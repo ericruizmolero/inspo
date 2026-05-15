@@ -158,8 +158,8 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
           />
         )}
 
-        {/* Shimmer */}
-        {!manualThumbnail && !loaded && source !== "error" && source !== "idle" && (
+        {/* Shimmer — desde idle hasta que carga */}
+        {!manualThumbnail && !loaded && source !== "error" && (
           <div
             style={{
               position: "absolute",
