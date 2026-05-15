@@ -60,6 +60,9 @@ export default function InspoClient({
     if (res.ok) {
       const { url } = await res.json();
       setThumbMap((prev) => ({ ...prev, [webUrl]: url }));
+    } else {
+      const body = await res.json().catch(() => ({}));
+      alert(`Error subiendo thumbnail (${res.status}):\n${body.error ?? "desconocido"}`);
     }
   };
 
