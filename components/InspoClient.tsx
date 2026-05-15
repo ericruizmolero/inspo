@@ -109,15 +109,22 @@ export default function InspoClient({
   };
 
   const handlePickFromLibrary = (webUrl: string) => {
+    // Ensure PIN is stored before opening picker
     withPin(() => { setPickerWebUrl(webUrl); });
   };
 
-  const handlePickerSelect = async (blobUrl: string) => {
-    if (!pickerWebUrl) return;
-    const webUrl = pickerWebUrl;
-    setPickerWebUrl(null);
+  // Called when PIN confirmed — if picker was waiting, open it
+  // (already handled by pendingAction in handlePinConfirm)
 
-    const doAssign = async (pin: string): Promise<boolean> => {
+  // Returns error string on failure, null on success
+  const handlePickerSelect = async (blobUrl: string): Promise<string | null> => {
+    if (!pickerWebUrl) return "Sin webUrl";
+    const webUrl = pickerWebUrl;
+
+    const pin = localStorage.getItem("inspo_upload_pin");
+    if (!pin) return "Sin PIN — recarga y vuelve a intentarlo";
+
+    try {
       const res = await fetch("/api/thumbnail/assign", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-upload-pin": pin },
@@ -125,23 +132,17 @@ export default function InspoClient({
       });
       if (res.ok) {
         setThumbMap((prev) => ({ ...prev, [webUrl]: blobUrl }));
-        return true;
+        setPickerWebUrl(null); // close modal only on success
+        return null;
       }
       if (res.status === 401) {
         localStorage.removeItem("inspo_upload_pin");
-        // Re-prompt for PIN
-        pendingAction.current = async (newPin) => { await doAssign(newPin); };
-        setShowPin(true);
+        return "PIN incorrecto";
       }
-      return false;
-    };
-
-    const storedPin = localStorage.getItem("inspo_upload_pin");
-    if (storedPin) {
-      await doAssign(storedPin);
-    } else {
-      pendingAction.current = async (pin) => { await doAssign(pin); };
-      setShowPin(true);
+      const body = await res.json().catch(() => ({}));
+      return body.error ?? `Error ${res.status}`;
+    } catch (e) {
+      return String(e);
     }
   };
 
@@ -230,7 +231,7 @@ export default function InspoClient({
       {showPin && <PinModal onConfirm={handlePinConfirm} onCancel={handlePinCancel} />}
       {pickerWebUrl && (
         <ThumbPickerModal
-          onSelect={async (url) => { await handlePickerSelect(url); }}
+          onSelect={handlePickerSelect}
           onCancel={() => setPickerWebUrl(null)}
         />
       )}
