@@ -1,4 +1,4 @@
-import { put, list, del, getDownloadUrl } from "@vercel/blob";
+import { put, list, del } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -8,18 +8,41 @@ const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 
 // ─── Vercel Blob (producción) ─────────────────────────────────────────────────
 
+async function fetchBlobJson(url: string): Promise<ThumbnailMap | null> {
+  // Approach 1: Bearer token (most reliable for private blobs)
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+      cache: "no-store",
+    });
+    if (res.ok) return await res.json();
+  } catch { /* fall through */ }
+
+  // Approach 2: Direct fetch (works if blob URL is signed/public)
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (res.ok) return await res.json();
+  } catch { /* fall through */ }
+
+  return null;
+}
+
 async function getBlobMap(): Promise<ThumbnailMap> {
   try {
     const { blobs } = await list({ prefix: "inspo/thumbnail-map" });
     if (!blobs.length) return {};
-    const latest = blobs.sort(
+
+    // Sort by uploadedAt descending, take the newest
+    const sorted = blobs.sort(
       (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-    )[0];
-    // getDownloadUrl genera una URL firmada para acceder a blobs privados
-    const signedUrl = await getDownloadUrl(latest.url);
-    const res = await fetch(signedUrl, { cache: "no-store" });
-    if (!res.ok) return {};
-    return await res.json();
+    );
+
+    // Try each blob until we get a valid map (newest first)
+    for (const blob of sorted) {
+      const data = await fetchBlobJson(blob.url);
+      if (data && typeof data === "object") return data;
+    }
+    return {};
   } catch (e) {
     console.error("getBlobMap error:", e);
     return {};
@@ -27,15 +50,24 @@ async function getBlobMap(): Promise<ThumbnailMap> {
 }
 
 async function saveBlobMap(map: ThumbnailMap): Promise<void> {
-  // Borra versiones antiguas antes de guardar la nueva
-  const { blobs } = await list({ prefix: "inspo/thumbnail-map" });
-  if (blobs.length > 0) await del(blobs.map((b) => b.url));
+  // 1. Record OLD blobs BEFORE writing anything
+  const { blobs: oldBlobs } = await list({ prefix: "inspo/thumbnail-map" });
 
+  // 2. Save the new version FIRST — timestamped to avoid name collision
   await put(
-    "inspo/thumbnail-map.json",
+    `inspo/thumbnail-map-${Date.now()}.json`,
     Buffer.from(JSON.stringify(map)),
     { access: "private", contentType: "application/json" }
   );
+
+  // 3. THEN delete old versions (data safe even if this fails)
+  if (oldBlobs.length > 0) {
+    try {
+      await del(oldBlobs.map((b) => b.url));
+    } catch (e) {
+      console.warn("saveBlobMap: could not delete old blobs (non-fatal):", e);
+    }
+  }
 }
 
 async function uploadToBlob(filename: string, file: File): Promise<string> {
