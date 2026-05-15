@@ -93,6 +93,11 @@ body {
   z-index: 10;
   background: #EDE8DF;
 }
+
+/* Desktop rows */
+.filterbar-desktop { display: block; }
+.filterbar-mobile  { display: none; }
+
 .filterbar__row {
   display: flex;
   align-items: center;
@@ -113,65 +118,11 @@ body {
   border-top: 1px solid #E4DFD8;
   gap: 16px;
 }
-.filterbar__nav {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-.filterbar__right {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-shrink: 0;
-}
-
-/* Fade hint de scroll en pantallas intermedias */
-.filterbar__row {
-  position: relative;
-}
-.filterbar__row::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 32px;
-  background: linear-gradient(to right, transparent, #EDE8DF);
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.filterbar__row.is-overflowing::after {
-  opacity: 1;
-}
 
 @media (max-width: 700px) {
   .app-header { padding: 0 16px; }
-
-  .filterbar__row {
-    padding: 8px 16px;
-    height: auto !important;
-    flex-wrap: wrap;
-    gap: 4px 0;
-    overflow-x: visible;
-  }
-  .filterbar__row--top {
-    justify-content: flex-start;
-    padding-bottom: 10px;
-  }
-  .filterbar__row--bottom {
-    justify-content: flex-start;
-    padding-bottom: 10px;
-  }
-  .filterbar__nav {
-    flex-wrap: wrap;
-    width: 100%;
-  }
-  .filterbar__right {
-    gap: 8px;
-    width: 100%;
-    flex-wrap: wrap;
-  }
+  .filterbar-desktop { display: none; }
+  .filterbar-mobile  { display: block; }
 }
 
 /* Masonry */
