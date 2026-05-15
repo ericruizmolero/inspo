@@ -25,7 +25,7 @@ function normalizeTipo(val: string): InspoItem["tipo"] {
 
 export async function fetchInspoItems(): Promise<InspoItem[]> {
   const res = await fetch(SHEET_CSV_URL, {
-    next: { revalidate: 60 },
+    cache: "no-store",
   });
 
   if (!res.ok) throw new Error(`Sheet fetch failed: ${res.status}`);

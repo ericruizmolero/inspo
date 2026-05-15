@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Inspo — treseiscero",
+  title: "INSPO by treseiscero",
   description: "Board de inspiración de treseiscero",
 };
 

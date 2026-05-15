@@ -10,3 +10,4 @@ export interface InspoItem {
 
 export type FilterTipo = "Todos" | InspoItem["tipo"];
 export type FilterAutor = "Todos" | InspoItem["puestoPor"];
+export type FilterFecha = "Todos" | "Este mes" | "Este año";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { InspoItem } from "@/types/inspo";
 import ProxyFrame from "./ProxyFrame";
 
@@ -10,6 +10,13 @@ interface InspoModalProps {
 }
 
 export default function InspoModal({ item, onClose }: InspoModalProps) {
+  const [proxyFailed, setProxyFailed] = useState(false);
+
+  useEffect(() => {
+    // Reset al cambiar de item
+    setProxyFailed(false);
+  }, [item]);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -58,8 +65,8 @@ export default function InspoModal({ item, onClose }: InspoModalProps) {
             flexShrink: 0,
             transition: "color 0.15s",
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#F0F0F0")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#555")}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#0F1923")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.color = "#8A8580")}
         >
           ×
         </button>
@@ -92,8 +99,8 @@ export default function InspoModal({ item, onClose }: InspoModalProps) {
             minWidth: 0,
             transition: "color 0.15s",
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#F0F0F0")}
-          onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#444")}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#0F1923")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#A09890")}
         >
           {item.web}
         </a>
@@ -125,6 +132,7 @@ export default function InspoModal({ item, onClose }: InspoModalProps) {
             letterSpacing: "0.06em",
             textTransform: "uppercase",
             flexShrink: 0,
+            fontFamily: "var(--font-mono)",
           }}
         >
           {item.fecha}
@@ -132,15 +140,58 @@ export default function InspoModal({ item, onClose }: InspoModalProps) {
       </div>
 
       {/* Frame */}
-      <div style={{ flex: 1, overflow: "hidden" }}>
-        <div style={{ width: "100%", height: "100%" }}>
-          <ProxyFrame
-            url={item.web}
-            iframeWidth={1440}
-            iframeHeight={900}
-            enableNav
-          />
-        </div>
+      <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+        <ProxyFrame
+          url={item.web}
+          iframeWidth={1440}
+          iframeHeight={900}
+          enableNav
+          onFail={() => setProxyFailed(true)}
+        />
+
+        {/* Overlay si el proxy falla */}
+        {proxyFailed && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "16px",
+              background: "#EDE8DF",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "13px",
+                color: "#8A8580",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              No se puede previsualizar este sitio
+            </span>
+            <a
+              href={item.web}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: "12px",
+                color: "#0F1923",
+                textDecoration: "none",
+                borderBottom: "1px solid #0F1923",
+                paddingBottom: "2px",
+                letterSpacing: "0.01em",
+                transition: "opacity 0.15s",
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.5")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}
+            >
+              Abrir en nueva pestaña →
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -23,6 +23,7 @@ interface ProxyFrameProps {
   className?: string;
   onNavigate?: (url: string) => void;
   enableNav?: boolean;
+  onFail?: () => void;
 }
 
 export default function ProxyFrame({
@@ -32,6 +33,7 @@ export default function ProxyFrame({
   className = "",
   onNavigate,
   enableNav = false,
+  onFail,
 }: ProxyFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -62,6 +64,7 @@ export default function ProxyFrame({
       })
       .catch(() => {
         setFailed(true);
+        onFail?.();
       })
       .finally(() => clearTimeout(timer));
   }
@@ -78,6 +81,7 @@ export default function ProxyFrame({
             loadUrl(url);
           } else {
             setFailed(true);
+            onFail?.();
           }
         }
       },

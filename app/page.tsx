@@ -1,10 +1,14 @@
 import { fetchInspoItems, SHEET_CSV_URL } from "@/lib/sheets";
+import { getThumbnailMap, ThumbnailMap } from "@/lib/thumbnails";
 import InspoClient from "@/components/InspoClient";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  let items = await fetchInspoItems().catch(() => null);
+  const [items, thumbnailMap] = await Promise.all([
+    fetchInspoItems().catch(() => null),
+    getThumbnailMap().catch(() => ({} as ThumbnailMap)),
+  ]);
 
   if (!items) {
     return (
@@ -40,39 +44,12 @@ export default async function Home() {
 
   return (
     <div style={{ minHeight: "100dvh" }}>
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 32px",
-          height: "52px",
-          borderBottom: "1px solid #D8D0C6",
-        }}
-      >
-        <span
-          style={{
-            fontSize: "12px",
-            fontWeight: 500,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "#0F1923",
-          }}
-        >
-          treseiscero
-        </span>
-        <span
-          style={{
-            fontSize: "12px",
-            color: "#C8C0B8",
-            marginLeft: "10px",
-            letterSpacing: "0.04em",
-          }}
-        >
-          / inspo
-        </span>
+      <header className="app-header">
+        <span className="app-header__title">INSPO</span>
+        <span className="app-header__by">by treseiscero</span>
       </header>
 
-      <InspoClient items={items} />
+      <InspoClient items={items} initialThumbnailMap={thumbnailMap} />
     </div>
   );
 }
