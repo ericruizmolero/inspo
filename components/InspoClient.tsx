@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { InspoItem, FilterTipo, FilterAutor, FilterFecha } from "@/types/inspo";
 import { ThumbnailMap } from "@/lib/thumbnails";
@@ -171,9 +170,6 @@ export default function InspoClient({
     }
   };
 
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const handleRefresh = () => startTransition(() => router.refresh());
 
   const numCols = useColumnCount();
   const gridRef = useRef<HTMLElement>(null);
@@ -264,8 +260,6 @@ export default function InspoClient({
         tipo={tipo} autor={autor} fecha={fecha} query={query}
         onTipo={setTipo} onAutor={setAutor} onFecha={setFecha} onQuery={setQuery}
         count={filtered.length}
-        onRefresh={handleRefresh}
-        refreshing={isPending}
       />
 
       <main ref={gridRef} className="inspo-masonry">

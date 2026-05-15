@@ -17,8 +17,6 @@ interface FilterBarProps {
   onFecha: (f: FilterFecha) => void;
   onQuery: (q: string) => void;
   count: number;
-  onRefresh: () => void;
-  refreshing: boolean;
 }
 
 // ─── Shared primitives ────────────────────────────────────────────────────────
@@ -99,27 +97,13 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
   );
 }
 
-function RefreshBtn({ onClick, refreshing }: { onClick: () => void; refreshing: boolean }) {
-  return (
-    <button onClick={onClick} disabled={refreshing} title="Actualizar"
-      style={{ background: "none", border: "none", cursor: refreshing ? "wait" : "pointer", color: "#C8C0B8", padding: "4px", display: "flex", alignItems: "center", flexShrink: 0, transition: "color 0.15s" }}
-      onMouseEnter={(e) => { if (!refreshing) (e.currentTarget as HTMLButtonElement).style.color = "#0F1923"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#C8C0B8"; }}>
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"
-        style={{ animation: refreshing ? "spin 0.7s linear infinite" : "none" }}>
-        <path d="M10.5 6A4.5 4.5 0 1 1 7.5 1.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-        <path d="M7.5 1.8 L10 1.8 L10 4.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
-  );
-}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function FilterBar({
   tipo, autor, fecha, query,
   onTipo, onAutor, onFecha, onQuery,
-  count, onRefresh, refreshing,
+  count,
 }: FilterBarProps) {
   const [panelOpen, setPanelOpen] = useState(false);
 
@@ -141,7 +125,6 @@ export default function FilterBar({
               {AUTORES.map((a) => <Tab key={a} label={a} active={autor === a} onClick={() => onAutor(a)} />)}
             </nav>
             <span style={{ fontSize: "11px", color: "#C8C0B8", fontVariantNumeric: "tabular-nums", letterSpacing: "0.04em" }}>{count}</span>
-            <RefreshBtn onClick={onRefresh} refreshing={refreshing} />
           </div>
         </div>
         {/* Fila 2 */}
@@ -194,7 +177,6 @@ export default function FilterBar({
             {count}
           </span>
 
-          <RefreshBtn onClick={onRefresh} refreshing={refreshing} />
         </div>
 
         {/* Filter panel */}
