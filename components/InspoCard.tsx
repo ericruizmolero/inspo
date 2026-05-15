@@ -266,7 +266,7 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
             }}
           >
             {uploading ? (
-              <span style={{ opacity: 0.7 }}>subiendo…</span>
+              <span className="spinner" />
             ) : (
               <>
                 <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
