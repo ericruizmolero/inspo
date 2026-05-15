@@ -219,9 +219,9 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
             right: "8px",
             display: "flex",
             gap: "4px",
-            opacity: hovered ? 1 : 0,
+            opacity: hovered || uploading ? 1 : 0,
             transition: "opacity 0.2s",
-            pointerEvents: hovered ? "auto" : "none",
+            pointerEvents: hovered || uploading ? "auto" : "none",
           }}
         >
           {/* Quitar thumbnail manual */}
