@@ -8,8 +8,6 @@ const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 
 // ─── Vercel Blob (producción) ─────────────────────────────────────────────────
 
-const MAP_BLOB_PATH = "inspo/thumbnail-map.json";
-
 async function getBlobMap(): Promise<ThumbnailMap> {
   try {
     const { blobs } = await list({ prefix: "inspo/thumbnail-map" });
@@ -26,21 +24,23 @@ async function getBlobMap(): Promise<ThumbnailMap> {
 }
 
 async function saveBlobMap(map: ThumbnailMap): Promise<void> {
-  const body = JSON.stringify(map);
-  await put(MAP_BLOB_PATH, body, {
-    access: "public",
-    contentType: "application/json",
-    addRandomSuffix: false,
-  });
+  // Usamos random suffix para evitar conflictos; listamos el más reciente al leer
+  await put(
+    "inspo/thumbnail-map.json",
+    Buffer.from(JSON.stringify(map)),
+    { access: "public", contentType: "application/json" }
+  );
 }
 
 async function uploadToBlob(filename: string, file: File): Promise<string> {
-  const blob = await put(
+  // Convertimos a Buffer para máxima compatibilidad en serverless
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const result = await put(
     `inspo/thumbs/${Date.now()}-${filename}`,
-    file,
-    { access: "public" }
+    buffer,
+    { access: "public", contentType: file.type || "image/jpeg" }
   );
-  return blob.url;
+  return result.url;
 }
 
 // ─── Filesystem local (dev) ───────────────────────────────────────────────────
