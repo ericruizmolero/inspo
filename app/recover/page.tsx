@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 
 interface ThumbBlob {
   url: string;
@@ -30,7 +31,9 @@ function ProjectPicker({
 }) {
   const [query, setQuery] = useState(value ? (items.find((i) => i.web === value)?.empresa ?? value) : "");
   const [open, setOpen] = useState(false);
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const filtered = query.trim()
     ? items.filter(
@@ -49,6 +52,31 @@ function ProjectPicker({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Position dropdown relative to input on screen (portal escapes overflow:hidden)
+  const openDropdown = () => {
+    if (!inputRef.current) return;
+    const rect = inputRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const dropHeight = Math.min(200, filtered.length * 44);
+    const showAbove = spaceBelow < dropHeight + 8 && rect.top > dropHeight + 8;
+    setDropdownStyle({
+      position: "fixed",
+      left: rect.left,
+      width: rect.width,
+      ...(showAbove
+        ? { bottom: window.innerHeight - rect.top + 3, top: "auto" }
+        : { top: rect.bottom + 3 }),
+      background: "#F5F1EB",
+      border: "1px solid #D8D0C6",
+      borderRadius: "4px",
+      zIndex: 9999,
+      maxHeight: "200px",
+      overflowY: "auto",
+      boxShadow: "0 4px 16px rgba(15,25,35,0.14)",
+    });
+    setOpen(true);
+  };
+
   const select = (item: InspoItem) => {
     setQuery(item.empresa);
     onChange(item.web);
@@ -62,14 +90,15 @@ function ProjectPicker({
   };
 
   return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
+    <div ref={wrapRef}>
       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
         <input
+          ref={inputRef}
           type="text"
           placeholder="Buscar proyecto…"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); onChange(""); }}
-          onFocus={() => setOpen(true)}
+          onChange={(e) => { setQuery(e.target.value); onChange(""); openDropdown(); }}
+          onFocus={openDropdown}
           style={{
             flex: 1, boxSizing: "border-box",
             background: value ? "#E8F0E8" : "#EDE8DF",
@@ -88,14 +117,9 @@ function ProjectPicker({
         )}
       </div>
 
-      {open && filtered.length > 0 && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 3px)", left: 0, right: 0,
-          background: "#F5F1EB", border: "1px solid #D8D0C6", borderRadius: "4px",
-          zIndex: 100, maxHeight: "180px", overflowY: "auto",
-          boxShadow: "0 4px 12px rgba(15,25,35,0.12)",
-        }}>
-          {filtered.slice(0, 30).map((item) => (
+      {open && filtered.length > 0 && typeof document !== "undefined" && createPortal(
+        <div style={dropdownStyle}>
+          {filtered.slice(0, 40).map((item) => (
             <button
               key={item.web}
               onMouseDown={() => select(item)}
@@ -111,7 +135,8 @@ function ProjectPicker({
               <div style={{ fontSize: "9px", color: "#A09890", fontFamily: "monospace", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.web}</div>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
