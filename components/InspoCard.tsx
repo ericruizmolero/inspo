@@ -31,10 +31,14 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
   const [hovered, setHovered] = useState(false);
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(null); // blob URL
+  const [manualLoaded, setManualLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
+
+  // Reset manualLoaded when thumbnail changes
+  useEffect(() => { setManualLoaded(false); }, [manualThumbnail]);
 
   // IntersectionObserver: arranca la carga al entrar en viewport
   useEffect(() => {
@@ -120,23 +124,35 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
         ref={containerRef}
         style={{ height: "200px", position: "relative", overflow: "hidden", background: "#E8E3DA" }}
       >
-        {/* Manual */}
+        {/* Manual thumbnail — shimmer hasta que carga, luego fade-in */}
         {manualThumbnail && (
-          <img
-            src={manualThumbnail.startsWith("https://")
-              ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
-              : manualThumbnail}
-            alt={item.empresa}
-            style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover", display: "block",
-              transition: "transform 0.5s ease",
-              transform: hovered ? "scale(1.04)" : "scale(1)",
-            }}
-          />
+          <>
+            {!manualLoaded && (
+              <div style={{
+                position: "absolute", inset: 0,
+                background: "linear-gradient(90deg, #E8E3DA 25%, #DED9D0 50%, #E8E3DA 75%)",
+                backgroundSize: "200% 100%",
+                animation: "shimmer 1.6s infinite",
+              }} />
+            )}
+            <img
+              src={manualThumbnail.startsWith("https://")
+                ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
+                : manualThumbnail}
+              alt={item.empresa}
+              onLoad={() => setManualLoaded(true)}
+              style={{
+                position: "absolute", inset: 0, width: "100%", height: "100%",
+                objectFit: "cover", display: "block",
+                opacity: manualLoaded ? 1 : 0,
+                transition: "opacity 0.4s ease, transform 0.5s ease",
+                transform: hovered ? "scale(1.04)" : "scale(1)",
+              }}
+            />
+          </>
         )}
 
-        {/* Auto (blob URL) */}
+        {/* Auto (blob URL) — solo si no hay manual */}
         {!manualThumbnail && imgSrc && (
           <img
             src={imgSrc}
@@ -151,7 +167,7 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
           />
         )}
 
-        {/* Shimmer — mientras no hay imagen */}
+        {/* Shimmer — solo si no hay manual y el auto aún no cargó */}
         {!manualThumbnail && !isLoaded && source !== "error" && (
           <div style={{
             position: "absolute", inset: 0,
