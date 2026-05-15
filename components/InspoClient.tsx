@@ -112,19 +112,37 @@ export default function InspoClient({
     withPin(() => { setPickerWebUrl(webUrl); });
   };
 
-  const handlePickerSelect = (blobUrl: string) => {
+  const handlePickerSelect = async (blobUrl: string) => {
     if (!pickerWebUrl) return;
     const webUrl = pickerWebUrl;
     setPickerWebUrl(null);
-    withPin(async (pin) => {
+
+    const doAssign = async (pin: string): Promise<boolean> => {
       const res = await fetch("/api/thumbnail/assign", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-upload-pin": pin },
         body: JSON.stringify({ webUrl, blobUrl }),
       });
-      if (res.ok) setThumbMap((prev) => ({ ...prev, [webUrl]: blobUrl }));
-      else if (res.status === 401) { localStorage.removeItem("inspo_upload_pin"); }
-    });
+      if (res.ok) {
+        setThumbMap((prev) => ({ ...prev, [webUrl]: blobUrl }));
+        return true;
+      }
+      if (res.status === 401) {
+        localStorage.removeItem("inspo_upload_pin");
+        // Re-prompt for PIN
+        pendingAction.current = async (newPin) => { await doAssign(newPin); };
+        setShowPin(true);
+      }
+      return false;
+    };
+
+    const storedPin = localStorage.getItem("inspo_upload_pin");
+    if (storedPin) {
+      await doAssign(storedPin);
+    } else {
+      pendingAction.current = async (pin) => { await doAssign(pin); };
+      setShowPin(true);
+    }
   };
 
   const router = useRouter();
@@ -212,7 +230,7 @@ export default function InspoClient({
       {showPin && <PinModal onConfirm={handlePinConfirm} onCancel={handlePinCancel} />}
       {pickerWebUrl && (
         <ThumbPickerModal
-          onSelect={handlePickerSelect}
+          onSelect={async (url) => { await handlePickerSelect(url); }}
           onCancel={() => setPickerWebUrl(null)}
         />
       )}

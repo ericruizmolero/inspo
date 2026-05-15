@@ -3,13 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 
 interface ThumbPickerModalProps {
-  onSelect: (blobUrl: string) => void;
+  onSelect: (blobUrl: string) => Promise<void>;
   onCancel: () => void;
 }
 
 export default function ThumbPickerModal({ onSelect, onCancel }: ThumbPickerModalProps) {
   const [urls, setUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selecting, setSelecting] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -76,34 +77,56 @@ export default function ThumbPickerModal({ onSelect, onCancel }: ThumbPickerModa
               gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
               gap: "8px",
             }}>
-              {urls.map((url) => (
-                <button
-                  key={url}
-                  onClick={() => onSelect(url)}
-                  onMouseEnter={() => setHovered(url)}
-                  onMouseLeave={() => setHovered(null)}
-                  style={{
-                    padding: 0, border: "none", cursor: "pointer",
-                    borderRadius: "4px", overflow: "hidden",
-                    outline: hovered === url ? "2px solid #0F1923" : "2px solid transparent",
-                    outlineOffset: "2px",
-                    transition: "outline-color 0.15s, transform 0.15s",
-                    transform: hovered === url ? "scale(1.03)" : "scale(1)",
-                    background: "#E8E3DA",
-                    aspectRatio: "4/3",
-                    display: "block",
-                    width: "100%",
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/api/thumbnail/img?url=${encodeURIComponent(url)}`}
-                    alt=""
-                    loading="lazy"
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  />
-                </button>
-              ))}
+              {urls.map((url) => {
+                const isSelecting = selecting === url;
+                const isActive = hovered === url || isSelecting;
+                return (
+                  <button
+                    key={url}
+                    onClick={async () => {
+                      if (selecting) return;
+                      setSelecting(url);
+                      await onSelect(url);
+                      setSelecting(null);
+                    }}
+                    onMouseEnter={() => setHovered(url)}
+                    onMouseLeave={() => setHovered(null)}
+                    disabled={!!selecting}
+                    style={{
+                      padding: 0, border: "none",
+                      cursor: selecting ? (isSelecting ? "wait" : "default") : "pointer",
+                      borderRadius: "4px", overflow: "hidden",
+                      outline: isActive ? "2px solid #0F1923" : "2px solid transparent",
+                      outlineOffset: "2px",
+                      transition: "outline-color 0.15s, transform 0.15s, opacity 0.15s",
+                      transform: isActive && !selecting ? "scale(1.03)" : "scale(1)",
+                      opacity: selecting && !isSelecting ? 0.4 : 1,
+                      background: "#E8E3DA",
+                      aspectRatio: "4/3",
+                      display: "block",
+                      width: "100%",
+                      position: "relative",
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`/api/thumbnail/img?url=${encodeURIComponent(url)}`}
+                      alt=""
+                      loading="lazy"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                    {isSelecting && (
+                      <div style={{
+                        position: "absolute", inset: 0,
+                        background: "rgba(15,25,35,0.45)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
