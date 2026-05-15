@@ -17,6 +17,11 @@ interface RecoverData {
 interface InspoItem {
   empresa: string;
   web: string;
+  tipo?: string;
+  comentarios?: string;
+  subcomentarios?: string;
+  puestoPor?: string;
+  fecha?: string;
 }
 
 // ─── Autocomplete input ────────────────────────────────────────────────────────
@@ -35,11 +40,12 @@ function ProjectPicker({
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = query.trim()
-    ? items.filter(
-        (i) =>
-          i.empresa.toLowerCase().includes(query.toLowerCase()) ||
-          i.web.toLowerCase().includes(query.toLowerCase())
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? items.filter((i) =>
+        [i.empresa, i.web, i.tipo, i.comentarios, i.subcomentarios, i.puestoPor, i.fecha]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(q))
       )
     : items;
 
@@ -131,8 +137,15 @@ function ProjectPicker({
               onMouseEnter={(e) => (e.currentTarget.style.background = "#EDE8DF")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
             >
-              <div style={{ fontSize: "11px", fontWeight: 600, color: "#0F1923", lineHeight: 1.2 }}>{item.empresa}</div>
-              <div style={{ fontSize: "9px", color: "#A09890", fontFamily: "monospace", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.web}</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 600, color: "#0F1923", lineHeight: 1.2 }}>{item.empresa}</span>
+                {item.tipo && <span style={{ fontSize: "9px", color: "#A09890", letterSpacing: "0.06em", textTransform: "uppercase" }}>{item.tipo}</span>}
+                {item.puestoPor && item.puestoPor !== "Ambos" && <span style={{ fontSize: "9px", color: "#C8C0B8" }}>{item.puestoPor}</span>}
+              </div>
+              {item.comentarios && (
+                <div style={{ fontSize: "9px", color: "#B0A8A0", marginTop: "2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.comentarios}</div>
+              )}
+              <div style={{ fontSize: "9px", color: "#C8C0B8", fontFamily: "monospace", marginTop: "1px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.web}</div>
             </button>
           ))}
         </div>,
