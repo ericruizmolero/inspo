@@ -35,11 +35,21 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
   const [manualLoaded, setManualLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const manualImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
 
-  // Reset manualLoaded when thumbnail changes
-  useEffect(() => { setManualLoaded(false); }, [manualThumbnail]);
+  // Reset on thumbnail change, then immediately check if already cached
+  useEffect(() => {
+    setManualLoaded(false);
+    // Give React one tick to render the img, then check img.complete
+    // (cached images fire onLoad before the handler is registered)
+    const id = setTimeout(() => {
+      const el = manualImgRef.current;
+      if (el && el.complete && el.naturalWidth > 0) setManualLoaded(true);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [manualThumbnail]);
 
   // IntersectionObserver: arranca la carga al entrar en viewport
   useEffect(() => {
@@ -137,6 +147,7 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
               }} />
             )}
             <img
+              ref={manualImgRef}
               src={manualThumbnail.startsWith("https://")
                 ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
                 : manualThumbnail}
