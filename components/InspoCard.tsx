@@ -25,9 +25,10 @@ interface InspoCardProps {
   manualThumbnail?: string;
   onUpload: (file: File) => Promise<void>;
   onRemoveThumbnail: () => Promise<void>;
+  onPickFromLibrary: () => void;
 }
 
-export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThumbnail }: InspoCardProps) {
+export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThumbnail, onPickFromLibrary }: InspoCardProps) {
   const [hovered, setHovered] = useState(false);
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(null); // blob URL
@@ -219,6 +220,25 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
               ×
             </button>
           )}
+          {/* Elegir de la librería */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onPickFromLibrary(); }}
+            title="Elegir de la librería"
+            style={{
+              background: "rgba(15,25,35,0.6)", border: "none", borderRadius: "3px",
+              color: "#EDE8DF", fontSize: "10px", padding: "4px 8px", cursor: "pointer",
+              backdropFilter: "blur(4px)", letterSpacing: "0.03em", lineHeight: 1,
+              display: "flex", alignItems: "center", gap: "4px",
+            }}
+          >
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
+              <rect x="1" y="1" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="5" y="1" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="1" y="5" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
+              <rect x="5" y="5" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
+            </svg>
+            elegir
+          </button>
           <button onClick={triggerUpload} title={manualThumbnail ? "Reemplazar" : "Subir thumbnail"}
             style={{
               background: uploading ? "rgba(15,25,35,0.4)" : "rgba(15,25,35,0.6)",

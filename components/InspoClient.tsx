@@ -8,6 +8,7 @@ import { ThumbnailMap } from "@/lib/thumbnails";
 import FilterBar from "./FilterBar";
 import InspoCard from "./InspoCard";
 import PinModal from "./PinModal";
+import ThumbPickerModal from "./ThumbPickerModal";
 
 function parseFecha(s: string): number {
   if (!s) return 0;
@@ -54,6 +55,7 @@ export default function InspoClient({
   const [query, setQuery] = useState("");
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
   const [showPin, setShowPin] = useState(false);
+  const [pickerWebUrl, setPickerWebUrl] = useState<string | null>(null);
   const pendingAction = useRef<((pin: string) => void) | null>(null);
 
   const withPin = (action: (pin: string) => void) => {
@@ -103,6 +105,25 @@ export default function InspoClient({
       const res = await fetch(`/api/thumbnail?webUrl=${encodeURIComponent(webUrl)}`, { method: "DELETE", headers: { "x-upload-pin": pin } });
       if (res.status === 401) { localStorage.removeItem("inspo_upload_pin"); return; }
       setThumbMap((prev) => { const next = { ...prev }; delete next[webUrl]; return next; });
+    });
+  };
+
+  const handlePickFromLibrary = (webUrl: string) => {
+    withPin(() => { setPickerWebUrl(webUrl); });
+  };
+
+  const handlePickerSelect = (blobUrl: string) => {
+    if (!pickerWebUrl) return;
+    const webUrl = pickerWebUrl;
+    setPickerWebUrl(null);
+    withPin(async (pin) => {
+      const res = await fetch("/api/thumbnail/assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-upload-pin": pin },
+        body: JSON.stringify({ webUrl, blobUrl }),
+      });
+      if (res.ok) setThumbMap((prev) => ({ ...prev, [webUrl]: blobUrl }));
+      else if (res.status === 401) { localStorage.removeItem("inspo_upload_pin"); }
     });
   };
 
@@ -189,6 +210,12 @@ export default function InspoClient({
   return (
     <>
       {showPin && <PinModal onConfirm={handlePinConfirm} onCancel={handlePinCancel} />}
+      {pickerWebUrl && (
+        <ThumbPickerModal
+          onSelect={handlePickerSelect}
+          onCancel={() => setPickerWebUrl(null)}
+        />
+      )}
       <FilterBar
         tipo={tipo} autor={autor} fecha={fecha} query={query}
         onTipo={setTipo} onAutor={setAutor} onFecha={setFecha} onQuery={setQuery}
@@ -207,6 +234,7 @@ export default function InspoClient({
                   manualThumbnail={thumbMap[item.web]}
                   onUpload={(file) => { handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
                   onRemoveThumbnail={() => { handleThumbnailRemove(item.web); return Promise.resolve(); }}
+                  onPickFromLibrary={() => handlePickFromLibrary(item.web)}
                 />
               </div>
             ))}
