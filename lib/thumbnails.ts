@@ -31,7 +31,7 @@ async function saveBlobMap(map: ThumbnailMap): Promise<void> {
   await put(
     "inspo/thumbnail-map.json",
     Buffer.from(JSON.stringify(map)),
-    { access: "private", contentType: "application/json" }
+    { access: "private", contentType: "application/json", allowOverwrite: true }
   );
 }
 
