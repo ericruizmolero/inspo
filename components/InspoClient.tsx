@@ -53,22 +53,41 @@ export default function InspoClient({
   const [query, setQuery] = useState("");
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
 
+  const getPin = (): string | null => {
+    const stored = localStorage.getItem("inspo_upload_pin");
+    if (stored) return stored;
+    const entered = prompt("PIN para subir thumbnails:");
+    if (!entered) return null;
+    localStorage.setItem("inspo_upload_pin", entered);
+    return entered;
+  };
+
   const handleThumbnailUpload = async (webUrl: string, file: File) => {
+    const pin = getPin();
+    if (!pin) return;
     const fd = new FormData();
     fd.append("file", file);
     fd.append("webUrl", webUrl);
-    const res = await fetch("/api/thumbnail", { method: "POST", body: fd });
+    const res = await fetch("/api/thumbnail", { method: "POST", body: fd, headers: { "x-upload-pin": pin } });
     if (res.ok) {
       const { url } = await res.json();
       setThumbMap((prev) => ({ ...prev, [webUrl]: url }));
     } else {
       const body = await res.json().catch(() => ({}));
-      alert(`Error subiendo thumbnail (${res.status}):\n${body.error ?? "desconocido"}`);
+      if (res.status === 401) {
+        localStorage.removeItem("inspo_upload_pin");
+        alert("PIN incorrecto.");
+      } else {
+        alert(`Error subiendo thumbnail (${res.status}):\n${body.error ?? "desconocido"}`);
+      }
     }
   };
 
   const handleThumbnailRemove = async (webUrl: string) => {
-    await fetch(`/api/thumbnail?webUrl=${encodeURIComponent(webUrl)}`, { method: "DELETE" });
+    const pin = getPin();
+    if (!pin) return;
+    const res = await fetch(`/api/thumbnail?webUrl=${encodeURIComponent(webUrl)}`, { method: "DELETE", headers: { "x-upload-pin": pin } });
+    if (res.status === 401) { localStorage.removeItem("inspo_upload_pin"); alert("PIN incorrecto."); return; }
     setThumbMap((prev) => {
       const next = { ...prev };
       delete next[webUrl];

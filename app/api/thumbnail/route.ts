@@ -21,6 +21,11 @@ export async function GET() {
 // POST → sube imagen y actualiza el mapa
 export async function POST(req: NextRequest) {
   try {
+    const pin = process.env.UPLOAD_PIN;
+    if (pin && req.headers.get("x-upload-pin") !== pin) {
+      return Response.json({ error: "PIN incorrecto" }, { status: 401 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const webUrl = formData.get("webUrl") as string | null;
@@ -44,6 +49,10 @@ export async function POST(req: NextRequest) {
 // DELETE → elimina entrada del mapa
 export async function DELETE(req: NextRequest) {
   try {
+    const pin = process.env.UPLOAD_PIN;
+    if (pin && req.headers.get("x-upload-pin") !== pin) {
+      return Response.json({ error: "PIN incorrecto" }, { status: 401 });
+    }
     const webUrl = req.nextUrl.searchParams.get("webUrl");
     if (!webUrl) return Response.json({ error: "Falta webUrl" }, { status: 400 });
     await removeThumbnailFromMap(webUrl);
