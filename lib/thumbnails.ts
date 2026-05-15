@@ -15,7 +15,11 @@ async function getBlobMap(): Promise<ThumbnailMap> {
     const latest = blobs.sort(
       (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     )[0];
-    const res = await fetch(latest.url, { cache: "no-store" });
+    // Blobs privados requieren el token en el header
+    const res = await fetch(latest.url, {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    });
     if (!res.ok) return {};
     return await res.json();
   } catch {
@@ -24,21 +28,19 @@ async function getBlobMap(): Promise<ThumbnailMap> {
 }
 
 async function saveBlobMap(map: ThumbnailMap): Promise<void> {
-  // Usamos random suffix para evitar conflictos; listamos el más reciente al leer
   await put(
     "inspo/thumbnail-map.json",
     Buffer.from(JSON.stringify(map)),
-    { access: "public", contentType: "application/json" }
+    { access: "private", contentType: "application/json" }
   );
 }
 
 async function uploadToBlob(filename: string, file: File): Promise<string> {
-  // Convertimos a Buffer para máxima compatibilidad en serverless
   const buffer = Buffer.from(await file.arrayBuffer());
   const result = await put(
     `inspo/thumbs/${Date.now()}-${filename}`,
     buffer,
-    { access: "public", contentType: file.type || "image/jpeg" }
+    { access: "private", contentType: file.type || "image/jpeg" }
   );
   return result.url;
 }

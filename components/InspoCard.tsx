@@ -112,7 +112,10 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
         {/* Thumbnail manual — prioridad máxima */}
         {manualThumbnail && (
           <img
-            src={manualThumbnail}
+            src={manualThumbnail.startsWith("https://")
+              ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
+              : manualThumbnail
+            }
             alt={item.empresa}
             style={{
               position: "absolute",
