@@ -1,4 +1,4 @@
-import { put, list, del } from "@vercel/blob";
+import { put, list, del, getDownloadUrl } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -15,14 +15,13 @@ async function getBlobMap(): Promise<ThumbnailMap> {
     const latest = blobs.sort(
       (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     )[0];
-    // Blobs privados requieren el token en el header
-    const res = await fetch(latest.url, {
-      cache: "no-store",
-      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-    });
+    // getDownloadUrl genera una URL firmada para acceder a blobs privados
+    const signedUrl = await getDownloadUrl(latest.url);
+    const res = await fetch(signedUrl, { cache: "no-store" });
     if (!res.ok) return {};
     return await res.json();
-  } catch {
+  } catch (e) {
+    console.error("getBlobMap error:", e);
     return {};
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getDownloadUrl } from "@vercel/blob";
 
 export const runtime = "nodejs";
 
@@ -6,13 +7,9 @@ export async function GET(req: NextRequest) {
   const blobUrl = req.nextUrl.searchParams.get("url");
   if (!blobUrl) return new Response("missing url", { status: 400 });
 
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
-  if (!token) return new Response("no token", { status: 500 });
-
   try {
-    const res = await fetch(blobUrl, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const signedUrl = await getDownloadUrl(blobUrl);
+    const res = await fetch(signedUrl);
     if (!res.ok) return new Response("blob fetch failed", { status: 502 });
 
     const buffer = await res.arrayBuffer();
@@ -21,10 +18,11 @@ export async function GET(req: NextRequest) {
     return new Response(buffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=3600",
       },
     });
-  } catch {
+  } catch (e) {
+    console.error("thumbnail img proxy error:", e);
     return new Response("error", { status: 500 });
   }
 }
