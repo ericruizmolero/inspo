@@ -16,6 +16,8 @@ interface FilterBarProps {
   onFecha: (f: FilterFecha) => void;
   onQuery: (q: string) => void;
   count: number;
+  onRefresh: () => void;
+  refreshing: boolean;
 }
 
 function Tab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -45,7 +47,7 @@ function Tab({ label, active, onClick }: { label: string; active: boolean; onCli
   );
 }
 
-export default function FilterBar({ tipo, autor, fecha, query, onTipo, onAutor, onFecha, onQuery, count }: FilterBarProps) {
+export default function FilterBar({ tipo, autor, fecha, query, onTipo, onAutor, onFecha, onQuery, count, onRefresh, refreshing }: FilterBarProps) {
   return (
     <div className="filterbar">
       {/* Fila 1: tipo + autor + count */}
@@ -65,6 +67,26 @@ export default function FilterBar({ tipo, autor, fecha, query, onTipo, onAutor, 
           <span style={{ fontSize: "11px", color: "#C8C0B8", fontVariantNumeric: "tabular-nums", letterSpacing: "0.04em", flexShrink: 0 }}>
             {count}
           </span>
+          <button
+            onClick={onRefresh}
+            disabled={refreshing}
+            title="Actualizar desde Sheets"
+            style={{
+              background: "none", border: "none", cursor: refreshing ? "wait" : "pointer",
+              color: "#C8C0B8", padding: "2px 4px", display: "flex", alignItems: "center",
+              flexShrink: 0, transition: "color 0.15s",
+            }}
+            onMouseEnter={(e) => { if (!refreshing) (e.currentTarget as HTMLButtonElement).style.color = "#0F1923"; }}
+            onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = "#C8C0B8"}
+          >
+            <svg
+              width="12" height="12" viewBox="0 0 12 12" fill="none"
+              style={{ animation: refreshing ? "spin 0.7s linear infinite" : "none" }}
+            >
+              <path d="M10.5 6A4.5 4.5 0 1 1 7.5 1.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+              <path d="M7.5 1.8 L10 1.8 L10 4.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
       </div>
 
