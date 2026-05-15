@@ -1,11 +1,16 @@
-export type ThumbnailMap = Record<string, string>; // webUrl → imageUrl
+import { put, list } from "@vercel/blob";
+import { promises as fs } from "fs";
+import path from "path";
+
+export type ThumbnailMap = Record<string, string>;
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 
 // ─── Vercel Blob (producción) ─────────────────────────────────────────────────
 
+const MAP_BLOB_PATH = "inspo/thumbnail-map.json";
+
 async function getBlobMap(): Promise<ThumbnailMap> {
-  const { list } = await import("@vercel/blob");
   try {
     const { blobs } = await list({ prefix: "inspo/thumbnail-map" });
     if (!blobs.length) return {};
@@ -13,6 +18,7 @@ async function getBlobMap(): Promise<ThumbnailMap> {
       (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
     )[0];
     const res = await fetch(latest.url, { cache: "no-store" });
+    if (!res.ok) return {};
     return await res.json();
   } catch {
     return {};
@@ -20,8 +26,8 @@ async function getBlobMap(): Promise<ThumbnailMap> {
 }
 
 async function saveBlobMap(map: ThumbnailMap): Promise<void> {
-  const { put } = await import("@vercel/blob");
-  await put("inspo/thumbnail-map.json", JSON.stringify(map), {
+  const body = JSON.stringify(map);
+  await put(MAP_BLOB_PATH, body, {
     access: "public",
     contentType: "application/json",
     addRandomSuffix: false,
@@ -29,7 +35,6 @@ async function saveBlobMap(map: ThumbnailMap): Promise<void> {
 }
 
 async function uploadToBlob(filename: string, file: File): Promise<string> {
-  const { put } = await import("@vercel/blob");
   const blob = await put(
     `inspo/thumbs/${Date.now()}-${filename}`,
     file,
@@ -40,11 +45,8 @@ async function uploadToBlob(filename: string, file: File): Promise<string> {
 
 // ─── Filesystem local (dev) ───────────────────────────────────────────────────
 
-import { promises as fs } from "fs";
-import path from "path";
-
 const THUMBS_DIR = path.join(process.cwd(), "public", "thumbs");
-const MAP_PATH = path.join(THUMBS_DIR, "_map.json");
+const MAP_PATH   = path.join(THUMBS_DIR, "_map.json");
 
 async function getFsMap(): Promise<ThumbnailMap> {
   try {
@@ -62,10 +64,10 @@ async function saveFsMap(map: ThumbnailMap): Promise<void> {
 
 async function uploadToFs(filename: string, file: File): Promise<string> {
   await fs.mkdir(THUMBS_DIR, { recursive: true });
-  const ext = filename.split(".").pop() ?? "jpg";
+  const ext  = filename.split(".").pop() ?? "jpg";
   const name = `${Date.now()}.${ext}`;
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(path.join(THUMBS_DIR, name), buffer);
+  const buf  = Buffer.from(await file.arrayBuffer());
+  await fs.writeFile(path.join(THUMBS_DIR, name), buf);
   return `/thumbs/${name}`;
 }
 
@@ -79,12 +81,11 @@ export async function uploadThumbnail(filename: string, file: File): Promise<str
   return USE_BLOB ? uploadToBlob(filename, file) : uploadToFs(filename, file);
 }
 
-export async function setThumbnailInMap(webUrl: string, imageUrl: string): Promise<ThumbnailMap> {
+export async function setThumbnailInMap(webUrl: string, imageUrl: string): Promise<void> {
   const map = await getThumbnailMap();
   map[webUrl] = imageUrl;
   if (USE_BLOB) await saveBlobMap(map);
   else await saveFsMap(map);
-  return map;
 }
 
 export async function removeThumbnailFromMap(webUrl: string): Promise<void> {

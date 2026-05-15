@@ -35,8 +35,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ url });
   } catch (err) {
-    console.error("Error subiendo thumbnail:", err);
-    return Response.json({ error: String(err) }, { status: 500 });
+    const msg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+    console.error("Error subiendo thumbnail:", msg);
+    return Response.json({ error: msg }, { status: 500 });
   }
 }
 
