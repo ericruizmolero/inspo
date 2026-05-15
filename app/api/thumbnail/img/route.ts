@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { getDownloadUrl } from "@vercel/blob";
 
 export const runtime = "nodejs";
 
@@ -8,8 +7,13 @@ export async function GET(req: NextRequest) {
   if (!blobUrl) return new Response("missing url", { status: 400 });
 
   try {
-    const signedUrl = await getDownloadUrl(blobUrl);
-    const res = await fetch(signedUrl);
+    // Fetch private blob with Bearer token (getDownloadUrl unreliable in v2.x)
+    const res = await fetch(blobUrl, {
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+      },
+    });
+
     if (!res.ok) return new Response("blob fetch failed", { status: 502 });
 
     const buffer = await res.arrayBuffer();
@@ -18,7 +22,7 @@ export async function GET(req: NextRequest) {
     return new Response(buffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": "public, max-age=86400",
       },
     });
   } catch (e) {
