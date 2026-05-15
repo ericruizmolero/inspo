@@ -10,6 +10,30 @@ import InspoCard from "./InspoCard";
 import PinModal from "./PinModal";
 import ThumbPickerModal from "./ThumbPickerModal";
 
+// Compress + resize image client-side before upload (avoids 413 on Vercel)
+async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const ratio = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * ratio);
+      const h = Math.round(img.height * ratio);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => resolve(new File([blob!], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" })),
+        "image/jpeg", quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); }; // fallback: upload as-is
+    img.src = objectUrl;
+  });
+}
+
 function parseFecha(s: string): number {
   if (!s) return 0;
   const parts = s.split("/");
@@ -79,8 +103,9 @@ export default function InspoClient({
 
   const handleThumbnailUpload = (webUrl: string, file: File) => {
     withPin(async (pin) => {
+      const compressed = await compressImage(file);
       const fd = new FormData();
-      fd.append("file", file);
+      fd.append("file", compressed);
       fd.append("webUrl", webUrl);
       const res = await fetch("/api/thumbnail", { method: "POST", body: fd, headers: { "x-upload-pin": pin } });
       if (res.ok) {
@@ -90,7 +115,7 @@ export default function InspoClient({
         localStorage.removeItem("inspo_upload_pin");
         pendingAction.current = async (newPin) => {
           const fd2 = new FormData();
-          fd2.append("file", file);
+          fd2.append("file", compressed);
           fd2.append("webUrl", webUrl);
           const res2 = await fetch("/api/thumbnail", { method: "POST", body: fd2, headers: { "x-upload-pin": newPin } });
           if (res2.ok) { const { url } = await res2.json(); setThumbMap((prev) => ({ ...prev, [webUrl]: url })); }
