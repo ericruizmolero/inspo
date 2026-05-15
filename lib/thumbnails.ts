@@ -1,4 +1,4 @@
-import { put, list } from "@vercel/blob";
+import { put, list, del } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -28,10 +28,14 @@ async function getBlobMap(): Promise<ThumbnailMap> {
 }
 
 async function saveBlobMap(map: ThumbnailMap): Promise<void> {
+  // Borra versiones antiguas antes de guardar la nueva
+  const { blobs } = await list({ prefix: "inspo/thumbnail-map" });
+  if (blobs.length > 0) await del(blobs.map((b) => b.url));
+
   await put(
     "inspo/thumbnail-map.json",
     Buffer.from(JSON.stringify(map)),
-    { access: "private", contentType: "application/json", allowOverwrite: true }
+    { access: "private", contentType: "application/json" }
   );
 }
 
