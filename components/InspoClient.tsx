@@ -7,6 +7,7 @@ import { InspoItem, FilterTipo, FilterAutor, FilterFecha } from "@/types/inspo";
 import { ThumbnailMap } from "@/lib/thumbnails";
 import FilterBar from "./FilterBar";
 import InspoCard from "./InspoCard";
+import PinModal from "./PinModal";
 
 function parseFecha(s: string): number {
   if (!s) return 0;
@@ -52,46 +53,56 @@ export default function InspoClient({
   const [fecha, setFecha] = useState<FilterFecha>("Todos");
   const [query, setQuery] = useState("");
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
+  const [showPin, setShowPin] = useState(false);
+  const pendingAction = useRef<((pin: string) => void) | null>(null);
 
-  const getPin = (): string | null => {
+  const withPin = (action: (pin: string) => void) => {
     const stored = localStorage.getItem("inspo_upload_pin");
-    if (stored) return stored;
-    const entered = prompt("PIN para subir thumbnails:");
-    if (!entered) return null;
-    localStorage.setItem("inspo_upload_pin", entered);
-    return entered;
+    if (stored) { action(stored); return; }
+    pendingAction.current = action;
+    setShowPin(true);
   };
 
-  const handleThumbnailUpload = async (webUrl: string, file: File) => {
-    const pin = getPin();
-    if (!pin) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("webUrl", webUrl);
-    const res = await fetch("/api/thumbnail", { method: "POST", body: fd, headers: { "x-upload-pin": pin } });
-    if (res.ok) {
-      const { url } = await res.json();
-      setThumbMap((prev) => ({ ...prev, [webUrl]: url }));
-    } else {
-      const body = await res.json().catch(() => ({}));
-      if (res.status === 401) {
+  const handlePinConfirm = (pin: string) => {
+    localStorage.setItem("inspo_upload_pin", pin);
+    setShowPin(false);
+    pendingAction.current?.(pin);
+    pendingAction.current = null;
+  };
+
+  const handlePinCancel = () => {
+    setShowPin(false);
+    pendingAction.current = null;
+  };
+
+  const handleThumbnailUpload = (webUrl: string, file: File) => {
+    withPin(async (pin) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("webUrl", webUrl);
+      const res = await fetch("/api/thumbnail", { method: "POST", body: fd, headers: { "x-upload-pin": pin } });
+      if (res.ok) {
+        const { url } = await res.json();
+        setThumbMap((prev) => ({ ...prev, [webUrl]: url }));
+      } else if (res.status === 401) {
         localStorage.removeItem("inspo_upload_pin");
-        alert("PIN incorrecto.");
-      } else {
-        alert(`Error subiendo thumbnail (${res.status}):\n${body.error ?? "desconocido"}`);
+        pendingAction.current = async (newPin) => {
+          const fd2 = new FormData();
+          fd2.append("file", file);
+          fd2.append("webUrl", webUrl);
+          const res2 = await fetch("/api/thumbnail", { method: "POST", body: fd2, headers: { "x-upload-pin": newPin } });
+          if (res2.ok) { const { url } = await res2.json(); setThumbMap((prev) => ({ ...prev, [webUrl]: url })); }
+        };
+        setShowPin(true);
       }
-    }
+    });
   };
 
-  const handleThumbnailRemove = async (webUrl: string) => {
-    const pin = getPin();
-    if (!pin) return;
-    const res = await fetch(`/api/thumbnail?webUrl=${encodeURIComponent(webUrl)}`, { method: "DELETE", headers: { "x-upload-pin": pin } });
-    if (res.status === 401) { localStorage.removeItem("inspo_upload_pin"); alert("PIN incorrecto."); return; }
-    setThumbMap((prev) => {
-      const next = { ...prev };
-      delete next[webUrl];
-      return next;
+  const handleThumbnailRemove = (webUrl: string) => {
+    withPin(async (pin) => {
+      const res = await fetch(`/api/thumbnail?webUrl=${encodeURIComponent(webUrl)}`, { method: "DELETE", headers: { "x-upload-pin": pin } });
+      if (res.status === 401) { localStorage.removeItem("inspo_upload_pin"); return; }
+      setThumbMap((prev) => { const next = { ...prev }; delete next[webUrl]; return next; });
     });
   };
 
@@ -177,6 +188,7 @@ export default function InspoClient({
 
   return (
     <>
+      {showPin && <PinModal onConfirm={handlePinConfirm} onCancel={handlePinCancel} />}
       <FilterBar
         tipo={tipo} autor={autor} fecha={fecha} query={query}
         onTipo={setTipo} onAutor={setAutor} onFecha={setFecha} onQuery={setQuery}
@@ -193,8 +205,8 @@ export default function InspoClient({
                 <InspoCard
                   item={item}
                   manualThumbnail={thumbMap[item.web]}
-                  onUpload={(file) => handleThumbnailUpload(item.web, file)}
-                  onRemoveThumbnail={() => handleThumbnailRemove(item.web)}
+                  onUpload={(file) => { handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
+                  onRemoveThumbnail={() => { handleThumbnailRemove(item.web); return Promise.resolve(); }}
                 />
               </div>
             ))}
