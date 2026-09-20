@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { DesignMdState } from "./DesignMdToasts";
+import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
 import type { DesignSpec } from "@/types/design";
+import type { RevisionMeta } from "@/lib/design-revise";
 
 interface DesignMdModalProps {
   url: string;
@@ -11,6 +12,23 @@ interface DesignMdModalProps {
   onClose: () => void;
   onRetry: () => void;
   onRegenerate: () => void;
+  onRevised: (patch: Partial<DesignMdEntry>) => void;
+}
+
+type ReviseFn = (section: string, comment: string) => Promise<{ summary: string; warning: string | null; unchanged?: boolean }>;
+
+const SECTION_LABEL: Record<string, string> = {
+  general: "Identidad", color: "Color", tipografia: "Tipografía", espaciado: "Espaciado y forma",
+  componentes: "Componentes", reglas: "Reglas", sistema: "Sistema", afines: "Marcas afines", prompt: "Prompt",
+};
+
+export function timeAgo(iso: string): string {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return "ahora mismo";
+  if (s < 3600) return `hace ${Math.floor(s / 60)} min`;
+  if (s < 86400) return `hace ${Math.floor(s / 3600)} h`;
+  if (s < 86400 * 7) return `hace ${Math.floor(s / 86400)} d`;
+  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
 }
 
 const STEPS = [
@@ -42,6 +60,9 @@ const IcX = (
 );
 const IcCopy = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="4.5" width="8" height="8" rx="1.6" /><path d="M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5" /></svg>
+);
+const IcEdit = (
+  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11H3v-2z" /></svg>
 );
 const IcArrow = (
   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l6-6M4 3h5v5" /></svg>
@@ -92,31 +113,68 @@ function pageBg(spec: DesignSpec): string {
 }
 
 // ─── Progress ─────────────────────────────────────────────────────────────────
+// Mientras se genera: la web a la izquierda (og:image) con un haz que la "lee",
+// y a la derecha qué está pasando. Es lo primero que ve alguien nuevo, así que
+// tiene que parecer que ocurre algo, no una lista de espera.
 function Progress({ startedAt, empresa, url }: { startedAt: number; empresa: string; url: string }) {
   const current = stepIndex(startedAt);
   const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+  const pct = Math.round(progressFor(startedAt) * 100);
+  const [shot, setShot] = useState<"loading" | "ok" | "none">("loading");
+  const host = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } })();
+
   return (
     <div className="dm-progress">
-      <div className="dm-progress__card">
-        <div className="dm-progress__head">
-          <span className="spinner" />
-          <div>
-            <div className="display dm-progress__title">Leyendo {empresa}</div>
-            <div className="dm-progress__url">{url}</div>
+      <div className="dm-progress__glow" aria-hidden />
+      <div className="dm-progress__stage">
+        <div className="dm-progress__visual">
+          <div className="dm-frame dm-frame--dark">
+            <div className="dm-frame__bar"><span /><span /><span /><em>{host}</em></div>
+            <div className={`dm-reader${shot === "ok" ? " is-loaded" : ""}`}>
+              {shot === "loading" && <div className="shimmer" />}
+              {shot === "none" && (
+                <div className="dm-reader__blank">
+                  <span className="display">{empresa.slice(0, 1).toUpperCase()}</span>
+                  <span>{host}</span>
+                </div>
+              )}
+              <img
+                src={`/api/og?url=${encodeURIComponent(url)}`}
+                alt=""
+                onLoad={() => setShot("ok")}
+                onError={() => setShot("none")}
+              />
+              <div className="dm-reader__beam" aria-hidden />
+            </div>
           </div>
-          <span className="dm-progress__time">{elapsed}s</span>
         </div>
-        <ol className="dm-steps">
-          {STEPS.map((label, i) => (
-            <li key={label} className={`dm-step${i < current ? " is-done" : i === current ? " is-current" : ""}`}>
-              <span className="dm-step__mark">{i < current ? IcCheck : null}</span>
-              <span>{label}</span>
-            </li>
-          ))}
-        </ol>
-        <p className="dm-progress__hint">
-          Suele tardar entre 30 y 90 segundos. Puedes cerrar esta ventana: la generación sigue en segundo plano y te avisamos cuando esté lista.
-        </p>
+
+        <div className="dm-progress__text">
+          <div className="dm-progress__eyebrow">
+            <span className="spinner" />
+            <span>DESIGN.md · paso {current + 1} de {STEPS.length}</span>
+            <span className="dm-progress__time">{elapsed}s</span>
+          </div>
+          <h2 className="display dm-progress__title">Leyendo {empresa}</h2>
+          <div className="dm-progress__url">{url}</div>
+
+          <div className="dm-progress__bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+            <span style={{ width: `${pct}%` }} />
+          </div>
+
+          <ol className="dm-steps">
+            {STEPS.map((label, i) => (
+              <li key={label} className={`dm-step${i < current ? " is-done" : i === current ? " is-current" : ""}`}>
+                <span className="dm-step__mark">{i < current ? IcCheck : null}</span>
+                <span>{label}</span>
+              </li>
+            ))}
+          </ol>
+
+          <p className="dm-progress__hint">
+            Suele tardar entre 30 y 90 segundos. Puedes cerrar esta ventana: sigue en segundo plano y te avisamos cuando esté.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -220,8 +278,119 @@ function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: strin
   );
 }
 
+// ─── Cabecera de sección con "Proponer cambio" ────────────────────────────────
+function SectionHead({ title, meta, section, onRevise }: { title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState<{ summary: string; warning: string | null; unchanged?: boolean } | null>(null);
+  const [startedAt, setStartedAt] = useState(0);
+  const [, tick] = useState(0);
+
+  useEffect(() => {
+    if (!busy) return;
+    const id = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [busy]);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onRevise || text.trim().length < 5) return;
+    setBusy(true); setError(""); setDone(null); setStartedAt(Date.now());
+    try {
+      const r = await onRevise(section, text.trim());
+      setDone(r);
+      if (!r.unchanged) { setText(""); setOpen(false); }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se ha podido aplicar el cambio");
+    } finally { setBusy(false); }
+  };
+  const elapsed = busy ? Math.floor((Date.now() - startedAt) / 1000) : 0;
+
+  return (
+    <>
+      <header className="dm-section__head">
+        <h2 className="dm-h">{title}</h2>
+        <span className="dm-section__right">
+          {meta && <span className="dm-section__meta">{meta}</span>}
+          {onRevise && (
+            <button className={`dm-revise-btn${open ? " is-open" : ""}`} onClick={() => { setOpen((o) => !o); setDone(null); }} disabled={busy}>
+              {IcEdit}<span>Proponer cambio</span>
+            </button>
+          )}
+        </span>
+      </header>
+      {open && (
+        <form className="dm-revise" onSubmit={submit}>
+          <textarea
+            className="dm-revise__input" autoFocus rows={3} value={text} disabled={busy}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={`Qué no encaja en ${title.toLowerCase()} y cómo debería ser. Ej.: "el acento no es ese azul, es #1D4ED8 y solo va en enlaces".`}
+            onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit(e); }}
+          />
+          <div className="dm-revise__foot">
+            <span className="dm-revise__hint">
+              {busy
+                ? <><span className="spinner spinner--sm" /> Claude reescribe la spec completa con tu cambio · {elapsed}s <span className="dm-revise__eta">(suele tardar 20-40 s)</span></>
+                : "Claude corrige la spec y el cambio queda en el historial con tu nombre."}
+            </span>
+            <div className="dm-revise__actions">
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpen(false)} disabled={busy}>Cancelar</button>
+              <button type="submit" className="btn btn--primary btn--sm" disabled={busy || text.trim().length < 5}>Aplicar con Claude</button>
+            </div>
+          </div>
+          {error && <p className="modal__error">{error}</p>}
+        </form>
+      )}
+      {done && (
+        <div className={`dm-revise-done${done.warning ? " has-warning" : ""}${done.unchanged ? " is-unchanged" : ""}`}>
+          <span className="dm-revise-done__mark">{done.unchanged ? IcX : IcCheck}</span>
+          <div>
+            <p>{done.summary}</p>
+            {done.warning && <p className="dm-revise-done__warning">{done.warning}</p>}
+          </div>
+          <button className="btn-icon" onClick={() => setDone(null)} aria-label="Cerrar">{IcX}</button>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── Historial de revisiones ──────────────────────────────────────────────────
+function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onRevert: (id: string) => void; busy: boolean }) {
+  return (
+    <div className="dm-history">
+      <div className="dm-history__head">
+        <span className="dm-h" style={{ margin: 0 }}>Historial</span>
+        <span className="dm-section__meta">{revisions.length} {revisions.length === 1 ? "cambio" : "cambios"} en este workspace · la versión vigente es la primera</span>
+      </div>
+      <ol className="dm-history__list">
+        {revisions.map((r, i) => (
+          <li key={r.id} className={`dm-rev${i === 0 ? " is-current" : ""}`}>
+            <div className="dm-rev__meta">
+              <span className="dm-rev__author">{r.authorName}</span>
+              <span className="dm-rev__when">{timeAgo(r.createdAt)}</span>
+              {r.kind === "revision" && r.section && <span className="dm-tag">{SECTION_LABEL[r.section] ?? r.section}</span>}
+              {r.kind === "regeneracion" && <span className="dm-tag">regenerado</span>}
+              {r.kind === "reversion" && <span className="dm-tag">vuelta atrás</span>}
+              {i === 0 && <span className="dm-rev__current">vigente</span>}
+            </div>
+            {r.comment && <p className="dm-rev__comment">“{r.comment}”</p>}
+            <p className="dm-rev__summary">{r.summary}</p>
+            {r.warning && <p className="dm-rev__warning">{r.warning}</p>}
+            {i !== 0 && (
+              <button className="btn btn--ghost btn--sm dm-rev__revert" onClick={() => onRevert(r.id)} disabled={busy}>Volver a esta versión</button>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 // ─── Ficha ────────────────────────────────────────────────────────────────────
-function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string }; url: string; date: string }) {
+function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn }) {
   useGoogleFonts(spec.fonts.map((f) => f.family));
   const [promptCopied, copyPrompt] = useCopy();
   const bg = pageBg(spec);
@@ -238,10 +407,17 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
             <a className="dm-link" href={url} target="_blank" rel="noopener noreferrer">{host}{IcArrow}</a>
             <span className="dm-eyebrow__sep">·</span>
             <span>{date}</span>
+            {entry.revisions?.length ? (
+              <>
+                <span className="dm-eyebrow__sep">·</span>
+                <span className="dm-eyebrow__rev">{IcEdit} revisado por {entry.revisions[0].authorName} {timeAgo(entry.revisions[0].createdAt)}</span>
+              </>
+            ) : null}
           </div>
           <h1 className="display dm-brand">{spec.brand}</h1>
           <p className="dm-tagline">{spec.tagline}</p>
           <p className="dm-desc">{spec.description}</p>
+          {onRevise && <div className="dm-hero__revise"><SectionHead title="Identidad" section="general" onRevise={onRevise} /></div>}
         </div>
         {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} />}
       </section>
@@ -250,10 +426,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Colores */}
       <section className="dm-section">
-        <header className="dm-section__head">
-          <h2 className="dm-h">Color</h2>
-          <span className="dm-section__meta">{spec.colors.length} tonos · clic para copiar</span>
-        </header>
+        <SectionHead title="Color" meta={`${spec.colors.length} tonos · clic para copiar`} section="color" onRevise={onRevise} />
         {GROUPS.map(({ key, label }) => {
           const cs = spec.colors.filter((c) => c.group === key);
           if (!cs.length) return null;
@@ -268,10 +441,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Tipografía */}
       <section className="dm-section">
-        <header className="dm-section__head">
-          <h2 className="dm-h">Tipografía</h2>
-          <span className="dm-section__meta">{spec.fonts.map((f) => f.family).join(" + ")}</span>
-        </header>
+        <SectionHead title="Tipografía" meta={spec.fonts.map((f) => f.family).join(" + ")} section="tipografia" onRevise={onRevise} />
         <div className="dm-fonts">
           {spec.fonts.map((f) => <FontCard key={f.family + f.role} f={f} sample={f.role === "mono" ? host : spec.tagline} />)}
         </div>
@@ -307,10 +477,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Tokens */}
       <section className="dm-section">
-        <header className="dm-section__head">
-          <h2 className="dm-h">Espaciado y forma</h2>
-          <span className="dm-section__meta">densidad {({ compact: "compacta", comfortable: "cómoda", airy: "aireada" } as const)[spec.spacing.density]}</span>
-        </header>
+        <SectionHead title="Espaciado y forma" meta={`densidad ${({ compact: "compacta", comfortable: "cómoda", airy: "aireada" } as const)[spec.spacing.density]}`} section="espaciado" onRevise={onRevise} />
         <div className="dm-tokens">
           <div className="dm-token"><span className="dm-token__k">Unidad base</span><span className="dm-token__v">{spec.spacing.baseUnit}</span></div>
           <div className="dm-token"><span className="dm-token__k">Ancho máximo</span><span className="dm-token__v">{spec.spacing.maxWidth}</span></div>
@@ -329,10 +496,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Componentes */}
       <section className="dm-section">
-        <header className="dm-section__head">
-          <h2 className="dm-h">Componentes</h2>
-          <span className="dm-section__meta">{spec.components.length}</span>
-        </header>
+        <SectionHead title="Componentes" meta={String(spec.components.length)} section="componentes" onRevise={onRevise} />
         <div className="dm-components">
           {spec.components.map((c) => (
             <div key={c.name} className="dm-component">
@@ -346,7 +510,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Do / Don't */}
       <section className="dm-section">
-        <header className="dm-section__head"><h2 className="dm-h">Reglas</h2></header>
+        <SectionHead title="Reglas" section="reglas" onRevise={onRevise} />
         <div className="dm-two">
           <ul className="dm-rules dm-rules--do">
             {spec.dos.map((d, i) => <li key={i}><span className="dm-rules__mark">{IcCheck}</span>{d}</li>)}
@@ -359,7 +523,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Notas */}
       <section className="dm-section">
-        <header className="dm-section__head"><h2 className="dm-h">Sistema</h2></header>
+        <SectionHead title="Sistema" section="sistema" onRevise={onRevise} />
         <div className="dm-notes">
           {[["Elevación", spec.elevation], ["Layout", spec.layout], ["Imagen", spec.imagery], ["Movimiento", spec.motion]].map(([k, v]) => (
             <div key={k} className="dm-note"><div className="dm-note__k">{k}</div><p>{v}</p></div>
@@ -369,7 +533,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 
       {/* Similares */}
       <section className="dm-section">
-        <header className="dm-section__head"><h2 className="dm-h">Marcas afines</h2></header>
+        <SectionHead title="Marcas afines" section="afines" onRevise={onRevise} />
         <ul className="dm-similar">
           {spec.similar.map((s) => <li key={s.brand}><strong>{s.brand}</strong><span>{s.why}</span></li>)}
         </ul>
@@ -388,6 +552,7 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
             </button>
           </div>
           <p className="dm-prompt__text">{spec.agentPrompt}</p>
+          {onRevise && <div className="dm-prompt__revise"><SectionHead title="Prompt" section="prompt" onRevise={onRevise} /></div>}
         </div>
         <div className="dm-colophon">Medidas tomadas de la web en vivo · roles y recomendaciones interpretados por {entry.model}</div>
       </section>
@@ -396,14 +561,41 @@ function SpecPanel({ spec, entry, url, date }: { spec: DesignSpec; entry: { scre
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-export default function DesignMdModal({ url, empresa, state, onClose, onRetry, onRegenerate }: DesignMdModalProps) {
+export default function DesignMdModal({ url, empresa, state, onClose, onRetry, onRegenerate, onRevised }: DesignMdModalProps) {
   const [copied, copy] = useCopy(1600);
-  const [view, setView] = useState<"spec" | "md">("spec");
+  const [view, setView] = useState<"spec" | "md" | "history">("spec");
   const [, tick] = useState(0);
+  const [reverting, setReverting] = useState(false);
 
   const status = state?.status ?? "loading";
   const entry = state?.entry;
   const spec = entry?.spec;
+  const revisions = entry?.revisions ?? [];
+
+  // Envía una objeción a Claude y actualiza la entrada con la spec corregida
+  const revise: ReviseFn = async (section, comment) => {
+    const res = await fetch("/api/design-md/revisions", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, section, comment }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+    if (data.unchanged) return { summary: data.summary, warning: null, unchanged: true };
+    onRevised({ spec: data.spec, markdown: data.markdown, revisions: data.revisions });
+    return { summary: data.applied?.summary ?? "Cambio aplicado.", warning: data.applied?.warning ?? null };
+  };
+
+  const revert = async (id: string) => {
+    setReverting(true);
+    try {
+      const res = await fetch("/api/design-md/revisions", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, revertTo: id }),
+      });
+      const data = await res.json();
+      if (res.ok) onRevised({ spec: data.spec, markdown: data.markdown, revisions: data.revisions });
+    } finally { setReverting(false); }
+  };
 
   useEffect(() => {
     if (status !== "loading") return;
@@ -437,13 +629,16 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRetry, o
       <header className="dm-bar">
         <button className="btn-icon dm-bar__close" onClick={onClose} aria-label="Cerrar">{IcX}</button>
         <div className="dm-bar__title">
-          <span className="display">{spec?.brand ?? empresa}</span>
+          <span className="dm-bar__brand">{spec?.brand ?? empresa}</span>
           <span className="dm-bar__file">DESIGN.md</span>
         </div>
         {showTabs && (
           <div className="dm-tabs" role="tablist">
             <button role="tab" aria-selected={activeView === "spec"} className={`dm-tab${activeView === "spec" ? " is-active" : ""}`} onClick={() => setView("spec")}>Ficha</button>
             <button role="tab" aria-selected={activeView === "md"} className={`dm-tab${activeView === "md" ? " is-active" : ""}`} onClick={() => setView("md")}>Markdown</button>
+            <button role="tab" aria-selected={activeView === "history"} className={`dm-tab${activeView === "history" ? " is-active" : ""}`} onClick={() => setView("history")}>
+              Historial{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}
+            </button>
           </div>
         )}
         <div className="dm-bar__actions">
@@ -470,8 +665,12 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRetry, o
 
       {status === "ready" && entry && (
         <div className="dm-body">
-          {activeView === "spec" && spec
-            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} />
+          {activeView === "history" ? (
+            revisions.length
+              ? <History revisions={revisions} onRevert={revert} busy={reverting} />
+              : <div className="dm-history dm-history--empty">Nadie ha revisado aún este DESIGN.md. Usa "Proponer cambio" en cualquier sección de la ficha.</div>
+          ) : activeView === "spec" && spec
+            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} />
             : (
               <div className="dm-md">
                 <div className="dm-md__head">

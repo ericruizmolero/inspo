@@ -4,6 +4,7 @@ import { generateDesignMd } from "@/lib/design-md";
 import { getDesignMd, getDesignMdIndex, saveDesignMd } from "@/lib/design-store";
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { findByWeb, webSet } from "@/lib/items";
+import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
 
   if (!force) {
     const cached = await getDesignMd(url);
-    if (cached) return Response.json({ ...cached, cached: true });
+    if (cached) return Response.json({ ...(await overlayRevision(ctx.workspace.id, cached)), cached: true });
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -75,7 +76,17 @@ export async function GET(req: NextRequest) {
       );
 
       console.log(`design-md ${url}: extract ${t1 - t0}ms, claude ${t2 - t1}ms, tokens in/out ${usage.input}/${usage.output}`);
-      return Response.json({ ...entry, cached: false });
+
+      // Si el workspace tenía revisiones, la regeneración pasa a ser la versión vigente y queda en el historial
+      let revisions = await listRevisions(ctx.workspace.id, url);
+      if (revisions.length) {
+        await addRevision({
+          organizationId: ctx.workspace.id, url, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email,
+          kind: "regeneracion", summary: "Regenerado desde cero a partir de la web en vivo.", spec,
+        });
+        revisions = await listRevisions(ctx.workspace.id, url);
+      }
+      return Response.json({ ...entry, revisions, cached: false });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error("design-md error:", url, msg);

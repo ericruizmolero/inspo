@@ -119,3 +119,51 @@ export const inspoItem = sqliteTable("inspo_item", {
   index("inspo_item_org_idx").on(t.organizationId),
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
 ]);
+
+// ─── Revisiones de DESIGN.md ─────────────────────────────────────────────────
+// La generación automática es la base global por URL (lib/design-store.ts).
+// Cada workspace guarda encima sus revisiones: una fila por cambio, con la spec
+// completa resultante. La spec vigente del workspace es la de la última fila.
+
+export const designRevision = sqliteTable("design_revision", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** URL normalizada (misma que la clave de la caché global) */
+  url: text("url").notNull(),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  authorName: text("author_name").notNull(),
+  /** "regeneracion" | "revision" | "reversion" */
+  kind: text("kind").notNull().default("revision"),
+  /** Sección del DESIGN.md a la que se refiere el comentario (color, tipografia, …) */
+  section: text("section"),
+  /** Lo que escribió la persona */
+  comment: text("comment").notNull().default(""),
+  /** Resumen de Claude de qué ha cambiado */
+  summary: text("summary").notNull().default(""),
+  /** Aviso de Claude si el comentario contradice lo medido en la web */
+  warning: text("warning"),
+  /** DesignSpec completa tras este cambio */
+  specJson: text("spec_json").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, (t) => [
+  index("design_revision_org_url_idx").on(t.organizationId, t.url),
+]);
+
+// ─── Comentarios por inspo ───────────────────────────────────────────────────
+// Hilo plano por item (como el hilo de un pin de Figma). La nota original del
+// item (comentarios/subcomentarios) sigue en inspo_item y se pinta como primer
+// mensaje del hilo; aquí van las respuestas de cualquier miembro.
+
+export const inspoComment = sqliteTable("inspo_comment", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  /** Nombre en el momento de escribir (por si el usuario desaparece) */
+  authorName: text("author_name").notNull(),
+  body: text("body").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  editedAt: integer("edited_at", { mode: "timestamp_ms" }),
+}, (t) => [
+  index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
+]);

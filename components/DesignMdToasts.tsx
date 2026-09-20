@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import { stepFor, stepIndex, STEP_COUNT, progressFor } from "./DesignMdModal";
 import type { DesignSpec } from "@/types/design";
+import type { RevisionMeta } from "@/lib/design-revise";
 
 export interface DesignMdEntry {
   url: string; markdown: string; generatedAt: string; model: string; cached: boolean;
   spec?: DesignSpec; screenshotUrl?: string;
+  /** Historial de revisiones del workspace, la más reciente primero */
+  revisions?: RevisionMeta[];
 }
 
 export interface DesignMdState {
