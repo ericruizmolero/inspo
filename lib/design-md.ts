@@ -20,6 +20,8 @@ Reglas:
 - La descripción es un único párrafo denso, de 120 a 180 palabras, que un diseñador reconocería como esta web exacta.
 - Las reglas de "sí" y "no" deben ser específicas de este sistema y reproducibles por un agente de IA.
 - Los roles de la escala tipográfica van en castellano: leyenda, cuerpo-sm, cuerpo, subtítulo, título-sm, título, título-lg, display.
+- Componentes: de 3 a 5 primitivos reutilizables (botón primario, botón secundario, input, enlace, tarjeta, cabecera, footer), solo los que existan de verdad. Nunca describas secciones de la página (hero, mosaico de imágenes, carrusel de logos, filas de features): eso es contenido de esa landing, no sistema. En cada primitivo cita los tokens por nombre ("fondo Obsidiana, radio pequeño, texto en cuerpo-sm") y añade solo lo que no está en otra sección: altura, padding, borde, hover, estado activo.
+- Redondea los px que vienen de rem: 11,7px es 12px, 21,06px es 21px, 115,2px es 115px o el paso de la escala más cercano. Un decimal de conversión no es una decisión de diseño.
 - Si un valor es dudoso, dilo brevemente en el texto del rol en lugar de inventarlo.`;
 
 export interface GenerateResult {
