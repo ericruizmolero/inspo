@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
+import { Flip } from "gsap/Flip";
+import { flushSync } from "react-dom";
 import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags } from "@/types/inspo";
 import { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
@@ -55,23 +57,44 @@ function normalize(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-function useColumnCount() {
-  const [cols, setCols] = useState(4);
+const SIDEBAR_W = 256;
+const SIDEBAR_RAIL_W = 52;
+const DESKTOP_MIN = 801;
+const COLLAPSED_KEY = "inspo:sidebar-collapsed";
+const RATIOS_KEY = "inspo:card-ratios";
+// Alto/ancho de una tarjeta antes de medirla (el placeholder es 4:3) y hueco entre tarjetas.
+const DEFAULT_RATIO = 0.75;
+const GAP_RATIO = 0.06;
+
+// Columnas según el ancho útil del contenido (ventana menos sidebar en escritorio).
+// Se calcula de forma síncrona para que plegar el sidebar y recolocar las tarjetas
+// ocurra en el mismo render y GSAP Flip pueda animarlo de una vez.
+function useColumnCount(collapsed: boolean) {
+  const [winW, setWinW] = useState(0);
   useEffect(() => {
-    function update() {
-      const w = window.innerWidth;
-      if (w <= 520) setCols(1);
-      else if (w <= 900) setCols(2);
-      else if (w <= 1400) setCols(3);
-      else if (w <= 1900) setCols(4);
-      else setCols(5);
-    }
+    const update = () => setWinW(window.innerWidth);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return cols;
+  return useMemo(() => {
+    if (!winW) return 4;
+    const desktop = winW >= DESKTOP_MIN;
+    const w = desktop ? winW - (collapsed ? SIDEBAR_RAIL_W : SIDEBAR_W) : winW;
+    if (!desktop && w <= 520) return 1;
+    if (w <= 644) return 2;
+    if (w <= 1144) return 3;
+    if (w <= 1644) return 4;
+    return 5;
+  }, [winW, collapsed]);
 }
+
+const IconPanel = (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" />
+    <path d="M6 2.75v10.5" />
+  </svg>
+);
 
 // Jev puntúa de forma conservadora: mostramos lo que supera 0.4 y, si son pocos,
 // al menos los 8 mejores mientras pasen de 0.3.
@@ -88,7 +111,7 @@ export default function InspoClient({
   user,
   workspace,
   workspaces,
-  memberNames = [],
+  members = [],
 }: {
   items: InspoItem[];
   initialThumbnailMap?: ThumbnailMap;
@@ -97,7 +120,7 @@ export default function InspoClient({
   user: SessionUser;
   workspace: Workspace;
   workspaces: Workspace[];
-  memberNames?: string[];
+  members?: { name: string; image: string | null }[];
 }) {
   const [items, setItems] = useState(initialItems);
   const [tipo, setTipo] = useState<FilterTipo>("Todos");
@@ -111,7 +134,8 @@ export default function InspoClient({
   const [sector, setSector] = useState("Todos");
   const [estilo, setEstilo] = useState("Todos");
   const [selTags, setSelTags] = useState<string[]>([]);
-  const [ai, setAi] = useState(false);
+  // Sin modo "normal": si Jev está configurado, la búsqueda es siempre IA
+  const ai = aiEnabled;
   const [aiScores, setAiScores] = useState<Record<string, number> | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiReasons, setAiReasons] = useState<Record<string, string> | null>(null);
@@ -321,6 +345,8 @@ export default function InspoClient({
   }, [designMdItem, designMdJobs]);
 
   // "Quién": miembros del workspace primero, luego etiquetas heredadas que sigan en uso (p. ej. "Ambos")
+  const memberNames = useMemo(() => members.map((m) => m.name), [members]);
+  const autorImages = useMemo(() => Object.fromEntries(members.filter((m) => m.image).map((m) => [m.name, m.image!])), [members]);
   const autores = useMemo(() => {
     const used = new Set(items.map((i) => i.puestoPor).filter(Boolean));
     const fromMembers = memberNames.filter((n) => used.has(n));
@@ -336,7 +362,29 @@ export default function InspoClient({
   const activeFilterCount = (tipo !== "Todos" ? 1 : 0) + (autor !== "Todos" ? 1 : 0) + (fecha !== "Todos" ? 1 : 0)
     + (sector !== "Todos" ? 1 : 0) + (estilo !== "Todos" ? 1 : 0) + selTags.length;
 
-  const numCols = useColumnCount();
+  // Sidebar plegable (solo escritorio). Se recuerda entre sesiones.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try { if (localStorage.getItem(COLLAPSED_KEY) === "1") setCollapsed(true); } catch { /* sin storage */ }
+  }, []);
+  const toggleSidebar = () => {
+    gsap.registerPlugin(Flip);
+    const targets = [".sidebar", ".sb-toggle", ".card-item"];
+    const state = Flip.getState(targets);
+    const next = !collapsed;
+    flushSync(() => setCollapsed(next));
+    try { localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0"); } catch { /* sin storage */ }
+    Flip.from(state, {
+      targets,
+      duration: 0.55,
+      ease: "power3.inOut",
+      scale: true,
+      absolute: false,
+      onComplete: () => gsap.set(targets, { clearProps: "transform" }),
+    });
+  };
+
+  const numCols = useColumnCount(collapsed);
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
 
@@ -377,12 +425,81 @@ export default function InspoClient({
       });
   }, [items, tipo, autor, fecha, query, tagMap, sector, estilo, selTags, ai, aiScores]);
 
-  // Round-robin into columns so visual order reads left→right, row by row
+  // Mejor afinidad entre los resultados visibles (para la cabecera de la búsqueda IA)
+  const aiTop = useMemo(
+    () => (ai && aiScores ? filtered.reduce((m, it) => Math.max(m, aiScores[it.web] ?? 0), 0) : 0),
+    [filtered, ai, aiScores],
+  );
+
+  // Masonry real: cada tarjeta va a la columna más corta según su alto medido
+  // (alto/ancho, así no depende del ancho de columna). Las medidas se cachean en
+  // localStorage para que la segunda visita salga ya equilibrada.
+  const ratiosRef = useRef<Record<string, number>>({});
+  const [ratiosVersion, setRatiosVersion] = useState(0);
+  const entering = useRef(false);
+  const pendingRelayout = useRef(false);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(RATIOS_KEY) || "{}");
+      if (saved && typeof saved === "object") { ratiosRef.current = saved; setRatiosVersion((v) => v + 1); }
+    } catch { /* sin storage */ }
+  }, []);
+
   const columns = useMemo(() => {
     const cols: InspoItem[][] = Array.from({ length: numCols }, () => []);
-    filtered.forEach((item, i) => cols[i % numCols].push(item));
+    const heights = new Array<number>(numCols).fill(0);
+    for (const item of filtered) {
+      let c = 0;
+      for (let i = 1; i < numCols; i++) if (heights[i] < heights[c] - 0.001) c = i;
+      cols[c].push(item);
+      heights[c] += (ratiosRef.current[item.web] ?? DEFAULT_RATIO) + GAP_RATIO;
+    }
     return cols;
-  }, [filtered, numCols]);
+    // ratiosVersion fuerza el recálculo cuando cambian las medidas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, numCols, ratiosVersion]);
+
+  const relayout = () => {
+    try { localStorage.setItem(RATIOS_KEY, JSON.stringify(ratiosRef.current)); } catch { /* sin storage */ }
+    if (entering.current) { pendingRelayout.current = true; return; }
+    pendingRelayout.current = false;
+    gsap.registerPlugin(Flip);
+    const state = Flip.getState(".card-item");
+    flushSync(() => setRatiosVersion((v) => v + 1));
+    Flip.from(state, {
+      targets: ".card-item",
+      duration: 0.4,
+      ease: "power2.inOut",
+      onComplete: () => gsap.set(".card-item", { clearProps: "transform" }),
+    });
+  };
+  const relayoutRef = useRef(relayout);
+  relayoutRef.current = relayout;
+
+  // Mide cada tarjeta cuando cambia de tamaño (imagen cargada, miniatura nueva…)
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    let timer: number | undefined;
+    const ro = new ResizeObserver((entries) => {
+      let changed = false;
+      for (const e of entries) {
+        const el = e.target as HTMLElement;
+        const id = el.dataset.flipId;
+        if (!id || el.querySelector(".tile__media.is-loading")) continue;
+        const w = el.clientWidth, h = el.clientHeight;
+        if (!w || !h) continue;
+        const r = h / w;
+        const prev = ratiosRef.current[id];
+        if (prev === undefined || Math.abs(prev - r) > 0.02) { ratiosRef.current[id] = r; changed = true; }
+      }
+      if (!changed) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => relayoutRef.current(), 200);
+    });
+    grid.querySelectorAll<HTMLElement>(".card-item").forEach((el) => ro.observe(el));
+    return () => { ro.disconnect(); window.clearTimeout(timer); };
+  }, [columns]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -397,6 +514,7 @@ export default function InspoClient({
       return ra.left - rb.left;
     });
 
+    entering.current = true;
     gsap.from(sorted, {
       opacity: 0,
       y: isMount.current ? 16 : 8,
@@ -404,6 +522,10 @@ export default function InspoClient({
       stagger: isMount.current ? 0.035 : 0.025,
       ease: "power3.out",
       clearProps: "all",
+      onComplete: () => {
+        entering.current = false;
+        if (pendingRelayout.current) relayoutRef.current();
+      },
     });
     isMount.current = false;
   }, [filtered]);
@@ -412,7 +534,7 @@ export default function InspoClient({
   useEffect(() => { setDrawerOpen(false); }, [tipo, autor, fecha, sector, estilo, selTags]);
 
   return (
-    <div className="shell">
+    <div className={`shell${collapsed ? " is-collapsed" : ""}`}>
       {pickerWebUrl && (
         <ThumbPickerModal onSelect={handlePickerSelect} onCancel={() => setPickerWebUrl(null)} />
       )}
@@ -432,7 +554,7 @@ export default function InspoClient({
         onOpen={openDesignMdByUrl}
         onDismiss={(url) => patchJob(url, { seen: true })}
       />
-      {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} />}
+      {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} aiEnabled={aiEnabled} />}
       {showAdd && (
         <AddInspoModal
           onClose={() => setShowAdd(false)}
@@ -443,6 +565,7 @@ export default function InspoClient({
       <Sidebar
         brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} />}
         autores={autores}
+        autorImages={autorImages}
         items={items}
         tipo={tipo} autor={autor} fecha={fecha} query={query}
         onTipo={setTipo} onAutor={setAutor} onFecha={setFecha} onQuery={setQuery}
@@ -454,15 +577,25 @@ export default function InspoClient({
         tagMap={tagMap}
         sector={sector} estilo={estilo} selTags={selTags}
         onSector={setSector} onEstilo={setEstilo} onToggleTag={toggleTag}
-        ai={ai} onAi={setAi} aiLoading={aiLoading} aiEnabled={aiEnabled}
+        ai={ai} aiLoading={aiLoading} aiEnabled={aiEnabled}
         pending={pending} tagging={tagging} onTagAll={tagAll}
       />
+
+      <button
+        className="btn-icon sb-toggle"
+        onClick={toggleSidebar}
+        aria-label={collapsed ? "Mostrar sidebar" : "Ocultar sidebar"}
+        title={collapsed ? "Mostrar sidebar" : "Ocultar sidebar"}
+        aria-expanded={!collapsed}
+      >
+        {IconPanel}
+      </button>
 
       <div className="content">
         <div className="topbar">
           <span className="display">Inspo</span>
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
-            ai={ai} onAi={aiEnabled ? setAi : undefined} aiLoading={aiLoading} />
+            ai={ai} aiLoading={aiLoading} />
           <button className="btn-icon topbar__filter" onClick={() => setDrawerOpen(true)} aria-label="Filtros">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M2 4h12M4 8h8M6 12h4" />
@@ -472,12 +605,38 @@ export default function InspoClient({
           <button className="btn-icon" onClick={() => setShowAdd(true)} aria-label="Añadir">{Icons.plus}</button>
         </div>
 
-        {ai && query.trim().length >= 3 && (
-          <div className="ai-status">
-            {aiLoading ? "Preguntando a Jev…"
-              : aiError ? <span className="ai-status__error">{aiError}</span>
-              : aiScores ? `${filtered.length} resultados para “${query.trim()}”` : null}
-          </div>
+        {ai && query.trim().length >= 3 && (aiLoading || aiError || aiScores) && (
+          <header className={`ai-hero${aiLoading ? " is-loading" : ""}${aiError ? " is-error" : ""}`} role="status" aria-live="polite">
+            <div className="ai-hero__badge" aria-hidden>
+              {aiLoading ? <span className="spinner" /> : aiError ? Icons.x : Icons.spark}
+            </div>
+            <div className="ai-hero__main">
+              <div className="ai-hero__eyebrow">
+                {aiLoading ? "Jev está leyendo la librería" : aiError ? "Jev no ha respondido" : "Resultados de Jev para"}
+              </div>
+              <h2 className="ai-hero__query">{query.trim()}</h2>
+              <div className="ai-hero__meta">
+                {aiLoading ? (
+                  <>
+                    <span className="ai-hero__skeleton" style={{ width: 120 }} />
+                    <span className="ai-hero__skeleton" style={{ width: 72 }} />
+                  </>
+                ) : aiError ? (
+                  <span className="ai-hero__pill ai-hero__pill--error">{aiError}</span>
+                ) : (
+                  <>
+                    <span className="ai-hero__pill"><strong>{filtered.length}</strong> {filtered.length === 1 ? "resultado" : "resultados"}</span>
+                    {aiTop > 0 && <span className="ai-hero__pill">mejor encaje <strong>{Math.round(aiTop * 100)}%</strong></span>}
+                    <span className="ai-hero__hint">Ordenados por afinidad · pulsa el porcentaje de una card para ver el porqué</span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button className="ai-hero__clear" onClick={() => setQuery("")}>
+              {Icons.x}<span>Limpiar</span><kbd>Esc</kbd>
+            </button>
+            <span className="ai-hero__bar" aria-hidden />
+          </header>
         )}
 
         {filtered.length === 0 ? (
@@ -491,7 +650,7 @@ export default function InspoClient({
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="masonry__col">
                 {col.map((item, itemIdx) => (
-                  <div key={`${item.web}-${colIdx}-${itemIdx}`} className="card-item">
+                  <div key={`${item.web}-${colIdx}-${itemIdx}`} className="card-item" data-flip-id={item.web}>
                     <InspoCard
                       item={item}
                       tags={tagMap[item.web]}

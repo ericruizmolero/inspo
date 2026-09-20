@@ -30,7 +30,7 @@ export default async function Home() {
       user={ctx.user}
       workspace={ctx.workspace}
       workspaces={ctx.workspaces}
-      memberNames={members.map((m) => m.name)}
+      members={members.map((m) => ({ name: m.name, image: m.image ?? null }))}
     />
   );
 }

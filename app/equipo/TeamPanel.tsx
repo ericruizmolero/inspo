@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
+import { UserAvatar } from "@/components/WorkspaceMenu";
 
-interface Member { id: string; userId: string; name: string; email: string; role: string; createdAt: string }
+interface Member { id: string; userId: string; name: string; email: string; image?: string | null; role: string; createdAt: string }
 interface Invitation { id: string; email: string; role: string | null; expiresAt: string }
 
 const ROLE_LABEL: Record<string, string> = { owner: "Propietario", admin: "Admin", member: "Miembro" };
@@ -88,7 +89,7 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
           <ul className="list">
             {members.map((m) => (
               <li key={m.id} className="list__row">
-                <span className="ws__avatar" aria-hidden>{m.name.slice(0, 1).toUpperCase()}</span>
+                <UserAvatar name={m.name} image={m.image} />
                 <span className="list__main">
                   <span className="list__name">{m.name}{m.userId === me.id && <span className="list__you"> · tú</span>}</span>
                   <span className="list__sub">{m.email}</span>

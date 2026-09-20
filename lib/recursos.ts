@@ -16,15 +16,31 @@ export interface RecursoGrupo {
 
 export const RECURSOS: RecursoGrupo[] = [
   {
+    key: "designmd",
+    title: "DESIGN.md para agentes",
+    hint: "Sistemas de diseño en texto, listos para pegar en Claude o Cursor",
+    items: [
+      { name: "Refero Styles", url: "https://styles.refero.design", desc: "DESIGN.md de marcas reales, medidos de la web en vivo. El modelo de nuestro botón." },
+      { name: "DesignMD.me", url: "https://designmd.me", desc: "Genera un DESIGN.md a partir de una URL." },
+      { name: "Open Design", url: "https://open-design.ai", desc: "Sistemas de diseño abiertos en formato para agentes." },
+      { name: "DesignMD Supply", url: "https://designmd.supply", desc: "Colección de DESIGN.md descargables." },
+      { name: "getdesign.md", url: "https://getdesign.md", desc: "Extrae el sistema de diseño de cualquier web." },
+      { name: "Aura", url: "https://aura.build", desc: "Constructor de UI con IA a partir de estilos definidos." },
+      { name: "Neuform", url: "https://neuform.ai", desc: "Sistemas de diseño generados para usar con agentes." },
+      { name: "Hyperbrowser Design MD", url: "https://design-md.hyperbrowser.ai", desc: "Extracción automática de DESIGN.md con navegador headless." },
+      { name: "TypeUI", url: "https://typeui.sh", desc: "Tipografía y tokens de UI en formato de terminal." },
+    ],
+  },
+  {
     key: "webs",
     title: "Galerías de webs",
     hint: "Landings y sites completos, curados a mano",
     items: [
+      { name: "Recent.design", url: "https://recent.design", desc: "Lo mejor del diseño reciente, actualizado a diario." },
       { name: "Landdding", url: "https://landdding.com", desc: "Referencias de landings con filtros por estilo y sector." },
       { name: "Curated.design", url: "https://curated.design", desc: "Selección editorial de webs con criterio, sin ruido." },
       { name: "Landing.love", url: "https://landing.love", desc: "Landings con vídeo de scroll para ver la animación sin abrirlas." },
       { name: "A1 Gallery", url: "https://a1.gallery", desc: "Galería de webs recientes con gusto muy actual." },
-      { name: "Recent.design", url: "https://recent.design", desc: "Lo mejor del diseño reciente, actualizado a diario." },
       { name: "Inspora", url: "https://inspora.design", desc: "Archivo de diseño visual reciente, más amplio que curado." },
       { name: "Dark.design", url: "https://dark.design", desc: "Solo webs en modo oscuro." },
       { name: "Loadmo.re", url: "https://loadmo.re", desc: "Webs atrevidas vistas en móvil, con sus animaciones." },
@@ -81,22 +97,6 @@ export const RECURSOS: RecursoGrupo[] = [
       { name: "60fps", url: "https://60fps.design", desc: "Animaciones e interacciones de UI grabadas en vídeo." },
       { name: "Animos", url: "https://animos.app", desc: "Diseños en movimiento para presentar tu trabajo." },
       { name: "Motion in Design", url: "https://motionin.design", desc: "Motion con prompts listos para copiar y reproducir con IA." },
-    ],
-  },
-  {
-    key: "designmd",
-    title: "DESIGN.md para agentes",
-    hint: "Sistemas de diseño en texto, listos para pegar en Claude o Cursor",
-    items: [
-      { name: "Refero Styles", url: "https://styles.refero.design", desc: "DESIGN.md de marcas reales, medidos de la web en vivo. El modelo de nuestro botón." },
-      { name: "DesignMD.me", url: "https://designmd.me", desc: "Genera un DESIGN.md a partir de una URL." },
-      { name: "Open Design", url: "https://open-design.ai", desc: "Sistemas de diseño abiertos en formato para agentes." },
-      { name: "DesignMD Supply", url: "https://designmd.supply", desc: "Colección de DESIGN.md descargables." },
-      { name: "getdesign.md", url: "https://getdesign.md", desc: "Extrae el sistema de diseño de cualquier web." },
-      { name: "Aura", url: "https://aura.build", desc: "Constructor de UI con IA a partir de estilos definidos." },
-      { name: "Neuform", url: "https://neuform.ai", desc: "Sistemas de diseño generados para usar con agentes." },
-      { name: "Hyperbrowser Design MD", url: "https://design-md.hyperbrowser.ai", desc: "Extracción automática de DESIGN.md con navegador headless." },
-      { name: "TypeUI", url: "https://typeui.sh", desc: "Tipografía y tokens de UI en formato de terminal." },
     ],
   },
   {

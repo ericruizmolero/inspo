@@ -18,6 +18,10 @@ function isBlocked(url: string) {
 
 type ImgSource = "idle" | "og" | "shot" | "error";
 
+// Imágenes ya resueltas por URL: al recolocar tarjetas entre columnas React las
+// vuelve a montar y sin esto se descargaría (y parpadearía) todo otra vez.
+const imgCache = new Map<string, { src: string | null; source: ImgSource }>();
+
 interface InspoCardProps {
   item: InspoItem;
   tags?: InspoTags;
@@ -52,8 +56,8 @@ const IconX = (
 );
 
 export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onPickFromLibrary, onDesignMd, designMdLoading, designMdReady, designCover, designScroll }: InspoCardProps) {
-  const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : "idle");
-  const [imgSrc, setImgSrc] = useState<string | null>(null); // blob URL
+  const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
+  const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
   const [manualLoaded, setManualLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false); // móvil: el globo del % se abre al tocar
@@ -91,7 +95,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
 
   // Fetch as blob so failed sources don't spam the console
   useEffect(() => {
-    if (source === "idle" || source === "error") return;
+    if (source === "idle" || source === "error" || imgSrc) return;
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), source === "shot" ? 60000 : 15000);
     // og:image first (cheap); if the site has none, capture its hero server-side
@@ -101,19 +105,22 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
 
     fetch(apiUrl, { signal: ctrl.signal })
       .then((res) => { if (!res.ok) throw new Error(`${res.status}`); return res.blob(); })
-      .then((blob) => { clearTimeout(timeout); setImgSrc(URL.createObjectURL(blob)); })
+      .then((blob) => {
+        clearTimeout(timeout);
+        const src = URL.createObjectURL(blob);
+        imgCache.set(item.web, { src, source });
+        setImgSrc(src);
+      })
       .catch(() => {
         clearTimeout(timeout);
         if (source === "og") { setSource("shot"); setImgSrc(null); }
-        else setSource("error");
+        else { imgCache.set(item.web, { src: null, source: "error" }); setSource("error"); }
       });
 
     return () => { ctrl.abort(); clearTimeout(timeout); };
+    // imgSrc solo evita repetir la descarga cuando ya viene de la caché
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, item.web]);
-
-  useEffect(() => {
-    return () => { if (imgSrc) URL.revokeObjectURL(imgSrc); };
-  }, [imgSrc]);
 
   const domain = getDomain(item.web);
   const useDesign = !manualThumbnail && !!designCover;
@@ -216,6 +223,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               alt={item.empresa}
               onError={() => {
                 // Blob fetched but not a renderable image (bad og:image): try next source
+                imgCache.delete(item.web);
                 setImgSrc(null);
                 setSource(source === "og" ? "shot" : "error");
               }}

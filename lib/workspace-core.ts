@@ -12,6 +12,8 @@ export interface Workspace {
   slug: string;
   kind: WorkspaceKind;
   role: Role;
+  /** Logo de empresa (data URL pequeña o URL); null si no tiene */
+  logo: string | null;
 }
 
 export interface SessionUser { id: string; name: string; email: string; image?: string | null }
@@ -64,14 +66,14 @@ export async function ensurePersonalWorkspace(userId: string, name: string, emai
 export async function listWorkspaces(userId: string): Promise<Workspace[]> {
   const rows = await db
     .select({
-      id: schema.organization.id, name: schema.organization.name, slug: schema.organization.slug,
+      id: schema.organization.id, name: schema.organization.name, slug: schema.organization.slug, logo: schema.organization.logo,
       metadata: schema.organization.metadata, role: schema.member.role, createdAt: schema.organization.createdAt,
     })
     .from(schema.member)
     .innerJoin(schema.organization, eq(schema.member.organizationId, schema.organization.id))
     .where(eq(schema.member.userId, userId));
   return rows
-    .map((r) => ({ id: r.id, name: r.name, slug: r.slug, kind: kindOf(r.metadata), role: (r.role.split(",")[0] as Role) ?? "member", createdAt: r.createdAt }))
+    .map((r) => ({ id: r.id, name: r.name, slug: r.slug, logo: r.logo ?? null, kind: kindOf(r.metadata), role: (r.role.split(",")[0] as Role) ?? "member", createdAt: r.createdAt }))
     .sort((a, b) => (a.kind === b.kind ? +a.createdAt - +b.createdAt : a.kind === "personal" ? -1 : 1))
     .map(({ createdAt: _c, ...w }) => w);
 }
@@ -79,7 +81,7 @@ export async function listWorkspaces(userId: string): Promise<Workspace[]> {
 /** Miembros de un workspace (para el filtro "Quién" y la página de equipo). */
 export async function listMembers(organizationId: string) {
   return db
-    .select({ id: schema.member.id, userId: schema.user.id, name: schema.user.name, email: schema.user.email, role: schema.member.role, createdAt: schema.member.createdAt })
+    .select({ id: schema.member.id, userId: schema.user.id, name: schema.user.name, email: schema.user.email, image: schema.user.image, role: schema.member.role, createdAt: schema.member.createdAt })
     .from(schema.member)
     .innerJoin(schema.user, eq(schema.member.userId, schema.user.id))
     .where(eq(schema.member.organizationId, organizationId));

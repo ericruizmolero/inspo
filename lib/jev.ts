@@ -5,6 +5,7 @@ import { InspoItem, InspoTags } from "@/types/inspo";
 import { SECTORES, ESTILOS, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD, labelOf } from "./taxonomy";
 import { fetchSiteText, SiteText } from "./extract";
 import { describeSite } from "./vision";
+import { RECURSOS } from "./recursos";
 
 let _client: TypeSafeClient | null = null;
 function client() {
@@ -174,6 +175,46 @@ export async function matchQuery(
     } catch (e) {
       console.error("matchQuery batch error:", e);
       return batch.map((it) => [it.web, 0] as const);
+    }
+  });
+
+  return Object.fromEntries(results.flat());
+}
+
+// ─── Búsqueda en el directorio de recursos ────────────────────────────────────
+
+
+const RECURSOS_FLAT = RECURSOS.flatMap((g) =>
+  g.items.map((r) => ({ url: r.url, name: r.name, desc: r.desc, group: g.title, group_hint: g.hint }))
+);
+
+/** Devuelve, por URL, la probabilidad (0–1) de que cada recurso del directorio encaje con la consulta. */
+export async function matchRecursos(query: string): Promise<Record<string, number>> {
+  const batches: typeof RECURSOS_FLAT[] = [];
+  for (let i = 0; i < RECURSOS_FLAT.length; i += BATCH) batches.push(RECURSOS_FLAT.slice(i, i + BATCH));
+
+  const results = await pool(batches, CONCURRENCY, async (batch) => {
+    const state = {
+      search_query: query,
+      note: "The query is written by a designer looking for a website where they can browse design inspiration, references or tools. It may be in Spanish or English. Each item is a website from a curated directory, with its category.",
+      items: batch.map((r, i) => ({ id: `item_${i}`, name: r.name, url: r.url, description: r.desc, category: r.group, category_hint: r.group_hint })),
+    };
+    const questions = Object.fromEntries(
+      batch.map((_, i) => [
+        `item_${i}`,
+        noul(`Would the item with id "item_${i}" be a good place to go for what the search_query asks?`, {
+          true: "The site clearly serves what the query asks for (kind of content, medium, style, format or purpose).",
+          false: "The site does not serve the query, or only trivially.",
+        }),
+      ])
+    );
+    try {
+      const res = await client().systemOne({ state, questions });
+      const a = res.answers as Record<string, { noul?: number }>;
+      return batch.map((r, i) => [r.url, Number(a[`item_${i}`]?.noul ?? 0)] as const);
+    } catch (e) {
+      console.error("matchRecursos batch error:", e);
+      return batch.map((r) => [r.url, 0] as const);
     }
   });
 

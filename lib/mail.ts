@@ -6,6 +6,15 @@ import path from "path";
 
 const FROM = process.env.MAIL_FROM || "Inspo <inspo@savvia.studio>";
 
+// Las fuentes del correo se sirven desde public/fonts (Family para títulos, Söhne para texto).
+// Apple Mail, iOS Mail y Outlook mac las cargan; Gmail ignora @font-face y cae a la pila de sistema.
+const FONT_BASE =
+  process.env.BETTER_AUTH_URL ||
+  process.env.NEXT_PUBLIC_APP_URL ||
+  "https://inspo.savvia.studio";
+const DISPLAY = "'Family', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+const BODY = "'Söhne', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+
 export async function sendMail(to: string, subject: string, html: string, text: string): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -26,21 +35,37 @@ export async function sendMail(to: string, subject: string, html: string, text: 
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 
-function layout(title: string, body: string, cta: { label: string; url: string }) {
-  return `<!doctype html><html lang="es"><body style="margin:0;background:#0d0d0d;color:#f2f2f2;font-family:ui-sans-serif,system-ui,sans-serif">
-  <div style="max-width:480px;margin:0 auto;padding:48px 24px">
-    <div style="font-size:22px;font-weight:700;margin-bottom:24px">Inspo</div>
-    <h1 style="font-size:20px;margin:0 0 12px">${esc(title)}</h1>
-    <p style="color:#b4b4b4;line-height:1.5;margin:0 0 24px">${body}</p>
-    <a href="${cta.url}" style="display:inline-block;background:#f2f2f2;color:#0d0d0d;text-decoration:none;padding:12px 18px;border-radius:10px;font-weight:600">${esc(cta.label)}</a>
-    <p style="color:#7a7a7a;font-size:12px;margin-top:32px;word-break:break-all">Si el botón no funciona, copia este enlace: ${esc(cta.url)}</p>
-  </div></body></html>`;
+function layout(title: string, body: string, cta: { label: string; url: string }, note: string) {
+  const href = esc(cta.url);
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(title)}</title>
+<style>
+  @font-face { font-family: 'Family'; font-weight: 700; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/family-bold.woff2') format('woff2'); }
+  @font-face { font-family: 'Söhne'; font-weight: 400; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/soehne-buch.woff2') format('woff2'); }
+  @font-face { font-family: 'Söhne'; font-weight: 500; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/soehne-kraftig.woff2') format('woff2'); }
+</style></head>
+<body style="margin:0;padding:0;background:#0d0d0d;color:#f2f2f2;font-family:${BODY};-webkit-font-smoothing:antialiased">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0d0d0d">
+  <tr><td align="center" style="padding:56px 24px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px">
+      <tr><td style="padding:0 0 40px;font-family:${DISPLAY};font-size:16px;font-weight:700;letter-spacing:-0.01em;color:#f2f2f2">Inspo</td></tr>
+      <tr><td style="padding:0 0 12px;font-family:${DISPLAY};font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:#f2f2f2">${esc(title)}</td></tr>
+      <tr><td style="padding:0 0 28px;font-family:${BODY};font-size:15px;font-weight:400;line-height:1.55;color:#a3a3a3">${body}</td></tr>
+      <tr><td style="padding:0 0 36px">
+        <a href="${href}" style="display:inline-block;background:#f2f2f2;color:#0d0d0d;text-decoration:none;padding:13px 22px;border-radius:999px;font-family:${BODY};font-size:15px;font-weight:500">${esc(cta.label)}</a>
+      </td></tr>
+      <tr><td style="border-top:1px solid #262626;padding:20px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
+        ${note} Si el botón no funciona, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">abre este enlace</a>.
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`;
 }
 
 export function magicLinkMail(url: string) {
   return {
     subject: "Tu enlace para entrar en Inspo",
-    html: layout("Entrar en Inspo", "Haz clic en el botón para iniciar sesión. El enlace caduca en 10 minutos.", { label: "Entrar", url }),
+    html: layout("Entrar en Inspo", "Haz clic en el botón para iniciar sesión. El enlace caduca en 10 minutos.", { label: "Entrar", url }, "Si no has pedido este correo, puedes ignorarlo."),
     text: `Entra en Inspo con este enlace (caduca en 10 minutos):\n${url}`,
   };
 }
@@ -48,7 +73,7 @@ export function magicLinkMail(url: string) {
 export function invitationMail(url: string, teamName: string, inviterName: string) {
   return {
     subject: `${inviterName} te invita al equipo ${teamName} en Inspo`,
-    html: layout(`Te invitan a ${esc(teamName)}`, `${esc(inviterName)} quiere que te unas a su librería de inspiración.`, { label: "Aceptar invitación", url }),
+    html: layout(`Te invitan a ${esc(teamName)}`, `${esc(inviterName)} quiere que te unas a su librería de inspiración.`, { label: "Aceptar invitación", url }, "Si no esperabas esta invitación, puedes ignorar este correo."),
     text: `${inviterName} te invita al equipo ${teamName} en Inspo. Acepta aquí:\n${url}`,
   };
 }

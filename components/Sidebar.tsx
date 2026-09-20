@@ -81,9 +81,9 @@ const TIPO_ICON: Record<InspoItem["tipo"], React.ReactNode> = {
   Inspiración: I.spark, Videos: I.play, Ideas: I.bulb, Documentales: I.film,
 };
 
-export function SearchBox({ value, onChange, className = "", autoFocus, ai, onAi, aiLoading }: {
+export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading }: {
   value: string; onChange: (v: string) => void; className?: string; autoFocus?: boolean;
-  ai?: boolean; onAi?: (on: boolean) => void; aiLoading?: boolean;
+  ai?: boolean; aiLoading?: boolean;
 }) {
   return (
     <div className={`search ${className}${ai ? " is-ai" : ""}`}>
@@ -94,22 +94,13 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, onAi
         value={value}
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Escape" && value) { e.preventDefault(); onChange(""); } }}
         placeholder={ai ? "Describe lo que buscas" : "Buscar"}
       />
       <div className="search__right">
         {value && (
           <button className="btn-icon search__clear" onClick={() => onChange("")} aria-label="Limpiar">
             {I.x}
-          </button>
-        )}
-        {onAi && (
-          <button
-            className={`search__ai${ai ? " is-on" : ""}`}
-            onClick={() => onAi(!ai)}
-            title={ai ? "Búsqueda IA activada" : "Activar búsqueda IA"}
-            aria-pressed={ai}
-          >
-            IA
           </button>
         )}
       </div>
@@ -155,6 +146,7 @@ export interface SidebarProps {
   brand: React.ReactNode;
   /** Valores del filtro "Quién" (nombres de miembros y etiquetas heredadas) */
   autores: string[];
+  autorImages?: Record<string, string>;
   items: InspoItem[];
   tipo: FilterTipo;
   autor: FilterAutor;
@@ -178,7 +170,6 @@ export interface SidebarProps {
   onEstilo: (e: string) => void;
   onToggleTag: (k: string) => void;
   ai: boolean;
-  onAi: (on: boolean) => void;
   aiLoading: boolean;
   aiEnabled: boolean;
   pending: number;
@@ -187,11 +178,11 @@ export interface SidebarProps {
 }
 
 export default function Sidebar({
-  brand, autores, items, tipo, autor, fecha, query,
+  brand, autores, autorImages = {}, items, tipo, autor, fecha, query,
   onTipo, onAutor, onFecha, onQuery, onReset, onAdd, onRecursos,
   open, onClose,
   tagMap, sector, estilo, selTags, onSector, onEstilo, onToggleTag,
-  ai, onAi, aiLoading, aiEnabled, pending, tagging, onTagAll,
+  ai, aiLoading, aiEnabled, pending, tagging, onTagAll,
 }: SidebarProps) {
   const isAll = tipo === "Todos" && autor === "Todos" && fecha === "Todos" && !query
     && sector === "Todos" && estilo === "Todos" && selTags.length === 0;
@@ -216,7 +207,7 @@ export default function Sidebar({
         <div className="sidebar__brand">{brand}</div>
 
         <SearchBox className="sidebar__search" value={query} onChange={onQuery}
-          ai={ai} onAi={aiEnabled ? onAi : undefined} aiLoading={aiLoading} />
+          ai={ai} aiLoading={aiLoading} />
 
         <button className="sidebar__inspo" onClick={onRecursos}>
           <span className="sidebar__inspo-top">
@@ -249,7 +240,9 @@ export default function Sidebar({
             {autores.map((a) => (
               <NavItem
                 key={a}
-                icon={a === "Ambos" ? I.users : I.user}
+                icon={autorImages[a]
+                  ? <span className="nav-item__avatar"><img src={autorImages[a]} alt="" /></span>
+                  : a === "Ambos" ? I.users : I.user}
                 label={a}
                 count={countBy((i) => i.puestoPor === a)}
                 active={autor === a}
