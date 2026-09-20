@@ -3,6 +3,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
 import type { ThumbnailMap } from "./thumbnails";
+import { webKeyOf } from "./url";
 
 const T = schema.inspoItem;
 type Row = typeof T.$inferSelect;
@@ -11,15 +12,7 @@ const TIPOS = new Set(["Inspiración", "Videos", "Ideas", "Documentales"]);
 export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 /** Normaliza una URL para deduplicar: sin espacios, sin barra final, host en minúsculas. */
-export function webKeyOf(raw: string): string {
-  const s = raw.trim().replace(/\/+$/, "");
-  try {
-    const u = new URL(s);
-    return `${u.protocol}//${u.host.toLowerCase()}${u.pathname.replace(/\/+$/, "")}${u.search}`;
-  } catch {
-    return s.toLowerCase();
-  }
-}
+export { webKeyOf };
 
 export function normalizeTipo(v: string | undefined): InspoItem["tipo"] {
   return TIPOS.has(v ?? "") ? (v as InspoItem["tipo"]) : "Inspiración";
@@ -136,4 +129,12 @@ export async function webSet(organizationId: string): Promise<Set<string>> {
 export async function deleteItems(organizationId: string, ids: string[]) {
   if (!ids.length) return;
   await db.delete(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
+}
+
+/** Borra un item y su hilo de comentarios (Turso no garantiza el ON DELETE CASCADE). */
+export async function deleteItem(organizationId: string, id: string): Promise<boolean> {
+  const C = schema.inspoComment;
+  await db.delete(C).where(and(eq(C.organizationId, organizationId), eq(C.itemId, id)));
+  const res = await db.delete(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
+  return (res.rowsAffected ?? 0) > 0;
 }

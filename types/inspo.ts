@@ -37,3 +37,17 @@ export interface InspoTags {
 }
 
 export type TagMap = Record<string, InspoTags>;
+
+// ─── Comentarios ─────────────────────────────────────────────────────────────
+export interface InspoComment {
+  id: string;
+  itemId: string;
+  authorId: string | null;
+  authorName: string;
+  authorImage: string | null;
+  body: string;
+  /** ISO */
+  createdAt: string;
+}
+
+export type CommentMap = Record<string, InspoComment[]>;

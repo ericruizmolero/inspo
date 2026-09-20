@@ -4,16 +4,18 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
-import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags } from "@/types/inspo";
+import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags, CommentMap } from "@/types/inspo";
 import { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
 import Sidebar, { SearchBox, Icons, TaggingState } from "./Sidebar";
 import InspoCard from "./InspoCard";
-import ThumbPickerModal from "./ThumbPickerModal";
-import AddInspoModal from "./AddInspoModal";
+import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
+import { webKeyOf, nameFromHost, tipoFromUrl } from "@/lib/url";
 import DesignMdModal from "./DesignMdModal";
 import RecursosModal from "./RecursosModal";
 import EmptyStart from "./EmptyStart";
+import CommentsPanel from "./CommentsPanel";
+import { proxiedSrc } from "@/lib/proxied-src";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -235,8 +237,90 @@ export default function InspoClient({
   };
   const [showAdd, setShowAdd] = useState(false);
   const [showRecursos, setShowRecursos] = useState(false);
+
+  // ─── Alta solo con URL ───────────────────────────────────────────────────────
+  // La tarjeta aparece al instante con el dominio; el servidor saca el nombre real
+  // de la propia web y la reemplaza. Si falla, se retira y se avisa arriba.
+  const [addError, setAddError] = useState<{ title: string; detail: string } | null>(null);
+  useEffect(() => {
+    if (!addError) return;
+    const t = setTimeout(() => setAddError(null), 6000);
+    return () => clearTimeout(t);
+  }, [addError]);
+  const isDuplicate = useCallback((web: string) => {
+    const key = webKeyOf(web);
+    return items.some((i) => webKeyOf(i.web) === key);
+  }, [items]);
+  const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
+    const d = new Date();
+    const temp: InspoItem = {
+      empresa: nameFromHost(input.web), web: input.web, tipo: input.tipo, comentarios: input.comentarios,
+      fecha: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
+      puestoPor: user.name || user.email,
+    };
+    setItems((prev) => [temp, ...prev]);
+    try {
+      const res = await fetch("/api/inspo/add", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ web: input.web, tipo: input.tipo, comentarios: input.comentarios }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      const item = data.item as InspoItem;
+      setItems((prev) => prev.map((i) => (i === temp ? item : i)));
+      tagOne(item.web);
+      return item;
+    } catch (e) {
+      setItems((prev) => prev.filter((i) => i !== temp));
+      setAddError({ title: "No se ha podido guardar", detail: e instanceof Error ? e.message : String(e) });
+      return null;
+    }
+  }, [user, tagOne]);
+
+  // ─── Quitar tarjeta ──────────────────────────────────────────────────────────
+  // Se retira al instante; si el servidor falla, vuelve a su sitio y se avisa.
+  const deleteItem = useCallback(async (item: InspoItem) => {
+    if (!item.id) return;
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
+    try {
+      const res = await fetch(`/api/inspo?id=${encodeURIComponent(item.id)}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok && res.status !== 404) throw new Error(data.error ?? `Error ${res.status}`);
+      setThumbMap((prev) => { if (!(item.web in prev)) return prev; const next = { ...prev }; delete next[item.web]; return next; });
+    } catch (e) {
+      setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev]));
+      setAddError({ title: "No se ha podido quitar", detail: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
+  // ─── Comentarios ───────────────────────────────────────────────────────────
+  const [commentMap, setCommentMap] = useState<CommentMap>({});
+  const [commentsItemId, setCommentsItemId] = useState<string | null>(null);
+  const loadComments = useCallback(async () => {
+    try {
+      const res = await fetch("/api/comments");
+      if (res.ok) setCommentMap(await res.json());
+    } catch { /* sin red: se reintenta en el siguiente ciclo */ }
+  }, []);
+  useEffect(() => { loadComments(); }, [loadComments]);
+  // Con el panel abierto, refrescar cada 20 s para ver lo que escriban los demás
+  useEffect(() => {
+    if (!commentsItemId) return;
+    const t = setInterval(loadComments, 20000);
+    return () => clearInterval(t);
+  }, [commentsItemId, loadComments]);
+  const commentsItem = useMemo(() => items.find((i) => i.id === commentsItemId) ?? null, [items, commentsItemId]);
+  const postComment = async (itemId: string, body: string) => {
+    const res = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, body }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+    setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), data] }));
+  };
+  const deleteComment = async (itemId: string, id: string) => {
+    const res = await fetch(`/api/comments?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    if (res.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
+  };
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [pickerWebUrl, setPickerWebUrl] = useState<string | null>(null);
   const [designMdItem, setDesignMdItem] = useState<InspoItem | null>(null);
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
   // Índice de DESIGN.md ya generados: servidor + los que terminen en esta sesión
@@ -260,29 +344,6 @@ export default function InspoClient({
     if (res.ok) setThumbMap((prev) => { const next = { ...prev }; delete next[webUrl]; return next; });
   };
 
-  const handlePickFromLibrary = (webUrl: string) => setPickerWebUrl(webUrl);
-
-  // Returns error string on failure, null on success
-  const handlePickerSelect = async (blobUrl: string): Promise<string | null> => {
-    if (!pickerWebUrl) return "Sin webUrl";
-    const webUrl = pickerWebUrl;
-    try {
-      const res = await fetch("/api/thumbnail/assign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webUrl, blobUrl }),
-      });
-      if (res.ok) {
-        setThumbMap((prev) => ({ ...prev, [webUrl]: blobUrl }));
-        setPickerWebUrl(null);
-        return null;
-      }
-      const body = await res.json().catch(() => ({}));
-      return body.error ?? `Error ${res.status}`;
-    } catch (e) {
-      return String(e);
-    }
-  };
 
   // ─── DESIGN.md ────────────────────────────────────────────────────────────
   // La generación vive aquí, no en el modal: cerrar el modal no la cancela y
@@ -536,9 +597,6 @@ export default function InspoClient({
 
   return (
     <div className={`shell${collapsed ? " is-collapsed" : ""}`}>
-      {pickerWebUrl && (
-        <ThumbPickerModal onSelect={handlePickerSelect} onCancel={() => setPickerWebUrl(null)} />
-      )}
       {designMdItem && (
         <DesignMdModal
           url={designMdItem.web}
@@ -547,6 +605,7 @@ export default function InspoClient({
           onClose={() => setDesignMdItem(null)}
           onRetry={() => runDesignMd(designMdItem)}
           onRegenerate={() => regenerateDesignMd(designMdItem)}
+          onRevised={(patch) => patchJob(designMdItem.web, { entry: { ...designMdJobs[designMdItem.web]?.entry!, ...patch } })}
         />
       )}
       <DesignMdToasts
@@ -555,11 +614,34 @@ export default function InspoClient({
         onOpen={openDesignMdByUrl}
         onDismiss={(url) => patchJob(url, { seen: true })}
       />
+      {addError && (
+        <div className="toasts toasts--top" role="alert">
+          <div className="toast toast--error" onClick={() => setAddError(null)}>
+            <span className="toast__dot" />
+            <span className="toast__text"><span className="toast__title">{addError.title}</span><span className="toast__sub">{addError.detail}</span></span>
+          </div>
+        </div>
+      )}
       {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} aiEnabled={aiEnabled} />}
+      {commentsItem && (
+        <CommentsPanel
+          item={commentsItem}
+          comments={commentMap[commentsItem.id!] ?? []}
+          user={user}
+          canManage={workspace.role === "owner" || workspace.role === "admin"}
+          memberImages={autorImages}
+          memberNames={memberNames}
+          image={thumbMap[commentsItem.web] ? proxiedSrc(thumbMap[commentsItem.web]) : designMdIndex[commentsItem.web]?.coverUrl ? proxiedSrc(designMdIndex[commentsItem.web].coverUrl!) : null}
+          onPost={(body) => postComment(commentsItem.id!, body)}
+          onDelete={(id) => deleteComment(commentsItem.id!, id)}
+          onClose={() => setCommentsItemId(null)}
+        />
+      )}
       {showAdd && (
         <AddInspoModal
           onClose={() => setShowAdd(false)}
-          onAdd={(item) => { setItems((prev) => [item, ...prev]); tagOne(item.web); }}
+          onSubmit={addByUrl}
+          isDuplicate={isDuplicate}
         />
       )}
 
@@ -641,7 +723,15 @@ export default function InspoClient({
         )}
 
         {items.length === 0 ? (
-          <EmptyStart onAdd={() => setShowAdd(true)} onRecursos={() => setShowRecursos(true)} />
+          <EmptyStart
+            onAddUrl={async (web) => {
+              // Primera inspo: se guarda y se abre su DESIGN.md directamente, para que se vea qué hace la app
+              const item = await addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" });
+              if (item) { setDesignMdItem(item); runDesignMd(item); }
+            }}
+            isDuplicate={isDuplicate}
+            onRecursos={() => setShowRecursos(true)}
+          />
         ) : filtered.length === 0 ? (
           <div className="empty">
             <span className="display">Nada por aquí</span>
@@ -659,10 +749,12 @@ export default function InspoClient({
                       tags={tagMap[item.web]}
                       score={ai && aiScores ? aiScores[item.web] : undefined}
                       reason={ai && aiScores ? aiReasons?.[item.web] : undefined}
+                      commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
+                      onComments={item.id ? () => setCommentsItemId(item.id!) : undefined}
+                      onDelete={item.id ? () => deleteItem(item) : undefined}
                       manualThumbnail={thumbMap[item.web]}
                       onUpload={(file) => { handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
                       onRemoveThumbnail={() => { handleThumbnailRemove(item.web); return Promise.resolve(); }}
-                      onPickFromLibrary={() => handlePickFromLibrary(item.web)}
                       onDesignMd={() => openDesignMd(item)}
                       designMdLoading={designMdJobs[item.web]?.status === "loading"}
                       designMdReady={item.web in designMdIndex}

@@ -30,12 +30,14 @@ interface InspoCardProps {
   manualThumbnail?: string;
   onUpload: (file: File) => Promise<void>;
   onRemoveThumbnail: () => Promise<void>;
-  onPickFromLibrary: () => void;
   onDesignMd: () => void;
   designMdLoading?: boolean;
   designMdReady?: boolean;
   designCover?: string;   // portada 720x450 generada con el DESIGN.md
   designScroll?: string;  // tira larga que se desplaza al hover
+  commentCount?: number;  // respuestas en el hilo (sin contar la nota original)
+  onComments?: () => void;
+  onDelete?: () => Promise<void>; // quitar la tarjeta del workspace
 }
 
 const IconUpload = (
@@ -43,10 +45,14 @@ const IconUpload = (
     <path d="M7 10V2M7 2L4 5M7 2l3 3" /><path d="M2 12h10" />
   </svg>
 );
-const IconLibrary = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" /><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" />
-    <rect x="1.5" y="8" width="4.5" height="4.5" rx="1" /><rect x="8" y="8" width="4.5" height="4.5" rx="1" />
+const IconComment = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+    <path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" />
+  </svg>
+);
+const IconTrash = (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" />
   </svg>
 );
 const IconX = (
@@ -55,7 +61,7 @@ const IconX = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onPickFromLibrary, onDesignMd, designMdLoading, designMdReady, designCover, designScroll }: InspoCardProps) {
+export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, onComments, onDelete }: InspoCardProps) {
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
   const [manualLoaded, setManualLoaded] = useState(false);
@@ -64,6 +70,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [scrollDist, setScrollDist] = useState(0);
+  // Borrar en dos toques: el primero pide confirmación en el propio botón, el segundo borra
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const manualImgRef = useRef<HTMLImageElement>(null);
@@ -142,6 +151,21 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  useEffect(() => {
+    if (!confirmDelete) return;
+    const t = setTimeout(() => setConfirmDelete(false), 5000);
+    return () => clearTimeout(t);
+  }, [confirmDelete]);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setConfirmDelete(false);
+    setDeleting(true);
+    try { await onDelete(); } finally { setDeleting(false); }
   };
 
   const triggerUpload = (e: React.MouseEvent) => {
@@ -241,6 +265,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             <div className="display tile__title">{item.empresa}</div>
             {meta}
             {item.comentarios && <p className="tile__comment">{item.comentarios}</p>}
+            {commentCount > 0 && (
+              <span className="tile__replies">{IconComment}{commentCount === 1 ? "1 respuesta" : `${commentCount} respuestas`}</span>
+            )}
             {aiChips}
           </div>
 
@@ -257,7 +284,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           )}
 
           <div
-            className={`tile__actions${uploading || designMdLoading ? " is-visible" : ""}`}
+            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting ? " is-visible" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -267,6 +294,12 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 {IconX}
               </button>
             )}
+            {onComments && (
+              <button className={`tile__action tile__action--cm${commentCount > 0 ? " has-count" : ""}`} title="Comentarios"
+                onClick={(e) => { e.stopPropagation(); onComments(); }}>
+                {IconComment}{commentCount > 0 && <span className="tile__action-count">{commentCount}</span>}
+              </button>
+            )}
             <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
               title={designMdLoading ? "Generando DESIGN.md…" : designMdReady ? "Ver DESIGN.md" : "Generar DESIGN.md con IA (30-90 s)"}
@@ -274,14 +307,20 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             >
               {designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}
             </button>
-            <button className="tile__action" title="Elegir de la librería"
-              onClick={(e) => { e.stopPropagation(); onPickFromLibrary(); }}>
-              {IconLibrary}
-            </button>
             <button className="tile__action" title={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"}
               onClick={triggerUpload}>
               {uploading ? <span className="spinner" /> : IconUpload}
             </button>
+            {onDelete && (
+              <button
+                className={`tile__action tile__action--danger tile__action--del${confirmDelete ? " is-confirm" : ""}`}
+                title={confirmDelete ? "Pulsa otra vez para borrar" : "Quitar de Inspo"}
+                aria-label={confirmDelete ? "Confirmar borrado" : "Quitar de Inspo"}
+                onClick={handleDelete}
+              >
+                {deleting ? <span className="spinner" /> : confirmDelete ? <>{IconTrash}¿Borrar?</> : IconTrash}
+              </button>
+            )}
           </div>
 
           <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }}
@@ -296,7 +335,17 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           {meta}
           {aiChips}
         </div>
+        {onComments && (
+          <button className={`tile__caption-md${commentCount > 0 ? " is-ready" : ""}`} onClick={onComments} aria-label="Comentarios">
+            {IconComment}{commentCount > 0 && commentCount}
+          </button>
+        )}
         <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>
+        {onDelete && (
+          <button className={`tile__caption-md tile__caption-del${confirmDelete ? " is-confirm" : ""}`} onClick={handleDelete} aria-label={confirmDelete ? "Confirmar borrado" : "Quitar de Inspo"}>
+            {deleting ? <span className="spinner" /> : confirmDelete ? "¿Borrar?" : IconTrash}
+          </button>
+        )}
       </div>
     </div>
   );
