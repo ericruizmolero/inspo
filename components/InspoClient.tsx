@@ -13,6 +13,7 @@ import ThumbPickerModal from "./ThumbPickerModal";
 import AddInspoModal from "./AddInspoModal";
 import DesignMdModal from "./DesignMdModal";
 import RecursosModal from "./RecursosModal";
+import EmptyStart from "./EmptyStart";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -639,7 +640,9 @@ export default function InspoClient({
           </header>
         )}
 
-        {filtered.length === 0 ? (
+        {items.length === 0 ? (
+          <EmptyStart onAdd={() => setShowAdd(true)} onRecursos={() => setShowRecursos(true)} />
+        ) : filtered.length === 0 ? (
           <div className="empty">
             <span className="display">Nada por aquí</span>
             <span>{aiLoading ? "Buscando…" : "Prueba con otro filtro o búsqueda."}</span>
