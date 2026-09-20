@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
     });
   } catch (err) {
     console.error("shot error:", url, err instanceof Error ? err.message : err);
-    return new Response("capture failed", { status: 502, headers: { "Cache-Control": "private, max-age=3600" } });
+    // Un fallo se recuerda un rato para no relanzar Chromium en cada carga, pero no tanto
+    // como para que un arreglo en el servidor tarde una hora en verse.
+    return new Response("capture failed", { status: 502, headers: { "Cache-Control": "private, max-age=900" } });
   }
 }
