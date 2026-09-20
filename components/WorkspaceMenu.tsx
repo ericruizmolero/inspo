@@ -151,7 +151,10 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
         <WorkspaceAvatar workspace={workspace} />
         <span className="ws__names">
           <span className="display ws__name">{workspace.name}</span>
-          <span className="ws__kind">{workspace.kind === "personal" ? "Personal" : "Equipo"}</span>
+          {/* Si el nombre ya dice "Equipo", no se repite debajo */}
+          {(workspace.kind === "personal" || !/equipo/i.test(workspace.name)) && (
+            <span className="ws__kind">{workspace.kind === "personal" ? "Personal" : "Equipo"}</span>
+          )}
         </span>
       </button>
 
