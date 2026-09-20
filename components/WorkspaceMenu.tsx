@@ -76,6 +76,25 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
     router.refresh();
   };
 
+  // Nombre de la persona: va en user.name y se replica al workspace personal, que lleva ese mismo nombre
+  const [renamingMe, setRenamingMe] = useState(false);
+  const [myName, setMyName] = useState(user.name);
+  const renameMe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = myName.trim();
+    if (!name || name === user.name) { setRenamingMe(false); return; }
+    setBusy(true); setError("");
+    const { error: err } = await authClient.updateUser({ name });
+    if (!err) {
+      const personal = workspaces.find((w) => w.kind === "personal");
+      if (personal) await authClient.organization.update({ organizationId: personal.id, data: { name } });
+    }
+    setBusy(false);
+    if (err) { setError(err.message ?? "No se pudo cambiar el nombre"); return; }
+    setRenamingMe(false); setOpen(false);
+    router.refresh();
+  };
+
   const logout = async () => {
     await authClient.signOut();
     router.push("/login");
@@ -200,6 +219,24 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
               <span className="ws__me-email">{user.email}</span>
             </span>
           </div>
+          {renamingMe ? (
+            <form onSubmit={renameMe} style={{ display: "flex", gap: 6, padding: "4px 2px" }}>
+              <input
+                className="input"
+                value={myName}
+                onChange={(e) => setMyName(e.target.value)}
+                placeholder="Tu nombre"
+                aria-label="Tu nombre"
+                autoFocus
+                maxLength={60}
+                style={{ flex: 1, height: 32, fontSize: 13 }}
+                onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenamingMe(false); setMyName(user.name); } }}
+              />
+              <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Guardar</button>
+            </form>
+          ) : (
+            <button className="ws__item" onClick={() => { setMyName(user.name); setRenamingMe(true); }} disabled={busy}>Cambiar mi nombre</button>
+          )}
           <button className="ws__item" onClick={() => photoRef.current?.click()} disabled={busy}>
             {user.image ? "Cambiar mi foto" : "Añadir mi foto"}
           </button>
