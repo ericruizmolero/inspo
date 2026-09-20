@@ -21,7 +21,9 @@ export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer 
 export type DesignMdIndex = Record<string, { generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string }>;
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
-const PREFIX = "inspo/design-md/";
+/** Prefijo en Blob de capturas, portadas y specs de DESIGN.md (compartidas entre workspaces) */
+export const DESIGN_MD_PREFIX = "inspo/design-md/";
+const PREFIX = DESIGN_MD_PREFIX;
 const INDEX_PREFIX = "inspo/design-md-index"; // fuera de PREFIX para no confundirlo con una entrada
 const FS_DIR = path.join(process.cwd(), "public", "design-md");
 const FS_INDEX = path.join(FS_DIR, "_index.json");

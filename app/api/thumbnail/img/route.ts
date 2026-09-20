@@ -2,17 +2,19 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { ownsThumbnail } from "@/lib/items";
 import { blobPrefix } from "@/lib/thumbnails";
+import { DESIGN_MD_PREFIX } from "@/lib/design-store";
 
 export const runtime = "nodejs";
 
-// Proxy de blobs privados: solo imágenes del workspace activo
+// Proxy de blobs privados: miniaturas del workspace activo y las portadas de DESIGN.md
+// (capturas de webs públicas, compartidas entre workspaces; el índice ya se filtra por items).
 export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const blobUrl = req.nextUrl.searchParams.get("url");
   if (!blobUrl) return new Response("missing url", { status: 400 });
 
-  const inLibrary = blobUrl.includes(`/${blobPrefix(ctx.workspace.id)}`);
+  const inLibrary = blobUrl.includes(`/${blobPrefix(ctx.workspace.id)}`) || blobUrl.includes(`/${DESIGN_MD_PREFIX}`);
   if (!inLibrary && !(await ownsThumbnail(ctx.workspace.id, blobUrl))) {
     return new Response("forbidden", { status: 403 });
   }

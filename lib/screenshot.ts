@@ -63,13 +63,26 @@ const LOCAL_CHROME_CANDIDATES = [
   "/usr/bin/chromium",
 ].filter(Boolean) as string[];
 
+// En Vercel, executablePath() descomprime Chromium en /tmp la primera vez. Si dos
+// peticiones lo piden a la vez, una ejecuta el binario mientras la otra aún lo
+// escribe y el spawn falla con ETXTBSY. Se comparte una única promesa por instancia.
+let serverlessChromePath: Promise<string> | null = null;
+async function serverlessExecutablePath(): Promise<string> {
+  if (!serverlessChromePath) {
+    serverlessChromePath = import("@sparticuz/chromium")
+      .then((m) => m.default.executablePath())
+      .catch((e) => { serverlessChromePath = null; throw e; });
+  }
+  return serverlessChromePath;
+}
+
 async function launchBrowser(): Promise<Browser> {
   if (IS_SERVERLESS) {
     const chromium = (await import("@sparticuz/chromium")).default;
     return puppeteer.launch({
       args: chromium.args,
       defaultViewport: VIEWPORT,
-      executablePath: await chromium.executablePath(),
+      executablePath: await serverlessExecutablePath(),
       headless: true,
     });
   }
@@ -98,10 +111,11 @@ const HIDE_CSS = `
 
 const ACCEPT_TEXTS = ["aceptar", "accept", "agree", "allow", "ok", "got it", "entendido", "onartu"];
 
-// Simple in-process gate so local dev never launches a dozen Chromes at once.
+// Puerta en proceso para no lanzar una docena de Chromes a la vez. En una función
+// serverless la memoria da para uno; en local, dos.
 let active = 0;
 const waiters: (() => void)[] = [];
-const MAX_CONCURRENT = 2;
+const MAX_CONCURRENT = IS_SERVERLESS ? 1 : 2;
 async function acquire() {
   if (active < MAX_CONCURRENT) { active++; return; }
   await new Promise<void>((r) => waiters.push(r));
