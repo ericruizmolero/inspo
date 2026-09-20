@@ -107,10 +107,12 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     if (source === "idle" || source === "error" || imgSrc) return;
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), source === "shot" ? 60000 : 15000);
-    // og:image first (cheap); if the site has none, capture its hero server-side
+    // og:image first (cheap); if the site has none, capture its hero server-side.
+    // El "v" cambia la URL de captura cuando el servidor se arregla: los 502 antiguos
+    // se quedan en la caché del navegador y sin esto seguirían saliendo un buen rato.
     const apiUrl = source === "og"
       ? `/api/og?url=${encodeURIComponent(item.web)}`
-      : `/api/shot?url=${encodeURIComponent(item.web)}`;
+      : `/api/shot?url=${encodeURIComponent(item.web)}&v=2`;
 
     fetch(apiUrl, { signal: ctrl.signal })
       .then((res) => { if (!res.ok) throw new Error(`${res.status}`); return res.blob(); })
