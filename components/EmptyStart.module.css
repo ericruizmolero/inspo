@@ -9,7 +9,21 @@
 .title { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); }
 .lead { font-size: 15px; line-height: 1.5; color: var(--muted); }
 .lead strong { color: var(--text-2); font-weight: 500; }
-.actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+.paste { display: flex; gap: 8px; width: 100%; max-width: 520px; margin-top: 12px; }
+.paste .pasteInput { flex: 1; min-width: 0; background: var(--surface-2); border-color: var(--border); }
+.paste .pasteInput:focus { border-color: var(--border-strong); }
+.paste :global(.btn) { height: 46px; padding: 0 18px; border-radius: 12px; flex-shrink: 0; }
+.sub { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
+.sub strong { color: var(--text-2); font-weight: 500; }
+.error { font-size: 13px; color: var(--danger); margin-top: 4px; }
+.link {
+  display: inline-flex; align-items: center; gap: 5px; vertical-align: baseline;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: var(--text-2);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong);
+  transition: color 0.12s;
+}
+.link:hover { color: var(--text); }
+.link svg { width: 13px; height: 13px; }
 
 .section { width: 100%; margin-top: 56px; display: flex; flex-direction: column; gap: 14px; }
 .eyebrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
@@ -60,4 +74,6 @@
   .grid, .steps { grid-template-columns: 1fr; }
   .title { font-size: 26px; }
   .wrap { padding-left: 16px; padding-right: 16px; }
+  .paste { flex-direction: column; }
 }
+

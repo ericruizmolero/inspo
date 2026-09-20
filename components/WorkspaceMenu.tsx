@@ -26,6 +26,15 @@ export function UserAvatar({ name, image, small, className = "" }: { name: strin
 }
 
 const I = {
+  plus: (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
+  ),
+  camera: (
+    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 5.5A1.5 1.5 0 013.5 4h1l1-1.5h3L9.5 4h1A1.5 1.5 0 0112 5.5V10a1.5 1.5 0 01-1.5 1.5h-7A1.5 1.5 0 012 10z" /><circle cx="7" cy="7.8" r="2" /></svg>
+  ),
+  pencil: (
+    <svg width="10" height="10" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11H3v-2z" /></svg>
+  ),
   check: (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2.5 6.5l2.5 2.5 4.5-5" />
@@ -148,7 +157,10 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
   return (
     <div className="ws" ref={ref}>
       <button className="ws__trigger" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu">
-        <WorkspaceAvatar workspace={workspace} />
+        {/* El workspace personal eres tú: lleva tu foto, no la inicial */}
+        {workspace.kind === "personal" && !workspace.logo
+          ? <UserAvatar name={user.name} image={user.image} />
+          : <WorkspaceAvatar workspace={workspace} />}
         <span className="ws__names">
           <span className="display ws__name">{workspace.name}</span>
           {/* Si el nombre ya dice "Equipo", no se repite debajo */}
@@ -160,16 +172,15 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
 
       {open && (
         <div className="ws__menu" role="menu">
-          <div className="ws__section">Personal</div>
+          <div className="ws__section">Workspaces</div>
           {personal.map((w) => (
             <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>
-              <WorkspaceAvatar workspace={w} small />
+              {w.logo ? <WorkspaceAvatar workspace={w} small /> : <UserAvatar name={user.name} image={user.image} small />}
               <span className="ws__item-name">{w.name}</span>
+              <span className="ws__item-kind">Personal</span>
               {w.id === workspace.id && <span className="ws__item-check">{I.check}</span>}
             </button>
           ))}
-          <div className="ws__section">Equipos</div>
-          {teams.length === 0 && <div className="ws__empty">Aún no estás en ningún equipo</div>}
           {teams.map((w) => (
             <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>
               <WorkspaceAvatar workspace={w} small />
@@ -177,78 +188,98 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
               {w.id === workspace.id && <span className="ws__item-check">{I.check}</span>}
             </button>
           ))}
-          <div className="ws__divider" />
-          {canManage && workspace.kind === "team" && (
-            renaming ? (
-              <form onSubmit={rename} style={{ display: "flex", gap: 6, padding: "4px 2px" }}>
-                <input
-                  className="input"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Nombre del equipo"
-                  aria-label="Nombre del equipo"
-                  autoFocus
-                  maxLength={60}
-                  style={{ flex: 1, height: 32, fontSize: 13 }}
-                  onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(false); setNewName(workspace.name); } }}
-                />
-                <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Guardar</button>
-              </form>
-            ) : (
-              <button className="ws__item" onClick={() => { setNewName(workspace.name); setRenaming(true); }} disabled={busy}>Cambiar nombre del equipo</button>
-            )
-          )}
-          {canManage && (
+          <Link className="ws__item ws__item--muted" href="/equipo?nuevo=1" onClick={() => setOpen(false)}>
+            <span className="ws__plus" aria-hidden>{I.plus}</span>
+            <span className="ws__item-name">Crear equipo</span>
+          </Link>
+
+          {workspace.kind === "team" && (
             <>
-              <button className="ws__item" onClick={() => fileRef.current?.click()} disabled={busy}>
-                {workspace.logo ? "Cambiar logo" : "Añadir logo de empresa"}
-              </button>
-              {workspace.logo && (
-                <button className="ws__item ws__item--muted" onClick={() => setLogo(null)} disabled={busy}>Quitar logo</button>
+              <div className="ws__divider" />
+              <div className="ws__section">{workspace.name}</div>
+              <Link className="ws__item" href="/equipo" onClick={() => setOpen(false)}>
+                <span className="ws__item-name">Miembros e invitaciones</span>
+              </Link>
+              {canManage && (
+                renaming ? (
+                  <form onSubmit={rename} className="ws__form">
+                    <input
+                      className="input"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="Nombre del equipo"
+                      aria-label="Nombre del equipo"
+                      autoFocus
+                      maxLength={60}
+                      onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(false); setNewName(workspace.name); } }}
+                    />
+                    <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Guardar</button>
+                  </form>
+                ) : (
+                  <button className="ws__item" onClick={() => { setNewName(workspace.name); setRenaming(true); }} disabled={busy}>
+                    <span className="ws__item-name">Cambiar nombre</span>
+                  </button>
+                )
+              )}
+              {canManage && (
+                <div className="ws__item ws__item--static">
+                  <span className="ws__item-name">Logo</span>
+                  <button className="ws__mini" onClick={() => fileRef.current?.click()} disabled={busy}>{workspace.logo ? "Cambiar" : "Añadir"}</button>
+                  {workspace.logo && <button className="ws__mini ws__mini--muted" onClick={() => setLogo(null)} disabled={busy}>Quitar</button>}
+                </div>
               )}
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={onLogoFile} />
-              {error && <div className="ws__empty">{error}</div>}
             </>
           )}
-          {workspace.kind === "team" && (
-            <Link className="ws__item" href="/equipo" onClick={() => setOpen(false)}>Miembros e invitaciones</Link>
-          )}
-          <Link className="ws__item" href="/equipo?nuevo=1" onClick={() => setOpen(false)}>Crear equipo</Link>
+
           <div className="ws__divider" />
+          <div className="ws__section">Cuenta</div>
           <div className="ws__me">
-            <UserAvatar name={user.name} image={user.image} />
+            {/* El avatar es el botón de la foto: clic para cambiarla; la cruz de la esquina la quita */}
+            <span className="ws__me-avatar">
+              <button
+                type="button" className="ws__me-photo" onClick={() => photoRef.current?.click()} disabled={busy}
+                title={user.image ? "Cambiar mi foto" : "Añadir mi foto"} aria-label={user.image ? "Cambiar mi foto" : "Añadir mi foto"}
+              >
+                <UserAvatar name={user.name} image={user.image} />
+                <span className="ws__me-photo-hint" aria-hidden>{I.camera}</span>
+              </button>
+              {user.image && (
+                <button type="button" className="ws__me-remove" onClick={() => setPhoto(null)} disabled={busy} title="Quitar mi foto" aria-label="Quitar mi foto">×</button>
+              )}
+            </span>
             <span className="ws__me-text">
-              <span className="ws__me-name">{user.name}</span>
-              <span className="ws__me-email">{user.email}</span>
+              {renamingMe ? (
+                <form onSubmit={renameMe} className="ws__me-rename">
+                  <input
+                    className="ws__me-input"
+                    value={myName}
+                    onChange={(e) => setMyName(e.target.value)}
+                    placeholder="Tu nombre"
+                    aria-label="Tu nombre"
+                    autoFocus
+                    maxLength={60}
+                    disabled={busy}
+                    onBlur={() => { if (!busy) { setRenamingMe(false); setMyName(user.name); } }}
+                    onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenamingMe(false); setMyName(user.name); } }}
+                  />
+                  <span className="ws__me-email">Intro para guardar · Esc para cancelar</span>
+                </form>
+              ) : (
+                <>
+                  <button type="button" className="ws__me-name" onClick={() => { setMyName(user.name); setRenamingMe(true); }} disabled={busy} title="Cambiar mi nombre">
+                    {user.name}<span className="ws__me-name-edit" aria-hidden>{I.pencil}</span>
+                  </button>
+                </>
+              )}
             </span>
           </div>
-          {renamingMe ? (
-            <form onSubmit={renameMe} style={{ display: "flex", gap: 6, padding: "4px 2px" }}>
-              <input
-                className="input"
-                value={myName}
-                onChange={(e) => setMyName(e.target.value)}
-                placeholder="Tu nombre"
-                aria-label="Tu nombre"
-                autoFocus
-                maxLength={60}
-                style={{ flex: 1, height: 32, fontSize: 13 }}
-                onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenamingMe(false); setMyName(user.name); } }}
-              />
-              <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Guardar</button>
-            </form>
-          ) : (
-            <button className="ws__item" onClick={() => { setMyName(user.name); setRenamingMe(true); }} disabled={busy}>Cambiar mi nombre</button>
-          )}
-          <button className="ws__item" onClick={() => photoRef.current?.click()} disabled={busy}>
-            {user.image ? "Cambiar mi foto" : "Añadir mi foto"}
-          </button>
-          {user.image && (
-            <button className="ws__item ws__item--muted" onClick={() => setPhoto(null)} disabled={busy}>Quitar mi foto</button>
-          )}
+          {!renamingMe && <div className="ws__me-email" title={user.email}>{user.email}</div>}
           <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPhotoFile} />
-          {error && !canManage && <div className="ws__empty">{error}</div>}
-          <button className="ws__item ws__item--muted" onClick={logout}>Salir</button>
+          {error && <div className="ws__empty">{error}</div>}
+          <button className="ws__item ws__item--muted" onClick={logout}>
+            <span className="ws__item-name">Salir</span>
+          </button>
         </div>
       )}
     </div>

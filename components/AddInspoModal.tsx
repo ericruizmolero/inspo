@@ -2,36 +2,35 @@
 
 import { useState, useEffect, useRef } from "react";
 import { InspoItem } from "@/types/inspo";
+import { normalizeWebUrl, tipoFromUrl } from "@/lib/url";
 import { Icons } from "./Sidebar";
+
+export interface NewInspoInput {
+  web: string;
+  tipo: InspoItem["tipo"];
+  comentarios: string;
+}
 
 interface AddInspoModalProps {
   onClose: () => void;
-  onAdd: (item: InspoItem) => void;
+  /** Se llama con la URL ya normalizada; el alta y la tarjeta las gestiona quien abre el modal. */
+  onSubmit: (input: NewInspoInput) => void;
+  /** ¿Esa URL ya está guardada? Evita ir al servidor para decir lo mismo. */
+  isDuplicate?: (web: string) => boolean;
 }
 
 const TIPOS = ["Inspiración", "Videos", "Ideas", "Documentales"] as const;
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="field">
-      <label className="field__label">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-export default function AddInspoModal({ onClose, onAdd }: AddInspoModalProps) {
-  const [empresa, setEmpresa] = useState("");
-  const [web, setWeb] = useState("");
-  const [tipo, setTipo] = useState<InspoItem["tipo"]>("Inspiración");
+/** Solo hace falta la URL: nombre, captura, etiquetas y colección se deducen. */
+export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddInspoModalProps) {
+  const [raw, setRaw] = useState("");
   const [comentarios, setComentarios] = useState("");
-  const [subcomentarios, setSubcomentarios] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [tipo, setTipo] = useState<InspoItem["tipo"] | null>(null); // null = la que sugiera la URL
   const [error, setError] = useState("");
-  const firstRef = useRef<HTMLInputElement>(null);
+  const urlRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    firstRef.current?.focus();
+    urlRef.current?.focus();
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
@@ -41,29 +40,16 @@ export default function AddInspoModal({ onClose, onAdd }: AddInspoModalProps) {
     };
   }, [onClose]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const web = normalizeWebUrl(raw);
+  const suggested = web ? tipoFromUrl(web) : "Inspiración";
+  const tipoFinal = tipo ?? suggested;
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!empresa.trim() || !web.trim()) return;
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/inspo/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          empresa: empresa.trim(), web: web.trim(), tipo,
-          comentarios: comentarios.trim(), subcomentarios: subcomentarios.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Error desconocido"); return; }
-      onAdd(data.item);
-      onClose();
-    } catch (err) {
-      setError(String(err));
-    } finally {
-      setLoading(false);
-    }
+    if (!web) { setError("Eso no parece una URL"); return; }
+    if (isDuplicate?.(web)) { setError("Esa URL ya está en tu librería"); return; }
+    onSubmit({ web, tipo: tipoFinal, comentarios: comentarios.trim() });
+    onClose();
   };
 
   return (
@@ -75,37 +61,50 @@ export default function AddInspoModal({ onClose, onAdd }: AddInspoModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="modal__body">
-          <div className="grid-2">
-            <Field label="Empresa / Proyecto">
-              <input ref={firstRef} className="input" value={empresa} onChange={(e) => setEmpresa(e.target.value)} placeholder="Nombre" required />
-            </Field>
-            <Field label="URL">
-              <input className="input" value={web} onChange={(e) => setWeb(e.target.value)} placeholder="https://" required />
-            </Field>
+          <div className="field">
+            <input
+              ref={urlRef}
+              className="input input--lg"
+              value={raw}
+              onChange={(e) => { setRaw(e.target.value); setError(""); }}
+              placeholder="Pega una URL"
+              inputMode="url"
+              autoComplete="off"
+              spellCheck={false}
+              required
+            />
+            <p className="modal__hint">El nombre, la captura y las etiquetas se sacan solos.</p>
           </div>
 
-          <Field label="Colección">
-            <select className="input" value={tipo} onChange={(e) => setTipo(e.target.value as InspoItem["tipo"])}>
-              {TIPOS.map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </Field>
+          <div className="field">
+            <input
+              className="input"
+              value={comentarios}
+              onChange={(e) => setComentarios(e.target.value)}
+              placeholder="¿Qué te ha gustado? (opcional)"
+            />
+          </div>
 
-          <Field label="Comentarios">
-            <textarea className="input" value={comentarios} onChange={(e) => setComentarios(e.target.value)} placeholder="¿Qué te ha gustado?" rows={2} />
-          </Field>
-
-          <Field label="Subcomentarios (opcional)">
-            <textarea className="input" value={subcomentarios} onChange={(e) => setSubcomentarios(e.target.value)} placeholder="Detalle adicional" rows={2} />
-          </Field>
+          <div className="pills" role="radiogroup" aria-label="Colección">
+            {TIPOS.map((t) => (
+              <button
+                key={t}
+                type="button"
+                role="radio"
+                aria-checked={tipoFinal === t}
+                className={`pill${tipoFinal === t ? " is-on" : ""}`}
+                onClick={() => setTipo(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
 
           {error && <p className="modal__error">{error}</p>}
 
           <div className="modal__footer">
             <button type="button" className="btn btn--ghost" onClick={onClose}>Cancelar</button>
-            <button type="submit" className="btn btn--primary" disabled={loading || !empresa.trim() || !web.trim()}>
-              {loading && <span className="spinner" style={{ borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} />}
-              {loading ? "Añadiendo" : "Añadir"}
-            </button>
+            <button type="submit" className="btn btn--primary" disabled={!raw.trim()}>Guardar</button>
           </div>
         </form>
       </div>

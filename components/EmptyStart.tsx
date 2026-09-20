@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { normalizeWebUrl } from "@/lib/url";
 import { RECURSOS, RECURSOS_TOTAL, recursoShot } from "@/lib/recursos";
 import { Icons } from "./Sidebar";
 import s from "./EmptyStart.module.css";
 
 // Una web por categoría del directorio (la primera de cada grupo), sin el grupo de herramientas.
-const PICKS = RECURSOS.filter((g) => g.key !== "recursos").map((g) => ({ group: g.title, ...g.items[0] }));
+// Una web por categoría, elegidas a mano por tener una captura que se ve perfecta.
+// Si alguna deja de estar en el directorio, se cae a la primera de su grupo.
+const FEATURED: Record<string, string> = {
+  designmd: "https://styles.refero.design",
+  webs: "https://curated.design",
+  saas: "https://saasframe.io",
+  secciones: "https://supahero.io",
+  motion: "https://motionin.design",
+  moodboards: "https://www.cosmos.so",
+};
+const PICKS = RECURSOS.filter((g) => g.key !== "recursos").map((g) => ({
+  group: g.title,
+  ...(g.items.find((r) => r.url.replace(/\/+$/, "") === FEATURED[g.key]) ?? g.items[0]),
+}));
 
 function Thumb({ name, url }: { name: string; url: string }) {
   const [failed, setFailed] = useState(false);
@@ -29,7 +43,7 @@ const IcMd = <span className={s.md}>MD</span>;
 
 // Cómo funciona la app, en el orden en que alguien la usa por primera vez.
 const STEPS = [
-  { icon: Icons.plus, title: "Guarda una web", text: "Pega la URL y ponle nombre. La captura se hace sola y la card aparece en el lienzo." },
+  { icon: Icons.plus, title: "Guarda una web", text: "Pega la URL y ya. El nombre y la captura se sacan de la propia web y la card aparece en el lienzo." },
   { icon: IcTag, title: "Se etiqueta sola", text: "Sector, estilo y tags los pone la IA al guardar. Los filtros del lateral se van llenando sin que hagas nada." },
   { icon: Icons.search, title: "Busca describiendo", text: "Escribe «landing oscura con mucho tipo» y la búsqueda ordena por afinidad y te dice por qué encaja cada una." },
   { icon: Icons.all, title: "Colecciones", text: "Inspiración, vídeos, ideas y documentales. Cada cosa en su sitio, con filtros por sector, estilo y fecha." },
@@ -38,30 +52,67 @@ const STEPS = [
 ];
 
 interface EmptyStartProps {
-  onAdd: () => void;
+  /** Guarda la primera inspo a partir de la URL (ya normalizada). Resuelve cuando termina el alta. */
+  onAddUrl: (web: string) => Promise<void>;
+  isDuplicate?: (web: string) => boolean;
   onRecursos: () => void;
 }
 
 /** Workspace sin inspos todavía: punto de partida en vez de un vacío. */
-export default function EmptyStart({ onAdd, onRecursos }: EmptyStartProps) {
+export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyStartProps) {
+  const [raw, setRaw] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const web = normalizeWebUrl(raw);
+    if (!web) { setError("Eso no parece una URL"); return; }
+    if (isDuplicate?.(web)) { setError("Esa URL ya está guardada"); return; }
+    setBusy(true);
+    try { await onAddUrl(web); } finally { setBusy(false); }
+  };
+
   return (
     <section className={s.wrap}>
       <div className={s.head}>
         <h1 className={s.title}>Tu librería empieza vacía. La inspiración, no.</h1>
         <p className={s.lead}>
-          Hay <strong>{RECURSOS_TOTAL} webs</strong> esperando en el directorio. Mira, guarda lo que te pare, y las etiquetas se ponen solas.
+          Pega la web que te tenga enganchado. Se guarda, se etiqueta sola y te sacamos su DESIGN.md para que veas de qué va esto.
         </p>
-        <div className={s.actions}>
-          <button className="btn btn--primary" onClick={onAdd}>{Icons.plus}<span>Guardar la primera inspo</span></button>
-          <button className="btn btn--ghost" onClick={onRecursos}>{Icons.compass}<span>Abrir el directorio</span></button>
-        </div>
+        <form className={s.paste} onSubmit={submit}>
+          <input
+            ref={inputRef}
+            className={`input input--lg ${s.pasteInput}`}
+            value={raw}
+            onChange={(e) => { setRaw(e.target.value); setError(""); }}
+            placeholder="Pega una URL"
+            inputMode="url"
+            autoComplete="off"
+            spellCheck={false}
+            disabled={busy}
+            aria-label="URL de la primera inspo"
+          />
+          <button type="submit" className="btn btn--primary" disabled={busy || !raw.trim()}>
+            {busy ? <span className="spinner" style={{ borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} /> : Icons.plus}
+            <span>{busy ? "Guardando" : "Guardar"}</span>
+          </button>
+        </form>
+        {error ? <p className={s.error}>{error}</p> : (
+          <p className={s.sub}>
+            ¿Sin nada a mano? Hay <strong>{RECURSOS_TOTAL} webs</strong> esperando en el directorio.{" "}
+            <button type="button" className={s.link} onClick={onRecursos}>{Icons.compass}<span>Abrir el directorio</span></button>
+          </p>
+        )}
       </div>
 
       <div className={s.section}>
         <div className={s.eyebrow}>
           <span>Cómo funciona</span>
         </div>
-        <ol className={s.steps}>
+        <ul className={s.steps}>
           {STEPS.map((st) => (
             <li key={st.title} className={s.step}>
               <span className={s.stepHead}>
@@ -71,7 +122,7 @@ export default function EmptyStart({ onAdd, onRecursos }: EmptyStartProps) {
               <span className={s.stepText}>{st.text}</span>
             </li>
           ))}
-        </ol>
+        </ul>
       </div>
 
       <div className={s.section}>
