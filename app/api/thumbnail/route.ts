@@ -1,63 +1,46 @@
 import { NextRequest } from "next/server";
-import {
-  getThumbnailMap,
-  uploadThumbnail,
-  setThumbnailInMap,
-  removeThumbnailFromMap,
-} from "@/lib/thumbnails";
+import { requireCtx, isResponse } from "@/lib/workspace";
+import { uploadThumbnail } from "@/lib/thumbnails";
+import { setThumbnail, loadWorkspaceData } from "@/lib/items";
 
 export const runtime = "nodejs";
 
-// GET → devuelve el mapa completo
+// GET → mapa web → miniatura del workspace
 export async function GET() {
-  try {
-    const map = await getThumbnailMap();
-    return Response.json(map);
-  } catch {
-    return Response.json({});
-  }
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
+  const { thumbnailMap } = await loadWorkspaceData(ctx.workspace.id);
+  return Response.json(thumbnailMap);
 }
 
-// POST → sube imagen y actualiza el mapa
+// POST (multipart file + webUrl) → sube imagen y la asigna al item
 export async function POST(req: NextRequest) {
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
   try {
-    const pin = process.env.UPLOAD_PIN;
-    if (pin && req.headers.get("x-upload-pin") !== pin) {
-      return Response.json({ error: "PIN incorrecto" }, { status: 401 });
-    }
-
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const webUrl = formData.get("webUrl") as string | null;
-
-    if (!file || !webUrl) {
-      return Response.json({ error: "Faltan file o webUrl" }, { status: 400 });
-    }
+    if (!file || !webUrl) return Response.json({ error: "Faltan file o webUrl" }, { status: 400 });
 
     const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const url = await uploadThumbnail(safeFilename, file);
-    await setThumbnailInMap(webUrl, url);
-
+    const url = await uploadThumbnail(ctx.workspace.id, safeFilename, file);
+    const ok = await setThumbnail(ctx.workspace.id, webUrl, url);
+    if (!ok) return Response.json({ error: "Esa URL no está en el workspace" }, { status: 404 });
     return Response.json({ url });
   } catch (err) {
-    const msg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("Error subiendo thumbnail:", msg);
     return Response.json({ error: msg }, { status: 500 });
   }
 }
 
-// DELETE → elimina entrada del mapa
+// DELETE ?webUrl= → quita la miniatura manual
 export async function DELETE(req: NextRequest) {
-  try {
-    const pin = process.env.UPLOAD_PIN;
-    if (pin && req.headers.get("x-upload-pin") !== pin) {
-      return Response.json({ error: "PIN incorrecto" }, { status: 401 });
-    }
-    const webUrl = req.nextUrl.searchParams.get("webUrl");
-    if (!webUrl) return Response.json({ error: "Falta webUrl" }, { status: 400 });
-    await removeThumbnailFromMap(webUrl);
-    return Response.json({ ok: true });
-  } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 });
-  }
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
+  const webUrl = req.nextUrl.searchParams.get("webUrl");
+  if (!webUrl) return Response.json({ error: "Falta webUrl" }, { status: 400 });
+  await setThumbnail(ctx.workspace.id, webUrl, null);
+  return Response.json({ ok: true });
 }

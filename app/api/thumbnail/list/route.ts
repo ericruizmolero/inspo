@@ -1,23 +1,13 @@
-import { list } from "@vercel/blob";
+import { requireCtx, isResponse } from "@/lib/workspace";
+import { listThumbnailLibrary } from "@/lib/thumbnails";
 
 export const runtime = "nodejs";
 
 export async function GET() {
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
   try {
-    const { blobs } = await list({ prefix: "inspo/thumbs/" });
-    // Deduplicate by filename stem, keep latest upload per original filename
-    const seen = new Map<string, { url: string; uploadedAt: string }>();
-    for (const b of blobs) {
-      const stem = b.pathname.split("/").pop()?.replace(/^\d+-/, "") ?? b.url;
-      const existing = seen.get(stem);
-      if (!existing || new Date(b.uploadedAt) > new Date(existing.uploadedAt)) {
-        seen.set(stem, { url: b.url, uploadedAt: b.uploadedAt.toString() });
-      }
-    }
-    const urls = [...seen.values()]
-      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-      .map((v) => v.url);
-    return Response.json({ urls });
+    return Response.json({ urls: await listThumbnailLibrary(ctx.workspace.id) });
   } catch (e) {
     return Response.json({ urls: [], error: String(e) }, { status: 500 });
   }

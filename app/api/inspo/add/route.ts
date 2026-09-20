@@ -1,44 +1,28 @@
 import { NextRequest } from "next/server";
+import { requireCtx, isResponse } from "@/lib/workspace";
+import { addItem } from "@/lib/items";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
   try {
     const body = await req.json();
-    const { empresa, web, tipo, puestoPor, comentarios, subcomentarios } = body;
-
-    if (!empresa || !web) {
+    const { empresa, web, tipo, comentarios, subcomentarios } = body as Record<string, string | undefined>;
+    if (!empresa?.trim() || !web?.trim()) {
       return Response.json({ error: "empresa y web son obligatorios" }, { status: 400 });
     }
+    try { new URL(web.trim()); } catch { return Response.json({ error: "La URL no es válida" }, { status: 400 }); }
 
-    const scriptUrl = process.env.SHEETS_SCRIPT_URL;
-    const secret    = process.env.SHEETS_SCRIPT_SECRET;
-
-    if (!scriptUrl) {
-      return Response.json({ error: "SHEETS_SCRIPT_URL no configurada" }, { status: 500 });
-    }
-
-    // Fecha de hoy en DD/MM/YYYY
-    const now   = new Date();
-    const fecha = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()}`;
-
-    const payload = { secret, empresa, web, fecha, puestoPor, tipo, comentarios, subcomentarios: subcomentarios || "" };
-
-    const res = await fetch(scriptUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      redirect: "follow",
+    const item = await addItem(ctx.workspace.id, {
+      empresa, web, tipo, comentarios, subcomentarios,
+      autor: ctx.user.name || ctx.user.email,
+      createdBy: ctx.user.id,
     });
-
-    if (!res.ok) {
-      const text = await res.text();
-      return Response.json({ error: `Script error: ${text}` }, { status: 502 });
-    }
-
-    const item = { empresa, web, fecha, puestoPor, tipo, comentarios, subcomentarios: subcomentarios || undefined };
     return Response.json({ ok: true, item });
   } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    return Response.json({ error: msg }, { status: msg.includes("ya está") ? 409 : 500 });
   }
 }

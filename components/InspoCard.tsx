@@ -1,7 +1,10 @@
 "use client";
 
+import { proxiedSrc } from "@/lib/proxied-src";
+
 import { useState, useEffect, useRef } from "react";
-import { InspoItem } from "@/types/inspo";
+import { InspoItem, InspoTags } from "@/types/inspo";
+import { ESTILOS, TAGS, TAG_THRESHOLD, labelOf } from "@/lib/taxonomy";
 
 const BLOCKED = ["x.com", "twitter.com", "linkedin.com", "primevideo.com", "instagram.com", "youtube.com"];
 
@@ -12,38 +15,60 @@ function isBlocked(url: string) {
   const d = getDomain(url);
   return BLOCKED.some((b) => d.includes(b));
 }
-function bgFromName(name: string) {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
-  return `hsl(${Math.abs(h) % 360}, 12%, 83%)`;
-}
 
-type ImgSource = "idle" | "og" | "microlink" | "error";
+type ImgSource = "idle" | "og" | "shot" | "error";
 
 interface InspoCardProps {
   item: InspoItem;
+  tags?: InspoTags;
+  score?: number;
+  reason?: string;
   manualThumbnail?: string;
   onUpload: (file: File) => Promise<void>;
   onRemoveThumbnail: () => Promise<void>;
   onPickFromLibrary: () => void;
+  onDesignMd: () => void;
+  designMdLoading?: boolean;
+  designMdReady?: boolean;
+  designCover?: string;   // portada 720x450 generada con el DESIGN.md
+  designScroll?: string;  // tira larga que se desplaza al hover
 }
 
-export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThumbnail, onPickFromLibrary }: InspoCardProps) {
-  const [hovered, setHovered] = useState(false);
+const IconUpload = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M7 10V2M7 2L4 5M7 2l3 3" /><path d="M2 12h10" />
+  </svg>
+);
+const IconLibrary = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="1.5" y="1.5" width="4.5" height="4.5" rx="1" /><rect x="8" y="1.5" width="4.5" height="4.5" rx="1" />
+    <rect x="1.5" y="8" width="4.5" height="4.5" rx="1" /><rect x="8" y="8" width="4.5" height="4.5" rx="1" />
+  </svg>
+);
+const IconX = (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+    <path d="M2 2l8 8M10 2l-8 8" />
+  </svg>
+);
+
+export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onPickFromLibrary, onDesignMd, designMdLoading, designMdReady, designCover, designScroll }: InspoCardProps) {
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(null); // blob URL
   const [manualLoaded, setManualLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [whyOpen, setWhyOpen] = useState(false); // móvil: el globo del % se abre al tocar
+  const [coverLoaded, setCoverLoaded] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const [scrollDist, setScrollDist] = useState(0);
+  const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const manualImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
 
-  // Reset on thumbnail change, then immediately check if already cached
+  // Reset on thumbnail change, then check if the image was already cached
   useEffect(() => {
     setManualLoaded(false);
-    // Give React one tick to render the img, then check img.complete
-    // (cached images fire onLoad before the handler is registered)
     const id = setTimeout(() => {
       const el = manualImgRef.current;
       if (el && el.complete && el.naturalWidth > 0) setManualLoaded(true);
@@ -51,9 +76,9 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
     return () => clearTimeout(id);
   }, [manualThumbnail]);
 
-  // IntersectionObserver: arranca la carga al entrar en viewport
+  // Start loading when the tile enters the viewport
   useEffect(() => {
-    if (manualThumbnail || source !== "idle") return;
+    if (manualThumbnail || designCover || source !== "idle") return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -62,44 +87,45 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [source, manualThumbnail]);
+  }, [source, manualThumbnail, designCover]);
 
-  // Carga la imagen via fetch para suprimir errores de consola
+  // Fetch as blob so failed sources don't spam the console
   useEffect(() => {
     if (source === "idle" || source === "error") return;
-
     const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 15000);
+    const timeout = setTimeout(() => ctrl.abort(), source === "shot" ? 60000 : 15000);
+    // og:image first (cheap); if the site has none, capture its hero server-side
     const apiUrl = source === "og"
       ? `/api/og?url=${encodeURIComponent(item.web)}`
-      : `https://api.microlink.io?url=${encodeURIComponent(item.web)}&screenshot=true&embed=screenshot.url`;
+      : `/api/shot?url=${encodeURIComponent(item.web)}`;
 
     fetch(apiUrl, { signal: ctrl.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error(`${res.status}`);
-        return res.blob();
-      })
-      .then((blob) => {
-        clearTimeout(timeout);
-        setImgSrc(URL.createObjectURL(blob));
-      })
+      .then((res) => { if (!res.ok) throw new Error(`${res.status}`); return res.blob(); })
+      .then((blob) => { clearTimeout(timeout); setImgSrc(URL.createObjectURL(blob)); })
       .catch(() => {
         clearTimeout(timeout);
-        if (source === "og") { setSource("microlink"); setImgSrc(null); }
+        if (source === "og") { setSource("shot"); setImgSrc(null); }
         else setSource("error");
       });
 
     return () => { ctrl.abort(); clearTimeout(timeout); };
   }, [source, item.web]);
 
-  // Revoca blob URLs anteriores para no hacer leak
   useEffect(() => {
     return () => { if (imgSrc) URL.revokeObjectURL(imgSrc); };
   }, [imgSrc]);
 
   const domain = getDomain(item.web);
-  const isLoaded = !!imgSrc;
-  const isError = !manualThumbnail && source === "error";
+  const useDesign = !manualThumbnail && !!designCover;
+  const isError = !manualThumbnail && !useDesign && source === "error";
+  const isLoaded = manualThumbnail ? manualLoaded : useDesign ? coverLoaded : !!imgSrc;
+
+  const onScrollLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget, box = scrollBoxRef.current;
+    if (!box) return;
+    const rendered = (img.naturalHeight / img.naturalWidth) * box.clientWidth;
+    setScrollDist(Math.max(0, rendered - box.clientHeight));
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -118,204 +144,152 @@ export default function InspoCard({ item, manualThumbnail, onUpload, onRemoveThu
     setTimeout(() => { suppressClick.current = false; }, 500);
   };
 
-  const handleRemove = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    await onRemoveThumbnail();
-  };
+  const meta = (
+    <div className="tile__meta">
+      <span>{item.tipo}</span>
+      {item.puestoPor !== "Ambos" && (<><span className="tile__meta-sep">·</span><span>{item.puestoPor}</span></>)}
+      {domain && (<><span className="tile__meta-sep">·</span><span>{domain}</span></>)}
+    </div>
+  );
+
+  const activeTags = tags
+    ? TAGS.filter((t) => (tags.tags[t.key] ?? 0) >= TAG_THRESHOLD)
+        .sort((a, b) => tags.tags[b.key] - tags.tags[a.key]).slice(0, 3)
+    : [];
+  const aiChips = tags && (
+    <div className="tile__tags">
+      <span className="tile__tag tile__tag--style">{labelOf(ESTILOS, tags.estilo)}</span>
+      {activeTags.map((t) => <span key={t.key} className="tile__tag">{t.label}</span>)}
+    </div>
+  );
 
   return (
-    <article
-      onClick={() => { if (suppressClick.current) return; window.open(item.web, "_blank", "noopener,noreferrer"); }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{ background: "#F5F1EB", cursor: "pointer", overflow: "hidden", display: "block", position: "relative" }}
-    >
-      {/* Thumbnail */}
-      <div
-        ref={containerRef}
-        style={{ height: "200px", position: "relative", overflow: "hidden", background: "#E8E3DA" }}
+    <div>
+      <article
+        className="tile"
+        onClick={() => { if (suppressClick.current) return; window.open(item.web, "_blank", "noopener,noreferrer"); }}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
       >
-        {/* Manual thumbnail — shimmer hasta que carga, luego fade-in */}
-        {manualThumbnail && (
-          <>
-            {!manualLoaded && (
-              <div style={{
-                position: "absolute", inset: 0,
-                background: "linear-gradient(90deg, #E8E3DA 25%, #DED9D0 50%, #E8E3DA 75%)",
-                backgroundSize: "200% 100%",
-                animation: "shimmer 1.6s infinite",
-              }} />
-            )}
+        <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}>
+          {!isLoaded && !isError && <div className="shimmer" />}
+
+          {manualThumbnail && (
             <img
               ref={manualImgRef}
+              className={`tile__img${manualLoaded ? "" : " is-hidden"}`}
               src={manualThumbnail.startsWith("https://")
                 ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
                 : manualThumbnail}
               alt={item.empresa}
               onLoad={() => setManualLoaded(true)}
-              style={{
-                position: "absolute", inset: 0, width: "100%", height: "100%",
-                objectFit: "cover", display: "block",
-                opacity: manualLoaded ? 1 : 0,
-                transition: "opacity 0.4s ease, transform 0.5s ease",
-                transform: hovered ? "scale(1.04)" : "scale(1)",
+            />
+          )}
+
+          {useDesign && (
+            <>
+              <img
+                className={`tile__img${coverLoaded ? "" : " is-hidden"}`}
+                src={proxiedSrc(designCover!)}
+                alt={item.empresa}
+                loading="lazy"
+                onLoad={() => setCoverLoaded(true)}
+              />
+              {designScroll && coverLoaded && hovering && (
+                <div ref={scrollBoxRef} className="tile__scroll">
+                  <img
+                    src={proxiedSrc(designScroll)}
+                    alt=""
+                    onLoad={onScrollLoad}
+                    className={scrollDist > 0 ? "is-ready" : ""}
+                    style={{ "--dm-scroll": `-${scrollDist}px`, animationDuration: `${Math.max(4, Math.round(scrollDist / 170))}s` } as React.CSSProperties}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {!manualThumbnail && !useDesign && imgSrc && (
+            <img
+              className="tile__img"
+              src={imgSrc}
+              alt={item.empresa}
+              onError={() => {
+                // Blob fetched but not a renderable image (bad og:image): try next source
+                setImgSrc(null);
+                setSource(source === "og" ? "shot" : "error");
               }}
             />
-          </>
-        )}
-
-        {/* Auto (blob URL) — solo si no hay manual */}
-        {!manualThumbnail && imgSrc && (
-          <img
-            src={imgSrc}
-            alt={item.empresa}
-            style={{
-              position: "absolute", inset: 0, width: "100%", height: "100%",
-              objectFit: "cover", display: "block",
-              opacity: isLoaded ? 1 : 0,
-              transition: "opacity 0.4s ease, transform 0.5s ease",
-              transform: hovered ? "scale(1.04)" : "scale(1)",
-            }}
-          />
-        )}
-
-        {/* Shimmer — solo si no hay manual y el auto aún no cargó */}
-        {!manualThumbnail && !isLoaded && source !== "error" && (
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(90deg, #E8E3DA 25%, #DED9D0 50%, #E8E3DA 75%)",
-            backgroundSize: "200% 100%",
-            animation: "shimmer 1.6s infinite",
-          }} />
-        )}
-
-        {/* Fallback color */}
-        {isError && (
-          <div style={{
-            position: "absolute", inset: 0, background: bgFromName(item.empresa),
-            display: "flex", flexDirection: "column", alignItems: "center",
-            justifyContent: "center", gap: "6px", padding: "16px",
-          }}>
-            <span style={{ fontSize: "15px", fontWeight: 500, color: "rgba(15,25,35,0.5)", letterSpacing: "-0.02em", textAlign: "center", lineHeight: 1.25 }}>
-              {item.empresa}
-            </span>
-            {domain && (
-              <span style={{ fontSize: "9px", color: "rgba(15,25,35,0.28)", fontFamily: "var(--font-mono)", letterSpacing: "0.06em" }}>
-                {domain}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Hover veil */}
-        <div style={{
-          position: "absolute", inset: 0, background: "rgba(15,25,35,0.05)",
-          opacity: hovered ? 1 : 0, transition: "opacity 0.25s", pointerEvents: "none",
-        }} />
-
-        {/* Botones upload */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          style={{
-            position: "absolute", bottom: "8px", right: "8px",
-            display: "flex", gap: "4px",
-            opacity: hovered || uploading ? 1 : 0,
-            transition: "opacity 0.2s",
-            pointerEvents: hovered || uploading ? "auto" : "none",
-          }}
-        >
-          {manualThumbnail && (
-            <button onClick={handleRemove} title="Quitar thumbnail"
-              style={{ background: "rgba(15,25,35,0.6)", border: "none", borderRadius: "3px", color: "#EDE8DF", fontSize: "11px", padding: "4px 7px", cursor: "pointer", backdropFilter: "blur(4px)", lineHeight: 1 }}>
-              ×
-            </button>
           )}
-          {/* Elegir de la librería */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onPickFromLibrary(); }}
-            title="Elegir de la librería"
-            style={{
-              background: "rgba(15,25,35,0.6)", border: "none", borderRadius: "3px",
-              color: "#EDE8DF", fontSize: "10px", padding: "4px 8px", cursor: "pointer",
-              backdropFilter: "blur(4px)", letterSpacing: "0.03em", lineHeight: 1,
-              display: "flex", alignItems: "center", gap: "4px",
-            }}
+
+          {isError && (
+            <div className="tile__fallback">
+              <span className="display">{item.empresa}</span>
+              {domain && <span className="tile__fallback-domain">{domain}</span>}
+            </div>
+          )}
+
+          <div className="tile__overlay">
+            <div className="display tile__title">{item.empresa}</div>
+            {meta}
+            {item.comentarios && <p className="tile__comment">{item.comentarios}</p>}
+            {aiChips}
+          </div>
+
+          {score !== undefined && (
+            <div
+              className={`tile__score${reason ? " has-why" : ""}${whyOpen && reason ? " is-open" : ""}`}
+              onClick={(e) => { e.stopPropagation(); if (reason) setWhyOpen((v) => !v); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onMouseLeave={() => setWhyOpen(false)}
+            >
+              <span className="tile__score-pct" title={reason ? undefined : "Afinidad con la búsqueda"}>{Math.round(score * 100)}%</span>
+              {reason && <span className="tile__score-why" role="tooltip">{reason}</span>}
+            </div>
+          )}
+
+          <div
+            className={`tile__actions${uploading || designMdLoading ? " is-visible" : ""}`}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-              <rect x="1" y="1" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="5" y="1" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="1" y="5" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="5" y="5" width="3" height="3" rx="0.5" stroke="currentColor" strokeWidth="1.2"/>
-            </svg>
-            elegir
-          </button>
-          <button onClick={triggerUpload} title={manualThumbnail ? "Reemplazar" : "Subir thumbnail"}
-            style={{
-              background: uploading ? "rgba(15,25,35,0.4)" : "rgba(15,25,35,0.6)",
-              border: "none", borderRadius: "3px", color: "#EDE8DF", fontSize: "10px",
-              padding: "4px 8px", cursor: uploading ? "wait" : "pointer",
-              backdropFilter: "blur(4px)", letterSpacing: "0.03em", lineHeight: 1,
-              display: "flex", alignItems: "center", gap: "4px",
-            }}>
-            {uploading ? <span className="spinner" /> : (
-              <>
-                <svg width="9" height="9" viewBox="0 0 9 9" fill="none">
-                  <path d="M4.5 6.5V1M4.5 1L2 3.5M4.5 1L7 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M1 7.5h7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
-                {manualThumbnail ? "reemplazar" : "subir thumb"}
-              </>
+            {manualThumbnail && (
+              <button className="tile__action tile__action--danger" title="Quitar thumbnail"
+                onClick={async (e) => { e.stopPropagation(); await onRemoveThumbnail(); }}>
+                {IconX}
+              </button>
             )}
-          </button>
-        </div>
-
-        <input ref={fileInputRef} type="file" accept="image/*"
-          style={{ display: "none" }}
-          onClick={(e) => e.stopPropagation()}
-          onChange={handleFileChange}
-        />
-      </div>
-
-      {/* Meta */}
-      <div style={{ padding: "12px 14px 14px", borderTop: "1px solid #E2DDD6" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "10px", marginBottom: "6px" }}>
-          <span style={{ fontSize: "12px", fontWeight: 600, color: "#0F1923", letterSpacing: "-0.02em", lineHeight: 1.3, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {item.empresa}
-          </span>
-          <div style={{ display: "flex", gap: "5px", flexShrink: 0, alignItems: "center" }}>
-            <span style={{ fontSize: "9px", color: "#0F1923", opacity: 0.3, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>{item.tipo}</span>
-            {item.puestoPor !== "Ambos" && (<>
-              <span style={{ color: "#D8D0C6", fontSize: "9px" }}>·</span>
-              <span style={{ fontSize: "9px", color: "#A09890", letterSpacing: "0.04em" }}>{item.puestoPor}</span>
-            </>)}
-            {item.fecha && (<>
-              <span style={{ color: "#D8D0C6", fontSize: "9px" }}>·</span>
-              <span style={{ fontSize: "9px", color: "rgba(15,25,35,0.22)", fontFamily: "var(--font-mono)", letterSpacing: "0.02em" }}>{item.fecha}</span>
-            </>)}
+            <button
+              className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
+              title={designMdLoading ? "Generando DESIGN.md…" : designMdReady ? "Ver DESIGN.md" : "Generar DESIGN.md con IA (30-90 s)"}
+              onClick={(e) => { e.stopPropagation(); onDesignMd(); }}
+            >
+              {designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}
+            </button>
+            <button className="tile__action" title="Elegir de la librería"
+              onClick={(e) => { e.stopPropagation(); onPickFromLibrary(); }}>
+              {IconLibrary}
+            </button>
+            <button className="tile__action" title={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"}
+              onClick={triggerUpload}>
+              {uploading ? <span className="spinner" /> : IconUpload}
+            </button>
           </div>
+
+          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }}
+            onClick={(e) => e.stopPropagation()} onChange={handleFileChange} />
         </div>
+      </article>
 
-        {item.comentarios && (
-          <p style={{ fontSize: "11px", color: "#7A7570", lineHeight: 1.5, margin: 0, marginBottom: item.subcomentarios ? "6px" : "0" }}>
-            {item.comentarios}
-          </p>
-        )}
-
-        {item.subcomentarios && (
-          <p style={{ fontSize: "10px", color: "#A09890", lineHeight: 1.55, margin: 0, paddingLeft: "8px", borderLeft: "1px solid #D8D0C6", fontStyle: "italic" }}>
-            {item.subcomentarios}
-          </p>
-        )}
-
-        {domain && (
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "flex-end" }}>
-            <span style={{ fontSize: "9px", color: hovered ? "#0F1923" : "#C8C0B8", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", transition: "color 0.2s" }}>
-              {domain} ↗
-            </span>
-          </div>
-        )}
+      {/* Touch devices: caption under the tile since there is no hover */}
+      <div className="tile__caption">
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <span className="display tile__title">{item.empresa}</span>
+          {meta}
+          {aiChips}
+        </div>
+        <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>
       </div>
-    </article>
+    </div>
   );
 }

@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ShipStudio metadata
+.shipstudio/
+
+# Design references (local only)
+/refs/
+
+# Server-side hero screenshots (dev cache)
+/public/shots/
+
+# Working handoff files
+HANDOFF-*.md
+.data
+
+# DESIGN.md cache (dev)
+/public/design-md/

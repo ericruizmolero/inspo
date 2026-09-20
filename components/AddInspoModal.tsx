@@ -2,46 +2,28 @@
 
 import { useState, useEffect, useRef } from "react";
 import { InspoItem } from "@/types/inspo";
+import { Icons } from "./Sidebar";
 
 interface AddInspoModalProps {
   onClose: () => void;
   onAdd: (item: InspoItem) => void;
-  defaultAutor: "Eric" | "Andoni";
 }
 
 const TIPOS = ["Inspiración", "Videos", "Ideas", "Documentales"] as const;
-const AUTORES = ["Eric", "Andoni", "Ambos"] as const;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <label style={{ fontSize: "10px", color: "#A09890", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-        {label}
-      </label>
+    <div className="field">
+      <label className="field__label">{label}</label>
       {children}
     </div>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  background: "#EDE8DF",
-  border: "1px solid #D8D0C6",
-  borderRadius: "3px",
-  fontSize: "12px",
-  color: "#0F1923",
-  padding: "8px 10px",
-  outline: "none",
-  fontFamily: "inherit",
-  width: "100%",
-  boxSizing: "border-box",
-  transition: "border-color 0.15s",
-};
-
-export default function AddInspoModal({ onClose, onAdd, defaultAutor }: AddInspoModalProps) {
+export default function AddInspoModal({ onClose, onAdd }: AddInspoModalProps) {
   const [empresa, setEmpresa] = useState("");
   const [web, setWeb] = useState("");
   const [tipo, setTipo] = useState<InspoItem["tipo"]>("Inspiración");
-  const [puestoPor, setPuestoPor] = useState<InspoItem["puestoPor"]>(defaultAutor);
   const [comentarios, setComentarios] = useState("");
   const [subcomentarios, setSubcomentarios] = useState("");
   const [loading, setLoading] = useState(false);
@@ -68,7 +50,10 @@ export default function AddInspoModal({ onClose, onAdd, defaultAutor }: AddInspo
       const res = await fetch("/api/inspo/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ empresa: empresa.trim(), web: web.trim(), tipo, puestoPor, comentarios: comentarios.trim(), subcomentarios: subcomentarios.trim() }),
+        body: JSON.stringify({
+          empresa: empresa.trim(), web: web.trim(), tipo,
+          comentarios: comentarios.trim(), subcomentarios: subcomentarios.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Error desconocido"); return; }
@@ -82,140 +67,44 @@ export default function AddInspoModal({ onClose, onAdd, defaultAutor }: AddInspo
   };
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(15,25,35,0.25)",
-        backdropFilter: "blur(4px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          background: "#F5F1EB",
-          borderRadius: "6px",
-          width: "100%",
-          maxWidth: "480px",
-          boxShadow: "0 8px 40px rgba(15,25,35,0.15)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #E2DDD6" }}>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "#0F1923", letterSpacing: "-0.01em" }}>
-            Nueva inspo
-          </span>
-          <button
-            onClick={onClose}
-            style={{ background: "none", border: "none", cursor: "pointer", color: "#A09890", fontSize: "18px", lineHeight: 1, padding: "2px" }}
-          >
-            ×
-          </button>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal__header">
+          <span className="display modal__title">Nueva inspo</span>
+          <button className="btn-icon" onClick={onClose} aria-label="Cerrar">{Icons.x}</button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <form onSubmit={handleSubmit} className="modal__body">
+          <div className="grid-2">
             <Field label="Empresa / Proyecto">
-              <input
-                ref={firstRef}
-                value={empresa}
-                onChange={(e) => setEmpresa(e.target.value)}
-                placeholder="Nombre"
-                required
-                style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#A09890")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D8D0C6")}
-              />
+              <input ref={firstRef} className="input" value={empresa} onChange={(e) => setEmpresa(e.target.value)} placeholder="Nombre" required />
             </Field>
             <Field label="URL">
-              <input
-                value={web}
-                onChange={(e) => setWeb(e.target.value)}
-                placeholder="https://..."
-                required
-                style={inputStyle}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "#A09890")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "#D8D0C6")}
-              />
+              <input className="input" value={web} onChange={(e) => setWeb(e.target.value)} placeholder="https://" required />
             </Field>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-            <Field label="Tipo">
-              <select
-                value={tipo}
-                onChange={(e) => setTipo(e.target.value as InspoItem["tipo"])}
-                style={{ ...inputStyle, cursor: "pointer" }}
-              >
-                {TIPOS.map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </Field>
-            <Field label="Puesto por">
-              <select
-                value={puestoPor}
-                onChange={(e) => setPuestoPor(e.target.value as InspoItem["puestoPor"])}
-                style={{ ...inputStyle, cursor: "pointer" }}
-              >
-                {AUTORES.map((a) => <option key={a}>{a}</option>)}
-              </select>
-            </Field>
-          </div>
+          <Field label="Colección">
+            <select className="input" value={tipo} onChange={(e) => setTipo(e.target.value as InspoItem["tipo"])}>
+              {TIPOS.map((t) => <option key={t}>{t}</option>)}
+            </select>
+          </Field>
 
           <Field label="Comentarios">
-            <textarea
-              value={comentarios}
-              onChange={(e) => setComentarios(e.target.value)}
-              placeholder="¿Qué te ha gustado?"
-              rows={2}
-              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#A09890")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#D8D0C6")}
-            />
+            <textarea className="input" value={comentarios} onChange={(e) => setComentarios(e.target.value)} placeholder="¿Qué te ha gustado?" rows={2} />
           </Field>
 
           <Field label="Subcomentarios (opcional)">
-            <textarea
-              value={subcomentarios}
-              onChange={(e) => setSubcomentarios(e.target.value)}
-              placeholder="Detalle adicional..."
-              rows={2}
-              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5 }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "#A09890")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "#D8D0C6")}
-            />
+            <textarea className="input" value={subcomentarios} onChange={(e) => setSubcomentarios(e.target.value)} placeholder="Detalle adicional" rows={2} />
           </Field>
 
-          {error && (
-            <p style={{ fontSize: "11px", color: "#C0392B", margin: 0 }}>{error}</p>
-          )}
+          {error && <p className="modal__error">{error}</p>}
 
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", paddingTop: "4px" }}>
-            <button
-              type="button"
-              onClick={onClose}
-              style={{ background: "none", border: "1px solid #D8D0C6", borderRadius: "3px", padding: "8px 16px", fontSize: "12px", color: "#8A8580", cursor: "pointer", fontFamily: "inherit" }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !empresa.trim() || !web.trim()}
-              style={{
-                background: loading ? "#A09890" : "#0F1923",
-                border: "none", borderRadius: "3px",
-                padding: "8px 20px", fontSize: "12px",
-                color: "#EDE8DF", cursor: loading ? "wait" : "pointer",
-                fontFamily: "inherit", fontWeight: 500,
-                display: "flex", alignItems: "center", gap: "8px",
-                transition: "background 0.15s",
-              }}
-            >
-              {loading && <span className="spinner" style={{ borderColor: "rgba(237,232,223,0.3)", borderTopColor: "#EDE8DF" }} />}
-              {loading ? "Añadiendo…" : "Añadir"}
+          <div className="modal__footer">
+            <button type="button" className="btn btn--ghost" onClick={onClose}>Cancelar</button>
+            <button type="submit" className="btn btn--primary" disabled={loading || !empresa.trim() || !web.trim()}>
+              {loading && <span className="spinner" style={{ borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} />}
+              {loading ? "Añadiendo" : "Añadir"}
             </button>
           </div>
         </form>

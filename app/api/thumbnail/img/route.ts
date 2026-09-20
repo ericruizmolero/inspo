@@ -1,28 +1,30 @@
 import { NextRequest } from "next/server";
+import { requireCtx, isResponse } from "@/lib/workspace";
+import { ownsThumbnail } from "@/lib/items";
+import { blobPrefix } from "@/lib/thumbnails";
 
 export const runtime = "nodejs";
 
+// Proxy de blobs privados: solo imágenes del workspace activo
 export async function GET(req: NextRequest) {
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
   const blobUrl = req.nextUrl.searchParams.get("url");
   if (!blobUrl) return new Response("missing url", { status: 400 });
 
+  const inLibrary = blobUrl.includes(`/${blobPrefix(ctx.workspace.id)}`);
+  if (!inLibrary && !(await ownsThumbnail(ctx.workspace.id, blobUrl))) {
+    return new Response("forbidden", { status: 403 });
+  }
+
   try {
-    // Fetch private blob with Bearer token (getDownloadUrl unreliable in v2.x)
-    const res = await fetch(blobUrl, {
-      headers: {
-        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
-      },
-    });
-
+    const res = await fetch(blobUrl, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
     if (!res.ok) return new Response("blob fetch failed", { status: 502 });
-
     const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") || "image/jpeg";
-
     return new Response(buffer, {
       headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400",
+        "Content-Type": res.headers.get("content-type") || "image/jpeg",
+        "Cache-Control": "private, max-age=86400",
       },
     });
   } catch (e) {
