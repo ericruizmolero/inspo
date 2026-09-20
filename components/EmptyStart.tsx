@@ -19,6 +19,24 @@ function Thumb({ name, url }: { name: string; url: string }) {
   );
 }
 
+const IcTag = (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 2.75h5.4c.33 0 .65.13.88.37l5.35 5.35a1.25 1.25 0 0 1 0 1.76l-3.4 3.4a1.25 1.25 0 0 1-1.76 0L3.12 8.28A1.25 1.25 0 0 1 2.75 7.4V2.75z" />
+    <circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+const IcMd = <span className={s.md}>MD</span>;
+
+// Cómo funciona la app, en el orden en que alguien la usa por primera vez.
+const STEPS = [
+  { icon: Icons.plus, title: "Guarda una web", text: "Pega la URL y ponle nombre. La captura se hace sola y la card aparece en el lienzo." },
+  { icon: IcTag, title: "Se etiqueta sola", text: "Sector, estilo y tags los pone la IA al guardar. Los filtros del lateral se van llenando sin que hagas nada." },
+  { icon: Icons.search, title: "Busca describiendo", text: "Escribe «landing oscura con mucho tipo» y la búsqueda ordena por afinidad y te dice por qué encaja cada una." },
+  { icon: Icons.all, title: "Colecciones", text: "Inspiración, vídeos, ideas y documentales. Cada cosa en su sitio, con filtros por sector, estilo y fecha." },
+  { icon: IcMd, title: "Saca su DESIGN.md", text: "El botón MD de cada card extrae el sistema de diseño de esa web: colores, tipografía, componentes y un prompt listo para Claude o Cursor." },
+  { icon: Icons.users, title: "En equipo", text: "Crea un equipo e invita por correo. Cada uno guarda con su nombre y puedes filtrar por quién lo trajo." },
+];
+
 interface EmptyStartProps {
   onAdd: () => void;
   onRecursos: () => void;
@@ -37,6 +55,23 @@ export default function EmptyStart({ onAdd, onRecursos }: EmptyStartProps) {
           <button className="btn btn--primary" onClick={onAdd}>{Icons.plus}<span>Guardar la primera inspo</span></button>
           <button className="btn btn--ghost" onClick={onRecursos}>{Icons.compass}<span>Abrir el directorio</span></button>
         </div>
+      </div>
+
+      <div className={s.section}>
+        <div className={s.eyebrow}>
+          <span>Cómo funciona</span>
+        </div>
+        <ol className={s.steps}>
+          {STEPS.map((st) => (
+            <li key={st.title} className={s.step}>
+              <span className={s.stepHead}>
+                <span className={s.stepIcon}>{st.icon}</span>
+              </span>
+              <span className={s.stepTitle}>{st.title}</span>
+              <span className={s.stepText}>{st.text}</span>
+            </li>
+          ))}
+        </ol>
       </div>
 
       <div className={s.section}>

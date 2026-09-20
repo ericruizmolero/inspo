@@ -44,6 +44,8 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
   const photoRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const canManage = workspace.role === "owner" || workspace.role === "admin";
+  const [renaming, setRenaming] = useState(false);
+  const [newName, setNewName] = useState(workspace.name);
 
   useEffect(() => {
     if (!open) return;
@@ -59,6 +61,18 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
     setBusy(true);
     await authClient.organization.setActive({ organizationId: id });
     setOpen(false); setBusy(false);
+    router.refresh();
+  };
+
+  const rename = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name || name === workspace.name) { setRenaming(false); return; }
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.update({ organizationId: workspace.id, data: { name } });
+    setBusy(false);
+    if (err) { setError(err.message ?? "No se pudo cambiar el nombre"); return; }
+    setRenaming(false); setOpen(false);
     router.refresh();
   };
 
@@ -142,6 +156,26 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
             </button>
           ))}
           <div className="ws__divider" />
+          {canManage && workspace.kind === "team" && (
+            renaming ? (
+              <form onSubmit={rename} style={{ display: "flex", gap: 6, padding: "4px 2px" }}>
+                <input
+                  className="input"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Nombre del equipo"
+                  aria-label="Nombre del equipo"
+                  autoFocus
+                  maxLength={60}
+                  style={{ flex: 1, height: 32, fontSize: 13 }}
+                  onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(false); setNewName(workspace.name); } }}
+                />
+                <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Guardar</button>
+              </form>
+            ) : (
+              <button className="ws__item" onClick={() => { setNewName(workspace.name); setRenaming(true); }} disabled={busy}>Cambiar nombre del equipo</button>
+            )
+          )}
           {canManage && (
             <>
               <button className="ws__item" onClick={() => fileRef.current?.click()} disabled={busy}>
