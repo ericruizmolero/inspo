@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
+import ThemeSwitch from "./ThemeSwitch";
 
 /** Avatar del workspace: logo si lo tiene, si no la inicial del nombre */
 export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean }) {
@@ -277,6 +278,9 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
           {!renamingMe && <div className="ws__me-email" title={user.email}>{user.email}</div>}
           <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPhotoFile} />
           {error && <div className="ws__empty">{error}</div>}
+          <div className="ws__theme">
+            <ThemeSwitch />
+          </div>
           <button className="ws__item ws__item--muted" onClick={logout}>
             <span className="ws__item-name">Salir</span>
           </button>

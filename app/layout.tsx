@@ -1,4 +1,5 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { klimDisplay, klimBody, schibsted } from "./fonts";
 import "./globals.css";
 import { Agentation } from "agentation";
@@ -27,6 +28,14 @@ export const metadata: Metadata = {
   },
 };
 
+// Color de la barra del navegador según el tema del sistema (el mismo que --bg en cada tema)
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d0d0d" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,7 +45,12 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${klimDisplay.variable} ${klimBody.variable} ${schibsted.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Pone data-theme antes del primer pintado para que no parpadee al cargar */}
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+      </head>
       <body>
         {children}
         {process.env.NODE_ENV === "development" && (

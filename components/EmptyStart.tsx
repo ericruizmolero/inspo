@@ -105,7 +105,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
             aria-label="URL de la primera inspo"
           />
           <button type="submit" className="btn btn--primary" disabled={busy || !raw.trim()}>
-            {busy ? <span className="spinner" style={{ borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} /> : Icons.plus}
+            {busy ? <span className="spinner" /> : Icons.plus}
             <span>{busy ? "Guardando" : "Guardar"}</span>
           </button>
         </form>

@@ -81,7 +81,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
       {error && <p className="modal__error">{error}</p>}
       <button className="btn btn--primary btn--block auth__submit" type="submit" disabled={loading || !email.trim()}>
         {loading
-          ? <><span className="spinner" style={{ borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} /> Enviando</>
+          ? <><span className="spinner" /> Enviando</>
           : <>Enviar enlace {IcArrow}</>}
       </button>
       {devEmail && (
