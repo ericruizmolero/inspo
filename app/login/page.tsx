@@ -6,7 +6,7 @@ import { showcaseEntries, showcaseSrc } from "@/lib/showcase";
 import LoginForm from "@/components/LoginForm";
 import { DEV_LOGIN_EMAIL } from "@/lib/auth";
 
-export const metadata: Metadata = { title: "Entrar — Inspo" };
+export const metadata: Metadata = { title: "Entrar" };
 export const dynamic = "force-dynamic";
 
 const IcBack = (

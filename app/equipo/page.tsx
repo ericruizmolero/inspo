@@ -7,7 +7,7 @@ import { and, eq } from "drizzle-orm";
 import TeamPanel from "./TeamPanel";
 import { usageSummary } from "@/lib/usage";
 
-export const metadata: Metadata = { title: "Equipo — Inspo" };
+export const metadata: Metadata = { title: "Equipo" };
 export const dynamic = "force-dynamic";
 
 export default async function EquipoPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {

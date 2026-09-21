@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/shot": CHROMIUM_BIN,
     "/api/design-md": CHROMIUM_BIN,
+    // Tarjeta de compartir: lee las fuentes TTF con readFile, que el trazado no ve
+    "/opengraph-image": ["./app/fonts/*.ttf"],
+    "/twitter-image": ["./app/fonts/*.ttf"],
   },
 };
 

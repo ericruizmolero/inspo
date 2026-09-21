@@ -186,6 +186,7 @@ export const RECURSOS: RecursoGrupo[] = [
       { name: "Aura", url: "https://www.aura.build", desc: "Constructor de UI con IA que parte de un estilo definido, no de un prompt en blanco." },
       { name: "Agentation", url: "https://agentation.com", desc: "Extensión para señalar elementos de la web y mandar el feedback directo al agente." },
       { name: "Claude Code", url: "https://claude.com/claude-code", desc: "El agente de Anthropic en la terminal, el que construye inspo." },
+      { name: "Codex (OpenAI)", url: "https://chatgpt.com/codex", desc: "El agente de programación de OpenAI: terminal, app de escritorio y nube, con varios agentes trabajando en paralelo." },
       { name: "Cursor", url: "https://cursor.com", desc: "Editor con agentes integrados, el estándar para programar con IA." },
       { name: "v0", url: "https://v0.app", desc: "De Vercel: genera interfaces React con Tailwind y shadcn a partir de texto o capturas." },
       { name: "Lovable", url: "https://lovable.dev", desc: "Apps completas desde el chat, con backend y despliegue incluidos." },
@@ -217,6 +218,8 @@ export const RECURSOS: RecursoGrupo[] = [
     items: [
       { name: "Muse (Meta)", url: "https://muse.ai", desc: "El agente personal de Meta: navega, rellena formularios, reserva y paga, y sigue trabajando con la app cerrada." },
       { name: "Instinct", url: "https://instinct.co", desc: "Asistente personal al que escribes o llamas; usa el móvil y el ordenador como una persona. Con invitación." },
+      { name: "OpenClaw", url: "https://openclaw.ai", desc: "Agente personal open source que corre en tu propia máquina y te responde desde WhatsApp, Telegram, Slack o iMessage. MIT, sin versión de pago." },
+      { name: "Hermes Agent (Nous Research)", url: "https://hermes-agent.nousresearch.com", desc: "Agente open source con memoria persistente que se crea sus propias skills y aprende de cada sesión. También en la nube, siempre encendido." },
     ],
   },
   {

@@ -6,7 +6,7 @@ import { db, schema } from "@/lib/db";
 import { getSession } from "@/lib/workspace";
 import AcceptInvitation from "./AcceptInvitation";
 
-export const metadata: Metadata = { title: "Invitación — Inspo" };
+export const metadata: Metadata = { title: "Invitación" };
 export const dynamic = "force-dynamic";
 
 export default async function InvitacionPage({ params }: { params: Promise<{ id: string }> }) {

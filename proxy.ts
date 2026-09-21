@@ -26,5 +26,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // recursos/: miniaturas estáticas del directorio, que se ve también sin sesión desde la portada
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon0.svg|icon1.png|apple-icon.png|icon-512.png|thumbs/|design-md/|shots/|fonts/|recursos/).*)"],
+  // opengraph-image y twitter-image: la tarjeta de compartir la piden WhatsApp y compañía sin sesión
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon0.svg|icon1.png|apple-icon.png|icon-512.png|opengraph-image|twitter-image|thumbs/|design-md/|shots/|fonts/|recursos/).*)"],
 };

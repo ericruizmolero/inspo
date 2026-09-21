@@ -5,7 +5,7 @@ import { getCtx, HttpError } from "@/lib/workspace";
 import { quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT } from "@/lib/plans";
 
-export const metadata: Metadata = { title: "Planes — Inspo" };
+export const metadata: Metadata = { title: "Planes" };
 export const dynamic = "force-dynamic";
 
 const IcCheck = (
