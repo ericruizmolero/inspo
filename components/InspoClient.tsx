@@ -65,6 +65,12 @@ function normalize(s: string) {
 // Al guardar una web nueva se lanza la experiencia completa (captura, etiquetas y
 // DESIGN.md). Vídeos y redes no tienen sistema de diseño que extraer.
 const NO_DESIGN_MD = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "tiktok.com", "primevideo.com", "netflix.com"];
+interface RunDesignMdOpts {
+  force?: boolean;         // regenerar aunque exista (cuesta dinero, solo admins)
+  quiet?: boolean;         // se espera caché: el toast solo sale si tarda
+  openWhenReady?: boolean; // abrir la ficha sola al terminar
+}
+
 function canAutoDesignMd(web: string): boolean {
   try {
     const host = new URL(web).hostname.replace(/^www\./, "");
@@ -277,7 +283,7 @@ export default function InspoClient({
     const key = webKeyOf(web);
     return items.some((i) => webKeyOf(i.web) === key);
   }, [items]);
-  const runDesignMdRef = useRef<(item: InspoItem) => void>(() => {});
+  const runDesignMdRef = useRef<(item: InspoItem, opts?: RunDesignMdOpts) => void>(() => {});
   const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
     const d = new Date();
     const temp: InspoItem = {
@@ -328,7 +334,7 @@ export default function InspoClient({
     if (done === web || !/^https?:\/\//.test(web) || isDuplicate(web)) return;
     try { sessionStorage.setItem(DONE_KEY, web); } catch { /* sin storage */ }
     addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" }).then((item) => {
-      if (item) { setDesignMdItem(item); runDesignMdRef.current(item); }
+      if (item) runDesignMdRef.current(item, { openWhenReady: true });
     });
     // solo al montar: la URL de la barra no cambia después
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -410,27 +416,55 @@ export default function InspoClient({
 
 
   // ─── DESIGN.md ────────────────────────────────────────────────────────────
-  // La generación vive aquí, no en el modal: cerrar el modal no la cancela y
-  // el toast avisa cuando termina.
+  // La generación vive aquí, no en el modal. La ficha solo se abre cuando el
+  // DESIGN.md existe; mientras se genera, todo pasa en el toast de abajo a la
+  // derecha (progreso, Parar, Listo). No hay pantalla intermedia de carga.
   const patchJob = (url: string, patch: Partial<DesignMdState>) =>
     setDesignMdJobs((prev) => ({ ...prev, [url]: { ...prev[url], ...patch } }));
+  const dropJob = (url: string) =>
+    setDesignMdJobs((prev) => { const next = { ...prev }; delete next[url]; return next; });
 
-  const runDesignMd = async (item: InspoItem, force = false) => {
+  // Una petición en vuelo por URL: parar = abortar el fetch (el servidor cierra Chromium
+  // y corta a Claude al perder al último cliente) y avisar también con DELETE por si acaso.
+  const designMdCtrls = useRef(new Map<string, AbortController>());
+  const designMdItemRef = useRef<InspoItem | null>(null);
+
+  const runDesignMd = async (item: InspoItem, opts: RunDesignMdOpts = {}) => {
     const url = item.web;
+    designMdCtrls.current.get(url)?.abort();
+    const ctrl = new AbortController();
+    designMdCtrls.current.set(url, ctrl);
     setDesignMdJobs((prev) => ({
       ...prev,
-      [url]: { status: "loading", empresa: item.empresa, startedAt: Date.now(), seen: false },
+      [url]: { status: "loading", empresa: item.empresa, startedAt: Date.now(), seen: false, quiet: opts.quiet, openWhenReady: opts.openWhenReady },
     }));
     try {
-      const res = await fetch(`/api/design-md?url=${encodeURIComponent(url)}${force ? "&force=1" : ""}`);
+      const res = await fetch(`/api/design-md?url=${encodeURIComponent(url)}${opts.force ? "&force=1" : ""}`, { signal: ctrl.signal });
       const body = await res.json().catch(() => ({}));
+      if (ctrl.signal.aborted) return false;
       if (!res.ok) throw new Error(body.error ?? `Error ${res.status}`);
       patchJob(url, { status: "ready", entry: body, error: undefined });
       setDesignMdIndex((prev) => ({ ...prev, [url]: { coverUrl: body.coverUrl, scrollUrl: body.scrollUrl } }));
       if (!body.cached) loadQuota();
+      // Abrir sola solo si no hay otra ficha delante; si la hay, queda el toast "Listo"
+      if (opts.openWhenReady && !designMdItemRef.current) setDesignMdItem(item);
+      return true;
     } catch (e) {
+      if (ctrl.signal.aborted) return false; // parada por el usuario: el job ya se ha retirado
       patchJob(url, { status: "error", error: e instanceof Error ? e.message : String(e) });
+      return false;
+    } finally {
+      if (designMdCtrls.current.get(url) === ctrl) designMdCtrls.current.delete(url);
     }
+  };
+
+  const cancelDesignMd = (url: string) => {
+    const ctrl = designMdCtrls.current.get(url);
+    if (!ctrl) return;
+    ctrl.abort();
+    designMdCtrls.current.delete(url);
+    dropJob(url);
+    fetch(`/api/design-md?url=${encodeURIComponent(url)}`, { method: "DELETE", keepalive: true }).catch(() => {});
   };
 
   useEffect(() => {
@@ -447,9 +481,8 @@ export default function InspoClient({
     if (job?.status === "ready") { setDesignMdItem(item); return; }
     if (job?.status === "loading") return; // ya está en marcha, el toast lo muestra
     if (item.web in designMdIndex) {
-      // Existe en el servidor: abrir y cargar (respuesta casi inmediata desde caché)
-      setDesignMdItem(item);
-      runDesignMd(item);
+      // Existe en el servidor: se trae de caché (casi inmediato) y se abre al llegar
+      runDesignMd(item, { quiet: true, openWhenReady: true });
       return;
     }
     runDesignMd(item);
@@ -459,9 +492,18 @@ export default function InspoClient({
     const item = items.find((i) => i.web === url);
     if (item) openDesignMd(item);
   };
+  const retryDesignMdByUrl = (url: string) => {
+    const item = items.find((i) => i.web === url);
+    if (item) runDesignMd(item, { openWhenReady: true });
+  };
 
-  // Regenerar cuesta dinero: el servidor solo lo permite a administradores del workspace
-  const regenerateDesignMd = (item: InspoItem) => runDesignMd(item, true);
+  // Regenerar cuesta dinero: el servidor solo lo permite a administradores del workspace.
+  // Se cierra la ficha y el toast lleva el proceso; al acabar, la ficha nueva se abre sola.
+  const regenerateDesignMd = (item: InspoItem) => {
+    setDesignMdItem(null);
+    runDesignMd(item, { force: true, openWhenReady: true });
+  };
+  designMdItemRef.current = designMdItem;
 
   // Lo que se muestra en el modal cuenta como visto
   useEffect(() => {
@@ -671,7 +713,6 @@ export default function InspoClient({
           empresa={designMdItem.empresa}
           state={designMdJobs[designMdItem.web]}
           onClose={() => setDesignMdItem(null)}
-          onRetry={() => runDesignMd(designMdItem)}
           onRegenerate={() => regenerateDesignMd(designMdItem)}
           onRevised={(patch) => patchJob(designMdItem.web, { entry: { ...designMdJobs[designMdItem.web]?.entry!, ...patch } })}
         />
@@ -681,6 +722,8 @@ export default function InspoClient({
         openUrl={designMdItem?.web ?? null}
         onOpen={openDesignMdByUrl}
         onDismiss={(url) => patchJob(url, { seen: true })}
+        onCancel={cancelDesignMd}
+        onRetry={retryDesignMdByUrl}
       />
       {addError && (
         <div className="toasts toasts--top" role="alert">
@@ -796,7 +839,7 @@ export default function InspoClient({
             onAddUrl={async (web) => {
               // Primera inspo: se guarda y se abre su DESIGN.md directamente, para que se vea qué hace la app
               const item = await addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" });
-              if (item) { setDesignMdItem(item); runDesignMd(item); }
+              if (item) runDesignMd(item, { openWhenReady: true });
             }}
             isDuplicate={isDuplicate}
             onRecursos={() => setShowRecursos(true)}

@@ -31,7 +31,7 @@ export interface GenerateResult {
   usage: { input: number; output: number; cacheRead: number };
 }
 
-export async function generateDesignMd(tokens: DesignTokens, screenshot: Buffer): Promise<GenerateResult> {
+export async function generateDesignMd(tokens: DesignTokens, screenshot: Buffer, signal?: AbortSignal): Promise<GenerateResult> {
   const client = new Anthropic();
   const date = new Date().toISOString().slice(0, 10);
 
@@ -58,7 +58,7 @@ export async function generateDesignMd(tokens: DesignTokens, screenshot: Buffer)
         ],
       },
     ],
-  });
+  }, { signal });
 
   // El SDK intenta parsear el JSON en finalMessage() aunque el stop_reason no sea end_turn,
   // así que capturamos stop_reason y el texto por el camino para dar un error útil si se corta.
@@ -73,6 +73,7 @@ export async function generateDesignMd(tokens: DesignTokens, screenshot: Buffer)
   try {
     msg = await stream.finalMessage();
   } catch (err) {
+    if (signal?.aborted) throw err; // parada del usuario: no es una respuesta rota
     const why = err instanceof Error ? err.message : String(err);
     console.error(`design-md: respuesta no parseable (stop_reason=${stopReason}, ${raw.length} chars). Cola: …${raw.slice(-200)}`);
     throw new Error(`Claude devolvió una respuesta incompleta (stop_reason=${stopReason ?? "desconocido"}): ${why}`);

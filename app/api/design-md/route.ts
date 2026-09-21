@@ -12,8 +12,26 @@ import { HttpError } from "@/lib/workspace-core";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// Una generación por URL a la vez (evita dobles clics / pestañas duplicadas)
-const inflight = new Map<string, Promise<Response>>();
+// Una generación por URL a la vez (evita dobles clics / pestañas duplicadas).
+// Cada una lleva su AbortController: se para con DELETE ?url=… o cuando el último
+// cliente que la esperaba cierra la conexión (cerrar pestaña, "Parar" en el toast).
+interface Job { promise: Promise<Response>; ctrl: AbortController; waiters: number }
+const inflight = new Map<string, Job>();
+
+function CANCELLED() {
+  return Response.json({ error: "Generación parada", cancelled: true }, { status: 499 });
+}
+
+// Cuenta un cliente más esperando el resultado; si todos se van, se aborta el trabajo.
+function attach(job: Job, req: NextRequest): Promise<Response> {
+  job.waiters++;
+  const leave = () => { if (--job.waiters <= 0) job.ctrl.abort(); };
+  req.signal.addEventListener("abort", leave, { once: true });
+  return job.promise.then((res) => {
+    req.signal.removeEventListener("abort", leave);
+    return res.clone();
+  });
+}
 
 function normalizeUrl(raw: string): string | null {
   try {
@@ -63,19 +81,21 @@ export async function GET(req: NextRequest) {
   }
 
   const existing = inflight.get(url);
-  if (existing) return (await existing).clone();
+  if (existing) return attach(existing, req);
 
   // Cuota mensual del plan: solo cuenta lo que se genera de verdad (la caché es gratis)
   try { await assertQuota(ctx.workspace, "design_md"); }
   catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
 
-  const job = (async () => {
+  const ctrl = new AbortController();
+  const promise = (async () => {
     try {
       const t0 = Date.now();
-      const { tokens, screenshot, fullShot, cover, scroll } = await extractDesign(url);
+      const { tokens, screenshot, fullShot, cover, scroll } = await extractDesign(url, ctrl.signal);
       const t1 = Date.now();
-      const { spec, markdown, model, usage } = await generateDesignMd(tokens, screenshot);
+      const { spec, markdown, model, usage } = await generateDesignMd(tokens, screenshot, ctrl.signal);
       const t2 = Date.now();
+      ctrl.signal.throwIfAborted();
 
       const entry = await saveDesignMd(
         { url, markdown, spec, generatedAt: new Date().toISOString(), model },
@@ -96,6 +116,10 @@ export async function GET(req: NextRequest) {
       }
       return Response.json({ ...entry, revisions, cached: false });
     } catch (err) {
+      if (ctrl.signal.aborted) {
+        console.log(`design-md ${url}: parado por el usuario`);
+        return CANCELLED();
+      }
       const msg = err instanceof Error ? err.message : String(err);
       console.error("design-md error:", url, msg);
       return Response.json({ error: msg }, { status: 500 });
@@ -104,6 +128,18 @@ export async function GET(req: NextRequest) {
     }
   })();
 
+  const job: Job = { promise, ctrl, waiters: 0 };
   inflight.set(url, job);
-  return job;
+  return attach(job, req);
+}
+
+// DELETE ?url=… → para la generación en marcha de esa URL (si la hay en esta instancia)
+export async function DELETE(req: NextRequest) {
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
+  const url = normalizeUrl(req.nextUrl.searchParams.get("url") ?? "");
+  if (!url) return Response.json({ error: "url inválida" }, { status: 400 });
+  const job = inflight.get(url);
+  if (job) job.ctrl.abort();
+  return Response.json({ stopped: !!job });
 }

@@ -606,73 +606,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .dm-tabs + .dm-bar__actions { margin-left: 0; }
 .dm-body { flex: 1; min-height: 0; overflow-y: auto; }
 
-/* Progreso / error */
-.dm-progress { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; padding: 40px 32px; overflow: hidden; }
-.dm-progress__glow {
-  position: absolute; left: 50%; top: 50%; width: 900px; height: 600px; transform: translate(-50%, -50%);
-  background: radial-gradient(closest-side, rgba(255,255,255,0.05), transparent 70%);
-  pointer-events: none;
-}
-.dm-progress__stage {
-  position: relative; width: 100%; max-width: 980px;
-  display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr); gap: 56px; align-items: center;
-  animation: pop-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.dm-progress__visual { min-width: 0; }
-.dm-frame--dark { background: var(--surface); border-color: var(--border-strong); box-shadow: 0 40px 100px -30px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.03) inset; }
-.dm-frame--dark .dm-frame__bar { align-items: center; background: var(--panel); border-bottom-color: var(--border); }
-.dm-frame--dark .dm-frame__bar span { background: var(--border-strong); }
-.dm-frame__bar em { margin-left: 8px; font-style: normal; font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); }
-.dm-reader { position: relative; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; background: var(--surface); }
-.dm-reader img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity 0.5s; }
-.dm-reader.is-loaded img { opacity: 1; }
-.dm-reader__blank {
-  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-  color: var(--muted); font-family: var(--font-mono); font-size: 11px;
-}
-.dm-reader__blank .display { font-size: 72px; line-height: 1; color: var(--text-2); }
-.dm-reader__beam {
-  position: absolute; left: 0; right: 0; height: 38%; top: -40%;
-  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.10) 55%, rgba(255,255,255,0.28) 99%, transparent 100%);
-  animation: dm-beam 3.2s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-  mix-blend-mode: screen; pointer-events: none;
-}
-@keyframes dm-beam { 0% { top: -40%; } 100% { top: 110%; } }
-
-.dm-progress__text { display: flex; flex-direction: column; min-width: 0; }
-.dm-progress__eyebrow { display: flex; align-items: center; gap: 10px; font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-.dm-progress__eyebrow .spinner { width: 12px; height: 12px; border-width: 1.5px; }
-.dm-progress__time { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; }
-.dm-progress__title { font-size: 34px; line-height: 1.08; letter-spacing: -0.02em; margin: 14px 0 0; color: var(--text); overflow-wrap: anywhere; }
-.dm-progress__url { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 8px; }
-.dm-progress__bar { position: relative; height: 2px; margin: 26px 0 22px; background: var(--border); border-radius: 2px; overflow: hidden; }
-.dm-progress__bar span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--text); border-radius: 2px; transition: width 1s linear; }
-.dm-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.dm-step { display: flex; align-items: center; gap: 12px; padding: 6px 0; font-size: 13.5px; color: var(--muted-2); transition: color 0.25s; }
-.dm-step.is-done { color: var(--muted); }
-.dm-step.is-current { color: var(--text); }
-.dm-step__mark {
-  width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border-strong); color: var(--text-2); transition: background 0.25s, border-color 0.25s;
-}
-.dm-step.is-done .dm-step__mark { background: var(--surface-2); border-color: transparent; }
-.dm-step.is-current .dm-step__mark { border-color: var(--text); box-shadow: 0 0 0 3px rgba(255,255,255,0.08); animation: dm-pulse 1.4s ease-in-out infinite; }
-@keyframes dm-pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(255,255,255,0.08); } 50% { box-shadow: 0 0 0 5px rgba(255,255,255,0.03); } }
-.dm-progress__hint { font-size: 12px; line-height: 1.5; color: var(--muted); margin: 22px 0 0; max-width: 360px; }
-.dm-progress__card {
-  position: relative; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 14px;
-  padding: 22px 24px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-l);
-  animation: pop-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.dm-progress__card .dm-progress__title { font-size: 20px; margin: 0; }
-.dm-progress__card .dm-progress__hint { margin: 0; }
-@media (max-width: 860px) {
-  .dm-progress { padding: 24px 16px; align-items: flex-start; overflow-y: auto; }
-  .dm-progress__stage { grid-template-columns: 1fr; gap: 28px; max-width: 520px; }
-  .dm-progress__title { font-size: 28px; }
-}
-
 /* Ficha */
 .dm-spec { max-width: 1160px; margin: 0 auto; padding: 48px 40px 120px; }
 .dm-section { padding: 40px 0 0; margin-top: 40px; border-top: 1px solid var(--border); }
@@ -888,7 +821,38 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .toast__step { font-family: var(--font-mono); font-size: 10px; color: var(--muted-2); margin-right: 6px; }
 .toast__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--surface-3); }
 .toast__bar span { display: block; height: 100%; background: var(--text-2); transition: width 1s linear; }
-@media (max-width: 640px) { .toasts { right: 16px; left: 16px; bottom: 16px; width: auto; } }
+
+/* Toast enriquecido mientras se genera: miniatura de la web, paso, tiempo y Parar */
+.toasts:has(.toast--rich) { width: 380px; }
+.toast--rich { align-items: center; gap: 12px; padding: 10px 10px 12px 10px; cursor: default; }
+.toast--rich:hover { background: var(--surface); }
+.toast__thumb {
+  position: relative; flex-shrink: 0; width: 64px; height: 44px; border-radius: 6px; overflow: hidden;
+  background: var(--surface-2); border: 1px solid var(--border);
+}
+.toast__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity 0.4s; }
+.toast__thumb.is-loaded img { opacity: 1; }
+.toast__thumb-blank { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-display); font-size: 20px; color: var(--text-2); }
+.toast__beam {
+  position: absolute; left: 0; right: 0; height: 45%; top: -50%;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.32) 99%, transparent 100%);
+  animation: toast-beam 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite; mix-blend-mode: screen; pointer-events: none;
+}
+@keyframes toast-beam { 0% { top: -50%; } 100% { top: 110%; } }
+.toast__sub--step { display: flex; align-items: center; gap: 6px; margin-top: 3px; color: var(--text-2); }
+.toast__sub--step .spinner { width: 10px; height: 10px; border-width: 1.5px; }
+.toast__sub--step .toast__step { margin-right: 0; }
+.toast__steplabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.toast__time { margin-left: auto; padding-left: 6px; font-family: var(--font-mono); font-size: 10px; color: var(--muted-2); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.toast__dots { display: flex; gap: 4px; margin-top: 7px; }
+.toast__dots i { width: 14px; height: 3px; border-radius: 2px; background: var(--surface-3); transition: background 0.3s; }
+.toast__dots i.is-done { background: var(--text-2); }
+.toast__dots i.is-current { background: var(--text); animation: toast-blink 1.2s ease-in-out infinite; }
+@keyframes toast-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.toast__stop { flex-shrink: 0; gap: 5px; height: 28px; padding: 0 9px; align-self: center; }
+.toast__stop:hover { color: var(--danger); border-color: var(--danger); }
+.toast--error .btn { flex-shrink: 0; }
+@media (max-width: 640px) { .toasts, .toasts:has(.toast--rich) { right: 16px; left: 16px; bottom: 16px; width: auto; } }
 
 /* ─── IA: chips, búsqueda inteligente, etiquetas en cards ─────────────────── */
 .spinner--sm { width: 12px; height: 12px; border-width: 1.5px; }

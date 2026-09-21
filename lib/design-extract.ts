@@ -233,8 +233,13 @@ const COLLECT = `(() => {
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-export async function extractDesign(url: string): Promise<ExtractResult> {
+// `signal`: si el usuario para la generación se cierra Chromium al momento y no se
+// sigue gastando tiempo ni capturas. Cualquier paso pendiente falla y la ruta lo traduce.
+export async function extractDesign(url: string, signal?: AbortSignal): Promise<ExtractResult> {
+  signal?.throwIfAborted();
   const browser = await launch();
+  const onAbort = () => { void browser.close().catch(() => {}); };
+  signal?.addEventListener("abort", onAbort, { once: true });
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
@@ -281,8 +286,10 @@ export async function extractDesign(url: string): Promise<ExtractResult> {
       viewport: { width: 1440, height: 900, pageHeight },
       ...rest,
     };
+    signal?.throwIfAborted();
     return { tokens, screenshot, fullShot, cover, scroll };
   } finally {
+    signal?.removeEventListener("abort", onAbort);
     await browser.close().catch(() => {});
   }
 }

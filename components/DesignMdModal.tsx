@@ -10,7 +10,6 @@ interface DesignMdModalProps {
   empresa: string;
   state: DesignMdState | undefined;
   onClose: () => void;
-  onRetry: () => void;
   onRegenerate: () => void;
   onRevised: (patch: Partial<DesignMdEntry>) => void;
 }
@@ -31,29 +30,12 @@ export function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
 }
 
-const STEPS = [
-  "Abriendo la web en Chromium…",
-  "Midiendo colores, tipografías y espaciados…",
-  "Capturando pantalla…",
-  "Claude redacta el DESIGN.md…",
-  "Claude sigue escribiendo…",
-];
-
-export function stepIndex(startedAt: number): number {
-  return Math.min(Math.floor((Date.now() - startedAt) / 9000), STEPS.length - 1);
-}
-export function stepFor(startedAt: number): string {
-  return STEPS[stepIndex(startedAt)];
-}
-export const STEP_COUNT = STEPS.length;
-// Progreso estimado 0-1 sobre una duración típica de ~75 s; nunca llega al 100 % hasta que termina
-export function progressFor(startedAt: number): number {
-  return Math.min(0.94, (Date.now() - startedAt) / 75000);
-}
-
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const IcCheck = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6.5l2.5 2.5L10 3.5" /></svg>
+);
+const IcDoc = (
+  <svg width="9" height="11" viewBox="0 0 9 11" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round"><path d="M1.5 1h4l2 2v7h-6z" /><path d="M5.5 1v2h2" /></svg>
 );
 const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
@@ -112,76 +94,16 @@ function pageBg(spec: DesignSpec): string {
   return pick?.hex ?? (spec.theme === "dark" ? "#0d0d0d" : "#ffffff");
 }
 
-// ─── Progress ─────────────────────────────────────────────────────────────────
-// Mientras se genera: la web a la izquierda (og:image) con un haz que la "lee",
-// y a la derecha qué está pasando. Es lo primero que ve alguien nuevo, así que
-// tiene que parecer que ocurre algo, no una lista de espera.
-function Progress({ startedAt, empresa, url }: { startedAt: number; empresa: string; url: string }) {
-  const current = stepIndex(startedAt);
-  const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-  const pct = Math.round(progressFor(startedAt) * 100);
-  const [shot, setShot] = useState<"loading" | "ok" | "none">("loading");
-  const host = (() => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; } })();
+// ─── Screenshot con scroll automático, en una ventana de Safari ──────────────
+// La barra es de cristal: la captura pasa por debajo desenfocada mientras hace scroll.
+const IcChev = (
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 2L3.5 5l3 3" /></svg>
+);
+const IcLock = (
+  <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M2 4V3a2.5 2.5 0 015 0v1h.5a1 1 0 011 1v3.5a1 1 0 01-1 1h-6a1 1 0 01-1-1V5a1 1 0 011-1H2zm1 0h3V3a1.5 1.5 0 00-3 0v1z" /></svg>
+);
 
-  return (
-    <div className="dm-progress">
-      <div className="dm-progress__glow" aria-hidden />
-      <div className="dm-progress__stage">
-        <div className="dm-progress__visual">
-          <div className="dm-frame dm-frame--dark">
-            <div className="dm-frame__bar"><span /><span /><span /><em>{host}</em></div>
-            <div className={`dm-reader${shot === "ok" ? " is-loaded" : ""}`}>
-              {shot === "loading" && <div className="shimmer" />}
-              {shot === "none" && (
-                <div className="dm-reader__blank">
-                  <span className="display">{empresa.slice(0, 1).toUpperCase()}</span>
-                  <span>{host}</span>
-                </div>
-              )}
-              <img
-                src={`/api/og?url=${encodeURIComponent(url)}`}
-                alt=""
-                onLoad={() => setShot("ok")}
-                onError={() => setShot("none")}
-              />
-              <div className="dm-reader__beam" aria-hidden />
-            </div>
-          </div>
-        </div>
-
-        <div className="dm-progress__text">
-          <div className="dm-progress__eyebrow">
-            <span className="spinner" />
-            <span>DESIGN.md · paso {current + 1} de {STEPS.length}</span>
-            <span className="dm-progress__time">{elapsed}s</span>
-          </div>
-          <h2 className="display dm-progress__title">Leyendo {empresa}</h2>
-          <div className="dm-progress__url">{url}</div>
-
-          <div className="dm-progress__bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <span style={{ width: `${pct}%` }} />
-          </div>
-
-          <ol className="dm-steps">
-            {STEPS.map((label, i) => (
-              <li key={label} className={`dm-step${i < current ? " is-done" : i === current ? " is-current" : ""}`}>
-                <span className="dm-step__mark">{i < current ? IcCheck : null}</span>
-                <span>{label}</span>
-              </li>
-            ))}
-          </ol>
-
-          <p className="dm-progress__hint">
-            Suele tardar entre 30 y 90 segundos. Puedes cerrar esta ventana: sigue en segundo plano y te avisamos cuando esté.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Screenshot con scroll automático ─────────────────────────────────────────
-function ScrollShot({ src, alt, bg }: { src: string; alt: string; bg: string }) {
+function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; bg: string; host: string; theme?: string }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [dist, setDist] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -199,8 +121,15 @@ function ScrollShot({ src, alt, bg }: { src: string; alt: string; bg: string }) 
   const proxied = src.startsWith("https://") ? `/api/thumbnail/img?url=${encodeURIComponent(src)}` : src;
 
   return (
-    <div className="dm-frame" style={{ background: bg }}>
-      <div className="dm-frame__bar"><span /><span /><span /></div>
+    <div className={`dm-frame${theme === "dark" ? " dm-frame--dark" : ""}`} style={{ background: bg }}>
+      <div className="dm-frame__bar" aria-hidden>
+        <span className="dm-frame__left">
+          <span className="dm-frame__lights"><i /><i /><i /></span>
+          <span className="dm-frame__nav">{IcChev}<span className="dm-frame__fwd">{IcChev}</span></span>
+        </span>
+        <span className="dm-frame__url">{IcLock}<span>{host}</span></span>
+        <span />
+      </div>
       <div ref={boxRef} className={`dm-shot${loaded ? " is-loaded" : ""}`}>
         {!loaded && <div className="shimmer" />}
         <img
@@ -419,7 +348,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
           <p className="dm-desc">{spec.description}</p>
           {onRevise && <div className="dm-hero__revise"><SectionHead title="Identidad" section="general" onRevise={onRevise} /></div>}
         </div>
-        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} />}
+        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
       </section>
 
       <PaletteStrip colors={spec.colors} />
@@ -561,14 +490,15 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-export default function DesignMdModal({ url, empresa, state, onClose, onRetry, onRegenerate, onRevised }: DesignMdModalProps) {
+// La ficha solo se abre cuando el DESIGN.md ya existe: la generación vive en el
+// toast de abajo a la derecha (DesignMdToasts), aquí no hay pantalla de progreso.
+export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised }: DesignMdModalProps) {
   const [copied, copy] = useCopy(1600);
   const [view, setView] = useState<"spec" | "md" | "history">("spec");
-  const [, tick] = useState(0);
   const [reverting, setReverting] = useState(false);
 
-  const status = state?.status ?? "loading";
   const entry = state?.entry;
+  const ready = state?.status === "ready" && !!entry;
   const spec = entry?.spec;
   const revisions = entry?.revisions ?? [];
 
@@ -598,12 +528,6 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRetry, o
   };
 
   useEffect(() => {
-    if (status !== "loading") return;
-    const id = setInterval(() => tick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [status]);
-
-  useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -621,16 +545,27 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRetry, o
   };
 
   const date = entry ? new Date(entry.generatedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "";
-  const showTabs = status === "ready" && !!spec;
+  const showTabs = ready && !!spec;
   const activeView = spec ? view : "md";
+  const barHost = url.replace(/^https?:\/\//, "").split("/")[0];
+  const [iconOk, setIconOk] = useState(true);
 
   return (
     <div className="dm">
       <header className="dm-bar">
         <button className="btn-icon dm-bar__close" onClick={onClose} aria-label="Cerrar">{IcX}</button>
-        <div className="dm-bar__title">
-          <span className="dm-bar__brand">{spec?.brand ?? empresa}</span>
-          <span className="dm-bar__file">DESIGN.md</span>
+        <div className="dm-bar__id">
+          <span className="dm-bar__icon" aria-hidden>
+            {iconOk && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(barHost)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
+            {!iconOk && <span>{(spec?.brand ?? empresa).slice(0, 1).toUpperCase()}</span>}
+          </span>
+          <div className="dm-bar__title">
+            <span className="display dm-bar__brand">{spec?.brand ?? empresa}</span>
+            <span className="dm-bar__meta">
+              <a href={url} target="_blank" rel="noopener noreferrer">{barHost}</a>
+              <button type="button" className="dm-bar__file" onClick={download} disabled={!ready} title="Descargar el DESIGN.md">{IcDoc}DESIGN.md</button>
+            </span>
+          </div>
         </div>
         {showTabs && (
           <div className="dm-tabs" role="tablist">
@@ -642,28 +577,15 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRetry, o
           </div>
         )}
         <div className="dm-bar__actions">
-          <button className="btn btn--ghost btn--sm" onClick={onRegenerate} disabled={status === "loading"}>Regenerar</button>
-          <button className="btn btn--ghost btn--sm" onClick={download} disabled={status !== "ready"}>Descargar</button>
-          <button className="btn btn--primary btn--sm" onClick={() => entry && copy(entry.markdown)} disabled={status !== "ready"}>
+          <button className="btn btn--ghost btn--sm" onClick={onRegenerate} disabled={!ready}>Regenerar</button>
+          <button className="btn btn--ghost btn--sm" onClick={download} disabled={!ready}>Descargar</button>
+          <button className="btn btn--primary btn--sm" onClick={() => entry && copy(entry.markdown)} disabled={!ready}>
             {copied ? <>{IcCheck} Copiado</> : <>{IcCopy} Copiar MD</>}
           </button>
         </div>
       </header>
 
-      {status === "loading" && <Progress startedAt={state?.startedAt ?? Date.now()} empresa={empresa} url={url} />}
-
-      {status === "error" && (
-        <div className="dm-progress">
-          <div className="dm-progress__card">
-            <div className="display dm-progress__title">No se ha podido generar</div>
-            <p className="modal__error" style={{ marginTop: 8 }}>{state?.error}</p>
-            <p className="dm-progress__hint">Algunas webs bloquean navegadores automáticos o tardan demasiado en cargar.</p>
-            <button className="btn btn--ghost btn--sm" style={{ alignSelf: "flex-start" }} onClick={onRetry}>Reintentar</button>
-          </div>
-        </div>
-      )}
-
-      {status === "ready" && entry && (
+      {ready && entry && (
         <div className="dm-body">
           {activeView === "history" ? (
             revisions.length
