@@ -244,11 +244,11 @@ export default function Sidebar({
         <button className="sidebar__inspo" onClick={onRecursos}>
           <span className="sidebar__inspo-top">
             <span className="sidebar__inspo-icon">{I.compass}</span>
-            <span className="sidebar__inspo-count">{RECURSOS_TOTAL} webs</span>
+            <span className="sidebar__inspo-count">{RECURSOS_TOTAL} webs y herramientas</span>
             <span className="sidebar__inspo-arrow">{I.arrow}</span>
           </span>
-          <span className="sidebar__inspo-title">¿Buscando inspiración?</span>
-          <span className="sidebar__inspo-sub">Un directorio de sitios donde mirar antes de empezar.</span>
+          <span className="sidebar__inspo-title">Dónde mirar y con qué hacerlo</span>
+          <span className="sidebar__inspo-sub">Galerías, tipografía, código, modelos y agentes. Lo que usamos antes de empezar.</span>
         </button>
 
         <div className="sidebar__scroll">
