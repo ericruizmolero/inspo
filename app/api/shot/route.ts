@@ -4,7 +4,7 @@ import { findByWeb } from "@/lib/items";
 import { getOrCaptureShot } from "@/lib/screenshot";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 90; // arranque en frío de Chromium + 20 s de carga + captura
 
 const TTL = 60 * 60 * 24 * 30; // 30 days
 
@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("shot error:", url, err instanceof Error ? err.message : err);
     // Un fallo se recuerda un rato para no relanzar Chromium en cada carga, pero no tanto
-    // como para que un arreglo en el servidor tarde una hora en verse.
-    return new Response("capture failed", { status: 502, headers: { "Cache-Control": "private, max-age=900" } });
+    // como para que un arreglo en el servidor tarde una hora en verse. Se responde 204 y
+    // no 502 para que el navegador no lo pinte como error en consola: la tarjeta ya
+    // enseña el nombre de la web cuando no hay imagen.
+    return new Response(null, { status: 204, headers: { "X-Shot": "capture-failed", "Cache-Control": "private, max-age=900" } });
   }
 }

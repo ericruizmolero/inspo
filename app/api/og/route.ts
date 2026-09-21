@@ -27,6 +27,12 @@ function fetchWithTimeout(url: string, opts: RequestInit & { next?: { revalidate
 const NO_CACHE = `public, s-maxage=${60 * 60 * 24 * 7}, stale-while-revalidate=${TTL}`;
 const LONG_CACHE = `public, s-maxage=${TTL}, max-age=${TTL}, stale-while-revalidate=${TTL * 2}`;
 
+// Que una web no tenga og:image es lo normal, no un error: se responde 204 (sin cuerpo)
+// para que el navegador no llene la consola de "Failed to load resource" y la tarjeta
+// pase a la captura. El motivo va en una cabecera por si hay que depurar.
+const none = (reason: string, cache = "private, max-age=900") =>
+  new Response(null, { status: 204, headers: { "X-Og": reason, "Cache-Control": cache } });
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const url = searchParams.get("url");
@@ -37,20 +43,15 @@ export async function GET(req: Request) {
       `${PROXY}?url=${encodeURIComponent(url)}`,
       { next: { revalidate: TTL } }
     );
-    if (!proxyRes.ok) return new Response("proxy error", { status: 502 });
+    if (!proxyRes.ok) return none("proxy-error");
 
     const html = await proxyRes.text();
     const imageUrl = extractOgImage(html, url);
 
-    if (!imageUrl) {
-      return new Response("no og:image", {
-        status: 404,
-        headers: { "Cache-Control": NO_CACHE },
-      });
-    }
+    if (!imageUrl) return none("no-image", NO_CACHE);
 
     const imgRes = await fetchWithTimeout(imageUrl, { next: { revalidate: TTL } });
-    if (!imgRes.ok) return new Response("image fetch failed", { status: 502 });
+    if (!imgRes.ok) return none("image-fetch-failed");
 
     const blob = await imgRes.arrayBuffer();
     const contentType = imgRes.headers.get("content-type") || "image/jpeg";
@@ -59,7 +60,6 @@ export async function GET(req: Request) {
       headers: { "Content-Type": contentType, "Cache-Control": LONG_CACHE },
     });
   } catch (e) {
-    const status = (e as Error).name === "AbortError" ? 408 : 500;
-    return new Response("error", { status });
+    return none((e as Error).name === "AbortError" ? "timeout" : "error");
   }
 }

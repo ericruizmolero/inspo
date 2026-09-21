@@ -115,7 +115,11 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
       : `/api/shot?url=${encodeURIComponent(item.web)}&v=2`;
 
     fetch(apiUrl, { signal: ctrl.signal })
-      .then((res) => { if (!res.ok) throw new Error(`${res.status}`); return res.blob(); })
+      .then((res) => {
+        // 204 = la web no tiene og:image o la captura falló: se pasa al siguiente método
+        if (!res.ok || res.status === 204 || !res.headers.get("content-type")?.startsWith("image/")) throw new Error(`${res.status}`);
+        return res.blob();
+      })
       .then((blob) => {
         clearTimeout(timeout);
         const src = URL.createObjectURL(blob);
