@@ -167,3 +167,28 @@ export const inspoComment = sqliteTable("inspo_comment", {
 }, (t) => [
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
 ]);
+
+// ─── Uso de IA ───────────────────────────────────────────────────────────────
+// Una fila por llamada a un modelo (Claude o Jev), con su coste estimado en USD
+// según la tarifa vigente al escribir (lib/usage.ts). Base del pricing del SaaS.
+
+export const aiUsage = sqliteTable("ai_usage", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  /** design_md | vision | jev_tag | jev_search | jev_recursos | explain | revise */
+  action: text("action").notNull(),
+  model: text("model").notNull(),
+  inputTokens: integer("input_tokens").notNull().default(0),
+  outputTokens: integer("output_tokens").notNull().default(0),
+  cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+  /** Unidades facturadas por item (Jev): items puntuados o etiquetados */
+  units: integer("units").notNull().default(0),
+  /** Coste estimado en microdólares (USD × 1e6) para no perder precisión en enteros */
+  costMicros: integer("cost_micros").notNull().default(0),
+  /** URL, consulta… lo que ayude a explicar la fila */
+  ref: text("ref"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, (t) => [
+  index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
+]);

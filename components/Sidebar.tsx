@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { FilterAutor, FilterFecha, FilterTipo, InspoItem, TagMap } from "@/types/inspo";
 import { SECTORES, ESTILOS, TAGS, TAG_THRESHOLD, Term } from "@/lib/taxonomy";
 import { RECURSOS_TOTAL } from "@/lib/recursos";
@@ -141,7 +143,15 @@ function NavItem({ icon, label, count, active, onClick }: {
 
 export interface TaggingState { running: boolean; done: number; total: number; error?: string }
 
+export interface QuotaView {
+  planName: string;
+  designMd: { used: number; limit: number | null };
+  searches: { used: number; limit: number | null };
+}
+
 export interface SidebarProps {
+  /** Plan y uso del mes (null hasta que carga) */
+  quota?: QuotaView | null;
   /** Cabecera: selector de workspace */
   brand: React.ReactNode;
   /** Valores del filtro "Quién" (nombres de miembros y etiquetas heredadas) */
@@ -177,7 +187,22 @@ export interface SidebarProps {
   onTagAll: () => void;
 }
 
+/** Cuota de DESIGN.md del mes: es lo único que se agota. Enlaza a /planes. */
+function PlanMeter({ quota }: { quota: QuotaView }) {
+  const { used, limit } = quota.designMd;
+  const full = limit !== null && used >= limit;
+  const pct = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100));
+  return (
+    <Link href="/planes" className={`sidebar__plan${full ? " is-full" : ""}`} title="Ver planes">
+      <span className="sidebar__plan-head"><strong>Plan {quota.planName}</strong><span>{limit === null ? `${used} DESIGN.md` : `${used}/${limit} DESIGN.md`}</span></span>
+      {limit !== null && <span className="quota__bar"><span style={{ width: `${pct}%` }} className={full ? "is-full" : ""} /></span>}
+      <span className="sidebar__plan-note">{full ? "Cuota del mes agotada · ampliar plan" : limit === null ? "Sin límite este mes" : "este mes"}</span>
+    </Link>
+  );
+}
+
 export default function Sidebar({
+  quota,
   brand, autores, autorImages = {}, items, tipo, autor, fecha, query,
   onTipo, onAutor, onFecha, onQuery, onReset, onAdd, onRecursos,
   open, onClose,
@@ -208,6 +233,13 @@ export default function Sidebar({
 
         <SearchBox className="sidebar__search" value={query} onChange={onQuery}
           ai={ai} aiLoading={aiLoading} />
+
+        {/* Con inspos ya guardadas, añadir va arriba, a la vista; con la librería vacía manda el cajón de URL del lienzo */}
+        {items.length > 0 && (
+          <button className="btn btn--ghost btn--block sidebar__add" onClick={onAdd}>
+            {I.plus} Añadir
+          </button>
+        )}
 
         <button className="sidebar__inspo" onClick={onRecursos}>
           <span className="sidebar__inspo-top">
@@ -277,6 +309,7 @@ export default function Sidebar({
         </div>
 
         <div className="sidebar__footer">
+          {quota && <PlanMeter quota={quota} />}
           {aiEnabled && (pending > 0 || tagging.running || tagging.error) && (
             <button className="btn btn--ghost btn--block btn--sm sidebar__tag-all" onClick={onTagAll} disabled={tagging.running}>
               {tagging.running
@@ -289,9 +322,11 @@ export default function Sidebar({
           {aiEnabled && pending === 0 && !tagging.running && tagged > 0 && (
             <div className="sidebar__footer-note">{tagged} etiquetados con IA</div>
           )}
-          <button className="btn btn--ghost btn--block" onClick={onAdd}>
-            {I.plus} Añadir
-          </button>
+          {items.length === 0 && (
+            <button className="btn btn--ghost btn--block" onClick={onAdd}>
+              {I.plus} Añadir
+            </button>
+          )}
         </div>
       </aside>
     </>

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (hit) return Response.json({ scores: hit, cached: true });
 
   try {
-    const scores = await matchRecursos(query);
+    const scores = await matchRecursos(query, { organizationId: ctx.workspace.id, userId: ctx.user.id });
     setCachedSearch(key, scores);
     return Response.json({ scores });
   } catch (e) {

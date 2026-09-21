@@ -3,7 +3,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { getOrCaptureShot } from "./screenshot";
 
-const MODEL = process.env.VISION_MODEL || "claude-opus-5";
+// Describir una captura en 120 palabras no necesita Opus: Haiku cuesta diez veces menos.
+const MODEL = process.env.VISION_MODEL || "claude-haiku-4-5-20251001";
+const IS_HAIKU = /^claude-haiku/.test(MODEL);
 const CAPTURE_TIMEOUT_MS = 45_000;
 
 // Dominios donde la captura no aporta nada (login walls, vídeo, redes)
@@ -24,15 +26,14 @@ Describe only what is visible. Do not guess at animation. Do not name the brand'
 let _client: Anthropic | null = null;
 const client = () => (_client ??= new Anthropic());
 
-export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number }
+export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number }
 
 export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url: string }): Promise<VisionResult | null> {
+  // Haiku 4.5 no admite effort ni el fallback de servidor (son de Opus 5 / Sonnet 5)
   const msg = await client().beta.messages.create({
     model: MODEL,
     max_tokens: 600,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    output_config: { effort: "low" },
+    ...(IS_HAIKU ? {} : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default", output_config: { effort: "low" } }),
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
     messages: [
       {
@@ -53,7 +54,7 @@ export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url:
     .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
     .map((b) => b.text).join("").trim();
   if (!text) return null;
-  return { text, model: msg.model, inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens };
+  return { text, model: msg.model, inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens, cacheReadTokens: msg.usage.cache_read_input_tokens ?? 0 };
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {

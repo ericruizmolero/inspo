@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       .filter((it) => wanted.has(it.web))
       .map((it) => ({ item: it, tags: tagMap[it.web], score: wanted.get(it.web)! }))
       .sort((a, b) => b.score - a.score);
-    const reasons = await explainMatches(query, entries, ctx.workspace.id);
+    const reasons = await explainMatches(query, entries, ctx.workspace.id, { organizationId: ctx.workspace.id, userId: ctx.user.id });
     return Response.json({ reasons });
   } catch (e) {
     console.error("explain error:", e);

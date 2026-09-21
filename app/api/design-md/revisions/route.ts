@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { recordUsage } from "@/lib/usage";
 import { promises as fs } from "fs";
 import path from "path";
 import { requireCtx, isResponse } from "@/lib/workspace";
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
     const t0 = Date.now();
     const out = await reviseDesignSpec({ spec: current, url, section, comment, screenshot: await localScreenshot(url) });
     console.log(`design-md revise ${url} [${section}] by ${author.authorName}: ${Date.now() - t0}ms, ${out.model}, changed=${out.changed}`);
+    void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "revise", model: out.model, inputTokens: out.usage.input, outputTokens: out.usage.output, cacheReadTokens: out.usage.cacheRead, ref: url });
 
     if (!out.changed) {
       return Response.json({ unchanged: true, summary: out.summary, revisions: await listRevisions(ctx.workspace.id, url) });

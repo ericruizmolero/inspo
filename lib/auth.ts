@@ -3,6 +3,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization } from "better-auth/plugins";
+import { APIError } from "better-auth/api";
+import { memberLimitMessage } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail } from "./mail";
@@ -95,6 +97,16 @@ export const auth = betterAuth({
         async beforeCreateOrganization({ organization: org }) {
           return { data: { ...org, metadata: { kind: "team", ...(org.metadata ?? {}) } } };
         },
+        // Cuota de personas del plan: se comprueba al invitar y al aceptar
+        async beforeCreateInvitation({ invitation, organization: org }) {
+          const msg = await memberLimitMessage(invitation.organizationId, planFromOrg(org));
+          if (msg) throw new APIError("FORBIDDEN", { message: msg });
+        },
+        async beforeAddMember({ member, organization: org }) {
+          if (member.role === "owner") return; // creador del workspace
+          const msg = await memberLimitMessage(member.organizationId, planFromOrg(org));
+          if (msg) throw new APIError("FORBIDDEN", { message: msg });
+        },
       },
     }),
     nextCookies(), // debe ir el último
@@ -112,3 +124,10 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+
+function planFromOrg(org: { metadata?: unknown }): string | null {
+  const m = org.metadata;
+  if (m && typeof m === "object") return (m as { plan?: string }).plan ?? null;
+  if (typeof m === "string") { try { return JSON.parse(m)?.plan ?? null; } catch { return null; } }
+  return null;
+}

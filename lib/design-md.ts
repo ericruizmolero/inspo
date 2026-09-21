@@ -41,7 +41,8 @@ export async function generateDesignMd(tokens: DesignTokens, screenshot: Buffer)
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
     system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
-    output_config: { format: zodOutputFormat(DesignSpecSchema) },
+    // Effort medio: la mitad de tokens de razonamiento con un DESIGN.md prácticamente igual
+    output_config: { format: zodOutputFormat(DesignSpecSchema), effort: (process.env.DESIGN_MD_EFFORT as "low" | "medium" | "high") || "medium" },
     messages: [
       {
         role: "user",

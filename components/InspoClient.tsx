@@ -7,7 +7,7 @@ import { flushSync } from "react-dom";
 import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags, CommentMap } from "@/types/inspo";
 import { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
-import Sidebar, { SearchBox, Icons, TaggingState } from "./Sidebar";
+import Sidebar, { SearchBox, Icons, TaggingState, type QuotaView } from "./Sidebar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import { webKeyOf, nameFromHost, tipoFromUrl } from "@/lib/url";
@@ -58,6 +58,16 @@ function parseFecha(s: string): number {
 
 function normalize(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+// Al guardar una web nueva se lanza la experiencia completa (captura, etiquetas y
+// DESIGN.md). Vídeos y redes no tienen sistema de diseño que extraer.
+const NO_DESIGN_MD = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "tiktok.com", "primevideo.com", "netflix.com"];
+function canAutoDesignMd(web: string): boolean {
+  try {
+    const host = new URL(web).hostname.replace(/^www\./, "");
+    return !NO_DESIGN_MD.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch { return false; }
 }
 
 const SIDEBAR_W = 256;
@@ -169,13 +179,14 @@ export default function InspoClient({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
         setAiScores(data.scores);
+        if (!data.cached) loadQuota();
         setAiReasons(null);
       } catch (e) {
         if ((e as Error).name !== "AbortError") setAiError(String((e as Error).message ?? e));
       } finally {
         if (!ctrl.signal.aborted) setAiLoading(false);
       }
-    }, 600);
+    }, 900);
     return () => { clearTimeout(id); ctrl.abort(); };
   }, [aiQuery, aiEnabled]);
 
@@ -236,6 +247,19 @@ export default function InspoClient({
     }
   };
   const [showAdd, setShowAdd] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "n" && e.key !== "N") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      if (document.querySelector(".modal-backdrop, .dm, .cp")) return; // algo abierto encima
+      e.preventDefault();
+      setShowAdd(true);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
   const [showRecursos, setShowRecursos] = useState(false);
 
   // ─── Alta solo con URL ───────────────────────────────────────────────────────
@@ -251,6 +275,7 @@ export default function InspoClient({
     const key = webKeyOf(web);
     return items.some((i) => webKeyOf(i.web) === key);
   }, [items]);
+  const runDesignMdRef = useRef<(item: InspoItem) => void>(() => {});
   const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
     const d = new Date();
     const temp: InspoItem = {
@@ -268,7 +293,9 @@ export default function InspoClient({
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       const item = data.item as InspoItem;
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
+      // Experiencia completa desde el primer momento: etiquetas y DESIGN.md sin pedirlos
       tagOne(item.web);
+      if (canAutoDesignMd(item.web)) runDesignMdRef.current(item);
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
@@ -276,6 +303,26 @@ export default function InspoClient({
       return null;
     }
   }, [user, tagOne]);
+
+  // Un invitado que pegó una URL en el lienzo de inicio vuelve del login con ?add=<url>:
+  // se guarda sola y se abre su DESIGN.md, como si la hubiera pegado ya dentro.
+  const autoAdded = useRef(false);
+  useEffect(() => {
+    if (autoAdded.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const web = params.get("add");
+    if (!web) return;
+    autoAdded.current = true;
+    params.delete("add");
+    const clean = window.location.pathname + (params.size ? `?${params}` : "");
+    window.history.replaceState(null, "", clean);
+    if (!/^https?:\/\//.test(web) || isDuplicate(web)) return;
+    addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" }).then((item) => {
+      if (item) { setDesignMdItem(item); runDesignMdRef.current(item); }
+    });
+    // solo al montar: la URL de la barra no cambia después
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Quitar tarjeta ──────────────────────────────────────────────────────────
   // Se retira al instante; si el servidor falla, vuelve a su sitio y se avisa.
@@ -292,6 +339,13 @@ export default function InspoClient({
       setAddError({ title: "No se ha podido quitar", detail: e instanceof Error ? e.message : String(e) });
     }
   }, []);
+
+  // ─── Plan y cuotas ─────────────────────────────────────────────────────────
+  const [quota, setQuota] = useState<QuotaView | null>(null);
+  const loadQuota = useCallback(() => {
+    fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
+  }, []);
+  useEffect(() => { loadQuota(); }, [loadQuota]);
 
   // ─── Comentarios ───────────────────────────────────────────────────────────
   const [commentMap, setCommentMap] = useState<CommentMap>({});
@@ -363,6 +417,7 @@ export default function InspoClient({
       if (!res.ok) throw new Error(body.error ?? `Error ${res.status}`);
       patchJob(url, { status: "ready", entry: body, error: undefined });
       setDesignMdIndex((prev) => ({ ...prev, [url]: { coverUrl: body.coverUrl, scrollUrl: body.scrollUrl } }));
+      if (!body.cached) loadQuota();
     } catch (e) {
       patchJob(url, { status: "error", error: e instanceof Error ? e.message : String(e) });
     }
@@ -431,7 +486,8 @@ export default function InspoClient({
   }, []);
   const toggleSidebar = () => {
     gsap.registerPlugin(Flip);
-    const targets = [".sidebar", ".sb-toggle", ".card-item"];
+    // Tarjetas de la rejilla y bloques de la pantalla vacía (data-flip) se mueven al unísono
+    const targets = [".sidebar", ".sb-toggle", ".card-item", "[data-flip]"];
     const state = Flip.getState(targets);
     const next = !collapsed;
     flushSync(() => setCollapsed(next));
@@ -595,6 +651,8 @@ export default function InspoClient({
   // Close the mobile drawer whenever a filter changes
   useEffect(() => { setDrawerOpen(false); }, [tipo, autor, fecha, sector, estilo, selTags]);
 
+  runDesignMdRef.current = runDesignMd;
+
   return (
     <div className={`shell${collapsed ? " is-collapsed" : ""}`}>
       {designMdItem && (
@@ -646,6 +704,7 @@ export default function InspoClient({
       )}
 
       <Sidebar
+        quota={quota}
         brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} />}
         autores={autores}
         autorImages={autorImages}

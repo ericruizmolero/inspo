@@ -5,18 +5,24 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { UserAvatar } from "@/components/WorkspaceMenu";
+import type { UsageSummary, UsageAction } from "@/lib/usage";
 
 interface Member { id: string; userId: string; name: string; email: string; image?: string | null; role: string; createdAt: string }
 interface Invitation { id: string; email: string; role: string | null; expiresAt: string }
 
 const ROLE_LABEL: Record<string, string> = { owner: "Propietario", admin: "Admin", member: "Miembro" };
+const ACTION_LABEL: Record<UsageAction, string> = {
+  design_md: "DESIGN.md generados", vision: "Capturas descritas", jev_tag: "Inspos etiquetados",
+  jev_search: "Búsquedas IA", jev_recursos: "Búsquedas en el directorio", explain: "Explicaciones de búsqueda", revise: "Revisiones de DESIGN.md",
+};
+const usd = (n: number) => (n < 0.01 && n > 0 ? "<0,01 $" : `${n.toFixed(2).replace(".", ",")} $`);
 
 function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 }
 
-export default function TeamPanel({ workspace, me, canManage, members, invitations, startCreating }: {
-  workspace: Workspace; me: SessionUser; canManage: boolean; members: Member[]; invitations: Invitation[]; startCreating: boolean;
+export default function TeamPanel({ workspace, me, canManage, members, invitations, startCreating, usage }: {
+  workspace: Workspace; me: SessionUser; canManage: boolean; members: Member[]; invitations: Invitation[]; startCreating: boolean; usage?: UsageSummary;
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(startCreating);
@@ -79,6 +85,48 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
     <div className="page__body">
       {error && <p className="modal__error">{error}</p>}
       {msg && <p className="page__ok">{msg}</p>}
+
+      {usage && (
+        <section className="panel">
+          <div className="panel__head">
+            <span className="panel__title">Uso de IA</span>
+            <span className="panel__meta">últimos {usage.sinceDays} días</span>
+            <span className="panel__meta" style={{ marginLeft: "auto", color: "var(--text)" }}>{usd(usage.totalUsd)}</span>
+          </div>
+          {usage.byAction.length === 0 ? (
+            <p className="panel__hint">Todavía no hay llamadas registradas. Cada DESIGN.md, etiquetado o búsqueda IA queda apuntado aquí con su coste estimado.</p>
+          ) : (
+            <>
+              <ul className="list">
+                {usage.byAction.map((a) => (
+                  <li key={a.action} className="list__row">
+                    <span className="list__main">
+                      <span className="list__name">{ACTION_LABEL[a.action] ?? a.action}</span>
+                      <span className="list__sub">{a.action.startsWith("jev_") && a.units ? `${a.units} items en ${a.calls} llamadas` : `${a.calls} ${a.calls === 1 ? "llamada" : "llamadas"}`}</span>
+                    </span>
+                    <span className="list__role">{usd(a.usd)}</span>
+                  </li>
+                ))}
+              </ul>
+              {usage.byUser.length > 1 && (
+                <>
+                  <div className="panel__head" style={{ marginTop: 12 }}><span className="panel__title">Por persona</span></div>
+                  <ul className="list">
+                    {usage.byUser.map((u) => (
+                      <li key={u.userId ?? "sys"} className="list__row">
+                        <UserAvatar name={u.name} image={members.find((m) => m.userId === u.userId)?.image} small />
+                        <span className="list__main"><span className="list__name">{u.name}</span><span className="list__sub">{u.calls} llamadas</span></span>
+                        <span className="list__role">{usd(u.usd)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <p className="panel__hint">Coste estimado con la tarifa pública de Anthropic y de Jev. Sirve para dimensionar el pricing, no es la factura.</p>
+            </>
+          )}
+        </section>
+      )}
 
       {workspace.kind === "team" && (
         <section className="panel">

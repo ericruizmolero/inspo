@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
 import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch } from "@/lib/jev";
+import { prefilter } from "@/lib/search-prefilter";
+import { assertQuota } from "@/lib/quota";
+import { HttpError } from "@/lib/workspace-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -20,11 +23,15 @@ export async function POST(req: NextRequest) {
   const hit = getCachedSearch(key);
   if (hit) return Response.json({ scores: hit, cached: true });
 
+  try { await assertQuota(ctx.workspace, "jev_search"); }
+  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
+
   try {
     const { items, tagMap } = await loadWorkspaceData(ctx.workspace.id);
-    const scores = await matchQuery(query, items, tagMap);
+    const candidates = prefilter(query, items, tagMap);
+    const scores = await matchQuery(query, candidates, tagMap, { organizationId: ctx.workspace.id, userId: ctx.user.id });
     setCachedSearch(key, scores);
-    return Response.json({ scores });
+    return Response.json({ scores, candidates: candidates.length, total: items.length });
   } catch (e) {
     console.error("search error:", e);
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

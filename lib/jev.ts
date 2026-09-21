@@ -6,6 +6,7 @@ import { SECTORES, ESTILOS, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD, labelOf } fro
 import { fetchSiteText, SiteText } from "./extract";
 import { describeSite } from "./vision";
 import { RECURSOS } from "./recursos";
+import { recordUsage, type UsageCtx } from "./usage";
 
 let _client: TypeSafeClient | null = null;
 function client() {
@@ -53,10 +54,13 @@ function buildState(item: InspoItem, site: SiteText | null, visual: string | nul
   };
 }
 
-export async function classifyItem(item: InspoItem): Promise<InspoTags> {
+export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<InspoTags> {
   const [site, vision] = await Promise.all([fetchSiteText(item.web), describeSite(item)]);
   const visual = vision?.text ?? null;
-  if (vision) console.log(`vision ${item.web}: ${vision.model} in/out ${vision.inputTokens}/${vision.outputTokens}`);
+  if (vision) {
+    console.log(`vision ${item.web}: ${vision.model} in/out ${vision.inputTokens}/${vision.outputTokens}`);
+    void recordUsage(usage, { action: "vision", model: vision.model, inputTokens: vision.inputTokens, outputTokens: vision.outputTokens, cacheReadTokens: vision.cacheReadTokens, ref: item.web });
+  }
   const state = buildState(item, site, visual);
 
   const questions = {
@@ -77,6 +81,7 @@ export async function classifyItem(item: InspoItem): Promise<InspoTags> {
   };
 
   const res = await client().systemOne({ state, questions });
+  void recordUsage(usage, { action: "jev_tag", model: "jev", units: 1, ref: item.web });
   const a = res.answers as Record<string, { type: string; choice?: string; probabilities?: Record<string, number>; noul?: number }>;
 
   const tags: Record<string, number> = {};
@@ -148,8 +153,10 @@ async function pool<T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): Prom
 export async function matchQuery(
   query: string,
   items: InspoItem[],
-  tagMap: Record<string, InspoTags>
+  tagMap: Record<string, InspoTags>,
+  usage?: UsageCtx
 ): Promise<Record<string, number>> {
+  void recordUsage(usage, { action: "jev_search", model: "jev", units: items.length, ref: query });
   const batches: InspoItem[][] = [];
   for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
 
@@ -189,7 +196,8 @@ const RECURSOS_FLAT = RECURSOS.flatMap((g) =>
 );
 
 /** Devuelve, por URL, la probabilidad (0–1) de que cada recurso del directorio encaje con la consulta. */
-export async function matchRecursos(query: string): Promise<Record<string, number>> {
+export async function matchRecursos(query: string, usage?: UsageCtx): Promise<Record<string, number>> {
+  void recordUsage(usage, { action: "jev_recursos", model: "jev", units: RECURSOS_FLAT.length, ref: query });
   const batches: typeof RECURSOS_FLAT[] = [];
   for (let i = 0; i < RECURSOS_FLAT.length; i += BATCH) batches.push(RECURSOS_FLAT.slice(i, i + BATCH));
 

@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
   if (isResponse(ctx)) return ctx;
   const orgId = ctx.workspace.id;
   const manage = canManage(ctx.workspace.role);
+  const usage = { organizationId: orgId, userId: ctx.user.id };
 
   const body = (await req.json().catch(() => ({}))) as { web?: string; all?: boolean; force?: boolean };
 
@@ -48,7 +49,7 @@ export async function POST(req: NextRequest) {
       if (existing && existing.v === TAXONOMY_VERSION && !body.force) {
         return Response.json({ tags: existing, cached: true });
       }
-      const tags = await classifyItem(item);
+      const tags = await classifyItem(item, usage);
       await setTags(orgId, item.web, tags);
       clearSearchCache(); clearExplainCache();
       return Response.json({ tags });
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
         Array.from({ length: Math.min(CONCURRENCY, batch.length) }, async () => {
           while (i < batch.length) {
             const item = batch[i++];
-            try { done[item.web] = await classifyItem(item); }
+            try { done[item.web] = await classifyItem(item, usage); }
             catch (e) { errors.push(`${item.web}: ${e instanceof Error ? e.message : e}`); }
           }
         })

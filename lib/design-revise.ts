@@ -115,7 +115,7 @@ Reglas:
 
 export async function reviseDesignSpec(input: {
   spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null;
-}): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string }> {
+}): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; usage: { input: number; output: number; cacheRead: number } }> {
   const client = new Anthropic();
   const content: Anthropic.Beta.BetaContentBlockParam[] = [];
   if (input.screenshot) {
@@ -141,5 +141,5 @@ export async function reviseDesignSpec(input: {
   const text = msg.content.filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text").map((b) => b.text).join("");
   const out = ReviseOutput.parse(JSON.parse(text));
   const spec = out.changed ? DesignSpecSchema.parse({ ...input.spec, ...out.patch }) : input.spec;
-  return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: msg.model };
+  return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: msg.model, usage: { input: msg.usage.input_tokens, output: msg.usage.output_tokens, cacheRead: msg.usage.cache_read_input_tokens ?? 0 } };
 }

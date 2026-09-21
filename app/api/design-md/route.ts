@@ -5,6 +5,9 @@ import { getDesignMd, getDesignMdIndex, saveDesignMd } from "@/lib/design-store"
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { findByWeb, webSet } from "@/lib/items";
 import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise";
+import { recordUsage } from "@/lib/usage";
+import { assertQuota } from "@/lib/quota";
+import { HttpError } from "@/lib/workspace-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -62,6 +65,10 @@ export async function GET(req: NextRequest) {
   const existing = inflight.get(url);
   if (existing) return (await existing).clone();
 
+  // Cuota mensual del plan: solo cuenta lo que se genera de verdad (la caché es gratis)
+  try { await assertQuota(ctx.workspace, "design_md"); }
+  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
+
   const job = (async () => {
     try {
       const t0 = Date.now();
@@ -76,6 +83,7 @@ export async function GET(req: NextRequest) {
       );
 
       console.log(`design-md ${url}: extract ${t1 - t0}ms, claude ${t2 - t1}ms, tokens in/out ${usage.input}/${usage.output}`);
+      void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, ref: url });
 
       // Si el workspace tenía revisiones, la regeneración pasa a ser la versión vigente y queda en el historial
       let revisions = await listRevisions(ctx.workspace.id, url);

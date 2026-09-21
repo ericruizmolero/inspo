@@ -4,6 +4,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
 import { summarize } from "./jev";
+import { recordUsage, type UsageCtx } from "./usage";
 
 const MODEL = process.env.EXPLAIN_MODEL || "claude-haiku-4-5-20251001";
 export const explainEnabled = () => !!process.env.ANTHROPIC_API_KEY;
@@ -25,7 +26,7 @@ export const clearExplainCache = () => cache.clear();
 
 export interface ExplainEntry { item: InspoItem; tags?: InspoTags; score: number }
 
-export async function explainMatches(query: string, entries: ExplainEntry[], scope = ""): Promise<Record<string, string>> {
+export async function explainMatches(query: string, entries: ExplainEntry[], scope = "", usage?: UsageCtx): Promise<Record<string, string>> {
   if (!entries.length) return {};
   const key = `${scope}|${query.toLowerCase()}|${entries.map((e) => e.item.web).sort().join(",")}`;
   const hit = cache.get(key);
@@ -43,6 +44,7 @@ export async function explainMatches(query: string, entries: ExplainEntry[], sco
     messages: [{ role: "user", content: JSON.stringify(payload) }],
   });
 
+  void recordUsage(usage, { action: "explain", model: msg.model, inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens, cacheReadTokens: msg.usage.cache_read_input_tokens ?? 0, ref: query });
   const text = msg.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("\n");
   const reasons: Record<string, string> = {};
   for (const line of text.split("\n")) {
