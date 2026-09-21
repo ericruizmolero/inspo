@@ -174,6 +174,7 @@ export const RECURSOS: RecursoGrupo[] = [
       { name: "Atipo Foundry", url: "https://www.atipofoundry.com", desc: "Fundición de Gijón. Paga lo que quieras y familias muy versátiles." },
       { name: "Future Fonts", url: "https://www.futurefonts.xyz", desc: "Fuentes en desarrollo: compras barato ahora y recibes las versiones nuevas." },
       { name: "Fontshare", url: "https://www.fontshare.com", desc: "Fuentes gratuitas de Indian Type Foundry con calidad de pago." },
+      { name: "Font Pairing (Monotype)", url: "https://www.monotype.com/font-pairing#/playground?fontPair1=Pepi%2FRudi&fontPair2=Schotis+Text", desc: "Playground para ver dos fuentes funcionando juntas en una maqueta y buscar parejas." },
       { name: "Velvetyne", url: "https://velvetyne.fr", desc: "Tipografías libres y experimentales. Para cuando la marca puede arriesgar." },
     ],
   },
