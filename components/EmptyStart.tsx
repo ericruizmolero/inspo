@@ -6,21 +6,30 @@ import { RECURSOS, RECURSOS_TOTAL, recursoShot } from "@/lib/recursos";
 import { Icons } from "./Sidebar";
 import s from "./EmptyStart.module.css";
 
-// Una web por categoría del directorio (la primera de cada grupo), sin el grupo de herramientas.
-// Una web por categoría, elegidas a mano por tener una captura que se ve perfecta.
-// Si alguna deja de estar en el directorio, se cae a la primera de su grupo.
-const FEATURED: Record<string, string> = {
-  designmd: "https://styles.refero.design",
-  webs: "https://curated.design",
-  saas: "https://saasframe.io",
-  secciones: "https://supahero.io",
-  motion: "https://motionin.design",
-  moodboards: "https://www.cosmos.so",
-};
-const PICKS = RECURSOS.filter((g) => g.key !== "recursos").map((g) => ({
-  group: g.title,
-  ...(g.items.find((r) => r.url.replace(/\/+$/, "") === FEATURED[g.key]) ?? g.items[0]),
-}));
+// Siempre 9 webs (rejilla de 3×3): las más usadas y las más de moda ahora mismo, elegidas a mano
+// y con una captura que se ve perfecta. Si alguna deja de estar en el directorio, se rellena
+// con la primera de cada grupo que aún no esté representado, para no dejar la rejilla coja.
+const FEATURED = [
+  "https://styles.refero.design",
+  "https://godly.website",
+  "https://curated.design",
+  "https://mobbin.com",
+  "https://saasframe.io",
+  "https://supahero.io",
+  "https://motionin.design",
+  "https://the-brandidentity.com",
+  "https://www.cosmos.so",
+];
+const ALL = RECURSOS.flatMap((g) => g.items.map((r) => ({ group: g.title, groupKey: g.key, ...r })));
+const PICKS = (() => {
+  const picks = FEATURED.map((u) => ALL.find((r) => r.url === u)).filter((r): r is (typeof ALL)[number] => !!r);
+  for (const g of RECURSOS) {
+    if (picks.length >= 9) break;
+    if (g.key === "recursos" || picks.some((r) => r.groupKey === g.key)) continue;
+    picks.push({ group: g.title, groupKey: g.key, ...g.items[0] });
+  }
+  return picks.slice(0, 9);
+})();
 
 function Thumb({ name, url }: { name: string; url: string }) {
   const [failed, setFailed] = useState(false);
@@ -127,7 +136,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
 
       <div className={s.section}>
         <div className={s.eyebrow} data-flip>
-          <span>Para empezar a mirar · una por categoría</span>
+          <span>Para empezar a mirar · las más de moda</span>
           <button className={s.more} onClick={onRecursos}>Ver las {RECURSOS_TOTAL} {Icons.arrow}</button>
         </div>
         <div className={s.grid}>
