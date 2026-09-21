@@ -690,7 +690,7 @@ export default function InspoClient({
           </div>
         </div>
       )}
-      {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} aiEnabled={aiEnabled} />}
+      {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} />}
       {commentsItem && (
         <CommentsPanel
           item={commentsItem}
