@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { InspoItem, InspoComment } from "@/types/inspo";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { InspoItem, InspoComment, CommentAttachment } from "@/types/inspo";
 import type { SessionUser } from "@/lib/workspace-core";
+import { proxiedSrc } from "@/lib/proxied-src";
+import { prepareScreenshot } from "@/lib/image-client";
 
 // Panel lateral de comentarios de un inspo, al estilo del hilo de un pin de Figma:
 // la nota original de quien lo guardó abre el hilo y cualquier miembro responde debajo.
+// Las capturas se pegan (⌘V), se arrastran al panel o se adjuntan con el clip; se suben
+// nada más soltarlas y viajan con el comentario como lista de URLs.
+
+const MAX_FILES = 6;
 
 interface CommentsPanelProps {
   item: InspoItem;
@@ -18,7 +24,7 @@ interface CommentsPanelProps {
   memberNames?: string[];
   /** Miniatura del inspo para dar contexto arriba del hilo */
   image?: string | null;
-  onPost: (body: string) => Promise<void>;
+  onPost: (body: string, attachments: CommentAttachment[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onClose: () => void;
 }
@@ -31,6 +37,12 @@ const IcSend = (
 );
 const IcTrash = (
   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" /></svg>
+);
+const IcImage = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
+);
+const IcChevron = (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
 );
 const IcArrow = (
   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l6-6M4 3h5v5" /></svg>
@@ -87,6 +99,7 @@ interface Msg {
   name: string;
   image: string | null;
   body: string;
+  attachments: CommentAttachment[];
   at: string;
   mine: boolean;
   /** true para la nota original y el subcomentario del item */
@@ -96,16 +109,91 @@ interface Msg {
 
 const PROMPTS = ["Me gusta el hero", "Ojo a la tipografía", "¿Lo usamos de referencia?", "El scroll es muy fino"];
 
+// Enlaces dentro del comentario: se detectan http(s):// y www., y se pintan como hipervínculos
+// con el dominio en corto (sin protocolo ni barra final) para que no rompan el ancho del panel.
+const URL_RE = /((?:https?:\/\/|www\.)[^\s<>"'）)]+)/gi;
+function linkLabel(raw: string) {
+  const s = raw.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, "");
+  return s.length > 48 ? s.slice(0, 45) + "…" : s;
+}
+function renderBody(text: string) {
+  const parts = text.split(URL_RE);
+  return parts.map((part, i) => {
+    if (i % 2 === 0) return part;
+    // Puntuación final (coma, punto, paréntesis) no forma parte del enlace
+    const m = part.match(/^(.*?)([.,;:!?)\]]*)$/);
+    const url = m ? m[1] : part;
+    const tail = m ? m[2] : "";
+    const href = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+    return (
+      <Fragment key={i}>
+        <a className="cm-link" href={href} target="_blank" rel="noopener noreferrer" title={url}>{linkLabel(url)}{IcArrow}</a>
+        {tail}
+      </Fragment>
+    );
+  });
+}
+
+/** Captura en el composer: se sube nada más añadirla y se envía con el comentario cuando está `ready`. */
+interface Pending {
+  key: string;
+  preview: string;       // object URL local, para la miniatura inmediata
+  name: string;
+  status: "uploading" | "ready" | "error";
+  url?: string;
+  w: number;
+  h: number;
+  error?: string;
+}
+
+async function uploadPending(file: File): Promise<{ url: string; w: number; h: number; name: string }> {
+  const prepared = await prepareScreenshot(file);
+  const fd = new FormData();
+  fd.append("file", new File([prepared.blob], prepared.name, { type: prepared.blob.type }));
+  const res = await fetch("/api/comments/upload", { method: "POST", body: fd });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+  return { url: data.url as string, w: prepared.w, h: prepared.h, name: prepared.name };
+}
+
+function filesFrom(dt: DataTransfer | null): File[] {
+  if (!dt) return [];
+  const out: File[] = [];
+  for (const f of Array.from(dt.files ?? [])) if (f.type.startsWith("image/")) out.push(f);
+  if (!out.length) {
+    for (const it of Array.from(dt.items ?? [])) {
+      if (it.kind === "file" && it.type.startsWith("image/")) { const f = it.getAsFile(); if (f) out.push(f); }
+    }
+  }
+  return out;
+}
+
 export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onClose }: CommentsPanelProps) {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [pending, setPending] = useState<Pending[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const [lightbox, setLightbox] = useState<{ list: CommentAttachment[]; idx: number } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const dragDepth = useRef(0);
+  const lightboxRef = useRef(lightbox);
+  lightboxRef.current = lightbox;
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      const lb = lightboxRef.current;
+      if (lb) {
+        if (e.key === "Escape") setLightbox(null);
+        if (e.key === "ArrowRight") setLightbox({ list: lb.list, idx: (lb.idx + 1) % lb.list.length });
+        if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
+        return;
+      }
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", onKey);
     const t = setInterval(() => setNow(Date.now()), 30000);
     return () => { document.removeEventListener("keydown", onKey); clearInterval(t); };
@@ -113,19 +201,66 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
 
   useEffect(() => { textareaRef.current?.focus(); }, [item.id]);
 
+  // Al cambiar de inspo o cerrar, soltar las previews locales
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
+  useEffect(() => () => { for (const p of pendingRef.current) URL.revokeObjectURL(p.preview); }, [item.id]);
+
+  const addFiles = useCallback((files: File[]) => {
+    if (!files.length) return;
+    setError(null);
+    const room = MAX_FILES - pendingRef.current.length;
+    if (room <= 0) { setError(`Como mucho ${MAX_FILES} capturas por comentario`); return; }
+    const batch = files.slice(0, room).map<Pending>((f) => ({
+      key: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, preview: URL.createObjectURL(f),
+      name: f.name || "captura", status: "uploading", w: 0, h: 0,
+    }));
+    setPending((prev) => [...prev, ...batch]);
+    batch.forEach((p, i) => {
+      uploadPending(files[i])
+        .then((r) => setPending((prev) => prev.map((x) => x.key === p.key ? { ...x, status: "ready", url: r.url, w: r.w, h: r.h, name: r.name } : x)))
+        .catch((e) => setPending((prev) => prev.map((x) => x.key === p.key ? { ...x, status: "error", error: e instanceof Error ? e.message : "No se pudo subir" } : x)));
+    });
+    if (files.length > room) setError(`Solo caben ${MAX_FILES} capturas; se han dejado fuera ${files.length - room}`);
+  }, []);
+
+  const removePending = (key: string) => {
+    const p = pendingRef.current.find((x) => x.key === key);
+    if (!p) return;
+    URL.revokeObjectURL(p.preview);
+    if (p.url) fetch(`/api/comments/upload?url=${encodeURIComponent(p.url)}`, { method: "DELETE" }).catch(() => {});
+    setPending((prev) => prev.filter((x) => x.key !== key));
+  };
+
+  const onPaste = (e: React.ClipboardEvent) => {
+    const files = filesFrom(e.clipboardData);
+    if (files.length) { e.preventDefault(); addFiles(files); }
+  };
+  const onDragEnter = (e: React.DragEvent) => {
+    if (!Array.from(e.dataTransfer.types).includes("Files")) return;
+    e.preventDefault(); dragDepth.current += 1; setDragging(true);
+  };
+  const onDragOver = (e: React.DragEvent) => { if (Array.from(e.dataTransfer.types).includes("Files")) e.preventDefault(); };
+  const onDragLeave = () => { dragDepth.current = Math.max(0, dragDepth.current - 1); if (dragDepth.current === 0) setDragging(false); };
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault(); dragDepth.current = 0; setDragging(false);
+    addFiles(filesFrom(e.dataTransfer));
+    textareaRef.current?.focus();
+  };
+
   const msgs = useMemo<Msg[]>(() => {
     const out: Msg[] = [];
     const author = item.puestoPor || "Sin autor";
     const mine = author === user.name;
     if (item.comentarios) {
-      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.comentarios, at: esDateToIso(item.fecha), mine, original: true });
+      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.comentarios, attachments: [], at: esDateToIso(item.fecha), mine, original: true });
     }
     if (item.subcomentarios) {
-      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subcomentarios, at: esDateToIso(item.fecha), mine, original: true });
+      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subcomentarios, attachments: [], at: esDateToIso(item.fecha), mine, original: true });
     }
     for (const c of comments) {
       const own = c.authorId === user.id;
-      out.push({ id: c.id, name: c.authorName, image: c.authorImage, body: c.body, at: c.createdAt, mine: own, deletable: own || canManage });
+      out.push({ id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage });
     }
     return out;
   }, [item, comments, user, canManage, memberImages]);
@@ -136,13 +271,19 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     if (el) el.scrollTop = el.scrollHeight;
   }, [msgs.length, item.id]);
 
+  const uploading = pending.some((p) => p.status === "uploading");
+  const ready = pending.filter((p): p is Pending & { url: string } => p.status === "ready" && !!p.url);
+  const canSend = (!!draft.trim() || ready.length > 0) && !uploading && !sending;
+
   const submit = async () => {
     const body = draft.trim();
-    if (!body || sending) return;
+    if (!canSend) return;
     setSending(true); setError(null);
     try {
-      await onPost(body);
+      await onPost(body, ready.map((p) => ({ url: p.url, w: p.w, h: p.h, name: p.name })));
       setDraft("");
+      for (const p of pending) URL.revokeObjectURL(p.preview);
+      setPending([]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "No se pudo enviar");
     } finally {
@@ -164,7 +305,23 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   return (
     <>
       <div className="cm-backdrop" onClick={onClose} />
-      <aside className="cm-panel" role="dialog" aria-label={`Comentarios de ${item.empresa}`}>
+      <aside
+        className={`cm-panel${dragging ? " is-dragging" : ""}`}
+        role="dialog"
+        aria-label={`Comentarios de ${item.empresa}`}
+        onPaste={onPaste}
+        onDragEnter={onDragEnter}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        {dragging && (
+          <div className="cm-drop" aria-hidden>
+            <span className="cm-drop__icon">{IcImage}</span>
+            <span className="display cm-drop__title">Suelta la captura</span>
+            <span className="cm-drop__text">Se adjunta al comentario</span>
+          </div>
+        )}
         <header className="cm-panel__head">
           <div className="cm-panel__title">
             <span className="display">{item.empresa}</span>
@@ -196,8 +353,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               <span className="display cm-empty__title">Todavía no hay conversación</span>
               <span className="cm-empty__text">
                 {others.length === 0
-                  ? "Apunta qué te ha gustado y por qué. Queda guardado con la web."
-                  : `Di qué te ha gustado de esta web. ${listNames(others)} lo ${others.length > 1 ? "verán" : "verá"} aquí.`}
+                  ? "Apunta qué te ha gustado y por qué, o pega una captura. Queda guardado con la web."
+                  : `Di qué te ha gustado de esta web o pega una captura. ${listNames(others)} lo ${others.length > 1 ? "verán" : "verá"} aquí.`}
               </span>
               <div className="cm-empty__prompts">
                 {PROMPTS.map((p) => (
@@ -220,7 +377,25 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                   </div>
                 )}
                 <div className="cm-msg__row">
-                  <p className="cm-msg__body">{m.body}</p>
+                  <div className="cm-msg__content">
+                    {m.body && <p className="cm-msg__body">{renderBody(m.body)}</p>}
+                    {m.attachments.length > 0 && (
+                      <div className={`cm-atts cm-atts--${Math.min(m.attachments.length, 3)}`}>
+                        {m.attachments.map((a, j) => (
+                          <button
+                            key={a.url}
+                            type="button"
+                            className="cm-att"
+                            style={m.attachments.length === 1 && a.w && a.h ? { aspectRatio: `${a.w} / ${a.h}` } : undefined}
+                            title={a.name ?? "Ver captura"}
+                            onClick={() => setLightbox({ list: m.attachments, idx: j })}
+                          >
+                            <img src={proxiedSrc(a.url)} alt={a.name ?? "Captura"} loading="lazy" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {m.deletable && (
                     <button className="cm-msg__del" title="Borrar comentario" onClick={() => onDelete(m.id)}>{IcTrash}</button>
                   )}
@@ -238,19 +413,60 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               className="input cm-composer__input"
               rows={2}
               value={draft}
-              placeholder={replies === 0 && !item.comentarios ? "Escribe el primer comentario…" : "Responder…"}
+              placeholder={replies === 0 && !item.comentarios ? "Escribe el primer comentario o pega una captura…" : "Responder…"}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); submit(); } }}
             />
+            {pending.length > 0 && (
+              <div className="cm-files">
+                {pending.map((p) => (
+                  <div key={p.key} className={`cm-file is-${p.status}`} title={p.status === "error" ? p.error : p.name}>
+                    <img src={p.preview} alt="" />
+                    {p.status === "uploading" && <span className="spinner spinner--sm" />}
+                    {p.status === "error" && <span className="cm-file__err">!</span>}
+                    <button type="button" className="cm-file__rm" aria-label="Quitar captura" onClick={() => removePending(p.key)}>{IcX}</button>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="cm-composer__foot">
-              {error ? <span className="cm-composer__error">{error}</span> : <span className="cm-composer__hint">⌘↩ para enviar</span>}
-              <button type="submit" className="btn btn--primary btn--sm" disabled={!draft.trim() || sending}>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
+                onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
+              <button type="button" className="btn-icon cm-composer__attach" title="Adjuntar captura" aria-label="Adjuntar captura" onClick={() => fileRef.current?.click()}>{IcImage}</button>
+              {error
+                ? <span className="cm-composer__error">{error}</span>
+                : <span className="cm-composer__hint">{uploading ? "Subiendo captura…" : "⌘↩ envía · ⌘V pega capturas"}</span>}
+              <button type="submit" className="btn btn--primary btn--sm" disabled={!canSend}>
                 {sending ? <span className="spinner spinner--sm" /> : <>Enviar {IcSend}</>}
               </button>
             </div>
           </div>
         </form>
       </aside>
+
+      {lightbox && (() => {
+        const a = lightbox.list[lightbox.idx];
+        const many = lightbox.list.length > 1;
+        const go = (d: number) => setLightbox({ list: lightbox.list, idx: (lightbox.idx + d + lightbox.list.length) % lightbox.list.length });
+        return (
+          <div className="cm-lightbox" role="dialog" aria-label="Captura" onClick={() => setLightbox(null)}>
+            <button className="btn-icon cm-lightbox__close" aria-label="Cerrar" onClick={() => setLightbox(null)}>{IcX}</button>
+            {many && <button className="cm-lightbox__nav is-prev" aria-label="Anterior" onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
+            <img
+              key={a.url}
+              className="cm-lightbox__img"
+              src={proxiedSrc(a.url)}
+              alt={a.name ?? "Captura"}
+              onClick={(e) => e.stopPropagation()}
+            />
+            {many && <button className="cm-lightbox__nav is-next" aria-label="Siguiente" onClick={(e) => { e.stopPropagation(); go(1); }}>{IcChevron}</button>}
+            <div className="cm-lightbox__caption">
+              {a.name && <span>{a.name}</span>}
+              {many && <span className="cm-lightbox__count">{lightbox.idx + 1} / {lightbox.list.length}</span>}
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

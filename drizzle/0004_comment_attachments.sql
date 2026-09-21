@@ -1,0 +1,1 @@
+ALTER TABLE `inspo_comment` ADD `attachments` text DEFAULT '[]' NOT NULL;

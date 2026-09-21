@@ -6,7 +6,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
-import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags, CommentMap } from "@/types/inspo";
+import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
 import { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
 import Sidebar, { SearchBox, Icons, TaggingState, type QuotaView } from "./Sidebar";
@@ -380,8 +380,8 @@ export default function InspoClient({
     return () => clearInterval(t);
   }, [commentsItemId, loadComments]);
   const commentsItem = useMemo(() => items.find((i) => i.id === commentsItemId) ?? null, [items, commentsItemId]);
-  const postComment = async (itemId: string, body: string) => {
-    const res = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, body }) });
+  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[]) => {
+    const res = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, body, attachments }) });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
     setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), data] }));
@@ -513,14 +513,13 @@ export default function InspoClient({
     if (job && job.status !== "loading" && !job.seen) patchJob(url, { seen: true });
   }, [designMdItem, designMdJobs]);
 
-  // "Quién": miembros del workspace primero, luego etiquetas heredadas que sigan en uso (p. ej. "Ambos")
+  // "Quién": solo miembros del workspace con algo subido. Las etiquetas heredadas de la hoja
+  // ("Ambos" = sin autor conocido) no se ofrecen como filtro; esas webs siguen en "Todos".
   const memberNames = useMemo(() => members.map((m) => m.name), [members]);
   const autorImages = useMemo(() => Object.fromEntries(members.filter((m) => m.image).map((m) => [m.name, m.image!])), [members]);
   const autores = useMemo(() => {
     const used = new Set(items.map((i) => i.puestoPor).filter(Boolean));
-    const fromMembers = memberNames.filter((n) => used.has(n));
-    const legacy = [...used].filter((n) => !memberNames.includes(n)).sort();
-    return [...fromMembers, ...legacy];
+    return memberNames.filter((n) => used.has(n));
   }, [items, memberNames]);
 
   const resetFilters = useCallback(() => {
@@ -743,7 +742,7 @@ export default function InspoClient({
           memberImages={autorImages}
           memberNames={memberNames}
           image={thumbMap[commentsItem.web] ? proxiedSrc(thumbMap[commentsItem.web]) : designMdIndex[commentsItem.web]?.coverUrl ? proxiedSrc(designMdIndex[commentsItem.web].coverUrl!) : null}
-          onPost={(body) => postComment(commentsItem.id!, body)}
+          onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
           onDelete={(id) => deleteComment(commentsItem.id!, id)}
           onClose={() => setCommentsItemId(null)}
         />
@@ -807,7 +806,7 @@ export default function InspoClient({
             </div>
             <div className="ai-hero__main">
               <div className="ai-hero__eyebrow">
-                {aiLoading ? "Jev está leyendo la librería" : aiError ? "Jev no ha respondido" : "Resultados de Jev para"}
+                {aiLoading ? "Buscando en tu librería" : aiError ? "La búsqueda no ha respondido" : "Resultados para"}
               </div>
               <h2 className="ai-hero__query">{query.trim()}</h2>
               <div className="ai-hero__meta">
@@ -821,8 +820,14 @@ export default function InspoClient({
                 ) : (
                   <>
                     <span className="ai-hero__pill"><strong>{filtered.length}</strong> {filtered.length === 1 ? "resultado" : "resultados"}</span>
-                    {aiTop > 0 && <span className="ai-hero__pill">mejor encaje <strong>{Math.round(aiTop * 100)}%</strong></span>}
-                    <span className="ai-hero__hint">Ordenados por afinidad · pulsa el porcentaje de una card para ver el porqué</span>
+                    {aiTop > 0 && (
+                      <button type="button" className="ai-hero__pill ai-hero__pill--info" aria-describedby="ai-score-tip">
+                        mejor encaje <strong>{Math.round(aiTop * 100)}%</strong>
+                        <span className="info-i" aria-hidden>{Icons.info}</span>
+                        <span className="info-tip" role="tooltip" id="ai-score-tip">El porcentaje es la probabilidad de que cada web sea lo que has descrito. En cada card, el suyo te cuenta el porqué.</span>
+                      </button>
+                    )}
+                    <span className="ai-hero__hint">Ordenadas de mayor a menor encaje</span>
                   </>
                 )}
               </div>

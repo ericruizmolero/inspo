@@ -39,6 +39,15 @@ export interface InspoTags {
 export type TagMap = Record<string, InspoTags>;
 
 // ─── Comentarios ─────────────────────────────────────────────────────────────
+export interface CommentAttachment {
+  /** URL del fichero (Blob privado: pasa por /api/thumbnail/img; local: ruta de /public) */
+  url: string;
+  /** Tamaño en píxeles, para reservar el hueco antes de cargar */
+  w: number;
+  h: number;
+  name?: string;
+}
+
 export interface InspoComment {
   id: string;
   itemId: string;
@@ -46,6 +55,7 @@ export interface InspoComment {
   authorName: string;
   authorImage: string | null;
   body: string;
+  attachments: CommentAttachment[];
   /** ISO */
   createdAt: string;
 }

@@ -11,6 +11,11 @@ export const FECHAS: Exclude<FilterFecha, "Todos">[] = ["Este mes", "Este año"]
 
 // ─── Icons (16px, 1.5 stroke) ─────────────────────────────────────────────────
 const I = {
+  info: (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+      <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
+    </svg>
+  ),
   all: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="2" width="5" height="5" rx="1.2" /><rect x="9" y="2" width="5" height="5" rx="1.2" />
@@ -274,7 +279,7 @@ export default function Sidebar({
                 key={a}
                 icon={autorImages[a]
                   ? <span className="nav-item__avatar"><img src={autorImages[a]} alt="" /></span>
-                  : a === "Ambos" ? I.users : I.user}
+                  : I.user}
                 label={a}
                 count={countBy((i) => i.puestoPor === a)}
                 active={autor === a}

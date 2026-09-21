@@ -15,16 +15,18 @@ export async function GET() {
   }
 }
 
-// POST { itemId, body } → InspoComment
+// POST { itemId, body, attachments?: [{ url, w, h, name? }] } → InspoComment
+// Los adjuntos se suben antes por /api/comments/upload; aquí solo llegan sus URLs.
 export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  const { itemId, body } = (await req.json().catch(() => ({}))) as { itemId?: string; body?: string };
-  if (!itemId || typeof body !== "string" || !body.trim()) {
+  const { itemId, body, attachments } = (await req.json().catch(() => ({}))) as { itemId?: string; body?: string; attachments?: unknown };
+  const text = typeof body === "string" ? body : "";
+  if (!itemId || (!text.trim() && !(Array.isArray(attachments) && attachments.length))) {
     return Response.json({ error: "Faltan datos" }, { status: 400 });
   }
   try {
-    const c = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body });
+    const c = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: text, attachments });
     return Response.json(c, { status: 201 });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });

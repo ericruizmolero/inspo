@@ -2,21 +2,40 @@
 import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
-import type { InspoComment, CommentMap } from "@/types/inspo";
+import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-files";
+import type { InspoComment, CommentMap, CommentAttachment } from "@/types/inspo";
 
 const C = schema.inspoComment;
 const U = schema.user;
 
 const select = {
   id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName,
-  body: C.body, createdAt: C.createdAt, authorImage: U.image,
+  body: C.body, attachments: C.attachments, createdAt: C.createdAt, authorImage: U.image,
 };
-type Row = { id: string; itemId: string; authorId: string | null; authorName: string; body: string; createdAt: Date; authorImage: string | null };
+type Row = { id: string; itemId: string; authorId: string | null; authorName: string; body: string; attachments: CommentAttachment[]; createdAt: Date; authorImage: string | null };
 
 const toComment = (r: Row): InspoComment => ({
   id: r.id, itemId: r.itemId, authorId: r.authorId, authorName: r.authorName,
-  authorImage: r.authorImage ?? null, body: r.body, createdAt: r.createdAt.toISOString(),
+  authorImage: r.authorImage ?? null, body: r.body, attachments: Array.isArray(r.attachments) ? r.attachments : [],
+  createdAt: r.createdAt.toISOString(),
 });
+
+/** Solo se guardan adjuntos subidos por este workspace, con medidas sanas. */
+function cleanAttachments(organizationId: string, input: unknown): CommentAttachment[] {
+  if (!Array.isArray(input)) return [];
+  const out: CommentAttachment[] = [];
+  for (const a of input.slice(0, MAX_ATTACHMENTS)) {
+    if (!a || typeof a.url !== "string" || !ownsCommentFile(organizationId, a.url)) continue;
+    const w = Math.round(Number(a.w)), h = Math.round(Number(a.h));
+    out.push({
+      url: a.url,
+      w: w > 0 && w < 20000 ? w : 0,
+      h: h > 0 && h < 20000 ? h : 0,
+      ...(typeof a.name === "string" && a.name ? { name: a.name.slice(0, 120) } : {}),
+    });
+  }
+  return out;
+}
 
 /** Todos los comentarios del workspace agrupados por item (volumen pequeño, una consulta). */
 export async function listComments(organizationId: string): Promise<CommentMap> {
@@ -27,23 +46,29 @@ export async function listComments(organizationId: string): Promise<CommentMap> 
   return map;
 }
 
-export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string }): Promise<InspoComment> {
+export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string; attachments?: unknown }): Promise<InspoComment> {
   const body = input.body.trim();
-  if (!body) throw new Error("El comentario está vacío");
+  const attachments = cleanAttachments(organizationId, input.attachments);
+  if (!body && !attachments.length) throw new Error("El comentario está vacío");
   const [item] = await db.select({ id: schema.inspoItem.id }).from(schema.inspoItem)
     .where(and(eq(schema.inspoItem.id, input.itemId), eq(schema.inspoItem.organizationId, organizationId))).limit(1);
   if (!item) throw new Error("Ese item no está en el workspace");
-  const row = { id: newId(), organizationId, itemId: input.itemId, authorId: input.authorId, authorName: input.authorName, body: body.slice(0, 4000), createdAt: new Date(), editedAt: null };
+  const row = { id: newId(), organizationId, itemId: input.itemId, authorId: input.authorId, authorName: input.authorName, body: body.slice(0, 4000), attachments, createdAt: new Date(), editedAt: null };
   await db.insert(C).values(row);
   const [u] = await db.select({ image: U.image }).from(U).where(eq(U.id, input.authorId)).limit(1);
   return toComment({ ...row, authorImage: u?.image ?? null });
 }
 
-/** Borra un comentario propio (o cualquiera si `admin`). Devuelve false si no existía o no era suyo. */
+/** Borra un comentario propio (o cualquiera si `admin`) y sus capturas. Devuelve false si no existía o no era suyo. */
 export async function deleteComment(organizationId: string, id: string, userId: string, admin: boolean): Promise<boolean> {
   const where = admin
     ? and(eq(C.id, id), eq(C.organizationId, organizationId))
     : and(eq(C.id, id), eq(C.organizationId, organizationId), eq(C.authorId, userId));
+  const [row] = await db.select({ attachments: C.attachments }).from(C).where(where).limit(1);
+  if (!row) return false;
   const res = await db.delete(C).where(where);
-  return (res.rowsAffected ?? 0) > 0;
+  if ((res.rowsAffected ?? 0) === 0) return false;
+  const urls = Array.isArray(row.attachments) ? row.attachments.map((a) => a.url) : [];
+  if (urls.length) await deleteCommentFiles(organizationId, urls);
+  return true;
 }

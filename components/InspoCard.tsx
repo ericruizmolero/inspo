@@ -1,8 +1,9 @@
 "use client";
 
 import { proxiedSrc } from "@/lib/proxied-src";
+import { hueFor } from "./CommentsPanel";
 
-import { useState, useEffect, useRef } from "react";
+import { Fragment, useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags } from "@/types/inspo";
 import { ESTILOS, TAGS, TAG_THRESHOLD, labelOf } from "@/lib/taxonomy";
 
@@ -60,6 +61,16 @@ const IconX = (
     <path d="M2 2l8 8M10 2l-8 8" />
   </svg>
 );
+const IconExternal = (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 10l6-6M5 4h5v5" />
+  </svg>
+);
+const IconInfo = (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+    <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
+  </svg>
+);
 
 export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, onComments, onDelete }: InspoCardProps) {
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
@@ -73,6 +84,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   // Borrar en dos toques: el primero pide confirmación en el propio botón, el segundo borra
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // Momento en que se abrió la confirmación: un segundo clic/tap/tecla casi inmediato no cuenta,
+  // para que borrar sea siempre dos acciones deliberadas (doble clic, doble tap o Espacio no borran).
+  const confirmAt = useRef(0);
   const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const manualImgRef = useRef<HTMLImageElement>(null);
@@ -159,16 +173,21 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     }
   };
 
+  // La confirmación se cancela con Esc o sola a los 6 s
   useEffect(() => {
     if (!confirmDelete) return;
-    const t = setTimeout(() => setConfirmDelete(false), 5000);
-    return () => clearTimeout(t);
+    const t = setTimeout(() => setConfirmDelete(false), 6000);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setConfirmDelete(false); };
+    window.addEventListener("keydown", onKey);
+    return () => { clearTimeout(t); window.removeEventListener("keydown", onKey); };
   }, [confirmDelete]);
+  const cancelDelete = (e: React.MouseEvent) => { e.stopPropagation(); setConfirmDelete(false); };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!onDelete) return;
-    if (!confirmDelete) { setConfirmDelete(true); return; }
+    if (!confirmDelete) { confirmAt.current = Date.now(); setConfirmDelete(true); return; }
+    if (Date.now() - confirmAt.current < 400) return; // demasiado seguido: no es una decisión
     setConfirmDelete(false);
     setDeleting(true);
     try { await onDelete(); } finally { setDeleting(false); }
@@ -180,6 +199,11 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     fileInputRef.current?.click();
     setTimeout(() => { suppressClick.current = false; }, 500);
   };
+
+  // La web externa solo se abre desde su icono: el clic en la card lleva a lo nuestro.
+  // Con DESIGN.md hecho se abre la ficha; si no, el hilo de comentarios (que ya enlaza a la web).
+  const clickTarget: "md" | "comments" = designMdReady || !onComments ? "md" : "comments";
+  const openInside = () => { if (clickTarget === "md") onDesignMd(); else onComments!(); };
 
   const meta = (
     <div className="tile__meta">
@@ -204,7 +228,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     <div>
       <article
         className="tile"
-        onClick={() => { if (suppressClick.current) return; window.open(item.web, "_blank", "noopener,noreferrer"); }}
+        onClick={() => { if (suppressClick.current) return; openInside(); }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
@@ -261,9 +285,18 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           )}
 
           {isError && (
-            <div className="tile__fallback">
-              <span className="display">{item.empresa}</span>
-              {domain && <span className="tile__fallback-domain">{domain}</span>}
+            // Sin captura: cartel tipográfico. Tinte sutil estable por dominio e inicial en marca de agua.
+            <div className="tile__fallback" style={{ "--fb-hue": hueFor(domain || item.empresa) } as React.CSSProperties}>
+              <span className="display tile__fallback-mark" aria-hidden>{item.empresa.trim().slice(0, 1).toUpperCase()}</span>
+              <div className="tile__fallback-top">
+                <span className="tile__fallback-domain">{domain}</span>
+                <span className="tile__fallback-tipo">{item.tipo}</span>
+              </div>
+              <div className="tile__fallback-body">
+                <i className="tile__fallback-rule" aria-hidden />
+                <span className="display tile__fallback-name">{item.empresa}</span>
+                {item.comentarios && <span className="tile__fallback-note">{item.comentarios}</span>}
+              </div>
             </div>
           )}
 
@@ -275,57 +308,83 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               <span className="tile__replies">{IconComment}{commentCount === 1 ? "1 respuesta" : `${commentCount} respuestas`}</span>
             )}
             {aiChips}
+            <span className="tile__cta">
+              {clickTarget === "md" ? (designMdReady ? "Abrir DESIGN.md" : designMdLoading ? "Generando DESIGN.md…" : "Generar DESIGN.md") : (commentCount > 0 ? "Ver comentarios" : "Comentar")}
+            </span>
           </div>
 
           {score !== undefined && (
             <div
-              className={`tile__score${reason ? " has-why" : ""}${whyOpen && reason ? " is-open" : ""}`}
-              onClick={(e) => { e.stopPropagation(); if (reason) setWhyOpen((v) => !v); }}
+              className={`tile__score has-why${whyOpen ? " is-open" : ""}`}
+              onClick={(e) => { e.stopPropagation(); setWhyOpen((v) => !v); }}
               onMouseDown={(e) => e.stopPropagation()}
               onMouseLeave={() => setWhyOpen(false)}
             >
-              <span className="tile__score-pct" title={reason ? undefined : "Afinidad con la búsqueda"}>{Math.round(score * 100)}%</span>
-              {reason && <span className="tile__score-why" role="tooltip">{reason}</span>}
+              <span className="tile__score-pct">
+                {Math.round(score * 100)}%
+                <span className="tile__score-i" aria-hidden>{IconInfo}</span>
+              </span>
+              <span className="tile__score-why" role="tooltip">
+                <span className="tile__score-why-label">Encaje con tu búsqueda</span>
+                <span className="tile__score-why-text">{reason ?? "Probabilidad de que esta web sea lo que has descrito."}</span>
+              </span>
             </div>
           )}
 
           <div
-            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting ? " is-visible" : ""}`}
+            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
+            {confirmDelete || deleting ? (
+              <Fragment key="confirm">
+                <span className="tile__confirm-text">{deleting ? "Quitando…" : "¿Quitar de Inspo?"}</span>
+                <button className="tile__action tile__action--confirm" onClick={handleDelete} disabled={deleting} autoFocus>
+                  {deleting ? <span className="spinner" /> : "Borrar"}
+                </button>
+                {!deleting && (
+                  <button className="tile__action" data-tip="Cancelar" aria-label="Cancelar" onClick={cancelDelete}>{IconX}</button>
+                )}
+              </Fragment>
+            ) : (
+              <Fragment key="actions">
             {manualThumbnail && (
-              <button className="tile__action tile__action--danger" title="Quitar thumbnail"
+              <button className="tile__action tile__action--danger" data-tip="Quitar thumbnail" aria-label="Quitar thumbnail"
                 onClick={async (e) => { e.stopPropagation(); await onRemoveThumbnail(); }}>
                 {IconX}
               </button>
             )}
             {onComments && (
-              <button className={`tile__action tile__action--cm${commentCount > 0 ? " has-count" : ""}`} title="Comentarios"
+              <button className={`tile__action tile__action--cm${commentCount > 0 ? " has-count" : ""}`} data-tip={commentCount > 0 ? "Ver comentarios" : "Comentar"} aria-label="Comentarios"
                 onClick={(e) => { e.stopPropagation(); onComments(); }}>
                 {IconComment}{commentCount > 0 && <span className="tile__action-count">{commentCount}</span>}
               </button>
             )}
             <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
-              title={designMdLoading ? "Generando DESIGN.md…" : designMdReady ? "Ver DESIGN.md" : "Generar DESIGN.md con IA (30-90 s)"}
+              data-tip={designMdLoading ? "Generando DESIGN.md…" : designMdReady ? "Ver DESIGN.md" : "Generar DESIGN.md con IA (30-90 s)"}
               onClick={(e) => { e.stopPropagation(); onDesignMd(); }}
             >
               {designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}
             </button>
-            <button className="tile__action" title={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"}
+            <button className="tile__action" data-tip={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"} aria-label={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"}
               onClick={triggerUpload}>
               {uploading ? <span className="spinner" /> : IconUpload}
             </button>
+            <a className="tile__action tile__action--link" href={item.web} target="_blank" rel="noopener noreferrer"
+              data-tip="Abrir la web" aria-label="Abrir la web" onClick={(e) => e.stopPropagation()}>
+              {IconExternal}
+            </a>
             {onDelete && (
               <button
-                className={`tile__action tile__action--danger tile__action--del${confirmDelete ? " is-confirm" : ""}`}
-                title={confirmDelete ? "Pulsa otra vez para borrar" : "Quitar de Inspo"}
-                aria-label={confirmDelete ? "Confirmar borrado" : "Quitar de Inspo"}
+                className="tile__action tile__action--danger"
+                data-tip="Quitar de Inspo" aria-label="Quitar de Inspo"
                 onClick={handleDelete}
               >
-                {deleting ? <span className="spinner" /> : confirmDelete ? <>{IconTrash}¿Borrar?</> : IconTrash}
+                {IconTrash}
               </button>
+            )}
+            </Fragment>
             )}
           </div>
 
@@ -347,11 +406,17 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           </button>
         )}
         <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>
-        {onDelete && (
-          <button className={`tile__caption-md tile__caption-del${confirmDelete ? " is-confirm" : ""}`} onClick={handleDelete} aria-label={confirmDelete ? "Confirmar borrado" : "Quitar de Inspo"}>
-            {deleting ? <span className="spinner" /> : confirmDelete ? "¿Borrar?" : IconTrash}
-          </button>
-        )}
+        <a className="tile__caption-md tile__caption-link" href={item.web} target="_blank" rel="noopener noreferrer" aria-label="Abrir la web">{IconExternal}</a>
+        {onDelete && (confirmDelete || deleting ? (
+          <Fragment key="confirm">
+            <button className="tile__caption-md tile__caption-del is-confirm" onClick={handleDelete} disabled={deleting} aria-label="Confirmar borrado">
+              {deleting ? <span className="spinner" /> : "Borrar"}
+            </button>
+            {!deleting && <button className="tile__caption-md" onClick={cancelDelete} aria-label="Cancelar">{IconX}</button>}
+          </Fragment>
+        ) : (
+          <button key="trash" className="tile__caption-md tile__caption-del" onClick={handleDelete} aria-label="Quitar de Inspo">{IconTrash}</button>
+        ))}
       </div>
     </div>
   );

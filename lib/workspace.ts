@@ -18,8 +18,12 @@ export async function getCtx(): Promise<Ctx> {
   if (!s) throw new HttpError(401, "No has iniciado sesión");
   const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image };
 
-  await ensurePersonalWorkspace(user.id, user.name, user.email);
-  const workspaces = await listWorkspaces(user.id);
+  // Una sola consulta en el caso normal; solo se crea el personal (y se relee) la primera vez
+  let workspaces = await listWorkspaces(user.id);
+  if (!workspaces.some((w) => w.kind === "personal")) {
+    await ensurePersonalWorkspace(user.id, user.name, user.email);
+    workspaces = await listWorkspaces(user.id);
+  }
 
   const activeId = (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
   let workspace = workspaces.find((w) => w.id === activeId);

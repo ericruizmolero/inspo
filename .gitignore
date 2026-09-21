@@ -55,3 +55,4 @@ HANDOFF-*.md
 
 # DESIGN.md cache (dev)
 /public/design-md/
+/public/comments/

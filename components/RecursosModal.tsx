@@ -80,10 +80,10 @@ export default function RecursosModal({ onClose }: RecursosModalProps) {
       <div className="modal modal--lg rec-modal" onClick={(e) => e.stopPropagation()}>
         <div className="rec-modal__header">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 className="rec-modal__title">¿Buscando inspiración?</h2>
+            <h2 className="rec-modal__title">Dónde mirar y con qué hacerlo</h2>
             <p className="rec-modal__lead">
-              {RECURSOS_TOTAL} webs que usamos para mirar antes de empezar: galerías, secciones sueltas,
-              motion, DESIGN.md para agentes y herramientas. Ninguna repetida.
+              {RECURSOS_TOTAL} webs que usamos antes de empezar y mientras hacemos: galerías de diseño, secciones,
+              motion, tipografía, código, DESIGN.md para agentes, modelos y herramientas de IA. Ninguna repetida.
             </p>
           </div>
           <button className="btn-icon" onClick={onClose} aria-label="Cerrar">{Icons.x}</button>

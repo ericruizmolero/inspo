@@ -154,6 +154,8 @@ export const designRevision = sqliteTable("design_revision", {
 // item (comentarios/subcomentarios) sigue en inspo_item y se pinta como primer
 // mensaje del hilo; aquí van las respuestas de cualquier miembro.
 
+export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
+
 export const inspoComment = sqliteTable("inspo_comment", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
@@ -162,6 +164,8 @@ export const inspoComment = sqliteTable("inspo_comment", {
   /** Nombre en el momento de escribir (por si el usuario desaparece) */
   authorName: text("author_name").notNull(),
   body: text("body").notNull(),
+  /** Capturas adjuntas: JSON `[{ url, w, h, name }]` (URLs privadas de Blob o rutas de /public en local) */
+  attachments: text("attachments", { mode: "json" }).$type<CommentAttachmentRow[]>().notNull().default([]),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   editedAt: integer("edited_at", { mode: "timestamp_ms" }),
 }, (t) => [

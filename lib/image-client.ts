@@ -24,3 +24,44 @@ export async function fileToSquareDataURL(file: File, size = 128): Promise<strin
     bitmap.close();
   }
 }
+
+export interface PreparedImage { blob: Blob; w: number; h: number; name: string }
+
+/**
+ * Prepara una captura para adjuntarla a un comentario: la reduce a `maxEdge` px de lado mayor
+ * y la recodifica (WebP, o JPEG si el navegador no sabe codificar WebP) hasta que quepa en `maxBytes`.
+ * Los GIF pequeños se dejan tal cual para no perder la animación.
+ */
+export async function prepareScreenshot(file: File, maxEdge = 2560, maxBytes = 4 * 1024 * 1024): Promise<PreparedImage> {
+  if (!file.type.startsWith("image/")) throw new Error("El fichero no es una imagen");
+  const bitmap = await createImageBitmap(file);
+  try {
+    const base = (file.name || "captura").replace(/\.[^.]+$/, "") || "captura";
+    if (file.type === "image/gif" && file.size <= maxBytes) {
+      return { blob: file, w: bitmap.width, h: bitmap.height, name: `${base}.gif` };
+    }
+    let scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    let quality = 0.88;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const w = Math.max(1, Math.round(bitmap.width * scale));
+      const h = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("No se pudo procesar la imagen");
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      let blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/webp", quality));
+      if (!blob || blob.type !== "image/webp") {
+        blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", quality));
+      }
+      if (!blob) throw new Error("No se pudo codificar la imagen");
+      if (blob.size <= maxBytes) {
+        return { blob, w, h, name: `${base}.${blob.type === "image/webp" ? "webp" : "jpg"}` };
+      }
+      scale *= 0.75; quality = Math.max(0.7, quality - 0.06);
+    }
+    throw new Error("La imagen es demasiado grande");
+  } finally {
+    bitmap.close();
+  }
+}
