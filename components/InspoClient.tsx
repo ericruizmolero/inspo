@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
@@ -306,6 +308,11 @@ export default function InspoClient({
 
   // Un invitado que pegó una URL en el lienzo de inicio vuelve del login con ?add=<url>:
   // se guarda sola y se abre su DESIGN.md, como si la hubiera pegado ya dentro.
+  // El parámetro se quita con el router de Next, no con history.replaceState: el router
+  // guarda su propia URL y, al cambiar de workspace (router.refresh + remontaje), la
+  // restauraba con el ?add= y la web se daba de alta también en el segundo workspace.
+  // Por si acaso, la URL ya tratada se apunta en sessionStorage y no se repite en la pestaña.
+  const router = useRouter();
   const autoAdded = useRef(false);
   useEffect(() => {
     if (autoAdded.current) return;
@@ -314,9 +321,12 @@ export default function InspoClient({
     if (!web) return;
     autoAdded.current = true;
     params.delete("add");
-    const clean = window.location.pathname + (params.size ? `?${params}` : "");
-    window.history.replaceState(null, "", clean);
-    if (!/^https?:\/\//.test(web) || isDuplicate(web)) return;
+    router.replace(window.location.pathname + (params.size ? `?${params}` : ""), { scroll: false });
+    const DONE_KEY = "inspo:auto-added";
+    let done = "";
+    try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* sin storage */ }
+    if (done === web || !/^https?:\/\//.test(web) || isDuplicate(web)) return;
+    try { sessionStorage.setItem(DONE_KEY, web); } catch { /* sin storage */ }
     addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" }).then((item) => {
       if (item) { setDesignMdItem(item); runDesignMdRef.current(item); }
     });
