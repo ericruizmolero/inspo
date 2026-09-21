@@ -1137,8 +1137,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
     linear-gradient(to right, var(--panel) 0%, transparent 14%, transparent 90%, var(--panel) 100%);
 }
 .collage { width: 100%; max-width: 760px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
-.collage[data-cols="2"] { grid-template-columns: repeat(2, 1fr); max-width: 560px; }
-.collage[data-cols="1"] { grid-template-columns: 1fr; max-width: 380px; }
 .collage__col { display: flex; flex-direction: column; gap: 16px; animation: collage-drift 18s ease-in-out infinite alternate; }
 .collage__col:nth-child(2) { margin-top: 72px; animation-direction: alternate-reverse; animation-duration: 22s; }
 .collage__col:nth-child(3) { margin-top: 28px; animation-duration: 20s; }

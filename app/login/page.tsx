@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/workspace";
-import { showcaseCovers, showcaseSrc } from "@/lib/showcase";
+import { showcaseEntries, showcaseSrc } from "@/lib/showcase";
 import LoginForm from "@/components/LoginForm";
 import { DEV_LOGIN_EMAIL } from "@/lib/auth";
 
@@ -25,10 +25,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       return add ? new URL(add).hostname.replace(/^www\./, "") : "";
     } catch { return ""; }
   })();
-  // Lateral: las últimas webs guardadas en Savvia. Con pocas, menos columnas; sin ninguna, texto.
-  const covers = (await showcaseCovers().catch(() => [] as string[])).map(showcaseSrc);
-  const nCols = covers.length >= 9 ? 3 : covers.length >= 4 ? 2 : covers.length > 0 ? 1 : 0;
-  const cols = nCols ? Array.from({ length: nCols }, (_, c) => covers.filter((_, i) => i % nCols === c)) : null;
+  // Lateral: las últimas webs guardadas en Savvia, siempre 3 columnas de 6. Si hubiera menos
+  // imágenes se repiten para llenar; sin ninguna, texto.
+  const found = (await showcaseEntries().catch(() => [])).map(showcaseSrc);
+  const covers = found.length ? Array.from({ length: 18 }, (_, i) => found[i % found.length]) : [];
+  const cols = covers.length ? [0, 1, 2].map((c) => covers.filter((_, i) => i % 3 === c)) : null;
 
   return (
     <div className="auth">
@@ -61,7 +62,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <aside className="auth__visual" aria-hidden>
         {cols ? (
           <>
-            <div className="collage" data-cols={nCols}>
+            <div className="collage">
               {cols.map((col, ci) => (
                 <div key={ci} className="collage__col">
                   {col.map((src, i) => <img key={i} src={src} alt="" loading="lazy" decoding="async" />)}

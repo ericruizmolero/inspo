@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
-import { put, get } from "@vercel/blob";
+import { put, get, head } from "@vercel/blob";
 import puppeteer, { Browser } from "puppeteer-core";
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
@@ -37,6 +37,18 @@ export async function getStoredShot(url: string): Promise<Buffer | null> {
     return null;
   }
 }
+
+/** ¿Hay captura guardada? Solo metadatos: no descarga la imagen. */
+export async function hasStoredShot(url: string): Promise<boolean> {
+  const key = shotKey(url);
+  if (USE_BLOB) {
+    try { await head(`inspo/shots/${key}.jpg`); return true; } catch { return false; }
+  }
+  try { await fs.access(path.join(SHOTS_DIR, `${key}.jpg`)); return true; } catch { return false; }
+}
+
+/** Ruta pública de la captura en local (public/shots). En producción va por blob privado. */
+export const localShotPath = (url: string) => `/shots/${shotKey(url)}.jpg`;
 
 async function storeShot(url: string, jpeg: Buffer): Promise<void> {
   const key = shotKey(url);
