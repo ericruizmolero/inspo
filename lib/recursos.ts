@@ -58,7 +58,6 @@ export const RECURSOS: RecursoGrupo[] = [
       { name: "Seesaw", url: "https://www.seesaw.website", desc: "Curación holandesa, muy editorial." },
       { name: "Site of Sites", url: "https://siteofsites.co", desc: "Colección curada de webs, ordenada por lo que hace especial a cada una." },
       { name: "Maxibestof", url: "https://maxibestof.one", desc: "Lo mejor de lo mejor: una selección corta y muy exigente." },
-      { name: "Godly", url: "https://godly.website", desc: "Webs astronómicamente buenas: selección corta y muy exigente, con vídeo de cada una." },
       { name: "Klikkentheke", url: "https://klikkentheke.com", desc: "Galería holandesa de webs con mucho cuidado en la selección." },
       { name: "Hover States", url: "https://hoverstat.es", desc: "Webs experimentales e interactivas. Lo raro y lo nuevo." },
       { name: "The Responsive", url: "https://the-responsive.com", desc: "Cada web vista en escritorio y móvil a la vez, para juzgar el responsive." },

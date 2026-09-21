@@ -11,7 +11,7 @@ import s from "./EmptyStart.module.css";
 // con la primera de cada grupo que aún no esté representado, para no dejar la rejilla coja.
 const FEATURED = [
   "https://styles.refero.design",
-  "https://godly.website",
+  "https://recent.design",
   "https://curated.design",
   "https://mobbin.com",
   "https://saasframe.io",
