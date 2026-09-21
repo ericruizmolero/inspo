@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { FilterAutor, FilterFecha, FilterTipo, InspoItem, TagMap } from "@/types/inspo";
 import { SECTORES, ESTILOS, TAGS, TAG_THRESHOLD, Term } from "@/lib/taxonomy";
@@ -256,7 +257,7 @@ export default function Sidebar({
           <span className="sidebar__inspo-sub">Galerías, tipografía, código, modelos y agentes. Lo que usamos antes de empezar.</span>
         </button>
 
-        <div className="sidebar__scroll">
+        <FadeScroll>
         <NavItem icon={I.all} label="Todo" count={items.length} active={isAll} onClick={onReset} />
 
         <div className="sidebar__section">Colecciones</div>
@@ -311,7 +312,7 @@ export default function Sidebar({
         <div className="sidebar__section">Tags</div>
         <Chips terms={TAGS} counts={tagCounts} selected={selTags} onToggle={onToggleTag} />
 
-        </div>
+        </FadeScroll>
 
         <div className="sidebar__footer">
           {quota && <PlanMeter quota={quota} />}
@@ -339,3 +340,33 @@ export default function Sidebar({
 }
 
 export const Icons = I;
+
+// Bloque con scroll y dos "nubes" en los bordes: arriba solo cuando hay contenido por
+// encima, abajo solo cuando queda más por debajo. Se recalculan al hacer scroll y al
+// cambiar el tamaño (filtros que aparecen o desaparecen), y se funden con transición.
+function FadeScroll({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ top: false, bottom: false });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const top = el.scrollTop > 2;
+      const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
+      setEdges((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    for (const child of el.children) ro.observe(child);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, []);
+
+  return (
+    <div className={`sidebar__scrollwrap${edges.top ? " is-top" : ""}${edges.bottom ? " is-bottom" : ""}`}>
+      <div className="sidebar__scroll" ref={ref}>{children}</div>
+    </div>
+  );
+}

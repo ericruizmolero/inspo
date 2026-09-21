@@ -214,12 +214,22 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   padding: 20px 14px 16px;
   border-right: 1px solid var(--border);
 }
+.sidebar__scrollwrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0 -14px; }
 .sidebar__scroll {
   flex: 1; min-height: 0; overflow-y: auto;
   display: flex; flex-direction: column; gap: 2px;
-  margin: 0 -14px; padding: 0 14px 20px;
+  padding: 0 14px 20px;
   scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent;
 }
+/* Nubes en los bordes del scroll: solo cuando hay contenido oculto en esa dirección */
+.sidebar__scrollwrap::before, .sidebar__scrollwrap::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 44px; z-index: 1;
+  pointer-events: none; opacity: 0; transition: opacity 0.25s;
+}
+.sidebar__scrollwrap::before { top: 0; background: linear-gradient(to bottom, var(--sidebar-bg, var(--bg)) 20%, transparent); }
+.sidebar__scrollwrap::after { bottom: 0; background: linear-gradient(to top, var(--sidebar-bg, var(--bg)) 20%, transparent); }
+.sidebar__scrollwrap.is-top::before { opacity: 1; }
+.sidebar__scrollwrap.is-bottom::after { opacity: 1; }
 /* Los hijos no deben encogerse: si no, los pills activos pierden su alto */
 .sidebar__scroll > * { flex-shrink: 0; }
 .sidebar__brand {
