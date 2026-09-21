@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/workspace";
-import { getDesignMdIndex } from "@/lib/design-store";
-import { proxiedSrc } from "@/lib/proxied-src";
+import { showcaseCovers, showcaseSrc } from "@/lib/showcase";
 import LoginForm from "@/components/LoginForm";
 import { DEV_LOGIN_EMAIL } from "@/lib/auth";
 
@@ -16,19 +15,9 @@ const IcBack = (
   </svg>
 );
 
-// Portadas para el lateral: las de los DESIGN.md ya generados (capturas de webs públicas,
-// sin nada de ningún workspace ni de nadie)
-async function covers(): Promise<{ covers: string[]; total: number }> {
-  const index = await getDesignMdIndex();
-  const entries = Object.values(index).sort((a, b) => +new Date(b.generatedAt) - +new Date(a.generatedAt));
-  const covers = entries.map((e) => e.coverUrl).filter((u): u is string => !!u).slice(0, 15).map(proxiedSrc);
-  return { covers, total: entries.length };
-}
-
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
   if (await getSession()) redirect(next && next.startsWith("/") ? next : "/");
-  const pub = await covers().catch(() => ({ covers: [], total: 0 }));
   // Si viene del lienzo de inicio con una URL (?next=/?add=…), el titular lo dice
   const pendingDomain = (() => {
     try {
@@ -36,7 +25,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       return add ? new URL(add).hostname.replace(/^www\./, "") : "";
     } catch { return ""; }
   })();
-  const cols = pub.covers.length >= 6 ? [0, 1, 2].map((c) => pub.covers.filter((_, i) => i % 3 === c)) : null;
+  // Lateral: las últimas webs guardadas en Savvia. Con pocas, menos columnas; sin ninguna, texto.
+  const covers = (await showcaseCovers().catch(() => [] as string[])).map(showcaseSrc);
+  const nCols = covers.length >= 9 ? 3 : covers.length >= 4 ? 2 : covers.length > 0 ? 1 : 0;
+  const cols = nCols ? Array.from({ length: nCols }, (_, c) => covers.filter((_, i) => i % nCols === c)) : null;
 
   return (
     <div className="auth">
@@ -69,7 +61,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <aside className="auth__visual" aria-hidden>
         {cols ? (
           <>
-            <div className="collage">
+            <div className="collage" data-cols={nCols}>
               {cols.map((col, ci) => (
                 <div key={ci} className="collage__col">
                   {col.map((src, i) => <img key={i} src={src} alt="" loading="lazy" decoding="async" />)}
@@ -77,8 +69,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               ))}
             </div>
             <div className="auth__visual-caption">
-              <span className="display">DESIGN.md</span>
-              <span>{pub.total} sistemas de diseño extraídos hasta hoy</span>
+              <span className="display">Lo último</span>
+              <span>Las webs que hemos guardado estos días en el estudio</span>
             </div>
           </>
         ) : (

@@ -5,7 +5,7 @@ import { getSessionCookie } from "better-auth/cookies";
 
 // La portada (/) también es pública: sin sesión enseña el lienzo de inicio (app/page.tsx)
 // y la primera acción abre la ventana de acceso. Todo lo demás pide sesión.
-const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/api\/og(\/|$)/, /^\/invitacion\//];
+const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/dev-login(\/|$)/, /^\/api\/og(\/|$)/, /^\/api\/showcase$/, /^\/invitacion\//];
 
 // Auto-login en desarrollo (ver lib/auth.ts): sin cookie, en vez de /login se pasa por /api/dev-login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;
