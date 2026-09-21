@@ -106,7 +106,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
 
   const logout = async () => {
     await authClient.signOut();
-    router.push("/login");
+    router.push("/");
     router.refresh();
   };
 

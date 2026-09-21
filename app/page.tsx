@@ -1,18 +1,15 @@
-import { redirect } from "next/navigation";
-import { getCtx, HttpError, listMembers } from "@/lib/workspace";
+import { getSession, getCtx, listMembers } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
 import InspoClient from "@/components/InspoClient";
+import GuestStart from "@/components/GuestStart";
 
 export const dynamic = "force-dynamic";
 
+// Sin sesión: el lienzo de inicio como invitado (la primera acción abre la ventana de acceso).
+// Con sesión: el workspace activo.
 export default async function Home() {
-  let ctx;
-  try {
-    ctx = await getCtx();
-  } catch (e) {
-    if (e instanceof HttpError) redirect("/login");
-    throw e;
-  }
+  if (!(await getSession())) return <GuestStart />;
+  const ctx = await getCtx();
 
   const [{ items, thumbnailMap, tagMap }, members] = await Promise.all([
     loadWorkspaceData(ctx.workspace.id),

@@ -77,7 +77,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
 
   return (
     <section className={s.wrap}>
-      <div className={s.head}>
+      <div className={s.head} data-flip>
         <h1 className={s.title}>Tu librería empieza vacía. La inspiración, no.</h1>
         <p className={s.lead}>
           Pega la web que te tenga enganchado. Se guarda, se etiqueta sola y te sacamos su DESIGN.md para que veas de qué va esto.
@@ -109,12 +109,12 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
       </div>
 
       <div className={s.section}>
-        <div className={s.eyebrow}>
+        <div className={s.eyebrow} data-flip>
           <span>Cómo funciona</span>
         </div>
         <ul className={s.steps}>
           {STEPS.map((st) => (
-            <li key={st.title} className={s.step}>
+            <li key={st.title} className={s.step} data-flip>
               <span className={s.stepHead}>
                 <span className={s.stepIcon}>{st.icon}</span>
               </span>
@@ -126,13 +126,13 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
       </div>
 
       <div className={s.section}>
-        <div className={s.eyebrow}>
+        <div className={s.eyebrow} data-flip>
           <span>Para empezar a mirar · una por categoría</span>
           <button className={s.more} onClick={onRecursos}>Ver las {RECURSOS_TOTAL} {Icons.arrow}</button>
         </div>
         <div className={s.grid}>
           {PICKS.map((r) => (
-            <a key={r.url} className={s.tile} href={r.url} target="_blank" rel="noopener noreferrer">
+            <a key={r.url} className={s.tile} data-flip href={r.url} target="_blank" rel="noopener noreferrer">
               <Thumb name={r.name} url={r.url} />
               <span className={s.text}>
                 <span className={s.group}>{r.group}</span>
@@ -144,7 +144,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
         </div>
       </div>
 
-      <p className={s.tip}>Cuando veas algo que te llame la atención, aunque no sepas por qué, guárdalo. Con tres o cuatro ya empieza a verse un criterio.</p>
+      <p className={s.tip} data-flip>Cuando veas algo que te llame la atención, aunque no sepas por qué, guárdalo. Con tres o cuatro ya empieza a verse un criterio.</p>
     </section>
   );
 }
