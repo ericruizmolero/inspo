@@ -1,5 +1,6 @@
 "use client";
 
+import { revokeKey as revokeKeyAction } from "@/app/actions/ext-keys";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -100,9 +101,9 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
   const revokeKey = async (k: ExtKey) => {
     if (!confirm(t.team.revokeConfirm(k.name || k.prefix))) return;
     setBusy(true); setError("");
-    const res = await fetch(`/api/ext/v1/keys?id=${encodeURIComponent(k.id)}`, { method: "DELETE" });
+    const r = await revokeKeyAction(k.id).catch(() => null);
     setBusy(false);
-    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? t.team.revokeFailed); return; }
+    if (!r?.ok) { setError(r?.error ?? t.team.revokeFailed); return; }
     router.refresh();
   };
 

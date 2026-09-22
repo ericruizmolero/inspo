@@ -1,5 +1,6 @@
 "use client";
 
+import { addInspo, removeInspo, postComment as postCommentAction, removeComment } from "@/app/actions/library";
 import { useRouter } from "next/navigation";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
@@ -136,8 +137,14 @@ export default function InspoClient({
   workspaces,
   members = [],
   isAdmin = false,
+  initialQuota = null,
+  initialComments = {},
+  initialDesignMdIndex = {},
 }: {
   items: InspoItem[];
+  initialQuota?: QuotaView | null;
+  initialComments?: CommentMap;
+  initialDesignMdIndex?: Record<string, { coverUrl?: string; scrollUrl?: string }>;
   initialThumbnailMap?: ThumbnailMap;
   initialTagMap?: TagMap;
   aiEnabled?: boolean;
@@ -299,13 +306,9 @@ export default function InspoClient({
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const res = await fetch("/api/inspo/add", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ web: input.web, tipo: input.tipo, comentarios: input.comentarios }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-      const item = data.item as InspoItem;
+      const r = await addInspo({ web: input.web, tipo: input.tipo, comentarios: input.comentarios });
+      if (!r.ok) throw new Error(r.error);
+      const item = r.data;
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Experiencia completa desde el primer momento: etiquetas y DESIGN.md sin pedirlos
       tagOne(item.web);
@@ -357,9 +360,8 @@ export default function InspoClient({
     if (!item.id) return;
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     try {
-      const res = await fetch(`/api/inspo?id=${encodeURIComponent(item.id)}`, { method: "DELETE" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok && res.status !== 404) throw new Error(data.error ?? `Error ${res.status}`);
+      const r = await removeInspo(item.id);
+      if (!r.ok) throw new Error(r.error);
       setThumbMap((prev) => { if (!(item.web in prev)) return prev; const next = { ...prev }; delete next[item.web]; return next; });
     } catch (e) {
       setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev]));
@@ -368,14 +370,14 @@ export default function InspoClient({
   }, []);
 
   // ─── Plan y cuotas ─────────────────────────────────────────────────────────
-  const [quota, setQuota] = useState<QuotaView | null>(null);
+  // Llega del servidor con la página; se relee tras gastar cuota (un DESIGN.md nuevo)
+  const [quota, setQuota] = useState<QuotaView | null>(initialQuota);
   const loadQuota = useCallback(() => {
     fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
   }, []);
-  useEffect(() => { loadQuota(); }, [loadQuota]);
 
   // ─── Comentarios ───────────────────────────────────────────────────────────
-  const [commentMap, setCommentMap] = useState<CommentMap>({});
+  const [commentMap, setCommentMap] = useState<CommentMap>(initialComments);
   const [commentsItemId, setCommentsItemId] = useState<string | null>(null);
   const loadComments = useCallback(async () => {
     try {
@@ -383,7 +385,6 @@ export default function InspoClient({
       if (res.ok) setCommentMap(await res.json());
     } catch { /* sin red: se reintenta en el siguiente ciclo */ }
   }, []);
-  useEffect(() => { loadComments(); }, [loadComments]);
   // Con el hilo a la vista (cajón o columna de la ficha), refrescar cada 20 s para ver lo que escriban los demás
   const [designMdItem, setDesignMdItem] = useState<InspoItem | null>(null);
   useEffect(() => {
@@ -393,19 +394,18 @@ export default function InspoClient({
   }, [commentsItemId, designMdItem, loadComments]);
   const commentsItem = useMemo(() => items.find((i) => i.id === commentsItemId) ?? null, [items, commentsItemId]);
   const postComment = async (itemId: string, body: string, attachments: CommentAttachment[]) => {
-    const res = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, body, attachments }) });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-    setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), data] }));
+    const r = await postCommentAction(itemId, body, attachments);
+    if (!r.ok) throw new Error(r.error);
+    setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), r.data] }));
   };
   const deleteComment = async (itemId: string, id: string) => {
-    const res = await fetch(`/api/comments?id=${encodeURIComponent(id)}`, { method: "DELETE" });
-    if (res.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
+    const r = await removeComment(id).catch(() => null);
+    if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
   };
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
   // Índice de DESIGN.md ya generados: servidor + los que terminen en esta sesión
-  const [designMdIndex, setDesignMdIndex] = useState<Record<string, { coverUrl?: string; scrollUrl?: string }>>({});
+  const [designMdIndex, setDesignMdIndex] = useState(initialDesignMdIndex);
 
   // Cualquier miembro del workspace puede tocar miniaturas; el servidor comprueba la sesión.
   const handleThumbnailUpload = async (webUrl: string, file: File) => {
@@ -479,13 +479,6 @@ export default function InspoClient({
     dropJob(url);
     fetch(`/api/design-md?url=${encodeURIComponent(url)}`, { method: "DELETE", keepalive: true }).catch(() => {});
   };
-
-  useEffect(() => {
-    fetch("/api/design-md")
-      .then((r) => (r.ok ? r.json() : {}))
-      .then((index: Record<string, { coverUrl?: string; scrollUrl?: string }>) => setDesignMdIndex(index))
-      .catch(() => {});
-  }, []);
 
   // Solo se abre la ficha si el DESIGN.md existe (en sesión o en el servidor).
   // Si hay que generarlo, se lanza en segundo plano y el toast de abajo a la derecha informa.

@@ -2,9 +2,9 @@ import { NextRequest } from "next/server";
 import { normalizeWebUrl } from "@/lib/url";
 import { extractDesign } from "@/lib/design-extract";
 import { generateDesignMd } from "@/lib/design-md";
-import { getDesignMd, getDesignMdIndex, saveDesignMd } from "@/lib/design-store";
+import { getDesignMd, saveDesignMd } from "@/lib/design-store";
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
-import { findByWeb, webSet } from "@/lib/items";
+import { findByWeb } from "@/lib/items";
 import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise";
 import { recordUsage } from "@/lib/usage";
 import { assertQuota, quotaBlock } from "@/lib/quota";
@@ -37,21 +37,14 @@ function attach(job: Job, req: NextRequest): Promise<Response> {
 // La caché de DESIGN.md es global por URL (se deriva solo de la web pública),
 // pero cada workspace solo ve/genera las URLs que tiene guardadas.
 //
-// GET                   → índice { url: { generatedAt, model } } de las URLs del workspace ya generadas
 // GET ?url=…            → devuelve la caché o genera
 // GET ?url=…&force=1    → regenera (solo administradores: cuesta dinero)
 export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
 
-  const rawUrl = req.nextUrl.searchParams.get("url");
-  if (!rawUrl) {
-    const [index, mine] = await Promise.all([getDesignMdIndex(), webSet(ctx.workspace.id)]);
-    const norm = new Set([...mine].map((w) => normalizeWebUrl(w) ?? w));
-    return Response.json(Object.fromEntries(Object.entries(index).filter(([u]) => norm.has(u))));
-  }
-
-  const url = normalizeWebUrl(rawUrl);
+  // El índice del workspace ya no se pide aquí: llega con la página (app/page.tsx)
+  const url = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   if (!(await findByWeb(ctx.workspace.id, url))) {
     return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });

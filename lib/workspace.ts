@@ -71,3 +71,21 @@ export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Res
 
 export const isResponse = (x: unknown): x is Response => x instanceof Response;
 
+/** Lo que devuelve una Server Action: los errores esperados vuelven como valor, no como excepción. */
+export type ActionResult<T = void> = { ok: true; data: T } | { ok: false; error: string };
+
+/**
+ * Para Server Actions. Son endpoints POST públicos: la sesión se comprueba aquí dentro,
+ * nunca se da por hecha. Un HttpError lanzado en `fn` vuelve como { ok: false, error }.
+ */
+export async function withCtx<T>(fn: (ctx: Ctx) => Promise<T>, opts?: { manage?: boolean }): Promise<ActionResult<T>> {
+  const ctx = await requireCtx(opts);
+  if (isResponse(ctx)) return { ok: false, error: ((await ctx.json()) as { error: string }).error };
+  try {
+    return { ok: true, data: await fn(ctx) };
+  } catch (e) {
+    if (!(e instanceof HttpError)) console.error(e);
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+

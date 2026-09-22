@@ -1,5 +1,6 @@
 "use client";
 
+import { createKey } from "@/app/actions/ext-keys";
 import { useEffect, useState } from "react";
 import type { Workspace } from "@/lib/workspace-core";
 import { WorkspaceAvatar } from "@/components/WorkspaceMenu";
@@ -47,12 +48,9 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
     e.preventDefault();
     setBusy(true); setError("");
     try {
-      const res = await fetch("/api/ext/v1/keys", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgId, name: name.trim() || t.ext.browser }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      const r = await createKey(orgId, name.trim() || t.ext.browser);
+      if (!r.ok) throw new Error(r.error);
+      const data = r.data;
       setResult(data);
       // Se la entregamos a la extensión; si no está, queda el botón de copiar
       window.postMessage({ source: FROM_PAGE, type: "ext-key", key: data.key, base: window.location.origin, workspace: data.workspace }, window.location.origin);

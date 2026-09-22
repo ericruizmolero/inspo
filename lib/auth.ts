@@ -123,7 +123,7 @@ export const auth = betterAuth({
     // Nadie tiene contraseña; el nombre se rellena desde el correo al crear el usuario
     additionalFields: {
       // Idioma de la persona: decide en qué idioma se le escriben los correos.
-      // Lo escribe /api/lang, no el cliente directamente.
+      // Lo escribe setLanguage (app/actions/library.ts), no el cliente directamente.
       language: { type: "string", required: false, defaultValue: "en", input: false },
     },
   },

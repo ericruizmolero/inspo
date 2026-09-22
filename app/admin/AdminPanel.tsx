@@ -1,5 +1,6 @@
 "use client";
 
+import { grantAccess, revokeAccess, deleteFeedback } from "@/app/actions/admin";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "@/components/WorkspaceMenu";
@@ -159,10 +160,10 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
     const value = email.trim().toLowerCase();
     if (!value) return;
     setBusy(true); setError(""); setMsg("");
-    const res = await fetch("/api/admin/accesos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: value }) });
-    const data = await res.json().catch(() => ({}));
+    const r = await grantAccess(value).catch(() => null);
     setBusy(false);
-    if (!res.ok) { setError(data.error ?? t.admin.grantFailed); return; }
+    if (!r?.ok) { setError(r?.error ?? t.admin.grantFailed); return; }
+    const data = r.data;
     setEmail("");
     setMsg(data.added ? (data.mailed ? t.admin.grantedMailed(value) : t.admin.granted(value)) : t.admin.alreadyGranted(value));
     router.refresh();
@@ -171,10 +172,9 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   const remove = async (a: AdminEntry) => {
     if (!confirm(t.admin.removeConfirm(a.name ?? a.email))) return;
     setBusy(true); setError(""); setMsg("");
-    const res = await fetch(`/api/admin/accesos?email=${encodeURIComponent(a.email)}`, { method: "DELETE" });
-    const data = await res.json().catch(() => ({}));
+    const r = await revokeAccess(a.email).catch(() => null);
     setBusy(false);
-    if (!res.ok) { setError(data.error ?? t.admin.revokeFailed); return; }
+    if (!r?.ok) { setError(r?.error ?? t.admin.revokeFailed); return; }
     setAdmins((prev) => prev.filter((x) => x.email !== a.email));
     router.refresh();
   };
@@ -285,9 +285,8 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
 
   const onDelete = async (b: FeedbackBatch) => {
     setError("");
-    const res = await fetch("/api/admin/feedback", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: b.notes.map((n) => n.id) }) });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) { setError(data.error ?? t.admin.deleteFailed); return; }
+    const r = await deleteFeedback(b.notes.map((n) => n.id)).catch(() => null);
+    if (!r?.ok) { setError(r?.error ?? t.admin.deleteFailed); return; }
     setGone((prev) => new Set(prev).add(b.key));
     router.refresh();
   };

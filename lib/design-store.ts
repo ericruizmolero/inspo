@@ -1,4 +1,6 @@
 import "server-only";
+import { webSet } from "./items";
+import { normalizeWebUrl } from "./url";
 import { put, list, del } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
@@ -158,6 +160,13 @@ export function getDesignMd(url: string): Promise<DesignMdEntry | null> {
 
 export function getDesignMdIndex(): Promise<DesignMdIndex> {
   return USE_BLOB ? blobGetIndex() : fsGetIndex();
+}
+
+/** El índice recortado a las webs de este workspace. */
+export async function designMdIndexFor(organizationId: string): Promise<DesignMdIndex> {
+  const [index, mine] = await Promise.all([getDesignMdIndex(), webSet(organizationId)]);
+  const norm = new Set([...mine].map((w) => normalizeWebUrl(w) ?? w));
+  return Object.fromEntries(Object.entries(index).filter(([u]) => norm.has(u)));
 }
 
 export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages): Promise<DesignMdEntry> {
