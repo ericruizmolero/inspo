@@ -27,6 +27,14 @@ interface CommentsPanelProps {
   onPost: (body: string, attachments: CommentAttachment[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onClose: () => void;
+  /**
+   * `drawer` (por defecto): panel lateral fijo con fondo oscuro, se cierra con Escape.
+   * `column`: columna embebida dentro de la ficha DESIGN.md; sin fondo, sin Escape
+   * (lo gestiona la ficha) y con cabecera corta, porque la marca ya está en la barra.
+   */
+  variant?: "drawer" | "column";
+  /** Estado del DESIGN.md de esta web, para el aviso "genera el MD y tendrás la ficha completa" */
+  designMd?: { status: "none" | "loading" | "ready"; onGenerate: () => void; onOpen: () => void };
 }
 
 const IcX = (
@@ -46,6 +54,9 @@ const IcChevron = (
 );
 const IcArrow = (
   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l6-6M4 3h5v5" /></svg>
+);
+const IcDoc = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round"><path d="M3 1.5h5l3 3v8H3z" /><path d="M8 1.5v3h3M5 7.5h4M5 10h4" /></svg>
 );
 
 // Color estable por nombre para diferenciar a cada persona de un vistazo
@@ -168,7 +179,8 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onClose }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onClose, variant = "drawer", designMd }: CommentsPanelProps) {
+  const column = variant === "column";
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -192,14 +204,15 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
         return;
       }
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !column) onClose();
     };
     document.addEventListener("keydown", onKey);
     const t = setInterval(() => setNow(Date.now()), 30000);
     return () => { document.removeEventListener("keydown", onKey); clearInterval(t); };
-  }, [onClose]);
+  }, [onClose, column]);
 
-  useEffect(() => { textareaRef.current?.focus(); }, [item.id]);
+  // En columna no se roba el foco: la ficha de al lado es lo que se está leyendo
+  useEffect(() => { if (!column) textareaRef.current?.focus(); }, [item.id, column]);
 
   // Al cambiar de inspo o cerrar, soltar las previews locales
   const pendingRef = useRef(pending);
@@ -304,9 +317,9 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
 
   return (
     <>
-      <div className="cm-backdrop" onClick={onClose} />
+      {!column && <div className="cm-backdrop" onClick={onClose} />}
       <aside
-        className={`cm-panel${dragging ? " is-dragging" : ""}`}
+        className={`cm-panel${column ? " cm-panel--column" : ""}${dragging ? " is-dragging" : ""}`}
         role="dialog"
         aria-label={`Comentarios de ${item.empresa}`}
         onPaste={onPaste}
@@ -324,12 +337,27 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         )}
         <header className="cm-panel__head">
           <div className="cm-panel__title">
-            <span className="display">{item.empresa}</span>
-            <a className="cm-panel__link" href={item.web} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>
+            <span className="display">{column ? "Comentarios" : item.empresa}</span>
+            {!column && <a className="cm-panel__link" href={item.web} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
           </div>
           <span className="cm-panel__count">{replies === 0 ? "Sin respuestas" : replies === 1 ? "1 respuesta" : `${replies} respuestas`}</span>
-          <button className="btn-icon" onClick={onClose} aria-label="Cerrar">{IcX}</button>
+          <button className="btn-icon" onClick={onClose} aria-label={column ? "Ocultar comentarios" : "Cerrar"}>{IcX}</button>
         </header>
+
+        {designMd && !column && (
+          <div className={`cm-md-cta is-${designMd.status}`}>
+            <span className="cm-md-cta__icon">{designMd.status === "loading" ? <span className="spinner spinner--sm" /> : IcDoc}</span>
+            <span className="cm-md-cta__text">
+              {designMd.status === "ready"
+                ? <>Esta web ya tiene su ficha completa: colores, tipografías, componentes y prompt.</>
+                : designMd.status === "loading"
+                  ? <>Generando la ficha completa… en un minuto la tienes aquí.</>
+                  : <>¿Quieres la ficha completa de esta web? Genera el DESIGN.md y tendrás colores, tipografías, componentes y prompt.</>}
+            </span>
+            {designMd.status === "ready" && <button type="button" className="btn btn--ghost btn--sm" onClick={designMd.onOpen}>Ver ficha</button>}
+            {designMd.status === "none" && <button type="button" className="btn btn--primary btn--sm" onClick={designMd.onGenerate}>Generar MD</button>}
+          </div>
+        )}
 
         <div ref={listRef} className="cm-list">
           {image && (

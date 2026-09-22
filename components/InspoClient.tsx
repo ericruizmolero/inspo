@@ -382,12 +382,13 @@ export default function InspoClient({
     } catch { /* sin red: se reintenta en el siguiente ciclo */ }
   }, []);
   useEffect(() => { loadComments(); }, [loadComments]);
-  // Con el panel abierto, refrescar cada 20 s para ver lo que escriban los demás
+  // Con el hilo a la vista (cajón o columna de la ficha), refrescar cada 20 s para ver lo que escriban los demás
+  const [designMdItem, setDesignMdItem] = useState<InspoItem | null>(null);
   useEffect(() => {
-    if (!commentsItemId) return;
+    if (!commentsItemId && !designMdItem) return;
     const t = setInterval(loadComments, 20000);
     return () => clearInterval(t);
-  }, [commentsItemId, loadComments]);
+  }, [commentsItemId, designMdItem, loadComments]);
   const commentsItem = useMemo(() => items.find((i) => i.id === commentsItemId) ?? null, [items, commentsItemId]);
   const postComment = async (itemId: string, body: string, attachments: CommentAttachment[]) => {
     const res = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, body, attachments }) });
@@ -400,7 +401,6 @@ export default function InspoClient({
     if (res.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
   };
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [designMdItem, setDesignMdItem] = useState<InspoItem | null>(null);
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
   // Índice de DESIGN.md ya generados: servidor + los que terminen en esta sesión
   const [designMdIndex, setDesignMdIndex] = useState<Record<string, { coverUrl?: string; scrollUrl?: string }>>({});
@@ -435,6 +435,8 @@ export default function InspoClient({
 
   // Una petición en vuelo por URL: parar = abortar el fetch (el servidor cierra Chromium
   // y corta a Claude al perder al último cliente) y avisar también con DELETE por si acaso.
+  // La ficha lleva el hilo en columna: al abrirla se cierra el cajón de comentarios si estaba abierto
+  const showDesignMd = (item: InspoItem) => { setDesignMdItem(item); setCommentsItemId(null); };
   const designMdCtrls = useRef(new Map<string, AbortController>());
   const designMdItemRef = useRef<InspoItem | null>(null);
 
@@ -456,7 +458,7 @@ export default function InspoClient({
       setDesignMdIndex((prev) => ({ ...prev, [url]: { coverUrl: body.coverUrl, scrollUrl: body.scrollUrl } }));
       if (!body.cached) loadQuota();
       // Abrir sola solo si no hay otra ficha delante; si la hay, queda el toast "Listo"
-      if (opts.openWhenReady && !designMdItemRef.current) setDesignMdItem(item);
+      if (opts.openWhenReady && !designMdItemRef.current) showDesignMd(item);
       return true;
     } catch (e) {
       if (ctrl.signal.aborted) return false; // parada por el usuario: el job ya se ha retirado
@@ -487,7 +489,7 @@ export default function InspoClient({
   // Si hay que generarlo, se lanza en segundo plano y el toast de abajo a la derecha informa.
   const openDesignMd = (item: InspoItem) => {
     const job = designMdJobs[item.web];
-    if (job?.status === "ready") { setDesignMdItem(item); return; }
+    if (job?.status === "ready") { showDesignMd(item); return; }
     if (job?.status === "loading") return; // ya está en marcha, el toast lo muestra
     if (item.web in designMdIndex) {
       // Existe en el servidor: se trae de caché (casi inmediato) y se abre al llegar
@@ -727,6 +729,21 @@ export default function InspoClient({
           onClose={() => setDesignMdItem(null)}
           onRegenerate={() => regenerateDesignMd(designMdItem)}
           onRevised={(patch) => patchJob(designMdItem.web, { entry: { ...designMdJobs[designMdItem.web]?.entry!, ...patch } })}
+          commentCount={designMdItem.id ? (commentMap[designMdItem.id]?.length ?? 0) : 0}
+          comments={designMdItem.id ? (hide) => (
+            <CommentsPanel
+              variant="column"
+              item={designMdItem}
+              comments={commentMap[designMdItem.id!] ?? []}
+              user={user}
+              canManage={workspace.role === "owner" || workspace.role === "admin"}
+              memberImages={autorImages}
+              memberNames={memberNames}
+              onPost={(body, attachments) => postComment(designMdItem.id!, body, attachments)}
+              onDelete={(id) => deleteComment(designMdItem.id!, id)}
+              onClose={hide}
+            />
+          ) : undefined}
         />
       )}
       <DesignMdToasts
@@ -758,6 +775,11 @@ export default function InspoClient({
           onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
           onDelete={(id) => deleteComment(commentsItem.id!, id)}
           onClose={() => setCommentsItemId(null)}
+          designMd={canAutoDesignMd(commentsItem.web) ? {
+            status: designMdJobs[commentsItem.web]?.status === "loading" ? "loading" : commentsItem.web in designMdIndex ? "ready" : "none",
+            onGenerate: () => runDesignMd(commentsItem, { openWhenReady: true }),
+            onOpen: () => openDesignMd(commentsItem),
+          } : undefined}
         />
       )}
       {showAdd && (

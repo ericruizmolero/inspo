@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
 import type { DesignSpec } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
@@ -12,6 +12,13 @@ interface DesignMdModalProps {
   onClose: () => void;
   onRegenerate: () => void;
   onRevised: (patch: Partial<DesignMdEntry>) => void;
+  /**
+   * Hilo de comentarios del inspo, en columna a la derecha de la ficha: se pinta con el
+   * CommentsPanel en modo `column`; `hide` es lo que debe llamar su botón de cerrar.
+   */
+  comments?: (hide: () => void) => ReactNode;
+  /** Cuántas respuestas hay, para el botón de la barra */
+  commentCount?: number;
 }
 
 type ReviseFn = (section: string, comment: string) => Promise<{ summary: string; warning: string | null; unchanged?: boolean }>;
@@ -39,6 +46,9 @@ const IcDoc = (
 );
 const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
+);
+const IcComment = (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h.5" /></svg>
 );
 const IcCopy = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="4.5" width="8" height="8" rx="1.6" /><path d="M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5" /></svg>
@@ -492,10 +502,13 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 // ─── Modal ────────────────────────────────────────────────────────────────────
 // La ficha solo se abre cuando el DESIGN.md ya existe: la generación vive en el
 // toast de abajo a la derecha (DesignMdToasts), aquí no hay pantalla de progreso.
-export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised }: DesignMdModalProps) {
+export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised, comments, commentCount = 0 }: DesignMdModalProps) {
   const [copied, copy] = useCopy(1600);
   const [view, setView] = useState<"spec" | "md" | "history">("spec");
   const [reverting, setReverting] = useState(false);
+  // La columna de comentarios va abierta en pantallas anchas; en estrechas se
+  // superpone a la ficha y se abre a mano desde la barra.
+  const [commentsOpen, setCommentsOpen] = useState(() => typeof window === "undefined" || window.innerWidth > 1100);
 
   const entry = state?.entry;
   const ready = state?.status === "ready" && !!entry;
@@ -577,6 +590,16 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
           </div>
         )}
         <div className="dm-bar__actions">
+          {comments && (
+            <button
+              className={`btn btn--ghost btn--sm dm-bar__comments${commentsOpen ? " is-active" : ""}`}
+              onClick={() => setCommentsOpen((o) => !o)}
+              aria-pressed={commentsOpen}
+              title={commentsOpen ? "Ocultar comentarios" : "Ver comentarios"}
+            >
+              {IcComment}<span className="dm-bar__comments-label">Comentarios</span>{commentCount > 0 && <span className="dm-tab__count">{commentCount}</span>}
+            </button>
+          )}
           <button className="btn btn--ghost btn--sm" onClick={onRegenerate} disabled={!ready}>Regenerar</button>
           <button className="btn btn--ghost btn--sm" onClick={download} disabled={!ready}>Descargar</button>
           <button className="btn btn--primary btn--sm" onClick={() => entry && copy(entry.markdown)} disabled={!ready}>
@@ -586,6 +609,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
       </header>
 
       {ready && entry && (
+        <div className={`dm-content${comments && commentsOpen ? " has-comments" : ""}`}>
         <div className="dm-body">
           {activeView === "history" ? (
             revisions.length
@@ -602,6 +626,10 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
                 <pre className="dm-md__pre">{entry.markdown}</pre>
               </div>
             )}
+        </div>
+        {comments && commentsOpen && (
+          <div className="dm-side">{comments(() => setCommentsOpen(false))}</div>
+        )}
         </div>
       )}
     </div>

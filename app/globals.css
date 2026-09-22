@@ -658,6 +658,17 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 .cm-drop__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--surface-2); color: var(--text); margin-bottom: 8px; }
 .cm-drop__icon svg { width: 18px; height: 18px; }
 .cm-drop__title { font-size: 18px; }
+
+/* Modo columna: el mismo panel, embebido a la derecha de la ficha DESIGN.md */
+.cm-panel--column { position: relative; inset: auto; z-index: auto; width: 100%; height: 100%; min-height: 0; border-left: none; box-shadow: none; animation: none; }
+.cm-panel--column .cm-panel__head { padding-top: 14px; padding-bottom: 12px; }
+
+/* Aviso en el cajón: sin DESIGN.md solo hay hilo; la ficha completa se genera desde aquí */
+.cm-md-cta { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: 12px; line-height: 1.4; color: var(--text-2); }
+.cm-md-cta__icon { flex-shrink: 0; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--surface-2); color: var(--text); }
+.cm-md-cta__text { flex: 1; min-width: 0; }
+.cm-md-cta .btn { flex-shrink: 0; white-space: nowrap; }
+.cm-md-cta.is-ready { color: var(--muted); }
 .cm-drop__text { font-size: 12px; color: var(--muted); }
 
 .cm-files { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -790,6 +801,15 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 .dm-bar__actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; }
 .dm-tabs + .dm-bar__actions { margin-left: 0; }
 .dm-body { flex: 1; min-height: 0; overflow-y: auto; }
+/* Ficha + hilo de comentarios en columna a la derecha (así lo que gustó de la web queda a mano) */
+.dm-content { position: relative; flex: 1; min-height: 0; display: flex; }
+.dm-side { width: 380px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--panel); }
+.dm-bar__comments { gap: 6px; }
+.dm-bar__comments.is-active { background: var(--surface-3); color: var(--text); }
+.dm-bar__comments .dm-tab__count { margin-left: 0; }
+@media (max-width: 1100px) {
+  .dm-side { position: absolute; top: 0; right: 0; bottom: 0; z-index: 5; width: min(420px, 100vw); box-shadow: var(--shadow-drawer); animation: cm-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+}
 
 /* Ficha */
 .dm-spec { max-width: 1160px; margin: 0 auto; padding: 48px 40px 120px; }
@@ -996,7 +1016,8 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 
 @media (max-width: 960px) {
   .dm-bar { gap: 10px; }
-  .dm-bar__file, .dm-bar__actions .btn:not(.btn--primary) { display: none; }
+  .dm-bar__file, .dm-bar__actions .btn:not(.btn--primary):not(.dm-bar__comments) { display: none; }
+  .dm-bar__comments-label { display: none; }
   .dm-spec { padding: 24px 16px 80px; }
   .dm-section { padding-top: 28px; margin-top: 28px; }
   .dm-hero { grid-template-columns: 1fr; gap: 24px; }
@@ -1816,3 +1837,4 @@ body:has([data-agentation-toolbar] [role="button"][title="Start feedback mode"])
     bottom: calc(1.25rem + 44px + 12px);
   }
 }
+
