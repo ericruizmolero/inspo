@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { DesignTokens } from "./design-extract";
 import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/design";
+import { getErrors } from "./i18n";
 
 const MODEL = process.env.DESIGN_MD_MODEL || "claude-opus-5";
 
@@ -76,7 +77,7 @@ export async function generateDesignMd(tokens: DesignTokens, screenshot: Buffer,
     if (signal?.aborted) throw err; // parada del usuario: no es una respuesta rota
     const why = err instanceof Error ? err.message : String(err);
     console.error(`design-md: respuesta no parseable (stop_reason=${stopReason}, ${raw.length} chars). Cola: …${raw.slice(-200)}`);
-    throw new Error(`Claude devolvió una respuesta incompleta (stop_reason=${stopReason ?? "desconocido"}): ${why}`);
+    throw new Error(`${(await getErrors()).incompleteAnswer} (stop_reason=${stopReason ?? "unknown"}): ${why}`);
   }
 
   if (msg.stop_reason === "refusal") {

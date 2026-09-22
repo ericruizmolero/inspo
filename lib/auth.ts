@@ -9,6 +9,7 @@ import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
 import { LANG_COOKIE, isLocale, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { getErrors } from "./i18n";
 import { planOf } from "./plans";
 import { eq } from "drizzle-orm";
 
@@ -201,7 +202,7 @@ export const auth = betterAuth({
           // La invitación vuelve a pendiente: el enlace sigue sirviendo cuando haya sitio
           await db.update(schema.invitation).set({ status: "pending" }).where(eq(schema.invitation.id, invitation.id));
           throw new APIError("FORBIDDEN", {
-            message: `Alguien ha ocupado la última plaza del plan ${plan.name} antes que tú. Tu invitación sigue activa: avisa a quien te invitó para que libere un sitio o amplíe el plan.`,
+            message: (await getErrors()).seatTaken,
           });
         },
       },

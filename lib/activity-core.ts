@@ -1,19 +1,9 @@
-// Tipos y etiquetas del panel de actividad, sin dependencias de servidor:
-// lo importa tanto lib/activity.ts (BD) como app/admin/AdminPanel.tsx (cliente).
+// Tipos del panel de actividad, sin dependencias de servidor: lo importa tanto
+// lib/activity.ts (BD) como app/admin/AdminPanel.tsx (cliente).
+//
+// Aquí no hay texto: el servidor manda códigos y fechas ISO, y el cliente los
+// traduce y formatea con su idioma (t.labels.area, fmtDate).
 
-export const AREAS: Record<string, string> = {
-  biblioteca: "Biblioteca",
-  busqueda: "Búsqueda IA",
-  "design-md": "DESIGN.md",
-  comentarios: "Comentarios",
-  recursos: "Recursos",
-  anadir: "Añadir inspo",
-  equipo: "Equipo",
-  planes: "Planes",
-  admin: "Actividad",
-  invitacion: "Invitación",
-};
-export const areaLabel = (a: string) => AREAS[a] ?? a;
 
 
 export interface ActivityUser {
@@ -37,8 +27,8 @@ export interface ActivityUser {
   topArea: string | null;
 }
 
-export interface ActivityDay { date: string; label: string; users: number; seconds: number }
-export interface ActivityArea { area: string; label: string; seconds: number; users: number }
+export interface ActivityDay { date: string; users: number; seconds: number }
+export interface ActivityArea { area: string; seconds: number; users: number }
 export interface ActivityLogin { userId: string; name: string; email: string; image: string | null; at: string; device: string | null; alive: boolean }
 
 export interface ActivityOverview {

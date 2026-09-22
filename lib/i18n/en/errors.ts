@@ -1,6 +1,8 @@
 // Los errores que devuelve el servidor y que la interfaz pinta tal cual.
 // Mismas claves en lib/i18n/es/errors.ts.
 export const errors = {
+  seatTaken: "Someone took the last seat on the plan before you. Your invitation is still live: tell whoever invited you to free a seat, or move up a plan.",
+  incompleteAnswer: "Claude returned an incomplete answer",
   adminsCanRegenerate: "Only admins can regenerate",
   adminsOnly: "Admins only",
   badBody: "Invalid body",

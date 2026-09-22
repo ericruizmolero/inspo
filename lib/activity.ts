@@ -8,7 +8,7 @@ import "server-only";
 import { userAgent } from "next/server";
 import { db, schema } from "./db";
 import { daySlots, dayOf, tzOffsetSeconds, startOfTodayMs } from "./dias";
-import { areaLabel, type AdminEntry, type ActivityArea, type ActivityDay, type ActivityLogin, type ActivityOverview, type ActivityUser } from "./activity-core";
+import { type AdminEntry, type ActivityArea, type ActivityDay, type ActivityLogin, type ActivityOverview, type ActivityUser } from "./activity-core";
 import { getErrors } from "./i18n";
 
 export * from "./activity-core";
@@ -76,7 +76,8 @@ export function deviceSummary(ua: string | null | undefined): string | null {
     const { browser, os, device } = userAgent({ headers: new Headers({ "user-agent": ua }) });
     const parts = [browser.name, os.name].filter(Boolean);
     if (!parts.length) return null;
-    const kind = device.type === "mobile" ? " (móvil)" : device.type === "tablet" ? " (tablet)" : "";
+    // Se guarda tal cual en la fila, así que va en inglés: no hay dónde traducirlo al pintarlo
+    const kind = device.type === "mobile" ? " (mobile)" : device.type === "tablet" ? " (tablet)" : "";
     return parts.join(" · ") + kind;
   } catch { return null; }
 }
@@ -204,10 +205,10 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
   const dayMap = new Map(daily.map((d) => [Number(d.day), d]));
   const series: ActivityDay[] = daySlots(days, off).map((s) => {
     const d = dayMap.get(s.day);
-    return { date: s.date, label: s.label, users: Number(d?.users ?? 0), seconds: Number(d?.seconds ?? 0) };
+    return { date: s.date, users: Number(d?.users ?? 0), seconds: Number(d?.seconds ?? 0) };
   });
 
-  const areas: ActivityArea[] = byArea.map((r) => ({ area: r.area, label: areaLabel(r.area), seconds: Number(r.seconds), users: Number(r.users) }))
+  const areas: ActivityArea[] = byArea.map((r) => ({ area: r.area, seconds: Number(r.seconds), users: Number(r.users) }))
     .filter((a) => a.seconds > 0).sort((a, b) => b.seconds - a.seconds);
 
   const totalSeconds = list.reduce((n, u) => n + u.seconds, 0);

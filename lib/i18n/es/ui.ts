@@ -374,6 +374,7 @@ export const ui: typeof EnUi = {
     noCalls: "Todavía no hay llamadas registradas. Cada DESIGN.md, etiquetado o búsqueda IA queda apuntado aquí con su coste estimado.",
     itemsInCalls: (units: number, calls: number): string => `${units} items en ${calls} llamadas`,
     calls: (n: number): string => `${n} ${n === 1 ? "llamada" : "llamadas"}`,
+    system: "Sistema",
     perPerson: "Por persona",
     costNote: "Coste estimado con la tarifa pública de Anthropic y de Jev. Sirve para dimensionar el pricing, no es la factura.",
     members: "Miembros",
@@ -497,7 +498,7 @@ export const ui: typeof EnUi = {
     loggedIn: "Con sesión abierta",
     loggedInSub: "logeadas, sin caducar (30 días)",
     registered: "Registradas",
-    newUsers: (n: number, days: number): string => `${n} nuevas en ${days} días`,
+    newUsers: (n: number, days: number): string => `${n} ${n === 1 ? "nueva" : "nuevas"} en ${days} días`,
     noNewUsers: (days: number): string => `ninguna nueva en ${days} días`,
     timeInApp: "Tiempo en la app",
     avgPerActive: (dur: string): string => `${dur} de media por persona activa`,
@@ -549,7 +550,22 @@ export const ui: typeof EnUi = {
     updatedAt: (time: string): string => `Actualizado a las ${time}`,
     updating: "Actualizando\u2026",
     refreshNote: " \u00b7 se refresca solo cada minuto",
+    system: "Sistema",
+    deletedWorkspace: "Workspace borrado",
     calls: (n: number): string => `${n} ${n === 1 ? "llamada" : "llamadas"}`,
     itemsInCalls: (units: number, calls: number): string => `${units} items en ${calls} llamadas`,
+  },
+  quota: {
+    people: (n: number): string => `${n} ${n === 1 ? "persona" : "personas"}`,
+    actions: { design_md: "DESIGN.md", jev_search: "búsquedas IA" },
+    overSeats: (members: string, plan: string, limit: number): string =>
+      `El equipo tiene ${members} y el plan ${plan} admite ${limit}. Quita a alguien en /equipo o amplía el plan en /planes para volver a usar la IA.`,
+    spent: (used: number, limit: number, what: string, plan: string): string =>
+      `Has usado ${used} de ${limit} ${what} este mes en el plan ${plan}. Amplía el plan en /planes.`,
+    planAllows: (plan: string, people: string): string => `El plan ${plan} admite ${people}.`,
+    pendingInvites: (n: number): string => (n === 1 ? "1 invitación sin aceptar" : `${n} invitaciones sin aceptar`),
+    withPending: (allows: string, members: string, pending: string): string =>
+      `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancela una invitación en /equipo o amplía el plan en /planes.`,
+    movePlan: (allows: string): string => `${allows} Amplía el plan en /planes para invitar a más.`,
   },
 };

@@ -4,7 +4,7 @@ import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
 import { dayOf, daySlots, tzOffsetSeconds } from "./dias";
-import { actionLabel, type UsageAction, type UsageOverview } from "./usage-core";
+import { type UsageAction, type UsageOverview } from "./usage-core";
 
 export * from "./usage-core";
 
@@ -62,7 +62,8 @@ export interface UsageSummary {
   sinceDays: number;
   totalUsd: number;
   byAction: { action: UsageAction; calls: number; usd: number; units: number }[];
-  byUser: { userId: string | null; name: string; usd: number; calls: number }[];
+  /** `name` null = llamada del sistema, sin persona detrás */
+  byUser: { userId: string | null; name: string | null; usd: number; calls: number }[];
 }
 
 /** Resumen de gasto del workspace en los últimos N días (para la página de equipo). */
@@ -82,7 +83,7 @@ export async function usageSummary(organizationId: string, sinceDays = 30): Prom
     sinceDays,
     totalUsd: actions.reduce((n, a) => n + a.usd, 0),
     byAction: actions,
-    byUser: byUser.map((r) => ({ userId: r.userId, name: r.name ?? "Sistema", usd: Number(r.micros) / 1e6, calls: Number(r.calls) })).sort((a, b) => b.usd - a.usd),
+    byUser: byUser.map((r) => ({ userId: r.userId, name: r.name, usd: Number(r.micros) / 1e6, calls: Number(r.calls) })).sort((a, b) => b.usd - a.usd),
   };
 }
 
@@ -108,15 +109,15 @@ export async function usageOverview(days = 30): Promise<UsageOverview> {
 
   const dayMap = new Map(daily.map((d) => [Number(d.day), d]));
   const actions = byAction
-    .map((r) => ({ action: r.action, label: actionLabel(r.action), calls: Number(r.calls), usd: Number(r.micros) / 1e6, units: Number(r.units) }))
+    .map((r) => ({ action: r.action, calls: Number(r.calls), usd: Number(r.micros) / 1e6, units: Number(r.units) }))
     .sort((a, b) => b.usd - a.usd);
   const users = byUser
-    .map((r) => ({ userId: r.userId, name: r.name ?? "Sistema", email: r.email, image: r.image, usd: Number(r.micros) / 1e6, calls: Number(r.calls) }))
+    .map((r) => ({ userId: r.userId, name: r.name, email: r.email, image: r.image, usd: Number(r.micros) / 1e6, calls: Number(r.calls) }))
     .sort((a, b) => b.usd - a.usd);
   const workspaces = byWs.map((r) => {
     let kind: "personal" | "team" = "team";
     try { kind = JSON.parse(r.metadata ?? "{}")?.kind === "personal" ? "personal" : "team"; } catch { /* metadata rota */ }
-    return { id: r.id, name: r.name ?? "Workspace borrado", kind, usd: Number(r.micros) / 1e6, calls: Number(r.calls) };
+    return { id: r.id, name: r.name, kind, usd: Number(r.micros) / 1e6, calls: Number(r.calls) };
   }).sort((a, b) => b.usd - a.usd);
 
   return {
@@ -129,7 +130,7 @@ export async function usageOverview(days = 30): Promise<UsageOverview> {
     byWorkspace: workspaces,
     daily: slots.map((s) => {
       const d = dayMap.get(s.day);
-      return { date: s.date, label: s.label, usd: Number(d?.micros ?? 0) / 1e6, calls: Number(d?.calls ?? 0) };
+      return { date: s.date, usd: Number(d?.micros ?? 0) / 1e6, calls: Number(d?.calls ?? 0) };
     }),
   };
 }

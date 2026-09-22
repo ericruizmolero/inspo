@@ -9,6 +9,7 @@ import { fetchSiteText } from "@/lib/extract";
 import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
 import { classifyItem, jevEnabled } from "@/lib/jev";
 import { getErrors } from "@/lib/i18n";
+import { HttpError } from "@/lib/workspace-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // el etiquetado corre en after(), tras responder
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: true, existed: false, item });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: msg }, { status: msg.includes("ya está") ? 409 : 500 });
+    // El estado viene del error, no de lo que diga el mensaje: el texto está traducido
+    return Response.json({ error: msg }, { status: err instanceof HttpError ? err.status : 500 });
   }
 }

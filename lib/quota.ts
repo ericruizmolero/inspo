@@ -4,6 +4,7 @@ import { db, schema } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
 import { HttpError, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
+import { getT } from "./i18n";
 import { overCapacityMail, sendMail, localeForEmail } from "./mail";
 
 export interface QuotaLine { used: number; limit: number | null }
@@ -29,7 +30,7 @@ function nextMonth(): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
 }
 
-const people = (n: number) => `${n} ${n === 1 ? "persona" : "personas"}`;
+// Los mensajes de cuota los lee la persona, así que van en su idioma
 
 // Las búsquedas se cuentan por consulta distinta (ref = texto normalizado), no por
 // llamada: la búsqueda se lanza mientras se escribe y una misma intención puede
@@ -90,13 +91,12 @@ export async function overCapacity(organizationId: string, planKey: string | nul
   return members > plan.members ? { members, limit: plan.members, planName: plan.name } : null;
 }
 
-const LABEL = { design_md: "DESIGN.md", jev_search: "búsquedas IA" } as const;
-
 /** Lanza HttpError(402) si el equipo pasa del número de personas de su plan. */
 export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise<void> {
   const over = await overCapacity(ws.id, ws.plan);
   if (!over) return;
-  throw new HttpError(402, `El equipo tiene ${people(over.members)} y el plan ${over.planName} admite ${over.limit}. Quita a alguien en /equipo o amplía el plan en /planes para volver a usar la IA.`);
+  const { t } = await getT();
+  throw new HttpError(402, t.quota.overSeats(t.quota.people(over.members), over.planName, over.limit));
 }
 
 /** Lanza HttpError(402) si el workspace ha agotado la cuota mensual de esa acción. */
@@ -107,7 +107,8 @@ export async function assertQuota(ws: Pick<Workspace, "id" | "plan">, action: "d
   if (limit === null) return;
   const used = await countAction(ws.id, action);
   if (used >= limit) {
-    throw new HttpError(402, `Has usado ${used} de ${limit} ${LABEL[action]} este mes en el plan ${plan.name}. Amplía el plan en /planes.`);
+    const { t } = await getT();
+    throw new HttpError(402, t.quota.spent(used, limit, t.quota.actions[action], plan.name));
   }
 }
 
@@ -127,12 +128,12 @@ export async function memberLimitMessage(organizationId: string, planKey: string
     opts.includePending ? countPendingInvitations(organizationId, opts.exceptEmail) : Promise.resolve(0),
   ]);
   if (members + pending < plan.members) return null;
-  const cabe = `El plan ${plan.name} admite ${people(plan.members)}.`;
+  const { t } = await getT();
+  const allows = t.quota.planAllows(plan.name, t.quota.people(plan.members));
   if (pending > 0) {
-    const inv = pending === 1 ? "1 invitación sin aceptar" : `${pending} invitaciones sin aceptar`;
-    return `${cabe} Ahora hay ${people(members)} en el equipo y ${inv}. Cancela una invitación en /equipo o amplía el plan en /planes.`;
+    return t.quota.withPending(allows, t.quota.people(members), t.quota.pendingInvites(pending));
   }
-  return `${cabe} Amplía el plan en /planes para invitar a más.`;
+  return t.quota.movePlan(allows);
 }
 
 /**

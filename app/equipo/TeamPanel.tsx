@@ -153,8 +153,8 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
                   <ul className="list">
                     {usage.byUser.map((u) => (
                       <li key={u.userId ?? "sys"} className="list__row">
-                        <UserAvatar name={u.name} image={members.find((m) => m.userId === u.userId)?.image} small />
-                        <span className="list__main"><span className="list__name">{u.name}</span><span className="list__sub">{t.team.calls(u.calls)}</span></span>
+                        <UserAvatar name={u.name ?? t.team.system} image={members.find((m) => m.userId === u.userId)?.image} small />
+                        <span className="list__main"><span className="list__name">{u.name ?? t.team.system}</span><span className="list__sub">{t.team.calls(u.calls)}</span></span>
                         <span className="list__role">{usd(u.usd)}</span>
                       </li>
                     ))}

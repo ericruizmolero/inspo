@@ -24,19 +24,19 @@ export function dayOf(col: AnyColumn, off: number): SQL<number> {
   return sql<number>`cast((${col} / 1000 + ${off}) / 86400 as integer)`;
 }
 
-export interface DaySlot { day: number; date: string; label: string }
+/** `date` es ISO (YYYY-MM-DD). La etiqueta del eje la formatea el cliente, con su idioma. */
+export interface DaySlot { day: number; date: string }
 
-/** Los N últimos días naturales acabando hoy: número de día, fecha ISO y etiqueta corta ("3 sept") */
+/** Los N últimos días naturales acabando hoy: número de día y fecha ISO */
 export function daySlots(days: number, off: number): DaySlot[] {
   const todayStart = startOfTodayMs(off);
   const since = todayStart - (days - 1) * 86400000;
   const firstDay = Math.floor((since / 1000 + off) / 86400);
-  const fmt = new Intl.DateTimeFormat("es-ES", { timeZone: TZ, day: "numeric", month: "short" });
   const out: DaySlot[] = [];
   for (let i = 0; i < days; i++) {
     const day = firstDay + i;
     const date = new Date((day * 86400 - off) * 1000 + 12 * 3600 * 1000); // mediodía, a salvo de cambios de hora
-    out.push({ day, date: date.toISOString().slice(0, 10), label: fmt.format(date).replace(".", "") });
+    out.push({ day, date: date.toISOString().slice(0, 10) });
   }
   return out;
 }

@@ -5,6 +5,7 @@ import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
 import type { ThumbnailMap } from "./thumbnails";
 import { webKeyOf } from "./url";
 import { getErrors } from "./i18n";
+import { HttpError } from "./workspace-core";
 
 const T = schema.inspoItem;
 type Row = typeof T.$inferSelect;
@@ -79,7 +80,7 @@ export interface NewItem {
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
   const web = input.web.trim().replace(/\/+$/, "");
   const existing = await findByWeb(organizationId, web);
-  if (existing) throw new Error((await getErrors()).urlAlreadyHere);
+  if (existing) throw new HttpError(409, (await getErrors()).urlAlreadyHere);
   const now = new Date();
   const row: typeof T.$inferInsert = {
     id: newId(),

@@ -79,11 +79,14 @@ function niceTicks(max: number, integer = false): number[] {
   return out;
 }
 
-function Columns<T extends { date: string; label: string }>({ data, value, format, title, integer = false, unitOf }: {
+function Columns<T extends { date: string }>({ data, value, format, title, integer = false, unitOf }: {
   data: T[]; value: (d: T) => number; format: (v: number) => string; title: string; integer?: boolean;
   /** Unidad "limpia" según el máximo (p. ej. segundos → minutos u horas) para que las marcas caigan en valores redondos */
   unitOf?: (max: number) => number;
 }) {
+  const { locale } = useT();
+  // El servidor manda la fecha ISO; el día del eje se escribe aquí ("3 Oct" / "3 oct")
+  const dayLabel = (iso: string) => fmtDate(iso, locale, { day: "numeric", month: "short" }).replace(".", "");
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const H = 150, padL = 36, padR = 8, padT = 10, padB = 22;
@@ -122,7 +125,7 @@ function Columns<T extends { date: string; label: string }>({ data, value, forma
                 <rect x={padL + i * band} y={padT} width={band} height={innerH} fill="transparent" />
                 {path && <path d={path} className={`ad-chart__bar${hover === i ? " is-hover" : ""}`} />}
                 {(i % every === 0 || i === data.length - 1) && (i === data.length - 1 || i + every <= data.length - 1 || data.length <= 14) && (
-                  <text x={padL + i * band + band / 2} y={H - 6} textAnchor="middle" className="ad-chart__tick">{d.label}</text>
+                  <text x={padL + i * band + band / 2} y={H - 6} textAnchor="middle" className="ad-chart__tick">{dayLabel(d.date)}</text>
                 )}
               </g>
             );
@@ -131,7 +134,7 @@ function Columns<T extends { date: string; label: string }>({ data, value, forma
       )}
       {h && hover !== null && (
         <div className="ad-tip" style={{ left: Math.min(Math.max(padL + hover * band + band / 2, 60), Math.max(60, width - 60)) }}>
-          <span className="ad-tip__label">{h.label}</span>
+          <span className="ad-tip__label">{dayLabel(h.date)}</span>
           <span className="ad-tip__value">{format(vals[hover])}</span>
         </div>
       )}
@@ -404,10 +407,10 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
             <ul className="ad-areas">
               {data.areas.map((a) => (
                 <li key={a.area} className="ad-area">
-                  <AreaThumb area={a.area} label={t.labels.area[a.area as keyof typeof t.labels.area] ?? a.label} />
+                  <AreaThumb area={a.area} label={t.labels.area[a.area as keyof typeof t.labels.area] ?? a.area} />
                   <span className="ad-area__body">
                     <span className="ad-area__head">
-                      <span className="ad-area__name">{t.labels.area[a.area as keyof typeof t.labels.area] ?? a.label}</span>
+                      <span className="ad-area__name">{t.labels.area[a.area as keyof typeof t.labels.area] ?? a.area}</span>
                       <span className="ad-area__meta">{t.admin.peopleCount(a.users)}</span>
                       <span className="ad-area__value">{fmtDur(a.seconds)}</span>
                     </span>
@@ -480,7 +483,7 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
                     <li key={a.action} className="ad-area">
                       <span className="ad-area__body">
                         <span className="ad-area__head">
-                          <span className="ad-area__name">{t.labels.action[a.action as keyof typeof t.labels.action] ?? a.label}</span>
+                          <span className="ad-area__name">{t.labels.action[a.action as keyof typeof t.labels.action] ?? a.action}</span>
                           <span className="ad-area__meta">{a.action.startsWith("jev_") && a.units ? t.admin.itemsInCalls(a.units, a.calls) : t.admin.calls(a.calls)}</span>
                           <span className="ad-area__value">{fmtUsd(a.usd)}</span>
                         </span>
@@ -496,7 +499,7 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
                   {usage.byWorkspace.map((w) => (
                     <li key={w.id} className="list__row">
                       <span className="list__main">
-                        <span className="list__name">{w.name}</span>
+                        <span className="list__name">{w.name ?? t.admin.deletedWorkspace}</span>
                         <span className="list__sub">{w.kind === "personal" ? t.admin.personalSpace : ""}{t.admin.calls(w.calls)}</span>
                       </span>
                       <span className="list__role">{fmtUsd(w.usd)}</span>
@@ -507,9 +510,9 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
                 <ul className="list">
                   {usage.byUser.map((u) => (
                     <li key={u.userId ?? "sys"} className="list__row">
-                      <UserAvatar name={u.name} image={u.image} small />
+                      <UserAvatar name={u.name ?? t.admin.system} image={u.image} small />
                       <span className="list__main">
-                        <span className="list__name">{u.name}</span>
+                        <span className="list__name">{u.name ?? t.admin.system}</span>
                         <span className="list__sub">{u.email ? `${u.email} · ` : ""}{t.admin.calls(u.calls)}</span>
                       </span>
                       <span className="list__role">{fmtUsd(u.usd)}</span>

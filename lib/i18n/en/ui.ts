@@ -376,6 +376,7 @@ export const ui = {
     noCalls: "No calls recorded yet. Every DESIGN.md, tagging or AI search is noted here with its estimated cost.",
     itemsInCalls: (units: number, calls: number): string => `${units} items in ${calls} calls`,
     calls: (n: number): string => `${n} ${n === 1 ? "call" : "calls"}`,
+    system: "System",
     perPerson: "Per person",
     costNote: "Estimated with the public Anthropic and Jev rates. It is for sizing the pricing, it is not the invoice.",
     members: "Members",
@@ -551,7 +552,22 @@ export const ui = {
     updatedAt: (time: string): string => `Updated at ${time}`,
     updating: "Updating\u2026",
     refreshNote: " \u00b7 it refreshes itself every minute",
+    system: "System",
+    deletedWorkspace: "Deleted workspace",
     calls: (n: number): string => `${n} ${n === 1 ? "call" : "calls"}`,
     itemsInCalls: (units: number, calls: number): string => `${units} items in ${calls} calls`,
+  },
+  quota: {
+    people: (n: number): string => `${n} ${n === 1 ? "person" : "people"}`,
+    actions: { design_md: "DESIGN.md", jev_search: "AI searches" },
+    overSeats: (members: string, plan: string, limit: number): string =>
+      `The team has ${members} and the ${plan} plan allows ${limit}. Remove someone in /equipo, or move up a plan in /planes, to use the AI again.`,
+    spent: (used: number, limit: number, what: string, plan: string): string =>
+      `You have used ${used} of ${limit} ${what} this month on the ${plan} plan. Move up a plan in /planes.`,
+    planAllows: (plan: string, people: string): string => `The ${plan} plan allows ${people}.`,
+    pendingInvites: (n: number): string => (n === 1 ? "1 invitation not yet accepted" : `${n} invitations not yet accepted`),
+    withPending: (allows: string, members: string, pending: string): string =>
+      `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan in /planes.`,
+    movePlan: (allows: string): string => `${allows} Move up a plan in /planes to invite more.`,
   },
 };

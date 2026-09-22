@@ -1768,9 +1768,11 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
   -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 4.5c-4.4 0-8 3-8 6.8 0 2 1 3.8 2.6 5L6 20l4-2c.6.1 1.3.2 2 .2 4.4 0 8-3 8-6.8s-3.6-6.9-8-6.9z'/><circle cx='8.6' cy='11.3' r='.9' fill='black' stroke='none'/><circle cx='12' cy='11.3' r='.9' fill='black' stroke='none'/><circle cx='15.4' cy='11.3' r='.9' fill='black' stroke='none'/></svg>") center / contain no-repeat;
   mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M12 4.5c-4.4 0-8 3-8 6.8 0 2 1 3.8 2.6 5L6 20l4-2c.6.1 1.3.2 2 .2 4.4 0 8-3 8-6.8s-3.6-6.9-8-6.9z'/><circle cx='8.6' cy='11.3' r='.9' fill='black' stroke='none'/><circle cx='12' cy='11.3' r='.9' fill='black' stroke='none'/><circle cx='15.4' cy='11.3' r='.9' fill='black' stroke='none'/></svg>") center / contain no-repeat;
 }
-/* Etiqueta a la izquierda del botón al pasar el ratón o enfocarlo con el teclado */
+/* Etiqueta a la izquierda del botón al pasar el ratón o enfocarlo con el teclado.
+   Es texto en CSS, así que no puede leer el diccionario: sigue al lang del <html>,
+   que pone app/layout.tsx. Inglés por defecto, como el resto. */
 [data-agentation-toolbar] [role="button"][title="Start feedback mode"]::after {
-  content: "Dar feedback";
+  content: "Give feedback";
   position: absolute;
   right: calc(100% + 10px);
   top: 50%;
@@ -1790,6 +1792,9 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 [data-agentation-toolbar] [role="button"][title="Start feedback mode"]:focus-visible::after {
   opacity: 1;
   transform: translateY(-50%) translateX(0);
+}
+html[lang="es"] [data-agentation-toolbar] [role="button"][title="Start feedback mode"]::after {
+  content: "Dar feedback";
 }
 
 /* Botón "Enviar al equipo": va pegado a la izquierda de la barra de Agentation (fija abajo a

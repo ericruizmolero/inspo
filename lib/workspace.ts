@@ -17,7 +17,7 @@ export async function getSession() {
 /** Sesión + workspace activo. Lanza HttpError(401) si no hay sesión. */
 export async function getCtx(): Promise<Ctx> {
   const s = await getSession();
-  if (!s) throw new HttpError(401, "No has iniciado sesión");
+  if (!s) throw new HttpError(401, (await getErrors()).notSignedIn);
   const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image, language: toLocale((s.user as { language?: unknown }).language) };
 
   // Una sola consulta en el caso normal; solo se crea el personal (y se relee) la primera vez
