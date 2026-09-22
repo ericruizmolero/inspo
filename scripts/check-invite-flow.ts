@@ -69,7 +69,7 @@ async function main() {
   assert.equal(eva.status, 200, "la quinta plaza debería caber");
   const lleno = await invite(jefa, orgId, mail("sobra"));
   assert.equal(lleno.status, 403, "con 4 miembros y 1 invitación el plan está lleno");
-  assert.match(String(lleno.body.message), /1 invitación sin aceptar/);
+  assert.match(String(lleno.body.message), /1 invitation not yet accepted/);
 
   // 3. Dos invitaciones de más para la última plaza, metidas a mano: es el estado que
   //    dejaban las invitaciones creadas antes del arreglo.

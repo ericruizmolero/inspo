@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { getSession } from "../session";
 import { db, schema } from "../db";
-import { LANG_COOKIE, toLocale, isLocale, type Locale } from "./locale";
+import { LANG_COOKIE, DEFAULT_LOCALE, toLocale, isLocale, type Locale } from "./locale";
 import en, { type Dict } from "./en";
 import es from "./es";
 
@@ -32,7 +32,12 @@ export const getLocale = cache(async (): Promise<Locale> => {
     if (isLocale(row?.language)) return row.language;
   }
   // Sin sesión manda la cookie, que escribe proxy.ts desde `?lang` o Accept-Language
-  return toLocale((await cookies()).get(LANG_COOKIE)?.value);
+  // Fuera de una petición (scripts de scripts/) no hay cookies: idioma por defecto
+  try {
+    return toLocale((await cookies()).get(LANG_COOKIE)?.value);
+  } catch {
+    return DEFAULT_LOCALE;
+  }
 });
 
 export const dictOf = (locale: Locale): Dict => DICTS[locale];

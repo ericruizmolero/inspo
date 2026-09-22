@@ -53,7 +53,7 @@ async function main() {
   assert.equal(await memberLimitMessage(orgId, "studio"), null, "sin contar pendientes todavía cabe gente");
   const full = await memberLimitMessage(orgId, "studio", { includePending: true });
   assert.ok(full, "1 miembro + 4 invitaciones llenan el plan Studio");
-  assert.match(full!, /4 invitaciones sin aceptar/, "el mensaje dice cuántas invitaciones hay");
+  assert.match(full!, /4 invitations not yet accepted/, "el mensaje dice cuántas invitaciones hay");
 
   // 2. Reenviar una invitación no ocupa una plaza de más
   assert.equal(
