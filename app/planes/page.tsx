@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import BackLink from "@/components/BackLink";
+import ActivityPing from "@/components/ActivityPing";
 import { redirect } from "next/navigation";
 import { getCtx, HttpError } from "@/lib/workspace";
 import { quotaStatus } from "@/lib/quota";
@@ -36,6 +37,7 @@ export default async function PlanesPage() {
 
   return (
     <div className="page pl">
+      <ActivityPing area="planes" organizationId={ws.id} />
       <div className="pl-bar">
         <BackLink />
       </div>

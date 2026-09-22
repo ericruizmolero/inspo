@@ -20,6 +20,7 @@ import CommentsPanel from "./CommentsPanel";
 import { proxiedSrc } from "@/lib/proxied-src";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
+import { useActivity } from "./useActivity";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
@@ -133,6 +134,7 @@ export default function InspoClient({
   workspace,
   workspaces,
   members = [],
+  isAdmin = false,
 }: {
   items: InspoItem[];
   initialThumbnailMap?: ThumbnailMap;
@@ -142,6 +144,8 @@ export default function InspoClient({
   workspace: Workspace;
   workspaces: Workspace[];
   members?: { name: string; image: string | null }[];
+  /** Puede ver el panel de actividad (/admin) */
+  isAdmin?: boolean;
 }) {
   const [items, setItems] = useState(initialItems);
   const [tipo, setTipo] = useState<FilterTipo>("Todos");
@@ -702,6 +706,10 @@ export default function InspoClient({
   // Close the mobile drawer whenever a filter changes
   useEffect(() => { setDrawerOpen(false); }, [tipo, autor, fecha, sector, estilo, selTags]);
 
+  // Presencia: en qué zona está la persona ahora mismo (lo lee el panel de /admin)
+  const area = designMdItem ? "design-md" : commentsItem ? "comentarios" : showRecursos ? "recursos" : showAdd ? "anadir" : aiScores ? "busqueda" : "biblioteca";
+  useActivity(area, workspace.id);
+
   runDesignMdRef.current = runDesignMd;
 
   return (
@@ -757,7 +765,7 @@ export default function InspoClient({
 
       <Sidebar
         quota={quota}
-        brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} />}
+        brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />}
         autores={autores}
         autorImages={autorImages}
         items={items}

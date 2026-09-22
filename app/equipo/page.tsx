@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import BackLink from "@/components/BackLink";
+import ActivityPing from "@/components/ActivityPing";
 import { redirect } from "next/navigation";
 import { getCtx, HttpError, listMembers, canManage } from "@/lib/workspace";
 import { db, schema } from "@/lib/db";
@@ -26,6 +27,7 @@ export default async function EquipoPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="page">
+      <ActivityPing area="equipo" organizationId={ws.id} />
       <div className="page__bar">
         <BackLink />
         <span className="display page__title">{ws.kind === "team" ? ws.name : "Equipos"}</span>

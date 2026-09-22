@@ -2,6 +2,7 @@ import { getSession, getCtx, listMembers } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
 import InspoClient from "@/components/InspoClient";
 import GuestStart from "@/components/GuestStart";
+import { isAdmin } from "@/lib/activity";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function Home() {
       workspace={ctx.workspace}
       workspaces={ctx.workspaces}
       members={members.map((m) => ({ name: m.name, image: m.image ?? null }))}
+      isAdmin={await isAdmin(ctx.user.email)}
     />
   );
 }

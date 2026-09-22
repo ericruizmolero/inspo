@@ -5,17 +5,13 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { UserAvatar } from "@/components/WorkspaceMenu";
-import type { UsageSummary, UsageAction } from "@/lib/usage";
+import type { UsageSummary } from "@/lib/usage";
+import { ACTION_LABEL, fmtUsd as usd } from "@/lib/usage-core";
 
 interface Member { id: string; userId: string; name: string; email: string; image?: string | null; role: string; createdAt: string }
 interface Invitation { id: string; email: string; role: string | null; expiresAt: string }
 
 const ROLE_LABEL: Record<string, string> = { owner: "Propietario", admin: "Admin", member: "Miembro" };
-const ACTION_LABEL: Record<UsageAction, string> = {
-  design_md: "DESIGN.md generados", vision: "Capturas descritas", jev_tag: "Inspos etiquetados",
-  jev_search: "Búsquedas IA", jev_recursos: "Búsquedas en el directorio", explain: "Explicaciones de búsqueda", revise: "Revisiones de DESIGN.md",
-};
-const usd = (n: number) => (n < 0.01 && n > 0 ? "<0,01 $" : `${n.toFixed(2).replace(".", ",")} $`);
 
 function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);

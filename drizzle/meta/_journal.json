@@ -36,6 +36,20 @@
       "when": 1789991045261,
       "tag": "0004_comment_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1790067221945,
+      "tag": "0005_activity_segment",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790068017997,
+      "tag": "0006_app_admin",
+      "breakpoints": true
     }
   ]
 }

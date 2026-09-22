@@ -43,8 +43,8 @@ const I = {
   ),
 };
 
-export default function WorkspaceMenu({ user, workspace, workspaces }: {
-  user: SessionUser; workspace: Workspace; workspaces: Workspace[];
+export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false }: {
+  user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -281,6 +281,11 @@ export default function WorkspaceMenu({ user, workspace, workspaces }: {
           <div className="ws__theme">
             <ThemeSwitch />
           </div>
+          {isAdmin && (
+            <Link className="ws__item" href="/admin" onClick={() => setOpen(false)}>
+              <span className="ws__item-name">Actividad de la app</span>
+            </Link>
+          )}
           <button className="ws__item ws__item--muted" onClick={logout}>
             <span className="ws__item-name">Salir</span>
           </button>

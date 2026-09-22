@@ -196,3 +196,43 @@ export const aiUsage = sqliteTable("ai_usage", {
 }, (t) => [
   index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
 ]);
+
+// ─── Actividad (presencia) ───────────────────────────────────────────────────
+// Un segmento = una persona en una zona de la app (biblioteca, DESIGN.md, equipo…)
+// dentro de una visita (pestaña). El cliente manda un latido cada 20 s mientras la
+// pestaña está visible (components/useActivity.ts) y el servidor suma el tiempo
+// entre latidos (lib/activity.ts). Alimenta el panel de /admin.
+
+export const activitySegment = sqliteTable("activity_segment", {
+  /** Lo genera el cliente (uno por visita × zona); solo lo puede tocar su dueño */
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+  /** Una visita = una carga de la app en una pestaña */
+  visitId: text("visit_id").notNull(),
+  /** Zona de la app: biblioteca | busqueda | design-md | comentarios | recursos | anadir | equipo | planes | admin… */
+  area: text("area").notNull(),
+  path: text("path").notNull(),
+  /** Resumen legible del navegador: "Chrome · macOS" */
+  device: text("device"),
+  startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+  /** Segundos con la pestaña visible en esta zona */
+  seconds: integer("seconds").notNull().default(0),
+}, (t) => [
+  index("activity_segment_user_seen_idx").on(t.userId, t.lastSeenAt),
+  index("activity_segment_seen_idx").on(t.lastSeenAt),
+]);
+
+// ─── Administradores de la app ───────────────────────────────────────────────
+// Quién puede ver el panel de actividad (/admin). Se gestiona desde el propio panel
+// (lib/activity.ts); los correos fijos de DEFAULT_ADMINS / ADMIN_EMAILS no van aquí.
+
+export const appAdmin = sqliteTable("app_admin", {
+  /** Correo en minúsculas */
+  email: text("email").primaryKey(),
+  /** Nombre de quien le dio acceso (para enseñarlo en la lista) */
+  addedBy: text("added_by").notNull().default(""),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+});
+

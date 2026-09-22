@@ -85,3 +85,12 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
     text: `${inviterName} te invita al equipo ${teamName} en Inspo. Acepta aquí:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
   };
 }
+
+export function adminAccessMail(url: string, granterName: string) {
+  return {
+    subject: `${granterName} te ha dado acceso al panel de actividad de Inspo`,
+    html: layout("Ya puedes ver la actividad de Inspo", `${esc(granterName)} te ha dado acceso al panel de actividad: quién está conectado, cuánto tiempo pasa cada persona en la app y en qué zona.`, { label: "Abrir el panel", url }, "Entra con este mismo correo. Si no esperabas este acceso, puedes ignorar el mensaje."),
+    text: `${granterName} te ha dado acceso al panel de actividad de Inspo. Entra con este correo y ábrelo aquí:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
+  };
+}
+

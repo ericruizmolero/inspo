@@ -3,8 +3,10 @@
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
+import { dayOf, daySlots, tzOffsetSeconds } from "./dias";
+import { actionLabel, type UsageAction, type UsageOverview } from "./usage-core";
 
-export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "jev_recursos" | "explain" | "revise";
+export * from "./usage-core";
 
 export interface UsageCtx { organizationId: string; userId?: string | null }
 
@@ -81,5 +83,53 @@ export async function usageSummary(organizationId: string, sinceDays = 30): Prom
     totalUsd: actions.reduce((n, a) => n + a.usd, 0),
     byAction: actions,
     byUser: byUser.map((r) => ({ userId: r.userId, name: r.name ?? "Sistema", usd: Number(r.micros) / 1e6, calls: Number(r.calls) })).sort((a, b) => b.usd - a.usd),
+  };
+}
+
+/** Uso de IA de toda la app (todos los workspaces) en los últimos N días naturales, para /admin. */
+export async function usageOverview(days = 30): Promise<UsageOverview> {
+  const off = tzOffsetSeconds();
+  const slots = daySlots(days, off);
+  const since = new Date((slots[0].day * 86400 - off) * 1000);
+  const U = schema.aiUsage, O = schema.organization, P = schema.user;
+  const where = gte(U.createdAt, since);
+  const dayExpr = dayOf(U.createdAt, off);
+
+  const [byAction, byUser, byWs, daily] = await Promise.all([
+    db.select({ action: U.action, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})`, units: sql<number>`sum(${U.units})` })
+      .from(U).where(where).groupBy(U.action),
+    db.select({ userId: U.userId, name: sql<string | null>`max(${P.name})`, email: sql<string | null>`max(${P.email})`, image: sql<string | null>`max(${P.image})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
+      .from(U).leftJoin(P, eq(U.userId, P.id)).where(where).groupBy(U.userId),
+    db.select({ id: U.organizationId, name: sql<string | null>`max(${O.name})`, metadata: sql<string | null>`max(${O.metadata})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
+      .from(U).leftJoin(O, eq(U.organizationId, O.id)).where(where).groupBy(U.organizationId),
+    db.select({ day: dayExpr, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
+      .from(U).where(where).groupBy(dayExpr),
+  ]);
+
+  const dayMap = new Map(daily.map((d) => [Number(d.day), d]));
+  const actions = byAction
+    .map((r) => ({ action: r.action, label: actionLabel(r.action), calls: Number(r.calls), usd: Number(r.micros) / 1e6, units: Number(r.units) }))
+    .sort((a, b) => b.usd - a.usd);
+  const users = byUser
+    .map((r) => ({ userId: r.userId, name: r.name ?? "Sistema", email: r.email, image: r.image, usd: Number(r.micros) / 1e6, calls: Number(r.calls) }))
+    .sort((a, b) => b.usd - a.usd);
+  const workspaces = byWs.map((r) => {
+    let kind: "personal" | "team" = "team";
+    try { kind = JSON.parse(r.metadata ?? "{}")?.kind === "personal" ? "personal" : "team"; } catch { /* metadata rota */ }
+    return { id: r.id, name: r.name ?? "Workspace borrado", kind, usd: Number(r.micros) / 1e6, calls: Number(r.calls) };
+  }).sort((a, b) => b.usd - a.usd);
+
+  return {
+    days,
+    totalUsd: actions.reduce((n, a) => n + a.usd, 0),
+    calls: actions.reduce((n, a) => n + a.calls, 0),
+    people: users.filter((u) => u.userId).length,
+    byAction: actions,
+    byUser: users,
+    byWorkspace: workspaces,
+    daily: slots.map((s) => {
+      const d = dayMap.get(s.day);
+      return { date: s.date, label: s.label, usd: Number(d?.micros ?? 0) / 1e6, calls: Number(d?.calls ?? 0) };
+    }),
   };
 }
