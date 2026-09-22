@@ -8,6 +8,8 @@ import { fmtDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT } from "./I18nProvider";
+import { Button } from "@/components/ui/button";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
 interface DesignMdModalProps {
   url: string;
@@ -23,6 +25,8 @@ interface DesignMdModalProps {
   comments?: (hide: () => void) => ReactNode;
   /** Cuántas respuestas hay, para el botón de la barra */
   commentCount?: number;
+  /** Name of the library it belongs to, first step of the breadcrumb */
+  libraryName?: string;
 }
 
 type ReviseFn = (section: string, comment: string) => Promise<{ summary: string; warning: string | null; unchanged?: boolean }>;
@@ -273,8 +277,8 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
                 : t.designMd.reviseHint}
             </span>
             <div className="dm-revise__actions">
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpen(false)} disabled={busy}>{t.common.cancel}</button>
-              <button type="submit" className="btn btn--primary btn--sm" disabled={busy || text.trim().length < 5}>{t.designMd.applyWithClaude}</button>
+              <Button variant="ghost" size="sm" type="button" onClick={() => setOpen(false)} disabled={busy}>{t.common.cancel}</Button>
+              <Button variant="primary" size="sm" type="submit" disabled={busy || text.trim().length < 5}>{t.designMd.applyWithClaude}</Button>
             </div>
           </div>
           {error && <p className="modal__error">{error}</p>}
@@ -287,7 +291,7 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
             <p>{done.summary}</p>
             {done.warning && <p className="dm-revise-done__warning">{done.warning}</p>}
           </div>
-          <button className="btn-icon" onClick={() => setDone(null)} aria-label={t.common.close}>{IcX}</button>
+          <Button variant="icon" onClick={() => setDone(null)} aria-label={t.common.close}>{IcX}</Button>
         </div>
       )}
     </>
@@ -318,7 +322,7 @@ function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onR
             <p className="dm-rev__summary">{r.summary}</p>
             {r.warning && <p className="dm-rev__warning">{r.warning}</p>}
             {i !== 0 && (
-              <button className="btn btn--ghost btn--sm dm-rev__revert" onClick={() => onRevert(r.id)} disabled={busy}>{t.designMd.revertTo}</button>
+              <Button variant="ghost" size="sm" className="dm-rev__revert" onClick={() => onRevert(r.id)} disabled={busy}>{t.designMd.revertTo}</Button>
             )}
           </li>
         ))}
@@ -486,9 +490,9 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
               <div className="dm-h" style={{ margin: 0 }}>{t.designMd.agentPrompt}</div>
               <div className="dm-section__meta">{t.designMd.agentPromptHint}</div>
             </div>
-            <button className="btn btn--sm btn--ghost" onClick={() => copyPrompt(spec.agentPrompt)}>
+            <Button variant="ghost" size="sm" onClick={() => copyPrompt(spec.agentPrompt)}>
               {promptCopied ? <>{IcCheck} Copiado</> : <>{IcCopy} Copiar</>}
-            </button>
+            </Button>
           </div>
           <p className="dm-prompt__text">{spec.agentPrompt}</p>
           {onRevise && <div className="dm-prompt__revise"><SectionHead title={t.designMd.sections.prompt} section="prompt" onRevise={onRevise} /></div>}
@@ -502,7 +506,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 // ─── Modal ────────────────────────────────────────────────────────────────────
 // La ficha solo se abre cuando el DESIGN.md ya existe: la generación vive en el
 // toast de abajo a la derecha (DesignMdToasts), aquí no hay pantalla de progreso.
-export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised, comments, commentCount = 0 }: DesignMdModalProps) {
+export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised, comments, commentCount = 0, libraryName }: DesignMdModalProps) {
   const { locale, t } = useT();
   const [copied, copy] = useCopy(1600);
   const [view, setView] = useState<"spec" | "md" | "history">("spec");
@@ -567,7 +571,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
   return (
     <div className="dm">
       <header className="dm-bar">
-        <button className="btn-icon dm-bar__close" onClick={onClose} aria-label={t.common.close}>{IcX}</button>
+        <Button variant="icon" className="dm-bar__close" onClick={onClose} aria-label={t.common.close}>{IcX}</Button>
         <div className="dm-bar__id">
           <span className="dm-bar__icon" aria-hidden>
             {iconOk && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(barHost)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
@@ -575,10 +579,22 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
           </span>
           <div className="dm-bar__title">
             <span className="display dm-bar__brand">{spec?.brand ?? empresa}</span>
-            <span className="dm-bar__meta">
-              <a href={url} target="_blank" rel="noopener noreferrer">{barHost}</a>
-              <button type="button" className="dm-bar__file" onClick={download} disabled={!ready} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
-            </span>
+            {/* Where this is: the library, the site, the file */}
+            <Breadcrumb className="dm-bar__meta" aria-label={t.settings.breadcrumb}>
+              <BreadcrumbList>
+                {libraryName && (
+                  <>
+                    <BreadcrumbItem><button type="button" className="dm-bar__crumb" onClick={onClose}>{libraryName}</button></BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                  </>
+                )}
+                <BreadcrumbItem><a href={url} target="_blank" rel="noopener noreferrer">{barHost}</a></BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <button type="button" className="dm-bar__file" onClick={download} disabled={!ready} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
         </div>
         {showTabs && (
@@ -592,20 +608,22 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
         )}
         <div className="dm-bar__actions">
           {comments && (
-            <button
-              className={`btn btn--ghost btn--sm dm-bar__comments${commentsOpen ? " is-active" : ""}`}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`dm-bar__comments${commentsOpen ? " is-active" : ""}`}
               onClick={() => setCommentsOpen((o) => !o)}
               aria-pressed={commentsOpen}
               title={commentsOpen ? t.designMd.hideComments : t.designMd.showComments}
             >
               {IcComment}<span className="dm-bar__comments-label">{t.designMd.comments}</span>{commentCount > 0 && <span className="dm-tab__count">{commentCount}</span>}
-            </button>
+            </Button>
           )}
-          <button className="btn btn--ghost btn--sm" onClick={onRegenerate} disabled={!ready}>{t.designMd.regenerate}</button>
-          <button className="btn btn--ghost btn--sm" onClick={download} disabled={!ready}>{t.designMd.download}</button>
-          <button className="btn btn--primary btn--sm" onClick={() => entry && copy(entry.markdown)} disabled={!ready}>
+          <Button variant="ghost" size="sm" onClick={onRegenerate} disabled={!ready}>{t.designMd.regenerate}</Button>
+          <Button variant="ghost" size="sm" onClick={download} disabled={!ready}>{t.designMd.download}</Button>
+          <Button variant="primary" size="sm" onClick={() => entry && copy(entry.markdown)} disabled={!ready}>
             {copied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyMd}</>}
-          </button>
+          </Button>
         </div>
       </header>
 

@@ -56,3 +56,17 @@ export async function setLanguage(lang: string): Promise<void> {
   const session = await getSession();
   if (session) await db.update(schema.user).set({ language: lang, updatedAt: new Date() }).where(eq(schema.user.id, session.user.id));
 }
+
+/**
+ * A shared /i/<id> link can point to an inspiration in another of the person's workspaces.
+ * Returns that workspace when the person is a member of it, so the client can switch to it; null otherwise.
+ * It never says whether an item exists in a workspace the person cannot see.
+ */
+export async function workspaceOfItem(itemId: string) {
+  return withCtx(async (ctx) => {
+    const [row] = await db.select({ organizationId: schema.inspoItem.organizationId })
+      .from(schema.inspoItem).where(eq(schema.inspoItem.id, itemId)).limit(1);
+    if (!row || !ctx.workspaces.some((w) => w.id === row.organizationId)) return null;
+    return row.organizationId;
+  });
+}

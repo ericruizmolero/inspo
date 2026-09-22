@@ -1,7 +1,8 @@
 "use client";
 
-import { addInspo, removeInspo, postComment as postCommentAction, removeComment } from "@/app/actions/library";
-import { useRouter } from "next/navigation";
+import { addInspo, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem } from "@/app/actions/library";
+import { authClient } from "@/lib/auth-client";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
@@ -24,6 +25,13 @@ import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
 import { useT } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import CommandPalette from "./CommandPalette";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import Logo from "@/components/Logo";
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
 async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<File> {
@@ -82,9 +90,7 @@ function canAutoDesignMd(web: string): boolean {
 }
 
 const SIDEBAR_W = 256;
-const SIDEBAR_RAIL_W = 52;
 const DESKTOP_MIN = 801;
-const COLLAPSED_KEY = "inspo:sidebar-collapsed";
 const RATIOS_KEY = "inspo:card-ratios";
 // Alto/ancho de una tarjeta antes de medirla (el placeholder es 4:3) y hueco entre tarjetas.
 const DEFAULT_RATIO = 0.75;
@@ -104,7 +110,7 @@ function useColumnCount(collapsed: boolean) {
   return useMemo(() => {
     if (!winW) return 4;
     const desktop = winW >= DESKTOP_MIN;
-    const w = desktop ? winW - (collapsed ? SIDEBAR_RAIL_W : SIDEBAR_W) : winW;
+    const w = desktop ? winW - (collapsed ? 0 : SIDEBAR_W) : winW;
     if (!desktop && w <= 520) return 1;
     if (w <= 644) return 2;
     if (w <= 1144) return 3;
@@ -113,12 +119,6 @@ function useColumnCount(collapsed: boolean) {
   }, [winW, collapsed]);
 }
 
-const IconPanel = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" />
-    <path d="M6 2.75v10.5" />
-  </svg>
-);
 
 // Jev puntúa de forma conservadora: mostramos lo que supera 0.4 y, si son pocos,
 // al menos los 8 mejores mientras pasen de 0.3.
@@ -140,6 +140,7 @@ export default function InspoClient({
   initialQuota = null,
   initialComments = {},
   initialDesignMdIndex = {},
+  initialSidebarOpen = true,
 }: {
   items: InspoItem[];
   initialQuota?: QuotaView | null;
@@ -154,6 +155,8 @@ export default function InspoClient({
   members?: { name: string; image: string | null }[];
   /** Puede ver el panel de actividad (/admin) */
   isAdmin?: boolean;
+  /** Saved sidebar state, read from the sidebar_state cookie on the server */
+  initialSidebarOpen?: boolean;
 }) {
   const { t } = useT();
   const [items, setItems] = useState(initialItems);
@@ -402,7 +405,6 @@ export default function InspoClient({
     const r = await removeComment(id).catch(() => null);
     if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
   };
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
   // Índice de DESIGN.md ya generados: servidor + los que terminen en esta sesión
   const [designMdIndex, setDesignMdIndex] = useState(initialDesignMdIndex);
@@ -438,7 +440,23 @@ export default function InspoClient({
   // Una petición en vuelo por URL: parar = abortar el fetch (el servidor cierra Chromium
   // y corta a Claude al perder al último cliente) y avisar también con DELETE por si acaso.
   // La ficha lleva el hilo en columna: al abrirla se cierra el cajón de comentarios si estaba abierto
-  const showDesignMd = (item: InspoItem) => { setDesignMdItem(item); setCommentsItemId(null); };
+  // Each open DESIGN.md has its own URL (/i/<id>): it can be shared, and Back closes it.
+  // The URL changes with history.pushState, which Next syncs with usePathname without a navigation.
+  const pushedRef = useRef(false);
+  const showDesignMd = (item: InspoItem) => {
+    setDesignMdItem(item); setCommentsItemId(null);
+    if (item.id && window.location.pathname !== `/i/${item.id}`) {
+      window.history.pushState(null, "", `/i/${item.id}`);
+      pushedRef.current = true;
+    }
+  };
+  const closeDesignMd = () => {
+    if (!window.location.pathname.startsWith("/i/")) { setDesignMdItem(null); return; }
+    // Opened here: step back, so Back and close do the same. Opened from a shared link: go to the library.
+    if (pushedRef.current) { window.history.back(); return; }
+    window.history.replaceState(null, "", "/");
+    setDesignMdItem(null);
+  };
   const designMdCtrls = useRef(new Map<string, AbortController>());
   const designMdItemRef = useRef<InspoItem | null>(null);
 
@@ -506,10 +524,41 @@ export default function InspoClient({
   // Regenerar cuesta dinero: el servidor solo lo permite a administradores del workspace.
   // Se cierra la ficha y el toast lleva el proceso; al acabar, la ficha nueva se abre sola.
   const regenerateDesignMd = (item: InspoItem) => {
-    setDesignMdItem(null);
+    closeDesignMd();
     runDesignMd(item, { force: true, openWhenReady: true });
   };
   designMdItemRef.current = designMdItem;
+
+  // Cmd+K (Ctrl+K) opens the command palette from anywhere in the library
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setPaletteOpen((o) => !o); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // The path decides what is open: Back or Forward move between the library and a DESIGN.md,
+  // and a shared /i/<id> link opens that inspiration when the library loads
+  const pathname = usePathname();
+  useEffect(() => {
+    const id = pathname.match(/^\/i\/([^/]+)/)?.[1];
+    if (!id) {
+      if (designMdItemRef.current) { pushedRef.current = false; setDesignMdItem(null); }
+      return;
+    }
+    if (designMdItemRef.current?.id === id) return;
+    const item = items.find((i) => i.id === id);
+    if (item) { openDesignMd(item); return; }
+    // Not in this workspace: if it is in another one of mine, switch to it; the library remounts and opens it
+    workspaceOfItem(id).then(async (r) => {
+      if (!r.ok || !r.data || r.data === workspace.id) return;
+      await authClient.organization.setActive({ organizationId: r.data });
+      router.refresh();
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
+  }, [pathname]);
 
   // Lo que se muestra en el modal cuenta como visto
   useEffect(() => {
@@ -536,19 +585,18 @@ export default function InspoClient({
   const activeFilterCount = (tipo !== "Todos" ? 1 : 0) + (autor !== "Todos" ? 1 : 0) + (fecha !== "Todos" ? 1 : 0)
     + (sector !== "Todos" ? 1 : 0) + (estilo !== "Todos" ? 1 : 0) + selTags.length;
 
-  // Sidebar plegable (solo escritorio). Se recuerda entre sesiones.
-  const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    try { if (localStorage.getItem(COLLAPSED_KEY) === "1") setCollapsed(true); } catch { /* sin storage */ }
-  }, []);
-  const toggleSidebar = () => {
+  // Sidebar plegable (solo escritorio). SidebarProvider saves it in a cookie that the server reads
+  const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
+  // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B); the cards follow with GSAP Flip
+  // while the sidebar slides with a CSS transition of the same length and curve
+  const setSidebarOpen = (open: boolean) => {
+    if (open === !collapsed) return;
     gsap.registerPlugin(Flip);
     // Tarjetas de la rejilla y bloques de la pantalla vacía (data-flip) se mueven al unísono
-    const targets = [".sidebar", ".sb-toggle", ".card-item", "[data-flip]"];
+    const targets = [".card-item", "[data-flip]"];
     const state = Flip.getState(targets);
-    const next = !collapsed;
+    const next = !open;
     flushSync(() => setCollapsed(next));
-    try { localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0"); } catch { /* sin storage */ }
     Flip.from(state, {
       targets,
       duration: 0.55,
@@ -560,6 +608,9 @@ export default function InspoClient({
   };
 
   const numCols = useColumnCount(collapsed);
+  // On a phone the same trigger opens the filters sheet, so it says so
+  const isMobile = useIsMobile();
+  const triggerLabel = isMobile ? t.app.filters : collapsed ? t.app.showSidebar : t.app.hideSidebar;
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
 
@@ -705,9 +756,6 @@ export default function InspoClient({
     isMount.current = false;
   }, [filtered]);
 
-  // Close the mobile drawer whenever a filter changes
-  useEffect(() => { setDrawerOpen(false); }, [tipo, autor, fecha, sector, estilo, selTags]);
-
   // Presencia: en qué zona está la persona ahora mismo (lo lee el panel de /admin)
   const area = designMdItem ? "design-md" : commentsItem ? "comentarios" : showRecursos ? "recursos" : showAdd ? "anadir" : aiScores ? "busqueda" : "biblioteca";
   useActivity(area, workspace.id);
@@ -715,13 +763,14 @@ export default function InspoClient({
   runDesignMdRef.current = runDesignMd;
 
   return (
-    <div className={`shell${collapsed ? " is-collapsed" : ""}`}>
+    <SidebarProvider open={!collapsed} onOpenChange={setSidebarOpen} className="shell">
       {designMdItem && (
         <DesignMdModal
           url={designMdItem.web}
           empresa={designMdItem.empresa}
           state={designMdJobs[designMdItem.web]}
-          onClose={() => setDesignMdItem(null)}
+          onClose={closeDesignMd}
+          libraryName={workspace.name}
           onRegenerate={() => regenerateDesignMd(designMdItem)}
           onRevised={(patch) => patchJob(designMdItem.web, { entry: { ...designMdJobs[designMdItem.web]?.entry!, ...patch } })}
           commentCount={designMdItem.id ? (commentMap[designMdItem.id]?.length ?? 0) : 0}
@@ -758,6 +807,23 @@ export default function InspoClient({
         </div>
       )}
       {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} />}
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        items={items}
+        hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
+        workspace={workspace}
+        workspaces={workspaces}
+        isAdmin={isAdmin}
+        onOpenItem={openDesignMd}
+        onAddUrl={(web) => {
+          // Already saved: show it in the grid instead of saving it twice
+          if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
+          addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" });
+        }}
+        onAdd={() => setShowAdd(true)}
+        onDirectory={() => setShowRecursos(true)}
+      />
       {commentsItem && (
         <CommentsPanel
           item={commentsItem}
@@ -794,10 +860,8 @@ export default function InspoClient({
         tipo={tipo} autor={autor} fecha={fecha} query={query}
         onTipo={setTipo} onAutor={setAutor} onFecha={setFecha} onQuery={setQuery}
         onReset={resetFilters}
-        onAdd={() => { setDrawerOpen(false); setShowAdd(true); }}
-        onRecursos={() => { setDrawerOpen(false); setShowRecursos(true); }}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onAdd={() => setShowAdd(true)}
+        onRecursos={() => setShowRecursos(true)}
         tagMap={tagMap}
         sector={sector} estilo={estilo} selTags={selTags}
         onSector={setSector} onEstilo={setEstilo} onToggleTag={toggleTag}
@@ -805,29 +869,28 @@ export default function InspoClient({
         pending={pending} tagging={tagging} onTagAll={tagAll}
       />
 
-      <button
-        className="btn-icon sb-toggle"
-        onClick={toggleSidebar}
-        aria-label={collapsed ? t.app.showSidebar : t.app.hideSidebar}
-        title={collapsed ? t.app.showSidebar : t.app.hideSidebar}
-        aria-expanded={!collapsed}
-      >
-        {IconPanel}
-      </button>
-
-      <div className="content">
-        <div className="topbar">
-          <span className="display">Inspo</span>
+      <SidebarInset className="content">
+        <header className="topbar">
+          <span className="topbar__trigger">
+            <SidebarTrigger aria-label={triggerLabel} />
+            {activeFilterCount > 0 && <span className="topbar__badge">{activeFilterCount}</span>}
+          </span>
+          <Separator orientation="vertical" className="topbar__sep" />
+          <Breadcrumb className="topbar__view" aria-label={t.settings.breadcrumb}>
+            <BreadcrumbList>
+              <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="topbar__title">{tipo === "Todos" ? t.sidebar.all : t.labels.tipo[tipo]}</BreadcrumbPage>
+                <span className="topbar__count">{filtered.length}</span>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+          <Logo size={28} className="topbar__logo" />
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
             ai={ai} aiLoading={aiLoading} />
-          <button className="btn-icon topbar__filter" onClick={() => setDrawerOpen(true)} aria-label={t.app.filters}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M2 4h12M4 8h8M6 12h4" />
-            </svg>
-            {activeFilterCount > 0 && <span className="topbar__badge">{activeFilterCount}</span>}
-          </button>
-          <button className="btn-icon" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</button>
-        </div>
+          <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
+        </header>
 
         {ai && query.trim().length >= 3 && (aiLoading || aiError || aiScores) && (
           <header className={`ai-hero${aiLoading ? " is-loading" : ""}${aiError ? " is-error" : ""}`} role="status" aria-live="polite">
@@ -883,10 +946,10 @@ export default function InspoClient({
           <div className="empty">
             <span className="display">{t.app.nothingHere}</span>
             <span>{aiLoading ? t.app.searchingShort : t.app.tryAnother}</span>
-            <button className="btn btn--ghost btn--sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</button>
+            <Button variant="ghost" size="sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</Button>
           </div>
         ) : (
-          <main ref={gridRef} className="masonry">
+          <section ref={gridRef} className="masonry">
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="masonry__col">
                 {col.map((item, itemIdx) => (
@@ -912,9 +975,9 @@ export default function InspoClient({
                 ))}
               </div>
             ))}
-          </main>
+          </section>
         )}
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

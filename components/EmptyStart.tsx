@@ -6,6 +6,8 @@ import { RECURSOS, RECURSOS_TOTAL, recursoShot } from "@/lib/recursos";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import s from "./EmptyStart.module.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 // Siempre 9 webs (rejilla de 3×3): las más usadas y las más de moda ahora mismo, elegidas a mano
 // y con una captura que se ve perfecta. Si alguna deja de estar en el directorio, se rellena
@@ -43,24 +45,6 @@ function Thumb({ name, url }: { name: string; url: string }) {
   );
 }
 
-const IcTag = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 2.75h5.4c.33 0 .65.13.88.37l5.35 5.35a1.25 1.25 0 0 1 0 1.76l-3.4 3.4a1.25 1.25 0 0 1-1.76 0L3.12 8.28A1.25 1.25 0 0 1 2.75 7.4V2.75z" />
-    <circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none" />
-  </svg>
-);
-const IcMd = <span className={s.md}>MD</span>;
-
-// Cómo funciona la app, en el orden en que alguien la usa por primera vez.
-// El texto de cada paso está en el diccionario (t.start.steps); aquí solo el icono.
-const STEP_ICONS = [
-  { key: "save", icon: Icons.plus },
-  { key: "tag", icon: IcTag },
-  { key: "search", icon: Icons.search },
-  { key: "collections", icon: Icons.all },
-  { key: "designMd", icon: IcMd },
-  { key: "team", icon: Icons.users },
-] as const;
 
 interface EmptyStartProps {
   /** Guarda la primera inspo a partir de la URL (ya normalizada). Resuelve cuando termina el alta. */
@@ -93,9 +77,10 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
         <h1 className={s.title}>{t.start.title}</h1>
         <p className={s.lead}>{t.start.lead}</p>
         <form className={s.paste} onSubmit={submit}>
-          <input
+          <Input
             ref={inputRef}
-            className={`input input--lg ${s.pasteInput}`}
+            size="lg"
+            className={s.pasteInput}
             value={raw}
             onChange={(e) => { setRaw(e.target.value); setError(""); }}
             placeholder={t.start.pasteUrl}
@@ -105,10 +90,10 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
             disabled={busy}
             aria-label={t.start.firstUrlLabel}
           />
-          <button type="submit" className="btn btn--primary" disabled={busy || !raw.trim()}>
+          <Button variant="primary" type="submit" disabled={busy || !raw.trim()}>
             {busy ? <span className="spinner" /> : Icons.plus}
             <span>{busy ? t.start.saving : t.start.save}</span>
-          </button>
+          </Button>
         </form>
         {error ? <p className={s.error}>{error}</p> : (
           <p className={s.sub}>
@@ -116,23 +101,6 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
             <button type="button" className={s.link} onClick={onRecursos}>{Icons.compass}<span>{t.start.openDirectory}</span></button>
           </p>
         )}
-      </div>
-
-      <div className={s.section}>
-        <div className={s.eyebrow} data-flip>
-          <span>{t.start.howItWorks}</span>
-        </div>
-        <ul className={s.steps}>
-          {STEP_ICONS.map((st) => (
-            <li key={st.key} className={s.step} data-flip>
-              <span className={s.stepHead}>
-                <span className={s.stepIcon}>{st.icon}</span>
-              </span>
-              <span className={s.stepTitle}>{t.start.steps[st.key].title}</span>
-              <span className={s.stepText}>{t.start.steps[st.key].text}</span>
-            </li>
-          ))}
-        </ul>
       </div>
 
       <div className={s.section}>
