@@ -1842,3 +1842,11 @@ body:has([data-agentation-toolbar] [role="button"][title="Start feedback mode"])
     bottom: calc(1.25rem + 44px + 12px);
   }
 }
+
+/* ─── Extensión del navegador: /extension/conectar y llaves en /equipo ─── */
+.ext-key { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+.ext-key code { flex: 1; font-size: 13px; word-break: break-all; color: var(--text); }
+.ext-ok { font-size: 14px; color: var(--text); margin: 0; line-height: 1.5; }
+.ext-choice { padding: 0; }
+.ext-choice__label { display: flex; align-items: center; gap: 12px; padding: 10px 0; width: 100%; cursor: pointer; }
+.ext-choice__label input { accent-color: var(--text); margin: 0; }

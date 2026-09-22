@@ -1,0 +1,17 @@
+// ¿Esta web ya está guardada en el workspace de la llave?
+import { NextRequest } from "next/server";
+import { requireExtCtx } from "@/lib/ext-keys";
+import { findByWeb, rowToItem } from "@/lib/items";
+import { normalizeWebUrl } from "@/lib/url";
+
+export const runtime = "nodejs";
+
+// GET ?url= → { exists, item? }
+export async function GET(req: NextRequest) {
+  const ctx = await requireExtCtx(req);
+  if (ctx instanceof Response) return ctx;
+  const web = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
+  if (!web) return Response.json({ error: "La URL no es válida" }, { status: 400 });
+  const row = await findByWeb(ctx.workspace.id, web);
+  return Response.json(row ? { exists: true, item: rowToItem(row) } : { exists: false });
+}

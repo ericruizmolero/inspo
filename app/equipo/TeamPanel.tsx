@@ -10,6 +10,7 @@ import { ACTION_LABEL, fmtUsd as usd } from "@/lib/usage-core";
 
 interface Member { id: string; userId: string; name: string; email: string; image?: string | null; role: string; createdAt: string }
 interface Invitation { id: string; email: string; role: string | null; expiresAt: string }
+interface ExtKey { id: string; prefix: string; name: string; userId: string; userName: string; createdAt: string; lastUsedAt: string | null }
 
 const ROLE_LABEL: Record<string, string> = { owner: "Propietario", admin: "Admin", member: "Miembro" };
 
@@ -17,8 +18,8 @@ function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 }
 
-export default function TeamPanel({ workspace, me, canManage, members, invitations, startCreating, usage }: {
-  workspace: Workspace; me: SessionUser; canManage: boolean; members: Member[]; invitations: Invitation[]; startCreating: boolean; usage?: UsageSummary;
+export default function TeamPanel({ workspace, me, canManage, members, invitations, startCreating, usage, extKeys = [] }: {
+  workspace: Workspace; me: SessionUser; canManage: boolean; members: Member[]; invitations: Invitation[]; startCreating: boolean; usage?: UsageSummary; extKeys?: ExtKey[];
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(startCreating);
@@ -66,6 +67,15 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
     const { error: err } = await authClient.organization.removeMember({ memberIdOrEmail: m.id, organizationId: workspace.id });
     setBusy(false);
     if (err) setError(err.message ?? "No se pudo quitar"); else router.refresh();
+  };
+
+  const revokeKey = async (k: ExtKey) => {
+    if (!confirm(`¿Revocar la llave "${k.name || k.prefix}"? Ese navegador dejará de poder guardar aquí.`)) return;
+    setBusy(true); setError("");
+    const res = await fetch(`/api/ext/v1/keys?id=${encodeURIComponent(k.id)}`, { method: "DELETE" });
+    setBusy(false);
+    if (!res.ok) { const d = await res.json().catch(() => ({})); setError(d.error ?? "No se pudo revocar"); return; }
+    router.refresh();
   };
 
   const leave = async () => {
@@ -181,6 +191,33 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
           )}
         </section>
       )}
+
+      <section className="panel">
+        <div className="panel__head">
+          <span className="panel__title">Extensión del navegador</span>
+          {extKeys.length > 0 && <span className="panel__meta">{extKeys.length}</span>}
+        </div>
+        {extKeys.length > 0 && (
+          <ul className="list">
+            {extKeys.map((k) => {
+              const mine = k.userId === me.id;
+              return (
+                <li key={k.id} className="list__row">
+                  <span className="list__main">
+                    <span className="list__name">{k.name || "Navegador"}{mine && <span className="list__you"> · tuya</span>}</span>
+                    <span className="list__sub">{k.prefix}… · {k.userName} · {k.lastUsedAt ? `usada ${new Date(k.lastUsedAt).toLocaleDateString("es-ES")}` : "sin usar"}</span>
+                  </span>
+                  {(mine || canManage) && <button className="btn btn--ghost btn--sm" onClick={() => revokeKey(k)} disabled={busy}>Revocar</button>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <div>
+          <a className="btn btn--ghost" href="/extension/conectar">Conectar este navegador</a>
+        </div>
+        <p className="panel__hint">Con la extensión guardas la web que estás viendo sin abrir la app. Cada llave guarda en {workspace.name}; revócala si pierdes el equipo o dejas de usarla.</p>
+      </section>
 
       <section className="panel">
         <div className="panel__head">

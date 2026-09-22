@@ -260,3 +260,28 @@ export const feedbackNote = sqliteTable("feedback_note", {
   index("feedback_note_pending_idx").on(t.sentAt, t.updatedAt),
   index("feedback_note_user_path_idx").on(t.userId, t.path),
 ]);
+
+// ─── Llaves de la extensión del navegador ───────────────────────────────────
+// La extensión no usa la cookie de sesión (en Safari ni siquiera se puede): al conectarla,
+// la persona elige un workspace en /extension/conectar y se le da una llave larga que la
+// extensión guarda. Aquí solo vive el resumen SHA-256 de la llave, nunca la llave.
+// Cada llave vale para un workspace; se revoca desde /equipo o desde la propia extensión.
+export const extKey = sqliteTable("ext_key", {
+  id: text("id").primaryKey(),
+  /** SHA-256 en hex de la llave completa */
+  hash: text("hash").notNull(),
+  /** Primeros caracteres de la llave (para reconocerla en la lista) */
+  prefix: text("prefix").notNull(),
+  /** Etiqueta que pone la persona: "Chrome del portátil" */
+  name: text("name").notNull().default(""),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
+  /** null = activa */
+  revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+}, (t) => [
+  uniqueIndex("ext_key_hash_idx").on(t.hash),
+  index("ext_key_org_idx").on(t.organizationId),
+  index("ext_key_user_idx").on(t.userId),
+]);
