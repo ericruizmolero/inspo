@@ -14,7 +14,8 @@
     "seed": "tsx scripts/seed.ts",
     "migrate:sheet": "tsx scripts/migrate-sheet.ts",
     "shots:recursos": "tsx scripts/recursos-shots.ts",
-    "plan": "tsx scripts/set-plan.ts"
+    "plan": "tsx scripts/set-plan.ts",
+    "apple:secret": "tsx scripts/apple-secret.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.127.0",

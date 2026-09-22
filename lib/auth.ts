@@ -1,5 +1,5 @@
-// Configuración de Better Auth: entrada por magic link (sin contraseñas) y
-// workspaces mediante el plugin organization. Solo servidor.
+// Configuración de Better Auth: entrada por magic link (sin contraseñas) o con
+// Google, Apple y X, y workspaces mediante el plugin organization. Solo servidor.
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization } from "better-auth/plugins";
@@ -51,13 +51,41 @@ const publicLink = (url: string, callbackURL?: string, headers?: Headers | null,
   try { const u = new URL(url); return origin + u.pathname + u.search; } catch { return url; }
 };
 
+// Proveedores sociales. Cada uno se activa solo si tiene sus claves en el entorno,
+// así en local se puede trabajar sin ellas. La lista (SOCIAL_PROVIDERS) la usa /login
+// para pintar únicamente los botones que funcionan.
+export type SocialProvider = "google" | "apple" | "twitter";
+const env = (k: string) => (process.env[k] || "").trim();
+const socialProviders = {
+  ...(env("GOOGLE_CLIENT_ID") && env("GOOGLE_CLIENT_SECRET") ? {
+    google: { clientId: env("GOOGLE_CLIENT_ID"), clientSecret: env("GOOGLE_CLIENT_SECRET") },
+  } : {}),
+  // Apple: clientId es el Services ID (web) y clientSecret un JWT firmado con la clave .p8
+  // (caduca a los 6 meses; se regenera con `npm run apple:secret`). appBundleIdentifier solo
+  // hace falta si además entra gente desde una app nativa.
+  ...(env("APPLE_CLIENT_ID") && env("APPLE_CLIENT_SECRET") ? {
+    apple: {
+      clientId: env("APPLE_CLIENT_ID"),
+      clientSecret: env("APPLE_CLIENT_SECRET"),
+      ...(env("APPLE_APP_BUNDLE_IDENTIFIER") ? { appBundleIdentifier: env("APPLE_APP_BUNDLE_IDENTIFIER") } : {}),
+    },
+  } : {}),
+  // X (Twitter): OAuth 2.0 con PKCE. El correo solo llega si la app tiene el permiso
+  // "users.email"; si no, Better Auth crea uno de relleno y no se enlaza con cuentas previas.
+  ...(env("TWITTER_CLIENT_ID") && env("TWITTER_CLIENT_SECRET") ? {
+    twitter: { clientId: env("TWITTER_CLIENT_ID"), clientSecret: env("TWITTER_CLIENT_SECRET") },
+  } : {}),
+};
+export const SOCIAL_PROVIDERS = Object.keys(socialProviders) as SocialProvider[];
+
 export const auth = betterAuth({
   appName: "Inspo",
   baseURL: APP_URL || undefined,
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
   trustedOrigins: (request) => {
-    const fixed = [APP_URL, process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : ""].filter(Boolean);
+    // Apple devuelve el código por POST (form_post) desde su dominio, así que hay que confiar en él
+    const fixed = [APP_URL, process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "", "https://appleid.apple.com"].filter(Boolean);
     // En desarrollo confiamos en el origen que hace la petición (localhost:<puerto> del preview)
     // En desarrollo confiamos en cualquier puerto local (el preview cambia de puerto)
     const dyn = !IS_PROD ? ["http://localhost:*", "http://127.0.0.1:*", originOf(request?.headers, request)].filter(Boolean) : [];
@@ -67,6 +95,12 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 30, // 30 días
     updateAge: 60 * 60 * 24,
     cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
+  socialProviders,
+  account: {
+    // Quien entró por magic link puede entrar luego con Google o Apple con el mismo correo:
+    // se enlaza a la cuenta existente. X no va en la lista porque no siempre verifica el correo.
+    accountLinking: { enabled: true, trustedProviders: ["google", "apple"] },
   },
   user: {
     // Nadie tiene contraseña; el nombre se rellena desde el correo al crear el usuario

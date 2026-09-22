@@ -14,4 +14,9 @@ add BETTER_AUTH_SECRET  "$(openssl rand -base64 32)"
 add BETTER_AUTH_URL     "https://inspo.treseiscero.app"
 add RESEND_API_KEY      "$(val RESEND_API_KEY)"
 add MAIL_FROM           "Inspo <inspo@savvia.studio>"
+v="$(val ADMIN_EMAILS)"; [ -n "$v" ] && add ADMIN_EMAILS "$v"
+# Proveedores sociales: solo se suben los que tengan valor en .env.local
+for k in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET APPLE_CLIENT_ID APPLE_CLIENT_SECRET TWITTER_CLIENT_ID TWITTER_CLIENT_SECRET; do
+  v="$(val "$k")"; [ -n "$v" ] && add "$k" "$v"
+done
 echo; vercel env ls production

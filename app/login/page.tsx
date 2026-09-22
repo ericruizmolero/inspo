@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/workspace";
 import { showcaseEntries, showcaseSrc } from "@/lib/showcase";
 import LoginForm from "@/components/LoginForm";
-import { DEV_LOGIN_EMAIL } from "@/lib/auth";
+import { DEV_LOGIN_EMAIL, SOCIAL_PROVIDERS } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Entrar" };
 export const dynamic = "force-dynamic";
@@ -14,6 +14,19 @@ const IcBack = (
     <path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" />
   </svg>
 );
+
+// Mensajes para los códigos de error con los que Better Auth vuelve a /login?error=…
+function loginError(code?: string): string | undefined {
+  switch (code) {
+    case undefined: case "": return undefined;
+    case "INVALID_TOKEN": case "EXPIRED_TOKEN": return "El enlace ha caducado o ya se ha usado. Pide otro.";
+    case "access_denied": case "user_cancelled_authorize": return "Has cancelado el acceso. Puedes volver a intentarlo.";
+    case "account_not_linked": case "email_doesn't_match": return "Ese correo ya tiene cuenta con otro método. Entra con el enlace por correo.";
+    case "email_not_found": return "Esa cuenta no comparte el correo con nosotros. Prueba con otra o con el enlace por correo.";
+    case "signup_disabled": return "No se pueden crear cuentas nuevas por aquí.";
+    default: return "No se pudo entrar. Vuelve a intentarlo.";
+  }
+}
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
@@ -49,8 +62,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             hint={pendingDomain
               ? "Sin contraseñas: te mandamos un enlace de un solo uso. Al volver, la web se guarda sola en tu librería y te sacamos su DESIGN.md."
               : "Webs, vídeos e ideas en un solo sitio, con su DESIGN.md listo para copiar. Sin contraseñas: te mandamos un enlace de un solo uso."}
-            initialError={error === "INVALID_TOKEN" || error === "EXPIRED_TOKEN" ? "El enlace ha caducado o ya se ha usado. Pide otro." : undefined}
+            initialError={loginError(error)}
             devEmail={DEV_LOGIN_EMAIL || undefined}
+            providers={SOCIAL_PROVIDERS}
           />
         </div>
 
