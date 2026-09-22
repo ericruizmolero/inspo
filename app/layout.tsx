@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { klimDisplay, klimBody, schibsted } from "./fonts";
 import "./globals.css";
-import { Agentation } from "agentation";
+import { getSession } from "@/lib/workspace";
+import FeedbackTool from "@/components/FeedbackTool";
 
 const SITE = "https://inspo.savvia.studio";
 const DESCRIPTION = "La biblioteca de inspiración de tu equipo: guarda webs, vídeos e ideas, coméntalas con capturas y saca el DESIGN.md de cualquier web.";
@@ -36,11 +37,13 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // La barra de feedback solo para quien ha entrado: sus notas llegan por correo a los socios
+  const session = await getSession();
   return (
     <html
       lang="es"
@@ -53,9 +56,7 @@ export default function RootLayout({
       </head>
       <body>
         {children}
-        {process.env.NODE_ENV === "development" && (
-          <Agentation endpoint="http://localhost:4747" />
-        )}
+        {session && <FeedbackTool />}
       </body>
     </html>
   );

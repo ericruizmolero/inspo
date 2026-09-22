@@ -19,20 +19,22 @@ const FONT_BASE =
 const DISPLAY = "'Family', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 const BODY = "'Söhne', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 
-export async function sendMail(to: string, subject: string, html: string, text: string): Promise<void> {
+/** Un correo a una o varias direcciones. `replyTo` sustituye a la dirección de respuesta por defecto. */
+export async function sendMail(to: string | string[], subject: string, html: string, text: string, opts: { replyTo?: string } = {}): Promise<void> {
   const key = process.env.RESEND_API_KEY;
+  const recipients = Array.isArray(to) ? to : [to];
   if (!key) {
-    console.log(`\n✉️  [mail sin RESEND_API_KEY] → ${to}\n${subject}\n${text}\n`);
+    console.log(`\n✉️  [mail sin RESEND_API_KEY] → ${recipients.join(", ")}\n${subject}\n${text}\n`);
     try {
       await fs.mkdir(path.join(process.cwd(), ".data"), { recursive: true });
-      await fs.writeFile(path.join(process.cwd(), ".data", "last-mail.txt"), `${to}\n${subject}\n${text}\n`);
+      await fs.writeFile(path.join(process.cwd(), ".data", "last-mail.txt"), `${recipients.join(", ")}\n${subject}\n${text}\n`);
     } catch { /* solo es ayuda para desarrollo */ }
     return;
   }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to: [to], reply_to: REPLY_TO, subject, html, text }),
+    body: JSON.stringify({ from: FROM, to: recipients, reply_to: opts.replyTo || REPLY_TO, subject, html, text }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
@@ -94,3 +96,25 @@ export function adminAccessMail(url: string, granterName: string) {
   };
 }
 
+const fmtWhen = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+
+/**
+ * Feedback visual sobre la app (barra Agentation) para los socios. El cuerpo lleva el
+ * markdown tal cual lo copia la barra, listo para pegárselo a un agente; el texto plano
+ * es solo el markdown, así que responder o reenviar también sirve.
+ */
+export function feedbackMail(f: { author: { name: string; email: string }; path: string; url: string; count: number; markdown: string; at: Date }) {
+  const who = f.author.name || f.author.email;
+  const n = f.count === 1 ? "1 nota" : `${f.count} notas`;
+  const title = `${n} de ${who}`;
+  const intro = `${esc(who)} (<a href="mailto:${esc(f.author.email)}" style="color:#a3a3a3;text-decoration:underline">${esc(f.author.email)}</a>) ha dejado ${n} sobre <strong style="color:#f2f2f2;font-weight:500">${esc(f.path)}</strong> el ${esc(fmtWhen.format(f.at))}. Debajo va el feedback tal cual lo copia la barra: pégaselo al agente.`;
+  const pre = `<pre style="margin:0 0 28px;padding:18px 20px;background:#161616;border:1px solid #262626;border-radius:12px;color:#e5e5e5;font-family:'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere">${esc(f.markdown)}</pre>`;
+  const html = layout(title, intro, { label: "Abrir la página", url: f.url }, "Responde a este correo para hablar directamente con quien ha dejado el feedback.")
+    // El bloque de código va justo antes del botón: el layout no tiene hueco para él
+    .replace('<tr><td style="padding:0 0 36px">', `<tr><td style="padding:0 0 0">${pre}</td></tr>\n      <tr><td style="padding:0 0 36px">`);
+  return {
+    subject: `Feedback de ${who}: ${n} en ${f.path}`,
+    html,
+    text: `${who} (${f.author.email}) ha dejado ${n} sobre ${f.path} el ${fmtWhen.format(f.at)}.\nPágina: ${f.url}\n\n${f.markdown}\n\n${SIGNATURE}`,
+  };
+}

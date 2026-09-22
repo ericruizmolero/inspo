@@ -236,3 +236,27 @@ export const appAdmin = sqliteTable("app_admin", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
+// ─── Feedback visual (Agentation) ────────────────────────────────────────────
+// Cada nota que alguien deja con la barra de feedback sobre la propia app. Se guardan
+// según llegan y se mandan por correo a los socios (los del panel /admin) en lotes:
+// al pulsar enviar/copiar o cuando pasa un rato sin notas nuevas (lib/feedback.ts).
+export const feedbackNote = sqliteTable("feedback_note", {
+  /** `${id de la anotación}@${userId}`: el id lo genera Agentation en el navegador */
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+  /** Ruta de la página anotada (agrupa el lote) y URL completa para el enlace del correo */
+  path: text("path").notNull(),
+  url: text("url").notNull(),
+  /** "1440×900" en el momento de anotar */
+  viewport: text("viewport"),
+  /** Anotación completa de Agentation en JSON (elemento, selector, texto, estilos…) */
+  data: text("data").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  /** Cuándo salió el correo con esta nota; null = pendiente de enviar */
+  sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+}, (t) => [
+  index("feedback_note_pending_idx").on(t.sentAt, t.updatedAt),
+  index("feedback_note_user_path_idx").on(t.userId, t.path),
+]);
