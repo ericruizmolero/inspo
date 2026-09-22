@@ -1353,6 +1353,10 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 }
 .auth__back:hover { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
 .auth__card { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 400px; }
+/* Invitación: una sola tarjeta centrada, sin el collage del login */
+.auth--solo { grid-template-columns: 1fr; place-items: center; padding: 32px 20px; }
+.auth--solo .auth__card { flex: none; max-width: 380px; gap: 20px; }
+.auth--solo .auth__brand { margin-bottom: 4px; }
 .auth__form, .auth__sent { display: flex; flex-direction: column; gap: 14px; animation: pop-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .auth__lead { font-size: 34px; color: var(--text); margin: 0; line-height: 1.02; }
 .auth__hint { font-size: 14px; color: var(--muted); margin: 0 0 10px; line-height: 1.55; max-width: 36ch; }

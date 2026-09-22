@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { UserAvatar } from "@/components/WorkspaceMenu";
@@ -18,8 +19,11 @@ function slugify(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 }
 
-export default function TeamPanel({ workspace, me, canManage, members, invitations, startCreating, usage, extKeys = [] }: {
+interface OverCapacity { members: number; limit: number; planName: string }
+
+export default function TeamPanel({ workspace, me, canManage, members, invitations, startCreating, usage, extKeys = [], seatLimit, overCapacity }: {
   workspace: Workspace; me: SessionUser; canManage: boolean; members: Member[]; invitations: Invitation[]; startCreating: boolean; usage?: UsageSummary; extKeys?: ExtKey[];
+  seatLimit?: number | null; overCapacity?: OverCapacity | null;
 }) {
   const router = useRouter();
   const [creating, setCreating] = useState(startCreating);
@@ -29,6 +33,17 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
+  const [lastLink, setLastLink] = useState("");
+  const [copied, setCopied] = useState("");
+
+  // El enlace vale por sí solo: si el correo tarda, se pega por chat y la persona entra igual
+  const linkOf = (id: string) => `${window.location.origin}/invitacion/${id}`;
+  const copy = async (link: string, tag: string) => {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(tag); setTimeout(() => setCopied(""), 2000);
+    } catch { setError(`No se pudo copiar. El enlace es ${link}`); }
+  };
 
   const createTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,22 +58,34 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
     router.push("/equipo"); router.refresh();
   };
 
+  const send = async (value: string, as: "member" | "admin") => {
+    setBusy(true); setError(""); setMsg(""); setLastLink("");
+    const { data, error: err } = await authClient.organization.inviteMember({ email: value, role: as, organizationId: workspace.id });
+    setBusy(false);
+    if (err) { setError(err.message ?? "No se pudo invitar"); return; }
+    setMsg(`Invitación enviada a ${value}`);
+    if (data?.id) setLastLink(linkOf(data.id));
+    router.refresh();
+  };
+
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
     const value = email.trim().toLowerCase();
     if (!value) return;
-    setBusy(true); setError(""); setMsg("");
-    const { error: err } = await authClient.organization.inviteMember({ email: value, role, organizationId: workspace.id });
-    setBusy(false);
-    if (err) { setError(err.message ?? "No se pudo invitar"); return; }
-    setEmail(""); setMsg(`Invitación enviada a ${value}`);
-    router.refresh();
+    await send(value, role);
+    setEmail("");
   };
 
+  // Reenviar = invitar otra vez: cancelPendingInvitationsOnReInvite cancela la anterior
+  // y crea una nueva con enlace nuevo. No ocupa una plaza de más.
+  const resend = (i: Invitation) => send(i.email, (i.role === "admin" ? "admin" : "member"));
+
   const cancelInvite = async (id: string) => {
-    setBusy(true);
-    await authClient.organization.cancelInvitation({ invitationId: id });
-    setBusy(false); router.refresh();
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.cancelInvitation({ invitationId: id });
+    setBusy(false);
+    if (err) { setError(err.message ?? "No se pudo cancelar la invitación"); return; }
+    router.refresh();
   };
 
   const removeMember = async (m: Member) => {
@@ -90,7 +117,12 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
   return (
     <div className="page__body">
       {error && <p className="modal__error">{error}</p>}
-      {msg && <p className="page__ok">{msg}</p>}
+      {msg && (
+        <p className="page__ok">
+          {msg}
+          {lastLink && <> · <button type="button" className="btn btn--ghost btn--sm" onClick={() => copy(lastLink, "ultimo")}>{copied === "ultimo" ? "Enlace copiado" : "Copiar enlace"}</button></>}
+        </p>
+      )}
 
       {usage && (
         <section className="panel">
@@ -138,8 +170,17 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
         <section className="panel">
           <div className="panel__head">
             <span className="panel__title">Miembros</span>
-            <span className="panel__meta">{members.length}</span>
+            <span className="panel__meta">
+              {seatLimit == null ? members.length : `${members.length} de ${seatLimit}`}
+              {invitations.length > 0 && ` · ${invitations.length} sin aceptar`}
+            </span>
           </div>
+          {overCapacity && (
+            <p className="modal__error">
+              Sois {overCapacity.members} y el plan {overCapacity.planName} admite {overCapacity.limit}. No hemos quitado a nadie,
+              pero las invitaciones y la IA están paradas hasta que quites a alguien de la lista o <Link href="/planes">amplíes el plan</Link>.
+            </p>
+          )}
           <ul className="list">
             {members.map((m) => (
               <li key={m.id} className="list__row">
@@ -172,6 +213,7 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
               <div className="panel__head" style={{ marginTop: 16 }}>
                 <span className="panel__title">Invitaciones pendientes</span>
               </div>
+              <p className="panel__hint">Si el correo tarda, copia el enlace y mándaselo por donde quieras: funciona igual.</p>
               <ul className="list">
                 {invitations.map((i) => (
                   <li key={i.id} className="list__row">
@@ -179,6 +221,10 @@ export default function TeamPanel({ workspace, me, canManage, members, invitatio
                       <span className="list__name">{i.email}</span>
                       <span className="list__sub">{ROLE_LABEL[i.role ?? "member"] ?? i.role} · caduca {new Date(i.expiresAt).toLocaleDateString("es-ES")}</span>
                     </span>
+                    <button className="btn btn--ghost btn--sm" onClick={() => copy(linkOf(i.id), i.id)} disabled={busy}>
+                      {copied === i.id ? "Copiado" : "Copiar enlace"}
+                    </button>
+                    {canManage && <button className="btn btn--ghost btn--sm" onClick={() => resend(i)} disabled={busy}>Reenviar</button>}
                     {canManage && <button className="btn btn--ghost btn--sm" onClick={() => cancelInvite(i.id)} disabled={busy}>Cancelar</button>}
                   </li>
                 ))}

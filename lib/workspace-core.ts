@@ -40,7 +40,14 @@ export function planOfMetadata(metadata: string | null): PlanKey {
   catch { return DEFAULT_PLAN; }
 }
 
-/** Cambia el plan de un workspace conservando el resto de la metadata. */
+/**
+ * Cambia el plan de un workspace conservando el resto de la metadata.
+ * ponytail: lectura y escritura en dos sentencias, sin transacción. Solo lo llama
+ * scripts/set-plan.ts a mano; si algún día lo llama una pasarela de pago, hace falta
+ * una transacción o un UPDATE con json_set.
+ * Quien baje el plan debe avisar al dueño si el equipo se queda por encima del límite:
+ * notifyOverCapacity() en lib/quota.ts.
+ */
 export async function setWorkspacePlan(organizationId: string, plan: PlanKey): Promise<void> {
   const [row] = await db.select({ metadata: schema.organization.metadata }).from(schema.organization).where(eq(schema.organization.id, organizationId)).limit(1);
   if (!row) throw new Error("Workspace no encontrado");

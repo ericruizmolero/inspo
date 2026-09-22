@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
 import { explainMatches, explainEnabled } from "@/lib/explain";
+import { assertSeatsOk } from "@/lib/quota";
+import { HttpError } from "@/lib/workspace-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -13,6 +15,10 @@ export async function POST(req: NextRequest) {
   if (!explainEnabled()) return Response.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
+
+  // Bajar de plan puede dejar al equipo con más gente de la que admite: la IA se para hasta que lo arreglen
+  try { await assertSeatsOk(ctx.workspace); }
+  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
 
   const body = (await req.json().catch(() => ({}))) as { q?: string; results?: { web?: string; score?: number }[] };
   const query = (body.q ?? "").trim().replace(/\s+/g, " ").slice(0, 200);

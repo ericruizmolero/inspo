@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import ActivityPing from "@/components/ActivityPing";
 import { redirect } from "next/navigation";
@@ -57,6 +58,17 @@ export default async function PlanesPage() {
           <Line label="Búsquedas IA este mes" used={q.searches.used} limit={q.searches.limit} />
           <Line label="Personas" used={q.members.used} limit={q.members.limit} />
         </div>
+        {q.members.limit !== null && q.members.used > q.members.limit && (
+          <p className="pl-usage__meta">
+            Sois {q.members.used} y el plan {q.planName} admite {q.members.limit}. No hemos quitado a nadie, pero las invitaciones
+            y la IA están paradas hasta que quites a alguien en <Link href="/equipo">el equipo</Link> o amplíes el plan.
+          </p>
+        )}
+        {q.pendingInvites > 0 && (
+          <p className="pl-usage__meta">
+            {q.pendingInvites === 1 ? "1 invitación sin aceptar, que también ocupa plaza." : `${q.pendingInvites} invitaciones sin aceptar, que también ocupan plaza.`}
+          </p>
+        )}
       </section>
 
       <div className="pl-plans">

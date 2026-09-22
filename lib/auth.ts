@@ -4,10 +4,12 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization } from "better-auth/plugins";
 import { APIError } from "better-auth/api";
-import { memberLimitMessage } from "./quota";
+import { memberLimitMessage, memberRank } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail } from "./mail";
+import { planOf } from "./plans";
+import { eq } from "drizzle-orm";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -120,26 +122,61 @@ export const auth = betterAuth({
       creatorRole: "owner",
       invitationExpiresIn: 60 * 60 * 24 * 7,
       cancelPendingInvitationsOnReInvite: true,
+      // El correo no decide si la invitación vale: la fila ya existe y el enlace funciona.
+      // Si Resend falla, se apunta y se sigue; desde /equipo se puede copiar el enlace o reenviar.
       async sendInvitationEmail(data, request) {
         const base = APP_URL || originOf(request?.headers, request) || "http://localhost:3000";
         const url = `${base}/invitacion/${data.id}`;
-        const m = invitationMail(url, data.organization.name, data.inviter.user.name || data.inviter.user.email);
-        await sendMail(data.email, m.subject, m.html, m.text);
+        const inviter = data.inviter.user;
+        const m = invitationMail(url, data.organization.name, inviter.name || inviter.email, inviter.email, data.email);
+        try {
+          await sendMail(data.email, m.subject, m.html, m.text);
+        } catch (e) {
+          console.error(`[invitacion] no se pudo enviar el correo a ${data.email}:`, e);
+        }
       },
       organizationHooks: {
         // Todo lo que se crea desde la UI es un equipo; los personales los crea lib/workspace.ts
         async beforeCreateOrganization({ organization: org }) {
           return { data: { ...org, metadata: { kind: "team", ...(org.metadata ?? {}) } } };
         },
-        // Cuota de personas del plan: se comprueba al invitar y al aceptar
+        // Cuota de personas del plan: se comprueba al invitar y al aceptar.
+        // Al invitar cuentan también las invitaciones sin aceptar, menos la de esta
+        // misma dirección: reinvitar sustituye a la pendiente, no se suma a ella.
         async beforeCreateInvitation({ invitation, organization: org }) {
-          const msg = await memberLimitMessage(invitation.organizationId, planFromOrg(org));
+          const msg = await memberLimitMessage(invitation.organizationId, planFromOrg(org), { includePending: true, exceptEmail: invitation.email });
           if (msg) throw new APIError("FORBIDDEN", { message: msg });
         },
+        // Alta directa de un miembro (no por invitación): cuenta solo los miembros
         async beforeAddMember({ member, organization: org }) {
           if (member.role === "owner") return; // creador del workspace
           const msg = await memberLimitMessage(member.organizationId, planFromOrg(org));
           if (msg) throw new APIError("FORBIDDEN", { message: msg });
+        },
+        // Aceptar una invitación NO pasa por beforeAddMember: Better Auth usa estos dos
+        // hooks para esa ruta. Aquí se cuentan solo los miembros, porque la invitación
+        // pendiente se convierte en el miembro que entra.
+        async beforeAcceptInvitation({ invitation, organization: org }) {
+          const msg = await memberLimitMessage(invitation.organizationId, planFromOrg(org));
+          if (msg) throw new APIError("FORBIDDEN", { message: msg });
+        },
+        // Dos personas pueden aceptar la última plaza a la vez: las dos pasan la
+        // comprobación de arriba antes de que ninguna llegue a insertarse. El alta la
+        // hace Better Auth, así que no podemos meterla en la misma transacción; se
+        // comprueba después y quien sobra se retira, siempre el último por orden de alta.
+        // ponytail: control compensatorio, no transacción. Si algún día el insert pasa
+        // a código nuestro, cámbialo por un db.transaction() y borra esto.
+        async afterAcceptInvitation({ invitation, member, organization: org }) {
+          const plan = planOf(planFromOrg(org));
+          if (plan.members === null) return;
+          const rank = await memberRank(member.organizationId, member.id);
+          if (rank < plan.members) return; // los primeros del plan se quedan siempre
+          await db.delete(schema.member).where(eq(schema.member.id, member.id));
+          // La invitación vuelve a pendiente: el enlace sigue sirviendo cuando haya sitio
+          await db.update(schema.invitation).set({ status: "pending" }).where(eq(schema.invitation.id, invitation.id));
+          throw new APIError("FORBIDDEN", {
+            message: `Alguien ha ocupado la última plaza del plan ${plan.name} antes que tú. Tu invitación sigue activa: avisa a quien te invitó para que libere un sitio o amplíe el plan.`,
+          });
         },
       },
     }),

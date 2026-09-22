@@ -80,11 +80,27 @@ export function magicLinkMail(url: string, email?: string) {
   };
 }
 
-export function invitationMail(url: string, teamName: string, inviterName: string) {
+export function invitationMail(url: string, teamName: string, inviterName: string, inviterEmail: string, inviteeEmail: string) {
+  const who = inviterName === inviterEmail ? esc(inviterName) : `${esc(inviterName)} (${esc(inviterEmail)})`;
+  const body = `${who} quiere que te unas a <strong style="color:#f2f2f2;font-weight:500">${esc(teamName)}</strong> en Inspo: webs, vídeos e ideas guardadas en un sitio, cada una con su DESIGN.md. Compartiréis la misma librería.<br><br>Entra con este mismo correo: <strong style="color:#f2f2f2;font-weight:500">${esc(inviteeEmail)}</strong>.`;
   return {
     subject: `${inviterName} te invita al equipo ${teamName} en Inspo`,
-    html: layout(`Te invitan a ${esc(teamName)}`, `${esc(inviterName)} quiere que te unas a su librería de inspiración.`, { label: "Aceptar invitación", url }, "Si no esperabas esta invitación, puedes ignorar este correo."),
-    text: `${inviterName} te invita al equipo ${teamName} en Inspo. Acepta aquí:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
+    html: layout(`Te invitan a ${esc(teamName)}`, body, { label: "Aceptar invitación", url }, "El enlace caduca en 7 días. Si no esperabas esta invitación, puedes ignorar este correo."),
+    text: `${inviterName} (${inviterEmail}) te invita al equipo ${teamName} en Inspo. Compartiréis la misma librería de inspiración.\n\nEntra con este mismo correo (${inviteeEmail}) y acepta aquí:\n${url}\n\nEl enlace caduca en 7 días.\n\n${SIGNATURE}\n${REPLY_TO}`,
+  };
+}
+
+/**
+ * Al bajar de plan un equipo puede quedarse con más gente de la que admite el plan nuevo.
+ * No se quita a nadie: se avisa al dueño para que decida.
+ */
+export function overCapacityMail(url: string, teamName: string, planName: string, members: number, limit: number) {
+  const n = (x: number) => `${x} ${x === 1 ? "persona" : "personas"}`;
+  const body = `<strong style="color:#f2f2f2;font-weight:500">${esc(teamName)}</strong> ha pasado al plan ${esc(planName)}, que admite ${n(limit)}, y ahora mismo sois ${n(members)}.<br><br>No hemos quitado a nadie. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas ni usar la IA (DESIGN.md, etiquetas y búsquedas). Tú decides: quita a alguien del equipo o vuelve a un plan más grande.`;
+  return {
+    subject: `${teamName} tiene ${n(members)} y el plan ${planName} admite ${limit}`,
+    html: layout("Sobra gente para el plan nuevo", body, { label: "Abrir el equipo", url }, "Nadie ha perdido su sitio ni sus inspos."),
+    text: `${teamName} ha pasado al plan ${planName}, que admite ${n(limit)}, y ahora sois ${n(members)}.\n\nNo hemos quitado a nadie. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas ni usar la IA. Quita a alguien o vuelve a un plan más grande:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
   };
 }
 

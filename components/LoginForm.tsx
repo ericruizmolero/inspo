@@ -90,7 +90,8 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     const callbackURL = origin + back;
     // En desarrollo el enlace de este correo no se envía nunca: entra por la ruta de auto-login
     if (devEmail && value === devEmail) { window.location.assign(devLoginHref(back)); return; }
-    const { error: err } = await authClient.signIn.magicLink({ email: value, callbackURL, errorCallbackURL: `${origin}/login` });
+    // errorCallbackURL conserva el destino: si no, un enlace caducado pierde la invitación
+    const { error: err } = await authClient.signIn.magicLink({ email: value, callbackURL, errorCallbackURL: `${origin}/login?next=${encodeURIComponent(back)}` });
     setLoading(false);
     if (err) { setError(err.message ?? "No se pudo enviar el enlace"); return; }
     setSent(true);

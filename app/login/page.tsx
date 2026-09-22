@@ -31,6 +31,8 @@ function loginError(code?: string): string | undefined {
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
   if (await getSession()) redirect(next && next.startsWith("/") ? next : "/");
+  // Quien llega desde una invitación tiene que saber a qué entra y con qué correo
+  const fromInvitation = (next ?? "").startsWith("/invitacion/");
   // Si viene del lienzo de inicio con una URL (?next=/?add=…), el titular lo dice
   const pendingDomain = (() => {
     try {
@@ -58,8 +60,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="auth__card">
           <LoginForm
             next={next}
-            lead={pendingDomain ? <>Entra para guardar<br />{pendingDomain}.</> : <>Guarda lo que<br />te inspira.</>}
-            hint={pendingDomain
+            lead={fromInvitation ? <>Entra para unirte<br />al equipo.</> : pendingDomain ? <>Entra para guardar<br />{pendingDomain}.</> : <>Guarda lo que<br />te inspira.</>}
+            hint={fromInvitation
+              ? "Usa el mismo correo al que llegó la invitación. Sin contraseñas: te mandamos un enlace de un solo uso y vuelves aquí."
+              : pendingDomain
               ? "Sin contraseñas: te mandamos un enlace de un solo uso. Al volver, la web se guarda sola en tu librería y te sacamos su DESIGN.md."
               : "Webs, vídeos e ideas en un solo sitio, con su DESIGN.md listo para copiar. Sin contraseñas: te mandamos un enlace de un solo uso."}
             initialError={loginError(error)}

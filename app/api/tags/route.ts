@@ -5,6 +5,8 @@ import { classifyItem, jevEnabled, clearSearchCache } from "@/lib/jev";
 import { clearExplainCache } from "@/lib/explain";
 import { TAXONOMY_VERSION } from "@/lib/taxonomy";
 import { visionEnabled } from "@/lib/vision";
+import { assertSeatsOk } from "@/lib/quota";
+import { HttpError } from "@/lib/workspace-core";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -32,6 +34,9 @@ export async function POST(req: NextRequest) {
   if (!jevEnabled()) return Response.json({ error: "TYPESAFE_API_KEY no configurada" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
+  // Bajar de plan puede dejar al equipo con más gente de la que admite: la IA se para hasta que lo arreglen
+  try { await assertSeatsOk(ctx.workspace); }
+  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
   const orgId = ctx.workspace.id;
   const manage = canManage(ctx.workspace.role);
   const usage = { organizationId: orgId, userId: ctx.user.id };
