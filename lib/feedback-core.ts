@@ -41,3 +41,54 @@ export function feedbackMarkdown(annotations: Annotation[], path: string, viewpo
   });
   return out.trim();
 }
+
+// ─── Lo que enseña /admin ────────────────────────────────────────────────────
+
+/** Una nota, ya reducida a lo que se lee en el panel */
+export interface FeedbackNoteView {
+  id: string;
+  element: string;
+  elementPath: string;
+  comment: string;
+  selectedText: string | null;
+  sourceFile: string | null;
+  reactComponents: string | null;
+  createdAt: string;
+}
+
+/** Un envío (o un borrador aún sin enviar): las notas de una persona sobre una página */
+export interface FeedbackBatch {
+  key: string;
+  author: { id: string; name: string; email: string; image: string | null };
+  workspace: string | null;
+  path: string;
+  url: string;
+  viewport: string | null;
+  /** Cuándo salió el correo; null = la persona aún no ha pulsado "Enviar al equipo" */
+  sentAt: string | null;
+  /** Última nota añadida o editada */
+  updatedAt: string;
+  notes: FeedbackNoteView[];
+}
+
+export interface FeedbackOverview {
+  days: number;
+  batches: FeedbackBatch[];
+  /** Totales del periodo */
+  notes: number;
+  sent: number;
+  pending: number;
+  people: number;
+}
+
+/** El mismo markdown del correo, reconstruido desde el panel para pegárselo a un agente */
+export function batchMarkdown(b: FeedbackBatch): string {
+  return feedbackMarkdown(
+    b.notes.map((n, i) => ({
+      id: n.id, x: 0, y: 0, timestamp: i, comment: n.comment, element: n.element, elementPath: n.elementPath,
+      selectedText: n.selectedText ?? undefined, sourceFile: n.sourceFile ?? undefined, reactComponents: n.reactComponents ?? undefined,
+    })),
+    b.path,
+    b.viewport,
+  );
+}

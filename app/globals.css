@@ -1697,6 +1697,29 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
   .ad-kpi--hero .ad-kpi__value { font-size: 40px; }
 }
 
+/* ─── Feedback en /admin: un bloque por envío, con sus notas ─────────────────── */
+.fb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.fb { border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--surface); padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.fb__head { display: flex; align-items: center; gap: 12px; }
+.fb__on { color: var(--muted); }
+.fb__path { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.fb__path:hover { text-decoration-color: currentColor; }
+.fb__draft { font-size: 11px; color: var(--muted); border: 1px solid var(--border-strong); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.fb__notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; counter-reset: fb; }
+.fb__note { position: relative; padding: 10px 0 10px 28px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; counter-increment: fb; }
+.fb__note::before { content: counter(fb); position: absolute; left: 0; top: 10px; width: 20px; height: 20px; border-radius: 6px; background: var(--surface-3); color: var(--muted); font-size: 11px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.fb__el { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fb__src { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; }
+.fb__quote { font-size: 12.5px; color: var(--text-2); font-style: italic; border-left: 2px solid var(--border-strong); padding-left: 8px; }
+.fb__comment { margin: 0; font-size: 14px; line-height: 1.45; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb__empty { color: var(--muted); font-style: italic; }
+.fb__more { align-self: flex-start; background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.fb__more:hover { color: var(--text); }
+@media (max-width: 640px) {
+  .fb__head { flex-wrap: wrap; }
+  .fb__head .list__main { flex-basis: 100%; order: -1; }
+}
+
 /* ─── Barra de feedback (Agentation) ────────────────────────────────────────
    El botón cerrado trae un icono de "lista con chispa" que nadie asocia a dar feedback.
    Se sustituye por un bocadillo de comentario y se le pone la etiqueta "Feedback" al

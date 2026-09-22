@@ -6,6 +6,7 @@ import ActivityPing from "@/components/ActivityPing";
 import { getSession } from "@/lib/workspace";
 import { activityOverview, isAdmin, listAdmins } from "@/lib/activity";
 import { usageOverview } from "@/lib/usage";
+import { feedbackOverview } from "@/lib/feedback";
 import AdminPanel from "./AdminPanel";
 import UpdatedAt from "./UpdatedAt";
 
@@ -23,7 +24,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const { dias } = await searchParams;
   const days = DAYS.includes(Number(dias)) ? Number(dias) : 30;
-  const [data, usage, admins] = await Promise.all([activityOverview(days), usageOverview(days), listAdmins()]);
+  const [data, usage, feedback, admins] = await Promise.all([activityOverview(days), usageOverview(days), feedbackOverview(days), listAdmins()]);
 
   return (
     <div className="page page--wide">
@@ -47,7 +48,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
           </div>
         </div>
       </header>
-      <AdminPanel data={data} usage={usage} admins={admins} me={s.user.email} />
+      <AdminPanel data={data} usage={usage} feedback={feedback} admins={admins} me={s.user.email} />
     </div>
   );
 }

@@ -2,12 +2,12 @@
 // cuando la persona pulsa "Enviar al equipo", manda todas las notas de esa página por
 // correo a los socios (quienes ven /admin, lib/activity.ts) con el mismo markdown que
 // copia la barra. No hay envíos automáticos: solo sale lo que la persona decide enviar.
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import "server-only";
 import { db, schema } from "./db";
 import { listAdmins } from "./activity";
 import { feedbackMail, sendMail } from "./mail";
-import { feedbackMarkdown, pathOf, type Annotation, type FeedbackEvent } from "./feedback-core";
+import { feedbackMarkdown, pathOf, type Annotation, type FeedbackBatch, type FeedbackEvent, type FeedbackNoteView, type FeedbackOverview } from "./feedback-core";
 
 export * from "./feedback-core";
 
@@ -85,4 +85,65 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
     default:
       throw new Error("Evento desconocido");
   }
+}
+
+/**
+ * Feedback de los últimos N días para /admin, agrupado por envío: las notas que una persona
+ * mandó juntas sobre una página (mismo sentAt) o, si aún no ha pulsado enviar, su borrador.
+ * Lo más reciente primero.
+ */
+export async function feedbackOverview(days: number): Promise<FeedbackOverview> {
+  const since = new Date(Date.now() - days * 86400000);
+  const rows = await db
+    .select({
+      id: F.id, userId: F.userId, path: F.path, url: F.url, viewport: F.viewport, data: F.data,
+      createdAt: F.createdAt, updatedAt: F.updatedAt, sentAt: F.sentAt,
+      name: schema.user.name, email: schema.user.email, image: schema.user.image,
+      workspace: schema.organization.name,
+    })
+    .from(F)
+    .innerJoin(schema.user, eq(schema.user.id, F.userId))
+    .leftJoin(schema.organization, eq(schema.organization.id, F.organizationId))
+    .where(gte(F.updatedAt, since))
+    .orderBy(desc(F.updatedAt));
+
+  const batches = new Map<string, FeedbackBatch & { order: number[] }>();
+  for (const r of rows) {
+    let a: Partial<Annotation> = {};
+    try { a = JSON.parse(r.data) as Partial<Annotation>; } catch { /* fila vieja o rota: se enseña vacía */ }
+    const key = `${r.userId}|${r.path}|${r.sentAt ? r.sentAt.getTime() : "borrador"}`;
+    let b = batches.get(key);
+    if (!b) {
+      b = {
+        key, author: { id: r.userId, name: r.name, email: r.email, image: r.image ?? null }, workspace: r.workspace ?? null,
+        path: r.path, url: r.url, viewport: r.viewport ?? null,
+        sentAt: r.sentAt ? r.sentAt.toISOString() : null, updatedAt: r.updatedAt.toISOString(), notes: [], order: [],
+      };
+      batches.set(key, b);
+    }
+    if (r.updatedAt.toISOString() > b.updatedAt) b.updatedAt = r.updatedAt.toISOString();
+    const note: FeedbackNoteView = {
+      id: r.id, element: String(a.element ?? "Elemento"), elementPath: String(a.elementPath ?? ""), comment: String(a.comment ?? ""),
+      selectedText: a.selectedText ? String(a.selectedText) : null, sourceFile: a.sourceFile ? String(a.sourceFile) : null,
+      reactComponents: a.reactComponents ? String(a.reactComponents) : null, createdAt: r.createdAt.toISOString(),
+    };
+    b.notes.push(note);
+    b.order.push(typeof a.timestamp === "number" ? a.timestamp : r.createdAt.getTime());
+  }
+
+  const list = [...batches.values()].map((b) => {
+    // Dentro del envío, en el orden en que se dejaron las notas (como en el correo)
+    const idx = b.notes.map((_, i) => i).sort((i, j) => b.order[i] - b.order[j]);
+    const { order: _order, ...rest } = b;
+    return { ...rest, notes: idx.map((i) => b.notes[i]) };
+  });
+  list.sort((x, y) => (y.sentAt ?? y.updatedAt).localeCompare(x.sentAt ?? x.updatedAt));
+
+  return {
+    days, batches: list,
+    notes: rows.length,
+    sent: list.filter((b) => b.sentAt).length,
+    pending: list.filter((b) => !b.sentAt).length,
+    people: new Set(rows.map((r) => r.userId)).size,
+  };
 }

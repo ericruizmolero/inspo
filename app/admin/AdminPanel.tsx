@@ -6,6 +6,7 @@ import { UserAvatar } from "@/components/WorkspaceMenu";
 import AreaThumb from "./AreaThumb";
 import { areaLabel, type ActivityOverview, type ActivityDay, type AdminEntry } from "@/lib/activity-core";
 import { callsLabel, fmtUsd, type UsageOverview } from "@/lib/usage-core";
+import { batchMarkdown, type FeedbackBatch, type FeedbackOverview } from "@/lib/feedback-core";
 
 // ─── Formato ─────────────────────────────────────────────────────────────────
 
@@ -200,9 +201,90 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   );
 }
 
+// ─── Feedback de la barra (Agentation) ───────────────────────────────────────
+
+function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(batchMarkdown(batch)); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* sin portapapeles */ }
+  };
+  return <button className="btn btn--ghost btn--sm" onClick={copy}>{done ? "Copiado" : "Copiar para el agente"}</button>;
+}
+
+function FeedbackBatchView({ batch, now }: { batch: FeedbackBatch; now: number }) {
+  const [open, setOpen] = useState(batch.notes.length <= 3);
+  const notes = open ? batch.notes : batch.notes.slice(0, 3);
+  const when = batch.sentAt ?? batch.updatedAt;
+  return (
+    <li className="fb">
+      <div className="fb__head">
+        <UserAvatar name={batch.author.name} image={batch.author.image} small />
+        <span className="list__main">
+          <span className="list__name">
+            {batch.author.name}
+            <span className="fb__on"> sobre </span>
+            <a className="fb__path" href={batch.url} target="_blank" rel="noopener noreferrer" title={batch.url}>{batch.path}</a>
+          </span>
+          <span className="list__sub" title={fmtDateTime(when)}>
+            {batch.sentAt ? `enviado ${ago(batch.sentAt, now)}` : `sin enviar todavía · última nota ${ago(batch.updatedAt, now)}`}
+            {batch.workspace ? ` · ${batch.workspace}` : ""}{batch.viewport ? ` · ${batch.viewport}` : ""}
+            {` · ${batch.notes.length} ${batch.notes.length === 1 ? "nota" : "notas"}`}
+          </span>
+        </span>
+        {!batch.sentAt && <span className="fb__draft">Borrador</span>}
+        <CopyMarkdown batch={batch} />
+      </div>
+      <ol className="fb__notes">
+        {notes.map((n) => (
+          <li key={n.id} className="fb__note">
+            <span className="fb__el" title={n.elementPath}>{n.element}{n.sourceFile ? <span className="fb__src"> · {n.sourceFile}</span> : null}</span>
+            {n.selectedText && <q className="fb__quote">{n.selectedText}</q>}
+            <p className="fb__comment">{n.comment || <span className="fb__empty">sin comentario</span>}</p>
+          </li>
+        ))}
+      </ol>
+      {batch.notes.length > 3 && (
+        <button className="fb__more" onClick={() => setOpen((v) => !v)}>{open ? "Ver menos" : `Ver las ${batch.notes.length} notas`}</button>
+      )}
+    </li>
+  );
+}
+
+function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: number }) {
+  const [showAll, setShowAll] = useState(false);
+  const batches = showAll ? feedback.batches : feedback.batches.slice(0, 8);
+  return (
+    <section className="panel">
+      <div className="panel__head">
+        <span className="panel__title">Feedback de la barra</span>
+        <span className="panel__meta">
+          {feedback.notes ? `${feedback.notes} ${feedback.notes === 1 ? "nota" : "notas"} · ${feedback.sent} ${feedback.sent === 1 ? "envío" : "envíos"}${feedback.pending ? ` · ${feedback.pending} sin enviar` : ""} · ${feedback.people} ${feedback.people === 1 ? "persona" : "personas"}` : `últimos ${feedback.days} días`}
+        </span>
+      </div>
+      {feedback.batches.length === 0 ? (
+        <p className="panel__hint">Nadie ha dejado notas con la barra de feedback en los últimos {feedback.days} días. Cuando alguien pulse "Enviar al equipo" llega por correo y aparece aquí.</p>
+      ) : (
+        <ul className="fb-list">
+          {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} />)}
+        </ul>
+      )}
+      {feedback.batches.length > 8 && (
+        <button className="btn btn--ghost btn--sm" onClick={() => setShowAll((v) => !v)} style={{ alignSelf: "flex-start" }}>
+          {showAll ? "Ver menos" : `Ver los ${feedback.batches.length}`}
+        </button>
+      )}
+      {feedback.batches.length > 0 && (
+        <p className="panel__hint">
+          Cada bloque es lo que una persona mandó de una vez sobre una página; "Copiar para el agente" da el mismo markdown del correo. Los borradores son notas guardadas que aún no se han enviado.
+        </p>
+      )}
+    </section>
+  );
+}
+
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
-export default function AdminPanel({ data, usage, admins, me }: { data: ActivityOverview; usage: UsageOverview; admins: AdminEntry[]; me: string }) {
+export default function AdminPanel({ data, usage, feedback, admins, me }: { data: ActivityOverview; usage: UsageOverview; feedback: FeedbackOverview; admins: AdminEntry[]; me: string }) {
   const router = useRouter();
   const now = new Date(data.generatedAt).getTime();
   const [showAll, setShowAll] = useState(false);
@@ -393,6 +475,8 @@ export default function AdminPanel({ data, usage, admins, me }: { data: Activity
         )}
         <p className="panel__hint">Coste estimado con la tarifa pública de Anthropic y de Jev, sumando todos los equipos. Sirve para dimensionar el pricing, no es la factura.</p>
       </section>
+
+      <FeedbackPanel feedback={feedback} now={now} />
 
       <section className="panel">
         <div className="panel__head">
