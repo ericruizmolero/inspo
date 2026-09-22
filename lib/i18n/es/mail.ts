@@ -1,29 +1,29 @@
 import type { mail as EnMail } from "../en/mail";
 
 export const mail: typeof EnMail = {
-  signature: "Inspo es la librería de inspiración de Savvia \u00b7 savvia.studio",
+  signature: "criterio.design es la librería de inspiración de Savvia \u00b7 savvia.studio",
   fallbackNote: (href: string): string => `Si el botón no funciona, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">abre este enlace</a>.`,
   questions: (email: string): string => `Si tienes dudas, escríbenos a <a href="mailto:${email}" style="color:#a3a3a3;text-decoration:underline">${email}</a>.`,
 
   magicLink: {
-    subject: "Tu enlace para entrar en Inspo",
-    title: "Entrar en Inspo",
-    body: (who: string): string => `Has pedido entrar en Inspo${who}. Pulsa el botón para iniciar sesión: el enlace caduca en 10 minutos y solo funciona una vez.`,
+    subject: "Tu enlace para entrar en criterio.design",
+    title: "Entrar en criterio.design",
+    body: (who: string): string => `Has pedido entrar en criterio.design${who}. Pulsa el botón para iniciar sesión: el enlace caduca en 10 minutos y solo funciona una vez.`,
     withAddress: (email: string): string => ` con la dirección ${email}`,
     cta: "Entrar",
     note: "Si no has pedido este correo, puedes ignorarlo: nadie puede entrar sin este enlace.",
-    text: (who: string, url: string): string => `Has pedido entrar en Inspo${who}. Entra con este enlace (caduca en 10 minutos y solo funciona una vez):\n${url}\n\nSi no lo has pedido, ignora este correo.`,
+    text: (who: string, url: string): string => `Has pedido entrar en criterio.design${who}. Entra con este enlace (caduca en 10 minutos y solo funciona una vez):\n${url}\n\nSi no lo has pedido, ignora este correo.`,
   },
 
   invitation: {
-    subject: (inviter: string, team: string): string => `${inviter} te invita al equipo ${team} en Inspo`,
+    subject: (inviter: string, team: string): string => `${inviter} te invita al equipo ${team} en criterio.design`,
     title: (team: string): string => `Te invitan a ${team}`,
     body: (who: string, team: string, invitee: string): string =>
-      `${who} quiere que te unas a <strong style="color:#f2f2f2;font-weight:500">${team}</strong> en Inspo: webs, vídeos e ideas guardadas en un sitio, cada una con su DESIGN.md. Compartiréis la misma librería.<br><br>Entra con este mismo correo: <strong style="color:#f2f2f2;font-weight:500">${invitee}</strong>.`,
+      `${who} quiere que te unas a <strong style="color:#f2f2f2;font-weight:500">${team}</strong> en criterio.design: webs, vídeos e ideas guardadas en un sitio, cada una con su DESIGN.md. Compartiréis la misma librería.<br><br>Entra con este mismo correo: <strong style="color:#f2f2f2;font-weight:500">${invitee}</strong>.`,
     cta: "Aceptar invitación",
     note: "El enlace caduca en 7 días. Si no esperabas esta invitación, puedes ignorar este correo.",
     text: (inviter: string, inviterEmail: string, team: string, invitee: string, url: string): string =>
-      `${inviter} (${inviterEmail}) te invita al equipo ${team} en Inspo. Compartiréis la misma librería de inspiración.\n\nEntra con este mismo correo (${invitee}) y acepta aquí:\n${url}\n\nEl enlace caduca en 7 días.`,
+      `${inviter} (${inviterEmail}) te invita al equipo ${team} en criterio.design. Compartiréis la misma librería de inspiración.\n\nEntra con este mismo correo (${invitee}) y acepta aquí:\n${url}\n\nEl enlace caduca en 7 días.`,
   },
 
   overCapacity: {
@@ -39,12 +39,12 @@ export const mail: typeof EnMail = {
   },
 
   adminAccess: {
-    subject: (granter: string): string => `${granter} te ha dado acceso al panel de actividad de Inspo`,
-    title: "Ya puedes ver la actividad de Inspo",
+    subject: (granter: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design`,
+    title: "Ya puedes ver la actividad de criterio.design",
     body: (granter: string): string => `${granter} te ha dado acceso al panel de actividad: quién está conectado, cuánto tiempo pasa cada persona en la app y en qué zona.`,
     cta: "Abrir el panel",
     note: "Entra con este mismo correo. Si no esperabas este acceso, puedes ignorar el mensaje.",
-    text: (granter: string, url: string): string => `${granter} te ha dado acceso al panel de actividad de Inspo. Entra con este correo y ábrelo aquí:\n${url}`,
+    text: (granter: string, url: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design. Entra con este correo y ábrelo aquí:\n${url}`,
   },
 
   feedback: {

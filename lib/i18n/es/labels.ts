@@ -25,6 +25,8 @@ export const labels: typeof EnLabels = {
     anadir: "Añadir inspo",
     equipo: "Equipo",
     planes: "Planes",
+    ajustes: "Ajustes",
+    extension: "Extensión",
     admin: "Actividad",
     invitacion: "Invitación",
   },

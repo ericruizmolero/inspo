@@ -34,6 +34,8 @@ export const labels = {
     anadir: "Add inspo",
     equipo: "Team",
     planes: "Plans",
+    ajustes: "Settings",
+    extension: "Browser extension",
     admin: "Activity",
     invitacion: "Invitation",
   },

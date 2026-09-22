@@ -3,29 +3,29 @@
 // La regla: un correo sale en el idioma de QUIEN LO RECIBE, no de quien lo provoca.
 // Quién lo decide en cada caso está en localeForEmail (lib/mail.ts).
 export const mail = {
-  signature: "Inspo is the inspiration library of Savvia \u00b7 savvia.studio",
+  signature: "criterio.design is the inspiration library of Savvia \u00b7 savvia.studio",
   fallbackNote: (href: string): string => `If the button does not work, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">open this link</a>.`,
   questions: (email: string): string => `If you have questions, write to <a href="mailto:${email}" style="color:#a3a3a3;text-decoration:underline">${email}</a>.`,
 
   magicLink: {
-    subject: "Your link to sign in to Inspo",
-    title: "Sign in to Inspo",
-    body: (who: string): string => `You asked to sign in to Inspo${who}. Press the button to sign in: the link expires in 10 minutes and works once.`,
+    subject: "Your link to sign in to criterio.design",
+    title: "Sign in to criterio.design",
+    body: (who: string): string => `You asked to sign in to criterio.design${who}. Press the button to sign in: the link expires in 10 minutes and works once.`,
     withAddress: (email: string): string => ` with the address ${email}`,
     cta: "Sign in",
     note: "If you did not ask for this email, you can ignore it: nobody can get in without this link.",
-    text: (who: string, url: string): string => `You asked to sign in to Inspo${who}. Use this link (it expires in 10 minutes and works once):\n${url}\n\nIf you did not ask for it, ignore this email.`,
+    text: (who: string, url: string): string => `You asked to sign in to criterio.design${who}. Use this link (it expires in 10 minutes and works once):\n${url}\n\nIf you did not ask for it, ignore this email.`,
   },
 
   invitation: {
-    subject: (inviter: string, team: string): string => `${inviter} invites you to the team ${team} on Inspo`,
+    subject: (inviter: string, team: string): string => `${inviter} invites you to the team ${team} on criterio.design`,
     title: (team: string): string => `You are invited to ${team}`,
     body: (who: string, team: string, invitee: string): string =>
-      `${who} wants you to join <strong style="color:#f2f2f2;font-weight:500">${team}</strong> on Inspo: sites, videos and ideas kept in one place, each with its DESIGN.md. You will share the same library.<br><br>Sign in with this same address: <strong style="color:#f2f2f2;font-weight:500">${invitee}</strong>.`,
+      `${who} wants you to join <strong style="color:#f2f2f2;font-weight:500">${team}</strong> on criterio.design: sites, videos and ideas kept in one place, each with its DESIGN.md. You will share the same library.<br><br>Sign in with this same address: <strong style="color:#f2f2f2;font-weight:500">${invitee}</strong>.`,
     cta: "Accept the invitation",
     note: "The link expires in 7 days. If you were not expecting this invitation, you can ignore this email.",
     text: (inviter: string, inviterEmail: string, team: string, invitee: string, url: string): string =>
-      `${inviter} (${inviterEmail}) invites you to the team ${team} on Inspo. You will share the same inspiration library.\n\nSign in with this same address (${invitee}) and accept here:\n${url}\n\nThe link expires in 7 days.`,
+      `${inviter} (${inviterEmail}) invites you to the team ${team} on criterio.design. You will share the same inspiration library.\n\nSign in with this same address (${invitee}) and accept here:\n${url}\n\nThe link expires in 7 days.`,
   },
 
   overCapacity: {
@@ -41,12 +41,12 @@ export const mail = {
   },
 
   adminAccess: {
-    subject: (granter: string): string => `${granter} has given you access to the Inspo activity panel`,
-    title: "You can see the Inspo activity now",
+    subject: (granter: string): string => `${granter} has given you access to the criterio.design activity panel`,
+    title: "You can see the criterio.design activity now",
     body: (granter: string): string => `${granter} has given you access to the activity panel: who is online, how long each person spends in the app, and in which area.`,
     cta: "Open the panel",
     note: "Sign in with this same address. If you were not expecting this access, you can ignore the message.",
-    text: (granter: string, url: string): string => `${granter} has given you access to the Inspo activity panel. Sign in with this address and open it here:\n${url}`,
+    text: (granter: string, url: string): string => `${granter} has given you access to the criterio.design activity panel. Sign in with this address and open it here:\n${url}`,
   },
 
   feedback: {
