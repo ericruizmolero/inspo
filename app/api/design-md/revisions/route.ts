@@ -9,7 +9,6 @@ import { renderDesignMd, type DesignSpec } from "@/types/design";
 import { SECTIONS, addRevision, getRevisionSpec, latestRevision, listRevisions, reviseDesignSpec } from "@/lib/design-revise";
 import { getErrors, getLocale, getT, fmtDate } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 export const maxDuration = 120;
 
 function normalizeUrl(raw: string): string | null {

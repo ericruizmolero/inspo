@@ -9,7 +9,6 @@ import { assertSeatsOk } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 export const maxDuration = 300;
 
 // Con visión cada item puede tardar 20–40 s (captura + Claude); sin visión, ~1 s.

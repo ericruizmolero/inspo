@@ -7,7 +7,6 @@ import { assertQuota } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 export const maxDuration = 30;
 
 // POST { q } → { scores: { [web]: 0–1 } } dentro del workspace activo

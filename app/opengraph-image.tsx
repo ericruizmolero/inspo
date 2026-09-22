@@ -10,7 +10,6 @@ import { join } from "path";
 export const alt = "Inspo, your team's inspiration library";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const runtime = "nodejs";
 
 // Silueta del collage de la app: tres columnas de tarjetas fantasma
 const COLS: { offset: number; tiles: number[] }[] = [

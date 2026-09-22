@@ -4,7 +4,6 @@ import { setThumbnail } from "@/lib/items";
 import { listThumbnailLibrary } from "@/lib/thumbnails";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // POST { webUrl, blobUrl } → asigna una imagen ya subida (de la biblioteca del workspace)
 export async function POST(req: NextRequest) {

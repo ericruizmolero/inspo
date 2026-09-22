@@ -6,7 +6,6 @@ import { DESIGN_MD_PREFIX } from "@/lib/design-store";
 import { commentPrefix } from "@/lib/comment-files";
 import { isBlobUrl, isBlobUrlUnder } from "@/lib/blob-url";
 
-export const runtime = "nodejs";
 
 // Proxy de blobs privados: miniaturas y capturas de comentarios del workspace activo, y las
 // portadas de DESIGN.md (capturas de webs públicas, compartidas entre workspaces; el índice ya se filtra por items).

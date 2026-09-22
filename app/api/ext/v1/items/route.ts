@@ -11,7 +11,6 @@ import { classifyItem, jevEnabled } from "@/lib/jev";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 
-export const runtime = "nodejs";
 export const maxDuration = 60; // el etiquetado corre en after(), tras responder
 
 const NAME_TIMEOUT_MS = 5000;

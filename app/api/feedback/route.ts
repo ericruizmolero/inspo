@@ -3,7 +3,6 @@ import { getSession } from "@/lib/workspace";
 import { handleFeedbackEvent, type FeedbackEvent } from "@/lib/feedback";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 const EVENTS = new Set(["annotation.add", "annotation.update", "annotation.delete", "submit"]);
 

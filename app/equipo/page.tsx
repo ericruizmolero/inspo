@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import BackLink from "@/components/BackLink";
 import ActivityPing from "@/components/ActivityPing";
-import { redirect } from "next/navigation";
-import { getCtx, HttpError, listMembers, canManage } from "@/lib/workspace";
+import { getCtxOrLogin, listMembers, canManage } from "@/lib/workspace";
 import { db, schema } from "@/lib/db";
 import { and, eq, gt } from "drizzle-orm";
 import TeamPanel from "./TeamPanel";
@@ -12,7 +11,6 @@ import { overCapacity } from "@/lib/quota";
 import { planOf } from "@/lib/plans";
 import { getT } from "@/lib/i18n";
 
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -21,11 +19,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function EquipoPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
   const { nuevo } = await searchParams;
-  let ctx;
-  try { ctx = await getCtx(); } catch (e) { if (e instanceof HttpError) redirect("/login"); throw e; }
-
+  const [ctx, { t }] = await Promise.all([getCtxOrLogin("/equipo"), getT()]);
   const ws = ctx.workspace;
-  const { t } = await getT();
   const [members, invitations, usage, extKeys, over] = await Promise.all([
     listMembers(ws.id),
     // Las caducadas no se enseñan ni ocupan plaza

@@ -1,7 +1,6 @@
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { listThumbnailLibrary } from "@/lib/thumbnails";
 
-export const runtime = "nodejs";
 
 export async function GET() {
   const ctx = await requireCtx();

@@ -1,7 +1,6 @@
 // Comprobar la llave: quién soy y en qué workspace guarda esta extensión.
 import { requireExtCtx, revokeExtKey } from "@/lib/ext-keys";
 
-export const runtime = "nodejs";
 const API_VERSION = 1;
 
 export async function GET(req: Request) {

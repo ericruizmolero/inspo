@@ -3,7 +3,6 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { listItems, deleteItem } from "@/lib/items";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 export async function GET() {
   const ctx = await requireCtx();

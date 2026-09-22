@@ -5,7 +5,6 @@ import { findByWeb, rowToItem } from "@/lib/items";
 import { normalizeWebUrl } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // GET ?url= → { exists, item? }
 export async function GET(req: NextRequest) {

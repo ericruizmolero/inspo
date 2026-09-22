@@ -1,7 +1,10 @@
 // Helpers de servidor: sesión actual, workspace activo y permisos.
 // Un workspace es una organization de Better Auth con metadata.kind = "personal" | "team".
 import "server-only";
+import { cache } from "react";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSession } from "./session";
 import { auth } from "./auth";
 import { toLocale } from "./i18n/locale";
 import { ensurePersonalWorkspace, listWorkspaces, HttpError, type Ctx, type Role, type SessionUser } from "./workspace-core";
@@ -9,13 +12,26 @@ import { getErrors } from "./i18n";
 
 export * from "./workspace-core";
 
-export async function getSession() {
-  const h = await headers();
-  return auth.api.getSession({ headers: h });
-}
+export { getSession };
 
 /** Sesión + workspace activo. Lanza HttpError(401) si no hay sesión. */
 export async function getCtx(): Promise<Ctx> {
+  return (await resolveCtx()).ctx;
+}
+
+/** Para páginas: el contexto, o al login (volviendo a `next`) si no hay sesión. */
+export async function getCtxOrLogin(next?: string): Promise<Ctx> {
+  try {
+    return await getCtx();
+  } catch (e) {
+    if (e instanceof HttpError) redirect(next ? `/login?next=${encodeURIComponent(next)}` : "/login");
+    throw e;
+  }
+}
+
+// `fallback`: la sesión no tenía workspace activo (o ya no es miembro) y se eligió uno aquí.
+// Guardarlo escribe una cookie, cosa que un Server Component no puede hacer: eso lo hace requireCtx.
+const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
   const s = await getSession();
   if (!s) throw new HttpError(401, (await getErrors()).notSignedIn);
   const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image, language: toLocale((s.user as { language?: unknown }).language) };
@@ -28,22 +44,21 @@ export async function getCtx(): Promise<Ctx> {
   }
 
   const activeId = (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
-  let workspace = workspaces.find((w) => w.id === activeId);
-  if (!workspace) {
-    // Sin workspace activo: si está en algún equipo, mejor empezar ahí que en el personal vacío
-    workspace = workspaces.find((w) => w.kind === "team") ?? workspaces[0];
-    const h = await headers();
-    await auth.api.setActiveOrganization({ headers: h, body: { organizationId: workspace.id } }).catch(() => {});
-  }
-  return { user, workspace, workspaces };
-}
+  const active = workspaces.find((w) => w.id === activeId);
+  // Sin workspace activo: si está en algún equipo, mejor empezar ahí que en el personal vacío
+  const workspace = active ?? workspaces.find((w) => w.kind === "team") ?? workspaces[0];
+  return { ctx: { user, workspace, workspaces }, fallback: !active };
+});
 
 export const canManage = (role: Role) => role === "owner" || role === "admin";
 
 /** Para route handlers: devuelve el contexto o una Response de error. */
 export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Response> {
   try {
-    const ctx = await getCtx();
+    const { ctx, fallback } = await resolveCtx();
+    if (fallback) {
+      await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: ctx.workspace.id } }).catch(() => {});
+    }
     if (opts?.manage && !canManage(ctx.workspace.role)) {
       return Response.json({ error: (await getErrors()).workspaceAdminsCan }, { status: 403 });
     }

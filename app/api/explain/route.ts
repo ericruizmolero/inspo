@@ -6,7 +6,6 @@ import { assertSeatsOk } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
 import { getErrors, getLocale } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 export const maxDuration = 30;
 
 const MAX_ITEMS = 40;

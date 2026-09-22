@@ -4,7 +4,6 @@ import { isAdmin } from "@/lib/activity";
 import { deleteFeedbackNotes } from "@/lib/feedback";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // Borrar feedback desde el panel de actividad. Solo quien ve /admin.
 // DELETE { ids: string[] } → { ok: true, deleted }. Los ids son los de feedback_note (un envío = varias notas).

@@ -3,7 +3,6 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { getOrCaptureShot } from "@/lib/screenshot";
 
-export const runtime = "nodejs";
 export const maxDuration = 90; // arranque en frío de Chromium + 20 s de carga + captura
 
 const TTL = 60 * 60 * 24 * 30; // 30 days

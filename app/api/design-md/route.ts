@@ -10,7 +10,6 @@ import { assertQuota } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 export const maxDuration = 300;
 
 // Una generación por URL a la vez (evita dobles clics / pestañas duplicadas).

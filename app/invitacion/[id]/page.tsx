@@ -8,7 +8,6 @@ import AcceptInvitation from "./AcceptInvitation";
 import SwitchAccount from "./SwitchAccount";
 import { getT } from "@/lib/i18n";
 
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();

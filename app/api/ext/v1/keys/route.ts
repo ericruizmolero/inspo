@@ -5,7 +5,6 @@ import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { createExtKey, listExtKeys, revokeExtKey } from "@/lib/ext-keys";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // GET → llaves activas del workspace actual
 export async function GET() {

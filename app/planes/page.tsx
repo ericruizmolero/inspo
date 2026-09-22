@@ -2,13 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import ActivityPing from "@/components/ActivityPing";
-import { redirect } from "next/navigation";
-import { getCtx, HttpError } from "@/lib/workspace";
+import { getCtxOrLogin } from "@/lib/workspace";
 import { quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT } from "@/lib/plans";
 import { getT, fmtDate, type Dict } from "@/lib/i18n";
 
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -34,11 +32,9 @@ function Line({ label, used, limit, t }: { label: string; used: number; limit: n
 }
 
 export default async function PlanesPage() {
-  let ctx;
-  try { ctx = await getCtx(); } catch (e) { if (e instanceof HttpError) redirect("/login"); throw e; }
+  const [ctx, { locale, t }] = await Promise.all([getCtxOrLogin("/planes"), getT()]);
   const ws = ctx.workspace;
   const q = await quotaStatus(ws);
-  const { locale, t } = await getT();
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
   const mailto = (plan: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(plan, ws.name))}`;
 

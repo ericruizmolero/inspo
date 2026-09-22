@@ -3,7 +3,6 @@ import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { listComments, addComment, deleteComment } from "@/lib/comments";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // GET            → { [itemId]: InspoComment[] } de todo el workspace
 export async function GET() {

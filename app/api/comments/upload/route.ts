@@ -3,7 +3,6 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { uploadCommentFile, deleteCommentFiles, ownsCommentFile, ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES } from "@/lib/comment-files";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // POST multipart { file } → { url }. Una captura por petición: el navegador ya la ha reducido
 // (lib/image-client.ts) y así cada subida se queda por debajo del tope de body de Vercel.

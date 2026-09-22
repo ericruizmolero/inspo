@@ -3,7 +3,6 @@ import { getSession } from "@/lib/workspace";
 import { touchSegment, type Heartbeat } from "@/lib/activity";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // POST { segmentId, visitId, area, path, organizationId? } → { ok: true }
 // Latido de presencia del cliente (components/useActivity.ts). Llega cada 20 s con la

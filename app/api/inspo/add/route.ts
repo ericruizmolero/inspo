@@ -6,7 +6,6 @@ import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 
-export const runtime = "nodejs";
 
 // Sacar el nombre de la web no debería frenar el alta: si tarda más que esto, se usa el dominio.
 const NAME_TIMEOUT_MS = 5000;

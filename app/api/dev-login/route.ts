@@ -6,8 +6,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth, DEV_LOGIN_EMAIL, takeDevLink } from "@/lib/auth";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   if (!DEV_LOGIN_EMAIL) return NextResponse.json({ error: (await getErrors()).unavailable }, { status: 404 });

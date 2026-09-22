@@ -13,7 +13,7 @@ export default async function Loading() {
 
       <header className="pl-head">
         <h1 className="display pl-title">{t.plans.title}</h1>
-        <p className="pl-lead">Un precio por workspace, sin sorpresas. Cambia cuando quieras.</p>
+        <p className="pl-lead">{t.plans.lead}</p>
       </header>
 
       <section className="pl-usage">

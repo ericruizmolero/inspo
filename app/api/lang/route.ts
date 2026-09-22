@@ -4,7 +4,6 @@ import { db, schema } from "@/lib/db";
 import { getSession } from "@/lib/workspace";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 
-export const runtime = "nodejs";
 
 // POST { lang } → cambia el idioma. La cookie es lo que lee cada página; con sesión
 // se guarda además en la cuenta, que es lo que decide el idioma de sus correos.

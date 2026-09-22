@@ -8,7 +8,6 @@ import { DEV_LOGIN_EMAIL, SOCIAL_PROVIDERS } from "@/lib/auth";
 import { getT, type Dict } from "@/lib/i18n";
 import { Fragment } from "react";
 
-export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();

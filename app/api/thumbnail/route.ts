@@ -5,7 +5,6 @@ import { setThumbnail, hasItem } from "@/lib/items";
 import { ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES } from "@/lib/comment-files";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // POST (multipart file + webUrl) → sube imagen y la asigna al item
 export async function POST(req: NextRequest) {

@@ -4,7 +4,6 @@ import InspoClient from "@/components/InspoClient";
 import GuestStart from "@/components/GuestStart";
 import { isAdmin } from "@/lib/activity";
 
-export const dynamic = "force-dynamic";
 
 // Sin sesión: el lienzo de inicio como invitado (la primera acción abre la ventana de acceso).
 // Con sesión: el workspace activo.
@@ -12,9 +11,10 @@ export default async function Home() {
   if (!(await getSession())) return <GuestStart />;
   const ctx = await getCtx();
 
-  const [{ items, thumbnailMap, tagMap }, members] = await Promise.all([
+  const [{ items, thumbnailMap, tagMap }, members, admin] = await Promise.all([
     loadWorkspaceData(ctx.workspace.id),
     listMembers(ctx.workspace.id),
+    isAdmin(ctx.user.email),
   ]);
 
   return (
@@ -29,7 +29,7 @@ export default async function Home() {
       workspace={ctx.workspace}
       workspaces={ctx.workspaces}
       members={members.map((m) => ({ name: m.name, image: m.image ?? null }))}
-      isAdmin={await isAdmin(ctx.user.email)}
+      isAdmin={admin}
     />
   );
 }

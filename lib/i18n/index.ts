@@ -6,9 +6,10 @@
 // Sin sesión manda la cookie, que escribe proxy.ts con este orden: `?lang` si viene en
 // la URL, si no el primer idioma de Accept-Language que tengamos, si no inglés.
 import "server-only";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
-import { auth } from "../auth";
+import { cache } from "react";
+import { getSession } from "../session";
 import { db, schema } from "../db";
 import { LANG_COOKIE, toLocale, isLocale, type Locale } from "./locale";
 import en, { type Dict } from "./en";
@@ -21,8 +22,8 @@ export type { Dict };
 const DICTS: Record<Locale, Dict> = { en, es };
 
 /** El idioma de esta petición. */
-export async function getLocale(): Promise<Locale> {
-  const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
+export const getLocale = cache(async (): Promise<Locale> => {
+  const session = await getSession().catch(() => null);
   if (session) {
     // El idioma se lee de la fila, no del objeto de sesión: Better Auth cachea la sesión
     // en una cookie durante 5 minutos (lib/auth.ts), así que el idioma que trae dentro
@@ -32,7 +33,7 @@ export async function getLocale(): Promise<Locale> {
   }
   // Sin sesión manda la cookie, que escribe proxy.ts desde `?lang` o Accept-Language
   return toLocale((await cookies()).get(LANG_COOKIE)?.value);
-}
+});
 
 export const dictOf = (locale: Locale): Dict => DICTS[locale];
 

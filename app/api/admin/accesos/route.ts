@@ -5,7 +5,6 @@ import { isAdmin, addAdmin, removeAdmin, listAdmins } from "@/lib/activity";
 import { sendMail, adminAccessMail, localeForEmail } from "@/lib/mail";
 import { getErrors } from "@/lib/i18n";
 
-export const runtime = "nodejs";
 
 // Quién puede ver el panel de actividad. Solo puede tocarlo quien ya tiene acceso.
 async function guard() {
