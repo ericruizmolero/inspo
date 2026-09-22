@@ -1,4 +1,5 @@
 // Cuotas mensuales por plan, contadas sobre ai_usage. Solo servidor.
+import "server-only";
 import { and, eq, gt, gte, lt, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";

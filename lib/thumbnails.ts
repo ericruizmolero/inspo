@@ -1,6 +1,7 @@
 // Subida de miniaturas manuales. El mapa web → imagen vive ahora en inspo_item.thumbnail_url
 // (ver lib/items.ts); aquí solo queda el almacenamiento del fichero.
 // Producción: Vercel Blob (privado, bajo inspo/<workspace>/thumbs/). Local: public/thumbs.
+import "server-only";
 import { put, list } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";

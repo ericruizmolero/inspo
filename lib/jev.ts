@@ -1,4 +1,5 @@
 // Clasificación con Jev (Typesafe AI). Solo servidor.
+import "server-only";
 import { TypeSafeClient, choice, noul } from "@typesafe-ai/sdk";
 import type { JsonValue } from "@typesafe-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";

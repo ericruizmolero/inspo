@@ -7,7 +7,7 @@ import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
 import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
-import { ThumbnailMap } from "@/lib/thumbnails";
+import type { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
 import Sidebar, { SearchBox, Icons, TaggingState, type QuotaView } from "./Sidebar";
 import InspoCard from "./InspoCard";

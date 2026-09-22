@@ -1,5 +1,6 @@
 // Registro de uso de IA por workspace y coste estimado. Tarifa de Anthropic
 // (USD por millón de tokens) y de Jev (USD por item). Actualizar al cambiar de modelo.
+import "server-only";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";

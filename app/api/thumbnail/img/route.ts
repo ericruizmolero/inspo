@@ -4,6 +4,7 @@ import { ownsThumbnail } from "@/lib/items";
 import { blobPrefix } from "@/lib/thumbnails";
 import { DESIGN_MD_PREFIX } from "@/lib/design-store";
 import { commentPrefix } from "@/lib/comment-files";
+import { isBlobUrl, isBlobUrlUnder } from "@/lib/blob-url";
 
 export const runtime = "nodejs";
 
@@ -15,9 +16,10 @@ export async function GET(req: NextRequest) {
   const blobUrl = req.nextUrl.searchParams.get("url");
   if (!blobUrl) return new Response("missing url", { status: 400 });
 
-  const inLibrary = blobUrl.includes(`/${blobPrefix(ctx.workspace.id)}`)
-    || blobUrl.includes(`/${commentPrefix(ctx.workspace.id)}`)
-    || blobUrl.includes(`/${DESIGN_MD_PREFIX}`);
+  // El token solo viaja a hosts de Vercel Blob
+  if (!isBlobUrl(blobUrl)) return new Response("forbidden", { status: 403 });
+  const inLibrary = [blobPrefix(ctx.workspace.id), commentPrefix(ctx.workspace.id), DESIGN_MD_PREFIX]
+    .some((prefix) => isBlobUrlUnder(blobUrl, prefix));
   if (!inLibrary && !(await ownsThumbnail(ctx.workspace.id, blobUrl))) {
     return new Response("forbidden", { status: 403 });
   }

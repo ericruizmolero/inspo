@@ -1,6 +1,7 @@
 // Explica en una frase por qué cada resultado de la búsqueda IA encaja con la consulta.
 // Jev solo devuelve probabilidades; aquí Claude redacta el "porqué" a partir de los mismos datos
 // que vio Jev (notas, resumen, descripción de la captura, tags) y de la puntuación.
+import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
 import { summarize } from "./jev";

@@ -1,6 +1,8 @@
 // Capturas adjuntas a los comentarios. Producción: Vercel Blob privado bajo
 // inspo/<workspace>/comments/ (se sirven por /api/thumbnail/img). Local: public/comments.
+import "server-only";
 import { put, del } from "@vercel/blob";
+import { isBlobUrlUnder } from "./blob-url";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -17,7 +19,7 @@ export const commentPrefix = (organizationId: string) => `inspo/${organizationId
 /** ¿Esta URL es un adjunto de comentario de este workspace? (Blob o local) */
 export function ownsCommentFile(organizationId: string, url: string): boolean {
   return USE_BLOB
-    ? url.includes(`/${commentPrefix(organizationId)}`)
+    ? isBlobUrlUnder(url, commentPrefix(organizationId))
     : url.startsWith("/comments/") && !url.includes("..");
 }
 

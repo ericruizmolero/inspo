@@ -1,7 +1,27 @@
 // Extrae texto y señales estructurales de una URL para dárselas a Jev
 // (que solo entiende texto). Usa el mismo proxy que /api/og.
 
-export const PROXY = "https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy";
+import "server-only";
+
+// Proxy externo para leer webs que bloquean IPs de centros de datos. WEB_PROXY_URL="" lo apaga.
+const DEFAULT_PROXY = "https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy";
+export const PROXY = process.env.WEB_PROXY_URL ?? DEFAULT_PROXY;
+export const viaProxy = (url: string) => (PROXY ? `${PROXY}?url=${encodeURIComponent(url)}` : null);
+
+// ponytail: solo mira el hostname (localhost, IPs privadas, .local/.internal). No resuelve DNS,
+// así que un dominio que apunte a 10.x o una redirección a una IP interna pasan. Si hace falta,
+// resolver con dns.lookup y comprobar la IP antes de pedir.
+const PRIVATE_HOST = /^(localhost|0\.0\.0\.0|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$|\[?f[cd][0-9a-f]{2}:|\[?fe80:)|\.(local|internal|localhost)$/i;
+
+/** ¿Es una URL http(s) que apunta a internet y no a la red interna? */
+export function isPublicHttpUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return /^https?:$/.test(u.protocol) && !PRIVATE_HOST.test(u.hostname) && !/^\d+$/.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
 const TIMEOUT_MS = 8000;
 
 export interface SiteText {
@@ -114,8 +134,10 @@ async function fetchHtml(url: string, headers?: Record<string, string>): Promise
 
 /** Proxy primero (evita bloqueos por IP de Vercel); si falla, fetch directo con UA de navegador. */
 export async function fetchSiteText(url: string): Promise<SiteText | null> {
+  if (!isPublicHttpUrl(url)) return null;
+  const proxied = viaProxy(url);
   const html =
-    (await fetchHtml(`${PROXY}?url=${encodeURIComponent(url)}`)) ??
+    (proxied ? await fetchHtml(proxied) : null) ??
     (await fetchHtml(url, { "User-Agent": UA, Accept: "text/html,*/*" }));
   return html ? parseSiteText(html) : null;
 }

@@ -1,4 +1,5 @@
 // Acceso a los items de inspiración, siempre acotado a un workspace (organizationId).
+import "server-only";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
@@ -99,6 +100,12 @@ export async function addItem(organizationId: string, input: NewItem): Promise<I
   };
   await db.insert(T).values(row);
   return rowToItem(row as Row);
+}
+
+export async function hasItem(organizationId: string, web: string): Promise<boolean> {
+  const [r] = await db.select({ id: T.id }).from(T)
+    .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web)))).limit(1);
+  return !!r;
 }
 
 export async function setThumbnail(organizationId: string, web: string, thumbnailUrl: string | null): Promise<boolean> {

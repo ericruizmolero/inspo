@@ -1,5 +1,6 @@
 // Revisiones del DESIGN.md por workspace: una persona discrepa de una sección,
 // Claude corrige la spec estructurada y el cambio queda registrado con autor y resumen.
+import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";

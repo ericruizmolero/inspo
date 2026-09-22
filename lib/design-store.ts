@@ -1,3 +1,4 @@
+import "server-only";
 import { put, list, del } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
