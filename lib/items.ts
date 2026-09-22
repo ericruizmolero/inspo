@@ -4,6 +4,7 @@ import { db, schema } from "./db";
 import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
 import type { ThumbnailMap } from "./thumbnails";
 import { webKeyOf } from "./url";
+import { getErrors } from "./i18n";
 
 const T = schema.inspoItem;
 type Row = typeof T.$inferSelect;
@@ -78,7 +79,7 @@ export interface NewItem {
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
   const web = input.web.trim().replace(/\/+$/, "");
   const existing = await findByWeb(organizationId, web);
-  if (existing) throw new Error("Esa URL ya está en este workspace");
+  if (existing) throw new Error((await getErrors()).urlAlreadyHere);
   const now = new Date();
   const row: typeof T.$inferInsert = {
     id: newId(),

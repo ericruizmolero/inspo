@@ -4,12 +4,13 @@
 // Todo con rutas relativas: detrás del proxy del preview el servidor no conoce el origen público.
 import { NextResponse, type NextRequest } from "next/server";
 import { auth, DEV_LOGIN_EMAIL, takeDevLink } from "@/lib/auth";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  if (!DEV_LOGIN_EMAIL) return NextResponse.json({ error: "No disponible" }, { status: 404 });
+  if (!DEV_LOGIN_EMAIL) return NextResponse.json({ error: (await getErrors()).unavailable }, { status: 404 });
 
   const next = request.nextUrl.searchParams.get("next");
   const callbackURL = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
   const link = takeDevLink();
   if (!signIn.ok || !link) {
     console.error("[dev-login] sign-in", signIn.status, await signIn.text());
-    return NextResponse.json({ error: "No se pudo generar el enlace de acceso" }, { status: 500 });
+    return NextResponse.json({ error: (await getErrors()).linkFailed }, { status: 500 });
   }
 
   // Sin callbackURL el endpoint devuelve JSON (en vez de redirigir) y aun así fija las cookies de sesión
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
   const cookies = verify.headers.getSetCookie();
   if (!verify.ok || cookies.length === 0) {
     console.error("[dev-login] verify", verify.status, await verify.text());
-    return NextResponse.json({ error: "No se pudo crear la sesión" }, { status: 500 });
+    return NextResponse.json({ error: (await getErrors()).sessionFailed }, { status: 500 });
   }
 
   const res = new NextResponse(null, { status: 302, headers: { Location: callbackURL } });

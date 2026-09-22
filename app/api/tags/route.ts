@@ -7,6 +7,7 @@ import { TAXONOMY_VERSION } from "@/lib/taxonomy";
 import { visionEnabled } from "@/lib/vision";
 import { assertSeatsOk } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
 
     if (body.web) {
       const item = items.find((i) => i.web === body.web);
-      if (!item) return Response.json({ error: "URL no está en el workspace" }, { status: 404 });
-      if (body.force && !manage) return Response.json({ error: "Solo administradores" }, { status: 403 });
+      if (!item) return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 404 });
+      if (body.force && !manage) return Response.json({ error: (await getErrors()).adminsOnly }, { status: 403 });
       const existing = tagMap[item.web];
       if (existing && existing.v === TAXONOMY_VERSION && !body.force) {
         return Response.json({ tags: existing, cached: true });
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (body.all) {
-      if (!manage) return Response.json({ error: "Solo administradores del workspace" }, { status: 403 });
+      if (!manage) return Response.json({ error: (await getErrors()).workspaceAdminsOnly }, { status: 403 });
       const todo = items.filter((i) => body.force || !tagMap[i.web] || tagMap[i.web].v !== TAXONOMY_VERSION);
       const batch = todo.slice(0, perRequest());
 
@@ -89,7 +90,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return Response.json({ error: "Falta web o all" }, { status: 400 });
+    return Response.json({ error: (await getErrors()).missingWebOrAll }, { status: 400 });
   } catch (e) {
     console.error("tags POST error:", e);
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

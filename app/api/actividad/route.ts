@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSession } from "@/lib/workspace";
 import { touchSegment, type Heartbeat } from "@/lib/activity";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -10,10 +11,10 @@ export const runtime = "nodejs";
 // se acepte texto plano además de JSON.
 export async function POST(req: NextRequest) {
   const s = await getSession();
-  if (!s) return Response.json({ error: "No has iniciado sesión" }, { status: 401 });
+  if (!s) return Response.json({ error: (await getErrors()).notSignedIn }, { status: 401 });
   let body: Partial<Heartbeat> = {};
-  try { body = JSON.parse(await req.text()); } catch { return Response.json({ error: "Cuerpo no válido" }, { status: 400 }); }
-  if (typeof body.segmentId !== "string" || typeof body.visitId !== "string") return Response.json({ error: "Faltan datos" }, { status: 400 });
+  try { body = JSON.parse(await req.text()); } catch { return Response.json({ error: (await getErrors()).badBody }, { status: 400 }); }
+  if (typeof body.segmentId !== "string" || typeof body.visitId !== "string") return Response.json({ error: (await getErrors()).missingData }, { status: 400 });
   try {
     const r = await touchSegment(s.user.id, {
       segmentId: body.segmentId, visitId: body.visitId,

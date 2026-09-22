@@ -3,7 +3,9 @@
 import "server-only";
 import { headers } from "next/headers";
 import { auth } from "./auth";
+import { toLocale } from "./i18n/locale";
 import { ensurePersonalWorkspace, listWorkspaces, HttpError, type Ctx, type Role, type SessionUser } from "./workspace-core";
+import { getErrors } from "./i18n";
 
 export * from "./workspace-core";
 
@@ -16,7 +18,7 @@ export async function getSession() {
 export async function getCtx(): Promise<Ctx> {
   const s = await getSession();
   if (!s) throw new HttpError(401, "No has iniciado sesión");
-  const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image };
+  const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image, language: toLocale((s.user as { language?: unknown }).language) };
 
   // Una sola consulta en el caso normal; solo se crea el personal (y se relee) la primera vez
   let workspaces = await listWorkspaces(user.id);
@@ -43,7 +45,7 @@ export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Res
   try {
     const ctx = await getCtx();
     if (opts?.manage && !canManage(ctx.workspace.role)) {
-      return Response.json({ error: "Solo los administradores del workspace pueden hacer esto" }, { status: 403 });
+      return Response.json({ error: (await getErrors()).workspaceAdminsCan }, { status: 403 });
     }
     return ctx;
   } catch (e) {

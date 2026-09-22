@@ -3,6 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { addItem } from "@/lib/items";
 import { fetchSiteText } from "@/lib/extract";
 import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { empresa, web: rawWeb, tipo, comentarios, subcomentarios } = body as Record<string, string | undefined>;
     const web = normalizeWebUrl(rawWeb ?? "");
-    if (!web) return Response.json({ error: "La URL no es válida" }, { status: 400 });
+    if (!web) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
 
     const item = await addItem(ctx.workspace.id, {
       empresa: empresa?.trim() || (await resolveEmpresa(web)),

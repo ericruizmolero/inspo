@@ -6,8 +6,9 @@ import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import "server-only";
 import { db, schema } from "./db";
 import { listAdmins } from "./activity";
-import { feedbackMail, sendMail } from "./mail";
+import { feedbackMail, sendMail, localeForEmail } from "./mail";
 import { feedbackMarkdown, pathOf, type Annotation, type FeedbackBatch, type FeedbackEvent, type FeedbackNoteView, type FeedbackOverview } from "./feedback-core";
+import { getErrors } from "./i18n";
 
 export * from "./feedback-core";
 
@@ -62,7 +63,7 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
   switch (ev.event) {
     case "annotation.add":
     case "annotation.update":
-      if (!validAnnotation(ev.annotation)) throw new Error("Falta la anotación");
+      if (!validAnnotation(ev.annotation)) throw new Error((await getErrors()).missingAnnotation);
       await upsert(author, organizationId, [ev.annotation], url, viewport);
       return { sent: 0 };
     case "annotation.delete":
@@ -71,19 +72,20 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
       return { sent: 0 };
     case "submit": {
       const annotations = (Array.isArray(ev.annotations) ? ev.annotations : []).filter(validAnnotation);
-      if (!annotations.length) throw new Error("No hay notas que enviar");
+      if (!annotations.length) throw new Error((await getErrors()).noNotesToSend);
       await upsert(author, organizationId, annotations, url, viewport);
       const path = pathOf(url);
       const markdown = typeof ev.output === "string" && ev.output.trim() ? ev.output.trim().slice(0, 60000) : feedbackMarkdown(annotations.map(slim), path, viewport);
       const to = (await listAdmins()).map((a) => a.email);
-      if (!to.length) throw new Error("No hay nadie en el equipo a quien avisar");
-      const m = feedbackMail({ author, path, url, count: annotations.length, markdown, at: new Date() });
+      if (!to.length) throw new Error((await getErrors()).nobodyToNotify);
+      // Va a los socios; el idioma es el del primero de la lista, que es quien lo lee
+      const m = feedbackMail({ author, path, url, count: annotations.length, markdown, at: new Date() }, await localeForEmail(to[0]));
       await sendMail(to, m.subject, m.html, m.text, { replyTo: author.email });
       await db.update(F).set({ sentAt: new Date() }).where(inArray(F.id, annotations.map((a) => noteId(a.id, author.id))));
       return { sent: 1 };
     }
     default:
-      throw new Error("Evento desconocido");
+      throw new Error((await getErrors()).unknownEvent);
   }
 }
 

@@ -64,6 +64,13 @@
       "when": 1790088457492,
       "tag": "0008_ext_key",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790090608739,
+      "tag": "0009_wise_doctor_strange",
+      "breakpoints": true
     }
   ]
 }

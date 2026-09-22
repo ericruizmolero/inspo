@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useT } from "@/components/I18nProvider";
 
 /** Salir de esta cuenta y volver al login con la invitación como destino. */
 export default function SwitchAccount({ next }: { next: string }) {
+  const { t } = useT();
   const [busy, setBusy] = useState(false);
   const go = async () => {
     setBusy(true);
@@ -13,7 +15,7 @@ export default function SwitchAccount({ next }: { next: string }) {
   };
   return (
     <button className="btn btn--primary btn--block" onClick={go} disabled={busy}>
-      {busy ? "Saliendo…" : "Entrar con otro correo"}
+      {busy ? t.invite.signingOut : t.invite.useAnotherEmail}
     </button>
   );
 }

@@ -4,9 +4,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "@/components/WorkspaceMenu";
 import AreaThumb from "./AreaThumb";
-import { areaLabel, type ActivityOverview, type ActivityDay, type AdminEntry } from "@/lib/activity-core";
-import { callsLabel, fmtUsd, type UsageOverview } from "@/lib/usage-core";
+import { type ActivityOverview, type ActivityDay, type AdminEntry } from "@/lib/activity-core";
+import { type UsageOverview } from "@/lib/usage-core";
 import { batchMarkdown, type FeedbackBatch, type FeedbackOverview } from "@/lib/feedback-core";
+import { useT } from "@/components/I18nProvider";
+import { fmtDate, fmtDateTime as fmtDT, fmtUsd as usd } from "@/lib/i18n/format";
+import type { Locale } from "@/lib/i18n/locale";
+import type { Dict } from "@/lib/i18n/en";
 
 // ─── Formato ─────────────────────────────────────────────────────────────────
 
@@ -22,31 +26,29 @@ export function fmtDur(s: number): string {
 const fmtAxisDur = (v: number) => (v >= 3600 ? `${(Math.round(v / 360) / 10).toString().replace(".", ",")} h` : v >= 60 ? `${Math.round(v / 60)} min` : `${Math.round(v)} s`);
 
 /** "Eric", "Eric y Andoni", "Eric, Andoni y 3 más" */
-function namesList(names: string[], max = 3): string {
+function namesList(names: string[], t: Dict, max = 3): string {
   const shown = names.slice(0, max), rest = names.length - shown.length;
-  if (rest > 0) return `${shown.join(", ")} y ${rest} más`;
+  if (rest > 0) return `${shown.join(", ")} ${t.admin.andMore(rest)}`;
   if (shown.length <= 1) return shown[0] ?? "";
-  return `${shown.slice(0, -1).join(", ")} y ${shown[shown.length - 1]}`;
+  return `${shown.slice(0, -1).join(", ")} ${t.admin.and} ${shown[shown.length - 1]}`;
 }
 
 /** Para el eje de coste: "0,5 $", "2 $", "<0,01 $" no hace falta porque el eje empieza en 0 */
 const fmtAxisUsd = (v: number) => (v === 0 ? "0 $" : `${(Math.round(v * 100) / 100).toString().replace(".", ",")} $`);
 
-function ago(iso: string | null, now: number): string {
-  if (!iso) return "nunca";
+function ago(iso: string | null, now: number, locale: Locale, t: Dict): string {
+  if (!iso) return t.admin.never;
   const d = now - new Date(iso).getTime();
   const m = Math.floor(d / 60000);
-  if (m < 1) return "ahora";
-  if (m < 60) return `hace ${m} min`;
+  if (m < 1) return t.admin.now;
+  if (m < 60) return t.admin.minsAgo(m);
   const h = Math.floor(m / 60);
-  if (h < 24) return `hace ${h} h`;
+  if (h < 24) return t.admin.hoursAgo(h);
   const days = Math.floor(h / 24);
-  if (days === 1) return "ayer";
-  if (days < 30) return `hace ${days} días`;
-  return new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+  if (days === 1) return t.admin.yesterday;
+  if (days < 30) return t.admin.daysAgo(days);
+  return fmtDate(iso, locale, { day: "numeric", month: "short" });
 }
-
-const fmtDateTime = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 // ─── Gráfica de columnas (una serie) ─────────────────────────────────────────
 
@@ -140,6 +142,7 @@ function Columns<T extends { date: string; label: string }>({ data, value, forma
 // ─── Quién puede ver el panel ────────────────────────────────────────────────
 
 function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
+  const { locale, t } = useT();
   const router = useRouter();
   const [admins, setAdmins] = useState(initial);
   const [email, setEmail] = useState("");
@@ -156,19 +159,19 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
     const res = await fetch("/api/admin/accesos", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: value }) });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) { setError(data.error ?? "No se pudo dar acceso"); return; }
+    if (!res.ok) { setError(data.error ?? t.admin.grantFailed); return; }
     setEmail("");
-    setMsg(data.added ? (data.mailed ? `${value} ya tiene acceso. Le hemos avisado por correo.` : `${value} ya tiene acceso.`) : `${value} ya tenía acceso.`);
+    setMsg(data.added ? (data.mailed ? t.admin.grantedMailed(value) : t.admin.granted(value)) : t.admin.alreadyGranted(value));
     router.refresh();
   };
 
   const remove = async (a: AdminEntry) => {
-    if (!confirm(`¿Quitar el acceso a ${a.name ?? a.email}?`)) return;
+    if (!confirm(t.admin.removeConfirm(a.name ?? a.email))) return;
     setBusy(true); setError(""); setMsg("");
     const res = await fetch(`/api/admin/accesos?email=${encodeURIComponent(a.email)}`, { method: "DELETE" });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (!res.ok) { setError(data.error ?? "No se pudo quitar"); return; }
+    if (!res.ok) { setError(data.error ?? t.admin.revokeFailed); return; }
     setAdmins((prev) => prev.filter((x) => x.email !== a.email));
     router.refresh();
   };
@@ -176,7 +179,7 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   return (
     <section className="panel">
       <div className="panel__head">
-        <span className="panel__title">Quién puede ver este panel</span>
+        <span className="panel__title">{t.admin.accessTitle}</span>
         <span className="panel__meta">{admins.length}</span>
       </div>
       <ul className="list">
@@ -184,27 +187,25 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
           <li key={a.email} className="list__row">
             <UserAvatar name={a.name ?? a.email} small />
             <span className="list__main">
-              <span className="list__name">{a.name ?? a.email}{a.email === me.toLowerCase() && <span className="list__you"> · tú</span>}</span>
+              <span className="list__name">{a.name ?? a.email}{a.email === me.toLowerCase() && <span className="list__you">{t.admin.you}</span>}</span>
               <span className="list__sub">
                 {a.name ? `${a.email} · ` : ""}
-                {a.fixed ? "acceso fijo" : `${a.name ? "" : "todavía sin cuenta · "}añadido por ${a.addedBy || "—"}${a.createdAt ? ` el ${new Date(a.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}` : ""}`}
+                {a.fixed ? t.admin.fixedAccess : `${a.name ? "" : t.admin.noAccountYet}${t.admin.addedBy(a.addedBy || "—")}${a.createdAt ? t.admin.addedOn(fmtDate(a.createdAt, locale, { day: "numeric", month: "short" })) : ""}`}
               </span>
             </span>
             {!a.fixed && a.email !== me.toLowerCase() && (
-              <button className="btn btn--ghost btn--sm" onClick={() => remove(a)} disabled={busy}>Quitar</button>
+              <button className="btn btn--ghost btn--sm" onClick={() => remove(a)} disabled={busy}>{t.admin.remove}</button>
             )}
           </li>
         ))}
       </ul>
       <form onSubmit={add} className="invite">
-        <input className="input" type="email" placeholder="correo@socio.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <button className="btn btn--primary" type="submit" disabled={busy || !email.trim()}>Dar acceso</button>
+        <input className="input" type="email" placeholder={t.admin.partnerEmail} value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <button className="btn btn--primary" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</button>
       </form>
       {error && <p className="modal__error">{error}</p>}
       {msg && <p className="page__ok">{msg}</p>}
-      <p className="panel__hint">
-        Quien esté aquí ve la actividad de todas las personas y equipos, y puede dar o quitar acceso a otros. Basta con que entre en Inspo con ese correo: le aparece "Actividad de la app" en el menú de cuenta.
-      </p>
+      <p className="panel__hint">{t.admin.accessHint}</p>
     </section>
   );
 }
@@ -212,19 +213,21 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
 // ─── Feedback de la barra (Agentation) ───────────────────────────────────────
 
 function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
+  const { t } = useT();
   const [done, setDone] = useState(false);
   const copy = async () => {
     try { await navigator.clipboard.writeText(batchMarkdown(batch)); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* sin portapapeles */ }
   };
-  return <button className="btn btn--ghost btn--sm" onClick={copy}>{done ? "Copiado" : "Copiar para el agente"}</button>;
+  return <button className="btn btn--ghost btn--sm" onClick={copy}>{done ? t.common.copied : t.admin.copyForAgent}</button>;
 }
 
 function FeedbackBatchView({ batch, now, onDelete }: { batch: FeedbackBatch; now: number; onDelete: (b: FeedbackBatch) => Promise<void> }) {
+  const { locale, t } = useT();
   const [open, setOpen] = useState(batch.notes.length <= 3);
   const [busy, setBusy] = useState(false);
   const remove = async () => {
     const n = batch.notes.length;
-    if (!confirm(`¿Borrar ${n === 1 ? "esta nota" : `estas ${n} notas`} de ${batch.author.name} sobre ${batch.path}? No se puede deshacer.`)) return;
+    if (!confirm(t.admin.deleteNotesConfirm(n, batch.author.name, batch.path))) return;
     setBusy(true);
     try { await onDelete(batch); } finally { setBusy(false); }
   };
@@ -237,36 +240,37 @@ function FeedbackBatchView({ batch, now, onDelete }: { batch: FeedbackBatch; now
         <span className="list__main">
           <span className="list__name">
             {batch.author.name}
-            <span className="fb__on"> sobre </span>
+            <span className="fb__on">{t.admin.about}</span>
             <a className="fb__path" href={batch.url} target="_blank" rel="noopener noreferrer" title={batch.url}>{batch.path}</a>
           </span>
-          <span className="list__sub" title={fmtDateTime(when)}>
-            {batch.sentAt ? `enviado ${ago(batch.sentAt, now)}` : `sin enviar todavía · última nota ${ago(batch.updatedAt, now)}`}
+          <span className="list__sub" title={fmtDT(when, locale)}>
+            {batch.sentAt ? t.admin.sentAgo(ago(batch.sentAt, now, locale, t)) : t.admin.notSentYet(ago(batch.updatedAt, now, locale, t))}
             {batch.workspace ? ` · ${batch.workspace}` : ""}{batch.viewport ? ` · ${batch.viewport}` : ""}
-            {` · ${batch.notes.length} ${batch.notes.length === 1 ? "nota" : "notas"}`}
+            {` · ${t.admin.notes(batch.notes.length)}`}
           </span>
         </span>
-        {!batch.sentAt && <span className="fb__draft">Borrador</span>}
+        {!batch.sentAt && <span className="fb__draft">{t.admin.draft}</span>}
         <CopyMarkdown batch={batch} />
-        <button className="btn btn--ghost btn--sm" onClick={remove} disabled={busy} aria-label="Borrar este feedback">{busy ? <span className="spinner" /> : "Borrar"}</button>
+        <button className="btn btn--ghost btn--sm" onClick={remove} disabled={busy} aria-label={t.admin.deleteFeedback}>{busy ? <span className="spinner" /> : t.common.delete}</button>
       </div>
       <ol className="fb__notes">
         {notes.map((n) => (
           <li key={n.id} className="fb__note">
             <span className="fb__el" title={n.elementPath}>{n.element}{n.sourceFile ? <span className="fb__src"> · {n.sourceFile}</span> : null}</span>
             {n.selectedText && <q className="fb__quote">{n.selectedText}</q>}
-            <p className="fb__comment">{n.comment || <span className="fb__empty">sin comentario</span>}</p>
+            <p className="fb__comment">{n.comment || <span className="fb__empty">{t.admin.noComment}</span>}</p>
           </li>
         ))}
       </ol>
       {batch.notes.length > 3 && (
-        <button className="fb__more" onClick={() => setOpen((v) => !v)}>{open ? "Ver menos" : `Ver las ${batch.notes.length} notas`}</button>
+        <button className="fb__more" onClick={() => setOpen((v) => !v)}>{open ? t.admin.seeLess : t.admin.seeAllNotes(batch.notes.length)}</button>
       )}
     </li>
   );
 }
 
 function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: number }) {
+  const { t } = useT();
   const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [gone, setGone] = useState<Set<string>>(() => new Set());
@@ -280,20 +284,20 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
     setError("");
     const res = await fetch("/api/admin/feedback", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: b.notes.map((n) => n.id) }) });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) { setError(data.error ?? "No se pudo borrar"); return; }
+    if (!res.ok) { setError(data.error ?? t.admin.deleteFailed); return; }
     setGone((prev) => new Set(prev).add(b.key));
     router.refresh();
   };
   return (
     <section className="panel">
       <div className="panel__head">
-        <span className="panel__title">Feedback de la barra</span>
+        <span className="panel__title">{t.admin.feedbackTitle}</span>
         <span className="panel__meta">
-          {feedback.notes ? `${feedback.notes} ${feedback.notes === 1 ? "nota" : "notas"} · ${feedback.sent} ${feedback.sent === 1 ? "envío" : "envíos"}${feedback.pending ? ` · ${feedback.pending} sin enviar` : ""} · ${feedback.people} ${feedback.people === 1 ? "persona" : "personas"}` : `últimos ${feedback.days} días`}
+          {feedback.notes ? t.admin.feedbackMeta(feedback.notes, feedback.sent, feedback.pending, feedback.people) : t.admin.lastDays(feedback.days)}
         </span>
       </div>
       {all.length === 0 ? (
-        <p className="panel__hint">Nadie ha dejado notas con la barra de feedback en los últimos {feedback.days} días. Cuando alguien pulse "Enviar al equipo" llega por correo y aparece aquí.</p>
+        <p className="panel__hint">{t.admin.noFeedback(feedback.days)}</p>
       ) : (
         <ul className="fb-list">
           {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} onDelete={onDelete} />)}
@@ -302,13 +306,11 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
       {error && <p className="modal__error">{error}</p>}
       {all.length > 8 && (
         <button className="btn btn--ghost btn--sm" onClick={() => setShowAll((v) => !v)} style={{ alignSelf: "flex-start" }}>
-          {showAll ? "Ver menos" : `Ver los ${all.length}`}
+          {showAll ? t.admin.seeLess : t.admin.seeAll(all.length)}
         </button>
       )}
       {feedback.batches.length > 0 && (
-        <p className="panel__hint">
-          Cada bloque es lo que una persona mandó de una vez sobre una página; "Copiar para el agente" da el mismo markdown del correo; "Borrar" quita el bloque para siempre. Los borradores son notas guardadas que aún no se han enviado.
-        </p>
+        <p className="panel__hint">{t.admin.feedbackHint}</p>
       )}
     </section>
   );
@@ -317,6 +319,9 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
 export default function AdminPanel({ data, usage, feedback, admins, me }: { data: ActivityOverview; usage: UsageOverview; feedback: FeedbackOverview; admins: AdminEntry[]; me: string }) {
+  const { locale, t } = useT();
+  const fmtUsd = (n: number) => usd(n, locale);
+  const fmtDateTime = (iso: string) => fmtDT(iso, locale);
   const router = useRouter();
   const now = new Date(data.generatedAt).getTime();
   const [showAll, setShowAll] = useState(false);
@@ -337,52 +342,52 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
     <div className="page__body">
       <section className="ad-kpis">
         <div className="ad-kpi ad-kpi--hero">
-          <span className="ad-kpi__label"><span className={`ad-dot${k.online ? " is-on" : ""}`} aria-hidden />Conectadas ahora</span>
+          <span className="ad-kpi__label"><span className={`ad-dot${k.online ? " is-on" : ""}`} aria-hidden />{t.admin.onlineNow}</span>
           <span className="ad-kpi__value">{k.online}</span>
           {online.length ? (
             <span className="ad-online" title={online.map((u) => u.name).join(", ")}>
               <span className="ad-online__avatars">
                 {online.slice(0, 5).map((u) => <UserAvatar key={u.id} name={u.name} image={u.image} small />)}
               </span>
-              <span className="ad-online__names">{namesList(online.map((u) => u.name))}</span>
+              <span className="ad-online__names">{namesList(online.map((u) => u.name), t)}</span>
             </span>
           ) : (
-            <span className="ad-kpi__sub">con la app abierta en los últimos 2 min</span>
+            <span className="ad-kpi__sub">{t.admin.onlineSub}</span>
           )}
         </div>
         <div className="ad-kpi">
-          <span className="ad-kpi__label">Activas hoy</span>
+          <span className="ad-kpi__label">{t.admin.activeToday}</span>
           <span className="ad-kpi__value">{k.activeToday}</span>
-          <span className="ad-kpi__sub">{k.active7} en 7 días · {k.active30} en 30</span>
+          <span className="ad-kpi__sub">{t.admin.activeSub(k.active7, k.active30)}</span>
         </div>
         <div className="ad-kpi">
-          <span className="ad-kpi__label">Con sesión abierta</span>
+          <span className="ad-kpi__label">{t.admin.loggedIn}</span>
           <span className="ad-kpi__value">{k.loggedIn}</span>
-          <span className="ad-kpi__sub">logeadas, sin caducar (30 días)</span>
+          <span className="ad-kpi__sub">{t.admin.loggedInSub}</span>
         </div>
         <div className="ad-kpi">
-          <span className="ad-kpi__label">Registradas</span>
+          <span className="ad-kpi__label">{t.admin.registered}</span>
           <span className="ad-kpi__value">{k.totalUsers}</span>
-          <span className="ad-kpi__sub">{k.newUsers ? `${k.newUsers} nuevas en ${data.days} días` : `ninguna nueva en ${data.days} días`}</span>
+          <span className="ad-kpi__sub">{k.newUsers ? t.admin.newUsers(k.newUsers, data.days) : t.admin.noNewUsers(data.days)}</span>
         </div>
         <div className="ad-kpi">
-          <span className="ad-kpi__label">Tiempo en la app</span>
+          <span className="ad-kpi__label">{t.admin.timeInApp}</span>
           <span className="ad-kpi__value ad-kpi__value--text">{fmtDur(k.seconds)}</span>
-          <span className="ad-kpi__sub">{k.avgSeconds ? `${fmtDur(k.avgSeconds)} de media por persona activa` : `en ${data.days} días`}</span>
+          <span className="ad-kpi__sub">{k.avgSeconds ? t.admin.avgPerActive(fmtDur(k.avgSeconds)) : t.admin.inDays(data.days)}</span>
         </div>
       </section>
 
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">Por día</span>
-          <span className="panel__meta">últimos {data.days} días</span>
+          <span className="panel__title">{t.admin.perDay}</span>
+          <span className="panel__meta">{t.admin.lastDays(data.days)}</span>
         </div>
         {data.kpis.seconds === 0 && data.daily.every((d) => d.users === 0) ? (
-          <p className="panel__hint">Todavía no hay actividad medida. Cada persona con la app abierta manda un latido cada 20 segundos; en cuanto alguien entre, aparecerá aquí.</p>
+          <p className="panel__hint">{t.admin.noActivity}</p>
         ) : (
           <div className="ad-charts">
-            <Columns data={data.daily} title="Personas activas" value={(d) => d.users} format={(v) => String(Math.round(v))} integer />
-            <Columns data={data.daily} title="Tiempo en la app" value={(d) => d.seconds} format={fmtAxisDur} unitOf={(m) => (m >= 3600 ? 3600 : m >= 60 ? 60 : 1)} />
+            <Columns data={data.daily} title={t.admin.activePeople} value={(d) => d.users} format={(v) => String(Math.round(v))} integer />
+            <Columns data={data.daily} title={t.admin.timeInApp} value={(d) => d.seconds} format={fmtAxisDur} unitOf={(m) => (m >= 3600 ? 3600 : m >= 60 ? 60 : 1)} />
           </div>
         )}
       </section>
@@ -390,20 +395,20 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
       <div className="ad-cols">
         <section className="panel">
           <div className="panel__head">
-            <span className="panel__title">Dónde pasan el tiempo</span>
-            <span className="panel__meta">últimos {data.days} días</span>
+            <span className="panel__title">{t.admin.whereTime}</span>
+            <span className="panel__meta">{t.admin.lastDays(data.days)}</span>
           </div>
           {data.areas.length === 0 ? (
-            <p className="panel__hint">Sin datos todavía.</p>
+            <p className="panel__hint">{t.admin.noData}</p>
           ) : (
             <ul className="ad-areas">
               {data.areas.map((a) => (
                 <li key={a.area} className="ad-area">
-                  <AreaThumb area={a.area} label={a.label} />
+                  <AreaThumb area={a.area} label={t.labels.area[a.area as keyof typeof t.labels.area] ?? a.label} />
                   <span className="ad-area__body">
                     <span className="ad-area__head">
-                      <span className="ad-area__name">{a.label}</span>
-                      <span className="ad-area__meta">{a.users} {a.users === 1 ? "persona" : "personas"}</span>
+                      <span className="ad-area__name">{t.labels.area[a.area as keyof typeof t.labels.area] ?? a.label}</span>
+                      <span className="ad-area__meta">{t.admin.peopleCount(a.users)}</span>
                       <span className="ad-area__value">{fmtDur(a.seconds)}</span>
                     </span>
                     <span className="ad-area__bar"><span style={{ width: `${maxArea ? Math.max(1, (a.seconds / maxArea) * 100) : 0}%` }} /></span>
@@ -416,11 +421,11 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
 
         <section className="panel">
           <div className="panel__head">
-            <span className="panel__title">Últimos accesos</span>
-            <span className="panel__meta">inicios de sesión</span>
+            <span className="panel__title">{t.admin.lastLogins}</span>
+            <span className="panel__meta">{t.admin.logins}</span>
           </div>
           {data.logins.length === 0 ? (
-            <p className="panel__hint">Nadie ha iniciado sesión todavía.</p>
+            <p className="panel__hint">{t.admin.noLogins}</p>
           ) : (
             <ul className="list">
               {data.logins.map((l, i) => (
@@ -428,9 +433,9 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
                   <UserAvatar name={l.name} image={l.image} small />
                   <span className="list__main">
                     <span className="list__name">{l.name}</span>
-                    <span className="list__sub">{fmtDateTime(l.at)}{l.device ? ` · ${l.device}` : ""}{l.alive ? "" : " · caducada"}</span>
+                    <span className="list__sub">{fmtDateTime(l.at)}{l.device ? ` · ${l.device}` : ""}{l.alive ? "" : t.admin.expiredSession}</span>
                   </span>
-                  <span className="list__role">{ago(l.at, now)}</span>
+                  <span className="list__role">{ago(l.at, now, locale, t)}</span>
                 </li>
               ))}
             </ul>
@@ -440,43 +445,43 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
 
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">Uso de IA</span>
-          <span className="panel__meta">últimos {usage.days} días</span>
+          <span className="panel__title">{t.admin.aiUsage}</span>
+          <span className="panel__meta">{t.admin.lastDays(usage.days)}</span>
         </div>
         <div className="ad-usage-kpis">
           <div className="ad-usage-kpi">
-            <span className="ad-kpi__label">Coste estimado</span>
+            <span className="ad-kpi__label">{t.admin.estimatedCost}</span>
             <span className="ad-kpi__value ad-usage-kpi__value">{fmtUsd(usage.totalUsd)}</span>
           </div>
           <div className="ad-usage-kpi">
-            <span className="ad-kpi__label">Por persona que ha usado IA</span>
+            <span className="ad-kpi__label">{t.admin.perAiPerson}</span>
             <span className="ad-kpi__value ad-usage-kpi__value">{fmtUsd(usage.people ? usage.totalUsd / usage.people : 0)}</span>
-            <span className="ad-kpi__sub">{usage.people} {usage.people === 1 ? "persona" : "personas"}</span>
+            <span className="ad-kpi__sub">{t.admin.peopleCount(usage.people)}</span>
           </div>
           <div className="ad-usage-kpi">
-            <span className="ad-kpi__label">Llamadas</span>
+            <span className="ad-kpi__label">{t.admin.callsLabel}</span>
             <span className="ad-kpi__value ad-usage-kpi__value">{usage.calls}</span>
-            <span className="ad-kpi__sub">{usage.calls ? `${fmtUsd(usage.totalUsd / usage.calls)} de media` : "a Claude y a Jev"}</span>
+            <span className="ad-kpi__sub">{usage.calls ? t.admin.avgCall(fmtUsd(usage.totalUsd / usage.calls)) : t.admin.toClaudeAndJev}</span>
           </div>
         </div>
         {usage.calls === 0 ? (
-          <p className="panel__hint">Todavía no hay llamadas registradas en este periodo. Cada DESIGN.md, etiquetado o búsqueda IA queda apuntado con su coste estimado.</p>
+          <p className="panel__hint">{t.admin.noCalls}</p>
         ) : (
           <>
             <div className="ad-charts">
-              <Columns data={usage.daily} title="Coste por día" value={(d) => d.usd} format={fmtAxisUsd} />
-              <Columns data={usage.daily} title="Llamadas por día" value={(d) => d.calls} format={(v) => String(Math.round(v))} integer />
+              <Columns data={usage.daily} title={t.admin.costPerDay} value={(d) => d.usd} format={fmtAxisUsd} />
+              <Columns data={usage.daily} title={t.admin.callsPerDay} value={(d) => d.calls} format={(v) => String(Math.round(v))} integer />
             </div>
             <div className="ad-cols ad-cols--inner">
               <div className="ad-sub">
-                <span className="ad-sub__title">Por acción</span>
+                <span className="ad-sub__title">{t.admin.byAction}</span>
                 <ul className="ad-areas">
                   {usage.byAction.map((a) => (
                     <li key={a.action} className="ad-area">
                       <span className="ad-area__body">
                         <span className="ad-area__head">
-                          <span className="ad-area__name">{a.label}</span>
-                          <span className="ad-area__meta">{callsLabel(a.action, a.calls, a.units)}</span>
+                          <span className="ad-area__name">{t.labels.action[a.action as keyof typeof t.labels.action] ?? a.label}</span>
+                          <span className="ad-area__meta">{a.action.startsWith("jev_") && a.units ? t.admin.itemsInCalls(a.units, a.calls) : t.admin.calls(a.calls)}</span>
                           <span className="ad-area__value">{fmtUsd(a.usd)}</span>
                         </span>
                         <span className="ad-area__bar"><span style={{ width: `${maxAction ? Math.max(1, (a.usd / maxAction) * 100) : 0}%` }} /></span>
@@ -486,26 +491,26 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
                 </ul>
               </div>
               <div className="ad-sub">
-                <span className="ad-sub__title">Por equipo</span>
+                <span className="ad-sub__title">{t.admin.byTeam}</span>
                 <ul className="list">
                   {usage.byWorkspace.map((w) => (
                     <li key={w.id} className="list__row">
                       <span className="list__main">
                         <span className="list__name">{w.name}</span>
-                        <span className="list__sub">{w.kind === "personal" ? "espacio personal · " : ""}{w.calls} {w.calls === 1 ? "llamada" : "llamadas"}</span>
+                        <span className="list__sub">{w.kind === "personal" ? t.admin.personalSpace : ""}{t.admin.calls(w.calls)}</span>
                       </span>
                       <span className="list__role">{fmtUsd(w.usd)}</span>
                     </li>
                   ))}
                 </ul>
-                <span className="ad-sub__title" style={{ marginTop: 8 }}>Por persona</span>
+                <span className="ad-sub__title" style={{ marginTop: 8 }}>{t.admin.byPerson}</span>
                 <ul className="list">
                   {usage.byUser.map((u) => (
                     <li key={u.userId ?? "sys"} className="list__row">
                       <UserAvatar name={u.name} image={u.image} small />
                       <span className="list__main">
                         <span className="list__name">{u.name}</span>
-                        <span className="list__sub">{u.email ? `${u.email} · ` : ""}{u.calls} {u.calls === 1 ? "llamada" : "llamadas"}</span>
+                        <span className="list__sub">{u.email ? `${u.email} · ` : ""}{t.admin.calls(u.calls)}</span>
                       </span>
                       <span className="list__role">{fmtUsd(u.usd)}</span>
                     </li>
@@ -515,28 +520,28 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
             </div>
           </>
         )}
-        <p className="panel__hint">Coste estimado con la tarifa pública de Anthropic y de Jev, sumando todos los equipos. Sirve para dimensionar el pricing, no es la factura.</p>
+        <p className="panel__hint">{t.admin.costNote}</p>
       </section>
 
       <FeedbackPanel feedback={feedback} now={now} />
 
       <section className="panel">
         <div className="panel__head">
-          <span className="panel__title">Personas</span>
-          <span className="panel__meta">{data.users.length} registradas · tiempo de los últimos {data.days} días</span>
+          <span className="panel__title">{t.admin.people}</span>
+          <span className="panel__meta">{t.admin.peopleMeta(data.users.length, data.days)}</span>
         </div>
         <div className="ad-table-wrap">
           <table className="ad-table">
             <thead>
               <tr>
-                <th>Persona</th>
-                <th>Estado</th>
-                <th>Última vez</th>
-                <th className="ad-num">Tiempo</th>
-                <th className="ad-num">Visitas</th>
-                <th>Dónde más</th>
-                <th>Equipos</th>
-                <th>Dispositivo</th>
+                <th>{t.admin.thPerson}</th>
+                <th>{t.admin.thState}</th>
+                <th>{t.admin.thLastSeen}</th>
+                <th className="ad-num">{t.admin.thTime}</th>
+                <th className="ad-num">{t.admin.thVisits}</th>
+                <th>{t.admin.thWhere}</th>
+                <th>{t.admin.thTeams}</th>
+                <th>{t.admin.thDevice}</th>
               </tr>
             </thead>
             <tbody>
@@ -553,20 +558,20 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
                   </td>
                   <td>
                     {u.online ? (
-                      <span className="ad-state ad-state--on"><span className="ad-dot is-on" aria-hidden />Conectada</span>
+                      <span className="ad-state ad-state--on"><span className="ad-dot is-on" aria-hidden />{t.admin.stateOnline}</span>
                     ) : u.openSessions > 0 ? (
-                      <span className="ad-state">Sesión abierta</span>
+                      <span className="ad-state">{t.admin.stateSession}</span>
                     ) : (
-                      <span className="ad-state ad-state--off">Sin sesión</span>
+                      <span className="ad-state ad-state--off">{t.admin.stateOff}</span>
                     )}
                   </td>
-                  <td title={u.lastSeenAt ? fmtDateTime(u.lastSeenAt) : u.lastLoginAt ? `Acceso: ${fmtDateTime(u.lastLoginAt)}` : undefined}>
-                    {u.lastSeenAt ? ago(u.lastSeenAt, now) : u.lastLoginAt ? `acceso ${ago(u.lastLoginAt, now)}` : "nunca"}
+                  <td title={u.lastSeenAt ? fmtDateTime(u.lastSeenAt) : u.lastLoginAt ? t.admin.loginAt(fmtDateTime(u.lastLoginAt)) : undefined}>
+                    {u.lastSeenAt ? ago(u.lastSeenAt, now, locale, t) : u.lastLoginAt ? t.admin.loginAgo(ago(u.lastLoginAt, now, locale, t)) : t.admin.never}
                   </td>
                   <td className="ad-num">{u.seconds ? fmtDur(u.seconds) : "—"}</td>
                   <td className="ad-num">{u.visits || "—"}</td>
-                  <td>{u.topArea ? areaLabel(u.topArea) : "—"}</td>
-                  <td className="ad-cell-trunc" title={u.workspaces.join(", ")}>{u.workspaces.length ? u.workspaces.join(", ") : "Personal"}</td>
+                  <td>{u.topArea ? t.labels.area[u.topArea as keyof typeof t.labels.area] ?? u.topArea : "—"}</td>
+                  <td className="ad-cell-trunc" title={u.workspaces.join(", ")}>{u.workspaces.length ? u.workspaces.join(", ") : t.admin.personal}</td>
                   <td className="ad-cell-trunc">{u.device ?? "—"}</td>
                 </tr>
               ))}
@@ -575,12 +580,10 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
         </div>
         {data.users.length > 25 && (
           <button className="btn btn--ghost btn--sm" onClick={() => setShowAll((v) => !v)} style={{ alignSelf: "flex-start" }}>
-            {showAll ? "Ver menos" : `Ver las ${data.users.length}`}
+            {showAll ? t.admin.seeLess : t.admin.seeAll(data.users.length)}
           </button>
         )}
-        <p className="panel__hint">
-          "Conectada" es quien ha mandado un latido en los últimos 2 minutos. "Sesión abierta" es quien tiene la cookie viva aunque no esté en la app. El tiempo solo cuenta con la pestaña visible.
-        </p>
+        <p className="panel__hint">{t.admin.peopleHint}</p>
       </section>
 
       <AccessPanel initial={admins} me={me} />

@@ -4,6 +4,7 @@ import { loadWorkspaceData } from "@/lib/items";
 import { explainMatches, explainEnabled } from "@/lib/explain";
 import { assertSeatsOk } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
+import { getErrors, getLocale } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as { q?: string; results?: { web?: string; score?: number }[] };
   const query = (body.q ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
-  if (query.length < 3) return Response.json({ error: "Consulta demasiado corta" }, { status: 400 });
+  if (query.length < 3) return Response.json({ error: (await getErrors()).queryTooShort }, { status: 400 });
   const wanted = new Map<string, number>();
   for (const r of body.results ?? []) {
     if (typeof r.web === "string" && wanted.size < MAX_ITEMS) wanted.set(r.web, Number(r.score) || 0);
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
       .filter((it) => wanted.has(it.web))
       .map((it) => ({ item: it, tags: tagMap[it.web], score: wanted.get(it.web)! }))
       .sort((a, b) => b.score - a.score);
-    const reasons = await explainMatches(query, entries, ctx.workspace.id, { organizationId: ctx.workspace.id, userId: ctx.user.id });
+    const reasons = await explainMatches(query, entries, ctx.workspace.id, { organizationId: ctx.workspace.id, userId: ctx.user.id }, await getLocale());
     return Response.json({ reasons });
   } catch (e) {
     console.error("explain error:", e);

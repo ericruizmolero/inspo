@@ -7,7 +7,8 @@ import { APIError } from "better-auth/api";
 import { memberLimitMessage, memberRank } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
-import { sendMail, magicLinkMail, invitationMail } from "./mail";
+import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
+import { LANG_COOKIE, isLocale, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import { planOf } from "./plans";
 import { eq } from "drizzle-orm";
 
@@ -80,6 +81,19 @@ const socialProviders = {
 };
 export const SOCIAL_PROVIDERS = Object.keys(socialProviders) as SocialProvider[];
 
+/** Idioma de la cookie de la petición, para cuando quien recibe el correo no tiene cuenta. */
+function localeFromCookie(headers: Headers | null | undefined): Locale {
+  const raw = headers?.get("cookie") ?? "";
+  const m = new RegExp(`(?:^|; )${LANG_COOKIE}=([^;]+)`).exec(raw);
+  return isLocale(m?.[1]) ? m[1] : DEFAULT_LOCALE;
+}
+
+/** Idioma guardado de un usuario por id. Para el correo de invitación: el de quien invita. */
+async function localeOfUser(userId: string): Promise<Locale> {
+  const [row] = await db.select({ language: schema.user.language }).from(schema.user).where(eq(schema.user.id, userId)).limit(1);
+  return isLocale(row?.language) ? row.language : DEFAULT_LOCALE;
+}
+
 export const auth = betterAuth({
   appName: "Inspo",
   baseURL: APP_URL || undefined,
@@ -106,6 +120,11 @@ export const auth = betterAuth({
   },
   user: {
     // Nadie tiene contraseña; el nombre se rellena desde el correo al crear el usuario
+    additionalFields: {
+      // Idioma de la persona: decide en qué idioma se le escriben los correos.
+      // Lo escribe /api/lang, no el cliente directamente.
+      language: { type: "string", required: false, defaultValue: "en", input: false },
+    },
   },
   plugins: [
     magicLink({
@@ -113,7 +132,9 @@ export const auth = betterAuth({
       async sendMagicLink({ email, url }, ctx) {
         if (DEV_LOGIN_EMAIL && email.toLowerCase() === DEV_LOGIN_EMAIL) { g.__inspoDevLink = url; return; }
         const callbackURL = (ctx?.body as { callbackURL?: string } | undefined)?.callbackURL;
-        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request), email);
+        // Si la dirección ya tiene cuenta, su idioma; si no, el de la pestaña desde la que lo pide
+        const locale = await localeForEmail(email, localeFromCookie(ctx?.headers ?? ctx?.request?.headers));
+        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request), email, locale);
         await sendMail(email, m.subject, m.html, m.text);
       },
     }),
@@ -126,9 +147,14 @@ export const auth = betterAuth({
       // Si Resend falla, se apunta y se sigue; desde /equipo se puede copiar el enlace o reenviar.
       async sendInvitationEmail(data, request) {
         const base = APP_URL || originOf(request?.headers, request) || "http://localhost:3000";
-        const url = `${base}/invitacion/${data.id}`;
         const inviter = data.inviter.user;
-        const m = invitationMail(url, data.organization.name, inviter.name || inviter.email, inviter.email, data.email);
+        // El caso que siempre se escapa: quien recibe la invitación puede no tener cuenta
+        // todavía, así que no hay idioma que consultar. Se usa el de quien invita, que es la
+        // mejor pista que hay, y se cuelga de la propia URL para que la pantalla de aceptar
+        // salga en el mismo idioma que el correo.
+        const locale = await localeForEmail(data.email, await localeOfUser(inviter.id));
+        const url = `${base}/invitacion/${data.id}?lang=${locale}`;
+        const m = invitationMail(url, data.organization.name, inviter.name || inviter.email, inviter.email, data.email, locale);
         try {
           await sendMail(data.email, m.subject, m.html, m.text);
         } catch (e) {

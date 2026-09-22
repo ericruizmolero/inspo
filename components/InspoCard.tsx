@@ -5,7 +5,8 @@ import { hueFor } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags } from "@/types/inspo";
-import { ESTILOS, TAGS, TAG_THRESHOLD, labelOf } from "@/lib/taxonomy";
+import { TAGS, TAG_THRESHOLD } from "@/lib/taxonomy";
+import { useT } from "./I18nProvider";
 
 const BLOCKED = ["x.com", "twitter.com", "linkedin.com", "primevideo.com", "instagram.com", "youtube.com"];
 
@@ -73,6 +74,7 @@ const IconInfo = (
 );
 
 export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, onComments, onDelete }: InspoCardProps) {
+  const { t } = useT();
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
   const [manualLoaded, setManualLoaded] = useState(false);
@@ -207,7 +209,8 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
 
   const meta = (
     <div className="tile__meta">
-      <span>{item.tipo}</span>
+      <span>{t.labels.tipo[item.tipo]}</span>
+      {/* "Ambos" es el autor heredado del sheet: no es una persona, así que no se enseña */}
       {item.puestoPor !== "Ambos" && (<><span className="tile__meta-sep">·</span><span>{item.puestoPor}</span></>)}
       {domain && (<><span className="tile__meta-sep">·</span><span>{domain}</span></>)}
     </div>
@@ -219,8 +222,8 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     : [];
   const aiChips = tags && (
     <div className="tile__tags">
-      <span className="tile__tag tile__tag--style">{labelOf(ESTILOS, tags.estilo)}</span>
-      {activeTags.map((t) => <span key={t.key} className="tile__tag">{t.label}</span>)}
+      <span className="tile__tag tile__tag--style">{t.taxonomy.estilo[tags.estilo as keyof typeof t.taxonomy.estilo] ?? tags.estilo}</span>
+      {activeTags.map((x) => <span key={x.key} className="tile__tag">{t.taxonomy.tag[x.key as keyof typeof t.taxonomy.tag] ?? x.key}</span>)}
     </div>
   );
 
@@ -290,7 +293,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               <span className="display tile__fallback-mark" aria-hidden>{item.empresa.trim().slice(0, 1).toUpperCase()}</span>
               <div className="tile__fallback-top">
                 <span className="tile__fallback-domain">{domain}</span>
-                <span className="tile__fallback-tipo">{item.tipo}</span>
+                <span className="tile__fallback-tipo">{t.labels.tipo[item.tipo]}</span>
               </div>
               <div className="tile__fallback-body">
                 <i className="tile__fallback-rule" aria-hidden />
@@ -305,11 +308,11 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             {meta}
             {item.comentarios && <p className="tile__comment">{item.comentarios}</p>}
             {commentCount > 0 && (
-              <span className="tile__replies">{IconComment}{commentCount === 1 ? "1 respuesta" : `${commentCount} respuestas`}</span>
+              <span className="tile__replies">{IconComment}{t.card.replies(commentCount)}</span>
             )}
             {aiChips}
             <span className="tile__cta">
-              {clickTarget === "md" ? (designMdReady ? "Abrir DESIGN.md" : designMdLoading ? "Generando DESIGN.md…" : "Generar DESIGN.md") : (commentCount > 0 ? "Ver comentarios" : "Comentar")}
+              {clickTarget === "md" ? (designMdReady ? t.card.openDesignMd : designMdLoading ? t.card.generatingDesignMd : t.card.generateDesignMd) : (commentCount > 0 ? t.card.seeComments : t.card.comment)}
             </span>
           </div>
 
@@ -325,8 +328,8 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 <span className="tile__score-i" aria-hidden>{IconInfo}</span>
               </span>
               <span className="tile__score-why" role="tooltip">
-                <span className="tile__score-why-label">Encaje con tu búsqueda</span>
-                <span className="tile__score-why-text">{reason ?? "Probabilidad de que esta web sea lo que has descrito."}</span>
+                <span className="tile__score-why-label">{t.card.matchLabel}</span>
+                <span className="tile__score-why-text">{reason ?? t.card.matchFallback}</span>
               </span>
             </div>
           )}
@@ -338,47 +341,47 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           >
             {confirmDelete || deleting ? (
               <Fragment key="confirm">
-                <span className="tile__confirm-text">{deleting ? "Quitando…" : "¿Quitar de Inspo?"}</span>
+                <span className="tile__confirm-text">{deleting ? t.card.removing : t.card.confirmRemove}</span>
                 <button className="tile__action tile__action--confirm" onClick={handleDelete} disabled={deleting} autoFocus>
-                  {deleting ? <span className="spinner" /> : "Borrar"}
+                  {deleting ? <span className="spinner" /> : t.common.delete}
                 </button>
                 {!deleting && (
-                  <button className="tile__action" data-tip="Cancelar" aria-label="Cancelar" onClick={cancelDelete}>{IconX}</button>
+                  <button className="tile__action" data-tip={t.common.cancel} aria-label={t.common.cancel} onClick={cancelDelete}>{IconX}</button>
                 )}
               </Fragment>
             ) : (
               <Fragment key="actions">
             {manualThumbnail && (
-              <button className="tile__action tile__action--danger" data-tip="Quitar thumbnail" aria-label="Quitar thumbnail"
+              <button className="tile__action tile__action--danger" data-tip={t.card.removeThumb} aria-label={t.card.removeThumb}
                 onClick={async (e) => { e.stopPropagation(); await onRemoveThumbnail(); }}>
                 {IconX}
               </button>
             )}
             {onComments && (
-              <button className={`tile__action tile__action--cm${commentCount > 0 ? " has-count" : ""}`} data-tip={commentCount > 0 ? "Ver comentarios" : "Comentar"} aria-label="Comentarios"
+              <button className={`tile__action tile__action--cm${commentCount > 0 ? " has-count" : ""}`} data-tip={commentCount > 0 ? t.card.seeComments : t.card.comment} aria-label={t.card.comments}
                 onClick={(e) => { e.stopPropagation(); onComments(); }}>
                 {IconComment}{commentCount > 0 && <span className="tile__action-count">{commentCount}</span>}
               </button>
             )}
             <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
-              data-tip={designMdLoading ? "Generando DESIGN.md…" : designMdReady ? "Ver DESIGN.md" : "Generar DESIGN.md con IA (30-90 s)"}
+              data-tip={designMdLoading ? t.card.generatingDesignMd : designMdReady ? t.card.seeDesignMd : t.card.generateWithAi}
               onClick={(e) => { e.stopPropagation(); onDesignMd(); }}
             >
               {designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}
             </button>
-            <button className="tile__action" data-tip={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"} aria-label={manualThumbnail ? "Reemplazar thumbnail" : "Subir thumbnail"}
+            <button className="tile__action" data-tip={manualThumbnail ? t.card.replaceThumb : t.card.uploadThumb} aria-label={manualThumbnail ? t.card.replaceThumb : t.card.uploadThumb}
               onClick={triggerUpload}>
               {uploading ? <span className="spinner" /> : IconUpload}
             </button>
             <a className="tile__action tile__action--link" href={item.web} target="_blank" rel="noopener noreferrer"
-              data-tip="Abrir la web" aria-label="Abrir la web" onClick={(e) => e.stopPropagation()}>
+              data-tip={t.card.openSite} aria-label={t.card.openSite} onClick={(e) => e.stopPropagation()}>
               {IconExternal}
             </a>
             {onDelete && (
               <button
                 className="tile__action tile__action--danger"
-                data-tip="Quitar de Inspo" aria-label="Quitar de Inspo"
+                data-tip={t.card.removeFromInspo} aria-label={t.card.removeFromInspo}
                 onClick={handleDelete}
               >
                 {IconTrash}
@@ -401,21 +404,21 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           {aiChips}
         </div>
         {onComments && (
-          <button className={`tile__caption-md${commentCount > 0 ? " is-ready" : ""}`} onClick={onComments} aria-label="Comentarios">
+          <button className={`tile__caption-md${commentCount > 0 ? " is-ready" : ""}`} onClick={onComments} aria-label={t.card.comments}>
             {IconComment}{commentCount > 0 && commentCount}
           </button>
         )}
         <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>
-        <a className="tile__caption-md tile__caption-link" href={item.web} target="_blank" rel="noopener noreferrer" aria-label="Abrir la web">{IconExternal}</a>
+        <a className="tile__caption-md tile__caption-link" href={item.web} target="_blank" rel="noopener noreferrer" aria-label={t.card.openSite}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (
           <Fragment key="confirm">
-            <button className="tile__caption-md tile__caption-del is-confirm" onClick={handleDelete} disabled={deleting} aria-label="Confirmar borrado">
-              {deleting ? <span className="spinner" /> : "Borrar"}
+            <button className="tile__caption-md tile__caption-del is-confirm" onClick={handleDelete} disabled={deleting} aria-label={t.card.confirmDelete}>
+              {deleting ? <span className="spinner" /> : t.common.delete}
             </button>
-            {!deleting && <button className="tile__caption-md" onClick={cancelDelete} aria-label="Cancelar">{IconX}</button>}
+            {!deleting && <button className="tile__caption-md" onClick={cancelDelete} aria-label={t.common.cancel}>{IconX}</button>}
           </Fragment>
         ) : (
-          <button key="trash" className="tile__caption-md tile__caption-del" onClick={handleDelete} aria-label="Quitar de Inspo">{IconTrash}</button>
+          <button key="trash" className="tile__caption-md tile__caption-del" onClick={handleDelete} aria-label={t.card.removeFromInspo}>{IconTrash}</button>
         ))}
       </div>
     </div>

@@ -4,36 +4,30 @@
 
 export type PlanKey = "solo" | "studio" | "agencia";
 
+// El texto de cada plan (titular y lista de lo que incluye) vive en
+// lib/i18n/<idioma>/plans.ts, con la clave del plan como clave.
 export interface Plan {
   key: PlanKey;
   name: string;
   priceEur: number;
-  tagline: string;
   /** null = sin límite */
   members: number | null;
   designMdPerMonth: number | null;
   searchesPerMonth: number | null;
-  features: string[];
 }
 
 export const PLANS: Plan[] = [
   {
     key: "solo", name: "Solo", priceEur: 0,
-    tagline: "Para tu librería personal.",
     members: 1, designMdPerMonth: 3, searchesPerMonth: 30,
-    features: ["Inspos ilimitados", "Etiquetas automáticas", "3 DESIGN.md al mes", "30 búsquedas IA distintas al mes", "Directorio de 60+ webs"],
   },
   {
     key: "studio", name: "Studio", priceEur: 29,
-    tagline: "Para un estudio pequeño que comparte gusto.",
     members: 5, designMdPerMonth: 25, searchesPerMonth: null,
-    features: ["Hasta 5 personas", "Inspos ilimitados", "25 DESIGN.md al mes", "Búsquedas IA ilimitadas", "Comentarios y revisiones de DESIGN.md"],
   },
   {
     key: "agencia", name: "Agencia", priceEur: 79,
-    tagline: "Para equipos con varios proyectos abiertos.",
     members: 15, designMdPerMonth: 100, searchesPerMonth: null,
-    features: ["Hasta 15 personas", "Varios workspaces", "100 DESIGN.md al mes", "Búsquedas IA ilimitadas", "Soporte por correo el mismo día"],
   },
 ];
 

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { listItems, deleteItem } from "@/lib/items";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -20,10 +21,10 @@ export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const id = req.nextUrl.searchParams.get("id");
-  if (!id) return Response.json({ error: "Falta id" }, { status: 400 });
+  if (!id) return Response.json({ error: (await getErrors()).missingId }, { status: 400 });
   try {
     const ok = await deleteItem(ctx.workspace.id, id);
-    if (!ok) return Response.json({ error: "Esa tarjeta ya no existe" }, { status: 404 });
+    if (!ok) return Response.json({ error: (await getErrors()).cardGone }, { status: 404 });
     return Response.json({ ok: true });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });

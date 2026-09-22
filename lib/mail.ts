@@ -1,14 +1,34 @@
 // Envío de correos transaccionales (magic link, invitaciones).
 // Con RESEND_API_KEY usa Resend; sin ella (local) imprime el enlace en consola
 // y lo guarda en .data/last-mail.txt para poder probar sin correo.
+//
+// El idioma es el de QUIEN RECIBE el correo, nunca el de quien lo provoca:
+// localeForEmail() lo busca en la cuenta del destinatario. El texto está en
+// lib/i18n/<idioma>/mail.ts.
 import { promises as fs } from "fs";
 import path from "path";
+import { eq } from "drizzle-orm";
+import { db, schema } from "./db";
+import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import en from "./i18n/en";
+import es from "./i18n/es";
+
+const DICTS = { en, es } as const;
+export const mailDict = (locale: Locale) => DICTS[locale].mail;
+
+/**
+ * Idioma de un destinatario. Si la dirección tiene cuenta, el suyo; si no, `fallback`
+ * (por defecto inglés). Es el caso de la invitación: quien la recibe puede no tener cuenta.
+ */
+export async function localeForEmail(email: string, fallback: Locale = DEFAULT_LOCALE): Promise<Locale> {
+  const [row] = await db.select({ language: schema.user.language }).from(schema.user).where(eq(schema.user.email, email)).limit(1);
+  return row ? toLocale(row.language) : fallback;
+}
 
 // Remitente y dirección de respuesta. inspo@ no es un buzón, así que las respuestas van a hola@,
 // que sí existe: Gmail penaliza a los remitentes a los que no se puede contestar.
 const FROM = process.env.MAIL_FROM || "Inspo · Savvia <inspo@savvia.studio>";
 const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
-const SIGNATURE = "Inspo es la librería de inspiración de Savvia · savvia.studio";
 
 // Las fuentes del correo se sirven desde public/fonts (Family para títulos, Söhne para texto).
 // Apple Mail, iOS Mail y Outlook mac las cargan; Gmail ignora @font-face y cae a la pila de sistema.
@@ -41,9 +61,10 @@ export async function sendMail(to: string | string[], subject: string, html: str
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 
-function layout(title: string, body: string, cta: { label: string; url: string }, note: string) {
+function layout(locale: Locale, title: string, body: string, cta: { label: string; url: string }, note: string) {
+  const t = mailDict(locale);
   const href = esc(cta.url);
-  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(title)}</title>
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(title)}</title>
 <style>
   @font-face { font-family: 'Family'; font-weight: 700; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/family-bold.woff2') format('woff2'); }
   @font-face { font-family: 'Söhne'; font-weight: 400; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/soehne-buch.woff2') format('woff2'); }
@@ -60,10 +81,10 @@ function layout(title: string, body: string, cta: { label: string; url: string }
         <a href="${href}" style="display:inline-block;background:#f2f2f2;color:#0d0d0d;text-decoration:none;padding:13px 22px;border-radius:999px;font-family:${BODY};font-size:15px;font-weight:500">${esc(cta.label)}</a>
       </td></tr>
       <tr><td style="border-top:1px solid #262626;padding:20px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
-        ${note} Si el botón no funciona, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">abre este enlace</a>.
+        ${note} ${t.fallbackNote(href)}
       </td></tr>
       <tr><td style="padding:16px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
-        ${esc(SIGNATURE)}. Si tienes dudas, escríbenos a <a href="mailto:${REPLY_TO}" style="color:#a3a3a3;text-decoration:underline">${REPLY_TO}</a>.
+        ${esc(t.signature)}. ${t.questions(REPLY_TO)}
       </td></tr>
     </table>
   </td></tr>
@@ -71,22 +92,23 @@ function layout(title: string, body: string, cta: { label: string; url: string }
 </body></html>`;
 }
 
-export function magicLinkMail(url: string, email?: string) {
-  const who = email ? ` con la dirección ${esc(email)}` : "";
+export function magicLinkMail(url: string, email: string | undefined, locale: Locale) {
+  const t = mailDict(locale);
+  const who = email ? t.magicLink.withAddress(esc(email)) : "";
   return {
-    subject: "Tu enlace para entrar en Inspo",
-    html: layout("Entrar en Inspo", `Has pedido entrar en Inspo${who}. Pulsa el botón para iniciar sesión: el enlace caduca en 10 minutos y solo funciona una vez.`, { label: "Entrar", url }, "Si no has pedido este correo, puedes ignorarlo: nadie puede entrar sin este enlace."),
-    text: `Has pedido entrar en Inspo${email ? ` con la dirección ${email}` : ""}. Entra con este enlace (caduca en 10 minutos y solo funciona una vez):\n${url}\n\nSi no lo has pedido, ignora este correo.\n\n${SIGNATURE}\n${REPLY_TO}`,
+    subject: t.magicLink.subject,
+    html: layout(locale, t.magicLink.title, t.magicLink.body(who), { label: t.magicLink.cta, url }, t.magicLink.note),
+    text: `${t.magicLink.text(email ? t.magicLink.withAddress(email) : "", url)}\n\n${t.signature}\n${REPLY_TO}`,
   };
 }
 
-export function invitationMail(url: string, teamName: string, inviterName: string, inviterEmail: string, inviteeEmail: string) {
+export function invitationMail(url: string, teamName: string, inviterName: string, inviterEmail: string, inviteeEmail: string, locale: Locale) {
+  const t = mailDict(locale);
   const who = inviterName === inviterEmail ? esc(inviterName) : `${esc(inviterName)} (${esc(inviterEmail)})`;
-  const body = `${who} quiere que te unas a <strong style="color:#f2f2f2;font-weight:500">${esc(teamName)}</strong> en Inspo: webs, vídeos e ideas guardadas en un sitio, cada una con su DESIGN.md. Compartiréis la misma librería.<br><br>Entra con este mismo correo: <strong style="color:#f2f2f2;font-weight:500">${esc(inviteeEmail)}</strong>.`;
   return {
-    subject: `${inviterName} te invita al equipo ${teamName} en Inspo`,
-    html: layout(`Te invitan a ${esc(teamName)}`, body, { label: "Aceptar invitación", url }, "El enlace caduca en 7 días. Si no esperabas esta invitación, puedes ignorar este correo."),
-    text: `${inviterName} (${inviterEmail}) te invita al equipo ${teamName} en Inspo. Compartiréis la misma librería de inspiración.\n\nEntra con este mismo correo (${inviteeEmail}) y acepta aquí:\n${url}\n\nEl enlace caduca en 7 días.\n\n${SIGNATURE}\n${REPLY_TO}`,
+    subject: t.invitation.subject(inviterName, teamName),
+    html: layout(locale, t.invitation.title(esc(teamName)), t.invitation.body(who, esc(teamName), esc(inviteeEmail)), { label: t.invitation.cta, url }, t.invitation.note),
+    text: `${t.invitation.text(inviterName, inviterEmail, teamName, inviteeEmail, url)}\n\n${t.signature}\n${REPLY_TO}`,
   };
 }
 
@@ -94,43 +116,48 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
  * Al bajar de plan un equipo puede quedarse con más gente de la que admite el plan nuevo.
  * No se quita a nadie: se avisa al dueño para que decida.
  */
-export function overCapacityMail(url: string, teamName: string, planName: string, members: number, limit: number) {
-  const n = (x: number) => `${x} ${x === 1 ? "persona" : "personas"}`;
-  const body = `<strong style="color:#f2f2f2;font-weight:500">${esc(teamName)}</strong> ha pasado al plan ${esc(planName)}, que admite ${n(limit)}, y ahora mismo sois ${n(members)}.<br><br>No hemos quitado a nadie. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas ni usar la IA (DESIGN.md, etiquetas y búsquedas). Tú decides: quita a alguien del equipo o vuelve a un plan más grande.`;
+export function overCapacityMail(url: string, teamName: string, planName: string, members: number, limit: number, locale: Locale) {
+  const t = mailDict(locale);
+  const nMembers = t.overCapacity.people(members);
+  const nLimit = t.overCapacity.people(limit);
   return {
-    subject: `${teamName} tiene ${n(members)} y el plan ${planName} admite ${limit}`,
-    html: layout("Sobra gente para el plan nuevo", body, { label: "Abrir el equipo", url }, "Nadie ha perdido su sitio ni sus inspos."),
-    text: `${teamName} ha pasado al plan ${planName}, que admite ${n(limit)}, y ahora sois ${n(members)}.\n\nNo hemos quitado a nadie. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas ni usar la IA. Quita a alguien o vuelve a un plan más grande:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
+    subject: t.overCapacity.subject(teamName, nMembers, planName, limit),
+    html: layout(locale, t.overCapacity.title, t.overCapacity.body(esc(teamName), esc(planName), nLimit, nMembers), { label: t.overCapacity.cta, url }, t.overCapacity.note),
+    text: `${t.overCapacity.text(teamName, planName, nLimit, nMembers, url)}\n\n${t.signature}\n${REPLY_TO}`,
   };
 }
 
-export function adminAccessMail(url: string, granterName: string) {
+export function adminAccessMail(url: string, granterName: string, locale: Locale) {
+  const t = mailDict(locale);
   return {
-    subject: `${granterName} te ha dado acceso al panel de actividad de Inspo`,
-    html: layout("Ya puedes ver la actividad de Inspo", `${esc(granterName)} te ha dado acceso al panel de actividad: quién está conectado, cuánto tiempo pasa cada persona en la app y en qué zona.`, { label: "Abrir el panel", url }, "Entra con este mismo correo. Si no esperabas este acceso, puedes ignorar el mensaje."),
-    text: `${granterName} te ha dado acceso al panel de actividad de Inspo. Entra con este correo y ábrelo aquí:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
+    subject: t.adminAccess.subject(granterName),
+    html: layout(locale, t.adminAccess.title, t.adminAccess.body(esc(granterName)), { label: t.adminAccess.cta, url }, t.adminAccess.note),
+    text: `${t.adminAccess.text(granterName, url)}\n\n${t.signature}\n${REPLY_TO}`,
   };
 }
 
-const fmtWhen = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+/** La hora del feedback va siempre en la zona de Madrid: es un dato del estudio, no del idioma. */
+const fmtWhen = (locale: Locale) =>
+  new Intl.DateTimeFormat(INTL_LOCALE[locale], { timeZone: "Europe/Madrid", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 /**
  * Feedback visual sobre la app (barra Agentation) para los socios. El cuerpo lleva el
  * markdown tal cual lo copia la barra, listo para pegárselo a un agente; el texto plano
  * es solo el markdown, así que responder o reenviar también sirve.
  */
-export function feedbackMail(f: { author: { name: string; email: string }; path: string; url: string; count: number; markdown: string; at: Date }) {
+export function feedbackMail(f: { author: { name: string; email: string }; path: string; url: string; count: number; markdown: string; at: Date }, locale: Locale) {
+  const t = mailDict(locale);
   const who = f.author.name || f.author.email;
-  const n = f.count === 1 ? "1 nota" : `${f.count} notas`;
-  const title = `${n} de ${who}`;
-  const intro = `${esc(who)} (<a href="mailto:${esc(f.author.email)}" style="color:#a3a3a3;text-decoration:underline">${esc(f.author.email)}</a>) ha dejado ${n} sobre <strong style="color:#f2f2f2;font-weight:500">${esc(f.path)}</strong> el ${esc(fmtWhen.format(f.at))}. Debajo va el feedback tal cual lo copia la barra: pégaselo al agente.`;
+  const n = t.feedback.notes(f.count);
+  const when = fmtWhen(locale).format(f.at);
+  const intro = t.feedback.intro(esc(who), esc(f.author.email), n, esc(f.path), esc(when));
   const pre = `<pre style="margin:0 0 28px;padding:18px 20px;background:#161616;border:1px solid #262626;border-radius:12px;color:#e5e5e5;font-family:'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere">${esc(f.markdown)}</pre>`;
-  const html = layout(title, intro, { label: "Abrir la página", url: f.url }, "Responde a este correo para hablar directamente con quien ha dejado el feedback.")
+  const html = layout(locale, t.feedback.title(n, who), intro, { label: t.feedback.cta, url: f.url }, t.feedback.note)
     // El bloque de código va justo antes del botón: el layout no tiene hueco para él
     .replace('<tr><td style="padding:0 0 36px">', `<tr><td style="padding:0 0 0">${pre}</td></tr>\n      <tr><td style="padding:0 0 36px">`);
   return {
-    subject: `Feedback de ${who}: ${n} en ${f.path}`,
+    subject: t.feedback.subject(who, n, f.path),
     html,
-    text: `${who} (${f.author.email}) ha dejado ${n} sobre ${f.path} el ${fmtWhen.format(f.at)}.\nPágina: ${f.url}\n\n${f.markdown}\n\n${SIGNATURE}`,
+    text: `${t.feedback.text(who, f.author.email, n, f.path, when, f.url, f.markdown)}\n\n${t.signature}`,
   };
 }

@@ -1511,7 +1511,8 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 
 /* Selector de tema (Sistema / Claro / Oscuro): fila propia del menú, a todo el ancho, tres celdas iguales, solo texto */
 .ws__theme { padding: 2px 8px 6px; }
-.theme-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; width: 100%; padding: 3px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); }
+/* Las columnas salen del número de opciones: el tema tiene 3 y el idioma 2 */
+.theme-seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; width: 100%; padding: 3px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); }
 .theme-seg__opt { display: flex; align-items: center; justify-content: center; min-width: 0; height: 30px; padding: 0 4px; border: 0; border-radius: 6px; background: transparent; color: var(--text-2); font-size: 13px; font-weight: 500; letter-spacing: -0.005em; cursor: pointer; transition: background 0.12s, color 0.12s, box-shadow 0.12s; }
 .theme-seg__opt:hover { color: var(--text); }
 .theme-seg__opt.is-active { background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border-strong), 0 1px 2px rgba(0,0,0,0.12); }

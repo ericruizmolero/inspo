@@ -9,9 +9,14 @@ import { usageOverview } from "@/lib/usage";
 import { feedbackOverview } from "@/lib/feedback";
 import AdminPanel from "./AdminPanel";
 import UpdatedAt from "./UpdatedAt";
+import { getT } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Actividad" };
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t.admin.title };
+}
 
 const DAYS = [7, 30, 90];
 
@@ -24,6 +29,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
 
   const { dias } = await searchParams;
   const days = DAYS.includes(Number(dias)) ? Number(dias) : 30;
+  const { t } = await getT();
   const [data, usage, feedback, admins] = await Promise.all([activityOverview(days), usageOverview(days), feedbackOverview(days), listAdmins()]);
 
   return (
@@ -33,14 +39,14 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         <BackLink />
         <div className="ad-head__row">
           <div className="ad-head__text">
-            <h1 className="display ad-head__title">Actividad</h1>
-            <p className="ad-head__sub">Uso de Inspo por todas las personas y equipos en los últimos {days} días.</p>
+            <h1 className="display ad-head__title">{t.admin.title}</h1>
+            <p className="ad-head__sub">{t.admin.headSub(days)}</p>
           </div>
           <div className="ad-head__tools">
-            <nav className="seg" aria-label="Periodo">
+            <nav className="seg" aria-label={t.admin.period}>
               {DAYS.map((d) => (
                 <Link key={d} href={`/admin?dias=${d}`} aria-current={d === days ? "page" : undefined} className={`seg__item${d === days ? " is-active" : ""}`}>
-                  {d} días
+                  {t.admin.days(d)}
                 </Link>
               ))}
             </nav>

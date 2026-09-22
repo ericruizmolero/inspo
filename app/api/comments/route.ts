@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { listComments, addComment, deleteComment } from "@/lib/comments";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const { itemId, body, attachments } = (await req.json().catch(() => ({}))) as { itemId?: string; body?: string; attachments?: unknown };
   const text = typeof body === "string" ? body : "";
   if (!itemId || (!text.trim() && !(Array.isArray(attachments) && attachments.length))) {
-    return Response.json({ error: "Faltan datos" }, { status: 400 });
+    return Response.json({ error: (await getErrors()).missingData }, { status: 400 });
   }
   try {
     const c = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: text, attachments });
@@ -38,8 +39,8 @@ export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const id = req.nextUrl.searchParams.get("id");
-  if (!id) return Response.json({ error: "Falta id" }, { status: 400 });
+  if (!id) return Response.json({ error: (await getErrors()).missingId }, { status: 400 });
   const ok = await deleteComment(ctx.workspace.id, id, ctx.user.id, canManage(ctx.workspace.role));
-  if (!ok) return Response.json({ error: "No se puede borrar ese comentario" }, { status: 403 });
+  if (!ok) return Response.json({ error: (await getErrors()).cannotDeleteComment }, { status: 403 });
   return Response.json({ ok: true });
 }

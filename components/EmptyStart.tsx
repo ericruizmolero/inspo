@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { normalizeWebUrl } from "@/lib/url";
 import { RECURSOS, RECURSOS_TOTAL, recursoShot } from "@/lib/recursos";
 import { Icons } from "./Sidebar";
+import { useT } from "./I18nProvider";
 import s from "./EmptyStart.module.css";
 
 // Siempre 9 webs (rejilla de 3×3): las más usadas y las más de moda ahora mismo, elegidas a mano
@@ -20,13 +21,13 @@ const FEATURED = [
   "https://the-brandidentity.com",
   "https://www.cosmos.so",
 ];
-const ALL = RECURSOS.flatMap((g) => g.items.map((r) => ({ group: g.title, groupKey: g.key, ...r })));
+const ALL = RECURSOS.flatMap((g) => g.items.map((r) => ({ group: g, ...r })));
 const PICKS = (() => {
   const picks = FEATURED.map((u) => ALL.find((r) => r.url === u)).filter((r): r is (typeof ALL)[number] => !!r);
   for (const g of RECURSOS) {
     if (picks.length >= 9) break;
-    if (g.key === "recursos" || picks.some((r) => r.groupKey === g.key)) continue;
-    picks.push({ group: g.title, groupKey: g.key, ...g.items[0] });
+    if (g.key === "recursos" || picks.some((r) => r.group.key === g.key)) continue;
+    picks.push({ group: g, ...g.items[0] });
   }
   return picks.slice(0, 9);
 })();
@@ -51,14 +52,15 @@ const IcTag = (
 const IcMd = <span className={s.md}>MD</span>;
 
 // Cómo funciona la app, en el orden en que alguien la usa por primera vez.
-const STEPS = [
-  { icon: Icons.plus, title: "Guarda una web", text: "Pega la URL y ya. El nombre y la captura se sacan de la propia web y la card aparece en el lienzo." },
-  { icon: IcTag, title: "Se etiqueta sola", text: "Sector, estilo y tags los pone la IA al guardar. Los filtros del lateral se van llenando sin que hagas nada." },
-  { icon: Icons.search, title: "Busca describiendo", text: "Escribe «landing oscura con mucho tipo» y la búsqueda ordena por afinidad y te dice por qué encaja cada una." },
-  { icon: Icons.all, title: "Colecciones", text: "Inspiración, vídeos, ideas y documentales. Cada cosa en su sitio, con filtros por sector, estilo y fecha." },
-  { icon: IcMd, title: "Saca su DESIGN.md", text: "El botón MD de cada card extrae el sistema de diseño de esa web: colores, tipografía, componentes y un prompt listo para Claude o Cursor." },
-  { icon: Icons.users, title: "En equipo", text: "Crea un equipo e invita por correo. Cada uno guarda con su nombre y puedes filtrar por quién lo trajo." },
-];
+// El texto de cada paso está en el diccionario (t.start.steps); aquí solo el icono.
+const STEP_ICONS = [
+  { key: "save", icon: Icons.plus },
+  { key: "tag", icon: IcTag },
+  { key: "search", icon: Icons.search },
+  { key: "collections", icon: Icons.all },
+  { key: "designMd", icon: IcMd },
+  { key: "team", icon: Icons.users },
+] as const;
 
 interface EmptyStartProps {
   /** Guarda la primera inspo a partir de la URL (ya normalizada). Resuelve cuando termina el alta. */
@@ -69,6 +71,7 @@ interface EmptyStartProps {
 
 /** Workspace sin inspos todavía: punto de partida en vez de un vacío. */
 export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyStartProps) {
+  const { t } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -78,8 +81,8 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const web = normalizeWebUrl(raw);
-    if (!web) { setError("Eso no parece una URL"); return; }
-    if (isDuplicate?.(web)) { setError("Esa URL ya está guardada"); return; }
+    if (!web) { setError(t.start.notUrl); return; }
+    if (isDuplicate?.(web)) { setError(t.start.alreadySaved); return; }
     setBusy(true);
     try { await onAddUrl(web); } finally { setBusy(false); }
   };
@@ -87,48 +90,46 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
   return (
     <section className={s.wrap}>
       <div className={s.head} data-flip>
-        <h1 className={s.title}>Tu librería empieza vacía. La inspiración, no.</h1>
-        <p className={s.lead}>
-          Pega la web que te tenga enganchado. Se guarda, se etiqueta sola y te sacamos su DESIGN.md para que veas de qué va esto.
-        </p>
+        <h1 className={s.title}>{t.start.title}</h1>
+        <p className={s.lead}>{t.start.lead}</p>
         <form className={s.paste} onSubmit={submit}>
           <input
             ref={inputRef}
             className={`input input--lg ${s.pasteInput}`}
             value={raw}
             onChange={(e) => { setRaw(e.target.value); setError(""); }}
-            placeholder="Pega una URL"
+            placeholder={t.start.pasteUrl}
             inputMode="url"
             autoComplete="off"
             spellCheck={false}
             disabled={busy}
-            aria-label="URL de la primera inspo"
+            aria-label={t.start.firstUrlLabel}
           />
           <button type="submit" className="btn btn--primary" disabled={busy || !raw.trim()}>
             {busy ? <span className="spinner" /> : Icons.plus}
-            <span>{busy ? "Guardando" : "Guardar"}</span>
+            <span>{busy ? t.start.saving : t.start.save}</span>
           </button>
         </form>
         {error ? <p className={s.error}>{error}</p> : (
           <p className={s.sub}>
-            ¿Sin nada a mano? Hay <strong>{RECURSOS_TOTAL} webs</strong> esperando en el directorio.{" "}
-            <button type="button" className={s.link} onClick={onRecursos}>{Icons.compass}<span>Abrir el directorio</span></button>
+            {t.start.nothingToHandBefore}<strong>{t.start.sitesWord(RECURSOS_TOTAL)}</strong>{t.start.nothingToHandAfter}{" "}
+            <button type="button" className={s.link} onClick={onRecursos}>{Icons.compass}<span>{t.start.openDirectory}</span></button>
           </p>
         )}
       </div>
 
       <div className={s.section}>
         <div className={s.eyebrow} data-flip>
-          <span>Cómo funciona</span>
+          <span>{t.start.howItWorks}</span>
         </div>
         <ul className={s.steps}>
-          {STEPS.map((st) => (
-            <li key={st.title} className={s.step} data-flip>
+          {STEP_ICONS.map((st) => (
+            <li key={st.key} className={s.step} data-flip>
               <span className={s.stepHead}>
                 <span className={s.stepIcon}>{st.icon}</span>
               </span>
-              <span className={s.stepTitle}>{st.title}</span>
-              <span className={s.stepText}>{st.text}</span>
+              <span className={s.stepTitle}>{t.start.steps[st.key].title}</span>
+              <span className={s.stepText}>{t.start.steps[st.key].text}</span>
             </li>
           ))}
         </ul>
@@ -136,24 +137,24 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
 
       <div className={s.section}>
         <div className={s.eyebrow} data-flip>
-          <span>Para empezar a mirar · las más de moda</span>
-          <button className={s.more} onClick={onRecursos}>Ver las {RECURSOS_TOTAL} {Icons.arrow}</button>
+          <span>{t.start.trendingNow}</span>
+          <button className={s.more} onClick={onRecursos}>{t.start.seeAll(RECURSOS_TOTAL)} {Icons.arrow}</button>
         </div>
         <div className={s.grid}>
           {PICKS.map((r) => (
             <a key={r.url} className={s.tile} data-flip href={r.url} target="_blank" rel="noopener noreferrer">
               <Thumb name={r.name} url={r.url} />
               <span className={s.text}>
-                <span className={s.group}>{r.group}</span>
+                <span className={s.group}>{t.recursos.groups[r.group.key as keyof typeof t.recursos.groups].title}</span>
                 <span className={s.name}>{r.name}{Icons.arrow}</span>
-                <span className={s.desc}>{r.desc}</span>
+                <span className={s.desc}>{t.recursos.items[r.url]}</span>
               </span>
             </a>
           ))}
         </div>
       </div>
 
-      <p className={s.tip} data-flip>Cuando veas algo que te llame la atención, aunque no sepas por qué, guárdalo. Con tres o cuatro ya empieza a verse un criterio.</p>
+      <p className={s.tip} data-flip>{t.start.tip}</p>
     </section>
   );
 }

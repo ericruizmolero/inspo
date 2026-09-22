@@ -1,8 +1,10 @@
 // Esqueleto de /planes: se prefetcha con el enlace del lateral y aparece al instante
 // mientras el servidor calcula el uso del mes. Misma estructura que la página real.
 import BackLink from "@/components/BackLink";
+import { getT } from "@/lib/i18n";
 
-export default function Loading() {
+export default async function Loading() {
+  const { t } = await getT();
   return (
     <div className="page pl" aria-busy>
       <div className="pl-bar">
@@ -10,7 +12,7 @@ export default function Loading() {
       </div>
 
       <header className="pl-head">
-        <h1 className="display pl-title">Planes</h1>
+        <h1 className="display pl-title">{t.plans.title}</h1>
         <p className="pl-lead">Un precio por workspace, sin sorpresas. Cambia cuando quieras.</p>
       </header>
 

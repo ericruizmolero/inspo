@@ -2,7 +2,8 @@
 import { TypeSafeClient, choice, noul } from "@typesafe-ai/sdk";
 import type { JsonValue } from "@typesafe-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
-import { SECTORES, ESTILOS, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD, labelOf } from "./taxonomy";
+import { SECTORES, ESTILOS, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD } from "./taxonomy";
+import en from "./i18n/en";
 import { fetchSiteText, SiteText } from "./extract";
 import { describeSite } from "./vision";
 import { recordUsage, type UsageCtx } from "./usage";
@@ -131,9 +132,10 @@ export function summarize(item: InspoItem, t: InspoTags | undefined) {
     curator_notes: [item.comentarios, item.subcomentarios].filter(Boolean).join(" — ") || null,
     page: t?.resumen || null,
     look: t?.visual ? t.visual.slice(0, 400) : null,
-    sector: t ? labelOf(SECTORES, t.sector) : null,
-    style: t ? labelOf(ESTILOS, t.estilo) : null,
-    traits: t ? activeTags(t).map((k) => labelOf(TAGS, k)) : [],
+    // Al modelo se le habla en inglés, también en las etiquetas
+    sector: t ? en.taxonomy.sector[t.sector as keyof typeof en.taxonomy.sector] ?? t.sector : null,
+    style: t ? en.taxonomy.estilo[t.estilo as keyof typeof en.taxonomy.estilo] ?? t.estilo : null,
+    traits: t ? activeTags(t).map((k) => en.taxonomy.tag[k as keyof typeof en.taxonomy.tag] ?? k) : [],
   };
 }
 

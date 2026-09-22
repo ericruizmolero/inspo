@@ -3,6 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { DEFAULT_PLAN, isPlanKey, type PlanKey } from "./plans";
+import type { Locale } from "./i18n/locale";
 
 export type WorkspaceKind = "personal" | "team";
 export type Role = "owner" | "admin" | "member";
@@ -19,7 +20,7 @@ export interface Workspace {
   plan: PlanKey;
 }
 
-export interface SessionUser { id: string; name: string; email: string; image?: string | null }
+export interface SessionUser { id: string; name: string; email: string; image?: string | null; language: Locale }
 
 export interface Ctx {
   user: SessionUser;

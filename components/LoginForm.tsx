@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { SocialProvider } from "@/lib/auth";
+import { useT } from "./I18nProvider";
 
 const IcArrow = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -55,6 +56,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
   devEmail?: string;
   providers?: SocialProvider[];
 }) {
+  const { t } = useT();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,7 +78,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
       callbackURL: origin + backPath(),
       errorCallbackURL: `${origin}/login?next=${encodeURIComponent(backPath())}`,
     });
-    if (err) { setSocial(null); setError(err.message ?? `No se pudo entrar con ${SOCIAL[provider].label}`); }
+    if (err) { setSocial(null); setError(err.message ?? t.login.socialFailed(SOCIAL[provider].label)); }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -93,7 +95,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     // errorCallbackURL conserva el destino: si no, un enlace caducado pierde la invitación
     const { error: err } = await authClient.signIn.magicLink({ email: value, callbackURL, errorCallbackURL: `${origin}/login?next=${encodeURIComponent(back)}` });
     setLoading(false);
-    if (err) { setError(err.message ?? "No se pudo enviar el enlace"); return; }
+    if (err) { setError(err.message ?? t.login.linkFailed); return; }
     setSent(true);
   };
 
@@ -101,20 +103,20 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     return (
       <div className="auth__sent" role="status">
         <span className="auth__sent-icon">{IcMail}</span>
-        <p className="auth__lead display">Revisa tu correo</p>
-        <p className="auth__hint">Hemos enviado un enlace a <strong>{email.trim()}</strong>. Ábrelo desde este dispositivo; caduca en 10 minutos.</p>
-        <button className="auth__alt" type="button" onClick={() => setSent(false)}>Usar otro correo</button>
+        <p className="auth__lead display">{t.login.checkInbox}</p>
+        <p className="auth__hint">{t.login.sentToBefore}<strong>{email.trim()}</strong>{t.login.sentToAfter}</p>
+        <button className="auth__alt" type="button" onClick={() => setSent(false)}>{t.login.useAnotherEmail}</button>
       </div>
     );
   }
 
   return (
     <form onSubmit={submit} className="auth__form">
-      <p className="auth__lead display">{lead ?? "Entra con tu correo"}</p>
-      <p className="auth__hint">{hint ?? "Sin contraseñas: te mandamos un enlace de un solo uso."}</p>
+      <p className="auth__lead display">{lead ?? t.login.leadDefault}</p>
+      <p className="auth__hint">{hint ?? t.login.hintDefault}</p>
       {providers.length > 0 && (
         <>
-          <div className="auth__social" role="group" aria-label="Entrar con otra cuenta">
+          <div className="auth__social" role="group" aria-label={t.login.signInWithOther}>
             {providers.map((p) => (
               <button
                 key={p}
@@ -125,22 +127,22 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
                 onClick={() => social_(p)}
               >
                 {social === p ? <span className="spinner spinner--sm" /> : SOCIAL[p].icon}
-                <span>Continuar con {SOCIAL[p].label}</span>
+                <span>{t.login.continueWith(SOCIAL[p].label)}</span>
               </button>
             ))}
           </div>
-          <div className="auth__or" aria-hidden><span>o con tu correo</span></div>
+          <div className="auth__or" aria-hidden><span>{t.login.orWithEmail}</span></div>
         </>
       )}
       <label className="auth__field">
-        <span className="auth__label">Correo</span>
+        <span className="auth__label">{t.login.email}</span>
         <input
           className="input input--lg"
           type="email"
           autoFocus={autoFocus}
           autoComplete="email"
           inputMode="email"
-          placeholder="tu@correo.com"
+          placeholder={t.login.emailPlaceholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -149,12 +151,12 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
       {error && <p className="modal__error">{error}</p>}
       <button className="btn btn--primary btn--block auth__submit" type="submit" disabled={loading || social !== null || !email.trim()}>
         {loading
-          ? <><span className="spinner" /> Enviando</>
-          : <>Enviar enlace {IcArrow}</>}
+          ? <><span className="spinner" /> {t.login.sending}</>
+          : <>{t.login.sendLink} {IcArrow}</>}
       </button>
       {devEmail && (
         <a className="auth__alt auth__dev" href={devLoginHref(next && next.startsWith("/") && !next.startsWith("//") ? next : "/")}>
-          Desarrollo: entrar como {devEmail} sin correo
+          {t.login.devLogin(devEmail)}
         </a>
       )}
     </form>

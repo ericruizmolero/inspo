@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Icons } from "./Sidebar";
+import { useT } from "./I18nProvider";
 
 interface ThumbPickerModalProps {
   // Returns error string on failure, null on success
@@ -10,6 +11,7 @@ interface ThumbPickerModalProps {
 }
 
 export default function ThumbPickerModal({ onSelect, onCancel }: ThumbPickerModalProps) {
+  const { t } = useT();
   const [urls, setUrls] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState<string | null>(null);
@@ -45,20 +47,20 @@ export default function ThumbPickerModal({ onSelect, onCancel }: ThumbPickerModa
     >
       <div className="modal modal--lg">
         <div className="modal__header">
-          <span className="display modal__title">Librería</span>
+          <span className="display modal__title">{t.thumbs.title}</span>
           {error && <span className="modal__error">{error}</span>}
-          {selecting && <span className="modal__hint">Guardando</span>}
+          {selecting && <span className="modal__hint">{t.thumbs.saving}</span>}
           <span className="modal__hint">{urls.length}</span>
-          <button className="btn-icon" onClick={() => { if (!selecting) onCancel(); }} disabled={!!selecting} aria-label="Cerrar">
+          <button className="btn-icon" onClick={() => { if (!selecting) onCancel(); }} disabled={!!selecting} aria-label={t.common.close}>
             {Icons.x}
           </button>
         </div>
 
         <div className="modal__body" style={{ padding: 14 }}>
           {loading ? (
-            <div className="empty" style={{ minHeight: 200 }}>Cargando</div>
+            <div className="empty" style={{ minHeight: 200 }}>{t.common.loading}</div>
           ) : urls.length === 0 ? (
-            <div className="empty" style={{ minHeight: 200 }}>No hay imágenes subidas todavía</div>
+            <div className="empty" style={{ minHeight: 200 }}>{t.thumbs.empty}</div>
           ) : (
             <div className="picker-grid">
               {urls.map((url) => {

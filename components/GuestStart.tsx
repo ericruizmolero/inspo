@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
 import RecursosModal from "./RecursosModal";
+import { useT } from "./I18nProvider";
 
 /**
  * Portada sin sesión: el mismo lienzo de inicio que ve un usuario nuevo, sin sidebar.
@@ -12,6 +13,7 @@ import RecursosModal from "./RecursosModal";
  */
 export default function GuestStart() {
   const router = useRouter();
+  const { t } = useT();
   const [showRecursos, setShowRecursos] = useState(false);
 
   return (
@@ -21,7 +23,7 @@ export default function GuestStart() {
           <span className="display">Inspo</span>
           <span>savvia.studio</span>
         </span>
-        <Link href="/login" className="btn btn--ghost btn--sm">Entrar</Link>
+        <Link href="/login" className="btn btn--ghost btn--sm">{t.common.signIn}</Link>
       </header>
 
       <EmptyStart

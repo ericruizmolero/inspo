@@ -9,6 +9,7 @@ import { userAgent } from "next/server";
 import { db, schema } from "./db";
 import { daySlots, dayOf, tzOffsetSeconds, startOfTodayMs } from "./dias";
 import { areaLabel, type AdminEntry, type ActivityArea, type ActivityDay, type ActivityLogin, type ActivityOverview, type ActivityUser } from "./activity-core";
+import { getErrors } from "./i18n";
 
 export * from "./activity-core";
 
@@ -48,7 +49,7 @@ export async function listAdmins(): Promise<AdminEntry[]> {
 /** Da acceso a un correo. Devuelve false si ya lo tenía. */
 export async function addAdmin(email: string, addedBy: string): Promise<{ email: string; added: boolean }> {
   const e = normEmail(email);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new Error("Ese correo no parece válido");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new Error((await getErrors()).badEmail);
   if (fixedAdmins().includes(e)) return { email: e, added: false };
   const res = await db.insert(schema.appAdmin).values({ email: e, addedBy: addedBy.slice(0, 80), createdAt: new Date() }).onConflictDoNothing().returning({ email: schema.appAdmin.email });
   return { email: e, added: res.length > 0 };
@@ -57,7 +58,7 @@ export async function addAdmin(email: string, addedBy: string): Promise<{ email:
 /** Quita el acceso. Los fijos no se pueden quitar. */
 export async function removeAdmin(email: string): Promise<void> {
   const e = normEmail(email);
-  if (fixedAdmins().includes(e)) throw new Error("Ese acceso es fijo y no se puede quitar desde aquí");
+  if (fixedAdmins().includes(e)) throw new Error((await getErrors()).fixedAccess);
   await db.delete(schema.appAdmin).where(eq(schema.appAdmin.email, e));
 }
 
@@ -90,7 +91,7 @@ export interface Heartbeat {
 
 /** Registra un latido: crea el segmento si es nuevo o le suma el tiempo desde el anterior. */
 export async function touchSegment(userId: string, hb: Heartbeat, ua: string | null): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
-  if (!ID_RE.test(hb.segmentId) || !ID_RE.test(hb.visitId)) return { ok: false, error: "Identificadores no válidos", status: 400 };
+  if (!ID_RE.test(hb.segmentId) || !ID_RE.test(hb.visitId)) return { ok: false, error: (await getErrors()).badIds, status: 400 };
   const area = String(hb.area || "").slice(0, 40) || "biblioteca";
   const path = String(hb.path || "/").slice(0, 200);
   const now = Date.now();
@@ -103,7 +104,7 @@ export async function touchSegment(userId: string, hb: Heartbeat, ua: string | n
     }).onConflictDoNothing();
     return { ok: true };
   }
-  if (row.userId !== userId) return { ok: false, error: "Ese segmento no es tuyo", status: 403 };
+  if (row.userId !== userId) return { ok: false, error: (await getErrors()).segmentNotYours, status: 403 };
   const gap = now - row.lastSeenAt.getTime();
   const add = gap > 0 && gap <= MAX_GAP_MS ? Math.round(gap / 1000) : 0;
   await db.update(S).set({ lastSeenAt: new Date(now), seconds: sql`${S.seconds} + ${add}` }).where(eq(S.id, hb.segmentId));

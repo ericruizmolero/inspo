@@ -5,6 +5,7 @@ import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch } from "@/lib/
 import { prefilter } from "@/lib/search-prefilter";
 import { assertQuota } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   const { q } = (await req.json().catch(() => ({}))) as { q?: string };
   const query = (q ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
-  if (query.length < 3) return Response.json({ error: "Consulta demasiado corta" }, { status: 400 });
+  if (query.length < 3) return Response.json({ error: (await getErrors()).queryTooShort }, { status: 400 });
 
   const key = `${ctx.workspace.id}|${query.toLowerCase()}`;
   const hit = getCachedSearch(key);

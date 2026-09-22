@@ -7,6 +7,8 @@ import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import ThemeSwitch from "./ThemeSwitch";
+import LangSwitch from "./LangSwitch";
+import { useT, messageOf } from "./I18nProvider";
 
 /** Avatar del workspace: logo si lo tiene, si no la inicial del nombre */
 export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean }) {
@@ -46,6 +48,7 @@ const I = {
 export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
 }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -81,7 +84,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     setBusy(true); setError("");
     const { error: err } = await authClient.organization.update({ organizationId: workspace.id, data: { name } });
     setBusy(false);
-    if (err) { setError(err.message ?? "No se pudo cambiar el nombre"); return; }
+    if (err) { setError(err.message ?? t.ws.renameFailed); return; }
     setRenaming(false); setOpen(false);
     router.refresh();
   };
@@ -100,7 +103,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
       if (personal) await authClient.organization.update({ organizationId: personal.id, data: { name } });
     }
     setBusy(false);
-    if (err) { setError(err.message ?? "No se pudo cambiar el nombre"); return; }
+    if (err) { setError(err.message ?? t.ws.renameFailed); return; }
     setRenamingMe(false); setOpen(false);
     router.refresh();
   };
@@ -115,7 +118,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     setBusy(true); setError("");
     const { error: err } = await authClient.organization.update({ organizationId: workspace.id, data: { logo } });
     setBusy(false);
-    if (err) { setError(err.message ?? "No se pudo guardar el logo"); return; }
+    if (err) { setError(err.message ?? t.ws.logoFailed); return; }
     setOpen(false);
     router.refresh();
   };
@@ -127,7 +130,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     try {
       await setLogo(await fileToSquareDataURL(file, 128));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo leer la imagen");
+      setError(messageOf(err, t, t.ws.imageFailed));
     }
   };
 
@@ -136,7 +139,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     setBusy(true); setError("");
     const { error: err } = await authClient.updateUser({ image });
     setBusy(false);
-    if (err) { setError(err.message ?? "No se pudo guardar la foto"); return; }
+    if (err) { setError(err.message ?? t.ws.photoFailed); return; }
     setOpen(false);
     router.refresh();
   };
@@ -148,7 +151,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     try {
       await setPhoto(await fileToSquareDataURL(file, 96));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo leer la imagen");
+      setError(messageOf(err, t, t.ws.imageFailed));
     }
   };
 
@@ -164,21 +167,21 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           : <WorkspaceAvatar workspace={workspace} />}
         <span className="ws__names">
           <span className="display ws__name">{workspace.name}</span>
-          {/* Si el nombre ya dice "Equipo", no se repite debajo */}
-          {(workspace.kind === "personal" || !/equipo/i.test(workspace.name)) && (
-            <span className="ws__kind">{workspace.kind === "personal" ? "Personal" : "Equipo"}</span>
+          {/* Si el nombre ya dice "Equipo" o "Team", no se repite debajo */}
+          {(workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
+            <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
           )}
         </span>
       </button>
 
       {open && (
         <div className="ws__menu" role="menu">
-          <div className="ws__section">Workspaces</div>
+          <div className="ws__section">{t.ws.workspaces}</div>
           {personal.map((w) => (
             <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>
               {w.logo ? <WorkspaceAvatar workspace={w} small /> : <UserAvatar name={user.name} image={user.image} small />}
               <span className="ws__item-name">{w.name}</span>
-              <span className="ws__item-kind">Personal</span>
+              <span className="ws__item-kind">{t.ws.personal}</span>
               {w.id === workspace.id && <span className="ws__item-check">{I.check}</span>}
             </button>
           ))}
@@ -191,7 +194,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           ))}
           <Link className="ws__item ws__item--muted" href="/equipo?nuevo=1" onClick={() => setOpen(false)}>
             <span className="ws__plus" aria-hidden>{I.plus}</span>
-            <span className="ws__item-name">Crear equipo</span>
+            <span className="ws__item-name">{t.ws.createTeam}</span>
           </Link>
 
           {workspace.kind === "team" && (
@@ -199,7 +202,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
               <div className="ws__divider" />
               <div className="ws__section">{workspace.name}</div>
               <Link className="ws__item" href="/equipo" onClick={() => setOpen(false)}>
-                <span className="ws__item-name">Miembros e invitaciones</span>
+                <span className="ws__item-name">{t.ws.membersAndInvites}</span>
               </Link>
               {canManage && (
                 renaming ? (
@@ -208,25 +211,25 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
                       className="input"
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      placeholder="Nombre del equipo"
-                      aria-label="Nombre del equipo"
+                      placeholder={t.ws.teamName}
+                      aria-label={t.ws.teamName}
                       autoFocus
                       maxLength={60}
                       onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenaming(false); setNewName(workspace.name); } }}
                     />
-                    <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>Guardar</button>
+                    <button type="submit" className="btn btn--primary btn--sm" disabled={busy}>{t.common.save}</button>
                   </form>
                 ) : (
                   <button className="ws__item" onClick={() => { setNewName(workspace.name); setRenaming(true); }} disabled={busy}>
-                    <span className="ws__item-name">Cambiar nombre</span>
+                    <span className="ws__item-name">{t.ws.rename}</span>
                   </button>
                 )
               )}
               {canManage && (
                 <div className="ws__item ws__item--static">
-                  <span className="ws__item-name">Logo</span>
-                  <button className="ws__mini" onClick={() => fileRef.current?.click()} disabled={busy}>{workspace.logo ? "Cambiar" : "Añadir"}</button>
-                  {workspace.logo && <button className="ws__mini ws__mini--muted" onClick={() => setLogo(null)} disabled={busy}>Quitar</button>}
+                  <span className="ws__item-name">{t.ws.logo}</span>
+                  <button className="ws__mini" onClick={() => fileRef.current?.click()} disabled={busy}>{workspace.logo ? t.ws.change : t.ws.add}</button>
+                  {workspace.logo && <button className="ws__mini ws__mini--muted" onClick={() => setLogo(null)} disabled={busy}>{t.ws.remove}</button>}
                 </div>
               )}
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={onLogoFile} />
@@ -234,19 +237,19 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           )}
 
           <div className="ws__divider" />
-          <div className="ws__section">Cuenta</div>
+          <div className="ws__section">{t.ws.account}</div>
           <div className="ws__me">
             {/* El avatar es el botón de la foto: clic para cambiarla; la cruz de la esquina la quita */}
             <span className="ws__me-avatar">
               <button
                 type="button" className="ws__me-photo" onClick={() => photoRef.current?.click()} disabled={busy}
-                title={user.image ? "Cambiar mi foto" : "Añadir mi foto"} aria-label={user.image ? "Cambiar mi foto" : "Añadir mi foto"}
+                title={user.image ? t.ws.changePhoto : t.ws.addPhoto} aria-label={user.image ? t.ws.changePhoto : t.ws.addPhoto}
               >
                 <UserAvatar name={user.name} image={user.image} />
                 <span className="ws__me-photo-hint" aria-hidden>{I.camera}</span>
               </button>
               {user.image && (
-                <button type="button" className="ws__me-remove" onClick={() => setPhoto(null)} disabled={busy} title="Quitar mi foto" aria-label="Quitar mi foto">×</button>
+                <button type="button" className="ws__me-remove" onClick={() => setPhoto(null)} disabled={busy} title={t.ws.removePhoto} aria-label={t.ws.removePhoto}>×</button>
               )}
             </span>
             <span className="ws__me-text">
@@ -256,19 +259,19 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
                     className="ws__me-input"
                     value={myName}
                     onChange={(e) => setMyName(e.target.value)}
-                    placeholder="Tu nombre"
-                    aria-label="Tu nombre"
+                    placeholder={t.ws.yourName}
+                    aria-label={t.ws.yourName}
                     autoFocus
                     maxLength={60}
                     disabled={busy}
                     onBlur={() => { if (!busy) { setRenamingMe(false); setMyName(user.name); } }}
                     onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRenamingMe(false); setMyName(user.name); } }}
                   />
-                  <span className="ws__me-email">Intro para guardar · Esc para cancelar</span>
+                  <span className="ws__me-email">{t.ws.enterToSave}</span>
                 </form>
               ) : (
                 <>
-                  <button type="button" className="ws__me-name" onClick={() => { setMyName(user.name); setRenamingMe(true); }} disabled={busy} title="Cambiar mi nombre">
+                  <button type="button" className="ws__me-name" onClick={() => { setMyName(user.name); setRenamingMe(true); }} disabled={busy} title={t.ws.changeName}>
                     {user.name}<span className="ws__me-name-edit" aria-hidden>{I.pencil}</span>
                   </button>
                 </>
@@ -281,13 +284,16 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           <div className="ws__theme">
             <ThemeSwitch />
           </div>
+          <div className="ws__theme">
+            <LangSwitch />
+          </div>
           {isAdmin && (
             <Link className="ws__item" href="/admin" onClick={() => setOpen(false)}>
-              <span className="ws__item-name">Actividad de la app</span>
+              <span className="ws__item-name">{t.ws.appActivity}</span>
             </Link>
           )}
           <button className="ws__item ws__item--muted" onClick={logout}>
-            <span className="ws__item-name">Salir</span>
+            <span className="ws__item-name">{t.ws.signOut}</span>
           </button>
         </div>
       )}

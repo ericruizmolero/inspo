@@ -5,9 +5,18 @@ import { getSession } from "@/lib/workspace";
 import { showcaseImages } from "@/lib/showcase";
 import LoginForm from "@/components/LoginForm";
 import { DEV_LOGIN_EMAIL, SOCIAL_PROVIDERS } from "@/lib/auth";
+import { getT, type Dict } from "@/lib/i18n";
+import { Fragment } from "react";
 
-export const metadata: Metadata = { title: "Entrar" };
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t.login.pageTitle };
+}
+
+/** Los titulares llevan un salto de línea a propósito: en el diccionario es un \n. */
+const lines = (s: string) => s.split("\n").map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>);
 
 const IcBack = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -16,20 +25,21 @@ const IcBack = (
 );
 
 // Mensajes para los códigos de error con los que Better Auth vuelve a /login?error=…
-function loginError(code?: string): string | undefined {
+function loginError(code: string | undefined, t: Dict): string | undefined {
   switch (code) {
     case undefined: case "": return undefined;
-    case "INVALID_TOKEN": case "EXPIRED_TOKEN": return "El enlace ha caducado o ya se ha usado. Pide otro.";
-    case "access_denied": case "user_cancelled_authorize": return "Has cancelado el acceso. Puedes volver a intentarlo.";
-    case "account_not_linked": case "email_doesn't_match": return "Ese correo ya tiene cuenta con otro método. Entra con el enlace por correo.";
-    case "email_not_found": return "Esa cuenta no comparte el correo con nosotros. Prueba con otra o con el enlace por correo.";
-    case "signup_disabled": return "No se pueden crear cuentas nuevas por aquí.";
-    default: return "No se pudo entrar. Vuelve a intentarlo.";
+    case "INVALID_TOKEN": case "EXPIRED_TOKEN": return t.login.errors.expired;
+    case "access_denied": case "user_cancelled_authorize": return t.login.errors.cancelled;
+    case "account_not_linked": case "email_doesn't_match": return t.login.errors.notLinked;
+    case "email_not_found": return t.login.errors.noEmail;
+    case "signup_disabled": return t.login.errors.signupDisabled;
+    default: return t.login.errors.generic;
   }
 }
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
+  const { t } = await getT();
   if (await getSession()) redirect(next && next.startsWith("/") ? next : "/");
   // Quien llega desde una invitación tiene que saber a qué entra y con qué correo
   const fromInvitation = (next ?? "").startsWith("/invitacion/");
@@ -54,26 +64,22 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <span className="display auth__title">Inspo</span>
             <span className="auth__by">savvia.studio</span>
           </span>
-          <Link href="/" className="auth__back">{IcBack} Volver</Link>
+          <Link href="/" className="auth__back">{IcBack} {t.common.back}</Link>
         </header>
 
         <div className="auth__card">
           <LoginForm
             next={next}
-            lead={fromInvitation ? <>Entra para unirte<br />al equipo.</> : pendingDomain ? <>Entra para guardar<br />{pendingDomain}.</> : <>Guarda lo que<br />te inspira.</>}
-            hint={fromInvitation
-              ? "Usa el mismo correo al que llegó la invitación. Sin contraseñas: te mandamos un enlace de un solo uso y vuelves aquí."
-              : pendingDomain
-              ? "Sin contraseñas: te mandamos un enlace de un solo uso. Al volver, la web se guarda sola en tu librería y te sacamos su DESIGN.md."
-              : "Webs, vídeos e ideas en un solo sitio, con su DESIGN.md listo para copiar. Sin contraseñas: te mandamos un enlace de un solo uso."}
-            initialError={loginError(error)}
+            lead={lines(fromInvitation ? t.login.leadInvitation : pendingDomain ? t.login.leadPending(pendingDomain) : t.login.leadDefault)}
+            hint={fromInvitation ? t.login.hintInvitation : pendingDomain ? t.login.hintPending : t.login.hintDefault}
+            initialError={loginError(error, t)}
             devEmail={DEV_LOGIN_EMAIL || undefined}
             providers={SOCIAL_PROVIDERS}
           />
         </div>
 
         <footer className="auth__foot">
-          <span>¿Primera vez? La cuenta se crea sola con el primer enlace.</span>
+          <span>{t.login.firstTime}</span>
         </footer>
       </section>
 
@@ -88,14 +94,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               ))}
             </div>
             <div className="auth__visual-caption">
-              <span className="display">Lo último</span>
-              <span>Las webs que hemos guardado estos días en el estudio</span>
+              <span className="display">{t.login.latest}</span>
+              <span>{t.login.latestSub}</span>
             </div>
           </>
         ) : (
           <div className="auth__visual-empty">
             <span className="display">Inspo</span>
-            <span>Webs, vídeos, ideas y documentales. Con su DESIGN.md.</span>
+            <span>{t.login.visualEmpty}</span>
           </div>
         )}
       </aside>

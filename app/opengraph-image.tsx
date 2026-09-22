@@ -4,7 +4,10 @@ import { join } from "path";
 
 // Tarjeta que sale al compartir un enlace (WhatsApp, Slack, X, iMessage…). 1200×630.
 // Las fuentes de prueba de Klim solo traen A-Z a-z 0-9 . , - así que los textos evitan tildes y signos.
-export const alt = "Inspo, la biblioteca de inspiración de tu equipo";
+//
+// Va siempre en inglés, el idioma por defecto: la imagen es estática y quien la pide
+// (WhatsApp, Slack, un buscador) no manda la cookie del idioma.
+export const alt = "Inspo, your team's inspiration library";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const runtime = "nodejs";
@@ -49,8 +52,8 @@ export default async function Image() {
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontFamily: "Family", fontSize: 128, lineHeight: 0.95, letterSpacing: "-0.02em", color: "#f2f2f2" }}>Inspo</div>
             <div style={{ marginTop: 26, display: "flex", flexDirection: "column", fontSize: 32, lineHeight: 1.3, color: "#b4b4b4" }}>
-              <span>Lo que inspira a tu equipo,</span>
-              <span>en un solo sitio.</span>
+              <span>What inspires your team,</span>
+              <span>all in one place.</span>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 22, color: "#7a7a7a" }}>

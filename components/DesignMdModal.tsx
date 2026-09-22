@@ -4,6 +4,10 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
 import type { DesignSpec } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
+import { fmtDate } from "@/lib/i18n/format";
+import type { Locale } from "@/lib/i18n/locale";
+import type { Dict } from "@/lib/i18n/en";
+import { useT } from "./I18nProvider";
 
 interface DesignMdModalProps {
   url: string;
@@ -23,18 +27,13 @@ interface DesignMdModalProps {
 
 type ReviseFn = (section: string, comment: string) => Promise<{ summary: string; warning: string | null; unchanged?: boolean }>;
 
-const SECTION_LABEL: Record<string, string> = {
-  general: "Identidad", color: "Color", tipografia: "Tipografía", espaciado: "Espaciado y forma",
-  componentes: "Componentes", reglas: "Reglas", sistema: "Sistema", afines: "Marcas afines", prompt: "Prompt",
-};
-
-export function timeAgo(iso: string): string {
+export function timeAgo(iso: string, locale: Locale, t: Dict): string {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return "ahora mismo";
-  if (s < 3600) return `hace ${Math.floor(s / 60)} min`;
-  if (s < 86400) return `hace ${Math.floor(s / 3600)} h`;
-  if (s < 86400 * 7) return `hace ${Math.floor(s / 86400)} d`;
-  return new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+  if (s < 60) return t.designMd.justNow;
+  if (s < 3600) return t.designMd.minsAgo(Math.floor(s / 60));
+  if (s < 86400) return t.designMd.hoursAgo(Math.floor(s / 3600));
+  if (s < 86400 * 7) return t.designMd.daysAgo(Math.floor(s / 86400));
+  return fmtDate(iso, locale, { day: "2-digit", month: "short" });
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -154,22 +153,19 @@ function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; b
 }
 
 // ─── Colores ──────────────────────────────────────────────────────────────────
-const GROUPS: { key: DesignSpec["colors"][number]["group"]; label: string }[] = [
-  { key: "brand", label: "Marca" },
-  { key: "accent", label: "Acento" },
-  { key: "semantic", label: "Semánticos" },
-  { key: "neutral", label: "Neutros" },
-];
+// El orden en que se agrupan los colores; la etiqueta sale del diccionario.
+const GROUPS: DesignSpec["colors"][number]["group"][] = ["brand", "accent", "semantic", "neutral"];
 
 function Swatch({ c }: { c: DesignSpec["colors"][number] }) {
+  const { t } = useT();
   const [copied, copy] = useCopy();
   return (
-    <button className="dm-swatch" onClick={() => copy(c.hex)} title="Copiar hex">
+    <button className="dm-swatch" onClick={() => copy(c.hex)} title={t.designMd.copyHex}>
       <span className="dm-swatch__chip" style={{ background: c.hex, color: isDark(c.hex) ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.7)" }}>
         <span className="dm-swatch__copy">{copied ? IcCheck : IcCopy}</span>
       </span>
       <span className="dm-swatch__name">{c.name}</span>
-      <span className="dm-swatch__hex">{copied ? "copiado" : c.hex}</span>
+      <span className="dm-swatch__hex">{copied ? t.designMd.copiedShort : c.hex}</span>
       <span className="dm-swatch__role">{c.role}</span>
     </button>
   );
@@ -189,6 +185,7 @@ function PaletteStrip({ colors }: { colors: DesignSpec["colors"] }) {
 
 // ─── Tipografía ───────────────────────────────────────────────────────────────
 function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: string }) {
+  const { t } = useT();
   const stack = `"${f.family}", ${f.fallback}`;
   const isDisplay = f.role === "display";
   const weight = f.weights.includes(700) && !isDisplay ? 700 : f.weights[0] ?? 400;
@@ -202,7 +199,7 @@ function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: strin
       <div className="dm-font__body">
         <div className="dm-font__head">
           <span className="dm-font__family">{f.family}</span>
-          <span className="dm-tag">{({ display: "display", body: "cuerpo", mono: "mono", ui: "interfaz" } as const)[f.role]}</span>
+          <span className="dm-tag">{t.designMd.fontRoles[f.role]}</span>
         </div>
         <p className="dm-font__usage">{f.usage}</p>
         <dl className="dm-kv">
@@ -219,6 +216,7 @@ function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: strin
 
 // ─── Cabecera de sección con "Proponer cambio" ────────────────────────────────
 function SectionHead({ title, meta, section, onRevise }: { title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -242,7 +240,7 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
       setDone(r);
       if (!r.unchanged) { setText(""); setOpen(false); }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se ha podido aplicar el cambio");
+      setError(err instanceof Error ? err.message : t.designMd.reviseFailed);
     } finally { setBusy(false); }
   };
   const elapsed = busy ? Math.floor((Date.now() - startedAt) / 1000) : 0;
@@ -255,7 +253,7 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
           {meta && <span className="dm-section__meta">{meta}</span>}
           {onRevise && (
             <button className={`dm-revise-btn${open ? " is-open" : ""}`} onClick={() => { setOpen((o) => !o); setDone(null); }} disabled={busy}>
-              {IcEdit}<span>Proponer cambio</span>
+              {IcEdit}<span>{t.designMd.propose}</span>
             </button>
           )}
         </span>
@@ -265,18 +263,18 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
           <textarea
             className="dm-revise__input" autoFocus rows={3} value={text} disabled={busy}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Qué no encaja en ${title.toLowerCase()} y cómo debería ser. Ej.: "el acento no es ese azul, es #1D4ED8 y solo va en enlaces".`}
+            placeholder={t.designMd.revisePlaceholder(title.toLowerCase())}
             onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit(e); }}
           />
           <div className="dm-revise__foot">
             <span className="dm-revise__hint">
               {busy
-                ? <><span className="spinner spinner--sm" /> Claude reescribe la spec completa con tu cambio · {elapsed}s <span className="dm-revise__eta">(suele tardar 20-40 s)</span></>
-                : "Claude corrige la spec y el cambio queda en el historial con tu nombre."}
+                ? <><span className="spinner spinner--sm" /> {t.designMd.reviseBusy(elapsed)} <span className="dm-revise__eta">{t.designMd.reviseEta}</span></>
+                : t.designMd.reviseHint}
             </span>
             <div className="dm-revise__actions">
-              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpen(false)} disabled={busy}>Cancelar</button>
-              <button type="submit" className="btn btn--primary btn--sm" disabled={busy || text.trim().length < 5}>Aplicar con Claude</button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={() => setOpen(false)} disabled={busy}>{t.common.cancel}</button>
+              <button type="submit" className="btn btn--primary btn--sm" disabled={busy || text.trim().length < 5}>{t.designMd.applyWithClaude}</button>
             </div>
           </div>
           {error && <p className="modal__error">{error}</p>}
@@ -289,7 +287,7 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
             <p>{done.summary}</p>
             {done.warning && <p className="dm-revise-done__warning">{done.warning}</p>}
           </div>
-          <button className="btn-icon" onClick={() => setDone(null)} aria-label="Cerrar">{IcX}</button>
+          <button className="btn-icon" onClick={() => setDone(null)} aria-label={t.common.close}>{IcX}</button>
         </div>
       )}
     </>
@@ -298,28 +296,29 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
 
 // ─── Historial de revisiones ──────────────────────────────────────────────────
 function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onRevert: (id: string) => void; busy: boolean }) {
+  const { locale, t } = useT();
   return (
     <div className="dm-history">
       <div className="dm-history__head">
-        <span className="dm-h" style={{ margin: 0 }}>Historial</span>
-        <span className="dm-section__meta">{revisions.length} {revisions.length === 1 ? "cambio" : "cambios"} en este workspace · la versión vigente es la primera</span>
+        <span className="dm-h" style={{ margin: 0 }}>{t.designMd.history}</span>
+        <span className="dm-section__meta">{t.designMd.historyMeta(revisions.length)}</span>
       </div>
       <ol className="dm-history__list">
         {revisions.map((r, i) => (
           <li key={r.id} className={`dm-rev${i === 0 ? " is-current" : ""}`}>
             <div className="dm-rev__meta">
               <span className="dm-rev__author">{r.authorName}</span>
-              <span className="dm-rev__when">{timeAgo(r.createdAt)}</span>
-              {r.kind === "revision" && r.section && <span className="dm-tag">{SECTION_LABEL[r.section] ?? r.section}</span>}
-              {r.kind === "regeneracion" && <span className="dm-tag">regenerado</span>}
-              {r.kind === "reversion" && <span className="dm-tag">vuelta atrás</span>}
-              {i === 0 && <span className="dm-rev__current">vigente</span>}
+              <span className="dm-rev__when">{timeAgo(r.createdAt, locale, t)}</span>
+              {r.kind === "revision" && r.section && <span className="dm-tag">{t.designMd.sections[r.section as keyof typeof t.designMd.sections] ?? r.section}</span>}
+              {r.kind === "regeneracion" && <span className="dm-tag">{t.designMd.kindRegenerated}</span>}
+              {r.kind === "reversion" && <span className="dm-tag">{t.designMd.kindReverted}</span>}
+              {i === 0 && <span className="dm-rev__current">{t.designMd.live}</span>}
             </div>
             {r.comment && <p className="dm-rev__comment">“{r.comment}”</p>}
             <p className="dm-rev__summary">{r.summary}</p>
             {r.warning && <p className="dm-rev__warning">{r.warning}</p>}
             {i !== 0 && (
-              <button className="btn btn--ghost btn--sm dm-rev__revert" onClick={() => onRevert(r.id)} disabled={busy}>Volver a esta versión</button>
+              <button className="btn btn--ghost btn--sm dm-rev__revert" onClick={() => onRevert(r.id)} disabled={busy}>{t.designMd.revertTo}</button>
             )}
           </li>
         ))}
@@ -330,6 +329,7 @@ function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onR
 
 // ─── Ficha ────────────────────────────────────────────────────────────────────
 function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn }) {
+  const { locale, t } = useT();
   useGoogleFonts(spec.fonts.map((f) => f.family));
   const [promptCopied, copyPrompt] = useCopy();
   const bg = pageBg(spec);
@@ -342,21 +342,21 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
       <section className="dm-hero">
         <div className="dm-hero__text">
           <div className="dm-eyebrow">
-            <span className={`dm-theme dm-theme--${spec.theme}`}><i />{spec.theme === "dark" ? "oscuro" : "claro"}</span>
+            <span className={`dm-theme dm-theme--${spec.theme}`}><i />{spec.theme === "dark" ? t.designMd.themeDark : t.designMd.themeLight}</span>
             <a className="dm-link" href={url} target="_blank" rel="noopener noreferrer">{host}{IcArrow}</a>
             <span className="dm-eyebrow__sep">·</span>
             <span>{date}</span>
             {entry.revisions?.length ? (
               <>
                 <span className="dm-eyebrow__sep">·</span>
-                <span className="dm-eyebrow__rev">{IcEdit} revisado por {entry.revisions[0].authorName} {timeAgo(entry.revisions[0].createdAt)}</span>
+                <span className="dm-eyebrow__rev">{IcEdit} {t.designMd.revisedBy(entry.revisions[0].authorName, timeAgo(entry.revisions[0].createdAt, locale, t))}</span>
               </>
             ) : null}
           </div>
           <h1 className="display dm-brand">{spec.brand}</h1>
           <p className="dm-tagline">{spec.tagline}</p>
           <p className="dm-desc">{spec.description}</p>
-          {onRevise && <div className="dm-hero__revise"><SectionHead title="Identidad" section="general" onRevise={onRevise} /></div>}
+          {onRevise && <div className="dm-hero__revise"><SectionHead title={t.designMd.sections.general} section="general" onRevise={onRevise} /></div>}
         </div>
         {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
       </section>
@@ -365,13 +365,13 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Colores */}
       <section className="dm-section">
-        <SectionHead title="Color" meta={`${spec.colors.length} tonos · clic para copiar`} section="color" onRevise={onRevise} />
-        {GROUPS.map(({ key, label }) => {
+        <SectionHead title={t.designMd.sections.color} meta={t.designMd.colorMeta(spec.colors.length)} section="color" onRevise={onRevise} />
+        {GROUPS.map((key) => {
           const cs = spec.colors.filter((c) => c.group === key);
           if (!cs.length) return null;
           return (
             <div key={key} className="dm-group">
-              <div className="dm-group__label">{label}<span>{cs.length}</span></div>
+              <div className="dm-group__label">{t.designMd.colorGroups[key]}<span>{cs.length}</span></div>
               <div className="dm-swatches">{cs.map((c) => <Swatch key={c.name + c.hex} c={c} />)}</div>
             </div>
           );
@@ -380,12 +380,12 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Tipografía */}
       <section className="dm-section">
-        <SectionHead title="Tipografía" meta={spec.fonts.map((f) => f.family).join(" + ")} section="tipografia" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.tipografia} meta={spec.fonts.map((f) => f.family).join(" + ")} section="tipografia" onRevise={onRevise} />
         <div className="dm-fonts">
           {spec.fonts.map((f) => <FontCard key={f.family + f.role} f={f} sample={f.role === "mono" ? host : spec.tagline} />)}
         </div>
 
-        <div className="dm-subhead">Escala</div>
+        <div className="dm-subhead">{t.designMd.scale}</div>
         <div className="dm-scale">
           {scale.map((t) => {
             const f = spec.fonts.find((x) => x.family === t.family);
@@ -416,13 +416,13 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Tokens */}
       <section className="dm-section">
-        <SectionHead title="Espaciado y forma" meta={`densidad ${({ compact: "compacta", comfortable: "cómoda", airy: "aireada" } as const)[spec.spacing.density]}`} section="espaciado" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.espaciado} meta={t.designMd.densityMeta(t.designMd.density[spec.spacing.density])} section="espaciado" onRevise={onRevise} />
         <div className="dm-tokens">
-          <div className="dm-token"><span className="dm-token__k">Unidad base</span><span className="dm-token__v">{spec.spacing.baseUnit}</span></div>
-          <div className="dm-token"><span className="dm-token__k">Ancho máximo</span><span className="dm-token__v">{spec.spacing.maxWidth}</span></div>
-          <div className="dm-token"><span className="dm-token__k">Separación de secciones</span><span className="dm-token__v">{spec.spacing.sectionGap}</span></div>
-          <div className="dm-token"><span className="dm-token__k">Padding de tarjeta</span><span className="dm-token__v">{spec.spacing.cardPadding}</span></div>
-          <div className="dm-token"><span className="dm-token__k">Separación de elementos</span><span className="dm-token__v">{spec.spacing.elementGap}</span></div>
+          <div className="dm-token"><span className="dm-token__k">{t.designMd.baseUnit}</span><span className="dm-token__v">{spec.spacing.baseUnit}</span></div>
+          <div className="dm-token"><span className="dm-token__k">{t.designMd.maxWidth}</span><span className="dm-token__v">{spec.spacing.maxWidth}</span></div>
+          <div className="dm-token"><span className="dm-token__k">{t.designMd.sectionGap}</span><span className="dm-token__v">{spec.spacing.sectionGap}</span></div>
+          <div className="dm-token"><span className="dm-token__k">{t.designMd.cardPadding}</span><span className="dm-token__v">{spec.spacing.cardPadding}</span></div>
+          <div className="dm-token"><span className="dm-token__k">{t.designMd.elementGap}</span><span className="dm-token__v">{spec.spacing.elementGap}</span></div>
           {spec.radii.map((r) => (
             <div key={r.element} className="dm-token dm-token--radius">
               <span className="dm-radius" style={{ borderRadius: r.value }} />
@@ -435,7 +435,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Componentes */}
       <section className="dm-section">
-        <SectionHead title="Componentes" meta={String(spec.components.length)} section="componentes" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.componentes} meta={String(spec.components.length)} section="componentes" onRevise={onRevise} />
         <div className="dm-components">
           {spec.components.map((c) => (
             <div key={c.name} className="dm-component">
@@ -449,7 +449,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Do / Don't */}
       <section className="dm-section">
-        <SectionHead title="Reglas" section="reglas" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.reglas} section="reglas" onRevise={onRevise} />
         <div className="dm-two">
           <ul className="dm-rules dm-rules--do">
             {spec.dos.map((d, i) => <li key={i}><span className="dm-rules__mark">{IcCheck}</span>{d}</li>)}
@@ -462,9 +462,9 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Notas */}
       <section className="dm-section">
-        <SectionHead title="Sistema" section="sistema" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.sistema} section="sistema" onRevise={onRevise} />
         <div className="dm-notes">
-          {[["Elevación", spec.elevation], ["Layout", spec.layout], ["Imagen", spec.imagery], ["Movimiento", spec.motion]].map(([k, v]) => (
+          {[[t.designMd.elevation, spec.elevation], [t.designMd.layout, spec.layout], [t.designMd.imagery, spec.imagery], [t.designMd.motion, spec.motion]].map(([k, v]) => (
             <div key={k} className="dm-note"><div className="dm-note__k">{k}</div><p>{v}</p></div>
           ))}
         </div>
@@ -472,7 +472,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       {/* Similares */}
       <section className="dm-section">
-        <SectionHead title="Marcas afines" section="afines" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.afines} section="afines" onRevise={onRevise} />
         <ul className="dm-similar">
           {spec.similar.map((s) => <li key={s.brand}><strong>{s.brand}</strong><span>{s.why}</span></li>)}
         </ul>
@@ -483,15 +483,15 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
         <div className="dm-prompt">
           <div className="dm-prompt__head">
             <div>
-              <div className="dm-h" style={{ margin: 0 }}>Prompt para agentes</div>
-              <div className="dm-section__meta">Pégalo tal cual en Claude o en el DESIGN.md de un proyecto</div>
+              <div className="dm-h" style={{ margin: 0 }}>{t.designMd.agentPrompt}</div>
+              <div className="dm-section__meta">{t.designMd.agentPromptHint}</div>
             </div>
             <button className="btn btn--sm btn--ghost" onClick={() => copyPrompt(spec.agentPrompt)}>
               {promptCopied ? <>{IcCheck} Copiado</> : <>{IcCopy} Copiar</>}
             </button>
           </div>
           <p className="dm-prompt__text">{spec.agentPrompt}</p>
-          {onRevise && <div className="dm-prompt__revise"><SectionHead title="Prompt" section="prompt" onRevise={onRevise} /></div>}
+          {onRevise && <div className="dm-prompt__revise"><SectionHead title={t.designMd.sections.prompt} section="prompt" onRevise={onRevise} /></div>}
         </div>
         <div className="dm-colophon">Medidas tomadas de la web en vivo · roles y recomendaciones interpretados por {entry.model}</div>
       </section>
@@ -503,6 +503,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 // La ficha solo se abre cuando el DESIGN.md ya existe: la generación vive en el
 // toast de abajo a la derecha (DesignMdToasts), aquí no hay pantalla de progreso.
 export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised, comments, commentCount = 0 }: DesignMdModalProps) {
+  const { locale, t } = useT();
   const [copied, copy] = useCopy(1600);
   const [view, setView] = useState<"spec" | "md" | "history">("spec");
   const [reverting, setReverting] = useState(false);
@@ -525,7 +526,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
     if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
     if (data.unchanged) return { summary: data.summary, warning: null, unchanged: true };
     onRevised({ spec: data.spec, markdown: data.markdown, revisions: data.revisions });
-    return { summary: data.applied?.summary ?? "Cambio aplicado.", warning: data.applied?.warning ?? null };
+    return { summary: data.applied?.summary ?? t.designMd.changeApplied, warning: data.applied?.warning ?? null };
   };
 
   const revert = async (id: string) => {
@@ -557,7 +558,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
     URL.revokeObjectURL(a.href);
   };
 
-  const date = entry ? new Date(entry.generatedAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "";
+  const date = entry ? fmtDate(entry.generatedAt, locale, { day: "2-digit", month: "short", year: "numeric" }) : "";
   const showTabs = ready && !!spec;
   const activeView = spec ? view : "md";
   const barHost = url.replace(/^https?:\/\//, "").split("/")[0];
@@ -566,7 +567,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
   return (
     <div className="dm">
       <header className="dm-bar">
-        <button className="btn-icon dm-bar__close" onClick={onClose} aria-label="Cerrar">{IcX}</button>
+        <button className="btn-icon dm-bar__close" onClick={onClose} aria-label={t.common.close}>{IcX}</button>
         <div className="dm-bar__id">
           <span className="dm-bar__icon" aria-hidden>
             {iconOk && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(barHost)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
@@ -576,16 +577,16 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
             <span className="display dm-bar__brand">{spec?.brand ?? empresa}</span>
             <span className="dm-bar__meta">
               <a href={url} target="_blank" rel="noopener noreferrer">{barHost}</a>
-              <button type="button" className="dm-bar__file" onClick={download} disabled={!ready} title="Descargar el DESIGN.md">{IcDoc}DESIGN.md</button>
+              <button type="button" className="dm-bar__file" onClick={download} disabled={!ready} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
             </span>
           </div>
         </div>
         {showTabs && (
           <div className="dm-tabs" role="tablist">
-            <button role="tab" aria-selected={activeView === "spec"} className={`dm-tab${activeView === "spec" ? " is-active" : ""}`} onClick={() => setView("spec")}>Ficha</button>
-            <button role="tab" aria-selected={activeView === "md"} className={`dm-tab${activeView === "md" ? " is-active" : ""}`} onClick={() => setView("md")}>Markdown</button>
+            <button role="tab" aria-selected={activeView === "spec"} className={`dm-tab${activeView === "spec" ? " is-active" : ""}`} onClick={() => setView("spec")}>{t.designMd.tabSpec}</button>
+            <button role="tab" aria-selected={activeView === "md"} className={`dm-tab${activeView === "md" ? " is-active" : ""}`} onClick={() => setView("md")}>{t.designMd.tabMarkdown}</button>
             <button role="tab" aria-selected={activeView === "history"} className={`dm-tab${activeView === "history" ? " is-active" : ""}`} onClick={() => setView("history")}>
-              Historial{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}
+              {t.designMd.tabHistory}{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}
             </button>
           </div>
         )}
@@ -595,15 +596,15 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
               className={`btn btn--ghost btn--sm dm-bar__comments${commentsOpen ? " is-active" : ""}`}
               onClick={() => setCommentsOpen((o) => !o)}
               aria-pressed={commentsOpen}
-              title={commentsOpen ? "Ocultar comentarios" : "Ver comentarios"}
+              title={commentsOpen ? t.designMd.hideComments : t.designMd.showComments}
             >
-              {IcComment}<span className="dm-bar__comments-label">Comentarios</span>{commentCount > 0 && <span className="dm-tab__count">{commentCount}</span>}
+              {IcComment}<span className="dm-bar__comments-label">{t.designMd.comments}</span>{commentCount > 0 && <span className="dm-tab__count">{commentCount}</span>}
             </button>
           )}
-          <button className="btn btn--ghost btn--sm" onClick={onRegenerate} disabled={!ready}>Regenerar</button>
-          <button className="btn btn--ghost btn--sm" onClick={download} disabled={!ready}>Descargar</button>
+          <button className="btn btn--ghost btn--sm" onClick={onRegenerate} disabled={!ready}>{t.designMd.regenerate}</button>
+          <button className="btn btn--ghost btn--sm" onClick={download} disabled={!ready}>{t.designMd.download}</button>
           <button className="btn btn--primary btn--sm" onClick={() => entry && copy(entry.markdown)} disabled={!ready}>
-            {copied ? <>{IcCheck} Copiado</> : <>{IcCopy} Copiar MD</>}
+            {copied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyMd}</>}
           </button>
         </div>
       </header>
@@ -614,14 +615,14 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
           {activeView === "history" ? (
             revisions.length
               ? <History revisions={revisions} onRevert={revert} busy={reverting} />
-              : <div className="dm-history dm-history--empty">Nadie ha revisado aún este DESIGN.md. Usa "Proponer cambio" en cualquier sección de la ficha.</div>
+              : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>
           ) : activeView === "spec" && spec
             ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} />
             : (
               <div className="dm-md">
                 <div className="dm-md__head">
                   <span>{empresa.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
-                  <span>{entry.markdown.split(/\s+/).length} palabras · {date}</span>
+                  <span>{t.designMd.words(entry.markdown.split(/\s+/).length)} · {date}</span>
                 </div>
                 <pre className="dm-md__pre">{entry.markdown}</pre>
               </div>

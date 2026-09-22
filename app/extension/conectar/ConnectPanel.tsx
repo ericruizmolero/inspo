@@ -3,21 +3,23 @@
 import { useEffect, useState } from "react";
 import type { Workspace } from "@/lib/workspace-core";
 import { WorkspaceAvatar } from "@/components/WorkspaceMenu";
+import { useT } from "@/components/I18nProvider";
 
 // Mensajes que cruzan entre esta página y extension/chrome/content.js (misma pestaña, mismo origen)
 const FROM_PAGE = "criterio";
 const FROM_EXT = "criterio-ext";
 
-function browserName(): string {
+function browserName(fallback: string): string {
   const ua = navigator.userAgent;
   if (/Edg\//.test(ua)) return "Edge";
   if (/Arc\//.test(ua)) return "Arc";
   if (/Chrome\//.test(ua)) return "Chrome";
   if (/Safari\//.test(ua)) return "Safari";
-  return "Navegador";
+  return fallback;
 }
 
 export default function ConnectPanel({ workspaces, currentId }: { workspaces: Workspace[]; currentId: string }) {
+  const { t } = useT();
   const [orgId, setOrgId] = useState(currentId);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -27,7 +29,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
   const [received, setReceived] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => { setName(browserName()); }, []);
+  useEffect(() => { setName(browserName(t.ext.browser)); }, [t.ext.browser]);
 
   // La extensión avisa de que está escuchando y confirma cuando guarda la llave
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
     try {
       const res = await fetch("/api/ext/v1/keys", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ organizationId: orgId, name: name.trim() || "Navegador" }),
+        body: JSON.stringify({ organizationId: orgId, name: name.trim() || t.ext.browser }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
@@ -68,19 +70,19 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
     return (
       <div className="page__body">
         <section className="panel">
-          <div className="panel__head"><span className="panel__title">Llave creada para {result.workspace.name}</span></div>
+          <div className="panel__head"><span className="panel__title">{t.ext.keyCreated(result.workspace.name)}</span></div>
           {received ? (
-            <p className="ext-ok">La extensión ya tiene la llave. Puedes cerrar esta pestaña y guardar webs desde cualquier sitio.</p>
+            <p className="ext-ok">{t.ext.keyReceived}</p>
           ) : (
             <>
               <p className="panel__hint">
-                {extPresent ? "Entregando la llave a la extensión…" : "No se ha detectado la extensión en esta pestaña. Copia la llave y pégala en la extensión, en “Ya tengo una llave”."}
+                {extPresent ? t.ext.handingOver : t.ext.notDetected}
               </p>
               <div className="ext-key">
                 <code>{result.key}</code>
-                <button className="btn btn--sm" type="button" onClick={copy}>{copied ? "Copiada" : "Copiar"}</button>
+                <button className="btn btn--sm" type="button" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</button>
               </div>
-              <p className="panel__hint">Es la única vez que se enseña. Si la pierdes, revócala en Equipo y crea otra.</p>
+              <p className="panel__hint">{t.ext.onlyOnce}</p>
             </>
           )}
         </section>
@@ -92,7 +94,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
     <form className="page__body" onSubmit={create}>
       {error && <p className="modal__error">{error}</p>}
       <section className="panel">
-        <div className="panel__head"><span className="panel__title">¿Dónde guarda este navegador?</span></div>
+        <div className="panel__head"><span className="panel__title">{t.ext.whereSave}</span></div>
         <ul className="list">
           {workspaces.map((w) => (
             <li key={w.id} className="list__row ext-choice">
@@ -101,21 +103,21 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
                 <WorkspaceAvatar workspace={w} small />
                 <span className="list__main">
                   <span className="list__name">{w.name}</span>
-                  <span className="list__sub">{w.kind === "personal" ? "Tu espacio personal" : "Equipo"}</span>
+                  <span className="list__sub">{w.kind === "personal" ? t.ext.personalSpace : t.ext.team}</span>
                 </span>
               </label>
             </li>
           ))}
         </ul>
-        <p className="panel__hint">Cada llave guarda en un solo workspace. Para otro, conecta la extensión otra vez.</p>
+        <p className="panel__hint">{t.ext.oneWorkspace}</p>
       </section>
       <section className="panel">
-        <div className="panel__head"><span className="panel__title">Nombre para reconocerla</span></div>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Chrome del portátil" maxLength={60} />
-        <p className="panel__hint">Aparecerá en la lista de llaves de Equipo, con la fecha del último uso.</p>
+        <div className="panel__head"><span className="panel__title">{t.ext.nameIt}</span></div>
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.ext.namePlaceholder} maxLength={60} />
+        <p className="panel__hint">{t.ext.nameHint}</p>
       </section>
       <div>
-        <button className="btn btn--primary" type="submit" disabled={busy}>{busy ? "Creando…" : "Crear llave y conectar"}</button>
+        <button className="btn btn--primary" type="submit" disabled={busy}>{busy ? t.ext.creating : t.ext.createKey}</button>
       </div>
     </form>
   );

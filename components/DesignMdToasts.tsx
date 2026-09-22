@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { DesignSpec } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
+import { useT } from "./I18nProvider";
 
 export interface DesignMdEntry {
   url: string; markdown: string; generatedAt: string; model: string; cached: boolean;
@@ -25,14 +26,8 @@ export interface DesignMdState {
 }
 
 // ─── Pasos estimados (no hay progreso real del servidor) ─────────────────────
-const STEPS = [
-  "Abriendo la web en Chromium",
-  "Midiendo colores, tipografías y espaciados",
-  "Capturando pantalla",
-  "Claude redacta el DESIGN.md",
-  "Claude sigue escribiendo",
-];
-const STEP_COUNT = STEPS.length;
+// Los textos están en el diccionario (t.toast.steps); aquí solo hace falta cuántos son.
+const STEP_COUNT = 5;
 // Duración típica ~75 s; la barra nunca llega al 100 % hasta que termina
 const TYPICAL_MS = 75000;
 const QUIET_MS = 2500;
@@ -64,6 +59,8 @@ interface DesignMdToastsProps {
 // se genera enseña la web, el paso, el tiempo y un botón para pararlo; al acabar,
 // se toca para abrir la ficha.
 export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCancel, onRetry }: DesignMdToastsProps) {
+  const { t } = useT();
+  const STEPS = t.toast.steps;
   const [, tick] = useState(0);
   const now = Date.now();
 
@@ -107,9 +104,9 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
               </div>
               <button
                 className="btn btn--ghost btn--sm toast__stop"
-                title="Parar la generación"
+                title={t.toast.stopTitle}
                 onClick={(e) => { e.stopPropagation(); onCancel(url); }}
-              >{IcStop} Parar</button>
+              >{IcStop} {t.toast.stop}</button>
               <span className="toast__bar"><span style={{ width: `${pct}%` }} /></span>
             </div>
           );
@@ -120,15 +117,15 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
             <div className="toast__text">
               <span className="toast__title">DESIGN.md · {j.empresa}</span>
               <span className="toast__sub">
-                {j.status === "ready" ? "Listo. Toca para verlo." : (j.error || "Ha fallado")}
+                {j.status === "ready" ? t.toast.ready : (j.error || t.toast.failed)}
               </span>
             </div>
             {j.status === "error" && (
-              <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); onRetry(url); }}>Reintentar</button>
+              <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); onRetry(url); }}>{t.common.retry}</button>
             )}
             <button
               className="btn-icon toast__close"
-              aria-label="Descartar"
+              aria-label={t.toast.dismiss}
               onClick={(e) => { e.stopPropagation(); onDismiss(url); }}
             >×</button>
           </div>

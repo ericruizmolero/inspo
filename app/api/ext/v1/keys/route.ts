@@ -3,6 +3,7 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { createExtKey, listExtKeys, revokeExtKey } from "@/lib/ext-keys";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (isResponse(ctx)) return ctx;
   const body = (await req.json().catch(() => ({}))) as { organizationId?: string; name?: string };
   const ws = ctx.workspaces.find((w) => w.id === body.organizationId);
-  if (!ws) return Response.json({ error: "Ese workspace no es tuyo" }, { status: 403 });
+  if (!ws) return Response.json({ error: (await getErrors()).workspaceNotYours }, { status: 403 });
   try {
     const { key, row } = await createExtKey(ctx.user.id, ws.id, body.name || "Navegador");
     return Response.json({ key, id: row.id, prefix: row.prefix, workspace: { id: ws.id, name: ws.name, kind: ws.kind } });
@@ -33,9 +34,9 @@ export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const id = req.nextUrl.searchParams.get("id");
-  if (!id) return Response.json({ error: "Falta id" }, { status: 400 });
+  if (!id) return Response.json({ error: (await getErrors()).missingId }, { status: 400 });
   const r = await revokeExtKey(id, (row) => row.userId === ctx.user.id || (row.organizationId === ctx.workspace.id && canManage(ctx.workspace.role)));
-  if (r === "not_found") return Response.json({ error: "Esa llave ya no existe" }, { status: 404 });
-  if (r === "forbidden") return Response.json({ error: "Solo su dueño o un administrador pueden revocarla" }, { status: 403 });
+  if (r === "not_found") return Response.json({ error: (await getErrors()).keyGone }, { status: 404 });
+  if (r === "forbidden") return Response.json({ error: (await getErrors()).ownerOrAdminRevoke }, { status: 403 });
   return Response.json({ ok: true });
 }

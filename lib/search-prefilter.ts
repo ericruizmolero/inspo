@@ -1,6 +1,7 @@
 // Prefiltro léxico antes de Jev. Solo servidor.
 import { activeTags } from "./jev";
-import { SECTORES, ESTILOS, TAGS, labelOf } from "./taxonomy";
+import en from "./i18n/en";
+import es from "./i18n/es";
 import type { InspoItem, TagMap } from "@/types/inspo";
 
 // Jev cobra por item puntuado, así que el coste de una búsqueda crecería con la
@@ -12,13 +13,20 @@ const STOP = new Set(["con", "que", "una", "uno", "unos", "unas", "para", "por",
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
+// Las etiquetas entran en los dos idiomas: la consulta puede venir en cualquiera
+// de los dos y el prefiltro tiene que encontrarla igual ("videos" y "documentaries").
+const both = (pick: (d: typeof en) => Record<string, string>, key: string): string[] =>
+  [pick(en)[key] ?? key, pick(es)[key] ?? key];
+
 function haystack(it: InspoItem, tagMap: TagMap): string {
   const t = tagMap[it.web];
   return norm([
-    it.empresa, it.comentarios, it.subcomentarios ?? "", it.web, it.tipo,
+    it.empresa, it.comentarios, it.subcomentarios ?? "", it.web,
+    it.tipo, ...both((d) => d.labels.tipo, it.tipo),
     t?.resumen ?? "", t?.visual ?? "",
-    t ? labelOf(SECTORES, t.sector) : "", t ? labelOf(ESTILOS, t.estilo) : "",
-    ...(t ? activeTags(t).map((k) => labelOf(TAGS, k)) : []),
+    ...(t ? both((d) => d.taxonomy.sector, t.sector) : []),
+    ...(t ? both((d) => d.taxonomy.estilo, t.estilo) : []),
+    ...(t ? activeTags(t).flatMap((k) => both((d) => d.taxonomy.tag, k)) : []),
   ].join(" "));
 }
 

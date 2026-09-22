@@ -8,6 +8,7 @@ import { uploadThumbnail } from "@/lib/thumbnails";
 import { fetchSiteText } from "@/lib/extract";
 import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
 import { classifyItem, jevEnabled } from "@/lib/jev";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const maxDuration = 60; // el etiquetado corre en after(), tras responder
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (ctx instanceof Response) return ctx;
   const body = (await req.json().catch(() => ({}))) as { url?: string; title?: string; screenshot?: string };
   const web = normalizeWebUrl(body.url ?? "");
-  if (!web) return Response.json({ error: "La URL no es válida" }, { status: 400 });
+  if (!web) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
 
   const existing = await findByWeb(ctx.workspace.id, web);
   if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing) });

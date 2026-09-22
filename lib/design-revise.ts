@@ -6,6 +6,7 @@ import { z } from "zod";
 import { desc, and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/design";
+import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 
 // Revisar es reescribir una spec ya hecha con un cambio acotado: Sonnet lo resuelve bien y en un tercio del tiempo que Opus.
 const MODEL = process.env.DESIGN_REVISE_MODEL || "claude-sonnet-5";
@@ -96,11 +97,18 @@ export async function overlayRevision<T extends { url: string; spec?: DesignSpec
 const ReviseOutput = z.object({
   changed: z.boolean().describe("true si el comentario pedía un cambio y lo has aplicado; false si no pedía nada concreto (una prueba, una pregunta, un comentario vacío)"),
   patch: DesignSpecSchema.partial().describe("Solo las claves de primer nivel de la spec que cambian, cada una completa (si cambia un color, devuelve el array 'colors' entero). Vacío si changed es false."),
-  summary: z.string().describe("2-3 frases en castellano: qué has cambiado exactamente y en qué partes de la spec se ha propagado"),
-  warning: z.string().nullable().describe("Si el comentario contradice valores que están claramente medidos o visibles, dilo aquí en una frase en castellano. Si no, null."),
+  summary: z.string().describe("2-3 frases: qué has cambiado exactamente y en qué partes de la spec se ha propagado"),
+  warning: z.string().nullable().describe("Si el comentario contradice valores que están claramente medidos o visibles, dilo aquí en una frase. Si no, null."),
 });
 
-const SYSTEM = `Mantienes el DESIGN.md de una web para un equipo de diseño. Recibes la spec estructurada vigente y un comentario de una persona del equipo que no está de acuerdo con una parte. Tu trabajo es aplicar ese cambio con criterio y devolver la spec completa corregida.
+// El resumen y el aviso se leen en pantalla, así que salen en el idioma de quien
+// mira. La spec en sí no: eso es #27 (el DESIGN.md pasa a generarse siempre en inglés).
+const LANGUAGE: Record<Locale, string> = {
+  en: "Write \"summary\" and \"warning\" in English",
+  es: "Escribe \"summary\" y \"warning\" en castellano (español de España)",
+};
+
+const systemFor = (locale: Locale) => `Mantienes el DESIGN.md de una web para un equipo de diseño. Recibes la spec estructurada vigente y un comentario de una persona del equipo que no está de acuerdo con una parte. Tu trabajo es aplicar ese cambio con criterio y devolver la spec completa corregida.
 
 Reglas:
 - Aplica lo que pide la persona. Es quien conoce la marca; su criterio manda sobre lo generado automáticamente.
@@ -110,11 +118,12 @@ Reglas:
 - Si el comentario es ambiguo, elige la interpretación más razonable y explícala en "summary".
 - Si el comentario no pide ningún cambio (es una prueba, una pregunta o no dice nada concreto), devuelve "changed": false, "patch" vacío y explica en "summary" qué te faltaría para poder aplicarlo.
 - Devuelve en "patch" únicamente las claves de primer nivel que cambian, pero cada una completa: si tocas un color, devuelve el array "colors" entero con todos los colores; si tocas una regla, "dos" o "donts" enteros. No devuelvas claves que no cambian.
-- Todo en castellano (español de España), salvo nombres de fuentes, marcas y valores técnicos (hex, px, pesos).
+- El texto de la spec, en castellano (español de España), salvo nombres de fuentes, marcas y valores técnicos (hex, px, pesos).
+- ${LANGUAGE[locale]}: esos dos los lee la persona en pantalla.
 - Respeta las restricciones del esquema: entre 4 y 12 colores, 6-9 pasos de escala, 5-7 reglas de cada tipo.`;
 
 export async function reviseDesignSpec(input: {
-  spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null;
+  spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null; locale?: Locale;
 }): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; usage: { input: number; output: number; cacheRead: number } }> {
   const client = new Anthropic();
   const content: Anthropic.Beta.BetaContentBlockParam[] = [];
@@ -131,7 +140,7 @@ export async function reviseDesignSpec(input: {
     max_tokens: 6000,
     betas: ["server-side-fallback-2026-07-01"],
     fallbacks: "default",
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: systemFor(input.locale ?? DEFAULT_LOCALE), cache_control: { type: "ephemeral" } }],
     output_config: { format: zodOutputFormat(ReviseOutput) },
     messages: [{ role: "user", content }],
   });

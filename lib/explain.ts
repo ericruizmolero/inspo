@@ -5,15 +5,23 @@ import Anthropic from "@anthropic-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
 import { summarize } from "./jev";
 import { recordUsage, type UsageCtx } from "./usage";
+import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 
 const MODEL = process.env.EXPLAIN_MODEL || "claude-haiku-4-5-20251001";
 export const explainEnabled = () => !!process.env.ANTHROPIC_API_KEY;
 
-const SYSTEM = `Un diseñador busca en su librería de webs de inspiración. Recibes la consulta y, por cada resultado, lo que sabemos de él (notas del curador, resumen de la página, descripción de la captura, sector, estilo, rasgos) y su afinidad 0-1 con la consulta según un clasificador.
+// El prompt va en inglés; lo único que cambia con el idioma es en qué idioma
+// se pide la respuesta, porque esa frase se lee en pantalla.
+const LANGUAGE: Record<Locale, string> = {
+  en: "in English",
+  es: "in Spanish (from Spain)",
+};
 
-Para cada item escribe en español UNA frase de máximo 14 palabras que explique por qué encaja con la consulta: concreta y visual, basada solo en los datos dados. No repitas el nombre del item ni la consulta, no uses comillas ni punto final. Si la afinidad es baja (<0.5), di qué encaja solo en parte.
+const systemFor = (locale: Locale) => `A designer is searching their library of inspiration sites. You get the query and, for each result, what we know about it (curator notes, a summary of the page, a description of the screenshot, sector, style, traits) and its 0-1 affinity with the query according to a classifier.
 
-Responde únicamente con líneas "item_N: frase", una por item y en el mismo orden. Nada más.`;
+For each item write ONE sentence ${LANGUAGE[locale]}, 14 words at most, explaining why it fits the query: concrete and visual, based only on the data given. Do not repeat the item name or the query, do not use quotes or a full stop. If the affinity is low (<0.5), say what only partly fits.
+
+Answer only with lines "item_N: sentence", one per item and in the same order. Nothing else.`;
 
 let _client: Anthropic | null = null;
 const client = () => (_client ??= new Anthropic());
@@ -26,9 +34,10 @@ export const clearExplainCache = () => cache.clear();
 
 export interface ExplainEntry { item: InspoItem; tags?: InspoTags; score: number }
 
-export async function explainMatches(query: string, entries: ExplainEntry[], scope = "", usage?: UsageCtx): Promise<Record<string, string>> {
+export async function explainMatches(query: string, entries: ExplainEntry[], scope = "", usage?: UsageCtx, locale: Locale = DEFAULT_LOCALE): Promise<Record<string, string>> {
   if (!entries.length) return {};
-  const key = `${scope}|${query.toLowerCase()}|${entries.map((e) => e.item.web).sort().join(",")}`;
+  // El idioma entra en la clave: si no, quien busca en inglés se come la frase en castellano
+  const key = `${locale}|${scope}|${query.toLowerCase()}|${entries.map((e) => e.item.web).sort().join(",")}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.reasons;
 
@@ -40,7 +49,7 @@ export async function explainMatches(query: string, entries: ExplainEntry[], sco
   const msg = await client().messages.create({
     model: MODEL,
     max_tokens: 60 * entries.length + 200,
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+    system: [{ type: "text", text: systemFor(locale), cache_control: { type: "ephemeral" } }],
     messages: [{ role: "user", content: JSON.stringify(payload) }],
   });
 

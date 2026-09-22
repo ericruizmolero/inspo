@@ -18,7 +18,8 @@
     "apple:secret": "tsx scripts/apple-secret.ts",
     "admin": "tsx scripts/set-admin.ts",
     "check:seats": "tsx scripts/check-seats.ts",
-    "check:invites": "tsx scripts/check-invite-flow.ts"
+    "check:invites": "tsx scripts/check-invite-flow.ts",
+    "check:locale": "tsx scripts/check-locale.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.127.0",

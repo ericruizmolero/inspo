@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FilterAutor, FilterFecha, FilterTipo, InspoItem, TagMap } from "@/types/inspo";
 import { SECTORES, ESTILOS, TAGS, TAG_THRESHOLD, Term } from "@/lib/taxonomy";
 import { RECURSOS_TOTAL } from "@/lib/recursos";
+import { useT } from "./I18nProvider";
 
 export const TIPOS: InspoItem["tipo"][] = ["Inspiración", "Videos", "Ideas", "Documentales"];
 export const FECHAS: Exclude<FilterFecha, "Todos">[] = ["Este mes", "Este año"];
@@ -93,6 +94,7 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   value: string; onChange: (v: string) => void; className?: string; autoFocus?: boolean;
   ai?: boolean; aiLoading?: boolean;
 }) {
+  const { t } = useT();
   return (
     <div className={`search ${className}${ai ? " is-ai" : ""}`}>
       <span className="search__icon">{aiLoading ? <span className="spinner spinner--sm" /> : ai ? I.spark : I.search}</span>
@@ -103,11 +105,11 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
         autoFocus={autoFocus}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Escape" && value) { e.preventDefault(); onChange(""); } }}
-        placeholder={ai ? "Describe lo que buscas" : "Buscar"}
+        placeholder={ai ? t.sidebar.searchAi : t.sidebar.search}
       />
       <div className="search__right">
         {value && (
-          <button className="btn-icon search__clear" onClick={() => onChange("")} aria-label="Limpiar">
+          <button className="btn-icon search__clear" onClick={() => onChange("")} aria-label={t.sidebar.clear}>
             {I.x}
           </button>
         )}
@@ -116,18 +118,20 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   );
 }
 
-function Chips({ terms, counts, selected, onToggle }: {
+function Chips({ terms, counts, selected, onToggle, labels }: {
   terms: Term[]; counts: Record<string, number>; selected: string[]; onToggle: (k: string) => void;
+  labels: Record<string, string>;
 }) {
+  const { t: dict } = useT();
   const visible = terms.filter((t) => (counts[t.key] ?? 0) > 0 || selected.includes(t.key));
-  if (!visible.length) return <div className="chips__empty">Sin etiquetar todavía</div>;
+  if (!visible.length) return <div className="chips__empty">{dict.sidebar.notTagged}</div>;
   return (
     <div className="chips">
       {visible.map((t) => {
         const on = selected.includes(t.key);
         return (
           <button key={t.key} className={`chip${on ? " is-active" : ""}`} onClick={() => onToggle(t.key)}>
-            {t.label}<span className="chip__count">{counts[t.key] ?? 0}</span>
+            {labels[t.key] ?? t.key}<span className="chip__count">{counts[t.key] ?? 0}</span>
           </button>
         );
       })}
@@ -195,14 +199,15 @@ export interface SidebarProps {
 
 /** Cuota de DESIGN.md del mes: es lo único que se agota. Enlaza a /planes. */
 function PlanMeter({ quota }: { quota: QuotaView }) {
+  const { t } = useT();
   const { used, limit } = quota.designMd;
   const full = limit !== null && used >= limit;
   const pct = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100));
   return (
-    <Link href="/planes" className={`sidebar__plan${full ? " is-full" : ""}`} title="Ver planes">
-      <span className="sidebar__plan-head"><strong>Plan {quota.planName}</strong><span>{limit === null ? `${used} DESIGN.md` : `${used}/${limit} DESIGN.md`}</span></span>
+    <Link href="/planes" className={`sidebar__plan${full ? " is-full" : ""}`} title={t.sidebar.seePlans}>
+      <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${used} DESIGN.md` : `${used}/${limit} DESIGN.md`}</span></span>
       {limit !== null && <span className="quota__bar"><span style={{ width: `${pct}%` }} className={full ? "is-full" : ""} /></span>}
-      <span className="sidebar__plan-note">{full ? "Cuota del mes agotada · ampliar plan" : limit === null ? "Sin límite este mes" : "este mes"}</span>
+      <span className="sidebar__plan-note">{full ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>
     </Link>
   );
 }
@@ -215,6 +220,7 @@ export default function Sidebar({
   tagMap, sector, estilo, selTags, onSector, onEstilo, onToggleTag,
   ai, aiLoading, aiEnabled, pending, tagging, onTagAll,
 }: SidebarProps) {
+  const { t } = useT();
   const isAll = tipo === "Todos" && autor === "Todos" && fecha === "Todos" && !query
     && sector === "Todos" && estilo === "Todos" && selTags.length === 0;
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
@@ -243,45 +249,45 @@ export default function Sidebar({
         {/* Con inspos ya guardadas, añadir va arriba, a la vista; con la librería vacía manda el cajón de URL del lienzo */}
         {items.length > 0 && (
           <button className="btn btn--ghost btn--block sidebar__add" onClick={onAdd}>
-            {I.plus} Añadir
+            {I.plus} {t.sidebar.add}
           </button>
         )}
 
         <button className="sidebar__inspo" onClick={onRecursos}>
           <span className="sidebar__inspo-top">
             <span className="sidebar__inspo-icon">{I.compass}</span>
-            <span className="sidebar__inspo-count">{RECURSOS_TOTAL} webs y herramientas</span>
+            <span className="sidebar__inspo-count">{t.sidebar.directoryCount(RECURSOS_TOTAL)}</span>
             <span className="sidebar__inspo-arrow">{I.arrow}</span>
           </span>
-          <span className="sidebar__inspo-title">Dónde mirar y con qué hacerlo</span>
-          <span className="sidebar__inspo-sub">Galerías, tipografía, código, modelos y agentes. Lo que usamos antes de empezar.</span>
+          <span className="sidebar__inspo-title">{t.sidebar.directoryTitle}</span>
+          <span className="sidebar__inspo-sub">{t.sidebar.directorySub}</span>
         </button>
 
         <FadeScroll>
-        <NavItem icon={I.all} label="Todo" count={items.length} active={isAll} onClick={onReset} />
+        <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={onReset} />
 
-        <div className="sidebar__section">Colecciones</div>
-        {TIPOS.map((t) => (
+        <div className="sidebar__section">{t.sidebar.collections}</div>
+        {TIPOS.map((v) => (
           <NavItem
-            key={t}
-            icon={TIPO_ICON[t]}
-            label={t}
-            count={countBy((i) => i.tipo === t)}
-            active={tipo === t}
-            onClick={() => onTipo(tipo === t ? "Todos" : t)}
+            key={v}
+            icon={TIPO_ICON[v]}
+            label={t.labels.tipo[v]}
+            count={countBy((i) => i.tipo === v)}
+            active={tipo === v}
+            onClick={() => onTipo(tipo === v ? "Todos" : v)}
           />
         ))}
 
         {autores.length > 1 && (
           <>
-            <div className="sidebar__section">Quién</div>
+            <div className="sidebar__section">{t.sidebar.who}</div>
             {autores.map((a) => (
               <NavItem
                 key={a}
                 icon={autorImages[a]
                   ? <span className="nav-item__avatar"><img src={autorImages[a]} alt="" /></span>
                   : I.user}
-                label={a}
+                label={t.labels.autor[a as keyof typeof t.labels.autor] ?? a}
                 count={countBy((i) => i.puestoPor === a)}
                 active={autor === a}
                 onClick={() => onAutor(autor === a ? "Todos" : a)}
@@ -290,27 +296,27 @@ export default function Sidebar({
           </>
         )}
 
-        <div className="sidebar__section">Cuándo</div>
+        <div className="sidebar__section">{t.sidebar.when}</div>
         {FECHAS.map((f) => (
           <NavItem
             key={f}
             icon={I.cal}
-            label={f}
+            label={t.labels.fecha[f]}
             active={fecha === f}
             onClick={() => onFecha(fecha === f ? "Todos" : f)}
           />
         ))}
 
-        <div className="sidebar__section">Sector</div>
-        <Chips terms={SECTORES} counts={sectorCounts} selected={sector === "Todos" ? [] : [sector]}
+        <div className="sidebar__section">{t.sidebar.sector}</div>
+        <Chips terms={SECTORES} labels={t.taxonomy.sector} counts={sectorCounts} selected={sector === "Todos" ? [] : [sector]}
           onToggle={(k) => onSector(sector === k ? "Todos" : k)} />
 
-        <div className="sidebar__section">Estilo</div>
-        <Chips terms={ESTILOS} counts={estiloCounts} selected={estilo === "Todos" ? [] : [estilo]}
+        <div className="sidebar__section">{t.sidebar.style}</div>
+        <Chips terms={ESTILOS} labels={t.taxonomy.estilo} counts={estiloCounts} selected={estilo === "Todos" ? [] : [estilo]}
           onToggle={(k) => onEstilo(estilo === k ? "Todos" : k)} />
 
-        <div className="sidebar__section">Tags</div>
-        <Chips terms={TAGS} counts={tagCounts} selected={selTags} onToggle={onToggleTag} />
+        <div className="sidebar__section">{t.sidebar.tags}</div>
+        <Chips terms={TAGS} labels={t.taxonomy.tag} counts={tagCounts} selected={selTags} onToggle={onToggleTag} />
 
         </FadeScroll>
 
@@ -319,18 +325,18 @@ export default function Sidebar({
           {aiEnabled && (pending > 0 || tagging.running || tagging.error) && (
             <button className="btn btn--ghost btn--block btn--sm sidebar__tag-all" onClick={onTagAll} disabled={tagging.running}>
               {tagging.running
-                ? <><span className="spinner spinner--sm" /> Etiquetando {tagging.done}/{tagging.total}</>
+                ? <><span className="spinner spinner--sm" /> {t.sidebar.tagging(tagging.done, tagging.total)}</>
                 : tagging.error
-                  ? <>Error al etiquetar · reintentar</>
-                  : <>{I.spark} Etiquetar {pending} con IA</>}
+                  ? <>{t.sidebar.taggingFailed}</>
+                  : <>{I.spark} {t.sidebar.tagPending(pending)}</>}
             </button>
           )}
           {aiEnabled && pending === 0 && !tagging.running && tagged > 0 && (
-            <div className="sidebar__footer-note">{tagged} etiquetados con IA</div>
+            <div className="sidebar__footer-note">{t.sidebar.tagged(tagged)}</div>
           )}
           {items.length === 0 && (
             <button className="btn btn--ghost btn--block" onClick={onAdd}>
-              {I.plus} Añadir
+              {I.plus} {t.sidebar.add}
             </button>
           )}
         </div>

@@ -10,12 +10,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Agentation, loadAnnotations, type Annotation } from "agentation";
 import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
+import { useT } from "./I18nProvider";
 
 const ENDPOINT = "/api/feedback";
 type SendState = "idle" | "sending" | "sent" | "error";
 
 export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) {
   const pathname = usePathname();
+  const { t } = useT();
   const [notes, setNotes] = useState<Map<string, Annotation>>(() => new Map());
   const [state, setState] = useState<SendState>("idle");
   const stateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -69,7 +71,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
 
   useEffect(() => () => { if (stateTimer.current) clearTimeout(stateTimer.current); }, []);
 
-  const label = !canSend ? "Entra para enviarlo al equipo" : state === "sending" ? "Enviando…" : state === "sent" ? "Enviado al equipo" : state === "error" ? "No se pudo enviar · reintentar" : "Enviar al equipo";
+  const label = !canSend ? t.feedback.signInToSend : state === "sending" ? t.feedback.sending : state === "sent" ? t.feedback.sent : state === "error" ? t.feedback.failed : t.feedback.send;
 
   return (
     <>

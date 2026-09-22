@@ -8,6 +8,7 @@ import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise
 import { recordUsage } from "@/lib/usage";
 import { assertQuota } from "@/lib/quota";
 import { HttpError } from "@/lib/workspace-core";
+import { getErrors } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -18,8 +19,8 @@ export const maxDuration = 300;
 interface Job { promise: Promise<Response>; ctrl: AbortController; waiters: number }
 const inflight = new Map<string, Job>();
 
-function CANCELLED() {
-  return Response.json({ error: "Generación parada", cancelled: true }, { status: 499 });
+async function CANCELLED() {
+  return Response.json({ error: (await getErrors()).generationStopped, cancelled: true }, { status: 499 });
 }
 
 // Cuenta un cliente más esperando el resultado; si todos se van, se aborta el trabajo.
@@ -61,14 +62,14 @@ export async function GET(req: NextRequest) {
   }
 
   const url = normalizeUrl(rawUrl);
-  if (!url) return Response.json({ error: "url inválida" }, { status: 400 });
+  if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   if (!(await findByWeb(ctx.workspace.id, url))) {
-    return Response.json({ error: "Esa URL no está en el workspace" }, { status: 403 });
+    return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });
   }
 
   const force = req.nextUrl.searchParams.get("force") === "1";
   if (force && !canManage(ctx.workspace.role)) {
-    return Response.json({ error: "Solo los administradores pueden regenerar" }, { status: 403 });
+    return Response.json({ error: (await getErrors()).adminsCanRegenerate }, { status: 403 });
   }
 
   if (!force) {
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    return Response.json({ error: "Falta ANTHROPIC_API_KEY en el entorno" }, { status: 500 });
+    return Response.json({ error: (await getErrors()).noAnthropicKey }, { status: 500 });
   }
 
   const existing = inflight.get(url);
@@ -138,7 +139,7 @@ export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const url = normalizeUrl(req.nextUrl.searchParams.get("url") ?? "");
-  if (!url) return Response.json({ error: "url inválida" }, { status: 400 });
+  if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   const job = inflight.get(url);
   if (job) job.ctrl.abort();
   return Response.json({ stopped: !!job });

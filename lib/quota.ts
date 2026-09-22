@@ -3,7 +3,8 @@ import { and, eq, gt, gte, lt, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
 import { HttpError, listMembers, type Workspace } from "./workspace-core";
-import { overCapacityMail, sendMail } from "./mail";
+import type { Locale } from "./i18n/locale";
+import { overCapacityMail, sendMail, localeForEmail } from "./mail";
 
 export interface QuotaLine { used: number; limit: number | null }
 export interface QuotaStatus {
@@ -161,7 +162,15 @@ export async function notifyOverCapacity(organizationId: string, planKey: string
   const members = await listMembers(organizationId);
   const to = members.filter((m) => m.role.split(",")[0] !== "member").map((m) => m.email);
   if (!to.length) return false;
-  const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/equipo`, teamName, over.planName, over.members, over.limit);
-  try { await sendMail(to, m.subject, m.html, m.text); } catch (e) { console.error("[plan] no se pudo avisar al dueño:", e); }
+  // Un correo por idioma: los dueños no tienen por qué compartirlo
+  const byLocale = new Map<Locale, string[]>();
+  for (const email of to) {
+    const locale = await localeForEmail(email);
+    byLocale.set(locale, [...(byLocale.get(locale) ?? []), email]);
+  }
+  for (const [locale, emails] of byLocale) {
+    const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/equipo`, teamName, over.planName, over.members, over.limit, locale);
+    try { await sendMail(emails, m.subject, m.html, m.text); } catch (e) { console.error("[plan] no se pudo avisar al dueño:", e); }
+  }
   return true;
 }

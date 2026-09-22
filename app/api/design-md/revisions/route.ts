@@ -7,6 +7,7 @@ import { findByWeb } from "@/lib/items";
 import { getDesignMd, keyFor } from "@/lib/design-store";
 import { renderDesignMd, type DesignSpec } from "@/types/design";
 import { SECTIONS, addRevision, getRevisionSpec, latestRevision, listRevisions, reviseDesignSpec } from "@/lib/design-revise";
+import { getErrors, getLocale, getT, fmtDate } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const url = normalizeUrl(req.nextUrl.searchParams.get("url") ?? "");
-  if (!url) return Response.json({ error: "url inválida" }, { status: 400 });
+  if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   return Response.json({ revisions: await listRevisions(ctx.workspace.id, url) });
 }
 
@@ -42,11 +43,11 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => ({}))) as { url?: string; section?: string; comment?: string; revertTo?: string };
   const url = normalizeUrl(body.url ?? "");
-  if (!url) return Response.json({ error: "url inválida" }, { status: 400 });
-  if (!(await findByWeb(ctx.workspace.id, url))) return Response.json({ error: "Esa URL no está en el workspace" }, { status: 403 });
+  if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
+  if (!(await findByWeb(ctx.workspace.id, url))) return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });
 
   const base = await getDesignMd(url);
-  if (!base?.spec) return Response.json({ error: "Esa web aún no tiene DESIGN.md generado" }, { status: 404 });
+  if (!base?.spec) return Response.json({ error: (await getErrors()).noDesignMdYet }, { status: 404 });
 
   const current = (await latestRevision(ctx.workspace.id, url))?.spec ?? base.spec;
   const author = { authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email };
@@ -54,23 +55,24 @@ export async function POST(req: NextRequest) {
   try {
     if (body.revertTo) {
       const target = await getRevisionSpec(ctx.workspace.id, body.revertTo);
-      if (!target) return Response.json({ error: "Esa revisión no existe" }, { status: 404 });
-      const when = new Date(target.meta.createdAt).toLocaleDateString("es-ES", { day: "2-digit", month: "short" });
+      if (!target) return Response.json({ error: (await getErrors()).revisionGone }, { status: 404 });
+      const { locale, t } = await getT();
+      const when = fmtDate(target.meta.createdAt, locale, { day: "2-digit", month: "short" });
       const meta = await addRevision({
         organizationId: ctx.workspace.id, url, ...author, kind: "reversion",
-        comment: "", summary: `Vuelta a la versión de ${target.meta.authorName} del ${when}.`, spec: target.spec,
+        comment: "", summary: t.designMd.revertedTo(target.meta.authorName, when), spec: target.spec,
       });
       return Response.json(await respond(ctx.workspace.id, url, target.spec, meta.id));
     }
 
     const section = (body.section ?? "general").trim();
     const comment = (body.comment ?? "").trim().slice(0, 2000);
-    if (comment.length < 5) return Response.json({ error: "Cuenta qué no encaja y cómo debería ser" }, { status: 400 });
-    if (!(section in SECTIONS)) return Response.json({ error: "Sección desconocida" }, { status: 400 });
-    if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: "Falta ANTHROPIC_API_KEY en el entorno" }, { status: 500 });
+    if (comment.length < 5) return Response.json({ error: (await getErrors()).tellUsWhat }, { status: 400 });
+    if (!(section in SECTIONS)) return Response.json({ error: (await getErrors()).unknownSection }, { status: 400 });
+    if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: (await getErrors()).noAnthropicKey }, { status: 500 });
 
     const t0 = Date.now();
-    const out = await reviseDesignSpec({ spec: current, url, section, comment, screenshot: await localScreenshot(url) });
+    const out = await reviseDesignSpec({ spec: current, url, section, comment, screenshot: await localScreenshot(url), locale: await getLocale() });
     console.log(`design-md revise ${url} [${section}] by ${author.authorName}: ${Date.now() - t0}ms, ${out.model}, changed=${out.changed}`);
     void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "revise", model: out.model, inputTokens: out.usage.input, outputTokens: out.usage.output, cacheReadTokens: out.usage.cacheRead, ref: url });
 

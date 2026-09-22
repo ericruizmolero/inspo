@@ -21,6 +21,7 @@ import { proxiedSrc } from "@/lib/proxied-src";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
+import { useT } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
@@ -147,6 +148,7 @@ export default function InspoClient({
   /** Puede ver el panel de actividad (/admin) */
   isAdmin?: boolean;
 }) {
+  const { t } = useT();
   const [items, setItems] = useState(initialItems);
   const [tipo, setTipo] = useState<FilterTipo>("Todos");
   const [autor, setAutor] = useState<FilterAutor>("Todos");
@@ -311,7 +313,7 @@ export default function InspoClient({
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setAddError({ title: "No se ha podido guardar", detail: e instanceof Error ? e.message : String(e) });
+      setAddError({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }, [user, tagOne]);
@@ -361,7 +363,7 @@ export default function InspoClient({
       setThumbMap((prev) => { if (!(item.web in prev)) return prev; const next = { ...prev }; delete next[item.web]; return next; });
     } catch (e) {
       setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev]));
-      setAddError({ title: "No se ha podido quitar", detail: e instanceof Error ? e.message : String(e) });
+      setAddError({ title: t.app.removeFailed, detail: e instanceof Error ? e.message : String(e) });
     }
   }, []);
 
@@ -813,8 +815,8 @@ export default function InspoClient({
       <button
         className="btn-icon sb-toggle"
         onClick={toggleSidebar}
-        aria-label={collapsed ? "Mostrar sidebar" : "Ocultar sidebar"}
-        title={collapsed ? "Mostrar sidebar" : "Ocultar sidebar"}
+        aria-label={collapsed ? t.app.showSidebar : t.app.hideSidebar}
+        title={collapsed ? t.app.showSidebar : t.app.hideSidebar}
         aria-expanded={!collapsed}
       >
         {IconPanel}
@@ -825,13 +827,13 @@ export default function InspoClient({
           <span className="display">Inspo</span>
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
             ai={ai} aiLoading={aiLoading} />
-          <button className="btn-icon topbar__filter" onClick={() => setDrawerOpen(true)} aria-label="Filtros">
+          <button className="btn-icon topbar__filter" onClick={() => setDrawerOpen(true)} aria-label={t.app.filters}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M2 4h12M4 8h8M6 12h4" />
             </svg>
             {activeFilterCount > 0 && <span className="topbar__badge">{activeFilterCount}</span>}
           </button>
-          <button className="btn-icon" onClick={() => setShowAdd(true)} aria-label="Añadir">{Icons.plus}</button>
+          <button className="btn-icon" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</button>
         </div>
 
         {ai && query.trim().length >= 3 && (aiLoading || aiError || aiScores) && (
@@ -841,7 +843,7 @@ export default function InspoClient({
             </div>
             <div className="ai-hero__main">
               <div className="ai-hero__eyebrow">
-                {aiLoading ? "Buscando en tu librería" : aiError ? "La búsqueda no ha respondido" : "Resultados para"}
+                {aiLoading ? t.app.searching : aiError ? t.app.searchFailed : t.app.resultsFor}
               </div>
               <h2 className="ai-hero__query">{query.trim()}</h2>
               <div className="ai-hero__meta">
@@ -854,21 +856,21 @@ export default function InspoClient({
                   <span className="ai-hero__pill ai-hero__pill--error">{aiError}</span>
                 ) : (
                   <>
-                    <span className="ai-hero__pill"><strong>{filtered.length}</strong> {filtered.length === 1 ? "resultado" : "resultados"}</span>
+                    <span className="ai-hero__pill"><strong>{filtered.length}</strong> {t.app.results(filtered.length)}</span>
                     {aiTop > 0 && (
                       <button type="button" className="ai-hero__pill ai-hero__pill--info" aria-describedby="ai-score-tip">
-                        mejor encaje <strong>{Math.round(aiTop * 100)}%</strong>
+                        {t.app.bestMatch} <strong>{Math.round(aiTop * 100)}%</strong>
                         <span className="info-i" aria-hidden>{Icons.info}</span>
-                        <span className="info-tip" role="tooltip" id="ai-score-tip">El porcentaje es la probabilidad de que cada web sea lo que has descrito. En cada card, el suyo te cuenta el porqué.</span>
+                        <span className="info-tip" role="tooltip" id="ai-score-tip">{t.app.scoreTip}</span>
                       </button>
                     )}
-                    <span className="ai-hero__hint">Ordenadas de mayor a menor encaje</span>
+                    <span className="ai-hero__hint">{t.app.sortedByMatch}</span>
                   </>
                 )}
               </div>
             </div>
             <button className="ai-hero__clear" onClick={() => setQuery("")}>
-              {Icons.x}<span>Limpiar</span><kbd>Esc</kbd>
+              {Icons.x}<span>{t.app.clear}</span><kbd>Esc</kbd>
             </button>
             <span className="ai-hero__bar" aria-hidden />
           </header>
@@ -886,9 +888,9 @@ export default function InspoClient({
           />
         ) : filtered.length === 0 ? (
           <div className="empty">
-            <span className="display">Nada por aquí</span>
-            <span>{aiLoading ? "Buscando…" : "Prueba con otro filtro o búsqueda."}</span>
-            <button className="btn btn--ghost btn--sm" onClick={resetFilters} style={{ marginTop: 8 }}>Ver todo</button>
+            <span className="display">{t.app.nothingHere}</span>
+            <span>{aiLoading ? t.app.searchingShort : t.app.tryAnother}</span>
+            <button className="btn btn--ghost btn--sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</button>
           </div>
         ) : (
           <main ref={gridRef} className="masonry">

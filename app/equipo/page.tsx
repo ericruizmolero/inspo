@@ -10,9 +10,14 @@ import { usageSummary } from "@/lib/usage";
 import { listExtKeys } from "@/lib/ext-keys";
 import { overCapacity } from "@/lib/quota";
 import { planOf } from "@/lib/plans";
+import { getT } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Equipo" };
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return { title: t.team.title };
+}
 
 export default async function EquipoPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
   const { nuevo } = await searchParams;
@@ -20,6 +25,7 @@ export default async function EquipoPage({ searchParams }: { searchParams: Promi
   try { ctx = await getCtx(); } catch (e) { if (e instanceof HttpError) redirect("/login"); throw e; }
 
   const ws = ctx.workspace;
+  const { t } = await getT();
   const [members, invitations, usage, extKeys, over] = await Promise.all([
     listMembers(ws.id),
     // Las caducadas no se enseñan ni ocupan plaza
@@ -36,7 +42,7 @@ export default async function EquipoPage({ searchParams }: { searchParams: Promi
       <ActivityPing area="equipo" organizationId={ws.id} />
       <div className="page__bar">
         <BackLink />
-        <span className="display page__title">{ws.kind === "team" ? ws.name : "Equipos"}</span>
+        <span className="display page__title">{ws.kind === "team" ? ws.name : t.invite.teams}</span>
       </div>
       <TeamPanel
         workspace={ws}

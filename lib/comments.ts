@@ -4,6 +4,7 @@ import { db, schema } from "./db";
 import { newId } from "./items";
 import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-files";
 import type { InspoComment, CommentMap, CommentAttachment } from "@/types/inspo";
+import { getErrors } from "./i18n";
 
 const C = schema.inspoComment;
 const U = schema.user;
@@ -49,10 +50,10 @@ export async function listComments(organizationId: string): Promise<CommentMap> 
 export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string; attachments?: unknown }): Promise<InspoComment> {
   const body = input.body.trim();
   const attachments = cleanAttachments(organizationId, input.attachments);
-  if (!body && !attachments.length) throw new Error("El comentario está vacío");
+  if (!body && !attachments.length) throw new Error((await getErrors()).emptyComment);
   const [item] = await db.select({ id: schema.inspoItem.id }).from(schema.inspoItem)
     .where(and(eq(schema.inspoItem.id, input.itemId), eq(schema.inspoItem.organizationId, organizationId))).limit(1);
-  if (!item) throw new Error("Ese item no está en el workspace");
+  if (!item) throw new Error((await getErrors()).itemNotInWorkspace);
   const row = { id: newId(), organizationId, itemId: input.itemId, authorId: input.authorId, authorName: input.authorName, body: body.slice(0, 4000), attachments, createdAt: new Date(), editedAt: null };
   await db.insert(C).values(row);
   const [u] = await db.select({ image: U.image }).from(U).where(eq(U.id, input.authorId)).limit(1);

@@ -4,6 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { RECURSOS, RECURSOS_TOTAL, recursoShot, type Recurso } from "@/lib/recursos";
 import { Icons, SearchBox } from "./Sidebar";
+import { useT } from "./I18nProvider";
+import en from "@/lib/i18n/en";
+import es from "@/lib/i18n/es";
+
+type GroupKey = keyof typeof en.recursos.groups;
+
+// La búsqueda mira los dos idiomas: la palabra que tiene alguien en la cabeza puede
+// ser "tipografía" aunque esté viendo la app en inglés.
+const text = (url: string) => `${en.recursos.items[url] ?? ""} ${es.recursos.items[url] ?? ""}`;
+const titles = (key: string) =>
+  `${en.recursos.groups[key as GroupKey]?.title ?? ""} ${es.recursos.groups[key as GroupKey]?.title ?? ""}`;
 
 interface RecursosModalProps {
   onClose: () => void;
@@ -81,34 +92,35 @@ function RecRow({ name, url, desc }: { name: string; url: string; desc: string }
 
 /** Cuerpo del modal para un invitado: la muestra, y el resto borroso con el botón de entrar. */
 function GuestBody() {
+  const { t } = useT();
   const hidden = RECURSOS_TOTAL - SAMPLE.length;
   return (
     <>
       <section className="rec-group">
         <header className="rec-group__head">
-          <h3 className="rec-group__title">Una muestra</h3>
+          <h3 className="rec-group__title">{t.recursos.sample}</h3>
           <span className="rec-group__count">{SAMPLE.length}</span>
-          <span className="rec-group__hint">Para abrir boca. Las demás, con tu cuenta.</span>
+          <span className="rec-group__hint">{t.recursos.sampleHint}</span>
         </header>
         <ul className="rec-list">
-          {SAMPLE.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={r.desc} />)}
+          {SAMPLE.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={t.recursos.items[r.url]} />)}
         </ul>
       </section>
 
-      <section className="rec-gate" aria-label={`${hidden} webs más al entrar`}>
+      <section className="rec-gate" aria-label={t.recursos.gateLabel(hidden)}>
         {/* Filas de relleno: se ven borrosas y no se pueden abrir ni seleccionar */}
         <ul className="rec-list rec-gate__rows" aria-hidden inert>
-          {TEASER.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={r.desc} />)}
+          {TEASER.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={t.recursos.items[r.url]} />)}
         </ul>
         <div className="rec-gate__cta">
-          <p className="rec-gate__title">{hidden} webs más te esperan dentro</p>
+          <p className="rec-gate__title">{t.recursos.moreInside(hidden)}</p>
           <p className="rec-gate__groups">
             {RECURSOS.map((g) => (
-              <span key={g.key} className="chip" aria-hidden>{g.title}<span className="chip__count">{g.items.length}</span></span>
+              <span key={g.key} className="chip" aria-hidden>{t.recursos.groups[g.key as GroupKey].title}<span className="chip__count">{g.items.length}</span></span>
             ))}
           </p>
-          <Link href={LOGIN_HREF} className="btn btn--primary">Entrar para verlas todas</Link>
-          <p className="rec-gate__note">Gratis. Un enlace al correo y estás dentro.</p>
+          <Link href={LOGIN_HREF} className="btn btn--primary">{t.recursos.signInForAll}</Link>
+          <p className="rec-gate__note">{t.recursos.free}</p>
         </div>
       </section>
     </>
@@ -116,6 +128,7 @@ function GuestBody() {
 }
 
 export default function RecursosModal({ onClose, guest = false }: RecursosModalProps) {
+  const { t } = useT();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<string>("todas");
   const [base] = useState(() => RECURSOS.map((g) => ({ ...g, items: shuffle(g.items) })));
@@ -133,7 +146,7 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
       .filter((g) => tab === "todas" || g.key === tab)
       .map((g) => ({
         ...g,
-        items: needle ? g.items.filter((r) => norm(`${r.name} ${r.desc} ${r.url} ${g.title}`).includes(needle)) : g.items,
+        items: needle ? g.items.filter((r) => norm(`${r.name} ${text(r.url)} ${r.url} ${titles(g.key)}`).includes(needle)) : g.items,
       }))
       .filter((g) => g.items.length > 0);
   }, [base, q, tab]);
@@ -145,14 +158,13 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
       <div className="modal modal--lg rec-modal" onClick={(e) => e.stopPropagation()}>
         <div className="rec-modal__header">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 className="rec-modal__title">Dónde mirar y con qué hacerlo</h2>
+            <h2 className="rec-modal__title">{t.recursos.title}</h2>
             <p className="rec-modal__lead">
-              {RECURSOS_TOTAL} webs que usamos antes de empezar y mientras hacemos: galerías de diseño, secciones,
-              motion, tipografía, código, DESIGN.md para agentes, modelos y herramientas de IA. Ninguna repetida.
-              {guest && <> Sin cuenta ves una muestra; <Link href={LOGIN_HREF}>entra</Link> para verlas todas.</>}
+              {t.recursos.lead(RECURSOS_TOTAL)}
+              {guest && <> {t.recursos.guestNote} <Link href={LOGIN_HREF}>{t.recursos.guestSignIn}</Link> {t.recursos.guestNoteEnd}</>}
             </p>
           </div>
-          <button className="btn-icon" onClick={onClose} aria-label="Cerrar">{Icons.x}</button>
+          <button className="btn-icon" onClick={onClose} aria-label={t.common.close}>{Icons.x}</button>
         </div>
 
         {!guest && (
@@ -160,11 +172,11 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
             <SearchBox value={q} onChange={setQ} autoFocus />
             <div className="rec-modal__tabs">
               <button className={`chip${tab === "todas" ? " is-active" : ""}`} onClick={() => setTab("todas")}>
-                Todas<span className="chip__count">{RECURSOS_TOTAL}</span>
+                {t.recursos.all}<span className="chip__count">{RECURSOS_TOTAL}</span>
               </button>
               {RECURSOS.map((g) => (
                 <button key={g.key} className={`chip${tab === g.key ? " is-active" : ""}`} onClick={() => setTab(tab === g.key ? "todas" : g.key)}>
-                  {g.title}<span className="chip__count">{g.items.length}</span>
+                  {t.recursos.groups[g.key as GroupKey].title}<span className="chip__count">{g.items.length}</span>
                 </button>
               ))}
             </div>
@@ -175,22 +187,22 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
           {guest ? <GuestBody /> : (
             <>
               {groups.length === 0 && (
-                <div className="rec-empty">Nada con ese nombre. Prueba con otra palabra o quita el filtro.</div>
+                <div className="rec-empty">{t.recursos.noMatch}</div>
               )}
               {groups.map((g) => (
                 <section key={g.key} className="rec-group">
                   <header className="rec-group__head">
-                    <h3 className="rec-group__title">{g.title}</h3>
+                    <h3 className="rec-group__title">{t.recursos.groups[g.key as GroupKey].title}</h3>
                     <span className="rec-group__count">{g.items.length}</span>
-                    <span className="rec-group__hint">{g.hint}</span>
+                    <span className="rec-group__hint">{t.recursos.groups[g.key as GroupKey].hint}</span>
                   </header>
                   <ul className="rec-list">
-                    {g.items.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={r.desc} />)}
+                    {g.items.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={t.recursos.items[r.url]} />)}
                   </ul>
                 </section>
               ))}
               {(q || tab !== "todas") && shown > 0 && (
-                <div className="sidebar__footer-note" style={{ padding: 0 }}>{shown} de {RECURSOS_TOTAL}</div>
+                <div className="sidebar__footer-note" style={{ padding: 0 }}>{t.recursos.showing(shown, RECURSOS_TOTAL)}</div>
               )}
             </>
           )}
