@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/workspace";
-import { showcaseEntries, showcaseSrc } from "@/lib/showcase";
+import { showcaseImages } from "@/lib/showcase";
 import LoginForm from "@/components/LoginForm";
 import { DEV_LOGIN_EMAIL, SOCIAL_PROVIDERS } from "@/lib/auth";
 
@@ -38,9 +38,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       return add ? new URL(add).hostname.replace(/^www\./, "") : "";
     } catch { return ""; }
   })();
-  // Lateral: las últimas webs guardadas en Savvia, siempre 3 columnas de 6. Si hubiera menos
-  // imágenes se repiten para llenar; sin ninguna, texto.
-  const found = (await showcaseEntries().catch(() => [])).map(showcaseSrc);
+  // Lateral: las imágenes fijas de public/showcase, siempre 3 columnas de 6. Si hubiera menos
+  // se repiten para llenar; sin ninguna, texto.
+  const found = await showcaseImages();
   const covers = found.length ? Array.from({ length: 18 }, (_, i) => found[i % found.length]) : [];
   const cols = covers.length ? [0, 1, 2].map((c) => covers.filter((_, i) => i % 3 === c)) : null;
 

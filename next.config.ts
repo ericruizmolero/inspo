@@ -6,12 +6,14 @@ import type { NextConfig } from "next";
 const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**/*"];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium", "@libsql/client", "sharp"],
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium", "@libsql/client"],
   outputFileTracingIncludes: {
     "/api/shot": CHROMIUM_BIN,
     "/api/design-md": CHROMIUM_BIN,
     // Tarjeta de compartir: lee las fuentes TTF con readFile, que el trazado no ve
     "/opengraph-image": ["./app/fonts/*.ttf"],
+    // Escaparate del login: lee la carpeta con readdir, que el trazado no ve
+    "/login": ["./public/showcase/*"],
     "/twitter-image": ["./app/fonts/*.ttf"],
   },
 };
