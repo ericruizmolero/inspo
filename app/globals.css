@@ -1658,6 +1658,11 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 .ad-kpi--hero .ad-kpi__value { font-size: 48px; }
 .ad-kpi__value--text { font-size: 22px; padding-top: 4px; }
 .ad-kpi__sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
+.ad-online { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: 2px; }
+.ad-online__avatars { display: flex; flex: none; }
+.ad-online__avatars .ws__avatar { box-shadow: 0 0 0 2px var(--panel); }
+.ad-online__avatars .ws__avatar + .ws__avatar { margin-left: -6px; }
+.ad-online__names { font-size: 12px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ad-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted-2); flex: none; display: inline-block; }
 .ad-dot.is-on { background: #3fb25f; box-shadow: 0 0 0 3px rgba(63, 178, 95, 0.18); }
 :root[data-theme="light"] .ad-dot.is-on { background: #2e9e4f; box-shadow: 0 0 0 3px rgba(46, 158, 79, 0.16); }
@@ -1837,4 +1842,3 @@ body:has([data-agentation-toolbar] [role="button"][title="Start feedback mode"])
     bottom: calc(1.25rem + 44px + 12px);
   }
 }
-

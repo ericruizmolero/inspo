@@ -21,6 +21,14 @@ export function fmtDur(s: number): string {
 /** Para el eje: "40 s", "12 min", "1,5 h" */
 const fmtAxisDur = (v: number) => (v >= 3600 ? `${(Math.round(v / 360) / 10).toString().replace(".", ",")} h` : v >= 60 ? `${Math.round(v / 60)} min` : `${Math.round(v)} s`);
 
+/** "Eric", "Eric y Andoni", "Eric, Andoni y 3 más" */
+function namesList(names: string[], max = 3): string {
+  const shown = names.slice(0, max), rest = names.length - shown.length;
+  if (rest > 0) return `${shown.join(", ")} y ${rest} más`;
+  if (shown.length <= 1) return shown[0] ?? "";
+  return `${shown.slice(0, -1).join(", ")} y ${shown[shown.length - 1]}`;
+}
+
 /** Para el eje de coste: "0,5 $", "2 $", "<0,01 $" no hace falta porque el eje empieza en 0 */
 const fmtAxisUsd = (v: number) => (v === 0 ? "0 $" : `${(Math.round(v * 100) / 100).toString().replace(".", ",")} $`);
 
@@ -298,6 +306,7 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
   }, [router]);
 
   const k = data.kpis;
+  const online = data.users.filter((u) => u.online);
   const users = showAll ? data.users : data.users.slice(0, 25);
 
   return (
@@ -306,7 +315,16 @@ export default function AdminPanel({ data, usage, feedback, admins, me }: { data
         <div className="ad-kpi ad-kpi--hero">
           <span className="ad-kpi__label"><span className={`ad-dot${k.online ? " is-on" : ""}`} aria-hidden />Conectadas ahora</span>
           <span className="ad-kpi__value">{k.online}</span>
-          <span className="ad-kpi__sub">con la app abierta en los últimos 2 min</span>
+          {online.length ? (
+            <span className="ad-online" title={online.map((u) => u.name).join(", ")}>
+              <span className="ad-online__avatars">
+                {online.slice(0, 5).map((u) => <UserAvatar key={u.id} name={u.name} image={u.image} small />)}
+              </span>
+              <span className="ad-online__names">{namesList(online.map((u) => u.name))}</span>
+            </span>
+          ) : (
+            <span className="ad-kpi__sub">con la app abierta en los últimos 2 min</span>
+          )}
         </div>
         <div className="ad-kpi">
           <span className="ad-kpi__label">Activas hoy</span>
