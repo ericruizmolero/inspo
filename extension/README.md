@@ -1,13 +1,13 @@
-# Extensión de Criterio para el navegador
+# Extensión de criterio.design para el navegador
 
-Guarda la web que estás viendo en tu librería de Criterio con un clic. La extensión no analiza
+Guarda la web que estás viendo en tu librería de criterio.design con un clic. La extensión no analiza
 nada por su cuenta: manda la dirección, el título de la pestaña y una captura de lo visible, y el
 servidor decide nombre, colección, etiquetas y miniatura, igual que cuando pegas una URL en la app.
 
 ## Cómo entra
 
 No usa la cookie de sesión de la web (Safari no lo permite de forma fiable). Al pulsar
-"Conectar con Criterio" se abre `criterio.design/extension/conectar`: ahí eliges el workspace y
+"Conectar con criterio.design" se abre `criterio.design/extension/conectar`: ahí eliges el workspace y
 se crea una llave larga (`crit_…`) que la extensión guarda en `chrome.storage.local`. Todas las
 llamadas van con `Authorization: Bearer crit_…` a las rutas versionadas de `/api/ext/v1/`:
 

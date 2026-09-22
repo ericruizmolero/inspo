@@ -7,7 +7,7 @@ import { join } from "path";
 //
 // Va siempre en inglés, el idioma por defecto: la imagen es estática y quien la pide
 // (WhatsApp, Slack, un buscador) no manda la cookie del idioma.
-export const alt = "Inspo, your team's inspiration library";
+export const alt = "criterio.design, your team's inspiration library";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -19,10 +19,12 @@ const COLS: { offset: number; tiles: number[] }[] = [
 ];
 
 export default async function Image() {
-  const [display, body] = await Promise.all([
+  const [display, body, mark] = await Promise.all([
     readFile(join(process.cwd(), "app/fonts/test-family-bold.ttf")),
     readFile(join(process.cwd(), "app/fonts/test-soehne-buch.ttf")),
+    readFile(join(process.cwd(), "app/icon.png")),
   ]);
+  const logo = `data:image/png;base64,${mark.toString("base64")}`;
 
   return new ImageResponse(
     (
@@ -42,18 +44,10 @@ export default async function Image() {
 
         {/* Texto */}
         <div style={{ position: "absolute", left: 72, top: 72, bottom: 72, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", width: 64, height: 64, borderRadius: 14, background: "#161616", border: "1px solid rgba(255,255,255,0.14)", position: "relative" }}>
-            <div style={{ position: "absolute", left: 14, top: 14, width: 16, height: 21, borderRadius: 3.5, background: "#f2f2f2" }} />
-            <div style={{ position: "absolute", left: 14, top: 39, width: 16, height: 11, borderRadius: 3.5, background: "#f2f2f2" }} />
-            <div style={{ position: "absolute", left: 34, top: 14, width: 16, height: 11, borderRadius: 3.5, background: "#f2f2f2" }} />
-            <div style={{ position: "absolute", left: 34, top: 29, width: 16, height: 21, borderRadius: 3.5, background: "#f2f2f2" }} />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontFamily: "Family", fontSize: 128, lineHeight: 0.95, letterSpacing: "-0.02em", color: "#f2f2f2" }}>Inspo</div>
-            <div style={{ marginTop: 26, display: "flex", flexDirection: "column", fontSize: 32, lineHeight: 1.3, color: "#b4b4b4" }}>
-              <span>What inspires your team,</span>
-              <span>all in one place.</span>
-            </div>
+          <img src={logo} width={176} height={176} style={{ borderRadius: 40 }} />
+          <div style={{ display: "flex", flexDirection: "column", fontFamily: "Family", fontSize: 72, lineHeight: 1, letterSpacing: "-0.02em", color: "#f2f2f2" }}>
+            <span>What inspires your team,</span>
+            <span>all in one place.</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 22, color: "#7a7a7a" }}>
             <span>criterio.design</span>

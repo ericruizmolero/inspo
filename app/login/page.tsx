@@ -7,6 +7,7 @@ import LoginForm from "@/components/LoginForm";
 import { DEV_LOGIN_EMAIL, SOCIAL_PROVIDERS } from "@/lib/auth";
 import { getT, type Dict } from "@/lib/i18n";
 import { Fragment } from "react";
+import Logo from "@/components/Logo";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -60,7 +61,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <section className="auth__panel">
         <header className="auth__top">
           <span className="auth__brand">
-            <span className="display auth__title">Inspo</span>
+            <Logo size={36} />
             <span className="auth__by">savvia.studio</span>
           </span>
           <Link href="/" className="auth__back">{IcBack} {t.common.back}</Link>
@@ -99,7 +100,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </>
         ) : (
           <div className="auth__visual-empty">
-            <span className="display">Inspo</span>
+            <Logo size={88} />
             <span>{t.login.visualEmpty}</span>
           </div>
         )}

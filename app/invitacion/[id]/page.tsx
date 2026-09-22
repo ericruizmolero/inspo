@@ -7,6 +7,8 @@ import { getSession } from "@/lib/workspace";
 import AcceptInvitation from "./AcceptInvitation";
 import SwitchAccount from "./SwitchAccount";
 import { getT } from "@/lib/i18n";
+import { buttonVariants } from "@/components/ui/button";
+import Logo from "@/components/Logo";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -43,7 +45,7 @@ export default async function InvitacionPage({ params }: { params: Promise<{ id:
     <div className="auth auth--solo">
       <div className="auth__card">
         <div className="auth__brand">
-          <span className="display auth__title">Inspo</span>
+          <Logo size={48} />
         </div>
         {problem ? (
           <div className="auth__sent">
@@ -57,7 +59,7 @@ export default async function InvitacionPage({ params }: { params: Promise<{ id:
                 <a href={`mailto:${inv.inviterEmail}?subject=${encodeURIComponent(t.invite.mailSubject(inv.orgName))}`}>{inv.inviterEmail}</a>
               </p>
             ) : null}
-            <Link href="/" className="btn btn--ghost btn--sm">{t.invite.goToApp}</Link>
+            <Link href="/" className={buttonVariants({ variant: "ghost", size: "sm" })}>{t.invite.goToApp}</Link>
           </div>
         ) : (
           <AcceptInvitation

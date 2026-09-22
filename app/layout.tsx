@@ -13,12 +13,12 @@ const SITE = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "
 // cookie, así que le toca el idioma por defecto: inglés.
 const META: Record<Locale, { title: string; description: string; ogLocale: string }> = {
   en: {
-    title: "Inspo — Your team's inspiration library",
+    title: "criterio.design · Your team's inspiration library",
     description: "Your team's inspiration library: save sites, videos and ideas, comment on them with screenshots, and pull the DESIGN.md out of any site.",
     ogLocale: "en_GB",
   },
   es: {
-    title: "Inspo — La biblioteca de inspiración de tu equipo",
+    title: "criterio.design · La biblioteca de inspiración de tu equipo",
     description: "La biblioteca de inspiración de tu equipo: guarda webs, vídeos e ideas, coméntalas con capturas y saca el DESIGN.md de cualquier web.",
     ogLocale: "es_ES",
   },
@@ -29,13 +29,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const m = META[await getLocale()];
   return {
     metadataBase: new URL(SITE),
-    title: { default: "Inspo — Savvia", template: "%s — Inspo" },
+    title: { default: "criterio.design", template: "%s · criterio.design" },
     description: m.description,
-    applicationName: "Inspo",
+    applicationName: "criterio.design",
     openGraph: {
       type: "website",
       locale: m.ogLocale,
-      siteName: "Inspo",
+      siteName: "criterio.design",
       url: SITE,
       title: m.title,
       description: m.description,

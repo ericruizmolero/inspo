@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
 import RecursosModal from "./RecursosModal";
 import { useT } from "./I18nProvider";
+import { buttonVariants } from "@/components/ui/button";
+import Logo from "@/components/Logo";
 
 /**
  * Portada sin sesión: el mismo lienzo de inicio que ve un usuario nuevo, sin sidebar.
@@ -20,10 +22,10 @@ export default function GuestStart() {
     <div className="guest">
       <header className="guest__bar">
         <span className="guest__brand">
-          <span className="display">Inspo</span>
+          <Logo />
           <span>savvia.studio</span>
         </span>
-        <Link href="/login" className="btn btn--ghost btn--sm">{t.common.signIn}</Link>
+        <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>{t.common.signIn}</Link>
       </header>
 
       <EmptyStart

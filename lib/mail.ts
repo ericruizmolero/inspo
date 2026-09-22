@@ -27,7 +27,7 @@ export async function localeForEmail(email: string, fallback: Locale = DEFAULT_L
 
 // Remitente y dirección de respuesta. inspo@ no es un buzón, así que las respuestas van a hola@,
 // que sí existe: Gmail penaliza a los remitentes a los que no se puede contestar.
-const FROM = process.env.MAIL_FROM || "Inspo · Savvia <inspo@savvia.studio>";
+const FROM = process.env.MAIL_FROM || "criterio.design <inspo@savvia.studio>";
 const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
 
 // Las fuentes del correo se sirven desde public/fonts (Family para títulos, Söhne para texto).
@@ -74,7 +74,7 @@ function layout(locale: Locale, title: string, body: string, cta: { label: strin
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0d0d0d">
   <tr><td align="center" style="padding:56px 24px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px">
-      <tr><td style="padding:0 0 40px;font-family:${DISPLAY};font-size:16px;font-weight:700;letter-spacing:-0.01em;color:#f2f2f2">Inspo</td></tr>
+      <tr><td style="padding:0 0 40px;font-family:${DISPLAY};font-size:16px;font-weight:700;letter-spacing:-0.01em;color:#f2f2f2">criterio.design</td></tr>
       <tr><td style="padding:0 0 12px;font-family:${DISPLAY};font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:#f2f2f2">${esc(title)}</td></tr>
       <tr><td style="padding:0 0 28px;font-family:${BODY};font-size:15px;font-weight:400;line-height:1.55;color:#a3a3a3">${body}</td></tr>
       <tr><td style="padding:0 0 36px">

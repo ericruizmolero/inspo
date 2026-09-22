@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Criterio",
-  "description": "Guarda la web que estás viendo en tu librería de Criterio con un clic.",
+  "name": "criterio.design",
+  "description": "Guarda la web que estás viendo en tu librería de criterio.design con un clic.",
   "version": "0.1.0",
   "icons": {
     "16": "icons/icon16.png",
@@ -10,7 +10,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Guardar en Criterio",
+    "default_title": "Guardar en criterio.design",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

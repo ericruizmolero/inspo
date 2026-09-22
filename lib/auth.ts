@@ -96,7 +96,7 @@ async function localeOfUser(userId: string): Promise<Locale> {
 }
 
 export const auth = betterAuth({
-  appName: "Inspo",
+  appName: "criterio.design",
   baseURL: APP_URL || undefined,
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, { provider: "sqlite", schema }),
