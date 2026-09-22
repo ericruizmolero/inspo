@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { normalizeWebUrl } from "@/lib/url";
 import { recordUsage } from "@/lib/usage";
 import { promises as fs } from "fs";
 import path from "path";
@@ -11,27 +12,11 @@ import { getErrors, getLocale, getT, fmtDate } from "@/lib/i18n";
 
 export const maxDuration = 120;
 
-function normalizeUrl(raw: string): string | null {
-  try {
-    const u = new URL(raw.trim());
-    if (!/^https?:$/.test(u.protocol)) return null;
-    return u.href.replace(/\/+$/, "");
-  } catch { return null; }
-}
 
 // Captura guardada de la web, si está en local (en Blob se omite: la spec ya lleva los valores)
 async function localScreenshot(url: string): Promise<Buffer | null> {
   try { return await fs.readFile(path.join(process.cwd(), "public", "design-md", `${keyFor(url)}.jpg`)); }
   catch { return null; }
-}
-
-// GET ?url=… → historial de revisiones del workspace para esa URL
-export async function GET(req: NextRequest) {
-  const ctx = await requireCtx();
-  if (isResponse(ctx)) return ctx;
-  const url = normalizeUrl(req.nextUrl.searchParams.get("url") ?? "");
-  if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
-  return Response.json({ revisions: await listRevisions(ctx.workspace.id, url) });
 }
 
 // POST { url, section, comment }  → Claude aplica el cambio y queda registrado
@@ -41,7 +26,7 @@ export async function POST(req: NextRequest) {
   if (isResponse(ctx)) return ctx;
 
   const body = (await req.json().catch(() => ({}))) as { url?: string; section?: string; comment?: string; revertTo?: string };
-  const url = normalizeUrl(body.url ?? "");
+  const url = normalizeWebUrl(body.url ?? "");
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   if (!(await findByWeb(ctx.workspace.id, url))) return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });
 

@@ -5,7 +5,7 @@ import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, rowToItem, setThumbnail, setTags } from "@/lib/items";
 import { uploadThumbnail } from "@/lib/thumbnails";
-import { fetchSiteText } from "@/lib/extract";
+import { siteTextWithin } from "@/lib/extract";
 import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
 import { classifyItem, jevEnabled } from "@/lib/jev";
 import { getErrors } from "@/lib/i18n";
@@ -13,7 +13,6 @@ import { HttpError } from "@/lib/workspace-core";
 
 export const maxDuration = 60; // el etiquetado corre en after(), tras responder
 
-const NAME_TIMEOUT_MS = 5000;
 const MAX_SHOT_BYTES = 3 * 1024 * 1024;
 
 /** data:image/jpeg;base64,… → File, o null si no es una imagen razonable */
@@ -38,10 +37,7 @@ export async function POST(req: NextRequest) {
   if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing) });
 
   // Nombre: og:site_name o <title> de la web con tope de tiempo; si no llega, el título de la pestaña
-  const site = await Promise.race([
-    fetchSiteText(web).catch(() => null),
-    new Promise<null>((r) => setTimeout(() => r(null), NAME_TIMEOUT_MS)),
-  ]);
+  const site = await siteTextWithin(web);
   const empresa = guessEmpresa(web, site ?? (body.title ? { title: body.title } : null));
 
   try {

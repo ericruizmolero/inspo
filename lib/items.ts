@@ -6,13 +6,13 @@ import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
 import type { ThumbnailMap } from "./thumbnails";
 import { webKeyOf } from "./url";
 import { getErrors } from "./i18n";
-import { HttpError } from "./workspace-core";
+import { HttpError, newId } from "./workspace-core";
 
 const T = schema.inspoItem;
 type Row = typeof T.$inferSelect;
 
 const TIPOS = new Set(["Inspiración", "Videos", "Ideas", "Documentales"]);
-export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+export { newId };
 
 /** Normaliza una URL para deduplicar: sin espacios, sin barra final, host en minúsculas. */
 export { webKeyOf };

@@ -2,7 +2,7 @@
 // (ver lib/items.ts); aquí solo queda el almacenamiento del fichero.
 // Producción: Vercel Blob (privado, bajo inspo/<workspace>/thumbs/). Local: public/thumbs.
 import "server-only";
-import { put, list } from "@vercel/blob";
+import { put } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -28,19 +28,3 @@ export async function uploadThumbnail(organizationId: string, filename: string, 
   return `/thumbs/${name}`;
 }
 
-/** Biblioteca de miniaturas ya subidas por este workspace (para el selector). */
-export async function listThumbnailLibrary(organizationId: string): Promise<string[]> {
-  if (USE_BLOB) {
-    const { blobs } = await list({ prefix: blobPrefix(organizationId) });
-    return blobs
-      .sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt))
-      .map((b) => b.url);
-  }
-  try {
-    const files = await fs.readdir(THUMBS_DIR);
-    return files
-      .filter((f) => /\.(jpe?g|png|webp|gif)$/i.test(f))
-      .sort((a, b) => b.localeCompare(a))
-      .map((f) => `/thumbs/${f}`);
-  } catch { return []; }
-}

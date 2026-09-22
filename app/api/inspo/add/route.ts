@@ -1,22 +1,13 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { addItem } from "@/lib/items";
-import { fetchSiteText } from "@/lib/extract";
+import { siteTextWithin } from "@/lib/extract";
 import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 
 
-// Sacar el nombre de la web no debería frenar el alta: si tarda más que esto, se usa el dominio.
-const NAME_TIMEOUT_MS = 5000;
-
-async function resolveEmpresa(web: string): Promise<string> {
-  const site = await Promise.race([
-    fetchSiteText(web).catch(() => null),
-    new Promise<null>((r) => setTimeout(() => r(null), NAME_TIMEOUT_MS)),
-  ]);
-  return guessEmpresa(web, site);
-}
+const resolveEmpresa = async (web: string) => guessEmpresa(web, await siteTextWithin(web));
 
 // POST { web, empresa?, tipo?, comentarios?, subcomentarios? }
 // Solo la URL es obligatoria: nombre y colección se deducen si no llegan.

@@ -57,7 +57,7 @@ export async function setWorkspacePlan(organizationId: string, plan: PlanKey): P
   await db.update(schema.organization).set({ metadata: JSON.stringify({ ...meta, plan }) }).where(eq(schema.organization.id, organizationId));
 }
 
-const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 export function slugify(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")

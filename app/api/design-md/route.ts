@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { normalizeWebUrl } from "@/lib/url";
 import { extractDesign } from "@/lib/design-extract";
 import { generateDesignMd } from "@/lib/design-md";
 import { getDesignMd, getDesignMdIndex, saveDesignMd } from "@/lib/design-store";
@@ -32,15 +33,6 @@ function attach(job: Job, req: NextRequest): Promise<Response> {
   });
 }
 
-function normalizeUrl(raw: string): string | null {
-  try {
-    const u = new URL(raw.trim());
-    if (!/^https?:$/.test(u.protocol)) return null;
-    return u.href.replace(/\/+$/, "");
-  } catch {
-    return null;
-  }
-}
 
 // La caché de DESIGN.md es global por URL (se deriva solo de la web pública),
 // pero cada workspace solo ve/genera las URLs que tiene guardadas.
@@ -55,11 +47,11 @@ export async function GET(req: NextRequest) {
   const rawUrl = req.nextUrl.searchParams.get("url");
   if (!rawUrl) {
     const [index, mine] = await Promise.all([getDesignMdIndex(), webSet(ctx.workspace.id)]);
-    const norm = new Set([...mine].map((w) => normalizeUrl(w) ?? w));
+    const norm = new Set([...mine].map((w) => normalizeWebUrl(w) ?? w));
     return Response.json(Object.fromEntries(Object.entries(index).filter(([u]) => norm.has(u))));
   }
 
-  const url = normalizeUrl(rawUrl);
+  const url = normalizeWebUrl(rawUrl);
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   if (!(await findByWeb(ctx.workspace.id, url))) {
     return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });
@@ -136,7 +128,7 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  const url = normalizeUrl(req.nextUrl.searchParams.get("url") ?? "");
+  const url = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   const job = inflight.get(url);
   if (job) job.ctrl.abort();

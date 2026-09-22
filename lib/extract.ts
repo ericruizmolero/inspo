@@ -132,6 +132,14 @@ async function fetchHtml(url: string, headers?: Record<string, string>): Promise
   }
 }
 
+/** fetchSiteText con tope de tiempo: sacar el nombre de la web no debe frenar un alta. */
+export function siteTextWithin(url: string, ms = 5000): Promise<SiteText | null> {
+  return Promise.race([
+    fetchSiteText(url).catch(() => null),
+    new Promise<null>((r) => setTimeout(() => r(null), ms)),
+  ]);
+}
+
 /** Proxy primero (evita bloqueos por IP de Vercel); si falla, fetch directo con UA de navegador. */
 export async function fetchSiteText(url: string): Promise<SiteText | null> {
   if (!isPublicHttpUrl(url)) return null;

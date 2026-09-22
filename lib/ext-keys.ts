@@ -6,7 +6,7 @@ import "server-only";
 import { createHash, randomBytes } from "crypto";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
-import { isMember, listWorkspaces, type SessionUser, type Workspace } from "./workspace-core";
+import { isMember, listWorkspaces, newId, type SessionUser, type Workspace } from "./workspace-core";
 import { toLocale } from "./i18n/locale";
 import { getErrors } from "./i18n";
 
@@ -16,7 +16,6 @@ export const KEY_PREFIX = "crit_";
 const TOUCH_EVERY_MS = 5 * 60 * 1000;
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
-const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 export interface ExtKeyRow {
   id: string; prefix: string; name: string; userId: string; organizationId: string;

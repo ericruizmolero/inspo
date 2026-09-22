@@ -6,6 +6,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { desc, and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
+import { newId } from "./workspace-core";
 import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/design";
 import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 
@@ -35,7 +36,6 @@ export interface RevisionMeta {
   createdAt: string;
 }
 
-const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 const toMeta = (r: typeof schema.designRevision.$inferSelect): RevisionMeta => ({
   id: r.id, kind: r.kind as RevisionMeta["kind"], authorName: r.authorName, section: r.section,
