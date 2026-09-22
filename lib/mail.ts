@@ -15,7 +15,7 @@ const SIGNATURE = "Inspo es la librería de inspiración de Savvia · savvia.stu
 const FONT_BASE =
   process.env.BETTER_AUTH_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
-  "https://inspo.savvia.studio";
+  "https://criterio.design";
 const DISPLAY = "'Family', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 const BODY = "'Söhne', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 

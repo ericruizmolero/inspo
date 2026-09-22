@@ -5,7 +5,8 @@ import "./globals.css";
 import { getSession } from "@/lib/workspace";
 import FeedbackTool from "@/components/FeedbackTool";
 
-const SITE = "https://inspo.savvia.studio";
+// URL pública canónica: la misma que BETTER_AUTH_URL en Vercel (criterio.design desde el 22/09/2026).
+const SITE = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://criterio.design";
 const DESCRIPTION = "La biblioteca de inspiración de tu equipo: guarda webs, vídeos e ideas, coméntalas con capturas y saca el DESIGN.md de cualquier web.";
 
 // Título, descripción y tarjeta para compartir (WhatsApp, Slack, X…). La imagen sale de app/opengraph-image.tsx.

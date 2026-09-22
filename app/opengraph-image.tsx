@@ -54,7 +54,7 @@ export default async function Image() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 22, color: "#7a7a7a" }}>
-            <span>inspo.savvia.studio</span>
+            <span>criterio.design</span>
             <span style={{ width: 4, height: 4, borderRadius: 2, background: "#4a4a4a" }} />
             <span>by Savvia</span>
           </div>

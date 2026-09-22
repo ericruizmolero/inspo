@@ -16,7 +16,7 @@ export type FeedbackEvent =
 export function pathOf(url: string | undefined | null, fallback = "/"): string {
   if (!url) return fallback;
   try {
-    const u = new URL(url, "https://inspo.savvia.studio");
+    const u = new URL(url, "https://criterio.design");
     return (u.pathname + u.search + u.hash) || fallback;
   } catch { return fallback; }
 }
