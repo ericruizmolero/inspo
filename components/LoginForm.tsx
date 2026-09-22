@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { SocialProvider } from "@/lib/auth";
 import { useT } from "./I18nProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const IcArrow = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -122,10 +124,9 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
         <>
           <div className="auth__social" role="group" aria-label={t.login.signInWithOther}>
             {providers.map((p) => (
-              <button
+              <Button
                 key={p}
-                type="button"
-                className={`btn auth__social-btn auth__social-btn--${p}`}
+                className={`auth__social-btn auth__social-btn--${p}`}
                 disabled={loading || social !== null}
                 aria-busy={social === p}
                 onClick={() => social_(p)}
@@ -133,7 +134,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
                 {social === p ? <span className="spinner spinner--sm" /> : SOCIAL[p].icon}
                 <span>{t.login.continueWith(SOCIAL[p].label)}</span>
                 {lastUsed === p && badge}
-              </button>
+              </Button>
             ))}
           </div>
           <div className="auth__or" aria-hidden><span>{t.login.orWithEmail}</span></div>
@@ -141,8 +142,8 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
       )}
       <label className="auth__field">
         <span className="auth__label">{t.login.email}{lastUsed === "magic-link" && badge}</span>
-        <input
-          className="input input--lg"
+        <Input size="lg"
+          
           type="email"
           autoFocus={autoFocus}
           autoComplete="email"
@@ -154,11 +155,11 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
         />
       </label>
       {error && <p className="modal__error">{error}</p>}
-      <button className="btn btn--primary btn--block auth__submit" type="submit" disabled={loading || social !== null || !email.trim()}>
+      <Button variant="primary" block className="auth__submit" type="submit" disabled={loading || social !== null || !email.trim()}>
         {loading
           ? <><span className="spinner" /> {t.login.sending}</>
           : <>{t.login.sendLink} {IcArrow}</>}
-      </button>
+      </Button>
       {devEmail && (
         <a className="auth__alt auth__dev" href={devLoginHref(next && next.startsWith("/") && !next.startsWith("//") ? next : "/")}>
           {t.login.devLogin(devEmail)}

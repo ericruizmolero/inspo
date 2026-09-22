@@ -5,6 +5,10 @@ import { useEffect, useState } from "react";
 import type { Workspace } from "@/lib/workspace-core";
 import { WorkspaceAvatar } from "@/components/WorkspaceMenu";
 import { useT } from "@/components/I18nProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 
 // Mensajes que cruzan entre esta página y extension/chrome/content.js (misma pestaña, mismo origen)
 const FROM_PAGE = "criterio";
@@ -67,23 +71,23 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
   if (result) {
     return (
       <div className="page__body">
-        <section className="panel">
-          <div className="panel__head"><span className="panel__title">{t.ext.keyCreated(result.workspace.name)}</span></div>
-          {received ? (
-            <p className="ext-ok">{t.ext.keyReceived}</p>
-          ) : (
-            <>
-              <p className="panel__hint">
-                {extPresent ? t.ext.handingOver : t.ext.notDetected}
-              </p>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.ext.keyCreated(result.workspace.name)}</CardTitle>
+            {!received && <CardDescription>{extPresent ? t.ext.handingOver : t.ext.notDetected}</CardDescription>}
+          </CardHeader>
+          <CardContent>
+            {received ? (
+              <p className="ext-ok">{t.ext.keyReceived}</p>
+            ) : (
               <div className="ext-key">
                 <code>{result.key}</code>
-                <button className="btn btn--sm" type="button" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</button>
+                <Button variant="default" size="sm" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</Button>
               </div>
-              <p className="panel__hint">{t.ext.onlyOnce}</p>
-            </>
-          )}
-        </section>
+            )}
+          </CardContent>
+          {!received && <CardFooter><p className="card-note">{t.ext.onlyOnce}</p></CardFooter>}
+        </Card>
       </div>
     );
   }
@@ -91,32 +95,40 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
   return (
     <form className="page__body" onSubmit={create}>
       {error && <p className="modal__error">{error}</p>}
-      <section className="panel">
-        <div className="panel__head"><span className="panel__title">{t.ext.whereSave}</span></div>
-        <ul className="list">
-          {workspaces.map((w) => (
-            <li key={w.id} className="list__row ext-choice">
-              <label className="ext-choice__label">
-                <input type="radio" name="workspace" value={w.id} checked={orgId === w.id} onChange={() => setOrgId(w.id)} />
-                <WorkspaceAvatar workspace={w} small />
-                <span className="list__main">
-                  <span className="list__name">{w.name}</span>
-                  <span className="list__sub">{w.kind === "personal" ? t.ext.personalSpace : t.ext.team}</span>
-                </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-        <p className="panel__hint">{t.ext.oneWorkspace}</p>
-      </section>
-      <section className="panel">
-        <div className="panel__head"><span className="panel__title">{t.ext.nameIt}</span></div>
-        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.ext.namePlaceholder} maxLength={60} />
-        <p className="panel__hint">{t.ext.nameHint}</p>
-      </section>
-      <div>
-        <button className="btn btn--primary" type="submit" disabled={busy}>{busy ? t.ext.creating : t.ext.createKey}</button>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.ext.whereSave}</CardTitle>
+          <CardDescription>{t.ext.oneWorkspace}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="list">
+            {workspaces.map((w) => (
+              <li key={w.id} className="list__row ext-choice">
+                <label className="ext-choice__label">
+                  <input type="radio" name="workspace" value={w.id} checked={orgId === w.id} onChange={() => setOrgId(w.id)} />
+                  <WorkspaceAvatar workspace={w} small />
+                  <span className="list__main">
+                    <span className="list__name">{w.name}</span>
+                    <span className="list__sub">{w.kind === "personal" ? t.ext.personalSpace : t.ext.team}</span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle><Label htmlFor="ext-key-name" className="text-base leading-snug">{t.ext.nameIt}</Label></CardTitle>
+          <CardDescription>{t.ext.nameHint}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Input id="ext-key-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.ext.namePlaceholder} maxLength={60} />
+        </CardContent>
+        <CardFooter>
+          <Button variant="primary" type="submit" disabled={busy}>{busy ? t.ext.creating : t.ext.createKey}</Button>
+        </CardFooter>
+      </Card>
     </form>
   );
 }

@@ -9,6 +9,7 @@ import { fmtDate, fmtDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT, messageOf } from "./I18nProvider";
+import { Button } from "@/components/ui/button";
 
 // Panel lateral de comentarios de un inspo, al estilo del hilo de un pin de Figma:
 // la nota original de quien lo guardó abre el hilo y cualquier miembro responde debajo.
@@ -344,7 +345,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             {!column && <a className="cm-panel__link" href={item.web} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
           </div>
           <span className="cm-panel__count">{replies === 0 ? t.comments.noReplies : t.comments.replies(replies)}</span>
-          <button className="btn-icon" onClick={onClose} aria-label={column ? t.comments.hide : t.common.close}>{IcX}</button>
+          <Button variant="icon" onClick={onClose} aria-label={column ? t.comments.hide : t.common.close}>{IcX}</Button>
         </header>
 
         {designMd && !column && (
@@ -357,8 +358,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                   ? t.comments.mdLoading
                   : t.comments.mdNone}
             </span>
-            {designMd.status === "ready" && <button type="button" className="btn btn--ghost btn--sm" onClick={designMd.onOpen}>{t.comments.seeSpec}</button>}
-            {designMd.status === "none" && <button type="button" className="btn btn--primary btn--sm" onClick={designMd.onGenerate}>{t.comments.generateMd}</button>}
+            {designMd.status === "ready" && <Button variant="ghost" size="sm" type="button" onClick={designMd.onOpen}>{t.comments.seeSpec}</Button>}
+            {designMd.status === "none" && <Button variant="primary" size="sm" type="button" onClick={designMd.onGenerate}>{t.comments.generateMd}</Button>}
           </div>
         )}
 
@@ -463,13 +464,13 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             <div className="cm-composer__foot">
               <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
                 onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
-              <button type="button" className="btn-icon cm-composer__attach" title={t.comments.attach} aria-label={t.comments.attach} onClick={() => fileRef.current?.click()}>{IcImage}</button>
+              <Button variant="icon" type="button" className="cm-composer__attach" title={t.comments.attach} aria-label={t.comments.attach} onClick={() => fileRef.current?.click()}>{IcImage}</Button>
               {error
                 ? <span className="cm-composer__error">{error}</span>
                 : <span className="cm-composer__hint">{uploading ? t.comments.uploading : t.comments.composerHint}</span>}
-              <button type="submit" className="btn btn--primary btn--sm" disabled={!canSend}>
+              <Button variant="primary" size="sm" type="submit" disabled={!canSend}>
                 {sending ? <span className="spinner spinner--sm" /> : <>{t.comments.send} {IcSend}</>}
-              </button>
+              </Button>
             </div>
           </div>
         </form>
@@ -481,7 +482,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         const go = (d: number) => setLightbox({ list: lightbox.list, idx: (lightbox.idx + d + lightbox.list.length) % lightbox.list.length });
         return (
           <div className="cm-lightbox" role="dialog" aria-label={t.comments.screenshot} onClick={() => setLightbox(null)}>
-            <button className="btn-icon cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</button>
+            <Button variant="icon" className="cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</Button>
             {many && <button className="cm-lightbox__nav is-prev" aria-label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
             <img
               key={a.url}

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { RECURSOS, RECURSOS_TOTAL, recursoShot, type Recurso } from "@/lib/recursos";
 import { Icons, SearchBox } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import en from "@/lib/i18n/en";
 import es from "@/lib/i18n/es";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type GroupKey = keyof typeof en.recursos.groups;
 
@@ -119,7 +121,7 @@ function GuestBody() {
               <span key={g.key} className="chip" aria-hidden>{t.recursos.groups[g.key as GroupKey].title}<span className="chip__count">{g.items.length}</span></span>
             ))}
           </p>
-          <Link href={LOGIN_HREF} className="btn btn--primary">{t.recursos.signInForAll}</Link>
+          <Link href={LOGIN_HREF} className={buttonVariants({ variant: "primary" })}>{t.recursos.signInForAll}</Link>
           <p className="rec-gate__note">{t.recursos.free}</p>
         </div>
       </section>
@@ -132,12 +134,6 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<string>("todas");
   const [base] = useState(() => RECURSOS.map((g) => ({ ...g, items: shuffle(g.items) })));
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
 
   // Búsqueda normal: nombre, descripción, URL y grupo, sin acentos ni mayúsculas
   const groups = useMemo(() => {
@@ -154,17 +150,18 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
   const shown = groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal--lg rec-modal" onClick={(e) => e.stopPropagation()}>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      {/* The search box takes focus on open; guests have none, so the default applies */}
+      <DialogContent size="lg" className="rec-modal" initialFocus={() => document.querySelector<HTMLElement>(".rec-modal__tools input")}>
         <div className="rec-modal__header">
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 className="rec-modal__title">{t.recursos.title}</h2>
+            <DialogTitle className="rec-modal__title">{t.recursos.title}</DialogTitle>
             <p className="rec-modal__lead">
               {t.recursos.lead(RECURSOS_TOTAL)}
               {guest && <> {t.recursos.guestNote} <Link href={LOGIN_HREF}>{t.recursos.guestSignIn}</Link> {t.recursos.guestNoteEnd}</>}
             </p>
           </div>
-          <button className="btn-icon" onClick={onClose} aria-label={t.common.close}>{Icons.x}</button>
+          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
         </div>
 
         {!guest && (
@@ -207,7 +204,7 @@ export default function RecursosModal({ onClose, guest = false }: RecursosModalP
             </>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

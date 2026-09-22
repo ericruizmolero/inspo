@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { DesignSpec } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { useT } from "./I18nProvider";
+import { Button } from "@/components/ui/button";
 
 export interface DesignMdEntry {
   url: string; markdown: string; generatedAt: string; model: string; cached: boolean;
@@ -102,11 +103,10 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
                   {STEPS.map((s, i) => <i key={s} className={i < step ? "is-done" : i === step ? "is-current" : ""} />)}
                 </span>
               </div>
-              <button
-                className="btn btn--ghost btn--sm toast__stop"
+              <Button variant="ghost" size="sm"
+                className="toast__stop"
                 title={t.toast.stopTitle}
-                onClick={(e) => { e.stopPropagation(); onCancel(url); }}
-              >{IcStop} {t.toast.stop}</button>
+                onClick={(e) => { e.stopPropagation(); onCancel(url); }}>{IcStop} {t.toast.stop}</Button>
               <span className="toast__bar"><span style={{ width: `${pct}%` }} /></span>
             </div>
           );
@@ -121,13 +121,12 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
               </span>
             </div>
             {j.status === "error" && (
-              <button className="btn btn--ghost btn--sm" onClick={(e) => { e.stopPropagation(); onRetry(url); }}>{t.common.retry}</button>
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onRetry(url); }}>{t.common.retry}</Button>
             )}
-            <button
-              className="btn-icon toast__close"
+            <Button variant="icon"
+              className="toast__close"
               aria-label={t.toast.dismiss}
-              onClick={(e) => { e.stopPropagation(); onDismiss(url); }}
-            >×</button>
+              onClick={(e) => { e.stopPropagation(); onDismiss(url); }}>×</Button>
           </div>
         );
       })}

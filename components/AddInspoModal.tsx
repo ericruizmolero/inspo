@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { InspoItem } from "@/types/inspo";
 import { normalizeWebUrl, tipoFromUrl } from "@/lib/url";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 export interface NewInspoInput {
   web: string;
@@ -31,17 +34,6 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddIns
   const [error, setError] = useState("");
   const urlRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    urlRef.current?.focus();
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
-
   const web = normalizeWebUrl(raw);
   const suggested = web ? tipoFromUrl(web) : "Inspiración";
   const tipoFinal = tipo ?? suggested;
@@ -55,18 +47,18 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddIns
   };
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent initialFocus={urlRef}>
         <div className="modal__header">
-          <span className="display modal__title">{t.add.title}</span>
-          <button className="btn-icon" onClick={onClose} aria-label={t.common.close}>{Icons.x}</button>
+          <DialogTitle>{t.add.title}</DialogTitle>
+          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
         </div>
 
         <form onSubmit={handleSubmit} className="modal__body">
           <div className="field">
-            <input
+            <Input size="lg"
               ref={urlRef}
-              className="input input--lg"
+              
               value={raw}
               onChange={(e) => { setRaw(e.target.value); setError(""); }}
               placeholder={t.start.pasteUrl}
@@ -79,8 +71,8 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddIns
           </div>
 
           <div className="field">
-            <input
-              className="input"
+            <Input
+              
               value={comentarios}
               onChange={(e) => setComentarios(e.target.value)}
               placeholder={t.add.whatYouLiked}
@@ -105,11 +97,11 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddIns
           {error && <p className="modal__error">{error}</p>}
 
           <div className="modal__footer">
-            <button type="button" className="btn btn--ghost" onClick={onClose}>{t.common.cancel}</button>
-            <button type="submit" className="btn btn--primary" disabled={!raw.trim()}>{t.common.save}</button>
+            <Button variant="ghost" type="button" onClick={onClose}>{t.common.cancel}</Button>
+            <Button variant="primary" type="submit" disabled={!raw.trim()}>{t.common.save}</Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

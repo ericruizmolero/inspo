@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useT } from "@/components/I18nProvider";
+import { Button } from "@/components/ui/button";
 
 export default function AcceptInvitation({ id, teamName, inviterName, inviterEmail, youAre }: {
   id: string; teamName: string; inviterName: string; inviterEmail: string; youAre: string;
@@ -40,9 +41,9 @@ export default function AcceptInvitation({ id, teamName, inviterName, inviterEma
       <p className="auth__lead">{t.invite.invitesYou(inviterName, teamName)}</p>
       <p className="auth__hint">{inviterEmail} · {t.invite.sharedLibrary}</p>
       {error && <p className="modal__error">{error}</p>}
-      <button className="btn btn--primary btn--block" onClick={accept} disabled={busy}>
+      <Button variant="primary" block onClick={accept} disabled={busy}>
         {busy ? t.invite.joining : t.invite.join}
-      </button>
+      </Button>
       <p className="auth__hint">{t.invite.signedInAs(youAre)}</p>
     </div>
   );
