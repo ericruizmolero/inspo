@@ -4,7 +4,11 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-const FROM = process.env.MAIL_FROM || "Inspo <inspo@savvia.studio>";
+// Remitente y dirección de respuesta. inspo@ no es un buzón, así que las respuestas van a hola@,
+// que sí existe: Gmail penaliza a los remitentes a los que no se puede contestar.
+const FROM = process.env.MAIL_FROM || "Inspo · Savvia <inspo@savvia.studio>";
+const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
+const SIGNATURE = "Inspo es la librería de inspiración de Savvia · savvia.studio";
 
 // Las fuentes del correo se sirven desde public/fonts (Family para títulos, Söhne para texto).
 // Apple Mail, iOS Mail y Outlook mac las cargan; Gmail ignora @font-face y cae a la pila de sistema.
@@ -28,7 +32,7 @@ export async function sendMail(to: string, subject: string, html: string, text: 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html, text }),
+    body: JSON.stringify({ from: FROM, to: [to], reply_to: REPLY_TO, subject, html, text }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
@@ -56,17 +60,21 @@ function layout(title: string, body: string, cta: { label: string; url: string }
       <tr><td style="border-top:1px solid #262626;padding:20px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
         ${note} Si el botón no funciona, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">abre este enlace</a>.
       </td></tr>
+      <tr><td style="padding:16px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
+        ${esc(SIGNATURE)}. Si tienes dudas, escríbenos a <a href="mailto:${REPLY_TO}" style="color:#a3a3a3;text-decoration:underline">${REPLY_TO}</a>.
+      </td></tr>
     </table>
   </td></tr>
 </table>
 </body></html>`;
 }
 
-export function magicLinkMail(url: string) {
+export function magicLinkMail(url: string, email?: string) {
+  const who = email ? ` con la dirección ${esc(email)}` : "";
   return {
     subject: "Tu enlace para entrar en Inspo",
-    html: layout("Entrar en Inspo", "Haz clic en el botón para iniciar sesión. El enlace caduca en 10 minutos.", { label: "Entrar", url }, "Si no has pedido este correo, puedes ignorarlo."),
-    text: `Entra en Inspo con este enlace (caduca en 10 minutos):\n${url}`,
+    html: layout("Entrar en Inspo", `Has pedido entrar en Inspo${who}. Pulsa el botón para iniciar sesión: el enlace caduca en 10 minutos y solo funciona una vez.`, { label: "Entrar", url }, "Si no has pedido este correo, puedes ignorarlo: nadie puede entrar sin este enlace."),
+    text: `Has pedido entrar en Inspo${email ? ` con la dirección ${email}` : ""}. Entra con este enlace (caduca en 10 minutos y solo funciona una vez):\n${url}\n\nSi no lo has pedido, ignora este correo.\n\n${SIGNATURE}\n${REPLY_TO}`,
   };
 }
 
@@ -74,6 +82,6 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
   return {
     subject: `${inviterName} te invita al equipo ${teamName} en Inspo`,
     html: layout(`Te invitan a ${esc(teamName)}`, `${esc(inviterName)} quiere que te unas a su librería de inspiración.`, { label: "Aceptar invitación", url }, "Si no esperabas esta invitación, puedes ignorar este correo."),
-    text: `${inviterName} te invita al equipo ${teamName} en Inspo. Acepta aquí:\n${url}`,
+    text: `${inviterName} te invita al equipo ${teamName} en Inspo. Acepta aquí:\n${url}\n\n${SIGNATURE}\n${REPLY_TO}`,
   };
 }

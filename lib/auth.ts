@@ -111,7 +111,7 @@ export const auth = betterAuth({
       async sendMagicLink({ email, url }, ctx) {
         if (DEV_LOGIN_EMAIL && email.toLowerCase() === DEV_LOGIN_EMAIL) { g.__inspoDevLink = url; return; }
         const callbackURL = (ctx?.body as { callbackURL?: string } | undefined)?.callbackURL;
-        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request));
+        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request), email);
         await sendMail(email, m.subject, m.html, m.text);
       },
     }),
