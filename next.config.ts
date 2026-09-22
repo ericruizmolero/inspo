@@ -6,6 +6,14 @@ import type { NextConfig } from "next";
 const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**/*"];
 
 const nextConfig: NextConfig = {
+  // Settings moved under /settings (22/09/2026). Old links, bookmarks and emails keep working;
+  // the query passes through, so /equipo?nuevo=1 still opens Create team.
+  async redirects() {
+    return [
+      { source: "/equipo", destination: "/settings/members", permanent: true },
+      { source: "/planes", destination: "/settings/plan", permanent: true },
+    ];
+  },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium", "@libsql/client"],
   outputFileTracingIncludes: {
     "/api/shot": CHROMIUM_BIN,

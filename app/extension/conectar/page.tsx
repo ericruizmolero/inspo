@@ -19,10 +19,10 @@ export default async function ConectarPage() {
   return (
     <div className="page">
       <ActivityPing area="extension" organizationId={ctx.workspace.id} />
-      <div className="page__bar">
-        <BackLink />
-        <span className="display page__title">{t.ext.connect}</span>
-      </div>
+      <header className="page__head">
+        <BackLink href="/settings/extension" />
+        <h1 className="display page__title">{t.ext.connect}</h1>
+      </header>
       <ConnectPanel workspaces={ctx.workspaces} currentId={ctx.workspace.id} />
     </div>
   );

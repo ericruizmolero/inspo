@@ -12,7 +12,7 @@ export default function UpdatedAt({ iso }: { iso: string }) {
     setTime(fmtTime(iso, locale));
   }, [iso, locale]);
   return (
-    <span className="ad-head__meta">
+    <span className="settings__meta">
       {time ? t.admin.updatedAt(time) : t.admin.updating}{t.admin.refreshNote}
     </span>
   );
