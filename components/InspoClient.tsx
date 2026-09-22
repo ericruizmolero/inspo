@@ -322,16 +322,21 @@ export default function InspoClient({
   // guarda su propia URL y, al cambiar de workspace (router.refresh + remontaje), la
   // restauraba con el ?add= y la web se daba de alta también en el segundo workspace.
   // Por si acaso, la URL ya tratada se apunta en sessionStorage y no se repite en la pestaña.
+  // Y si vuelve con ?recursos=1 (pulsó "entrar" desde el directorio de invitado), se abre el directorio.
   const router = useRouter();
   const autoAdded = useRef(false);
   useEffect(() => {
     if (autoAdded.current) return;
     const params = new URLSearchParams(window.location.search);
     const web = params.get("add");
-    if (!web) return;
+    const wantsRecursos = params.has("recursos");
+    if (!web && !wantsRecursos) return;
     autoAdded.current = true;
     params.delete("add");
+    params.delete("recursos");
     router.replace(window.location.pathname + (params.size ? `?${params}` : ""), { scroll: false });
+    if (wantsRecursos) setShowRecursos(true);
+    if (!web) return;
     const DONE_KEY = "inspo:auto-added";
     let done = "";
     try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* sin storage */ }

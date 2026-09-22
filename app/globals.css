@@ -1283,6 +1283,23 @@ html[data-theme="light"] .sidebar__inspo:hover { box-shadow: 0 14px 32px -18px r
 .rec-status { font-size: 12px; color: var(--muted); margin: -12px 0 -20px; }
 .rec-status.is-error { color: var(--danger); }
 .rec-empty { font-size: 13px; color: var(--muted); padding: 20px 0; text-align: center; }
+
+/* Directorio para invitados: muestra corta y, de fondo, filas borrosas tras el botón de entrar */
+.rec-modal__body--guest { gap: 28px; }
+.rec-gate { position: relative; overflow: hidden; padding: 36px 20px 20px; }
+.rec-gate__rows {
+  position: absolute; inset: 0; padding: 0 0 0; filter: blur(5px); opacity: 0.5; pointer-events: none; user-select: none;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
+}
+.rec-gate__cta {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+}
+.rec-gate__title { font-family: var(--font-body); font-weight: 500; font-size: 18px; line-height: 1.2; letter-spacing: -0.01em; margin: 0; color: var(--text); }
+.rec-gate__groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; max-width: 640px; }
+.rec-gate__groups .chip { cursor: default; }
+.rec-gate__note { font-size: 12px; color: var(--muted); margin: 0; }
+@media (max-width: 640px) { .rec-gate__groups { display: none; } }
 @media (max-width: 900px) { .rec-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) {
   .rec-list { grid-template-columns: minmax(0, 1fr); }

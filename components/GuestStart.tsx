@@ -29,7 +29,7 @@ export default function GuestStart() {
         onRecursos={() => setShowRecursos(true)}
       />
 
-      {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} />}
+      {showRecursos && <RecursosModal guest onClose={() => setShowRecursos(false)} />}
     </div>
   );
 }
