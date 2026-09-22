@@ -191,6 +191,7 @@ export const ui = {
     signInWithOther: "Sign in with another account",
     continueWith: (provider: string): string => `Continue with ${provider}`,
     orWithEmail: "or with your email",
+    lastUsed: "Last used",
     email: "Email",
     emailPlaceholder: "you@email.com",
     sending: "Sending",

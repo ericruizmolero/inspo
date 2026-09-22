@@ -2,7 +2,7 @@
 // Google, Apple y X, y workspaces mediante el plugin organization. Solo servidor.
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink, organization } from "better-auth/plugins";
+import { magicLink, organization, lastLoginMethod } from "better-auth/plugins";
 import { APIError } from "better-auth/api";
 import { memberLimitMessage, memberRank } from "./quota";
 import { nextCookies } from "better-auth/next-js";
@@ -128,6 +128,7 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    lastLoginMethod(),
     magicLink({
       expiresIn: 60 * 10,
       async sendMagicLink({ email, url }, ctx) {

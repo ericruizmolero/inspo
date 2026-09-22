@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { SocialProvider } from "@/lib/auth";
 import { useT } from "./I18nProvider";
@@ -62,6 +62,10 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
   const [loading, setLoading] = useState(false);
   const [social, setSocial] = useState<SocialProvider | null>(null);
   const [error, setError] = useState(initialError ?? "");
+  // Cookie que deja el plugin lastLoginMethod al entrar: "google" | "apple" | "twitter" | "magic-link"
+  const [lastUsed, setLastUsed] = useState<string | null>(null);
+  useEffect(() => setLastUsed(authClient.getLastUsedLoginMethod()), []);
+  const badge = <span className="auth__last">{t.login.lastUsed}</span>;
 
   // Ruta de vuelta tras entrar (relativa, nunca /login ni //otro-dominio)
   const backPath = () => {
@@ -128,6 +132,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
               >
                 {social === p ? <span className="spinner spinner--sm" /> : SOCIAL[p].icon}
                 <span>{t.login.continueWith(SOCIAL[p].label)}</span>
+                {lastUsed === p && badge}
               </button>
             ))}
           </div>
@@ -135,7 +140,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
         </>
       )}
       <label className="auth__field">
-        <span className="auth__label">{t.login.email}</span>
+        <span className="auth__label">{t.login.email}{lastUsed === "magic-link" && badge}</span>
         <input
           className="input input--lg"
           type="email"

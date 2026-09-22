@@ -189,6 +189,7 @@ export const ui: typeof EnUi = {
     signInWithOther: "Entrar con otra cuenta",
     continueWith: (provider: string) => `Continuar con ${provider}`,
     orWithEmail: "o con tu correo",
+    lastUsed: "Último usado",
     email: "Correo",
     emailPlaceholder: "tu@correo.com",
     sending: "Enviando",
