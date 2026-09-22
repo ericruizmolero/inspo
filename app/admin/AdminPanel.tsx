@@ -219,8 +219,15 @@ function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
   return <button className="btn btn--ghost btn--sm" onClick={copy}>{done ? "Copiado" : "Copiar para el agente"}</button>;
 }
 
-function FeedbackBatchView({ batch, now }: { batch: FeedbackBatch; now: number }) {
+function FeedbackBatchView({ batch, now, onDelete }: { batch: FeedbackBatch; now: number; onDelete: (b: FeedbackBatch) => Promise<void> }) {
   const [open, setOpen] = useState(batch.notes.length <= 3);
+  const [busy, setBusy] = useState(false);
+  const remove = async () => {
+    const n = batch.notes.length;
+    if (!confirm(`¿Borrar ${n === 1 ? "esta nota" : `estas ${n} notas`} de ${batch.author.name} sobre ${batch.path}? No se puede deshacer.`)) return;
+    setBusy(true);
+    try { await onDelete(batch); } finally { setBusy(false); }
+  };
   const notes = open ? batch.notes : batch.notes.slice(0, 3);
   const when = batch.sentAt ?? batch.updatedAt;
   return (
@@ -241,6 +248,7 @@ function FeedbackBatchView({ batch, now }: { batch: FeedbackBatch; now: number }
         </span>
         {!batch.sentAt && <span className="fb__draft">Borrador</span>}
         <CopyMarkdown batch={batch} />
+        <button className="btn btn--ghost btn--sm" onClick={remove} disabled={busy} aria-label="Borrar este feedback">{busy ? <span className="spinner" /> : "Borrar"}</button>
       </div>
       <ol className="fb__notes">
         {notes.map((n) => (
@@ -259,8 +267,23 @@ function FeedbackBatchView({ batch, now }: { batch: FeedbackBatch; now: number }
 }
 
 function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: number }) {
+  const router = useRouter();
   const [showAll, setShowAll] = useState(false);
-  const batches = showAll ? feedback.batches : feedback.batches.slice(0, 8);
+  const [gone, setGone] = useState<Set<string>>(() => new Set());
+  const [error, setError] = useState("");
+  // Al llegar datos nuevos del servidor (router.refresh) se olvida lo borrado en local
+  useEffect(() => { setGone(new Set()); }, [feedback]);
+  const all = feedback.batches.filter((b) => !gone.has(b.key));
+  const batches = showAll ? all : all.slice(0, 8);
+
+  const onDelete = async (b: FeedbackBatch) => {
+    setError("");
+    const res = await fetch("/api/admin/feedback", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: b.notes.map((n) => n.id) }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setError(data.error ?? "No se pudo borrar"); return; }
+    setGone((prev) => new Set(prev).add(b.key));
+    router.refresh();
+  };
   return (
     <section className="panel">
       <div className="panel__head">
@@ -269,21 +292,22 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
           {feedback.notes ? `${feedback.notes} ${feedback.notes === 1 ? "nota" : "notas"} · ${feedback.sent} ${feedback.sent === 1 ? "envío" : "envíos"}${feedback.pending ? ` · ${feedback.pending} sin enviar` : ""} · ${feedback.people} ${feedback.people === 1 ? "persona" : "personas"}` : `últimos ${feedback.days} días`}
         </span>
       </div>
-      {feedback.batches.length === 0 ? (
+      {all.length === 0 ? (
         <p className="panel__hint">Nadie ha dejado notas con la barra de feedback en los últimos {feedback.days} días. Cuando alguien pulse "Enviar al equipo" llega por correo y aparece aquí.</p>
       ) : (
         <ul className="fb-list">
-          {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} />)}
+          {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} onDelete={onDelete} />)}
         </ul>
       )}
-      {feedback.batches.length > 8 && (
+      {error && <p className="modal__error">{error}</p>}
+      {all.length > 8 && (
         <button className="btn btn--ghost btn--sm" onClick={() => setShowAll((v) => !v)} style={{ alignSelf: "flex-start" }}>
-          {showAll ? "Ver menos" : `Ver los ${feedback.batches.length}`}
+          {showAll ? "Ver menos" : `Ver los ${all.length}`}
         </button>
       )}
       {feedback.batches.length > 0 && (
         <p className="panel__hint">
-          Cada bloque es lo que una persona mandó de una vez sobre una página; "Copiar para el agente" da el mismo markdown del correo. Los borradores son notas guardadas que aún no se han enviado.
+          Cada bloque es lo que una persona mandó de una vez sobre una página; "Copiar para el agente" da el mismo markdown del correo; "Borrar" quita el bloque para siempre. Los borradores son notas guardadas que aún no se han enviado.
         </p>
       )}
     </section>

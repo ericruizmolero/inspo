@@ -147,3 +147,10 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
     people: new Set(rows.map((r) => r.userId)).size,
   };
 }
+
+/** Borra notas por id (desde /admin). Devuelve cuántas había. */
+export async function deleteFeedbackNotes(ids: string[]): Promise<number> {
+  if (!ids.length) return 0;
+  const rows = await db.delete(F).where(inArray(F.id, ids)).returning({ id: F.id });
+  return rows.length;
+}
