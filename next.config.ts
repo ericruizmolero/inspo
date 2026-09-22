@@ -6,7 +6,7 @@ import type { NextConfig } from "next";
 const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**/*"];
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium", "@libsql/client"],
+  serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium", "@libsql/client", "sharp"],
   outputFileTracingIncludes: {
     "/api/shot": CHROMIUM_BIN,
     "/api/design-md": CHROMIUM_BIN,
