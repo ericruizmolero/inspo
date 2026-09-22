@@ -8,6 +8,10 @@ export const ui: typeof EnUi = {
   },
   common: {
     back: "Volver",
+    errorTitle: "Algo se ha roto",
+    errorBody: "Esta página no ha cargado. Vuelve a intentarlo en un momento.",
+    notFoundTitle: "Aquí no hay nada",
+    notFoundBody: "Esta página no existe o ha cambiado de sitio.",
     backToLibrary: "Volver a la librería",
     signIn: "Entrar",
     cancel: "Cancelar",

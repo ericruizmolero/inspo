@@ -93,6 +93,17 @@ export async function overCapacity(organizationId: string, planKey: string | nul
 }
 
 /** Lanza HttpError(402) si el equipo pasa del número de personas de su plan. */
+/** Para route handlers: null si se puede seguir, o la respuesta de error con `quota: true`. */
+export async function quotaBlock(check: Promise<void>): Promise<Response | null> {
+  try {
+    await check;
+    return null;
+  } catch (e) {
+    if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status });
+    throw e;
+  }
+}
+
 export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise<void> {
   const over = await overCapacity(ws.id, ws.plan);
   if (!over) return;

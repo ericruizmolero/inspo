@@ -10,6 +10,10 @@ export const ui = {
   },
   common: {
     back: "Back",
+    errorTitle: "Something broke",
+    errorBody: "This page didn't load. Try again in a moment.",
+    notFoundTitle: "Nothing here",
+    notFoundBody: "This page doesn't exist or has moved.",
     backToLibrary: "Back to the library",
     signIn: "Sign in",
     cancel: "Cancel",

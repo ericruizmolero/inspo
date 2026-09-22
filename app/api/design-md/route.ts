@@ -6,8 +6,7 @@ import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { findByWeb, webSet } from "@/lib/items";
 import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise";
 import { recordUsage } from "@/lib/usage";
-import { assertQuota } from "@/lib/quota";
-import { HttpError } from "@/lib/workspace-core";
+import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 300;
@@ -84,8 +83,8 @@ export async function GET(req: NextRequest) {
   if (existing) return attach(existing, req);
 
   // Cuota mensual del plan: solo cuenta lo que se genera de verdad (la caché es gratis)
-  try { await assertQuota(ctx.workspace, "design_md"); }
-  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
+  const blocked = await quotaBlock(assertQuota(ctx.workspace, "design_md"));
+  if (blocked) return blocked;
 
   const ctrl = new AbortController();
   const promise = (async () => {

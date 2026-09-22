@@ -3,8 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
 import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch } from "@/lib/jev";
 import { prefilter } from "@/lib/search-prefilter";
-import { assertQuota } from "@/lib/quota";
-import { HttpError } from "@/lib/workspace-core";
+import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 30;
@@ -23,8 +22,8 @@ export async function POST(req: NextRequest) {
   const hit = getCachedSearch(key);
   if (hit) return Response.json({ scores: hit, cached: true });
 
-  try { await assertQuota(ctx.workspace, "jev_search"); }
-  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
+  const blocked = await quotaBlock(assertQuota(ctx.workspace, "jev_search"));
+  if (blocked) return blocked;
 
   try {
     const { items, tagMap } = await loadWorkspaceData(ctx.workspace.id);

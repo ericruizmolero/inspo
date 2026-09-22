@@ -5,8 +5,7 @@ import { classifyItem, jevEnabled, clearSearchCache } from "@/lib/jev";
 import { clearExplainCache } from "@/lib/explain";
 import { TAXONOMY_VERSION } from "@/lib/taxonomy";
 import { visionEnabled } from "@/lib/vision";
-import { assertSeatsOk } from "@/lib/quota";
-import { HttpError } from "@/lib/workspace-core";
+import { assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 300;
@@ -35,8 +34,8 @@ export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   // Bajar de plan puede dejar al equipo con más gente de la que admite: la IA se para hasta que lo arreglen
-  try { await assertSeatsOk(ctx.workspace); }
-  catch (e) { if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status }); throw e; }
+  const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
+  if (blocked) return blocked;
   const orgId = ctx.workspace.id;
   const manage = canManage(ctx.workspace.role);
   const usage = { organizationId: orgId, userId: ctx.user.id };
