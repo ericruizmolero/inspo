@@ -7,6 +7,12 @@ import { FilterAutor, FilterFecha, FilterTipo, InspoItem, TagMap } from "@/types
 import { SECTORES, ESTILOS, TAGS, TAG_THRESHOLD, Term } from "@/lib/taxonomy";
 import { RECURSOS_TOTAL } from "@/lib/recursos";
 import { useT } from "./I18nProvider";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
+} from "@/components/ui/sidebar";
 
 export const TIPOS: InspoItem["tipo"][] = ["Inspiración", "Videos", "Ideas", "Documentales"];
 export const FECHAS: Exclude<FilterFecha, "Todos">[] = ["Este mes", "Este año"];
@@ -98,8 +104,8 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   return (
     <div className={`search ${className}${ai ? " is-ai" : ""}`}>
       <span className="search__icon">{aiLoading ? <span className="spinner spinner--sm" /> : ai ? I.spark : I.search}</span>
-      <input
-        className="input"
+      <Input
+        
         type="text"
         value={value}
         autoFocus={autoFocus}
@@ -109,9 +115,9 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
       />
       <div className="search__right">
         {value && (
-          <button className="btn-icon search__clear" onClick={() => onChange("")} aria-label={t.sidebar.clear}>
+          <Button variant="icon" className="search__clear" onClick={() => onChange("")} aria-label={t.sidebar.clear}>
             {I.x}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -143,11 +149,13 @@ function NavItem({ icon, label, count, active, onClick }: {
   icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void;
 }) {
   return (
-    <button className={`nav-item${active ? " is-active" : ""}`} onClick={onClick}>
-      <span className="nav-item__icon">{icon}</span>
-      <span className="nav-item__label">{label}</span>
-      {count !== undefined && <span className="nav-item__count">{count}</span>}
-    </button>
+    <SidebarMenuItem>
+      <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item">
+        <span className="nav-item__icon">{icon}</span>
+        <span>{label}</span>
+      </SidebarMenuButton>
+      {count !== undefined && <SidebarMenuBadge className="nav-item__count">{count}</SidebarMenuBadge>}
+    </SidebarMenuItem>
   );
 }
 
@@ -179,8 +187,6 @@ export interface SidebarProps {
   onReset: () => void;
   onAdd: () => void;
   onRecursos: () => void;
-  open: boolean;
-  onClose: () => void;
   // IA
   tagMap: TagMap;
   sector: string;
@@ -204,7 +210,7 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
   const full = limit !== null && used >= limit;
   const pct = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100));
   return (
-    <Link href="/planes" className={`sidebar__plan${full ? " is-full" : ""}`} title={t.sidebar.seePlans}>
+    <Link href="/settings/plan" className={`sidebar__plan${full ? " is-full" : ""}`} title={t.sidebar.seePlans}>
       <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${used} DESIGN.md` : `${used}/${limit} DESIGN.md`}</span></span>
       {limit !== null && <span className="quota__bar"><span style={{ width: `${pct}%` }} className={full ? "is-full" : ""} /></span>}
       <span className="sidebar__plan-note">{full ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>
@@ -212,15 +218,19 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
   );
 }
 
-export default function Sidebar({
+export default function AppSidebar({
   quota,
   brand, autores, autorImages = {}, items, tipo, autor, fecha, query,
   onTipo, onAutor, onFecha, onQuery, onReset, onAdd, onRecursos,
-  open, onClose,
   tagMap, sector, estilo, selTags, onSector, onEstilo, onToggleTag,
   ai, aiLoading, aiEnabled, pending, tagging, onTagAll,
 }: SidebarProps) {
   const { t } = useT();
+  const { isMobile, setOpenMobile } = useSidebar();
+  // On a phone the sidebar is a sheet: opening a modal from it closes the sheet first
+  const fromSheet = (fn: () => void) => () => { if (isMobile) setOpenMobile(false); fn(); };
+  // Picking a filter on a phone closes the sheet so the result is visible
+  useEffect(() => { setOpenMobile(false); }, [tipo, autor, fecha, sector, estilo, selTags, setOpenMobile]);
   const isAll = tipo === "Todos" && autor === "Todos" && fecha === "Todos" && !query
     && sector === "Todos" && estilo === "Todos" && selTags.length === 0;
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
@@ -238,22 +248,21 @@ export default function Sidebar({
   const tagged = items.filter((i) => tagMap[i.web]).length;
 
   return (
-    <>
-      {open && <div className="drawer-backdrop" onClick={onClose} />}
-      <aside className={`sidebar${open ? " is-open" : ""}`}>
-        <div className="sidebar__brand">{brand}</div>
+    <Sidebar mobileTitle={t.app.filters} className="app-sidebar">
+      <SidebarHeader className="app-sidebar__header">
+        {brand}
 
         <SearchBox className="sidebar__search" value={query} onChange={onQuery}
           ai={ai} aiLoading={aiLoading} />
 
         {/* Con inspos ya guardadas, añadir va arriba, a la vista; con la librería vacía manda el cajón de URL del lienzo */}
         {items.length > 0 && (
-          <button className="btn btn--ghost btn--block sidebar__add" onClick={onAdd}>
+          <Button variant="ghost" block onClick={fromSheet(onAdd)}>
             {I.plus} {t.sidebar.add}
-          </button>
+          </Button>
         )}
 
-        <button className="sidebar__inspo" onClick={onRecursos}>
+        <button className="sidebar__inspo" onClick={fromSheet(onRecursos)}>
           <span className="sidebar__inspo-top">
             <span className="sidebar__inspo-icon">{I.compass}</span>
             <span className="sidebar__inspo-count">{t.sidebar.directoryCount(RECURSOS_TOTAL)}</span>
@@ -262,86 +271,114 @@ export default function Sidebar({
           <span className="sidebar__inspo-title">{t.sidebar.directoryTitle}</span>
           <span className="sidebar__inspo-sub">{t.sidebar.directorySub}</span>
         </button>
+      </SidebarHeader>
 
+      {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
+      <SidebarContent className="overflow-hidden">
         <FadeScroll>
-        <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={onReset} />
+          <SidebarGroup>
+            <SidebarMenu>
+              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={onReset} />
+            </SidebarMenu>
+          </SidebarGroup>
 
-        <div className="sidebar__section">{t.sidebar.collections}</div>
-        {TIPOS.map((v) => (
-          <NavItem
-            key={v}
-            icon={TIPO_ICON[v]}
-            label={t.labels.tipo[v]}
-            count={countBy((i) => i.tipo === v)}
-            active={tipo === v}
-            onClick={() => onTipo(tipo === v ? "Todos" : v)}
-          />
-        ))}
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.sidebar.collections}</SidebarGroupLabel>
+            <SidebarMenu>
+              {TIPOS.map((v) => (
+                <NavItem
+                  key={v}
+                  icon={TIPO_ICON[v]}
+                  label={t.labels.tipo[v]}
+                  count={countBy((i) => i.tipo === v)}
+                  active={tipo === v}
+                  onClick={() => onTipo(tipo === v ? "Todos" : v)}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
 
-        {autores.length > 1 && (
-          <>
-            <div className="sidebar__section">{t.sidebar.who}</div>
-            {autores.map((a) => (
-              <NavItem
-                key={a}
-                icon={autorImages[a]
-                  ? <span className="nav-item__avatar"><img src={autorImages[a]} alt="" /></span>
-                  : I.user}
-                label={t.labels.autor[a as keyof typeof t.labels.autor] ?? a}
-                count={countBy((i) => i.puestoPor === a)}
-                active={autor === a}
-                onClick={() => onAutor(autor === a ? "Todos" : a)}
-              />
-            ))}
-          </>
-        )}
+          {autores.length > 1 && (
+            <SidebarGroup>
+              <SidebarGroupLabel>{t.sidebar.who}</SidebarGroupLabel>
+              <SidebarMenu>
+                {autores.map((a) => (
+                  <NavItem
+                    key={a}
+                    icon={autorImages[a]
+                      ? <span className="nav-item__avatar"><img src={autorImages[a]} alt="" /></span>
+                      : I.user}
+                    label={t.labels.autor[a as keyof typeof t.labels.autor] ?? a}
+                    count={countBy((i) => i.puestoPor === a)}
+                    active={autor === a}
+                    onClick={() => onAutor(autor === a ? "Todos" : a)}
+                  />
+                ))}
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
 
-        <div className="sidebar__section">{t.sidebar.when}</div>
-        {FECHAS.map((f) => (
-          <NavItem
-            key={f}
-            icon={I.cal}
-            label={t.labels.fecha[f]}
-            active={fecha === f}
-            onClick={() => onFecha(fecha === f ? "Todos" : f)}
-          />
-        ))}
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.sidebar.when}</SidebarGroupLabel>
+            <SidebarMenu>
+              {FECHAS.map((f) => (
+                <NavItem
+                  key={f}
+                  icon={I.cal}
+                  label={t.labels.fecha[f]}
+                  active={fecha === f}
+                  onClick={() => onFecha(fecha === f ? "Todos" : f)}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
 
-        <div className="sidebar__section">{t.sidebar.sector}</div>
-        <Chips terms={SECTORES} labels={t.taxonomy.sector} counts={sectorCounts} selected={sector === "Todos" ? [] : [sector]}
-          onToggle={(k) => onSector(sector === k ? "Todos" : k)} />
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.sidebar.sector}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <Chips terms={SECTORES} labels={t.taxonomy.sector} counts={sectorCounts} selected={sector === "Todos" ? [] : [sector]}
+                onToggle={(k) => onSector(sector === k ? "Todos" : k)} />
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-        <div className="sidebar__section">{t.sidebar.style}</div>
-        <Chips terms={ESTILOS} labels={t.taxonomy.estilo} counts={estiloCounts} selected={estilo === "Todos" ? [] : [estilo]}
-          onToggle={(k) => onEstilo(estilo === k ? "Todos" : k)} />
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.sidebar.style}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <Chips terms={ESTILOS} labels={t.taxonomy.estilo} counts={estiloCounts} selected={estilo === "Todos" ? [] : [estilo]}
+                onToggle={(k) => onEstilo(estilo === k ? "Todos" : k)} />
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-        <div className="sidebar__section">{t.sidebar.tags}</div>
-        <Chips terms={TAGS} labels={t.taxonomy.tag} counts={tagCounts} selected={selTags} onToggle={onToggleTag} />
-
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.sidebar.tags}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <Chips terms={TAGS} labels={t.taxonomy.tag} counts={tagCounts} selected={selTags} onToggle={onToggleTag} />
+            </SidebarGroupContent>
+          </SidebarGroup>
         </FadeScroll>
+      </SidebarContent>
 
-        <div className="sidebar__footer">
-          {quota && <PlanMeter quota={quota} />}
-          {aiEnabled && (pending > 0 || tagging.running || tagging.error) && (
-            <button className="btn btn--ghost btn--block btn--sm sidebar__tag-all" onClick={onTagAll} disabled={tagging.running}>
-              {tagging.running
-                ? <><span className="spinner spinner--sm" /> {t.sidebar.tagging(tagging.done, tagging.total)}</>
-                : tagging.error
-                  ? <>{t.sidebar.taggingFailed}</>
-                  : <>{I.spark} {t.sidebar.tagPending(pending)}</>}
-            </button>
-          )}
-          {aiEnabled && pending === 0 && !tagging.running && tagged > 0 && (
-            <div className="sidebar__footer-note">{t.sidebar.tagged(tagged)}</div>
-          )}
-          {items.length === 0 && (
-            <button className="btn btn--ghost btn--block" onClick={onAdd}>
-              {I.plus} {t.sidebar.add}
-            </button>
-          )}
-        </div>
-      </aside>
-    </>
+      <SidebarFooter className="app-sidebar__footer">
+        {quota && <PlanMeter quota={quota} />}
+        {aiEnabled && (pending > 0 || tagging.running || tagging.error) && (
+          <Button variant="ghost" size="sm" block onClick={onTagAll} disabled={tagging.running}>
+            {tagging.running
+              ? <><span className="spinner spinner--sm" /> {t.sidebar.tagging(tagging.done, tagging.total)}</>
+              : tagging.error
+                ? <>{t.sidebar.taggingFailed}</>
+                : <>{I.spark} {t.sidebar.tagPending(pending)}</>}
+          </Button>
+        )}
+        {aiEnabled && pending === 0 && !tagging.running && tagged > 0 && (
+          <div className="sidebar__footer-note">{t.sidebar.tagged(tagged)}</div>
+        )}
+        {items.length === 0 && (
+          <Button variant="ghost" block onClick={fromSheet(onAdd)}>
+            {I.plus} {t.sidebar.add}
+          </Button>
+        )}
+      </SidebarFooter>
+    </Sidebar>
   );
 }
 
