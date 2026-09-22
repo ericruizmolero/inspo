@@ -42,7 +42,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // La barra de feedback solo para quien ha entrado: sus notas llegan por correo a los socios
+  // La barra de feedback está en todas las páginas, también sin sesión (login, planes,
+  // invitación): sin sesión se anota y se copia, pero enviar a los socios pide entrar.
   const session = await getSession();
   return (
     <html
@@ -56,7 +57,7 @@ export default async function RootLayout({
       </head>
       <body>
         {children}
-        {session && <FeedbackTool />}
+        <FeedbackTool canSend={!!session} />
       </body>
     </html>
   );

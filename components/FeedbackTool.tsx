@@ -1,9 +1,11 @@
 "use client";
 
-// Barra de feedback visual (Agentation) para quien ha iniciado sesión. La persona deja
-// todas las notas que quiera sobre la página y, cuando termina, pulsa "Enviar al equipo":
-// ahí (y solo ahí) sale un correo a los socios con el mismo markdown que copia la barra.
+// Barra de feedback visual (Agentation), en todas las páginas. La persona deja todas las
+// notas que quiera sobre la página y, cuando termina, pulsa "Enviar al equipo": ahí (y solo
+// ahí) sale un correo a los socios con el mismo markdown que copia la barra.
 // Cada nota se guarda además en el servidor según se añade (/api/feedback), por si acaso.
+// Sin sesión (login, planes, invitación) la barra funciona igual y las notas se quedan en
+// localStorage, pero enviar pide entrar primero: /api/feedback exige sesión.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Agentation, loadAnnotations, type Annotation } from "agentation";
@@ -12,7 +14,7 @@ import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
 const ENDPOINT = "/api/feedback";
 type SendState = "idle" | "sending" | "sent" | "error";
 
-export default function FeedbackTool() {
+export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) {
   const pathname = usePathname();
   const [notes, setNotes] = useState<Map<string, Annotation>>(() => new Map());
   const [state, setState] = useState<SendState>("idle");
@@ -32,18 +34,24 @@ export default function FeedbackTool() {
   const track = useCallback((event: "annotation.add" | "annotation.update", a: Annotation) => {
     setNotes((m) => new Map(m).set(a.id, a));
     setState("idle");
-    post({ event, annotation: a }).catch(() => {});
-  }, [post]);
+    if (canSend) post({ event, annotation: a }).catch(() => {});
+  }, [post, canSend]);
 
   const forget = useCallback((a: Annotation) => {
     setNotes((m) => { const n = new Map(m); n.delete(a.id); return n; });
-    post({ event: "annotation.delete", annotation: a }).catch(() => {});
-  }, [post]);
+    if (canSend) post({ event: "annotation.delete", annotation: a }).catch(() => {});
+  }, [post, canSend]);
 
   const list = useMemo(() => [...notes.values()].sort((a, b) => a.timestamp - b.timestamp), [notes]);
 
   const send = useCallback(async () => {
     if (!list.length || state === "sending") return;
+    if (!canSend) {
+      // Las notas siguen en localStorage: al volver con sesión a esta misma ruta se pueden enviar
+      const here = window.location.pathname + window.location.search;
+      window.location.assign(`/login?next=${encodeURIComponent(here)}`);
+      return;
+    }
     setState("sending");
     if (stateTimer.current) clearTimeout(stateTimer.current);
     const path = pathOf(window.location.href);
@@ -57,11 +65,11 @@ export default function FeedbackTool() {
     } catch {
       setState("error");
     }
-  }, [list, state, post]);
+  }, [list, state, post, canSend]);
 
   useEffect(() => () => { if (stateTimer.current) clearTimeout(stateTimer.current); }, []);
 
-  const label = state === "sending" ? "Enviando…" : state === "sent" ? "Enviado al equipo" : state === "error" ? "No se pudo enviar · reintentar" : "Enviar al equipo";
+  const label = !canSend ? "Entra para enviarlo al equipo" : state === "sending" ? "Enviando…" : state === "sent" ? "Enviado al equipo" : state === "error" ? "No se pudo enviar · reintentar" : "Enviar al equipo";
 
   return (
     <>
