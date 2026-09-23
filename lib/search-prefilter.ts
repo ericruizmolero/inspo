@@ -4,9 +4,10 @@ import en from "./i18n/en";
 import es from "./i18n/es";
 import type { InspoItem, TagMap } from "@/types/inspo";
 
-// Jev cobra por item puntuado, así que el coste de una búsqueda crecería con la
-// biblioteca. Prefiltramos por texto (nombre, notas, resumen, descripción visual y
-// etiquetas) y solo mandamos a Jev un máximo fijo de candidatos.
+// Jev cobra por token (vía OpenRouter) y cada candidato son unos 330 tokens, así que
+// el coste de una búsqueda crecería con la biblioteca. Prefiltramos por texto (nombre,
+// notas, resumen, descripción visual y etiquetas) y solo mandamos a Jev un máximo fijo
+// de candidatos. Con 80, una búsqueda cuesta unos 0,0011 dólares (septiembre de 2026).
 const MAX_JEV = 80;
 const MIN_HITS = 40;
 const STOP = new Set(["con", "que", "una", "uno", "unos", "unas", "para", "por", "del", "las", "los", "web", "webs", "sitio", "sitios", "pagina", "paginas", "page", "site", "sites", "the", "and", "with", "muy", "mas", "tipo", "estilo", "style", "like", "como"]);
