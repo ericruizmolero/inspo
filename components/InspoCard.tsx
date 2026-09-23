@@ -95,6 +95,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const manualImgRef = useRef<HTMLImageElement>(null);
+  const coverImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
 
@@ -111,6 +112,19 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     }, 0);
     return () => clearTimeout(id);
   }, [manualThumbnail]);
+
+  // Same for the DESIGN.md cover. The tile is server-rendered, so the browser
+  // often finishes loading the cover before React hydrates and attaches onLoad:
+  // the event is lost and the tile would shimmer forever over a loaded image.
+  useEffect(() => {
+    setCoverLoaded(false);
+    setCoverFailed(false);
+    const id = setTimeout(() => {
+      const el = coverImgRef.current;
+      if (el && el.complete && el.naturalWidth > 0) setCoverLoaded(true);
+    }, 0);
+    return () => clearTimeout(id);
+  }, [designCover]);
 
   // Start loading when the tile enters the viewport
   useEffect(() => {
@@ -260,6 +274,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           {useDesign && (
             <>
               <img
+                ref={coverImgRef}
                 className={`tile__img${coverLoaded ? "" : " is-hidden"}`}
                 src={proxiedSrc(designCover!)}
                 alt={item.name}
