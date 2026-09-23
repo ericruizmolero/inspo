@@ -20,7 +20,7 @@
     "check:seats": "tsx --conditions=react-server scripts/check-seats.ts",
     "check:invites": "tsx --conditions=react-server scripts/check-invite-flow.ts",
     "check:locale": "tsx --conditions=react-server scripts/check-locale.ts",
-    "eval:design-md": "tsx --conditions=react-server scripts/eval-design-md.ts"
+    "check:design": "tsx --conditions=react-server scripts/check-design.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
