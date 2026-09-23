@@ -7,11 +7,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
+import { CustomEase } from "gsap/CustomEase";
 import { flushSync } from "react-dom";
 import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
-import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView } from "./Sidebar";
+import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView, IslandPill } from "./Sidebar";
 import FilterBar from "./FilterBar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
@@ -93,12 +94,24 @@ const SIDEBAR_W = 256;
 const DESKTOP_MIN = 801;
 const RATIOS_KEY = "inspo:card-ratios";
 // Card height/width before measuring (the placeholder is 4:3) and gap between cards.
+/** Cards within a screen of the viewport: the only ones worth measuring and animating. Off-screen ones jump. */
+const nearViewport = (el: Element) => { const r = el.getBoundingClientRect(); return r.bottom > -300 && r.top < window.innerHeight + 300; };
 const DEFAULT_RATIO = 0.75;
 const GAP_RATIO = 0.06;
 
 // Columns from the usable content width (window minus sidebar on desktop).
 // Computed synchronously so collapsing the sidebar and reflowing the cards
 // happen in the same render and GSAP Flip can animate it in one go.
+function columnsFor(winW: number, collapsed: boolean) {
+  if (!winW) return 4;
+  const desktop = winW >= DESKTOP_MIN;
+  const w = desktop ? winW - (collapsed ? 0 : SIDEBAR_W) : winW;
+  if (!desktop && w <= 520) return 1;
+  if (w <= 644) return 2;
+  if (w <= 1144) return 3;
+  if (w <= 1644) return 4;
+  return 5;
+}
 function useColumnCount(collapsed: boolean) {
   const [winW, setWinW] = useState(0);
   useEffect(() => {
@@ -107,16 +120,7 @@ function useColumnCount(collapsed: boolean) {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return useMemo(() => {
-    if (!winW) return 4;
-    const desktop = winW >= DESKTOP_MIN;
-    const w = desktop ? winW - (collapsed ? 0 : SIDEBAR_W) : winW;
-    if (!desktop && w <= 520) return 1;
-    if (w <= 644) return 2;
-    if (w <= 1144) return 3;
-    if (w <= 1644) return 4;
-    return 5;
-  }, [winW, collapsed]);
+  return useMemo(() => columnsFor(winW, collapsed), [winW, collapsed]);
 }
 
 
@@ -608,42 +612,82 @@ export default function InspoClient({
   // while the sidebar slides with a CSS transition of the same length and curve
   const setSidebarOpen = (open: boolean) => {
     if (open === !collapsed) return;
-    gsap.registerPlugin(Flip);
-    // Grid cards and empty-screen blocks (data-flip) move in unison
-    const targets = [".card-item", "[data-flip]"];
-    const state = Flip.getState(targets);
-    // The sidebar box morphs between the docked column and the island pill (position, size, radius, colour)
-    const box = document.querySelector<HTMLElement>(".app-sidebar");
-    const boxState = box ? Flip.getState(box, { props: "borderRadius,backgroundColor" }) : null;
+    gsap.registerPlugin(Flip, CustomEase);
+    // The same curve and length as the column's CSS slide, so the cards and the curtain move as one
+    if (!CustomEase.get("curtain")) CustomEase.create("curtain", "0.65,0,0.35,1");
+    // Only what is on screen flies: measuring every card (125 of them, with computed styles) took half a
+    // second in WebKit and the toggle felt frozen. Off-screen cards just jump; nobody sees them.
+    Flip.killFlipsOf(".card-item, [data-flip], .fbar, .topbar__search", true);
+    const targets = Array.from(document.querySelectorAll<HTMLElement>(".card-item, [data-flip]")).filter(nearViewport);
+    // The bar over the grid and the search box move with the curtain too (their width changes, so no scale)
+    const chrome = Array.from(document.querySelectorAll<HTMLElement>(".fbar, .topbar__search"));
+    // PERF-PROBE (temporary)
+    const T0 = performance.now(); let T1 = 0, T2 = 0, T3 = 0;
+    { let last = performance.now(), worst = 0, frames = 0, first = 0; const start = last;
+      const tick = () => { const now = performance.now(); if (!first) first = now - T0; worst = Math.max(worst, now - last); last = now; frames++;
+        if (now - start < 1200) requestAnimationFrame(tick); else console.log(`PERF-PROBE frames=${frames} firstFrame=${first.toFixed(0)}ms worstGap=${worst.toFixed(0)}ms measure=${(T1 - T0).toFixed(0)}ms flushSync=${(T2 - T1).toFixed(0)}ms flipFrom=${(T3 - T2).toFixed(0)}ms`); };
+      requestAnimationFrame(tick); }
+    const state = Flip.getState(targets, { simple: true });
+    const chromeState = Flip.getState(chrome, { simple: true });
+    T1 = performance.now();
     const next = !open;
     flushSync(() => setCollapsed(next));
+    T2 = performance.now();
+    // The column itself: same tick, same curve, same length as everything else, then CSS takes over
+    const column = document.querySelector<HTMLElement>(".app-sidebar");
+    if (column) gsap.fromTo(column, { xPercent: next ? 0 : -100 }, { xPercent: next ? -100 : 0, duration: 0.55, ease: "curtain", overwrite: true, clearProps: "transform" });
+    // Promoted to their own layers for the flight: without it WebKit re-rasters every scaled tile on every frame
+    gsap.set(targets, { willChange: "transform" });
+    const clearCards = () => gsap.set(targets, { clearProps: "transform,willChange" });
+    const settle = () => {
+      clearCards();
+      if (columnsFor(window.innerWidth, next) === numCols) { setColsCollapsed(next); return; }
+      // The column count changes: a second, softer flight for the cards that switch column
+      const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item")).filter(nearViewport);
+      const before = Flip.getState(cards, { simple: true });
+      flushSync(() => setColsCollapsed(next));
+      gsap.set(cards, { willChange: "transform" });
+      const clear = () => gsap.set(cards, { clearProps: "transform,willChange" });
+      Flip.from(before, { targets: cards, duration: 0.4, ease: "power2.inOut", scale: true, absolute: false, onComplete: clear, onInterrupt: clear });
+    };
     Flip.from(state, {
       targets,
       duration: 0.55,
-      ease: "power3.inOut",
+      ease: "curtain",
       scale: true,
       absolute: false,
-      onComplete: () => gsap.set(targets, { clearProps: "transform" }),
+      onComplete: settle,
+      onInterrupt: settle,
     });
-    if (boxState) {
-      Flip.from(boxState, {
-        duration: 0.55,
-        ease: "power3.inOut",
-        scale: false,
-        absolute: false,
-        props: "borderRadius,backgroundColor",
-        clearProps: "transform,width,height,borderRadius,backgroundColor",
-      });
-    }
+    const clearChrome = () => gsap.set(chrome, { clearProps: "transform,width,height" });
+    Flip.from(chromeState, {
+      targets: chrome,
+      duration: 0.55,
+      ease: "curtain",
+      scale: false,
+      absolute: false,
+      onComplete: clearChrome,
+      onInterrupt: clearChrome,
+    });
+    T3 = performance.now();
   };
 
-  const numCols = useColumnCount(collapsed);
+  // The column count follows the sidebar only once the curtain has finished: during it every card keeps its
+  // column, so the whole grid moves as one block. If the count then changes, the cards rebalance softly.
+  const [colsCollapsed, setColsCollapsed] = useState(!initialSidebarOpen);
+  const numCols = useColumnCount(colsCollapsed);
   // On a phone the same trigger opens the menu sheet, so it says so
   const isMobile = useIsMobile();
   const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
   // Desktop, sidebar collapsed: the island pill sits over the topbar and says what the breadcrumb said
   const island = !isMobile && collapsed;
   const viewLabel = type === "all" ? t.sidebar.all : t.labels.type[type];
+  // Everything under the workspace, shared by the docked column and the island menu
+  const navProps = {
+    quota, items, members, workspaceKind: workspace.kind, author, onAuthor: setAuthor, type,
+    isAll: type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0,
+    onType: setType, onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
+  };
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
 
@@ -723,13 +767,20 @@ export default function InspoClient({
     if (entering.current) { pendingRelayout.current = true; return; }
     pendingRelayout.current = false;
     gsap.registerPlugin(Flip);
-    const state = Flip.getState(".card-item");
+    // Only the cards on screen fly, and only with transforms: measuring all 125 took half a second in WebKit,
+    // and animating width and height relaid out the whole grid on every frame. That was the freeze.
+    Flip.killFlipsOf(".card-item", true);
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item")).filter(nearViewport);
+    const state = Flip.getState(cards, { simple: true });
     flushSync(() => setRatiosVersion((v) => v + 1));
+    const clear = () => gsap.set(cards, { clearProps: "transform" });
     Flip.from(state, {
-      targets: ".card-item",
+      targets: cards,
       duration: 0.4,
       ease: "power2.inOut",
-      onComplete: () => gsap.set(".card-item", { clearProps: "transform" }),
+      scale: true,
+      onComplete: clear,
+      onInterrupt: clear,
     });
   };
   const relayoutRef = useRef(relayout);
@@ -746,6 +797,8 @@ export default function InspoClient({
         const el = e.target as HTMLElement;
         const id = el.dataset.flipId;
         if (!id || el.querySelector(".tile__media.is-loading")) continue;
+        // Off-screen cards are skipped by content-visibility and only have a placeholder size: not a measurement
+        if (typeof el.checkVisibility === "function" && !el.checkVisibility({ contentVisibilityAuto: true })) continue;
         const w = el.clientWidth, h = el.clientHeight;
         if (!w || !h) continue;
         const r = h / w;
@@ -890,28 +943,20 @@ export default function InspoClient({
         />
       )}
 
-      <Sidebar
-        quota={quota}
-        brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-          subtitle={island ? <>{viewLabel} <span className="ws__count">{filtered.length}</span></> : undefined} />}
-        items={items}
-        members={members}
-        workspaceKind={workspace.kind}
-        author={author}
-        onAuthor={setAuthor}
-        type={type}
-        isAll={type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0}
-        onType={setType}
-        onReset={resetFilters}
-        onAdd={() => setShowAdd(true)}
-        onDirectory={() => setShowDirectory(true)}
-      />
+      <Sidebar brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />} {...navProps} />
 
       <SidebarInset className="content">
-        <header className={`topbar${island ? " is-island" : ""}`}>
+        <header className="topbar">
           <span className="topbar__trigger">
             <SidebarTrigger aria-label={triggerLabel} />
           </span>
+          {island ? (
+            <IslandPill
+              brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
+                subtitle={<>{viewLabel} <span className="ws__count">{filtered.length}</span></>} />}
+              {...navProps}
+            />
+          ) : (
           <Breadcrumb className="topbar__view" aria-label={t.settings.breadcrumb}>
             <BreadcrumbList>
               <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>
@@ -922,6 +967,7 @@ export default function InspoClient({
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          )}
           <Logo size={28} className="topbar__logo" />
           {/* The main search always looks like the AI search (spark + "Describe what you are after"), as the sidebar box did */}
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
@@ -1000,8 +1046,9 @@ export default function InspoClient({
           <section ref={gridRef} className="masonry">
             {columns.map((col, colIdx) => (
               <div key={colIdx} className="masonry__col">
-                {col.map((item, itemIdx) => (
-                  <div key={`${item.web}-${colIdx}-${itemIdx}`} className="card-item" data-flip-id={item.web}>
+                {/* Keyed by the item, not its slot: a card that stays in its column keeps its DOM (and its decoded image) when the columns change */}
+                {col.map((item) => (
+                  <div key={item.web} className="card-item" data-flip-id={item.web}>
                     <InspoCard
                       item={item}
                       tags={tagMap[item.web]}
