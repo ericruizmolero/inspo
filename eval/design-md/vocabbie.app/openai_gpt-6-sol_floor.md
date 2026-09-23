@@ -1,48 +1,49 @@
 # Vocabbie — DESIGN.md
-> soft daylight for language learning
+> pastel light around quiet learning
 
 **Theme:** light  
 **Source:** https://www.vocabbie.app/ · 2026-09-23
 
 Source measurements are normalised; roles and recommendations are interpreted.
 
-Vocabbie presents language learning as quick, approachable, and unusually calm. A centered mascot and wordmark sit above a two-line promise, with generous white space giving the message more authority than any decorative device. The 68px system-sans headline uses weight 600 and tight tracking; a muted 21px explanation and small proof points lead to dark, pill-shaped store links. A phone preview introduces the product without crowding the first screen. Across the longer page, warm #faf8f5 and pale blue #eff4ff surfaces soften white #ffffff, while #222326 text keeps the interface legible and grounded. Cards use broad 28px corners rather than heavy borders or shadows. The typography is primarily -apple-system, with Inter and Segoe UI in its fallback stack; medium and semibold weights establish hierarchy without a separate display face. Faint pastel gradients and restrained product imagery add playfulness, but the layout remains orderly and practical.
+Vocabbie presents language learning as quick, approachable, and unusually calm. A centered mascot and wordmark lead into a large, tightly set promise, followed by a short explanation, small proof points, and two unmistakable download actions. The first screen leaves generous white space around this hierarchy while soft lilac, pink, and blue light frames the product imagery without competing with it. Across the longer page, Paper White #ffffff alternates with substantial Oat #faf8f5 and Mist Blue #eff4ff surfaces. Ink #222326 carries the headings; quieter copy recedes into Slate #52525b or a translucent ink. The interface relies on the native -apple-system stack, with Inter available as a fallback: weight 600 and negative heading tracking give it character without decorative typography. Near-black pill buttons, generously rounded cards, restrained borders, and occasional delicate demo shadows keep the product tangible but not busy.
 
 ## Colors
 
 | Name | Value | Group | Role |
 |------|-------|-------|------|
-| Deep Ink | `#222326` | neutral | Primary text and the near-black visual anchor for prominent controls. |
-| Soft Slate | `#52525b` | neutral | Secondary copy and quiet navigation links. |
-| Distant Gray | `#8b8c8f` | neutral | Tertiary labels and deliberately subdued supporting text. |
-| Warm Hairline | `#e7e4de` | neutral | Subtle separation on warm surfaces without prominent outlines. |
-| Soft Stone | `#f5f3ef` | neutral | Inset surfaces and quieter secondary controls. |
-| Oat Paper | `#faf8f5` | neutral | Warm section backgrounds that break up the long page. |
-| Paper White | `#ffffff` | neutral | The opening canvas and clean card surfaces. |
-| Mist Blue | `#eff4ff` | accent | Cool, low-contrast background relief around product content. |
-| Contact Blue | `#2563eb` | accent | A sparingly used interactive accent, notably for the contact link. |
+| Ink | `#222326` | neutral | Primary headings and interface text use this near-black for crisp contrast. |
+| Button Black | `#1f2025` | brand | The darker fill makes primary download actions immediately recognizable. |
+| Slate | `#52525b` | neutral | Secondary text and quiet navigation links step back from the headings. |
+| Faint Slate | `#8b8c8f` | neutral | Tertiary labels and low-emphasis details use this lighter gray. |
+| Oat | `#faf8f5` | neutral | This warm off-white covers substantial page sections and softens the long-form layout. |
+| Paper White | `#ffffff` | neutral | The main canvas and card surfaces stay clean and luminous. |
+| Mist Blue | `#eff4ff` | accent | Pale blue supplies an alternate section surface and a gentle product-focused atmosphere. |
+| Warm Hairline | `#e7e4de` | neutral | Subtle borders separate content on warm and white surfaces. |
+| Action Blue | `#2563eb` | accent | A sparingly used accent identifies actionable text links rather than primary buttons. |
 
 ## Typography
 
 ### -apple-system — body
-The system sans carries headings, copy, controls, and labels. Weight 600 does most of the hierarchy work; the largest headings gain character from tight tracking rather than a decorative typeface.
+The native sans stack handles both display and everyday interface copy; Inter is loaded but appears mainly as a fallback rather than the dominant rendered face. Weight 600 and tight tracking create the recognizable large headings, while paragraphs remain regular and openly spaced.
 - **Fallback:** system-ui, Inter, Segoe UI, sans-serif
 - **Weights:** 400, 500, 600, 700
-- **Sizes:** 12–68px · 7 principal values
-- **Line height:** 1–1.5, tighter for large headings
-- **Letter spacing:** normal for copy; approximately -0.03em for major headings
+- **Sizes:** 11-68px · 8 principal values
+- **Line height:** 1-1.5 depending on hierarchy
+- **Letter spacing:** normal in body copy; approximately -0.02em to -0.03em in headings
 
 ### Type scale
 
 | Role | Family | Weight | Size | Line height | Letter spacing |
 |------|--------|--------|------|-------------|----------------|
-| caption | -apple-system | 500 | 12px | 1.5 | normal |
-| body-sm | -apple-system | 400 | 14px | 1.5 | normal |
+| caption | -apple-system | 400 | 12px | 1.5 | normal |
+| body-sm | -apple-system | 500 | 14px | 1.5 | -0.14px |
 | body | -apple-system | 400 | 16px | 1.5 | normal |
-| subtitle | -apple-system | 400 | 21px | 1.3 | normal |
-| title-sm | -apple-system | 600 | 26px | 1.1 | -0.5px |
-| title | -apple-system | 600 | 48px | 1.05 | -1.5px |
-| display | -apple-system | 600 | 68px | 1 | -2px |
+| subtitle | -apple-system | 500 | 17px | 1.5 | -0.17px |
+| title-sm | -apple-system | 600 | 21px | 1.5 | -0.42px |
+| title | -apple-system | 600 | 26px | 1.1 | -0.51px |
+| title-lg | -apple-system | 600 | 48px | 1.05 | -1.45px |
+| display | -apple-system | 600 | 68px | 1 | -2.04px |
 
 ## Spacing and layout
 
@@ -52,83 +53,84 @@ The system sans carries headings, copy, controls, and labels. Weight 600 does mo
 - **Max page width:** 1024px
 - **Section gap:** 112px
 - **Card padding:** 22px 24px
-- **Element gap:** 8px, 16px, or 24px
+- **Element gap:** 8px, expanding to 16px or 24px between larger groups
 
 ### Border radii
 
-- **Search input:** 8px
-- **Secondary store link:** 16px
+- **Primary download button:** 999px
 - **Card:** 28px
-- **Primary store button:** 999px
+- **Large card:** 36px
+- **Input:** 8px
+- **Secondary download link:** 16px
 
 ## Elevation
 
-Page cards are largely flat: use surface changes and occasional Warm Hairline borders instead of routine shadows. Small embedded interface elements may use 0 1px 2px #1c264c0d; floating product details can use 0 14px 30px -12px #1c264c4d, 0 2px 6px #1c264c0f.
+The core layout is largely flat: section color changes, white cards, and Warm Hairline borders provide separation, while card shadow variables are set to none. Small product-interface details may use a restrained shadow such as 0 1px 2px #1c264c0d; deeper shadows belong to floating mockup details, not every page card.
 
 ## Components
 
 ### Primary button
-**Role:** Sends visitors to an app store.
+**Role:** Sends visitors to the mobile app stores.
 
-Deep Ink fill, Paper White label, pill radius, and body text at weight 600; 13px 24px padding with a store icon beside the label. Keep the hover change restrained.
+Button Black background, Paper White text, pill radius; 13px 24px padding with a store icon beside the label. Keep the fill solid and use a subtle transform on hover.
 
 ### Secondary button
-**Role:** Offers a quieter store link elsewhere on the page.
+**Role:** Offers a quieter app-store action away from the main call to action.
 
-Soft Stone fill, Deep Ink label, 16px radius, and body-sm text at weight 500; 10px 16px padding. Do not give it the visual weight of the primary download links.
+Light warm surface, Ink text, 16px radius, 10px 16px padding; avoid making it compete with the primary pill.
 
 ### Input
-**Role:** Filters the language list.
+**Role:** Lets visitors search the language list.
 
-A lightly tinted field with an 8px radius, 1px cool-gray border, and 8px 10px padding; use a caption-scale label or placeholder. The measured field tint is #f7f7f8, a local control surface rather than a page-wide palette token.
+Light neutral fill, Ink text, 8px radius, 1px cool-gray border and 8px 10px padding; retain a clearly visible focus state.
 
 ### Link
-**Role:** Provides low-emphasis navigation or a direct contact action.
+**Role:** Handles navigation and occasional inline contact actions.
 
-Use Soft Slate for ordinary text links, shifting toward Deep Ink on hover; reserve Contact Blue and weight 600 for the contact action. Avoid button styling on inline links.
+Navigation links use Slate and darken to Ink on hover; the contact link uses Action Blue. Inline links have no container or button treatment.
 
 ### Card
-**Role:** Groups a product explanation or embedded interface detail.
+**Role:** Groups learning information and product examples.
 
-Paper White surface, 28px radius, and approximately 22px 24px padding. Keep the default state flat; use surrounding background contrast rather than a heavy outline.
+Paper White surface, large card radius, approximately 22px 24px padding; prefer surface contrast over a persistent heavy shadow.
 
 ## Motion
 
-Favor modest color changes over conspicuous movement: link colors transition in roughly 200–300ms, transforms in about 280ms, and scroll-revealed opacity in about 600ms ease-out. Keep headlines, reading copy, and primary calls to action stable.
+Use restrained color transitions around 0.2-0.3s and transform transitions around 0.28s with a smooth cubic-bezier easing. Some content fades into view on scroll over approximately 0.5-0.6s. Keep headings and primary calls to action stable rather than continuously animated.
 
 ## Layout
 
-Build a long, vertically paced landing page within a roughly 1024px content container. Center the opening identity, headline, copy, proof points, and paired store links; keep the introductory copy narrower than the container. Use approximately 112px vertical section padding and alternate white, warm paper, and pale blue fields as content moves into cards and product previews.
+Center the opening message in a narrow text column within a broad white canvas, then move into sections constrained chiefly to 1024px with 24px horizontal page padding. Use generous approximately 112px section padding, compact 8px internal gaps, and larger 16-24px gaps between related groups. Alternate white, warm off-white, and pale-blue surfaces over the long page; align detailed content in orderly cards rather than filling every available width.
 
 ## Imagery
 
-Lead with a small illustrated mascot and polished phone or app-interface imagery, not lifestyle photography. Product visuals can carry faint pastel glow and occasional floating details; leave ample blank space around them.
+Product-led imagery combines a small illustrated animal mascot, mobile-device mockups, and numerous interface examples. The opening image sits below the text and store actions, with diffuse pastel color behind it; photography is not the defining visual language.
 
 ## Do and don't
 
 ### Do
-- Center the opening message and let its 68px semibold headline dominate.
-- Use weight 600 and tight tracking for major headings, with regular-weight muted explanatory copy.
-- Keep store calls to action dark, paired, icon-led, and fully pill-shaped.
-- Alternate Paper White with Oat Paper and occasional Mist Blue to pace the long page.
-- Give product cards generous corners and rely on surface contrast before adding elevation.
-- Use the mascot and app previews as the primary source of personality.
+- Open with a centered, two-line 68px promise and ample white space.
+- Use 600-weight native-system headings with measured negative tracking.
+- Keep app-store calls to action as dark, fully pill-shaped icon-and-label buttons.
+- Alternate substantial Oat and Mist Blue sections with Paper White.
+- Use large rounded white cards while keeping their default elevation restrained.
+- Let product screens and the mascot provide the playful detail.
 
 ### Don't
-- Do not replace the calm white opening with a saturated full-bleed hero.
-- Do not introduce a decorative display font or make every heading weight 700.
-- Do not turn Contact Blue into the default color for every button and heading.
-- Do not crowd the centered opening with navigation, badges, or dense card grids.
-- Do not add strong shadows to ordinary cards.
-- Do not substitute generic stock photography for product-interface imagery.
+- Do not turn the pale pastel atmosphere into saturated full-page gradients.
+- Do not replace the restrained system typography with a decorative display face.
+- Do not make Action Blue the fill of the primary download buttons.
+- Do not apply dramatic shadows to every card.
+- Do not crowd the opening text with side navigation or dense controls.
+- Do not introduce sharp-cornered cards or rectangular primary buttons.
 
 ## Similar brands
 
-- **Quizlet** — Clear study-tool messaging, restrained controls, and product-led explanation.
-- **Memrise** — Friendly language-learning presentation built around approachable app previews.
-- **Lingvist** — A quiet, typography-led approach to explaining language-learning benefits.
-- **Drops** — Playful language-learning identity paired with prominent mobile-app calls to action.
+- **Quizlet** — Clear study-product messaging supported by approachable interface previews.
+- **Memrise** — Friendly language-learning presentation with mobile product imagery.
+- **Lingvist** — Calm, spacious explanation of a technology-assisted language-learning tool.
+- **Speak** — Direct app-download calls to action paired with polished mobile mockups.
 
 ## Agent prompt
 
-Create a calm, product-led landing page for Vocabbie. Use a white opening with a faint pastel glow, a centered mascot and wordmark, and a large, tightly tracked semibold system-sans promise. Follow it with muted explanatory copy, small proof points, and two near-black pill-shaped store links. Keep the layout airy within a 1024px container. Pace later content with #faf8f5 and #eff4ff backgrounds, white 28px cards, and polished phone-interface imagery. Use blue only for occasional interactive emphasis; avoid heavy card shadows.
+Build a light, spacious landing page for Vocabbie using -apple-system with Inter as fallback. Center a compact mascot wordmark above a bold 68px, weight-600 headline with tight tracking, then quieter explanatory copy and dark pill-shaped store buttons. Keep the canvas Paper White #ffffff, alternate large Oat #faf8f5 and Mist Blue #eff4ff sections, and constrain content to 1024px. Use rounded white cards, subtle borders, minimal shadows, and mobile-app imagery against diffuse pastel light. Make the page friendly and precise, never loud.

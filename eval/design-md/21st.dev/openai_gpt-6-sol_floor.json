@@ -1,0 +1,268 @@
+{
+  "brand": "21st",
+  "tagline": "electric gallery after dark",
+  "theme": "dark",
+  "description": "21st presents a component library as a living exhibition rather than a conventional software catalog. A near-black #09090b foundation opens into a broad blue glow behind the hero, while large, edge-to-edge previews supply the visual variety. The headline is unusually spacious: 64px General Sans at weight 500, interrupted by one blue, italic Averia Serif Libre word that makes “living” feel expressive without changing the rest of the system. Supporting copy and navigation recede into #8f8f99; the principal action is a small, unmistakable #0033ff pill. Below the roomy introduction, the interface becomes compact and systematic, using 13px labels, short category tabs, tight metadata, and closely arranged previews. Later surfaces introduce warm terracotta and cream, with brighter pink and orange reserved for showcase moments. Borders and shadows remain restrained so the examples, not their containers, carry the spectacle. The overall effect is polished, technical, and deliberately animated without making the navigation complicated.",
+  "colors": [
+    {
+      "name": "Midnight Ink",
+      "hex": "#09090b",
+      "group": "neutral",
+      "role": "The primary page background and dark surface used to keep the gallery visually continuous."
+    },
+    {
+      "name": "Soft Charcoal",
+      "hex": "#0e0f10",
+      "group": "neutral",
+      "role": "A subtly raised dark section and preview surface."
+    },
+    {
+      "name": "Graphite Line",
+      "hex": "#27272a",
+      "group": "neutral",
+      "role": "A quiet outline for controls and contained interfaces."
+    },
+    {
+      "name": "Mist Gray",
+      "hex": "#8f8f99",
+      "group": "neutral",
+      "role": "Secondary copy, inactive navigation, and supporting labels."
+    },
+    {
+      "name": "Gallery White",
+      "hex": "#f4f4f5",
+      "group": "neutral",
+      "role": "Primary text against dark surfaces."
+    },
+    {
+      "name": "Electric Blue",
+      "hex": "#0033ff",
+      "group": "brand",
+      "role": "The decisive call-to-action color for signup and browsing."
+    },
+    {
+      "name": "Glow Blue",
+      "hex": "#4b73ff",
+      "group": "brand",
+      "role": "A softer blue used in atmospheric glow and expressive emphasis."
+    },
+    {
+      "name": "Terracotta",
+      "hex": "#c86a50",
+      "group": "accent",
+      "role": "A warm background for a contrasting showcase surface farther down the page."
+    },
+    {
+      "name": "Warm Paper",
+      "hex": "#f6f6f1",
+      "group": "neutral",
+      "role": "A light showcase surface that breaks up the dark page rhythm."
+    },
+    {
+      "name": "Neon Pink",
+      "hex": "#ff66f4",
+      "group": "accent",
+      "role": "A vivid color within the site's more expressive showcase treatments."
+    },
+    {
+      "name": "Hot Orange",
+      "hex": "#fe7b02",
+      "group": "accent",
+      "role": "A second high-energy showcase color, not a default control color."
+    }
+  ],
+  "fonts": [
+    {
+      "family": "General Sans",
+      "role": "body",
+      "weights": [
+        400,
+        500,
+        600
+      ],
+      "sizes": "11-64px · approximately 10 values",
+      "lineHeight": "1.06 for display; approximately 1.4-1.6 for smaller text",
+      "letterSpacing": "normal for most text; -1.408px for the display heading",
+      "fallback": "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+      "usage": "Used for navigation, explanatory text, buttons, labels, and nearly all headings. Weight 500 does most of the work; scale and contrast create hierarchy instead of frequent bold weights."
+    },
+    {
+      "family": "Averia Serif Libre",
+      "role": "display",
+      "weights": [
+        400
+      ],
+      "sizes": "approximately 64px · 1 prominent value",
+      "lineHeight": "approximately 1.06",
+      "letterSpacing": "display-tight",
+      "fallback": "Georgia, Times New Roman, serif",
+      "usage": "Reserved for the expressive italic word in the main headline rather than used as a second general-purpose text face. That single handwritten-feeling interruption is the recognisable typographic signature."
+    },
+    {
+      "family": "ui-monospace",
+      "role": "mono",
+      "weights": [
+        500
+      ],
+      "sizes": "12-13px · 2 values",
+      "lineHeight": "approximately 1.5-2.1",
+      "letterSpacing": "normal",
+      "fallback": "SF Mono, Monaco, Cascadia Code, Roboto Mono, Consolas, monospace",
+      "usage": "Used for command-line and code-oriented demonstrations. It distinguishes executable output from the polished sans-serif marketing interface."
+    }
+  ],
+  "typeScale": [
+    {
+      "role": "caption",
+      "size": 11,
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal",
+      "family": "General Sans"
+    },
+    {
+      "role": "body-sm",
+      "size": 13,
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal",
+      "family": "General Sans"
+    },
+    {
+      "role": "body",
+      "size": 16,
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal",
+      "family": "General Sans"
+    },
+    {
+      "role": "subtitle",
+      "size": 17,
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "-0.204px",
+      "family": "General Sans"
+    },
+    {
+      "role": "title-sm",
+      "size": 36,
+      "weight": 500,
+      "lineHeight": 1.15,
+      "letterSpacing": "-0.968px",
+      "family": "General Sans"
+    },
+    {
+      "role": "title",
+      "size": 44,
+      "weight": 500,
+      "lineHeight": 1.1,
+      "letterSpacing": "-0.968px",
+      "family": "General Sans"
+    },
+    {
+      "role": "display",
+      "size": 64,
+      "weight": 500,
+      "lineHeight": 1.06,
+      "letterSpacing": "-1.408px",
+      "family": "General Sans"
+    }
+  ],
+  "spacing": {
+    "density": "comfortable",
+    "baseUnit": "4px",
+    "maxWidth": "1152px",
+    "sectionGap": "64px",
+    "cardPadding": "12px for metadata; previews are edge-to-edge",
+    "elementGap": "8-24px"
+  },
+  "radii": [
+    {
+      "element": "Small controls and navigation states",
+      "value": "6px"
+    },
+    {
+      "element": "Contained interface panels",
+      "value": "8px"
+    },
+    {
+      "element": "Large showcase panels",
+      "value": "12px"
+    },
+    {
+      "element": "Call-to-action buttons",
+      "value": "9999px"
+    },
+    {
+      "element": "Gallery preview frames",
+      "value": "0px"
+    }
+  ],
+  "elevation": "Depth is mostly supplied by background changes, expansive color glow, and the previews themselves. Gallery frames use a restrained inset outline and small shadow: 0 0 0 1px #0000000a inset, 0 1px 3px #00000012. Avoid heavy floating-card shadows in the main catalog.",
+  "components": [
+    {
+      "name": "Primary button",
+      "role": "Directs visitors toward signup or browsing.",
+      "spec": "Electric Blue background, Gallery White text, pill radius; 28px high with 16px horizontal padding in the header, or 44px high with 24px horizontal padding for larger actions."
+    },
+    {
+      "name": "Secondary button",
+      "role": "Offers a quieter action beside the primary conversion path.",
+      "spec": "Midnight Ink background, Gallery White text, Graphite Line 1px border, pill radius; 44px high with 24px horizontal padding. Keep it visually subordinate to Electric Blue."
+    },
+    {
+      "name": "Link",
+      "role": "Handles navigation and low-emphasis category choices.",
+      "spec": "Mist Gray body-sm text with a transparent default background; navigation links have 4px 8px padding and a 6px radius. Emphasize the active category with a subtle surface fill rather than a bright underline."
+    },
+    {
+      "name": "Card",
+      "role": "Makes a live component example the primary clickable object.",
+      "spec": "Edge-to-edge preview with a square outer frame, minimal inset outline and shadow; place compact labels and metadata below rather than padding the artwork. Allow the preview's own colors and motion to vary."
+    },
+    {
+      "name": "Header",
+      "role": "Keeps the brand, catalog routes, and account actions accessible without competing with the gallery.",
+      "spec": "A slim, transparent row within the centered container: logo at left, muted links in the middle, ghost login and a small Primary button at right. Use generous space between groups rather than a visible divider."
+    }
+  ],
+  "motion": "Use short color changes around 150ms, background and opacity changes around 200ms, and preview transforms around 300ms with restrained cubic-bezier easing. Some examples and lower-page elements animate on scroll; keep ordinary navigation steady and let motion belong chiefly to the showcased work.",
+  "layout": "Center editorial text and navigation within a 1152px container, but let the gallery extend broadly across the viewport. Start with a large, left-aligned headline and a compact paragraph, leave substantial vertical breathing room, then switch to a tight category row and a horizontally abundant preview grid. Reuse 8px, 12px, and 24px internal intervals; separate major groups by roughly 64px.",
+  "imagery": "The imagery is the product: numerous live interface previews rather than stock photography or a unified illustration set. Show diverse dark, light, typographic, and animated examples in large cropped frames; preserve their individual visual identities while the surrounding catalog remains restrained.",
+  "dos": [
+    "Use Midnight Ink as the stable canvas and concentrate blue glow behind major introductory content.",
+    "Set most interface text in General Sans at weight 500.",
+    "Use Averia Serif Libre sparingly for one italic, highlighted display phrase.",
+    "Let preview artwork run to the edges of square gallery frames.",
+    "Keep navigation, labels, and metadata small and muted against the large heading.",
+    "Use Electric Blue for unmistakable primary actions, not every interactive element."
+  ],
+  "donts": [
+    "Do not turn every gallery example into a padded, rounded dashboard card.",
+    "Do not apply the serif accent to paragraphs, navigation, or multiple headings.",
+    "Do not replace the dark canvas with continuous terracotta, cream, pink, or orange sections.",
+    "Do not make all category links as bright as the primary call to action.",
+    "Do not use heavy shadows to separate the main catalog items.",
+    "Do not force one color treatment onto the diverse live previews."
+  ],
+  "similar": [
+    {
+      "brand": "Vercel",
+      "why": "Dark developer-focused presentation with restrained chrome and prominent product demonstrations."
+    },
+    {
+      "brand": "Linear",
+      "why": "Precise typography, muted navigation, and atmospheric lighting over dark surfaces."
+    },
+    {
+      "brand": "shadcn/ui",
+      "why": "A code-oriented component catalog that lets examples remain the central content."
+    },
+    {
+      "brand": "Framer",
+      "why": "Editorial product presentation built around expressive, motion-rich interface previews."
+    }
+  ],
+  "agentPrompt": "Build a dark, gallery-led interface for 21st. Use #09090b as the canvas, #f4f4f5 for primary text, #8f8f99 for supporting text, and #0033ff for pill-shaped primary actions. Set typography in General Sans, mainly weight 500; make the large, tight headline distinctive with one blue italic Averia Serif Libre word. Center the navigation and copy within 1152px, then let live component previews stretch broadly across the viewport in minimally framed, square-edged cards. Keep labels compact, spacing deliberate, and chrome quiet. Add a soft blue atmospheric glow and reserve brighter warm colors for showcase content."
+}

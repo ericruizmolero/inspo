@@ -1,54 +1,46 @@
 # Stripe — DESIGN.md
-> prismatic financial infrastructure in daylight
+> prismatic light over quiet infrastructure
 
 **Theme:** light  
 **Source:** https://stripe.com/en-es · 2026-09-23
 
 Source measurements are normalised; roles and recommendations are interpreted.
 
-Stripe presents complex financial infrastructure with the clarity of an editorial landing page. A broad white #ffffff canvas, restrained #061b31 headings and softer #50617a supporting copy give the message room to breathe; a sweeping, multicolour ribbon supplies the visual energy without becoming a background for every section. The hero uses an unusually long, light-weight 48px Sohne headline, followed by compact violet #533afd calls to action and a quiet row of customer logos. Sohne-var carries the entire interface: weight 300 keeps large statements open and conversational, while 400 gives navigation and controls just enough definition. Subsequent content shifts between white, pale #f8fafd surfaces and occasional deep #0d1738 areas, with #e5edf5 rules establishing structure. Product illustrations resemble polished software interfaces rather than decorative stock imagery. Small radii, fine borders and sparing shadows keep the page precise, while generous spacing makes its breadth of products feel manageable.
+Stripe presents financial infrastructure as expansive but approachable. A mostly white canvas (#ffffff) gives the oversized, light-weight sohne-var headline room to breathe, while deep navy (#061b31) and measured slate (#50617a) keep complex product language legible. The opening artwork sweeps across the page in blue, orange and pink; these colors belong to the imagery rather than becoming a collection of interface accents. Actions instead use a disciplined violet (#533afd), with compact rectangular buttons and fine outlines. Farther down the page, substantial areas of pale blue (#e5edf5), off-white (#f8fafd) and midnight navy (#0d1738) create changes in pace without disrupting the grid. Typography carries much of the hierarchy: weight 300 supports broad, closely spaced headings and readable paragraphs, while weight 400 gives navigation and calls to action definition. Product graphics and customer marks add specificity; restrained borders, small radii and selective shadows keep their surrounding interface precise.
 
 ## Colors
 
 | Name | Value | Group | Role |
 |------|-------|-------|------|
-| Stripe Violet | `#533afd` | brand | The decisive color for primary actions and prominent links. |
-| Midnight Navy | `#0d1738` | neutral | A deep surface for contrasting sections farther down the page. |
-| Ink Navy | `#061b31` | neutral | The principal heading and navigation color on light surfaces. |
-| Steel Slate | `#50617a` | neutral | The standard color for explanatory copy and subdued footer links. |
-| Soft Slate | `#64748d` | neutral | A quieter tone for large secondary statements and supporting text. |
-| Lavender Rule | `#d6d9fc` | accent | A subtle violet-tinted outline for secondary interactive elements. |
-| Cloud Blue | `#e5edf5` | neutral | Light section fills and fine structural dividers. |
-| Porcelain | `#f8fafd` | neutral | A barely tinted surface for cards and quieter content areas. |
-| Paper White | `#ffffff` | neutral | The dominant page canvas and the text color on violet actions. |
+| Midnight Navy | `#0d1738` | neutral | A substantial dark section surface that changes the page's pace. |
+| Ink Navy | `#061b31` | neutral | Primary heading and navigation text on light surfaces. |
+| Body Slate | `#50617a` | neutral | Default paragraph and supporting-link text. |
+| Soft Slate | `#64748d` | neutral | Secondary descriptions and quieter large-format copy. |
+| Blue Mist | `#e5edf5` | neutral | Broad pale-blue surfaces and unobtrusive dividers. |
+| Cloud White | `#f8fafd` | neutral | Subtle card and section surfaces against white. |
+| Paper White | `#ffffff` | neutral | The main canvas, graphic-card surface and text on filled violet actions. |
+| Stripe Violet | `#533afd` | brand | Primary actions and prominent text links. |
+| Lavender Line | `#b9b9f9` | accent | The fine outline on a secondary signup action. |
 
 ## Typography
 
-### sohne-var — display
-Large headlines and product titles use the same sans serif as the rest of the site. Weight 300, tight tracking and short line heights create scale without heavy typography.
-- **Fallback:** Arial, Helvetica, sans-serif
-- **Weights:** 300
-- **Sizes:** 26–48px · 3 principal values
-- **Line height:** 1.1–1.15
-- **Letter spacing:** -0.26px to -0.96px
-
 ### sohne-var — body
-Weight 300 carries paragraphs and large supporting statements; weight 400 is reserved mainly for navigation, links and actions. The recognisable choice is to achieve hierarchy through size and color rather than bold weight.
+Söhne Variable serves the entire interface, from navigation to long-form copy. Weight 300 does the expressive work in spacious headings and paragraphs; weight 400 defines controls without introducing a heavy bold face.
 - **Fallback:** Arial, Helvetica, sans-serif
 - **Weights:** 300, 400
-- **Sizes:** 12–32px · 5 principal values
-- **Line height:** 1.1–1.4
-- **Letter spacing:** normal to -0.64px
+- **Sizes:** 12-48px · 8 values
+- **Line height:** Approximately 1.1 for large headings and 1.4 for body copy
+- **Letter spacing:** Normal for body and controls; approximately -0.26px to -0.96px for headings
 
 ### Type scale
 
 | Role | Family | Weight | Size | Line height | Letter spacing |
 |------|--------|--------|------|-------------|----------------|
-| caption | sohne-var | 300 | 12px | 1.33 | normal |
+| caption | sohne-var | 300 | 12px | 1.4 | normal |
 | body-sm | sohne-var | 400 | 14px | 1.4 | normal |
 | body | sohne-var | 300 | 16px | 1.4 | normal |
 | subtitle | sohne-var | 300 | 18px | 1.4 | normal |
-| title-sm | sohne-var | 300 | 22px | 1.2 | -0.33px |
+| title-sm | sohne-var | 300 | 22px | 1.2 | -0.3px |
 | title | sohne-var | 300 | 26px | 1.12 | -0.26px |
 | title-lg | sohne-var | 300 | 32px | 1.1 | -0.64px |
 | display | sohne-var | 300 | 48px | 1.15 | -0.96px |
@@ -59,84 +51,82 @@ Weight 300 carries paragraphs and large supporting statements; weight 400 is res
 
 - **Base unit:** 8px
 - **Max page width:** 1266px
-- **Section gap:** 64px or more
-- **Card padding:** 24px
-- **Element gap:** 8–16px
+- **Section gap:** 64px
+- **Card padding:** 24px where cards hold text; product-graphic cards vary
+- **Element gap:** 8px for close controls, 16px for related content, 32px for larger groups
 
 ### Border radii
 
-- **Buttons and navigation controls:** 4px
-- **Cards and interface illustrations:** 6px
-- **Larger inset panels:** 8px
+- **Buttons and controls:** 4px
+- **Cards and graphic panels:** 6px
 
 ## Elevation
 
-Most depth comes from Paper White and Porcelain surface steps, Cloud Blue dividers and Lavender Rule outlines. Reserve shadows for floating product-interface illustrations: 0 3px 6px #1717170f or, on larger panels, 0 16px 32px #32325d1f.
+Use Blue Mist borders and changes between Paper White and Cloud White before adding depth. Selected floating product graphics use 0 3px 6px #1717170f or 0 16px 32px #32325d1f; ordinary sections remain flat.
 
 ## Components
 
-### Primary button
-**Role:** Moves visitors into signup, sales or another principal journey.
+### Header
+**Role:** Keeps product navigation and commercial actions accessible above the page.
 
-Stripe Violet fill, Paper White text and 4px radius; approximately 48px tall with 24px horizontal padding, or a compact 38px header variant with 20px padding. A trailing arrow is common; hover changes color smoothly rather than adding depth.
+Approximately 76px tall in the shown desktop viewport; align content to the main container, use a fine bottom divider, plain text navigation triggers and compact right-aligned actions.
+
+### Primary button
+**Role:** Marks the principal conversion action.
+
+Stripe Violet background, Paper White text, 4px radius; use approximately 48px height with 24px horizontal padding for standard CTAs, or a more compact 40px header variant. A trailing arrow may identify forward movement.
 
 ### Secondary button
-**Role:** Offers an alternate action without competing with the violet CTA.
+**Role:** Offers an alternative action without competing with the primary CTA.
 
-Paper White or translucent white fill, Stripe Violet text, 1px Lavender Rule border and 4px radius. Use approximately 48px height and 24px horizontal padding; preserve the outline on hover.
+Paper White or translucent white background, Stripe Violet text, 4px radius; use a 1px Lavender Line outline for the signup variant and approximately 48px height with 24px horizontal padding.
 
 ### Link
-**Role:** Connects explanatory copy to deeper product and service pages.
+**Role:** Connects descriptions and supporting navigation to deeper information.
 
-Stripe Violet text at body size with no resting border or pill container; use a subtle color shift on hover. Footer links instead use Steel Slate.
+Use Stripe Violet for prominent calls to action and Body Slate for quieter footer links; leave links unboxed and make hover changes primarily through color.
 
 ### Card
-**Role:** Groups product information or framed interface examples.
+**Role:** Contains product explanations or interface demonstrations.
 
-Use a Porcelain surface and 6px radius for content cards, without a default shadow. Product-interface mockups may use Paper White and the restrained illustration shadows specified under elevation.
-
-### Header
-**Role:** Keeps product navigation and account actions available at the top of the page.
-
-Approximately 76px tall within the main container, with a fine Cloud Blue bottom divider. Use Ink Navy body-sm navigation, small dropdown chevrons and compact actions aligned right; avoid a heavy filled bar.
+Use Cloud White for understated content cards or Paper White for floating product graphics, with a 6px radius. Reserve the stronger graphic-panel shadow for elements that visibly overlap or float.
 
 ## Motion
 
-Use restrained 300ms easing for link color, fills, icon strokes and small transforms; brief 150ms linear opacity changes suit transient states. Larger product-illustration transforms may take 600–800ms. Do not animate body copy or rely on scroll-triggered reveals.
+Favor restrained interaction over constant animation. Color, fill, stroke, background and small transforms commonly transition over 300ms with eased timing; opacity changes can use 150ms linear. Longer 600-800ms easing belongs to occasional graphic transforms, not navigation or ordinary copy.
 
 ## Layout
 
-Center content in a maximum 1266px container. Keep the header and logo alignment near its outer edges, while principal copy can sit farther inward; use ample white space around oversized text. Thin horizontal rules separate broad bands, and later content alternates open editorial areas with grids of product cards and interface illustrations.
+Use a centered container up to 1266px with wide desktop gutters. Align navigation, copy and lower-page modules to a consistent grid; allow major statements generous width and whitespace, then organize denser product material in modular cards. Maintain a 64px large-scale rhythm and smaller 8px, 16px and 32px relationships within groups.
 
 ## Imagery
 
-Favor customer wordmarks and detailed, layered product-interface renders over photography. The opening uses one large, flowing multicolour gradient ribbon against white; elsewhere, illustration is contained within polished UI panels so the page remains typographic and legible.
+Lead with an expansive, fluid prismatic graphic, then use customer logos and crisp product-interface compositions rather than generic stock photography. Keep most imagery contained within the grid; let selected interface panels float with subtle shadows.
 
 ## Do and don't
 
 ### Do
-- Set major headings in Sohne-var weight 300 with tight tracking.
-- Keep the main canvas white and use Porcelain only for deliberate surface contrast.
-- Use Stripe Violet sparingly for actions and navigational emphasis.
-- Give long statements wide measures and generous surrounding whitespace.
-- Separate content bands with fine Cloud Blue rules.
-- Render product concepts as credible interface fragments with restrained depth.
+- Set large statements in sohne-var at weight 300 with tight negative tracking.
+- Keep primary actions consistently Stripe Violet with Paper White text.
+- Use the prismatic artwork as imagery, not as a source of extra UI colors.
+- Alternate white, pale-blue and midnight surfaces to pace long pages.
+- Give customer marks and product interfaces clean, generous surroundings.
+- Use small 4px control radii and 6px card radii.
 
 ### Don't
-- Do not set headings in heavy bold weights to create hierarchy.
-- Do not spread the hero’s multicolour gradient across every section.
-- Do not replace Ink Navy and slate text with pure black throughout.
-- Do not give ordinary content cards strong drop shadows.
-- Do not use highly rounded pills for the primary action system.
-- Do not fill open editorial areas with decorative stock photography.
+- Do not turn the orange and pink artwork into button or link colors.
+- Do not replace the light headline with an extra-bold display face.
+- Do not crowd the opening message with multiple competing panels.
+- Do not apply deep shadows to every card or section.
+- Do not use pill-shaped buttons in place of the compact rectangles.
+- Do not introduce a separate font for navigation or product graphics.
 
 ## Similar brands
 
-- **Plaid** — Developer-facing financial infrastructure explained through crisp typography and product visuals.
-- **Adyen** — Enterprise payments messaging organized into clear, spacious product narratives.
-- **Mercury** — Calm fintech presentation with carefully framed software interfaces.
-- **Vercel** — Developer-oriented clarity, disciplined navigation and strong typographic hierarchy.
+- **Adyen** — Enterprise payments presented through clear typography, product detail and disciplined calls to action.
+- **Plaid** — Financial infrastructure explained with generous space and concrete product visuals.
+- **Brex** — A polished fintech marketing system that pairs restrained interface structure with expressive campaign imagery.
 
 ## Agent prompt
 
-Create a Stripe-like financial infrastructure interface on a spacious Paper White canvas. Use Sohne-var throughout: light, tightly tracked 48px display text; 32px section statements; restrained 16px body copy in Steel Slate. Anchor navigation and headings in Ink Navy, reserving Stripe Violet for compact square-cornered CTAs and links. Keep a centered 1266px layout, fine Cloud Blue dividers, Porcelain content cards and selective product-UI illustrations. Add one expressive multicolour gradient ribbon near the opening, then let typography, whitespace and credible interface details carry the rest.
+Create a Stripe-like financial infrastructure page on a Paper White canvas within a centered 1266px grid. Use sohne-var throughout: weight 300 for large, tightly tracked navy statements and readable slate descriptions, weight 400 for navigation and actions. Give the opening generous whitespace and one sweeping blue-orange-pink prismatic artwork, but keep UI accents strictly Stripe Violet. Build compact 4px-radius buttons, subtle 6px-radius cards, fine pale-blue separators and occasional floating product-interface graphics. Pace the longer page with Cloud White, Blue Mist and Midnight Navy surfaces; keep shadows selective and transitions understated.

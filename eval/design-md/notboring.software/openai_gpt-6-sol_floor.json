@@ -1,0 +1,217 @@
+{
+  "brand": "(Not Boring) Software",
+  "tagline": "playful software in open space",
+  "theme": "light",
+  "description": "(Not Boring) Software presents everyday utilities as things worth enjoying, not merely finishing. Its first impression is unusually spacious: a small, colorful mark and restrained navigation sit above a wide, largely open white field, while the editorial message begins on a cool gray surface. That restraint gives the larger page room for vivid app imagery and a substantial #ffb200 yellow surface without making the interface feel busy. Founders Grotesk carries the personality, moving from a 44px, weight-600 declaration to an equally large weight-400 reply; the 76px display heading is reserved for bigger moments. Jet Brains gives uppercase navigation a precise, almost technical counterpoint. Near-black #000000 actions and #232323 headings anchor the playful material against #ffffff, #ececec, and #e0e0e0 surfaces. Buttons are solid or outlined rather than decorative, with small corners and no shadows. The result feels confident and game-minded while leaving generous space around the words and products.",
+  "colors": [
+    {
+      "name": "Ink Black",
+      "hex": "#000000",
+      "group": "neutral",
+      "role": "Anchors navigation, primary actions, borders, and the strongest text."
+    },
+    {
+      "name": "Soft Charcoal",
+      "hex": "#232323",
+      "group": "neutral",
+      "role": "Gives large editorial headings a slightly softer contrast than pure black."
+    },
+    {
+      "name": "Quiet Gray",
+      "hex": "#aaaaaa",
+      "group": "neutral",
+      "role": "Recedes secondary labels and supporting links; nearby measured grays are treated as this token."
+    },
+    {
+      "name": "Inset Gray",
+      "hex": "#e0e0e0",
+      "group": "neutral",
+      "role": "Separates lighter gray content surfaces from the main editorial surface."
+    },
+    {
+      "name": "Gallery Gray",
+      "hex": "#ececec",
+      "group": "neutral",
+      "role": "Provides the broad, cool-gray ground for editorial content."
+    },
+    {
+      "name": "Paper White",
+      "hex": "#ffffff",
+      "group": "neutral",
+      "role": "Keeps open page areas bright and supplies text on solid black actions."
+    },
+    {
+      "name": "Andy Yellow",
+      "hex": "#ffb200",
+      "group": "brand",
+      "role": "Creates a large, unmistakably playful section surface rather than a routine UI highlight."
+    }
+  ],
+  "fonts": [
+    {
+      "family": "Founders Grotesk",
+      "role": "display",
+      "weights": [
+        400,
+        600,
+        700
+      ],
+      "sizes": "22-76px · 5 values",
+      "lineHeight": "0.91-1.4",
+      "letterSpacing": "normal",
+      "fallback": "Arial, Helvetica, sans-serif",
+      "usage": "Used for the major statements, supporting editorial copy, and buttons. The signature contrast is a weight-600 statement paired with a weight-400 continuation at the same 44px size; weight 700 is saved for the largest heading."
+    },
+    {
+      "family": "Jet Brains",
+      "role": "mono",
+      "weights": [
+        400,
+        700
+      ],
+      "sizes": "12-16px · 2 values",
+      "lineHeight": "1.125-1.67",
+      "letterSpacing": "normal to 1px",
+      "fallback": "'JetBrains Mono', 'Courier New', monospace",
+      "usage": "Used for compact uppercase navigation and small labels. Its mechanical rhythm counterbalances the expressive grotesk; the supplied font name suggests a monospaced face, though the exact custom font file is not identified."
+    }
+  ],
+  "typeScale": [
+    {
+      "role": "caption",
+      "size": 12,
+      "weight": 700,
+      "lineHeight": 1.67,
+      "letterSpacing": "1px",
+      "family": "Jet Brains"
+    },
+    {
+      "role": "body-sm",
+      "size": 16,
+      "weight": 400,
+      "lineHeight": 1.125,
+      "letterSpacing": "normal",
+      "family": "Jet Brains"
+    },
+    {
+      "role": "body",
+      "size": 22,
+      "weight": 600,
+      "lineHeight": 0.91,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "subtitle",
+      "size": 24,
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "title-sm",
+      "size": 36,
+      "weight": 600,
+      "lineHeight": 1,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "title",
+      "size": 44,
+      "weight": 600,
+      "lineHeight": 1.2,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "display",
+      "size": 76,
+      "weight": 700,
+      "lineHeight": 1,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    }
+  ],
+  "spacing": {
+    "density": "airy",
+    "baseUnit": "10px",
+    "maxWidth": "1200px outer; 880px editorial",
+    "sectionGap": "100px",
+    "cardPadding": "40px; no consistent card primitive was measured",
+    "elementGap": "60px for major groups; 10-40px for local spacing"
+  },
+  "radii": [
+    {
+      "element": "Buttons",
+      "value": "4px"
+    },
+    {
+      "element": "Subscribe action",
+      "value": "8px"
+    }
+  ],
+  "elevation": "Flat surface changes, solid outlines, and whitespace establish hierarchy; no box shadows were measured.",
+  "components": [
+    {
+      "name": "Primary button",
+      "role": "Presents the principal download action.",
+      "spec": "Ink Black background, Paper White body text, 4px radius; 12px 30px 15px padding and no border. A background-color transition is measured, but its hover color is not established."
+    },
+    {
+      "name": "Secondary button",
+      "role": "Offers a lower-emphasis route to more work.",
+      "spec": "Paper White background, Ink Black body text, 4px radius; 12px 30px 15px padding with a 2px solid Ink Black border."
+    },
+    {
+      "name": "Input",
+      "role": "Collects an email address for subscription.",
+      "spec": "Transparent background and Founders Grotesk subtitle text; borderless field with 0px 8px padding. Its adjacent Subscribe action has a 2px Ink Black outline and 8px radius."
+    },
+    {
+      "name": "Link",
+      "role": "Supports navigation and quieter secondary routes.",
+      "spec": "Uppercase Jet Brains text without an underline or border; use Ink Black at body-sm size for principal navigation and Quiet Gray at caption size for subdued links."
+    },
+    {
+      "name": "Header",
+      "role": "Keeps the brand mark, site navigation, and download action immediately accessible.",
+      "spec": "Paper White surface within the 1200px outer container; small mark aligned left, widely spaced links toward the right, and the primary button at the far edge. No shadow or dividing line is measured."
+    }
+  ],
+  "motion": "A background-color transition of 0.3s ease is measured on one element. Scroll animations are present elsewhere on the page, but their timing and transforms are unspecified; avoid assigning motion to every component.",
+  "layout": "Center a 1200px outer container and use narrower 880px editorial columns for prominent text. Give major sections about 100px of vertical padding and use 60px gaps between substantial groups. Favor broad horizontal surfaces, left-aligned statements, and pronounced open space over a dense card grid.",
+  "imagery": "Product-led imagery and video carry the playful, game-like character; the page includes numerous images and video rather than relying on illustration as UI decoration. Let dimensional app visuals provide color and detail while the surrounding interface stays flat and quiet.",
+  "dos": [
+    "Keep the white opening spacious, with the small brand mark and navigation doing little visual work.",
+    "Pair weight-600 and weight-400 Founders Grotesk statements at the same 44px size.",
+    "Use Jet Brains in uppercase for compact navigation and labels.",
+    "Alternate white and measured gray surfaces, reserving Andy Yellow for a large intentional color field.",
+    "Use solid black or black-outlined actions with small radii and no shadow.",
+    "Constrain editorial text to about 880px inside the wider 1200px layout."
+  ],
+  "donts": [
+    "Fill the open upper viewport with invented cards, copy, or decorative shapes.",
+    "Turn Andy Yellow into the default button color or scatter it across minor controls.",
+    "Replace the paired headline weights with universally bold type.",
+    "Use rounded pills, gradients, glass effects, or floating shadows for controls.",
+    "Set long editorial statements in the small uppercase navigation face.",
+    "Infer specific hover colors or scroll-animation choreography from the measured transition alone."
+  ],
+  "similar": [
+    {
+      "brand": "Panic",
+      "why": "Playful software presentation supported by confident typography and expressive product imagery."
+    },
+    {
+      "brand": "Teenage Engineering",
+      "why": "Technical-feeling small labels and strong product personality coexist with restrained page furniture."
+    },
+    {
+      "brand": "Cultured Code",
+      "why": "Considerable whitespace and polished product storytelling keep utility software feeling considered."
+    }
+  ],
+  "agentPrompt": "Build a light, spacious software site for (Not Boring) Software. Center a 1200px layout, narrow editorial copy to 880px, and give major sections roughly 100px of vertical breathing room. Use Founders Grotesk for large, conversational statements, especially 44px lines contrasting weights 600 and 400; reserve 76px bold type for display moments. Set uppercase navigation in Jet Brains. Work with white, #ececec, and #e0e0e0 surfaces, black actions, and one substantial #ffb200 yellow field. Keep buttons small-radius, imagery product-led, and shadows absent."
+}

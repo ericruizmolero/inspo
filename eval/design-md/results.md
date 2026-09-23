@@ -42,12 +42,4 @@ Run 2026-09-23T09:48. Same tokens and screenshot for every model.
 
 ## Decision (2026-09-23)
 
-DeepSeek v4.1 Flash becomes the default for DESIGN.md generation.
-
-- $0.006 per DESIGN.md against $0.16 for Opus 5 through OpenRouter. 28 times cheaper.
-- 5 of 5 runs ok, 0 repeated entries, colors and fonts grounded in the measurement as often as Opus.
-- Read side by side on 21st.dev, the text is as specific as Opus. One miss: it merged the CTA blue #1436f4 into #4b73ff.
-- MiMo Pro was dropped: 2 of 5 timed out, and on 21st.dev it reasoned for 23k tokens and 8 minutes.
-- GPT Sol on the flex tier (`:floor`) is the fallback: $0.025, fastest, but 2 repeated entries across 5 runs.
-
-DeepSeek is served by several providers (DeepInfra, Together, AtlasCloud, CoreWeave in this run). All of them honoured the strict schema with `require_parameters`. Watch the duplicate count if quality drops, and pin providers then.
+Superseded. This first run only checked colors and fonts against the measurement. Reading the texts showed DeepSeek writing px line heights, Unicode minus signs and descriptions in the family column: 82 field errors across 5 sites. See `DECISION.md`.

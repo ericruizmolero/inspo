@@ -1,0 +1,227 @@
+{
+  "brand": "Not Boring Software",
+  "tagline": "game-studio minimalism with a yellow wink",
+  "theme": "light",
+  "description": "A near-white gallery for a company that makes apps like games. Everything sits on Paper White and an enormous field of Fog #ececec, with the only saturated colour — Andy Yellow #ffb200 — appearing as a small logo mark and skin imagery, never as a large painted panel in the first viewport. Typography carries the whole personality: Founders Grotesk in two identical 44px sizes, one at weight 600 for the claim and one at weight 400 for the answer, so headlines read as call-and-response rather than a scale. Jet Brains appears only in 12px uppercase utility labels with 1px tracking, giving navigation a mechanical, almost terminal voice against the warm grotesk. Buttons are the loudest objects: solid Ink or a 2px Ink outline, radius 4px, generous horizontal padding, and an oddly low 20px line-height that makes the label feel pressed into the box. Space is lavish — 100px vertical section padding, 880px text measure, 60px gaps.",
+  "colors": [
+    {
+      "name": "Paper White",
+      "hex": "#ffffff",
+      "group": "neutral",
+      "role": "Page base and header surface; also the fill of outline buttons."
+    },
+    {
+      "name": "Fog",
+      "hex": "#ececec",
+      "group": "neutral",
+      "role": "Dominant section surface — the large grey blocks that carry every editorial statement."
+    },
+    {
+      "name": "Gainsboro",
+      "hex": "#e0e0e0",
+      "group": "neutral",
+      "role": "Second-tier panel surface used to alternate or nest against Fog."
+    },
+    {
+      "name": "Ink",
+      "hex": "#000000",
+      "group": "neutral",
+      "role": "Primary buttons, borders, body and display text; the only border colour on the site."
+    },
+    {
+      "name": "Soft Ink",
+      "hex": "#232323",
+      "group": "neutral",
+      "role": "Headline text inside grey sections — a hair softer than Ink, used for all h3 copy."
+    },
+    {
+      "name": "Ash",
+      "hex": "#aaaaaa",
+      "group": "neutral",
+      "role": "Muted and secondary text: footer links, meta, anything demoted below Ink."
+    },
+    {
+      "name": "Andy Yellow",
+      "hex": "#ffb200",
+      "group": "brand",
+      "role": "The brand's single saturated accent; logo mark and app-skin imagery. Measured as a wide background area deeper in the page, so treat it as a real section colour, not a dot."
+    }
+  ],
+  "fonts": [
+    {
+      "family": "Founders Grotesk",
+      "role": "display",
+      "weights": [
+        400,
+        600,
+        700
+      ],
+      "sizes": "22px, 24px, 36px, 44px, 76px",
+      "lineHeight": "TBD",
+      "letterSpacing": "normal",
+      "fallback": "sans-serif",
+      "usage": "Every headline, paragraph, button label and input. Weight 600 does the claiming, weight 400 answers it, weight 700 only at 76px for the page's single shout."
+    },
+    {
+      "family": "Jet Brains",
+      "role": "ui",
+      "weights": [
+        400,
+        700
+      ],
+      "sizes": "12px, 16px",
+      "lineHeight": "TBD",
+      "letterSpacing": "1px on 12px caption",
+      "fallback": "monospace",
+      "usage": "Uppercase navigation and footer labels only. Its 1px tracking and monospaced rhythm are the site's one machine-like gesture."
+    }
+  ],
+  "typeScale": [
+    {
+      "role": "caption",
+      "size": 12,
+      "weight": 700,
+      "lineHeight": 1.67,
+      "letterSpacing": "1px",
+      "family": "Jet Brains"
+    },
+    {
+      "role": "body-sm",
+      "size": 16,
+      "weight": 400,
+      "lineHeight": 1.15,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "body",
+      "size": 24,
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "subtitle",
+      "size": 22,
+      "weight": 600,
+      "lineHeight": 1,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "title-sm",
+      "size": 36,
+      "weight": 600,
+      "lineHeight": 1,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "title",
+      "size": 44,
+      "weight": 600,
+      "lineHeight": 1.2,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "title-lg",
+      "size": 44,
+      "weight": 400,
+      "lineHeight": 1.2,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    },
+    {
+      "role": "display",
+      "size": 76,
+      "weight": 700,
+      "lineHeight": 1,
+      "letterSpacing": "normal",
+      "family": "Founders Grotesk"
+    }
+  ],
+  "spacing": {
+    "density": "airy",
+    "baseUnit": "",
+    "maxWidth": "880px text measure, 1200px page container",
+    "sectionGap": "100px vertical, 90-100px bottom on closing sections",
+    "cardPadding": "40px 100px on panel content",
+    "elementGap": "TBD"
+  },
+  "radii": [
+    {
+      "element": "button",
+      "value": "4px"
+    },
+    {
+      "element": "submit button",
+      "value": "8px"
+    },
+    {
+      "element": "input",
+      "value": "0px"
+    },
+    {
+      "element": "card / section",
+      "value": "0px"
+    }
+  ],
+  "elevation": "None. There are no shadows anywhere in the system; hierarchy is made with flat Fog/Gainsboro surfaces and 2px Ink borders.",
+  "components": [
+    {
+      "name": "Primary button",
+      "role": "Main call to action ('Download')",
+      "spec": "Ink background, Paper White text, subtitle scale (22px/600), 4px radius, padding 12px 30px 15px, no border or shadow. Hover transitions background-color over 0.3s ease."
+    },
+    {
+      "name": "Outline button",
+      "role": "Secondary action ('See all Works')",
+      "spec": "Paper White background, Ink text at 22px/600, 2px solid Ink border, 4px radius, same 12px 30px 15px padding as the primary button."
+    },
+    {
+      "name": "Nav link",
+      "role": "Header and footer navigation",
+      "spec": "Jet Brains, 16px/400, uppercase, Ink, no underline, no border. Footer/meta variants drop to caption scale (12px/700, 1px tracking) and Ash colour."
+    },
+    {
+      "name": "Email input",
+      "role": "Newsletter field",
+      "spec": "Transparent background, no border at rest, Ink text at body scale (24px/400), padding 0 8px. Placeholder reads 'your@email.com' and inherits Ash."
+    },
+    {
+      "name": "Subscribe button",
+      "role": "Submit inside the input row",
+      "spec": "Transparent background, Ink text at 26px/600, 2px solid Ink border, 8px radius (the only 8px on the site), padding 13px 24px 16px."
+    },
+    {
+      "name": "Header",
+      "role": "Persistent top bar",
+      "spec": "Paper White surface, 1200px max width, small colour logo left, nav links right, primary button last. No bottom border, no shadow, no scroll-state change."
+    }
+  ],
+  "motion": "Near-static. One measured transition, background-color 0.3s ease, on buttons; scroll-triggered reveals exist deeper in the page. Nothing bounces or scales.",
+  "layout": "Full-bleed alternating bands: Paper White at the top and around content, then wide Fog #ececec sections. Content is left-aligned inside a 1200px container with an 880px text measure, sections separated by 100px of vertical air and 60px internal gaps. Radii are essentially square — 0px on sections, 4px only on controls.",
+  "imagery": "3D rendered app hardware and colourful skin artwork, high-contrast, placed as large product shots against flat grey rather than treated as photography. The palette stays neutral so the yellow and the app screens supply all chroma.",
+  "dos": [
+    "Set every headline and paragraph in Founders Grotesk; reserve Jet Brains exclusively for 12-16px uppercase labels with 1px tracking.",
+    "Pair a 44px weight-600 claim with a 44px weight-400 reply instead of changing size — that weight flip is the system's signature.",
+    "Give sections 100px of vertical padding and hold body copy to an 880px measure.",
+    "Use Fog #ececec as the default section surface and Paper White for the header and for controls that sit on grey.",
+    "Keep buttons at radius 4px, 2px Ink borders for outlines, and horizontal padding near 30px.",
+    "Left-align everything; no centred hero copy anywhere in the system.",
+    "Let Andy Yellow appear only in the logo and product imagery — it is an accent, not a background for text."
+  ],
+  "donts": [
+    "Do not introduce shadows, gradients or glass — the system is strictly flat.",
+    "Do not add a fourth font weight or any italic; Founders Grotesk 400/600/700 and Jet Brains 400/700 are the whole set.",
+    "Do not colour buttons with Andy Yellow or any hue other than Ink/Paper White.",
+    "Do not round sections or cards; corners stay at 0px outside of controls.",
+    "Do not use 8px radius except on the Subscriber submit button, and even there treat it as an inconsistency rather than a rule.",
+    "Do not set body copy below 24px in Founders Grotesk or above 12px in Jet Brains.",
+    "Do not centre or justify multi-line headlines — the ragged left edge is intentional."
+  ],
+  "similar": [],
+  "agentPrompt": ""
+}

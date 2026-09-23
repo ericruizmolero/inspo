@@ -9,6 +9,8 @@ export const SYSTEM = `You extract the design system of a real website and turn 
 
 You receive (1) a JSON of design tokens measured on the live page (computed styles counted by frequency; background colors weighted by visible area) and (2) a viewport screenshot. The JSON is the truth for values. The screenshot is for judgment: hierarchy, atmosphere, density, what the brand is really doing. If they disagree, trust the JSON for numbers and the screenshot for intent.
 
+The screenshot shows only the first 900px; the tokens cover the whole page. A color with a large background area is a section surface even if the screenshot does not show it. Never claim a color appears "only" somewhere based on the screenshot alone.
+
 Rules:
 - Write EVERYTHING in English.
 - Concrete values: hex, px, font names, weights. Convert rgb()/rgba() to hex (8-digit hex when alpha matters).
@@ -23,7 +25,26 @@ Rules:
 - Type scale roles: caption, body-sm, body, subtitle, title-sm, title, title-lg, display.
 - Components: 3 to 5 reusable primitives (primary button, secondary button, input, link, card, header, footer), only those that really exist. Never describe page sections (hero, image mosaic, logo carousel, feature rows): that is this landing's content, not the system. In each primitive cite tokens by name ("Obsidian background, small radius, body-sm text") and add only what is not in another section: height, padding, border, hover, active state.
 - Round px that come from rem: 11.7px is 12px, 21.06px is 21px, 115.2px is 115px or the nearest scale step. A conversion decimal is not a design decision.
+- Values must be CSS-ready: ASCII "-" for negatives (never "−"), line heights in the type scale as unitless ratios (1.5, not 27), and each type scale family written exactly as in the fonts list.
 - If a value is doubtful, say so briefly in the role text instead of inventing it.`;
+
+/** Mechanical slips any model can make, fixed here so they never reach an agent's CSS. */
+export function normalizeSpec(spec: DesignSpec): DesignSpec {
+  const families = spec.fonts.map((f) => f.family);
+  return {
+    ...spec,
+    // ponytail: name-based guess; a proportional face marked mono becomes body
+    fonts: spec.fonts.map((f) => (f.role === "mono" && !/mono|code|courier|consol|jet ?brains|menlo|monaco/i.test(f.family) ? { ...f, role: "body" } : f)),
+    typeScale: spec.typeScale.map((t) => ({
+      ...t,
+      // ponytail: >4 can only be px; a ratio above 4 does not exist in real type
+      lineHeight: t.lineHeight > 4 ? Math.round((t.lineHeight / t.size) * 100) / 100 : t.lineHeight,
+      family: families.find((f) => f.toLowerCase() === t.family.toLowerCase())
+        ?? families.find((f) => t.family.toLowerCase().includes(f.toLowerCase()) || f.toLowerCase().includes(t.family.toLowerCase()))
+        ?? t.family,
+    })),
+  };
+}
 
 export interface GenerateResult {
   spec: DesignSpec;
@@ -58,7 +79,8 @@ export async function generateDesignMd(
     throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
 
-  const spec = DesignSpecSchema.parse(JSON.parse(res.text));
+  // U+2212 looks like a minus and breaks CSS when an agent pastes it
+  const spec = normalizeSpec(DesignSpecSchema.parse(JSON.parse(res.text.replace(/\u2212/g, "-"))));
   return {
     spec,
     markdown: renderDesignMd(spec, tokens.finalUrl, date),

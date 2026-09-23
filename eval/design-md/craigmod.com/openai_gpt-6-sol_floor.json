@@ -1,0 +1,251 @@
+{
+  "brand": "Craig Mod",
+  "tagline": "quiet literary studio after dark",
+  "theme": "dark",
+  "description": "Craig Mod’s homepage feels like a writer’s personal archive rather than a conventional storefront: quiet, generous, and built for reading. A Charcoal #222222 canvas carries Soft Ivory #dddddd text, while FF Meta Web Pro gives navigation, headings, and controls a clear editorial structure. FF Meta Serif Web Pro takes over for descriptions, quotations, and longer passages, making the shift from interface to prose unmistakable. The narrow, centered newsletter form sits in ample empty space before the page opens into photography, books, endorsements, and essays. Navigation is small, uppercase, bold, and tracked; headings remain modest beside the imagery. Electric blue #2969ff is reserved for decisive actions, with translucent Link Blue #007afcbf appearing on purchase links. White #ffffff inputs and occasional Pale Paper #efefef surfaces provide contrast without turning the site into a bright dashboard. Rules, muted metadata, and restrained rounding keep a long, varied page coherent.",
+  "colors": [
+    {
+      "name": "Deep Black",
+      "hex": "#000000",
+      "group": "neutral",
+      "role": "Provides the deepest background areas and contrast beneath dark-page content."
+    },
+    {
+      "name": "Charcoal",
+      "hex": "#222222",
+      "group": "neutral",
+      "role": "Forms the principal dark page canvas."
+    },
+    {
+      "name": "Slate Rule",
+      "hex": "#555555",
+      "group": "neutral",
+      "role": "Defines restrained borders and dividers against the dark canvas."
+    },
+    {
+      "name": "Muted Ink",
+      "hex": "#666666",
+      "group": "neutral",
+      "role": "Sets quiet publication details, form hints, and fine print."
+    },
+    {
+      "name": "Faint Silver",
+      "hex": "#999999",
+      "group": "neutral",
+      "role": "Supports secondary labels that should remain legible but recede."
+    },
+    {
+      "name": "Soft Ivory",
+      "hex": "#dddddd",
+      "group": "neutral",
+      "role": "Carries most headings, prose, and navigation on dark surfaces."
+    },
+    {
+      "name": "Pale Paper",
+      "hex": "#efefef",
+      "group": "neutral",
+      "role": "Supplies light section surfaces and the border of the white email field."
+    },
+    {
+      "name": "Paper White",
+      "hex": "#ffffff",
+      "group": "neutral",
+      "role": "Fills input surfaces and sets text on blue action links."
+    },
+    {
+      "name": "Electric Blue",
+      "hex": "#2969ff",
+      "group": "brand",
+      "role": "Marks the main subscription action against the otherwise subdued palette."
+    },
+    {
+      "name": "Link Blue",
+      "hex": "#007afcbf",
+      "group": "accent",
+      "role": "Gives compact purchase links a translucent blue fill."
+    }
+  ],
+  "fonts": [
+    {
+      "family": "ff-meta-web-pro-1",
+      "role": "ui",
+      "weights": [
+        400,
+        500,
+        700
+      ],
+      "sizes": "13-32px · 6 values",
+      "lineHeight": "Mostly normal; 1.1 for selected headings and 1.5 for compact links",
+      "letterSpacing": "normal; 1px for uppercase navigation",
+      "fallback": "-apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif",
+      "usage": "Used for navigation, headings, form controls, and action labels. Small tracked capitals organize the header, while 500 and 700 weights establish hierarchy without oversized display typography."
+    },
+    {
+      "family": "ff-meta-serif-web-pro-1",
+      "role": "body",
+      "weights": [
+        400,
+        500
+      ],
+      "sizes": "13-22px · 4 values",
+      "lineHeight": "Usually 1.5; approximately 1.1 for small editorial titles",
+      "letterSpacing": "normal",
+      "fallback": "Georgia, Times, serif",
+      "usage": "Used for descriptive copy, essay links, quotations, and supporting publication information. Its regular-weight, comfortably spaced prose makes the page feel authored rather than promotional."
+    }
+  ],
+  "typeScale": [
+    {
+      "role": "caption",
+      "size": 13,
+      "weight": 700,
+      "lineHeight": 1.3,
+      "letterSpacing": "1px",
+      "family": "ff-meta-web-pro-1"
+    },
+    {
+      "role": "body-sm",
+      "size": 14,
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal",
+      "family": "ff-meta-serif-web-pro-1"
+    },
+    {
+      "role": "body",
+      "size": 18,
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal",
+      "family": "ff-meta-serif-web-pro-1"
+    },
+    {
+      "role": "subtitle",
+      "size": 20,
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal",
+      "family": "ff-meta-web-pro-1"
+    },
+    {
+      "role": "title-sm",
+      "size": 22,
+      "weight": 400,
+      "lineHeight": 1.1,
+      "letterSpacing": "normal",
+      "family": "ff-meta-serif-web-pro-1"
+    },
+    {
+      "role": "title",
+      "size": 26,
+      "weight": 500,
+      "lineHeight": 1.1,
+      "letterSpacing": "normal",
+      "family": "ff-meta-web-pro-1"
+    },
+    {
+      "role": "title-lg",
+      "size": 28,
+      "weight": 700,
+      "lineHeight": 1.2,
+      "letterSpacing": "normal",
+      "family": "ff-meta-web-pro-1"
+    },
+    {
+      "role": "display",
+      "size": 32,
+      "weight": 700,
+      "lineHeight": 1.2,
+      "letterSpacing": "normal",
+      "family": "ff-meta-web-pro-1"
+    }
+  ],
+  "spacing": {
+    "density": "airy",
+    "baseUnit": "10px",
+    "maxWidth": "1140px",
+    "sectionGap": "60-90px",
+    "cardPadding": "20px",
+    "elementGap": "10-30px"
+  },
+  "radii": [
+    {
+      "element": "Email input",
+      "value": "5px"
+    },
+    {
+      "element": "Compact action link",
+      "value": "6px"
+    },
+    {
+      "element": "Primary button",
+      "value": "8px"
+    },
+    {
+      "element": "Circular monogram",
+      "value": "50%"
+    }
+  ],
+  "elevation": "Depth comes primarily from contrasting surfaces and fine rules, not stacked cards. Selected raised elements use a restrained 0 10px 26px #00000047 shadow.",
+  "components": [
+    {
+      "name": "Header",
+      "role": "Provides a compact directory to the writer’s work and channels.",
+      "spec": "Place the circular monogram and grouped caption-scale links within the 1140px container; use uppercase labels, 3px vertical link padding, and a thin Slate Rule divider."
+    },
+    {
+      "name": "Link",
+      "role": "Connects prose and navigation to essays, publishers, and other destinations.",
+      "spec": "Keep editorial links inline and visibly underlined where context calls for it; transition text color over 0.2s ease. Header links instead use the tracked uppercase caption treatment."
+    },
+    {
+      "name": "Input",
+      "role": "Collects an email address for newsletter subscriptions.",
+      "spec": "Use a Paper White surface, Pale Paper 2px border, 5px radius, and 4px 10px padding; pair it with native newsletter checkboxes."
+    },
+    {
+      "name": "Primary button",
+      "role": "Submits the newsletter form.",
+      "spec": "Use an Electric Blue fill, Paper White label, approximately 44px height, and 8px radius; keep the treatment solid rather than outlined."
+    },
+    {
+      "name": "Secondary button",
+      "role": "Presents compact outbound purchase choices.",
+      "spec": "Style the link with a Link Blue fill, Paper White bold label, 6px radius, and approximately 8px 17px padding; ease background-color changes over 0.15s."
+    }
+  ],
+  "motion": "Keep motion unobtrusive: link colors ease over 0.2-0.3s, action backgrounds over 0.15-0.3s, and small interaction transforms over 0.25s. Some scroll-driven transforms use approximately 0.6s easing; prose and page structure should otherwise remain still.",
+  "layout": "Center the page in a 1140px maximum-width container. Use a narrow centered form and generous vertical pauses near the top, then alternate spacious image-and-text compositions with reading-oriented sections. Align prose to clear columns and preserve substantial margins around photography.",
+  "imagery": "Use real book, walking, and photographic imagery rather than illustration. Let images occupy meaningful space beside text, retain their natural color, and avoid heavy overlays or decorative frames.",
+  "dos": [
+    "Set the main reading canvas to Charcoal and most copy to Soft Ivory.",
+    "Use FF Meta Web Pro for interface hierarchy and FF Meta Serif Web Pro for prose.",
+    "Keep navigation at caption scale, uppercase, bold, and tracked by 1px.",
+    "Constrain content to 1140px and give the opening form generous breathing room.",
+    "Reserve Electric Blue for clear actions and Link Blue for compact purchase links.",
+    "Use underlines and muted metadata to distinguish editorial references from actions."
+  ],
+  "donts": [
+    "Do not replace the dark reading canvas with an all-white landing-page layout.",
+    "Do not introduce oversized, high-contrast display headlines.",
+    "Do not render long passages in the UI sans serif.",
+    "Do not turn every section into a raised card or add heavy shadows.",
+    "Do not use blue for ordinary headings, dividers, or body links indiscriminately.",
+    "Do not substitute generic illustrations for books and original photography."
+  ],
+  "similar": [
+    {
+      "brand": "The Creative Independent",
+      "why": "An editorial reading experience that gives creative work room to breathe."
+    },
+    {
+      "brand": "Kottke.org",
+      "why": "A personal, link-rich publishing sensibility with typography ahead of interface chrome."
+    },
+    {
+      "brand": "The Marginalian",
+      "why": "Literary content, book imagery, and a distinct authorial voice shape the presentation."
+    }
+  ],
+  "agentPrompt": "Build a dark, literary homepage for Craig Mod using a #222222 canvas, #dddddd reading text, FF Meta Web Pro for navigation and headings, and FF Meta Serif Web Pro for prose. Center content within 1140px, keep the newsletter form narrow and spacious, and follow it with substantial book photography and editorial text. Make navigation small, bold, uppercase, and tracked. Use #2969ff for the primary action and restrained blue purchase links. Favor underlines, quiet rules, muted metadata, minimal shadows, and generous pauses over cards or animated decoration."
+}

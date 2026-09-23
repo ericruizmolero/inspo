@@ -1,0 +1,129 @@
+# Stripe — DESIGN.md
+> clinical fintech gradient stage
+
+**Theme:** light  
+**Source:** https://stripe.com/en-es · 2026-09-23
+
+Source measurements are normalised; roles and recommendations are interpreted.
+
+A clinical, hairline-ruled fintech canvas: Paper White everywhere, split by 1px Slate Tint vertical gutters that run the full page height and align every block to a 1266px measure. Ink #061B31 sets the headlines at weight 300 with tight negative tracking (-0.96px at 48px), and the second sentence of each headline drops to Slate Muted so a single sentence reads as two tonal registers. Body copy sits in Slate Body #50617A at weight 300, 16/1.4. Signal Indigo #533AFD is rationed: filled buttons, callout links, one word of the nav — never a section fill. Sections breathe with 64px gaps on Mist #F8FAFD panels and Deep Navy #0D1738 for dark bands. The only drama is the hero's iridescent orange-pink-violet beam bleeding off the right edge behind light-weight type. Buttons are 4px radius, cards 6px, nothing is bold, shadows stay blue-tinted and low.
+
+## Colors
+
+| Name | Value | Group | Role |
+|------|-------|-------|------|
+| Paper White | `#FFFFFF` | neutral | Page canvas, button fills on dark bands, floating graphic cards. |
+| Mist | `#F8FAFD` | neutral | Soft panel and card surface behind feature blocks; barely-blue white. |
+| Slate Tint | `#E5EDF5` | neutral | Hairline rules, section dividers, card borders — the structural grid. |
+| Deep Navy | `#0D1738` | neutral | Dark band background for inverted sections and footer. |
+| Ink | `#061B31` | neutral | Headings, nav labels, button-adjacent UI text. |
+| Slate Body | `#50617A` | neutral | Body paragraphs, footer links, supporting descriptions. |
+| Slate Muted | `#64748D` | neutral | Second-clause headline text, captions, tertiary metadata. |
+| Signal Indigo | `#533AFD` | accent | Primary CTA fill, callout links, active nav state. |
+| Lilac Border | `#B9B9F9` | accent | Outline on secondary buttons sitting over the hero gradient. |
+| Lavender Rule | `#D6D9FC` | accent | Outline on light-surface secondary buttons and accent dividers. |
+
+## Typography
+
+### sohne-var — ui
+Single family for the whole system. Weight 300 carries every heading and every paragraph; weight 400 is reserved for interactive UI — nav items, buttons, links, card labels.
+- **Fallback:** ui-sans-serif, system-ui, sans-serif
+- **Weights:** 300, 400
+- **Sizes:** caption 11px, body-sm 14px, body 16px, subtitle 18px, title-sm 26px, title 32px, title-lg 40px, display 48px
+- **Line height:** caption 1.3, body-sm 1.4, body 1.4, subtitle 1.4, title-sm 1.12, title 1.1, title-lg 1.1, display 1.15
+- **Letter spacing:** normal at body and below, -0.26px at title-sm, -0.64px at title, -0.8px at title-lg, -0.96px at display
+
+### Type scale
+
+| Role | Family | Weight | Size | Line height | Letter spacing |
+|------|--------|--------|------|-------------|----------------|
+| caption | sohne-var | 400 | 11px | 1.3 | 0.1px |
+| body-sm | sohne-var | 300 | 14px | 1.4 | normal |
+| body | sohne-var | 300 | 16px | 1.4 | normal |
+| subtitle | sohne-var | 300 | 18px | 1.4 | normal |
+| title-sm | sohne-var | 300 | 26px | 1.12 | -0.26px |
+| title | sohne-var | 300 | 32px | 1.1 | -0.64px |
+| title-lg | sohne-var | 300 | 40px | 1.1 | -0.8px |
+| display | sohne-var | 300 | 48px | 1.15 | -0.96px |
+
+## Spacing and layout
+
+**Density:** airy
+
+- **Base unit:** 4px
+- **Max page width:** 1266px
+- **Section gap:** 96px
+- **Card padding:** 32px
+- **Element gap:** 64px
+
+### Border radii
+
+- **button / input:** 4px
+- **card / panel:** 6px
+- **large graphic container:** 16px
+
+## Elevation
+
+Tinted, never grey: rgba(50,50,93,0.12) 0 16px 32px for floating graphic cards; rgba(23,23,23,0.06) 0 3px 6px for shallow surfaces; no glow, no hard borders as shadow substitutes.
+
+## Components
+
+### Primary button
+**Role:** conversion
+
+Signal Indigo background, Paper White text, body role at weight 400, 4px radius. Content height 48px with padding 15.5px 24px 16.5px; nav variant 40px with padding 11.5px 20px 12.5px and body-sm. Optional trailing chevron glyph, 6px gap. Hover: background darkens toward Deep Navy blend and translateY(-1px) over 0.3s cubic-bezier(0.25,0.46,0.45,0.94); active: translateY(0) with no scale. Focus: 2px Lilac Border outline, 2px offset.
+
+### Secondary button
+**Role:** conversion
+
+Transparent or Paper White fill with 1px Lilac Border (#B9B9F9) on gradient backgrounds, 1px Lavender Rule (#D6D9FC) on flat surfaces. Signal Indigo text at weight 400, body size, 4px radius, height 46-48px with padding 14.5px 24px 15.5px. Leading 16px vendor glyph allowed with 8px gap. Hover: fill goes to solid Paper White and border shifts to Signal Indigo over 0.3s; active: border color holds, no shadow.
+
+### Header
+**Role:** navigation
+
+Paper White bar, 76px tall, 1px Slate Tint bottom rule, sticky at top. Left: wordmark in Ink. Center-left: nav triggers at body-sm weight 400 in Ink, padding 12px 0, 8px chevron glyph, 28px apart, radius 4px on hover with Mist fill. Right: text button (Sign in) in Signal Indigo, transparent fill, 1px Paper White border, padding 10.5px 20px 13.5px, plus the primary button at nav sizing. Hover on nav items: color transitions to Signal Indigo over 0.3s.
+
+### Callout link
+**Role:** navigation
+
+Inline, body size weight 400, Signal Indigo, no underline at rest, optional trailing chevron with 6px gap. Hover: underline appears and chevron translates 4px right over 0.3s. Muted variant for tertiary copy uses Slate Muted instead of Signal Indigo — same motion, same size.
+
+### Card
+**Role:** surface
+
+Mist background, 1px Slate Tint border, 6px radius, 32px padding, title-sm Ink heading plus body Slate Body copy. Bento variant drops the border and lets Slate Tint hairlines define the grid instead. Floating graphic cards inside are Paper White, 6px radius, shadow rgba(50,50,93,0.12) 0 16px 32px. Hover on interactive cards: shadow lifts to rgba(23,23,23,0.08) 0 15px 35px and internal arrow translates 4px, 0.3s.
+
+## Motion
+
+State changes use color/fill/transform at 0.3s cubic-bezier(0.25,0.46,0.45,0.94); larger reveals and hero layers use transform at 0.8s cubic-bezier(0.165,0.84,0.44,1); micro-fades are opacity 0.15s linear. No parallax, no scroll-linked timelines.
+
+## Layout
+
+1266px measure held between two full-height 1px Slate Tint vertical rules; sections separated by hairline horizontal rules rather than whitespace alone; logo row is a 7-column evenly-spaced strip inside the same rules.
+
+## Imagery
+
+One iridescent orange-pink-violet beam rendered as a soft-focus gradient bleeding off the right edge behind the display headline; all other imagery is flat UI mockup cards in Paper White with tinted shadow.
+
+## Do and don't
+
+### Do
+- Set every heading at weight 300 with negative letter-spacing (-0.96px at 48px, -0.64px at 32px, -0.26px at 26px); use weight 400 only inside nav items, buttons and links.
+- Split long headlines into two tonal clauses: first clause Ink, remainder Slate Muted — same size, same weight.
+- Frame content blocks with 1px Slate Tint hairlines and align them to the 1266px measure; let the rules, not big margins, do the separating.
+- Fill only primary conversion actions with Signal Indigo; everywhere else the accent is text color or a 1px Lilac/Lavender border.
+- Keep radii at 4px for controls and 6px for cards, and use blue-tinted shadows (rgba(50,50,93,0.12)) at 0 16px 32px.
+
+### Don't
+- Never introduce a bold or black weight — nothing on this site exceeds 400.
+- Never use Signal Indigo as a section or hero background; it appears only on buttons, links and active states.
+- Never use pure grey (#000/#999) for borders or body text — use Slate Tint for lines and Slate Body/Slate Muted for copy.
+- Never place body copy directly on the iridescent beam; type sits on Paper White or over the beam's out-of-focus left falloff only.
+- Never exceed 16px radius or add pill shapes to structural cards; buttons stay at 4px.
+
+## Similar brands
+
+
+## Agent prompt
+
+Reproduce this Stripe design system as semantic HTML with inline CSS/CSS variables. Use only the tokens above, referenced by name (e.g. color: var(--signal-indigo)). Type must follow the 8-step scale exactly, headings weight 300 with the specified negative tracking, UI weight 400. Single font family sohne-var with system fallback. Layout: 1266px max-width between two full-height 1px Slate Tint vertical rules, sections divided by hairline horizontal rules, 96px section gap, 64px element gap, 32px card padding, base unit 4px. Buttons: primary = Signal Indigo fill / Paper White / 4px radius / 48px height; secondary = 1px Lilac Border outline with Signal Indigo text. Radii only 4px/6px/16px. Blue-tinted shadows only. Motion: 0.3s cubic-bezier(0.25,0.46,0.45,0.94) for states, 0.8s cubic-bezier(0.165,0.84,0.44,1) for reveals, 0.15s linear for fades. Imagery: one soft-focus irisdescent gradient bleeding off the right edge behind the hero headline; flat Paper White UI mockup cards elsewhere. Do not use grey hexes, bold weights, or Signal Indigo as a background.

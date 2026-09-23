@@ -1,51 +1,52 @@
 # Craig Mod — DESIGN.md
-> quiet books after dark
+> quiet literary studio after dark
 
 **Theme:** dark  
 **Source:** https://craigmod.com/ · 2026-09-23
 
 Source measurements are normalised; roles and recommendations are interpreted.
 
-Craig Mod’s homepage feels like an author’s reading room rather than a conventional portfolio: intimate, text-led, and generous with space despite its near-black #222222 canvas. A restrained header sets small, uppercase FF Meta Web Pro links above a centered newsletter invitation; the first substantial image arrives only after the subscription form and a row of book-award laurels. FF Meta Serif Web Pro carries the conversational descriptions, quotations, and publishing details, while the sans serif gives headings and navigation a clear, modest structure. Most copy is soft #dddddd, with #666666 and #999999 reserved for details that should recede. The white email field and vivid #2969ff Subscribe button provide the page’s strongest interface contrast without turning the whole site blue. Farther down, large book and photography images sit beside editorial copy in an open 1140px layout. Thin rules, understated links, and minimal surface decoration let the writing, walking, and books remain the subject.
+Craig Mod’s homepage feels like a writer’s personal archive rather than a conventional storefront: quiet, generous, and built for reading. A Charcoal #222222 canvas carries Soft Ivory #dddddd text, while FF Meta Web Pro gives navigation, headings, and controls a clear editorial structure. FF Meta Serif Web Pro takes over for descriptions, quotations, and longer passages, making the shift from interface to prose unmistakable. The narrow, centered newsletter form sits in ample empty space before the page opens into photography, books, endorsements, and essays. Navigation is small, uppercase, bold, and tracked; headings remain modest beside the imagery. Electric blue #2969ff is reserved for decisive actions, with translucent Link Blue #007afcbf appearing on purchase links. White #ffffff inputs and occasional Pale Paper #efefef surfaces provide contrast without turning the site into a bright dashboard. Rules, muted metadata, and restrained rounding keep a long, varied page coherent.
 
 ## Colors
 
 | Name | Value | Group | Role |
 |------|-------|-------|------|
-| Night | `#222222` | neutral | The continuous dark page background keeps long editorial sections visually connected. |
-| Charcoal | `#333333` | neutral | A subtle raised dark surface where the interface needs separation from Night. |
-| Slate Rule | `#555555` | neutral | Quiet borders and dividers on the dark canvas. |
-| Faded Ink | `#666666` | neutral | Low-emphasis publishing details and subscription reassurance. |
-| Silver | `#999999` | neutral | Secondary labels and navigation that should remain legible without leading. |
-| Reading White | `#dddddd` | neutral | Primary text and headings, softened for sustained reading on Night. |
-| Paper Edge | `#efefef` | neutral | The light border around white form fields. |
-| Paper White | `#ffffff` | neutral | Email-field fill and high-contrast text on blue actions. |
-| Subscribe Blue | `#2969ff` | accent | The decisive subscription action and small interactive highlights; other measured blue treatments appear to be related variations. |
+| Deep Black | `#000000` | neutral | Provides the deepest background areas and contrast beneath dark-page content. |
+| Charcoal | `#222222` | neutral | Forms the principal dark page canvas. |
+| Slate Rule | `#555555` | neutral | Defines restrained borders and dividers against the dark canvas. |
+| Muted Ink | `#666666` | neutral | Sets quiet publication details, form hints, and fine print. |
+| Faint Silver | `#999999` | neutral | Supports secondary labels that should remain legible but recede. |
+| Soft Ivory | `#dddddd` | neutral | Carries most headings, prose, and navigation on dark surfaces. |
+| Pale Paper | `#efefef` | neutral | Supplies light section surfaces and the border of the white email field. |
+| Paper White | `#ffffff` | neutral | Fills input surfaces and sets text on blue action links. |
+| Electric Blue | `#2969ff` | brand | Marks the main subscription action against the otherwise subdued palette. |
+| Link Blue | `#007afcbf` | accent | Gives compact purchase links a translucent blue fill. |
 
 ## Typography
 
 ### ff-meta-web-pro-1 — ui
-Used for navigation, headings, form text, and actions. Its recognisable move is compact, tracked uppercase navigation against straightforward mixed-case headings, without oversized display lettering.
+Used for navigation, headings, form controls, and action labels. Small tracked capitals organize the header, while 500 and 700 weights establish hierarchy without oversized display typography.
 - **Fallback:** -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif
 - **Weights:** 400, 500, 700
-- **Sizes:** 13–32px · 7 values
-- **Line height:** Normal for headings and navigation; approximately 1.5 for smaller interface text.
-- **Letter spacing:** Normal; 1px on uppercase navigation.
+- **Sizes:** 13-32px · 6 values
+- **Line height:** Mostly normal; 1.1 for selected headings and 1.5 for compact links
+- **Letter spacing:** normal; 1px for uppercase navigation
 
 ### ff-meta-serif-web-pro-1 — body
-Carries newsletter descriptions, essay text, quotations, and quiet metadata. Regular-weight 18px copy at a 27px line height does most of the editorial work; emphasis comes from italics and context rather than heavy bold.
+Used for descriptive copy, essay links, quotations, and supporting publication information. Its regular-weight, comfortably spaced prose makes the page feel authored rather than promotional.
 - **Fallback:** Georgia, Times, serif
 - **Weights:** 400, 500
-- **Sizes:** 13–22px · 4 values
-- **Line height:** 1.5 for reading copy; approximately 1.1 for short essay titles.
-- **Letter spacing:** Normal.
+- **Sizes:** 13-22px · 4 values
+- **Line height:** Usually 1.5; approximately 1.1 for small editorial titles
+- **Letter spacing:** normal
 
 ### Type scale
 
 | Role | Family | Weight | Size | Line height | Letter spacing |
 |------|--------|--------|------|-------------|----------------|
-| caption | ff-meta-serif-web-pro-1 | 400 | 13px | 1.5 | normal |
-| body-sm | ff-meta-web-pro-1 | 400 | 15px | 1.5 | normal |
+| caption | ff-meta-web-pro-1 | 700 | 13px | 1.3 | 1px |
+| body-sm | ff-meta-serif-web-pro-1 | 400 | 14px | 1.5 | normal |
 | body | ff-meta-serif-web-pro-1 | 400 | 18px | 1.5 | normal |
 | subtitle | ff-meta-web-pro-1 | 400 | 20px | 1.5 | normal |
 | title-sm | ff-meta-serif-web-pro-1 | 400 | 22px | 1.1 | normal |
@@ -59,85 +60,84 @@ Carries newsletter descriptions, essay text, quotations, and quiet metadata. Reg
 
 - **Base unit:** 10px
 - **Max page width:** 1140px
-- **Section gap:** 70–90px
+- **Section gap:** 60-90px
 - **Card padding:** 20px
-- **Element gap:** 8–30px
+- **Element gap:** 10-30px
 
 ### Border radii
 
 - **Email input:** 5px
-- **Action links and buttons:** 6px
-- **Large image corners:** 8px
-- **Monogram mark:** 50%
+- **Compact action link:** 6px
+- **Primary button:** 8px
+- **Circular monogram:** 50%
 
 ## Elevation
 
-Depth is mostly typographic and photographic, with thin Slate Rule borders rather than stacked cards. A few raised elements use 0 10px 26px #00000047; keep shadows exceptional.
+Depth comes primarily from contrasting surfaces and fine rules, not stacked cards. Selected raised elements use a restrained 0 10px 26px #00000047 shadow.
 
 ## Components
 
 ### Header
-**Role:** Provides the monogram, site destinations, and social access without competing with the writing.
+**Role:** Provides a compact directory to the writer’s work and channels.
 
-Place within the 1140px container with a fine bottom rule; arrange the small uppercase links in loose columns, using 1px tracking and modest 3px vertical link padding.
-
-### Input
-**Role:** Collects an email address for newsletter subscription.
-
-Paper White fill, Paper Edge 2px border, Faded Ink placeholder, and 5px radius; use 4px 10px internal padding and approximately 20px sans-serif text.
-
-### Primary button
-**Role:** Confirms newsletter subscription.
-
-Subscribe Blue fill and Paper White bold label, approximately 44px high with a 6px radius; keep it compact and centered beneath the opt-in choices.
-
-### Secondary button
-**Role:** Presents compact purchase or destination actions near books.
-
-Use the blue accent with a slightly translucent treatment, Paper White bold text, 6px radius, and approximately 8px 17px padding; avoid making it larger than the primary subscription action.
+Place the circular monogram and grouped caption-scale links within the 1140px container; use uppercase labels, 3px vertical link padding, and a thin Slate Rule divider.
 
 ### Link
-**Role:** Connects prose, publishing credits, and navigation to further reading.
+**Role:** Connects prose and navigation to essays, publishers, and other destinations.
 
-Keep prose links text-like and underlined or otherwise quietly distinguished; header links are uppercase, bold, and tracked. Transition color over 0.2s ease rather than adding movement.
+Keep editorial links inline and visibly underlined where context calls for it; transition text color over 0.2s ease. Header links instead use the tracked uppercase caption treatment.
+
+### Input
+**Role:** Collects an email address for newsletter subscriptions.
+
+Use a Paper White surface, Pale Paper 2px border, 5px radius, and 4px 10px padding; pair it with native newsletter checkboxes.
+
+### Primary button
+**Role:** Submits the newsletter form.
+
+Use an Electric Blue fill, Paper White label, approximately 44px height, and 8px radius; keep the treatment solid rather than outlined.
+
+### Secondary button
+**Role:** Presents compact outbound purchase choices.
+
+Style the link with a Link Blue fill, Paper White bold label, 6px radius, and approximately 8px 17px padding; ease background-color changes over 0.15s.
 
 ## Motion
 
-Color changes take 0.2–0.3s ease; occasional background changes take 0.15–0.3s ease. A few visual elements use transform transitions, including a 0.6s cubic-bezier treatment, but reading text and the main page structure should remain still. Scroll animation exists but should be restrained.
+Keep motion unobtrusive: link colors ease over 0.2-0.3s, action backgrounds over 0.15-0.3s, and small interaction transforms over 0.25s. Some scroll-driven transforms use approximately 0.6s easing; prose and page structure should otherwise remain still.
 
 ## Layout
 
-Use a centered 1140px outer container and narrower reading areas around 720px. The header is horizontally distributed; the newsletter invitation is centered. Editorial content alternates between narrow text groupings and generous image-plus-copy arrangements, with substantial dark space between sections and alignment anchored to shared container edges.
+Center the page in a 1140px maximum-width container. Use a narrow centered form and generous vertical pauses near the top, then alternate spacious image-and-text compositions with reading-oriented sections. Align prose to clear columns and preserve substantial margins around photography.
 
 ## Imagery
 
-Use real photographs, particularly tactile books, travel, and observations from walking, rather than illustration or abstract decoration. Images are relatively few and large; let their natural colors provide warmth against the dark monochrome page. Award laurels function as small graphic endorsements, not a repeating ornamental language.
+Use real book, walking, and photographic imagery rather than illustration. Let images occupy meaningful space beside text, retain their natural color, and avoid heavy overlays or decorative frames.
 
 ## Do and don't
 
 ### Do
-- Keep Night continuous behind the principal editorial content.
-- Set long-form copy in 18px FF Meta Serif Web Pro with a 27px line height.
-- Use compact 13px uppercase FF Meta Web Pro navigation with 1px tracking.
-- Center the newsletter form and give it ample space before the book imagery.
-- Reserve Subscribe Blue for actions and minor interactive emphasis.
-- Let large, genuine book and travel photography interrupt the text rhythm.
+- Set the main reading canvas to Charcoal and most copy to Soft Ivory.
+- Use FF Meta Web Pro for interface hierarchy and FF Meta Serif Web Pro for prose.
+- Keep navigation at caption scale, uppercase, bold, and tracked by 1px.
+- Constrain content to 1140px and give the opening form generous breathing room.
+- Reserve Electric Blue for clear actions and Link Blue for compact purchase links.
+- Use underlines and muted metadata to distinguish editorial references from actions.
 
 ### Don't
-- Do not replace the dark reading canvas with white content cards.
-- Do not turn every text link into a bright blue button.
-- Do not introduce a giant display headline above the subscription invitation.
-- Do not use decorative gradients or illustrations in place of photographs.
-- Do not crowd the header links into a dense single-line menu.
-- Do not animate paragraphs or rely on heavy shadows for section separation.
+- Do not replace the dark reading canvas with an all-white landing-page layout.
+- Do not introduce oversized, high-contrast display headlines.
+- Do not render long passages in the UI sans serif.
+- Do not turn every section into a raised card or add heavy shadows.
+- Do not use blue for ordinary headings, dividers, or body links indiscriminately.
+- Do not substitute generic illustrations for books and original photography.
 
 ## Similar brands
 
-- **Austin Kleon** — An author-led web presence where books, newsletters, and informal writing share the stage.
-- **Kottke.org** — A personal editorial site that privileges readable links and sustained browsing over product-interface chrome.
-- **Robin Sloan** — Literary internet sensibility with publishing projects presented as part of a wider personal practice.
-- **The Creative Independent** — Restrained typography and an editorial-first treatment of creative work and reading.
+- **The Creative Independent** — An editorial reading experience that gives creative work room to breathe.
+- **Kottke.org** — A personal, link-rich publishing sensibility with typography ahead of interface chrome.
+- **The Marginalian** — Literary content, book imagery, and a distinct authorial voice shape the presentation.
 
 ## Agent prompt
 
-Build an author-and-photographer homepage with a continuous #222222 background, soft #dddddd text, and generous dark breathing room. Use FF Meta Web Pro for compact uppercase navigation, headings, and controls; use FF Meta Serif Web Pro for 18px reading copy with a 27px line height. Center a modest newsletter form with a white email field and one #2969ff action. Work within a 1140px container, narrowing prose toward 720px. Introduce large, authentic book and travel photographs alongside text, with thin rules and quiet links instead of card-heavy UI.
+Build a dark, literary homepage for Craig Mod using a #222222 canvas, #dddddd reading text, FF Meta Web Pro for navigation and headings, and FF Meta Serif Web Pro for prose. Center content within 1140px, keep the newsletter form narrow and spacious, and follow it with substantial book photography and editorial text. Make navigation small, bold, uppercase, and tracked. Use #2969ff for the primary action and restrained blue purchase links. Favor underlines, quiet rules, muted metadata, minimal shadows, and generous pauses over cards or animated decoration.

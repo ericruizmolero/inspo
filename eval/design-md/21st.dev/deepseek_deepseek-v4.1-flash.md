@@ -1,64 +1,66 @@
-# 21st.dev — DESIGN.md
-> nocturnal component foundry, blue-lit
+# 21st — DESIGN.md
+> midnight component vault, electric blue
 
 **Theme:** dark  
 **Source:** https://21st.dev/ · 2026-09-23
 
 Source measurements are normalised; roles and recommendations are interpreted.
 
-The system is a blacked-out workshop lit by one blue filament. Everything sits on Void #09090B, with panels stepped up barely a shade to #0D0D0E, so the page reads as one continuous dark surface rather than a stack of cards. Typography is General Sans at weight 500 almost exclusively — 318 of 341 weighted samples — with the hero climbing to 64px / 67.84px and negative tracking up to −1.408px, while interface chrome collapses to 11–15px. A lone serif italic (Averia Serif Libre 400) appears for a single accent word, tinted Signal Blue, which is the entire brand gesture. Depth is not made with shadow: it comes from 1px white-alpha rings (#FFFFFF14, #FFFFFF0F), hairline #3F3F4699 borders and near-invisible drop shadows, plus frosted glass overlays for dark UI mockups. Radii are confident but small: 8px on most chrome, 12px on code and feature blocks, full pills for every button and tab. Motion is quick and mechanical — 0.15s color, 0.2s background, 0.3s transform.
+A near-black interface laboratory. Obsidian (#09090b) is the canvas and a one-step-lighter Ink Panel (#0e0f10) is the only elevation, separated by 1px Hairline borders rather than shadow. Type is General Sans at weight 500 for essentially everything — 318 of the 340 measured weights — with 600 reserved for a handful of emphases and a General Sans 300 light tier for quiet asides; nothing is ever bold. The headline runs General Sans 500 at 64px/1.06 with -1.408px tracking, its middle word flipped to Signal Blue, and the aggressive negative tracking continues down the scale as size drops. Body copy is Slate against Ghost White headings, and the page is dense: 13px labels, 11px meta badges and 12.5px monospace readouts carry most of the meaning. Structure is pills and rounded rectangles — 9999px for every control, 6-8px for links and tags, 12-16px inside showcase panels. Motion is short and mechanical: color 0.15s, background-color 0.2s, transform 0.3s on cubic-bezier(0.23, 1, 0.32, 1).
 
 ## Colors
 
 | Name | Value | Group | Role |
 |------|-------|-------|------|
-| Void | `#09090B` | neutral | Global page background and every full-bleed section; also the fill of the dark pill button on light surfaces. The floor the whole product stands on. |
-| Ink Panel | `#0D0D0E` | neutral | Elevated surface one shade above Void for preview tiles and embedded mockups; a barely-perceptible step that keeps the page continuous instead of carded. |
-| Chalk | `#F4F4F5` | neutral | Primary text, logos, and icon strokes; used at 0.8 and 0.45 alpha for de-emphasised headings and inactive controls rather than a separate grey token. |
-| Fog | `#A1A1AA` | neutral | Secondary copy, nav links, the 17px hero sub-paragraph and all inactive chrome. Roughly 25% darker than Chalk, which is the only text contrast step in the system. |
-| Signal Blue | `#4B73FF` | accent | The single accent: primary buttons ('Sign up', 'Browse components'), the italic accent word in the display headline, focus and selected states. Nothing else is allowed to be saturated. |
-| Hairline | `#3F3F4699` | neutral | Outlines on the secondary dark pill button and quiet dividers between list rows. 60% alpha so it never reads as a drawn line. |
-| Glass Ring | `#FFFFFF14` | neutral | 1px inset ring and hover fills on dark overlays and mockup chrome; pairs with #FFFFFF0F for lower-emphasis nested surfaces. This is the system's substitute for borders on dark UI. |
-| Terminal Amber | `#C86A50` | accent | Warm counterpart used only inside showcased demo cards (terminal / status mockups). Reserved as content colour, never applied to product chrome — the one place the dark blue monopoly breaks. |
+| Obsidian | `#09090b` | neutral | Page canvas and every outline pill's fill. 1302 background hits: the site is this color before it is anything else. |
+| Ink Panel | `#0e0f10` | neutral | Raised surface exactly one step above Obsidian — component tiles, dropdowns, code panels. Barely visible by design; separation comes from borders, not lightness. |
+| Hairline | `#27272a` | neutral | The only structural border color: 1px around outline pills and cards. Content is drawn with lines here, not shadows. |
+| Ghost White | `#f4f4f5` | neutral | Primary text, icons, headings. A near-white, never a pure-white, so it sits soft on Obsidian. |
+| Slate | `#8f8f99` | neutral | Secondary text and the resting state of every nav link and description line (122 hits — the most common text color on the page). |
+| Signal Blue | `#0033ff` | brand | The single saturated color in the chrome: primary CTA fill, 'living' in the headline, active tab. It carries all brand energy alone. |
+| Selected Blue | `#008fe9` | brand | Declared as --color-selected; selection/focus accent, one step lighter and cooler than Signal Blue. |
+| Chalk | `#f6f6f1` | accent | Inverted light surface used inside showcase panels and terminal cards. Warm off-white, not neutral white. |
+| Terracotta | `#c86a50` | accent | Warm spotlight surface inside demo showcase cards only (183 area count). It never touches nav, buttons or page background. |
+| Pure White | `#ffffff` | accent | Text sitting on Signal Blue, and the brightest preview-card surface. |
 
 ## Typography
 
 ### General Sans — ui
-Everything. The signature decision is weight: 500 carries 318 of 341 weighted samples, including the 64px hero — nothing is bold, 600 is rare and 300 is only for de-emphasised code lines. Type gains authority from size and tracking, never from weight.
-- **Fallback:** system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
-- **Weights:** 400, 500, 600
-- **Sizes:** 11px to 64px
-- **Line height:** 1.06 for display, 1.5 for body, 1.38 for 13px chrome
-- **Letter spacing:** normal in chrome; -0.192px at 18px, -0.204px at 17px, -0.425px at 24px, -0.968px at 36px, -1.408px at 64px
+Everything — headline, body, buttons, nav, card titles. 269 of 350 font-family hits.
+- **Fallback:** 
+- **Weights:** 500, 600, 300
+- **Sizes:** 11px, 12px, 13px, 16px, 17px, 18px, 36px, 44px, 64px
+- **Line height:** 1.5 for body and controls, 1.06 for display
+- **Letter spacing:** normal to -0.022em, tightening with size
 
 ### ui-monospace — mono
-Code blocks, CLI transcripts and file-diff lines only, set loose at 12.5px with double leading. Never used for labels or eyebrows.
-- **Fallback:** SF Mono, Monaco, Cascadia Code, Roboto Mono, Consolas, monospace
+Terminal output, file paths, counts and installation snippets inside showcase panels.
+- **Fallback:** 
 - **Weights:** 400, 500
-- **Sizes:** 12.5px
-- **Line height:** 26.25px (2.1)
+- **Sizes:** 11px, 12.5px
+- **Line height:** 1.5 to 2.1
 - **Letter spacing:** normal
 
 ### Averia Serif Libre — display
-One word per page, italicised and filled Signal Blue. A deliberate discontinuity against a grotesque sans — the whole personality of the headline lives in this swap.
-- **Fallback:** serif
+Five instances only — a small serif counterpoint in editorial copy. Optional; drop it and nothing structural breaks.
+- **Fallback:** 
 - **Weights:** 400
-- **Sizes:** single accent word inside the 64px headline
-- **Line height:** inherits the display line
+- **Sizes:** 16px-20px (not resolved from the token dump)
+- **Line height:** 1.5
 - **Letter spacing:** normal
 
 ### Type scale
 
 | Role | Family | Weight | Size | Line height | Letter spacing |
 |------|--------|--------|------|-------------|----------------|
-| caption | General Sans | 500 | 11px | 16.5 | normal |
-| body-sm | General Sans | 500 | 13px | 18 | normal |
-| body | General Sans | 500 | 15px | 22.5 | normal |
-| subtitle | General Sans | 500 | 17px | 25.5 | -0.204px |
-| title-sm | General Sans | 500 | 24px | 30 | -0.425px |
-| title | General Sans | 500 | 36px | 40 | -0.968px |
-| title-lg | General Sans | 500 | 44px | 48 | -1px |
-| display | General Sans / Averia Serif Libre for one accent word | 500 | 64px | 67.84 | -1.408px |
+| caption | General Sans | 500 | 11px | 1.5 | normal |
+| body-sm | General Sans | 500 | 13px | 1.38 | normal |
+| body | General Sans | 500 | 16px | 1.5 | normal |
+| subtitle | General Sans | 500 | 17px | 1.5 | -0.012em |
+| title-sm | General Sans | 500 | 18px | 1.5 | normal |
+| title | General Sans | 500 | 36px | 1.1 | -0.012em |
+| title-lg | General Sans | 500 | 44px | 1.06 | -0.022em |
+| display | General Sans | 500 | 64px | 1.06 | -0.022em |
 
 ## Spacing and layout
 
@@ -66,87 +68,82 @@ One word per page, italicised and filled Signal Blue. A deliberate discontinuity
 
 - **Base unit:** 4px
 - **Max page width:** 1152px
-- **Section gap:** 64px
-- **Card padding:** 20px
-- **Element gap:** 12px
+- **Section gap:** 64px to 96px (page runs 6288px tall at 1440px wide, so sections stack long and airy while controls stay tight)
+- **Card padding:** 24px to 32px
+- **Element gap:** 8px to 12px
 
 ### Border radii
 
-- **Pill button / tab / badge / avatar:** 9999px
-- **Card, code block, mockup shell:** 12px
-- **Small utility button, nav link background, chip:** 6px
-- **Small control, inner panel:** 8px
-- **Large overlay / floating panel:** 16px
+- **Inline tag, nav link, small icon button:** 6px
+- **Compact control, menu item:** 8px
+- **Panel, terminal block, showcase card:** 12px
+- **Large dialog / pill-inside-panel:** 16px
+- **Every button, tab and badge:** 9999px
 
 ## Elevation
 
-Almost none. Separation is drawn with 1px white-alpha rings (#FFFFFF14 outer, #FFFFFF0F inner) and hairline #3F3F4699 borders; the shipped shadows are cosmetic — rgba(0,0,0,0.04) 0 0 0 1px inset with rgba(0,0,0,0.07) 0 1px 3px on tiles, and one bigger rgba(0,0,0,0.25) 0 25px 50px -12px reserved for the floating prompt card. Dark UI mockups use inset glass highlights (rgba(255,255,255,0.85) 0 1px 1px inset) to fake a lit rim rather than a drop shadow.
+Depth is border-first: 1px Hairline #27272a on dark surfaces, an inset hairline rgba(0, 0, 0, 0.04) 0 0 0 1px inset paired with rgba(0, 0, 0, 0.07) 0 1px 3px 0 on tiles, and a pressed-control shadow rgba(0, 0, 0, 0.25) 0 0.5px 1px 0 with rgba(0, 0, 0, 0.02) 0 -3px 4px 0 inset for pill buttons. Glossy panels add a white top-inset highlight instead of a drop shadow.
 
 ## Components
 
-### Primary Button
-**Role:** The only saturated control: 'Sign up', 'Browse components'.
+### Primary pill button
+**Role:** Reference: 'Sign up', 'Browse components'
 
-Signal Blue background, Chalk text, 15px/500 at 44px height or 13px/500 at 28px height, pill radius, horizontal padding 24px (large) / 16px (small), no border. Hover: same blue with a faint Glass Ring inset; active: scale to 0.97 over 0.15s cubic-bezier(0.4, 0, 0.2, 1).
+Signal Blue background, Pure White text, General Sans 500, small variant 13px/1.5 with height 28px and 0 16px padding; large variant 15px/1.5 with height 44px and 0 24px padding. Radius 9999px, no border, no shadow. Hover transitions background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); text is capitalized only in tab controls.
 
-### Ghost Button
-**Role:** 'Log in', 'Join for free', secondary actions on dark.
+### Outline pill button
+**Role:** Reference: 'Join for free'
 
-Transparent background, Fog text at 13px/500 (28px height, 12px side padding) or Chalk at 15px/500 (44px height, 24px side padding), pill radius. The dark variant carries a 1px Hairline border instead of a fill. Hover: text lifts to Chalk and a #FFFFFF14 fill fades in over 0.2s; nothing moves.
+Obsidian background, Ghost White text, 1px Hairline border, 15px/1.5 at weight 500, height 44px, 0 24px padding, radius 9999px. No fill change on hover in the measured state — treat hover as border brightening.
 
-### Nav Link
-**Role:** Header navigation and inline pointers.
+### Ghost nav link
+**Role:** Reference: 'Components', 'Templates', 'Pricing', 'Log in'
 
-Fog at 13px/500, 19.5px line-height, 4px 8px padding with a 6px radius so the hit area is generous while the text block stays visually tight. Horizontal gap between links is 12px, not 24px — the nav reads as a sentence. Hover: colour to Chalk in 0.15s, background stays transparent.
+Slate text, 13px/1.5 at weight 500, padding 4px 8px, radius 6px, transparent background. Transitions color 0.15s cubic-bezier(0.4, 0, 0.2, 1) toward Ghost White. Header height 28px for buttons, links vertically centered.
 
-### Pill Tab
-**Role:** Category chips ('Animated heroes', 'Shaders') and the Code/Preview segmented switch.
+### Component preview card
+**Role:** The library tile grid primitive
 
-12–13px/500, pill radius, 6px 12px padding for chips or 4px vertical for the switch. Inactive: Fog text, transparent fill, Glass Ring border. Active: Chalk text on a #FFFFFF14 fill with the ring slightly stronger; label colour, never a blue underline, is the state signal.
+Ink Panel or Obsidian surface, square outer corners (radius 0 measured on the tile), 16px/1.5 Ghost White text plus a 13px/1.38 title at 80% Ghost White. Shadow is an inset hairline plus a whisper drop: rgba(0, 0, 0, 0.04) 0 0 0 1px inset, rgba(0, 0, 0, 0.07) 0 1px 3px 0. Inner demo surfaces use 12-16px radius and their own colors.
 
-### Preview Card
-**Role:** The repeating dark tile that frames a live component or mockup.
+### Terminal / detail panel
+**Role:** Code and status readouts inside cards
 
-Ink Panel (#0D0D0E) fill, 0px radius on the outer frame with the inner media carrying 12px, inset ring rgba(0,0,0,0.04) 0 0 0 1px plus rgba(0,0,0,0.07) 0 1px 3px. Caption uses Chalk at 0.8 alpha, 13px/500, 18px line-height. Hover: transform scale or lift over 0.3s cubic-bezier(0.23, 1, 0.32, 1); no border colour change.
+Chalk, Terracotta or Pure White surface, radius 12px, padding 32px 32px 24px, ui-monospace at 12.5px/2.1 weight 500 in a 90%-white tint. Optional glossy highlight ring: rgba(255, 255, 255, 0.3) 0 1px 1px inset, rgba(255, 255, 255, 0.16) 0 0 0 1px inset.
 
 ## Motion
 
-Fast and mechanical, never bouncy. Colour transitions 0.15s; background-color 0.2s; opacity 0.2s; scale 0.15s; transforms and card lifts 0.3s on cubic-bezier(0.23, 1, 0.32, 1) (ease-out-expo family) — the one place the easing is expressive. All on cubic-bezier(0.4, 0, 0.2, 1) otherwise. Scroll-triggered reveals exist and are subtle: fade plus a short upward translate, no stagger spectacle.
+Short and mechanical, never bouncy in feel despite the curves: color 0.15s and background-color 0.2s on cubic-bezier(0.4, 0, 0.2, 1) for hover, transform 0.3s and scale 0.15s on cubic-bezier(0.23, 1, 0.32, 1) for press and reveal. Opacity fades run 0.18s-0.2s. Scroll-triggered reveals are present.
 
 ## Layout
 
-Centred 1152px column against the full-bleed Void. Header is a 44px-high single row: wordmark far left, four nav links optically centred, and Log in / Sign up pushed right — no borders, no backdrop, it simply floats on the black. Vertical rhythm is built from 12px gaps for grouped controls, 24px for labels-to-content, 64px between major blocks. The hero is a left-aligned 64px display over a 17px Fog sub-paragraph, with the accent word set in serif italic. Below, filters sit in one inline row of pill tabs, then a wide strip of dark preview tiles that overflow the viewport edge to signal an endless library.
+Single 1152px centered column on a 1440px viewport, 24px gutters. Header is a 3-zone bar — wordmark left, 13px nav links center, auth cluster right. Hero is a left-aligned 64px display with a 17px Slate lead and a row of filter pills. Below, a horizontally scrollable strip of square-cornered preview tiles.
 
 ## Imagery
 
-Screenshots of dark product UI, rendered gradient and liquid-metal textures, ASCII displacement studies and monochrome wireframe diagrams. Saturated colour appears only inside those embedded demos and never in the chrome around them.
+Preview screenshots of real components fill the tile grid: dense UI captures at their own aspect ratios, no rounding on the tile, no overlay gradient. Decorative atmosphere is provided by blue glow gradients behind the hero rather than by photography.
 
 ## Do and don't
 
 ### Do
-- Set almost all text in General Sans at weight 500; reserve 400 for nothing ornamental and let 600 appear only in dense labels.
-- Make one word of a display headline serif italic in Averia Serif Libre and fill it Signal Blue — exactly one per page.
-- Keep the palette to Void, Ink Panel, Chalk, Fog and one blue; reach for alpha (0.8, 0.45) rather than a new grey.
-- Separate surfaces with 1px white-alpha rings (#FFFFFF14) and hairline #3F3F4699 borders instead of shadows or lighter fills.
-- Use pills for every button and tab, 8px for small chrome, 12px for code blocks and cards — nothing larger than 16px.
-- Run interface chrome at 11–15px with normal tracking; apply negative letter-spacing only above 17px, scaling it with size (−0.204px at 17px up to −1.408px at 64px).
-- Keep hover states to a colour shift or a #FFFFFF14 fill over 0.15–0.2s; nothing should jump or bounce.
+- Set every control and tab at 9999px radius, and every inline tag or nav link at 6px.
+- Reach for General Sans 500 first; specify weight explicitly since the family ships 300/400/500/600 and the page leans on the middle of that range.
+- Tighten tracking as type grows: roughly -0.012em at 17-36px and -0.022em at 44-64px.
+- Keep the container at 1152px max width with 24px horizontal gutters, and build vertical rhythm from a 4px base with 8/12/16/24/32 steps.
+- Use ui-monospace 12.5px for anything that reads as a command, file path or status line, and Averia Serif Libre only as a rare editorial flourish (5 hits measured — treat it as an accent, not a family).
+- Animate only color, background-color, opacity, scale and transform, on 0.15s-0.3s cubic-bezier(0.4, 0, 0.2, 1) or cubic-bezier(0.23, 1, 0.32, 1).
 
 ### Don't
-- Do not introduce a second saturated colour into product chrome — pink, orange and terracotta in the screenshots belong to embedded demo content only.
-- Do not use bold or 700 weights; hierarchy comes from size and spacing.
-- Do not add drop shadows or glows to separate cards on the dark background.
-- Do not stack multiple grey text tokens; Fog and alpha-modified Chalk are the whole ladder.
-- Do not put the serif accent face anywhere except a single italic word inside a headline.
-- Do not use radii above 16px on surfaces, or squared corners on buttons — actions are always pills.
-- Do not set chrome text with visible letter-spacing or uppercase; the Code/Preview toggle capitalises only through text-transform, never through tracking.
+- Do not introduce a second saturated accent in the chrome; Signal Blue is the only colored fill on buttons, active tabs and headline emphasis.
+- Do not bold anything. Weight 500 is the ceiling for running UI, 600 for the rare label — 700+ does not exist in this system.
+- Do not use pure black #000000 or pure-neutral greys; the canvas is #09090b and every text grey carries a faint blue cast (#8f8f99, #f4f4f5).
+- Do not add drop shadows to page-level surfaces. Depth is 1px inset hairlines (#27272a or rgba(0,0,0,0.04) inset) plus a 0 1px 3px whisper at most.
+- Do not square off a button or a tab; controls are pill-shaped, square corners exist only on the outer preview tiles.
+- Do not put Terracotta, Chalk or Pure White behind nav, buttons or page background — they belong to showcase panels only.
 
 ## Similar brands
 
-- **Vercel** — same near-black canvas, Geist-like geometric grotesque and hairline-border depth model, but Vercel allows literal white-on-black starkness where 21st keeps everything at one grey step.
-- **Linear** — shared compact 13px chrome, pill controls and a single accent, though Linear's accent is violet and its surfaces are lighter, more layered panels.
-- **shadcn/ui docs** — the same register of dark neutral panels and code-as-content, but 21st pushes tracking negative and adds the serif-italic gesture shadcn never uses.
 
 ## Agent prompt
 
-Build on a #09090B canvas with #0D0D0E panels and General Sans at weight 500 everywhere. Use Fog #A1A1AA for secondary text and Chalk #F4F4F5 for primary; the only accent is Signal Blue #4B73FF, applied to pill buttons and to one serif-italic word in the display headline. Chrome runs 11–15px; the display is 64px/67.84px with −1.408px tracking. Buttons are pills — blue filled for primary, transparent with a 1px #3F3F4699 border for secondary. Separate surfaces with 1px #FFFFFF14 rings, not shadows. 1152px max width, 12px element gaps, 64px section gaps, 8px/12px radii, 0.15–0.2s colour transitions and 0.3s ease-out-expo lifts.
+Design system spec for 21st.dev — dark, near-black React component library with a single electric blue accent, General Sans at weight 500 doing nearly all the work, and pill-shaped controls.

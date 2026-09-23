@@ -280,16 +280,38 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     }));
 
     const { pageHeight, ...rest } = raw;
-    const tokens: DesignTokens = {
+    const tokens: DesignTokens = oklchToHex({
       url,
       finalUrl: page.url(),
       viewport: { width: 1440, height: 900, pageHeight },
       ...rest,
-    };
+    });
     signal?.throwIfAborted();
     return { tokens, screenshot, fullShot, cover, scroll };
   } finally {
     signal?.removeEventListener("abort", onAbort);
     await browser.close().catch(() => {});
   }
+}
+
+// Tailwind v4 sites report computed colors as oklch(). Models convert them in their
+// head and get it wrong (21st.dev's CTA #1436f4 came back as #4b73ff), so we do it here.
+const OKLCH = /oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)(?:deg)?\s*(?:\/\s*([\d.]+)(%?))?\s*\)/g;
+
+export function oklchToHex<T>(tokens: T): T {
+  const hex = (n: number) => Math.round(Math.min(1, Math.max(0, n)) * 255).toString(16).padStart(2, "0");
+  const gamma = (x: number) => (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055);
+  const json = JSON.stringify(tokens).replace(OKLCH, (_, l, lp, c, h, a, ap) => {
+    const L = lp ? Number(l) / 100 : Number(l), rad = (Number(h) * Math.PI) / 180;
+    const A = Number(c) * Math.cos(rad), B = Number(c) * Math.sin(rad);
+    const l3 = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+    const m3 = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+    const s3 = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+    const r = gamma(4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3);
+    const g = gamma(-1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3);
+    const b = gamma(-0.0041960863 * l3 - 0.7034186147 * m3 + 1.707614701 * s3);
+    const alpha = a === undefined ? "" : hex(ap ? Number(a) / 100 : Number(a));
+    return `#${hex(r)}${hex(g)}${hex(b)}${alpha === "ff" ? "" : alpha}`;
+  });
+  return JSON.parse(json);
 }

@@ -15,7 +15,7 @@ export const DesignSpecSchema = z.object({
   })).min(4).max(12).describe("6 to 10 colors in most systems; 12 only for truly rich palettes. A palette is a set of decisions, not a census: merge shades that differ by a few RGB points into one token, group low-opacity whites or blacks into a single 'hairline' or 'veil' token, and drop any color without a distinct role. Typical: background, 1-2 surfaces, text, muted text, border, 1-3 accents, and semantic colors only if they really exist. Neutrals ordered dark to light. No duplicates."),
   fonts: z.array(z.object({
     family: z.string(),
-    role: z.enum(["display", "body", "mono", "ui"]),
+    role: z.enum(["display", "body", "mono", "ui"]).describe("mono only for monospaced families"),
     weights: z.array(z.number()),
     sizes: z.string().describe("Range and count, e.g. '21-96px · 8 values'"),
     lineHeight: z.string(),
@@ -27,9 +27,9 @@ export const DesignSpecSchema = z.object({
     role: z.string().describe("caption | body-sm | body | subtitle | title-sm | title | title-lg | display"),
     size: z.number().describe("px"),
     weight: z.number(),
-    lineHeight: z.number().describe("unitless ratio"),
-    letterSpacing: z.string(),
-    family: z.string(),
+    lineHeight: z.number().describe("Unitless ratio such as 1.5, never px"),
+    letterSpacing: z.string().describe("CSS value, e.g. '-0.5px' or 'normal'. ASCII hyphen for negatives"),
+    family: z.string().describe("Exactly one of the fonts[].family names, nothing else"),
   })).describe("6-9 steps from smallest to largest"),
   spacing: z.object({
     density: z.enum(["compact", "comfortable", "airy"]),

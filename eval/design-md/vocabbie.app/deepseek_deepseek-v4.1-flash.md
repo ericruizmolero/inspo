@@ -1,47 +1,40 @@
 # Vocabbie — DESIGN.md
-> soft-focus study desk in pastel light
+> warm paper study companion
 
 **Theme:** light  
 **Source:** https://www.vocabbie.app/ · 2026-09-23
 
 Source measurements are normalised; roles and recommendations are interpreted.
 
-A warm, almost paper-white learning site that behaves like a quiet classroom rather than a growth funnel. The page sits on #faf8f5, not pure white, and lets one huge system-font display line (68px, weight 600, −2px tracking) carry the entire pitch; everything below it steps down through 21px lede, 16px body and 14px meta without a single bold shout. Colour arrives as tinted ink, not chrome: black pill store buttons, a single Signal Blue link, and pale panels in mist blue, soft green and warm cream that appear behind feature copy, each carrying its own deep ink tone (burnt orange, navy, teal) so a card reads as a tinted sheet rather than a bordered box. Corners are either fully round (999px buttons) or generously soft (28px cards), shadows are almost invisible one-pixel lifts, and motion is limited to a 0.28s transform on hover plus slow fade-ins on scroll.
+Vocabbie is a warm-paper study app that sells itself with one enormous sentence and almost no chrome. The page sits on #faf8f5 rather than white, so every white card reads as a raised sheet of paper, and the only saturated surface is a pale blue wash (#eff4ff) that bleeds behind the hero like morning light. Type is system-native — the -apple-system stack, with Inter loaded only as a fallback — and the display voice is weight 600, never 700: 68px at line-height 1.0 with -2.04px tracking, tight enough that the two headline lines lock together as one block. Below it the lede drops to 21.44px in 60% ink, then the meta line shrinks to 13px grey. Buttons are pure black pills, fully rounded, flat, borderless. Everything else resolves to 4px to 28px radii, 8px gaps and hairline #e7e4de borders.
 
 ## Colors
 
 | Name | Value | Group | Role |
 |------|-------|-------|------|
-| Obsidian | `#222326` | neutral | Primary text for headings and body, and the surface of both App Store / Google Play pills. The hero lede is the same ink at 60% alpha (#1f202599), which is how the system makes text quieter instead of switching hue. |
-| Paper White | `#ffffff` | neutral | Card and sheet surface that floats above the warm page: feature cards, the phone mockup screen, sticky bars. |
-| Warm Paper | `#faf8f5` | neutral | Default page background and by far the largest visible area. Gives every screenshot and pastel panel a cream seam instead of a cold white edge. |
-| Slate Grey | `#52525b` | neutral | Secondary copy and footer navigation labels; also the resting colour of header links before they darken to Obsidian. |
-| Ash Grey | `#8b8c8f` | neutral | Tertiary meta only: value props separated by dots, placeholders, legal micro-links, disabled-feeling text. |
-| Border Sand | `#e7e4de` | neutral | Hairline borders and dividers, and the base for neutral chips (#f5f3ef) and input outlines. Warm, never grey-blue. |
-| Signal Blue | `#2563eb` | accent | The single interactive accent: inline links such as "Email us". Used sparingly, one or two instances per page, always at weight 600. |
-| Mist Blue | `#eff4ff` | accent | Cool tinted panel behind illustrative/feature blocks. Siblings in the same family are Warm Cream #fff6ee and Soft Mint #e7f8f1; they are variants of one pastel-panel role, not separate tokens. |
-| Tinted Ink | `#324f7d` | accent | Card-body ink that matches its panel tint — Slate Navy #324f7d, Burnt Orange #7a4d2c, Deep Teal #2c5a51. Never used for headings, only for 15px body copy sitting on the matching pastel surface. |
+| Obsidian | `#222326` | neutral | Primary text everywhere, and the fill of the dark App Store / Google Play pills. Measured #1f2025 on those buttons and #222326 on text; treated here as one ink so the system keeps two colors out of a job that needs one. |
+| Warm Paper | `#faf8f5` | neutral | The page background and the most-covered color on the site. Not white — a faint cream that makes every white card float. |
+| Pure White | `#ffffff` | neutral | Card and content-sheet surface. Also the header scrim at 80% alpha (rgba(255,255,255,0.8)) when it floats over the hero gradient. |
+| Linen | `#f5f3ef` | neutral | Secondary warm surface for small chips and quiet app-store links, one step darker than Warm Paper, and the hover floor for those chips. |
+| Muted Slate | `#52525b` | neutral | Secondary copy, nav links and any label that should sit beside Obsidian without competing with it. |
+| Faint Grey | `#8b8c8f` | neutral | Tertiary meta — the '90 languages · 30-second deck creation' line, placeholders, footnotes. |
+| Hairline | `#e7e4de` | neutral | Warm border and divider on paper surfaces: card edges, table rules, quiet outlines. The input uses a cooler sibling, #e3e3e6. |
+| Accent Wash | `#eff4ff` | accent | The pale blue section surface that occasionally replaces Warm Paper behind content blocks — the site's only cool field. |
+| Signal Blue | `#2563eb` | accent | Reserved almost entirely for inline text links ('Email us'); the accent that says 'this is clickable, this is not a button'. |
+| Tinted Ink | `#7a4d2c` | accent | Family of per-card body inks that tint a blurb to match its illustration: orange #7a4d2c, blue #324f7d, teal #2c5a51, green #2d5a39. Each card picks one; never mix two on the same card. |
 
 ## Typography
 
-### System Sans (-apple-system / SF Pro / Segoe UI) — display
-Everything. The signature decision is that no webfont is loaded for the interface — the OS font is the brand face, and hierarchy is made with size and tracking, never with a second typeface.
-- **Fallback:** system-ui, "Inter", "Segoe UI", sans-serif
+### -apple-system — display
+Every headline, paragraph, button and label. The whole site is one native system stack — Inter is loaded but only as a fallback, so the brand's text literally renders as the reader's own OS. Weight 600 carries every heading; 700 exists only in stray utility text and never in the display voice. Display sizes get progressively negative tracking: -1.4544px at 48.48px, -2.04px at 68px.
+- **Fallback:** system-ui, Inter, Segoe UI, sans-serif
 - **Weights:** 400, 500, 600, 700
-- **Sizes:** 68px display, 48px section title, 26px card title, 21px lede, 16px body, 14px nav/meta, 12px caption
-- **Line height:** tight at display (1.0), 1.05 at 48px, 1.3 at body sizes
-- **Letter spacing:** -0.03em at display, -0.02em at 26–48px, -0.01em at 14–16px
+- **Sizes:** 11px to 68px
+- **Line height:** 1.0 to 1.6
+- **Letter spacing:** 0 to -2.04px at display sizes
 
-### Inter — body
-Loaded as a safety net and used on seven elements, mostly inputs and small controls on non-Apple platforms. Treat it as the stand-in so the system look survives on Windows and Linux.
-- **Fallback:** system-ui, -apple-system, sans-serif
-- **Weights:** 400, 600
-- **Sizes:** 13–16px
-- **Line height:** 1.5
-- **Letter spacing:** normal
-
-### SF Pro Rounded — ui
-Only the numbered step headings ("01 You write the answer"). A single playful cameo that marks instructional, in-app moments; do not extend it to body copy.
+### SF Pro Rounded — display
+Numerals and step headings only ('01 You write the answer'). A single deliberate rounded gesture inside an otherwise neutral stack — restore a rounded face for these counters if the platform lacks it, and use it nowhere else.
 - **Fallback:** -apple-system, system-ui, sans-serif
 - **Weights:** 400
 - **Sizes:** 16px
@@ -52,96 +45,98 @@ Only the numbered step headings ("01 You write the answer"). A single playful ca
 
 | Role | Family | Weight | Size | Line height | Letter spacing |
 |------|--------|--------|------|-------------|----------------|
-| caption | System Sans | 600 | 12px | 18 | -0.14px |
-| body-sm | System Sans | 400 | 14px | 20 | -0.14px |
-| body | System Sans | 400 | 16px | 24 | normal |
-| subtitle | System Sans | 400 | 21px | 28 | normal |
-| title-sm | System Sans | 600 | 26px | 28 | -0.512px |
-| title | System Sans | 600 | 48px | 51 | -1.4544px |
-| display | System Sans | 600 | 68px | 68 | -2.04px |
+| caption | -apple-system | 400 | 11px | 1.5 | 0 |
+| body-sm | -apple-system | 400 | 13px | 1.5 | 0 |
+| body | -apple-system | 400 | 15.2px | 1.5 | 0 |
+| subtitle | -apple-system | 400 | 17px | 1.5 | 0 |
+| title-sm | -apple-system | 600 | 20.8px | 1.5 | -0.416px |
+| title | -apple-system | 600 | 25.6px | 1.1 | -0.512px |
+| title-lg | -apple-system | 600 | 48.5px | 1.05 | -1.4544px |
+| display | -apple-system | 600 | 68px | 1 | -2.04px |
 
 ## Spacing and layout
 
-**Density:** airy
+**Density:** comfortable
 
-- **Base unit:** ،
-- **Max page width:** main 1024px, prose 672px, wide 1072px
-- **Section gap:** 112px vertical, 24px horizontal
+- **Base unit:** ،8px
+- **Max page width:** 1024px content shell, 672px for centered prose, 1072px for the widest sections
+- **Section gap:** 112px 24px vertical/horizontal section padding
 - **Card padding:** 22px 24px
-- **Element gap:** 8px most common; 12px / 16px / 24px for grouped blocks
+- **Element gap:** 8px default, 24px between stacked blocks, 12px inside tight rows
 
 ### Border radii
 
-- **pill buttons and badges:** 999px
-- **cards:** 28px
-- **chips and small panels:** 16px
-- **inputs:** 8px
-- **tags, avatars, icons:** 4px
+- **pill:** 999px
+- **card:** 28px
+- **chip:** 16px
+- **input:** 8px
+- **small:** 4px
+- **micro:** 2px
 
 ## Elevation
 
-Almost flat. The workhorse is a \"none\"-level 1px lift (28 38 76 / 5%, 0 1px 2px) on 64 small elements, and cards carry a broad soft plume (28 38 76 / 30%, 0 14px 30px -12px plus a 6% 2px contact). Only the phone mockup and floating badges get a deep drop (10 16 40 / 45%, 0 12px 26px -16px). Note: the CSS variables declare shadow-sm/md/lg as \"none\", so treat the measured values as the real system and the variables as unresolved.
+Barely there. The workhorse shadow is rgba(28,38,76,0.05) 0 1px 2px 0 — a one-pixel lift on ~64 elements; cards themselves are drawn flat with no shadow. Heavier shadows only sit under photographic objects like the phone mockup: rgba(28,38,76,0.3) 0 14px 30px -12px plus a 2px grounding shadow.
 
 ## Components
 
 ### Store pill button
-**Role:** Primary call to action
+**Role:** primary button
 
-Obsidian #222326 background, Paper White text, 16px / weight 600 / -0.16px tracking, radius 999px, padding 13px 24px (≈50px tall), icon 16–18px to the left of the label with an 8–10px gap. No border, no shadow at rest. Hover: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) — a small translateY, never a colour change; active: same lift removed.
+Obsidian background, pure white text, 999px radius, 16px text at weight 600 with -0.16px tracking, padding 13px 24px, no border, no shadow. Hover lifts with transform 0.28s cubic-bezier(0.4,0,0.2,1); active settles back to scale slightly under 1. Icon sits 8px from the label.
 
-### Quiet chip
-**Role:** Secondary / footer action
+### Warm chip link
+**Role:** secondary button
 
-Warm neutral #f5f3ef background, Obsidian text, 14px / weight 500, radius 16px, padding 10px 16px, no border and no shadow. Sits beside another chip with an 8px gap. Hover: darkens toward #ece9e3; text colour stays put.
+Linen background, Obsidian text at 14px/500, 16px radius, padding 10px 16px, no border. Hover darkens toward #ece9e3 and the label shifts to Signal Blue only if it is a genuine link, never on a decorative chip.
 
-### Text link and nav item
-**Role:** Inline and header navigation
+### Content card
+**Role:** card
 
-Inline link: Signal Blue #2563eb, 15px / weight 600, no underline, hover shifts to Ash Grey #8b8c8f (0.2s colour ease). Header nav: Slate Grey #52525b, 14px / weight 400, no underline, hover to Obsidian #222326 (0.15s). Footer legal links are 11px Ash Grey with a real underline.
+Pure White background on Warm Paper, 28px radius, 22px 24px padding, no border, flat (no shadow) — raise it only if it overlaps photography. Title at title-sm Obsidian; body blurb at 15.5px/1.4 in Tinted Ink, one tint per card.
 
 ### Search input
-**Role:** Language picker field
+**Role:** input
 
-Background #f7f7f8, 1px solid #e3e3e6 border, radius 8px, padding 8px 10px (≈37px tall), 13px / weight 400, Obsidian text, Ash Grey placeholder, no shadow. Focus: border darkens toward Border Sand-strong #d8d4cc rather than a blue ring.
+Background #f7f7f8, border 1px solid #e3e3e6 (a cooler hairline than the standard border token), 8px radius, padding 8px 10px, text 13px/400 Obsidian, placeholder Faint Grey. Focus swaps the border to Signal Blue and keeps the radius — no glow.
 
-### Card
-**Role:** Feature and content surface
+### Inline link
+**Role:** link
 
-Paper White background, radius 28px (36px on large cards), padding 22px 24px, no border, soft two-layer shadow (28 38 76 / 30% 0 14px 30px -12px + 6% 0 2px 6px). Title is title-sm (26px / 600 / -0.512px); body copy is 15px Tinted Ink when the card sits on a pastel panel. Hover: 0.28s transform lift only.
+Signal Blue at 15.2px/600 with no underline; hover shifts the color toward Faint Grey over 0.2s. Nav links are the quieter variant: Muted Slate 14px/400, no underline, hover to Obsidian.
 
 ## Motion
 
-Deliberate and quiet: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) on anything hoverable, colour 0.2s ease on links, and opacity 0.5–0.6s ease-out for scroll reveals. Nothing bounces, nothing loops except the demo video.
+Three fixed gestures. Movement: transform 0.28s cubic-bezier(0.4,0,0.2,1) for hover lifts. Reveal: opacity 0.6s ease-out for scroll-entrance, never longer. Color: 0.15s to 0.3s ease for text and link transitions only. Nothing bounces, nothing rotates.
 
 ## Layout
 
-Single centred column. Hero is one 68px display block on a white-to-pastel gradient wash, followed by a 21px lede capped at 672px, a 14px dot-separated proof line in Ash Grey, then two side-by-side pills at an 8px gap. Below, sections alternate 112px vertical rhythm with 1024px content max-width, feature copy stacked left over tinted panels and a phone mockup with floating badges.
+Single centered column capped at 1024px, prose narrowed to 672px. The hero is type-first: logo lockup, one 68px two-line statement, a muted lede at 21.44px, a 13px grey meta row, then two black pills side by side. Sections are separated by 112px of vertical air rather than rules or color changes. Cards sit in a grid on Warm Paper with white sheets and 8px-to-24px gaps. Background is a soft lavender-to-peach gradient bleed at the very top, dissolving into flat Warm Paper by the fold.
 
 ## Imagery
 
-Product truth over stock: a white iPhone mockup with real app UI (a progress bar, flag picker, "Hola") and small white pill badges with warm gradient icons that float half off the device edge. Backgrounds are large, low-contrast pastel washes (lilac, mint, cream) that fade into Warm Paper — no photography, no illustration, no logos except the gradient cat mascot.
+One device mockup (a phone with a flashcard UI) and small badge illustrations; no full-bleed photography. Illustrations are soft, rounded and outlined, matching the mascot. Decorative gradients are blurred and low-saturation, acting as light rather than as graphics.
 
 ## Do and don't
 
 ### Do
-- Set page background to Warm Paper #faf8f5 and reserve Paper White #ffffff for cards, sheets and the phone screen.
-- Build hierarchy with size and negative tracking (68px at -0.03em, 48px at -0.02em, 26px at -0.02em) instead of adding weights beyond 600.
-- Use pill radius 999px only for the primary store buttons and badges; use 28px for cards, 16px for chips, 8px for inputs.
-- Make the hero lede the same Obsidian ink at 60% alpha rather than a different grey — quieter, not greyer.
-- Keep hover feedback to a 0.28s transform lift; colour changes belong to links only.
-- Tint a panel (Mist Blue, Cream, Soft Mint) and then tint the text inside it to the matching deep ink (navy, orange, teal).
+- Keep the background at Warm Paper #faf8f5 and reserve Pure White for raised cards.
+- Set every heading at weight 600, never 700, and scale tracking negatively as size grows (-0.512px at 25.6px, -1.4544px at 48.5px, -2.04px at 68px).
+- Keep display line-height at 1.0 so multi-line headlines read as one solid block.
+- Use full 999px pills for primary actions and 28px radii for cards; never square a button or round a section.
+- Use 8px as the default gap and 112px vertical padding to separate sections instead of borders or background changes.
+- Let the accent stay almost invisible: Signal Blue for links, Accent Wash for occasional cool fields, Tinted Ink for card blurbs.
 
 ### Don't
-- Do not load a display webfont — the OS system sans is the brand face; Inter is a fallback, not a second voice.
-- Do not bold anything to 700 in body or UI; 600 is the ceiling, and 500 is only for chips and small labels.
-- Do not introduce a saturated brand colour as surface; the only strong colour is Signal Blue on text links, one or two per page.
-- Do not use cold grey borders or blue-grey shadows — dividers are warm #e7e4de and shadows are built from navy-tinted alpha.
-- Do not give cards hard borders or heavy drop shadows; cards are soft, almost flat, with 28px corners.
-- Do not use the purple gradient and pastel wash as button or text colours — they only exist as large, low-contrast background atmosphere.
+- Do not introduce a web-font display face; text renders in the reader's system stack by design.
+- Do not bold anything past 600 or add wide letter-spacing to headings.
+- Do not put a visible border or a heavy shadow on a white card — the lift comes from the warm background contrast.
+- Do not use Signal Blue as a button fill; buttons are Obsidian or Linen.
+- Do not mix two Tinted Ink colors inside one card, and do not use them for headings — they are body-copy tints only.
+- Do not add saturated gradients, glows or drop shadows to UI; the only soft gradients are the blurred light bleeds at the top of the page.
 
 ## Similar brands
 
 
 ## Agent prompt
 
-Design like Vocabbie: warm paper-white page (#faf8f5), one giant system-font headline at 68px/600 with -2px tracking, a 21px 60%-opacity lede, then near-black 999px pill buttons for App Store and Google Play. Cards are white, 28px corner radius, 22px 24px padding, almost shadowless. Accent with pastel panels (mist blue, cream, mint) carrying matching deep-ink body text, and a single blue link colour. Everything else is quiet: 14px grey meta, 8px gaps, 112px section rhythm, hover = 0.28s transform lift only.
+Build Vocabbie-style pages as warm paper documents: #faf8f5 background, white 28px-radius cards, system-ui type at weight 600 with negative tracking on large sizes, black 999px pill buttons, 8px gaps and 112px section padding, blue reserved for links only.

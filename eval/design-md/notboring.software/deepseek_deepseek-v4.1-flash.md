@@ -1,133 +1,144 @@
-# !Boring Software — DESIGN.md
-> playful monochrome, one amber spark
+# Not Boring Software — DESIGN.md
+> game-studio minimalism with a yellow wink
 
 **Theme:** light  
 **Source:** https://notbor.ing/ · 2026-09-23
 
 Source measurements are normalised; roles and recommendations are interpreted.
 
-A stark white-and-grey editorial surface that behaves like a gallery wall: 100px of empty air above and below every statement, nothing framed, nothing boxed, no shadows anywhere on the page. The whole system is achromatic — paper white and two greys doing the architectural work while Founders Grotesk speaks in a two-voice duet, weight 600 for the claim and weight 400 for the punchline sitting directly beneath it at the same 44px size. A second, unrelated typeface — Jet Brains, uppercase, letterspaced 1px — is quarantined to navigation and micro-labels, so the nav reads like machine labelling against the humanist headlines. The only chromatic event is a single amber #FFB200 borrowed from the little hand-drawn logo squiggle; it appears nowhere else, which is exactly why it lands. Buttons are flat rectangles: solid black for the primary action, 2px black outline for the alternative, 4px radius, never a shadow. The site is loud by being quiet.
+A near-white gallery for a company that makes apps like games. Everything sits on Paper White and an enormous field of Fog #ececec, with the only saturated colour — Andy Yellow #ffb200 — appearing as a small logo mark and skin imagery, never as a large painted panel in the first viewport. Typography carries the whole personality: Founders Grotesk in two identical 44px sizes, one at weight 600 for the claim and one at weight 400 for the answer, so headlines read as call-and-response rather than a scale. Jet Brains appears only in 12px uppercase utility labels with 1px tracking, giving navigation a mechanical, almost terminal voice against the warm grotesk. Buttons are the loudest objects: solid Ink or a 2px Ink outline, radius 4px, generous horizontal padding, and an oddly low 20px line-height that makes the label feel pressed into the box. Space is lavish — 100px vertical section padding, 880px text measure, 60px gaps.
 
 ## Colors
 
 | Name | Value | Group | Role |
 |------|-------|-------|------|
-| Paper White | `#FFFFFF` | neutral | Page base and the text color sitting on Ink Black elements. The default canvas of the header and the top of the page. |
-| Smoke | `#ECECEC` | neutral | Dominant section background — the pale grey band that the editorial headline blocks sit on. Weighted as the single largest surface color on the page. |
-| Gainsboro | `#E0E0E0` | neutral | Second-tier panel grey for alternating bands and media placeholders. One step darker than Smoke so stacked sections separate without a border. |
-| Ink Black | `#000000` | neutral | Primary action fill, 2px outline on the secondary button, and display headline ink. The only color used for hard borders. |
-| Charcoal | `#232323` | neutral | Long-form text ink: h3 claims and supporting paragraphs. Slightly softened from pure black so 44px blocks do not vibrate on grey. The CSS also carries #272727/#292929/#212121 — near-identical shades that collapse into this token. |
-| Ash | `#AAAAAA` | neutral | De-emphasized text: metadata, secondary body copy, anything that must recede behind Charcoal. |
-| Dormant | `#B6B5B5` | neutral | Disabled / low-priority nav link color, e.g. the unselected SUPPORT item. Barely lighter than Ash; treat as the quietest readable step. |
-| Andy Amber | `#FFB200` | accent | The lone chromatic accent, sampled from the logo scribble and the illustrated app skins. Used in graphical marks only — never for buttons, links or body text. Its scarcity is the point. |
+| Paper White | `#ffffff` | neutral | Page base and header surface; also the fill of outline buttons. |
+| Fog | `#ececec` | neutral | Dominant section surface — the large grey blocks that carry every editorial statement. |
+| Gainsboro | `#e0e0e0` | neutral | Second-tier panel surface used to alternate or nest against Fog. |
+| Ink | `#000000` | neutral | Primary buttons, borders, body and display text; the only border colour on the site. |
+| Soft Ink | `#232323` | neutral | Headline text inside grey sections — a hair softer than Ink, used for all h3 copy. |
+| Ash | `#aaaaaa` | neutral | Muted and secondary text: footer links, meta, anything demoted below Ink. |
+| Andy Yellow | `#ffb200` | brand | The brand's single saturated accent; logo mark and app-skin imagery. Measured as a wide background area deeper in the page, so treat it as a real section colour, not a dot. |
 
 ## Typography
 
 ### Founders Grotesk — display
-The entire voice of the site. Weight 600 states the claim, weight 400 delivers the counter-line at the identical size and line-height, so headlines read as a two-part joke rather than a hierarchy. Weight 700 is reserved for the 76px display line and is the only genuinely bold moment.
+Every headline, paragraph, button label and input. Weight 600 does the claiming, weight 400 answers it, weight 700 only at 76px for the page's single shout.
 - **Fallback:** sans-serif
 - **Weights:** 400, 600, 700
 - **Sizes:** 22px, 24px, 36px, 44px, 76px
-- **Line height:** 1.0 for display, 1.2 for h3, 1.4 for paragraph text
-- **Letter spacing:** normal (no tracking at any size)
+- **Line height:** TBD
+- **Letter spacing:** normal
 
-### Jet Brains — mono
-Quarantined to navigation items, eyebrows and micro-labels, always uppercase with 1px tracking. Never used for sentences. The functional/monospaced texture against Founders Grotesk is what makes the system legible as 'software company' rather than 'agency'.
+### Jet Brains — ui
+Uppercase navigation and footer labels only. Its 1px tracking and monospaced rhythm are the site's one machine-like gesture.
 - **Fallback:** monospace
 - **Weights:** 400, 700
 - **Sizes:** 12px, 16px
-- **Line height:** 1.125 for nav (18px), 1.67 for 12px labels
-- **Letter spacing:** 1px (applied to ~60 elements)
+- **Line height:** TBD
+- **Letter spacing:** 1px on 12px caption
 
 ### Type scale
 
 | Role | Family | Weight | Size | Line height | Letter spacing |
 |------|--------|--------|------|-------------|----------------|
-| caption | Jet Brains, uppercase — small labels and tertiary nav. | 700 | 12px | 20 | 1px |
-| body-sm | Jet Brains, uppercase — primary header navigation. | 400 | 16px | 18 | 1px |
-| subtitle | Founders Grotesk — button and CTA label size. | 600 | 22px | 20 | normal |
-| body | Founders Grotesk — lead paragraphs and blog descriptions. | 400 | 24px | 34 | normal |
-| title-sm | Founders Grotesk — article and card titles. | 600 | 36px | 36 | normal |
-| title | Founders Grotesk — section statements; weight 400 at the same size is the paired reply. | 600 | 44px | 53 | normal |
-| display | Founders Grotesk — the single largest line on the page, set solid with no leading. | 700 | 76px | 76 | normal |
+| caption | Jet Brains | 700 | 12px | 1.67 | 1px |
+| body-sm | Founders Grotesk | 400 | 16px | 1.15 | normal |
+| body | Founders Grotesk | 400 | 24px | 1.4 | normal |
+| subtitle | Founders Grotesk | 600 | 22px | 1 | normal |
+| title-sm | Founders Grotesk | 600 | 36px | 1 | normal |
+| title | Founders Grotesk | 600 | 44px | 1.2 | normal |
+| title-lg | Founders Grotesk | 400 | 44px | 1.2 | normal |
+| display | Founders Grotesk | 700 | 76px | 1 | normal |
 
 ## Spacing and layout
 
 **Density:** airy
 
-- **Base unit:** 5px
-- **Max page width:** 880px for prose and headline columns, 1200px for the page shell
-- **Section gap:** 100px
-- **Card padding:** not applicable — the system has no cards; blocks are framed by whitespace instead of borders or fills
-- **Element gap:** 60px between column blocks; 40px / 30px / 10px vertical margins for stacked text; 8px 10px for inline label pairs
+- **Base unit:** 
+- **Max page width:** 880px text measure, 1200px page container
+- **Section gap:** 100px vertical, 90-100px bottom on closing sections
+- **Card padding:** 40px 100px on panel content
+- **Element gap:** TBD
 
 ### Border radii
 
-- **buttons:** 4px
-- **input submit / form control:** 8px
+- **button:** 4px
+- **submit button:** 8px
+- **input:** 0px
+- **card / section:** 0px
 
 ## Elevation
 
-None. There are zero box-shadows in the system; separation is achieved by alternating Smoke and Gainsboro section fills and by 2px black borders on outlined controls.
+None. There are no shadows anywhere in the system; hierarchy is made with flat Fog/Gainsboro surfaces and 2px Ink borders.
 
 ## Components
 
-### Primary Button
-**Role:** Filled action (Download)
+### Primary button
+**Role:** Main call to action ('Download')
 
-Ink Black background, Paper White label, subtitle type (22px Founders Grotesk 600), 4px radius, no border, no shadow, padding 12px 30px 15px (asymmetric bottom-heavy). Hover transitions background-color over 0.3s ease.
+Ink background, Paper White text, subtitle scale (22px/600), 4px radius, padding 12px 30px 15px, no border or shadow. Hover transitions background-color over 0.3s ease.
 
-### Secondary Button
-**Role:** Outlined action (See all Works)
+### Outline button
+**Role:** Secondary action ('See all Works')
 
-Paper White background, Ink Black label at the same subtitle size and weight, 2px solid Ink Black border, 4px radius, padding 12px 30px 15px. Identical geometry to the primary so the two sit as a matched pair.
+Paper White background, Ink text at 22px/600, 2px solid Ink border, 4px radius, same 12px 30px 15px padding as the primary button.
 
-### Subscribe Control
-**Role:** Inline email capture
-
-A transparent, borderless input at 24px Founders Grotesk 400 with 0px 8px padding, paired with a submit that is Paper White, 2px Ink Black border, 8px radius, 26px Founders Grotesk 600, padding 13px 24px 16px. The softer 8px radius deliberately breaks from the 4px button family.
-
-### Nav Link
+### Nav link
 **Role:** Header and footer navigation
 
-Jet Brains 16px 400 uppercase, 1px letter-spacing, Ink Black, no underline, no background, line-height 18px, 30px horizontal margin between items. Inactive or low-priority items fall to Dormant #B6B5B5 at 12px weight 700.
+Jet Brains, 16px/400, uppercase, Ink, no underline, no border. Footer/meta variants drop to caption scale (12px/700, 1px tracking) and Ash colour.
 
-### Header Bar
-**Role:** Fixed top navigation
+### Email input
+**Role:** Newsletter field
 
-Paper White background, logo mark left, nav cluster and primary button right, no bottom border and no shadow. Contains no vertical padding token of its own; the 60px gap rhythm separates nav from CTA.
+Transparent background, no border at rest, Ink text at body scale (24px/400), padding 0 8px. Placeholder reads 'your@email.com' and inherits Ash.
+
+### Subscribe button
+**Role:** Submit inside the input row
+
+Transparent background, Ink text at 26px/600, 2px solid Ink border, 8px radius (the only 8px on the site), padding 13px 24px 16px.
+
+### Header
+**Role:** Persistent top bar
+
+Paper White surface, 1200px max width, small colour logo left, nav links right, primary button last. No bottom border, no shadow, no scroll-state change.
 
 ## Motion
 
-Background-color 0.3s ease on interactive controls only. Scroll-triggered reveals exist page-wide but the resting state of every element is fully opaque and un-transformed — motion never carries meaning that the static layout does not already convey.
+Near-static. One measured transition, background-color 0.3s ease, on buttons; scroll-triggered reveals exist deeper in the page. Nothing bounces or scales.
 
 ## Layout
 
-Centered single column capped at 880px for reading content inside a 1200px shell, sections separated by 100px of vertical air and nothing else: no dividers, no cards, no borders between bands. Full-bleed Smoke and Gainsboro panels alternate to segment the page. Two-column blocks use a 60px gap. Navigation is a flat horizontal row pinned to the top-right, with the primary CTA visually terminating the line.
+Full-bleed alternating bands: Paper White at the top and around content, then wide Fog #ececec sections. Content is left-aligned inside a 1200px container with an 880px text measure, sections separated by 100px of vertical air and 60px internal gaps. Radii are essentially square — 0px on sections, 4px only on controls.
 
 ## Imagery
 
-Photography and 3D app renders appear at full panel width against the flat grey bands, with no border radius, no shadow and no caption overlay — images behave like posters pasted flush onto the wall.
+3D rendered app hardware and colourful skin artwork, high-contrast, placed as large product shots against flat grey rather than treated as photography. The palette stays neutral so the yellow and the app screens supply all chroma.
 
 ## Do and don't
 
 ### Do
-- Set headline pairs at identical size and line-height, changing only the weight: 600 for the statement, 400 for the reply underneath.
-- Keep every surface achromatic and let Andy Amber #FFB200 appear only inside logo or illustration artwork.
-- Separate sections with 100px of vertical space or a full-bleed grey band — never with a border, card or shadow.
-- Use Jet Brains uppercase with 1px letter-spacing for anything under 16px that functions as a label or nav item.
-- Give buttons the 4px radius and the asymmetric 12px 30px 15px padding; keep filled and outlined variants geometrically identical.
+- Set every headline and paragraph in Founders Grotesk; reserve Jet Brains exclusively for 12-16px uppercase labels with 1px tracking.
+- Pair a 44px weight-600 claim with a 44px weight-400 reply instead of changing size — that weight flip is the system's signature.
+- Give sections 100px of vertical padding and hold body copy to an 880px measure.
+- Use Fog #ececec as the default section surface and Paper White for the header and for controls that sit on grey.
+- Keep buttons at radius 4px, 2px Ink borders for outlines, and horizontal padding near 30px.
+- Left-align everything; no centred hero copy anywhere in the system.
+- Let Andy Yellow appear only in the logo and product imagery — it is an accent, not a background for text.
 
 ### Don't
-- Never apply a box-shadow, gradient or glass effect — elevation does not exist in this system.
-- Never use Andy Amber on a button, link or piece of body text.
-- Never set body text in Jet Brains or sentence-case a nav item; Jet Brains is uppercase labelling only.
-- Never enlarge the headline weight to 700 below 76px — weight 600 does the work at section level.
-- Never box editorial content in cards with fills or borders; blocks breathe against grey, not inside frames.
+- Do not introduce shadows, gradients or glass — the system is strictly flat.
+- Do not add a fourth font weight or any italic; Founders Grotesk 400/600/700 and Jet Brains 400/700 are the whole set.
+- Do not colour buttons with Andy Yellow or any hue other than Ink/Paper White.
+- Do not round sections or cards; corners stay at 0px outside of controls.
+- Do not use 8px radius except on the Subscriber submit button, and even there treat it as an inconsistency rather than a rule.
+- Do not set body copy below 24px in Founders Grotesk or above 12px in Jet Brains.
+- Do not centre or justify multi-line headlines — the ragged left edge is intentional.
 
 ## Similar brands
 
 
 ## Agent prompt
 
-Build a stark, achromatic editorial page on Paper White #FFFFFF with full-bleed Smoke #ECECEC and Gainsboro #E0E0E0 bands. Use Founders Grotesk at 400/600/700 for every sentence; headline blocks are 44px with line-height 53px, weight 600 followed by weight 400 at the same size. Reserve the 76px/76px weight 700 line for the single largest statement. Set navigation in Jet Brains 16px uppercase with 1px letter-spacing, secondary labels at 12px weight 700. Paragraph copy is 24px Founders Grotesk 400 with 34px leading, color Charcoal #232323. Buttons: 4px radius, 12px 30px 15px padding, 22px Founders Grotesk 600 — filled Ink Black for primary, 2px Ink Black outline on white for secondary. Let the amber #FFB200 live only in the logo mark. No shadows anywhere; separate sections with 100px vertical spacing and alternating grey fills. Cap prose at 880px, the page shell at 1200px.
+
