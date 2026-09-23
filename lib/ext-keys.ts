@@ -55,13 +55,16 @@ export async function revokeExtKey(id: string, allow: (row: { userId: string; or
   return "ok";
 }
 
-export interface ExtCtx { user: SessionUser; workspace: Workspace; keyId: string }
+export interface ExtCtx { user: SessionUser; workspace: Workspace; workspaces: Workspace[]; keyId: string }
 
 /**
  * Authenticates an extension request by the `Authorization: Bearer crit_…` header.
- * Returns null if the key doesn't exist, is revoked, or the person is no longer in the workspace.
+ * The key belongs to the person, and opens every workspace they are in: `wanted` (the
+ * X-Workspace header) picks one, otherwise the workspace the key was created in.
+ * Returns null if the key doesn't exist, is revoked, or the person has no workspace left;
+ * "forbidden" if `wanted` is not one of theirs.
  */
-export async function authByExtKey(authorization: string | null): Promise<ExtCtx | null> {
+export async function authByExtKey(authorization: string | null, wanted?: string | null): Promise<ExtCtx | null | "forbidden"> {
   const m = /^Bearer\s+(crit_[A-Za-z0-9_-]{20,})$/.exec(authorization ?? "");
   if (!m) return null;
   const [row] = await db.select().from(T).where(eq(T.hash, sha256(m[1]))).limit(1);
@@ -70,18 +73,26 @@ export async function authByExtKey(authorization: string | null): Promise<ExtCtx
   const [u] = await db.select({ id: schema.user.id, name: schema.user.name, email: schema.user.email, image: schema.user.image, language: schema.user.language })
     .from(schema.user).where(eq(schema.user.id, row.userId)).limit(1);
   if (!u) return null;
-  const workspace = (await listWorkspaces(u.id)).find((w) => w.id === row.organizationId);
-  if (!workspace) return null; // no longer a member: the key stops working on its own
+  const workspaces = await listWorkspaces(u.id);
+  if (workspaces.length === 0) return null;
+  let workspace: Workspace | undefined;
+  if (wanted) {
+    workspace = workspaces.find((w) => w.id === wanted);
+    if (!workspace) return "forbidden";
+  } else {
+    workspace = workspaces.find((w) => w.id === row.organizationId) ?? workspaces.find((w) => w.kind === "personal") ?? workspaces[0];
+  }
 
   if (!row.lastUsedAt || Date.now() - +row.lastUsedAt > TOUCH_EVERY_MS) {
     void db.update(T).set({ lastUsedAt: new Date() }).where(eq(T.id, row.id)).catch(() => {});
   }
-  return { user: { ...u, language: toLocale(u.language) }, workspace, keyId: row.id };
+  return { user: { ...u, language: toLocale(u.language) }, workspace, workspaces, keyId: row.id };
 }
 
-/** For /api/ext route handlers: context or a 401 Response. */
+/** For /api/ext route handlers: context, or a 401 (bad key) / 403 (workspace not theirs) Response. */
 export async function requireExtCtx(req: Request): Promise<ExtCtx | Response> {
-  const ctx = await authByExtKey(req.headers.get("authorization"));
+  const ctx = await authByExtKey(req.headers.get("authorization"), req.headers.get("x-workspace"));
   if (!ctx) return Response.json({ error: (await getErrors()).badKey }, { status: 401 });
+  if (ctx === "forbidden") return Response.json({ error: (await getErrors()).workspaceNotYours }, { status: 403 });
   return ctx;
 }

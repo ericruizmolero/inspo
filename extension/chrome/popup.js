@@ -14,13 +14,17 @@ const app = $("app");
 const setView = (v) => { app.dataset.view = v; };
 const note = (el, text, kind) => { el.textContent = text || ""; el.className = "hint" + (kind ? ` is-${kind}` : ""); };
 
-let state = { key: null, base: DEFAULT_BASE, workspace: null, user: null };
+let state = { key: null, base: DEFAULT_BASE, workspace: null, workspaces: [], user: null };
 let tab = null;
 
 const api = async (path, init = {}) => {
   const res = await fetch(state.base + API + path, {
     ...init,
-    headers: { Authorization: `Bearer ${state.key}`, "Content-Type": "application/json", ...(init.headers || {}) },
+    headers: {
+      Authorization: `Bearer ${state.key}`, "Content-Type": "application/json",
+      ...(state.workspace?.id ? { "X-Workspace": state.workspace.id } : {}), // where this popup saves
+      ...(init.headers || {}),
+    },
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) { await disconnect(false); throw new Error(data.error || t("keyInvalid")); }
@@ -31,22 +35,37 @@ const api = async (path, init = {}) => {
 async function load() {
   document.documentElement.lang = chrome.i18n.getUILanguage();
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
-  const s = await chrome.storage.local.get(["key", "base", "workspace", "user"]);
-  state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, user: s.user || null };
+  const s = await chrome.storage.local.get(["key", "base", "workspace", "workspaces", "user"]);
+  state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
   if (!state.key) { setView("connect"); return; }
-  setChip(state.workspace?.name);
+  setChip();
   showFoot();
   setView("tab");
   await loadTab();
   // Checks the key in the background and refreshes the workspace and person names
   api("/me").then((me) => {
-    state.workspace = me.workspace; state.user = me.user;
-    chrome.storage.local.set({ workspace: me.workspace, user: me.user });
-    setChip(me.workspace.name); showFoot();
+    state.workspace = me.workspace; state.workspaces = me.workspaces || []; state.user = me.user;
+    chrome.storage.local.set({ workspace: me.workspace, workspaces: state.workspaces, user: me.user });
+    setChip(); showFoot();
   }).catch((e) => note($("tab-msg"), e.message, "error"));
 }
 
-function setChip(name) { const el = $("ws-name"); el.textContent = name || ""; el.hidden = !name; }
+// Top right: the workspace this popup saves to, switchable among all the person's workspaces
+function setChip() {
+  const sel = $("ws-select");
+  const list = state.workspaces.length ? state.workspaces : state.workspace ? [state.workspace] : [];
+  sel.replaceChildren(...list.map((w) => { const o = document.createElement("option"); o.value = w.id; o.textContent = w.name; return o; }));
+  if (state.workspace) sel.value = state.workspace.id;
+  $("ws-chip").hidden = list.length === 0;
+}
+
+$("ws-select").addEventListener("change", async () => {
+  const w = state.workspaces.find((x) => x.id === $("ws-select").value);
+  if (!w || w.id === state.workspace?.id) return;
+  state.workspace = w;
+  await chrome.storage.local.set({ workspace: w });
+  await loadTab(); // the same site may or may not be in this workspace
+});
 
 function showFoot() {
   $("foot").hidden = false;
@@ -54,15 +73,15 @@ function showFoot() {
 }
 
 async function loadTab() {
-  const [t] = await chrome.tabs.query({ active: true, currentWindow: true });
-  tab = t;
-  const url = t?.url || "";
+  const [cur] = await chrome.tabs.query({ active: true, currentWindow: true });
+  tab = cur;
+  const url = cur?.url || "";
   const ok = /^https?:\/\//.test(url);
-  $("tab-title").textContent = t?.title || url;
+  $("tab-title").textContent = cur?.title || url;
   // The address as it will be saved: host and path, without the scheme or a trailing slash
   try { const u = new URL(url); $("tab-host").textContent = ok ? (u.hostname.replace(/^www\./, "") + u.pathname).replace(/\/$/, "") : t("notWebsite"); } catch { $("tab-host").textContent = ""; }
-  if (t?.favIconUrl && !/^chrome/.test(t.favIconUrl)) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; $("tab-fav-fallback").setAttribute("hidden", ""); }
-  $("btn-save").disabled = !ok;
+  if (cur?.favIconUrl && !/^chrome/.test(t.favIconUrl)) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; $("tab-fav-fallback").setAttribute("hidden", ""); }
+  const saveBtn = $("btn-save"); saveBtn.hidden = false; saveBtn.disabled = !ok; saveBtn.classList.remove("is-busy"); saveBtn.textContent = t("save");
   $("btn-open").hidden = true;
   if (!ok) { note($("tab-msg"), t("onlyHttp"), null); return; }
   note($("tab-msg"), "");
@@ -117,9 +136,9 @@ async function save() {
 
 async function disconnect(tellServer = true) {
   if (tellServer && state.key) { try { await api("/me", { method: "DELETE" }); } catch { /* already revoked or offline */ } }
-  await chrome.storage.local.remove(["key", "workspace", "user", "connectedAt"]);
-  state.key = null; state.workspace = null; state.user = null;
-  $("foot").hidden = true; setChip(null);
+  await chrome.storage.local.remove(["key", "workspace", "workspaces", "user", "connectedAt"]);
+  state.key = null; state.workspace = null; state.workspaces = []; state.user = null;
+  $("foot").hidden = true; setChip();
   const btn = $("btn-save"); btn.hidden = false; btn.disabled = false; btn.classList.remove("is-busy"); btn.textContent = t("save");
   note($("connect-msg"), tellServer ? t("disconnected") : t("keyInvalid"), null);
   setView("connect");
@@ -138,7 +157,7 @@ $("btn-paste").addEventListener("click", async () => {
   state = { ...state, key, base };
   try {
     const me = await api("/me");
-    await chrome.storage.local.set({ key, base, workspace: me.workspace, user: me.user, connectedAt: Date.now() });
+    await chrome.storage.local.set({ key, base, workspace: me.workspace, workspaces: me.workspaces || [], user: me.user, connectedAt: Date.now() });
     await load();
   } catch (e) { state.key = null; note($("connect-msg"), e.message, "error"); }
 });

@@ -23,7 +23,7 @@ export default async function ConnectPage() {
         <BackLink href="/settings/extension" />
         <h1 className="display page__title">{t.ext.connect}</h1>
       </header>
-      <ConnectPanel workspaces={ctx.workspaces} currentId={ctx.workspace.id} />
+      <ConnectPanel currentId={ctx.workspace.id} />
     </div>
   );
 }

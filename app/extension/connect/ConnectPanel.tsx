@@ -2,8 +2,6 @@
 
 import { createKey } from "@/app/actions/ext-keys";
 import { useEffect, useState } from "react";
-import type { Workspace } from "@/lib/workspace-core";
-import { WorkspaceAvatar } from "@/components/WorkspaceMenu";
 import { useT } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +21,12 @@ function browserName(fallback: string): string {
   return fallback;
 }
 
-export default function ConnectPanel({ workspaces, currentId }: { workspaces: Workspace[]; currentId: string }) {
+export default function ConnectPanel({ currentId }: { currentId: string }) {
   const { t } = useT();
-  const [orgId, setOrgId] = useState(currentId);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [result, setResult] = useState<{ key: string; workspace: { name: string } } | null>(null);
+  const [result, setResult] = useState<{ key: string } | null>(null);
   const [extPresent, setExtPresent] = useState(false);
   const [received, setReceived] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -52,7 +49,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
     e.preventDefault();
     setBusy(true); setError("");
     try {
-      const r = await createKey(orgId, name.trim() || t.ext.browser);
+      const r = await createKey(currentId, name.trim() || t.ext.browser);
       if (!r.ok) throw new Error(r.error);
       const data = r.data;
       setResult(data);
@@ -73,7 +70,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
       <div className="page__body">
         <Card>
           <CardHeader>
-            <CardTitle>{t.ext.keyCreated(result.workspace.name)}</CardTitle>
+            <CardTitle>{t.ext.keyCreated}</CardTitle>
             {!received && <CardDescription>{extPresent ? t.ext.handingOver : t.ext.notDetected}</CardDescription>}
           </CardHeader>
           <CardContent>
@@ -97,30 +94,8 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
       {error && <p className="modal__error">{error}</p>}
       <Card>
         <CardHeader>
-          <CardTitle>{t.ext.whereSave}</CardTitle>
-          <CardDescription>{t.ext.oneWorkspace}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="list">
-            {workspaces.map((w) => (
-              <li key={w.id} className="list__row ext-choice">
-                <label className="ext-choice__label">
-                  <input type="radio" name="workspace" value={w.id} checked={orgId === w.id} onChange={() => setOrgId(w.id)} />
-                  <WorkspaceAvatar workspace={w} small />
-                  <span className="list__main">
-                    <span className="list__name">{w.name}</span>
-                    <span className="list__sub">{w.kind === "personal" ? t.ext.personalSpace : t.ext.team}</span>
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
           <CardTitle><Label htmlFor="ext-key-name" className="text-base leading-snug">{t.ext.nameIt}</Label></CardTitle>
-          <CardDescription>{t.ext.nameHint}</CardDescription>
+          <CardDescription>{t.ext.allWorkspaces} {t.ext.nameHint}</CardDescription>
         </CardHeader>
         <CardContent>
           <Input id="ext-key-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.ext.namePlaceholder} maxLength={60} />

@@ -25,6 +25,13 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
 
+## Workspaces
+
+One key per browser, and it opens every workspace the person belongs to. Each request says where to
+act with the `X-Workspace` header (an id from `/api/ext/v1/me`, which lists them); without it, the
+workspace the key was created in. The popup shows the choice as the pill at the top right, and
+remembers it. A workspace the person is not in gets a 403.
+
 ## Look
 
 The popup uses the app's tokens (`app/globals.css`), dark by default and light when the system prefers it,
