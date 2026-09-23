@@ -155,9 +155,9 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   );
 }
 
-export function Chips({ terms, counts, selected, onToggle, labels }: {
+export function Chips({ terms, counts, selected, onToggle, labels, images }: {
   terms: Term[]; counts: Record<string, number>; selected: string[]; onToggle: (k: string) => void;
-  labels: Record<string, string>;
+  labels: Record<string, string>; images?: Record<string, string>;
 }) {
   const { t: dict } = useT();
   const visible = terms.filter((t) => (counts[t.key] ?? 0) > 0 || selected.includes(t.key));
@@ -168,6 +168,7 @@ export function Chips({ terms, counts, selected, onToggle, labels }: {
         const on = selected.includes(t.key);
         return (
           <button key={t.key} className={`chip${on ? " is-active" : ""}`} onClick={() => onToggle(t.key)}>
+            {images?.[t.key] && <span className="fbar__avatar"><img src={images[t.key]} alt="" /></span>}
             {labels[t.key] ?? t.key}<span className="chip__count">{counts[t.key] ?? 0}</span>
           </button>
         );

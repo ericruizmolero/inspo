@@ -102,7 +102,7 @@ export default function FilterBar({
               <section className="fbar__group">
                 <h3 className="fbar__label">{t.sidebar.who}</h3>
                 <Chips terms={authors.map((key) => ({ key, description: "" }))} counts={authorCounts}
-                  labels={Object.fromEntries(authors.map((a) => [a, authorLabel(a)]))}
+                  labels={Object.fromEntries(authors.map((a) => [a, authorLabel(a)]))} images={authorImages}
                   selected={author === "all" ? [] : [author]} onToggle={(k) => onAuthor(author === k ? "all" : k)} />
               </section>
             )}
