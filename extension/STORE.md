@@ -7,8 +7,10 @@ para el alta ni para la ficha.
 ## Antes de empezar
 
 1. **Cuenta de desarrollador.** Entra en https://chrome.google.com/webstore/devconsole con
-   `tech@criterio.design` (la cuenta técnica compartida, no una personal) y paga el alta única
-   de 5 $. Google la puede tardar unas horas en activar.
+   `hola@criterio.design`: es la cuenta de Google del proyecto (la misma de Google Cloud).
+   `tech@` es solo un buzón de Namecheap, no existe como cuenta de Google, y hola@ es alias de
+   ese buzón, así que los correos de Google llegan igual. Paga el alta única de 5 $; Google
+   puede tardar unas horas en activarla.
 2. **Paquete.** `node extension/build.mjs` deja `extension/dist/criterio-design-<versión>.zip`
    sin las entradas de localhost. Sube ese zip, no la carpeta.
 3. **Versión.** Antes de cada subida, sube `version` en `extension/chrome/manifest.json`. La tienda
