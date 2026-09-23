@@ -1,8 +1,8 @@
-// Utilidades de imagen en el navegador.
+// Image utilities in the browser.
 //
-// Los errores salen como código, no como frase: este módulo corre en el navegador y
-// no puede leer la cookie del idioma. Quien los captura (componentes con useT) los
-// traduce con t.errors.<código>.
+// Errors come out as codes, not sentences: this module runs in the browser and
+// can't read the language cookie. Whoever catches them (components with useT)
+// translates them with t.errors.<code>.
 export const IMAGE_ERROR = {
   notAnImage: "notAnImage",
   imageFailed: "imageFailed",
@@ -12,8 +12,8 @@ export const IMAGE_ERROR = {
 
 
 /**
- * Reduce una imagen a un cuadrado de `size` px (recorte centrado) y la devuelve como data URL.
- * Se usa para logos: cabe en la columna `organization.logo` y no necesita almacenamiento aparte.
+ * Shrinks an image to a `size` px square (center crop) and returns it as a data URL.
+ * Used for logos: it fits in the `organization.logo` column and needs no separate storage.
  */
 export async function fileToSquareDataURL(file: File, size = 128): Promise<string> {
   if (!file.type.startsWith("image/")) throw new Error(IMAGE_ERROR.notAnImage);
@@ -27,7 +27,7 @@ export async function fileToSquareDataURL(file: File, size = 128): Promise<strin
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error(IMAGE_ERROR.imageFailed);
     ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, size, size);
-    // PNG conserva transparencia (logos); webp si el navegador lo soporta y queda más pequeño
+    // PNG keeps transparency (logos); webp if the browser supports it and it's smaller
     const png = canvas.toDataURL("image/png");
     const webp = canvas.toDataURL("image/webp", 0.9);
     return webp.startsWith("data:image/webp") && webp.length < png.length ? webp : png;
@@ -39,15 +39,15 @@ export async function fileToSquareDataURL(file: File, size = 128): Promise<strin
 export interface PreparedImage { blob: Blob; w: number; h: number; name: string }
 
 /**
- * Prepara una captura para adjuntarla a un comentario: la reduce a `maxEdge` px de lado mayor
- * y la recodifica (WebP, o JPEG si el navegador no sabe codificar WebP) hasta que quepa en `maxBytes`.
- * Los GIF pequeños se dejan tal cual para no perder la animación.
+ * Prepares a screenshot to attach to a comment: shrinks it to `maxEdge` px on the longest side
+ * and re-encodes it (WebP, or JPEG if the browser can't encode WebP) until it fits in `maxBytes`.
+ * Small GIFs are left as is so the animation isn't lost.
  */
 export async function prepareScreenshot(file: File, maxEdge = 2560, maxBytes = 4 * 1024 * 1024): Promise<PreparedImage> {
   if (!file.type.startsWith("image/")) throw new Error(IMAGE_ERROR.notAnImage);
   const bitmap = await createImageBitmap(file);
   try {
-    const base = (file.name || "captura").replace(/\.[^.]+$/, "") || "captura";
+    const base = (file.name || "screenshot").replace(/\.[^.]+$/, "") || "screenshot";
     if (file.type === "image/gif" && file.size <= maxBytes) {
       return { blob: file, w: bitmap.width, h: bitmap.height, name: `${base}.gif` };
     }

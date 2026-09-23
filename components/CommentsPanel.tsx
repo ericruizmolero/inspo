@@ -11,10 +11,10 @@ import type { Dict } from "@/lib/i18n/en";
 import { useT, messageOf } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 
-// Panel lateral de comentarios de un inspo, al estilo del hilo de un pin de Figma:
-// la nota original de quien lo guardó abre el hilo y cualquier miembro responde debajo.
-// Las capturas se pegan (⌘V), se arrastran al panel o se adjuntan con el clip; se suben
-// nada más soltarlas y viajan con el comentario como lista de URLs.
+// Side panel for an inspo's comments, like a Figma pin thread:
+// the original note from whoever saved it opens the thread and any member replies below.
+// Screenshots are pasted (⌘V), dragged onto the panel or attached with the clip; they upload
+// as soon as they're dropped and travel with the comment as a list of URLs.
 
 const MAX_FILES = 6;
 
@@ -23,22 +23,22 @@ interface CommentsPanelProps {
   comments: InspoComment[];
   user: SessionUser;
   canManage: boolean;
-  /** Avatares de los miembros por nombre (para la nota original, que no tiene autorId) */
+  /** Member avatars by name (for the original note, which has no autorId) */
   memberImages: Record<string, string>;
-  /** Nombres de los miembros del workspace (para el vacío: quién verá el comentario) */
+  /** Workspace member names (for the empty state: who will see the comment) */
   memberNames?: string[];
-  /** Miniatura del inspo para dar contexto arriba del hilo */
+  /** Inspo thumbnail for context above the thread */
   image?: string | null;
   onPost: (body: string, attachments: CommentAttachment[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onClose: () => void;
   /**
-   * `drawer` (por defecto): panel lateral fijo con fondo oscuro, se cierra con Escape.
-   * `column`: columna embebida dentro de la ficha DESIGN.md; sin fondo, sin Escape
-   * (lo gestiona la ficha) y con cabecera corta, porque la marca ya está en la barra.
+   * `drawer` (default): fixed side panel with a dark backdrop, closes with Escape.
+   * `column`: column embedded in the DESIGN.md sheet; no backdrop, no Escape
+   * (the sheet handles it) and a short header, since the brand is already in the bar.
    */
   variant?: "drawer" | "column";
-  /** Estado del DESIGN.md de esta web, para el aviso "genera el MD y tendrás la ficha completa" */
+  /** This site's DESIGN.md status, for the "generate the MD to get the full sheet" notice */
   designMd?: { status: "none" | "loading" | "ready"; onGenerate: () => void; onOpen: () => void };
 }
 
@@ -64,7 +64,7 @@ const IcDoc = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" strokeLinecap="round"><path d="M3 1.5h5l3 3v8H3z" /><path d="M8 1.5v3h3M5 7.5h4M5 10h4" /></svg>
 );
 
-// Color estable por nombre para diferenciar a cada persona de un vistazo
+// Stable color per name to tell people apart at a glance
 const HUES = [212, 28, 152, 268, 88, 340, 190, 48];
 export function hueFor(name: string): number {
   let h = 0;
@@ -118,13 +118,13 @@ interface Msg {
   attachments: CommentAttachment[];
   at: string;
   mine: boolean;
-  /** true para la nota original y el subcomentario del item */
+  /** true for the original note and the item's subcomment */
   original?: boolean;
   deletable?: boolean;
 }
 
-// Enlaces dentro del comentario: se detectan http(s):// y www., y se pintan como hipervínculos
-// con el dominio en corto (sin protocolo ni barra final) para que no rompan el ancho del panel.
+// Links inside the comment: http(s):// and www. are detected and rendered as hyperlinks
+// with a short domain (no protocol or trailing slash) so they don't break the panel width.
 const URL_RE = /((?:https?:\/\/|www\.)[^\s<>"'）)]+)/gi;
 function linkLabel(raw: string) {
   const s = raw.replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, "");
@@ -134,7 +134,7 @@ function renderBody(text: string) {
   const parts = text.split(URL_RE);
   return parts.map((part, i) => {
     if (i % 2 === 0) return part;
-    // Puntuación final (coma, punto, paréntesis) no forma parte del enlace
+    // Trailing punctuation (comma, period, parenthesis) isn't part of the link
     const m = part.match(/^(.*?)([.,;:!?)\]]*)$/);
     const url = m ? m[1] : part;
     const tail = m ? m[2] : "";
@@ -148,10 +148,10 @@ function renderBody(text: string) {
   });
 }
 
-/** Captura en el composer: se sube nada más añadirla y se envía con el comentario cuando está `ready`. */
+/** Screenshot in the composer: uploads as soon as it's added and is sent with the comment once `ready`. */
 interface Pending {
   key: string;
-  preview: string;       // object URL local, para la miniatura inmediata
+  preview: string;       // local object URL, for the instant thumbnail
   name: string;
   status: "uploading" | "ready" | "error";
   url?: string;
@@ -215,10 +215,10 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     return () => { document.removeEventListener("keydown", onKey); clearInterval(t); };
   }, [onClose, column]);
 
-  // En columna no se roba el foco: la ficha de al lado es lo que se está leyendo
+  // In column mode focus isn't stolen: the sheet beside it is what's being read
   useEffect(() => { if (!column) textareaRef.current?.focus(); }, [item.id, column]);
 
-  // Al cambiar de inspo o cerrar, soltar las previews locales
+  // On inspo change or close, release the local previews
   const pendingRef = useRef(pending);
   pendingRef.current = pending;
   useEffect(() => () => { for (const p of pendingRef.current) URL.revokeObjectURL(p.preview); }, [item.id]);
@@ -227,10 +227,10 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     if (!files.length) return;
     setError(null);
     const room = MAX_FILES - pendingRef.current.length;
-    if (room <= 0) { setError(`Como mucho ${MAX_FILES} capturas por comentario`); return; }
+    if (room <= 0) { setError(t.comments.maxFiles(MAX_FILES)); return; }
     const batch = files.slice(0, room).map<Pending>((f) => ({
       key: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, preview: URL.createObjectURL(f),
-      name: f.name || "captura", status: "uploading", w: 0, h: 0,
+      name: f.name || t.comments.screenshotName, status: "uploading", w: 0, h: 0,
     }));
     setPending((prev) => [...prev, ...batch]);
     batch.forEach((p, i) => {
@@ -238,7 +238,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         .then((r) => setPending((prev) => prev.map((x) => x.key === p.key ? { ...x, status: "ready", url: r.url, w: r.w, h: r.h, name: r.name } : x)))
         .catch((e) => setPending((prev) => prev.map((x) => x.key === p.key ? { ...x, status: "error", error: messageOf(e, t, t.comments.uploadFailed) } : x)));
     });
-    if (files.length > room) setError(`Solo caben ${MAX_FILES} capturas; se han dejado fuera ${files.length - room}`);
+    if (files.length > room) setError(t.comments.filesLeftOut(MAX_FILES, files.length - room));
   }, []);
 
   const removePending = (key: string) => {
@@ -267,13 +267,13 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
 
   const msgs = useMemo<Msg[]>(() => {
     const out: Msg[] = [];
-    const author = item.puestoPor || t.comments.noAuthor;
+    const author = item.addedBy || t.comments.noAuthor;
     const mine = author === user.name;
-    if (item.comentarios) {
-      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.comentarios, attachments: [], at: esDateToIso(item.fecha), mine, original: true });
+    if (item.note) {
+      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true });
     }
-    if (item.subcomentarios) {
-      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subcomentarios, attachments: [], at: esDateToIso(item.fecha), mine, original: true });
+    if (item.subNote) {
+      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true });
     }
     for (const c of comments) {
       const own = c.authorId === user.id;
@@ -282,7 +282,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     return out;
   }, [item, comments, user, canManage, memberImages]);
 
-  // Al abrir o al llegar un mensaje nuevo, bajar al final del hilo
+  // On open or when a new message arrives, scroll to the end of the thread
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -310,7 +310,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   };
 
   const others = memberNames.filter((n) => n && n !== user.name);
-  // Filas fantasma con los avatares reales del equipo (tú incluido)
+  // Ghost rows with the team's real avatars (you included)
   const ghosts = [user.name || user.email, ...others].slice(0, 3).map((n, i) => ({
     name: n, image: n === user.name ? user.image ?? null : memberImages[n] ?? null,
     w1: ["72%", "58%", "80%"][i], w2: ["40%", "66%", "34%"][i],
@@ -325,7 +325,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
       <aside
         className={`cm-panel${column ? " cm-panel--column" : ""}${dragging ? " is-dragging" : ""}`}
         role="dialog"
-        aria-label={t.comments.ofLabel(item.empresa)}
+        aria-label={t.comments.ofLabel(item.name)}
         onPaste={onPaste}
         onDragEnter={onDragEnter}
         onDragOver={onDragOver}
@@ -341,7 +341,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         )}
         <header className="cm-panel__head">
           <div className="cm-panel__title">
-            <span className="display">{column ? t.comments.title : item.empresa}</span>
+            <span className="display">{column ? t.comments.title : item.name}</span>
             {!column && <a className="cm-panel__link" href={item.web} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
           </div>
           <span className="cm-panel__count">{replies === 0 ? t.comments.noReplies : t.comments.replies(replies)}</span>
@@ -445,7 +445,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               className="input cm-composer__input"
               rows={2}
               value={draft}
-              placeholder={replies === 0 && !item.comentarios ? t.comments.firstComment : t.comments.reply}
+              placeholder={replies === 0 && !item.note ? t.comments.firstComment : t.comments.reply}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); submit(); } }}
             />

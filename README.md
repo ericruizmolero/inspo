@@ -35,28 +35,28 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Multiusuario y equipos (SaaS)
+## Multi-user and teams (SaaS)
 
-La app es multi-tenant: cada persona entra con su correo (magic link, sin contraseñas) y trabaja
-en **workspaces**. Todo el mundo tiene un workspace personal y puede crear equipos e invitar por
-correo. Los items, miniaturas y etiquetas IA pertenecen a un workspace; las fichas DESIGN.md se
-cachean por URL (globales) pero solo se ven las de URLs guardadas en el workspace activo.
+The app is multi-tenant: each person signs in with their email (magic link, no passwords) and works
+in **workspaces**. Everyone has a personal workspace and can create teams and invite by
+email. Items, thumbnails and AI tags belong to a workspace; DESIGN.md sheets are
+cached per URL (global), but only those for URLs saved in the active workspace are visible.
 
-- **Auth**: Better Auth (`lib/auth.ts`), plugins `magicLink` + `organization`. Handler en `app/api/auth/[...all]`.
-- **BD**: SQLite/libsql con Drizzle (`lib/db/schema.ts`). Local: `.data/inspo.db`. Producción: Turso (`DATABASE_URL` + `DATABASE_AUTH_TOKEN`).
-  Las migraciones están en `drizzle/` y se aplican con `npm run db:migrate` (también en `predev` y `prebuild`).
-- **Workspaces**: `lib/workspace.ts` (sesión + workspace activo + permisos) y `lib/workspace-core.ts` (consultas puras).
-  Roles: `owner`/`admin` pueden invitar, quitar miembros, etiquetar en lote y regenerar DESIGN.md; `member` añade items y miniaturas.
-- **Páginas**: `/login`, `/equipo` (miembros, invitaciones, crear equipo), `/invitacion/[id]`.
-- **Correo**: Resend vía `RESEND_API_KEY`. Sin clave (local) el enlace se imprime en consola y en `.data/last-mail.txt`.
-- **Sin login en local**: con `DEV_LOGIN_EMAIL=tu@correo` en `.env.local` se entra automáticamente como ese usuario
-  (sesión real vía `/api/dev-login`, ignorado en producción). Para volver a probar el login, quita la variable y cierra sesión.
-- **Migración del Sheet original**: `npm run migrate:sheet` (idempotente). Crea los usuarios de `TEAM_MEMBERS`,
-  el equipo `TEAM_NAME` y vuelca filas, miniaturas y etiquetas.
+- **Auth**: Better Auth (`lib/auth.ts`), plugins `magicLink` + `organization`. Handler in `app/api/auth/[...all]`.
+- **DB**: SQLite/libsql with Drizzle (`lib/db/schema.ts`). Local: `.data/inspo.db`. Production: Turso (`DATABASE_URL` + `DATABASE_AUTH_TOKEN`).
+  Migrations live in `drizzle/` and run with `npm run db:migrate` (also in `predev` and `prebuild`).
+- **Workspaces**: `lib/workspace.ts` (session + active workspace + permissions) and `lib/workspace-core.ts` (pure queries).
+  Roles: `owner`/`admin` can invite, remove members, batch tag and regenerate DESIGN.md; `member` adds items and thumbnails.
+- **Pages**: `/login`, `/settings/members` (members, invitations, create a team), `/invite/[id]`.
+- **Email**: Resend via `RESEND_API_KEY`. Without a key (local) the link is printed to the console and to `.data/last-mail.txt`.
+- **No login locally**: with `DEV_LOGIN_EMAIL=you@email` in `.env.local` you sign in automatically as that user
+  (real session via `/api/dev-login`, ignored in production). To test login again, remove the variable and sign out.
+- **Original Sheet migration**: `npm run migrate:sheet` (idempotent). Creates the `TEAM_MEMBERS` users,
+  the `TEAM_NAME` team, and loads rows, thumbnails and tags.
 
-### Puesta en producción (Vercel)
-1. Crear una BD en Turso y poner `DATABASE_URL` / `DATABASE_AUTH_TOKEN`.
-2. `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) y `BETTER_AUTH_URL=https://inspo.savvia.studio`.
-3. `RESEND_API_KEY` y `MAIL_FROM` con un dominio verificado.
-4. Desplegar (el `prebuild` aplica las migraciones) y ejecutar una vez `npm run migrate:sheet` con esas variables
-   para importar la librería de treseiscero.
+### Going to production (Vercel)
+1. Create a Turso DB and set `DATABASE_URL` / `DATABASE_AUTH_TOKEN`.
+2. `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL=https://inspo.savvia.studio`.
+3. `RESEND_API_KEY` and `MAIL_FROM` with a verified domain.
+4. Deploy (`prebuild` runs the migrations) and run `npm run migrate:sheet` once with those variables
+   to import the treseiscero library.

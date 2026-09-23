@@ -1,16 +1,16 @@
-// Escaparate del login: imágenes fijas de public/showcase, elegidas a mano.
-// Se sirven como estáticos (/showcase/NN.jpg), así que la página no toca base de
-// datos ni Blob y carga al instante. Para cambiarlas basta con poner o quitar
-// archivos .jpg/.png/.webp en esa carpeta: se pintan por orden de nombre.
+// Login showcase: fixed images from public/showcase, picked by hand.
+// Served as static files (/showcase/NN.jpg), so the page touches neither the
+// database nor Blob and loads instantly. To change them just add or remove
+// .jpg/.png/.webp files in that folder: they render in name order.
 import { promises as fs } from "fs";
 import path from "path";
 
-export const SHOWCASE_MAX = 18; // 3 columnas × 6
+export const SHOWCASE_MAX = 18; // 3 columns × 6
 const DIR = path.join(process.cwd(), "public", "showcase");
 
 let cache: string[] | null = null;
 
-/** Rutas públicas de las imágenes del escaparate, por orden de nombre. */
+/** Public paths of the showcase images, in name order. */
 export async function showcaseImages(): Promise<string[]> {
   if (cache) return cache;
   try {

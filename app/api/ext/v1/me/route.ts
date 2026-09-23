@@ -1,4 +1,4 @@
-// Comprobar la llave: quién soy y en qué workspace guarda esta extensión.
+// Check the key: who I am and which workspace this extension saves to.
 import { requireExtCtx, revokeExtKey } from "@/lib/ext-keys";
 
 const API_VERSION = 1;
@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   });
 }
 
-// DELETE → la extensión revoca su propia llave al desconectarse
+// DELETE → the extension revokes its own key on disconnect
 export async function DELETE(req: Request) {
   const ctx = await requireExtCtx(req);
   if (ctx instanceof Response) return ctx;

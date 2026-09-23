@@ -8,9 +8,9 @@ import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 30;
 
-// POST { q } → { scores: { [web]: 0–1 } } dentro del workspace activo
+// POST { q } → { scores: { [web]: 0–1 } } within the active workspace
 export async function POST(req: NextRequest) {
-  if (!jevEnabled()) return Response.json({ error: "TYPESAFE_API_KEY no configurada" }, { status: 503 });
+  if (!jevEnabled()) return Response.json({ error: "TYPESAFE_API_KEY not configured" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
 

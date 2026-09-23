@@ -1,19 +1,19 @@
-// Extrae texto y señales estructurales de una URL para dárselas a Jev
-// (que solo entiende texto). Usa el mismo proxy que /api/og.
+// Extracts text and structural signals from a URL to hand to Jev
+// (which only understands text). Uses the same proxy as /api/og.
 
 import "server-only";
 
-// Proxy externo para leer webs que bloquean IPs de centros de datos. WEB_PROXY_URL="" lo apaga.
+// External proxy to read sites that block data center IPs. WEB_PROXY_URL="" turns it off.
 const DEFAULT_PROXY = "https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy";
 export const PROXY = process.env.WEB_PROXY_URL ?? DEFAULT_PROXY;
 export const viaProxy = (url: string) => (PROXY ? `${PROXY}?url=${encodeURIComponent(url)}` : null);
 
-// ponytail: solo mira el hostname (localhost, IPs privadas, .local/.internal). No resuelve DNS,
-// así que un dominio que apunte a 10.x o una redirección a una IP interna pasan. Si hace falta,
-// resolver con dns.lookup y comprobar la IP antes de pedir.
+// ponytail: only checks the hostname (localhost, private IPs, .local/.internal). It doesn't resolve DNS,
+// so a domain pointing to 10.x or a redirect to an internal IP gets through. If needed,
+// resolve with dns.lookup and check the IP before fetching.
 const PRIVATE_HOST = /^(localhost|0\.0\.0\.0|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$|\[?f[cd][0-9a-f]{2}:|\[?fe80:)|\.(local|internal|localhost)$/i;
 
-/** ¿Es una URL http(s) que apunta a internet y no a la red interna? */
+/** Is it an http(s) URL pointing to the internet and not the internal network? */
 export function isPublicHttpUrl(raw: string): boolean {
   try {
     const u = new URL(raw);
@@ -132,7 +132,7 @@ async function fetchHtml(url: string, headers?: Record<string, string>): Promise
   }
 }
 
-/** fetchSiteText con tope de tiempo: sacar el nombre de la web no debe frenar un alta. */
+/** fetchSiteText with a time cap: getting the site name must not hold up adding an item. */
 export function siteTextWithin(url: string, ms = 5000): Promise<SiteText | null> {
   return Promise.race([
     fetchSiteText(url).catch(() => null),
@@ -140,7 +140,7 @@ export function siteTextWithin(url: string, ms = 5000): Promise<SiteText | null>
   ]);
 }
 
-/** Proxy primero (evita bloqueos por IP de Vercel); si falla, fetch directo con UA de navegador. */
+/** Proxy first (avoids blocks on Vercel IPs); if it fails, direct fetch with a browser UA. */
 export async function fetchSiteText(url: string): Promise<SiteText | null> {
   if (!isPublicHttpUrl(url)) return null;
   const proxied = viaProxy(url);

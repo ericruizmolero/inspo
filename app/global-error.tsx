@@ -1,5 +1,5 @@
 "use client";
-// Falla el propio layout raíz: no hay I18nProvider ni estilos, así que el idioma sale del navegador.
+// The root layout itself failed: no I18nProvider or styles, so the language comes from the browser.
 import en from "@/lib/i18n/en";
 import es from "@/lib/i18n/es";
 

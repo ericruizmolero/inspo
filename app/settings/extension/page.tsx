@@ -17,7 +17,7 @@ export default async function ExtensionPage() {
   const keys = await listExtKeys(ws.id);
   return (
     <>
-      <ActivityPing area="ajustes" organizationId={ws.id} />
+      <ActivityPing area="settings" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.extension} lead={t.settings.leads.extension} />
       <ExtensionPanel
         me={ctx.user}

@@ -1,17 +1,17 @@
-// Registro de uso de IA por workspace. El coste es el que devuelve OpenRouter en cada
-// llamada, Jev incluido (#28). Solo si no llega se estima, y la fila lo dice.
+// AI usage log per workspace. The cost is what OpenRouter returns on each
+// call, Jev included (#28). Only if it's missing is it estimated, and the row says so.
 import "server-only";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
-import { dayOf, daySlots, tzOffsetSeconds } from "./dias";
+import { dayOf, daySlots, tzOffsetSeconds } from "./days";
 import { type UsageAction, type UsageOverview } from "./usage-core";
 
 export * from "./usage-core";
 
 export interface UsageCtx { organizationId: string; userId?: string | null }
 
-/** Estimación de Jev por item, solo para cuando OpenRouter no devuelve el coste. */
+/** Jev estimate per item, only for when OpenRouter doesn't return the cost. */
 export const JEV_PER_ITEM_USD = 0.0004;
 
 export interface UsageInput {
@@ -20,22 +20,22 @@ export interface UsageInput {
   inputTokens?: number;
   outputTokens?: number;
   cacheReadTokens?: number;
-  /** Items facturados por Jev */
+  /** Items billed by Jev */
   units?: number;
-  /** USD que devolvió OpenRouter. null o ausente: se estima (Jev) o se guarda 0, y se avisa */
+  /** USD returned by OpenRouter. null or missing: estimated (Jev) or stored as 0, with a warning */
   costUsd?: number | null;
   provider?: string | null;
   requestId?: string | null;
   ref?: string | null;
 }
 
-/** Guarda una fila de uso. Nunca lanza: perder una fila es mejor que romper la llamada. */
+/** Saves a usage row. Never throws: losing a row beats breaking the call. */
 export async function recordUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Promise<void> {
   if (!ctx) return;
   const input = u.inputTokens ?? 0, output = u.outputTokens ?? 0, cacheRead = u.cacheReadTokens ?? 0, units = u.units ?? 0;
   const real = typeof u.costUsd === "number";
   const cost = real ? u.costUsd! : u.model === "jev" ? units * JEV_PER_ITEM_USD : 0;
-  if (!real) console.warn("usage: sin coste real", u.action, u.model);
+  if (!real) console.warn("usage: no real cost", u.action, u.model);
   try {
     await db.insert(schema.aiUsage).values({
       id: newId(), organizationId: ctx.organizationId, userId: ctx.userId ?? null,
@@ -45,11 +45,11 @@ export async function recordUsage(ctx: UsageCtx | null | undefined, u: UsageInpu
       ref: u.ref?.slice(0, 300) ?? null, createdAt: new Date(),
     });
   } catch (e) {
-    console.warn("usage: no se pudo registrar", u.action, e instanceof Error ? e.message : e);
+    console.warn("usage: could not record", u.action, e instanceof Error ? e.message : e);
   }
 }
 
-/** Gasto total de toda la app desde `since`, en USD. Para cuadrar con OpenRouter. */
+/** Total app-wide spend since `since`, in USD. For reconciling with OpenRouter. */
 export async function totalCostSince(since: Date): Promise<number> {
   const [r] = await db.select({ micros: sql<number>`coalesce(sum(${schema.aiUsage.costMicros}), 0)` })
     .from(schema.aiUsage).where(gte(schema.aiUsage.createdAt, since));
@@ -60,11 +60,11 @@ export interface UsageSummary {
   sinceDays: number;
   totalUsd: number;
   byAction: { action: UsageAction; calls: number; usd: number; units: number }[];
-  /** `name` null = llamada del sistema, sin persona detrás */
+  /** `name` null = system call, no person behind it */
   byUser: { userId: string | null; name: string | null; usd: number; calls: number }[];
 }
 
-/** Resumen de gasto del workspace en los últimos N días (para la página de equipo). */
+/** Workspace spend summary over the last N days (for the team page). */
 export async function usageSummary(organizationId: string, sinceDays = 30): Promise<UsageSummary> {
   const since = new Date(Date.now() - sinceDays * 86400000);
   const U = schema.aiUsage;
@@ -85,7 +85,7 @@ export async function usageSummary(organizationId: string, sinceDays = 30): Prom
   };
 }
 
-/** Uso de IA de toda la app (todos los workspaces) en los últimos N días naturales, para /admin. */
+/** App-wide AI usage (all workspaces) over the last N calendar days, for /admin. */
 export async function usageOverview(days = 30): Promise<UsageOverview> {
   const off = tzOffsetSeconds();
   const slots = daySlots(days, off);
@@ -114,7 +114,7 @@ export async function usageOverview(days = 30): Promise<UsageOverview> {
     .sort((a, b) => b.usd - a.usd);
   const workspaces = byWs.map((r) => {
     let kind: "personal" | "team" = "team";
-    try { kind = JSON.parse(r.metadata ?? "{}")?.kind === "personal" ? "personal" : "team"; } catch { /* metadata rota */ }
+    try { kind = JSON.parse(r.metadata ?? "{}")?.kind === "personal" ? "personal" : "team"; } catch { /* broken metadata */ }
     return { id: r.id, name: r.name, kind, usd: Number(r.micros) / 1e6, calls: Number(r.calls) };
   }).sort((a, b) => b.usd - a.usd);
 

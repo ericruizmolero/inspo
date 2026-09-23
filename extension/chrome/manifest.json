@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "criterio.design",
-  "description": "Guarda la web que estás viendo en tu librería de criterio.design con un clic.",
+  "description": "Save the site you are looking at to your criterio.design library in one click.",
   "version": "0.1.0",
   "icons": {
     "16": "icons/icon16.png",
@@ -10,7 +10,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Guardar en criterio.design",
+    "default_title": "Save to criterio.design",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
@@ -31,8 +31,8 @@
   "content_scripts": [
     {
       "matches": [
-        "https://criterio.design/extension/conectar*",
-        "http://localhost/extension/conectar*"
+        "https://criterio.design/extension/connect*",
+        "http://localhost/extension/connect*"
       ],
       "js": [
         "content.js"

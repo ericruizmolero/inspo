@@ -1,10 +1,10 @@
-// Las URLs de Blob se piden con BLOB_READ_WRITE_TOKEN, así que la pertenencia se comprueba
-// sobre la URL parseada y nunca con un substring: "https://evil.tld/inspo/<ws>/thumbs/x" no pasa.
+// Blob URLs are fetched with BLOB_READ_WRITE_TOKEN, so ownership is checked
+// on the parsed URL and never with a substring: "https://evil.tld/inspo/<ws>/thumbs/x" fails.
 import "server-only";
 
 const BLOB_HOST = /\.blob\.vercel-storage\.com$/i;
 
-/** ¿Es `url` una URL de Vercel Blob cuya ruta empieza por `prefix`? */
+/** Is `url` a Vercel Blob URL whose path starts with `prefix`? */
 export function isBlobUrlUnder(url: string, prefix: string): boolean {
   try {
     const u = new URL(url);

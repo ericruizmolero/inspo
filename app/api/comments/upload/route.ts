@@ -4,8 +4,8 @@ import { uploadCommentFile, deleteCommentFiles, ownsCommentFile, ATTACHMENT_TYPE
 import { getErrors } from "@/lib/i18n";
 
 
-// POST multipart { file } → { url }. Una captura por petición: el navegador ya la ha reducido
-// (lib/image-client.ts) y así cada subida se queda por debajo del tope de body de Vercel.
+// POST multipart { file } → { url }. One screenshot per request: the browser has already shrunk it
+// (lib/image-client.ts) so each upload stays under Vercel's body limit.
 export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ url }, { status: 201 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("Error subiendo adjunto de comentario:", msg);
+    console.error("Error uploading comment attachment:", msg);
     return Response.json({ error: msg }, { status: 500 });
   }
 }
 
-// DELETE ?url=… → quita una captura que se subió y luego se descartó antes de enviar
+// DELETE ?url=… → removes a screenshot that was uploaded and then discarded before sending
 export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;

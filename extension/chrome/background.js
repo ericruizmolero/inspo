@@ -1,6 +1,6 @@
-// Service worker de la extensión. Solo hace de buzón: recibe la llave desde content.js (que
-// la recoge en criterio.design/extension/conectar) y la guarda en chrome.storage.local.
-// Todo lo demás (llamadas a la API) lo hace el popup directamente.
+// The extension's service worker. It only acts as a mailbox: it gets the key from content.js
+// (which picks it up at criterio.design/extension/connect) and stores it in chrome.storage.local.
+// Everything else (API calls) the popup does directly.
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "ext-key" && typeof msg.key === "string" && msg.key.startsWith("crit_")) {
@@ -8,7 +8,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       .set({ key: msg.key, base: msg.base, workspace: msg.workspace ?? null, connectedAt: Date.now() })
       .then(() => sendResponse({ ok: true }))
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
-    return true; // respuesta asíncrona
+    return true; // async response
   }
   return false;
 });

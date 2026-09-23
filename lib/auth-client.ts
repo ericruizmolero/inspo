@@ -1,5 +1,5 @@
 "use client";
-// Cliente de Better Auth para componentes de cliente.
+// Better Auth client for client components.
 import { createAuthClient } from "better-auth/react";
 import { magicLinkClient, organizationClient, lastLoginMethodClient } from "better-auth/client/plugins";
 

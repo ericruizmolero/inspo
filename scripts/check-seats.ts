@@ -1,5 +1,5 @@
-// Comprobación del límite de personas por plan. No es un framework de tests: crea un
-// workspace de prueba, comprueba con assert y lo borra al terminar.
+// Check of the per-plan people limit. Not a test framework: creates a
+// test workspace, checks with assert and deletes it when done.
 //   npx tsx scripts/check-seats.ts
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -47,51 +47,51 @@ async function main() {
   const owner = await addUser(0);
   await addMember(owner, now, "owner");
 
-  // 1. Las invitaciones sin aceptar ocupan plaza
+  // 1. Unaccepted invitations take a seat
   for (let i = 1; i <= 4; i++) await addInvitation(`${TAG}-inv${i}@example.test`, new Date(Date.now() + 7 * DAY), owner);
-  assert.equal(await countPendingInvitations(orgId), 4, "4 invitaciones pendientes");
-  assert.equal(await memberLimitMessage(orgId, "studio"), null, "sin contar pendientes todavía cabe gente");
+  assert.equal(await countPendingInvitations(orgId), 4, "4 pending invitations");
+  assert.equal(await memberLimitMessage(orgId, "studio"), null, "not counting pending ones there is still room");
   const full = await memberLimitMessage(orgId, "studio", { includePending: true });
-  assert.ok(full, "1 miembro + 4 invitaciones llenan el plan Studio");
-  assert.match(full!, /4 invitations not yet accepted/, "el mensaje dice cuántas invitaciones hay");
+  assert.ok(full, "1 member + 4 invitations fill the Studio plan");
+  assert.match(full!, /4 invitations not yet accepted/, "the message says how many invitations there are");
 
-  // 2. Reenviar una invitación no ocupa una plaza de más
+  // 2. Resending an invitation doesn't take an extra seat
   assert.equal(
     await memberLimitMessage(orgId, "studio", { includePending: true, exceptEmail: `${TAG}-INV1@example.test` }),
-    null, "reenviar a una dirección ya invitada sigue cabiendo",
+    null, "resending to an already invited address still fits",
   );
 
-  // 3. Las caducadas no cuentan
-  await addInvitation(`${TAG}-viejo@example.test`, new Date(Date.now() - DAY), owner);
-  assert.equal(await countPendingInvitations(orgId), 4, "la invitación caducada no ocupa plaza");
+  // 3. Expired ones don't count
+  await addInvitation(`${TAG}-old@example.test`, new Date(Date.now() - DAY), owner);
+  assert.equal(await countPendingInvitations(orgId), 4, "the expired invitation takes no seat");
 
-  // 4. Bajar de plan deja al equipo por encima del límite
+  // 4. Downgrading leaves the team over the limit
   for (let i = 1; i <= 4; i++) await addMember(await addUser(i), new Date(+now + i));
-  assert.equal(await overCapacity(orgId, "studio"), null, "5 personas caben en Studio");
+  assert.equal(await overCapacity(orgId, "studio"), null, "5 people fit in Studio");
   await setWorkspacePlan(orgId, "solo");
   const over = await overCapacity(orgId, "solo");
-  assert.deepEqual(over, { members: 5, limit: 1, planName: "Solo" }, "5 personas no caben en Solo");
+  assert.deepEqual(over, { members: 5, limit: 1, planName: "Solo" }, "5 people don't fit in Solo");
   await assert.rejects(
     () => assertSeatsOk({ id: orgId, plan: "solo" }),
     (e: unknown) => e instanceof HttpError && e.status === 402,
-    "la IA se para mientras sobre gente",
+    "AI stops while the team is over the limit",
   );
 
-  // 5. Quien sobra al aceptar la última plaza a la vez es siempre el último, nunca los dos
+  // 5. When two accept the last seat at once, the one left over is always the later one, never both
   const ordered = await db.select({ id: schema.member.id, createdAt: schema.member.createdAt })
     .from(schema.member).where(eq(schema.member.organizationId, orgId));
   ordered.sort((a, b) => (+a.createdAt - +b.createdAt) || (a.id < b.id ? -1 : 1));
   for (let i = 0; i < ordered.length; i++) {
-    assert.equal(await memberRank(orgId, ordered[i].id), i, `el miembro ${i} tiene rango ${i}`);
+    assert.equal(await memberRank(orgId, ordered[i].id), i, `member ${i} has rank ${i}`);
   }
 
-  console.log("✓ plazas: pendientes, reenvío, caducadas, bajada de plan y orden de la última plaza");
+  console.log("✓ seats: pending, resend, expired, downgrade and last-seat order");
 }
 
 main()
   .catch((e) => { console.error("✗", e); process.exitCode = 1; })
   .finally(async () => {
-    // El borrado en cascada se lleva miembros e invitaciones; los usuarios van aparte
+    // The cascade delete takes members and invitations; users go separately
     await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
     for (const uid of userIds) await db.delete(schema.user).where(eq(schema.user.id, uid));
   });

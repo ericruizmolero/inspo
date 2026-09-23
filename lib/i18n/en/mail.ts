@@ -1,7 +1,7 @@
-// El texto de los correos. Mismas claves que lib/mail/es.ts.
+// The email text. Same keys as lib/i18n/es/mail.ts.
 //
-// La regla: un correo sale en el idioma de QUIEN LO RECIBE, no de quien lo provoca.
-// Quién lo decide en cada caso está en localeForEmail (lib/mail.ts).
+// The rule: an email goes out in the language of WHO RECEIVES IT, not who triggers it.
+// Who decides in each case is in localeForEmail (lib/mail.ts).
 export const mail = {
   signature: "criterio.design is the inspiration library of Savvia \u00b7 savvia.studio",
   fallbackNote: (href: string): string => `If the button does not work, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">open this link</a>.`,

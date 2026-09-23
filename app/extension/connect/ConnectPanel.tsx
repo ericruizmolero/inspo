@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 
-// Mensajes que cruzan entre esta página y extension/chrome/content.js (misma pestaña, mismo origen)
+// Messages between this page and extension/chrome/content.js (same tab, same origin)
 const FROM_PAGE = "criterio";
 const FROM_EXT = "criterio-ext";
 
@@ -36,7 +36,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
 
   useEffect(() => { setName(browserName(t.ext.browser)); }, [t.ext.browser]);
 
-  // La extensión avisa de que está escuchando y confirma cuando guarda la llave
+  // The extension announces it is listening and confirms when it saves the key
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.data?.source !== FROM_EXT) return;
@@ -56,7 +56,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
       if (!r.ok) throw new Error(r.error);
       const data = r.data;
       setResult(data);
-      // Se la entregamos a la extensión; si no está, queda el botón de copiar
+      // Hand it to the extension; if it is not there, the copy button remains
       window.postMessage({ source: FROM_PAGE, type: "ext-key", key: data.key, base: window.location.origin, workspace: data.workspace }, window.location.origin);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -65,7 +65,7 @@ export default function ConnectPanel({ workspaces, currentId }: { workspaces: Wo
 
   const copy = async () => {
     if (!result) return;
-    try { await navigator.clipboard.writeText(result.key); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* sin permiso */ }
+    try { await navigator.clipboard.writeText(result.key); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* no permission */ }
   };
 
   if (result) {

@@ -2,16 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import { normalizeWebUrl } from "@/lib/url";
-import { RECURSOS, RECURSOS_TOTAL, recursoShot } from "@/lib/recursos";
+import { DIRECTORY, DIRECTORY_TOTAL, siteShot } from "@/lib/directory";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import s from "./EmptyStart.module.css";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AddToLibrary } from "./DirectoryModal";
 
-// Siempre 9 webs (rejilla de 3×3): las más usadas y las más de moda ahora mismo, elegidas a mano
-// y con una captura que se ve perfecta. Si alguna deja de estar en el directorio, se rellena
-// con la primera de cada grupo que aún no esté representado, para no dejar la rejilla coja.
+// Always 9 sites (3×3 grid): the most used and the most popular right now, picked by hand
+// with a screenshot that looks perfect. If one leaves the directory, the first site of each
+// group not yet shown fills the gap, so the grid never has a hole.
 const FEATURED = [
   "https://styles.refero.design",
   "https://recent.design",
@@ -23,12 +22,12 @@ const FEATURED = [
   "https://the-brandidentity.com",
   "https://www.cosmos.so",
 ];
-const ALL = RECURSOS.flatMap((g) => g.items.map((r) => ({ group: g, ...r })));
+const ALL = DIRECTORY.flatMap((g) => g.items.map((r) => ({ group: g, ...r })));
 const PICKS = (() => {
   const picks = FEATURED.map((u) => ALL.find((r) => r.url === u)).filter((r): r is (typeof ALL)[number] => !!r);
-  for (const g of RECURSOS) {
+  for (const g of DIRECTORY) {
     if (picks.length >= 9) break;
-    if (g.key === "recursos" || picks.some((r) => r.group.key === g.key)) continue;
+    if (g.key === "resources" || picks.some((r) => r.group.key === g.key)) continue;
     picks.push({ group: g, ...g.items[0] });
   }
   return picks.slice(0, 9);
@@ -39,48 +38,60 @@ function Thumb({ name, url }: { name: string; url: string }) {
   return (
     <span className={s.thumb} aria-hidden>
       {failed ? name.slice(0, 1).toUpperCase() : (
-        <img src={recursoShot(url)} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
+        <img src={siteShot(url)} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
       )}
     </span>
   );
 }
 
 
+const PER_TAB = 9;
+
 interface EmptyStartProps {
-  /** Guarda la primera inspo a partir de la URL (ya normalizada). Resuelve cuando termina el alta. */
+  /** Saves the first inspo from the (already normalized) URL. Resolves when the save finishes. */
   onAddUrl: (web: string) => Promise<void>;
   isDuplicate?: (web: string) => boolean;
-  onRecursos: () => void;
+  onDirectory: () => void;
 }
 
-/** Workspace sin inspos todavía: punto de partida en vez de un vacío. */
-export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyStartProps) {
+/**
+ * Workspace with no inspos yet (Refero model): one prompt box to paste a URL, and under it the
+ * directory in tabs, where any site goes into the library with one click.
+ */
+export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: EmptyStartProps) {
   const { t } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState("picks");
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const web = normalizeWebUrl(raw);
-    if (!web) { setError(t.start.notUrl); return; }
+  const add = async (web: string) => {
     if (isDuplicate?.(web)) { setError(t.start.alreadySaved); return; }
     setBusy(true);
     try { await onAddUrl(web); } finally { setBusy(false); }
   };
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const web = normalizeWebUrl(raw);
+    if (!web) { setError(t.start.notUrl); return; }
+    add(web);
+  };
+
+  const group = DIRECTORY.find((g) => g.key === tab);
+  const shown = group ? group.items.slice(0, PER_TAB).map((r) => ({ group, ...r })) : PICKS;
+  const groupTitle = (key: string) => t.directory.groups[key as keyof typeof t.directory.groups].title;
 
   return (
     <section className={s.wrap}>
       <div className={s.head} data-flip>
         <h1 className={s.title}>{t.start.title}</h1>
         <p className={s.lead}>{t.start.lead}</p>
-        <form className={s.paste} onSubmit={submit}>
-          <Input
+        <form className={s.prompt} onSubmit={submit}>
+          <input
             ref={inputRef}
-            size="lg"
-            className={s.pasteInput}
+            className={s.promptInput}
             value={raw}
             onChange={(e) => { setRaw(e.target.value); setError(""); }}
             placeholder={t.start.pasteUrl}
@@ -89,40 +100,50 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onRecursos }: EmptyS
             spellCheck={false}
             disabled={busy}
             aria-label={t.start.firstUrlLabel}
+            aria-invalid={!!error}
+            aria-describedby={error ? "start-url-error" : undefined}
           />
-          <Button variant="primary" type="submit" disabled={busy || !raw.trim()}>
-            {busy ? <span className="spinner" /> : Icons.plus}
-            <span>{busy ? t.start.saving : t.start.save}</span>
-          </Button>
+          <button type="submit" className={s.send} disabled={busy} aria-label={busy ? t.start.saving : t.start.save}>
+            {busy ? <span className="spinner spinner--sm" /> : Icons.arrowUp}
+          </button>
         </form>
-        {error ? <p className={s.error}>{error}</p> : (
-          <p className={s.sub}>
-            {t.start.nothingToHandBefore}<strong>{t.start.sitesWord(RECURSOS_TOTAL)}</strong>{t.start.nothingToHandAfter}{" "}
-            <button type="button" className={s.link} onClick={onRecursos}>{Icons.compass}<span>{t.start.openDirectory}</span></button>
-          </p>
-        )}
+        {error && <p id="start-url-error" className={s.error} role="alert">{error}</p>}
       </div>
 
-      <div className={s.section}>
-        <div className={s.eyebrow} data-flip>
-          <span>{t.start.trendingNow}</span>
-          <button className={s.more} onClick={onRecursos}>{t.start.seeAll(RECURSOS_TOTAL)} {Icons.arrow}</button>
-        </div>
-        <div className={s.grid}>
-          {PICKS.map((r) => (
-            <a key={r.url} className={s.tile} data-flip href={r.url} target="_blank" rel="noopener noreferrer">
-              <Thumb name={r.name} url={r.url} />
-              <span className={s.text}>
-                <span className={s.group}>{t.recursos.groups[r.group.key as keyof typeof t.recursos.groups].title}</span>
-                <span className={s.name}>{r.name}{Icons.arrow}</span>
-                <span className={s.desc}>{t.recursos.items[r.url]}</span>
-              </span>
-            </a>
+      <div className={s.section} data-flip>
+        <div className={s.tabs} role="group" aria-label={t.start.trendingNow}>
+          {[{ key: "picks", title: t.directory.featured, n: PICKS.length },
+            ...DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), n: g.items.length }))].map((x) => (
+            <button key={x.key} type="button" aria-pressed={tab === x.key}
+              className={`${s.tab}${tab === x.key ? ` ${s.tabOn}` : ""}`} onClick={() => setTab(x.key)}>
+              {x.title}<span className={s.tabCount}>{x.n}</span>
+            </button>
           ))}
         </div>
-      </div>
 
-      <p className={s.tip} data-flip>{t.start.tip}</p>
+        <div className={s.grid}>
+          {shown.map((r) => (
+            <div key={r.url} className={s.tile}>
+              <a className={s.tileLink} href={r.url} target="_blank" rel="noopener noreferrer">
+                <Thumb name={r.name} url={r.url} />
+                <span className={s.text}>
+                  <span className={s.group}>{groupTitle(r.group.key)}</span>
+                  <span className={s.name}>{r.name}{Icons.arrow}</span>
+                  <span className={s.desc}>{t.directory.items[r.url]}</span>
+                </span>
+              </a>
+              {/* Outside the link, so the two targets never overlap */}
+              <div className={s.foot}>
+                <AddToLibrary url={r.url} name={r.name} added={!!isDuplicate?.(r.url)} onAdd={add} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button type="button" className={s.more} onClick={onDirectory}>
+          {Icons.compass}<span>{t.start.seeAll(DIRECTORY_TOTAL)}</span>{Icons.arrow}
+        </button>
+      </div>
     </section>
   );
 }

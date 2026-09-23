@@ -1,42 +1,42 @@
-# Extensión de criterio.design para el navegador
+# criterio.design browser extension
 
-Guarda la web que estás viendo en tu librería de criterio.design con un clic. La extensión no analiza
-nada por su cuenta: manda la dirección, el título de la pestaña y una captura de lo visible, y el
-servidor decide nombre, colección, etiquetas y miniatura, igual que cuando pegas una URL en la app.
+Saves the site you're looking at to your criterio.design library with one click. The extension doesn't
+analyze anything itself: it sends the address, the tab title and a screenshot of what's visible, and the
+server picks the name, collection, tags and thumbnail, the same as when you paste a URL in the app.
 
-## Cómo entra
+## How it signs in
 
-No usa la cookie de sesión de la web (Safari no lo permite de forma fiable). Al pulsar
-"Conectar con criterio.design" se abre `criterio.design/extension/conectar`: ahí eliges el workspace y
-se crea una llave larga (`crit_…`) que la extensión guarda en `chrome.storage.local`. Todas las
-llamadas van con `Authorization: Bearer crit_…` a las rutas versionadas de `/api/ext/v1/`:
+It doesn't use the site's session cookie (Safari doesn't allow that reliably). Pressing
+"Connect to criterio.design" opens `criterio.design/extension/connect`: there you pick the workspace and
+a long key (`crit_…`) is created, which the extension stores in `chrome.storage.local`. Every
+call goes with `Authorization: Bearer crit_…` to the versioned routes under `/api/ext/v1/`:
 
-| Ruta | Qué hace |
+| Route | What it does |
 |---|---|
-| `GET /me` | Comprueba la llave; devuelve persona y workspace |
-| `DELETE /me` | La extensión revoca su propia llave al desconectarse |
-| `GET /items/lookup?url=` | ¿Esta web ya está guardada? |
-| `POST /items` | Guarda `{ url, title, screenshot }` |
+| `GET /me` | Checks the key; returns the person and workspace |
+| `DELETE /me` | The extension revokes its own key when it disconnects |
+| `GET /items/lookup?url=` | Is this site already saved? |
+| `POST /items` | Saves `{ url, title, screenshot }` |
 
-Las llaves se ven y se revocan en **Equipo**. Una llave deja de valer sola si la persona sale del
-workspace. En la base de datos solo se guarda el SHA-256 de la llave.
+Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
+workspace. The database only stores the key's SHA-256.
 
-## Probarla en Chrome (modo desarrollador)
+## Try it in Chrome (developer mode)
 
-1. `chrome://extensions` → activa "Modo de desarrollador" (arriba a la derecha).
-2. "Cargar descomprimida" → elige la carpeta `extension/chrome`.
-3. Fija la extensión en la barra y ábrela en cualquier web.
+1. `chrome://extensions` → turn on "Developer mode" (top right).
+2. "Load unpacked" → pick the `extension/chrome` folder.
+3. Pin the extension to the toolbar and open it on any site.
 
-Para probar contra el servidor local, en el popup abre "Ya tengo una llave" y pon como servidor
-`http://localhost:<puerto>`; la llave la creas en `http://localhost:<puerto>/extension/conectar`.
+To test against the local server, open "I already have a key" in the popup and set the server to
+`http://localhost:<port>`; create the key at `http://localhost:<port>/extension/connect`.
 
 ## Safari
 
-El código es el mismo. Safari exige empaquetarla dentro de una app de Mac con Xcode:
-`xcrun safari-web-extension-converter extension/chrome`. Se hará cuando la de Chrome esté
-publicada.
+The code is the same. Safari requires packaging it inside a Mac app with Xcode:
+`xcrun safari-web-extension-converter extension/chrome`. That happens once the Chrome one is
+published.
 
-## Publicar en la Chrome Web Store
+## Publish to the Chrome Web Store
 
-Comprime la carpeta `extension/chrome` en un zip y súbelo al panel de desarrollador de Chrome
-(cuota única de 5 $). Antes de subir, sube `version` en `manifest.json`.
+Zip the `extension/chrome` folder and upload it to the Chrome developer dashboard
+(one-time $5 fee). Before uploading, bump `version` in `manifest.json`.

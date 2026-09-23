@@ -1,13 +1,13 @@
-// Actividad de las personas en la app: quién está conectado, quién ha estado activo,
-// cuánto tiempo pasan y en qué zona. Los datos salen de dos sitios:
-//  - activity_segment: latidos del cliente (components/useActivity.ts → /api/actividad)
-//  - session (Better Auth): sesiones abiertas = "logeados", y sus altas = accesos
-// Lo ven los correos fijos (DEFAULT_ADMINS, ADMIN_EMAILS) y los añadidos desde el propio panel (tabla app_admin).
+// People's activity in the app: who is online, who has been active,
+// how much time they spend and in which area. The data comes from two places:
+//  - activity_segment: client heartbeats (components/useActivity.ts → /api/activity)
+//  - session (Better Auth): open sessions = "logged in", and their creation = sign-ins
+// Visible to the fixed emails (DEFAULT_ADMINS, ADMIN_EMAILS) and those added from the panel itself (app_admin table).
 import { and, desc, eq, gte, sql } from "drizzle-orm";
 import "server-only";
 import { userAgent } from "next/server";
 import { db, schema } from "./db";
-import { daySlots, dayOf, tzOffsetSeconds, startOfTodayMs } from "./dias";
+import { daySlots, dayOf, tzOffsetSeconds, startOfTodayMs } from "./days";
 import { type AdminEntry, type ActivityArea, type ActivityDay, type ActivityLogin, type ActivityOverview, type ActivityUser } from "./activity-core";
 import { getErrors } from "./i18n";
 
@@ -15,7 +15,7 @@ export * from "./activity-core";
 
 const DEFAULT_ADMINS = ["ericruizmolero@treseiscero.app"];
 
-/** Correos fijos con acceso a /admin: los de arriba + ADMIN_EMAILS="a@x.com,b@y.com" (+ DEV_LOGIN_EMAIL en desarrollo). No se pueden quitar desde el panel. */
+/** Fixed emails with access to /admin: the ones above + ADMIN_EMAILS="a@x.com,b@y.com" (+ DEV_LOGIN_EMAIL in development). Cannot be removed from the panel. */
 export function fixedAdmins(): string[] {
   const fromEnv = (process.env.ADMIN_EMAILS || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
   const dev = process.env.NODE_ENV !== "production" ? [(process.env.DEV_LOGIN_EMAIL || "").trim().toLowerCase()].filter(Boolean) : [];
@@ -24,7 +24,7 @@ export function fixedAdmins(): string[] {
 
 const normEmail = (e: string) => e.trim().toLowerCase();
 
-/** ¿Puede ver el panel? Correos fijos o los añadidos desde el panel (tabla app_admin). */
+/** Can they see the panel? Fixed emails or those added from the panel (app_admin table). */
 export async function isAdmin(email: string | null | undefined): Promise<boolean> {
   if (!email) return false;
   const e = normEmail(email);
@@ -33,7 +33,7 @@ export async function isAdmin(email: string | null | undefined): Promise<boolean
   return !!row;
 }
 
-/** Lista completa de quienes ven el panel, fijos primero. */
+/** Full list of who can see the panel, fixed ones first. */
 export async function listAdmins(): Promise<AdminEntry[]> {
   const [rows, users] = await Promise.all([
     db.select().from(schema.appAdmin).orderBy(schema.appAdmin.createdAt),
@@ -46,7 +46,7 @@ export async function listAdmins(): Promise<AdminEntry[]> {
   return [...fixed, ...added];
 }
 
-/** Da acceso a un correo. Devuelve false si ya lo tenía. */
+/** Grants access to an email. Returns false if it already had it. */
 export async function addAdmin(email: string, addedBy: string): Promise<{ email: string; added: boolean }> {
   const e = normEmail(email);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new Error((await getErrors()).badEmail);
@@ -55,28 +55,28 @@ export async function addAdmin(email: string, addedBy: string): Promise<{ email:
   return { email: e, added: res.length > 0 };
 }
 
-/** Quita el acceso. Los fijos no se pueden quitar. */
+/** Removes access. Fixed ones cannot be removed. */
 export async function removeAdmin(email: string): Promise<void> {
   const e = normEmail(email);
   if (fixedAdmins().includes(e)) throw new Error((await getErrors()).fixedAccess);
   await db.delete(schema.appAdmin).where(eq(schema.appAdmin.email, e));
 }
 
-/** Alguien cuenta como "conectado ahora" si ha mandado un latido en los últimos 2 minutos */
+/** Someone counts as "online now" if they sent a heartbeat in the last 2 minutes */
 export const ONLINE_WINDOW_MS = 2 * 60 * 1000;
-/** Entre dos latidos se suma el tiempo real solo si el hueco es corto (pestaña visible); si no, no cuenta */
+/** Real time between two heartbeats is added only if the gap is short (tab visible); otherwise it doesn't count */
 const MAX_GAP_MS = 90 * 1000;
 
 const ID_RE = /^[a-z0-9]{8,40}$/;
 
-/** "Chrome · macOS", "Safari · iOS (móvil)"… a partir del user agent */
+/** "Chrome · macOS", "Safari · iOS (mobile)"… from the user agent */
 export function deviceSummary(ua: string | null | undefined): string | null {
   if (!ua) return null;
   try {
     const { browser, os, device } = userAgent({ headers: new Headers({ "user-agent": ua }) });
     const parts = [browser.name, os.name].filter(Boolean);
     if (!parts.length) return null;
-    // Se guarda tal cual en la fila, así que va en inglés: no hay dónde traducirlo al pintarlo
+    // Stored as is in the row, so it's in English: there's nowhere to translate it when rendering
     const kind = device.type === "mobile" ? " (mobile)" : device.type === "tablet" ? " (tablet)" : "";
     return parts.join(" · ") + kind;
   } catch { return null; }
@@ -90,10 +90,10 @@ export interface Heartbeat {
   organizationId?: string | null;
 }
 
-/** Registra un latido: crea el segmento si es nuevo o le suma el tiempo desde el anterior. */
+/** Records a heartbeat: creates the segment if new, or adds the time since the previous one. */
 export async function touchSegment(userId: string, hb: Heartbeat, ua: string | null): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
   if (!ID_RE.test(hb.segmentId) || !ID_RE.test(hb.visitId)) return { ok: false, error: (await getErrors()).badIds, status: 400 };
-  const area = String(hb.area || "").slice(0, 40) || "biblioteca";
+  const area = String(hb.area || "").slice(0, 40) || "library";
   const path = String(hb.path || "/").slice(0, 200);
   const now = Date.now();
   const S = schema.activitySegment;
@@ -112,9 +112,9 @@ export async function touchSegment(userId: string, hb: Heartbeat, ua: string | n
   return { ok: true };
 }
 
-// ─── Resumen para el panel ───────────────────────────────────────────────────
+// ─── Panel overview ────────────────────────────────────────────────────────
 
-/** Varios accesos de la misma persona en 10 minutos (reintentos, auto-login en desarrollo) se enseñan como uno */
+/** Several sign-ins by the same person within 10 minutes (retries, dev auto-login) are shown as one */
 function collapseLogins(rows: ActivityLogin[]): ActivityLogin[] {
   const out: ActivityLogin[] = [];
   for (const r of rows) {
@@ -160,7 +160,7 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
     ]),
   ]);
 
-  // Último dispositivo visto por persona (segmento más reciente)
+  // Last device seen per person (most recent segment)
   const lastDevice = new Map<string, string | null>();
   const lastSegs = await db.select({ userId: S.userId, device: S.device, lastSeen: S.lastSeenAt }).from(S)
     .where(and(gte(S.lastSeenAt, since30))).orderBy(desc(S.lastSeenAt));
@@ -176,7 +176,7 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
   const wsOf = new Map<string, string[]>();
   for (const m of memberships) {
     let kind = "team";
-    try { kind = JSON.parse(m.metadata ?? "{}")?.kind ?? "team"; } catch { /* metadata rota */ }
+    try { kind = JSON.parse(m.metadata ?? "{}")?.kind ?? "team"; } catch { /* broken metadata */ }
     if (kind === "personal") continue;
     wsOf.set(m.userId, [...(wsOf.get(m.userId) ?? []), m.name]);
   }
@@ -201,7 +201,7 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
     return (y.lastSeenAt ?? y.lastLoginAt ?? "").localeCompare(x.lastSeenAt ?? x.lastLoginAt ?? "");
   });
 
-  // Serie diaria completa (con ceros) del periodo
+  // Full daily series (with zeros) for the period
   const dayMap = new Map(daily.map((d) => [Number(d.day), d]));
   const series: ActivityDay[] = daySlots(days, off).map((s) => {
     const d = dayMap.get(s.day);

@@ -27,7 +27,7 @@ export default function CreateTeamDialog({ open, onOpenChange }: { open: boolean
     const value = name.trim();
     if (!value) return;
     setBusy(true); setError("");
-    const slug = `${slugify(value) || "equipo"}-${Math.random().toString(36).slice(2, 6)}`;
+    const slug = `${slugify(value) || "team"}-${Math.random().toString(36).slice(2, 6)}`;
     const { error: err } = await authClient.organization.create({ name: value, slug });
     setBusy(false);
     if (err) { setError(err.message ?? t.team.createFailed); return; }

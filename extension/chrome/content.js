@@ -1,6 +1,6 @@
-// Corre solo en criterio.design/extension/conectar. Recoge la llave que la página emite con
-// window.postMessage y se la pasa al service worker para guardarla. Después confirma a la
-// página, que enseña "la extensión ya tiene la llave".
+// Runs only on criterio.design/extension/connect. Picks up the key the page posts with
+// window.postMessage and hands it to the service worker to store. Then it confirms to the
+// page, which shows that the extension has the key.
 const FROM_PAGE = "criterio";
 const FROM_EXT = "criterio-ext";
 

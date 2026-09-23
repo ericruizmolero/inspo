@@ -46,7 +46,7 @@ export default async function PlanPage() {
 
   return (
     <>
-      <ActivityPing area="planes" organizationId={ws.id} />
+      <ActivityPing area="plans" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.plan} lead={t.settings.leads.plan} />
 
       <Card>

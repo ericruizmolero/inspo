@@ -1,6 +1,6 @@
-// Explica en una frase por qué cada resultado de la búsqueda IA encaja con la consulta.
-// Jev solo devuelve probabilidades; aquí un modelo redacta el "porqué" a partir de los mismos datos
-// que vio Jev (notas, resumen, descripción de la captura, tags) y de la puntuación.
+// Explains in one sentence why each AI search result fits the query.
+// Jev only returns probabilities; here a model writes the "why" from the same data
+// Jev saw (notes, summary, screenshot description, tags) and the score.
 import "server-only";
 import { InspoItem, InspoTags } from "@/types/inspo";
 import { summarize } from "./jev";
@@ -11,8 +11,8 @@ import { llm, llmEnabled } from "./llm";
 const MODEL = process.env.EXPLAIN_MODEL || "anthropic/claude-haiku-4.5";
 export const explainEnabled = llmEnabled;
 
-// El prompt va en inglés; lo único que cambia con el idioma es en qué idioma
-// se pide la respuesta, porque esa frase se lee en pantalla.
+// The prompt is in English; the only thing that changes with the locale is the language
+// the answer is asked in, because that sentence is read on screen.
 const LANGUAGE: Record<Locale, string> = {
   en: "in English",
   es: "in Spanish (from Spain)",
@@ -24,7 +24,7 @@ For each item write ONE sentence ${LANGUAGE[locale]}, 14 words at most, explaini
 
 Answer only with lines "item_N: sentence", one per item and in the same order. Nothing else.`;
 
-// Caché en memoria por consulta + conjunto de resultados
+// In-memory cache per query + result set
 const cache = new Map<string, { at: number; reasons: Record<string, string> }>();
 const TTL = 10 * 60 * 1000;
 const MAX = 200;
@@ -34,14 +34,14 @@ export interface ExplainEntry { item: InspoItem; tags?: InspoTags; score: number
 
 export async function explainMatches(query: string, entries: ExplainEntry[], scope = "", usage?: UsageCtx, locale: Locale = DEFAULT_LOCALE): Promise<Record<string, string>> {
   if (!entries.length) return {};
-  // El idioma entra en la clave: si no, quien busca en inglés se come la frase en castellano
+  // The locale is part of the key: otherwise someone searching in English gets the Spanish sentence
   const key = `${locale}|${scope}|${query.toLowerCase()}|${entries.map((e) => e.item.web).sort().join(",")}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL) return hit.reasons;
 
   const payload = {
-    consulta: query,
-    items: entries.map((e, i) => ({ id: `item_${i}`, afinidad: Math.round(e.score * 100) / 100, ...summarize(e.item, e.tags) })),
+    query,
+    items: entries.map((e, i) => ({ id: `item_${i}`, affinity: Math.round(e.score * 100) / 100, ...summarize(e.item, e.tags) })),
   };
 
   const res = await llm({

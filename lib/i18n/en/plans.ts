@@ -1,5 +1,5 @@
-// Lo que se lee de cada plan. El precio, las cuotas y la clave viven en lib/plans.ts,
-// que es donde manda: aquí solo está el texto.
+// The readable text of each plan. Price, quotas and key live in lib/plans.ts,
+// which is the source of truth: only the text is here.
 export const plans = {
   solo: {
     tagline: "For your own library.",
@@ -21,7 +21,7 @@ export const plans = {
       "Comments and DESIGN.md revisions",
     ],
   },
-  agencia: {
+  agency: {
     tagline: "For teams with several projects open at once.",
     features: [
       "Up to 15 people",

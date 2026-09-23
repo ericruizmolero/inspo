@@ -1,5 +1,5 @@
-// Helpers de servidor: sesión actual, workspace activo y permisos.
-// Un workspace es una organization de Better Auth con metadata.kind = "personal" | "team".
+// Server helpers: current session, active workspace and permissions.
+// A workspace is a Better Auth organization with metadata.kind = "personal" | "team".
 import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
@@ -14,12 +14,12 @@ export * from "./workspace-core";
 
 export { getSession };
 
-/** Sesión + workspace activo. Lanza HttpError(401) si no hay sesión. */
+/** Session + active workspace. Throws HttpError(401) if there's no session. */
 export async function getCtx(): Promise<Ctx> {
   return (await resolveCtx()).ctx;
 }
 
-/** Para páginas: el contexto, o al login (volviendo a `next`) si no hay sesión. */
+/** For pages: the context, or off to login (returning to `next`) if there's no session. */
 export async function getCtxOrLogin(next?: string): Promise<Ctx> {
   try {
     return await getCtx();
@@ -29,14 +29,14 @@ export async function getCtxOrLogin(next?: string): Promise<Ctx> {
   }
 }
 
-// `fallback`: la sesión no tenía workspace activo (o ya no es miembro) y se eligió uno aquí.
-// Guardarlo escribe una cookie, cosa que un Server Component no puede hacer: eso lo hace requireCtx.
+// `fallback`: the session had no active workspace (or is no longer a member) and one was picked here.
+// Saving it writes a cookie, which a Server Component can't do: requireCtx does that.
 const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
   const s = await getSession();
   if (!s) throw new HttpError(401, (await getErrors()).notSignedIn);
   const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image, language: toLocale((s.user as { language?: unknown }).language) };
 
-  // Una sola consulta en el caso normal; solo se crea el personal (y se relee) la primera vez
+  // A single query in the normal case; the personal one is only created (and re-read) the first time
   let workspaces = await listWorkspaces(user.id);
   if (!workspaces.some((w) => w.kind === "personal")) {
     await ensurePersonalWorkspace(user.id, user.name, user.email);
@@ -45,14 +45,14 @@ const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
 
   const activeId = (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
   const active = workspaces.find((w) => w.id === activeId);
-  // Sin workspace activo: si está en algún equipo, mejor empezar ahí que en el personal vacío
+  // No active workspace: if they're in a team, better to start there than in the empty personal one
   const workspace = active ?? workspaces.find((w) => w.kind === "team") ?? workspaces[0];
   return { ctx: { user, workspace, workspaces }, fallback: !active };
 });
 
 export const canManage = (role: Role) => role === "owner" || role === "admin";
 
-/** Para route handlers: devuelve el contexto o una Response de error. */
+/** For route handlers: returns the context or an error Response. */
 export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Response> {
   try {
     const { ctx, fallback } = await resolveCtx();
@@ -71,12 +71,12 @@ export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Res
 
 export const isResponse = (x: unknown): x is Response => x instanceof Response;
 
-/** Lo que devuelve una Server Action: los errores esperados vuelven como valor, no como excepción. */
+/** What a Server Action returns: expected errors come back as a value, not an exception. */
 export type ActionResult<T = void> = { ok: true; data: T } | { ok: false; error: string };
 
 /**
- * Para Server Actions. Son endpoints POST públicos: la sesión se comprueba aquí dentro,
- * nunca se da por hecha. Un HttpError lanzado en `fn` vuelve como { ok: false, error }.
+ * For Server Actions. They're public POST endpoints: the session is checked in here,
+ * never assumed. An HttpError thrown in `fn` comes back as { ok: false, error }.
  */
 export async function withCtx<T>(fn: (ctx: Ctx) => Promise<T>, opts?: { manage?: boolean }): Promise<ActionResult<T>> {
   const ctx = await requireCtx(opts);

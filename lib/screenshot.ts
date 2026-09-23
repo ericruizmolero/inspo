@@ -38,7 +38,7 @@ export async function getStoredShot(url: string): Promise<Buffer | null> {
   }
 }
 
-/** ¿Hay captura guardada? Solo metadatos: no descarga la imagen. */
+/** Is there a stored screenshot? Metadata only: doesn't download the image. */
 export async function hasStoredShot(url: string): Promise<boolean> {
   const key = shotKey(url);
   if (USE_BLOB) {
@@ -47,7 +47,7 @@ export async function hasStoredShot(url: string): Promise<boolean> {
   try { await fs.access(path.join(SHOTS_DIR, `${key}.jpg`)); return true; } catch { return false; }
 }
 
-/** Ruta pública de la captura en local (public/shots). En producción va por blob privado. */
+/** Public path of the screenshot locally (public/shots). In production it goes through private blob. */
 export const localShotPath = (url: string) => `/shots/${shotKey(url)}.jpg`;
 
 async function storeShot(url: string, jpeg: Buffer): Promise<void> {
@@ -75,9 +75,9 @@ const LOCAL_CHROME_CANDIDATES = [
   "/usr/bin/chromium",
 ].filter(Boolean) as string[];
 
-// En Vercel, executablePath() descomprime Chromium en /tmp la primera vez. Si dos
-// peticiones lo piden a la vez, una ejecuta el binario mientras la otra aún lo
-// escribe y el spawn falla con ETXTBSY. Se comparte una única promesa por instancia.
+// On Vercel, executablePath() unpacks Chromium into /tmp the first time. If two
+// requests ask at once, one runs the binary while the other is still writing it
+// and the spawn fails with ETXTBSY. A single promise is shared per instance.
 let serverlessChromePath: Promise<string> | null = null;
 async function serverlessExecutablePath(): Promise<string> {
   if (!serverlessChromePath) {
@@ -123,8 +123,8 @@ const HIDE_CSS = `
 
 const ACCEPT_TEXTS = ["aceptar", "accept", "agree", "allow", "ok", "got it", "entendido", "onartu"];
 
-// Puerta en proceso para no lanzar una docena de Chromes a la vez. En una función
-// serverless la memoria da para uno; en local, dos.
+// In-process gate so we don't launch a dozen Chromes at once. In a serverless
+// function memory allows one; locally, two.
 let active = 0;
 const waiters: (() => void)[] = [];
 const MAX_CONCURRENT = IS_SERVERLESS ? 1 : 2;

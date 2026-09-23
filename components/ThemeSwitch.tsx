@@ -6,14 +6,14 @@ import { useT } from "./I18nProvider";
 
 const OPTS: ThemePref[] = ["system", "light", "dark"];
 
-/** Segmentado Sistema / Claro / Oscuro. Aplica el tema al instante y lo recuerda en este navegador. */
+/** System / Light / Dark segmented control. Applies the theme instantly and remembers it in this browser. */
 export default function ThemeSwitch() {
   const { t } = useT();
-  // Arranca en "system" para que servidor y cliente pinten lo mismo; se lee la preferencia real al montar.
+  // Starts on "system" so server and client render the same; the real preference is read on mount.
   const [pref, setPref] = useState<ThemePref>("system");
   useEffect(() => { setPref(readThemePref()); }, []);
 
-  // Si sigue al sistema y el sistema cambia, se actualiza en caliente
+  // If it follows the system and the system changes, it updates live
   useEffect(() => {
     if (pref !== "system") return;
     const mq = matchMedia("(prefers-color-scheme: light)");

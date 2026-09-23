@@ -1,8 +1,8 @@
-// Tipos del panel de actividad, sin dependencias de servidor: lo importa tanto
-// lib/activity.ts (BD) como app/admin/AdminPanel.tsx (cliente).
+// Activity panel types, with no server dependencies: imported by both
+// lib/activity.ts (DB) and app/admin/AdminPanel.tsx (client).
 //
-// Aquí no hay texto: el servidor manda códigos y fechas ISO, y el cliente los
-// traduce y formatea con su idioma (t.labels.area, fmtDate).
+// No text here: the server sends codes and ISO dates, and the client
+// translates and formats them in its language (t.labels.area, fmtDate).
 
 
 
@@ -13,15 +13,15 @@ export interface ActivityUser {
   image: string | null;
   createdAt: string;
   workspaces: string[];
-  /** Último latido (ISO) o null si nunca ha entrado con la app medida */
+  /** Last heartbeat (ISO), or null if never seen with the tracked app */
   lastSeenAt: string | null;
-  /** Último inicio de sesión (ISO) */
+  /** Last sign-in (ISO) */
   lastLoginAt: string | null;
-  /** Sesiones sin caducar (cookies vivas) */
+  /** Unexpired sessions (live cookies) */
   openSessions: number;
   device: string | null;
   online: boolean;
-  /** En el periodo elegido */
+  /** In the chosen period */
   seconds: number;
   visits: number;
   topArea: string | null;
@@ -42,7 +42,7 @@ export interface ActivityOverview {
     loggedIn: number;
     totalUsers: number;
     newUsers: number;
-    /** Segundos totales en el periodo y media por persona activa */
+    /** Total seconds in the period and average per active person */
     seconds: number;
     avgSeconds: number;
   };
@@ -54,9 +54,9 @@ export interface ActivityOverview {
 
 export interface AdminEntry {
   email: string;
-  /** Nombre de la cuenta si ya existe en la app */
+  /** Account name if it already exists in the app */
   name: string | null;
-  /** Fijo por código o entorno: no se puede quitar desde el panel */
+  /** Fixed by code or env: cannot be removed from the panel */
   fixed: boolean;
   addedBy: string;
   createdAt: string | null;

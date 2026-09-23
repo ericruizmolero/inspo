@@ -1,7 +1,7 @@
-// Migración única: Google Sheet + mapas de miniaturas/etiquetas → workspace de equipo.
+// One-off migration: Google Sheet + thumbnail/tag maps → team workspace.
 //   npx tsx scripts/migrate-sheet.ts
-// Idempotente: crea (si no existen) los usuarios, el equipo y los items por URL.
-// Variables: TEAM_NAME, TEAM_SLUG, TEAM_MEMBERS="Nombre <correo>, Nombre <correo>"
+// Idempotent: creates (if missing) the users, the team and the items by URL.
+// Variables: TEAM_NAME, TEAM_SLUG, TEAM_MEMBERS="Name <email>, Name <email>"
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { eq } from "drizzle-orm";
@@ -25,7 +25,7 @@ async function ensureUser(name: string, email: string) {
   const now = new Date();
   const row = { id: newId(), name, email, emailVerified: true, image: null, createdAt: now, updatedAt: now };
   await db.insert(schema.user).values(row);
-  console.log(`+ usuario ${name} <${email}>`);
+  console.log(`+ user ${name} <${email}>`);
   return row;
 }
 
@@ -34,7 +34,7 @@ async function ensureTeam() {
   if (o) return o;
   const row = { id: newId(), name: TEAM_NAME, slug: TEAM_SLUG, logo: null, createdAt: new Date(), metadata: JSON.stringify({ kind: "team" }) };
   await db.insert(schema.organization).values(row);
-  console.log(`+ equipo ${TEAM_NAME}`);
+  console.log(`+ team ${TEAM_NAME}`);
   return row;
 }
 
@@ -48,7 +48,7 @@ async function readJson<T>(file: string): Promise<T | null> {
   try { return JSON.parse(await fs.readFile(file, "utf-8")) as T; } catch { return null; }
 }
 
-// En producción los mapas viejos viven en Blob; los leemos con el mismo patrón que antes
+// In production the old maps live in Blob; we read them with the same pattern as before
 async function readLegacyBlobMap<T>(prefix: string): Promise<T | null> {
   if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
   const { list } = await import("@vercel/blob");
@@ -72,34 +72,34 @@ async function main() {
   const byName = new Map(users.map((u) => [u.name.toLowerCase(), u]));
 
   const items = await fetchInspoItems();
-  console.log(`sheet: ${items.length} filas`);
+  console.log(`sheet: ${items.length} rows`);
   let added = 0, skipped = 0;
   for (const it of items) {
     if (await findByWeb(team.id, it.web)) { skipped++; continue; }
-    const creator = byName.get(it.puestoPor.toLowerCase());
-    const [d, m, y] = it.fecha.split("/");
-    const fechaIso = y && m && d ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : undefined;
+    const creator = byName.get(it.addedBy.toLowerCase());
+    const [d, m, y] = it.date.split("/");
+    const dateIso = y && m && d ? `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}` : undefined;
     try {
       await addItem(team.id, {
-        empresa: it.empresa, web: it.web, tipo: it.tipo, comentarios: it.comentarios, subcomentarios: it.subcomentarios,
-        autor: creator?.name ?? it.puestoPor, createdBy: creator?.id ?? null, fechaIso,
+        name: it.name, web: it.web, type: it.type, note: it.note, subNote: it.subNote,
+        author: creator?.name ?? it.addedBy, createdBy: creator?.id ?? null, dateIso,
       });
       added++;
     } catch (e) { console.warn(`! ${it.web}: ${e instanceof Error ? e.message : e}`); }
   }
-  console.log(`items: +${added}, ya existían ${skipped}`);
+  console.log(`items: +${added}, ${skipped} already existed`);
 
   const thumbs = (await readLegacyBlobMap<Record<string, string>>("inspo/thumbnail-map"))
     ?? (await readJson<Record<string, string>>(path.join("public", "thumbs", "_map.json"))) ?? {};
   let t = 0;
   for (const [web, url] of Object.entries(thumbs)) if (await setThumbnail(team.id, web, url)) t++;
-  console.log(`miniaturas: ${t}/${Object.keys(thumbs).length}`);
+  console.log(`thumbnails: ${t}/${Object.keys(thumbs).length}`);
 
   const tags = (await readLegacyBlobMap<TagMap>("inspo/tag-map"))
     ?? (await readJson<TagMap>(path.join(".data", "tags.json"))) ?? {};
   let g = 0;
   for (const [web, tg] of Object.entries(tags)) { if (await findByWeb(team.id, web)) { await setTags(team.id, web, tg); g++; } }
-  console.log(`etiquetas: ${g}/${Object.keys(tags).length}`);
+  console.log(`tags: ${g}/${Object.keys(tags).length}`);
 }
 
 main().then(() => process.exit(0)).catch((e) => { console.error(e); process.exit(1); });

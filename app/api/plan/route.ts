@@ -2,7 +2,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { quotaStatus } from "@/lib/quota";
 
 
-// GET → plan del workspace activo y uso del mes frente a las cuotas
+// GET → active workspace plan and this month's usage against the quotas
 export async function GET() {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;

@@ -1,16 +1,16 @@
 "use client";
 
-// Presencia: manda un latido a /api/actividad cada 20 s mientras la pestaña está
-// visible, y uno más al cambiar de zona, al ocultar la pestaña o al cerrarla.
-// Cada zona (area) abre un segmento nuevo, así el panel de /admin sabe dónde se
-// pasa el tiempo. El servidor solo suma huecos cortos entre latidos (lib/activity.ts),
-// así que el tiempo con la pestaña en segundo plano no cuenta.
+// Presence: sends a heartbeat to /api/activity every 20 s while the tab is
+// visible, plus one when the area changes, the tab is hidden or it closes.
+// Each area opens a new segment, so the /admin panel knows where time is
+// spent. The server only adds short gaps between beats (lib/activity.ts),
+// so time with the tab in the background doesn't count.
 import { useEffect, useRef } from "react";
 
 const INTERVAL_MS = 20 * 1000;
 const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
-// Una visita por carga de la app (pestaña), compartida entre páginas gracias a sessionStorage
+// One visit per app load (tab), shared across pages through sessionStorage
 function visitId(): string {
   try {
     const k = "inspo:visit";
@@ -33,12 +33,12 @@ export function useActivity(area: string, organizationId?: string | null) {
 
     const ping = () => {
       if (document.visibilityState !== "visible") return;
-      fetch("/api/actividad", { method: "POST", headers: { "Content-Type": "application/json" }, body: payload(), keepalive: true }).catch(() => {});
+      fetch("/api/activity", { method: "POST", headers: { "Content-Type": "application/json" }, body: payload(), keepalive: true }).catch(() => {});
     };
-    // Al cerrar u ocultar la pestaña, sendBeacon llega aunque la página muera
+    // When the tab closes or hides, sendBeacon gets through even if the page dies
     const flush = () => {
-      try { navigator.sendBeacon("/api/actividad", new Blob([payload()], { type: "application/json" })); }
-      catch { fetch("/api/actividad", { method: "POST", body: payload(), keepalive: true }).catch(() => {}); }
+      try { navigator.sendBeacon("/api/activity", new Blob([payload()], { type: "application/json" })); }
+      catch { fetch("/api/activity", { method: "POST", body: payload(), keepalive: true }).catch(() => {}); }
     };
     const onVisibility = () => { if (document.visibilityState === "visible") ping(); else flush(); };
 
@@ -50,7 +50,7 @@ export function useActivity(area: string, organizationId?: string | null) {
       clearInterval(t);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", flush);
-      flush(); // cierra el segmento al cambiar de zona
+      flush(); // closes the segment when the area changes
     };
   }, [area]);
 }

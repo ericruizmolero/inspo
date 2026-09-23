@@ -46,15 +46,15 @@ const SOCIAL: Record<SocialProvider, { label: string; icon: React.ReactNode }> =
 const devLoginHref = (next: string) => `/api/dev-login?next=${encodeURIComponent(next.startsWith("/login") ? "/" : next)}`;
 
 /**
- * Formulario de acceso por magic link. Lo usan la página /login y la ventana
- * que salta al hacer la primera acción como invitado (LoginGate).
- * - `next`: ruta a la que volver tras entrar (por defecto, la actual).
- * - `lead`/`hint`: titular y ayuda; si no se pasan, se usan los genéricos.
- * - `providers`: botones de Google / Apple / X que se pintan (los que tienen claves en el servidor).
+ * Magic link sign-in form. Used by the /login page and by the dialog
+ * that pops up on a guest's first action (LoginGate).
+ * - `next`: route to return to after sign-in (the current one by default).
+ * - `lead`/`hint`: headline and help; if not given, the generic ones are used.
+ * - `providers`: Google / Apple / X buttons to render (those with keys on the server).
  */
 export default function LoginForm({ next, initialError, lead, hint, autoFocus = true, devEmail, providers = [] }: {
   next?: string; initialError?: string; lead?: React.ReactNode; hint?: React.ReactNode; autoFocus?: boolean;
-  /** Solo en desarrollo: correo que entra sin pasar por el buzón (DEV_LOGIN_EMAIL) */
+  /** Development only: email that signs in without going through the inbox (DEV_LOGIN_EMAIL) */
   devEmail?: string;
   providers?: SocialProvider[];
 }) {
@@ -64,18 +64,18 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
   const [loading, setLoading] = useState(false);
   const [social, setSocial] = useState<SocialProvider | null>(null);
   const [error, setError] = useState(initialError ?? "");
-  // Cookie que deja el plugin lastLoginMethod al entrar: "google" | "apple" | "twitter" | "magic-link"
+  // Cookie the lastLoginMethod plugin sets on sign-in: "google" | "apple" | "twitter" | "magic-link"
   const [lastUsed, setLastUsed] = useState<string | null>(null);
   useEffect(() => setLastUsed(authClient.getLastUsedLoginMethod()), []);
   const badge = <span className="auth__last">{t.login.lastUsed}</span>;
 
-  // Ruta de vuelta tras entrar (relativa, nunca /login ni //otro-dominio)
+  // Return route after sign-in (relative, never /login or //other-domain)
   const backPath = () => {
     const back = next && next.startsWith("/") && !next.startsWith("//") ? next : window.location.pathname + window.location.search;
     return back.startsWith("/login") ? "/" : back;
   };
 
-  // Entrar con Google / Apple / X: redirige al proveedor y vuelve a callbackURL con sesión
+  // Sign in with Google / Apple / X: redirects to the provider and returns to callbackURL with a session
   const social_ = async (provider: SocialProvider) => {
     setSocial(provider); setError("");
     const origin = window.location.origin;
@@ -92,13 +92,13 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     const value = email.trim().toLowerCase();
     if (!value) return;
     setLoading(true); setError("");
-    // URLs absolutas: el servidor puede estar detrás de un proxy (preview) y no conocer el origen público
+    // Absolute URLs: the server may sit behind a proxy (preview) and not know the public origin
     const origin = window.location.origin;
     const back = backPath();
     const callbackURL = origin + back;
-    // En desarrollo el enlace de este correo no se envía nunca: entra por la ruta de auto-login
+    // In development this email's link is never sent: sign-in goes through the auto-login route
     if (devEmail && value === devEmail) { window.location.assign(devLoginHref(back)); return; }
-    // errorCallbackURL conserva el destino: si no, un enlace caducado pierde la invitación
+    // errorCallbackURL keeps the destination: otherwise an expired link loses the invitation
     const { error: err } = await authClient.signIn.magicLink({ email: value, callbackURL, errorCallbackURL: `${origin}/login?next=${encodeURIComponent(back)}` });
     setLoading(false);
     if (err) { setError(err.message ?? t.login.linkFailed); return; }

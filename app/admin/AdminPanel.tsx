@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfirm } from "@/components/useConfirm";
 
-// ─── Formato ─────────────────────────────────────────────────────────────────
+// ─── Formatting ─────────────────────────────────────────────────────────────
 
 export function fmtDur(s: number): string {
   if (s < 60) return `${Math.round(s)} s`;
@@ -27,10 +27,10 @@ export function fmtDur(s: number): string {
   return r ? `${h} h ${r} min` : `${h} h`;
 }
 
-/** Para el eje: "40 s", "12 min", "1,5 h" */
+/** For the axis: "40 s", "12 min", "1,5 h" */
 const fmtAxisDur = (v: number) => (v >= 3600 ? `${(Math.round(v / 360) / 10).toString().replace(".", ",")} h` : v >= 60 ? `${Math.round(v / 60)} min` : `${Math.round(v)} s`);
 
-/** "Eric", "Eric y Andoni", "Eric, Andoni y 3 más" */
+/** "Eric", "Eric and Andoni", "Eric, Andoni and 3 more" */
 function namesList(names: string[], t: Dict, max = 3): string {
   const shown = names.slice(0, max), rest = names.length - shown.length;
   if (rest > 0) return `${shown.join(", ")} ${t.admin.andMore(rest)}`;
@@ -38,7 +38,7 @@ function namesList(names: string[], t: Dict, max = 3): string {
   return `${shown.slice(0, -1).join(", ")} ${t.admin.and} ${shown[shown.length - 1]}`;
 }
 
-/** Para el eje de coste: "0,5 $", "2 $", "<0,01 $" no hace falta porque el eje empieza en 0 */
+/** For the cost axis: "0,5 $", "2 $"; "<0,01 $" is not needed because the axis starts at 0 */
 const fmtAxisUsd = (v: number) => (v === 0 ? "0 $" : `${(Math.round(v * 100) / 100).toString().replace(".", ",")} $`);
 
 function ago(iso: string | null, now: number, locale: Locale, t: Dict): string {
@@ -55,7 +55,7 @@ function ago(iso: string | null, now: number, locale: Locale, t: Dict): string {
   return fmtDate(iso, locale, { day: "numeric", month: "short" });
 }
 
-// ─── Gráfica de columnas (una serie) ─────────────────────────────────────────
+// ─── Column chart (one series) ─────────────────────────────────────────────
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null);
@@ -71,7 +71,7 @@ function useWidth<T extends HTMLElement>() {
   return [ref, w] as const;
 }
 
-// Marcas del eje Y: 0, la mitad y el techo redondeado a una cifra limpia (enteras si la serie lo es)
+// Y axis ticks: 0, the half and the top rounded to a clean number (integers if the series is)
 function niceTicks(max: number, integer = false): number[] {
   if (max <= 0) return [0, 1];
   const raw = max / 2;
@@ -86,11 +86,11 @@ function niceTicks(max: number, integer = false): number[] {
 
 function Columns<T extends { date: string }>({ data, value, format, title, integer = false, unitOf }: {
   data: T[]; value: (d: T) => number; format: (v: number) => string; title: string; integer?: boolean;
-  /** Unidad "limpia" según el máximo (p. ej. segundos → minutos u horas) para que las marcas caigan en valores redondos */
+  /** "Clean" unit based on the max (e.g. seconds → minutes or hours) so ticks land on round values */
   unitOf?: (max: number) => number;
 }) {
   const { locale } = useT();
-  // El servidor manda la fecha ISO; el día del eje se escribe aquí ("3 Oct" / "3 oct")
+  // The server sends the ISO date; the axis day is written here ("3 Oct" / "3 oct")
   const dayLabel = (iso: string) => fmtDate(iso, locale, { day: "numeric", month: "short" }).replace(".", "");
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
@@ -104,7 +104,7 @@ function Columns<T extends { date: string }>({ data, value, format, title, integ
   const band = data.length ? innerW / data.length : 0;
   const barW = Math.min(24, Math.max(2, band - 2));
   const y = (v: number) => padT + innerH - (v / top) * innerH;
-  // Etiquetas del eje X: primera, última y una cada N según el ancho
+  // X axis labels: first, last and one every N based on width
   const every = data.length > 14 ? Math.ceil(data.length / Math.max(2, Math.floor(innerW / 60))) : Math.max(1, Math.ceil(data.length / Math.max(2, Math.floor(innerW / 40))));
   const h = hover !== null ? data[hover] : null;
 
@@ -147,7 +147,7 @@ function Columns<T extends { date: string }>({ data, value, format, title, integ
   );
 }
 
-// ─── Quién puede ver el panel ────────────────────────────────────────────────
+// ─── Who can see the panel ──────────────────────────────────────────────────
 
 function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   const { locale, t } = useT();
@@ -221,13 +221,13 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   );
 }
 
-// ─── Feedback de la barra (Agentation) ───────────────────────────────────────
+// ─── Toolbar feedback (Agentation) ───────────────────────────────────────────
 
 function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
   const { t } = useT();
   const [done, setDone] = useState(false);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(batchMarkdown(batch)); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* sin portapapeles */ }
+    try { await navigator.clipboard.writeText(batchMarkdown(batch)); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* no clipboard */ }
   };
   return <Button variant="ghost" size="sm" onClick={copy}>{done ? t.common.copied : t.admin.copyForAgent}</Button>;
 }
@@ -288,7 +288,7 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
   const [showAll, setShowAll] = useState(false);
   const [gone, setGone] = useState<Set<string>>(() => new Set());
   const [error, setError] = useState("");
-  // Al llegar datos nuevos del servidor (router.refresh) se olvida lo borrado en local
+  // When new server data arrives (router.refresh), the local deletions are forgotten
   useEffect(() => { setGone(new Set()); }, [feedback]);
   const all = feedback.batches.filter((b) => !gone.has(b.key));
   const batches = showAll ? all : all.slice(0, 8);
@@ -345,7 +345,7 @@ export default function AdminPanel({ section, data, usage, feedback, admins, me 
   const maxArea = data.areas[0]?.seconds ?? 0;
   const maxAction = usage?.byAction[0]?.usd ?? 0;
 
-  // Los "conectados ahora" cambian solos: se refresca cada minuto mientras la pestaña está visible
+  // "Online now" changes on its own: refresh every minute while the tab is visible
   useEffect(() => {
     const t = setInterval(() => { if (document.visibilityState === "visible") router.refresh(); }, 60000);
     return () => clearInterval(t);

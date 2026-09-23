@@ -1,14 +1,14 @@
 /**
- * Tema claro / oscuro.
- * La preferencia se guarda en localStorage ("light" | "dark"; ausente = seguir al sistema)
- * y el valor resuelto se escribe en <html data-theme="light|dark">, que es lo que lee globals.css.
+ * Light / dark theme.
+ * The preference is stored in localStorage ("light" | "dark"; missing = follow the system)
+ * and the resolved value is written to <html data-theme="light|dark">, which globals.css reads.
  */
 export type ThemePref = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 
 export const THEME_KEY = "inspo-theme";
 
-/** Se inyecta inline en <head> para fijar el tema antes del primer pintado. */
+/** Injected inline in <head> to set the theme before first paint. */
 export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME_KEY}");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"}document.documentElement.dataset.theme=t}catch(e){}})();`;
 
 export function readThemePref(): ThemePref {
@@ -28,7 +28,7 @@ export function resolveTheme(pref: ThemePref): ResolvedTheme {
   return pref === "system" ? systemTheme() : pref;
 }
 
-/** Guarda la preferencia y aplica el tema resuelto al documento. */
+/** Saves the preference and applies the resolved theme to the document. */
 export function applyThemePref(pref: ThemePref) {
   try {
     if (pref === "system") localStorage.removeItem(THEME_KEY);

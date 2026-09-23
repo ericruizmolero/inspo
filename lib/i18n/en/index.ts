@@ -1,15 +1,15 @@
-// Inglés: el idioma de partida. Aquí se escribe primero y de aquí sale la traducción.
-// Cada archivo de lib/i18n/es/ lleva las mismas claves y está tipado contra el suyo,
-// así que falta una y no compila.
+// English: the source language. Text is written here first and translated from here.
+// Each file in lib/i18n/es/ has the same keys and is typed against its match,
+// so a missing key does not compile.
 //
-// ui.ts es el texto de la interfaz. Los demás llevan el texto de cosas que tienen
-// su propia clave: los planes, el directorio, la taxonomía, los correos y los
-// valores que la base de datos guarda en castellano.
+// ui.ts is the interface text. The others hold the text of things that have
+// their own key: the plans, the directory, the taxonomy, the emails and the
+// labels for the codes the database stores.
 import { ui } from "./ui";
 import { labels } from "./labels";
 import { taxonomy } from "./taxonomy";
 import { plans } from "./plans";
-import { recursos } from "./recursos";
+import { directory } from "./directory";
 import { mail } from "./mail";
 import { errors } from "./errors";
 
@@ -20,7 +20,7 @@ const en = {
   mail,
   errors,
   plans: { ...ui.plans, items: plans },
-  recursos: { ...ui.recursos, ...recursos },
+  directory: { ...ui.directory, ...directory },
 };
 
 export type Dict = typeof en;

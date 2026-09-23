@@ -12,9 +12,9 @@ import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 300;
 
-// Una generación por URL a la vez (evita dobles clics / pestañas duplicadas).
-// Cada una lleva su AbortController: se para con DELETE ?url=… o cuando el último
-// cliente que la esperaba cierra la conexión (cerrar pestaña, "Parar" en el toast).
+// One generation per URL at a time (avoids double clicks / duplicate tabs).
+// Each has its own AbortController: it stops on DELETE ?url=… or when the last
+// client waiting on it closes the connection (closing the tab, "Stop" in the toast).
 interface Job { promise: Promise<Response>; ctrl: AbortController; waiters: number }
 const inflight = new Map<string, Job>();
 
@@ -22,7 +22,7 @@ async function CANCELLED() {
   return Response.json({ error: (await getErrors()).generationStopped, cancelled: true }, { status: 499 });
 }
 
-// Cuenta un cliente más esperando el resultado; si todos se van, se aborta el trabajo.
+// Counts one more client waiting for the result; if all leave, the job is aborted.
 function attach(job: Job, req: NextRequest): Promise<Response> {
   job.waiters++;
   const leave = () => { if (--job.waiters <= 0) job.ctrl.abort(); };
@@ -34,16 +34,16 @@ function attach(job: Job, req: NextRequest): Promise<Response> {
 }
 
 
-// La caché de DESIGN.md es global por URL (se deriva solo de la web pública),
-// pero cada workspace solo ve/genera las URLs que tiene guardadas.
+// The DESIGN.md cache is global per URL (derived only from the public site),
+// but each workspace only sees/generates the URLs it has saved.
 //
-// GET ?url=…            → devuelve la caché o genera
-// GET ?url=…&force=1    → regenera (solo administradores: cuesta dinero)
+// GET ?url=…            → returns the cache or generates
+// GET ?url=…&force=1    → regenerates (admins only: it costs money)
 export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
 
-  // El índice del workspace ya no se pide aquí: llega con la página (app/page.tsx)
+  // The workspace index is no longer requested here: it comes with the page (app/page.tsx)
   const url = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   if (!(await findByWeb(ctx.workspace.id, url))) {
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
   const existing = inflight.get(url);
   if (existing) return attach(existing, req);
 
-  // Cuota mensual del plan: solo cuenta lo que se genera de verdad (la caché es gratis)
+  // Monthly plan quota: only real generations count (the cache is free)
   const blocked = await quotaBlock(assertQuota(ctx.workspace, "design_md"));
   if (blocked) return blocked;
 
@@ -89,19 +89,19 @@ export async function GET(req: NextRequest) {
       console.log(`design-md ${url}: extract ${t1 - t0}ms, ${model} ${t2 - t1}ms, tokens in/out ${usage.input}/${usage.output}`);
       void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, provider, requestId, ref: url });
 
-      // Si el workspace tenía revisiones, la regeneración pasa a ser la versión vigente y queda en el historial
+      // If the workspace had revisions, the regeneration becomes the current version and stays in the history
       let revisions = await listRevisions(ctx.workspace.id, url);
       if (revisions.length) {
         await addRevision({
           organizationId: ctx.workspace.id, url, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email,
-          kind: "regeneracion", summary: "Regenerado desde cero a partir de la web en vivo.", spec,
+          kind: "regeneration", summary: "Regenerated from scratch from the live site.", spec,
         });
         revisions = await listRevisions(ctx.workspace.id, url);
       }
       return Response.json({ ...entry, revisions, cached: false });
     } catch (err) {
       if (ctrl.signal.aborted) {
-        console.log(`design-md ${url}: parado por el usuario`);
+        console.log(`design-md ${url}: stopped by the user`);
         return CANCELLED();
       }
       const msg = err instanceof Error ? err.message : String(err);
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
   return attach(job, req);
 }
 
-// DELETE ?url=… → para la generación en marcha de esa URL (si la hay en esta instancia)
+// DELETE ?url=… → stops the running generation for that URL (if there is one on this instance)
 export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;

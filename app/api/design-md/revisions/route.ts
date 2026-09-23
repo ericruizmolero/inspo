@@ -13,14 +13,14 @@ import { getErrors, getLocale, getT, fmtDate } from "@/lib/i18n";
 export const maxDuration = 120;
 
 
-// Captura guardada de la web, si está en local (en Blob se omite: la spec ya lleva los valores)
+// Saved screenshot of the site, if local (skipped on Blob: the spec already has the values)
 async function localScreenshot(url: string): Promise<Buffer | null> {
   try { return await fs.readFile(path.join(process.cwd(), "public", "design-md", `${keyFor(url)}.jpg`)); }
   catch { return null; }
 }
 
-// POST { url, section, comment }  → Claude aplica el cambio y queda registrado
-// POST { url, revertTo }          → vuelve a la spec de una revisión anterior (nueva fila, historial lineal)
+// POST { url, section, comment }  → Claude applies the change and it gets recorded
+// POST { url, revertTo }          → goes back to the spec of an earlier revision (new row, linear history)
 export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;

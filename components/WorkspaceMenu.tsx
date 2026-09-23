@@ -9,7 +9,7 @@ import CreateTeamDialog from "./CreateTeamDialog";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-/** Avatar del workspace: logo si lo tiene, si no la inicial del nombre */
+/** Workspace avatar: its logo if it has one, otherwise the name's initial */
 export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean }) {
   return (
     <span className={`ws__avatar${small ? " ws__avatar--sm" : ""}`} aria-hidden>
@@ -18,7 +18,7 @@ export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspac
   );
 }
 
-/** Avatar de una persona: foto si la tiene, si no la inicial. Redondo, para distinguirlo del logo de workspace. */
+/** A person's avatar: photo if they have one, otherwise the initial. Round, to tell it apart from a workspace logo. */
 export function UserAvatar({ name, image, small, className = "" }: { name: string; image?: string | null; small?: boolean; className?: string }) {
   return (
     <span className={`ws__avatar ws__avatar--user${small ? " ws__avatar--sm" : ""} ${className}`} aria-hidden>
@@ -75,13 +75,13 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     <div className="ws" ref={ref}>
       <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className="ws__trigger">
-        {/* El workspace personal eres tú: lleva tu foto, no la inicial */}
+        {/* The personal workspace is you: it shows your photo, not the initial */}
         {workspace.kind === "personal" && !workspace.logo
           ? <UserAvatar name={user.name} image={user.image} />
           : <WorkspaceAvatar workspace={workspace} />}
         <span className="ws__names">
           <span className="display ws__name">{workspace.name}</span>
-          {/* Si el nombre ya dice "Equipo" o "Team", no se repite debajo */}
+          {/* If the name already says "Equipo" or "Team", it isn't repeated below */}
           {(workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
             <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
           )}

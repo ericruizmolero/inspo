@@ -1,46 +1,46 @@
 "use server";
-// Cambios de la biblioteca que hace la propia interfaz: alta y baja de webs, comentarios, idioma.
-// Lo que pide la extensión (llave, no cookie) o dura minutos (etiquetas, DESIGN.md) sigue en app/api.
+// Library changes made by the interface itself: adding and removing sites, comments, language.
+// What the extension asks for (key, not cookie) or takes minutes (tags, DESIGN.md) stays in app/api.
 import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
 import { addItem, deleteItem } from "@/lib/items";
 import { addComment, deleteComment } from "@/lib/comments";
 import { siteTextWithin } from "@/lib/extract";
-import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
+import { normalizeWebUrl, guessName, typeFromUrl } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment } from "@/types/inspo";
 
-/** Solo la URL es obligatoria: nombre y colección se deducen si no llegan. */
-export async function addInspo(input: { web: string; empresa?: string; tipo?: string; comentarios?: string; subcomentarios?: string }) {
+/** Only the URL is required: name and collection are inferred if missing. */
+export async function addInspo(input: { web: string; name?: string; type?: string; note?: string; subNote?: string }) {
   return withCtx(async (ctx) => {
     const web = normalizeWebUrl(input.web ?? "");
     if (!web) throw new HttpError(400, (await getErrors()).badUrl);
     return addItem(ctx.workspace.id, {
-      empresa: input.empresa?.trim() || guessEmpresa(web, await siteTextWithin(web)),
+      name: input.name?.trim() || guessName(web, await siteTextWithin(web)),
       web,
-      tipo: input.tipo?.trim() || tipoFromUrl(web),
-      comentarios: input.comentarios, subcomentarios: input.subcomentarios,
-      autor: ctx.user.name || ctx.user.email,
+      type: input.type?.trim() || typeFromUrl(web),
+      note: input.note, subNote: input.subNote,
+      author: ctx.user.name || ctx.user.email,
       createdBy: ctx.user.id,
     });
   });
 }
 
-/** Cualquier miembro puede quitar una tarjeta (con su hilo). Si ya no estaba, no es un error. */
+/** Any member can remove a card (with its thread). If it was already gone, it is not an error. */
 export async function removeInspo(id: string) {
   return withCtx(async (ctx) => { await deleteItem(ctx.workspace.id, id); });
 }
 
-/** Los adjuntos se suben antes por /api/comments/upload; aquí solo llegan sus URLs. */
+/** Attachments are uploaded first via /api/comments/upload; only their URLs arrive here. */
 export async function postComment(itemId: string, body: string, attachments: CommentAttachment[]) {
   return withCtx(async (ctx) =>
     addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments }));
 }
 
-/** Propio, o cualquiera si administra el workspace. */
+/** Own comments, or any if they manage the workspace. */
 export async function removeComment(id: string) {
   return withCtx(async (ctx) => {
     if (!(await deleteComment(ctx.workspace.id, id, ctx.user.id, canManage(ctx.workspace.role)))) {
@@ -49,7 +49,7 @@ export async function removeComment(id: string) {
   });
 }
 
-/** La cookie es lo que lee cada página; con sesión se guarda también en la cuenta (idioma de sus correos). */
+/** The cookie is what each page reads; with a session it is also saved on the account (language of their emails). */
 export async function setLanguage(lang: string): Promise<void> {
   if (!isLocale(lang)) return;
   (await cookies()).set(LANG_COOKIE, lang, { path: "/", maxAge: LANG_COOKIE_MAX_AGE, sameSite: "lax" });

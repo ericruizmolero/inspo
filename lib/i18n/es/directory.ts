@@ -1,19 +1,19 @@
-import type { recursos as EnRecursos } from "../en/recursos";
+import type { directory as EnDirectory } from "../en/directory";
 
-export const recursos: typeof EnRecursos = {
+export const directory: typeof EnDirectory = {
   groups: {
     designmd: { title: "DESIGN.md para agentes", hint: "Sistemas de diseño en texto, listos para pegar en Claude o Cursor" },
-    webs: { title: "Galerías de webs", hint: "Landings y sites completos, curados a mano" },
+    sites: { title: "Galerías de webs", hint: "Landings y sites completos, curados a mano" },
     saas: { title: "SaaS y producto", hint: "Marketing de software y pantallas de app reales" },
-    secciones: { title: "Secciones y componentes", hint: "Cuando solo necesitas resolver un trozo de la página" },
-    codigo: { title: "Componentes con código", hint: "Bloques y kits listos para copiar o para conectar al agente" },
+    sections: { title: "Secciones y componentes", hint: "Cuando solo necesitas resolver un trozo de la página" },
+    code: { title: "Componentes con código", hint: "Bloques y kits listos para copiar o para conectar al agente" },
     motion: { title: "Motion e interacción", hint: "Animación, micro-interacciones y detalles en movimiento" },
-    recursos: { title: "Recursos y herramientas", hint: "Assets, mockups y utilidades que ahorran horas" },
-    grafica: { title: "Branding y gráfica", hint: "Identidad, editorial y tipografía: lo que alimenta a la web sin ser web" },
-    tipografia: { title: "Tipografía y fundiciones", hint: "Fundiciones cuyas páginas de specimen ya son inspiración por sí solas" },
-    desarrollo: { title: "Desarrollo con agentes", hint: "Para construir con IA lo que has visto y para dar feedback sobre lo construido" },
-    modelos: { title: "Modelos", hint: "Los modelos que usamos y los frontier que conviene tener a mano" },
-    agentes: { title: "Agentes", hint: "Agentes personales que actúan por ti: para entender hacia dónde va la interfaz" },
+    resources: { title: "Recursos y herramientas", hint: "Assets, mockups y utilidades que ahorran horas" },
+    graphics: { title: "Branding y gráfica", hint: "Identidad, editorial y tipografía: lo que alimenta a la web sin ser web" },
+    type: { title: "Tipografía y fundiciones", hint: "Fundiciones cuyas páginas de specimen ya son inspiración por sí solas" },
+    development: { title: "Desarrollo con agentes", hint: "Para construir con IA lo que has visto y para dar feedback sobre lo construido" },
+    models: { title: "Modelos", hint: "Los modelos que usamos y los frontier que conviene tener a mano" },
+    agents: { title: "Agentes", hint: "Agentes personales que actúan por ti: para entender hacia dónde va la interfaz" },
     moodboards: { title: "Moodboards y newsletters", hint: "Para guardar lo que ves y para que te llegue sin buscar" },
   },
   items: {

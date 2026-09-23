@@ -3,19 +3,19 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-import { FilterAutor, FilterFecha, FilterTipo, InspoItem, TagMap } from "@/types/inspo";
-import { SECTORES, ESTILOS, TAGS, TAG_THRESHOLD, Term } from "@/lib/taxonomy";
-import { RECURSOS_TOTAL } from "@/lib/recursos";
+import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
+import type { Term } from "@/lib/taxonomy";
+import { DIRECTORY_TOTAL } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 
-export const TIPOS: InspoItem["tipo"][] = ["Inspiración", "Videos", "Ideas", "Documentales"];
-export const FECHAS: Exclude<FilterFecha, "Todos">[] = ["Este mes", "Este año"];
+export const TYPES: InspoItem["type"][] = ["inspiration", "videos", "ideas", "documentaries"];
+export const DATES: Exclude<FilterDate, "all">[] = ["thisMonth", "thisYear"];
 
 // ─── Icons (16px, 1.5 stroke) ─────────────────────────────────────────────────
 const I = {
@@ -85,6 +85,21 @@ const I = {
       <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" />
     </svg>
   ),
+  arrowUp: (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 11.5v-9M3 6.5l4-4 4 4" />
+    </svg>
+  ),
+  check: (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.5 7.5l3 3 6-7" />
+    </svg>
+  ),
+  sliders: (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" />
+    </svg>
+  ),
   compass: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="8" cy="8" r="6" /><path d="M10.5 5.5l-1.6 4-4 1.6 1.6-4z" />
@@ -92,20 +107,35 @@ const I = {
   ),
 };
 
-const TIPO_ICON: Record<InspoItem["tipo"], React.ReactNode> = {
-  Inspiración: I.spark, Videos: I.play, Ideas: I.bulb, Documentales: I.film,
+const TYPE_ICON: Record<InspoItem["type"], React.ReactNode> = {
+  inspiration: I.spark, videos: I.play, ideas: I.bulb, documentaries: I.film,
 };
 
-export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading }: {
+export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading, shortcut }: {
   value: string; onChange: (v: string) => void; className?: string; autoFocus?: boolean;
   ai?: boolean; aiLoading?: boolean;
+  /** "/" focuses this box from anywhere in the page */
+  shortcut?: boolean;
 }) {
   const { t } = useT();
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!shortcut) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      e.preventDefault();
+      ref.current?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [shortcut]);
   return (
     <div className={`search ${className}${ai ? " is-ai" : ""}`}>
       <span className="search__icon">{aiLoading ? <span className="spinner spinner--sm" /> : ai ? I.spark : I.search}</span>
       <Input
-        
+        ref={ref}
         type="text"
         value={value}
         autoFocus={autoFocus}
@@ -114,6 +144,7 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
         placeholder={ai ? t.sidebar.searchAi : t.sidebar.search}
       />
       <div className="search__right">
+        {shortcut && !value && <kbd className="search__kbd" aria-hidden>/</kbd>}
         {value && (
           <Button variant="icon" className="search__clear" onClick={() => onChange("")} aria-label={t.sidebar.clear}>
             {I.x}
@@ -124,7 +155,7 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   );
 }
 
-function Chips({ terms, counts, selected, onToggle, labels }: {
+export function Chips({ terms, counts, selected, onToggle, labels }: {
   terms: Term[]; counts: Record<string, number>; selected: string[]; onToggle: (k: string) => void;
   labels: Record<string, string>;
 }) {
@@ -168,42 +199,21 @@ export interface QuotaView {
 }
 
 export interface SidebarProps {
-  /** Plan y uso del mes (null hasta que carga) */
+  /** Plan and this month's usage (null until loaded) */
   quota?: QuotaView | null;
-  /** Cabecera: selector de workspace */
+  /** Header: workspace switcher */
   brand: React.ReactNode;
-  /** Valores del filtro "Quién" (nombres de miembros y etiquetas heredadas) */
-  autores: string[];
-  autorImages?: Record<string, string>;
   items: InspoItem[];
-  tipo: FilterTipo;
-  autor: FilterAutor;
-  fecha: FilterFecha;
-  query: string;
-  onTipo: (t: FilterTipo) => void;
-  onAutor: (a: FilterAutor) => void;
-  onFecha: (f: FilterFecha) => void;
-  onQuery: (q: string) => void;
+  type: FilterType;
+  /** No filter and no search: "All" is the current view */
+  isAll: boolean;
+  onType: (t: FilterType) => void;
   onReset: () => void;
   onAdd: () => void;
-  onRecursos: () => void;
-  // IA
-  tagMap: TagMap;
-  sector: string;
-  estilo: string;
-  selTags: string[];
-  onSector: (s: string) => void;
-  onEstilo: (e: string) => void;
-  onToggleTag: (k: string) => void;
-  ai: boolean;
-  aiLoading: boolean;
-  aiEnabled: boolean;
-  pending: number;
-  tagging: TaggingState;
-  onTagAll: () => void;
+  onDirectory: () => void;
 }
 
-/** Cuota de DESIGN.md del mes: es lo único que se agota. Enlaza a /planes. */
+/** This month's DESIGN.md quota: the only thing that runs out. Links to /settings/plan. */
 function PlanMeter({ quota }: { quota: QuotaView }) {
   const { t } = useT();
   const { used, limit } = quota.designMd;
@@ -218,59 +228,24 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
   );
 }
 
-export default function AppSidebar({
-  quota,
-  brand, autores, autorImages = {}, items, tipo, autor, fecha, query,
-  onTipo, onAutor, onFecha, onQuery, onReset, onAdd, onRecursos,
-  tagMap, sector, estilo, selTags, onSector, onEstilo, onToggleTag,
-  ai, aiLoading, aiEnabled, pending, tagging, onTagAll,
-}: SidebarProps) {
+// Navigation only (Refero model): add, the whole library, the four collections and the directory.
+// Filters live in the bar over the grid (FilterBar), search in the top bar.
+export default function AppSidebar({ quota, brand, items, type, isAll, onType, onReset, onAdd, onDirectory }: SidebarProps) {
   const { t } = useT();
   const { isMobile, setOpenMobile } = useSidebar();
   // On a phone the sidebar is a sheet: opening a modal from it closes the sheet first
   const fromSheet = (fn: () => void) => () => { if (isMobile) setOpenMobile(false); fn(); };
-  // Picking a filter on a phone closes the sheet so the result is visible
-  useEffect(() => { setOpenMobile(false); }, [tipo, autor, fecha, sector, estilo, selTags, setOpenMobile]);
-  const isAll = tipo === "Todos" && autor === "Todos" && fecha === "Todos" && !query
-    && sector === "Todos" && estilo === "Todos" && selTags.length === 0;
+  // Picking a collection on a phone closes the sheet so the result is visible
+  useEffect(() => { setOpenMobile(false); }, [type, setOpenMobile]);
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
 
-  const sectorCounts: Record<string, number> = {};
-  const estiloCounts: Record<string, number> = {};
-  const tagCounts: Record<string, number> = {};
-  for (const it of items) {
-    const t = tagMap[it.web];
-    if (!t) continue;
-    sectorCounts[t.sector] = (sectorCounts[t.sector] ?? 0) + 1;
-    estiloCounts[t.estilo] = (estiloCounts[t.estilo] ?? 0) + 1;
-    for (const k of Object.keys(t.tags)) if (t.tags[k] >= TAG_THRESHOLD) tagCounts[k] = (tagCounts[k] ?? 0) + 1;
-  }
-  const tagged = items.filter((i) => tagMap[i.web]).length;
-
   return (
-    <Sidebar mobileTitle={t.app.filters} className="app-sidebar">
+    <Sidebar mobileTitle={t.app.menu} className="app-sidebar">
       <SidebarHeader className="app-sidebar__header">
         {brand}
-
-        <SearchBox className="sidebar__search" value={query} onChange={onQuery}
-          ai={ai} aiLoading={aiLoading} />
-
-        {/* Con inspos ya guardadas, añadir va arriba, a la vista; con la librería vacía manda el cajón de URL del lienzo */}
-        {items.length > 0 && (
-          <Button variant="ghost" block onClick={fromSheet(onAdd)}>
-            {I.plus} {t.sidebar.add}
-          </Button>
-        )}
-
-        <button className="sidebar__inspo" onClick={fromSheet(onRecursos)}>
-          <span className="sidebar__inspo-top">
-            <span className="sidebar__inspo-icon">{I.compass}</span>
-            <span className="sidebar__inspo-count">{t.sidebar.directoryCount(RECURSOS_TOTAL)}</span>
-            <span className="sidebar__inspo-arrow">{I.arrow}</span>
-          </span>
-          <span className="sidebar__inspo-title">{t.sidebar.directoryTitle}</span>
-          <span className="sidebar__inspo-sub">{t.sidebar.directorySub}</span>
-        </button>
+        <Button variant="primary" block className="sidebar__add" onClick={fromSheet(onAdd)}>
+          {I.plus} {t.sidebar.addReference}
+        </Button>
       </SidebarHeader>
 
       {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
@@ -278,115 +253,43 @@ export default function AppSidebar({
         <FadeScroll>
           <SidebarGroup>
             <SidebarMenu>
-              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={onReset} />
-            </SidebarMenu>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.collections}</SidebarGroupLabel>
-            <SidebarMenu>
-              {TIPOS.map((v) => (
+              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={fromSheet(onReset)} />
+              {TYPES.map((v) => (
                 <NavItem
                   key={v}
-                  icon={TIPO_ICON[v]}
-                  label={t.labels.tipo[v]}
-                  count={countBy((i) => i.tipo === v)}
-                  active={tipo === v}
-                  onClick={() => onTipo(tipo === v ? "Todos" : v)}
+                  icon={TYPE_ICON[v]}
+                  label={t.labels.type[v]}
+                  count={countBy((i) => i.type === v)}
+                  active={type === v}
+                  onClick={() => onType(type === v ? "all" : v)}
                 />
               ))}
             </SidebarMenu>
           </SidebarGroup>
 
-          {autores.length > 1 && (
-            <SidebarGroup>
-              <SidebarGroupLabel>{t.sidebar.who}</SidebarGroupLabel>
-              <SidebarMenu>
-                {autores.map((a) => (
-                  <NavItem
-                    key={a}
-                    icon={autorImages[a]
-                      ? <span className="nav-item__avatar"><img src={autorImages[a]} alt="" /></span>
-                      : I.user}
-                    label={t.labels.autor[a as keyof typeof t.labels.autor] ?? a}
-                    count={countBy((i) => i.puestoPor === a)}
-                    active={autor === a}
-                    onClick={() => onAutor(autor === a ? "Todos" : a)}
-                  />
-                ))}
-              </SidebarMenu>
-            </SidebarGroup>
-          )}
-
           <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.when}</SidebarGroupLabel>
+            <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
             <SidebarMenu>
-              {FECHAS.map((f) => (
-                <NavItem
-                  key={f}
-                  icon={I.cal}
-                  label={t.labels.fecha[f]}
-                  active={fecha === f}
-                  onClick={() => onFecha(fecha === f ? "Todos" : f)}
-                />
-              ))}
+              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={fromSheet(onDirectory)} />
             </SidebarMenu>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.sector}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <Chips terms={SECTORES} labels={t.taxonomy.sector} counts={sectorCounts} selected={sector === "Todos" ? [] : [sector]}
-                onToggle={(k) => onSector(sector === k ? "Todos" : k)} />
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.style}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <Chips terms={ESTILOS} labels={t.taxonomy.estilo} counts={estiloCounts} selected={estilo === "Todos" ? [] : [estilo]}
-                onToggle={(k) => onEstilo(estilo === k ? "Todos" : k)} />
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.tags}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <Chips terms={TAGS} labels={t.taxonomy.tag} counts={tagCounts} selected={selTags} onToggle={onToggleTag} />
-            </SidebarGroupContent>
           </SidebarGroup>
         </FadeScroll>
       </SidebarContent>
 
-      <SidebarFooter className="app-sidebar__footer">
-        {quota && <PlanMeter quota={quota} />}
-        {aiEnabled && (pending > 0 || tagging.running || tagging.error) && (
-          <Button variant="ghost" size="sm" block onClick={onTagAll} disabled={tagging.running}>
-            {tagging.running
-              ? <><span className="spinner spinner--sm" /> {t.sidebar.tagging(tagging.done, tagging.total)}</>
-              : tagging.error
-                ? <>{t.sidebar.taggingFailed}</>
-                : <>{I.spark} {t.sidebar.tagPending(pending)}</>}
-          </Button>
-        )}
-        {aiEnabled && pending === 0 && !tagging.running && tagged > 0 && (
-          <div className="sidebar__footer-note">{t.sidebar.tagged(tagged)}</div>
-        )}
-        {items.length === 0 && (
-          <Button variant="ghost" block onClick={fromSheet(onAdd)}>
-            {I.plus} {t.sidebar.add}
-          </Button>
-        )}
-      </SidebarFooter>
+      {quota && (
+        <SidebarFooter className="app-sidebar__footer">
+          <PlanMeter quota={quota} />
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }
 
 export const Icons = I;
 
-// Bloque con scroll y dos "nubes" en los bordes: arriba solo cuando hay contenido por
-// encima, abajo solo cuando queda más por debajo. Se recalculan al hacer scroll y al
-// cambiar el tamaño (filtros que aparecen o desaparecen), y se funden con transición.
+// Scrolling block with two "clouds" at the edges: top only when there is content
+// above, bottom only when more remains below. Recomputed on scroll and on
+// resize (filters appearing or disappearing), and they fade with a transition.
 function FadeScroll({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edges, setEdges] = useState({ top: false, bottom: false });

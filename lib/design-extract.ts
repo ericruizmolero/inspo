@@ -1,7 +1,7 @@
 import puppeteer, { type Browser } from "puppeteer-core";
 import fs from "fs";
 
-// ─── Tipos ───────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface Tally { value: string; count: number }
 
@@ -39,10 +39,10 @@ export interface DesignTokens {
   };
   fonts: { loaded: string[]; families: Tally[]; links: string[] };
   colors: {
-    backgrounds: Tally[]; // ponderado por área visible
+    backgrounds: Tally[]; // weighted by visible area
     text: Tally[];
     borders: Tally[];
-    accents: Tally[]; // colores de botones / enlaces
+    accents: Tally[]; // button / link colors
   };
   typography: {
     sizes: Tally[];
@@ -73,10 +73,10 @@ export interface DesignTokens {
 
 export interface ExtractResult {
   tokens: DesignTokens;
-  screenshot: Buffer; // jpeg del viewport a 1440px (para Claude)
-  fullShot: Buffer;   // jpeg de la página entera a 1440px, hasta 6000px (para la ficha)
-  cover: Buffer;      // jpeg 720x450 (portada del grid, ~25KB)
-  scroll: Buffer;     // jpeg 720px de ancho, hasta 2250px (tira que se desplaza al hover, ~100KB)
+  screenshot: Buffer; // jpeg of the viewport at 1440px (for Claude)
+  fullShot: Buffer;   // jpeg of the whole page at 1440px, up to 6000px (for the detail view)
+  cover: Buffer;      // jpeg 720x450 (grid cover, ~25KB)
+  scroll: Buffer;     // jpeg 720px wide, up to 2250px (strip that scrolls on hover, ~100KB)
 }
 
 // ─── Browser ─────────────────────────────────────────────────────────────────
@@ -104,16 +104,16 @@ async function launch(): Promise<Browser> {
   });
 }
 
-// ─── Script que corre dentro de la página ────────────────────────────────────
-// Va como string para que Next no lo transforme y puppeteer lo ejecute tal cual.
+// ─── Script that runs inside the page ────────────────────────────────────────
+// Kept as a string so Next doesn't transform it and puppeteer runs it as is.
 
 const COLLECT = `(() => {
   const MAX = 4000;
   const tally = (m, k, w = 1) => { if (!k) return; m.set(k, (m.get(k) || 0) + w); };
   const top = (m, n = 12) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([value, count]) => ({ value, count: Math.round(count) }));
 
-  // Agrupa colores casi idénticos (p. ej. #08090a y #090a0b) en uno solo, sumando pesos.
-  // Los rgba muy transparentes (<10%) son hairlines/hover: se funden en una entrada por tono.
+  // Groups near-identical colors (e.g. #08090a and #090a0b) into one, summing weights.
+  // Very transparent rgba (<10%) are hairlines/hover: merged into one entry per hue.
   const parseRgb = (c) => { const m = c.match(/rgba?\\(\\s*(\\d+),\\s*(\\d+),\\s*(\\d+)(?:,\\s*([\\d.]+))?\\)/); return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]] : null; };
   const topColors = (m, n = 12) => {
     const entries = [...m.entries()].sort((a, b) => b[1] - a[1]);
@@ -193,7 +193,7 @@ const COLLECT = `(() => {
     }
   }
 
-  // Variables CSS declaradas en :root / html / body
+  // CSS variables declared on :root / html / body
   const vars = {};
   try {
     for (const sheet of document.styleSheets) {
@@ -233,8 +233,8 @@ const COLLECT = `(() => {
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-// `signal`: si el usuario para la generación se cierra Chromium al momento y no se
-// sigue gastando tiempo ni capturas. Cualquier paso pendiente falla y la ruta lo traduce.
+// `signal`: if the user stops generation, Chromium closes right away and no more
+// time or screenshots are spent. Any pending step fails and the route translates it.
 export async function extractDesign(url: string, signal?: AbortSignal): Promise<ExtractResult> {
   signal?.throwIfAborted();
   const browser = await launch();
@@ -247,12 +247,12 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9,es;q=0.8" });
 
     await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 }).catch(async () => {
-      // Algunos sitios nunca llegan a idle (analytics, websockets). Seguimos con lo que haya.
+      // Some sites never reach idle (analytics, websockets). We go on with what's there.
       await page.waitForSelector("body", { timeout: 5000 });
     });
     await new Promise((r) => setTimeout(r, 1200));
 
-    // Scroll suave para disparar lazy-load / animaciones on-scroll, y vuelta arriba.
+    // Smooth scroll to trigger lazy-load / on-scroll animations, then back to top.
     await page.evaluate(`(async () => {
       const h = document.documentElement.scrollHeight;
       for (let y = 0; y < Math.min(h, 6000); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
@@ -269,7 +269,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
       captureBeyondViewport: true,
     }));
 
-    // Versiones ligeras para el grid: mismo viewport a escala 0.5
+    // Light versions for the grid: same viewport at 0.5 scale
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 0.5 });
     await new Promise((r) => setTimeout(r, 300));
     const cover = Buffer.from(await page.screenshot({ type: "jpeg", quality: 72, fullPage: false }));

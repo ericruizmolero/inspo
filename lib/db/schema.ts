@@ -1,7 +1,7 @@
-// Esquema de la base de datos (SQLite/libsql vía Drizzle).
-// Las tablas user/session/account/verification/organization/member/invitation
-// son las que espera Better Auth 1.7 (plugin organization incluido).
-// inspo_item es nuestra: cada fila pertenece a un workspace (organization).
+// Database schema (SQLite/libsql via Drizzle).
+// The user/session/account/verification/organization/member/invitation tables
+// are the ones Better Auth 1.7 expects (organization plugin included).
+// inspo_item is ours: each row belongs to a workspace (organization).
 import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // ─── Better Auth ─────────────────────────────────────────────────────────────
@@ -12,7 +12,7 @@ export const user = sqliteTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: integer("emailVerified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
-  /** Idioma de la persona ("en" | "es"). Decide en qué idioma se le escriben los correos. */
+  /** The person's language ("en" | "es"). Decides the language of the emails they get. */
   language: text("language").notNull().default("en"),
   createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
@@ -56,8 +56,8 @@ export const verification = sqliteTable("verification", {
   updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
 }, (t) => [index("verification_identifier_idx").on(t.identifier)]);
 
-// Un workspace = una organization de Better Auth.
-// metadata (JSON) lleva { kind: "personal" | "team" }.
+// A workspace = a Better Auth organization.
+// metadata (JSON) holds { kind: "personal" | "team" }.
 export const organization = sqliteTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -99,21 +99,21 @@ export const invitation = sqliteTable("invitation", {
 export const inspoItem = sqliteTable("inspo_item", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-  empresa: text("empresa").notNull(),
+  name: text("name").notNull(),
   web: text("web").notNull(),
-  /** URL normalizada (sin barra final, minúsculas) para deduplicar dentro del workspace */
+  /** Normalized URL (no trailing slash, lowercase) to dedupe within the workspace */
   webKey: text("web_key").notNull(),
   /** ISO YYYY-MM-DD */
-  fecha: text("fecha").notNull(),
-  tipo: text("tipo").notNull().default("Inspiración"),
-  /** Etiqueta visible de quién lo puso (nombre del usuario o legado "Ambos") */
-  autor: text("autor").notNull(),
+  date: text("date").notNull(),
+  type: text("type").notNull().default("inspiration"),
+  /** Visible label of who added it (user name or legacy "Both") */
+  author: text("author").notNull(),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
-  comentarios: text("comentarios").notNull().default(""),
-  subcomentarios: text("subcomentarios"),
-  /** URL de la miniatura manual (Blob en prod, /thumbs/... en local) */
+  note: text("note").notNull().default(""),
+  subNote: text("sub_note"),
+  /** URL of the manual thumbnail (Blob in prod, /thumbs/... locally) */
   thumbnailUrl: text("thumbnail_url"),
-  /** InspoTags serializado (etiquetas IA) */
+  /** Serialized InspoTags (AI tags) */
   tagsJson: text("tags_json"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
@@ -122,39 +122,39 @@ export const inspoItem = sqliteTable("inspo_item", {
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
 ]);
 
-// ─── Revisiones de DESIGN.md ─────────────────────────────────────────────────
-// La generación automática es la base global por URL (lib/design-store.ts).
-// Cada workspace guarda encima sus revisiones: una fila por cambio, con la spec
-// completa resultante. La spec vigente del workspace es la de la última fila.
+// ─── DESIGN.md revisions ─────────────────────────────────────────────────────
+// The automatic generation is the global base per URL (lib/design-store.ts).
+// Each workspace stores its revisions on top: one row per change, with the full
+// resulting spec. The workspace's current spec is the one in the latest row.
 
 export const designRevision = sqliteTable("design_revision", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-  /** URL normalizada (misma que la clave de la caché global) */
+  /** Normalized URL (same as the global cache key) */
   url: text("url").notNull(),
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
   authorName: text("author_name").notNull(),
-  /** "regeneracion" | "revision" | "reversion" */
+  /** "regeneration" | "revision" | "reversion" */
   kind: text("kind").notNull().default("revision"),
-  /** Sección del DESIGN.md a la que se refiere el comentario (color, tipografia, …) */
+  /** DESIGN.md section the comment refers to (color, typography, …) */
   section: text("section"),
-  /** Lo que escribió la persona */
+  /** What the person wrote */
   comment: text("comment").notNull().default(""),
-  /** Resumen de Claude de qué ha cambiado */
+  /** Claude's summary of what changed */
   summary: text("summary").notNull().default(""),
-  /** Aviso de Claude si el comentario contradice lo medido en la web */
+  /** Claude's warning if the comment contradicts what was measured on the site */
   warning: text("warning"),
-  /** DesignSpec completa tras este cambio */
+  /** Full DesignSpec after this change */
   specJson: text("spec_json").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 }, (t) => [
   index("design_revision_org_url_idx").on(t.organizationId, t.url),
 ]);
 
-// ─── Comentarios por inspo ───────────────────────────────────────────────────
-// Hilo plano por item (como el hilo de un pin de Figma). La nota original del
-// item (comentarios/subcomentarios) sigue en inspo_item y se pinta como primer
-// mensaje del hilo; aquí van las respuestas de cualquier miembro.
+// ─── Comments per inspo ──────────────────────────────────────────────────────
+// Flat thread per item (like a Figma pin thread). The item's original note
+// (comments/subcomments) stays in inspo_item and renders as the first message
+// of the thread; replies from any member go here.
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
 
@@ -163,10 +163,10 @@ export const inspoComment = sqliteTable("inspo_comment", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
-  /** Nombre en el momento de escribir (por si el usuario desaparece) */
+  /** Name at the time of writing (in case the user is gone) */
   authorName: text("author_name").notNull(),
   body: text("body").notNull(),
-  /** Capturas adjuntas: JSON `[{ url, w, h, name }]` (URLs privadas de Blob o rutas de /public en local) */
+  /** Attached screenshots: JSON `[{ url, w, h, name }]` (private Blob URLs, or /public paths locally) */
   attachments: text("attachments", { mode: "json" }).$type<CommentAttachmentRow[]>().notNull().default([]),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   editedAt: integer("edited_at", { mode: "timestamp_ms" }),
@@ -174,119 +174,119 @@ export const inspoComment = sqliteTable("inspo_comment", {
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
 ]);
 
-// ─── Uso de IA ───────────────────────────────────────────────────────────────
-// Una fila por llamada a un modelo (Claude o Jev), con su coste estimado en USD
-// según la tarifa vigente al escribir (lib/usage.ts). Base del pricing del SaaS.
+// ─── AI usage ────────────────────────────────────────────────────────────────
+// One row per model call (Claude or Jev), with its estimated cost in USD
+// at the rate current when written (lib/usage.ts). The basis for SaaS pricing.
 
 export const aiUsage = sqliteTable("ai_usage", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-  /** design_md | vision | jev_tag | jev_search | jev_recursos | explain | revise */
+  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise */
   action: text("action").notNull(),
   model: text("model").notNull(),
   inputTokens: integer("input_tokens").notNull().default(0),
   outputTokens: integer("output_tokens").notNull().default(0),
   cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
-  /** Unidades facturadas por item (Jev): items puntuados o etiquetados */
+  /** Units billed per item (Jev): items scored or tagged */
   units: integer("units").notNull().default(0),
-  /** Coste en microdólares (USD × 1e6) para no perder precisión en enteros */
+  /** Cost in micro-dollars (USD × 1e6) to keep precision in integers */
   costMicros: integer("cost_micros").notNull().default(0),
-  /** "real": lo que cobró OpenRouter en esa llamada. "estimated": calculado por nosotros (#28) */
+  /** "real": what OpenRouter charged for that call. "estimated": computed by us (#28) */
   costSource: text("cost_source").notNull().default("estimated"),
-  /** Proveedor que sirvió la llamada en OpenRouter (DeepInfra, Anthropic…) */
+  /** Provider that served the call on OpenRouter (DeepInfra, Anthropic…) */
   provider: text("provider"),
-  /** Identificador de la llamada en OpenRouter, para cruzarla con su registro */
+  /** OpenRouter call id, to match it against their log */
   requestId: text("request_id"),
-  /** URL, consulta… lo que ayude a explicar la fila */
+  /** URL, query… whatever helps explain the row */
   ref: text("ref"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 }, (t) => [
   index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
 ]);
 
-// ─── Actividad (presencia) ───────────────────────────────────────────────────
-// Un segmento = una persona en una zona de la app (biblioteca, DESIGN.md, equipo…)
-// dentro de una visita (pestaña). El cliente manda un latido cada 20 s mientras la
-// pestaña está visible (components/useActivity.ts) y el servidor suma el tiempo
-// entre latidos (lib/activity.ts). Alimenta el panel de /admin.
+// ─── Activity (presence) ─────────────────────────────────────────────────────
+// A segment = one person in one area of the app (library, DESIGN.md, team…)
+// within one visit (tab). The client sends a heartbeat every 20 s while the
+// tab is visible (components/useActivity.ts) and the server adds up the time
+// between heartbeats (lib/activity.ts). Feeds the /admin panel.
 
 export const activitySegment = sqliteTable("activity_segment", {
-  /** Lo genera el cliente (uno por visita × zona); solo lo puede tocar su dueño */
+  /** Generated by the client (one per visit × area); only its owner can touch it */
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
-  /** Una visita = una carga de la app en una pestaña */
+  /** A visit = one load of the app in one tab */
   visitId: text("visit_id").notNull(),
-  /** Zona de la app: biblioteca | busqueda | design-md | comentarios | recursos | anadir | equipo | planes | admin… */
+  /** App area: library | search | design-md | comments | directory | add | team | plans | settings | admin… */
   area: text("area").notNull(),
   path: text("path").notNull(),
-  /** Resumen legible del navegador: "Chrome · macOS" */
+  /** Readable browser summary: "Chrome · macOS" */
   device: text("device"),
   startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
   lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
-  /** Segundos con la pestaña visible en esta zona */
+  /** Seconds with the tab visible in this area */
   seconds: integer("seconds").notNull().default(0),
 }, (t) => [
   index("activity_segment_user_seen_idx").on(t.userId, t.lastSeenAt),
   index("activity_segment_seen_idx").on(t.lastSeenAt),
 ]);
 
-// ─── Administradores de la app ───────────────────────────────────────────────
-// Quién puede ver el panel de actividad (/admin). Se gestiona desde el propio panel
-// (lib/activity.ts); los correos fijos de DEFAULT_ADMINS / ADMIN_EMAILS no van aquí.
+// ─── App admins ──────────────────────────────────────────────────────────────
+// Who can see the activity panel (/admin). Managed from the panel itself
+// (lib/activity.ts); the fixed emails in DEFAULT_ADMINS / ADMIN_EMAILS are not stored here.
 
 export const appAdmin = sqliteTable("app_admin", {
-  /** Correo en minúsculas */
+  /** Lowercase email */
   email: text("email").primaryKey(),
-  /** Nombre de quien le dio acceso (para enseñarlo en la lista) */
+  /** Name of who granted access (shown in the list) */
   addedBy: text("added_by").notNull().default(""),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
 });
 
-// ─── Feedback visual (Agentation) ────────────────────────────────────────────
-// Cada nota que alguien deja con la barra de feedback sobre la propia app. Se guardan
-// según llegan y se mandan por correo a los socios (los del panel /admin) en lotes:
-// al pulsar enviar/copiar o cuando pasa un rato sin notas nuevas (lib/feedback.ts).
+// ─── Visual feedback (Agentation) ────────────────────────────────────────────
+// Each note someone leaves with the feedback bar on the app itself. Stored as
+// they arrive and emailed to the partners (the /admin panel list) in batches:
+// on send/copy, or after a while with no new notes (lib/feedback.ts).
 export const feedbackNote = sqliteTable("feedback_note", {
-  /** `${id de la anotación}@${userId}`: el id lo genera Agentation en el navegador */
+  /** `${annotation id}@${userId}`: Agentation generates the id in the browser */
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
-  /** Ruta de la página anotada (agrupa el lote) y URL completa para el enlace del correo */
+  /** Path of the annotated page (groups the batch) and full URL for the email link */
   path: text("path").notNull(),
   url: text("url").notNull(),
-  /** "1440×900" en el momento de anotar */
+  /** "1440×900" at the time of annotating */
   viewport: text("viewport"),
-  /** Anotación completa de Agentation en JSON (elemento, selector, texto, estilos…) */
+  /** Full Agentation annotation as JSON (element, selector, text, styles…) */
   data: text("data").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
-  /** Cuándo salió el correo con esta nota; null = pendiente de enviar */
+  /** When the email with this note went out; null = not sent yet */
   sentAt: integer("sent_at", { mode: "timestamp_ms" }),
 }, (t) => [
   index("feedback_note_pending_idx").on(t.sentAt, t.updatedAt),
   index("feedback_note_user_path_idx").on(t.userId, t.path),
 ]);
 
-// ─── Llaves de la extensión del navegador ───────────────────────────────────
-// La extensión no usa la cookie de sesión (en Safari ni siquiera se puede): al conectarla,
-// la persona elige un workspace en /extension/conectar y se le da una llave larga que la
-// extensión guarda. Aquí solo vive el resumen SHA-256 de la llave, nunca la llave.
-// Cada llave vale para un workspace; se revoca desde /equipo o desde la propia extensión.
+// ─── Browser extension keys ─────────────────────────────────────────────────
+// The extension does not use the session cookie (Safari cannot anyway): on connect,
+// the person picks a workspace at /extension/connect and gets a long key that the
+// extension stores. Only the key's SHA-256 digest lives here, never the key.
+// Each key works for one workspace; revoke it from /settings/extension or the extension itself.
 export const extKey = sqliteTable("ext_key", {
   id: text("id").primaryKey(),
-  /** SHA-256 en hex de la llave completa */
+  /** Hex SHA-256 of the full key */
   hash: text("hash").notNull(),
-  /** Primeros caracteres de la llave (para reconocerla en la lista) */
+  /** First characters of the key (to recognize it in the list) */
   prefix: text("prefix").notNull(),
-  /** Etiqueta que pone la persona: "Chrome del portátil" */
+  /** Label the person sets: "Laptop Chrome" */
   name: text("name").notNull().default(""),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
-  /** null = activa */
+  /** null = active */
   revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
 }, (t) => [
   uniqueIndex("ext_key_hash_idx").on(t.hash),

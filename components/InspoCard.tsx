@@ -20,8 +20,8 @@ function isBlocked(url: string) {
 
 type ImgSource = "idle" | "og" | "shot" | "error";
 
-// Imágenes ya resueltas por URL: al recolocar tarjetas entre columnas React las
-// vuelve a montar y sin esto se descargaría (y parpadearía) todo otra vez.
+// Images already resolved per URL: moving cards between columns makes React
+// remount them, and without this everything would download (and flicker) again.
 const imgCache = new Map<string, { src: string | null; source: ImgSource }>();
 
 interface InspoCardProps {
@@ -35,11 +35,11 @@ interface InspoCardProps {
   onDesignMd: () => void;
   designMdLoading?: boolean;
   designMdReady?: boolean;
-  designCover?: string;   // portada 720x450 generada con el DESIGN.md
-  designScroll?: string;  // tira larga que se desplaza al hover
-  commentCount?: number;  // respuestas en el hilo (sin contar la nota original)
+  designCover?: string;   // 720x450 cover generated with the DESIGN.md
+  designScroll?: string;  // long strip that scrolls on hover
+  commentCount?: number;  // replies in the thread (not counting the original note)
   onComments?: () => void;
-  onDelete?: () => Promise<void>; // quitar la tarjeta del workspace
+  onDelete?: () => Promise<void>; // remove the card from the workspace
 }
 
 const IconUpload = (
@@ -79,15 +79,15 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
   const [manualLoaded, setManualLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [whyOpen, setWhyOpen] = useState(false); // móvil: el globo del % se abre al tocar
+  const [whyOpen, setWhyOpen] = useState(false); // mobile: the % bubble opens on tap
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [scrollDist, setScrollDist] = useState(0);
-  // Borrar en dos toques: el primero pide confirmación en el propio botón, el segundo borra
+  // Delete in two taps: the first asks for confirmation on the button itself, the second deletes
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  // Momento en que se abrió la confirmación: un segundo clic/tap/tecla casi inmediato no cuenta,
-  // para que borrar sea siempre dos acciones deliberadas (doble clic, doble tap o Espacio no borran).
+  // When the confirmation opened: a near-instant second click/tap/key doesn't count,
+  // so deleting is always two deliberate actions (double click, double tap or Space don't delete).
   const confirmAt = useRef(0);
   const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -124,15 +124,15 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), source === "shot" ? 60000 : 15000);
     // og:image first (cheap); if the site has none, capture its hero server-side.
-    // El "v" cambia la URL de captura cuando el servidor se arregla: los 502 antiguos
-    // se quedan en la caché del navegador y sin esto seguirían saliendo un buen rato.
+    // The "v" changes the screenshot URL when the server gets fixed: old 502s
+    // stay in the browser cache and without this would keep showing for a while.
     const apiUrl = source === "og"
       ? `/api/og?url=${encodeURIComponent(item.web)}`
       : `/api/shot?url=${encodeURIComponent(item.web)}&v=2`;
 
     fetch(apiUrl, { signal: ctrl.signal })
       .then((res) => {
-        // 204 = la web no tiene og:image o la captura falló: se pasa al siguiente método
+        // 204 = the site has no og:image or the screenshot failed: move to the next method
         if (!res.ok || res.status === 204 || !res.headers.get("content-type")?.startsWith("image/")) throw new Error(`${res.status}`);
         return res.blob();
       })
@@ -149,7 +149,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
       });
 
     return () => { ctrl.abort(); clearTimeout(timeout); };
-    // imgSrc solo evita repetir la descarga cuando ya viene de la caché
+    // imgSrc only avoids a repeat download when it already comes from the cache
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, item.web]);
 
@@ -175,7 +175,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     }
   };
 
-  // La confirmación se cancela con Esc o sola a los 6 s
+  // The confirmation cancels with Esc or on its own after 6 s
   useEffect(() => {
     if (!confirmDelete) return;
     const t = setTimeout(() => setConfirmDelete(false), 6000);
@@ -189,7 +189,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     e.stopPropagation();
     if (!onDelete) return;
     if (!confirmDelete) { confirmAt.current = Date.now(); setConfirmDelete(true); return; }
-    if (Date.now() - confirmAt.current < 400) return; // demasiado seguido: no es una decisión
+    if (Date.now() - confirmAt.current < 400) return; // too quick: not a decision
     setConfirmDelete(false);
     setDeleting(true);
     try { await onDelete(); } finally { setDeleting(false); }
@@ -202,16 +202,16 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     setTimeout(() => { suppressClick.current = false; }, 500);
   };
 
-  // La web externa solo se abre desde su icono: el clic en la card lleva a lo nuestro.
-  // Con DESIGN.md hecho se abre la ficha; si no, el hilo de comentarios (que ya enlaza a la web).
+  // The external site only opens from its icon: a click on the card leads to our own views.
+  // With a DESIGN.md done the sheet opens; otherwise the comment thread (which links to the site).
   const clickTarget: "md" | "comments" = designMdReady || !onComments ? "md" : "comments";
   const openInside = () => { if (clickTarget === "md") onDesignMd(); else onComments!(); };
 
   const meta = (
     <div className="tile__meta">
-      <span>{t.labels.tipo[item.tipo]}</span>
-      {/* "Ambos" es el autor heredado del sheet: no es una persona, así que no se enseña */}
-      {item.puestoPor !== "Ambos" && (<><span className="tile__meta-sep">·</span><span>{item.puestoPor}</span></>)}
+      <span>{t.labels.type[item.type]}</span>
+      {/* "Both" is the legacy sheet author: not a person, so it isn't shown */}
+      {item.addedBy !== "Both" && (<><span className="tile__meta-sep">·</span><span>{item.addedBy}</span></>)}
       {domain && (<><span className="tile__meta-sep">·</span><span>{domain}</span></>)}
     </div>
   );
@@ -222,7 +222,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     : [];
   const aiChips = tags && (
     <div className="tile__tags">
-      <span className="tile__tag tile__tag--style">{t.taxonomy.estilo[tags.estilo as keyof typeof t.taxonomy.estilo] ?? tags.estilo}</span>
+      <span className="tile__tag tile__tag--style">{t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style}</span>
       {activeTags.map((x) => <span key={x.key} className="tile__tag">{t.taxonomy.tag[x.key as keyof typeof t.taxonomy.tag] ?? x.key}</span>)}
     </div>
   );
@@ -245,7 +245,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               src={manualThumbnail.startsWith("https://")
                 ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
                 : manualThumbnail}
-              alt={item.empresa}
+              alt={item.name}
               onLoad={() => setManualLoaded(true)}
             />
           )}
@@ -255,7 +255,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               <img
                 className={`tile__img${coverLoaded ? "" : " is-hidden"}`}
                 src={proxiedSrc(designCover!)}
-                alt={item.empresa}
+                alt={item.name}
                 loading="lazy"
                 onLoad={() => setCoverLoaded(true)}
               />
@@ -277,7 +277,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             <img
               className="tile__img"
               src={imgSrc}
-              alt={item.empresa}
+              alt={item.name}
               onError={() => {
                 // Blob fetched but not a renderable image (bad og:image): try next source
                 imgCache.delete(item.web);
@@ -288,25 +288,25 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           )}
 
           {isError && (
-            // Sin captura: cartel tipográfico. Tinte sutil estable por dominio e inicial en marca de agua.
-            <div className="tile__fallback" style={{ "--fb-hue": hueFor(domain || item.empresa) } as React.CSSProperties}>
-              <span className="display tile__fallback-mark" aria-hidden>{item.empresa.trim().slice(0, 1).toUpperCase()}</span>
+            // No screenshot: a typographic poster. Subtle stable tint per domain and the initial as a watermark.
+            <div className="tile__fallback" style={{ "--fb-hue": hueFor(domain || item.name) } as React.CSSProperties}>
+              <span className="display tile__fallback-mark" aria-hidden>{item.name.trim().slice(0, 1).toUpperCase()}</span>
               <div className="tile__fallback-top">
                 <span className="tile__fallback-domain">{domain}</span>
-                <span className="tile__fallback-tipo">{t.labels.tipo[item.tipo]}</span>
+                <span className="tile__fallback-type">{t.labels.type[item.type]}</span>
               </div>
               <div className="tile__fallback-body">
                 <i className="tile__fallback-rule" aria-hidden />
-                <span className="display tile__fallback-name">{item.empresa}</span>
-                {item.comentarios && <span className="tile__fallback-note">{item.comentarios}</span>}
+                <span className="display tile__fallback-name">{item.name}</span>
+                {item.note && <span className="tile__fallback-note">{item.note}</span>}
               </div>
             </div>
           )}
 
           <div className="tile__overlay">
-            <div className="display tile__title">{item.empresa}</div>
+            <div className="display tile__title">{item.name}</div>
             {meta}
-            {item.comentarios && <p className="tile__comment">{item.comentarios}</p>}
+            {item.note && <p className="tile__comment">{item.note}</p>}
             {commentCount > 0 && (
               <span className="tile__replies">{IconComment}{t.card.replies(commentCount)}</span>
             )}
@@ -399,7 +399,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
       {/* Touch devices: caption under the tile since there is no hover */}
       <div className="tile__caption">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <span className="display tile__title">{item.empresa}</span>
+          <span className="display tile__title">{item.name}</span>
           {meta}
           {aiChips}
         </div>

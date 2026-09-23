@@ -9,27 +9,27 @@ import { Button } from "@/components/ui/button";
 export interface DesignMdEntry {
   url: string; markdown: string; generatedAt: string; model: string; cached: boolean;
   spec?: DesignSpec; screenshotUrl?: string;
-  /** Historial de revisiones del workspace, la más reciente primero */
+  /** Workspace revision history, newest first */
   revisions?: RevisionMeta[];
 }
 
 export interface DesignMdState {
   status: "loading" | "ready" | "error";
-  empresa: string;
+  name: string;
   startedAt: number;
   entry?: DesignMdEntry;
   error?: string;
-  seen: boolean; // el usuario ya ha visto el resultado (o lo ha descartado)
-  /** Se espera respuesta inmediata (caché): el toast no aparece salvo que tarde */
+  seen: boolean; // the user has seen the result (or dismissed it)
+  /** An instant (cached) answer is expected: the toast only shows if it takes a while */
   quiet?: boolean;
-  /** Abrir la ficha sola al terminar (primera inspo, regenerar, volver del login) */
+  /** Open the sheet on its own when done (first inspo, regenerate, back from login) */
   openWhenReady?: boolean;
 }
 
-// ─── Pasos estimados (no hay progreso real del servidor) ─────────────────────
-// Los textos están en el diccionario (t.toast.steps); aquí solo hace falta cuántos son.
+// ─── Estimated steps (the server reports no real progress) ─────────────────────
+// The copy lives in the dictionary (t.toast.steps); here we only need how many there are.
 const STEP_COUNT = 5;
-// Duración típica ~75 s; la barra nunca llega al 100 % hasta que termina
+// Typical run ~75 s; the bar never reaches 100 % until it finishes
 const TYPICAL_MS = 75000;
 const QUIET_MS = 2500;
 
@@ -49,16 +49,16 @@ const IcStop = (
 
 interface DesignMdToastsProps {
   jobs: Record<string, DesignMdState>;
-  openUrl: string | null; // URL cuyo modal está abierto ahora mismo
+  openUrl: string | null; // URL whose modal is open right now
   onOpen: (url: string) => void;
   onDismiss: (url: string) => void;
   onCancel: (url: string) => void;
   onRetry: (url: string) => void;
 }
 
-// Un toast por generación, abajo a la derecha. Es toda la UI del proceso: mientras
-// se genera enseña la web, el paso, el tiempo y un botón para pararlo; al acabar,
-// se toca para abrir la ficha.
+// One toast per generation, bottom right. It is the whole UI of the process: while
+// generating it shows the site, the step, the time and a button to stop it; when done,
+// tapping it opens the sheet.
 export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCancel, onRetry }: DesignMdToastsProps) {
   const { t } = useT();
   const STEPS = t.toast.steps;
@@ -89,9 +89,9 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
           const pct = Math.round(progressFor(j.startedAt) * 100);
           return (
             <div key={url} className="toast toast--loading toast--rich" role="status" aria-live="polite">
-              <Thumb url={url} empresa={j.empresa} />
+              <Thumb url={url} name={j.name} />
               <div className="toast__text">
-                <span className="toast__title">DESIGN.md · {j.empresa}</span>
+                <span className="toast__title">DESIGN.md · {j.name}</span>
                 <span className="toast__sub">{hostOf(url)}</span>
                 <span className="toast__sub toast__sub--step">
                   <span className="spinner" />
@@ -115,7 +115,7 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
           <div key={url} className={`toast toast--${j.status}`} onClick={() => j.status === "ready" && onOpen(url)} role={j.status === "ready" ? "button" : "alert"}>
             <span className="toast__dot" />
             <div className="toast__text">
-              <span className="toast__title">DESIGN.md · {j.empresa}</span>
+              <span className="toast__title">DESIGN.md · {j.name}</span>
               <span className="toast__sub">
                 {j.status === "ready" ? t.toast.ready : (j.error || t.toast.failed)}
               </span>
@@ -134,12 +134,12 @@ export default function DesignMdToasts({ jobs, openUrl, onOpen, onDismiss, onCan
   );
 }
 
-// Miniatura de la web (og:image) con un haz que la "lee"; si no hay imagen, la inicial.
-function Thumb({ url, empresa }: { url: string; empresa: string }) {
+// Site thumbnail (og:image) with a beam that "reads" it; with no image, the initial.
+function Thumb({ url, name }: { url: string; name: string }) {
   const [state, setState] = useState<"loading" | "ok" | "none">("loading");
   return (
     <div className={`toast__thumb${state === "ok" ? " is-loaded" : ""}`}>
-      {state === "none" && <span className="toast__thumb-blank">{empresa.slice(0, 1).toUpperCase()}</span>}
+      {state === "none" && <span className="toast__thumb-blank">{name.slice(0, 1).toUpperCase()}</span>}
       <img src={`/api/og?url=${encodeURIComponent(url)}`} alt="" onLoad={() => setState("ok")} onError={() => setState("none")} />
       <span className="toast__beam" aria-hidden />
     </div>

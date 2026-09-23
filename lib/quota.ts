@@ -1,4 +1,4 @@
-// Cuotas mensuales por plan, contadas sobre ai_usage. Solo servidor.
+// Monthly quotas per plan, counted on ai_usage. Server only.
 import "server-only";
 import { and, eq, gt, gte, lt, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -13,12 +13,12 @@ export interface QuotaStatus {
   plan: PlanKey;
   planName: string;
   priceEur: number;
-  /** Primer día del mes siguiente, ISO */
+  /** First day of next month, ISO */
   resetsAt: string;
   designMd: QuotaLine;
   searches: QuotaLine;
   members: QuotaLine;
-  /** Invitaciones enviadas y sin aceptar: también ocupan plaza */
+  /** Sent, unaccepted invitations: they take a seat too */
   pendingInvites: number;
 }
 
@@ -31,11 +31,11 @@ function nextMonth(): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
 }
 
-// Los mensajes de cuota los lee la persona, así que van en su idioma
+// The person reads quota messages, so they're in their language
 
-// Las búsquedas se cuentan por consulta distinta (ref = texto normalizado), no por
-// llamada: la búsqueda se lanza mientras se escribe y una misma intención puede
-// producir varias llamadas parciales. El coste real sigue en ai_usage fila a fila.
+// Searches are counted per distinct query (ref = normalized text), not per
+// call: search fires while typing and one intent can produce several
+// partial calls. The real cost stays in ai_usage row by row.
 async function countAction(organizationId: string, action: string): Promise<number> {
   const U = schema.aiUsage;
   const n = action === "jev_search" ? sql<number>`count(distinct lower(trim(${U.ref})))` : sql<number>`count(*)`;
@@ -50,11 +50,11 @@ export async function countMembers(organizationId: string): Promise<number> {
 }
 
 /**
- * Invitaciones enviadas y todavía sin aceptar, sin contar las caducadas.
- * Ocupan plaza igual que un miembro: si no, con un plan de 5 se pueden mandar 20
- * invitaciones y las 15 últimas fallan al aceptar sin que nadie entienda por qué.
- * `exceptEmail` deja fuera una dirección concreta, que es lo que necesita reenviar
- * una invitación: la nueva sustituye a la pendiente, no se suma a ella.
+ * Sent invitations not yet accepted, excluding expired ones.
+ * They take a seat like a member: otherwise a plan of 5 could send 20
+ * invitations and the last 15 would fail on accept with nobody knowing why.
+ * `exceptEmail` leaves out one address, which is what resending
+ * an invitation needs: the new one replaces the pending one instead of adding to it.
  */
 export async function countPendingInvitations(organizationId: string, exceptEmail?: string): Promise<number> {
   const I = schema.invitation;
@@ -81,9 +81,9 @@ export async function quotaStatus(ws: Pick<Workspace, "id" | "plan">): Promise<Q
 export interface OverCapacity { members: number; limit: number; planName: string }
 
 /**
- * Un equipo puede quedarse con más gente de la que admite su plan al bajar de plan.
- * No echamos a nadie: destruir datos por un cobro no es opción. Se bloquean las
- * invitaciones y las acciones de IA, y el dueño decide.
+ * A team can end up with more people than its plan allows after a downgrade.
+ * We don't kick anyone out: destroying data over a charge isn't an option. Invitations
+ * and AI actions are blocked, and the owner decides.
  */
 export async function overCapacity(organizationId: string, planKey: string | null | undefined): Promise<OverCapacity | null> {
   const plan = planOf(planKey);
@@ -92,8 +92,8 @@ export async function overCapacity(organizationId: string, planKey: string | nul
   return members > plan.members ? { members, limit: plan.members, planName: plan.name } : null;
 }
 
-/** Lanza HttpError(402) si el equipo pasa del número de personas de su plan. */
-/** Para route handlers: null si se puede seguir, o la respuesta de error con `quota: true`. */
+/** Throws HttpError(402) if the team exceeds its plan's seat count. */
+/** For route handlers: null to continue, or the error response with `quota: true`. */
 export async function quotaBlock(check: Promise<void>): Promise<Response | null> {
   try {
     await check;
@@ -111,7 +111,7 @@ export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise
   throw new HttpError(402, t.quota.overSeats(t.quota.people(over.members), over.planName, over.limit));
 }
 
-/** Lanza HttpError(402) si el workspace ha agotado la cuota mensual de esa acción. */
+/** Throws HttpError(402) if the workspace has used up that action's monthly quota. */
 export async function assertQuota(ws: Pick<Workspace, "id" | "plan">, action: "design_md" | "jev_search"): Promise<void> {
   await assertSeatsOk(ws);
   const plan = planOf(ws.plan);
@@ -125,13 +125,13 @@ export async function assertQuota(ws: Pick<Workspace, "id" | "plan">, action: "d
 }
 
 export interface SeatOpts {
-  /** Contar también las invitaciones sin aceptar (al invitar, no al aceptar) */
+  /** Also count unaccepted invitations (on invite, not on accept) */
   includePending?: boolean;
-  /** Dirección que no cuenta como pendiente, para poder reenviar una invitación */
+  /** Address that doesn't count as pending, so an invitation can be resent */
   exceptEmail?: string;
 }
 
-/** Mensaje para el hook de invitaciones: null si cabe una persona más. */
+/** Message for the invitations hook: null if one more person fits. */
 export async function memberLimitMessage(organizationId: string, planKey: string | null | undefined, opts: SeatOpts = {}): Promise<string | null> {
   const plan = planOf(planKey);
   if (plan.members === null) return null;
@@ -149,9 +149,9 @@ export async function memberLimitMessage(organizationId: string, planKey: string
 }
 
 /**
- * Cuántos miembros entraron antes que este, por createdAt con el id de desempate.
- * Sirve para el control posterior a la alta: dos personas pueden aceptar la última
- * plaza a la vez, y solo las que quedan por encima del límite se retiran.
+ * How many members joined before this one, by createdAt with id as tiebreaker.
+ * Used for the post-join check: two people can accept the last seat
+ * at once, and only those above the limit are removed.
  */
 export async function memberRank(organizationId: string, memberId: string): Promise<number> {
   const M = schema.member;
@@ -165,9 +165,9 @@ export async function memberRank(organizationId: string, memberId: string): Prom
 }
 
 /**
- * Avisa por correo a los dueños y admins de que el equipo pasa del número de personas
- * del plan. Se llama al cambiar el plan (scripts/set-plan.ts). No lanza: un fallo de
- * correo no debe tumbar el cambio de plan.
+ * Emails owners and admins that the team exceeds the plan's seat count.
+ * Called on plan change (scripts/set-plan.ts). Doesn't throw: an email failure
+ * must not break the plan change.
  */
 export async function notifyOverCapacity(organizationId: string, planKey: string | null | undefined, teamName: string, appUrl: string): Promise<boolean> {
   const over = await overCapacity(organizationId, planKey);
@@ -175,15 +175,15 @@ export async function notifyOverCapacity(organizationId: string, planKey: string
   const members = await listMembers(organizationId);
   const to = members.filter((m) => m.role.split(",")[0] !== "member").map((m) => m.email);
   if (!to.length) return false;
-  // Un correo por idioma: los dueños no tienen por qué compartirlo
+  // One email per language: owners don't necessarily share one
   const byLocale = new Map<Locale, string[]>();
   for (const email of to) {
     const locale = await localeForEmail(email);
     byLocale.set(locale, [...(byLocale.get(locale) ?? []), email]);
   }
   for (const [locale, emails] of byLocale) {
-    const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/equipo`, teamName, over.planName, over.members, over.limit, locale);
-    try { await sendMail(emails, m.subject, m.html, m.text); } catch (e) { console.error("[plan] no se pudo avisar al dueño:", e); }
+    const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/settings/members`, teamName, over.planName, over.members, over.limit, locale);
+    try { await sendMail(emails, m.subject, m.html, m.text); } catch (e) { console.error("[plan] could not notify the owner:", e); }
   }
   return true;
 }

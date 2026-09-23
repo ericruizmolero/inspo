@@ -1,20 +1,20 @@
 "use server";
-// Llaves de la extensión desde la web (sesión de cookie): /extension/conectar crea, /equipo revoca.
+// Extension keys from the web (cookie session): /extension/connect creates, /settings revokes.
 import { withCtx, canManage, HttpError } from "@/lib/workspace";
 import { createExtKey, revokeExtKey } from "@/lib/ext-keys";
 import { getErrors } from "@/lib/i18n";
 
-/** La llave en claro solo sale aquí, una vez. */
+/** The plain key only comes out here, once. */
 export async function createKey(organizationId: string, name: string) {
   return withCtx(async (ctx) => {
     const ws = ctx.workspaces.find((w) => w.id === organizationId);
     if (!ws) throw new HttpError(403, (await getErrors()).workspaceNotYours);
-    const { key, row } = await createExtKey(ctx.user.id, ws.id, String(name ?? "").slice(0, 80) || "Navegador");
+    const { key, row } = await createExtKey(ctx.user.id, ws.id, String(name ?? "").slice(0, 80) || "Browser");
     return { key, id: row.id, prefix: row.prefix, workspace: { id: ws.id, name: ws.name, kind: ws.kind } };
   });
 }
 
-/** Su dueño siempre; un admin del workspace, cualquiera del workspace. */
+/** Its owner always; a workspace admin, any key in the workspace. */
 export async function revokeKey(id: string) {
   return withCtx(async (ctx) => {
     const r = await revokeExtKey(id, (row) => row.userId === ctx.user.id || (row.organizationId === ctx.workspace.id && canManage(ctx.workspace.role)));

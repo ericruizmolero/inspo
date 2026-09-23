@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { useT } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
 
-/** Salir de esta cuenta y volver al login con la invitación como destino. */
+/** Sign out of this account and return to login with the invitation as the destination. */
 export default function SwitchAccount({ next }: { next: string }) {
   const { t } = useT();
   const [busy, setBusy] = useState(false);

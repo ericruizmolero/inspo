@@ -21,7 +21,7 @@ export const plans: typeof EnPlans = {
       "Comentarios y revisiones de DESIGN.md",
     ],
   },
-  agencia: {
+  agency: {
     tagline: "Para equipos con varios proyectos abiertos.",
     features: [
       "Hasta 15 personas",

@@ -1,4 +1,4 @@
-// Comentarios por inspo, siempre acotados a un workspace.
+// Comments per inspo, always scoped to a workspace.
 import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
@@ -21,7 +21,7 @@ const toComment = (r: Row): InspoComment => ({
   createdAt: r.createdAt.toISOString(),
 });
 
-/** Solo se guardan adjuntos subidos por este workspace, con medidas sanas. */
+/** Only attachments uploaded by this workspace, with sane dimensions, are kept. */
 function cleanAttachments(organizationId: string, input: unknown): CommentAttachment[] {
   if (!Array.isArray(input)) return [];
   const out: CommentAttachment[] = [];
@@ -38,7 +38,7 @@ function cleanAttachments(organizationId: string, input: unknown): CommentAttach
   return out;
 }
 
-/** Todos los comentarios del workspace agrupados por item (volumen pequeño, una consulta). */
+/** All workspace comments grouped by item (small volume, one query). */
 export async function listComments(organizationId: string): Promise<CommentMap> {
   const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
     .where(eq(C.organizationId, organizationId)).orderBy(asc(C.createdAt));
@@ -60,7 +60,7 @@ export async function addComment(organizationId: string, input: { itemId: string
   return toComment({ ...row, authorImage: u?.image ?? null });
 }
 
-/** Borra un comentario propio (o cualquiera si `admin`) y sus capturas. Devuelve false si no existía o no era suyo. */
+/** Deletes one's own comment (or any if `admin`) and its screenshots. Returns false if it didn't exist or wasn't theirs. */
 export async function deleteComment(organizationId: string, id: string, userId: string, admin: boolean): Promise<boolean> {
   const where = admin
     ? and(eq(C.id, id), eq(C.organizationId, organizationId))

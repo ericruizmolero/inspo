@@ -1,11 +1,11 @@
 "use client";
 
-// Barra de feedback visual (Agentation), en todas las páginas. La persona deja todas las
-// notas que quiera sobre la página y, cuando termina, pulsa "Enviar al equipo": ahí (y solo
-// ahí) sale un correo a los socios con el mismo markdown que copia la barra.
-// Cada nota se guarda además en el servidor según se añade (/api/feedback), por si acaso.
-// Sin sesión (login, planes, invitación) la barra funciona igual y las notas se quedan en
-// localStorage, pero enviar pide entrar primero: /api/feedback exige sesión.
+// Visual feedback bar (Agentation), on every page. People leave as many notes as they
+// want on the page and, when done, press "Send to the team": then (and only then) an email
+// goes to the partners with the same markdown the bar copies.
+// Each note is also saved on the server as it is added (/api/feedback), just in case.
+// Signed out (login, plans, invitation) the bar works the same and notes stay in
+// localStorage, but sending asks to sign in first: /api/feedback requires a session.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Agentation, loadAnnotations, type Annotation } from "agentation";
@@ -22,7 +22,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
   const [state, setState] = useState<SendState>("idle");
   const stateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Agentation guarda sus notas por ruta en localStorage: al cambiar de página se recuperan
+  // Agentation keeps its notes per route in localStorage: they come back when the page changes
   useEffect(() => {
     setNotes(new Map(loadAnnotations(pathname).map((a) => [a.id, a])));
     setState("idle");
@@ -49,7 +49,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
   const send = useCallback(async () => {
     if (!list.length || state === "sending") return;
     if (!canSend) {
-      // Las notas siguen en localStorage: al volver con sesión a esta misma ruta se pueden enviar
+      // The notes stay in localStorage: back on this route with a session, they can be sent
       const here = window.location.pathname + window.location.search;
       window.location.assign(`/login?next=${encodeURIComponent(here)}`);
       return;
@@ -62,7 +62,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
       const res = await post({ event: "submit", output, annotations: list });
       if (!res.ok) throw new Error(String(res.status));
       setState("sent");
-      // Enviado: el botón se retira hasta que haya notas nuevas o editadas
+      // Sent: the button hides until there are new or edited notes
       stateTimer.current = setTimeout(() => setNotes(new Map()), 2500);
     } catch {
       setState("error");

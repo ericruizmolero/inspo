@@ -1,13 +1,13 @@
-// Paso de visión: un modelo de visión describe la captura de una web en texto corto para que
-// Jev (solo texto) pueda juzgar rasgos visuales (tipografía, ilustración, paleta…).
+// Vision step: a vision model describes a site's screenshot in short text so that
+// Jev (text only) can judge visual traits (typography, illustration, palette…).
 import { getOrCaptureShot } from "./screenshot";
 import { llm, llmEnabled } from "./llm";
 
-// Describir una captura en 120 palabras no necesita Opus: Haiku cuesta diez veces menos.
+// Describing a screenshot in 120 words doesn't need Opus: Haiku costs ten times less.
 const MODEL = process.env.VISION_MODEL || "anthropic/claude-haiku-4.5";
 const CAPTURE_TIMEOUT_MS = 45_000;
 
-// Dominios donde la captura no aporta nada (login walls, vídeo, redes)
+// Domains where the screenshot adds nothing (login walls, video, social)
 const SKIP = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "primevideo.com", "netflix.com"];
 
 export const visionEnabled = llmEnabled;
@@ -44,8 +44,8 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   });
 }
 
-/** Captura (o reutiliza) el screenshot y lo describe. Devuelve null si no aplica o falla. */
-export async function describeSite(item: { empresa: string; web: string }): Promise<VisionResult | null> {
+/** Captures (or reuses) the screenshot and describes it. Returns null if not applicable or on failure. */
+export async function describeSite(item: { name: string; web: string }): Promise<VisionResult | null> {
   if (!visionEnabled()) return null;
   let host = "";
   try { host = new URL(item.web).hostname.replace(/^www\./, ""); } catch { return null; }
@@ -53,7 +53,7 @@ export async function describeSite(item: { empresa: string; web: string }): Prom
 
   try {
     const jpeg = await withTimeout(getOrCaptureShot(item.web), CAPTURE_TIMEOUT_MS, "capture");
-    return await describeScreenshot(jpeg, { name: item.empresa, url: item.web });
+    return await describeScreenshot(jpeg, { name: item.name, url: item.web });
   } catch (e) {
     console.warn("vision: skipped", item.web, e instanceof Error ? e.message : e);
     return null;

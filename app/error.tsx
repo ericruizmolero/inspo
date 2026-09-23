@@ -1,5 +1,5 @@
 "use client";
-// Error inesperado al renderizar una página. El layout raíz sigue en pie, así que hay idioma.
+// Unexpected error rendering a page. The root layout still stands, so the language is available.
 import { useEffect } from "react";
 import Link from "next/link";
 import { useT } from "@/components/I18nProvider";

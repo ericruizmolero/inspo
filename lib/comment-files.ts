@@ -1,5 +1,5 @@
-// Capturas adjuntas a los comentarios. Producción: Vercel Blob privado bajo
-// inspo/<workspace>/comments/ (se sirven por /api/thumbnail/img). Local: public/comments.
+// Screenshots attached to comments. Production: private Vercel Blob under
+// inspo/<workspace>/comments/ (served via /api/thumbnail/img). Local: public/comments.
 import "server-only";
 import { put, del } from "@vercel/blob";
 import { isBlobUrlUnder } from "./blob-url";
@@ -9,14 +9,14 @@ import path from "path";
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 const LOCAL_DIR = path.join(process.cwd(), "public", "comments");
 
-/** Tope por fichero tras la reducción en el navegador (Vercel corta el body en 4,5 MB) */
+/** Per-file cap after downscaling in the browser (Vercel cuts the body at 4.5 MB) */
 export const MAX_ATTACHMENT_BYTES = 4 * 1024 * 1024;
 export const MAX_ATTACHMENTS = 6;
 export const ATTACHMENT_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
 
 export const commentPrefix = (organizationId: string) => `inspo/${organizationId}/comments/`;
 
-/** ¿Esta URL es un adjunto de comentario de este workspace? (Blob o local) */
+/** Is this URL a comment attachment from this workspace? (Blob or local) */
 export function ownsCommentFile(organizationId: string, url: string): boolean {
   return USE_BLOB
     ? isBlobUrlUnder(url, commentPrefix(organizationId))
@@ -36,7 +36,7 @@ export async function uploadCommentFile(organizationId: string, file: File): Pro
   return `/comments/${name}`;
 }
 
-/** Borrado sin fallar: los adjuntos huérfanos no bloquean nada. */
+/** Delete without failing: orphan attachments block nothing. */
 export async function deleteCommentFiles(organizationId: string, urls: string[]): Promise<void> {
   const own = urls.filter((u) => ownsCommentFile(organizationId, u));
   if (!own.length) return;
@@ -44,6 +44,6 @@ export async function deleteCommentFiles(organizationId: string, urls: string[])
     if (USE_BLOB) await del(own);
     else await Promise.all(own.map((u) => fs.unlink(path.join(LOCAL_DIR, path.basename(u)))));
   } catch (e) {
-    console.warn("No se pudo borrar un adjunto de comentario:", e);
+    console.warn("Could not delete a comment attachment:", e);
   }
 }

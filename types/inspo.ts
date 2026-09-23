@@ -1,48 +1,48 @@
 export interface InspoItem {
-  /** id en base de datos (ausente solo en objetos transitorios) */
+  /** database id (missing only on transient objects) */
   id?: string;
-  empresa: string;
+  name: string;
   web: string;
-  /** DD/MM/YYYY (formato histórico del sheet, el cliente lo parsea así) */
-  fecha: string;
-  /** Nombre visible de quien lo puso. "Ambos" es un valor heredado del sheet. */
-  puestoPor: string;
-  tipo: "Inspiración" | "Videos" | "Ideas" | "Documentales";
-  comentarios: string;
-  subcomentarios?: string;
+  /** DD/MM/YYYY (legacy sheet format, the client parses it that way) */
+  date: string;
+  /** Display name of whoever added it. "Both" is a legacy sheet value. */
+  addedBy: string;
+  type: "inspiration" | "videos" | "ideas" | "documentaries";
+  note: string;
+  subNote?: string;
 }
 
-export type FilterTipo = "Todos" | InspoItem["tipo"];
-export type FilterAutor = "Todos" | string;
-export type FilterFecha = "Todos" | "Este mes" | "Este año";
+export type FilterType = "all" | InspoItem["type"];
+export type FilterAuthor = "all" | string;
+export type FilterDate = "all" | "thisMonth" | "thisYear";
 
-// ─── Etiquetas IA (Jev) ───────────────────────────────────────────────────────
+// ─── AI tags (Jev) ────────────────────────────────────────────────────────────
 export interface InspoTags {
-  /** Sector elegido por Jev (clave de SECTORES) */
+  /** Sector picked by Jev (a SECTORS key) */
   sector: string;
   sectorP: number;
-  /** Estilo dominante (clave de ESTILOS) */
-  estilo: string;
-  estiloP: number;
-  /** Probabilidad 0–1 de cada tag booleano (clave de TAGS) */
+  /** Dominant style (a STYLES key) */
+  style: string;
+  styleP: number;
+  /** 0–1 probability of each boolean tag (a TAGS key) */
   tags: Record<string, number>;
-  /** Resumen corto del sitio (título + descripción) para la búsqueda IA */
-  resumen: string;
-  /** Descripción visual de la captura generada por Claude (vacío si no hubo captura) */
+  /** Short site summary (title + description) for AI search */
+  summary: string;
+  /** Visual description of the screenshot by Claude (empty if there was none) */
   visual?: string;
-  /** ISO date de cuándo se etiquetó */
+  /** ISO date of when it was tagged */
   at: string;
-  /** Versión de la taxonomía usada */
+  /** Taxonomy version used */
   v: number;
 }
 
 export type TagMap = Record<string, InspoTags>;
 
-// ─── Comentarios ─────────────────────────────────────────────────────────────
+// ─── Comments ────────────────────────────────────────────────────────────────
 export interface CommentAttachment {
-  /** URL del fichero (Blob privado: pasa por /api/thumbnail/img; local: ruta de /public) */
+  /** File URL (private Blob: goes through /api/thumbnail/img; local: a /public path) */
   url: string;
-  /** Tamaño en píxeles, para reservar el hueco antes de cargar */
+  /** Size in pixels, to reserve the space before loading */
   w: number;
   h: number;
   name?: string;

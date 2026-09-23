@@ -13,10 +13,10 @@ export interface DesignMdEntry {
   markdown: string;
   generatedAt: string;
   model: string;
-  spec?: DesignSpec;          // ausente en entradas antiguas
-  screenshotUrl?: string;     // página entera a 1440px. /design-md/<key>.jpg en local, URL de Blob (privada) en producción
-  coverUrl?: string;          // 720x450, portada del grid
-  scrollUrl?: string;         // 720px de ancho, tira para el hover del grid
+  spec?: DesignSpec;          // missing in old entries
+  screenshotUrl?: string;     // whole page at 1440px. /design-md/<key>.jpg locally, Blob URL (private) in production
+  coverUrl?: string;          // 720x450, grid cover
+  scrollUrl?: string;         // 720px wide, strip for the grid hover
 }
 
 export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer }
@@ -24,10 +24,10 @@ export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer 
 export type DesignMdIndex = Record<string, { generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string }>;
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
-/** Prefijo en Blob de capturas, portadas y specs de DESIGN.md (compartidas entre workspaces) */
+/** Blob prefix for DESIGN.md screenshots, covers and specs (shared across workspaces) */
 export const DESIGN_MD_PREFIX = "inspo/design-md/";
 const PREFIX = DESIGN_MD_PREFIX;
-const INDEX_PREFIX = "inspo/design-md-index"; // fuera de PREFIX para no confundirlo con una entrada
+const INDEX_PREFIX = "inspo/design-md-index"; // outside PREFIX so it isn't mistaken for an entry
 const FS_DIR = path.join(process.cwd(), "public", "design-md");
 const FS_INDEX = path.join(FS_DIR, "_index.json");
 
@@ -94,7 +94,7 @@ async function blobGetIndex(): Promise<DesignMdIndex> {
 }
 
 async function blobSetIndex(index: DesignMdIndex): Promise<void> {
-  // Igual que el mapa de thumbnails: escribir la nueva versión antes de borrar las viejas
+  // Same as the thumbnail map: write the new version before deleting the old ones
   const { blobs: old } = await list({ prefix: INDEX_PREFIX });
   await put(`${INDEX_PREFIX}-${Date.now()}.json`, Buffer.from(JSON.stringify(index)), {
     access: "private",
@@ -122,7 +122,7 @@ async function fsGetIndex(): Promise<DesignMdIndex> {
   try {
     return JSON.parse(await fs.readFile(FS_INDEX, "utf-8"));
   } catch {
-    // Sin índice: reconstruirlo a partir de las entradas que haya en disco
+    // No index: rebuild it from the entries on disk
     const index: DesignMdIndex = {};
     try {
       for (const f of await fs.readdir(FS_DIR)) {
@@ -130,7 +130,7 @@ async function fsGetIndex(): Promise<DesignMdIndex> {
         const e = JSON.parse(await fs.readFile(path.join(FS_DIR, f), "utf-8")) as DesignMdEntry;
         if (e?.url) index[e.url] = { generatedAt: e.generatedAt, model: e.model, coverUrl: e.coverUrl, scrollUrl: e.scrollUrl };
       }
-    } catch { /* carpeta vacía */ }
+    } catch { /* empty folder */ }
     return index;
   }
 }
@@ -162,7 +162,7 @@ export function getDesignMdIndex(): Promise<DesignMdIndex> {
   return USE_BLOB ? blobGetIndex() : fsGetIndex();
 }
 
-/** El índice recortado a las webs de este workspace. */
+/** The index trimmed to this workspace's sites. */
 export async function designMdIndexFor(organizationId: string): Promise<DesignMdIndex> {
   const [index, mine] = await Promise.all([getDesignMdIndex(), webSet(organizationId)]);
   const norm = new Set([...mine].map((w) => normalizeWebUrl(w) ?? w));
@@ -172,7 +172,7 @@ export async function designMdIndexFor(organizationId: string): Promise<DesignMd
 export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages): Promise<DesignMdEntry> {
   const key = keyFor(entry.url);
   if (images) {
-    // Las imágenes viejas del mismo key se sobreescriben en local; en Blob quedan huérfanas hasta que se limpien
+    // Old images with the same key are overwritten locally; in Blob they stay orphaned until cleaned up
     [entry.screenshotUrl, entry.coverUrl, entry.scrollUrl] = await Promise.all([
       saveImage(key, "", images.fullShot),
       saveImage(key, "-cover", images.cover),

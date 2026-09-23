@@ -1,43 +1,39 @@
-// Etiquetas de valores que se guardan en la base de datos en castellano.
+// Labels for codes that are stored in the database.
 //
-// Son códigos que resultan ser palabras castellanas: inspo_item.tipo, el "Ambos"
-// heredado del sheet, las zonas del panel de actividad, las secciones del DESIGN.md.
-// No se traducen en la base de datos (sería una migración con riesgo y sin ganancia:
-// normalizeTipo convierte en "Inspiración" cualquier valor que no reconozca). Se
-// traducen aquí, solo al enseñarlos.
+// Every stored code is English (migrated 2026-09-23); these are the words shown for them.
 export const labels = {
-  /** inspo_item.tipo */
-  tipo: {
-    "Inspiración": "Inspiration",
-    Videos: "Videos",
-    Ideas: "Ideas",
-    Documentales: "Documentaries",
+  /** inspo_item.type */
+  type: {
+    inspiration: "Inspiration",
+    videos: "Videos",
+    ideas: "Ideas",
+    documentaries: "Documentaries",
   },
-  /** Filtro de fecha; el valor del estado sigue siendo la cadena castellana */
-  fecha: {
-    Todos: "All",
-    "Este mes": "This month",
-    "Este año": "This year",
+  /** Date filter */
+  date: {
+    all: "All",
+    thisMonth: "This month",
+    thisYear: "This year",
   },
-  /** "Ambos" es el autor heredado del sheet: no es una persona, es "no se sabe quién" */
-  autor: {
-    Todos: "All",
-    Ambos: "Both",
+  /** "Both" is the author inherited from the sheet: not a person, "we don't know who" */
+  author: {
+    all: "All",
+    Both: "Both",
   },
   /** activity_segment.area */
   area: {
-    biblioteca: "Library",
-    busqueda: "AI search",
+    library: "Library",
+    search: "AI search",
     "design-md": "DESIGN.md",
-    comentarios: "Comments",
-    recursos: "Directory",
-    anadir: "Add inspo",
-    equipo: "Team",
-    planes: "Plans",
-    ajustes: "Settings",
+    comments: "Comments",
+    directory: "Directory",
+    add: "Add inspo",
+    team: "Team",
+    plans: "Plans",
+    settings: "Settings",
     extension: "Browser extension",
     admin: "Activity",
-    invitacion: "Invitation",
+    invitation: "Invitation",
   },
   /** ai_usage.action */
   action: {
@@ -45,7 +41,7 @@ export const labels = {
     vision: "Screenshots described",
     jev_tag: "Inspos tagged",
     jev_search: "AI searches",
-    jev_recursos: "Directory searches",
+    jev_directory: "Directory searches",
     explain: "Search explanations",
     revise: "DESIGN.md revisions",
   },

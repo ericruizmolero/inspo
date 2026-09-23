@@ -1,5 +1,5 @@
-// Revisiones del DESIGN.md por workspace: una persona discrepa de una sección,
-// un modelo corrige la spec estructurada y el cambio queda registrado con autor y resumen.
+// DESIGN.md revisions per workspace: a person disagrees with a section,
+// a model fixes the structured spec and the change is logged with author and summary.
 import "server-only";
 import { z } from "zod";
 import { desc, and, eq } from "drizzle-orm";
@@ -9,24 +9,24 @@ import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/desig
 import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import { llm } from "./llm";
 
-// Revisar es reescribir una spec ya hecha con un cambio acotado: Sonnet lo resuelve bien y en un tercio del tiempo que Opus.
+// Revising is rewriting a finished spec with a bounded change: Sonnet handles it well in a third of Opus's time.
 const MODEL = process.env.DESIGN_REVISE_MODEL || "anthropic/claude-sonnet-5";
 
 export const SECTIONS: Record<string, string> = {
-  general: "Identidad y descripción",
+  general: "Identity and description",
   color: "Color",
-  tipografia: "Tipografía",
-  espaciado: "Espaciado y forma",
-  componentes: "Componentes",
-  reglas: "Reglas",
-  sistema: "Sistema (elevación, layout, imagen, movimiento)",
-  afines: "Marcas afines",
-  prompt: "Prompt para agentes",
+  typography: "Typography",
+  spacing: "Spacing and shape",
+  components: "Components",
+  rules: "Rules",
+  system: "System (elevation, layout, imagery, motion)",
+  related: "Related brands",
+  prompt: "Prompt for agents",
 };
 
 export interface RevisionMeta {
   id: string;
-  kind: "regeneracion" | "revision" | "reversion";
+  kind: "regeneration" | "revision" | "reversion";
   authorName: string;
   section: string | null;
   comment: string;
@@ -48,7 +48,7 @@ export async function listRevisions(organizationId: string, url: string): Promis
   return rows.map(toMeta);
 }
 
-/** Última spec vigente del workspace para esa URL, o null si nunca se ha revisado */
+/** The workspace's current spec for that URL, or null if never revised */
 export async function latestRevision(organizationId: string, url: string): Promise<{ meta: RevisionMeta; spec: DesignSpec } | null> {
   const [row] = await db.select().from(schema.designRevision)
     .where(and(eq(schema.designRevision.organizationId, organizationId), eq(schema.designRevision.url, url)))
@@ -78,7 +78,7 @@ export async function addRevision(input: {
   return toMeta({ ...row });
 }
 
-/** Aplica la spec vigente del workspace (si la hay) sobre la entrada global */
+/** Applies the workspace's current spec (if any) over the global entry */
 export async function overlayRevision<T extends { url: string; spec?: DesignSpec; markdown: string; generatedAt: string }>(
   organizationId: string, entry: T
 ): Promise<T & { revisions: RevisionMeta[] }> {
@@ -90,39 +90,39 @@ export async function overlayRevision<T extends { url: string; spec?: DesignSpec
   return { ...entry, spec: latest.spec, markdown: renderDesignMd(latest.spec, entry.url, date), revisions };
 }
 
-// ─── Modelo ──────────────────────────────────────────────────────────────────
+// ─── Model ───────────────────────────────────────────────────────────────────
 
-// El modelo devuelve solo las claves de primer nivel que cambian (no la spec entera): la salida
-// pasa de ~10k tokens a unos pocos cientos y la revisión tarda segundos en vez de un minuto.
+// The model returns only the top-level keys that change (not the whole spec): output
+// drops from ~10k tokens to a few hundred and the revision takes seconds instead of a minute.
 const ReviseOutput = z.object({
-  changed: z.boolean().describe("true si el comentario pedía un cambio y lo has aplicado; false si no pedía nada concreto (una prueba, una pregunta, un comentario vacío)"),
-  // Un string con JSON y no un objeto: 17 claves opcionales o nulables pasan del límite
-  // de uniones del esquema estricto de Anthropic (16). Lo valida DesignSpecSchema.partial() al volver.
-  patch: z.string().describe("Objeto JSON con solo las claves de primer nivel de la spec que cambian, cada una completa (si cambia un color, el array 'colors' entero). \"{}\" si changed es false."),
-  summary: z.string().describe("2-3 frases: qué has cambiado exactamente y en qué partes de la spec se ha propagado"),
-  warning: z.string().nullable().describe("Si el comentario contradice valores que están claramente medidos o visibles, dilo aquí en una frase. Si no, null."),
+  changed: z.boolean().describe("true if the comment asked for a change and you applied it; false if it asked for nothing concrete (a test, a question, an empty comment)"),
+  // A JSON string instead of an object: 17 optional or nullable keys exceed the union limit
+  // of Anthropic's strict schema (16). DesignSpecSchema.partial() validates it on return.
+  patch: z.string().describe("JSON object with only the top-level spec keys that change, each one complete (if a color changes, the whole 'colors' array). \"{}\" if changed is false."),
+  summary: z.string().describe("2-3 sentences: what exactly you changed and which parts of the spec it propagated to"),
+  warning: z.string().nullable().describe("If the comment contradicts values that are clearly measured or visible, say so here in one sentence. Otherwise, null."),
 });
 
-// El resumen y el aviso se leen en pantalla, así que salen en el idioma de quien
-// mira. La spec en sí no: eso es #27 (el DESIGN.md pasa a generarse siempre en inglés).
+// The summary and warning are read on screen, so they come out in the viewer's
+// language. The spec itself doesn't: that's #27 (the DESIGN.md is always generated in English).
 const LANGUAGE: Record<Locale, string> = {
   en: "Write \"summary\" and \"warning\" in English",
-  es: "Escribe \"summary\" y \"warning\" en castellano (español de España)",
+  es: "Write \"summary\" and \"warning\" in Castilian Spanish (Spanish from Spain)",
 };
 
-const systemFor = (locale: Locale) => `Mantienes el DESIGN.md de una web para un equipo de diseño. Recibes la spec estructurada vigente y un comentario de una persona del equipo que no está de acuerdo con una parte. Tu trabajo es aplicar ese cambio con criterio y devolver la spec completa corregida.
+const systemFor = (locale: Locale) => `You maintain the DESIGN.md of a website for a design team. You receive the current structured spec and a comment from a team member who disagrees with one part. Your job is to apply that change with judgment and return the complete corrected spec.
 
-Reglas:
-- Aplica lo que pide la persona. Es quien conoce la marca; su criterio manda sobre lo generado automáticamente.
-- Propaga el cambio a todo lo que dependa de él: si cambia un color, actualiza su rol, los componentes que lo usan, la descripción, las reglas y el prompt para agentes. La spec debe seguir siendo coherente.
-- No toques nada que el comentario no afecte. Conserva literalmente el resto de textos y valores.
-- Si el comentario contradice algo que está claramente medido o visible en la captura (p. ej. dice que el fondo es blanco y la captura es negra), aplícalo igualmente pero avísalo en "warning".
-- Si el comentario es ambiguo, elige la interpretación más razonable y explícala en "summary".
-- Si el comentario no pide ningún cambio (es una prueba, una pregunta o no dice nada concreto), devuelve "changed": false, "patch" "{}" y explica en "summary" qué te faltaría para poder aplicarlo.
-- "patch" es un string con un objeto JSON. Lleva únicamente las claves de primer nivel que cambian, pero cada una completa: si tocas un color, el array "colors" entero con todos los colores; si tocas una regla, "dos" o "donts" enteros. No incluyas claves que no cambian.
-- El texto de la spec va en inglés (#27), aunque la spec vigente o el comentario estén en castellano.
-- ${LANGUAGE[locale]}: esos dos los lee la persona en pantalla.
-- Respeta las restricciones del esquema: entre 4 y 12 colores, 6-9 pasos de escala, 5-7 reglas de cada tipo.`;
+Rules:
+- Apply what the person asks for. They know the brand; their judgment overrides what was generated automatically.
+- Propagate the change to everything that depends on it: if a color changes, update its role, the components that use it, the description, the rules and the prompt for agents. The spec must stay coherent.
+- Don't touch anything the comment doesn't affect. Keep the rest of the texts and values verbatim.
+- If the comment contradicts something clearly measured or visible in the screenshot (e.g. it says the background is white and the screenshot is black), apply it anyway but flag it in "warning".
+- If the comment is ambiguous, pick the most reasonable interpretation and explain it in "summary".
+- If the comment asks for no change (it's a test, a question or says nothing concrete), return "changed": false, "patch" "{}" and explain in "summary" what you'd need to be able to apply it.
+- "patch" is a string with a JSON object. It carries only the top-level keys that change, but each one complete: if you touch a color, the whole "colors" array with all colors; if you touch a rule, the whole "dos" or "donts". Don't include keys that don't change.
+- The spec text is in English (#27), even if the current spec or the comment is in Spanish.
+- ${LANGUAGE[locale]}: the person reads those two on screen.
+- Respect the schema constraints: between 4 and 12 colors, 6-9 scale steps, 5-7 rules of each kind.`;
 
 export async function reviseDesignSpec(input: {
   spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null; locale?: Locale;
@@ -131,7 +131,7 @@ export async function reviseDesignSpec(input: {
     model: MODEL,
     system: systemFor(input.locale ?? DEFAULT_LOCALE),
     image: input.screenshot,
-    text: `URL: ${input.url}\nSección a la que se refiere el comentario: ${SECTIONS[input.section] ?? input.section}\n\nComentario de la persona:\n"""\n${input.comment}\n"""\n\nSpec vigente (JSON):\n${JSON.stringify(input.spec)}`,
+    text: `URL: ${input.url}\nSection the comment refers to: ${SECTIONS[input.section] ?? input.section}\n\nThe person's comment:\n"""\n${input.comment}\n"""\n\nCurrent spec (JSON):\n${JSON.stringify(input.spec)}`,
     schema: ReviseOutput,
     maxTokens: 16000,
   });

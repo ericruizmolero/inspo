@@ -14,14 +14,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.settings.sections.members };
 }
 
-// ?nuevo=1 opens the Create team dialog (old /equipo?nuevo=1 links redirect here with the query)
-export default async function MembersPage({ searchParams }: { searchParams: Promise<{ nuevo?: string }> }) {
-  const { nuevo } = await searchParams;
+// ?create=1 opens the Create team dialog
+export default async function MembersPage({ searchParams }: { searchParams: Promise<{ create?: string }> }) {
+  const { create } = await searchParams;
   const [ctx, { t }] = await Promise.all([getCtxOrLogin("/settings/members"), getT()]);
   const ws = ctx.workspace;
   const [members, invitations, over] = await Promise.all([
     listMembers(ws.id),
-    // Las caducadas no se enseñan ni ocupan plaza
+    // Expired ones are not shown and do not take a seat
     db.select({ id: schema.invitation.id, email: schema.invitation.email, role: schema.invitation.role, expiresAt: schema.invitation.expiresAt })
       .from(schema.invitation)
       .where(and(eq(schema.invitation.organizationId, ws.id), eq(schema.invitation.status, "pending"), gt(schema.invitation.expiresAt, new Date()))),
@@ -30,7 +30,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <ActivityPing area="equipo" organizationId={ws.id} />
+      <ActivityPing area="team" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.members} lead={ws.kind === "personal" ? t.settings.leads.personal : t.settings.leads.members(ws.name)} />
       <MembersPanel
         workspace={ws}
@@ -40,7 +40,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         invitations={invitations.map((i) => ({ ...i, expiresAt: i.expiresAt.toISOString() }))}
         seatLimit={planOf(ws.plan).members}
         overCapacity={over}
-        startCreating={nuevo === "1"}
+        startCreating={create === "1"}
       />
     </>
   );

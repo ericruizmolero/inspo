@@ -15,7 +15,7 @@ export default async function WorkspacePage() {
   const ws = ctx.workspace;
   return (
     <>
-      <ActivityPing area="ajustes" organizationId={ws.id} />
+      <ActivityPing area="settings" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.workspace} lead={ws.kind === "personal" ? t.settings.leads.personal : t.settings.leads.workspace(ws.name)} />
       <WorkspacePanel workspace={ws} canManage={canManage(ws.role)} />
     </>

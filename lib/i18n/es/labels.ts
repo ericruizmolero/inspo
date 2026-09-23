@@ -1,41 +1,41 @@
 import type { labels as EnLabels } from "../en/labels";
 
 export const labels: typeof EnLabels = {
-  tipo: {
-    "Inspiración": "Inspiración",
-    Videos: "Vídeos",
-    Ideas: "Ideas",
-    Documentales: "Documentales",
+  type: {
+    inspiration: "Inspiración",
+    videos: "Vídeos",
+    ideas: "Ideas",
+    documentaries: "Documentales",
   },
-  fecha: {
-    Todos: "Todos",
-    "Este mes": "Este mes",
-    "Este año": "Este año",
+  date: {
+    all: "Todos",
+    thisMonth: "Este mes",
+    thisYear: "Este año",
   },
-  autor: {
-    Todos: "Todos",
-    Ambos: "Ambos",
+  author: {
+    all: "Todos",
+    Both: "Ambos",
   },
   area: {
-    biblioteca: "Biblioteca",
-    busqueda: "Búsqueda IA",
+    library: "Biblioteca",
+    search: "Búsqueda IA",
     "design-md": "DESIGN.md",
-    comentarios: "Comentarios",
-    recursos: "Recursos",
-    anadir: "Añadir inspo",
-    equipo: "Equipo",
-    planes: "Planes",
-    ajustes: "Ajustes",
+    comments: "Comentarios",
+    directory: "Recursos",
+    add: "Añadir inspo",
+    team: "Equipo",
+    plans: "Planes",
+    settings: "Ajustes",
     extension: "Extensión",
     admin: "Actividad",
-    invitacion: "Invitación",
+    invitation: "Invitación",
   },
   action: {
     design_md: "DESIGN.md generados",
     vision: "Capturas descritas",
     jev_tag: "Inspos etiquetados",
     jev_search: "Búsquedas IA",
-    jev_recursos: "Búsquedas en el directorio",
+    jev_directory: "Búsquedas en el directorio",
     explain: "Explicaciones de búsqueda",
     revise: "Revisiones de DESIGN.md",
   },

@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { InspoItem } from "@/types/inspo";
-import { normalizeWebUrl, tipoFromUrl } from "@/lib/url";
+import { normalizeWebUrl, typeFromUrl } from "@/lib/url";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
@@ -11,38 +11,38 @@ import { Input } from "@/components/ui/input";
 
 export interface NewInspoInput {
   web: string;
-  tipo: InspoItem["tipo"];
-  comentarios: string;
+  type: InspoItem["type"];
+  note: string;
 }
 
 interface AddInspoModalProps {
   onClose: () => void;
-  /** Se llama con la URL ya normalizada; el alta y la tarjeta las gestiona quien abre el modal. */
+  /** Called with the URL already normalized; whoever opens the modal handles saving and the card. */
   onSubmit: (input: NewInspoInput) => void;
-  /** ¿Esa URL ya está guardada? Evita ir al servidor para decir lo mismo. */
+  /** Is that URL already saved? Saves a trip to the server to hear the same thing. */
   isDuplicate?: (web: string) => boolean;
 }
 
-const TIPOS = ["Inspiración", "Videos", "Ideas", "Documentales"] as const;
+const TYPES = ["inspiration", "videos", "ideas", "documentaries"] as const;
 
-/** Solo hace falta la URL: nombre, captura, etiquetas y colección se deducen. */
+/** Only the URL is needed: name, screenshot, tags and collection are inferred. */
 export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddInspoModalProps) {
   const { t } = useT();
   const [raw, setRaw] = useState("");
-  const [comentarios, setComentarios] = useState("");
-  const [tipo, setTipo] = useState<InspoItem["tipo"] | null>(null); // null = la que sugiera la URL
+  const [note, setNote] = useState("");
+  const [type, setType] = useState<InspoItem["type"] | null>(null); // null = whatever the URL suggests
   const [error, setError] = useState("");
   const urlRef = useRef<HTMLInputElement>(null);
 
   const web = normalizeWebUrl(raw);
-  const suggested = web ? tipoFromUrl(web) : "Inspiración";
-  const tipoFinal = tipo ?? suggested;
+  const suggested = web ? typeFromUrl(web) : "inspiration";
+  const finalType = type ?? suggested;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!web) { setError(t.add.notUrl); return; }
     if (isDuplicate?.(web)) { setError(t.add.alreadyInLibrary); return; }
-    onSubmit({ web, tipo: tipoFinal, comentarios: comentarios.trim() });
+    onSubmit({ web, type: finalType, note: note.trim() });
     onClose();
   };
 
@@ -73,23 +73,23 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddIns
           <div className="field">
             <Input
               
-              value={comentarios}
-              onChange={(e) => setComentarios(e.target.value)}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
               placeholder={t.add.whatYouLiked}
             />
           </div>
 
           <div className="pills" role="radiogroup" aria-label={t.add.collection}>
-            {TIPOS.map((v) => (
+            {TYPES.map((v) => (
               <button
                 key={v}
                 type="button"
                 role="radio"
-                aria-checked={tipoFinal === v}
-                className={`pill${tipoFinal === v ? " is-on" : ""}`}
-                onClick={() => setTipo(v)}
+                aria-checked={finalType === v}
+                className={`pill${finalType === v ? " is-on" : ""}`}
+                onClick={() => setType(v)}
               >
-                {t.labels.tipo[v]}
+                {t.labels.type[v]}
               </button>
             ))}
           </div>

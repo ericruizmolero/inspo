@@ -2,21 +2,22 @@
 
 import { addInspo, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
-import { InspoItem, FilterTipo, FilterAutor, FilterFecha, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
+import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
-import Sidebar, { SearchBox, Icons, TaggingState, type QuotaView } from "./Sidebar";
+import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView } from "./Sidebar";
+import FilterBar from "./FilterBar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
-import { webKeyOf, nameFromHost, tipoFromUrl } from "@/lib/url";
+import { webKeyOf, nameFromHost, typeFromUrl } from "@/lib/url";
 import DesignMdModal from "./DesignMdModal";
-import RecursosModal from "./RecursosModal";
+import DirectoryModal from "./DirectoryModal";
 import EmptyStart from "./EmptyStart";
 import CommentsPanel from "./CommentsPanel";
 import { proxiedSrc } from "@/lib/proxied-src";
@@ -57,7 +58,7 @@ async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<
   });
 }
 
-function parseFecha(s: string): number {
+function parseDate(s: string): number {
   if (!s) return 0;
   const parts = s.split("/");
   if (parts.length === 3) {
@@ -73,13 +74,13 @@ function normalize(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 }
 
-// Al guardar una web nueva se lanza la experiencia completa (captura, etiquetas y
-// DESIGN.md). Vídeos y redes no tienen sistema de diseño que extraer.
+// Saving a new site kicks off the full experience (screenshot, tags and
+// DESIGN.md). Videos and social posts have no design system to extract.
 const NO_DESIGN_MD = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "tiktok.com", "primevideo.com", "netflix.com"];
 interface RunDesignMdOpts {
-  force?: boolean;         // regenerar aunque exista (cuesta dinero, solo admins)
-  quiet?: boolean;         // se espera caché: el toast solo sale si tarda
-  openWhenReady?: boolean; // abrir la ficha sola al terminar
+  force?: boolean;         // regenerate even if it exists (costs money, admins only)
+  quiet?: boolean;         // cache expected: the toast only shows if it takes a while
+  openWhenReady?: boolean; // open the sheet on its own when done
 }
 
 function canAutoDesignMd(web: string): boolean {
@@ -92,13 +93,13 @@ function canAutoDesignMd(web: string): boolean {
 const SIDEBAR_W = 256;
 const DESKTOP_MIN = 801;
 const RATIOS_KEY = "inspo:card-ratios";
-// Alto/ancho de una tarjeta antes de medirla (el placeholder es 4:3) y hueco entre tarjetas.
+// Card height/width before measuring (the placeholder is 4:3) and gap between cards.
 const DEFAULT_RATIO = 0.75;
 const GAP_RATIO = 0.06;
 
-// Columnas según el ancho útil del contenido (ventana menos sidebar en escritorio).
-// Se calcula de forma síncrona para que plegar el sidebar y recolocar las tarjetas
-// ocurra en el mismo render y GSAP Flip pueda animarlo de una vez.
+// Columns from the usable content width (window minus sidebar on desktop).
+// Computed synchronously so collapsing the sidebar and reflowing the cards
+// happen in the same render and GSAP Flip can animate it in one go.
 function useColumnCount(collapsed: boolean) {
   const [winW, setWinW] = useState(0);
   useEffect(() => {
@@ -120,8 +121,8 @@ function useColumnCount(collapsed: boolean) {
 }
 
 
-// Jev puntúa de forma conservadora: mostramos lo que supera 0.4 y, si son pocos,
-// al menos los 8 mejores mientras pasen de 0.3.
+// Jev scores conservatively: we show what scores above 0.4 and, if that's few,
+// at least the top 8 as long as they're above 0.3.
 function aiCutoff(scores: Record<string, number>) {
   const sorted = Object.values(scores).sort((a, b) => b - a);
   return Math.max(0.3, Math.min(0.4, sorted[7] ?? 0));
@@ -153,25 +154,45 @@ export default function InspoClient({
   workspace: Workspace;
   workspaces: Workspace[];
   members?: { name: string; image: string | null }[];
-  /** Puede ver el panel de actividad (/admin) */
+  /** Can see the activity panel (/admin) */
   isAdmin?: boolean;
   /** Saved sidebar state, read from the sidebar_state cookie on the server */
   initialSidebarOpen?: boolean;
 }) {
   const { t } = useT();
   const [items, setItems] = useState(initialItems);
-  const [tipo, setTipo] = useState<FilterTipo>("Todos");
-  const [autor, setAutor] = useState<FilterAutor>("Todos");
-  const [fecha, setFecha] = useState<FilterFecha>("Todos");
-  const [query, setQuery] = useState("");
+  // Filters live in the URL (?tipo=&autor=&fecha=&sector=&estilo=&tags=a,b&q=): a filtered view can be
+  // shared and Back undoes a filter. history.pushState/replaceState sync with useSearchParams without a navigation.
+  const sp = useSearchParams();
+  const typeParam = sp.get("type") as FilterType | null;
+  const type: FilterType = typeParam && TYPES.includes(typeParam as InspoItem["type"]) ? typeParam : "all";
+  const dateParam = sp.get("date") as FilterDate | null;
+  const date: FilterDate = dateParam && DATES.includes(dateParam as (typeof DATES)[number]) ? dateParam : "all";
+  const author: FilterAuthor = sp.get("author") || "all";
+  const sector = sp.get("sector") || "all";
+  const style = sp.get("style") || "all";
+  // The search box keeps its own state (a controlled input can't wait for the router) and copies itself into ?q=
+  const [query, setQueryState] = useState(() => sp.get("q") ?? "");
+  const tagsParam = sp.get("tags") ?? "";
+  const selTags = useMemo(() => tagsParam.split(",").filter(Boolean), [tagsParam]);
+  // "all" and "" drop the key. Typing replaces the entry; every other change adds one, so Back undoes it.
+  const setParams = useCallback((patch: Record<string, string>, replace = false) => {
+    const p = new URLSearchParams(window.location.search);
+    for (const [k, v] of Object.entries(patch)) { if (v && v !== "all") p.set(k, v); else p.delete(k); }
+    const url = window.location.pathname + (p.size ? `?${p}` : "");
+    if (replace) window.history.replaceState(null, "", url); else window.history.pushState(null, "", url);
+  }, []);
+  const setType = useCallback((v: FilterType) => setParams({ type: v }), [setParams]);
+  const setAuthor = useCallback((v: FilterAuthor) => setParams({ author: v }), [setParams]);
+  const setDate = useCallback((v: FilterDate) => setParams({ date: v }), [setParams]);
+  const setSector = useCallback((v: string) => setParams({ sector: v }), [setParams]);
+  const setStyle = useCallback((v: string) => setParams({ style: v }), [setParams]);
+  const setQuery = useCallback((v: string) => { setQueryState(v); setParams({ q: v }, true); }, [setParams]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
 
-  // ─── IA: etiquetas y búsqueda ───────────────────────────────────────────────
+  // ─── AI: tags and search ────────────────────────────────────────────────────
   const [tagMap, setTagMap] = useState<TagMap>(initialTagMap);
-  const [sector, setSector] = useState("Todos");
-  const [estilo, setEstilo] = useState("Todos");
-  const [selTags, setSelTags] = useState<string[]>([]);
-  // Sin modo "normal": si Jev está configurado, la búsqueda es siempre IA
+  // No "normal" mode: if Jev is configured, search is always AI
   const ai = aiEnabled;
   const [aiScores, setAiScores] = useState<Record<string, number> | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -185,10 +206,10 @@ export default function InspoClient({
   );
 
   const toggleTag = useCallback((k: string) => {
-    setSelTags((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]));
-  }, []);
+    setParams({ tags: (selTags.includes(k) ? selTags.filter((x) => x !== k) : [...selTags, k]).join(",") });
+  }, [selTags, setParams]);
 
-  // Búsqueda IA: debounce y llamada a /api/search
+  // AI search: debounce and call /api/search
   const aiQuery = ai ? query.trim() : "";
   useEffect(() => {
     if (!aiEnabled || aiQuery.length < 3) { setAiScores(null); setAiLoading(false); setAiError(""); return; }
@@ -214,7 +235,7 @@ export default function InspoClient({
     return () => { clearTimeout(id); ctrl.abort(); };
   }, [aiQuery, aiEnabled]);
 
-  // Porqué de cada resultado: Claude redacta una frase por item visible (tras tener las puntuaciones)
+  // Why each result: Claude writes one sentence per visible item (once scores are in)
   useEffect(() => {
     if (!aiScores || !aiQuery) { setAiReasons(null); return; }
     const cutoff = aiCutoff(aiScores);
@@ -234,7 +255,7 @@ export default function InspoClient({
     return () => ctrl.abort();
   }, [aiScores, aiQuery]);
 
-  // Etiqueta un item recién añadido (sin PIN; el servidor comprueba que esté en el sheet)
+  // Tags a newly added item (no PIN; the server checks it is in the sheet)
   const tagOne = useCallback(async (web: string) => {
     if (!aiEnabled) return;
     try {
@@ -244,10 +265,10 @@ export default function InspoClient({
       if (!res.ok) return;
       const { tags } = (await res.json()) as { tags: InspoTags };
       setTagMap((prev) => ({ ...prev, [web]: tags }));
-    } catch { /* se quedará como pendiente */ }
+    } catch { /* stays pending */ }
   }, [aiEnabled]);
 
-  // Etiquetado en lote de los pendientes (solo administradores del workspace), en tandas hasta acabar
+  // Batch tagging of pending items (workspace admins only), in rounds until done
   const tagAll = async () => {
     const total = pending;
     setTagging({ running: true, done: 0, total });
@@ -277,18 +298,18 @@ export default function InspoClient({
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-      if (document.querySelector(".modal-backdrop, .dm, .cp")) return; // algo abierto encima
+      if (document.querySelector(".modal-backdrop, .dm, .cp")) return; // something open on top
       e.preventDefault();
       setShowAdd(true);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
-  const [showRecursos, setShowRecursos] = useState(false);
+  const [showDirectory, setShowDirectory] = useState(false);
 
-  // ─── Alta solo con URL ───────────────────────────────────────────────────────
-  // La tarjeta aparece al instante con el dominio; el servidor saca el nombre real
-  // de la propia web y la reemplaza. Si falla, se retira y se avisa arriba.
+  // ─── Add by URL only ─────────────────────────────────────────────────────────
+  // The card appears instantly with the domain; the server gets the real name
+  // from the site itself and replaces it. If it fails, it's removed with a notice up top.
   const [addError, setAddError] = useState<{ title: string; detail: string } | null>(null);
   useEffect(() => {
     if (!addError) return;
@@ -303,17 +324,17 @@ export default function InspoClient({
   const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
     const d = new Date();
     const temp: InspoItem = {
-      empresa: nameFromHost(input.web), web: input.web, tipo: input.tipo, comentarios: input.comentarios,
-      fecha: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
-      puestoPor: user.name || user.email,
+      name: nameFromHost(input.web), web: input.web, type: input.type, note: input.note,
+      date: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
+      addedBy: user.name || user.email,
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const r = await addInspo({ web: input.web, tipo: input.tipo, comentarios: input.comentarios });
+      const r = await addInspo({ web: input.web, type: input.type, note: input.note });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
-      // Experiencia completa desde el primer momento: etiquetas y DESIGN.md sin pedirlos
+      // Full experience from the start: tags and DESIGN.md without asking
       tagOne(item.web);
       if (canAutoDesignMd(item.web)) runDesignMdRef.current(item);
       return item;
@@ -324,41 +345,41 @@ export default function InspoClient({
     }
   }, [user, tagOne]);
 
-  // Un invitado que pegó una URL en el lienzo de inicio vuelve del login con ?add=<url>:
-  // se guarda sola y se abre su DESIGN.md, como si la hubiera pegado ya dentro.
-  // El parámetro se quita con el router de Next, no con history.replaceState: el router
-  // guarda su propia URL y, al cambiar de workspace (router.refresh + remontaje), la
-  // restauraba con el ?add= y la web se daba de alta también en el segundo workspace.
-  // Por si acaso, la URL ya tratada se apunta en sessionStorage y no se repite en la pestaña.
-  // Y si vuelve con ?recursos=1 (pulsó "entrar" desde el directorio de invitado), se abre el directorio.
+  // A guest who pasted a URL on the start canvas comes back from login with ?add=<url>:
+  // it saves itself and its DESIGN.md opens, as if pasted from inside.
+  // The param is removed with the Next router, not history.replaceState: the router
+  // keeps its own URL and, on a workspace switch (router.refresh + remount), it
+  // restored it with ?add= and the site got added to the second workspace too.
+  // Just in case, the handled URL is noted in sessionStorage and not repeated in the tab.
+  // And if it comes back with ?directory=1 (pressed "sign in" from the guest directory), the directory opens.
   const router = useRouter();
   const autoAdded = useRef(false);
   useEffect(() => {
     if (autoAdded.current) return;
     const params = new URLSearchParams(window.location.search);
     const web = params.get("add");
-    const wantsRecursos = params.has("recursos");
-    if (!web && !wantsRecursos) return;
+    const wantsDirectory = params.has("directory");
+    if (!web && !wantsDirectory) return;
     autoAdded.current = true;
     params.delete("add");
-    params.delete("recursos");
+    params.delete("directory");
     router.replace(window.location.pathname + (params.size ? `?${params}` : ""), { scroll: false });
-    if (wantsRecursos) setShowRecursos(true);
+    if (wantsDirectory) setShowDirectory(true);
     if (!web) return;
     const DONE_KEY = "inspo:auto-added";
     let done = "";
-    try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* sin storage */ }
+    try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* no storage */ }
     if (done === web || !/^https?:\/\//.test(web) || isDuplicate(web)) return;
-    try { sessionStorage.setItem(DONE_KEY, web); } catch { /* sin storage */ }
-    addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" }).then((item) => {
+    try { sessionStorage.setItem(DONE_KEY, web); } catch { /* no storage */ }
+    addByUrl({ web, type: typeFromUrl(web), note: "" }).then((item) => {
       if (item) runDesignMdRef.current(item, { openWhenReady: true });
     });
-    // solo al montar: la URL de la barra no cambia después
+    // mount only: the address bar URL doesn't change later
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Quitar tarjeta ──────────────────────────────────────────────────────────
-  // Se retira al instante; si el servidor falla, vuelve a su sitio y se avisa.
+  // ─── Remove card ─────────────────────────────────────────────────────────────
+  // Removed instantly; if the server fails, it goes back in place with a notice.
   const deleteItem = useCallback(async (item: InspoItem) => {
     if (!item.id) return;
     setItems((prev) => prev.filter((i) => i.id !== item.id));
@@ -372,23 +393,23 @@ export default function InspoClient({
     }
   }, []);
 
-  // ─── Plan y cuotas ─────────────────────────────────────────────────────────
-  // Llega del servidor con la página; se relee tras gastar cuota (un DESIGN.md nuevo)
+  // ─── Plan and quotas ───────────────────────────────────────────────────────
+  // Arrives from the server with the page; re-read after spending quota (a new DESIGN.md)
   const [quota, setQuota] = useState<QuotaView | null>(initialQuota);
   const loadQuota = useCallback(() => {
     fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
   }, []);
 
-  // ─── Comentarios ───────────────────────────────────────────────────────────
+  // ─── Comments ──────────────────────────────────────────────────────────────
   const [commentMap, setCommentMap] = useState<CommentMap>(initialComments);
   const [commentsItemId, setCommentsItemId] = useState<string | null>(null);
   const loadComments = useCallback(async () => {
     try {
       const res = await fetch("/api/comments");
       if (res.ok) setCommentMap(await res.json());
-    } catch { /* sin red: se reintenta en el siguiente ciclo */ }
+    } catch { /* offline: retried on the next cycle */ }
   }, []);
-  // Con el hilo a la vista (cajón o columna de la ficha), refrescar cada 20 s para ver lo que escriban los demás
+  // With the thread in view (drawer or sheet column), refresh every 20 s to see what others write
   const [designMdItem, setDesignMdItem] = useState<InspoItem | null>(null);
   useEffect(() => {
     if (!commentsItemId && !designMdItem) return;
@@ -406,10 +427,10 @@ export default function InspoClient({
     if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
   };
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
-  // Índice de DESIGN.md ya generados: servidor + los que terminen en esta sesión
+  // Index of DESIGN.md already generated: server + those finished this session
   const [designMdIndex, setDesignMdIndex] = useState(initialDesignMdIndex);
 
-  // Cualquier miembro del workspace puede tocar miniaturas; el servidor comprueba la sesión.
+  // Any workspace member can change thumbnails; the server checks the session.
   const handleThumbnailUpload = async (webUrl: string, file: File) => {
     const compressed = await compressImage(file);
     const fd = new FormData();
@@ -429,24 +450,24 @@ export default function InspoClient({
 
 
   // ─── DESIGN.md ────────────────────────────────────────────────────────────
-  // La generación vive aquí, no en el modal. La ficha solo se abre cuando el
-  // DESIGN.md existe; mientras se genera, todo pasa en el toast de abajo a la
-  // derecha (progreso, Parar, Listo). No hay pantalla intermedia de carga.
+  // Generation lives here, not in the modal. The sheet only opens once the
+  // DESIGN.md exists; while generating, everything happens in the bottom-right
+  // toast (progress, Stop, Done). There is no loading screen in between.
   const patchJob = (url: string, patch: Partial<DesignMdState>) =>
     setDesignMdJobs((prev) => ({ ...prev, [url]: { ...prev[url], ...patch } }));
   const dropJob = (url: string) =>
     setDesignMdJobs((prev) => { const next = { ...prev }; delete next[url]; return next; });
 
-  // Una petición en vuelo por URL: parar = abortar el fetch (el servidor cierra Chromium
-  // y corta a Claude al perder al último cliente) y avisar también con DELETE por si acaso.
-  // La ficha lleva el hilo en columna: al abrirla se cierra el cajón de comentarios si estaba abierto
+  // One in-flight request per URL: stop = abort the fetch (the server closes Chromium
+  // and cuts Claude off when the last client leaves) and also send DELETE just in case.
+  // The sheet carries the thread in a column: opening it closes the comments drawer if open
   // Each open DESIGN.md has its own URL (/i/<id>): it can be shared, and Back closes it.
   // The URL changes with history.pushState, which Next syncs with usePathname without a navigation.
   const pushedRef = useRef(false);
   const showDesignMd = (item: InspoItem) => {
     setDesignMdItem(item); setCommentsItemId(null);
     if (item.id && window.location.pathname !== `/i/${item.id}`) {
-      window.history.pushState(null, "", `/i/${item.id}`);
+      window.history.pushState(null, "", `/i/${item.id}${window.location.search}`);
       pushedRef.current = true;
     }
   };
@@ -454,7 +475,7 @@ export default function InspoClient({
     if (!window.location.pathname.startsWith("/i/")) { setDesignMdItem(null); return; }
     // Opened here: step back, so Back and close do the same. Opened from a shared link: go to the library.
     if (pushedRef.current) { window.history.back(); return; }
-    window.history.replaceState(null, "", "/");
+    window.history.replaceState(null, "", `/${window.location.search}`);
     setDesignMdItem(null);
   };
   const designMdCtrls = useRef(new Map<string, AbortController>());
@@ -467,7 +488,7 @@ export default function InspoClient({
     designMdCtrls.current.set(url, ctrl);
     setDesignMdJobs((prev) => ({
       ...prev,
-      [url]: { status: "loading", empresa: item.empresa, startedAt: Date.now(), seen: false, quiet: opts.quiet, openWhenReady: opts.openWhenReady },
+      [url]: { status: "loading", name: item.name, startedAt: Date.now(), seen: false, quiet: opts.quiet, openWhenReady: opts.openWhenReady },
     }));
     try {
       const res = await fetch(`/api/design-md?url=${encodeURIComponent(url)}${opts.force ? "&force=1" : ""}`, { signal: ctrl.signal });
@@ -477,11 +498,11 @@ export default function InspoClient({
       patchJob(url, { status: "ready", entry: body, error: undefined });
       setDesignMdIndex((prev) => ({ ...prev, [url]: { coverUrl: body.coverUrl, scrollUrl: body.scrollUrl } }));
       if (!body.cached) loadQuota();
-      // Abrir sola solo si no hay otra ficha delante; si la hay, queda el toast "Listo"
+      // Open on its own only if no other sheet is in front; if there is, the "Done" toast stays
       if (opts.openWhenReady && !designMdItemRef.current) showDesignMd(item);
       return true;
     } catch (e) {
-      if (ctrl.signal.aborted) return false; // parada por el usuario: el job ya se ha retirado
+      if (ctrl.signal.aborted) return false; // stopped by the user: the job is already gone
       patchJob(url, { status: "error", error: e instanceof Error ? e.message : String(e) });
       return false;
     } finally {
@@ -498,14 +519,14 @@ export default function InspoClient({
     fetch(`/api/design-md?url=${encodeURIComponent(url)}`, { method: "DELETE", keepalive: true }).catch(() => {});
   };
 
-  // Solo se abre la ficha si el DESIGN.md existe (en sesión o en el servidor).
-  // Si hay que generarlo, se lanza en segundo plano y el toast de abajo a la derecha informa.
+  // The sheet only opens if the DESIGN.md exists (in session or on the server).
+  // If it needs generating, it runs in the background and the bottom-right toast reports.
   const openDesignMd = (item: InspoItem) => {
     const job = designMdJobs[item.web];
     if (job?.status === "ready") { showDesignMd(item); return; }
-    if (job?.status === "loading") return; // ya está en marcha, el toast lo muestra
+    if (job?.status === "loading") return; // already running, the toast shows it
     if (item.web in designMdIndex) {
-      // Existe en el servidor: se trae de caché (casi inmediato) y se abre al llegar
+      // Exists on the server: fetched from cache (near instant) and opened on arrival
       runDesignMd(item, { quiet: true, openWhenReady: true });
       return;
     }
@@ -521,8 +542,8 @@ export default function InspoClient({
     if (item) runDesignMd(item, { openWhenReady: true });
   };
 
-  // Regenerar cuesta dinero: el servidor solo lo permite a administradores del workspace.
-  // Se cierra la ficha y el toast lleva el proceso; al acabar, la ficha nueva se abre sola.
+  // Regenerating costs money: the server only allows it for workspace admins.
+  // The sheet closes and the toast carries the process; when done, the new sheet opens on its own.
   const regenerateDesignMd = (item: InspoItem) => {
     closeDesignMd();
     runDesignMd(item, { force: true, openWhenReady: true });
@@ -560,7 +581,7 @@ export default function InspoClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
   }, [pathname]);
 
-  // Lo que se muestra en el modal cuenta como visto
+  // Whatever shows in the modal counts as seen
   useEffect(() => {
     const url = designMdItem?.web;
     if (!url) return;
@@ -568,31 +589,28 @@ export default function InspoClient({
     if (job && job.status !== "loading" && !job.seen) patchJob(url, { seen: true });
   }, [designMdItem, designMdJobs]);
 
-  // "Quién": solo miembros del workspace con algo subido. Las etiquetas heredadas de la hoja
-  // ("Ambos" = sin autor conocido) no se ofrecen como filtro; esas webs siguen en "Todos".
+  // "Who": only workspace members who added something. Legacy sheet labels
+  // ("Both" = no known author) aren't offered as a filter; those sites stay under "all".
   const memberNames = useMemo(() => members.map((m) => m.name), [members]);
-  const autorImages = useMemo(() => Object.fromEntries(members.filter((m) => m.image).map((m) => [m.name, m.image!])), [members]);
-  const autores = useMemo(() => {
-    const used = new Set(items.map((i) => i.puestoPor).filter(Boolean));
+  const authorImages = useMemo(() => Object.fromEntries(members.filter((m) => m.image).map((m) => [m.name, m.image!])), [members]);
+  const authors = useMemo(() => {
+    const used = new Set(items.map((i) => i.addedBy).filter(Boolean));
     return memberNames.filter((n) => used.has(n));
   }, [items, memberNames]);
 
   const resetFilters = useCallback(() => {
-    setTipo("Todos"); setAutor("Todos"); setFecha("Todos"); setQuery("");
-    setSector("Todos"); setEstilo("Todos"); setSelTags([]);
-  }, []);
+    setQueryState("");
+    setParams({ type: "", author: "", date: "", q: "", sector: "", style: "", tags: "" });
+  }, [setParams]);
 
-  const activeFilterCount = (tipo !== "Todos" ? 1 : 0) + (autor !== "Todos" ? 1 : 0) + (fecha !== "Todos" ? 1 : 0)
-    + (sector !== "Todos" ? 1 : 0) + (estilo !== "Todos" ? 1 : 0) + selTags.length;
-
-  // Sidebar plegable (solo escritorio). SidebarProvider saves it in a cookie that the server reads
+  // Collapsible sidebar (desktop only). SidebarProvider saves it in a cookie that the server reads
   const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
   // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B); the cards follow with GSAP Flip
   // while the sidebar slides with a CSS transition of the same length and curve
   const setSidebarOpen = (open: boolean) => {
     if (open === !collapsed) return;
     gsap.registerPlugin(Flip);
-    // Tarjetas de la rejilla y bloques de la pantalla vacía (data-flip) se mueven al unísono
+    // Grid cards and empty-screen blocks (data-flip) move in unison
     const targets = [".card-item", "[data-flip]"];
     const state = Flip.getState(targets);
     const next = !open;
@@ -608,9 +626,9 @@ export default function InspoClient({
   };
 
   const numCols = useColumnCount(collapsed);
-  // On a phone the same trigger opens the filters sheet, so it says so
+  // On a phone the same trigger opens the menu sheet, so it says so
   const isMobile = useIsMobile();
-  const triggerLabel = isMobile ? t.app.filters : collapsed ? t.app.showSidebar : t.app.hideSidebar;
+  const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
 
@@ -625,41 +643,41 @@ export default function InspoClient({
     return [...items]
       .sort((a, b) => useAi
         ? (aiScores![b.web] ?? 0) - (aiScores![a.web] ?? 0)
-        : parseFecha(b.fecha) - parseFecha(a.fecha))
+        : parseDate(b.date) - parseDate(a.date))
       .filter((item) => {
         const t = tagMap[item.web];
-        if (sector !== "Todos" && t?.sector !== sector) return false;
-        if (estilo !== "Todos" && t?.estilo !== estilo) return false;
+        if (sector !== "all" && t?.sector !== sector) return false;
+        if (style !== "all" && t?.style !== style) return false;
         if (selTags.length && !selTags.every((k) => (t?.tags[k] ?? 0) >= TAG_THRESHOLD)) return false;
         if (useAi) {
           if ((aiScores![item.web] ?? 0) < cutoff) return false;
         }
-        if (tipo !== "Todos" && item.tipo !== tipo) return false;
-        if (autor !== "Todos" && item.puestoPor !== autor) return false;
-        if (fecha !== "Todos") {
-          const ts = parseFecha(item.fecha);
+        if (type !== "all" && item.type !== type) return false;
+        if (author !== "all" && item.addedBy !== author) return false;
+        if (date !== "all") {
+          const ts = parseDate(item.date);
           if (ts === 0) return false;
           const d = new Date(ts);
-          if (fecha === "Este año" && d.getFullYear() !== thisYear) return false;
-          if (fecha === "Este mes" && (d.getFullYear() !== thisYear || d.getMonth() !== thisMonth)) return false;
+          if (date === "thisYear" && d.getFullYear() !== thisYear) return false;
+          if (date === "thisMonth" && (d.getFullYear() !== thisYear || d.getMonth() !== thisMonth)) return false;
         }
         if (q && !useAi) {
-          const haystack = normalize([item.empresa, item.comentarios, item.subcomentarios ?? "", item.web].join(" "));
+          const haystack = normalize([item.name, item.note, item.subNote ?? "", item.web].join(" "));
           if (!haystack.includes(q)) return false;
         }
         return true;
       });
-  }, [items, tipo, autor, fecha, query, tagMap, sector, estilo, selTags, ai, aiScores]);
+  }, [items, type, author, date, query, tagMap, sector, style, selTags, ai, aiScores]);
 
-  // Mejor afinidad entre los resultados visibles (para la cabecera de la búsqueda IA)
+  // Best match among visible results (for the AI search header)
   const aiTop = useMemo(
     () => (ai && aiScores ? filtered.reduce((m, it) => Math.max(m, aiScores[it.web] ?? 0), 0) : 0),
     [filtered, ai, aiScores],
   );
 
-  // Masonry real: cada tarjeta va a la columna más corta según su alto medido
-  // (alto/ancho, así no depende del ancho de columna). Las medidas se cachean en
-  // localStorage para que la segunda visita salga ya equilibrada.
+  // Real masonry: each card goes to the shortest column by its measured height
+  // (height/width, so it doesn't depend on column width). Measurements are cached in
+  // localStorage so the second visit loads already balanced.
   const ratiosRef = useRef<Record<string, number>>({});
   const [ratiosVersion, setRatiosVersion] = useState(0);
   const entering = useRef(false);
@@ -668,7 +686,7 @@ export default function InspoClient({
     try {
       const saved = JSON.parse(localStorage.getItem(RATIOS_KEY) || "{}");
       if (saved && typeof saved === "object") { ratiosRef.current = saved; setRatiosVersion((v) => v + 1); }
-    } catch { /* sin storage */ }
+    } catch { /* no storage */ }
   }, []);
 
   const columns = useMemo(() => {
@@ -681,12 +699,12 @@ export default function InspoClient({
       heights[c] += (ratiosRef.current[item.web] ?? DEFAULT_RATIO) + GAP_RATIO;
     }
     return cols;
-    // ratiosVersion fuerza el recálculo cuando cambian las medidas
+    // ratiosVersion forces a recompute when measurements change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, numCols, ratiosVersion]);
 
   const relayout = () => {
-    try { localStorage.setItem(RATIOS_KEY, JSON.stringify(ratiosRef.current)); } catch { /* sin storage */ }
+    try { localStorage.setItem(RATIOS_KEY, JSON.stringify(ratiosRef.current)); } catch { /* no storage */ }
     if (entering.current) { pendingRelayout.current = true; return; }
     pendingRelayout.current = false;
     gsap.registerPlugin(Flip);
@@ -702,7 +720,7 @@ export default function InspoClient({
   const relayoutRef = useRef(relayout);
   relayoutRef.current = relayout;
 
-  // Mide cada tarjeta cuando cambia de tamaño (imagen cargada, miniatura nueva…)
+  // Measures each card when its size changes (image loaded, new thumbnail…)
   useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
@@ -756,8 +774,8 @@ export default function InspoClient({
     isMount.current = false;
   }, [filtered]);
 
-  // Presencia: en qué zona está la persona ahora mismo (lo lee el panel de /admin)
-  const area = designMdItem ? "design-md" : commentsItem ? "comentarios" : showRecursos ? "recursos" : showAdd ? "anadir" : aiScores ? "busqueda" : "biblioteca";
+  // Presence: which area the person is in right now (read by the /admin panel)
+  const area = designMdItem ? "design-md" : commentsItem ? "comments" : showDirectory ? "directory" : showAdd ? "add" : aiScores ? "search" : "library";
   useActivity(area, workspace.id);
 
   runDesignMdRef.current = runDesignMd;
@@ -767,7 +785,7 @@ export default function InspoClient({
       {designMdItem && (
         <DesignMdModal
           url={designMdItem.web}
-          empresa={designMdItem.empresa}
+          name={designMdItem.name}
           state={designMdJobs[designMdItem.web]}
           onClose={closeDesignMd}
           libraryName={workspace.name}
@@ -781,7 +799,7 @@ export default function InspoClient({
               comments={commentMap[designMdItem.id!] ?? []}
               user={user}
               canManage={workspace.role === "owner" || workspace.role === "admin"}
-              memberImages={autorImages}
+              memberImages={authorImages}
               memberNames={memberNames}
               onPost={(body, attachments) => postComment(designMdItem.id!, body, attachments)}
               onDelete={(id) => deleteComment(designMdItem.id!, id)}
@@ -806,7 +824,13 @@ export default function InspoClient({
           </div>
         </div>
       )}
-      {showRecursos && <RecursosModal onClose={() => setShowRecursos(false)} />}
+      {showDirectory && (
+        <DirectoryModal
+          onClose={() => setShowDirectory(false)}
+          onAdd={(web) => { if (!isDuplicate(web)) addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
+          isAdded={isDuplicate}
+        />
+      )}
       <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
@@ -819,10 +843,10 @@ export default function InspoClient({
         onAddUrl={(web) => {
           // Already saved: show it in the grid instead of saving it twice
           if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
-          addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" });
+          addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
         onAdd={() => setShowAdd(true)}
-        onDirectory={() => setShowRecursos(true)}
+        onDirectory={() => setShowDirectory(true)}
       />
       {commentsItem && (
         <CommentsPanel
@@ -830,7 +854,7 @@ export default function InspoClient({
           comments={commentMap[commentsItem.id!] ?? []}
           user={user}
           canManage={workspace.role === "owner" || workspace.role === "admin"}
-          memberImages={autorImages}
+          memberImages={authorImages}
           memberNames={memberNames}
           image={thumbMap[commentsItem.web] ? proxiedSrc(thumbMap[commentsItem.web]) : designMdIndex[commentsItem.web]?.coverUrl ? proxiedSrc(designMdIndex[commentsItem.web].coverUrl!) : null}
           onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
@@ -854,26 +878,19 @@ export default function InspoClient({
       <Sidebar
         quota={quota}
         brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />}
-        autores={autores}
-        autorImages={autorImages}
         items={items}
-        tipo={tipo} autor={autor} fecha={fecha} query={query}
-        onTipo={setTipo} onAutor={setAutor} onFecha={setFecha} onQuery={setQuery}
+        type={type}
+        isAll={type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0}
+        onType={setType}
         onReset={resetFilters}
         onAdd={() => setShowAdd(true)}
-        onRecursos={() => setShowRecursos(true)}
-        tagMap={tagMap}
-        sector={sector} estilo={estilo} selTags={selTags}
-        onSector={setSector} onEstilo={setEstilo} onToggleTag={toggleTag}
-        ai={ai} aiLoading={aiLoading} aiEnabled={aiEnabled}
-        pending={pending} tagging={tagging} onTagAll={tagAll}
+        onDirectory={() => setShowDirectory(true)}
       />
 
       <SidebarInset className="content">
         <header className="topbar">
           <span className="topbar__trigger">
             <SidebarTrigger aria-label={triggerLabel} />
-            {activeFilterCount > 0 && <span className="topbar__badge">{activeFilterCount}</span>}
           </span>
           <Separator orientation="vertical" className="topbar__sep" />
           <Breadcrumb className="topbar__view" aria-label={t.settings.breadcrumb}>
@@ -881,14 +898,15 @@ export default function InspoClient({
               <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="topbar__title">{tipo === "Todos" ? t.sidebar.all : t.labels.tipo[tipo]}</BreadcrumbPage>
+                <BreadcrumbPage className="topbar__title">{type === "all" ? t.sidebar.all : t.labels.type[type]}</BreadcrumbPage>
                 <span className="topbar__count">{filtered.length}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
           <Logo size={28} className="topbar__logo" />
+          {/* The main search always looks like the AI search (spark + "Describe what you are after"), as the sidebar box did */}
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
-            ai={ai} aiLoading={aiLoading} />
+            ai aiLoading={aiLoading} shortcut />
           <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
         </header>
 
@@ -932,15 +950,26 @@ export default function InspoClient({
           </header>
         )}
 
+        {items.length > 0 && (
+          <FilterBar
+            items={items} tagMap={tagMap}
+            authors={authors} authorImages={authorImages}
+            author={author} date={date} sector={sector} style={style} selTags={selTags}
+            onAuthor={setAuthor} onDate={setDate} onSector={setSector} onStyle={setStyle} onToggleTag={toggleTag}
+            onClear={() => setParams({ author: "", date: "", sector: "", style: "", tags: "" })}
+            aiEnabled={aiEnabled} pending={pending} tagging={tagging} onTagAll={tagAll}
+          />
+        )}
+
         {items.length === 0 ? (
           <EmptyStart
             onAddUrl={async (web) => {
-              // Primera inspo: se guarda y se abre su DESIGN.md directamente, para que se vea qué hace la app
-              const item = await addByUrl({ web, tipo: tipoFromUrl(web), comentarios: "" });
+              // First inspo: saved and its DESIGN.md opened directly, so the app shows what it does
+              const item = await addByUrl({ web, type: typeFromUrl(web), note: "" });
               if (item) runDesignMd(item, { openWhenReady: true });
             }}
             isDuplicate={isDuplicate}
-            onRecursos={() => setShowRecursos(true)}
+            onDirectory={() => setShowDirectory(true)}
           />
         ) : filtered.length === 0 ? (
           <div className="empty">

@@ -10,11 +10,11 @@ import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 300;
 
-// Con visión cada item puede tardar 20–40 s (captura + Claude); sin visión, ~1 s.
+// With vision each item can take 20–40 s (capture + Claude); without vision, ~1 s.
 const perRequest = () => (visionEnabled() ? 8 : 25);
 const CONCURRENCY = 4;
 
-// GET → mapa completo + pendientes del workspace
+// GET → full map + the workspace's pending items
 export async function GET() {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
@@ -27,13 +27,13 @@ export async function GET() {
   }
 }
 
-// POST { web, force? } → etiqueta un item del workspace (force solo admins)
-// POST { all: true, force? } → etiqueta los pendientes por lotes (solo admins: cuesta dinero)
+// POST { web, force? } → tags one workspace item (force admins only)
+// POST { all: true, force? } → tags pending items in batches (admins only: it costs money)
 export async function POST(req: NextRequest) {
-  if (!jevEnabled()) return Response.json({ error: "TYPESAFE_API_KEY no configurada" }, { status: 503 });
+  if (!jevEnabled()) return Response.json({ error: "TYPESAFE_API_KEY not configured" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  // Bajar de plan puede dejar al equipo con más gente de la que admite: la IA se para hasta que lo arreglen
+  // Downgrading can leave the team with more people than the plan allows: AI stops until they fix it
   const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
   if (blocked) return blocked;
   const orgId = ctx.workspace.id;

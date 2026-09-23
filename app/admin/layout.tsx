@@ -12,8 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: { template: `%s · ${t.admin.title} · criterio.design`, default: t.admin.title } };
 }
 
-// Panel de actividad de toda la app (todas las personas y workspaces).
-// Solo para quien tenga acceso (lib/activity.ts: fijos + añadidos desde el panel); para el resto no existe (404).
+// Activity panel for the whole app (all people and workspaces).
+// Only for those with access (lib/activity.ts: fixed + added from the panel); for everyone else it does not exist (404).
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const s = await getSession();
   if (!s) redirect("/login?next=/admin");

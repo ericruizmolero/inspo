@@ -1,7 +1,7 @@
-// Auto-login solo en desarrollo: crea una sesión real para DEV_LOGIN_EMAIL sin pasar por el correo.
-// 1) Pide a Better Auth un magic link (lib/auth.ts lo intercepta en vez de enviarlo).
-// 2) Verifica el token en el servidor y reenvía las cookies de sesión al navegador.
-// Todo con rutas relativas: detrás del proxy del preview el servidor no conoce el origen público.
+// Auto-login in development only: creates a real session for DEV_LOGIN_EMAIL without going through email.
+// 1) Asks Better Auth for a magic link (lib/auth.ts intercepts it instead of sending it).
+// 2) Verifies the token on the server and forwards the session cookies to the browser.
+// All with relative paths: behind the preview proxy the server does not know the public origin.
 import { NextResponse, type NextRequest } from "next/server";
 import { auth, DEV_LOGIN_EMAIL, takeDevLink } from "@/lib/auth";
 import { getErrors } from "@/lib/i18n";
@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
   const next = request.nextUrl.searchParams.get("next");
   const callbackURL = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
 
-  // Se pasa por el handler HTTP (no por auth.api) para que Better Auth deduzca el baseURL de la petición
+  // Goes through the HTTP handler (not auth.api) so Better Auth infers the baseURL from the request
   const origin = new URL(request.url).origin;
-  takeDevLink(); // descarta cualquier enlace viejo
+  takeDevLink(); // discards any old link
   const signIn = await auth.handler(new Request(new URL("/api/auth/sign-in/magic-link", origin), {
     method: "POST",
     headers: { "content-type": "application/json", origin },
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: (await getErrors()).linkFailed }, { status: 500 });
   }
 
-  // Sin callbackURL el endpoint devuelve JSON (en vez de redirigir) y aun así fija las cookies de sesión
+  // Without callbackURL the endpoint returns JSON (instead of redirecting) and still sets the session cookies
   const verifyURL = new URL(link);
   verifyURL.searchParams.delete("callbackURL");
   const verify = await auth.handler(new Request(verifyURL, { headers: { origin } }));

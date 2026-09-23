@@ -1,5 +1,5 @@
-// Workspaces: lógica pura sobre la base de datos, sin dependencias de Next.
-// La usan tanto el servidor (lib/workspace.ts) como los scripts (scripts/*.ts).
+// Workspaces: pure database logic, with no Next dependencies.
+// Used by both the server (lib/workspace.ts) and scripts (scripts/*.ts).
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { DEFAULT_PLAN, isPlanKey, type PlanKey } from "./plans";
@@ -14,9 +14,9 @@ export interface Workspace {
   slug: string;
   kind: WorkspaceKind;
   role: Role;
-  /** Logo de empresa (data URL pequeña o URL); null si no tiene */
+  /** Company logo (small data URL or URL); null if none */
   logo: string | null;
-  /** Plan del SaaS (metadata.plan); "solo" si no tiene */
+  /** SaaS plan (metadata.plan); "solo" if none */
   plan: PlanKey;
 }
 
@@ -42,18 +42,18 @@ export function planOfMetadata(metadata: string | null): PlanKey {
 }
 
 /**
- * Cambia el plan de un workspace conservando el resto de la metadata.
- * ponytail: lectura y escritura en dos sentencias, sin transacción. Solo lo llama
- * scripts/set-plan.ts a mano; si algún día lo llama una pasarela de pago, hace falta
- * una transacción o un UPDATE con json_set.
- * Quien baje el plan debe avisar al dueño si el equipo se queda por encima del límite:
- * notifyOverCapacity() en lib/quota.ts.
+ * Changes a workspace's plan, keeping the rest of the metadata.
+ * ponytail: read and write in two statements, no transaction. Only
+ * scripts/set-plan.ts calls it by hand; if a payment gateway ever calls it, it needs
+ * a transaction or an UPDATE with json_set.
+ * Whoever downgrades must notify the owner if the team ends up over the limit:
+ * notifyOverCapacity() in lib/quota.ts.
  */
 export async function setWorkspacePlan(organizationId: string, plan: PlanKey): Promise<void> {
   const [row] = await db.select({ metadata: schema.organization.metadata }).from(schema.organization).where(eq(schema.organization.id, organizationId)).limit(1);
-  if (!row) throw new Error("Workspace no encontrado");
+  if (!row) throw new Error("Workspace not found");
   let meta: Record<string, unknown> = {};
-  try { meta = JSON.parse(row.metadata ?? "{}") ?? {}; } catch { /* metadata rota: se reescribe */ }
+  try { meta = JSON.parse(row.metadata ?? "{}") ?? {}; } catch { /* broken metadata: rewritten */ }
   await db.update(schema.organization).set({ metadata: JSON.stringify({ ...meta, plan }) }).where(eq(schema.organization.id, organizationId));
 }
 
@@ -61,10 +61,10 @@ export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
 export function slugify(s: string): string {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "equipo";
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "team";
 }
 
-/** Crea el workspace personal del usuario si aún no lo tiene. Devuelve su id. */
+/** Creates the user's personal workspace if they don't have one yet. Returns its id. */
 export async function ensurePersonalWorkspace(userId: string, name: string, email: string): Promise<string> {
   const rows = await db
     .select({ id: schema.organization.id, metadata: schema.organization.metadata })
@@ -102,7 +102,7 @@ export async function listWorkspaces(userId: string): Promise<Workspace[]> {
     .map(({ createdAt: _c, ...w }) => w);
 }
 
-/** Miembros de un workspace (para el filtro "Quién" y la página de equipo). */
+/** A workspace's members (for the "Who" filter and the team page). */
 export async function listMembers(organizationId: string) {
   return db
     .select({ id: schema.member.id, userId: schema.user.id, name: schema.user.name, email: schema.user.email, image: schema.user.image, role: schema.member.role, createdAt: schema.member.createdAt })

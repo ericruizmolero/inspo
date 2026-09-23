@@ -1,22 +1,22 @@
-// Captura una vez la portada de cada web del directorio de Recursos y la guarda
-// como miniatura estática en public/recursos/<slug>.jpg (se commitea).
-//   npx tsx scripts/recursos-shots.ts          → solo las que faltan
-//   npx tsx scripts/recursos-shots.ts --force  → vuelve a capturar todas
-//   npx tsx scripts/recursos-shots.ts godly    → solo las que contengan "godly"
-//   --visible  → abre Chrome de verdad (no headless): necesario para webs con el
-//                "Security Checkpoint" de Vercel, que bloquea el navegador headless.
+// Captures the home page of each site in the Directory once and saves it
+// as a static thumbnail in public/directory/<slug>.jpg (committed).
+//   npx tsx scripts/directory-shots.ts          → only the missing ones
+//   npx tsx scripts/directory-shots.ts --force  → recaptures all of them
+//   npx tsx scripts/directory-shots.ts godly    → only those containing "godly"
+//   --visible  → opens real Chrome (not headless): needed for sites behind
+//                Vercel's "Security Checkpoint", which blocks headless browsers.
 import { promises as fs } from "fs";
 import path from "path";
 import puppeteer from "puppeteer-core";
 import sharp from "sharp";
-import { RECURSOS, recursoSlug } from "../lib/recursos";
+import { DIRECTORY, siteSlug } from "../lib/directory";
 import { captureHero } from "../lib/screenshot";
 
-const OUT = path.join(process.cwd(), "public", "recursos");
+const OUT = path.join(process.cwd(), "public", "directory");
 const WIDTH = 720;
 const QUALITY = 74;
-const CONCURRENCY = 2; // con --visible se usa 1
-// Por debajo de esto suele ser una página en blanco o un "verificando tu navegador".
+const CONCURRENCY = 2; // 1 with --visible
+// Below this it's usually a blank page or a "verifying your browser".
 const MIN_BYTES = 8 * 1024;
 
 const args = process.argv.slice(2);
@@ -27,7 +27,7 @@ const needle = args.find((a) => !a.startsWith("--"))?.toLowerCase();
 
 async function exists(p: string) { try { await fs.access(p); return true; } catch { return false; } }
 
-// Chrome con ventana: pasa el checkpoint de Vercel esperando a que cambie el título.
+// Windowed Chrome: gets past Vercel's checkpoint by waiting for the title to change.
 async function captureVisible(url: string): Promise<Buffer> {
   const browser = await puppeteer.launch({
     executablePath: CHROME, headless: false, defaultViewport: { width: 1440, height: 900 },
@@ -49,12 +49,12 @@ async function captureVisible(url: string): Promise<Buffer> {
 }
 
 async function one(name: string, url: string) {
-  const file = path.join(OUT, `${recursoSlug(url)}.jpg`);
-  if (!force && (await exists(file))) { console.log(`· ${name} (ya existe)`); return; }
+  const file = path.join(OUT, `${siteSlug(url)}.jpg`);
+  if (!force && (await exists(file))) { console.log(`· ${name} (already exists)`); return; }
   try {
     const raw = visible ? await captureVisible(url) : await captureHero(url);
     const jpeg = await sharp(raw).resize({ width: WIDTH }).jpeg({ quality: QUALITY, mozjpeg: true }).toBuffer();
-    if (jpeg.length < MIN_BYTES) { console.log(`✗ ${name}: captura casi vacía (${(jpeg.length / 1024).toFixed(0)}kB), no se guarda`); return; }
+    if (jpeg.length < MIN_BYTES) { console.log(`✗ ${name}: screenshot nearly empty (${(jpeg.length / 1024).toFixed(0)}kB), not saved`); return; }
     await fs.writeFile(file, jpeg);
     console.log(`✓ ${name} ${(jpeg.length / 1024).toFixed(0)}kB`);
   } catch (e) {
@@ -64,7 +64,7 @@ async function one(name: string, url: string) {
 
 async function main() {
   await fs.mkdir(OUT, { recursive: true });
-  const all = RECURSOS.flatMap((g) => g.items).filter((r) => !needle || `${r.name} ${r.url}`.toLowerCase().includes(needle));
+  const all = DIRECTORY.flatMap((g) => g.items).filter((r) => !needle || `${r.name} ${r.url}`.toLowerCase().includes(needle));
   const queue = [...all];
   await Promise.all(Array.from({ length: visible ? 1 : CONCURRENCY }, async () => {
     while (queue.length) { const r = queue.shift()!; await one(r.name, r.url); }

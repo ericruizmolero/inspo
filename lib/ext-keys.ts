@@ -1,7 +1,7 @@
-// Llaves de acceso de la extensión del navegador (tabla ext_key).
-// La llave completa se enseña una sola vez al crearla; en la base de datos solo queda su
-// SHA-256. Cada llave da acceso a UN workspace en nombre de la persona que la creó, mientras
-// esa persona siga siendo miembro y la llave no esté revocada.
+// Browser extension access keys (ext_key table).
+// The full key is shown only once on creation; the database keeps only its
+// SHA-256. Each key grants access to ONE workspace on behalf of the person who created it, as long as
+// that person is still a member and the key isn't revoked.
 import "server-only";
 import { createHash, randomBytes } from "crypto";
 import { and, eq, isNull } from "drizzle-orm";
@@ -12,7 +12,7 @@ import { getErrors } from "./i18n";
 
 const T = schema.extKey;
 export const KEY_PREFIX = "crit_";
-/** Con cuánta frecuencia se apunta lastUsedAt (no hace falta una escritura por petición) */
+/** How often lastUsedAt is written (no need for one write per request) */
 const TOUCH_EVERY_MS = 5 * 60 * 1000;
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
@@ -22,10 +22,10 @@ export interface ExtKeyRow {
   createdAt: Date; lastUsedAt: Date | null; revokedAt: Date | null;
 }
 
-/** Crea una llave para (usuario, workspace). Devuelve la llave en claro: es la única vez que existe. */
+/** Creates a key for (user, workspace). Returns the plain key: the only time it exists. */
 export async function createExtKey(userId: string, organizationId: string, name: string): Promise<{ key: string; row: ExtKeyRow }> {
   if (!(await isMember(organizationId, userId))) throw new Error((await getErrors()).notAMember);
-  const key = KEY_PREFIX + randomBytes(24).toString("base64url"); // crit_ + 32 caracteres
+  const key = KEY_PREFIX + randomBytes(24).toString("base64url"); // crit_ + 32 characters
   const row = {
     id: newId(), hash: sha256(key), prefix: key.slice(0, KEY_PREFIX.length + 6),
     name: name.trim().slice(0, 60), userId, organizationId,
@@ -36,7 +36,7 @@ export async function createExtKey(userId: string, organizationId: string, name:
   return { key, row: pub };
 }
 
-/** Llaves activas de un workspace, con el nombre de quien las creó (para /equipo). */
+/** A workspace's active keys, with the creator's name (for the members settings). */
 export async function listExtKeys(organizationId: string) {
   return db
     .select({ id: T.id, prefix: T.prefix, name: T.name, userId: T.userId, userName: schema.user.name, createdAt: T.createdAt, lastUsedAt: T.lastUsedAt })
@@ -46,7 +46,7 @@ export async function listExtKeys(organizationId: string) {
     .orderBy(T.createdAt);
 }
 
-/** Revoca una llave. La puede revocar su dueño o un admin del workspace (lo decide quien llama). */
+/** Revokes a key. Its owner or a workspace admin can revoke it (the caller decides). */
 export async function revokeExtKey(id: string, allow: (row: { userId: string; organizationId: string }) => boolean): Promise<"ok" | "not_found" | "forbidden"> {
   const [row] = await db.select({ userId: T.userId, organizationId: T.organizationId, revokedAt: T.revokedAt }).from(T).where(eq(T.id, id)).limit(1);
   if (!row || row.revokedAt) return "not_found";
@@ -58,8 +58,8 @@ export async function revokeExtKey(id: string, allow: (row: { userId: string; or
 export interface ExtCtx { user: SessionUser; workspace: Workspace; keyId: string }
 
 /**
- * Autentica una petición de la extensión por la cabecera `Authorization: Bearer crit_…`.
- * Devuelve null si la llave no existe, está revocada, o la persona ya no está en el workspace.
+ * Authenticates an extension request by the `Authorization: Bearer crit_…` header.
+ * Returns null if the key doesn't exist, is revoked, or the person is no longer in the workspace.
  */
 export async function authByExtKey(authorization: string | null): Promise<ExtCtx | null> {
   const m = /^Bearer\s+(crit_[A-Za-z0-9_-]{20,})$/.exec(authorization ?? "");
@@ -71,7 +71,7 @@ export async function authByExtKey(authorization: string | null): Promise<ExtCtx
     .from(schema.user).where(eq(schema.user.id, row.userId)).limit(1);
   if (!u) return null;
   const workspace = (await listWorkspaces(u.id)).find((w) => w.id === row.organizationId);
-  if (!workspace) return null; // ya no es miembro: la llave deja de valer sola
+  if (!workspace) return null; // no longer a member: the key stops working on its own
 
   if (!row.lastUsedAt || Date.now() - +row.lastUsedAt > TOUCH_EVERY_MS) {
     void db.update(T).set({ lastUsedAt: new Date() }).where(eq(T.id, row.id)).catch(() => {});
@@ -79,7 +79,7 @@ export async function authByExtKey(authorization: string | null): Promise<ExtCtx
   return { user: { ...u, language: toLocale(u.language) }, workspace, keyId: row.id };
 }
 
-/** Para route handlers de /api/ext: contexto o Response 401. */
+/** For /api/ext route handlers: context or a 401 Response. */
 export async function requireExtCtx(req: Request): Promise<ExtCtx | Response> {
   const ctx = await authByExtKey(req.headers.get("authorization"));
   if (!ctx) return Response.json({ error: (await getErrors()).badKey }, { status: 401 });

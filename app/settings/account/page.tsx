@@ -15,7 +15,7 @@ export default async function AccountPage() {
   const personal = ctx.workspaces.find((w) => w.kind === "personal");
   return (
     <>
-      <ActivityPing area="ajustes" organizationId={ctx.workspace.id} />
+      <ActivityPing area="settings" organizationId={ctx.workspace.id} />
       <SettingsHeading title={t.settings.sections.account} lead={t.settings.leads.account} />
       <AccountPanel user={ctx.user} personalId={personal?.id ?? null} />
     </>

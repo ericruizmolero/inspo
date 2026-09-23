@@ -6,7 +6,7 @@ import { ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES } from "@/lib/comment-files";
 import { getErrors } from "@/lib/i18n";
 
 
-// POST (multipart file + webUrl) → sube imagen y la asigna al item
+// POST (multipart file + webUrl) → uploads an image and assigns it to the item
 export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     if (!file || !webUrl) return Response.json({ error: (await getErrors()).missingFileOrWebUrl }, { status: 400 });
     if (!ATTACHMENT_TYPES.has(file.type)) return Response.json({ error: (await getErrors()).imagesOnly }, { status: 415 });
     if (file.size > MAX_ATTACHMENT_BYTES) return Response.json({ error: (await getErrors()).imageTooHeavy }, { status: 413 });
-    // Antes de subir: si la web no es del workspace no queda un blob huérfano
+    // Before uploading: if the site is not in the workspace, no orphan blob is left
     if (!(await hasItem(ctx.workspace.id, webUrl))) return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 404 });
 
     const safeFilename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -26,12 +26,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ url });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("Error subiendo thumbnail:", msg);
+    console.error("Error uploading thumbnail:", msg);
     return Response.json({ error: msg }, { status: 500 });
   }
 }
 
-// DELETE ?webUrl= → quita la miniatura manual
+// DELETE ?webUrl= → removes the manual thumbnail
 export async function DELETE(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;

@@ -13,17 +13,17 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from 
 
 interface DesignMdModalProps {
   url: string;
-  empresa: string;
+  name: string;
   state: DesignMdState | undefined;
   onClose: () => void;
   onRegenerate: () => void;
   onRevised: (patch: Partial<DesignMdEntry>) => void;
   /**
-   * Hilo de comentarios del inspo, en columna a la derecha de la ficha: se pinta con el
-   * CommentsPanel en modo `column`; `hide` es lo que debe llamar su botón de cerrar.
+   * The inspo's comment thread, as a column right of the sheet: rendered with
+   * CommentsPanel in `column` mode; `hide` is what its close button should call.
    */
   comments?: (hide: () => void) => ReactNode;
-  /** Cuántas respuestas hay, para el botón de la barra */
+  /** How many replies there are, for the bar button */
   commentCount?: number;
   /** Name of the library it belongs to, first step of the breadcrumb */
   libraryName?: string;
@@ -56,6 +56,9 @@ const IcComment = (
 const IcCopy = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="4.5" width="8" height="8" rx="1.6" /><path d="M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5" /></svg>
 );
+const IcChevron = (
+  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 2L6.5 5l-3 3" /></svg>
+);
 const IcEdit = (
   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11H3v-2z" /></svg>
 );
@@ -82,8 +85,8 @@ function useCopy(ms = 1400): [boolean, (text: string) => void] {
   return [copied, copy];
 }
 
-// Intenta cargar las familias desde Google Fonts. Si no existen ahí, el navegador
-// ignora la hoja y se aplica el fallback declarado en el spec.
+// Tries to load the families from Google Fonts. If they aren't there, the browser
+// ignores the sheet and the fallback declared in the spec applies.
 function useGoogleFonts(families: string[]) {
   useEffect(() => {
     const links = families.map((f) => {
@@ -107,8 +110,8 @@ function pageBg(spec: DesignSpec): string {
   return pick?.hex ?? (spec.theme === "dark" ? "#0d0d0d" : "#ffffff");
 }
 
-// ─── Screenshot con scroll automático, en una ventana de Safari ──────────────
-// La barra es de cristal: la captura pasa por debajo desenfocada mientras hace scroll.
+// ─── Auto-scrolling screenshot, in a Safari window ───────────────────────────
+// The bar is glass: the screenshot passes under it blurred while it scrolls.
 const IcChev = (
   <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 2L3.5 5l3 3" /></svg>
 );
@@ -156,8 +159,8 @@ function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; b
   );
 }
 
-// ─── Colores ──────────────────────────────────────────────────────────────────
-// El orden en que se agrupan los colores; la etiqueta sale del diccionario.
+// ─── Colors ───────────────────────────────────────────────────────────────────
+// The order colors are grouped in; the label comes from the dictionary.
 const GROUPS: DesignSpec["colors"][number]["group"][] = ["brand", "accent", "semantic", "neutral"];
 
 function Swatch({ c }: { c: DesignSpec["colors"][number] }) {
@@ -187,7 +190,7 @@ function PaletteStrip({ colors }: { colors: DesignSpec["colors"] }) {
   );
 }
 
-// ─── Tipografía ───────────────────────────────────────────────────────────────
+// ─── Typography ───────────────────────────────────────────────────────────────
 function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: string }) {
   const { t } = useT();
   const stack = `"${f.family}", ${f.fallback}`;
@@ -218,8 +221,12 @@ function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: strin
   );
 }
 
-// ─── Cabecera de sección con "Proponer cambio" ────────────────────────────────
-function SectionHead({ title, meta, section, onRevise }: { title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn }) {
+// ─── Section header with "Suggest a change" ───────────────────────────────────
+function SectionHead({ title, meta, section, onRevise, open: expanded, onToggle }: {
+  title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn;
+  /** Folding section: the title opens and closes it */
+  open?: boolean; onToggle?: () => void;
+}) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -252,7 +259,13 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
   return (
     <>
       <header className="dm-section__head">
-        <h2 className="dm-h">{title}</h2>
+        {onToggle ? (
+          <h2 className="dm-h">
+            <button type="button" className="dm-fold__toggle" aria-expanded={expanded} onClick={onToggle}>
+              <span className="dm-fold__chev" aria-hidden>{IcChevron}</span>{title}
+            </button>
+          </h2>
+        ) : <h2 className="dm-h">{title}</h2>}
         <span className="dm-section__right">
           {meta && <span className="dm-section__meta">{meta}</span>}
           {onRevise && (
@@ -298,7 +311,7 @@ function SectionHead({ title, meta, section, onRevise }: { title: string; meta?:
   );
 }
 
-// ─── Historial de revisiones ──────────────────────────────────────────────────
+// ─── Revision history ─────────────────────────────────────────────────────────
 function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onRevert: (id: string) => void; busy: boolean }) {
   const { locale, t } = useT();
   return (
@@ -314,7 +327,7 @@ function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onR
               <span className="dm-rev__author">{r.authorName}</span>
               <span className="dm-rev__when">{timeAgo(r.createdAt, locale, t)}</span>
               {r.kind === "revision" && r.section && <span className="dm-tag">{t.designMd.sections[r.section as keyof typeof t.designMd.sections] ?? r.section}</span>}
-              {r.kind === "regeneracion" && <span className="dm-tag">{t.designMd.kindRegenerated}</span>}
+              {r.kind === "regeneration" && <span className="dm-tag">{t.designMd.kindRegenerated}</span>}
               {r.kind === "reversion" && <span className="dm-tag">{t.designMd.kindReverted}</span>}
               {i === 0 && <span className="dm-rev__current">{t.designMd.live}</span>}
             </div>
@@ -331,7 +344,20 @@ function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onR
   );
 }
 
-// ─── Ficha ────────────────────────────────────────────────────────────────────
+// Secondary sections start closed: the first screen is identity, color and type.
+function Fold({ title, meta, section, onRevise, children }: {
+  title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn; children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section className={`dm-section dm-fold${open ? " is-open" : ""}`}>
+      <SectionHead title={title} meta={meta} section={section} onRevise={onRevise} open={open} onToggle={() => setOpen((o) => !o)} />
+      {open && children}
+    </section>
+  );
+}
+
+// ─── Sheet ────────────────────────────────────────────────────────────────────
 function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn }) {
   const { locale, t } = useT();
   useGoogleFonts(spec.fonts.map((f) => f.family));
@@ -360,6 +386,11 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
           <h1 className="display dm-brand">{spec.brand}</h1>
           <p className="dm-tagline">{spec.tagline}</p>
           <p className="dm-desc">{spec.description}</p>
+          <div className="dm-hero__actions">
+            <Button variant="ghost" size="sm" onClick={() => copyPrompt(spec.agentPrompt)}>
+              {promptCopied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyPrompt}</>}
+            </Button>
+          </div>
           {onRevise && <div className="dm-hero__revise"><SectionHead title={t.designMd.sections.general} section="general" onRevise={onRevise} /></div>}
         </div>
         {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
@@ -367,7 +398,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
       <PaletteStrip colors={spec.colors} />
 
-      {/* Colores */}
+      {/* Colors */}
       <section className="dm-section">
         <SectionHead title={t.designMd.sections.color} meta={t.designMd.colorMeta(spec.colors.length)} section="color" onRevise={onRevise} />
         {GROUPS.map((key) => {
@@ -382,9 +413,9 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
         })}
       </section>
 
-      {/* Tipografía */}
+      {/* Typography */}
       <section className="dm-section">
-        <SectionHead title={t.designMd.sections.tipografia} meta={spec.fonts.map((f) => f.family).join(" + ")} section="tipografia" onRevise={onRevise} />
+        <SectionHead title={t.designMd.sections.typography} meta={spec.fonts.map((f) => f.family).join(" + ")} section="typography" onRevise={onRevise} />
         <div className="dm-fonts">
           {spec.fonts.map((f) => <FontCard key={f.family + f.role} f={f} sample={f.role === "mono" ? host : spec.tagline} />)}
         </div>
@@ -419,8 +450,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
       </section>
 
       {/* Tokens */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.espaciado} meta={t.designMd.densityMeta(t.designMd.density[spec.spacing.density])} section="espaciado" onRevise={onRevise} />
+      <Fold title={t.designMd.sections.spacing} meta={t.designMd.densityMeta(t.designMd.density[spec.spacing.density])} section="spacing" onRevise={onRevise}>
         <div className="dm-tokens">
           <div className="dm-token"><span className="dm-token__k">{t.designMd.baseUnit}</span><span className="dm-token__v">{spec.spacing.baseUnit}</span></div>
           <div className="dm-token"><span className="dm-token__k">{t.designMd.maxWidth}</span><span className="dm-token__v">{spec.spacing.maxWidth}</span></div>
@@ -435,11 +465,10 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
             </div>
           ))}
         </div>
-      </section>
+      </Fold>
 
-      {/* Componentes */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.componentes} meta={String(spec.components.length)} section="componentes" onRevise={onRevise} />
+      {/* Components */}
+      <Fold title={t.designMd.sections.components} meta={String(spec.components.length)} section="components" onRevise={onRevise}>
         <div className="dm-components">
           {spec.components.map((c) => (
             <div key={c.name} className="dm-component">
@@ -449,11 +478,10 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
             </div>
           ))}
         </div>
-      </section>
+      </Fold>
 
       {/* Do / Don't */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.reglas} section="reglas" onRevise={onRevise} />
+      <Fold title={t.designMd.sections.rules} section="rules" onRevise={onRevise}>
         <div className="dm-two">
           <ul className="dm-rules dm-rules--do">
             {spec.dos.map((d, i) => <li key={i}><span className="dm-rules__mark">{IcCheck}</span>{d}</li>)}
@@ -462,25 +490,23 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
             {spec.donts.map((d, i) => <li key={i}><span className="dm-rules__mark">{IcX}</span>{d}</li>)}
           </ul>
         </div>
-      </section>
+      </Fold>
 
-      {/* Notas */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.sistema} section="sistema" onRevise={onRevise} />
+      {/* Notes */}
+      <Fold title={t.designMd.sections.system} section="system" onRevise={onRevise}>
         <div className="dm-notes">
           {[[t.designMd.elevation, spec.elevation], [t.designMd.layout, spec.layout], [t.designMd.imagery, spec.imagery], [t.designMd.motion, spec.motion]].map(([k, v]) => (
             <div key={k} className="dm-note"><div className="dm-note__k">{k}</div><p>{v}</p></div>
           ))}
         </div>
-      </section>
+      </Fold>
 
-      {/* Similares */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.afines} section="afines" onRevise={onRevise} />
+      {/* Similar */}
+      <Fold title={t.designMd.sections.related} section="related" onRevise={onRevise}>
         <ul className="dm-similar">
           {spec.similar.map((s) => <li key={s.brand}><strong>{s.brand}</strong><span>{s.why}</span></li>)}
         </ul>
-      </section>
+      </Fold>
 
       {/* Prompt */}
       <section className="dm-section">
@@ -491,36 +517,36 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
               <div className="dm-section__meta">{t.designMd.agentPromptHint}</div>
             </div>
             <Button variant="ghost" size="sm" onClick={() => copyPrompt(spec.agentPrompt)}>
-              {promptCopied ? <>{IcCheck} Copiado</> : <>{IcCopy} Copiar</>}
+              {promptCopied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.common.copy}</>}
             </Button>
           </div>
           <p className="dm-prompt__text">{spec.agentPrompt}</p>
           {onRevise && <div className="dm-prompt__revise"><SectionHead title={t.designMd.sections.prompt} section="prompt" onRevise={onRevise} /></div>}
         </div>
-        <div className="dm-colophon">Medidas tomadas de la web en vivo · roles y recomendaciones interpretados por {entry.model}</div>
+        <div className="dm-colophon">{t.designMd.colophon(entry.model)}</div>
       </section>
     </div>
   );
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-// La ficha solo se abre cuando el DESIGN.md ya existe: la generación vive en el
-// toast de abajo a la derecha (DesignMdToasts), aquí no hay pantalla de progreso.
-export default function DesignMdModal({ url, empresa, state, onClose, onRegenerate, onRevised, comments, commentCount = 0, libraryName }: DesignMdModalProps) {
+// The sheet only opens once the DESIGN.md exists: generation lives in the
+// bottom-right toast (DesignMdToasts), there is no progress screen here.
+export default function DesignMdModal({ url, name, state, onClose, onRegenerate, onRevised, comments, commentCount = 0, libraryName }: DesignMdModalProps) {
   const { locale, t } = useT();
   const [copied, copy] = useCopy(1600);
   const [view, setView] = useState<"spec" | "md" | "history">("spec");
   const [reverting, setReverting] = useState(false);
-  // La columna de comentarios va abierta en pantallas anchas; en estrechas se
-  // superpone a la ficha y se abre a mano desde la barra.
-  const [commentsOpen, setCommentsOpen] = useState(() => typeof window === "undefined" || window.innerWidth > 1100);
+  // The comments column starts open on wide screens; on narrow ones it
+  // overlays the sheet and opens by hand from the bar.
+  const [commentsOpen, setCommentsOpen] = useState(() => typeof window === "undefined" || window.innerWidth >= 1024);
 
   const entry = state?.entry;
   const ready = state?.status === "ready" && !!entry;
   const spec = entry?.spec;
   const revisions = entry?.revisions ?? [];
 
-  // Envía una objeción a Claude y actualiza la entrada con la spec corregida
+  // Sends an objection to Claude and updates the entry with the corrected spec
   const revise: ReviseFn = async (section, comment) => {
     const res = await fetch("/api/design-md/revisions", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -557,7 +583,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
     const blob = new Blob([entry.markdown], { type: "text/markdown" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${empresa.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md`;
+    a.download = `${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
@@ -575,10 +601,10 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
         <div className="dm-bar__id">
           <span className="dm-bar__icon" aria-hidden>
             {iconOk && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(barHost)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
-            {!iconOk && <span>{(spec?.brand ?? empresa).slice(0, 1).toUpperCase()}</span>}
+            {!iconOk && <span>{(spec?.brand ?? name).slice(0, 1).toUpperCase()}</span>}
           </span>
           <div className="dm-bar__title">
-            <span className="display dm-bar__brand">{spec?.brand ?? empresa}</span>
+            <span className="display dm-bar__brand">{spec?.brand ?? name}</span>
             {/* Where this is: the library, the site, the file */}
             <Breadcrumb className="dm-bar__meta" aria-label={t.settings.breadcrumb}>
               <BreadcrumbList>
@@ -616,7 +642,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
               aria-pressed={commentsOpen}
               title={commentsOpen ? t.designMd.hideComments : t.designMd.showComments}
             >
-              {IcComment}<span className="dm-bar__comments-label">{t.designMd.comments}</span>{commentCount > 0 && <span className="dm-tab__count">{commentCount}</span>}
+              {IcComment}<span className="dm-bar__comments-label">{t.designMd.comments}</span><span className="dm-tab__count">{commentCount}</span>
             </Button>
           )}
           <Button variant="ghost" size="sm" onClick={onRegenerate} disabled={!ready}>{t.designMd.regenerate}</Button>
@@ -639,7 +665,7 @@ export default function DesignMdModal({ url, empresa, state, onClose, onRegenera
             : (
               <div className="dm-md">
                 <div className="dm-md__head">
-                  <span>{empresa.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
+                  <span>{name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
                   <span>{t.designMd.words(entry.markdown.split(/\s+/).length)} · {date}</span>
                 </div>
                 <pre className="dm-md__pre">{entry.markdown}</pre>

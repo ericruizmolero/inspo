@@ -8,19 +8,19 @@ function extractFirstUrl(raw: string): string {
   return match ? match[0].replace(/\/$/, "") : raw.trim();
 }
 
-function normalizePuestoPor(val: string): InspoItem["puestoPor"] {
+function normalizeAddedBy(val: string): InspoItem["addedBy"] {
   const v = val?.trim();
   if (v === "Eric") return "Eric";
   if (v === "Andoni") return "Andoni";
-  return "Ambos";
+  return "Both";
 }
 
-function normalizeTipo(val: string): InspoItem["tipo"] {
+function normalizeType(val: string): InspoItem["type"] {
   const v = val?.trim();
-  if (v === "Videos") return "Videos";
-  if (v === "Ideas") return "Ideas";
-  if (v === "Documentales") return "Documentales";
-  return "Inspiración";
+  if (v === "Videos") return "videos";
+  if (v === "Ideas") return "ideas";
+  if (v === "Documentales") return "documentaries";
+  return "inspiration";
 }
 
 export async function fetchInspoItems(): Promise<InspoItem[]> {
@@ -42,12 +42,12 @@ export async function fetchInspoItems(): Promise<InspoItem[]> {
     .slice(headerIdx + 1)
     .filter((row) => row[1]?.trim())
     .map((row) => ({
-      empresa: row[1]?.trim() ?? "",
+      name: row[1]?.trim() ?? "",
       web: extractFirstUrl(row[2] ?? ""),
-      fecha: row[3]?.trim() ?? "",
-      puestoPor: normalizePuestoPor(row[4] ?? ""),
-      tipo: normalizeTipo(row[5] ?? ""),
-      comentarios: row[6]?.trim() ?? "",
-      subcomentarios: row[7]?.trim() || undefined,
+      date: row[3]?.trim() ?? "",
+      addedBy: normalizeAddedBy(row[4] ?? ""),
+      type: normalizeType(row[5] ?? ""),
+      note: row[6]?.trim() ?? "",
+      subNote: row[7]?.trim() || undefined,
     }));
 }

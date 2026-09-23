@@ -1,7 +1,7 @@
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { isPublicHttpUrl, viaProxy } from "@/lib/extract";
 
-const TTL = 60 * 60 * 24 * 30; // 30 días
+const TTL = 60 * 60 * 24 * 30; // 30 days
 const FETCH_TIMEOUT_MS = 6000;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -27,13 +27,13 @@ function fetchWithTimeout(url: string, opts: RequestInit & { next?: { revalidate
   return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
 }
 
-// Privada: la ruta pide sesión, así que ninguna CDN compartida debe guardarla
+// Private: the route requires a session, so no shared CDN should cache it
 const NO_CACHE = `private, max-age=${60 * 60 * 24 * 7}`;
 const LONG_CACHE = `private, max-age=${TTL}`;
 
-// Que una web no tenga og:image es lo normal, no un error: se responde 204 (sin cuerpo)
-// para que el navegador no llene la consola de "Failed to load resource" y la tarjeta
-// pase a la captura. El motivo va en una cabecera por si hay que depurar.
+// A site without og:image is normal, not an error: respond 204 (no body)
+// so the browser does not fill the console with "Failed to load resource" and the card
+// falls back to the screenshot. The reason goes in a header for debugging.
 const none = (reason: string, cache = "private, max-age=900") =>
   new Response(null, { status: 204, headers: { "X-Og": reason, "Cache-Control": cache } });
 

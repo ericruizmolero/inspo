@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>criterio.design</title>
@@ -12,20 +12,20 @@
       <span class="top__meta" id="ws-name"></span>
     </header>
 
-    <!-- Sin llave: conectar -->
+    <!-- No key: connect -->
     <section class="view" data-view="connect">
-      <p class="lead">Guarda la web que estás viendo en tu librería.</p>
+      <p class="lead">Save the site you're looking at to your library.</p>
       <p class="hint" id="connect-msg"></p>
-      <button class="btn btn--primary btn--block" id="btn-connect">Conectar con criterio.design</button>
+      <button class="btn btn--primary btn--block" id="btn-connect">Connect to criterio.design</button>
       <details class="paste">
-        <summary>Ya tengo una llave</summary>
+        <summary>I already have a key</summary>
         <input class="input" id="paste-key" placeholder="crit_…" spellcheck="false" autocomplete="off" />
         <input class="input" id="paste-base" placeholder="https://criterio.design" spellcheck="false" autocomplete="off" />
-        <button class="btn btn--block" id="btn-paste">Usar esta llave</button>
+        <button class="btn btn--block" id="btn-paste">Use this key</button>
       </details>
     </section>
 
-    <!-- Con llave: pestaña actual -->
+    <!-- With key: current tab -->
     <section class="view" data-view="tab">
       <div class="site">
         <img class="site__fav" id="tab-fav" alt="" hidden />
@@ -35,13 +35,13 @@
         </div>
       </div>
       <p class="hint" id="tab-msg"></p>
-      <button class="btn btn--primary btn--block" id="btn-save">Guardar</button>
-      <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden>Ver en criterio.design</a>
+      <button class="btn btn--primary btn--block" id="btn-save">Save</button>
+      <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden>View on criterio.design</a>
     </section>
 
     <footer class="foot" id="foot" hidden>
       <span class="foot__who" id="who"></span>
-      <button class="link" id="btn-disconnect">Desconectar</button>
+      <button class="link" id="btn-disconnect">Disconnect</button>
     </footer>
   </main>
   <script src="popup.js"></script>

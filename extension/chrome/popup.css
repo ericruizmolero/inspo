@@ -1,4 +1,4 @@
-/* Mismos tokens que la app (app/globals.css), en claro y oscuro */
+/* Same tokens as the app (app/globals.css), light and dark */
 :root {
   --bg: #f4f4f2; --panel: #ffffff; --surface: #ebebe8; --surface-2: #e2e2de;
   --border: #dedcd6; --border-strong: #c9c7c0;

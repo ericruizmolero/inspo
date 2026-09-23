@@ -1,9 +1,9 @@
-// Clasificación con Jev (Typesafe AI). Solo servidor.
+// Classification with Jev (Typesafe AI). Server only.
 import "server-only";
 import { TypeSafeClient, choice, noul } from "@typesafe-ai/sdk";
 import type { JsonValue } from "@typesafe-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
-import { SECTORES, ESTILOS, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD } from "./taxonomy";
+import { SECTORS, STYLES, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD } from "./taxonomy";
 import en from "./i18n/en";
 import { fetchSiteText, SiteText } from "./extract";
 import { describeSite } from "./vision";
@@ -11,31 +11,31 @@ import { recordUsage, type UsageCtx } from "./usage";
 
 let _client: TypeSafeClient | null = null;
 function client() {
-  if (!process.env.TYPESAFE_API_KEY) throw new Error("TYPESAFE_API_KEY no configurada");
+  if (!process.env.TYPESAFE_API_KEY) throw new Error("TYPESAFE_API_KEY not configured");
   return (_client ??= new TypeSafeClient());
 }
 
 export const jevEnabled = () => !!process.env.TYPESAFE_API_KEY;
 
-// OpenRouter devuelve coste, proveedor e id en cada llamada de Jev; el SDK los deja pasar aunque no los tipa
+// OpenRouter returns cost, provider and id on every Jev call; the SDK passes them through without typing them
 const billingOf = (res: object) => {
   const r = res as { usage?: { cost?: unknown }; provider?: string; id?: string };
   return { costUsd: typeof r.usage?.cost === "number" ? r.usage.cost : null, provider: r.provider ?? null, requestId: r.id ?? null };
 };
 
-const criteriaOf = (terms: typeof SECTORES) =>
+const criteriaOf = (terms: typeof SECTORS) =>
   Object.fromEntries(terms.map((t) => [t.key, t.description]));
 
-// ─── Etiquetado de un item ────────────────────────────────────────────────────
+// ─── Tagging an item ───────────────────────────────────────────────────────────
 
 function buildState(item: InspoItem, site: SiteText | null, visual: string | null): { [k: string]: JsonValue } {
   return {
-    name: item.empresa,
+    name: item.name,
     url: item.web,
-    collection: item.tipo,
-    curator_notes: [item.comentarios, item.subcomentarios].filter(Boolean).join(" — ") || null,
-    // Lo que se ve en la captura, descrito por un modelo de visión. Es la mejor
-    // evidencia para rasgos visuales (tipografía, ilustración, paleta, layout).
+    collection: item.type,
+    curator_notes: [item.note, item.subNote].filter(Boolean).join(" — ") || null,
+    // What the screenshot shows, described by a vision model. It's the best
+    // evidence for visual traits (typography, illustration, palette, layout).
     screenshot_description: visual,
     page: site
       ? {
@@ -71,10 +71,10 @@ export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<I
   const state = buildState(item, site, visual);
 
   const questions = {
-    sector: choice("What kind of website or piece is this?", criteriaOf(SECTORES)),
-    estilo: choice(
+    sector: choice("What kind of website or piece is this?", criteriaOf(SECTORS)),
+    style: choice(
       "Which visual style best describes it? Weigh screenshot_description most, then fonts, colors, copy and structure signals.",
-      criteriaOf(ESTILOS)
+      criteriaOf(STYLES)
     ),
     ...Object.fromEntries(
       TAGS.map((t) => [
@@ -94,14 +94,14 @@ export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<I
   const tags: Record<string, number> = {};
   for (const t of TAGS) tags[t.key] = Number(a[`tag_${t.key}`]?.noul ?? 0);
 
-  const sector = a.sector?.choice ?? "otro";
-  const estilo = a.estilo?.choice ?? "minimal";
-  const resumen = [site?.title, site?.description].filter(Boolean).join(" · ").slice(0, 300);
+  const sector = a.sector?.choice ?? "other";
+  const style = a.style?.choice ?? "minimal";
+  const summary = [site?.title, site?.description].filter(Boolean).join(" · ").slice(0, 300);
 
   return {
     sector, sectorP: a.sector?.probabilities?.[sector] ?? 0,
-    estilo, estiloP: a.estilo?.probabilities?.[estilo] ?? 0,
-    tags, resumen,
+    style, styleP: a.style?.probabilities?.[style] ?? 0,
+    tags, summary,
     visual: visual ?? undefined,
     at: new Date().toISOString(),
     v: TAXONOMY_VERSION,
@@ -111,9 +111,9 @@ export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<I
 export const activeTags = (t: InspoTags | undefined) =>
   t ? TAGS.filter((x) => (t.tags[x.key] ?? 0) >= TAG_THRESHOLD).map((x) => x.key) : [];
 
-// ─── Búsqueda inteligente ─────────────────────────────────────────────────────
+// ─── Smart search ─────────────────────────────────────────────────────────────
 
-// Caché en memoria por consulta. Se vacía al etiquetar, porque las etiquetas forman parte del estado.
+// In-memory cache per query. Cleared on tagging, because tags are part of the state.
 const searchCache = new Map<string, { at: number; scores: Record<string, number> }>();
 const SEARCH_TTL = 10 * 60 * 1000;
 const SEARCH_MAX = 200;
@@ -133,15 +133,15 @@ const CONCURRENCY = 6;
 
 export function summarize(item: InspoItem, t: InspoTags | undefined) {
   return {
-    name: item.empresa,
+    name: item.name,
     url: item.web,
-    collection: item.tipo,
-    curator_notes: [item.comentarios, item.subcomentarios].filter(Boolean).join(" — ") || null,
-    page: t?.resumen || null,
+    collection: item.type,
+    curator_notes: [item.note, item.subNote].filter(Boolean).join(" — ") || null,
+    page: t?.summary || null,
     look: t?.visual ? t.visual.slice(0, 400) : null,
-    // Al modelo se le habla en inglés, también en las etiquetas
+    // The model is spoken to in English, labels included
     sector: t ? en.taxonomy.sector[t.sector as keyof typeof en.taxonomy.sector] ?? t.sector : null,
-    style: t ? en.taxonomy.estilo[t.estilo as keyof typeof en.taxonomy.estilo] ?? t.estilo : null,
+    style: t ? en.taxonomy.style[t.style as keyof typeof en.taxonomy.style] ?? t.style : null,
     traits: t ? activeTags(t).map((k) => en.taxonomy.tag[k as keyof typeof en.taxonomy.tag] ?? k) : [],
   };
 }
@@ -157,7 +157,7 @@ async function pool<T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): Prom
   return out;
 }
 
-/** Devuelve, por URL, la probabilidad (0–1) de que el item encaje con la consulta. */
+/** Returns, per URL, the probability (0–1) that the item fits the query. */
 export async function matchQuery(
   query: string,
   items: InspoItem[],
@@ -192,9 +192,9 @@ export async function matchQuery(
     }
   });
 
-  // Una fila por búsqueda, con la suma de lo que cobró cada lote. Si algún lote llega
-  // sin coste, la fila entera pasa a estimada: mejor eso que un real que no lo es.
-  // Varios lotes son varias llamadas: se guarda el proveedor, no un id que solo sería de una
+  // One row per search, with the sum of what each batch cost. If any batch arrives
+  // without a cost, the whole row becomes estimated: better that than a fake real one.
+  // Several batches are several calls: the provider is stored, not an id that would belong to just one
   const costs = results.map((r) => r.costUsd);
   const costUsd = costs.every((c) => c !== null) ? costs.reduce((n: number, c) => n + c!, 0) : null;
   void recordUsage(usage, { action: "jev_search", model: "jev", units: items.length, costUsd, provider: results.find((r) => r.provider)?.provider ?? null, ref: query });

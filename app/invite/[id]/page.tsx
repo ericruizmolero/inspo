@@ -16,9 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.invite.pageTitle };
 }
 
-export default async function InvitacionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function InvitePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const path = `/invitacion/${id}`;
+  const path = `/invite/${id}`;
   const session = await getSession();
   const { t } = await getT();
   if (!session) redirect(`/login?next=${encodeURIComponent(path)}`);
@@ -51,7 +51,7 @@ export default async function InvitacionPage({ params }: { params: Promise<{ id:
           <div className="auth__sent">
             <p className="auth__lead">{t.invite.cannotAccept}</p>
             <p className="auth__hint">{problem}</p>
-            {/* El correo que no coincide era un callejón sin salida: ahora se puede cambiar de cuenta */}
+            {/* A mismatched email was a dead end: now the account can be switched */}
             {mismatch ? <SwitchAccount next={path} /> : null}
             {inv && !mismatch ? (
               <p className="auth__hint">

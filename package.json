@@ -13,7 +13,7 @@
     "db:studio": "drizzle-kit studio",
     "seed": "tsx --conditions=react-server scripts/seed.ts",
     "migrate:sheet": "tsx --conditions=react-server scripts/migrate-sheet.ts",
-    "shots:recursos": "tsx --conditions=react-server scripts/recursos-shots.ts",
+    "shots:directory": "tsx --conditions=react-server scripts/directory-shots.ts",
     "plan": "tsx --conditions=react-server scripts/set-plan.ts",
     "apple:secret": "tsx --conditions=react-server scripts/apple-secret.ts",
     "admin": "tsx --conditions=react-server scripts/set-admin.ts",

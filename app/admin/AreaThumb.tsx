@@ -1,14 +1,14 @@
-// Miniatura esquemática de cada área de la app: una mini interfaz dibujada
-// en SVG (40×28) para reconocer de un vistazo qué es cada sección del panel.
-// Todo en monocromo con los tokens del tema; se ve igual en claro y oscuro.
+// Schematic thumbnail of each app area: a mini interface drawn
+// in SVG (40×28) to recognize each panel section at a glance.
+// All monochrome with the theme tokens; looks the same in light and dark.
 import type { ReactNode } from "react";
 
 const ink = "var(--text-2)";
 const soft = "var(--surface-3)";
 
 const DRAWINGS: Record<string, ReactNode> = {
-  // Cuadrícula de tiles a distintas alturas (masonry)
-  biblioteca: (
+  // Grid of tiles at different heights (masonry)
+  library: (
     <>
       <rect x="4" y="4" width="9" height="11" rx="1.5" fill={ink} />
       <rect x="15.5" y="4" width="9" height="7" rx="1.5" fill={soft} />
@@ -18,8 +18,8 @@ const DRAWINGS: Record<string, ReactNode> = {
       <rect x="27" y="19" width="9" height="5" rx="1.5" fill={soft} />
     </>
   ),
-  // Barra de búsqueda con un destello
-  busqueda: (
+  // Search bar with a sparkle
+  search: (
     <>
       <rect x="4" y="9" width="32" height="10" rx="5" fill={soft} />
       <circle cx="10.5" cy="14" r="2.4" fill="none" stroke={ink} strokeWidth="1.3" />
@@ -27,7 +27,7 @@ const DRAWINGS: Record<string, ReactNode> = {
       <path d="M29 11l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill={ink} />
     </>
   ),
-  // Documento con líneas de texto
+  // Document with lines of text
   "design-md": (
     <>
       <rect x="11" y="3" width="18" height="22" rx="2" fill={soft} />
@@ -37,15 +37,15 @@ const DRAWINGS: Record<string, ReactNode> = {
       <rect x="14" y="18" width="8" height="1.5" rx=".75" fill={ink} opacity=".6" />
     </>
   ),
-  // Dos bocadillos de conversación
-  comentarios: (
+  // Two speech bubbles
+  comments: (
     <>
       <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h14A2.5 2.5 0 0 1 24 6.5v6a2.5 2.5 0 0 1-2.5 2.5H12l-4 3.5V15H7.5A2.5 2.5 0 0 1 5 12.5z" fill={ink} />
       <path d="M17 13.5h15.5A2.5 2.5 0 0 1 35 16v5.5a2.5 2.5 0 0 1-2.5 2.5H31v3l-3.5-3h-8A2.5 2.5 0 0 1 17 21.5z" fill={soft} />
     </>
   ),
-  // Lista de enlaces con favicon
-  recursos: (
+  // List of links with favicon
+  directory: (
     <>
       <rect x="5" y="4" width="5" height="5" rx="1.2" fill={ink} />
       <rect x="13" y="5" width="18" height="3" rx="1.5" fill={soft} />
@@ -55,30 +55,30 @@ const DRAWINGS: Record<string, ReactNode> = {
       <rect x="13" y="20" width="14" height="3" rx="1.5" fill={soft} />
     </>
   ),
-  // Zona de soltar con un más
-  anadir: (
+  // Drop zone with a plus
+  add: (
     <>
       <rect x="5" y="4" width="30" height="20" rx="3" fill="none" stroke={soft} strokeWidth="1.5" strokeDasharray="3 2.5" />
       <path d="M20 9.5v9M15.5 14h9" stroke={ink} strokeWidth="1.8" strokeLinecap="round" />
     </>
   ),
-  // Tres avatares solapados
-  equipo: (
+  // Three overlapping avatars
+  team: (
     <>
       <circle cx="13" cy="14" r="6.5" fill={soft} />
       <circle cx="27" cy="14" r="6.5" fill={soft} />
       <circle cx="20" cy="14" r="7" fill={ink} stroke="var(--panel)" strokeWidth="1.5" />
     </>
   ),
-  // Tres columnas de precio, la del medio destacada
-  planes: (
+  // Three price columns, the middle one highlighted
+  plans: (
     <>
       <rect x="4" y="9" width="9" height="15" rx="1.5" fill={soft} />
       <rect x="15.5" y="4" width="9" height="20" rx="1.5" fill={ink} />
       <rect x="27" y="9" width="9" height="15" rx="1.5" fill={soft} />
     </>
   ),
-  // Gráfica de columnas
+  // Column chart
   admin: (
     <>
       <rect x="5" y="16" width="5" height="8" rx="1" fill={soft} />
@@ -87,8 +87,8 @@ const DRAWINGS: Record<string, ReactNode> = {
       <rect x="27.5" y="5" width="5" height="19" rx="1" fill={ink} />
     </>
   ),
-  // Sobre
-  invitacion: (
+  // Envelope
+  invitation: (
     <>
       <rect x="6" y="6" width="28" height="17" rx="2.5" fill={soft} />
       <path d="M7.5 8.5L20 16.5 32.5 8.5" fill="none" stroke={ink} strokeWidth="1.5" strokeLinejoin="round" />

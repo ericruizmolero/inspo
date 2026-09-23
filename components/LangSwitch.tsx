@@ -1,13 +1,13 @@
 "use client";
-// Segmentado English / Castellano, hermano de ThemeSwitch. Guarda la elección
-// (cookie, y en la cuenta si hay sesión) y repinta el servidor con el idioma nuevo.
+// English / Spanish segmented control, sibling of ThemeSwitch. Saves the choice
+// (cookie, and on the account if signed in) and re-renders the server with the new locale.
 import { setLanguage } from "@/app/actions/library";
 import { useTransition } from "react";
 import { LOCALES, type Locale } from "@/lib/i18n/locale";
 import { useT } from "./I18nProvider";
 
-// Cada idioma se llama a sí mismo. "Español" y no "Castellano": el control es
-// estrecho y "Castellano" se corta.
+// Each language uses its own name. "Español" over "Castellano": the control is
+// narrow and "Castellano" gets cut off.
 const LABEL: Record<Locale, string> = { en: "English", es: "Español" };
 
 export default function LangSwitch() {
@@ -17,7 +17,7 @@ export default function LangSwitch() {
   const choose = (v: Locale) => {
     if (v === locale) return;
     start(async () => {
-      // La acción escribe la cookie y Next vuelve a pintar la página con el idioma nuevo
+      // The action writes the cookie and Next re-renders the page in the new locale
       await setLanguage(v);
     });
   };

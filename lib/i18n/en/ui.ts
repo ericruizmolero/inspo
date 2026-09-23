@@ -1,8 +1,8 @@
-// El diccionario de la interfaz. Inglés es el idioma de partida: aquí se escribe
-// primero y de aquí sale la traducción. lib/i18n/es.ts está tipado contra este
-// objeto, así que falta una clave y no compila.
+// The interface dictionary. English is the source language: text is written here
+// first and translated from here. lib/i18n/es/ui.ts is typed against this
+// object, so a missing key does not compile.
 //
-// Lo que lleva variables dentro es una función, no una plantilla con marcadores.
+// Anything with variables inside is a function, not a template with placeholders.
 export const ui = {
   settings: {
     language: "Language",
@@ -122,6 +122,11 @@ export const ui = {
     dismiss: "Dismiss",
   },
   sidebar: {
+    addReference: "Add reference",
+    discover: "Discover",
+    directory: "Directory",
+    anyTime: "Any time",
+    removeFilter: (label: string): string => `Remove ${label}`,
     search: "Search",
     searchAi: "Describe what you are after",
     clear: "Clear",
@@ -134,9 +139,6 @@ export const ui = {
     style: "Style",
     tags: "Tags",
     notTagged: "Nothing tagged yet",
-    directoryCount: (n: number): string => `${n} sites and tools`,
-    directoryTitle: "Where to look, and what to use",
-    directorySub: "Galleries, type, code, models and agents. What we open before starting.",
     seePlans: "See plans",
     plan: (name: string): string => `${name} plan`,
     quotaSpent: "Monthly quota spent \u00b7 upgrade",
@@ -145,7 +147,6 @@ export const ui = {
     tagging: (done: number, total: number): string => `Tagging ${done}/${total}`,
     taggingFailed: "Tagging failed \u00b7 try again",
     tagPending: (n: number): string => `Tag ${n} with AI`,
-    tagged: (n: number): string => `${n} tagged with AI`,
   },
   start: {
     title: "Your library starts empty. Inspiration does not.",
@@ -156,13 +157,9 @@ export const ui = {
     save: "Save",
     notUrl: "That does not look like a URL",
     alreadySaved: "That URL is already saved",
-    nothingToHandBefore: "Nothing to hand? There are ",
-    nothingToHandAfter: " waiting in the directory.",
-    sitesWord: (n: number): string => `${n} sites`,
     openDirectory: "Open the directory",
     trendingNow: "Somewhere to start \u00b7 what everyone is looking at",
     seeAll: (n: number): string => `See all ${n}`,
-    tip: "When something catches your eye, even if you cannot say why, save it. Three or four in and a point of view starts to show.",
   },
   add: {
     title: "New inspo",
@@ -172,7 +169,12 @@ export const ui = {
     notUrl: "That does not look like a URL",
     alreadyInLibrary: "That URL is already in your library",
   },
-  recursos: {
+  directory: {
+    add: "Add",
+    added: "Added",
+    addLabel: (name: string): string => `Add ${name} to the library`,
+    addedLabel: (name: string): string => `${name} is already in the library`,
+    featured: "Picks",
     title: "Where to look, and what to use",
     lead: (n: number): string => `${n} sites we open before starting and while we work: design galleries, sections, motion, type, code, DESIGN.md for agents, models and AI tools. None of them twice.`,
     guestNote: "Without an account you see a sample;",
@@ -251,6 +253,9 @@ export const ui = {
     },
   },
   comments: {
+    maxFiles: (n: number): string => `At most ${n} screenshots per comment`,
+    filesLeftOut: (n: number, out: number): string => `Only ${n} screenshots fit; ${out} left out`,
+    screenshotName: "screenshot",
     now: "now",
     minsAgo: (n: number): string => `${n} min ago`,
     hoursAgo: (n: number): string => `${n} h ago`,
@@ -294,13 +299,15 @@ export const ui = {
     next: "Next",
   },
   designMd: {
+    colophon: (model: string): string => `Measured on the live site · roles and recommendations interpreted by ${model}`,
+    copyPrompt: "Copy prompt",
     justNow: "just now",
     minsAgo: (n: number): string => `${n} min ago`,
     hoursAgo: (n: number): string => `${n} h ago`,
     daysAgo: (n: number): string => `${n} d ago`,
     sections: {
-      general: "Identity", color: "Colour", tipografia: "Typography", espaciado: "Spacing and shape",
-      componentes: "Components", reglas: "Rules", sistema: "System", afines: "Related brands", prompt: "Prompt",
+      general: "Identity", color: "Colour", typography: "Typography", spacing: "Spacing and shape",
+      components: "Components", rules: "Rules", system: "System", related: "Related brands", prompt: "Prompt",
     },
     colorGroups: { brand: "Brand", accent: "Accent", semantic: "Semantic", neutral: "Neutrals" },
     fontRoles: { display: "display", body: "body", mono: "mono", ui: "interface" },
@@ -353,6 +360,7 @@ export const ui = {
     words: (n: number): string => `${n} words`,
   },
   app: {
+    menu: "Menu",
     saveFailed: "It could not be saved",
     removeFailed: "It could not be removed",
     showSidebar: "Show the sidebar",

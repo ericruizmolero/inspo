@@ -1,21 +1,21 @@
-// Guardar una web desde la extensión. La extensión manda solo la dirección, el título de la
-// pestaña y una captura de lo que se ve; el resto (nombre, colección, etiquetas) lo decide el
-// servidor, igual que cuando se pega una URL en la app.
+// Save a site from the extension. The extension sends only the address, the tab title
+// and a screenshot of what is visible; the rest (name, collection, tags) is decided by the
+// server, same as when a URL is pasted in the app.
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, rowToItem, setThumbnail, setTags } from "@/lib/items";
 import { uploadThumbnail } from "@/lib/thumbnails";
 import { siteTextWithin } from "@/lib/extract";
-import { normalizeWebUrl, guessEmpresa, tipoFromUrl } from "@/lib/url";
+import { normalizeWebUrl, guessName, typeFromUrl } from "@/lib/url";
 import { classifyItem, jevEnabled } from "@/lib/jev";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 
-export const maxDuration = 60; // el etiquetado corre en after(), tras responder
+export const maxDuration = 60; // tagging runs in after(), once the response is sent
 
 const MAX_SHOT_BYTES = 3 * 1024 * 1024;
 
-/** data:image/jpeg;base64,… → File, o null si no es una imagen razonable */
+/** data:image/jpeg;base64,… → File, or null if it is not a reasonable image */
 function fileFromDataUrl(dataUrl: string | undefined): File | null {
   const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(dataUrl ?? "");
   if (!m) return null;
@@ -36,39 +36,39 @@ export async function POST(req: NextRequest) {
   const existing = await findByWeb(ctx.workspace.id, web);
   if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing) });
 
-  // Nombre: og:site_name o <title> de la web con tope de tiempo; si no llega, el título de la pestaña
+  // Name: the site's og:site_name or <title> with a time limit; if missing, the tab title
   const site = await siteTextWithin(web);
-  const empresa = guessEmpresa(web, site ?? (body.title ? { title: body.title } : null));
+  const name = guessName(web, site ?? (body.title ? { title: body.title } : null));
 
   try {
     const item = await addItem(ctx.workspace.id, {
-      empresa, web, tipo: tipoFromUrl(web),
-      autor: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
+      name, web, type: typeFromUrl(web),
+      author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
     });
 
-    // La captura de la pestaña hace de miniatura desde el primer segundo
+    // The tab screenshot serves as the thumbnail from the first second
     const shot = fileFromDataUrl(body.screenshot);
     if (shot) {
       try {
         const url = await uploadThumbnail(ctx.workspace.id, shot.name, shot);
         await setThumbnail(ctx.workspace.id, web, url);
-      } catch (e) { console.error("ext: miniatura no guardada", e instanceof Error ? e.message : e); }
+      } catch (e) { console.error("ext: thumbnail not saved", e instanceof Error ? e.message : e); }
     }
 
-    // Etiquetas con IA después de responder, como hace la app al pegar una URL
+    // AI tags after responding, as the app does when a URL is pasted
     if (jevEnabled()) {
       after(async () => {
         try {
           const tags = await classifyItem(item, { organizationId: ctx.workspace.id, userId: ctx.user.id });
           await setTags(ctx.workspace.id, web, tags);
-        } catch (e) { console.error("ext: etiquetado fallido", web, e instanceof Error ? e.message : e); }
+        } catch (e) { console.error("ext: tagging failed", web, e instanceof Error ? e.message : e); }
       });
     }
 
     return Response.json({ ok: true, existed: false, item });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    // El estado viene del error, no de lo que diga el mensaje: el texto está traducido
+    // The status comes from the error, not from the message: the text is translated
     return Response.json({ error: msg }, { status: err instanceof HttpError ? err.status : 500 });
   }
 }

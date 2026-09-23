@@ -1,20 +1,20 @@
-// El texto del directorio. La estructura (grupos, nombres y URLs) vive en
-// lib/recursos.ts; aquí solo lo que se lee, con la misma clave en los dos idiomas:
-// la clave del grupo, y la URL de cada recurso.
-export const recursos = {
+// The directory text. The structure (groups, names and URLs) lives in
+// lib/directory.ts; here only what is read, with the same key in both languages:
+// the group key, and the URL of each resource.
+export const directory = {
   groups: {
     designmd: { title: "DESIGN.md for agents", hint: "Design systems as text, ready to paste into Claude or Cursor" },
-    webs: { title: "Site galleries", hint: "Full landing pages and sites, picked by hand" },
+    sites: { title: "Site galleries", hint: "Full landing pages and sites, picked by hand" },
     saas: { title: "SaaS and product", hint: "Software marketing and real app screens" },
-    secciones: { title: "Sections and components", hint: "For when you only need to solve one piece of the page" },
-    codigo: { title: "Components with code", hint: "Blocks and kits to copy, or to hand to the agent" },
+    sections: { title: "Sections and components", hint: "For when you only need to solve one piece of the page" },
+    code: { title: "Components with code", hint: "Blocks and kits to copy, or to hand to the agent" },
     motion: { title: "Motion and interaction", hint: "Animation, micro-interactions and details that move" },
-    recursos: { title: "Resources and tools", hint: "Assets, mockups and utilities that save you hours" },
-    grafica: { title: "Branding and graphics", hint: "Identity, editorial and type: what feeds the web without being the web" },
-    tipografia: { title: "Type and foundries", hint: "Foundries whose specimen pages are inspiration on their own" },
-    desarrollo: { title: "Building with agents", hint: "To build what you saw, and to give feedback on what you built" },
-    modelos: { title: "Models", hint: "The models we use, and the frontier ones worth keeping close" },
-    agentes: { title: "Agents", hint: "Personal agents that act for you: where the interface is heading" },
+    resources: { title: "Resources and tools", hint: "Assets, mockups and utilities that save you hours" },
+    graphics: { title: "Branding and graphics", hint: "Identity, editorial and type: what feeds the web without being the web" },
+    type: { title: "Type and foundries", hint: "Foundries whose specimen pages are inspiration on their own" },
+    development: { title: "Building with agents", hint: "To build what you saw, and to give feedback on what you built" },
+    models: { title: "Models", hint: "The models we use, and the frontier ones worth keeping close" },
+    agents: { title: "Agents", hint: "Personal agents that act for you: where the interface is heading" },
     moodboards: { title: "Moodboards and newsletters", hint: "To keep what you see, and to have it arrive without looking" },
   },
   items: {

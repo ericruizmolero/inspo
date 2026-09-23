@@ -1,5 +1,5 @@
 "use server";
-// Panel de actividad (/admin): quién tiene acceso y borrar feedback. Solo quien ya tiene acceso.
+// Activity panel (/admin): who has access, and deleting feedback. Only for those who already have access.
 import { headers } from "next/headers";
 import { getSession, type ActionResult } from "@/lib/workspace";
 import { APP_URL } from "@/lib/auth";
@@ -21,7 +21,7 @@ async function asAdmin<T>(fn: (s: Admin) => Promise<T>): Promise<ActionResult<T>
   }
 }
 
-/** Da acceso y avisa por correo al nuevo, en su idioma (no en el de quien lo da). */
+/** Grants access and emails the new person, in their language (not the granter's). */
 export async function grantAccess(email: string) {
   return asAdmin(async (s) => {
     if (!email?.trim()) throw new Error((await getErrors()).missingEmail);
@@ -33,13 +33,13 @@ export async function grantAccess(email: string) {
       const base = APP_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
       const m = adminAccessMail(`${base}/admin`, by, await localeForEmail(r.email));
       try { await sendMail(r.email, m.subject, m.html, m.text); mailed = true; }
-      catch (e) { console.warn("accesos: no se pudo avisar por correo", e instanceof Error ? e.message : e); }
+      catch (e) { console.warn("access: could not send the email", e instanceof Error ? e.message : e); }
     }
     return { ...r, mailed };
   });
 }
 
-/** No puedes quitarte a ti mismo ni a los fijos. */
+/** You cannot remove yourself or the fixed ones. */
 export async function revokeAccess(email: string) {
   return asAdmin(async (s) => {
     const e = email?.trim().toLowerCase();
@@ -49,7 +49,7 @@ export async function revokeAccess(email: string) {
   });
 }
 
-/** Los ids son los de feedback_note (un envío = varias notas). */
+/** The ids are feedback_note ids (one submission = several notes). */
 export async function deleteFeedback(ids: string[]) {
   return asAdmin(async () => {
     const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 500) : [];

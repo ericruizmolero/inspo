@@ -9,13 +9,13 @@ export const maxDuration = 30;
 
 const MAX_ITEMS = 40;
 
-// POST { q, results: [{ web, score }] } → { reasons: { [web]: frase } }
+// POST { q, results: [{ web, score }] } → { reasons: { [web]: sentence } }
 export async function POST(req: NextRequest) {
-  if (!explainEnabled()) return Response.json({ error: "OPENROUTER_API_KEY no configurada" }, { status: 503 });
+  if (!explainEnabled()) return Response.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
 
-  // Bajar de plan puede dejar al equipo con más gente de la que admite: la IA se para hasta que lo arreglen
+  // Downgrading can leave the team with more people than the plan allows: AI stops until they fix it
   const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
   if (blocked) return blocked;
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { items, tagMap } = await loadWorkspaceData(ctx.workspace.id);
-    // Solo URLs del workspace: el cliente no puede hacernos explicar contenido arbitrario
+    // Workspace URLs only: the client cannot make us explain arbitrary content
     const entries = items
       .filter((it) => wanted.has(it.web))
       .map((it) => ({ item: it, tags: tagMap[it.web], score: wanted.get(it.web)! }))

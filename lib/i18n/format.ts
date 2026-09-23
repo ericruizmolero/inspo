@@ -1,5 +1,5 @@
-// Fechas y cantidades con el idioma de quien mira. La zona horaria no cambia con el
-// idioma: los días de las gráficas de /admin se agrupan siempre por el día de Madrid.
+// Dates and amounts in the viewer's language. The time zone does not change with the
+// language: days in the /admin charts are always grouped by the Madrid day.
 import { INTL_LOCALE, type Locale } from "./locale";
 
 type DateLike = Date | string | number;
@@ -17,7 +17,7 @@ export function fmtTime(v: DateLike, locale: Locale, opts: Intl.DateTimeFormatOp
   return asDate(v).toLocaleTimeString(INTL_LOCALE[locale], opts);
 }
 
-/** Dólares con el separador decimal del idioma: "1,23 $" en castellano, "$1.23" en inglés. */
+/** Dollars with the language's decimal separator: "1,23 $" in Spanish, "$1.23" in English. */
 export function fmtUsd(n: number, locale: Locale): string {
   const digits = n > 0 && n < 0.01 ? 4 : 2;
   return new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);

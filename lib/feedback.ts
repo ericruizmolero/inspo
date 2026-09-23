@@ -1,7 +1,7 @@
-// Feedback visual sobre la app: guarda cada nota de la barra Agentation según llega y,
-// cuando la persona pulsa "Enviar al equipo", manda todas las notas de esa página por
-// correo a los socios (quienes ven /admin, lib/activity.ts) con el mismo markdown que
-// copia la barra. No hay envíos automáticos: solo sale lo que la persona decide enviar.
+// Visual feedback on the app: saves each Agentation bar note as it arrives and,
+// when the person presses "Send to the team", emails all the notes for that page
+// to the partners (those who see /admin, lib/activity.ts) with the same markdown the
+// bar copies. No automatic sends: only what the person decides to send goes out.
 import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
 import "server-only";
 import { db, schema } from "./db";
@@ -17,13 +17,13 @@ export interface FeedbackAuthor { id: string; name: string; email: string }
 const F = schema.feedbackNote;
 const noteId = (annotationId: string | number, userId: string) => `${String(annotationId).slice(0, 40)}@${userId}`;
 
-/** Recorta campos enormes (estilos computados, HTML cercano) para no hinchar la fila */
+/** Trims huge fields (computed styles, nearby HTML) so the row doesn't bloat */
 function slim(a: Annotation): Annotation {
   const cut = (s: string | undefined, n: number) => (typeof s === "string" && s.length > n ? s.slice(0, n) + "…" : s);
   return {
     ...a,
     comment: String(a.comment ?? "").slice(0, 4000),
-    element: String(a.element ?? "Elemento").slice(0, 200),
+    element: String(a.element ?? "Element").slice(0, 200),
     elementPath: String(a.elementPath ?? "").slice(0, 600),
     selectedText: cut(a.selectedText, 1000),
     nearbyText: cut(a.nearbyText, 500),
@@ -41,7 +41,7 @@ function slim(a: Annotation): Annotation {
 const validAnnotation = (a: unknown): a is Annotation =>
   !!a && typeof a === "object" && (typeof (a as Annotation).id === "string" || typeof (a as Annotation).id === "number");
 
-/** Guarda o actualiza notas (sin tocar sentAt en las que ya salieron) */
+/** Saves or updates notes (without touching sentAt on those already sent) */
 async function upsert(author: FeedbackAuthor, organizationId: string | null, annotations: Annotation[], url: string, viewport: string | null) {
   if (!annotations.length) return;
   const now = new Date();
@@ -55,7 +55,7 @@ async function upsert(author: FeedbackAuthor, organizationId: string | null, ann
   }
 }
 
-/** Procesa un evento de la barra. Devuelve cuántos correos han salido (1 solo al enviar). */
+/** Handles a bar event. Returns how many emails went out (1 only on submit). */
 export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId: string | null, ev: FeedbackEvent): Promise<{ sent: number }> {
   const url = String(ev.url ?? "").slice(0, 1000);
   const viewport = "viewport" in ev && typeof ev.viewport === "string" ? ev.viewport.slice(0, 40) : null;
@@ -67,7 +67,7 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
       await upsert(author, organizationId, [ev.annotation], url, viewport);
       return { sent: 0 };
     case "annotation.delete":
-      // Solo se retira si aún no ha salido por correo; lo enviado, enviado está
+      // Only removed if not yet emailed; what's sent stays sent
       if (validAnnotation(ev.annotation)) await db.delete(F).where(and(eq(F.id, noteId(ev.annotation.id, author.id)), isNull(F.sentAt)));
       return { sent: 0 };
     case "submit": {
@@ -78,7 +78,7 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
       const markdown = typeof ev.output === "string" && ev.output.trim() ? ev.output.trim().slice(0, 60000) : feedbackMarkdown(annotations.map(slim), path, viewport);
       const to = (await listAdmins()).map((a) => a.email);
       if (!to.length) throw new Error((await getErrors()).nobodyToNotify);
-      // Va a los socios; el idioma es el del primero de la lista, que es quien lo lee
+      // Goes to the partners; the language is that of the first on the list, who reads it
       const m = feedbackMail({ author, path, url, count: annotations.length, markdown, at: new Date() }, await localeForEmail(to[0]));
       await sendMail(to, m.subject, m.html, m.text, { replyTo: author.email });
       await db.update(F).set({ sentAt: new Date() }).where(inArray(F.id, annotations.map((a) => noteId(a.id, author.id))));
@@ -90,9 +90,9 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
 }
 
 /**
- * Feedback de los últimos N días para /admin, agrupado por envío: las notas que una persona
- * mandó juntas sobre una página (mismo sentAt) o, si aún no ha pulsado enviar, su borrador.
- * Lo más reciente primero.
+ * Feedback from the last N days for /admin, grouped by submission: the notes one person
+ * sent together about a page (same sentAt) or, if they haven't pressed send yet, their draft.
+ * Most recent first.
  */
 export async function feedbackOverview(days: number): Promise<FeedbackOverview> {
   const since = new Date(Date.now() - days * 86400000);
@@ -112,8 +112,8 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
   const batches = new Map<string, FeedbackBatch & { order: number[] }>();
   for (const r of rows) {
     let a: Partial<Annotation> = {};
-    try { a = JSON.parse(r.data) as Partial<Annotation>; } catch { /* fila vieja o rota: se enseña vacía */ }
-    const key = `${r.userId}|${r.path}|${r.sentAt ? r.sentAt.getTime() : "borrador"}`;
+    try { a = JSON.parse(r.data) as Partial<Annotation>; } catch { /* old or broken row: shown empty */ }
+    const key = `${r.userId}|${r.path}|${r.sentAt ? r.sentAt.getTime() : "draft"}`;
     let b = batches.get(key);
     if (!b) {
       b = {
@@ -125,7 +125,7 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
     }
     if (r.updatedAt.toISOString() > b.updatedAt) b.updatedAt = r.updatedAt.toISOString();
     const note: FeedbackNoteView = {
-      id: r.id, element: String(a.element ?? "Elemento"), elementPath: String(a.elementPath ?? ""), comment: String(a.comment ?? ""),
+      id: r.id, element: String(a.element ?? "Element"), elementPath: String(a.elementPath ?? ""), comment: String(a.comment ?? ""),
       selectedText: a.selectedText ? String(a.selectedText) : null, sourceFile: a.sourceFile ? String(a.sourceFile) : null,
       reactComponents: a.reactComponents ? String(a.reactComponents) : null, createdAt: r.createdAt.toISOString(),
     };
@@ -134,7 +134,7 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
   }
 
   const list = [...batches.values()].map((b) => {
-    // Dentro del envío, en el orden en que se dejaron las notas (como en el correo)
+    // Within the submission, in the order the notes were left (as in the email)
     const idx = b.notes.map((_, i) => i).sort((i, j) => b.order[i] - b.order[j]);
     const { order: _order, ...rest } = b;
     return { ...rest, notes: idx.map((i) => b.notes[i]) };
@@ -150,7 +150,7 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
   };
 }
 
-/** Borra notas por id (desde /admin). Devuelve cuántas había. */
+/** Deletes notes by id (from /admin). Returns how many there were. */
 export async function deleteFeedbackNotes(ids: string[]): Promise<number> {
   if (!ids.length) return 0;
   const rows = await db.delete(F).where(inArray(F.id, ids)).returning({ id: F.id });

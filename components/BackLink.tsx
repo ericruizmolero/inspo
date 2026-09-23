@@ -1,7 +1,7 @@
 "use client";
-// Enlace "Volver" común a las páginas secundarias (/equipo, /planes…).
-// Si venimos de otra página de la app vuelve atrás en el historial, para
-// conservar filtros y scroll; si se llegó por URL directa va al destino fijo.
+// Shared "Back" link for secondary pages (/settings…).
+// Coming from another app page it goes back in history, to keep filters
+// and scroll; reached by direct URL it goes to the fixed destination.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
@@ -17,7 +17,7 @@ export default function BackLink({ href = "/", label }: Props) {
   const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     let sameOrigin = false;
-    try { sameOrigin = !!document.referrer && new URL(document.referrer).origin === window.location.origin; } catch { /* referrer opaco */ }
+    try { sameOrigin = !!document.referrer && new URL(document.referrer).origin === window.location.origin; } catch { /* opaque referrer */ }
     if (sameOrigin && window.history.length > 1) { e.preventDefault(); router.back(); }
   };
 

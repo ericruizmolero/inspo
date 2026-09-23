@@ -4,19 +4,19 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
-import RecursosModal from "./RecursosModal";
+import DirectoryModal from "./DirectoryModal";
 import { useT } from "./I18nProvider";
 import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 
 /**
- * Portada sin sesión: el mismo lienzo de inicio que ve un usuario nuevo, sin sidebar.
- * Pegar una URL lleva a /login con la URL a cuestas; al volver del enlace la web se guarda sola (?add=).
+ * Signed-out home page: the same start canvas a new user sees, without the sidebar.
+ * Pasting a URL goes to /login carrying the URL; back from the link, the site saves itself (?add=).
  */
 export default function GuestStart() {
   const router = useRouter();
   const { t } = useT();
-  const [showRecursos, setShowRecursos] = useState(false);
+  const [showDirectory, setShowDirectory] = useState(false);
 
   return (
     <div className="guest">
@@ -30,10 +30,10 @@ export default function GuestStart() {
 
       <EmptyStart
         onAddUrl={async (web) => { router.push(`/login?next=${encodeURIComponent(`/?add=${encodeURIComponent(web)}`)}`); }}
-        onRecursos={() => setShowRecursos(true)}
+        onDirectory={() => setShowDirectory(true)}
       />
 
-      {showRecursos && <RecursosModal guest onClose={() => setShowRecursos(false)} />}
+      {showDirectory && <DirectoryModal guest onClose={() => setShowDirectory(false)} />}
     </div>
   );
 }

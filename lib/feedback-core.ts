@@ -1,18 +1,18 @@
-// Feedback visual sobre la app (barra Agentation): tipos y formato, sin dependencias
-// de servidor. Lo importan lib/feedback.ts (BD y correo) y components/FeedbackTool.tsx.
+// Visual feedback on the app (Agentation bar): types and formatting, with no server
+// dependencies. Imported by lib/feedback.ts (DB and email) and components/FeedbackTool.tsx.
 import type { Annotation } from "agentation";
 
 export type { Annotation };
 
-/** Eventos que acepta POST /api/feedback */
+/** Events accepted by POST /api/feedback */
 export type FeedbackEvent =
-  /** Se guarda cada nota según se añade o edita, por si acaso; no manda nada */
+  /** Each note is saved as it's added or edited, just in case; nothing is sent */
   | { event: "annotation.add" | "annotation.update"; annotation: Annotation; url?: string; viewport?: string }
   | { event: "annotation.delete"; annotation: Annotation; url?: string }
-  /** Botón "Enviar al equipo": manda por correo todas las notas de la página */
+  /** "Send to the team" button: emails all the page's notes */
   | { event: "submit"; output?: string; annotations: Annotation[]; url?: string; viewport?: string };
 
-/** Ruta + query + hash de una URL, como la enseña Agentation en la cabecera del feedback */
+/** Path + query + hash of a URL, as Agentation shows it in the feedback header */
 export function pathOf(url: string | undefined | null, fallback = "/"): string {
   if (!url) return fallback;
   try {
@@ -22,9 +22,9 @@ export function pathOf(url: string | undefined | null, fallback = "/"): string {
 }
 
 /**
- * El mismo markdown que copia Agentation en su nivel "standard" (generateOutput):
- * cabecera con la página y el viewport, y una sección numerada por nota con el
- * elemento, su ruta en el DOM, el texto seleccionado y el comentario.
+ * The same markdown Agentation copies at its "standard" level (generateOutput):
+ * a header with the page and viewport, and one numbered section per note with the
+ * element, its DOM path, the selected text and the comment.
  */
 export function feedbackMarkdown(annotations: Annotation[], path: string, viewport?: string | null): string {
   if (!annotations.length) return "";
@@ -42,9 +42,9 @@ export function feedbackMarkdown(annotations: Annotation[], path: string, viewpo
   return out.trim();
 }
 
-// ─── Lo que enseña /admin ────────────────────────────────────────────────────
+// ─── What /admin shows ───────────────────────────────────────────────────────
 
-/** Una nota, ya reducida a lo que se lee en el panel */
+/** A note, reduced to what the panel shows */
 export interface FeedbackNoteView {
   id: string;
   element: string;
@@ -56,7 +56,7 @@ export interface FeedbackNoteView {
   createdAt: string;
 }
 
-/** Un envío (o un borrador aún sin enviar): las notas de una persona sobre una página */
+/** A submission (or an unsent draft): one person's notes on one page */
 export interface FeedbackBatch {
   key: string;
   author: { id: string; name: string; email: string; image: string | null };
@@ -64,9 +64,9 @@ export interface FeedbackBatch {
   path: string;
   url: string;
   viewport: string | null;
-  /** Cuándo salió el correo; null = la persona aún no ha pulsado "Enviar al equipo" */
+  /** When the email went out; null = the person hasn't pressed "Send to the team" yet */
   sentAt: string | null;
-  /** Última nota añadida o editada */
+  /** Last note added or edited */
   updatedAt: string;
   notes: FeedbackNoteView[];
 }
@@ -74,14 +74,14 @@ export interface FeedbackBatch {
 export interface FeedbackOverview {
   days: number;
   batches: FeedbackBatch[];
-  /** Totales del periodo */
+  /** Totals for the period */
   notes: number;
   sent: number;
   pending: number;
   people: number;
 }
 
-/** El mismo markdown del correo, reconstruido desde el panel para pegárselo a un agente */
+/** The same markdown as the email, rebuilt from the panel to paste into an agent */
 export function batchMarkdown(b: FeedbackBatch): string {
   return feedbackMarkdown(
     b.notes.map((n, i) => ({

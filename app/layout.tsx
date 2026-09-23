@@ -7,10 +7,10 @@ import { getLocale, type Locale } from "@/lib/i18n";
 import { I18nProvider } from "@/components/I18nProvider";
 import FeedbackTool from "@/components/FeedbackTool";
 
-// URL pública canónica: la misma que BETTER_AUTH_URL en Vercel (criterio.design desde el 22/09/2026).
+// Canonical public URL: the same as BETTER_AUTH_URL on Vercel (criterio.design since 22/09/2026).
 const SITE = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://criterio.design";
-// Título y descripción en el idioma de quien mira. Un buscador o un robot no manda
-// cookie, así que le toca el idioma por defecto: inglés.
+// Title and description in the viewer's language. A search engine or bot sends no
+// cookie, so it gets the default language: English.
 const META: Record<Locale, { title: string; description: string; ogLocale: string }> = {
   en: {
     title: "criterio.design · Your team's inspiration library",
@@ -24,7 +24,7 @@ const META: Record<Locale, { title: string; description: string; ogLocale: strin
   },
 };
 
-// Título, descripción y tarjeta para compartir (WhatsApp, Slack, X…). La imagen sale de app/opengraph-image.tsx.
+// Title, description and share card (WhatsApp, Slack, X…). The image comes from app/opengraph-image.tsx.
 export async function generateMetadata(): Promise<Metadata> {
   const m = META[await getLocale()];
   return {
@@ -48,7 +48,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Color de la barra del navegador según el tema del sistema (el mismo que --bg en cada tema)
+// Browser bar color based on the system theme (the same as --bg in each theme)
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
@@ -61,8 +61,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // La barra de feedback está en todas las páginas, también sin sesión (login, planes,
-  // invitación): sin sesión se anota y se copia, pero enviar a los socios pide entrar.
+  // The feedback bar is on every page, also without a session (login, plans,
+  // invite): without a session you can annotate and copy, but sending to the partners requires signing in.
   const [session, locale] = await Promise.all([getSession(), getLocale()]);
   return (
     <html
@@ -71,7 +71,7 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Pone data-theme antes del primer pintado para que no parpadee al cargar */}
+        {/* Sets data-theme before the first paint so it does not flicker on load */}
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>

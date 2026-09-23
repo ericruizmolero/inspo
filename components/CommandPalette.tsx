@@ -56,10 +56,10 @@ export default function CommandPalette({ open, onOpenChange, items, hasDesignMd,
             {items.map((it) => {
               const md = hasDesignMd(it.web);
               return (
-                <CommandItem key={it.id ?? it.web} value={`${it.empresa} ${it.web}`}
+                <CommandItem key={it.id ?? it.web} value={`${it.name} ${it.web}`}
                   onSelect={run(() => md ? onOpenItem(it) : window.open(it.web, "_blank", "noopener"))}>
                   <img className="cmdk-item__favicon" alt="" src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host(it.web))}&sz=32`} />
-                  <span className="cmdk-item__label">{it.empresa}</span>
+                  <span className="cmdk-item__label">{it.name}</span>
                   <CommandShortcut>{md ? "DESIGN.md" : t.palette.openSite}</CommandShortcut>
                 </CommandItem>
               );

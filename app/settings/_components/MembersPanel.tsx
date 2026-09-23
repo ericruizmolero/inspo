@@ -35,8 +35,8 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
   const [lastLink, setLastLink] = useState("");
   const [copied, setCopied] = useState("");
 
-  // El enlace vale por sí solo: si el correo tarda, se pega por chat y la persona entra igual
-  const linkOf = (id: string) => `${window.location.origin}/invitacion/${id}`;
+  // The link works on its own: if the email is slow, paste it in a chat and the person still gets in
+  const linkOf = (id: string) => `${window.location.origin}/invite/${id}`;
   const copy = async (link: string, tag: string) => {
     try {
       await navigator.clipboard.writeText(link);
@@ -62,8 +62,8 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
     setEmail("");
   };
 
-  // Reenviar = invitar otra vez: cancelPendingInvitationsOnReInvite cancela la anterior
-  // y crea una nueva con enlace nuevo. No ocupa una plaza de más.
+  // Resend = invite again: cancelPendingInvitationsOnReInvite cancels the previous one
+  // and creates a new one with a new link. It does not take an extra seat.
   const resend = (i: Invitation) => send(i.email, (i.role === "admin" ? "admin" : "member"));
 
   const cancelInvite = async (id: string) => {
@@ -89,7 +89,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
       {msg && (
         <p className="page__ok">
           {msg}
-          {lastLink && <> · <Button variant="ghost" size="sm" onClick={() => copy(lastLink, "ultimo")}>{copied === "ultimo" ? t.team.linkCopied : t.team.copyLink}</Button></>}
+          {lastLink && <> · <Button variant="ghost" size="sm" onClick={() => copy(lastLink, "last")}>{copied === "last" ? t.team.linkCopied : t.team.copyLink}</Button></>}
         </p>
       )}
 

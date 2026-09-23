@@ -11,11 +11,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.ext.connect };
 }
 
-// La extensión abre esta pestaña para conectarse: la persona ya está identificada (o entra),
-// elige el workspace donde guardará y se genera una llave que la extensión recoge sola
-// (extension/chrome/content.js escucha en esta página). Si no la recoge, se puede copiar.
-export default async function ConectarPage() {
-  const [ctx, { t }] = await Promise.all([getCtxOrLogin("/extension/conectar"), getT()]);
+// The extension opens this tab to connect: the person is already signed in (or signs in),
+// picks the workspace to save to, and a key is generated that the extension picks up on its own
+// (extension/chrome/content.js listens on this page). If it does not, the key can be copied.
+export default async function ConnectPage() {
+  const [ctx, { t }] = await Promise.all([getCtxOrLogin("/extension/connect"), getT()]);
   return (
     <div className="page">
       <ActivityPing area="extension" organizationId={ctx.workspace.id} />

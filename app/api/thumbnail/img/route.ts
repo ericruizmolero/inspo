@@ -7,15 +7,15 @@ import { commentPrefix } from "@/lib/comment-files";
 import { isBlobUrl, isBlobUrlUnder } from "@/lib/blob-url";
 
 
-// Proxy de blobs privados: miniaturas y capturas de comentarios del workspace activo, y las
-// portadas de DESIGN.md (capturas de webs públicas, compartidas entre workspaces; el índice ya se filtra por items).
+// Private blob proxy: thumbnails and comment screenshots of the active workspace, and the
+// DESIGN.md covers (screenshots of public sites, shared across workspaces; the index is already filtered by items).
 export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const blobUrl = req.nextUrl.searchParams.get("url");
   if (!blobUrl) return new Response("missing url", { status: 400 });
 
-  // El token solo viaja a hosts de Vercel Blob
+  // The token only travels to Vercel Blob hosts
   if (!isBlobUrl(blobUrl)) return new Response("forbidden", { status: 403 });
   const inLibrary = [blobPrefix(ctx.workspace.id), commentPrefix(ctx.workspace.id), DESIGN_MD_PREFIX]
     .some((prefix) => isBlobUrlUnder(blobUrl, prefix));

@@ -11,13 +11,13 @@ import { sidebarOpen } from "@/lib/sidebar-state";
 
 // The library lives in this layout so it stays mounted between / and /i/[id]: opening a DESIGN.md
 // changes the URL (history.pushState) without a remount, and a refresh keeps the running jobs.
-// Sin sesión: the pages decide (/ shows the guest start, /i/[id] sends to login).
+// No session: the pages decide (/ shows the guest start, /i/[id] sends to login).
 export default async function LibraryLayout({ children }: { children: ReactNode }) {
   if (!(await getSession())) return children;
   const ctx = await getCtx();
 
   const ws = ctx.workspace;
-  // Todo lo que la biblioteca necesita al abrir, en paralelo y antes de pintar
+  // Everything the library needs on open, in parallel and before painting
   const [{ items, thumbnailMap, tagMap }, members, admin, quota, comments, designMdIndex, open] = await Promise.all([
     loadWorkspaceData(ws.id),
     listMembers(ws.id),
@@ -30,7 +30,7 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
 
   return (
     <>
-    {/* key: al cambiar de workspace se remonta el cliente (estado de items y filtros limpio) */}
+    {/* key: switching workspace remounts the client (clean item and filter state) */}
     <InspoClient
       key={ctx.workspace.id}
       items={items}

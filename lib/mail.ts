@@ -1,10 +1,10 @@
-// Envío de correos transaccionales (magic link, invitaciones).
-// Con RESEND_API_KEY usa Resend; sin ella (local) imprime el enlace en consola
-// y lo guarda en .data/last-mail.txt para poder probar sin correo.
+// Sends transactional emails (magic link, invitations).
+// With RESEND_API_KEY it uses Resend; without it (local) it prints the link to the console
+// and saves it to .data/last-mail.txt so you can test without email.
 //
-// El idioma es el de QUIEN RECIBE el correo, nunca el de quien lo provoca:
-// localeForEmail() lo busca en la cuenta del destinatario. El texto está en
-// lib/i18n/<idioma>/mail.ts.
+// The language is the RECIPIENT's, never that of whoever triggers the email:
+// localeForEmail() looks it up on the recipient's account. The text lives in
+// lib/i18n/<locale>/mail.ts.
 import { promises as fs } from "fs";
 import path from "path";
 import { eq } from "drizzle-orm";
@@ -17,21 +17,21 @@ const DICTS = { en, es } as const;
 export const mailDict = (locale: Locale) => DICTS[locale].mail;
 
 /**
- * Idioma de un destinatario. Si la dirección tiene cuenta, el suyo; si no, `fallback`
- * (por defecto inglés). Es el caso de la invitación: quien la recibe puede no tener cuenta.
+ * A recipient's language. If the address has an account, theirs; otherwise `fallback`
+ * (English by default). That's the invitation case: the invitee may have no account.
  */
 export async function localeForEmail(email: string, fallback: Locale = DEFAULT_LOCALE): Promise<Locale> {
   const [row] = await db.select({ language: schema.user.language }).from(schema.user).where(eq(schema.user.email, email)).limit(1);
   return row ? toLocale(row.language) : fallback;
 }
 
-// Remitente y dirección de respuesta. inspo@ no es un buzón, así que las respuestas van a hola@,
-// que sí existe: Gmail penaliza a los remitentes a los que no se puede contestar.
+// Sender and reply-to address. inspo@ isn't a mailbox, so replies go to hola@,
+// which does exist: Gmail penalizes senders you can't reply to.
 const FROM = process.env.MAIL_FROM || "criterio.design <inspo@savvia.studio>";
 const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
 
-// Las fuentes del correo se sirven desde public/fonts (Family para títulos, Söhne para texto).
-// Apple Mail, iOS Mail y Outlook mac las cargan; Gmail ignora @font-face y cae a la pila de sistema.
+// Email fonts are served from public/fonts (Family for titles, Söhne for body).
+// Apple Mail, iOS Mail and Outlook mac load them; Gmail ignores @font-face and falls back to the system stack.
 const FONT_BASE =
   process.env.BETTER_AUTH_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
@@ -39,16 +39,16 @@ const FONT_BASE =
 const DISPLAY = "'Family', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 const BODY = "'Söhne', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 
-/** Un correo a una o varias direcciones. `replyTo` sustituye a la dirección de respuesta por defecto. */
+/** One email to one or more addresses. `replyTo` replaces the default reply-to address. */
 export async function sendMail(to: string | string[], subject: string, html: string, text: string, opts: { replyTo?: string } = {}): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   const recipients = Array.isArray(to) ? to : [to];
   if (!key) {
-    console.log(`\n✉️  [mail sin RESEND_API_KEY] → ${recipients.join(", ")}\n${subject}\n${text}\n`);
+    console.log(`\n✉️  [mail without RESEND_API_KEY] → ${recipients.join(", ")}\n${subject}\n${text}\n`);
     try {
       await fs.mkdir(path.join(process.cwd(), ".data"), { recursive: true });
       await fs.writeFile(path.join(process.cwd(), ".data", "last-mail.txt"), `${recipients.join(", ")}\n${subject}\n${text}\n`);
-    } catch { /* solo es ayuda para desarrollo */ }
+    } catch { /* just a development aid */ }
     return;
   }
   const res = await fetch("https://api.resend.com/emails", {
@@ -113,8 +113,8 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
 }
 
 /**
- * Al bajar de plan un equipo puede quedarse con más gente de la que admite el plan nuevo.
- * No se quita a nadie: se avisa al dueño para que decida.
+ * On a downgrade a team can end up with more people than the new plan allows.
+ * Nobody is removed: the owner is told so they can decide.
  */
 export function overCapacityMail(url: string, teamName: string, planName: string, members: number, limit: number, locale: Locale) {
   const t = mailDict(locale);
@@ -136,14 +136,14 @@ export function adminAccessMail(url: string, granterName: string, locale: Locale
   };
 }
 
-/** La hora del feedback va siempre en la zona de Madrid: es un dato del estudio, no del idioma. */
+/** Feedback time is always in the Madrid zone: it's a studio fact, not a language one. */
 const fmtWhen = (locale: Locale) =>
   new Intl.DateTimeFormat(INTL_LOCALE[locale], { timeZone: "Europe/Madrid", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
 
 /**
- * Feedback visual sobre la app (barra Agentation) para los socios. El cuerpo lleva el
- * markdown tal cual lo copia la barra, listo para pegárselo a un agente; el texto plano
- * es solo el markdown, así que responder o reenviar también sirve.
+ * Visual feedback on the app (Agentation bar) for the partners. The body carries the
+ * markdown exactly as the bar copies it, ready to paste into an agent; the plain text
+ * is just the markdown, so replying or forwarding works too.
  */
 export function feedbackMail(f: { author: { name: string; email: string }; path: string; url: string; count: number; markdown: string; at: Date }, locale: Locale) {
   const t = mailDict(locale);
@@ -153,7 +153,7 @@ export function feedbackMail(f: { author: { name: string; email: string }; path:
   const intro = t.feedback.intro(esc(who), esc(f.author.email), n, esc(f.path), esc(when));
   const pre = `<pre style="margin:0 0 28px;padding:18px 20px;background:#161616;border:1px solid #262626;border-radius:12px;color:#e5e5e5;font-family:'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere">${esc(f.markdown)}</pre>`;
   const html = layout(locale, t.feedback.title(n, who), intro, { label: t.feedback.cta, url: f.url }, t.feedback.note)
-    // El bloque de código va justo antes del botón: el layout no tiene hueco para él
+    // The code block goes right before the button: the layout has no slot for it
     .replace('<tr><td style="padding:0 0 36px">', `<tr><td style="padding:0 0 0">${pre}</td></tr>\n      <tr><td style="padding:0 0 36px">`);
   return {
     subject: t.feedback.subject(who, n, f.path),

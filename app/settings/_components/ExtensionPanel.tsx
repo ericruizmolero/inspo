@@ -57,7 +57,7 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
           </CardContent>
         )}
         <CardFooter>
-          <a className={buttonVariants({ variant: "primary", size: "sm" })} href="/extension/conectar">{t.team.connectBrowser}</a>
+          <a className={buttonVariants({ variant: "primary", size: "sm" })} href="/extension/connect">{t.team.connectBrowser}</a>
         </CardFooter>
       </Card>
     </div>

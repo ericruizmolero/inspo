@@ -1,6 +1,6 @@
 "use client";
-// Hora de la última carga del panel. Se pinta solo en el cliente para que la
-// hora salga en la zona horaria de quien mira (el servidor está en Dublín).
+// Time of the panel's last load. Painted only on the client so the
+// time shows in the viewer's time zone (the server is in Dublin).
 import { useEffect, useState } from "react";
 import { useT } from "@/components/I18nProvider";
 import { fmtTime } from "@/lib/i18n/format";

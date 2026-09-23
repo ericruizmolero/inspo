@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Sube a Vercel (Production) las variables de BD, auth y correo leyendo .env.local.
-# Uso: bash scripts/vercel-env-prod.sh
+# Uploads the DB, auth and mail variables to Vercel (Production), reading .env.local.
+# Usage: bash scripts/vercel-env-prod.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
 val() { grep "^$1=" .env.local | head -1 | cut -d= -f2-; }
@@ -16,7 +16,7 @@ add RESEND_API_KEY      "$(val RESEND_API_KEY)"
 add MAIL_FROM           "Inspo · Savvia <inspo@savvia.studio>"
 add MAIL_REPLY_TO       "hola@savvia.studio"
 v="$(val ADMIN_EMAILS)"; [ -n "$v" ] && add ADMIN_EMAILS "$v"
-# Proveedores sociales: solo se suben los que tengan valor en .env.local
+# Social providers: only the ones with a value in .env.local are uploaded
 for k in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET APPLE_CLIENT_ID APPLE_CLIENT_SECRET TWITTER_CLIENT_ID TWITTER_CLIENT_SECRET; do
   v="$(val "$k")"; [ -n "$v" ] && add "$k" "$v"
 done

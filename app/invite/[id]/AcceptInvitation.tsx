@@ -21,7 +21,7 @@ export default function AcceptInvitation({ id, teamName, inviterName, inviterEma
     if (err) { setBusy(false); setError(err.message ?? t.invite.acceptFailed); return; }
     const orgId = data?.invitation?.organizationId;
     if (orgId) await authClient.organization.setActive({ organizationId: orgId });
-    // Confirmación antes de soltar a la persona en la librería: sin ella parece que no ha entrado
+    // Confirmation before dropping the person into the library: without it, it looks like they did not get in
     setDone(true);
     router.refresh();
     setTimeout(() => router.push("/"), 900);

@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.login.pageTitle };
 }
 
-/** Los titulares llevan un salto de línea a propósito: en el diccionario es un \n. */
+/** Headlines carry a deliberate line break: in the dictionary it is a \n. */
 const lines = (s: string) => s.split("\n").map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>);
 
 const IcBack = (
@@ -24,7 +24,7 @@ const IcBack = (
   </svg>
 );
 
-// Mensajes para los códigos de error con los que Better Auth vuelve a /login?error=…
+// Messages for the error codes Better Auth returns to /login?error=… with
 function loginError(code: string | undefined, t: Dict): string | undefined {
   switch (code) {
     case undefined: case "": return undefined;
@@ -41,17 +41,17 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { next, error } = await searchParams;
   const { t } = await getT();
   if (await getSession()) redirect(next && next.startsWith("/") ? next : "/");
-  // Quien llega desde una invitación tiene que saber a qué entra y con qué correo
-  const fromInvitation = (next ?? "").startsWith("/invitacion/");
-  // Si viene del lienzo de inicio con una URL (?next=/?add=…), el titular lo dice
+  // Someone arriving from an invitation needs to know what they are joining and with which email
+  const fromInvitation = (next ?? "").startsWith("/invite/");
+  // If they come from the start canvas with a URL (?next=/?add=…), the headline says so
   const pendingDomain = (() => {
     try {
       const add = new URL(next ?? "", "http://x").searchParams.get("add");
       return add ? new URL(add).hostname.replace(/^www\./, "") : "";
     } catch { return ""; }
   })();
-  // Lateral: las imágenes fijas de public/showcase, siempre 3 columnas de 6. Si hubiera menos
-  // se repiten para llenar; sin ninguna, texto.
+  // Side panel: the fixed images from public/showcase, always 3 columns of 6. If there are fewer
+  // they repeat to fill; with none, text.
   const found = await showcaseImages();
   const covers = found.length ? Array.from({ length: 18 }, (_, i) => found[i % found.length]) : [];
   const cols = covers.length ? [0, 1, 2].map((c) => covers.filter((_, i) => i % 3 === c)) : null;

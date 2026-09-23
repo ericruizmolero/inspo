@@ -1,40 +1,40 @@
-// Etiquetas visibles de la taxonomía. La clave es la misma que guarda la base de
-// datos en inspo_item.tags_json. Van por lista porque "editorial" es a la vez un
-// sector y un estilo, y no significan lo mismo.
+// Visible taxonomy labels. The key is the same one the database stores
+// in inspo_item.tags_json. Grouped by list because "editorial" is both a
+// sector and a style, and they mean different things.
 //
-// Las `description` de lib/taxonomy.ts no están aquí a propósito: son el contrato
-// del clasificador, van siempre en inglés y cambiarlas cambia cómo clasifica Jev.
+// The `description` fields in lib/taxonomy.ts are left out on purpose: they are the
+// classifier's contract, always in English, and changing them changes how Jev classifies.
 export const taxonomy = {
   sector: {
-    estudio: "Studio / agency",
-    producto: "Product / SaaS",
+    studio: "Studio / agency",
+    product: "Product / SaaS",
     ecommerce: "Ecommerce",
     portfolio: "Portfolio",
     editorial: "Editorial / media",
-    cultura: "Culture / event",
+    culture: "Culture / event",
     tool: "Tool",
     video: "Video / talk",
-    otro: "Other",
+    other: "Other",
   },
-  estilo: {
+  style: {
     minimal: "Minimal",
     editorial: "Editorial",
-    brutalista: "Brutalist",
+    brutalist: "Brutalist",
     playful: "Playful",
-    corporativo: "Corporate",
-    inmersivo: "Immersive",
+    corporate: "Corporate",
+    immersive: "Immersive",
     retro: "Retro",
   },
   tag: {
-    tipografia: "Typography",
+    typography: "Typography",
     motion: "Motion",
     dark: "Dark",
-    fotografia: "Photography",
-    ilustracion: "Illustration",
+    photography: "Photography",
+    illustration: "Illustration",
     "3d": "3D / WebGL",
     grid: "Grid / bento",
-    colorido: "Colourful",
-    monocromo: "Monochrome",
+    colorful: "Colourful",
+    monochrome: "Monochrome",
     humor: "Humour",
     storytelling: "Storytelling",
   },

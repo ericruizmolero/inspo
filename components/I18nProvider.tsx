@@ -1,13 +1,13 @@
 "use client";
-// El idioma de la interfaz en el cliente.
+// The interface language on the client.
 //
-// El servidor solo manda el idioma, no el diccionario: las claves que llevan
-// variables son funciones (t.team.calls(3)) y una función no cruza la frontera
-// servidor/cliente. Así que los dos diccionarios se importan aquí y se elige uno.
-// Cuesta unos KB de bundle y a cambio la interpolación es una llamada normal.
+// The server only sends the locale, not the dictionary: keys with variables
+// are functions (t.team.calls(3)) and a function can't cross the
+// server/client boundary. So both dictionaries are imported here and one is picked.
+// It costs a few KB of bundle, and in return interpolation is a plain call.
 //
-// `t` es el propio objeto, así que se accede con punto (t.team.title) y TypeScript
-// avisa de la clave que falta.
+// `t` is the object itself, so access is by dot (t.team.title) and TypeScript
+// flags a missing key.
 import { createContext, useContext, useMemo } from "react";
 import type { Dict } from "@/lib/i18n/en";
 import type { Locale } from "@/lib/i18n/locale";
@@ -27,8 +27,8 @@ export function I18nProvider({ locale, children }: { locale: Locale; children: R
 export const useT = () => useContext(I18nContext);
 
 /**
- * Mensaje de un error lanzado fuera de React (lib/image-client), que llega como código.
- * Si no es un código conocido, se enseña tal cual: ya viene traducido del servidor.
+ * Message for an error thrown outside React (lib/image-client), which arrives as a code.
+ * If the code is unknown, it is shown as is: it comes already translated from the server.
  */
 export function messageOf(err: unknown, t: Dict, fallback: string): string {
   const raw = err instanceof Error ? err.message : "";

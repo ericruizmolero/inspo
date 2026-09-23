@@ -1,5 +1,5 @@
-// La sesión de esta petición. cache(): layout, metadata, página y getT la piden a la vez
-// y solo se consulta una vez por render.
+// This request's session. cache(): layout, metadata, page and getT all ask for it
+// and it's only fetched once per render.
 import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";

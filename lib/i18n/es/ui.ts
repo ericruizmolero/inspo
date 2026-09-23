@@ -1,4 +1,4 @@
-// Castellano. Tipado contra lib/i18n/en/ui.ts: si falta una clave, no compila.
+// Spanish. Typed against lib/i18n/en/ui.ts: a missing key does not compile.
 import type { ui as EnUi } from "../en/ui";
 
 export const ui: typeof EnUi = {
@@ -120,6 +120,11 @@ export const ui: typeof EnUi = {
     dismiss: "Descartar",
   },
   sidebar: {
+    addReference: "Añadir referencia",
+    discover: "Descubrir",
+    directory: "Directorio",
+    anyTime: "Siempre",
+    removeFilter: (label: string): string => `Quitar ${label}`,
     search: "Buscar",
     searchAi: "Describe lo que buscas",
     clear: "Limpiar",
@@ -132,9 +137,6 @@ export const ui: typeof EnUi = {
     style: "Estilo",
     tags: "Tags",
     notTagged: "Sin etiquetar todavía",
-    directoryCount: (n: number) => `${n} webs y herramientas`,
-    directoryTitle: "Dónde mirar y con qué hacerlo",
-    directorySub: "Galerías, tipografía, código, modelos y agentes. Lo que usamos antes de empezar.",
     seePlans: "Ver planes",
     plan: (name: string) => `Plan ${name}`,
     quotaSpent: "Cuota del mes agotada \u00b7 ampliar plan",
@@ -143,7 +145,6 @@ export const ui: typeof EnUi = {
     tagging: (done: number, total: number) => `Etiquetando ${done}/${total}`,
     taggingFailed: "Error al etiquetar \u00b7 reintentar",
     tagPending: (n: number) => `Etiquetar ${n} con IA`,
-    tagged: (n: number) => `${n} etiquetados con IA`,
   },
   start: {
     title: "Tu librería empieza vacía. La inspiración, no.",
@@ -154,13 +155,9 @@ export const ui: typeof EnUi = {
     save: "Guardar",
     notUrl: "Eso no parece una URL",
     alreadySaved: "Esa URL ya está guardada",
-    nothingToHandBefore: "¿Sin nada a mano? Hay ",
-    nothingToHandAfter: " esperando en el directorio.",
-    sitesWord: (n: number) => `${n} webs`,
     openDirectory: "Abrir el directorio",
     trendingNow: "Para empezar a mirar \u00b7 las más de moda",
     seeAll: (n: number) => `Ver las ${n}`,
-    tip: "Cuando veas algo que te llame la atención, aunque no sepas por qué, guárdalo. Con tres o cuatro ya empieza a verse un criterio.",
   },
   add: {
     title: "Nueva inspo",
@@ -170,7 +167,12 @@ export const ui: typeof EnUi = {
     notUrl: "Eso no parece una URL",
     alreadyInLibrary: "Esa URL ya está en tu librería",
   },
-  recursos: {
+  directory: {
+    add: "Añadir",
+    added: "Añadida",
+    addLabel: (name: string): string => `Añadir ${name} a la librería`,
+    addedLabel: (name: string): string => `${name} ya está en la librería`,
+    featured: "Destacadas",
     title: "Dónde mirar y con qué hacerlo",
     lead: (n: number) => `${n} webs que usamos antes de empezar y mientras hacemos: galerías de diseño, secciones, motion, tipografía, código, DESIGN.md para agentes, modelos y herramientas de IA. Ninguna repetida.`,
     guestNote: "Sin cuenta ves una muestra;",
@@ -249,6 +251,9 @@ export const ui: typeof EnUi = {
     },
   },
   comments: {
+    maxFiles: (n: number): string => `Como mucho ${n} capturas por comentario`,
+    filesLeftOut: (n: number, out: number): string => `Solo caben ${n} capturas; se han dejado fuera ${out}`,
+    screenshotName: "captura",
     now: "ahora",
     minsAgo: (n: number) => `hace ${n} min`,
     hoursAgo: (n: number) => `hace ${n} h`,
@@ -292,13 +297,15 @@ export const ui: typeof EnUi = {
     next: "Siguiente",
   },
   designMd: {
+    colophon: (model: string): string => `Medidas tomadas de la web en vivo · roles y recomendaciones interpretados por ${model}`,
+    copyPrompt: "Copiar prompt",
     justNow: "ahora mismo",
     minsAgo: (n: number) => `hace ${n} min`,
     hoursAgo: (n: number) => `hace ${n} h`,
     daysAgo: (n: number) => `hace ${n} d`,
     sections: {
-      general: "Identidad", color: "Color", tipografia: "Tipografía", espaciado: "Espaciado y forma",
-      componentes: "Componentes", reglas: "Reglas", sistema: "Sistema", afines: "Marcas afines", prompt: "Prompt",
+      general: "Identidad", color: "Color", typography: "Tipografía", spacing: "Espaciado y forma",
+      components: "Componentes", rules: "Reglas", system: "Sistema", related: "Marcas afines", prompt: "Prompt",
     },
     colorGroups: { brand: "Marca", accent: "Acento", semantic: "Semánticos", neutral: "Neutros" },
     fontRoles: { display: "display", body: "cuerpo", mono: "mono", ui: "interfaz" },
@@ -351,6 +358,7 @@ export const ui: typeof EnUi = {
     words: (n: number) => `${n} palabras`,
   },
   app: {
+    menu: "Menú",
     saveFailed: "No se ha podido guardar",
     removeFailed: "No se ha podido quitar",
     showSidebar: "Mostrar sidebar",

@@ -1,6 +1,6 @@
 "use client";
 
-// Para páginas de servidor (/equipo, /planes, /admin…): monta el latido de presencia sin más.
+// For server pages (/settings, /admin…): just mounts the presence heartbeat.
 import { useActivity } from "./useActivity";
 
 export default function ActivityPing({ area, organizationId }: { area: string; organizationId?: string | null }) {

@@ -1,19 +1,19 @@
-// Directorio de webs donde buscar inspiración. Se muestra desde el sidebar
-// ("¿Buscando inspiración?"). Sin duplicados: cada dominio aparece una sola vez.
+// Directory of sites to look for inspiration. Shown from the sidebar
+// ("Looking for inspiration?"). No duplicates: each domain appears only once.
 
-// El texto (título y ayuda de cada grupo, descripción de cada recurso) vive en
-// lib/i18n/<idioma>/recursos.ts, con la clave del grupo y la URL como clave.
-export interface Recurso {
+// The text (each group's title and help, each resource's description) lives in
+// lib/i18n/<locale>/directory.ts, keyed by group key and URL.
+export interface DirectorySite {
   name: string;
   url: string;
 }
 
-export interface RecursoGrupo {
+export interface DirectoryGroup {
   key: string;
-  items: Recurso[];
+  items: DirectorySite[];
 }
 
-export const RECURSOS: RecursoGrupo[] = [
+export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "designmd",
     items: [
@@ -29,7 +29,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "webs",
+    key: "sites",
     items: [
       { name: "Recent.design", url: "https://recent.design" },
       { name: "Goated UI", url: "https://goatedui.dev" },
@@ -75,7 +75,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "secciones",
+    key: "sections",
     items: [
       { name: "Supahero", url: "https://supahero.io" },
       { name: "Navbar Gallery", url: "https://navbar.gallery" },
@@ -87,7 +87,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "codigo",
+    key: "code",
     items: [
       { name: "Originkit", url: "https://www.originkit.dev" },
       { name: "Bencho", url: "https://bencho.dev" },
@@ -109,7 +109,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "recursos",
+    key: "resources",
     items: [
       { name: "Logo To Use", url: "https://logotouse.com" },
       { name: "Hano", url: "https://hano.so" },
@@ -130,7 +130,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "grafica",
+    key: "graphics",
     items: [
       { name: "The Brand Identity", url: "https://the-brandidentity.com" },
       { name: "Visuelle", url: "https://visuelle.co.uk" },
@@ -140,7 +140,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "tipografia",
+    key: "type",
     items: [
       { name: "Claude Type", url: "https://claudetype.com" },
       { name: "Klim Type Foundry", url: "https://klim.co.nz" },
@@ -160,7 +160,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "desarrollo",
+    key: "development",
     items: [
       { name: "Ship Studio", url: "https://www.ship.studio" },
       { name: "Aura", url: "https://www.aura.build" },
@@ -176,7 +176,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "modelos",
+    key: "models",
     items: [
       { name: "Jev (Typesafe AI)", url: "https://typesafe.ai" },
       { name: "Claude (Anthropic)", url: "https://www.anthropic.com" },
@@ -190,7 +190,7 @@ export const RECURSOS: RecursoGrupo[] = [
     ],
   },
   {
-    key: "agentes",
+    key: "agents",
     items: [
       { name: "Muse (Meta)", url: "https://muse.ai" },
       { name: "Instinct", url: "https://instinct.co" },
@@ -204,27 +204,27 @@ export const RECURSOS: RecursoGrupo[] = [
       { name: "Curated Supply", url: "https://curated.supply" },
       { name: "Savee", url: "https://savee.it" },
       { name: "Cosmos", url: "https://www.cosmos.so" },
-      { name: "Grey en X", url: "https://x.com/thisisgrey" },
-      { name: "Morrre en Instagram", url: "https://instagram.com/morrre.dsgn" },
+      { name: "Grey on X", url: "https://x.com/thisisgrey" },
+      { name: "Morrre on Instagram", url: "https://instagram.com/morrre.dsgn" },
       { name: "on.design", url: "https://on.design" },
       { name: "Are.na", url: "https://www.are.na" },
     ],
   },
 ];
 
-export const RECURSOS_TOTAL = RECURSOS.reduce((n, g) => n + g.items.length, 0);
+export const DIRECTORY_TOTAL = DIRECTORY.reduce((n, g) => n + g.items.length, 0);
 
-// Nombre de fichero de la miniatura estática (public/recursos/<slug>.jpg),
-// generada con `npx tsx scripts/recursos-shots.ts`.
-export function recursoSlug(url: string): string {
-  return recursoHost(url).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+// File name of the static thumbnail (public/directory/<slug>.jpg),
+// generated with `npx tsx scripts/directory-shots.ts`.
+export function siteSlug(url: string): string {
+  return siteHost(url).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 }
 
-export function recursoShot(url: string): string {
-  return `/recursos/${recursoSlug(url)}.jpg`;
+export function siteShot(url: string): string {
+  return `/directory/${siteSlug(url)}.jpg`;
 }
 
-export function recursoHost(url: string): string {
+export function siteHost(url: string): string {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {

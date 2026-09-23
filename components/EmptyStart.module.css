@@ -1,5 +1,5 @@
-/* Estado inicial de un workspace sin inspos: en vez de "Nada por aquí",
-   un punto de partida con el directorio de recursos a mano. */
+/* Initial state of a workspace with no inspos: a starting point with
+   the resource directory at hand, instead of "Nothing here". */
 .wrap {
   display: flex; flex-direction: column; align-items: center;
   width: 100%; max-width: 920px; margin: 0 auto;
@@ -9,41 +9,66 @@
 .title { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); }
 .lead { font-size: 15px; line-height: 1.5; color: var(--muted); }
 .lead strong { color: var(--text-2); font-weight: 500; }
-.paste { display: flex; gap: 8px; width: 100%; max-width: 520px; margin-top: 12px; }
-.paste .pasteInput { flex: 1; min-width: 0; background: var(--surface-2); border-color: var(--border); }
-.paste .pasteInput:focus { border-color: var(--border-strong); }
-.paste :global(.btn) { height: 46px; padding: 0 18px; border-radius: 12px; flex-shrink: 0; }
-.sub { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 4px; }
-.sub strong { color: var(--text-2); font-weight: 500; }
+/* Refero: one prompt box, the send arrow inside it */
+.prompt {
+  position: relative; display: flex; align-items: center; width: 100%; max-width: 560px; margin-top: 16px;
+  border-radius: 16px; border: 1px solid var(--border-strong); background: var(--surface);
+  box-shadow: var(--shadow-card); transition: border-color 0.15s, box-shadow 0.15s;
+}
+.prompt:focus-within { border-color: var(--text-2); }
+.promptInput {
+  flex: 1; min-width: 0; height: 56px; padding: 0 60px 0 20px;
+  border: 0; background: transparent; outline: none;
+  color: var(--text); font-size: 15px;
+}
+.promptInput::placeholder { color: var(--muted); }
+.send {
+  position: absolute; right: 10px; display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; border: 0;
+  background: var(--text); color: var(--bg); cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.send:active { transform: scale(0.96); }
+.send:disabled { opacity: 0.25; cursor: default; transform: none; }
 .error { font-size: 13px; color: var(--danger); margin-top: 4px; }
-.link {
-  display: inline-flex; align-items: center; gap: 5px; vertical-align: baseline;
-  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: var(--text-2);
-  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong);
-  transition: color 0.12s;
-}
-.link:hover { color: var(--text); }
-.link svg { width: 13px; height: 13px; }
 
-.section { width: 100%; margin-top: 56px; display: flex; flex-direction: column; gap: 14px; }
-.eyebrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.eyebrow span { font-size: 12.5px; color: var(--muted); }
+.section { width: 100%; margin-top: 56px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+/* Directory groups as soft tabs, one row that scrolls sideways */
+.tabs {
+  display: flex; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: none;
+  padding: 3px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  height: 30px; padding: 0 12px; border-radius: 9px; border: 0; background: transparent;
+  color: var(--muted); font-size: 13px; white-space: nowrap; cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+@media (hover: hover) { .tab:hover { color: var(--text); } }
+/* Inside the scrolling row an outside ring would be clipped */
+.tab:focus-visible { outline-offset: -2px; }
+.tabOn { background: var(--surface-3); color: var(--text); }
+.tabCount { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .more {
-  font-size: 12.5px; color: var(--text-2); background: none; border: 0; padding: 0; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 6px; transition: color 0.12s;
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+  height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border-strong);
+  background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
-.more:hover { color: var(--text); }
+@media (hover: hover) { .more:hover { background: var(--surface); color: var(--text); } }
 
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.grid { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .tile {
-  display: flex; flex-direction: column; gap: 10px; padding: 10px;
+  display: flex; flex-direction: column;
   border-radius: var(--radius-m); background: var(--surface); border: 1px solid var(--border);
-  color: var(--text); text-decoration: none;
   transition: background 0.12s, border-color 0.12s;
 }
+.tileLink { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: inherit; }
+.foot { display: flex; justify-content: flex-end; padding: 0 14px 14px; }
 .tile:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .thumb {
-  width: 100%; aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden;
+  width: 100%; aspect-ratio: 16 / 10; border-radius: 4px; overflow: hidden;
   background: var(--surface-3); border: 1px solid var(--border);
   display: grid; place-items: center; color: var(--muted); font-size: 18px; font-weight: 500;
 }
@@ -57,13 +82,13 @@
 .desc { font-size: 12.5px; line-height: 1.45; color: var(--muted); }
 
 
-.tip { margin-top: 32px; font-size: 12.5px; color: var(--muted-2); text-align: center; max-width: 460px; line-height: 1.5; }
-
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
   .grid { grid-template-columns: 1fr; }
   .title { font-size: 26px; }
   .wrap { padding-left: 16px; padding-right: 16px; }
-  .paste { flex-direction: column; }
 }
-
+@media (prefers-reduced-motion: reduce) {
+  .send, .tab { transition: none; }
+  .send:active { transform: none; }
+}
