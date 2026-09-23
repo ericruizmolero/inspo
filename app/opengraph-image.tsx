@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 // Card shown when sharing a link (WhatsApp, Slack, X, iMessage…). 1200×630.
-// Klim's test fonts only ship A-Z a-z 0-9 . , - so the texts avoid accents and symbols.
+// Inter, fetched as TTF from Google Fonts (Satori does not read woff2).
 //
 // Always in English, the default language: the image is static and whoever requests it
 // (WhatsApp, Slack, a search engine) does not send the language cookie.
@@ -18,17 +18,25 @@ const COLS: { offset: number; tiles: number[] }[] = [
   { offset: 30, tiles: [180, 120, 140, 110] },
 ];
 
+// Without a browser User-Agent, Google Fonts answers with TTF URLs
+async function inter(weight: number): Promise<ArrayBuffer> {
+  const css = await (await fetch(`https://fonts.googleapis.com/css2?family=Inter:wght@${weight}`)).text();
+  const url = css.match(/src: url\((.+?)\)/)?.[1];
+  if (!url) throw new Error("Inter: no font URL in the Google Fonts CSS");
+  return (await fetch(url)).arrayBuffer();
+}
+
 export default async function Image() {
   const [display, body, mark] = await Promise.all([
-    readFile(join(process.cwd(), "app/fonts/test-family-bold.ttf")),
-    readFile(join(process.cwd(), "app/fonts/test-soehne-buch.ttf")),
+    inter(600),
+    inter(400),
     readFile(join(process.cwd(), "app/icon.png")),
   ]);
   const logo = `data:image/png;base64,${mark.toString("base64")}`;
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: "#0d0d0d", color: "#f2f2f2", position: "relative", overflow: "hidden", fontFamily: "Soehne" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: "#0d0d0d", color: "#f2f2f2", position: "relative", overflow: "hidden", fontFamily: "Inter" }}>
         {/* Ghost collage on the right */}
         <div style={{ position: "absolute", left: 640, top: -40, display: "flex", gap: 18 }}>
           {COLS.map((c, i) => (
@@ -45,7 +53,7 @@ export default async function Image() {
         {/* Text */}
         <div style={{ position: "absolute", left: 72, top: 72, bottom: 72, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <img src={logo} width={176} height={176} style={{ borderRadius: 40 }} />
-          <div style={{ display: "flex", flexDirection: "column", fontFamily: "Family", fontSize: 72, lineHeight: 1, letterSpacing: "-0.02em", color: "#f2f2f2" }}>
+          <div style={{ display: "flex", flexDirection: "column", fontWeight: 600, fontSize: 72, lineHeight: 1.05, letterSpacing: "-0.035em", color: "#f2f2f2" }}>
             <span>What inspires your team,</span>
             <span>all in one place.</span>
           </div>
@@ -60,8 +68,8 @@ export default async function Image() {
     {
       ...size,
       fonts: [
-        { name: "Family", data: display, weight: 700, style: "normal" },
-        { name: "Soehne", data: body, weight: 400, style: "normal" },
+        { name: "Inter", data: display, weight: 600, style: "normal" },
+        { name: "Inter", data: body, weight: 400, style: "normal" },
       ],
     },
   );

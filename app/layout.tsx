@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-import { klimDisplay, klimBody, schibsted } from "./fonts";
+import { inter } from "./fonts";
 import "./globals.css";
 import { getSession } from "@/lib/workspace";
 import { getLocale, type Locale } from "@/lib/i18n";
@@ -67,7 +67,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${klimDisplay.variable} ${klimBody.variable} ${schibsted.variable}`}
+      className={inter.variable}
       suppressHydrationWarning
     >
       <head>

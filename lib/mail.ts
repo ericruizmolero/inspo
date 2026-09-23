@@ -30,14 +30,8 @@ export async function localeForEmail(email: string, fallback: Locale = DEFAULT_L
 const FROM = process.env.MAIL_FROM || "criterio.design <inspo@savvia.studio>";
 const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
 
-// Email fonts are served from public/fonts (Family for titles, Söhne for body).
-// Apple Mail, iOS Mail and Outlook mac load them; Gmail ignores @font-face and falls back to the system stack.
-const FONT_BASE =
-  process.env.BETTER_AUTH_URL ||
-  process.env.NEXT_PUBLIC_APP_URL ||
-  "https://criterio.design";
-const DISPLAY = "'Family', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
-const BODY = "'Söhne', 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
+// Inter from Google Fonts. Apple Mail, iOS Mail and Outlook mac load it; Gmail ignores web fonts and falls back to the system stack.
+const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 
 /** One email to one or more addresses. `replyTo` replaces the default reply-to address. */
 export async function sendMail(to: string | string[], subject: string, html: string, text: string, opts: { replyTo?: string } = {}): Promise<void> {
@@ -65,25 +59,21 @@ function layout(locale: Locale, title: string, body: string, cta: { label: strin
   const t = mailDict(locale);
   const href = esc(cta.url);
   return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(title)}</title>
-<style>
-  @font-face { font-family: 'Family'; font-weight: 700; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/family-bold.woff2') format('woff2'); }
-  @font-face { font-family: 'Söhne'; font-weight: 400; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/soehne-buch.woff2') format('woff2'); }
-  @font-face { font-family: 'Söhne'; font-weight: 500; font-style: normal; font-display: swap; src: url('${FONT_BASE}/fonts/soehne-kraftig.woff2') format('woff2'); }
-</style></head>
-<body style="margin:0;padding:0;background:#0d0d0d;color:#f2f2f2;font-family:${BODY};-webkit-font-smoothing:antialiased">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#0d0d0d;color:#f2f2f2;font-family:${FONT};-webkit-font-smoothing:antialiased">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0d0d0d">
   <tr><td align="center" style="padding:56px 24px">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px">
-      <tr><td style="padding:0 0 40px;font-family:${DISPLAY};font-size:16px;font-weight:700;letter-spacing:-0.01em;color:#f2f2f2">criterio.design</td></tr>
-      <tr><td style="padding:0 0 12px;font-family:${DISPLAY};font-size:26px;line-height:1.2;font-weight:700;letter-spacing:-0.02em;color:#f2f2f2">${esc(title)}</td></tr>
-      <tr><td style="padding:0 0 28px;font-family:${BODY};font-size:15px;font-weight:400;line-height:1.55;color:#a3a3a3">${body}</td></tr>
+      <tr><td style="padding:0 0 40px;font-family:${FONT};font-size:16px;font-weight:600;letter-spacing:-0.01em;color:#f2f2f2">criterio.design</td></tr>
+      <tr><td style="padding:0 0 12px;font-family:${FONT};font-size:24px;line-height:1.2;font-weight:600;letter-spacing:-0.025em;color:#f2f2f2">${esc(title)}</td></tr>
+      <tr><td style="padding:0 0 28px;font-family:${FONT};font-size:15px;font-weight:400;line-height:1.55;color:#a3a3a3">${body}</td></tr>
       <tr><td style="padding:0 0 36px">
-        <a href="${href}" style="display:inline-block;background:#f2f2f2;color:#0d0d0d;text-decoration:none;padding:13px 22px;border-radius:999px;font-family:${BODY};font-size:15px;font-weight:500">${esc(cta.label)}</a>
+        <a href="${href}" style="display:inline-block;background:#f2f2f2;color:#0d0d0d;text-decoration:none;padding:13px 22px;border-radius:999px;font-family:${FONT};font-size:15px;font-weight:500">${esc(cta.label)}</a>
       </td></tr>
-      <tr><td style="border-top:1px solid #262626;padding:20px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
+      <tr><td style="border-top:1px solid #262626;padding:20px 0 0;font-family:${FONT};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
         ${note} ${t.fallbackNote(href)}
       </td></tr>
-      <tr><td style="padding:16px 0 0;font-family:${BODY};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
+      <tr><td style="padding:16px 0 0;font-family:${FONT};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
         ${esc(t.signature)}. ${t.questions(REPLY_TO)}
       </td></tr>
     </table>
