@@ -53,7 +53,7 @@ const IconComment = (
   </svg>
 );
 const IconTrash = (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" />
   </svg>
 );
@@ -68,7 +68,7 @@ const IconExternal = (
   </svg>
 );
 const IconInfo = (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
     <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
   </svg>
 );
@@ -81,6 +81,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const [uploading, setUploading] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false); // mobile: the % bubble opens on tap
   const [coverLoaded, setCoverLoaded] = useState(false);
+  // A cover or thumbnail that fails to load falls through to og:image / screenshot instead of shimmering forever
+  const [manualFailed, setManualFailed] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
   const [hovering, setHovering] = useState(false);
   const [scrollDist, setScrollDist] = useState(0);
   // Delete in two taps: the first asks for confirmation on the button itself, the second deletes
@@ -95,9 +98,13 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
 
+  const useManual = !!manualThumbnail && !manualFailed;
+  const useDesign = !useManual && !!designCover && !coverFailed;
+
   // Reset on thumbnail change, then check if the image was already cached
   useEffect(() => {
     setManualLoaded(false);
+    setManualFailed(false);
     const id = setTimeout(() => {
       const el = manualImgRef.current;
       if (el && el.complete && el.naturalWidth > 0) setManualLoaded(true);
@@ -107,7 +114,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
 
   // Start loading when the tile enters the viewport
   useEffect(() => {
-    if (manualThumbnail || designCover || source !== "idle") return;
+    if (useManual || useDesign || source !== "idle") return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -116,7 +123,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [source, manualThumbnail, designCover]);
+  }, [source, useManual, useDesign]);
 
   // Fetch as blob so failed sources don't spam the console
   useEffect(() => {
@@ -154,9 +161,8 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   }, [source, item.web]);
 
   const domain = getDomain(item.web);
-  const useDesign = !manualThumbnail && !!designCover;
-  const isError = !manualThumbnail && !useDesign && source === "error";
-  const isLoaded = manualThumbnail ? manualLoaded : useDesign ? coverLoaded : !!imgSrc;
+  const isError = !useManual && !useDesign && source === "error";
+  const isLoaded = useManual ? manualLoaded : useDesign ? coverLoaded : !!imgSrc;
 
   const onScrollLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget, box = scrollBoxRef.current;
@@ -238,7 +244,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
         <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}>
           {!isLoaded && !isError && <div className="shimmer" />}
 
-          {manualThumbnail && (
+          {useManual && (
             <img
               ref={manualImgRef}
               className={`tile__img${manualLoaded ? "" : " is-hidden"}`}
@@ -247,6 +253,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 : manualThumbnail}
               alt={item.name}
               onLoad={() => setManualLoaded(true)}
+              onError={() => setManualFailed(true)}
             />
           )}
 
@@ -258,6 +265,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 alt={item.name}
                 loading="lazy"
                 onLoad={() => setCoverLoaded(true)}
+                onError={() => setCoverFailed(true)}
               />
               {designScroll && coverLoaded && hovering && (
                 <div ref={scrollBoxRef} className="tile__scroll">
@@ -273,7 +281,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             </>
           )}
 
-          {!manualThumbnail && !useDesign && imgSrc && (
+          {!useManual && !useDesign && imgSrc && (
             <img
               className="tile__img"
               src={imgSrc}
