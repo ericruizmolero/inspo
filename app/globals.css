@@ -306,96 +306,14 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .sidebar__scrollwrap.is-bottom::after { opacity: 1; }
 .sidebar__scroll > * { flex-shrink: 0; }
 
-.app-sidebar__header { padding: 12px 12px 4px; }
+.app-sidebar__header { gap: 12px; padding: 16px 12px 8px; }
 .app-sidebar__footer { gap: 8px; padding: 12px; border-top: 1px solid var(--sidebar-border); }
-
-/* ─── Island sidebar (after Angelo Libero) ────────────────────────────────── */
-/* The box: Flip in InspoClient morphs it between the docked column and the floating pill (position, size, radius, colour), so no CSS transition here */
-.app-sidebar { transition: none; background: var(--sidebar); }
-.app-sidebar [data-slot="sidebar-inner"] { background: transparent; }
-/* The content is remounted on each mode change: it fades in while the box morphs */
-.app-sidebar__stack { display: flex; flex-direction: column; flex: 1; min-height: 0; animation: island-fade 0.4s ease-out both; }
-@keyframes island-fade { from { opacity: 0; filter: blur(6px); } to { opacity: 1; filter: blur(0); } }
-/* The workspace is a card in both modes: it is the object that becomes the island pill */
-.app-sidebar__brand {
-  display: flex; align-items: center; gap: 2px; padding: 4px;
-  border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
-}
-.app-sidebar__brand .ws__trigger { padding: 4px 8px 4px 4px; border-radius: 9px; }
-.app-sidebar__brand .ws__trigger:hover { background: var(--surface-2); }
-.ws__count { color: var(--muted-2); font-variant-numeric: tabular-nums; }
-.app-sidebar__add-row { padding: 8px 12px 4px; }
-.app-sidebar__body, .app-sidebar__clip, .app-sidebar__card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.island__chev {
-  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 28px; height: 28px; margin-right: 2px; border: 0; border-radius: 8px;
-  background: transparent; color: var(--muted); cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
-}
-.island__chev:hover { background: var(--surface-2); color: var(--text); }
-.is-open .island__chev { transform: rotate(180deg); }
-
-@media (min-width: 801px) {
-  /* Collapsed on desktop = island: a quiet pill after the topbar trigger, in the bar's own language
-     (same height, radius and hairline as the search box): no fill at rest, filled on hover or while the menu is open */
-  .app-sidebar.is-island {
-    top: 9px; bottom: auto; left: 54px; width: auto; max-width: 260px; height: auto; z-index: 30;
-    border: 1px solid var(--border); border-radius: 10px;
-    background: transparent; box-shadow: none;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  @media (hover: hover) { .app-sidebar.is-island:hover { background: var(--surface); } }
-  .app-sidebar.is-island.is-open { background: var(--surface); border-color: var(--border-strong); }
-  .app-sidebar.is-island .app-sidebar__stack { display: block; }
-  .app-sidebar.is-island .app-sidebar__header { padding: 0; }
-  .app-sidebar.is-island .app-sidebar__brand { padding: 0; gap: 0; background: transparent; border-color: transparent; }
-  .app-sidebar.is-island .app-sidebar__brand .ws__trigger { height: 32px; padding: 0 6px 0 5px; gap: 8px; border-radius: 9px; }
-  .app-sidebar.is-island .app-sidebar__brand .ws__trigger:hover { background: transparent; }
-  .app-sidebar.is-island .ws__avatar { width: 20px; height: 20px; border-radius: 6px; font-size: 11px; }
-  /* One line: name, then the current view in grey */
-  .app-sidebar.is-island .ws__names { flex-direction: row; align-items: baseline; gap: 6px; }
-  .app-sidebar.is-island .ws__name { font-size: 13px; }
-  .app-sidebar.is-island .ws__kind { font-size: 12px; white-space: nowrap; }
-  .app-sidebar.is-island .island__chev { width: 24px; height: 24px; margin-right: 4px; }
-  /* The menu: a second island hanging under the pill, over the grid; the chevron folds it */
-  .app-sidebar.is-island .app-sidebar__body {
-    position: absolute; top: calc(100% + 8px); left: -1px; width: 280px;
-    display: grid; grid-template-rows: 0fr;
-    transition: grid-template-rows 0.45s cubic-bezier(0.65, 0, 0.35, 1);
-  }
-  .app-sidebar.is-island.is-open .app-sidebar__body { grid-template-rows: 1fr; }
-  /* Padding keeps the card's shadow inside the clip */
-  .app-sidebar.is-island .app-sidebar__clip { display: block; min-height: 0; overflow: hidden; padding-bottom: 28px; }
-  .app-sidebar.is-island .app-sidebar__card {
-    max-height: calc(100svh - 110px);
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card);
-    opacity: 0; filter: blur(6px); transform: translateY(-8px);
-    transition: opacity 0.3s, filter 0.3s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
-  }
-  .app-sidebar.is-island.is-open .app-sidebar__card { opacity: 1; filter: blur(0); transform: none; }
-  .app-sidebar.is-island .app-sidebar__footer { border-radius: 0 0 12px 12px; }
-  /* The topbar: the pill takes the breadcrumb's place */
-  .topbar.is-island .topbar__view, .topbar.is-island .topbar__sep { display: none; }
-  .topbar.is-island .topbar__trigger { margin-right: 262px; }
-}
-@media (min-width: 1200px) and (max-width: 1399px) {
-  .topbar.is-island .topbar__search { width: min(560px, calc(100% - 700px)); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .app-sidebar__stack { animation: none; }
-  .app-sidebar__body, .app-sidebar__card, .island__chev { transition: none; }
-}
 .sidebar__footer-note { font-size: 12px; color: var(--muted-2); padding: 0 10px; }
 
 /* Menu rows keep the project's quiet icons: muted until hover or selected */
 .nav-item__icon { display: flex; color: var(--muted); flex-shrink: 0; transition: color 0.15s; }
 .nav-item:hover .nav-item__icon, .nav-item[data-active] .nav-item__icon { color: var(--text); }
 .nav-item__count { color: var(--muted); font-weight: 400; }
-/* Team rows: a round 18px avatar in the icon slot, initials when there is no photo */
-.nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
-/* The "invite" row is an affordance, not a destination: muted until hovered */
-.nav-item--quiet { color: var(--muted-2); }
-.nav-item--quiet:hover { color: var(--text); }
 
 /* Refero: the one solid button in the sidebar, first thing under the workspace */
 .sidebar__add { height: 38px; justify-content: flex-start; padding: 0 12px 0 10px; }
@@ -413,6 +331,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__trigger { position: relative; display: flex; }
 .topbar__trigger [data-slot="sidebar-trigger"] { color: var(--muted); }
 .topbar__trigger [data-slot="sidebar-trigger"]:hover { color: var(--text); }
+.topbar__sep { height: 16px; }
 /* Shortcut inside a tooltip */
 .kbd { margin-left: 6px; padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, var(--bg) 14%, transparent); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.02em; }
 .topbar__view { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -422,18 +341,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__logo, .topbar__add { display: none; }
 /* Mobbin: one wide search in the middle of the bar */
 .topbar__search { flex: 1; min-width: 0; }
-/* Quiet at rest (Eric: the bar shouted): no fill, a hairline border, muted icon; the fill comes with hover and focus */
-.topbar .search.is-ai .input {
-  height: 36px; border-radius: 10px;
-  background: transparent; border-color: var(--border);
-  font-size: 13px;
-}
-.topbar .search.is-ai .input::placeholder { color: var(--muted-2); }
-@media (hover: hover) { .topbar .search.is-ai .input:hover { background: var(--surface); } }
-.topbar .search.is-ai .input:focus { background: var(--surface); border-color: var(--border-strong); }
-.topbar .search.is-ai .search__icon { color: var(--muted-2); }
-.topbar .search.is-ai:focus-within .search__icon { color: var(--muted); }
-.topbar .search.is-ai .search__kbd { border: 0; color: var(--muted-2); font-size: 11px; }
 /* Desktop: centred on the whole bar, not on the space the breadcrumb leaves; it narrows before it reaches the breadcrumb */
 @media (min-width: 1200px) {
   .topbar__search { position: absolute; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 520px)); }
@@ -493,7 +400,7 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
 
 @media (max-width: 800px) {
   .topbar { height: 56px; gap: 8px; padding: 0 12px; }
-  .topbar__view { display: none; }
+  .topbar__sep, .topbar__view { display: none; }
   .topbar__logo { display: block; }
   .topbar__add { display: inline-flex; }
   .search__kbd { display: none; }
@@ -2019,4 +1926,3 @@ body:has([data-agentation-toolbar] [role="button"][title="Start feedback mode"])
 .legal { display: flex; flex-direction: column; gap: 22px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
-
