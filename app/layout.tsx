@@ -51,8 +51,8 @@ export async function generateMetadata(): Promise<Metadata> {
 // Browser bar color based on the system theme (the same as --bg in each theme)
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f4f2" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d0d0d" },
+    { media: "(prefers-color-scheme: light)", color: "#f3f3f0" },
+    { media: "(prefers-color-scheme: dark)", color: "#0e0e0d" },
   ],
 };
 
