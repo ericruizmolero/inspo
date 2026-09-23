@@ -1,0 +1,22 @@
+{
+  "extDescription": { "message": "Save the site you are looking at to your criterio.design library in one click." },
+  "actionTitle": { "message": "Save to criterio.design" },
+  "lead": { "message": "Save the site you're looking at to your library." },
+  "connect": { "message": "Connect to criterio.design" },
+  "haveKey": { "message": "I already have a key" },
+  "useKey": { "message": "Use this key" },
+  "save": { "message": "Save" },
+  "saving": { "message": "Saving…" },
+  "viewOn": { "message": "View on criterio.design" },
+  "disconnect": { "message": "Disconnect" },
+  "yourLibrary": { "message": "your library" },
+  "notWebsite": { "message": "This tab isn't a website" },
+  "onlyHttp": { "message": "Only http(s) pages can be saved." },
+  "alreadySaved": { "message": "Already saved in $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
+  "alreadySavedBy": { "message": "Already saved in $WS$ (by $WHO$).", "placeholders": { "ws": { "content": "$1", "example": "Studio" }, "who": { "content": "$2", "example": "Ana" } } },
+  "savedIn": { "message": "Saved in $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
+  "keyInvalid": { "message": "This key no longer works. Connect again." },
+  "keyBadFormat": { "message": "That doesn't look like a key: it starts with crit_." },
+  "disconnected": { "message": "Disconnected. The key has been revoked." },
+  "errorStatus": { "message": "Error $STATUS$", "placeholders": { "status": { "content": "$1", "example": "500" } } }
+}

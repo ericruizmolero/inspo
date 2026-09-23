@@ -4,6 +4,10 @@ Saves the site you're looking at to your criterio.design library with one click.
 analyze anything itself: it sends the address, the tab title and a screenshot of what's visible, and the
 server picks the name, collection, tags and thumbnail, the same as when you paste a URL in the app.
 
+The popup follows the browser language: English by default, Spanish when the browser is in Spanish.
+Every text lives in `chrome/_locales/<lang>/messages.json` (Chrome's own i18n; `popup.js` reads them
+with `chrome.i18n.getMessage`). To add a language, copy `_locales/en` and translate the messages.
+
 ## How it signs in
 
 It doesn't use the site's session cookie (Safari doesn't allow that reliably). Pressing
@@ -40,3 +44,4 @@ published.
 
 Zip the `extension/chrome` folder and upload it to the Chrome developer dashboard
 (one-time $5 fee). Before uploading, bump `version` in `manifest.json`.
+The store listing takes the name and description from `_locales` too, so it shows up translated.

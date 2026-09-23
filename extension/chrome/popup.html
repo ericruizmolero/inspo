@@ -14,14 +14,14 @@
 
     <!-- No key: connect -->
     <section class="view" data-view="connect">
-      <p class="lead">Save the site you're looking at to your library.</p>
+      <p class="lead" data-i18n="lead">Save the site you're looking at to your library.</p>
       <p class="hint" id="connect-msg"></p>
-      <button class="btn btn--primary btn--block" id="btn-connect">Connect to criterio.design</button>
+      <button class="btn btn--primary btn--block" id="btn-connect" data-i18n="connect">Connect to criterio.design</button>
       <details class="paste">
-        <summary>I already have a key</summary>
+        <summary data-i18n="haveKey">I already have a key</summary>
         <input class="input" id="paste-key" placeholder="crit_…" spellcheck="false" autocomplete="off" />
         <input class="input" id="paste-base" placeholder="https://criterio.design" spellcheck="false" autocomplete="off" />
-        <button class="btn btn--block" id="btn-paste">Use this key</button>
+        <button class="btn btn--block" id="btn-paste" data-i18n="useKey">Use this key</button>
       </details>
     </section>
 
@@ -35,13 +35,13 @@
         </div>
       </div>
       <p class="hint" id="tab-msg"></p>
-      <button class="btn btn--primary btn--block" id="btn-save">Save</button>
-      <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden>View on criterio.design</a>
+      <button class="btn btn--primary btn--block" id="btn-save" data-i18n="save">Save</button>
+      <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden data-i18n="viewOn">View on criterio.design</a>
     </section>
 
     <footer class="foot" id="foot" hidden>
       <span class="foot__who" id="who"></span>
-      <button class="link" id="btn-disconnect">Disconnect</button>
+      <button class="link" id="btn-disconnect" data-i18n="disconnect">Disconnect</button>
     </footer>
   </main>
   <script src="popup.js"></script>

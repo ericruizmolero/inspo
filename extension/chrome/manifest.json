@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "criterio.design",
-  "description": "Save the site you are looking at to your criterio.design library in one click.",
+  "description": "__MSG_extDescription__",
   "version": "0.1.0",
+  "default_locale": "en",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -10,7 +11,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Save to criterio.design",
+    "default_title": "__MSG_actionTitle__",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",

@@ -5,6 +5,10 @@
 const DEFAULT_BASE = "https://criterio.design";
 const API = "/api/ext/v1";
 
+// Texts come from _locales/<lang>/messages.json (browser language; English if there is no translation)
+const t = (key, subs) => chrome.i18n.getMessage(key, subs) || key;
+const ws = () => state.workspace?.name || t("yourLibrary");
+
 const $ = (id) => document.getElementById(id);
 const app = $("app");
 const setView = (v) => { app.dataset.view = v; };
@@ -19,12 +23,14 @@ const api = async (path, init = {}) => {
     headers: { Authorization: `Bearer ${state.key}`, "Content-Type": "application/json", ...(init.headers || {}) },
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 401) { await disconnect(false); throw new Error(data.error || "This key no longer works. Connect again."); }
-  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+  if (res.status === 401) { await disconnect(false); throw new Error(data.error || t("keyInvalid")); }
+  if (!res.ok) throw new Error(data.error || t("errorStatus", [String(res.status)]));
   return data;
 };
 
 async function load() {
+  document.documentElement.lang = chrome.i18n.getUILanguage();
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
   const s = await chrome.storage.local.get(["key", "base", "workspace", "user"]);
   state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, user: s.user || null };
   if (!state.key) { setView("connect"); return; }
@@ -51,11 +57,11 @@ async function loadTab() {
   const url = t?.url || "";
   const ok = /^https?:\/\//.test(url);
   $("tab-title").textContent = t?.title || url;
-  try { $("tab-host").textContent = ok ? new URL(url).hostname.replace(/^www\./, "") : "This tab isn't a website"; } catch { $("tab-host").textContent = ""; }
+  try { $("tab-host").textContent = ok ? new URL(url).hostname.replace(/^www\./, "") : t("notWebsite"); } catch { $("tab-host").textContent = ""; }
   if (t?.favIconUrl) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; }
   $("btn-save").disabled = !ok;
   $("btn-open").hidden = true;
-  if (!ok) { note($("tab-msg"), "Only http(s) pages can be saved.", null); return; }
+  if (!ok) { note($("tab-msg"), t("onlyHttp"), null); return; }
   note($("tab-msg"), "");
   try {
     const r = await api(`/items/lookup?url=${encodeURIComponent(url)}`);
@@ -64,7 +70,7 @@ async function loadTab() {
 }
 
 function already(item) {
-  note($("tab-msg"), `Already saved in ${state.workspace?.name || "your library"}${item?.addedBy ? ` (by ${item.addedBy})` : ""}.`, "ok");
+  note($("tab-msg"), item?.addedBy ? t("alreadySavedBy", [ws(), item.addedBy]) : t("alreadySaved", [ws()]), "ok");
   $("btn-save").hidden = true;
   const open = $("btn-open"); open.href = state.base + "/"; open.hidden = false;
 }
@@ -77,18 +83,18 @@ async function capture() {
 async function save() {
   if (!tab?.url) return;
   const btn = $("btn-save");
-  btn.disabled = true; btn.textContent = "Saving…";
+  btn.disabled = true; btn.textContent = t("saving");
   note($("tab-msg"), "");
   try {
     const screenshot = await capture();
     const r = await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot }) });
     if (r.existed) { already(r.item); return; }
-    note($("tab-msg"), `Saved in ${state.workspace?.name || "your library"}.`, "ok");
+    note($("tab-msg"), t("savedIn", [ws()]), "ok");
     btn.hidden = true;
     const open = $("btn-open"); open.href = state.base + "/"; open.hidden = false;
   } catch (e) {
     note($("tab-msg"), e.message, "error");
-    btn.disabled = false; btn.textContent = "Save";
+    btn.disabled = false; btn.textContent = t("save");
   }
 }
 
@@ -97,8 +103,8 @@ async function disconnect(tellServer = true) {
   await chrome.storage.local.remove(["key", "workspace", "user", "connectedAt"]);
   state.key = null; state.workspace = null; state.user = null;
   $("foot").hidden = true; $("ws-name").textContent = "";
-  $("btn-save").hidden = false; $("btn-save").disabled = false; $("btn-save").textContent = "Save";
-  note($("connect-msg"), tellServer ? "Disconnected. The key has been revoked." : "This key no longer works. Connect again.", null);
+  $("btn-save").hidden = false; $("btn-save").disabled = false; $("btn-save").textContent = t("save");
+  note($("connect-msg"), tellServer ? t("disconnected") : t("keyInvalid"), null);
   setView("connect");
 }
 
@@ -111,7 +117,7 @@ $("btn-connect").addEventListener("click", async () => {
 $("btn-paste").addEventListener("click", async () => {
   const key = $("paste-key").value.trim();
   const base = ($("paste-base").value.trim() || DEFAULT_BASE).replace(/\/+$/, "");
-  if (!key.startsWith("crit_")) { note($("connect-msg"), "That doesn't look like a key: it starts with crit_.", "error"); return; }
+  if (!key.startsWith("crit_")) { note($("connect-msg"), t("keyBadFormat"), "error"); return; }
   state = { ...state, key, base };
   try {
     const me = await api("/me");

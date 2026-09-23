@@ -1,0 +1,22 @@
+{
+  "extDescription": { "message": "Guarda la web que estás viendo en tu librería de criterio.design con un clic." },
+  "actionTitle": { "message": "Guardar en criterio.design" },
+  "lead": { "message": "Guarda la web que estás viendo en tu librería." },
+  "connect": { "message": "Conectar con criterio.design" },
+  "haveKey": { "message": "Ya tengo una llave" },
+  "useKey": { "message": "Usar esta llave" },
+  "save": { "message": "Guardar" },
+  "saving": { "message": "Guardando…" },
+  "viewOn": { "message": "Ver en criterio.design" },
+  "disconnect": { "message": "Desconectar" },
+  "yourLibrary": { "message": "tu librería" },
+  "notWebsite": { "message": "Esta pestaña no es una web" },
+  "onlyHttp": { "message": "Solo se pueden guardar páginas http(s)." },
+  "alreadySaved": { "message": "Ya está guardada en $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
+  "alreadySavedBy": { "message": "Ya está guardada en $WS$ (por $WHO$).", "placeholders": { "ws": { "content": "$1", "example": "Studio" }, "who": { "content": "$2", "example": "Ana" } } },
+  "savedIn": { "message": "Guardada en $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
+  "keyInvalid": { "message": "La llave ya no vale. Vuelve a conectar." },
+  "keyBadFormat": { "message": "Esa llave no tiene buena pinta: empieza por crit_." },
+  "disconnected": { "message": "Desconectada. La llave ha quedado revocada." },
+  "errorStatus": { "message": "Error $STATUS$", "placeholders": { "status": { "content": "$1", "example": "500" } } }
+}
