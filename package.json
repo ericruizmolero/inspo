@@ -19,10 +19,10 @@
     "admin": "tsx --conditions=react-server scripts/set-admin.ts",
     "check:seats": "tsx --conditions=react-server scripts/check-seats.ts",
     "check:invites": "tsx --conditions=react-server scripts/check-invite-flow.ts",
-    "check:locale": "tsx --conditions=react-server scripts/check-locale.ts"
+    "check:locale": "tsx --conditions=react-server scripts/check-locale.ts",
+    "eval:design-md": "tsx --conditions=react-server scripts/eval-design-md.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.127.0",
     "@base-ui/react": "^1.8.0",
     "@libsql/client": "^0.18.0",
     "@sparticuz/chromium": "^153.0.0",

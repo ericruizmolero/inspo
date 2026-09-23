@@ -1,17 +1,16 @@
-// Paso de visión: Claude describe la captura de una web en texto corto para que
+// Paso de visión: un modelo de visión describe la captura de una web en texto corto para que
 // Jev (solo texto) pueda juzgar rasgos visuales (tipografía, ilustración, paleta…).
-import Anthropic from "@anthropic-ai/sdk";
 import { getOrCaptureShot } from "./screenshot";
+import { llm, llmEnabled } from "./llm";
 
 // Describir una captura en 120 palabras no necesita Opus: Haiku cuesta diez veces menos.
-const MODEL = process.env.VISION_MODEL || "claude-haiku-4-5-20251001";
-const IS_HAIKU = /^claude-haiku/.test(MODEL);
+const MODEL = process.env.VISION_MODEL || "anthropic/claude-haiku-4.5";
 const CAPTURE_TIMEOUT_MS = 45_000;
 
 // Dominios donde la captura no aporta nada (login walls, vídeo, redes)
 const SKIP = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "primevideo.com", "netflix.com"];
 
-export const visionEnabled = () => !!process.env.ANTHROPIC_API_KEY;
+export const visionEnabled = llmEnabled;
 
 const SYSTEM = `You describe website screenshots for a design-taste classifier that can only read text.
 
@@ -23,38 +22,19 @@ Write ONE compact paragraph in English, 90-140 words, plain prose, no headings o
 5. Overall style in two or three descriptors (e.g. "minimal", "brutalist", "playful", "corporate", "editorial", "immersive", "retro").
 Describe only what is visible. Do not guess at animation. Do not name the brand's business unless it is obvious from the screenshot.`;
 
-let _client: Anthropic | null = null;
-const client = () => (_client ??= new Anthropic());
-
-export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number }
+export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null }
 
 export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url: string }): Promise<VisionResult | null> {
-  // Haiku 4.5 no admite effort ni el fallback de servidor (son de Opus 5 / Sonnet 5)
-  const msg = await client().beta.messages.create({
+  const res = await llm({
     model: MODEL,
-    max_tokens: 600,
-    ...(IS_HAIKU ? {} : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default", output_config: { effort: "low" } }),
-    system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: "image/jpeg", data: jpeg.toString("base64") } },
-          { type: "text", text: `Site: ${ctx.name} (${ctx.url}). Describe the screenshot.` },
-        ],
-      },
-    ],
+    system: SYSTEM,
+    image: jpeg,
+    text: `Site: ${ctx.name} (${ctx.url}). Describe the screenshot.`,
+    maxTokens: 600,
   });
-
-  if (msg.stop_reason === "refusal") {
-    console.warn("vision: refusal", ctx.url, msg.stop_details?.category);
-    return null;
-  }
-  const text = msg.content
-    .filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text")
-    .map((b) => b.text).join("").trim();
+  const text = res.text.trim();
   if (!text) return null;
-  return { text, model: msg.model, inputTokens: msg.usage.input_tokens, outputTokens: msg.usage.output_tokens, cacheReadTokens: msg.usage.cache_read_input_tokens ?? 0 };
+  return { text, model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd };
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {

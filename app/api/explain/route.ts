@@ -11,7 +11,7 @@ const MAX_ITEMS = 40;
 
 // POST { q, results: [{ web, score }] } → { reasons: { [web]: frase } }
 export async function POST(req: NextRequest) {
-  if (!explainEnabled()) return Response.json({ error: "ANTHROPIC_API_KEY no configurada" }, { status: 503 });
+  if (!explainEnabled()) return Response.json({ error: "OPENROUTER_API_KEY no configurada" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
 

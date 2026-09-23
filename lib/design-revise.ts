@@ -1,17 +1,16 @@
 // Revisiones del DESIGN.md por workspace: una persona discrepa de una sección,
-// Claude corrige la spec estructurada y el cambio queda registrado con autor y resumen.
+// un modelo corrige la spec estructurada y el cambio queda registrado con autor y resumen.
 import "server-only";
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { desc, and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./workspace-core";
 import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/design";
 import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { llm } from "./llm";
 
 // Revisar es reescribir una spec ya hecha con un cambio acotado: Sonnet lo resuelve bien y en un tercio del tiempo que Opus.
-const MODEL = process.env.DESIGN_REVISE_MODEL || "claude-sonnet-5";
+const MODEL = process.env.DESIGN_REVISE_MODEL || "anthropic/claude-sonnet-5";
 
 export const SECTIONS: Record<string, string> = {
   general: "Identidad y descripción",
@@ -91,13 +90,15 @@ export async function overlayRevision<T extends { url: string; spec?: DesignSpec
   return { ...entry, spec: latest.spec, markdown: renderDesignMd(latest.spec, entry.url, date), revisions };
 }
 
-// ─── Claude ──────────────────────────────────────────────────────────────────
+// ─── Modelo ──────────────────────────────────────────────────────────────────
 
-// Claude devuelve solo las claves de primer nivel que cambian (no la spec entera): la salida
+// El modelo devuelve solo las claves de primer nivel que cambian (no la spec entera): la salida
 // pasa de ~10k tokens a unos pocos cientos y la revisión tarda segundos en vez de un minuto.
 const ReviseOutput = z.object({
   changed: z.boolean().describe("true si el comentario pedía un cambio y lo has aplicado; false si no pedía nada concreto (una prueba, una pregunta, un comentario vacío)"),
-  patch: DesignSpecSchema.partial().describe("Solo las claves de primer nivel de la spec que cambian, cada una completa (si cambia un color, devuelve el array 'colors' entero). Vacío si changed es false."),
+  // Un string con JSON y no un objeto: 17 claves opcionales o nulables pasan del límite
+  // de uniones del esquema estricto de Anthropic (16). Lo valida DesignSpecSchema.partial() al volver.
+  patch: z.string().describe("Objeto JSON con solo las claves de primer nivel de la spec que cambian, cada una completa (si cambia un color, el array 'colors' entero). \"{}\" si changed es false."),
   summary: z.string().describe("2-3 frases: qué has cambiado exactamente y en qué partes de la spec se ha propagado"),
   warning: z.string().nullable().describe("Si el comentario contradice valores que están claramente medidos o visibles, dilo aquí en una frase. Si no, null."),
 });
@@ -117,39 +118,26 @@ Reglas:
 - No toques nada que el comentario no afecte. Conserva literalmente el resto de textos y valores.
 - Si el comentario contradice algo que está claramente medido o visible en la captura (p. ej. dice que el fondo es blanco y la captura es negra), aplícalo igualmente pero avísalo en "warning".
 - Si el comentario es ambiguo, elige la interpretación más razonable y explícala en "summary".
-- Si el comentario no pide ningún cambio (es una prueba, una pregunta o no dice nada concreto), devuelve "changed": false, "patch" vacío y explica en "summary" qué te faltaría para poder aplicarlo.
-- Devuelve en "patch" únicamente las claves de primer nivel que cambian, pero cada una completa: si tocas un color, devuelve el array "colors" entero con todos los colores; si tocas una regla, "dos" o "donts" enteros. No devuelvas claves que no cambian.
-- El texto de la spec, en castellano (español de España), salvo nombres de fuentes, marcas y valores técnicos (hex, px, pesos).
+- Si el comentario no pide ningún cambio (es una prueba, una pregunta o no dice nada concreto), devuelve "changed": false, "patch" "{}" y explica en "summary" qué te faltaría para poder aplicarlo.
+- "patch" es un string con un objeto JSON. Lleva únicamente las claves de primer nivel que cambian, pero cada una completa: si tocas un color, el array "colors" entero con todos los colores; si tocas una regla, "dos" o "donts" enteros. No incluyas claves que no cambian.
+- El texto de la spec va en inglés (#27), aunque la spec vigente o el comentario estén en castellano.
 - ${LANGUAGE[locale]}: esos dos los lee la persona en pantalla.
 - Respeta las restricciones del esquema: entre 4 y 12 colores, 6-9 pasos de escala, 5-7 reglas de cada tipo.`;
 
 export async function reviseDesignSpec(input: {
   spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null; locale?: Locale;
-}): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; usage: { input: number; output: number; cacheRead: number } }> {
-  const client = new Anthropic();
-  const content: Anthropic.Beta.BetaContentBlockParam[] = [];
-  if (input.screenshot) {
-    content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: input.screenshot.toString("base64") } });
-  }
-  content.push({
-    type: "text",
-    text: `URL: ${input.url}\nSección a la que se refiere el comentario: ${SECTIONS[input.section] ?? input.section}\n\nComentario de la persona:\n"""\n${input.comment}\n"""\n\nSpec vigente (JSON):\n${JSON.stringify(input.spec)}`,
-  });
-
-  const msg = await client.beta.messages.create({
+}): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; costUsd: number | null; usage: { input: number; output: number; cacheRead: number } }> {
+  const res = await llm({
     model: MODEL,
-    max_tokens: 6000,
-    betas: ["server-side-fallback-2026-07-01"],
-    fallbacks: "default",
-    system: [{ type: "text", text: systemFor(input.locale ?? DEFAULT_LOCALE), cache_control: { type: "ephemeral" } }],
-    output_config: { format: zodOutputFormat(ReviseOutput) },
-    messages: [{ role: "user", content }],
+    system: systemFor(input.locale ?? DEFAULT_LOCALE),
+    image: input.screenshot,
+    text: `URL: ${input.url}\nSección a la que se refiere el comentario: ${SECTIONS[input.section] ?? input.section}\n\nComentario de la persona:\n"""\n${input.comment}\n"""\n\nSpec vigente (JSON):\n${JSON.stringify(input.spec)}`,
+    schema: ReviseOutput,
+    maxTokens: 16000,
   });
-
-  if (msg.stop_reason === "refusal") throw new Error("Claude ha rechazado revisar el DESIGN.md");
-  if (msg.stop_reason === "max_tokens") throw new Error("Claude se ha quedado sin tokens de salida");
-  const text = msg.content.filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === "text").map((b) => b.text).join("");
+  const text = res.text;
   const out = ReviseOutput.parse(JSON.parse(text));
-  const spec = out.changed ? DesignSpecSchema.parse({ ...input.spec, ...out.patch }) : input.spec;
-  return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: msg.model, usage: { input: msg.usage.input_tokens, output: msg.usage.output_tokens, cacheRead: msg.usage.cache_read_input_tokens ?? 0 } };
+  const patch = DesignSpecSchema.partial().parse(JSON.parse(out.patch || "{}"));
+  const spec = out.changed ? DesignSpecSchema.parse({ ...input.spec, ...patch }) : input.spec;
+  return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: res.model, costUsd: res.costUsd, usage: res.usage };
 }

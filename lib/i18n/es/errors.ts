@@ -2,7 +2,7 @@ import type { errors as EnErrors } from "../en/errors";
 
 export const errors: typeof EnErrors = {
   seatTaken: "Alguien ha ocupado la última plaza del plan antes que tú. Tu invitación sigue activa: avisa a quien te invitó para que libere un sitio o amplíe el plan.",
-  incompleteAnswer: "Claude devolvió una respuesta incompleta",
+  incompleteAnswer: "El modelo devolvió una respuesta incompleta",
   adminsCanRegenerate: "Solo los administradores pueden regenerar",
   adminsOnly: "Solo administradores",
   badBody: "Cuerpo no válido",
@@ -34,7 +34,7 @@ export const errors: typeof EnErrors = {
   missingWebOrAll: "Falta web o all",
   missingWebUrl: "Falta webUrl",
   missingWebUrlOrBlobUrl: "Faltan webUrl o blobUrl",
-  noAnthropicKey: "Falta ANTHROPIC_API_KEY en el entorno",
+  noModelKey: "Falta OPENROUTER_API_KEY en el entorno",
   noDesignMdYet: "Esa web aún no tiene DESIGN.md generado",
   noNotesToSend: "No hay notas que enviar",
   noPanelAccess: "No tienes acceso al panel",

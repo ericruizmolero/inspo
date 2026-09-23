@@ -53,12 +53,12 @@ export async function POST(req: NextRequest) {
     const comment = (body.comment ?? "").trim().slice(0, 2000);
     if (comment.length < 5) return Response.json({ error: (await getErrors()).tellUsWhat }, { status: 400 });
     if (!(section in SECTIONS)) return Response.json({ error: (await getErrors()).unknownSection }, { status: 400 });
-    if (!process.env.ANTHROPIC_API_KEY) return Response.json({ error: (await getErrors()).noAnthropicKey }, { status: 500 });
+    if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: (await getErrors()).noModelKey }, { status: 500 });
 
     const t0 = Date.now();
     const out = await reviseDesignSpec({ spec: current, url, section, comment, screenshot: await localScreenshot(url), locale: await getLocale() });
     console.log(`design-md revise ${url} [${section}] by ${author.authorName}: ${Date.now() - t0}ms, ${out.model}, changed=${out.changed}`);
-    void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "revise", model: out.model, inputTokens: out.usage.input, outputTokens: out.usage.output, cacheReadTokens: out.usage.cacheRead, ref: url });
+    void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "revise", model: out.model, inputTokens: out.usage.input, outputTokens: out.usage.output, cacheReadTokens: out.usage.cacheRead, costUsd: out.costUsd, ref: url });
 
     if (!out.changed) {
       return Response.json({ unchanged: true, summary: out.summary, revisions: await listRevisions(ctx.workspace.id, url) });

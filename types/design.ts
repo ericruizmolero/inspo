@@ -1,36 +1,36 @@
 import { z } from "zod";
 
-// ─── Spec estructurada que devuelve Claude ───────────────────────────────────
+// ─── Structured spec returned by the model ───────────────────────────────────
 
 export const DesignSpecSchema = z.object({
-  brand: z.string().describe("Nombre de la marca o de la web, corto"),
-  tagline: z.string().describe("Descriptor poético de la atmósfera visual, 3-6 palabras, en minúsculas y en castellano, p. ej. 'galería de museo blanca a mediodía'"),
+  brand: z.string().describe("Brand or site name, short"),
+  tagline: z.string().describe("Poetic descriptor of the visual atmosphere, 3-6 words, lowercase, e.g. 'white museum gallery at noon'"),
   theme: z.enum(["light", "dark"]),
-  description: z.string().describe("Un párrafo en castellano, 120-180 palabras: qué transmite la interfaz y las decisiones concretas que lo producen. Menciona hex y nombres de fuente en el texto."),
+  description: z.string().describe("One paragraph, 120-180 words: what the interface conveys and the concrete decisions that produce it. Mention hex values and font names in the text."),
   colors: z.array(z.object({
-    name: z.string().describe("Nombre evocador de 1-2 palabras en castellano, p. ej. 'Azul Señal', 'Obsidiana'"),
-    hex: z.string().describe("#rrggbb, o #rrggbbaa cuando el alpha importa"),
+    name: z.string().describe("Evocative name of 1-2 words, e.g. 'Signal Blue', 'Obsidian'"),
+    hex: z.string().describe("#rrggbb, or #rrggbbaa when alpha matters"),
     group: z.enum(["brand", "accent", "neutral", "semantic"]),
-    role: z.string().describe("Dónde y por qué se usa, una frase en castellano"),
-  })).min(4).max(12).describe("Entre 6 y 10 colores en la mayoría de sistemas; 12 solo en paletas realmente ricas. Una paleta es un conjunto de decisiones, no un censo: fusiona en un solo token los tonos que difieren en unos pocos puntos RGB, agrupa los blancos o negros con poca opacidad en un único token de 'filete' o 'velo', y descarta cualquier color sin un rol distinto. Lo típico: fondo, 1-2 superficies, texto, texto atenuado, borde, 1-3 acentos, y semánticos solo si existen de verdad. Neutros ordenados de oscuro a claro."),
+    role: z.string().describe("Where and why it is used, one sentence"),
+  })).min(4).max(12).describe("6 to 10 colors in most systems; 12 only for truly rich palettes. A palette is a set of decisions, not a census: merge shades that differ by a few RGB points into one token, group low-opacity whites or blacks into a single 'hairline' or 'veil' token, and drop any color without a distinct role. Typical: background, 1-2 surfaces, text, muted text, border, 1-3 accents, and semantic colors only if they really exist. Neutrals ordered dark to light. No duplicates."),
   fonts: z.array(z.object({
     family: z.string(),
     role: z.enum(["display", "body", "mono", "ui"]),
     weights: z.array(z.number()),
-    sizes: z.string().describe("Rango y recuento, p. ej. '21-96px · 8 valores'"),
+    sizes: z.string().describe("Range and count, e.g. '21-96px · 8 values'"),
     lineHeight: z.string(),
     letterSpacing: z.string(),
-    fallback: z.string().describe("Stack sustituto libre/de sistema si la fuente es propietaria"),
-    usage: z.string().describe("2-3 frases en castellano: para qué se usa y la decisión característica"),
+    fallback: z.string().describe("Free or system fallback stack if the font is proprietary"),
+    usage: z.string().describe("2-3 sentences: what it is used for and the signature decision"),
   })),
   typeScale: z.array(z.object({
-    role: z.string().describe("leyenda | cuerpo-sm | cuerpo | subtítulo | título-sm | título | título-lg | display"),
+    role: z.string().describe("caption | body-sm | body | subtitle | title-sm | title | title-lg | display"),
     size: z.number().describe("px"),
     weight: z.number(),
-    lineHeight: z.number().describe("ratio sin unidad"),
+    lineHeight: z.number().describe("unitless ratio"),
     letterSpacing: z.string(),
     family: z.string(),
-  })).describe("6-9 pasos de menor a mayor"),
+  })).describe("6-9 steps from smallest to largest"),
   spacing: z.object({
     density: z.enum(["compact", "comfortable", "airy"]),
     baseUnit: z.string(),
@@ -40,35 +40,24 @@ export const DesignSpecSchema = z.object({
     elementGap: z.string(),
   }),
   radii: z.array(z.object({ element: z.string(), value: z.string() })),
-  elevation: z.string().describe("Cómo se consigue la profundidad: sombras, bordes o escalones de superficie. Incluye los valores de sombra si los hay. En castellano."),
+  elevation: z.string().describe("How depth is achieved: shadows, borders or surface steps. Include shadow values if any."),
   components: z.array(z.object({
-    name: z.string().describe("Nombre del primitivo en castellano: 'Botón primario', 'Botón secundario', 'Input', 'Enlace', 'Tarjeta', 'Cabecera', 'Footer'"),
-    role: z.string().describe("Para qué sirve en esta web, una frase corta"),
-    spec: z.string().describe("Solo lo que no está ya en otra sección: altura o padding, borde, hover, estado activo. Cita los tokens por su nombre ('fondo Obsidiana, radio pequeño, texto en cuerpo-sm') en vez de repetir hex, fuente y tamaño. Sin decimales de conversión de rem."),
-  })).describe("De 3 a 5 primitivos reutilizables, los que un agente necesita para no inventarse un botón. Solo: botón primario, botón secundario, input, enlace, tarjeta, cabecera, footer. Nunca secciones de la página (hero, mosaico, carrusel, 'fila de capacidades', 'trusted by'): eso es contenido, no sistema."),
-  motion: z.string().describe("Transiciones, easing, duraciones, qué se anima y qué no. En castellano."),
-  layout: z.string().describe("Estructura, contenedor, grid, ritmo, alineación. En castellano."),
-  imagery: z.string().describe("Fotografía vs ilustración, densidad, tratamiento. En castellano."),
-  dos: z.array(z.string()).describe("5-7 reglas en castellano"),
-  donts: z.array(z.string()).describe("5-7 reglas en castellano"),
-  similar: z.array(z.object({ brand: z.string(), why: z.string() })).describe("3-5 marcas reales con un sistema parecido; el porqué en castellano"),
-  agentPrompt: z.string().describe("Párrafo de 60-100 palabras en castellano que un agente de IA pueda pegar para reproducir el estilo"),
+    name: z.string().describe("Primitive name: 'Primary button', 'Secondary button', 'Input', 'Link', 'Card', 'Header', 'Footer'"),
+    role: z.string().describe("What it does on this site, one short sentence"),
+    spec: z.string().describe("Only what is not already in another section: height or padding, border, hover, active state. Cite tokens by name ('Obsidian background, small radius, body-sm text') instead of repeating hex, font and size. No rem conversion decimals."),
+  })).describe("3 to 5 reusable primitives, the ones an agent needs so it does not invent a button. Only: primary button, secondary button, input, link, card, header, footer. Never page sections (hero, mosaic, carousel, 'capabilities row', 'trusted by'): that is content, not system."),
+  motion: z.string().describe("Transitions, easing, durations, what animates and what does not."),
+  layout: z.string().describe("Structure, container, grid, rhythm, alignment."),
+  imagery: z.string().describe("Photography vs illustration, density, treatment."),
+  dos: z.array(z.string()).describe("5-7 rules"),
+  donts: z.array(z.string()).describe("5-7 rules"),
+  similar: z.array(z.object({ brand: z.string(), why: z.string() })).describe("3-5 real brands with a similar system"),
+  agentPrompt: z.string().describe("Paragraph of 60-100 words an AI agent can paste to reproduce the style"),
 });
 
 export type DesignSpec = z.infer<typeof DesignSpecSchema>;
 
-// ─── Render a markdown (formato tipo Refero) ─────────────────────────────────
-
-const THEME_ES: Record<DesignSpec["theme"], string> = { light: "claro", dark: "oscuro" };
-const GROUP_ES: Record<DesignSpec["colors"][number]["group"], string> = {
-  brand: "marca", accent: "acento", neutral: "neutro", semantic: "semántico",
-};
-const DENSITY_ES: Record<DesignSpec["spacing"]["density"], string> = {
-  compact: "compacta", comfortable: "cómoda", airy: "aireada",
-};
-const FONT_ROLE_ES: Record<DesignSpec["fonts"][number]["role"], string> = {
-  display: "display", body: "cuerpo", mono: "mono", ui: "interfaz",
-};
+// ─── Render to markdown (Refero-like format) ─────────────────────────────────
 
 export function renderDesignMd(spec: DesignSpec, url: string, date: string): string {
   const L: string[] = [];
@@ -77,70 +66,70 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
   p(`# ${spec.brand} — DESIGN.md`);
   p(`> ${spec.tagline}`);
   p();
-  p(`**Tema:** ${THEME_ES[spec.theme]}  `);
-  p(`**Origen:** ${url} · ${date}`);
+  p(`**Theme:** ${spec.theme}  `);
+  p(`**Source:** ${url} · ${date}`);
   p();
-  p("Las medidas de origen están normalizadas; los roles y las recomendaciones son interpretados.");
+  p("Source measurements are normalised; roles and recommendations are interpreted.");
   p();
   p(spec.description);
   p();
 
-  p("## Colores");
+  p("## Colors");
   p();
-  p("| Nombre | Valor | Grupo | Rol |");
-  p("|--------|-------|-------|-----|");
-  for (const c of spec.colors) p(`| ${c.name} | \`${c.hex}\` | ${GROUP_ES[c.group]} | ${c.role} |`);
+  p("| Name | Value | Group | Role |");
+  p("|------|-------|-------|------|");
+  for (const c of spec.colors) p(`| ${c.name} | \`${c.hex}\` | ${c.group} | ${c.role} |`);
   p();
 
-  p("## Tipografía");
+  p("## Typography");
   p();
   for (const f of spec.fonts) {
-    p(`### ${f.family} — ${FONT_ROLE_ES[f.role]}`);
+    p(`### ${f.family} — ${f.role}`);
     p(f.usage);
-    p(`- **Sustituto:** ${f.fallback}`);
-    p(`- **Pesos:** ${f.weights.join(", ")}`);
-    p(`- **Tamaños:** ${f.sizes}`);
-    p(`- **Interlineado:** ${f.lineHeight}`);
-    p(`- **Tracking:** ${f.letterSpacing}`);
+    p(`- **Fallback:** ${f.fallback}`);
+    p(`- **Weights:** ${f.weights.join(", ")}`);
+    p(`- **Sizes:** ${f.sizes}`);
+    p(`- **Line height:** ${f.lineHeight}`);
+    p(`- **Letter spacing:** ${f.letterSpacing}`);
     p();
   }
-  p("### Escala tipográfica");
+  p("### Type scale");
   p();
-  p("| Rol | Familia | Peso | Tamaño | Interlineado | Tracking |");
-  p("|-----|---------|------|--------|--------------|----------|");
+  p("| Role | Family | Weight | Size | Line height | Letter spacing |");
+  p("|------|--------|--------|------|-------------|----------------|");
   for (const t of spec.typeScale) p(`| ${t.role} | ${t.family} | ${t.weight} | ${t.size}px | ${t.lineHeight} | ${t.letterSpacing} |`);
   p();
 
-  p("## Espaciado y layout");
+  p("## Spacing and layout");
   p();
-  p(`**Densidad:** ${DENSITY_ES[spec.spacing.density]}`);
+  p(`**Density:** ${spec.spacing.density}`);
   p();
-  p(`- **Unidad base:** ${spec.spacing.baseUnit}`);
-  p(`- **Ancho máximo de página:** ${spec.spacing.maxWidth}`);
-  p(`- **Separación entre secciones:** ${spec.spacing.sectionGap}`);
-  p(`- **Padding de tarjeta:** ${spec.spacing.cardPadding}`);
-  p(`- **Separación entre elementos:** ${spec.spacing.elementGap}`);
+  p(`- **Base unit:** ${spec.spacing.baseUnit}`);
+  p(`- **Max page width:** ${spec.spacing.maxWidth}`);
+  p(`- **Section gap:** ${spec.spacing.sectionGap}`);
+  p(`- **Card padding:** ${spec.spacing.cardPadding}`);
+  p(`- **Element gap:** ${spec.spacing.elementGap}`);
   p();
-  p("### Radios de borde");
+  p("### Border radii");
   p();
   for (const r of spec.radii) p(`- **${r.element}:** ${r.value}`);
   p();
-  p("## Elevación");
+  p("## Elevation");
   p();
   p(spec.elevation);
   p();
 
-  p("## Componentes");
+  p("## Components");
   p();
   for (const c of spec.components) {
     p(`### ${c.name}`);
-    p(`**Rol:** ${c.role}`);
+    p(`**Role:** ${c.role}`);
     p();
     p(c.spec);
     p();
   }
 
-  p("## Movimiento");
+  p("## Motion");
   p();
   p(spec.motion);
   p();
@@ -148,26 +137,26 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
   p();
   p(spec.layout);
   p();
-  p("## Imagen");
+  p("## Imagery");
   p();
   p(spec.imagery);
   p();
 
-  p("## Qué hacer y qué no");
+  p("## Do and don't");
   p();
-  p("### Sí");
+  p("### Do");
   for (const d of spec.dos) p(`- ${d}`);
   p();
-  p("### No");
+  p("### Don't");
   for (const d of spec.donts) p(`- ${d}`);
   p();
 
-  p("## Marcas afines");
+  p("## Similar brands");
   p();
   for (const s of spec.similar) p(`- **${s.brand}** — ${s.why}`);
   p();
 
-  p("## Prompt para agentes");
+  p("## Agent prompt");
   p();
   p(spec.agentPrompt);
   p();

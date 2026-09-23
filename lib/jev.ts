@@ -60,7 +60,7 @@ export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<I
   const visual = vision?.text ?? null;
   if (vision) {
     console.log(`vision ${item.web}: ${vision.model} in/out ${vision.inputTokens}/${vision.outputTokens}`);
-    void recordUsage(usage, { action: "vision", model: vision.model, inputTokens: vision.inputTokens, outputTokens: vision.outputTokens, cacheReadTokens: vision.cacheReadTokens, ref: item.web });
+    void recordUsage(usage, { action: "vision", model: vision.model, inputTokens: vision.inputTokens, outputTokens: vision.outputTokens, cacheReadTokens: vision.cacheReadTokens, costUsd: vision.costUsd, ref: item.web });
   }
   const state = buildState(item, site, visual);
 

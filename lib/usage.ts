@@ -1,5 +1,5 @@
-// Registro de uso de IA por workspace y coste estimado. Tarifa de Anthropic
-// (USD por millón de tokens) y de Jev (USD por item). Actualizar al cambiar de modelo.
+// Registro de uso de IA por workspace. El coste de los modelos es el que devuelve
+// OpenRouter en cada llamada (#28); el de Jev sigue siendo una estimación por item.
 import "server-only";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -11,26 +11,8 @@ export * from "./usage-core";
 
 export interface UsageCtx { organizationId: string; userId?: string | null }
 
-interface Rate { input: number; output: number; cacheRead: number }
-const RATES: [RegExp, Rate][] = [
-  [/^claude-fable|^claude-mythos/, { input: 10, output: 50, cacheRead: 1 }],
-  [/^claude-opus-5/, { input: 5, output: 25, cacheRead: 0.5 }],
-  [/^claude-opus-4/, { input: 5, output: 25, cacheRead: 0.5 }],
-  [/^claude-sonnet-5/, { input: 2, output: 10, cacheRead: 0.2 }],
-  [/^claude-sonnet-4/, { input: 3, output: 15, cacheRead: 0.3 }],
-  [/^claude-haiku-4-5/, { input: 1, output: 5, cacheRead: 0.1 }],
-];
 /** Jev cobra por item evaluado, no por token. */
 export const JEV_PER_ITEM_USD = 0.0004;
-
-export function rateFor(model: string): Rate {
-  return RATES.find(([re]) => re.test(model))?.[1] ?? { input: 5, output: 25, cacheRead: 0.5 };
-}
-
-export function estimateCostUsd(model: string, input: number, output: number, cacheRead = 0): number {
-  const r = rateFor(model);
-  return (input * r.input + output * r.output + cacheRead * r.cacheRead) / 1e6;
-}
 
 export interface UsageInput {
   action: UsageAction;
@@ -40,6 +22,8 @@ export interface UsageInput {
   cacheReadTokens?: number;
   /** Items facturados por Jev */
   units?: number;
+  /** USD que devolvió OpenRouter. null o ausente: se guarda 0 y se avisa */
+  costUsd?: number | null;
   ref?: string | null;
 }
 
@@ -47,7 +31,8 @@ export interface UsageInput {
 export async function recordUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Promise<void> {
   if (!ctx) return;
   const input = u.inputTokens ?? 0, output = u.outputTokens ?? 0, cacheRead = u.cacheReadTokens ?? 0, units = u.units ?? 0;
-  const cost = u.model === "jev" ? units * JEV_PER_ITEM_USD : estimateCostUsd(u.model, input, output, cacheRead);
+  const cost = u.model === "jev" ? units * JEV_PER_ITEM_USD : u.costUsd ?? 0;
+  if (u.model !== "jev" && u.costUsd == null) console.warn("usage: sin coste real", u.action, u.model);
   try {
     await db.insert(schema.aiUsage).values({
       id: newId(), organizationId: ctx.organizationId, userId: ctx.userId ?? null,

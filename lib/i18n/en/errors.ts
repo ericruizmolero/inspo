@@ -2,7 +2,7 @@
 // Mismas claves en lib/i18n/es/errors.ts.
 export const errors = {
   seatTaken: "Someone took the last seat on the plan before you. Your invitation is still live: tell whoever invited you to free a seat, or move up a plan.",
-  incompleteAnswer: "Claude returned an incomplete answer",
+  incompleteAnswer: "The model returned an incomplete answer",
   adminsCanRegenerate: "Only admins can regenerate",
   adminsOnly: "Admins only",
   badBody: "Invalid body",
@@ -34,7 +34,7 @@ export const errors = {
   missingWebOrAll: "Either web or all is missing",
   missingWebUrl: "webUrl is missing",
   missingWebUrlOrBlobUrl: "Either webUrl or blobUrl is missing",
-  noAnthropicKey: "ANTHROPIC_API_KEY is missing from the environment",
+  noModelKey: "OPENROUTER_API_KEY is missing from the environment",
   noDesignMdYet: "That site has no DESIGN.md generated yet",
   noNotesToSend: "There are no notes to send",
   noPanelAccess: "You do not have access to the panel",
