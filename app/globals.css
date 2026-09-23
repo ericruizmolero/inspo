@@ -1921,3 +1921,8 @@ body:has([data-agentation-toolbar] [role="button"][title="Start feedback mode"])
 .ext-choice { padding: 0; }
 .ext-choice__label { display: flex; align-items: center; gap: 12px; padding: 10px 0; width: 100%; cursor: pointer; }
 .ext-choice__label input { accent-color: var(--text); margin: 0; }
+
+/* Legal pages (extension privacy): plain sections, read without a session */
+.legal { display: flex; flex-direction: column; gap: 22px; }
+.legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+.legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }

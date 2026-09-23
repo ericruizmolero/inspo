@@ -7,8 +7,9 @@ import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromH
 
 // The home page (/) is public too: signed out it shows the start canvas (app/page.tsx)
 // and the first action opens the sign-in dialog. Everything else needs a session.
+// /extension/privacy: the extension's privacy page, linked from the Chrome Web Store
 // /api/ext/: the browser extension gets in with its key (lib/ext-keys.ts), not a cookie
-const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//];
+const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;

@@ -56,3 +56,7 @@ HANDOFF-*.md
 # DESIGN.md cache (dev)
 /public/design-md/
 /public/comments/
+prod.env
+
+# Chrome Web Store packages (node extension/build.mjs)
+extension/dist/
