@@ -1541,7 +1541,13 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
 .setting-row { display: flex; align-items: center; gap: 16px; }
 .setting-row__avatar.ws__avatar, .setting-row .ws__avatar { width: 48px; height: 48px; font-size: 18px; }
 .setting-row__actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.setting-line .theme-seg { width: 260px; flex: 0 0 auto; }
+.setting-line .theme-seg, .setting-line .select { width: 260px; flex: 0 0 auto; }
+/* Native select, same box as .theme-seg so the rows line up */
+.select { position: relative; display: inline-flex; align-items: center; }
+.select select { appearance: none; width: 100%; height: 38px; padding: 0 32px 0 12px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-2); font-size: 13px; font-weight: 500; cursor: pointer; transition: border-color 0.12s; }
+.select select:hover { border-color: var(--border-strong); }
+.select select:disabled { opacity: 0.6; cursor: default; }
+.select svg { position: absolute; right: 12px; color: var(--muted); pointer-events: none; }
 .setting-line { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 14px; color: var(--text-2); }
 .btn.is-danger { color: var(--danger); }
 .btn.is-danger:hover { border-color: var(--danger); }
