@@ -1,6 +1,6 @@
 import "server-only";
 import { webSet } from "./items";
-import { normalizeWebUrl } from "./url";
+import { normalizeWebUrl, webKeyOf } from "./url";
 import { put, list, del } from "@vercel/blob";
 import { promises as fs } from "fs";
 import path from "path";
@@ -32,8 +32,7 @@ const FS_DIR = path.join(process.cwd(), "public", "design-md");
 const FS_INDEX = path.join(FS_DIR, "_index.json");
 
 export function keyFor(url: string): string {
-  const norm = url.trim().replace(/\/+$/, "").toLowerCase();
-  return createHash("sha1").update(norm).digest("hex").slice(0, 16);
+  return createHash("sha1").update(webKeyOf(url)).digest("hex").slice(0, 16);
 }
 
 // ─── Blob ────────────────────────────────────────────────────────────────────

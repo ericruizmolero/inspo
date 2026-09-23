@@ -65,12 +65,17 @@ export function guessName(url: string, site?: { title?: string; siteName?: strin
   return pick.length > 48 ? fromHost : clip(pick);
 }
 
-/** Stable key to detect duplicates: lowercase host, no trailing slash. */
+/**
+ * Stable key to identify one address, whatever case or trailing slash it was typed
+ * or saved with. This is the one normalizer: item dedup (webKey), the DESIGN.md
+ * store and the screenshot store all hash this same string for their own keys,
+ * instead of each normalizing the URL its own way.
+ */
 export function webKeyOf(raw: string): string {
   const s = raw.trim().replace(/\/+$/, "");
   try {
     const u = new URL(s);
-    return `${u.protocol}//${u.host.toLowerCase()}${u.pathname.replace(/\/+$/, "")}${u.search}`;
+    return `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, "")}${u.search}`.toLowerCase();
   } catch {
     return s.toLowerCase();
   }

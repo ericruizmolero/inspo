@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { put, get, head } from "@vercel/blob";
 import puppeteer, { Browser } from "puppeteer-core";
+import { webKeyOf } from "./url";
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
@@ -15,7 +16,7 @@ const JPEG_QUALITY = 78;
 // ─── Storage ─────────────────────────────────────────────────────────────────
 
 export function shotKey(url: string): string {
-  return createHash("sha1").update(url.trim()).digest("hex");
+  return createHash("sha1").update(webKeyOf(url)).digest("hex");
 }
 
 const SHOTS_DIR = path.join(process.cwd(), "public", "shots");

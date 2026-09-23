@@ -21,7 +21,8 @@
     "check:invites": "tsx --conditions=react-server scripts/check-invite-flow.ts",
     "check:locale": "tsx --conditions=react-server scripts/check-locale.ts",
     "check:design": "tsx --conditions=react-server scripts/check-design.ts",
-    "check:usage": "tsx --conditions=react-server scripts/check-usage.ts"
+    "check:usage": "tsx --conditions=react-server scripts/check-usage.ts",
+    "check:url-keys": "tsx --conditions=react-server scripts/check-url-keys.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
