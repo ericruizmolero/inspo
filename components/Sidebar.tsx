@@ -20,7 +20,7 @@ export const DATES: Exclude<FilterDate, "all">[] = ["thisMonth", "thisYear"];
 // ─── Icons (16px, 1.5 stroke) ─────────────────────────────────────────────────
 const I = {
   info: (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
     </svg>
   ),
@@ -66,7 +66,7 @@ const I = {
     </svg>
   ),
   plus: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <path d="M7 2v10M2 7h10" />
     </svg>
   ),
@@ -86,12 +86,12 @@ const I = {
     </svg>
   ),
   arrowUp: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M7 11.5v-9M3 6.5l4-4 4 4" />
     </svg>
   ),
   check: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2.5 7.5l3 3 6-7" />
     </svg>
   ),

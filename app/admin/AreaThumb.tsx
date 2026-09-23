@@ -22,8 +22,8 @@ const DRAWINGS: Record<string, ReactNode> = {
   search: (
     <>
       <rect x="4" y="9" width="32" height="10" rx="5" fill={soft} />
-      <circle cx="10.5" cy="14" r="2.4" fill="none" stroke={ink} strokeWidth="1.3" />
-      <path d="M12.3 15.8l1.7 1.7" stroke={ink} strokeWidth="1.3" strokeLinecap="round" />
+      <circle cx="10.5" cy="14" r="2.4" fill="none" stroke={ink} strokeWidth="1.5" />
+      <path d="M12.3 15.8l1.7 1.7" stroke={ink} strokeWidth="1.5" strokeLinecap="round" />
       <path d="M29 11l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z" fill={ink} />
     </>
   ),
