@@ -1595,7 +1595,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .nav-item__avatar { display: block; width: 18px; height: 18px; border-radius: 999px; overflow: hidden; background: var(--surface-3); }
 .nav-item__avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ws__names { display: flex; flex-direction: column; min-width: 0; flex: 0 1 auto; }
-.ws__name { font-size: 18px; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws__name { font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws__kind { font-size: 11px; color: var(--muted); }
 .ws__menu { width: var(--anchor-width); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-m); padding: 6px; box-shadow: var(--shadow-pop); display: flex; flex-direction: column; }
 .ws__section { font-size: 11px; color: var(--muted); padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.04em; }
