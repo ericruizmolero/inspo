@@ -1,61 +1,137 @@
-/* Same tokens as the app (app/globals.css), light and dark */
+/* The popup follows the app: same tokens as app/globals.css (dark by default, light by system
+   preference), the same button, input and card recipes, Inter when the system has it. */
 :root {
-  --bg: #f4f4f2; --panel: #ffffff; --surface: #ebebe8; --surface-2: #e2e2de;
-  --border: #dedcd6; --border-strong: #c9c7c0;
-  --text: #171717; --text-2: #4a4a47; --muted: #8a8a86; --danger: #c2410c; --ok: #15803d;
+  --bg: #0e0e0d; --panel: #151514; --surface: #1d1d1b; --surface-2: #252523; --surface-3: #2f2f2c;
+  --border: rgba(255, 255, 250, 0.07); --border-strong: rgba(255, 255, 250, 0.14);
+  --text: #f2f2ef; --text-2: #b6b6b1; --muted: #8a8a84; --muted-2: #6a6a65; --text-strong: #fff;
+  --danger: #e5645a; --success: #5ac97a;
+  --ring: rgba(255, 255, 250, 0.1);
+  --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --focus-ring: color-mix(in srgb, var(--text) 55%, transparent);
+  color-scheme: dark;
 }
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --bg: #0d0d0d; --panel: #161616; --surface: #1f1f1f; --surface-2: #262626;
-    --border: #2a2a2a; --border-strong: #3a3a3a;
-    --text: #f2f2f2; --text-2: #b4b4b4; --muted: #7a7a7a; --danger: #fb923c; --ok: #4ade80;
+    --bg: #f3f3f0; --panel: #f9f9f7; --surface: #ffffff; --surface-2: #e8e8e4; --surface-3: #d9d9d4;
+    --border: rgba(0, 0, 0, 0.12); --border-strong: rgba(0, 0, 0, 0.24);
+    --text: #0e0e0d; --text-2: #34342f; --muted: #5d5d57; --muted-2: #76766f; --text-strong: #000;
+    --danger: #c23a30; --success: #267d3f;
+    --ring: rgba(0, 0, 0, 0.1);
+    --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.18);
+    color-scheme: light;
   }
 }
+
 * { box-sizing: border-box; }
-html, body { margin: 0; background: var(--bg); color: var(--text); }
-body { width: 320px; font: 13px/1.45 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
-.app { display: flex; flex-direction: column; gap: 12px; padding: 14px 14px 12px; }
-.top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.brand { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
-.top__meta { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The popup window is the card: Chrome draws its frame and corners, so nothing is boxed inside */
+html, body { margin: 0; background: var(--panel); color: var(--text); }
+body {
+  width: 336px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 13px; line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+::selection { background: var(--text); color: var(--bg); }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+h1, p { margin: 0; }
+
+.app { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 12px; }
+.app[data-view="loading"] { min-height: 120px; }
+
+/* Header: the mark, the name and the workspace this browser saves to */
+.top { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+.logo { width: 22px; height: 22px; border-radius: 24%; flex-shrink: 0; user-select: none; }
+@media (prefers-color-scheme: light) { .logo { box-shadow: 0 0 0 1px var(--border); } }
+.brand { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+.chip {
+  margin-left: auto; max-width: 150px; height: 22px; padding: 0 9px;
+  display: inline-flex; align-items: center;
+  border-radius: 999px; border: 1px solid var(--border);
+  color: var(--muted); font-size: 11px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chip[hidden] { display: none; }
 
 .view { display: none; flex-direction: column; gap: 10px; }
 .app[data-view="connect"] .view[data-view="connect"],
 .app[data-view="tab"] .view[data-view="tab"] { display: flex; }
-.app[data-view="loading"]::after { content: ""; height: 40px; }
 
-.lead { margin: 0; font-size: 14px; color: var(--text); }
-.hint { margin: 0; font-size: 12px; color: var(--muted); min-height: 0; }
+/* A view's content block: no box of its own, the popup frame already is one */
+.card { display: flex; flex-direction: column; gap: 12px; }
+.title { font-size: 15px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; }
+.hint { font-size: 12px; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
 .hint:empty { display: none; }
 .hint.is-error { color: var(--danger); }
-.hint.is-ok { color: var(--ok); }
+.hint.is-ok { color: var(--success); }
 
+/* Buttons and inputs: the .btn / .input recipes from the app */
 .btn {
-  height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--border);
-  background: var(--panel); color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 36px; padding: 0 14px;
+  border-radius: 10px; border: 1px solid transparent;
+  background: var(--surface); color: var(--text);
+  font-size: 13px; font-weight: 500; white-space: nowrap; text-decoration: none;
+  transition: background 0.15s, color 0.15s, opacity 0.15s, transform 0.1s;
 }
-.btn:hover { background: var(--surface); }
-.btn:disabled { opacity: 0.45; cursor: default; }
-.btn--primary { background: var(--text); color: var(--bg); border-color: var(--text); }
-.btn--primary:hover { opacity: 0.92; background: var(--text); }
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(0.96); }
+.btn:disabled { opacity: 0.4; cursor: default; transform: none; }
+.btn--primary { background: var(--text); color: var(--bg); }
+.btn--primary:hover { background: var(--text-strong); }
 .btn--block { width: 100%; }
-.link { background: none; border: 0; padding: 0; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.btn[hidden] { display: none; }
+.btn.is-busy::before {
+  content: ""; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  border: 1.5px solid color-mix(in srgb, currentColor 25%, transparent); border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.link { background: none; border: 0; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
 .link:hover { color: var(--text); }
 
 .input {
-  width: 100%; height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--panel); color: var(--text); font: inherit; font-size: 12px;
+  width: 100%; height: 36px; padding: 0 12px;
+  background: var(--surface); border: 1px solid transparent; border-radius: 10px;
+  color: var(--text); font-size: 13px; outline: none;
+  transition: border-color 0.15s, background 0.15s;
 }
-.input:focus { outline: none; border-color: var(--border-strong); }
-.paste { display: flex; flex-direction: column; gap: 8px; }
-.paste summary { font-size: 12px; color: var(--muted); cursor: pointer; }
+.input::placeholder { color: var(--muted); }
+.input:focus { border-color: var(--border-strong); background: var(--surface-2); }
 
-.site { display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; }
-.site__fav { width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0; }
-.site__text { min-width: 0; }
-.site__title { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "I already have a key": quiet, folded away under the card */
+.paste { }
+.paste summary { list-style: none; font-size: 12px; color: var(--muted); cursor: pointer; width: fit-content; }
+.paste summary::-webkit-details-marker { display: none; }
+.paste summary:hover { color: var(--text); }
+.paste[open] summary { color: var(--text); }
+.paste__body { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
+
+/* The site about to be saved, laid out like a library tile: the shot, then favicon, title and host */
+.shot {
+  position: relative; aspect-ratio: 16 / 10; overflow: hidden;
+  border-radius: 8px; background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.shot img[hidden] { display: none; }
+.shot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--border); pointer-events: none; }
+.site { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.site__icon {
+  width: 32px; height: 32px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+}
+.site__icon img { width: 16px; height: 16px; border-radius: 3px; }
+.site__icon img[hidden], .site__icon svg[hidden] { display: none; }
+.site__icon svg { color: var(--muted); }
+.site__text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.site__title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site__host { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.actions { display: flex; flex-direction: column; gap: 8px; }
 
 .foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-.foot__who { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foot[hidden] { display: none; }
+.foot__who { font-size: 11px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -8,35 +8,48 @@
 <body>
   <main id="app" class="app" data-view="loading">
     <header class="top">
+      <img class="logo" src="icons/icon48.png" alt="" width="22" height="22" draggable="false" />
       <span class="brand">criterio.design</span>
-      <span class="top__meta" id="ws-name"></span>
+      <span class="chip" id="ws-name" hidden></span>
     </header>
 
     <!-- No key: connect -->
     <section class="view" data-view="connect">
-      <p class="lead" data-i18n="lead">Save the site you're looking at to your library.</p>
-      <p class="hint" id="connect-msg"></p>
-      <button class="btn btn--primary btn--block" id="btn-connect" data-i18n="connect">Connect to criterio.design</button>
+      <div class="card">
+        <h1 class="title" data-i18n="lead">Save the site you're looking at to your library.</h1>
+        <p class="hint" id="connect-msg"></p>
+        <button class="btn btn--primary btn--block" id="btn-connect" data-i18n="connect">Connect to criterio.design</button>
+      </div>
       <details class="paste">
         <summary data-i18n="haveKey">I already have a key</summary>
-        <input class="input" id="paste-key" placeholder="crit_…" spellcheck="false" autocomplete="off" />
-        <input class="input" id="paste-base" placeholder="https://criterio.design" spellcheck="false" autocomplete="off" />
-        <button class="btn btn--block" id="btn-paste" data-i18n="useKey">Use this key</button>
+        <div class="paste__body">
+          <input class="input" id="paste-key" placeholder="crit_…" spellcheck="false" autocomplete="off" />
+          <input class="input" id="paste-base" placeholder="https://criterio.design" spellcheck="false" autocomplete="off" />
+          <button class="btn btn--block" id="btn-paste" data-i18n="useKey">Use this key</button>
+        </div>
       </details>
     </section>
 
-    <!-- With key: current tab -->
+    <!-- With key: the current tab, shown as it will look in the library -->
     <section class="view" data-view="tab">
-      <div class="site">
-        <img class="site__fav" id="tab-fav" alt="" hidden />
-        <div class="site__text">
-          <div class="site__title" id="tab-title"></div>
-          <div class="site__host" id="tab-host"></div>
+      <div class="card">
+        <div class="shot" id="shot" hidden><img id="shot-img" alt="" hidden /></div>
+        <div class="site">
+          <span class="site__icon">
+            <img id="tab-fav" alt="" hidden />
+            <svg id="tab-fav-fallback" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M1.75 8h12.5M8 1.75c1.8 1.9 2.7 4 2.7 6.25S9.8 12.4 8 14.25M8 1.75C6.2 3.65 5.3 5.75 5.3 8s.9 4.4 2.7 6.25"/></svg>
+          </span>
+          <div class="site__text">
+            <div class="site__title" id="tab-title"></div>
+            <div class="site__host" id="tab-host"></div>
+          </div>
+        </div>
+        <p class="hint" id="tab-msg"></p>
+        <div class="actions">
+          <button class="btn btn--primary btn--block" id="btn-save" data-i18n="save">Save</button>
+          <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden data-i18n="viewOn">View on criterio.design</a>
         </div>
       </div>
-      <p class="hint" id="tab-msg"></p>
-      <button class="btn btn--primary btn--block" id="btn-save" data-i18n="save">Save</button>
-      <a class="btn btn--block" id="btn-open" target="_blank" rel="noopener" hidden data-i18n="viewOn">View on criterio.design</a>
     </section>
 
     <footer class="foot" id="foot" hidden>

@@ -25,6 +25,13 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
 
+## Look
+
+The popup uses the app's tokens (`app/globals.css`), dark by default and light when the system prefers it,
+and shows the tab as it will look in the library: the shot, the favicon, the title and the address. The
+icons in `chrome/icons` are `public/logo.png` with the mark's rounded corners; regenerate them from there
+when the mark changes.
+
 ## Try it in Chrome (developer mode)
 
 1. `chrome://extensions` → turn on "Developer mode" (top right).

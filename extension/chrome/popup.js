@@ -34,7 +34,7 @@ async function load() {
   const s = await chrome.storage.local.get(["key", "base", "workspace", "user"]);
   state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, user: s.user || null };
   if (!state.key) { setView("connect"); return; }
-  $("ws-name").textContent = state.workspace?.name || "";
+  setChip(state.workspace?.name);
   showFoot();
   setView("tab");
   await loadTab();
@@ -42,9 +42,11 @@ async function load() {
   api("/me").then((me) => {
     state.workspace = me.workspace; state.user = me.user;
     chrome.storage.local.set({ workspace: me.workspace, user: me.user });
-    $("ws-name").textContent = me.workspace.name; showFoot();
+    setChip(me.workspace.name); showFoot();
   }).catch((e) => note($("tab-msg"), e.message, "error"));
 }
+
+function setChip(name) { const el = $("ws-name"); el.textContent = name || ""; el.hidden = !name; }
 
 function showFoot() {
   $("foot").hidden = false;
@@ -57,12 +59,14 @@ async function loadTab() {
   const url = t?.url || "";
   const ok = /^https?:\/\//.test(url);
   $("tab-title").textContent = t?.title || url;
-  try { $("tab-host").textContent = ok ? new URL(url).hostname.replace(/^www\./, "") : t("notWebsite"); } catch { $("tab-host").textContent = ""; }
-  if (t?.favIconUrl) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; }
+  // The address as it will be saved: host and path, without the scheme or a trailing slash
+  try { const u = new URL(url); $("tab-host").textContent = ok ? (u.hostname.replace(/^www\./, "") + u.pathname).replace(/\/$/, "") : t("notWebsite"); } catch { $("tab-host").textContent = ""; }
+  if (t?.favIconUrl && !/^chrome/.test(t.favIconUrl)) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; $("tab-fav-fallback").setAttribute("hidden", ""); }
   $("btn-save").disabled = !ok;
   $("btn-open").hidden = true;
   if (!ok) { note($("tab-msg"), t("onlyHttp"), null); return; }
   note($("tab-msg"), "");
+  showShot(await capture());
   try {
     const r = await api(`/items/lookup?url=${encodeURIComponent(url)}`);
     if (r.exists) already(r.item);
@@ -72,7 +76,20 @@ async function loadTab() {
 function already(item) {
   note($("tab-msg"), item?.addedBy ? t("alreadySavedBy", [ws(), item.addedBy]) : t("alreadySaved", [ws()]), "ok");
   $("btn-save").hidden = true;
-  const open = $("btn-open"); open.href = state.base + "/"; open.hidden = false;
+  showOpen(item);
+}
+
+// "View on criterio.design": the item itself when we know it, the library otherwise
+function showOpen(item) {
+  const open = $("btn-open"); open.href = state.base + (item?.id ? `/i/${item.id}` : "/"); open.hidden = false;
+}
+
+// The shot is taken when the popup opens (activeTab allows it) and reused when saving
+let shot;
+function showShot(dataUrl) {
+  shot = dataUrl;
+  const img = $("shot-img");
+  if (dataUrl) { img.src = dataUrl; img.hidden = false; $("shot").hidden = false; }
 }
 
 async function capture() {
@@ -83,18 +100,18 @@ async function capture() {
 async function save() {
   if (!tab?.url) return;
   const btn = $("btn-save");
-  btn.disabled = true; btn.textContent = t("saving");
+  btn.disabled = true; btn.classList.add("is-busy"); btn.textContent = t("saving");
   note($("tab-msg"), "");
   try {
-    const screenshot = await capture();
+    const screenshot = shot || (await capture());
     const r = await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot }) });
     if (r.existed) { already(r.item); return; }
     note($("tab-msg"), t("savedIn", [ws()]), "ok");
     btn.hidden = true;
-    const open = $("btn-open"); open.href = state.base + "/"; open.hidden = false;
+    showOpen(r.item);
   } catch (e) {
     note($("tab-msg"), e.message, "error");
-    btn.disabled = false; btn.textContent = t("save");
+    btn.disabled = false; btn.classList.remove("is-busy"); btn.textContent = t("save");
   }
 }
 
@@ -102,8 +119,8 @@ async function disconnect(tellServer = true) {
   if (tellServer && state.key) { try { await api("/me", { method: "DELETE" }); } catch { /* already revoked or offline */ } }
   await chrome.storage.local.remove(["key", "workspace", "user", "connectedAt"]);
   state.key = null; state.workspace = null; state.user = null;
-  $("foot").hidden = true; $("ws-name").textContent = "";
-  $("btn-save").hidden = false; $("btn-save").disabled = false; $("btn-save").textContent = t("save");
+  $("foot").hidden = true; setChip(null);
+  const btn = $("btn-save"); btn.hidden = false; btn.disabled = false; btn.classList.remove("is-busy"); btn.textContent = t("save");
   note($("connect-msg"), tellServer ? t("disconnected") : t("keyInvalid"), null);
   setView("connect");
 }
