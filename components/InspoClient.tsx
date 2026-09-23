@@ -27,7 +27,6 @@ import { useActivity } from "./useActivity";
 import { useT } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import CommandPalette from "./CommandPalette";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -613,6 +612,9 @@ export default function InspoClient({
     // Grid cards and empty-screen blocks (data-flip) move in unison
     const targets = [".card-item", "[data-flip]"];
     const state = Flip.getState(targets);
+    // The sidebar box morphs between the docked column and the island pill (position, size, radius, colour)
+    const box = document.querySelector<HTMLElement>(".app-sidebar");
+    const boxState = box ? Flip.getState(box, { props: "borderRadius,backgroundColor" }) : null;
     const next = !open;
     flushSync(() => setCollapsed(next));
     Flip.from(state, {
@@ -623,12 +625,25 @@ export default function InspoClient({
       absolute: false,
       onComplete: () => gsap.set(targets, { clearProps: "transform" }),
     });
+    if (boxState) {
+      Flip.from(boxState, {
+        duration: 0.55,
+        ease: "power3.inOut",
+        scale: false,
+        absolute: false,
+        props: "borderRadius,backgroundColor",
+        clearProps: "transform,width,height,borderRadius,backgroundColor",
+      });
+    }
   };
 
   const numCols = useColumnCount(collapsed);
   // On a phone the same trigger opens the menu sheet, so it says so
   const isMobile = useIsMobile();
   const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
+  // Desktop, sidebar collapsed: the island pill sits over the topbar and says what the breadcrumb said
+  const island = !isMobile && collapsed;
+  const viewLabel = type === "all" ? t.sidebar.all : t.labels.type[type];
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
 
@@ -877,8 +892,13 @@ export default function InspoClient({
 
       <Sidebar
         quota={quota}
-        brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />}
+        brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
+          subtitle={island ? <>{viewLabel} <span className="ws__count">{filtered.length}</span></> : undefined} />}
         items={items}
+        members={members}
+        workspaceKind={workspace.kind}
+        author={author}
+        onAuthor={setAuthor}
         type={type}
         isAll={type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0}
         onType={setType}
@@ -888,11 +908,10 @@ export default function InspoClient({
       />
 
       <SidebarInset className="content">
-        <header className="topbar">
+        <header className={`topbar${island ? " is-island" : ""}`}>
           <span className="topbar__trigger">
             <SidebarTrigger aria-label={triggerLabel} />
           </span>
-          <Separator orientation="vertical" className="topbar__sep" />
           <Breadcrumb className="topbar__view" aria-label={t.settings.breadcrumb}>
             <BreadcrumbList>
               <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>

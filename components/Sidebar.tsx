@@ -7,6 +7,7 @@ import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
 import type { Term } from "@/lib/taxonomy";
 import { DIRECTORY_TOTAL } from "@/lib/directory";
 import { useT } from "./I18nProvider";
+import { UserAvatar } from "./WorkspaceMenu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -100,6 +101,11 @@ const I = {
       <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" />
     </svg>
   ),
+  chevron: (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3.5 5.5L7 9l3.5-3.5" />
+    </svg>
+  ),
   compass: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="8" cy="8" r="6" /><path d="M10.5 5.5l-1.6 4-4 1.6 1.6-4z" />
@@ -177,12 +183,12 @@ export function Chips({ terms, counts, selected, onToggle, labels, images }: {
   );
 }
 
-function NavItem({ icon, label, count, active, onClick }: {
-  icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void;
+function NavItem({ icon, label, count, active, onClick, title }: {
+  icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void; title?: string;
 }) {
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item">
+      <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item" title={title}>
         <span className="nav-item__icon">{icon}</span>
         <span>{label}</span>
       </SidebarMenuButton>
@@ -199,12 +205,20 @@ export interface QuotaView {
   searches: { used: number; limit: number | null };
 }
 
+export interface SidebarMember { name: string; image: string | null }
+
 export interface SidebarProps {
   /** Plan and this month's usage (null until loaded) */
   quota?: QuotaView | null;
   /** Header: workspace switcher */
   brand: React.ReactNode;
   items: InspoItem[];
+  /** The workspace's people: each row filters the library by who added it */
+  members?: SidebarMember[];
+  /** A personal workspace offers "create a team" instead of "invite" */
+  workspaceKind?: "personal" | "team";
+  author: string;
+  onAuthor: (name: string) => void;
   type: FilterType;
   /** No filter and no search: "All" is the current view */
   isAll: boolean;
@@ -212,6 +226,8 @@ export interface SidebarProps {
   onReset: () => void;
   onAdd: () => void;
   onDirectory: () => void;
+  /** Island mode: does the menu start unfolded under the pill? */
+  defaultIslandOpen?: boolean;
 }
 
 /** This month's DESIGN.md quota: the only thing that runs out. Links to /settings/plan. */
@@ -231,57 +247,118 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
 
 // Navigation only (Refero model): add, the whole library, the four collections and the directory.
 // Filters live in the bar over the grid (FilterBar), search in the top bar.
-export default function AppSidebar({ quota, brand, items, type, isAll, onType, onReset, onAdd, onDirectory }: SidebarProps) {
+export default function AppSidebar({ quota, brand, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, defaultIslandOpen = true }: SidebarProps) {
   const { t } = useT();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, state } = useSidebar();
+  // Island (after Angelo Libero's sidebar): on desktop the collapsed sidebar does not leave the screen.
+  // It becomes a pill after the topbar trigger, with the workspace and the current view, and the menu
+  // hangs under it on demand. InspoClient morphs the box between column and pill with Flip.
+  const island = !isMobile && state === "collapsed";
+  const [islandOpen, setIslandOpen] = useState(defaultIslandOpen);
   // On a phone the sidebar is a sheet: opening a modal from it closes the sheet first
   const fromSheet = (fn: () => void) => () => { if (isMobile) setOpenMobile(false); fn(); };
   // Picking a collection on a phone closes the sheet so the result is visible
-  useEffect(() => { setOpenMobile(false); }, [type, setOpenMobile]);
+  useEffect(() => { setOpenMobile(false); }, [type, author, setOpenMobile]);
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
+  const folded = island && !islandOpen;
 
   return (
-    <Sidebar mobileTitle={t.app.menu} className="app-sidebar">
-      <SidebarHeader className="app-sidebar__header">
-        {brand}
-        <Button variant="primary" block className="sidebar__add" onClick={fromSheet(onAdd)}>
-          {I.plus} {t.sidebar.addReference}
-        </Button>
-      </SidebarHeader>
+    <Sidebar mobileTitle={t.app.menu} className={`app-sidebar${island ? " is-island" : ""}${island && islandOpen ? " is-open" : ""}`}>
+      {/* Remounted on every mode change: the content cross-fades while the box morphs */}
+      <div className="app-sidebar__stack" key={island ? "island" : "docked"}>
+        <SidebarHeader className="app-sidebar__header">
+          <div className="app-sidebar__brand">
+            {brand}
+            {island && (
+              <button
+                type="button"
+                className="island__chev"
+                onClick={() => setIslandOpen((v) => !v)}
+                aria-expanded={islandOpen}
+                aria-controls="app-sidebar-menu"
+                aria-label={islandOpen ? t.sidebar.foldMenu : t.sidebar.unfoldMenu}
+              >
+                {I.chevron}
+              </button>
+            )}
+          </div>
+        </SidebarHeader>
 
-      {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
-      <SidebarContent className="overflow-hidden">
-        <FadeScroll>
-          <SidebarGroup>
-            <SidebarMenu>
-              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={fromSheet(onReset)} />
-              {TYPES.map((v) => (
-                <NavItem
-                  key={v}
-                  icon={TYPE_ICON[v]}
-                  label={t.labels.type[v]}
-                  count={countBy((i) => i.type === v)}
-                  active={type === v}
-                  onClick={() => onType(type === v ? "all" : v)}
-                />
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
+        {/* Docked: the rest of the column. Island: a second card under the pill that folds with the chevron */}
+        <div className="app-sidebar__body" id="app-sidebar-menu" inert={folded}>
+          <div className="app-sidebar__clip">
+            <div className="app-sidebar__card">
+              <div className="app-sidebar__add-row">
+                <Button variant="primary" block className="sidebar__add" onClick={fromSheet(onAdd)}>
+                  {I.plus} {t.sidebar.addReference}
+                </Button>
+              </div>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
-            <SidebarMenu>
-              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={fromSheet(onDirectory)} />
-            </SidebarMenu>
-          </SidebarGroup>
-        </FadeScroll>
-      </SidebarContent>
+              {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
+              <SidebarContent className="overflow-hidden">
+                <FadeScroll>
+                  <SidebarGroup>
+                    <SidebarMenu>
+                      <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={fromSheet(onReset)} />
+                      {TYPES.map((v) => (
+                        <NavItem
+                          key={v}
+                          icon={TYPE_ICON[v]}
+                          label={t.labels.type[v]}
+                          count={countBy((i) => i.type === v)}
+                          active={type === v}
+                          onClick={() => onType(type === v ? "all" : v)}
+                        />
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroup>
 
-      {quota && (
-        <SidebarFooter className="app-sidebar__footer">
-          <PlanMeter quota={quota} />
-        </SidebarFooter>
-      )}
+                  {/* The team, visible from the first glance: this is a shared library, not a personal one.
+                      Clicking a person applies the "Who" filter (counts live in the filter bar, not here);
+                      the last row invites or creates the team. */}
+                  <SidebarGroup>
+                    <SidebarGroupLabel>{t.sidebar.team}</SidebarGroupLabel>
+                    <SidebarMenu>
+                      {members.map((m) => (
+                        <NavItem
+                          key={m.name}
+                          icon={<UserAvatar name={m.name} image={m.image} small className="nav-item__member" />}
+                          label={m.name}
+                          active={author === m.name}
+                          title={t.sidebar.addedBy(m.name)}
+                          onClick={() => onAuthor(author === m.name ? "all" : m.name)}
+                        />
+                      ))}
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          className="nav-item nav-item--quiet"
+                          render={<Link href={workspaceKind === "personal" ? "/settings/members?create=1" : "/settings/members"} onClick={() => { if (isMobile) setOpenMobile(false); }} />}
+                        >
+                          <span className="nav-item__icon">{I.plus}</span>
+                          <span>{workspaceKind === "personal" ? t.sidebar.createTeam : t.sidebar.invite}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroup>
+
+                  <SidebarGroup>
+                    <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
+                    <SidebarMenu>
+                      <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={fromSheet(onDirectory)} />
+                    </SidebarMenu>
+                  </SidebarGroup>
+                </FadeScroll>
+              </SidebarContent>
+
+              {quota && (
+                <SidebarFooter className="app-sidebar__footer">
+                  <PlanMeter quota={quota} />
+                </SidebarFooter>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </Sidebar>
   );
 }
