@@ -7,7 +7,6 @@ import type { ReactNode } from "react";
 import { useT } from "./I18nProvider";
 import Logo from "./Logo";
 import { sectionIcon } from "./section-icons";
-import { Separator } from "@/components/ui/separator";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -96,7 +95,6 @@ export default function SectionShell({ title, base, groups, wide = false, defaul
       <SidebarInset className="content">
         <header className="topbar">
           <span className="topbar__trigger"><Trigger /></span>
-          <Separator orientation="vertical" className="topbar__sep settings__sep" />
           <Logo size={24} className="settings__logo" />
           <Crumbs title={title} base={base} groups={groups} />
         </header>

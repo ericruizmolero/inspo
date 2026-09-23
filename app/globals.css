@@ -1549,7 +1549,6 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
 .btn.is-danger:hover { border-color: var(--danger); }
 @media (max-width: 800px) {
   .settings { padding-top: 20px; }
-  .settings__sep { display: none; }
   .settings__logo { display: block; }
 }
 
