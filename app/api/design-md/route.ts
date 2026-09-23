@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
       const t0 = Date.now();
       const { tokens, screenshot, fullShot, cover, scroll } = await extractDesign(url, ctrl.signal);
       const t1 = Date.now();
-      const { spec, markdown, model, usage, costUsd } = await generateDesignMd(tokens, screenshot, ctrl.signal);
+      const { spec, markdown, model, usage, costUsd, provider, requestId } = await generateDesignMd(tokens, screenshot, ctrl.signal);
       const t2 = Date.now();
       ctrl.signal.throwIfAborted();
 
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       );
 
       console.log(`design-md ${url}: extract ${t1 - t0}ms, ${model} ${t2 - t1}ms, tokens in/out ${usage.input}/${usage.output}`);
-      void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, ref: url });
+      void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, provider, requestId, ref: url });
 
       // Si el workspace tenía revisiones, la regeneración pasa a ser la versión vigente y queda en el historial
       let revisions = await listRevisions(ctx.workspace.id, url);

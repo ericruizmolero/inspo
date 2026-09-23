@@ -17,6 +17,12 @@ function client() {
 
 export const jevEnabled = () => !!process.env.TYPESAFE_API_KEY;
 
+// OpenRouter devuelve coste, proveedor e id en cada llamada de Jev; el SDK los deja pasar aunque no los tipa
+const billingOf = (res: object) => {
+  const r = res as { usage?: { cost?: unknown }; provider?: string; id?: string };
+  return { costUsd: typeof r.usage?.cost === "number" ? r.usage.cost : null, provider: r.provider ?? null, requestId: r.id ?? null };
+};
+
 const criteriaOf = (terms: typeof SECTORES) =>
   Object.fromEntries(terms.map((t) => [t.key, t.description]));
 
@@ -60,7 +66,7 @@ export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<I
   const visual = vision?.text ?? null;
   if (vision) {
     console.log(`vision ${item.web}: ${vision.model} in/out ${vision.inputTokens}/${vision.outputTokens}`);
-    void recordUsage(usage, { action: "vision", model: vision.model, inputTokens: vision.inputTokens, outputTokens: vision.outputTokens, cacheReadTokens: vision.cacheReadTokens, costUsd: vision.costUsd, ref: item.web });
+    void recordUsage(usage, { action: "vision", model: vision.model, inputTokens: vision.inputTokens, outputTokens: vision.outputTokens, cacheReadTokens: vision.cacheReadTokens, costUsd: vision.costUsd, provider: vision.provider, requestId: vision.requestId, ref: item.web });
   }
   const state = buildState(item, site, visual);
 
@@ -82,7 +88,7 @@ export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<I
   };
 
   const res = await client().systemOne({ state, questions });
-  void recordUsage(usage, { action: "jev_tag", model: "jev", units: 1, ref: item.web });
+  void recordUsage(usage, { action: "jev_tag", model: "jev", units: 1, ...billingOf(res), ref: item.web });
   const a = res.answers as Record<string, { type: string; choice?: string; probabilities?: Record<string, number>; noul?: number }>;
 
   const tags: Record<string, number> = {};
@@ -158,7 +164,6 @@ export async function matchQuery(
   tagMap: Record<string, InspoTags>,
   usage?: UsageCtx
 ): Promise<Record<string, number>> {
-  void recordUsage(usage, { action: "jev_search", model: "jev", units: items.length, ref: query });
   const batches: InspoItem[][] = [];
   for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
 
@@ -180,13 +185,19 @@ export async function matchQuery(
     try {
       const res = await client().systemOne({ state, questions });
       const a = res.answers as Record<string, { noul?: number }>;
-      return batch.map((it, i) => [it.web, Number(a[`item_${i}`]?.noul ?? 0)] as const);
+      return { ...billingOf(res), scores: batch.map((it, i) => [it.web, Number(a[`item_${i}`]?.noul ?? 0)] as const) };
     } catch (e) {
       console.error("matchQuery batch error:", e);
-      return batch.map((it) => [it.web, 0] as const);
+      return { costUsd: 0, provider: null, requestId: null, scores: batch.map((it) => [it.web, 0] as const) };
     }
   });
 
-  return Object.fromEntries(results.flat());
+  // Una fila por búsqueda, con la suma de lo que cobró cada lote. Si algún lote llega
+  // sin coste, la fila entera pasa a estimada: mejor eso que un real que no lo es.
+  // Varios lotes son varias llamadas: se guarda el proveedor, no un id que solo sería de una
+  const costs = results.map((r) => r.costUsd);
+  const costUsd = costs.every((c) => c !== null) ? costs.reduce((n: number, c) => n + c!, 0) : null;
+  void recordUsage(usage, { action: "jev_search", model: "jev", units: items.length, costUsd, provider: results.find((r) => r.provider)?.provider ?? null, ref: query });
+  return Object.fromEntries(results.flatMap((r) => r.scores));
 }
 

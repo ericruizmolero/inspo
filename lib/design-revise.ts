@@ -126,7 +126,7 @@ Reglas:
 
 export async function reviseDesignSpec(input: {
   spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null; locale?: Locale;
-}): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; costUsd: number | null; usage: { input: number; output: number; cacheRead: number } }> {
+}): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; provider: string | null; requestId: string | null; costUsd: number | null; usage: { input: number; output: number; cacheRead: number } }> {
   const res = await llm({
     model: MODEL,
     system: systemFor(input.locale ?? DEFAULT_LOCALE),
@@ -139,5 +139,5 @@ export async function reviseDesignSpec(input: {
   const out = ReviseOutput.parse(JSON.parse(text));
   const patch = DesignSpecSchema.partial().parse(JSON.parse(out.patch || "{}"));
   const spec = out.changed ? DesignSpecSchema.parse({ ...input.spec, ...patch }) : input.spec;
-  return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: res.model, costUsd: res.costUsd, usage: res.usage };
+  return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: res.model, provider: res.provider, requestId: res.id, costUsd: res.costUsd, usage: res.usage };
 }

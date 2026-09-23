@@ -51,7 +51,7 @@ export async function explainMatches(query: string, entries: ExplainEntry[], sco
     maxTokens: 60 * entries.length + 200,
   });
 
-  void recordUsage(usage, { action: "explain", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, ref: query });
+  void recordUsage(usage, { action: "explain", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: query });
   const text = res.text;
   const reasons: Record<string, string> = {};
   for (const line of text.split("\n")) {

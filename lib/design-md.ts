@@ -51,6 +51,7 @@ export interface GenerateResult {
   markdown: string;
   model: string;
   provider: string | null;
+  requestId: string | null;
   costUsd: number | null;
   ms: number;
   usage: { input: number; output: number; cacheRead: number; reasoning: number };
@@ -86,6 +87,7 @@ export async function generateDesignMd(
     markdown: renderDesignMd(spec, tokens.finalUrl, date),
     model: res.model,
     provider: res.provider,
+    requestId: res.id,
     costUsd: res.costUsd,
     ms: res.ms,
     usage: res.usage,

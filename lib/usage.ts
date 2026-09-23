@@ -1,5 +1,5 @@
-// Registro de uso de IA por workspace. El coste de los modelos es el que devuelve
-// OpenRouter en cada llamada (#28); el de Jev sigue siendo una estimación por item.
+// Registro de uso de IA por workspace. El coste es el que devuelve OpenRouter en cada
+// llamada, Jev incluido (#28). Solo si no llega se estima, y la fila lo dice.
 import "server-only";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -11,7 +11,7 @@ export * from "./usage-core";
 
 export interface UsageCtx { organizationId: string; userId?: string | null }
 
-/** Jev cobra por item evaluado, no por token. */
+/** Estimación de Jev por item, solo para cuando OpenRouter no devuelve el coste. */
 export const JEV_PER_ITEM_USD = 0.0004;
 
 export interface UsageInput {
@@ -22,8 +22,10 @@ export interface UsageInput {
   cacheReadTokens?: number;
   /** Items facturados por Jev */
   units?: number;
-  /** USD que devolvió OpenRouter. null o ausente: se guarda 0 y se avisa */
+  /** USD que devolvió OpenRouter. null o ausente: se estima (Jev) o se guarda 0, y se avisa */
   costUsd?: number | null;
+  provider?: string | null;
+  requestId?: string | null;
   ref?: string | null;
 }
 
@@ -31,17 +33,27 @@ export interface UsageInput {
 export async function recordUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Promise<void> {
   if (!ctx) return;
   const input = u.inputTokens ?? 0, output = u.outputTokens ?? 0, cacheRead = u.cacheReadTokens ?? 0, units = u.units ?? 0;
-  const cost = u.model === "jev" ? units * JEV_PER_ITEM_USD : u.costUsd ?? 0;
-  if (u.model !== "jev" && u.costUsd == null) console.warn("usage: sin coste real", u.action, u.model);
+  const real = typeof u.costUsd === "number";
+  const cost = real ? u.costUsd! : u.model === "jev" ? units * JEV_PER_ITEM_USD : 0;
+  if (!real) console.warn("usage: sin coste real", u.action, u.model);
   try {
     await db.insert(schema.aiUsage).values({
       id: newId(), organizationId: ctx.organizationId, userId: ctx.userId ?? null,
       action: u.action, model: u.model, inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead,
-      units, costMicros: Math.round(cost * 1e6), ref: u.ref?.slice(0, 300) ?? null, createdAt: new Date(),
+      units, costMicros: Math.round(cost * 1e6), costSource: real ? "real" : "estimated",
+      provider: u.provider ?? null, requestId: u.requestId ?? null,
+      ref: u.ref?.slice(0, 300) ?? null, createdAt: new Date(),
     });
   } catch (e) {
     console.warn("usage: no se pudo registrar", u.action, e instanceof Error ? e.message : e);
   }
+}
+
+/** Gasto total de toda la app desde `since`, en USD. Para cuadrar con OpenRouter. */
+export async function totalCostSince(since: Date): Promise<number> {
+  const [r] = await db.select({ micros: sql<number>`coalesce(sum(${schema.aiUsage.costMicros}), 0)` })
+    .from(schema.aiUsage).where(gte(schema.aiUsage.createdAt, since));
+  return Number(r?.micros ?? 0) / 1e6;
 }
 
 export interface UsageSummary {

@@ -22,7 +22,7 @@ Write ONE compact paragraph in English, 90-140 words, plain prose, no headings o
 5. Overall style in two or three descriptors (e.g. "minimal", "brutalist", "playful", "corporate", "editorial", "immersive", "retro").
 Describe only what is visible. Do not guess at animation. Do not name the brand's business unless it is obvious from the screenshot.`;
 
-export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null }
+export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null; provider: string | null; requestId: string | null }
 
 export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url: string }): Promise<VisionResult | null> {
   const res = await llm({
@@ -34,7 +34,7 @@ export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url:
   });
   const text = res.text.trim();
   if (!text) return null;
-  return { text, model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd };
+  return { text, model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id };
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {

@@ -190,8 +190,14 @@ export const aiUsage = sqliteTable("ai_usage", {
   cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
   /** Unidades facturadas por item (Jev): items puntuados o etiquetados */
   units: integer("units").notNull().default(0),
-  /** Coste estimado en microdólares (USD × 1e6) para no perder precisión en enteros */
+  /** Coste en microdólares (USD × 1e6) para no perder precisión en enteros */
   costMicros: integer("cost_micros").notNull().default(0),
+  /** "real": lo que cobró OpenRouter en esa llamada. "estimated": calculado por nosotros (#28) */
+  costSource: text("cost_source").notNull().default("estimated"),
+  /** Proveedor que sirvió la llamada en OpenRouter (DeepInfra, Anthropic…) */
+  provider: text("provider"),
+  /** Identificador de la llamada en OpenRouter, para cruzarla con su registro */
+  requestId: text("request_id"),
   /** URL, consulta… lo que ayude a explicar la fila */
   ref: text("ref"),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
