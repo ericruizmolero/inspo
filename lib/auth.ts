@@ -8,7 +8,7 @@ import { memberLimitMessage, memberRank } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
-import { LANG_COOKIE, isLocale, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { isLocale, DEFAULT_LOCALE, localeFromCookieHeader, localeForNewUser, type Locale } from "./i18n/locale";
 import { getErrors } from "./i18n";
 import { planOf } from "./plans";
 import { eq } from "drizzle-orm";
@@ -84,9 +84,7 @@ export const SOCIAL_PROVIDERS = Object.keys(socialProviders) as SocialProvider[]
 
 /** Language from the request cookie, for when the email recipient has no account. */
 function localeFromCookie(headers: Headers | null | undefined): Locale {
-  const raw = headers?.get("cookie") ?? "";
-  const m = new RegExp(`(?:^|; )${LANG_COOKIE}=([^;]+)`).exec(raw);
-  return isLocale(m?.[1]) ? m[1] : DEFAULT_LOCALE;
+  return localeFromCookieHeader(headers?.get("cookie")) ?? DEFAULT_LOCALE;
 }
 
 /** A user's saved language by id. For the invitation email: the inviter's. */
@@ -122,8 +120,10 @@ export const auth = betterAuth({
   user: {
     // Nobody has a password; the name is filled from the email when the user is created
     additionalFields: {
-      // The person's language: decides which language their emails are written in.
-      // Written by setLanguage (app/actions/library.ts), never by the client directly.
+      // The person's language: decides which language their emails are written in
+      // and, once signed in, the language of the app (lib/i18n/index.ts).
+      // Set on creation from the request (databaseHooks below) and afterwards
+      // by setLanguage (app/actions/library.ts), never by the client directly.
       language: { type: "string", required: false, defaultValue: "en", input: false },
     },
   },
@@ -213,9 +213,12 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        async before(u) {
+        async before(u, ctx) {
           const name = (u.name && u.name.trim()) || u.email.split("@")[0];
-          return { data: { ...u, name } };
+          // The language they were using on /login, so the account does not
+          // start in English for someone who signed up in Spanish
+          const language = localeForNewUser(ctx?.headers ?? ctx?.request?.headers);
+          return { data: { ...u, name, language } };
         },
       },
     },

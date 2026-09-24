@@ -6,7 +6,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
-import { localeFromHeader, toLocale, DEFAULT_LOCALE, LANG_COOKIE, isLocale } from "../lib/i18n/locale";
+import { localeFromHeader, localeFromCookieHeader, localeForNewUser, toLocale, DEFAULT_LOCALE, LANG_COOKIE, isLocale } from "../lib/i18n/locale";
 import { localeForEmail } from "../lib/mail";
 import en from "../lib/i18n/en";
 import es from "../lib/i18n/es";
@@ -46,6 +46,17 @@ async function main() {
   assert.equal(resolve({}), DEFAULT_LOCALE, "with nothing, English");
   assert.equal(resolve({ param: "de", header: "es-ES" }), "es", "an unknown ?lang is ignored");
   assert.equal(DEFAULT_LOCALE, "en");
+
+  // ── A new account starts in the language of /login, not the column default ──
+  // The bug: someone signed up in Spanish and, once inside, the app was in English.
+  assert.equal(localeFromCookieHeader(`theme=dark; ${LANG_COOKIE}=es`), "es");
+  assert.equal(localeFromCookieHeader(`${LANG_COOKIE}=de`), null, "an unknown cookie value is ignored");
+  assert.equal(localeFromCookieHeader(null), null);
+  const h = (o: Record<string, string>) => new Headers(o);
+  assert.equal(localeForNewUser(h({ cookie: `${LANG_COOKIE}=es`, "accept-language": "en-GB" })), "es", "the cookie from /login wins");
+  assert.equal(localeForNewUser(h({ "accept-language": "es-ES,es;q=0.9" })), "es", "no cookie (the mail app's browser): the header decides");
+  assert.equal(localeForNewUser(h({})), DEFAULT_LOCALE, "with nothing, English");
+  assert.equal(localeForNewUser(null), DEFAULT_LOCALE, "outside a request, English");
 
   // ── Emails: the locale is the recipient's, not the sender's ────────────────
   const spanish = await addUser("es", "es");

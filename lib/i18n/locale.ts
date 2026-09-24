@@ -29,3 +29,24 @@ export function localeFromHeader(header: string | null | undefined): Locale | nu
   }
   return null;
 }
+
+/** The `lang` cookie inside a raw Cookie header, if it holds a language we have. */
+export function localeFromCookieHeader(cookie: string | null | undefined): Locale | null {
+  if (!cookie) return null;
+  const m = new RegExp(`(?:^|; )${LANG_COOKIE}=([^;]+)`).exec(cookie);
+  return isLocale(m?.[1]) ? m[1] : null;
+}
+
+/**
+ * The language a brand-new account starts with: the one the person was already
+ * using on /login. Without it the row would get the column default ("en") and,
+ * as the account's language beats the cookie once signed in, someone who signed
+ * up in Spanish would land inside the app in English.
+ *
+ * Cookie first (same browser as /login). Then Accept-Language: the magic link
+ * may open in another browser (the mail app's), and Apple returns by a cross-site
+ * POST that does not carry the cookie. Then English.
+ */
+export function localeForNewUser(headers: Headers | null | undefined): Locale {
+  return localeFromCookieHeader(headers?.get("cookie")) ?? localeFromHeader(headers?.get("accept-language")) ?? DEFAULT_LOCALE;
+}
