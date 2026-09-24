@@ -160,6 +160,7 @@ const SECTIONS = `(() => {
 // Large images on the page, tagged for capture: the mockups, the renders, the photos a note may mean
 const IMAGES = `(() => {
   const out = [];
+  const seenSrc = new Set();
   for (const el of document.querySelectorAll("img, picture, video, canvas, svg, [style*=background-image]")) {
     if (out.length >= 60) break;
     if (el.closest("picture") && el.tagName !== "PICTURE") continue;
@@ -169,6 +170,12 @@ const IMAGES = `(() => {
     const y = r.y + scrollY;
     const dup = out.some((o) => { const ix = Math.max(0, Math.min(o.x + o.w, r.x + r.width) - Math.max(o.x, r.x)); const iy = Math.max(0, Math.min(o.y + o.h, y + r.height) - Math.max(o.y, y)); return ix * iy >= 0.8 * Math.min(o.w * o.h, r.width * r.height); });
     if (dup) continue;
+    // The same file shown twice (a repeated card, a carousel clone): once is enough
+    const inner = el.tagName === "PICTURE" ? el.querySelector("img") : el;
+    const src = (inner && (inner.currentSrc || inner.src)) || (getComputedStyle(el).backgroundImage.match(/url\\(["']?([^"')]+)/) || [])[1] || "";
+    const key = src.replace(/^https?:\\/\\/[^/]+/, "").replace(/\\?.*$/, "");
+    if (key && seenSrc.has(key)) continue;
+    if (key) seenSrc.add(key);
     const i = out.length;
     el.setAttribute("data-probe-img", String(i));
     out.push({ i, tag: el.tagName.toLowerCase(), x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height), alt: (el.getAttribute("alt") || el.getAttribute("aria-label") || "").trim().slice(0, 60) });
