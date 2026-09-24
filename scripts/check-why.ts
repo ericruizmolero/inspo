@@ -34,7 +34,7 @@ console.log(`probe ${Date.now() - tp}ms:`, JSON.stringify(probe?.summary ?? null
 const shotUrls: Record<string, string> = {};
 if (probe) {
   const dir = process.env.SHOT_DIR || "/tmp";
-  for (const c of probe.captures) { const f = path.join(dir, `why-${c.id}.jpg`); await fs.writeFile(f, c.jpeg); shotUrls[c.id] = f; console.log(`  capture ${c.id} (${c.hint}) y=${c.box.y} h=${c.box.h} → ${f}`); }
+  for (const c of probe.captures) { const f = path.join(dir, `why-${c.id}.${c.ext}`); await fs.writeFile(f, c.data); shotUrls[c.id] = f; console.log(`  capture ${c.id} ${c.kind} (${c.hint}) y=${c.box.y} h=${c.box.h}${c.ms ? ` ${c.ms}ms` : ""} ${c.data.length}B → ${f}`); }
   for (const t of probe.targets) for (const e of t.elements) console.log(`  ${t.hint} → <${e.tag}> "${e.text}" changed=${JSON.stringify(e.changed)} audio=${e.audioEvents}`);
 }
 if (probeOnly) return;

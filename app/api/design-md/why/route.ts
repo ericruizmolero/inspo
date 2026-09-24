@@ -3,7 +3,7 @@ import { normalizeWebUrl } from "@/lib/url";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { listItemComments } from "@/lib/comments";
-import { getDesignMd, getDesignScreenshot, saveWhyShot } from "@/lib/design-store";
+import { getDesignMd, getDesignScreenshot, saveWhyAsset } from "@/lib/design-store";
 import { latestRevision } from "@/lib/design-revise";
 import { getOrBuildWhy, type Voice } from "@/lib/design-why";
 import { probeSite } from "@/lib/design-probe";
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         if (!report) return null;
         void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_why", model: report.plan.model, inputTokens: report.plan.usage.input, outputTokens: report.plan.usage.output, cacheReadTokens: report.plan.usage.cacheRead, costUsd: report.plan.costUsd, ref: url });
         const shotUrls: Record<string, string> = {};
-        for (const c of report.captures) shotUrls[c.id] = await saveWhyShot(ctx.workspace.id, url, c.id, c.jpeg);
+        for (const c of report.captures) shotUrls[c.id] = await saveWhyAsset(ctx.workspace.id, url, c.id, c.data, c.mime, c.ext);
         return { report, shotUrls };
       },
     });

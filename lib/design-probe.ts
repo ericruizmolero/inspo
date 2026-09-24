@@ -4,7 +4,7 @@
 // the cursor and watches what moves on scroll. Everything it reports is observed, never guessed.
 import "server-only";
 import { z } from "zod";
-import type { Page } from "puppeteer-core";
+import type { Browser, Page } from "puppeteer-core";
 import { launch } from "./design-extract";
 import { llm } from "./llm";
 import type { Voice } from "./design-why";
@@ -71,7 +71,12 @@ export interface HoverResult {
   cursor: string;
 }
 
-export interface Capture { id: string; hint: string; kind: "section" | "image"; sectionId: number; text: string; box: { y: number; h: number }; jpeg: Buffer }
+export interface Capture {
+  id: string; hint: string; kind: "section" | "image" | "video" | "audio"; sectionId: number; text: string;
+  box: { y: number; h: number }; data: Buffer; mime: string; ext: string;
+  /** Videos and sounds: their length */
+  ms?: number;
+}
 
 export interface ProbeReport {
   plan: ProbePlan;
@@ -88,9 +93,9 @@ export interface ProbeReport {
 
 // Runs before any script of the page: counts sound the page makes, however it makes it
 const AUDIO_HOOK = `(() => {
-  const P = window.__probe = { plays: 0, contexts: 0, howler: false };
+  const P = window.__probe = { plays: 0, contexts: 0, howler: false, srcs: [] };
   const play = HTMLMediaElement.prototype.play;
-  HTMLMediaElement.prototype.play = function () { P.plays++; return play.apply(this, arguments); };
+  HTMLMediaElement.prototype.play = function () { P.plays++; const src = this.currentSrc || this.src; if (src && !P.srcs.includes(src)) P.srcs.push(src); return play.apply(this, arguments); };
   for (const name of ["AudioContext", "webkitAudioContext"]) {
     const Orig = window[name];
     if (!Orig) continue;
@@ -255,6 +260,120 @@ function pickElements(target: ProbePlan["targets"][number], cands: Candidate[]):
 
 async function settle(page: Page, ms: number) { await new Promise((r) => setTimeout(r, ms)); void page; }
 
+// ─── Video of the interaction ───────────────────────────────────────────────
+// The screencast streams viewport frames while the mouse sweeps the elements (as a person would run
+// down a menu); the browser then encodes them itself, cropped to the region, with MediaRecorder on a
+// canvas. If the page played a sound file meanwhile, it rides along as the audio track. No ffmpeg.
+
+interface Frame { data: string; t: number }
+interface Region { x: number; y: number; w: number; h: number }
+
+const AUDIO_EXT: Record<string, string> = { "audio/mpeg": "mp3", "audio/mp3": "mp3", "audio/wav": "wav", "audio/x-wav": "wav", "audio/ogg": "ogg", "audio/webm": "weba", "audio/mp4": "m4a", "audio/aac": "aac" };
+
+async function recordSweep(page: Page, elements: Candidate[]): Promise<{ frames: Frame[]; region: Region; audio: { data: Buffer; mime: string; ext: string; at: number } | null; hoverAt: number[] } | null> {
+  const sels = elements.slice(0, 4).map((c) => `[data-probe-i="${c.i}"]`);
+  if (!sels.length) return null;
+  // Everything in view at once, then the region is the union of the boxes with some air around
+  await page.evaluate(`document.querySelector(${JSON.stringify(sels[0])})?.scrollIntoView({ block: "center" })`);
+  await settle(page, 400);
+  const boxes = (await page.evaluate(`(${JSON.stringify(sels)}).map((s) => { const el = document.querySelector(s); if (!el) return null; const b = el.getBoundingClientRect(); return [b.x, b.y, b.width, b.height]; }).filter(Boolean)`)) as number[][];
+  if (!boxes.length) return null;
+  const pad = 48;
+  const x0 = Math.max(0, Math.min(...boxes.map((b) => b[0])) - pad), y0 = Math.max(0, Math.min(...boxes.map((b) => b[1])) - pad);
+  const x1 = Math.min(1440, Math.max(...boxes.map((b) => b[0] + b[2])) + pad), y1 = Math.min(900, Math.max(...boxes.map((b) => b[1] + b[3])) + pad);
+  const region: Region = { x: Math.round(x0), y: Math.round(y0), w: Math.round(Math.max(240, x1 - x0)), h: Math.round(Math.max(160, y1 - y0)) };
+
+  await page.mouse.move(5, 5); await settle(page, 200);
+  const srcsBefore = (await page.evaluate("(window.__probe && window.__probe.srcs || []).length")) as number;
+  const client = await page.createCDPSession();
+  const frames: Frame[] = [];
+  const t0 = Date.now();
+  client.on("Page.screencastFrame", (ev: { data: string; sessionId: number }) => {
+    frames.push({ data: ev.data, t: Date.now() - t0 });
+    client.send("Page.screencastFrameAck", { sessionId: ev.sessionId }).catch(() => {});
+  });
+  await client.send("Page.startScreencast", { format: "jpeg", quality: 72, maxWidth: 1440, maxHeight: 900, everyNthFrame: 1 });
+  const hoverAt: number[] = [];
+  try {
+    await settle(page, 500);
+    for (const sel of sels) {
+      hoverAt.push(Date.now() - t0);
+      try { await page.hover(sel); } catch { /* covered: keep going */ }
+      await settle(page, 750);
+    }
+    await page.mouse.move(5, 5);
+    await settle(page, 600);
+  } finally {
+    await client.send("Page.stopScreencast").catch(() => {});
+    await client.detach().catch(() => {});
+  }
+  if (frames.length < 3) return null;
+
+  // A sound file the page played during the sweep: fetched from inside the page, so cookies and CORS behave
+  let audio: { data: Buffer; mime: string; ext: string; at: number } | null = null;
+  const srcs = (await page.evaluate("(window.__probe && window.__probe.srcs || [])")) as string[];
+  const played = srcs.slice(srcsBefore)[0];
+  if (played) {
+    try {
+      const got = (await page.evaluate(`(async () => { const r = await fetch(${JSON.stringify(played)}); if (!r.ok) return null; const b = await r.arrayBuffer(); if (b.byteLength > 3000000) return null; let s = ""; const u = new Uint8Array(b); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return { b64: btoa(s), mime: r.headers.get("content-type") || "" }; })()`)) as { b64: string; mime: string } | null;
+      if (got) {
+        const mime = got.mime.split(";")[0] || "audio/mpeg";
+        audio = { data: Buffer.from(got.b64, "base64"), mime, ext: AUDIO_EXT[mime] || played.split("?")[0].split(".").pop()?.slice(0, 4) || "mp3", at: hoverAt[0] ?? 500 };
+      }
+    } catch { /* not fetchable: the video stays silent */ }
+  }
+  return { frames, region, audio, hoverAt };
+}
+
+async function encodeWebm(browser: Browser, frames: Frame[], region: Region, audio: { data: Buffer; mime: string; at: number } | null): Promise<{ data: Buffer; ms: number } | null> {
+  const page = await browser.newPage();
+  try {
+    await page.goto("about:blank");
+    const scale = Math.min(1, 960 / region.w);
+    const out = { w: Math.round(region.w * scale), h: Math.round(region.h * scale) };
+    const duration = frames[frames.length - 1].t + 200;
+    const res = (await page.evaluate(`(async () => {
+      const frames = ${JSON.stringify(frames)}, region = ${JSON.stringify(region)}, out = ${JSON.stringify(out)}, duration = ${duration};
+      const audio = ${audio ? JSON.stringify({ b64: audio.data.toString("base64"), mime: audio.mime, at: audio.at }) : "null"};
+      const imgs = await Promise.all(frames.map((f) => new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = "data:image/jpeg;base64," + f.data; })));
+      const c = document.createElement("canvas"); c.width = out.w; c.height = out.h; const ctx = c.getContext("2d");
+      const stream = c.captureStream(30);
+      let mime = "video/webm;codecs=vp9";
+      let actx = null;
+      if (audio) {
+        try {
+          actx = new AudioContext();
+          const bin = atob(audio.b64); const u = new Uint8Array(bin.length); for (let i = 0; i < u.length; i++) u[i] = bin.charCodeAt(i);
+          const buf = await actx.decodeAudioData(u.buffer);
+          const dest = actx.createMediaStreamDestination();
+          const src = actx.createBufferSource(); src.buffer = buf; src.connect(dest);
+          for (const tr of dest.stream.getAudioTracks()) stream.addTrack(tr);
+          mime = "video/webm;codecs=vp9,opus";
+          src.start(actx.currentTime + audio.at / 1000);
+        } catch (e) { actx = null; }
+      }
+      const chunks = []; const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 });
+      rec.ondataavailable = (e) => chunks.push(e.data);
+      const done = new Promise((res) => { rec.onstop = res; });
+      const draw = (im) => { if (im) ctx.drawImage(im, region.x, region.y, region.w, region.h, 0, 0, out.w, out.h); };
+      draw(imgs[0]); rec.start(200);
+      const start = performance.now();
+      for (let i = 0; i < frames.length; i++) { const wait = frames[i].t - (performance.now() - start); if (wait > 0) await new Promise((r) => setTimeout(r, wait)); draw(imgs[i]); }
+      await new Promise((r) => setTimeout(r, 250));
+      rec.stop(); await done;
+      if (actx) actx.close();
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const ab = await blob.arrayBuffer(); let s = ""; const u = new Uint8Array(ab); for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+      return { b64: btoa(s), ms: Math.round(performance.now() - start) };
+    })()`)) as { b64: string; ms: number } | null;
+    if (!res || !res.b64) return null;
+    return { data: Buffer.from(res.b64, "base64"), ms: res.ms };
+  } catch (e) {
+    console.error("probe: video encode failed", e instanceof Error ? e.message : e);
+    return null;
+  } finally { await page.close().catch(() => {}); }
+}
+
 /** For tuning the matcher: the candidates the browser sees on a page. */
 export async function listCandidates(url: string): Promise<Candidate[]> {
   const browser = await launch();
@@ -278,6 +397,7 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 InspoBot/1.0");
     await page.evaluateOnNewDocument(AUDIO_HOOK);
+    await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "no-preference" }]);
     await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 }).catch(async () => { await page.waitForSelector("body", { timeout: 5000 }); });
     await settle(page, 1200);
     // Wake the page: lazy content, scroll libraries, then back to the top
@@ -308,7 +428,7 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
           // The image and nothing else: a padding would frame it with the page's background
           const x = Math.max(0, r.x), w = Math.min(1440 - x, r.w), h = Math.min(r.h, 1800);
           const jpeg = Buffer.from(await page.screenshot({ type: "jpeg", quality: 72, clip: { x, y: r.y, width: w, height: h }, captureBeyondViewport: true }));
-          captures.push({ id: `i${iid}`, hint: target.hint, kind: "image", sectionId: -1, text: im.alt, box: { y: r.y, h }, jpeg });
+          captures.push({ id: `i${iid}`, hint: target.hint, kind: "image", sectionId: -1, text: im.alt, box: { y: r.y, h }, data: jpeg, mime: "image/jpeg", ext: "jpg" });
         } catch { /* gone or covered: skip */ }
       }
       for (const sid of target.sections.slice(0, 3)) {
@@ -321,7 +441,7 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
           if (!r || r.h < 60) continue;
           const height = Math.min(r.h, 1800);
           const jpeg = Buffer.from(await page.screenshot({ type: "jpeg", quality: 68, clip: { x: 0, y: r.y, width: 1440, height }, captureBeyondViewport: true }));
-          captures.push({ id: `s${sid}`, hint: target.hint, kind: "section", sectionId: sid, text: sec.text, box: { y: r.y, h: height }, jpeg });
+          captures.push({ id: `s${sid}`, hint: target.hint, kind: "section", sectionId: sid, text: sec.text, box: { y: r.y, h: height }, data: jpeg, mime: "image/jpeg", ext: "jpg" });
         } catch { /* a section that vanished on scroll: skip it */ }
       }
     }
@@ -371,6 +491,19 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
         } catch { /* detached or covered element: skip it */ }
       }
       targets.push({ hint: target.hint, kind: target.kind, probes: target.probes, matched: picked.length, elements });
+
+      // The moving picture: a sweep over the elements, recorded and encoded by the browser; sound rides along
+      if (elements.length && captures.length < 14) {
+        try {
+          const rec = await recordSweep(page, picked);
+          if (rec) {
+            const vid = await encodeWebm(browser, rec.frames, rec.region, rec.audio);
+            const vi = targets.length - 1;
+            if (vid) captures.push({ id: `v${vi}`, hint: target.hint, kind: "video", sectionId: -1, text: `${elements.length} elements hovered in turn${rec.audio ? ", with the sound the page played" : ""}`, box: { y: rec.region.y, h: rec.region.h }, data: vid.data, mime: "video/webm", ext: "webm", ms: vid.ms });
+            if (rec.audio) captures.push({ id: `a${vi}`, hint: target.hint, kind: "audio", sectionId: -1, text: "sound the page played while hovering", box: { y: rec.region.y, h: 0 }, data: rec.audio.data, mime: rec.audio.mime, ext: rec.audio.ext });
+          }
+        } catch (e) { console.error("probe: sweep failed", e instanceof Error ? e.message : e); }
+      }
     }
     await page.mouse.move(5, 5);
 
@@ -382,7 +515,9 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
 
     // The factual lines
     const summary: string[] = [];
-    if (captures.length) summary.push(`captured ${captures.length} section${captures.length > 1 ? "s" : ""}: ${captures.map((c) => `${c.hint} (y ${c.box.y}, ${c.box.h}px)`).join(", ")}`);
+    const stills = captures.filter((c) => c.kind === "section" || c.kind === "image");
+    if (stills.length) summary.push(`captured ${stills.length} ${stills.length > 1 ? "stills" : "still"}: ${stills.map((c) => `${c.hint} (y ${c.box.y}, ${c.box.h}px)`).join(", ")}`);
+    for (const c of captures) if (c.kind === "video") summary.push(`recorded a ${Math.round((c.ms ?? 0) / 100) / 10}s video of hovering: ${c.hint}${captures.some((a) => a.kind === "audio" && a.hint === c.hint) ? ", with the sound the page played" : ""}`);
     for (const t of targets) {
       if (!t.elements.length) { summary.push(t.matched ? `${t.hint}: ${t.matched} matching element${t.matched > 1 ? "s" : ""} found but none could be hovered` : `${t.hint}: no matching element found to hover`); continue; }
       const withChange = t.elements.filter((e) => Object.keys(e.changed).length);

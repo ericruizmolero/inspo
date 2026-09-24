@@ -76,6 +76,31 @@ function prepareAgentation() {
   } catch { /* private mode: the defaults apply */ }
 }
 
+// ─── Where the dock sits ─────────────────────────────────────────────────────
+// By default the pill owns the bottom-right corner and the CSS keeps it clear of what else docks
+// there. It can also be dragged anywhere; that spot is kept per browser, as offsets from the corner.
+
+const POS_KEY = "feedback-dock-pos";
+type DockPos = { right: number; bottom: number };
+const EDGE = 8;
+
+function loadPos(): DockPos | null {
+  try {
+    const p = JSON.parse(localStorage.getItem(POS_KEY) ?? "null");
+    return typeof p?.right === "number" && typeof p?.bottom === "number" ? p : null;
+  } catch { return null; }
+}
+function savePos(p: DockPos | null) {
+  try { if (p) localStorage.setItem(POS_KEY, JSON.stringify(p)); else localStorage.removeItem(POS_KEY); } catch { /* private mode */ }
+}
+/** Keeps a box of w×h inside the viewport, EDGE px from every side */
+function clampPos(p: DockPos, w: number, h: number): DockPos {
+  return {
+    right: Math.round(Math.min(Math.max(p.right, EDGE), Math.max(EDGE, window.innerWidth - w - EDGE))),
+    bottom: Math.round(Math.min(Math.max(p.bottom, EDGE), Math.max(EDGE, window.innerHeight - h - EDGE))),
+  };
+}
+
 // ─── The tool ────────────────────────────────────────────────────────────────
 
 export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) {
@@ -86,6 +111,58 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
   const [active, setActive] = useState(false);
   const stateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useState(prepareAgentation);
+
+  // Dragging the dock. `pos` is null until the person moves it: the CSS corner applies.
+  const [pos, setPos] = useState<DockPos | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const dockRef = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; y: number; right: number; bottom: number; moved: boolean } | null>(null);
+  const justDragged = useRef(false);
+  const dockSize = () => ({ w: dockRef.current?.offsetWidth ?? 160, h: dockRef.current?.offsetHeight ?? 40 });
+  useEffect(() => {
+    const saved = loadPos();
+    if (saved) { const { w, h } = dockSize(); setPos(clampPos(saved, w, h)); }
+  }, []);
+  useEffect(() => {
+    if (!pos) return;
+    const onResize = () => setPos((p) => { if (!p) return p; const { w, h } = dockSize(); return clampPos(p, w, h); });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [pos !== null]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onDockPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 || !dockRef.current) return;
+    const r = dockRef.current.getBoundingClientRect();
+    drag.current = { x: e.clientX, y: e.clientY, right: window.innerWidth - r.right, bottom: window.innerHeight - r.bottom, moved: false };
+    dockRef.current.setPointerCapture(e.pointerId);
+  };
+  const onDockPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x, dy = e.clientY - d.y;
+    // A few px of slack, so a plain click never counts as a drag
+    if (!d.moved && Math.hypot(dx, dy) < 4) return;
+    if (!d.moved) { d.moved = true; setDragging(true); }
+    const { w, h } = dockSize();
+    setPos(clampPos({ right: d.right - dx, bottom: d.bottom - dy }, w, h));
+  };
+  const onDockPointerUp = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.moved) return;
+    setDragging(false);
+    justDragged.current = true;
+    setPos((p) => { savePos(p); return p; });
+  };
+  // The click that ends a drag must not open feedback mode
+  const onDockClickCapture = (e: React.MouseEvent) => {
+    if (!justDragged.current) return;
+    justDragged.current = false;
+    e.preventDefault(); e.stopPropagation();
+  };
+  // Double-click sends the dock back to its corner
+  const resetPos = () => { setPos(null); savePos(null); };
+  // The open panel is wider than the dock: same spot, but kept inside the viewport
+  const panelStyle = pos ? { right: Math.max(EDGE, Math.min(pos.right, window.innerWidth - 320 - EDGE)), bottom: pos.bottom } : undefined;
 
   // Agentation keeps its notes per route in localStorage: they come back when the page changes
   useEffect(() => {
@@ -199,7 +276,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
       {/* data-feedback-toolbar: Agentation ignores clicks and hovers inside it, so our own
           buttons cannot be annotated while feedback mode is on */}
       {active ? (
-        <section className="fb-panel" role="dialog" aria-label={t.feedback.title} data-feedback-toolbar="true">
+        <section className="fb-panel" role="dialog" aria-label={t.feedback.title} data-feedback-toolbar="true" style={panelStyle}>
           <header className="fb-panel__head">
             <span className="fb-panel__dot" aria-hidden />
             <strong className="fb-panel__title">{t.feedback.title}</strong>
@@ -226,7 +303,19 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
           <p className="fb-panel__hint">{t.feedback.esc}</p>
         </section>
       ) : (
-        <div className="fb-dock" data-feedback-toolbar="true">
+        <div
+          ref={dockRef}
+          className={`fb-dock${dragging ? " is-dragging" : ""}`}
+          data-feedback-toolbar="true"
+          style={pos ? { right: pos.right, bottom: pos.bottom } : undefined}
+          onPointerDown={onDockPointerDown}
+          onPointerMove={onDockPointerMove}
+          onPointerUp={onDockPointerUp}
+          onPointerCancel={onDockPointerUp}
+          onClickCapture={onDockClickCapture}
+          onDoubleClick={resetPos}
+          title={t.feedback.dragHint}
+        >
           {count > 0 && sendButton}
           <button type="button" className="fb-pill" onClick={enterMode}>
             <IconBubble />

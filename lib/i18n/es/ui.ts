@@ -111,6 +111,7 @@ export const ui: typeof EnUi = {
     imageFailed: "No se pudo leer la imagen",
   },
   feedback: {
+    dragHint: "Arrastra para moverlo; doble clic para devolverlo a la esquina",
     open: "Dar feedback",
     resume: "Seguir con el feedback",
     title: "Modo feedback",

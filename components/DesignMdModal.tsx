@@ -390,7 +390,7 @@ function WhySection({ state }: { state: WhyState }) {
   const { t } = useT();
   const why = state.why;
   // Captures open in a viewer inside the sheet (a new tab has no way back in the preview)
-  const [lightbox, setLightbox] = useState<{ list: string[]; idx: number } | null>(null);
+  const [lightbox, setLightbox] = useState<{ list: { url: string; video?: boolean }[]; idx: number } | null>(null);
   const lightboxRef = useRef(lightbox);
   lightboxRef.current = lightbox;
   useEffect(() => {
@@ -420,15 +420,21 @@ function WhySection({ state }: { state: WhyState }) {
           {why.highlights.map((h, i) => (
             <li key={i} className={`dm-why__item is-${h.status}`}>
               {/* The thing itself first; the words read as its caption */}
-              {h.shotUrls && h.shotUrls.length > 0 && (
-                <div className="dm-why__shots" style={{ "--cols": Math.min(3, h.shotUrls.length) } as React.CSSProperties}>
-                  {h.shotUrls.map((u, j) => (
-                    <button key={j} type="button" className="dm-why__shot" onClick={() => setLightbox({ list: h.shotUrls!, idx: j })} aria-label={t.comments.screenshot}>
-                      <img src={proxiedSrc(u)} alt="" loading="lazy" decoding="async" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              {(() => {
+                // Videos of the interaction first (they move), then the stills; the viewer takes both
+                const media: { url: string; video?: boolean }[] = [...(h.videoUrls ?? []).map((url) => ({ url, video: true })), ...(h.shotUrls ?? []).map((url) => ({ url }))];
+                return media.length > 0 && (
+                  <div className="dm-why__shots" style={{ "--cols": Math.min(3, media.length) } as React.CSSProperties}>
+                    {media.map((m, j) => (
+                      <button key={j} type="button" className="dm-why__shot" onClick={() => setLightbox({ list: media, idx: j })} aria-label={t.comments.screenshot}>
+                        {m.video
+                          ? <video src={proxiedSrc(m.url)} autoPlay muted loop playsInline preload="metadata" />
+                          : <img src={proxiedSrc(m.url)} alt="" loading="lazy" decoding="async" />}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
               <div className="dm-why__caption">
                 <blockquote className="dm-why__quote">
                   <p>{h.quote}</p>
@@ -440,6 +446,7 @@ function WhySection({ state }: { state: WhyState }) {
                   )}
                   {h.status === "unverifiable" && <p className="dm-why__note-text dm-why__note-text--muted">{t.designMd.whyUnverifiable}{h.note ? ` ${h.note}` : ""}</p>}
                   {h.status !== "unverifiable" && h.note && <p className="dm-why__note-text">{h.note}</p>}
+                  {h.audioUrls?.map((u, j) => <audio key={j} className="dm-why__audio" src={proxiedSrc(u)} controls preload="metadata" />)}
                 </div>
               </div>
             </li>
@@ -453,7 +460,9 @@ function WhySection({ state }: { state: WhyState }) {
           <div className="cm-lightbox" role="dialog" onClick={() => setLightbox(null)}>
             <Button variant="icon" className="cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</Button>
             {many && <button className="cm-lightbox__nav is-prev" aria-label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
-            <img key={lightbox.idx} className="cm-lightbox__img" src={proxiedSrc(lightbox.list[lightbox.idx])} alt="" onClick={(e) => e.stopPropagation()} />
+            {lightbox.list[lightbox.idx].video
+              ? <video key={lightbox.idx} className="cm-lightbox__img" src={proxiedSrc(lightbox.list[lightbox.idx].url)} controls autoPlay loop playsInline onClick={(e) => e.stopPropagation()} />
+              : <img key={lightbox.idx} className="cm-lightbox__img" src={proxiedSrc(lightbox.list[lightbox.idx].url)} alt="" onClick={(e) => e.stopPropagation()} />}
             {many && <button className="cm-lightbox__nav is-next" aria-label={t.comments.next} onClick={(e) => { e.stopPropagation(); go(1); }}>{IcChevron}</button>}
             {many && <div className="cm-lightbox__caption"><span className="cm-lightbox__count">{lightbox.idx + 1} / {lightbox.list.length}</span></div>}
           </div>

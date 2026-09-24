@@ -377,7 +377,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
 /* Directory picks: plain rows, no logo (too many favicons are dark on transparent). On hover the row
    itself becomes a card: it takes the surface and a hairline, and grows in flow (grid rows, no overlay)
-   to show the site's description under the name. The rows below slide down.
+   to show the site's screenshot and its description under the name. The rows below slide down.
    It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
    ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
    Which row is open is decided in the Sidebar (is-open, one at a time); :focus-within keeps the keyboard path. */
@@ -394,17 +394,20 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* The card frame is the hover state now: the name row stays flat inside it */
 .nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
 /* The body sits under the name, pinned to the top of its track. It is not part of the motion: while
-   the row grows (and, moving down the list, slides up) the body is blank, and the text appears in place
-   only once the row has settled, with a short fade and no movement. When the row folds it is gone at
-   once, so the fold never shows it on the move either. All cards share one height (a fixed three-line
+   the row grows (and, moving down the list, slides up) the body is blank, and the screenshot and the
+   text appear in place only once the row has settled, with a short fade and no movement. No layer
+   over the picture, nothing sliding. When the row folds they are gone at once, so the fold never
+   shows them on the move either. All cards share one height (fixed shot ratio, fixed three-line
    description), which makes the hover handover between rows exact. */
 .nav-item__card { min-height: 0; overflow: hidden; }
-.nav-item__card-inner { padding: 0 8px 6px; opacity: 0; transition: opacity 0.08s; }
+.nav-item__card-inner { padding: 0 6px 6px; opacity: 0; transition: opacity 0.08s; }
 .nav-item--pick-row.is-open .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner {
   opacity: 1; transition: opacity 0.18s var(--pick-ease); transition-delay: var(--pick-time);
 }
+.nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+.nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .nav-item__card p {
-  margin: 0; padding: 0 0 2px; height: calc(3 * 1.4em + 2px); overflow: hidden;
+  margin: 0; padding: 7px 2px 2px; height: calc(3 * 1.4em + 9px); overflow: hidden;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
   font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted);
 }
@@ -1217,7 +1220,8 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 /* Captures of different proportions: a masonry by CSS columns, like the main canvas. Never cropped. */
 .dm-why__shots { column-count: var(--cols, 3); column-gap: 10px; }
 .dm-why__shot { display: block; width: 100%; padding: 0; border: 0; break-inside: avoid; margin-bottom: 10px; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); cursor: zoom-in; }
-.dm-why__shot img { display: block; width: 100%; height: auto; }
+.dm-why__shot img, .dm-why__shot video { display: block; width: 100%; height: auto; }
+.dm-why__audio { display: block; width: 100%; max-width: 380px; height: 32px; margin-top: 4px; }
 /* Quote at the left edge, detail at the right edge, the space between them is the layout */
 .dm-why__caption { display: flex; justify-content: space-between; align-items: flex-start; gap: 48px; }
 .dm-why__quote { margin: 0; flex: 0 1 44ch; min-width: 0; }
@@ -2015,12 +2019,17 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
    pill and panel here, with the app's tokens. Its markers and note popup stay as they are. */
 [data-agentation-toolbar] { display: none !important; }
 
-/* Closed: the pill in the bottom-right corner, with the send button beside it if there are notes */
+/* Closed: the pill in the bottom-right corner, with the send button beside it if there are notes.
+   The whole dock can be dragged anywhere (FeedbackTool sets right/bottom inline and remembers them);
+   a double-click sends it back to the corner. */
 .fb-dock {
   position: fixed; z-index: 100000; right: 1.25rem; bottom: 1.25rem;
   display: flex; align-items: center; gap: 8px;
+  touch-action: none; user-select: none; -webkit-user-select: none;
   animation: fb-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+.fb-dock.is-dragging { animation: none; cursor: grabbing; }
+.fb-dock.is-dragging .fb-pill, .fb-dock.is-dragging .fb-btn { cursor: grabbing; transition: none; transform: none; pointer-events: none; }
 .fb-pill {
   display: inline-flex; align-items: center; gap: 8px;
   height: 40px; padding: 0 14px 0 12px;
@@ -2104,6 +2113,12 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 /* The thread panel is fixed on the right: whatever docks bottom-right (feedback, toasts) moves left of it,
    so the button never sits on the composer. On phones the panel is the whole width and they leave the screen. */
 body:has(.cm-panel:not(.cm-panel--column)) :is(.fb-dock, .fb-panel, .toasts) { right: calc(min(420px, 100vw) + 1.25rem); }
+/* The DESIGN.md sheet keeps its thread in a 380px column on the right, whose composer ends in the
+   corner too: same move. Below 1024px that column is a 420px drawer. A dragged dock (inline position) wins. */
+body:has(.dm-side) :is(.fb-dock, .fb-panel, .toasts) { right: calc(380px + 1.25rem); }
+@media (max-width: 1023px) {
+  body:has(.dm-side) :is(.fb-dock, .fb-panel, .toasts) { right: calc(min(420px, 100vw) + 1.25rem); }
+}
 /* The feedback button owns the corner: toasts stack above it */
 body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .fb-count {

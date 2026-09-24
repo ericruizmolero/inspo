@@ -160,17 +160,17 @@ export function getDesignMd(url: string): Promise<DesignMdEntry | null> {
 /** Blob prefix of a workspace's "why it's here" captures (the proxy allows it for that workspace) */
 export const whyShotPrefix = (organizationId: string) => `inspo/design-why/${organizationId}/`;
 
-/** Saves one capture of the site for this workspace's "why": Blob (private) in production, /public locally. Returns its URL. */
-export async function saveWhyShot(organizationId: string, url: string, id: string, jpeg: Buffer): Promise<string> {
+/** Saves one capture of the site (image, video or sound) for this workspace's "why": Blob (private) in production, /public locally. Returns its URL. */
+export async function saveWhyAsset(organizationId: string, url: string, id: string, data: Buffer, mime: string, ext: string): Promise<string> {
   const name = `${keyFor(url)}-${id}`;
   if (USE_BLOB) {
-    const r = await put(`${whyShotPrefix(organizationId)}${name}-${Date.now()}.jpg`, jpeg, { access: "private", contentType: "image/jpeg" });
+    const r = await put(`${whyShotPrefix(organizationId)}${name}-${Date.now()}.${ext}`, data, { access: "private", contentType: mime });
     return r.url;
   }
   const dir = path.join(process.cwd(), "public", "design-why", organizationId);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, `${name}.jpg`), jpeg);
-  return `/design-why/${organizationId}/${name}.jpg?v=${Date.now()}`;
+  await fs.writeFile(path.join(dir, `${name}.${ext}`), data);
+  return `/design-why/${organizationId}/${name}.${ext}?v=${Date.now()}`;
 }
 
 /** The full-page screenshot saved with the DESIGN.md (for models that need to look), or null. */

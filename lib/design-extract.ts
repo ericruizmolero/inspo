@@ -90,7 +90,7 @@ export async function launch(): Promise<Browser> {
     return puppeteer.launch({
       executablePath: local,
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"],
     });
   }
 
@@ -98,7 +98,7 @@ export async function launch(): Promise<Browser> {
   chromium.setGraphicsMode = false;
   return puppeteer.launch({
     executablePath: await chromium.executablePath(),
-    args: [...chromium.args, "--hide-scrollbars"],
+    args: [...chromium.args, "--hide-scrollbars", "--autoplay-policy=no-user-gesture-required"],
     headless: true,
     defaultViewport: { width: 1440, height: 900 },
   });

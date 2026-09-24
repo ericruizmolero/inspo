@@ -113,6 +113,7 @@ export const ui = {
     imageFailed: "The image could not be read",
   },
   feedback: {
+    dragHint: "Drag to move; double-click to send it back to the corner",
     open: "Give feedback",
     resume: "Keep giving feedback",
     title: "Feedback mode",
