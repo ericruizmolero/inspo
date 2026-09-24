@@ -56,6 +56,11 @@ export interface FeedbackNoteView {
   createdAt: string;
 }
 
+/** Where a submission is: still a draft, sent to the partners, or dealt with */
+export type FeedbackStatus = "draft" | "sent" | "resolved";
+export const batchStatus = (b: Pick<FeedbackBatch, "sentAt" | "resolvedAt">): FeedbackStatus =>
+  b.resolvedAt ? "resolved" : b.sentAt ? "sent" : "draft";
+
 /** A submission (or an unsent draft): one person's notes on one page */
 export interface FeedbackBatch {
   key: string;
@@ -66,6 +71,8 @@ export interface FeedbackBatch {
   viewport: string | null;
   /** When the email went out; null = the person hasn't pressed "Send to the team" yet */
   sentAt: string | null;
+  /** When a partner marked it as dealt with; null = open (drafts are never resolved) */
+  resolvedAt: string | null;
   /** Last note added or edited */
   updatedAt: string;
   notes: FeedbackNoteView[];

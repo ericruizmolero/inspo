@@ -264,6 +264,8 @@ export const feedbackNote = sqliteTable("feedback_note", {
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   /** When the email with this note went out; null = not sent yet */
   sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+  /** When a partner marked it as dealt with in /admin; null = open. Only sent notes get resolved */
+  resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
 }, (t) => [
   index("feedback_note_pending_idx").on(t.sentAt, t.updatedAt),
   index("feedback_note_user_path_idx").on(t.userId, t.path),

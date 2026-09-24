@@ -1,6 +1,6 @@
 "use client";
 
-import { grantAccess, revokeAccess, deleteFeedback } from "@/app/actions/admin";
+import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback } from "@/app/actions/admin";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserAvatar } from "@/components/WorkspaceMenu";
@@ -232,7 +232,7 @@ function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
   return <Button variant="ghost" size="sm" onClick={copy}>{done ? t.common.copied : t.admin.copyForAgent}</Button>;
 }
 
-function FeedbackBatchView({ batch, now, onDelete }: { batch: FeedbackBatch; now: number; onDelete: (b: FeedbackBatch) => Promise<void> }) {
+function FeedbackBatchView({ batch, now, onDelete, onResolve }: { batch: FeedbackBatch; now: number; onDelete: (b: FeedbackBatch) => Promise<void>; onResolve: (b: FeedbackBatch, resolved: boolean) => Promise<void> }) {
   const { locale, t } = useT();
   const [confirm, confirmDialog] = useConfirm();
   const [open, setOpen] = useState(batch.notes.length <= 3);
@@ -242,6 +242,10 @@ function FeedbackBatchView({ batch, now, onDelete }: { batch: FeedbackBatch; now
     if (!(await confirm({ title: t.admin.deleteNotesConfirm(n, batch.author.name, batch.path), action: t.common.delete, danger: true }))) return;
     setBusy(true);
     try { await onDelete(batch); } finally { setBusy(false); }
+  };
+  const toggleResolved = async () => {
+    setBusy(true);
+    try { await onResolve(batch, !batch.resolvedAt); } finally { setBusy(false); }
   };
   const notes = open ? batch.notes : batch.notes.slice(0, 3);
   const when = batch.sentAt ?? batch.updatedAt;
@@ -262,7 +266,9 @@ function FeedbackBatchView({ batch, now, onDelete }: { batch: FeedbackBatch; now
             {` · ${t.admin.notes(batch.notes.length)}`}
           </span>
         </span>
-        {!batch.sentAt && <span className="fb__draft">{t.admin.draft}</span>}
+        {!batch.sentAt && <span className="fb__tag">{t.admin.draft}</span>}
+        {batch.resolvedAt && <span className="fb__tag fb__tag--resolved" title={fmtDT(batch.resolvedAt, locale)}>{t.admin.resolved}</span>}
+        {batch.sentAt && <Button variant="ghost" size="sm" onClick={toggleResolved} disabled={busy}>{batch.resolvedAt ? t.admin.reopen : t.admin.resolve}</Button>}
         <CopyMarkdown batch={batch} />
         <Button variant="ghost" size="sm" onClick={remove} disabled={busy} aria-label={t.admin.deleteFeedback}>{busy ? <span className="spinner" /> : t.common.delete}</Button>
       </div>
@@ -300,6 +306,12 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
     setGone((prev) => new Set(prev).add(b.key));
     router.refresh();
   };
+  const onResolve = async (b: FeedbackBatch, resolved: boolean) => {
+    setError("");
+    const r = await resolveFeedback(b.notes.map((n) => n.id), resolved).catch(() => null);
+    if (!r?.ok) { setError(r?.error ?? t.admin.resolveFailed); return; }
+    router.refresh();
+  };
   return (
     <Card>
       <CardHeader>
@@ -311,7 +323,7 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
           <p className="card-note">{t.admin.noFeedback(feedback.days)}</p>
         ) : (
           <ul className="fb-list">
-            {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} onDelete={onDelete} />)}
+            {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} onDelete={onDelete} onResolve={onResolve} />)}
           </ul>
         )}
         {error && <p className="modal__error">{error}</p>}

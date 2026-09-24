@@ -1880,7 +1880,11 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .fb__on { color: var(--muted); }
 .fb__path { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .fb__path:hover { text-decoration-color: currentColor; }
-.fb__draft { font-size: 11px; color: var(--muted); border: 1px solid var(--border-strong); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.fb__tag { font-size: 11px; color: var(--muted); border: 1px solid var(--border-strong); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.fb__tag--resolved { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, transparent); }
+.fb__tag--sent { color: var(--text-2); }
+/* /settings/feedback: the person's own history, same blocks without the author */
+.fb__when { font-size: 12px; color: var(--muted); }
 .fb__notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; counter-reset: fb; }
 .fb__note { position: relative; padding: 10px 0 10px 28px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; counter-increment: fb; }
 .fb__note::before { content: counter(fb); position: absolute; left: 0; top: 10px; width: 20px; height: 20px; border-radius: 6px; background: var(--surface-3); color: var(--muted); font-size: 11px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }

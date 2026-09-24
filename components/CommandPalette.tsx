@@ -13,7 +13,7 @@ import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
 } from "@/components/ui/command";
 
-const SETTINGS = ["account", "workspace", "members", "plan", "extension"] as const;
+const SETTINGS = ["account", "feedback", "workspace", "members", "plan", "extension"] as const;
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
 
 export default function CommandPalette({ open, onOpenChange, items, hasDesignMd, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onDirectory }: {

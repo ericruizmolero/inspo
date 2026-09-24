@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { getSession, type ActionResult } from "@/lib/workspace";
 import { APP_URL } from "@/lib/auth";
 import { isAdmin, addAdmin, removeAdmin } from "@/lib/activity";
-import { deleteFeedbackNotes } from "@/lib/feedback";
+import { deleteFeedbackNotes, resolveFeedbackNotes } from "@/lib/feedback";
 import { sendMail, adminAccessMail, localeForEmail } from "@/lib/mail";
 import { getErrors } from "@/lib/i18n";
 
@@ -55,5 +55,14 @@ export async function deleteFeedback(ids: string[]) {
     const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 500) : [];
     if (!list.length) throw new Error((await getErrors()).nothingToDelete);
     return deleteFeedbackNotes(list);
+  });
+}
+
+/** Marks a submission as dealt with (or reopens it). Same ids as deleteFeedback. */
+export async function resolveFeedback(ids: string[], resolved: boolean) {
+  return asAdmin(async () => {
+    const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 500) : [];
+    if (!list.length) throw new Error((await getErrors()).nothingToDelete);
+    return resolveFeedbackNotes(list, !!resolved);
   });
 }

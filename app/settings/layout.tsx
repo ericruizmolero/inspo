@@ -19,7 +19,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
       title={t.settings.title}
       base="/settings"
       groups={[
-        { items: [{ slug: "account", label: s.account, icon: "account" }] },
+        { items: [{ slug: "account", label: s.account, icon: "account" }, { slug: "feedback", label: s.feedback, icon: "feedback" }] },
         {
           label: ctx.workspace.name,
           items: [

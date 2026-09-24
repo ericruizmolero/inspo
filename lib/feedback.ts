@@ -2,7 +2,7 @@
 // when the person presses "Send to the team", emails all the notes for that page
 // to the partners (those who see /admin, lib/activity.ts) with the same markdown the
 // bar copies. No automatic sends: only what the person decides to send goes out.
-import { and, desc, eq, gte, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull } from "drizzle-orm";
 import "server-only";
 import { db, schema } from "./db";
 import { listAdmins } from "./activity";
@@ -89,26 +89,25 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
   }
 }
 
-/**
- * Feedback from the last N days for /admin, grouped by submission: the notes one person
- * sent together about a page (same sentAt) or, if they haven't pressed send yet, their draft.
- * Most recent first.
- */
-export async function feedbackOverview(days: number): Promise<FeedbackOverview> {
-  const since = new Date(Date.now() - days * 86400000);
-  const rows = await db
-    .select({
-      id: F.id, userId: F.userId, path: F.path, url: F.url, viewport: F.viewport, data: F.data,
-      createdAt: F.createdAt, updatedAt: F.updatedAt, sentAt: F.sentAt,
-      name: schema.user.name, email: schema.user.email, image: schema.user.image,
-      workspace: schema.organization.name,
-    })
-    .from(F)
-    .innerJoin(schema.user, eq(schema.user.id, F.userId))
-    .leftJoin(schema.organization, eq(schema.organization.id, F.organizationId))
-    .where(gte(F.updatedAt, since))
-    .orderBy(desc(F.updatedAt));
+type Row = {
+  id: string; userId: string; path: string; url: string; viewport: string | null; data: string;
+  createdAt: Date; updatedAt: Date; sentAt: Date | null; resolvedAt: Date | null;
+  name: string; email: string; image: string | null; workspace: string | null;
+};
 
+const selection = {
+  id: F.id, userId: F.userId, path: F.path, url: F.url, viewport: F.viewport, data: F.data,
+  createdAt: F.createdAt, updatedAt: F.updatedAt, sentAt: F.sentAt, resolvedAt: F.resolvedAt,
+  name: schema.user.name, email: schema.user.email, image: schema.user.image,
+  workspace: schema.organization.name,
+};
+
+/**
+ * Groups rows by submission: the notes one person sent together about a page (same sentAt)
+ * or, if they haven't pressed send yet, their draft. Most recent first; inside a submission,
+ * in the order the notes were left (as in the email).
+ */
+function groupBatches(rows: Row[]): FeedbackBatch[] {
   const batches = new Map<string, FeedbackBatch & { order: number[] }>();
   for (const r of rows) {
     let a: Partial<Annotation> = {};
@@ -119,11 +118,13 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
       b = {
         key, author: { id: r.userId, name: r.name, email: r.email, image: r.image ?? null }, workspace: r.workspace ?? null,
         path: r.path, url: r.url, viewport: r.viewport ?? null,
-        sentAt: r.sentAt ? r.sentAt.toISOString() : null, updatedAt: r.updatedAt.toISOString(), notes: [], order: [],
+        sentAt: r.sentAt ? r.sentAt.toISOString() : null, resolvedAt: null, updatedAt: r.updatedAt.toISOString(), notes: [], order: [],
       };
       batches.set(key, b);
     }
     if (r.updatedAt.toISOString() > b.updatedAt) b.updatedAt = r.updatedAt.toISOString();
+    // A submission is resolved as a whole; the latest mark wins if the notes ever differ
+    if (r.resolvedAt && (!b.resolvedAt || r.resolvedAt.toISOString() > b.resolvedAt)) b.resolvedAt = r.resolvedAt.toISOString();
     const note: FeedbackNoteView = {
       id: r.id, element: String(a.element ?? "Element"), elementPath: String(a.elementPath ?? ""), comment: String(a.comment ?? ""),
       selectedText: a.selectedText ? String(a.selectedText) : null, sourceFile: a.sourceFile ? String(a.sourceFile) : null,
@@ -134,13 +135,25 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
   }
 
   const list = [...batches.values()].map((b) => {
-    // Within the submission, in the order the notes were left (as in the email)
     const idx = b.notes.map((_, i) => i).sort((i, j) => b.order[i] - b.order[j]);
     const { order: _order, ...rest } = b;
     return { ...rest, notes: idx.map((i) => b.notes[i]) };
   });
   list.sort((x, y) => (y.sentAt ?? y.updatedAt).localeCompare(x.sentAt ?? x.updatedAt));
+  return list;
+}
 
+/** Feedback from the last N days for /admin, grouped by submission. Most recent first. */
+export async function feedbackOverview(days: number): Promise<FeedbackOverview> {
+  const since = new Date(Date.now() - days * 86400000);
+  const rows = await db
+    .select(selection)
+    .from(F)
+    .innerJoin(schema.user, eq(schema.user.id, F.userId))
+    .leftJoin(schema.organization, eq(schema.organization.id, F.organizationId))
+    .where(gte(F.updatedAt, since))
+    .orderBy(desc(F.updatedAt));
+  const list = groupBatches(rows);
   return {
     days, batches: list,
     notes: rows.length,
@@ -148,6 +161,26 @@ export async function feedbackOverview(days: number): Promise<FeedbackOverview> 
     pending: list.filter((b) => !b.sentAt).length,
     people: new Set(rows.map((r) => r.userId)).size,
   };
+}
+
+/** Everything one person has left with the bar, for /settings/feedback: sent, resolved and drafts. */
+export async function feedbackHistory(userId: string): Promise<FeedbackBatch[]> {
+  const rows = await db
+    .select(selection)
+    .from(F)
+    .innerJoin(schema.user, eq(schema.user.id, F.userId))
+    .leftJoin(schema.organization, eq(schema.organization.id, F.organizationId))
+    .where(eq(F.userId, userId))
+    .orderBy(desc(F.updatedAt));
+  return groupBatches(rows);
+}
+
+/** Marks notes as dealt with, or reopens them (from /admin). Drafts are skipped: nothing was sent. */
+export async function resolveFeedbackNotes(ids: string[], resolved: boolean): Promise<number> {
+  if (!ids.length) return 0;
+  const rows = await db.update(F).set({ resolvedAt: resolved ? new Date() : null })
+    .where(and(inArray(F.id, ids), isNotNull(F.sentAt))).returning({ id: F.id });
+  return rows.length;
 }
 
 /** Deletes notes by id (from /admin). Returns how many there were. */
