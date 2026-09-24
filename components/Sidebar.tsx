@@ -246,7 +246,7 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
 /** Everything under the workspace: add, the whole library, the collections, the team, the directory and the plan.
  *  Shared by the docked column, the phone sheet and the island menu that hangs from the top bar pill. */
 export function SidebarNav({ quota, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, onPick }: Omit<SidebarProps, "brand"> & {
-  /** Called after any choice (the island menu folds, the phone sheet closes) */
+  /** Called after any choice (the phone sheet closes; the island menu stays open on purpose) */
   onPick?: () => void;
 }) {
   const { t } = useT();
@@ -345,7 +345,7 @@ export default function AppSidebar({ brand, ...nav }: SidebarProps) {
 
 /** Island (after Angelo Libero): with the column folded, the workspace lives as a quiet pill in the top bar,
  *  in the bar's own language (same height and hairline as the search). Its chevron hangs the menu under it
- *  as a card over the grid; a choice, a click outside or Escape folds it again. */
+ *  as a card over the grid; it stays open while you pick filters and only a click outside or Escape folds it. */
 export function IslandPill({ brand, ...nav }: SidebarProps) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -377,7 +377,8 @@ export function IslandPill({ brand, ...nav }: SidebarProps) {
       <div className="island__body" id="island-menu" inert={!open}>
         <div className="island__clip">
           <div className="island__card">
-            <SidebarNav {...nav} onPick={() => setOpen(false)} />
+            {/* No onPick: a choice inside the island filters without folding it; only a click outside or Escape folds it */}
+            <SidebarNav {...nav} />
           </div>
         </div>
       </div>
