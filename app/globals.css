@@ -810,6 +810,35 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .cm-lightbox__caption { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; align-items: center; font-variant-numeric: tabular-nums; font-size: 11px; color: var(--muted); pointer-events: none; }
 .cm-lightbox__count { color: var(--text-2); font-variant-numeric: tabular-nums; }
 
+/* The root of the thread under the tile: who saved it and what caught their eye. A quiet
+   line on the page background (no box, unlike the old app), two lines at most; tapping opens the thread. */
+.tile__note {
+  display: flex; align-items: flex-start; gap: 8px;
+  width: 100%; margin: 0; padding: 9px 4px 2px;
+  border: 0; background: none; text-align: left; cursor: pointer;
+  font: inherit; color: var(--muted);
+  transition: color 0.15s;
+}
+.tile__note:hover { color: var(--text-2); }
+.tile__note .cm-avatar { margin-top: 1px; font-size: 8px; }
+.tile__note-text {
+  min-width: 0; font-size: 12px; line-height: 1.45; text-wrap: pretty;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tile__note-who { font-weight: 500; color: var(--text-2); }
+.tile__note:hover .tile__note-who { color: var(--text); }
+/* Replies in the thread: the activity shows at the end of the line, without opening anything */
+.tile__note-count {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; margin-left: auto; margin-top: 2px;
+  color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; line-height: 1;
+}
+.tile__note-count svg { width: 12px; height: 12px; }
+.tile__note:hover .tile__note-count { color: var(--text); }
+/* No note yet: an invitation, quieter than a note, that only speaks up on hover */
+.tile__note.is-empty { color: var(--muted-2); }
+.tile__note.is-empty:hover { color: var(--muted); }
+.tile__note-ghost { flex-shrink: 0; width: 16px; height: 16px; margin-top: 1px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--border-strong); }
+
 /* Caption below the tile on touch devices (no hover) */
 .tile__caption { display: none; }
 @media (hover: none) {

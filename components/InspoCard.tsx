@@ -1,7 +1,7 @@
 "use client";
 
 import { proxiedSrc } from "@/lib/proxied-src";
-import { hueFor } from "./CommentsPanel";
+import { hueFor, Avatar } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags } from "@/types/inspo";
@@ -38,6 +38,8 @@ interface InspoCardProps {
   designCover?: string;   // 720x450 cover generated with the DESIGN.md
   designScroll?: string;  // long strip that scrolls on hover
   commentCount?: number;  // replies in the thread (not counting the original note)
+  /** What whoever saved it highlighted (the note), or failing that the first reply: shown under the tile */
+  caption?: { name: string; image: string | null; body: string } | null;
   onComments?: () => void;
   onDelete?: () => Promise<void>; // remove the card from the workspace
 }
@@ -73,7 +75,7 @@ const IconInfo = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, onComments, onDelete }: InspoCardProps) {
+export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, caption, onComments, onDelete }: InspoCardProps) {
   const { t } = useT();
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
@@ -332,7 +334,6 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           <div className="tile__overlay">
             <div className="display tile__title">{item.name}</div>
             {meta}
-            {item.note && <p className="tile__comment">{item.note}</p>}
             {commentCount > 0 && (
               <span className="tile__replies">{IconComment}{t.card.replies(commentCount)}</span>
             )}
@@ -421,6 +422,21 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             onClick={(e) => e.stopPropagation()} onChange={handleFileChange} />
         </div>
       </article>
+
+      {/* The root of the thread, under the tile: why this site is here, in the words of whoever saved it.
+          The typographic poster already carries the note, so it gets nothing. */}
+      {!isError && onComments && (caption ? (
+        <button type="button" className="tile__note" onClick={onComments} title={t.card.seeComments}>
+          <Avatar name={caption.name} image={caption.image} size={16} />
+          <span className="tile__note-text"><b className="tile__note-who">{caption.name}</b> {caption.body}</span>
+          {commentCount > 0 && <span className="tile__note-count" aria-label={t.card.replies(commentCount)}>{IconComment}{commentCount}</span>}
+        </button>
+      ) : (
+        <button type="button" className="tile__note is-empty" onClick={onComments}>
+          <span className="tile__note-ghost" aria-hidden />
+          <span className="tile__note-text">{t.card.addFirstNote}</span>
+        </button>
+      ))}
 
       {/* Touch devices: caption under the tile since there is no hover */}
       <div className="tile__caption">

@@ -1,6 +1,7 @@
 // The extension popup. Two views: "connect" (no key) and "tab" (save the current tab).
 // All the name, collection and tag logic lives on the server: this only sends the
-// address, the title and a screenshot of what's visible (see app/api/ext/v1/items/route.ts).
+// address, the title, a screenshot of what's visible and the note of what caught the eye
+// (see app/api/ext/v1/items/route.ts).
 
 const DEFAULT_BASE = "https://criterio.design";
 const API = "/api/ext/v1";
@@ -35,6 +36,7 @@ const api = async (path, init = {}) => {
 async function load() {
   document.documentElement.lang = chrome.i18n.getUILanguage();
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+  for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = t(el.dataset.i18nPlaceholder);
   const s = await chrome.storage.local.get(["key", "base", "workspace", "workspaces", "user"]);
   state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
   if (!state.key) { setView("connect"); return; }
@@ -83,6 +85,7 @@ async function loadTab() {
   if (cur?.favIconUrl && !/^chrome/.test(t.favIconUrl)) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; $("tab-fav-fallback").setAttribute("hidden", ""); }
   const saveBtn = $("btn-save"); saveBtn.hidden = false; saveBtn.disabled = !ok; saveBtn.classList.remove("is-busy"); saveBtn.textContent = t("save");
   $("btn-open").hidden = true;
+  $("tab-note").hidden = !ok;
   if (!ok) { note($("tab-msg"), t("onlyHttp"), null); return; }
   note($("tab-msg"), "");
   showShot(await capture());
@@ -95,6 +98,7 @@ async function loadTab() {
 function already(item) {
   note($("tab-msg"), item?.addedBy ? t("alreadySavedBy", [ws(), item.addedBy]) : t("alreadySaved", [ws()]), "ok");
   $("btn-save").hidden = true;
+  $("tab-note").hidden = true;
   showOpen(item);
 }
 
@@ -123,10 +127,12 @@ async function save() {
   note($("tab-msg"), "");
   try {
     const screenshot = shot || (await capture());
-    const r = await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot }) });
+    const note = $("tab-note").value.trim();
+    const r = await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot, note }) });
     if (r.existed) { already(r.item); return; }
     note($("tab-msg"), t("savedIn", [ws()]), "ok");
     btn.hidden = true;
+    $("tab-note").hidden = true;
     showOpen(r.item);
   } catch (e) {
     note($("tab-msg"), e.message, "error");
@@ -163,6 +169,8 @@ $("btn-paste").addEventListener("click", async () => {
 });
 
 $("btn-save").addEventListener("click", save);
+// ⌘/Ctrl+Enter in the note saves, as in the app's comment box
+$("tab-note").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !$("btn-save").disabled) save(); });
 $("btn-disconnect").addEventListener("click", () => disconnect(true));
 
 // If the key arrives while the popup is open (connect tab), it refreshes itself

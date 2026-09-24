@@ -6,6 +6,7 @@
   "haveKey": { "message": "Ya tengo una llave" },
   "useKey": { "message": "Usar esta llave" },
   "save": { "message": "Guardar" },
+  "noteHint": { "message": "¿Qué te ha llamado la atención? Un sonido, una transición, el menú… (opcional)" },
   "saving": { "message": "Guardando…" },
   "viewOn": { "message": "Ver en criterio.design" },
   "disconnect": { "message": "Desconectar" },

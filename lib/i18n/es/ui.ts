@@ -189,7 +189,7 @@ export const ui: typeof EnUi = {
   add: {
     title: "Nueva inspo",
     urlHint: "El nombre, la captura y las etiquetas se sacan solos.",
-    whatYouLiked: "¿Qué te ha gustado? (opcional)",
+    whatYouLiked: "¿Qué te ha llamado la atención? (opcional)",
     collection: "Colección",
     notUrl: "Eso no parece una URL",
     alreadyInLibrary: "Esa URL ya está en tu librería",
@@ -235,6 +235,7 @@ export const ui: typeof EnUi = {
     removing: "Quitando\u2026",
     confirmRemove: "¿Quitar de criterio.design?",
     confirmDelete: "Confirmar borrado",
+    addFirstNote: "Añade la primera nota",
   },
   theme: {
     system: "Sistema",

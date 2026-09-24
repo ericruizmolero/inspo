@@ -237,6 +237,7 @@ export const ui = {
     removing: "Removing\u2026",
     confirmRemove: "Remove from criterio.design?",
     confirmDelete: "Confirm removal",
+    addFirstNote: "Add the first note",
   },
   theme: {
     system: "System",

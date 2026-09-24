@@ -8,7 +8,7 @@ import { useState, useMemo, useEffect, useRef, useCallback, memo, type RefObject
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
-import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
+import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment, InspoComment } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
 import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView, IslandPill } from "./Sidebar";
@@ -1065,7 +1065,7 @@ export default function InspoClient({
           <Grid
             gridRef={gridRef} layout={layout} tagMap={tagMap}
             aiScores={ai ? aiScores : null} aiReasons={ai ? aiReasons : null}
-            commentMap={commentMap} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
+            commentMap={commentMap} authorImages={authorImages} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
             actions={gridActions}
           />
         )}
@@ -1086,13 +1086,14 @@ interface GridActions {
 interface GridSlot { item: InspoItem; c: number; y: number; k: number }
 interface GridLayout { n: number; slots: GridSlot[]; height: string }
 
-const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, thumbMap, designMdJobs, designMdIndex, actions }: {
+const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, actions }: {
   gridRef: RefObject<HTMLElement | null>;
   layout: GridLayout;
   tagMap: TagMap;
   aiScores: Record<string, number> | null | undefined;
   aiReasons: Record<string, string> | null | undefined;
   commentMap: CommentMap;
+  authorImages: Record<string, string>;
   thumbMap: ThumbnailMap;
   designMdJobs: Record<string, DesignMdState>;
   designMdIndex: Record<string, { coverUrl?: string; scrollUrl?: string }>;
@@ -1109,6 +1110,8 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
               score={aiScores ? aiScores[item.web] : undefined}
               reason={aiScores ? aiReasons?.[item.web] : undefined}
               commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
+              firstComment={item.id ? commentMap[item.id]?.find((c) => c.body.trim()) : undefined}
+              authorImage={authorImages[item.addedBy]}
               manualThumbnail={thumbMap[item.web]}
               designMdLoading={designMdJobs[item.web]?.status === "loading"}
               designMd={designMdIndex[item.web]}
@@ -1123,12 +1126,17 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
 
 /** One card with its handlers bound. Memoised on its own data, so a new layout (a sidebar toggle, a new
  *  measurement) only moves the slot div around it and leaves the 125 card trees alone. */
-const Card = memo(function Card({ item, tags, score, reason, commentCount, manualThumbnail, designMdLoading, designMd, actions }: {
+const Card = memo(function Card({ item, tags, score, reason, commentCount, firstComment, authorImage, manualThumbnail, designMdLoading, designMd, actions }: {
   item: InspoItem; tags: InspoTags | undefined; score: number | undefined; reason: string | undefined; commentCount: number;
+  firstComment: InspoComment | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: { coverUrl?: string; scrollUrl?: string } | undefined;
   actions: RefObject<GridActions>;
 }) {
   const act = actions.current;
+  // Under the tile: the note of whoever saved it; with no note, the first reply with text
+  const caption = item.note.trim()
+    ? { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
+    : firstComment ? { name: firstComment.authorName, image: firstComment.authorImage, body: firstComment.body.trim() } : null;
   return (
     <InspoCard
       item={item}
@@ -1136,6 +1144,7 @@ const Card = memo(function Card({ item, tags, score, reason, commentCount, manua
       score={score}
       reason={reason}
       commentCount={commentCount}
+      caption={caption}
       onComments={item.id ? () => act.setCommentsItemId(item.id!) : undefined}
       onDelete={item.id ? () => act.deleteItem(item) : undefined}
       manualThumbnail={manualThumbnail}

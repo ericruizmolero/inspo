@@ -6,6 +6,7 @@
   "haveKey": { "message": "I already have a key" },
   "useKey": { "message": "Use this key" },
   "save": { "message": "Save" },
+  "noteHint": { "message": "What caught your eye? A sound, a transition, the nav… (optional)" },
   "saving": { "message": "Saving…" },
   "viewOn": { "message": "View on criterio.design" },
   "disconnect": { "message": "Disconnect" },

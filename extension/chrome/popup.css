@@ -108,6 +108,9 @@ h1, p { margin: 0; }
 }
 .input::placeholder { color: var(--muted); }
 .input:focus { border-color: var(--border-strong); background: var(--surface-2); }
+/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library) */
+.input--note { height: auto; min-height: 58px; padding: 8px 12px; resize: none; font: inherit; font-size: 13px; line-height: 1.4; }
+.input--note[hidden] { display: none; }
 
 /* "I already have a key": quiet, folded away under the card */
 .paste { }

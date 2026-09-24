@@ -25,11 +25,11 @@ function fileFromDataUrl(dataUrl: string | undefined): File | null {
   return new File([buf], `extension.${ext}`, { type: m[1] });
 }
 
-// POST { url, title?, screenshot? } → { ok, item, existed }
+// POST { url, title?, screenshot?, note? } → { ok, item, existed }
 export async function POST(req: NextRequest) {
   const ctx = await requireExtCtx(req);
   if (ctx instanceof Response) return ctx;
-  const body = (await req.json().catch(() => ({}))) as { url?: string; title?: string; screenshot?: string };
+  const body = (await req.json().catch(() => ({}))) as { url?: string; title?: string; screenshot?: string; note?: string };
   const web = normalizeWebUrl(body.url ?? "");
   if (!web) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const item = await addItem(ctx.workspace.id, {
-      name, web, type: typeFromUrl(web),
+      name, web, type: typeFromUrl(web), note: typeof body.note === "string" ? body.note.slice(0, 500) : "",
       author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
     });
 
