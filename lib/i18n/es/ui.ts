@@ -143,7 +143,7 @@ export const ui: typeof EnUi = {
   sidebar: {
     addReference: "Añadir referencia",
     discover: "Descubrir",
-    directory: "Directorio",
+    directory: "Ver directorio",
     shuffle: "Ver otras",
     shuffleHint: (n: number): string => `Otras ${n} webs del directorio`,
     team: "Equipo",
@@ -342,13 +342,8 @@ export const ui: typeof EnUi = {
     whyLoading: "Conectando lo que dijo el equipo con lo medido\u2026",
     whyEmpty: "Nadie ha dicho aún qué le llamó la atención de esta web. La primera nota o comentario aparece aquí conectado con la spec.",
     whyNothingConcrete: "Lo que se ha escrito no señala nada concreto de la web todavía.",
-    whyStatus: { measured: "medido", seen: "visto en la captura", unverifiable: "no verificable" },
     whyFailed: "No se ha podido conectar la nota con la spec",
-    whyProbe: "Sondeo en la web",
-    whyProbeLine: (captures: number, hovered: number, audio: number): string => {
-      const parts = [captures ? `${captures} ${captures === 1 ? "sección capturada" : "secciones capturadas"}` : "", hovered ? `hover en ${hovered} ${hovered === 1 ? "elemento" : "elementos"}` : "", hovered ? (audio ? `${audio} ${audio === 1 ? "evento" : "eventos"} de audio` : "sin audio al pasar el ratón") : ""].filter(Boolean);
-      return parts.length ? `Un navegador ha visitado la web: ${parts.join(", ")}.` : "";
-    },
+    whyUnverifiable: "No se puede comprobar desde los estilos ni una captura.",
     colorGroups: { brand: "Marca", accent: "Acento", semantic: "Semánticos", neutral: "Neutros" },
     fontRoles: { display: "display", body: "cuerpo", mono: "mono", ui: "interfaz" },
     density: { compact: "compacta", comfortable: "cómoda", airy: "aireada" },

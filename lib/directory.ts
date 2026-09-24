@@ -220,6 +220,34 @@ export function siteSlug(url: string): string {
   return siteHost(url).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 }
 
+// The handful worth a row in the sidebar, under "Directory": the galleries we open most.
+// Hand-picked and in this order (Recent.design first); one leaving the directory just disappears.
+const SIDEBAR_PICK_URLS = [
+  "https://recent.design",
+  "https://curated.design",
+  "https://goatedui.dev",
+  "https://landing.love",
+  "https://mobbin.com",
+  "https://supahero.io",
+  "https://styles.refero.design",
+];
+const ALL_SITES = DIRECTORY.flatMap((g) => g.items);
+export const SIDEBAR_PICKS: DirectorySite[] = SIDEBAR_PICK_URLS
+  .map((u) => ALL_SITES.find((r) => r.url === u))
+  .filter((r): r is DirectorySite => !!r);
+
+// "Shuffle" draws from the places to look, not from the tools: models, agents and dev tools stay out.
+const SHUFFLE_POOL = DIRECTORY
+  .filter((g) => !["development", "models", "agents"].includes(g.key))
+  .flatMap((g) => g.items);
+
+/** Another handful for the sidebar, none of them currently shown. */
+export function shuffleSidebarPicks(current: DirectorySite[], n = SIDEBAR_PICKS.length): DirectorySite[] {
+  const pool = SHUFFLE_POOL.filter((r) => !current.some((c) => c.url === r.url));
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  return pool.slice(0, n);
+}
+
 export function siteShot(url: string): string {
   return `/directory/${siteSlug(url)}.jpg`;
 }

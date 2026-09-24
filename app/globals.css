@@ -376,17 +376,42 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* Team rows: a round 18px avatar in the icon slot, initials when there is no photo */
 .nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
 /* Directory picks: plain rows, no logo (too many favicons are dark on transparent). On hover the row
-   explains the site with the same label the card icons use (data-tip, further down). */
+   itself becomes a card: it takes the surface and a hairline, and grows in flow (grid rows, no overlay)
+   to show the site's screenshot and its description under the name. The rows below slide down.
+   It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
+   ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
+   A short wait before opening (--pick-wait) keeps a sweep down the list from opening every row. */
+.nav-item--pick-row {
+  --pick-ease: cubic-bezier(0.65, 0, 0.35, 1);
+  --pick-time: 0.4s;
+  --pick-wait: 0.1s;
+  display: grid; grid-template-rows: auto 0fr; border-radius: 8px;
+  background: transparent; box-shadow: inset 0 0 0 1px transparent;
+  transition: grid-template-rows var(--pick-time) var(--pick-ease), background var(--pick-time) var(--pick-ease), box-shadow var(--pick-time) var(--pick-ease);
+}
+.nav-item--pick-row:hover, .nav-item--pick-row:focus-within {
+  grid-template-rows: auto 1fr; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  transition-delay: var(--pick-wait);
+}
+/* The card frame is the hover state now: the name row stays flat inside it */
+.nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
+.nav-item__card { min-height: 0; overflow: hidden; }
+/* The body only fades, on the same curve and clock as the fold: the clip does the movement, like an
+   accordion panel. Its fade sits in the first half of the clock, so it is fully there before the fold
+   settles and gone before the fold closes; the ease-in-out makes the two read as one motion. */
+.nav-item__card-inner { padding: 0 6px 6px; opacity: 0; transition: opacity calc(var(--pick-time) / 2) var(--pick-ease); }
+.nav-item--pick-row:hover .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner {
+  opacity: 1; transition-delay: var(--pick-wait);
+}
+.nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+.nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.nav-item__card p { margin: 0; padding: 7px 2px 2px; font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted); }
 /* "Shuffle" deals the new rows in, one by one: each drops in from a few px up with a little blur,
    45ms apart (the island's own language); only after a shuffle, the first paint stays still */
 .nav-item--pick-row.is-dealt {
-  /* `backwards`, not `both`: once dealt, the row must drop the filter/transform, or it becomes a
-     stacking context and the next row paints over this one's description label */
   animation: pick-deal 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   animation-delay: calc(var(--i, 0) * 45ms);
 }
-/* The hovered row rises above its sisters (and the scroll fades) so its label is never covered */
-.nav-item--pick-row:hover, .nav-item--pick-row:focus-within { z-index: 4; }
 @keyframes pick-deal {
   from { opacity: 0; transform: translateY(-6px); filter: blur(4px); }
   to { opacity: 1; transform: none; filter: blur(0); }
@@ -396,6 +421,8 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 @keyframes pick-flip { to { transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) {
   .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
+  .nav-item--pick-row, .nav-item--pick-row:hover, .nav-item--pick-row:focus-within,
+  .nav-item__card-inner, .nav-item--pick-row:hover .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner { transition: none; }
 }
 /* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
 .nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
@@ -657,8 +684,8 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .tile__action:hover { background: rgba(255,255,255,0.14); color: #fff; }
 /* Custom help label under each button: shows instantly, right-aligned so it does not
    overflow the card (the bar lives in the top right corner). */
-.tile__action, .nav-item--pick { position: relative; }
-.tile__action[data-tip]::after, .nav-item--pick[data-tip]::after {
+.tile__action { position: relative; }
+.tile__action[data-tip]::after {
   content: attr(data-tip);
   position: absolute; top: calc(100% + 9px); right: 0; z-index: 3;
   padding: 6px 9px; border-radius: 7px; white-space: nowrap;
@@ -669,11 +696,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
   opacity: 0; transform: translateY(-3px); pointer-events: none;
   transition: opacity 0.15s, transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.tile__action:hover::after, .tile__action:focus-visible::after,
-.nav-item--pick:hover::after, .nav-item--pick:focus-visible::after { opacity: 1; transform: none; transition-delay: 0.12s; }
-/* In the sidebar the label hangs under the row, starts at the name and wraps: the column is narrow */
-.nav-item--pick { overflow: visible; }
-.nav-item--pick[data-tip]::after { top: calc(100% + 2px); right: auto; left: 32px; max-width: 200px; white-space: normal; line-height: 1.35; }
+.tile__action:hover::after, .tile__action:focus-visible::after { opacity: 1; transform: none; transition-delay: 0.12s; }
 .tile__action--md.is-ready[data-tip]::after { color: rgba(255,255,255,0.92); }
 .tile__action:active { background: rgba(255,255,255,0.2); }
 .tile__action--danger:hover { background: var(--danger); color: #fff; }
@@ -1136,7 +1159,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 @keyframes dm-scroll { 0%, 6% { transform: translateY(0); } 94%, 100% { transform: translateY(var(--dm-scroll, 0)); } }
 
 /* Palette strip */
-.dm-strip { display: flex; height: 56px; margin-top: 48px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-strong); }
+.dm-strip { display: flex; height: 56px; margin: 0 0 28px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border-strong); }
 .dm-strip__seg { flex: 1; position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; transition: flex 0.25s cubic-bezier(0.2,0.8,0.2,1); }
 .dm-strip__seg span { font-variant-numeric: tabular-nums; font-size: 11px; opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
 .dm-strip__seg:hover { flex: 2.4; } .dm-strip__seg:hover span { opacity: 1; }
@@ -1183,29 +1206,27 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-scale__family { font-size: 11px; color: var(--muted-2); }
 .dm-scale__sample { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Why it's here (v2): the team's words on the left, the verdict on the right: tag, value chips, one line */
+/* Why it's here (v4): the capture of the very section first, full width; beneath it, as a caption,
+   the team's words on the left and the detail on the right. Its own story: the palette belongs to Color. */
+.dm-why { padding-bottom: 40px; border-bottom: 1px solid var(--border); }
 .dm-why__note { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); max-width: 60ch; }
-.dm-why__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.dm-why__item { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 40px; padding: 22px 0; border-top: 1px solid var(--border); }
-.dm-why__item:first-child { border-top: 0; padding-top: 0; }
-.dm-why__item:last-child { padding-bottom: 0; }
-.dm-why__quote { margin: 0; }
-.dm-why__quote p { margin: 0; font-size: 17px; line-height: 1.4; letter-spacing: -0.01em; color: var(--text); text-wrap: pretty; }
-.dm-why__quote footer { margin-top: 8px; font-size: 12px; color: var(--muted); }
-.dm-why__body { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
-.dm-why__line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--text-2); }
+.dm-why__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 36px; }
+.dm-why__item { display: flex; flex-direction: column; gap: 18px; }
+.dm-why__shots { display: flex; flex-wrap: wrap; gap: 10px; }
+.dm-why__shot { display: block; flex: 1 1 480px; min-width: 0; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.dm-why__shot img { display: block; width: 100%; height: auto; max-height: 560px; object-fit: cover; object-position: top; }
+/* Quote at the left edge, detail at the right edge, the space between them is the layout */
+.dm-why__caption { display: flex; justify-content: space-between; align-items: flex-start; gap: 48px; }
+.dm-why__quote { margin: 0; flex: 0 1 44ch; min-width: 0; }
+.dm-why__quote p { margin: 0; font-size: 19px; line-height: 1.35; letter-spacing: -0.012em; color: var(--text); text-wrap: pretty; }
+.dm-why__quote footer { margin-top: 6px; font-size: 12px; color: var(--muted); }
+.dm-why__body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; flex: 0 1 52ch; min-width: 0; padding-top: 3px; }
+.dm-why__where { margin: 0; font-size: 13px; color: var(--text-2); }
 .dm-why__values { display: flex; flex-wrap: wrap; gap: 6px; }
 .dm-why__value { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 1; padding: 6px 8px; border-radius: 6px; background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
-.dm-why__note-text { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-2); max-width: 56ch; }
-.dm-why__shots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; width: 100%; }
-.dm-why__shot { display: block; flex: 1 1 260px; max-width: 100%; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
-.dm-why__shot img { display: block; width: 100%; height: auto; max-height: 360px; object-fit: cover; object-position: top; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.dm-why__shot:hover img { transform: scale(1.02); }
-.dm-why__probe { margin: 18px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
-.dm-why__probe b { font-weight: 500; color: var(--text-2); }
-.dm-why__item.is-measured .dm-why__status { color: var(--text); border-color: var(--text); }
-.dm-why__item.is-unverifiable .dm-why__status { color: var(--muted); border-style: dashed; }
-@media (max-width: 720px) { .dm-why__item { grid-template-columns: 1fr; gap: 14px; } }
+.dm-why__note-text { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.dm-why__note-text--muted { color: var(--muted); }
+@media (max-width: 720px) { .dm-why__caption { flex-direction: column; gap: 10px; } .dm-why__quote, .dm-why__body { flex-basis: auto; } }
 
 /* Tokens */
 .dm-tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
@@ -1263,7 +1284,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
   .dm-hero { grid-template-columns: 1fr; gap: 24px; }
   .dm-hero__text { order: 2; } .dm-frame { order: 1; }
   .dm-shot { flex: none; min-height: 0; aspect-ratio: 16 / 11; }
-  .dm-strip { margin-top: 24px; height: 44px; }
+  .dm-strip { margin-bottom: 20px; height: 44px; }
   .dm-font { grid-template-columns: 1fr; }
   .dm-font__specimen { border-right: none; border-bottom: 1px solid var(--border); min-height: 0; padding: 22px; }
   .dm-font__aa { font-size: 72px; }
@@ -2111,6 +2132,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .legal { display: flex; flex-direction: column; gap: 22px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+
 
 
 

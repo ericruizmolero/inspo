@@ -398,34 +398,34 @@ function WhySection({ state }: { state: WhyState }) {
         <ol className="dm-why__list">
           {why.highlights.map((h, i) => (
             <li key={i} className={`dm-why__item is-${h.status}`}>
-              <blockquote className="dm-why__quote">
-                <p>{h.quote}</p>
-                <footer>{h.author}</footer>
-              </blockquote>
-              <div className="dm-why__body">
-                <div className="dm-why__line">
-                  <span className="dm-tag dm-why__status">{t.designMd.whyStatus[h.status]}</span>
-                  {h.where && <span className="dm-why__where">{h.where}</span>}
+              {/* The thing itself first; the words read as its caption */}
+              {h.shotUrls && h.shotUrls.length > 0 && (
+                <div className="dm-why__shots">
+                  {h.shotUrls.map((u, j) => (
+                    <a key={j} className="dm-why__shot" href={proxiedSrc(u)} target="_blank" rel="noopener noreferrer">
+                      <img src={proxiedSrc(u)} alt="" loading="lazy" decoding="async" />
+                    </a>
+                  ))}
                 </div>
-                {(h.values?.length ?? 0) > 0 && (
-                  <div className="dm-why__values">{h.values.map((v, j) => <code key={j} className="dm-why__value">{v}</code>)}</div>
-                )}
-                {h.note && <p className="dm-why__note-text">{h.note}</p>}
-                {h.shotUrls && h.shotUrls.length > 0 && (
-                  <div className="dm-why__shots">
-                    {h.shotUrls.map((u, j) => (
-                      <a key={j} className="dm-why__shot" href={proxiedSrc(u)} target="_blank" rel="noopener noreferrer">
-                        <img src={proxiedSrc(u)} alt="" loading="lazy" decoding="async" />
-                      </a>
-                    ))}
-                  </div>
-                )}
+              )}
+              <div className="dm-why__caption">
+                <blockquote className="dm-why__quote">
+                  <p>{h.quote}</p>
+                  <footer>{h.author}</footer>
+                </blockquote>
+                <div className="dm-why__body">
+                  {h.where && <p className="dm-why__where">{h.where}</p>}
+                  {h.values.length > 0 && (
+                    <div className="dm-why__values">{h.values.map((v, j) => <code key={j} className="dm-why__value">{v}</code>)}</div>
+                  )}
+                  {h.status === "unverifiable" && <p className="dm-why__note-text dm-why__note-text--muted">{t.designMd.whyUnverifiable}{h.note ? ` ${h.note}` : ""}</p>}
+                  {h.status !== "unverifiable" && h.note && <p className="dm-why__note-text">{h.note}</p>}
+                </div>
               </div>
             </li>
           ))}
         </ol>
       )}
-      {why?.probe && why.probe.captures !== undefined ? <p className="dm-why__probe">{t.designMd.whyProbeLine(why.probe.captures ?? 0, why.probe.hovered ?? 0, why.probe.audioEvents ?? 0)}</p> : null}
     </section>
   );
 }
@@ -471,11 +471,10 @@ function SpecPanel({ spec, entry, url, date, onRevise, why }: { spec: DesignSpec
 
       <WhySection state={why} />
 
-      <PaletteStrip colors={spec.colors} />
-
       {/* Colors */}
       <section className="dm-section">
         <SectionHead title={t.designMd.sections.color} meta={t.designMd.colorMeta(spec.colors.length)} section="color" onRevise={onRevise} />
+        <PaletteStrip colors={spec.colors} />
         {GROUPS.map((key) => {
           const cs = spec.colors.filter((c) => c.group === key);
           if (!cs.length) return null;

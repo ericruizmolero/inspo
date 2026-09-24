@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
 import type { Term } from "@/lib/taxonomy";
-import { DIRECTORY_TOTAL } from "@/lib/directory";
+import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import { UserAvatar } from "./WorkspaceMenu";
 import { Button } from "@/components/ui/button";
@@ -111,7 +111,37 @@ const I = {
       <circle cx="8" cy="8" r="6" /><path d="M10.5 5.5l-1.6 4-4 1.6 1.6-4z" />
     </svg>
   ),
+  external: (
+    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10l6-6M5 4h5v5" />
+    </svg>
+  ),
+  shuffle: (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4h2.5c1.2 0 2.2.6 2.9 1.6L9.6 10.4c.7 1 1.7 1.6 2.9 1.6H14M2 12h2.5c1.2 0 2.2-.6 2.9-1.6M9.6 5.6c.7-1 1.7-1.6 2.9-1.6H14" />
+      <path d="M12.5 2.5L14 4l-1.5 1.5M12.5 10.5L14 12l-1.5 1.5" />
+    </svg>
+  ),
 };
+
+/** The body of a directory pick's card, folded under the name until the row is hovered: the site's
+ *  screenshot (public/directory), then its description. If the screenshot never loads, text only.
+ *  The outer div is the grid track that folds; the padding lives inside so it folds to nothing. */
+function PickCard({ url, desc }: { url: string; desc: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="nav-item__card" aria-hidden>
+      <div className="nav-item__card-inner">
+        {!failed && (
+          <span className="nav-item__card-shot">
+            <img src={siteShot(url)} alt="" decoding="async" onError={() => setFailed(true)} />
+          </span>
+        )}
+        <p>{desc}</p>
+      </div>
+    </div>
+  );
+}
 
 const TYPE_ICON: Record<InspoItem["type"], React.ReactNode> = {
   inspiration: I.spark, videos: I.play, ideas: I.bulb, documentaries: I.film,
@@ -251,6 +281,11 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
 }) {
   const { t } = useT();
   const pick = (fn: () => void) => () => { onPick?.(); fn(); };
+  // The hand-picked seven first; "Shuffle" swaps them for seven others from the directory.
+  // `round` is part of each row's key, so every shuffle remounts the rows and replays the stagger.
+  const [picks, setPicks] = useState<DirectorySite[]>(SIDEBAR_PICKS);
+  const [round, setRound] = useState(0);
+  const shuffle = () => { setPicks((cur) => shuffleSidebarPicks(cur)); setRound((n) => n + 1); };
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
   return (
     <>
@@ -311,6 +346,29 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
             <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
             <SidebarMenu>
               <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={pick(onDirectory)} />
+              {/* The galleries we open most, straight from the sidebar: each row is an external link */}
+              {picks.map((r, i) => (
+                <SidebarMenuItem key={`${round}-${r.url}`} className={`nav-item--pick-row${round ? " is-dealt" : ""}`} style={{ "--i": i } as React.CSSProperties}>
+                  <SidebarMenuButton
+                    className="nav-item nav-item--pick"
+                    render={<a href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.()} />}
+                  >
+                    <span className="truncate">{r.name}</span>
+                  </SidebarMenuButton>
+                  {/* Bare outward arrow, flush right where the counts sit (same badge slot), shown on hover */}
+                  <SidebarMenuBadge className="nav-item__ext" aria-hidden>{I.external}</SidebarMenuBadge>
+                  {/* Under the name, in flow: screenshot plus what the site is (the row frames both as a card on hover) */}
+                  <PickCard url={r.url} desc={t.directory.items[r.url]} />
+                </SidebarMenuItem>
+              ))}
+              {/* Stays open: shuffling is browsing, not a choice (no onPick) */}
+              <SidebarMenuItem>
+                <SidebarMenuButton className="nav-item nav-item--quiet nav-item--shuffle" onClick={shuffle} title={t.sidebar.shuffleHint(picks.length)}>
+                  {/* The icon flips once per shuffle: keyed on the round so the animation restarts every time */}
+                  <span className={`nav-item__icon${round ? " is-spun" : ""}`} key={round}>{I.shuffle}</span>
+                  <span>{t.sidebar.shuffle}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </FadeScroll>
