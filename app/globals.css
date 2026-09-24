@@ -827,6 +827,10 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 }
 .tile__note-who { font-weight: 500; color: var(--text-2); }
 .tile__note:hover .tile__note-who { color: var(--text); }
+/* Several voices in the thread: overlapping circles, each cut out of the next by a ring of page background */
+.tile__note-stack { flex-shrink: 0; display: inline-flex; margin-top: 1px; }
+.tile__note-stack .cm-avatar { margin-top: 0; box-shadow: 0 0 0 1.5px var(--bg); }
+.tile__note-stack .cm-avatar + .cm-avatar { margin-left: -5px; }
 /* Replies in the thread: the activity shows at the end of the line, without opening anything */
 .tile__note-count {
   flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; margin-left: auto; margin-top: 2px;

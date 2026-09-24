@@ -1110,7 +1110,7 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
               score={aiScores ? aiScores[item.web] : undefined}
               reason={aiScores ? aiReasons?.[item.web] : undefined}
               commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
-              firstComment={item.id ? commentMap[item.id]?.find((c) => c.body.trim()) : undefined}
+              comments={item.id ? commentMap[item.id] : undefined}
               authorImage={authorImages[item.addedBy]}
               manualThumbnail={thumbMap[item.web]}
               designMdLoading={designMdJobs[item.web]?.status === "loading"}
@@ -1126,17 +1126,30 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
 
 /** One card with its handlers bound. Memoised on its own data, so a new layout (a sidebar toggle, a new
  *  measurement) only moves the slot div around it and leaves the 125 card trees alone. */
-const Card = memo(function Card({ item, tags, score, reason, commentCount, firstComment, authorImage, manualThumbnail, designMdLoading, designMd, actions }: {
+const Card = memo(function Card({ item, tags, score, reason, commentCount, comments, authorImage, manualThumbnail, designMdLoading, designMd, actions }: {
   item: InspoItem; tags: InspoTags | undefined; score: number | undefined; reason: string | undefined; commentCount: number;
-  firstComment: InspoComment | undefined; authorImage: string | undefined;
+  comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: { coverUrl?: string; scrollUrl?: string } | undefined;
   actions: RefObject<GridActions>;
 }) {
   const act = actions.current;
-  // Under the tile: the note of whoever saved it; with no note, the first reply with text
-  const caption = item.note.trim()
-    ? { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
-    : firstComment ? { name: firstComment.authorName, image: firstComment.authorImage, body: firstComment.body.trim() } : null;
+  // Under the tile: the note of whoever saved it; with no note, the first reply with text.
+  // `people` are everyone in the thread (saver first, then each new voice), at most three circles;
+  // `more` counts the replies not already on the line (a lone comment shown as the line is not "1 reply").
+  const caption = useMemo(() => {
+    const firstComment = comments?.find((c) => c.body.trim());
+    const root = item.note.trim()
+      ? { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
+      : firstComment ? { name: firstComment.authorName, image: firstComment.authorImage, body: firstComment.body.trim() } : null;
+    if (!root) return null;
+    const people = [{ name: root.name, image: root.image }];
+    for (const c of comments ?? []) {
+      if (people.length >= 3) break;
+      if (!people.some((p) => p.name === c.authorName)) people.push({ name: c.authorName, image: c.authorImage });
+    }
+    const more = (comments?.length ?? 0) - (item.note.trim() ? 0 : 1);
+    return { ...root, people, more: Math.max(0, more) };
+  }, [item.note, item.addedBy, authorImage, comments]);
   return (
     <InspoCard
       item={item}

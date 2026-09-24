@@ -39,7 +39,7 @@ interface InspoCardProps {
   designScroll?: string;  // long strip that scrolls on hover
   commentCount?: number;  // replies in the thread (not counting the original note)
   /** What whoever saved it highlighted (the note), or failing that the first reply: shown under the tile */
-  caption?: { name: string; image: string | null; body: string } | null;
+  caption?: { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number } | null;
   onComments?: () => void;
   onDelete?: () => Promise<void>; // remove the card from the workspace
 }
@@ -427,9 +427,16 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           The typographic poster already carries the note, so it gets nothing. */}
       {!isError && onComments && (caption ? (
         <button type="button" className="tile__note" onClick={onComments} title={t.card.seeComments}>
-          <Avatar name={caption.name} image={caption.image} size={16} />
+          {caption.people.length > 1 ? (
+            // Several people in the thread: their circles overlap, whoever saved it first
+            <span className="tile__note-stack" aria-hidden>
+              {caption.people.map((p) => <Avatar key={p.name} name={p.name} image={p.image} size={16} />)}
+            </span>
+          ) : (
+            <Avatar name={caption.name} image={caption.image} size={16} />
+          )}
           <span className="tile__note-text"><b className="tile__note-who">{caption.name}</b> {caption.body}</span>
-          {commentCount > 0 && <span className="tile__note-count" aria-label={t.card.replies(commentCount)}>{IconComment}{commentCount}</span>}
+          {caption.more > 0 && <span className="tile__note-count" aria-label={t.card.replies(caption.more)}>{IconComment}{caption.more}</span>}
         </button>
       ) : (
         <button type="button" className="tile__note is-empty" onClick={onComments}>
