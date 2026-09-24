@@ -368,15 +368,20 @@ function useWhy(url: string, ready: boolean, commentCount: number, specStamp: st
   useEffect(() => {
     if (!ready) return;
     const ctrl = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setState((s) => (s.why ? s : { status: "loading" }));
-    fetch(`/api/design-md/why?url=${encodeURIComponent(url)}`, { signal: ctrl.signal })
+    // A stale answer (the thread grew) shows at once while the server rebuilds; a few quiet
+    // refetches pick up the fresh one. Never a spinner over something we can already show.
+    const load = (attempt: number) => fetch(`/api/design-md/why?url=${encodeURIComponent(url)}`, { signal: ctrl.signal })
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
         setState({ status: "ready", why: data.why });
+        if (data.stale && attempt < 4) timer = setTimeout(() => load(attempt + 1), 20000);
       })
-      .catch((e) => { if (!ctrl.signal.aborted) setState({ status: "error", error: e instanceof Error ? e.message : String(e) }); });
-    return () => ctrl.abort();
+      .catch((e) => { if (!ctrl.signal.aborted) setState((s) => (s.why ? s : { status: "error", error: e instanceof Error ? e.message : String(e) })); });
+    load(0);
+    return () => { ctrl.abort(); clearTimeout(timer); };
   }, [url, ready, commentCount, specStamp]);
   return state;
 }

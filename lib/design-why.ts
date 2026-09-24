@@ -83,20 +83,28 @@ export async function buildWhy(input: { spec: DesignSpec; url: string; voices: V
 // (or race, with the loser overwriting the winner's captures). The job outlives the request that
 // started it: a client that leaves (React's double effect in dev, a closed tab) must not abort a
 // build another client is waiting for, so no request signal reaches the probe or the model.
-const inflight = new Map<string, Promise<{ why: DesignWhy; built: BuildResult | null }>>();
+const inflight = new Map<string, Promise<{ why: DesignWhy; built: BuildResult | null; stale: false }>>();
 
-/** Cached answer if the words and the spec have not changed; otherwise builds, stores and returns it. */
+export type WhyResult = { why: DesignWhy; built: BuildResult | null; stale: boolean };
+
+/**
+ * Cached answer if the words and the spec have not changed. Otherwise: with `background` given and an
+ * older answer at hand, that older answer comes back at once (`stale: true`) and the rebuild runs behind
+ * it, so the sheet never waits twice for the same site; with nothing cached, it builds and waits.
+ */
 export function getOrBuildWhy(input: {
   organizationId: string; url: string; voices: Voice[]; specStamp: string; spec: DesignSpec;
   screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; locale?: Locale;
-}): Promise<{ why: DesignWhy; built: BuildResult | null }> {
+  /** Keeps a promise alive after the response (Next's `after`): enables stale-while-rebuild */
+  background?: (job: Promise<unknown>) => void;
+}): Promise<WhyResult> {
   const key = `${input.organizationId}|${input.url}`;
   const running = inflight.get(key);
   if (running) return running;
-  const job = (async () => {
-    const stamp = stampFor(input.voices, input.specStamp, input.locale);
+  const stamp = stampFor(input.voices, input.specStamp, input.locale);
+  const job = (async (): Promise<{ why: DesignWhy; built: BuildResult | null; stale: false }> => {
     const cached = await getWhy(input.organizationId, input.url);
-    if (cached && cached.stamp === stamp) return { why: cached.why, built: null };
+    if (cached && cached.stamp === stamp) return { why: cached.why, built: null, stale: false };
     // A probe that broke (browser down, model hiccup) must not freeze a capture-less answer:
     // the row is saved under a stamp that never matches, so the next open tries again
     let probeFailed = false;
@@ -104,8 +112,14 @@ export function getOrBuildWhy(input: {
     const [screenshot, probed] = await Promise.all([input.screenshot(), probe]);
     const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, locale: input.locale });
     await saveWhy(input.organizationId, input.url, probeFailed ? `${stamp}~retry` : stamp, built.why);
-    return { why: built.why, built };
+    return { why: built.why, built, stale: false };
   })().finally(() => { inflight.delete(key); });
   inflight.set(key, job);
-  return job;
+  if (!input.background) return job;
+  // An older answer is better than a spinner: hand it over and let the job finish behind the response
+  return getWhy(input.organizationId, input.url).then((cached): WhyResult | Promise<WhyResult> => {
+    if (!cached || cached.stamp === stamp) return job;
+    input.background!(job.catch((e) => console.error("design-why background rebuild failed:", input.url, e instanceof Error ? e.message : e)));
+    return { why: cached.why, built: null, stale: true };
+  });
 }

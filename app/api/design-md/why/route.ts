@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { normalizeWebUrl } from "@/lib/url";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
@@ -44,9 +44,10 @@ export async function GET(req: NextRequest) {
 
   try {
     const t0 = Date.now();
-    const { why, built } = await getOrBuildWhy({
+    const { why, built, stale } = await getOrBuildWhy({
       organizationId: ctx.workspace.id, url, voices, specStamp, spec,
       screenshot: () => getDesignScreenshot(url), locale: await getLocale(),
+      background: (job) => after(() => job),
       // The browser goes to look at what the notes point at: captures the sections, hovers, listens
       probe: async () => {
         const report = await probeSite(url, voices);
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
         cacheReadTokens: built.usage.cacheRead, costUsd: built.costUsd, provider: built.provider, requestId: built.requestId, ref: url,
       });
     }
-    return Response.json({ why, cached: !built });
+    return Response.json({ why, cached: !built, stale });
   } catch (err) {
     if (req.signal.aborted) return new Response(null, { status: 499 });
     const msg = err instanceof Error ? err.message : String(err);
