@@ -380,18 +380,17 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    to show the site's screenshot and its description under the name. The rows below slide down.
    It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
    ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
-   A short wait before opening (--pick-wait) keeps a sweep down the list from opening every row. */
+   Which rows are open is decided in the Sidebar (is-open), so a fold never moves what is under the
+   pointer; :focus-within keeps the keyboard path. */
 .nav-item--pick-row {
   --pick-ease: cubic-bezier(0.65, 0, 0.35, 1);
   --pick-time: 0.4s;
-  --pick-wait: 0.1s;
   display: grid; grid-template-rows: auto 0fr; border-radius: 8px;
   background: transparent; box-shadow: inset 0 0 0 1px transparent;
   transition: grid-template-rows var(--pick-time) var(--pick-ease), background var(--pick-time) var(--pick-ease), box-shadow var(--pick-time) var(--pick-ease);
 }
-.nav-item--pick-row:hover, .nav-item--pick-row:focus-within {
+.nav-item--pick-row.is-open, .nav-item--pick-row:focus-within {
   grid-template-rows: auto 1fr; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
-  transition-delay: var(--pick-wait);
 }
 /* The card frame is the hover state now: the name row stays flat inside it */
 .nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
@@ -400,9 +399,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    accordion panel. Its fade sits in the first half of the clock, so it is fully there before the fold
    settles and gone before the fold closes; the ease-in-out makes the two read as one motion. */
 .nav-item__card-inner { padding: 0 6px 6px; opacity: 0; transition: opacity calc(var(--pick-time) / 2) var(--pick-ease); }
-.nav-item--pick-row:hover .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner {
-  opacity: 1; transition-delay: var(--pick-wait);
-}
+.nav-item--pick-row.is-open .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner { opacity: 1; }
 .nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
 .nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .nav-item__card p { margin: 0; padding: 7px 2px 2px; font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted); }
@@ -421,12 +418,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 @keyframes pick-flip { to { transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) {
   .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
-  .nav-item--pick-row, .nav-item--pick-row:hover, .nav-item--pick-row:focus-within,
-  .nav-item__card-inner, .nav-item--pick-row:hover .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner { transition: none; }
+  .nav-item--pick-row, .nav-item__card-inner { transition: none; }
 }
 /* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
 .nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
-.nav-item--pick-row:hover .nav-item__ext, .nav-item--pick-row:focus-within .nav-item__ext { opacity: 1; }
+.nav-item--pick-row.is-open .nav-item__ext, .nav-item--pick-row:focus-within .nav-item__ext { opacity: 1; }
 /* The "invite" row is an affordance, not a destination: muted until hovered */
 .nav-item--quiet { color: var(--muted-2); }
 .nav-item--quiet:hover { color: var(--text); }
@@ -1208,7 +1204,8 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 
 /* Why it's here (v4): the capture of the very section first, full width; beneath it, as a caption,
    the team's words on the left and the detail on the right. Its own story: the palette belongs to Color. */
-.dm-why { padding-bottom: 40px; border-bottom: 1px solid var(--border); }
+/* No bottom rule: the next section brings its own top one, and two hairlines read as a mistake */
+.dm-why { padding-bottom: 0; }
 .dm-why__note { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); max-width: 60ch; }
 .dm-why__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 36px; }
 .dm-why__item { display: flex; flex-direction: column; gap: 18px; }
