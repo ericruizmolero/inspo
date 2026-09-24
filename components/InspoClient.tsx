@@ -4,10 +4,9 @@ import { addInspo, removeInspo, postComment as postCommentAction, removeComment,
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, memo, type RefObject } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
-import { CustomEase } from "gsap/CustomEase";
 import { flushSync } from "react-dom";
 import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
@@ -94,8 +93,11 @@ const SIDEBAR_W = 256;
 const DESKTOP_MIN = 801;
 const RATIOS_KEY = "inspo:card-ratios";
 // Card height/width before measuring (the placeholder is 4:3) and gap between cards.
-/** Cards within a screen of the viewport: the only ones worth measuring and animating. Off-screen ones jump. */
-const nearViewport = (el: Element) => { const r = el.getBoundingClientRect(); return r.bottom > -300 && r.top < window.innerHeight + 300; };
+/** Cards near the viewport: the only ones worth measuring and animating. Off-screen ones jump. */
+const nearViewport = (el: Element, margin = 300) => { const r = el.getBoundingClientRect(); return r.bottom > -margin && r.top < window.innerHeight + margin; };
+/** The curtain: the sidebar's slide and everything that rides with it share this length and curve */
+const CURTAIN_MS = 550;
+const CURTAIN_EASE = "cubic-bezier(0.65, 0, 0.35, 1)";
 const DEFAULT_RATIO = 0.75;
 const GAP_RATIO = 0.06;
 
@@ -608,74 +610,79 @@ export default function InspoClient({
 
   // Collapsible sidebar (desktop only). SidebarProvider saves it in a cookie that the server reads
   const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
-  // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B); the cards follow with GSAP Flip
-  // while the sidebar slides with a CSS transition of the same length and curve
+  // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B). The curtain is transform-only and
+  // runs on the compositor (Web Animations API, not GSAP): the column slides, the whole content block slides
+  // with it, and every card near the viewport flies from its old box to its new one, all on the same curve
+  // and length, in the same frame. Nothing is laid out per frame and a busy main thread cannot stall it.
+  // The first GSAP version (Flip on every card, width transitions) froze WebKit for seconds and started late.
+  const curtain = useRef<{ anims: Animation[]; settle: () => void } | null>(null);
   const setSidebarOpen = (open: boolean) => {
     if (open === !collapsed) return;
-    gsap.registerPlugin(Flip, CustomEase);
-    // The same curve and length as the column's CSS slide, so the cards and the curtain move as one
-    if (!CustomEase.get("curtain")) CustomEase.create("curtain", "0.65,0,0.35,1");
-    // Only what is on screen flies: measuring every card (125 of them, with computed styles) took half a
-    // second in WebKit and the toggle felt frozen. Off-screen cards just jump; nobody sees them.
-    Flip.killFlipsOf(".card-item, [data-flip], .fbar, .topbar__search", true);
-    const targets = Array.from(document.querySelectorAll<HTMLElement>(".card-item, [data-flip]")).filter(nearViewport);
-    // The bar over the grid and the search box move with the curtain too (their width changes, so no scale)
-    const chrome = Array.from(document.querySelectorAll<HTMLElement>(".fbar, .topbar__search"));
-    // PERF-PROBE (temporary)
-    const T0 = performance.now(); let T1 = 0, T2 = 0, T3 = 0;
-    { let last = performance.now(), worst = 0, frames = 0, first = 0; const start = last;
-      const tick = () => { const now = performance.now(); if (!first) first = now - T0; worst = Math.max(worst, now - last); last = now; frames++;
-        if (now - start < 1200) requestAnimationFrame(tick); else console.log(`PERF-PROBE frames=${frames} firstFrame=${first.toFixed(0)}ms worstGap=${worst.toFixed(0)}ms measure=${(T1 - T0).toFixed(0)}ms flushSync=${(T2 - T1).toFixed(0)}ms flipFrom=${(T3 - T2).toFixed(0)}ms`); };
-      requestAnimationFrame(tick); }
-    const state = Flip.getState(targets, { simple: true });
-    const chromeState = Flip.getState(chrome, { simple: true });
-    T1 = performance.now();
     const next = !open;
-    flushSync(() => setCollapsed(next));
-    T2 = performance.now();
-    // The column itself: same tick, same curve, same length as everything else, then CSS takes over
+    // A second toggle mid-flight: land the running curtain first, then start the new one from there
+    if (curtain.current) { for (const a of curtain.current.anims) a.finish(); curtain.current.settle(); }
+    const content = document.querySelector<HTMLElement>(".content");
     const column = document.querySelector<HTMLElement>(".app-sidebar");
-    if (column) gsap.fromTo(column, { xPercent: next ? 0 : -100 }, { xPercent: next ? -100 : 0, duration: 0.55, ease: "curtain", overwrite: true, clearProps: "transform" });
-    // Promoted to their own layers for the flight: without it WebKit re-rasters every scaled tile on every frame
-    gsap.set(targets, { willChange: "transform" });
-    const clearCards = () => gsap.set(targets, { clearProps: "transform,willChange" });
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || !content || !column || window.innerWidth < DESKTOP_MIN) {
+      flushSync(() => setCollapsed(next));
+      return;
+    }
+    // 1. Where everything is now. Cards up to half a screen away count (the reflow can bring them in), at most
+    // 60 of them: every animated card is its own compositor layer, and past a hundred WebKit chokes.
+    const margin = window.innerHeight / 2;
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item, [data-flip]")).filter((el) => nearViewport(el, margin)).slice(0, 60);
+    const before = new Map<HTMLElement, DOMRect>();
+    for (const el of cards) before.set(el, el.getBoundingClientRect());
+    const contentRectBefore = content.getBoundingClientRect();
+    const contentBefore = contentRectBefore.left;
+    // The card nearest the top of the viewport stays put: the scroll follows it into the new layout
+    let anchor: HTMLElement | undefined;
+    for (const el of cards) { const r = before.get(el)!; if (r.bottom > 110 && (!anchor || r.top < before.get(anchor)!.top)) anchor = el; }
+    // 2. The swap: the gap jumps, the content takes its new width, the pill replaces the breadcrumb
+    flushSync(() => setCollapsed(next));
+    if (anchor) { const dy = anchor.getBoundingClientRect().top - before.get(anchor)!.top; if (dy) window.scrollBy({ top: dy, behavior: "instant" }); }
+    // 3. Everything starts from where it was and glides to where it is. All the "after" boxes are read before
+    // any animation exists: once one is created its first keyframe already shows in the rects, and a card
+    // measured through the content block's own shift would cancel it and sit still.
+    const contentRect = content.getBoundingClientRect();
+    const dxContent = contentBefore - contentRect.left;
+    const after = new Map<HTMLElement, DOMRect>();
+    for (const el of cards) after.set(el, el.getBoundingClientRect());
+    const opts: KeyframeAnimationOptions = { duration: CURTAIN_MS, easing: CURTAIN_EASE };
+    // The canvas itself grows or shrinks with the curtain, not in one jump: the content block's width is
+    // animated too (main thread, but cheap: the grid wrapper is pinned to its final width in px, so the
+    // 125 absolutely positioned cards are never laid out again during the flight; only the bars follow).
+    // Its own transform stays a separate, accelerated animation. flex: none so the width is obeyed.
+    const wrap = content.querySelector<HTMLElement>(".masonry-wrap");
+    if (wrap) wrap.style.width = `${contentRect.width}px`;
+    content.style.flex = "none";
+    const anims: Animation[] = [
+      column.animate([{ transform: `translateX(${next ? 0 : -100}%)` }, { transform: `translateX(${next ? -100 : 0}%)` }], opts),
+      content.animate([{ transform: `translateX(${dxContent}px)` }, { transform: "none" }], opts),
+      content.animate([{ width: `${contentRectBefore.width}px` }, { width: `${contentRect.width}px` }], opts),
+    ];
+    for (const el of cards) {
+      const b = before.get(el)!, a = after.get(el)!;
+      if (!a.width || !a.height) continue;
+      const dx = b.left - a.left - dxContent, dy = b.top - a.top, sx = b.width / a.width, sy = b.height / a.height;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.002 && Math.abs(sy - 1) < 0.002) continue;
+      el.style.transformOrigin = "0 0";
+      anims.push(el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: "none" }], opts));
+    }
+    // 4. Landed: release the cards and the canvas
     const settle = () => {
-      clearCards();
-      if (columnsFor(window.innerWidth, next) === numCols) { setColsCollapsed(next); return; }
-      // The column count changes: a second, softer flight for the cards that switch column
-      const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item")).filter(nearViewport);
-      const before = Flip.getState(cards, { simple: true });
-      flushSync(() => setColsCollapsed(next));
-      gsap.set(cards, { willChange: "transform" });
-      const clear = () => gsap.set(cards, { clearProps: "transform,willChange" });
-      Flip.from(before, { targets: cards, duration: 0.4, ease: "power2.inOut", scale: true, absolute: false, onComplete: clear, onInterrupt: clear });
+      if (curtain.current?.anims !== anims) return;
+      curtain.current = null;
+      for (const el of cards) el.style.transformOrigin = "";
+      if (wrap) wrap.style.width = "";
+      content.style.flex = "";
     };
-    Flip.from(state, {
-      targets,
-      duration: 0.55,
-      ease: "curtain",
-      scale: true,
-      absolute: false,
-      onComplete: settle,
-      onInterrupt: settle,
-    });
-    const clearChrome = () => gsap.set(chrome, { clearProps: "transform,width,height" });
-    Flip.from(chromeState, {
-      targets: chrome,
-      duration: 0.55,
-      ease: "curtain",
-      scale: false,
-      absolute: false,
-      onComplete: clearChrome,
-      onInterrupt: clearChrome,
-    });
-    T3 = performance.now();
+    curtain.current = { anims, settle };
+    Promise.all(anims.map((a) => a.finished)).then(settle, () => { /* cancelled: another toggle landed it */ });
   };
 
-  // The column count follows the sidebar only once the curtain has finished: during it every card keeps its
-  // column, so the whole grid moves as one block. If the count then changes, the cards rebalance softly.
-  const [colsCollapsed, setColsCollapsed] = useState(!initialSidebarOpen);
-  const numCols = useColumnCount(colsCollapsed);
+  const numCols = useColumnCount(collapsed);
   // On a phone the same trigger opens the menu sheet, so it says so
   const isMobile = useIsMobile();
   const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
@@ -748,16 +755,25 @@ export default function InspoClient({
     } catch { /* no storage */ }
   }, []);
 
-  const columns = useMemo(() => {
-    const cols: InspoItem[][] = Array.from({ length: numCols }, () => []);
-    const heights = new Array<number>(numCols).fill(0);
+  // Masonry as numbers: each card gets a column, a vertical offset in column widths (the ratios above it)
+  // and its index in the column. CSS turns them into left, top and width with container units, so the grid
+  // reflows with its container on its own, and a card that changes column keeps its DOM node (no remount,
+  // no image reload): the flat list is keyed by item, never by slot.
+  const layout = useMemo<GridLayout>(() => {
+    const y = new Array<number>(numCols).fill(0);
+    const count = new Array<number>(numCols).fill(0);
+    const slots: GridSlot[] = [];
     for (const item of filtered) {
       let c = 0;
-      for (let i = 1; i < numCols; i++) if (heights[i] < heights[c] - 0.001) c = i;
-      cols[c].push(item);
-      heights[c] += (ratiosRef.current[item.web] ?? DEFAULT_RATIO) + GAP_RATIO;
+      for (let i = 1; i < numCols; i++) if (y[i] + count[i] * GAP_RATIO < y[c] + count[c] * GAP_RATIO - 0.001) c = i;
+      slots.push({ item, c, y: y[c], k: count[c] });
+      y[c] += ratiosRef.current[item.web] ?? DEFAULT_RATIO;
+      count[c]++;
     }
-    return cols;
+    // The tallest column decides the height, but which one is tallest depends on the column width in px,
+    // which only CSS knows: max() over all of them
+    const height = `max(${y.map((v, i) => `calc(var(--m-pad-top) + ${v.toFixed(4)} * var(--col) + ${Math.max(0, count[i] - 1)} * var(--m-gap) + var(--m-pad-bottom))`).join(", ")})`;
+    return { n: numCols, slots, height };
     // ratiosVersion forces a recompute when measurements change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, numCols, ratiosVersion]);
@@ -797,8 +813,6 @@ export default function InspoClient({
         const el = e.target as HTMLElement;
         const id = el.dataset.flipId;
         if (!id || el.querySelector(".tile__media.is-loading")) continue;
-        // Off-screen cards are skipped by content-visibility and only have a placeholder size: not a measurement
-        if (typeof el.checkVisibility === "function" && !el.checkVisibility({ contentVisibilityAuto: true })) continue;
         const w = el.clientWidth, h = el.clientHeight;
         if (!w || !h) continue;
         const r = h / w;
@@ -811,7 +825,7 @@ export default function InspoClient({
     });
     grid.querySelectorAll<HTMLElement>(".card-item").forEach((el) => ro.observe(el));
     return () => { ro.disconnect(); window.clearTimeout(timer); };
-  }, [columns]);
+  }, [layout]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -833,7 +847,8 @@ export default function InspoClient({
       duration: isMount.current ? 0.45 : 0.3,
       stagger: isMount.current ? 0.035 : 0.025,
       ease: "power3.out",
-      clearProps: "all",
+      // Only what the tween touched: "all" wipes the inline style, and with it the card's grid position (--c, --y, --k)
+      clearProps: "opacity,transform",
       onComplete: () => {
         entering.current = false;
         if (pendingRelayout.current) relayoutRef.current();
@@ -847,6 +862,10 @@ export default function InspoClient({
   useActivity(area, workspace.id);
 
   runDesignMdRef.current = runDesignMd;
+  // The grid's handlers, behind one stable ref: the grid only re-renders when its data changes, never because
+  // the shell did (collapsing the sidebar used to re-render all 125 cards, 70 ms on the toggle's first frame)
+  const gridActions = useRef<GridActions>(null!);
+  gridActions.current = { setCommentsItemId, deleteItem, handleThumbnailUpload, handleThumbnailRemove, openDesignMd };
 
   return (
     <SidebarProvider open={!collapsed} onOpenChange={setSidebarOpen} className="shell">
@@ -1043,36 +1062,90 @@ export default function InspoClient({
             <Button variant="ghost" size="sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</Button>
           </div>
         ) : (
-          <section ref={gridRef} className="masonry">
-            {columns.map((col, colIdx) => (
-              <div key={colIdx} className="masonry__col">
-                {/* Keyed by the item, not its slot: a card that stays in its column keeps its DOM (and its decoded image) when the columns change */}
-                {col.map((item) => (
-                  <div key={item.web} className="card-item" data-flip-id={item.web}>
-                    <InspoCard
-                      item={item}
-                      tags={tagMap[item.web]}
-                      score={ai && aiScores ? aiScores[item.web] : undefined}
-                      reason={ai && aiScores ? aiReasons?.[item.web] : undefined}
-                      commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
-                      onComments={item.id ? () => setCommentsItemId(item.id!) : undefined}
-                      onDelete={item.id ? () => deleteItem(item) : undefined}
-                      manualThumbnail={thumbMap[item.web]}
-                      onUpload={(file) => { handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
-                      onRemoveThumbnail={() => { handleThumbnailRemove(item.web); return Promise.resolve(); }}
-                      onDesignMd={() => openDesignMd(item)}
-                      designMdLoading={designMdJobs[item.web]?.status === "loading"}
-                      designMdReady={item.web in designMdIndex}
-                      designCover={designMdIndex[item.web]?.coverUrl}
-                      designScroll={designMdIndex[item.web]?.scrollUrl}
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </section>
+          <Grid
+            gridRef={gridRef} layout={layout} tagMap={tagMap}
+            aiScores={ai ? aiScores : null} aiReasons={ai ? aiReasons : null}
+            commentMap={commentMap} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
+            actions={gridActions}
+          />
         )}
       </SidebarInset>
     </SidebarProvider>
   );
 }
+
+interface GridActions {
+  setCommentsItemId: (id: string) => void;
+  deleteItem: (item: InspoItem) => Promise<void>;
+  handleThumbnailUpload: (web: string, file: File) => void;
+  handleThumbnailRemove: (web: string) => void;
+  openDesignMd: (item: InspoItem) => void;
+}
+
+/** The masonry. Memoised: it re-renders on new data (items, tags, comments, covers), not on shell state. */
+interface GridSlot { item: InspoItem; c: number; y: number; k: number }
+interface GridLayout { n: number; slots: GridSlot[]; height: string }
+
+const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, thumbMap, designMdJobs, designMdIndex, actions }: {
+  gridRef: RefObject<HTMLElement | null>;
+  layout: GridLayout;
+  tagMap: TagMap;
+  aiScores: Record<string, number> | null | undefined;
+  aiReasons: Record<string, string> | null | undefined;
+  commentMap: CommentMap;
+  thumbMap: ThumbnailMap;
+  designMdJobs: Record<string, DesignMdState>;
+  designMdIndex: Record<string, { coverUrl?: string; scrollUrl?: string }>;
+  actions: RefObject<GridActions>;
+}) {
+  return (
+    <div className="masonry-wrap">
+      <section ref={gridRef} className="masonry" style={{ "--n": layout.n, height: layout.height } as React.CSSProperties}>
+        {layout.slots.map(({ item, c, y, k }) => (
+          <div key={item.web} className="card-item" data-flip-id={item.web} style={{ "--c": c, "--y": y.toFixed(4), "--k": k } as React.CSSProperties}>
+            <Card
+              item={item}
+              tags={tagMap[item.web]}
+              score={aiScores ? aiScores[item.web] : undefined}
+              reason={aiScores ? aiReasons?.[item.web] : undefined}
+              commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
+              manualThumbnail={thumbMap[item.web]}
+              designMdLoading={designMdJobs[item.web]?.status === "loading"}
+              designMd={designMdIndex[item.web]}
+              actions={actions}
+            />
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+});
+
+/** One card with its handlers bound. Memoised on its own data, so a new layout (a sidebar toggle, a new
+ *  measurement) only moves the slot div around it and leaves the 125 card trees alone. */
+const Card = memo(function Card({ item, tags, score, reason, commentCount, manualThumbnail, designMdLoading, designMd, actions }: {
+  item: InspoItem; tags: InspoTags | undefined; score: number | undefined; reason: string | undefined; commentCount: number;
+  manualThumbnail: string | undefined; designMdLoading: boolean; designMd: { coverUrl?: string; scrollUrl?: string } | undefined;
+  actions: RefObject<GridActions>;
+}) {
+  const act = actions.current;
+  return (
+    <InspoCard
+      item={item}
+      tags={tags}
+      score={score}
+      reason={reason}
+      commentCount={commentCount}
+      onComments={item.id ? () => act.setCommentsItemId(item.id!) : undefined}
+      onDelete={item.id ? () => act.deleteItem(item) : undefined}
+      manualThumbnail={manualThumbnail}
+      onUpload={(file) => { act.handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
+      onRemoveThumbnail={() => { act.handleThumbnailRemove(item.web); return Promise.resolve(); }}
+      onDesignMd={() => act.openDesignMd(item)}
+      designMdLoading={designMdLoading}
+      designMdReady={designMd !== undefined}
+      designCover={designMd?.coverUrl}
+      designScroll={designMd?.scrollUrl}
+    />
+  );
+});
