@@ -157,6 +157,20 @@ export function getDesignMd(url: string): Promise<DesignMdEntry | null> {
   return USE_BLOB ? blobGet(key) : fsGet(key);
 }
 
+/** The full-page screenshot saved with the DESIGN.md (for models that need to look), or null. */
+export async function getDesignScreenshot(url: string): Promise<Buffer | null> {
+  const key = keyFor(url);
+  if (!USE_BLOB) {
+    try { return await fs.readFile(path.join(FS_DIR, `${key}.jpg`)); } catch { return null; }
+  }
+  const entry = await blobGet(key);
+  if (!entry?.screenshotUrl) return null;
+  try {
+    const res = await fetch(entry.screenshotUrl, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` }, cache: "no-store" });
+    return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
+  } catch { return null; }
+}
+
 export function getDesignMdIndex(): Promise<DesignMdIndex> {
   return USE_BLOB ? blobGetIndex() : fsGetIndex();
 }

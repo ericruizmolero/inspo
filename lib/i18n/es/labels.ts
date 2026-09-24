@@ -38,5 +38,6 @@ export const labels: typeof EnLabels = {
     jev_directory: "Búsquedas en el directorio",
     explain: "Explicaciones de búsqueda",
     revise: "Revisiones de DESIGN.md",
+    design_why: "Notas conectadas con el DESIGN.md",
   },
 };

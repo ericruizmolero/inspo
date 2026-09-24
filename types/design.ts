@@ -163,3 +163,44 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
 
   return L.join("\n");
 }
+
+// ─── Why it's here (per workspace) ───────────────────────────────────────────
+// The DESIGN.md says what the site is. This says why it is in this library: the words
+// of whoever saved it and of the thread, connected by a model to what was measured.
+
+export const WhyStatus = z.enum(["measured", "seen", "unverifiable"]);
+
+export const WhyHighlightSchema = z.object({
+  quote: z.string().describe("The person's words, verbatim and in their language, trimmed to the part that names what they liked"),
+  author: z.string().describe("Who said it"),
+  status: WhyStatus.describe("measured: it maps to values in the spec or tokens. seen: visible in the screenshot but not measured. unverifiable: not observable from styles or a screenshot (sound, hover, scroll, feel)."),
+  where: z.string().describe("Which element or area of the page it refers to, 2-8 words in English. Empty if it cannot be located."),
+  evidence: z.string().describe("Only for measured or seen: the concrete values behind it (token names, hex, px, ms, easing, font, weight), one or two sentences in English. Empty when unverifiable."),
+  reproduce: z.string().describe("English. For measured/seen: what an agent must do to reproduce exactly this, one or two sentences citing tokens by name. For unverifiable: what would be needed to verify it (a recording, an interaction capture, the source).")
+});
+
+export const DesignWhySchema = z.object({
+  gist: z.string().describe("One sentence in English: what this team came to this site for, according to their own words. Empty if the notes say nothing concrete."),
+  highlights: z.array(WhyHighlightSchema).describe("One entry per distinct thing the people pointed at, in the order they said it. A comment that repeats an earlier point is merged into it, not repeated. Never add things nobody mentioned."),
+});
+
+export type WhyHighlight = z.infer<typeof WhyHighlightSchema>;
+export type DesignWhy = z.infer<typeof DesignWhySchema> & { model: string; createdAt: string; voices: number };
+
+/** The section appended to the DESIGN.md of this workspace (the global file does not carry it). */
+export function renderWhyMd(why: DesignWhy): string {
+  if (!why.highlights.length) return "";
+  const L: string[] = [];
+  const p = (s = "") => L.push(s);
+  p("## Why it's here");
+  p();
+  if (why.gist) { p(why.gist); p(); }
+  for (const h of why.highlights) {
+    p(`### "${h.quote}" — ${h.author}`);
+    p(`**Status:** ${h.status}${h.where ? ` · **Where:** ${h.where}` : ""}`);
+    if (h.evidence) p(`**Evidence:** ${h.evidence}`);
+    p(`**${h.status === "unverifiable" ? "To verify" : "To reproduce"}:** ${h.reproduce}`);
+    p();
+  }
+  return L.join("\n");
+}

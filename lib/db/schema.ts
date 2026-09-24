@@ -151,6 +151,25 @@ export const designRevision = sqliteTable("design_revision", {
   index("design_revision_org_url_idx").on(t.organizationId, t.url),
 ]);
 
+// ─── Why it's here ──────────────────────────────────────────────────────────
+// The DESIGN.md is global per URL, but the reason a site is in a library is the team's:
+// the note of whoever saved it and the thread. A model connects those words with what
+// was measured, and the result is cached here until the words or the spec change.
+export const designWhy = sqliteTable("design_why", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** Normalized URL (same as the global cache key) */
+  url: text("url").notNull(),
+  /** Fingerprint of the voices and the spec version this answer was built from */
+  stamp: text("stamp").notNull(),
+  model: text("model").notNull(),
+  /** DesignWhy as JSON */
+  whyJson: text("why_json").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, (t) => [
+  uniqueIndex("design_why_org_url_idx").on(t.organizationId, t.url),
+]);
+
 // ─── Comments per inspo ──────────────────────────────────────────────────────
 // Flat thread per item (like a Figma pin thread). The item's original note
 // (comments/subcomments) stays in inspo_item and renders as the first message
@@ -182,7 +201,7 @@ export const aiUsage = sqliteTable("ai_usage", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise */
+  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why */
   action: text("action").notNull(),
   model: text("model").notNull(),
   inputTokens: integer("input_tokens").notNull().default(0),

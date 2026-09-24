@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
-import type { DesignSpec } from "@/types/design";
+import { renderWhyMd, type DesignSpec, type DesignWhy } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { fmtDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
@@ -357,8 +357,69 @@ function Fold({ title, meta, section, onRevise, children }: {
   );
 }
 
+// ─── Why it's here ─────────────────────────────────────────────────────────────
+// The human root of the inspo (the saver's note, the thread) connected to the measured
+// spec by a model. Per workspace and cached server-side; a new comment rebuilds it.
+type WhyState = { status: "loading" | "ready" | "error"; why?: DesignWhy; error?: string };
+
+function useWhy(url: string, ready: boolean, commentCount: number, specStamp: string): WhyState {
+  const [state, setState] = useState<WhyState>({ status: "loading" });
+  useEffect(() => {
+    if (!ready) return;
+    const ctrl = new AbortController();
+    setState((s) => (s.why ? s : { status: "loading" }));
+    fetch(`/api/design-md/why?url=${encodeURIComponent(url)}`, { signal: ctrl.signal })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+        setState({ status: "ready", why: data.why });
+      })
+      .catch((e) => { if (!ctrl.signal.aborted) setState({ status: "error", error: e instanceof Error ? e.message : String(e) }); });
+    return () => ctrl.abort();
+  }, [url, ready, commentCount, specStamp]);
+  return state;
+}
+
+function WhySection({ state }: { state: WhyState }) {
+  const { t } = useT();
+  const why = state.why;
+  return (
+    <section className="dm-section dm-why">
+      <header className="dm-section__head">
+        <h2 className="dm-h">{t.designMd.sections.why}</h2>
+        {why && why.voices > 0 && <span className="dm-section__meta">{t.designMd.whyMeta(why.voices)}</span>}
+      </header>
+      {state.status === "loading" && !why && <p className="dm-why__note"><span className="spinner spinner--sm" /> {t.designMd.whyLoading}</p>}
+      {state.status === "error" && <p className="dm-why__note">{t.designMd.whyFailed}</p>}
+      {why && why.voices === 0 && <p className="dm-why__note">{t.designMd.whyEmpty}</p>}
+      {why && why.voices > 0 && !why.highlights.length && <p className="dm-why__note">{t.designMd.whyNothingConcrete}</p>}
+      {why && why.highlights.length > 0 && (
+        <>
+          {why.gist && <p className="dm-why__gist">{why.gist}</p>}
+          <ol className="dm-why__list">
+            {why.highlights.map((h, i) => (
+              <li key={i} className={`dm-why__item is-${h.status}`}>
+                <blockquote className="dm-why__quote">
+                  <span className="display dm-why__mark" aria-hidden>“</span>
+                  <p>{h.quote}</p>
+                  <footer>{h.author}{h.where && <> · <span className="dm-why__where">{h.where}</span></>}</footer>
+                </blockquote>
+                <div className="dm-why__body">
+                  <span className="dm-tag dm-why__status">{t.designMd.whyStatus[h.status]}</span>
+                  {h.evidence && <p><b>{t.designMd.whyEvidence}</b> {h.evidence}</p>}
+                  <p><b>{h.status === "unverifiable" ? t.designMd.whyVerify : t.designMd.whyReproduce}</b> {h.reproduce}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+    </section>
+  );
+}
+
 // ─── Sheet ────────────────────────────────────────────────────────────────────
-function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn }) {
+function SpecPanel({ spec, entry, url, date, onRevise, why }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn; why: WhyState }) {
   const { locale, t } = useT();
   useGoogleFonts(spec.fonts.map((f) => f.family));
   const [promptCopied, copyPrompt] = useCopy();
@@ -395,6 +456,8 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
         </div>
         {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
       </section>
+
+      <WhySection state={why} />
 
       <PaletteStrip colors={spec.colors} />
 
@@ -545,6 +608,10 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
   const ready = state?.status === "ready" && !!entry;
   const spec = entry?.spec;
   const revisions = entry?.revisions ?? [];
+  // The team's "why": rebuilt when the thread grows or the spec changes (a revision, a regeneration)
+  const why = useWhy(url, ready, commentCount, `${entry?.generatedAt ?? ""}:${revisions[0]?.id ?? ""}`);
+  // This workspace's file: the global DESIGN.md plus its own "Why it's here"
+  const markdown = entry ? (why.why?.highlights.length ? `${entry.markdown}\n${renderWhyMd(why.why)}` : entry.markdown) : "";
 
   // Sends an objection to Claude and updates the entry with the corrected spec
   const revise: ReviseFn = async (section, comment) => {
@@ -580,7 +647,7 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
 
   const download = () => {
     if (!entry) return;
-    const blob = new Blob([entry.markdown], { type: "text/markdown" });
+    const blob = new Blob([markdown], { type: "text/markdown" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md`;
@@ -647,7 +714,7 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
           )}
           <Button variant="ghost" size="sm" onClick={onRegenerate} disabled={!ready}>{t.designMd.regenerate}</Button>
           <Button variant="ghost" size="sm" onClick={download} disabled={!ready}>{t.designMd.download}</Button>
-          <Button variant="primary" size="sm" onClick={() => entry && copy(entry.markdown)} disabled={!ready}>
+          <Button variant="primary" size="sm" onClick={() => entry && copy(markdown)} disabled={!ready}>
             {copied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyMd}</>}
           </Button>
         </div>
@@ -661,14 +728,14 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
               ? <History revisions={revisions} onRevert={revert} busy={reverting} />
               : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>
           ) : activeView === "spec" && spec
-            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} />
+            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} why={why} />
             : (
               <div className="dm-md">
                 <div className="dm-md__head">
                   <span>{name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
-                  <span>{t.designMd.words(entry.markdown.split(/\s+/).length)} · {date}</span>
+                  <span>{t.designMd.words(markdown.split(/\s+/).length)} · {date}</span>
                 </div>
-                <pre className="dm-md__pre">{entry.markdown}</pre>
+                <pre className="dm-md__pre">{markdown}</pre>
               </div>
             )}
         </div>

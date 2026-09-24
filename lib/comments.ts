@@ -47,6 +47,13 @@ export async function listComments(organizationId: string): Promise<CommentMap> 
   return map;
 }
 
+/** The thread of one item, oldest first. */
+export async function listItemComments(organizationId: string, itemId: string): Promise<InspoComment[]> {
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+    .where(and(eq(C.organizationId, organizationId), eq(C.itemId, itemId))).orderBy(asc(C.createdAt));
+  return rows.map(toComment);
+}
+
 export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string; attachments?: unknown }): Promise<InspoComment> {
   const body = input.body.trim();
   const attachments = cleanAttachments(organizationId, input.attachments);

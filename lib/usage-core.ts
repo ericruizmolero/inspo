@@ -4,7 +4,7 @@
 // No text or formatting here: the server sends codes, ISO dates and numbers, and
 // the client translates and formats them in its language (t.labels.action, fmtUsd, fmtDate).
 
-export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "jev_directory" | "explain" | "revise";
+export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "jev_directory" | "explain" | "revise" | "design_why";
 
 
 export interface UsageDay { date: string; usd: number; calls: number }
