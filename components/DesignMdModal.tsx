@@ -414,7 +414,6 @@ function WhySection({ state }: { state: WhyState }) {
                   <footer>{h.author}</footer>
                 </blockquote>
                 <div className="dm-why__body">
-                  {h.where && <p className="dm-why__where">{h.where}</p>}
                   {h.values.length > 0 && (
                     <div className="dm-why__values">{h.values.map((v, j) => <code key={j} className="dm-why__value">{v}</code>)}</div>
                   )}

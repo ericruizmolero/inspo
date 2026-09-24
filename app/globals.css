@@ -1221,10 +1221,9 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-why__quote p { margin: 0; font-size: 19px; line-height: 1.35; letter-spacing: -0.012em; color: var(--text); text-wrap: pretty; }
 .dm-why__quote footer { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .dm-why__body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; flex: 0 1 52ch; min-width: 0; padding-top: 3px; }
-.dm-why__where { margin: 0; font-size: 13px; color: var(--text-2); }
 .dm-why__values { display: flex; flex-wrap: wrap; gap: 6px; }
 .dm-why__value { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 1; padding: 6px 8px; border-radius: 6px; background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
-.dm-why__note-text { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.dm-why__note-text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
 .dm-why__note-text--muted { color: var(--muted); }
 @media (max-width: 720px) { .dm-why__caption { flex-direction: column; gap: 10px; } .dm-why__quote, .dm-why__body { flex-basis: auto; } }
 
