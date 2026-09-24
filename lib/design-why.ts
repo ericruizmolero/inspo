@@ -27,14 +27,14 @@ Rules:
 - One highlight per distinct thing. When a comment repeats or reinforces an earlier point, merge it into that highlight (keep the first quote, name the author who said it first). Do not add things nobody mentioned.
 - A general remark ("the site as a whole", "everything", "nice") is not a highlight: when a sentence mixes a general remark with a concrete one, keep only the concrete part, and never split one sentence into two highlights.
 - Quotes stay verbatim and in the person's language. "note" is read on screen by the team: write it in the language given below. Values are values (hex, px, ms, token names) in any language.
-- Short and dense. "values" are chips of 1-4 words, only real values from the spec (token names as the spec writes them, hex, px, ms, easing, weight). "note" is one instruction of at most 22 words for the designer who will reproduce this: the concrete treatment to take (placement, scale, spacing, tone, timing). It never restates the quote, never praises, never mentions the spec or what is missing. Only when it adds something the capture does not show by itself; otherwise empty.
+- Short and dense. "values" exist only for measured things, and only the values that ARE what the person pointed at (that button's color, that menu's transition, that title's font), as chips of 1-4 words from the spec. Photos, mockups, illustrations, renders and layouts have no values: never decorate them with radii, gaps or counts from elsewhere in the spec. "note" is one instruction of at most 22 words for the designer who will reproduce this: the concrete treatment to take (placement, scale, spacing, tone, timing). It never restates the quote, never praises, never mentions the spec or what is missing. Only when it adds something the capture does not show by itself; otherwise empty.
 - You may also receive a PROBE REPORT: a headless browser visited the page, hovered the elements the notes point at, counted audio events, checked the cursor, watched the scroll and CAPTURED the sections the notes point at (the "captures" list, each with an id and the section's text). Hover and audio observations count as "measured": cite them ("color #111 → #e0afa8 on hover, 200ms", "2 audio events while hovering"). When the probe looked and found nothing (no audio event, no hover change, no matching element), say so plainly in the note and keep the status "unverifiable": absence in the probe is not proof of absence on a real visit.
 - For each highlight, list in "shots" the ids of the captures that show exactly that thing: all of them when several do (a note about mockups gets every mockup captured), in the best order first. A capture is worth more than any description: prefer pointing at it over describing what it shows.
 - A note that says nothing concrete ("cool", "check this", a greeting) produces no highlight. If nothing is concrete, return an empty list and an empty gist.`;
 
 export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 9 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 10 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {
@@ -74,7 +74,8 @@ export async function buildWhy(input: { spec: DesignSpec; url: string; voices: V
   });
   const out = DesignWhySchema.parse(JSON.parse(res.text));
   const urls = input.shotUrls ?? {};
-  const highlights = out.highlights.map((h) => ({ ...h, values: h.values.slice(0, 6), note: h.note.trim(), shots: h.shots.filter((id) => id in urls).slice(0, 8), shotUrls: h.shots.filter((id) => id in urls).slice(0, 8).map((id) => urls[id]) }));
+  // Chips only for measured things: for a photo or a mockup, values from elsewhere in the spec are noise
+  const highlights = out.highlights.map((h) => ({ ...h, values: h.status === "measured" ? h.values.slice(0, 6) : [], note: h.note.trim(), shots: h.shots.filter((id) => id in urls).slice(0, 8), shotUrls: h.shots.filter((id) => id in urls).slice(0, 8).map((id) => urls[id]) }));
   const why: DesignWhy = { highlights, model: res.model, createdAt: new Date().toISOString(), voices: input.voices.length, ...(input.probe ? { probe: { summary: input.probe.summary, ms: input.probe.ms, captures: input.probe.captures.length, hovered: input.probe.targets.reduce((n, t) => n + t.elements.length, 0), audioEvents: input.probe.targets.reduce((n, t) => n + t.elements.reduce((m, e) => m + e.audioEvents, 0), 0) } } : {}) };
   return { why, model: res.model, provider: res.provider, requestId: res.id, costUsd: res.costUsd, usage: res.usage };
 }

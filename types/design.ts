@@ -174,7 +174,7 @@ export const WhyHighlightSchema = z.object({
   quote: z.string().describe("The person's words, verbatim and in their language, trimmed to the part that names what they liked (max 20 words)"),
   author: z.string().describe("Who said it"),
   status: WhyStatus.describe("measured: the spec has values for it. seen: visible in the screenshot but the spec has no numbers for it. unverifiable: not observable from styles or a still image (sound, hover, scroll, feel, speed)."),
-  values: z.array(z.string()).describe("Only measured or seen: the concrete values behind it, as short chips of 1-4 words each, e.g. 'Mono 11px caps', '#ffffff', 'radius 0', 'ease-out 180ms', 'weight 510'. Token names as the spec writes them. Empty when unverifiable."),
+  values: z.array(z.string()).describe("Only when status is measured, and only the values that ARE the thing pointed at (the color of that button, the transition of that menu, the font of that title): short chips of 1-4 words, e.g. 'Mono 11px caps', '#ffffff', 'ease-out 180ms'. A photo, a mockup, an illustration, a render or a layout has no values: empty."),
   note: z.string().describe("One sentence in the reader's language, max 22 words, written for a designer who will reproduce this: the concrete treatment to take from it (placement, scale, spacing, tone, timing), as an instruction. Never restate the quote, never praise, never mention the spec or what is missing. For unverifiable things: what would be needed to check them. Empty when the capture and the values already say it all."),
   shots: z.array(z.string()).describe("Ids of the probe captures (from the PROBE REPORT captures list) that show exactly this thing, all of them when several do. Empty if none shows it, or if there is no probe report."),
 });
