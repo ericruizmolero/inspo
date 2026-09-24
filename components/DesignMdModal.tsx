@@ -405,7 +405,7 @@ function WhySection({ state }: { state: WhyState }) {
             <li key={i} className={`dm-why__item is-${h.status}`}>
               {/* The thing itself first; the words read as its caption */}
               {h.shotUrls && h.shotUrls.length > 0 && (
-                <div className="dm-why__shots">
+                <div className="dm-why__shots" style={{ "--cols": Math.min(3, h.shotUrls.length) } as React.CSSProperties}>
                   {h.shotUrls.map((u, j) => (
                     <a key={j} className="dm-why__shot" href={proxiedSrc(u)} target="_blank" rel="noopener noreferrer">
                       <img src={proxiedSrc(u)} alt="" loading="lazy" decoding="async" />

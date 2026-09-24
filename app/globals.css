@@ -393,18 +393,27 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 /* The card frame is the hover state now: the name row stays flat inside it */
 .nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
-/* The body never moves or fades: it sits where it will end up and the track's clip edge passes over it
-   like a blind (the row's own background, dark or light, is the blind). Pinned to the top of the track,
-   so a row that opens or folds in place keeps its screenshot still. When the row opened "up" (the
-   Sidebar sets is-up: the row above was folding, and this title slid up by the same amount) the body is
-   pinned to the bottom instead: the track's bottom edge is the one that stays put on screen, so the
-   screenshot stays put too and the blind rises. All cards share one height (fixed shot ratio, fixed
-   three-line description), which is what makes the handover exact. */
-.nav-item__card { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
-.nav-item--pick-row.is-up .nav-item__card { justify-content: flex-end; }
+/* The body sits where it will end up, pinned to the top of the track, and the track's clip edge passes
+   over it as the row opens. The screenshot itself never moves: it is covered by a blind, a layer in the
+   card's own surface colour (dark or light) laid over it, which slides down out of the frame once the
+   row has opened, and slides back the moment it folds. All cards share one height (fixed shot ratio,
+   fixed three-line description), which is what makes the hover handover between rows exact. */
+.nav-item__card { min-height: 0; overflow: hidden; }
 .nav-item__card-inner { padding: 0 6px 6px; }
-.nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+.nav-item__card-shot {
+  position: relative; display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden;
+  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
+}
 .nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+/* The blind: covers the shot while closed, starts to slide down once the row is half open, and is back
+   over the picture at once when the row folds (so the fold never shows the picture on the move) */
+.nav-item__card-shot::after {
+  content: ""; position: absolute; inset: 0; background: var(--surface);
+  transform: none; transition: transform var(--pick-time) var(--pick-ease);
+}
+.nav-item--pick-row.is-open .nav-item__card-shot::after, .nav-item--pick-row:focus-within .nav-item__card-shot::after {
+  transform: translateY(101%); transition-delay: calc(var(--pick-time) / 2);
+}
 .nav-item__card p {
   margin: 0; padding: 7px 2px 2px; height: calc(3 * 1.4em + 9px); overflow: hidden;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
@@ -425,7 +434,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 @keyframes pick-flip { to { transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) {
   .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
-  .nav-item--pick-row { transition: none; }
+  .nav-item--pick-row, .nav-item__card-shot::after { transition: none; }
 }
 /* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
 .nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
@@ -1216,9 +1225,9 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-why__note { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); max-width: 60ch; }
 .dm-why__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 36px; }
 .dm-why__item { display: flex; flex-direction: column; gap: 18px; }
-.dm-why__shots { display: flex; flex-wrap: wrap; gap: 10px; }
-/* One capture fills the row; several tile in two or three columns. Never cropped: what was captured is what shows. */
-.dm-why__shot { display: block; flex: 1 1 340px; max-width: 100%; min-width: 0; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+/* Captures of different proportions: a masonry by CSS columns, like the main canvas. Never cropped. */
+.dm-why__shots { column-count: var(--cols, 3); column-gap: 10px; }
+.dm-why__shot { display: block; break-inside: avoid; margin-bottom: 10px; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
 .dm-why__shot img { display: block; width: 100%; height: auto; }
 /* Quote at the left edge, detail at the right edge, the space between them is the layout */
 .dm-why__caption { display: flex; justify-content: space-between; align-items: flex-start; gap: 48px; }
@@ -1230,7 +1239,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-why__value { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 1; padding: 6px 8px; border-radius: 6px; background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
 .dm-why__note-text { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
 .dm-why__note-text--muted { color: var(--muted); }
-@media (max-width: 720px) { .dm-why__caption { flex-direction: column; gap: 10px; } .dm-why__quote, .dm-why__body { flex-basis: auto; } }
+@media (max-width: 720px) { .dm-why__caption { flex-direction: column; gap: 10px; } .dm-why__quote, .dm-why__body { flex-basis: auto; } .dm-why__shots { column-count: 1; } }
 
 /* Tokens */
 .dm-tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }

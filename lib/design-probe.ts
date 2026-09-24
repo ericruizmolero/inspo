@@ -165,7 +165,10 @@ const IMAGES = `(() => {
     if (el.closest("picture") && el.tagName !== "PICTURE") continue;
     const r = el.getBoundingClientRect();
     if (r.width < 240 || r.height < 160 || r.width > innerWidth * 1.2) continue;
-    if (out.some((o) => Math.abs(o.x - r.x) < 8 && Math.abs(o.y - (r.y + scrollY)) < 8 && Math.abs(o.w - r.width) < 8)) continue;
+    // The same picture twice (a lazy placeholder under the real image, a picture and its img): keep one
+    const y = r.y + scrollY;
+    const dup = out.some((o) => { const ix = Math.max(0, Math.min(o.x + o.w, r.x + r.width) - Math.max(o.x, r.x)); const iy = Math.max(0, Math.min(o.y + o.h, y + r.height) - Math.max(o.y, y)); return ix * iy >= 0.8 * Math.min(o.w * o.h, r.width * r.height); });
+    if (dup) continue;
     const i = out.length;
     el.setAttribute("data-probe-img", String(i));
     out.push({ i, tag: el.tagName.toLowerCase(), x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height), alt: (el.getAttribute("alt") || el.getAttribute("aria-label") || "").trim().slice(0, 60) });
@@ -295,9 +298,9 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
           await page.evaluate(`window.scrollTo(0, ${Math.max(0, im.y - 200)})`); await settle(page, 600);
           const r = (await page.evaluate(`(() => { const el = document.querySelector('[data-probe-img="${iid}"]'); if (!el) return null; const b = el.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y + scrollY), w: Math.round(b.width), h: Math.round(b.height) }; })()`)) as { x: number; y: number; w: number; h: number } | null;
           if (!r || r.w < 120 || r.h < 80) continue;
-          const pad = 12;
-          const x = Math.max(0, r.x - pad), w = Math.min(1440 - x, r.w + pad * 2), h = Math.min(r.h + pad * 2, 1800);
-          const jpeg = Buffer.from(await page.screenshot({ type: "jpeg", quality: 72, clip: { x, y: Math.max(0, r.y - pad), width: w, height: h }, captureBeyondViewport: true }));
+          // The image and nothing else: a padding would frame it with the page's background
+          const x = Math.max(0, r.x), w = Math.min(1440 - x, r.w), h = Math.min(r.h, 1800);
+          const jpeg = Buffer.from(await page.screenshot({ type: "jpeg", quality: 72, clip: { x, y: r.y, width: w, height: h }, captureBeyondViewport: true }));
           captures.push({ id: `i${iid}`, hint: target.hint, kind: "image", sectionId: -1, text: im.alt, box: { y: r.y, h }, jpeg });
         } catch { /* gone or covered: skip */ }
       }

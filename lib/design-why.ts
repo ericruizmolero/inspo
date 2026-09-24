@@ -34,7 +34,7 @@ Rules:
 
 export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 8 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 9 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {

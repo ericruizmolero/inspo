@@ -285,22 +285,18 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
   // `round` is part of each row's key, so every shuffle remounts the rows and replays the stagger.
   const [picks, setPicks] = useState<DirectorySite[]>(SIDEBAR_PICKS);
   const [round, setRound] = useState(0);
-  // Which pick row shows its card (one at a time), and whether it opened "up". Hover opens, after a
-  // short wait so a sweep down the list opens nothing on the way. The fold of the old row and the
-  // unfold of the new one run together, on the same clock, and the cards are all the same height, so
-  // moving DOWN the list the new row's title slides up exactly as much as its body grows: its card
-  // ends up under the pointer and nothing under the pointer is lost. `up` marks that case, and the CSS
-  // anchors the body to the bottom of its track, so the screenshot stays put on screen while the
-  // clip edge rises over it (a blind), instead of riding up with the title.
-  const [open, setOpen] = useState<{ i: number; up: boolean } | null>(null);
+  // Which pick row shows its card (one at a time). Hover opens, after a short wait so a sweep down the
+  // list opens nothing on the way. The fold of the old row and the unfold of the new one run together,
+  // on the same clock, and the cards are all the same height, so moving DOWN the list the new row's
+  // title slides up exactly as much as its body grows: its card ends up under the pointer and the
+  // hover is not lost. While that happens the screenshot is still under its blind (see the CSS), so
+  // nothing in the picture is seen moving.
+  const [open, setOpen] = useState<number | null>(null);
   const intent = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelIntent = () => { if (intent.current) { clearTimeout(intent.current); intent.current = null; } };
   const enterRow = (i: number) => {
     cancelIntent();
-    intent.current = setTimeout(() => {
-      intent.current = null;
-      setOpen((cur) => (cur?.i === i ? cur : { i, up: cur !== null && cur.i < i }));
-    }, 120);
+    intent.current = setTimeout(() => { intent.current = null; setOpen(i); }, 120);
   };
   const foldAll = () => { cancelIntent(); setOpen(null); };
   useEffect(() => cancelIntent, []);
@@ -369,7 +365,7 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
               {picks.map((r, i) => (
                 <SidebarMenuItem
                   key={`${round}-${r.url}`}
-                  className={`nav-item--pick-row${round ? " is-dealt" : ""}${open?.i === i ? ` is-open${open.up ? " is-up" : ""}` : ""}`}
+                  className={`nav-item--pick-row${round ? " is-dealt" : ""}${open === i ? " is-open" : ""}`}
                   style={{ "--i": i } as React.CSSProperties}
                   onPointerEnter={() => enterRow(i)}
                 >
