@@ -410,7 +410,7 @@ function WhySection({ state }: { state: WhyState }) {
                 {(h.values?.length ?? 0) > 0 && (
                   <div className="dm-why__values">{h.values.map((v, j) => <code key={j} className="dm-why__value">{v}</code>)}</div>
                 )}
-                <p className="dm-why__note-text">{h.note}</p>
+                {h.note && <p className="dm-why__note-text">{h.note}</p>}
                 {h.shotUrls && h.shotUrls.length > 0 && (
                   <div className="dm-why__shots">
                     {h.shotUrls.map((u, j) => (
@@ -425,7 +425,7 @@ function WhySection({ state }: { state: WhyState }) {
           ))}
         </ol>
       )}
-      {why?.probe?.summary.length ? <p className="dm-why__probe"><b>{t.designMd.whyProbe}</b> {why.probe.summary.join(" · ")}</p> : null}
+      {why?.probe && why.probe.captures !== undefined ? <p className="dm-why__probe">{t.designMd.whyProbeLine(why.probe.captures ?? 0, why.probe.hovered ?? 0, why.probe.audioEvents ?? 0)}</p> : null}
     </section>
   );
 }

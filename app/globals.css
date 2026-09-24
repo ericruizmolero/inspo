@@ -375,42 +375,31 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .nav-item__count { color: var(--muted); font-weight: 400; }
 /* Team rows: a round 18px avatar in the icon slot, initials when there is no photo */
 .nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
-/* Directory picks: the site's favicon on an 18px light plate (dark logos would vanish on the dark
-   sidebar), and on hover the same glass chip as the card actions, with the site's description under it */
-.nav-item__logo {
-  width: 18px; height: 18px; margin: -1px; border-radius: 5px; overflow: hidden; flex-shrink: 0;
-  display: grid; place-items: center; background: #f4f4f2; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
-  font-size: 10px; font-weight: 600; color: #555;
-  opacity: 0.85; transition: opacity 0.15s;
+/* Directory picks: plain rows, no logo (too many favicons are dark on transparent). On hover the row
+   explains the site with the same label the card icons use (data-tip, further down). */
+/* "Shuffle" deals the new rows in, one by one: each drops in from a few px up with a little blur,
+   45ms apart (the island's own language); only after a shuffle, the first paint stays still */
+.nav-item--pick-row.is-dealt {
+  /* `backwards`, not `both`: once dealt, the row must drop the filter/transform, or it becomes a
+     stacking context and the next row paints over this one's description label */
+  animation: pick-deal 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
 }
-.nav-item__logo img { width: 12px; height: 12px; display: block; }
-.nav-item:hover .nav-item__logo { opacity: 1; }
-.nav-item__chip {
-  position: relative; margin-left: auto; flex-shrink: 0;
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px; border-radius: 999px;
-  background: rgba(10,10,10,0.62); color: rgba(255,255,255,0.82);
-  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5);
-  opacity: 0; transform: translateX(4px);
-  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+/* The hovered row rises above its sisters (and the scroll fades) so its label is never covered */
+.nav-item--pick-row:hover, .nav-item--pick-row:focus-within { z-index: 4; }
+@keyframes pick-deal {
+  from { opacity: 0; transform: translateY(-6px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
 }
-.nav-item--pick:hover .nav-item__chip, .nav-item--pick:focus-visible .nav-item__chip { opacity: 1; transform: none; }
-/* The label wraps: the sidebar is narrow and the descriptions are a sentence long */
-.nav-item__chip[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute; top: calc(100% + 7px); right: 0; z-index: 3;
-  width: max-content; max-width: 200px; padding: 6px 9px; border-radius: 7px;
-  font-size: 11px; font-weight: 500; line-height: 1.35; letter-spacing: 0; text-align: left;
-  color: rgba(255,255,255,0.92); background: rgba(10,10,10,0.82);
-  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5);
-  opacity: 0; transform: translateY(-3px); pointer-events: none;
-  transition: opacity 0.15s, transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+/* The shuffle icon flips once per press */
+.nav-item--shuffle .nav-item__icon.is-spun { animation: pick-flip 0.5s cubic-bezier(0.65, 0, 0.35, 1); }
+@keyframes pick-flip { to { transform: rotate(180deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
 }
-.nav-item--pick:hover .nav-item__chip::after { opacity: 1; transform: none; transition-delay: 0.12s; }
-/* The row must not clip the label hanging under the chip */
-.nav-item--pick { overflow: visible; }
+/* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
+.nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
+.nav-item--pick-row:hover .nav-item__ext, .nav-item--pick-row:focus-within .nav-item__ext { opacity: 1; }
 /* The "invite" row is an affordance, not a destination: muted until hovered */
 .nav-item--quiet { color: var(--muted-2); }
 .nav-item--quiet:hover { color: var(--text); }
@@ -668,8 +657,8 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .tile__action:hover { background: rgba(255,255,255,0.14); color: #fff; }
 /* Custom help label under each button: shows instantly, right-aligned so it does not
    overflow the card (the bar lives in the top right corner). */
-.tile__action { position: relative; }
-.tile__action[data-tip]::after {
+.tile__action, .nav-item--pick { position: relative; }
+.tile__action[data-tip]::after, .nav-item--pick[data-tip]::after {
   content: attr(data-tip);
   position: absolute; top: calc(100% + 9px); right: 0; z-index: 3;
   padding: 6px 9px; border-radius: 7px; white-space: nowrap;
@@ -680,7 +669,11 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
   opacity: 0; transform: translateY(-3px); pointer-events: none;
   transition: opacity 0.15s, transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.tile__action:hover::after, .tile__action:focus-visible::after { opacity: 1; transform: none; transition-delay: 0.12s; }
+.tile__action:hover::after, .tile__action:focus-visible::after,
+.nav-item--pick:hover::after, .nav-item--pick:focus-visible::after { opacity: 1; transform: none; transition-delay: 0.12s; }
+/* In the sidebar the label hangs under the row, starts at the name and wraps: the column is narrow */
+.nav-item--pick { overflow: visible; }
+.nav-item--pick[data-tip]::after { top: calc(100% + 2px); right: auto; left: 32px; max-width: 200px; white-space: normal; line-height: 1.35; }
 .tile__action--md.is-ready[data-tip]::after { color: rgba(255,255,255,0.92); }
 .tile__action:active { background: rgba(255,255,255,0.2); }
 .tile__action--danger:hover { background: var(--danger); color: #fff; }
@@ -2118,3 +2111,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .legal { display: flex; flex-direction: column; gap: 22px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+
+
+
+

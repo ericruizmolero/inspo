@@ -144,6 +144,8 @@ export const ui: typeof EnUi = {
     addReference: "Añadir referencia",
     discover: "Descubrir",
     directory: "Directorio",
+    shuffle: "Ver otras",
+    shuffleHint: (n: number): string => `Otras ${n} webs del directorio`,
     team: "Equipo",
     invite: "Invitar a alguien",
     createTeam: "Crear un equipo",
@@ -343,6 +345,10 @@ export const ui: typeof EnUi = {
     whyStatus: { measured: "medido", seen: "visto en la captura", unverifiable: "no verificable" },
     whyFailed: "No se ha podido conectar la nota con la spec",
     whyProbe: "Sondeo en la web",
+    whyProbeLine: (captures: number, hovered: number, audio: number): string => {
+      const parts = [captures ? `${captures} ${captures === 1 ? "sección capturada" : "secciones capturadas"}` : "", hovered ? `hover en ${hovered} ${hovered === 1 ? "elemento" : "elementos"}` : "", hovered ? (audio ? `${audio} ${audio === 1 ? "evento" : "eventos"} de audio` : "sin audio al pasar el ratón") : ""].filter(Boolean);
+      return parts.length ? `Un navegador ha visitado la web: ${parts.join(", ")}.` : "";
+    },
     colorGroups: { brand: "Marca", accent: "Acento", semantic: "Semánticos", neutral: "Neutros" },
     fontRoles: { display: "display", body: "cuerpo", mono: "mono", ui: "interfaz" },
     density: { compact: "compacta", comfortable: "cómoda", airy: "aireada" },

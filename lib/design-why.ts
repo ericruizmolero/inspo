@@ -10,6 +10,7 @@ import { newId } from "./workspace-core";
 import { llm } from "./llm";
 import { DesignWhySchema, type DesignSpec, type DesignWhy } from "@/types/design";
 import type { ProbeReport } from "./design-probe";
+import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 
 // Vision + judgment over a finished spec. Haiku padded every answer with prose; Sonnet keeps to values (a few cents).
 export const DESIGN_WHY_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -25,15 +26,15 @@ Rules:
 - "measured" only when you can cite concrete values from the spec (token names, hex, px, ms, easing, font, weight). "seen" when the screenshot shows it but the spec has no numbers for it.
 - One highlight per distinct thing. When a comment repeats or reinforces an earlier point, merge it into that highlight (keep the first quote, name the author who said it first). Do not add things nobody mentioned.
 - A general remark ("the site as a whole", "everything", "nice") is not a highlight: when a sentence mixes a general remark with a concrete one, keep only the concrete part, and never split one sentence into two highlights.
-- Quotes stay verbatim and in the person's language. Everything else in English: the DESIGN.md is always in English.
-- Short and dense. "where" is 2-6 words. "values" are chips of 1-4 words, only real values from the spec (token names as the spec writes them, hex, px, ms, easing, weight). "note" is one sentence of at most 25 words, no filler, no restating the quote, no adjectives like refined or delicate.
+- Quotes stay verbatim and in the person's language. "where" and "note" are read on screen by the team: write them in the language given below. Values are values (hex, px, ms, token names) in any language.
+- Short and dense. "where" is 2-6 words. "values" are chips of 1-4 words, only real values from the spec (token names as the spec writes them, hex, px, ms, easing, weight). "note" is one sentence of at most 25 words and only when it adds something: the decision to get right, or what would verify an unverifiable thing. Never say what the spec lacks, does not document or treats differently: that is noise to the reader. With a capture and no values, an empty note is the right answer.
 - You may also receive a PROBE REPORT: a headless browser visited the page, hovered the elements the notes point at, counted audio events, checked the cursor, watched the scroll and CAPTURED the sections the notes point at (the "captures" list, each with an id and the section's text). Hover and audio observations count as "measured": cite them ("color #111 → #e0afa8 on hover, 200ms", "2 audio events while hovering"). When the probe looked and found nothing (no audio event, no hover change, no matching element), say so plainly in the note and keep the status "unverifiable": absence in the probe is not proof of absence on a real visit.
 - For each highlight, list in "shots" the ids of the captures that show exactly that thing (usually one). A capture is worth more than any description: prefer pointing at it over describing what it shows.
 - A note that says nothing concrete ("cool", "check this", a greeting) produces no highlight. If nothing is concrete, return an empty list and an empty gist.`;
 
-export function stampFor(voices: Voice[], specStamp: string): string {
+export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, ver: 4 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 6 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {
@@ -55,11 +56,16 @@ export interface BuildResult {
   usage: { input: number; output: number; cacheRead: number };
 }
 
-export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; signal?: AbortSignal }): Promise<BuildResult> {
+const LANGUAGE: Record<Locale, string> = {
+  en: "Write \"where\" and \"note\" in English.",
+  es: "Write \"where\" and \"note\" in Castilian Spanish (Spanish from Spain).",
+};
+
+export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; locale?: Locale; signal?: AbortSignal }): Promise<BuildResult> {
   const voices = input.voices.map((v, i) => `${i + 1}. [${v.kind === "note" ? "note of whoever saved it" : "comment"}] ${v.author} (${v.at.slice(0, 10)}): """${v.body}"""`).join("\n");
   const res = await llm({
     model: DESIGN_WHY_MODEL,
-    system: SYSTEM,
+    system: `${SYSTEM}\n\nLanguage: ${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,
     image: input.screenshot,
     text: `URL: ${input.url}\n\nWhat the team said, in order:\n${voices}\n\n${input.probe ? `PROBE REPORT (observed by a headless browser):\n${JSON.stringify({ summary: input.probe.summary, audio: input.probe.audio, cursor: input.probe.cursor, scroll: input.probe.scroll, targets: input.probe.targets, captures: input.probe.captures.map((c) => ({ id: c.id, hint: c.hint, section: c.text, y: c.box.y, h: c.box.h })) })}\n\n` : ""}The DESIGN.md spec (JSON):\n${JSON.stringify(input.spec)}`,
     schema: DesignWhySchema,
@@ -68,21 +74,38 @@ export async function buildWhy(input: { spec: DesignSpec; url: string; voices: V
   });
   const out = DesignWhySchema.parse(JSON.parse(res.text));
   const urls = input.shotUrls ?? {};
-  const highlights = out.highlights.map((h) => ({ ...h, shots: h.shots.filter((id) => id in urls), shotUrls: h.shots.map((id) => urls[id]).filter(Boolean) }));
-  const why: DesignWhy = { highlights, model: res.model, createdAt: new Date().toISOString(), voices: input.voices.length, ...(input.probe ? { probe: { summary: input.probe.summary, ms: input.probe.ms } } : {}) };
+  const highlights = out.highlights.map((h) => ({ ...h, values: h.values.slice(0, 6), shots: h.shots.filter((id) => id in urls).slice(0, 3), shotUrls: h.shots.filter((id) => id in urls).slice(0, 3).map((id) => urls[id]) }));
+  const why: DesignWhy = { highlights, model: res.model, createdAt: new Date().toISOString(), voices: input.voices.length, ...(input.probe ? { probe: { summary: input.probe.summary, ms: input.probe.ms, captures: input.probe.captures.length, hovered: input.probe.targets.reduce((n, t) => n + t.elements.length, 0), audioEvents: input.probe.targets.reduce((n, t) => n + t.elements.reduce((m, e) => m + e.audioEvents, 0), 0) } } : {}) };
   return { why, model: res.model, provider: res.provider, requestId: res.id, costUsd: res.costUsd, usage: res.usage };
 }
 
+// One build per workspace and site at a time: the sheet and a second tab must not pay twice
+// (or race, with the loser overwriting the winner's captures). The job outlives the request that
+// started it: a client that leaves (React's double effect in dev, a closed tab) must not abort a
+// build another client is waiting for, so no request signal reaches the probe or the model.
+const inflight = new Map<string, Promise<{ why: DesignWhy; built: BuildResult | null }>>();
+
 /** Cached answer if the words and the spec have not changed; otherwise builds, stores and returns it. */
-export async function getOrBuildWhy(input: {
+export function getOrBuildWhy(input: {
   organizationId: string; url: string; voices: Voice[]; specStamp: string; spec: DesignSpec;
-  screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; signal?: AbortSignal;
+  screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; locale?: Locale;
 }): Promise<{ why: DesignWhy; built: BuildResult | null }> {
-  const stamp = stampFor(input.voices, input.specStamp);
-  const cached = await getWhy(input.organizationId, input.url);
-  if (cached && cached.stamp === stamp) return { why: cached.why, built: null };
-  const [screenshot, probed] = await Promise.all([input.screenshot(), input.probe ? input.probe() : Promise.resolve(null)]);
-  const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, signal: input.signal });
-  await saveWhy(input.organizationId, input.url, stamp, built.why);
-  return { why: built.why, built };
+  const key = `${input.organizationId}|${input.url}`;
+  const running = inflight.get(key);
+  if (running) return running;
+  const job = (async () => {
+    const stamp = stampFor(input.voices, input.specStamp, input.locale);
+    const cached = await getWhy(input.organizationId, input.url);
+    if (cached && cached.stamp === stamp) return { why: cached.why, built: null };
+    // A probe that broke (browser down, model hiccup) must not freeze a capture-less answer:
+    // the row is saved under a stamp that never matches, so the next open tries again
+    let probeFailed = false;
+    const probe = input.probe ? input.probe().catch((e) => { probeFailed = true; console.error("design-why probe failed:", input.url, e instanceof Error ? e.message : e); return null; }) : Promise.resolve(null);
+    const [screenshot, probed] = await Promise.all([input.screenshot(), probe]);
+    const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, locale: input.locale });
+    await saveWhy(input.organizationId, input.url, probeFailed ? `${stamp}~retry` : stamp, built.why);
+    return { why: built.why, built };
+  })().finally(() => { inflight.delete(key); });
+  inflight.set(key, job);
+  return job;
 }

@@ -174,10 +174,10 @@ export const WhyHighlightSchema = z.object({
   quote: z.string().describe("The person's words, verbatim and in their language, trimmed to the part that names what they liked (max 20 words)"),
   author: z.string().describe("Who said it"),
   status: WhyStatus.describe("measured: the spec has values for it. seen: visible in the screenshot but the spec has no numbers for it. unverifiable: not observable from styles or a still image (sound, hover, scroll, feel, speed)."),
-  where: z.string().describe("The element or area of the page, 2-6 words in English. Empty if it cannot be located."),
-  values: z.array(z.string()).max(6).describe("Only measured or seen: the concrete values behind it, as short chips of 1-4 words each, e.g. 'Mono 11px caps', '#ffffff', 'radius 0', 'ease-out 180ms', 'weight 510'. Token names as the spec writes them. Empty when unverifiable."),
-  note: z.string().describe("English, max 25 words, no filler. For measured/seen: the one decision an agent must get right to reproduce it. For unverifiable: what would be needed to check it (a recording, an interaction capture, the source)."),
-  shots: z.array(z.string()).max(3).describe("Ids of the probe captures (from the PROBE REPORT captures list) that show exactly this thing. Empty if none shows it, or if there is no probe report."),
+  where: z.string().describe("The element or area of the page, 2-6 words, in the reader's language. Empty if it cannot be located."),
+  values: z.array(z.string()).describe("Only measured or seen: the concrete values behind it, as short chips of 1-4 words each, e.g. 'Mono 11px caps', '#ffffff', 'radius 0', 'ease-out 180ms', 'weight 510'. Token names as the spec writes them. Empty when unverifiable."),
+  note: z.string().describe("In the reader's language, max 25 words, only if it adds something the capture and the values do not already say: the one decision to get right, or for unverifiable things what would be needed to check them. Never what the spec lacks or fails to document. Empty when the capture says it all."),
+  shots: z.array(z.string()).describe("Ids of the probe captures (from the PROBE REPORT captures list) that show exactly this thing. Empty if none shows it, or if there is no probe report."),
 });
 
 export const DesignWhySchema = z.object({
@@ -192,7 +192,7 @@ export type DesignWhy = Omit<z.infer<typeof DesignWhySchema>, "highlights"> & {
   highlights: WhyHighlight[];
   model: string; createdAt: string; voices: number;
   /** What the headless browser went to check, when the notes mentioned something interactive */
-  probe?: { summary: string[]; ms: number };
+  probe?: { summary: string[]; ms: number; captures?: number; hovered?: number; audioEvents?: number };
 };
 
 /** The section appended to the DESIGN.md of this workspace (the global file does not carry it). */

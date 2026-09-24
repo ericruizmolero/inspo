@@ -22,11 +22,11 @@ const ProbeKind = z.enum(["capture", "hover", "audio", "scroll", "cursor"]);
 const PlanSchema = z.object({
   targets: z.array(z.object({
     hint: z.string().describe("The thing the person pointed at, in 2-6 English words"),
-    sections: z.array(z.number()).max(2).describe("Ids of the SECTIONS that show it, from the list (at most 2, the most specific ones). Empty only if it is not visible anywhere on the page."),
+    sections: z.array(z.number()).describe("Ids of the SECTIONS that show it, from the list (at most 2, the most specific ones). Empty only if it is not visible anywhere on the page."),
     kind: Kind.describe("Where its interactive part lives in the DOM, if any. 'page' for things that are not one element (scroll behaviour, the cursor, sound in general) or for purely visual things."),
-    text: z.array(z.string()).max(4).describe("Words likely found in the interactive element's own label or class name, lowercase (e.g. 'projects', 'about', 'menu'). Not the phenomenon itself: never 'sound', 'hover' or 'animation'. Empty if unknown or purely visual."),
+    text: z.array(z.string()).describe("Words likely found in the interactive element's own label or class name, lowercase (e.g. 'projects', 'about', 'menu'). Not the phenomenon itself: never 'sound', 'hover' or 'animation'. Empty if unknown or purely visual."),
     probes: z.array(ProbeKind).min(1).describe("capture: photograph the sections (always, when sections are given). hover: state changes on mouse over. audio: sound on interaction (always paired with hover). scroll: things that move or appear while scrolling. cursor: a custom cursor."),
-  })).max(4),
+  })),
 });
 export type ProbePlan = z.infer<typeof PlanSchema> & { model: string; costUsd: number | null; usage: { input: number; output: number; cacheRead: number } };
 
@@ -51,7 +51,10 @@ async function planOnPage(voices: Voice[], sections: PageSection[], fullShot: Bu
     maxTokens: 1500,
     signal,
   });
-  return { ...PlanSchema.parse(JSON.parse(res.text)), model: res.model, costUsd: res.costUsd, usage: res.usage };
+  // The limits in the descriptions are advice the model sometimes ignores: clamp here instead of failing
+  const parsed = PlanSchema.parse(JSON.parse(res.text));
+  const targets = parsed.targets.slice(0, 4).map((t) => ({ ...t, sections: t.sections.slice(0, 2), text: t.text.slice(0, 4) }));
+  return { targets, model: res.model, costUsd: res.costUsd, usage: res.usage };
 }
 
 // ─── Report ──────────────────────────────────────────────────────────────────

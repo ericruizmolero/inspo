@@ -146,6 +146,8 @@ export const ui = {
     addReference: "Add reference",
     discover: "Discover",
     directory: "Directory",
+    shuffle: "Shuffle",
+    shuffleHint: (n: number): string => `${n} other sites from the directory`,
     team: "Team",
     invite: "Invite someone",
     createTeam: "Create a team",
@@ -345,6 +347,10 @@ export const ui = {
     whyStatus: { measured: "measured", seen: "seen in the screenshot", unverifiable: "unverifiable" },
     whyFailed: "Could not connect the note with the spec",
     whyProbe: "Browser probe",
+    whyProbeLine: (captures: number, hovered: number, audio: number): string => {
+      const parts = [captures ? `${captures} section${captures === 1 ? "" : "s"} captured` : "", hovered ? `hovered ${hovered} element${hovered === 1 ? "" : "s"}` : "", hovered ? (audio ? `${audio} audio event${audio === 1 ? "" : "s"}` : "no audio on hover") : ""].filter(Boolean);
+      return parts.length ? `A browser visited the site: ${parts.join(", ")}.` : "";
+    },
     colorGroups: { brand: "Brand", accent: "Accent", semantic: "Semantic", neutral: "Neutrals" },
     fontRoles: { display: "display", body: "body", mono: "mono", ui: "interface" },
     density: { compact: "compact", comfortable: "comfortable", airy: "airy" },

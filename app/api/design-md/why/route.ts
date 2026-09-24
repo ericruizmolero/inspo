@@ -8,7 +8,7 @@ import { latestRevision } from "@/lib/design-revise";
 import { getOrBuildWhy, type Voice } from "@/lib/design-why";
 import { probeSite } from "@/lib/design-probe";
 import { recordUsage } from "@/lib/usage";
-import { getErrors } from "@/lib/i18n";
+import { getErrors, getLocale } from "@/lib/i18n";
 import type { DesignWhy } from "@/types/design";
 
 export const maxDuration = 120;
@@ -46,17 +46,15 @@ export async function GET(req: NextRequest) {
     const t0 = Date.now();
     const { why, built } = await getOrBuildWhy({
       organizationId: ctx.workspace.id, url, voices, specStamp, spec,
-      screenshot: () => getDesignScreenshot(url), signal: req.signal,
+      screenshot: () => getDesignScreenshot(url), locale: await getLocale(),
       // The browser goes to look at what the notes point at: captures the sections, hovers, listens
       probe: async () => {
-        try {
-          const report = await probeSite(url, voices, req.signal);
-          if (!report) return null;
-          void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_why", model: report.plan.model, inputTokens: report.plan.usage.input, outputTokens: report.plan.usage.output, cacheReadTokens: report.plan.usage.cacheRead, costUsd: report.plan.costUsd, ref: url });
-          const shotUrls: Record<string, string> = {};
-          for (const c of report.captures) shotUrls[c.id] = await saveWhyShot(ctx.workspace.id, url, c.id, c.jpeg);
-          return { report, shotUrls };
-        } catch (e) { console.error("design-why probe failed:", url, e instanceof Error ? e.message : e); return null; }
+        const report = await probeSite(url, voices);
+        if (!report) return null;
+        void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_why", model: report.plan.model, inputTokens: report.plan.usage.input, outputTokens: report.plan.usage.output, cacheReadTokens: report.plan.usage.cacheRead, costUsd: report.plan.costUsd, ref: url });
+        const shotUrls: Record<string, string> = {};
+        for (const c of report.captures) shotUrls[c.id] = await saveWhyShot(ctx.workspace.id, url, c.id, c.jpeg);
+        return { report, shotUrls };
       },
     });
     if (built) {

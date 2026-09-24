@@ -42,7 +42,7 @@ const key = keyFor(url);
 const entry = JSON.parse(await fs.readFile(path.join("public/design-md", `${key}.json`), "utf-8"));
 const screenshot = await fs.readFile(path.join("public/design-md", `${key}.jpg`)).catch(() => null);
 const t0 = Date.now();
-const r = await buildWhy({ spec: entry.spec, url, voices, screenshot, probe, shotUrls });
+const r = await buildWhy({ spec: entry.spec, url, voices, screenshot, probe, shotUrls, locale: "es" });
 console.log(`${r.model} ${Date.now() - t0}ms cost ${r.costUsd}`);
 console.log(JSON.stringify(r.why, null, 2));
 }
