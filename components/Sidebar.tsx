@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
 import type { Term } from "@/lib/taxonomy";
-import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteShot, type DirectorySite } from "@/lib/directory";
+import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import { UserAvatar } from "./WorkspaceMenu";
 import { Button } from "@/components/ui/button";
@@ -124,20 +124,12 @@ const I = {
   ),
 };
 
-/** The body of a directory pick's card, folded under the name until the row is hovered: the site's
- *  screenshot (public/directory), then its description. If the screenshot never loads, the slot stays
- *  (blank) so every card is the same height, which the fold-and-unfold handover relies on.
+/** The body of a directory pick's card, folded under the name until the row is hovered: what the site is.
  *  The outer div is the grid track that folds; the padding lives inside so it folds to nothing. */
-function PickCard({ url, desc }: { url: string; desc: string }) {
-  const [failed, setFailed] = useState(false);
+function PickCard({ desc }: { desc: string }) {
   return (
     <div className="nav-item__card" aria-hidden>
-      <div className="nav-item__card-inner">
-        <span className="nav-item__card-shot">
-          {!failed && <img src={siteShot(url)} alt="" decoding="async" onError={() => setFailed(true)} />}
-        </span>
-        <p>{desc}</p>
-      </div>
+      <div className="nav-item__card-inner"><p>{desc}</p></div>
     </div>
   );
 }
@@ -289,8 +281,8 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
   // list opens nothing on the way. The fold of the old row and the unfold of the new one run together,
   // on the same clock, and the cards are all the same height, so moving DOWN the list the new row's
   // title slides up exactly as much as its body grows: its card ends up under the pointer and the
-  // hover is not lost. While that happens the screenshot is still under its blind (see the CSS), so
-  // nothing in the picture is seen moving.
+  // hover is not lost. The body only shows once the row has settled (see the CSS), so it is never
+  // seen moving.
   const [open, setOpen] = useState<number | null>(null);
   const intent = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelIntent = () => { if (intent.current) { clearTimeout(intent.current); intent.current = null; } };
@@ -377,8 +369,8 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
                   </SidebarMenuButton>
                   {/* Bare outward arrow, flush right where the counts sit (same badge slot), shown on hover */}
                   <SidebarMenuBadge className="nav-item__ext" aria-hidden>{I.external}</SidebarMenuBadge>
-                  {/* Under the name, in flow: screenshot plus what the site is (the row frames both as a card on hover) */}
-                  <PickCard url={r.url} desc={t.directory.items[r.url]} />
+                  {/* Under the name, in flow: what the site is (the row frames both as a card on hover) */}
+                  <PickCard desc={t.directory.items[r.url]} />
                 </SidebarMenuItem>
               ))}
               {/* Stays open: shuffling is browsing, not a choice (no onPick) */}

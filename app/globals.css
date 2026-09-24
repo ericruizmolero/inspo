@@ -377,7 +377,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
 /* Directory picks: plain rows, no logo (too many favicons are dark on transparent). On hover the row
    itself becomes a card: it takes the surface and a hairline, and grows in flow (grid rows, no overlay)
-   to show the site's screenshot and its description under the name. The rows below slide down.
+   to show the site's description under the name. The rows below slide down.
    It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
    ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
    Which row is open is decided in the Sidebar (is-open, one at a time); :focus-within keeps the keyboard path. */
@@ -393,29 +393,18 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 /* The card frame is the hover state now: the name row stays flat inside it */
 .nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
-/* The body sits where it will end up, pinned to the top of the track, and the track's clip edge passes
-   over it as the row opens. The screenshot itself never moves: it is covered by a blind, a layer in the
-   card's own surface colour (dark or light) laid over it, which slides down out of the frame once the
-   row has opened, and slides back the moment it folds. All cards share one height (fixed shot ratio,
-   fixed three-line description), which is what makes the hover handover between rows exact. */
+/* The body sits under the name, pinned to the top of its track. It is not part of the motion: while
+   the row grows (and, moving down the list, slides up) the body is blank, and the text appears in place
+   only once the row has settled, with a short fade and no movement. When the row folds it is gone at
+   once, so the fold never shows it on the move either. All cards share one height (a fixed three-line
+   description), which makes the hover handover between rows exact. */
 .nav-item__card { min-height: 0; overflow: hidden; }
-.nav-item__card-inner { padding: 0 6px 6px; }
-.nav-item__card-shot {
-  position: relative; display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden;
-  background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border);
-}
-.nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-/* The blind: covers the shot while closed, starts to slide down once the row is half open, and is back
-   over the picture at once when the row folds (so the fold never shows the picture on the move) */
-.nav-item__card-shot::after {
-  content: ""; position: absolute; inset: 0; background: var(--surface);
-  transform: none; transition: transform var(--pick-time) var(--pick-ease);
-}
-.nav-item--pick-row.is-open .nav-item__card-shot::after, .nav-item--pick-row:focus-within .nav-item__card-shot::after {
-  transform: translateY(101%); transition-delay: calc(var(--pick-time) / 2);
+.nav-item__card-inner { padding: 0 8px 6px; opacity: 0; transition: opacity 0.08s; }
+.nav-item--pick-row.is-open .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner {
+  opacity: 1; transition: opacity 0.18s var(--pick-ease); transition-delay: var(--pick-time);
 }
 .nav-item__card p {
-  margin: 0; padding: 7px 2px 2px; height: calc(3 * 1.4em + 9px); overflow: hidden;
+  margin: 0; padding: 0 0 2px; height: calc(3 * 1.4em + 2px); overflow: hidden;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
   font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted);
 }
@@ -434,7 +423,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 @keyframes pick-flip { to { transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) {
   .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
-  .nav-item--pick-row, .nav-item__card-shot::after { transition: none; }
+  .nav-item--pick-row, .nav-item__card-inner { transition: none; }
 }
 /* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
 .nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
@@ -1227,7 +1216,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-why__item { display: flex; flex-direction: column; gap: 18px; }
 /* Captures of different proportions: a masonry by CSS columns, like the main canvas. Never cropped. */
 .dm-why__shots { column-count: var(--cols, 3); column-gap: 10px; }
-.dm-why__shot { display: block; break-inside: avoid; margin-bottom: 10px; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.dm-why__shot { display: block; width: 100%; padding: 0; border: 0; break-inside: avoid; margin-bottom: 10px; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); cursor: zoom-in; }
 .dm-why__shot img { display: block; width: 100%; height: auto; }
 /* Quote at the left edge, detail at the right edge, the space between them is the layout */
 .dm-why__caption { display: flex; justify-content: space-between; align-items: flex-start; gap: 48px; }

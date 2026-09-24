@@ -389,6 +389,22 @@ function useWhy(url: string, ready: boolean, commentCount: number, specStamp: st
 function WhySection({ state }: { state: WhyState }) {
   const { t } = useT();
   const why = state.why;
+  // Captures open in a viewer inside the sheet (a new tab has no way back in the preview)
+  const [lightbox, setLightbox] = useState<{ list: string[]; idx: number } | null>(null);
+  const lightboxRef = useRef(lightbox);
+  lightboxRef.current = lightbox;
+  useEffect(() => {
+    // Capture phase on window, ahead of the sheet's own Esc handler on document: Esc closes the viewer, not the sheet
+    const onKey = (e: KeyboardEvent) => {
+      const lb = lightboxRef.current;
+      if (!lb) return;
+      if (e.key === "Escape") { e.stopPropagation(); setLightbox(null); }
+      if (e.key === "ArrowRight") setLightbox({ list: lb.list, idx: (lb.idx + 1) % lb.list.length });
+      if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, []);
   return (
     <section className="dm-section dm-why">
       <header className="dm-section__head">
@@ -407,9 +423,9 @@ function WhySection({ state }: { state: WhyState }) {
               {h.shotUrls && h.shotUrls.length > 0 && (
                 <div className="dm-why__shots" style={{ "--cols": Math.min(3, h.shotUrls.length) } as React.CSSProperties}>
                   {h.shotUrls.map((u, j) => (
-                    <a key={j} className="dm-why__shot" href={proxiedSrc(u)} target="_blank" rel="noopener noreferrer">
+                    <button key={j} type="button" className="dm-why__shot" onClick={() => setLightbox({ list: h.shotUrls!, idx: j })} aria-label={t.comments.screenshot}>
                       <img src={proxiedSrc(u)} alt="" loading="lazy" decoding="async" />
-                    </a>
+                    </button>
                   ))}
                 </div>
               )}
@@ -430,6 +446,19 @@ function WhySection({ state }: { state: WhyState }) {
           ))}
         </ol>
       )}
+      {lightbox && (() => {
+        const many = lightbox.list.length > 1;
+        const go = (d: number) => setLightbox({ list: lightbox.list, idx: (lightbox.idx + d + lightbox.list.length) % lightbox.list.length });
+        return (
+          <div className="cm-lightbox" role="dialog" onClick={() => setLightbox(null)}>
+            <Button variant="icon" className="cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</Button>
+            {many && <button className="cm-lightbox__nav is-prev" aria-label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
+            <img key={lightbox.idx} className="cm-lightbox__img" src={proxiedSrc(lightbox.list[lightbox.idx])} alt="" onClick={(e) => e.stopPropagation()} />
+            {many && <button className="cm-lightbox__nav is-next" aria-label={t.comments.next} onClick={(e) => { e.stopPropagation(); go(1); }}>{IcChevron}</button>}
+            {many && <div className="cm-lightbox__caption"><span className="cm-lightbox__count">{lightbox.idx + 1} / {lightbox.list.length}</span></div>}
+          </div>
+        );
+      })()}
     </section>
   );
 }
