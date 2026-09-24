@@ -125,18 +125,17 @@ const I = {
 };
 
 /** The body of a directory pick's card, folded under the name until the row is hovered: the site's
- *  screenshot (public/directory), then its description. If the screenshot never loads, text only.
+ *  screenshot (public/directory), then its description. If the screenshot never loads, the slot stays
+ *  (blank) so every card is the same height, which the fold-and-unfold handover relies on.
  *  The outer div is the grid track that folds; the padding lives inside so it folds to nothing. */
 function PickCard({ url, desc }: { url: string; desc: string }) {
   const [failed, setFailed] = useState(false);
   return (
     <div className="nav-item__card" aria-hidden>
       <div className="nav-item__card-inner">
-        {!failed && (
-          <span className="nav-item__card-shot">
-            <img src={siteShot(url)} alt="" decoding="async" onError={() => setFailed(true)} />
-          </span>
-        )}
+        <span className="nav-item__card-shot">
+          {!failed && <img src={siteShot(url)} alt="" decoding="async" onError={() => setFailed(true)} />}
+        </span>
         <p>{desc}</p>
       </div>
     </div>
@@ -213,11 +212,12 @@ export function Chips({ terms, counts, selected, onToggle, labels, images }: {
   );
 }
 
-function NavItem({ icon, label, count, active, onClick, title }: {
+function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }: {
   icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void; title?: string;
+  onPointerEnter?: () => void;
 }) {
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem onPointerEnter={onPointerEnter}>
       <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item" title={title}>
         <span className="nav-item__icon">{icon}</span>
         <span>{label}</span>
@@ -285,7 +285,26 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
   // `round` is part of each row's key, so every shuffle remounts the rows and replays the stagger.
   const [picks, setPicks] = useState<DirectorySite[]>(SIDEBAR_PICKS);
   const [round, setRound] = useState(0);
-  const shuffle = () => { setPicks((cur) => shuffleSidebarPicks(cur)); setRound((n) => n + 1); };
+  // Which pick row shows its card (one at a time), and whether it opened "up". Hover opens, after a
+  // short wait so a sweep down the list opens nothing on the way. The fold of the old row and the
+  // unfold of the new one run together, on the same clock, and the cards are all the same height, so
+  // moving DOWN the list the new row's title slides up exactly as much as its body grows: its card
+  // ends up under the pointer and nothing under the pointer is lost. `up` marks that case, and the CSS
+  // anchors the body to the bottom of its track, so the screenshot stays put on screen while the
+  // clip edge rises over it (a blind), instead of riding up with the title.
+  const [open, setOpen] = useState<{ i: number; up: boolean } | null>(null);
+  const intent = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelIntent = () => { if (intent.current) { clearTimeout(intent.current); intent.current = null; } };
+  const enterRow = (i: number) => {
+    cancelIntent();
+    intent.current = setTimeout(() => {
+      intent.current = null;
+      setOpen((cur) => (cur?.i === i ? cur : { i, up: cur !== null && cur.i < i }));
+    }, 120);
+  };
+  const foldAll = () => { cancelIntent(); setOpen(null); };
+  useEffect(() => cancelIntent, []);
+  const shuffle = () => { foldAll(); setPicks((cur) => shuffleSidebarPicks(cur)); setRound((n) => n + 1); };
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
   return (
     <>
@@ -344,11 +363,16 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
 
           <SidebarGroup>
             <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
-            <SidebarMenu>
-              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={pick(onDirectory)} />
+            <SidebarMenu onPointerLeave={foldAll}>
+              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={pick(onDirectory)} onPointerEnter={foldAll} />
               {/* The galleries we open most, straight from the sidebar: each row is an external link */}
               {picks.map((r, i) => (
-                <SidebarMenuItem key={`${round}-${r.url}`} className={`nav-item--pick-row${round ? " is-dealt" : ""}`} style={{ "--i": i } as React.CSSProperties}>
+                <SidebarMenuItem
+                  key={`${round}-${r.url}`}
+                  className={`nav-item--pick-row${round ? " is-dealt" : ""}${open?.i === i ? ` is-open${open.up ? " is-up" : ""}` : ""}`}
+                  style={{ "--i": i } as React.CSSProperties}
+                  onPointerEnter={() => enterRow(i)}
+                >
                   <SidebarMenuButton
                     className="nav-item nav-item--pick"
                     render={<a href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.()} />}

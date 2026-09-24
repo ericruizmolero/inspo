@@ -22,7 +22,8 @@ const ProbeKind = z.enum(["capture", "hover", "audio", "scroll", "cursor"]);
 const PlanSchema = z.object({
   targets: z.array(z.object({
     hint: z.string().describe("The thing the person pointed at, in 2-6 English words"),
-    sections: z.array(z.number()).describe("Ids of the SECTIONS that show it, from the list (at most 2, the most specific ones). Empty only if it is not visible anywhere on the page."),
+    sections: z.array(z.number()).describe("Ids of the SECTIONS that show it, from the list (up to 3, the most specific ones). Empty if it is not visible anywhere on the page or if the IMAGES already cover it."),
+    images: z.array(z.number()).describe("Ids of the IMAGES that show it, from the list (up to 6). For a note about photos, mockups, illustrations or renders, list every image that shows it, not one."),
     kind: Kind.describe("Where its interactive part lives in the DOM, if any. 'page' for things that are not one element (scroll behaviour, the cursor, sound in general) or for purely visual things."),
     text: z.array(z.string()).describe("Words likely found in the interactive element's own label or class name, lowercase (e.g. 'projects', 'about', 'menu'). Not the phenomenon itself: never 'sound', 'hover' or 'animation'. Empty if unknown or purely visual."),
     probes: z.array(ProbeKind).min(1).describe("capture: photograph the sections (always, when sections are given). hover: state changes on mouse over. audio: sound on interaction (always paired with hover). scroll: things that move or appear while scrolling. cursor: a custom cursor."),
@@ -32,28 +33,29 @@ export type ProbePlan = z.infer<typeof PlanSchema> & { model: string; costUsd: n
 
 const PLAN_SYSTEM = `A design team wrote notes about why they saved a website. A headless browser has the page open and will do what you plan: capture the sections the notes point at, hover elements, listen for sound, check the cursor, watch the scroll.
 
-You receive the notes, a full-page screenshot (top to bottom) and the list of the page's SECTIONS with their vertical position and a text snippet. For each distinct thing the notes mention, say which sections show it and what the browser should do there. Locate visually: match what the person describes with what the screenshot shows at that height.
+You receive the notes, a full-page screenshot (top to bottom), the list of the page's SECTIONS with their vertical position and a text snippet, and the list of its large IMAGES with their position. For each distinct thing the notes mention, say which sections and images show it and what the browser should do there. Locate visually: match what the person describes with what the screenshot shows at that height.
 
 Rules:
 - Only things the notes actually mention. A general remark ("the whole site", "nice") gets no target.
 - Purely visual things (an illustration, a portrait, a layout, a type treatment) get "capture" and their sections. Interactive things get hover/audio/scroll/cursor as well, plus the section where they live.
-- At most four targets, at most two sections each. Prefer the specific section over the whole page.`;
+- At most four targets, up to three sections and six images each. Prefer the specific section over the whole page, and the images themselves when the note is about images: if the page has many mockups and the note says "mockups", list them all.`;
 
 export interface PageSection { i: number; tag: string; y: number; h: number; text: string; imgs: number; cls: string }
+export interface PageImage { i: number; tag: string; x: number; y: number; w: number; h: number; alt: string }
 
-async function planOnPage(voices: Voice[], sections: PageSection[], fullShot: Buffer, signal?: AbortSignal): Promise<ProbePlan> {
+async function planOnPage(voices: Voice[], sections: PageSection[], images: PageImage[], fullShot: Buffer, signal?: AbortSignal): Promise<ProbePlan> {
   const res = await llm({
     model: PLAN_MODEL,
     system: PLAN_SYSTEM,
     image: fullShot,
-    text: `Notes:\n${voices.map((v, i) => `${i + 1}. ${v.author}: """${v.body}"""`).join("\n")}\n\nSECTIONS (id, tag, top y in px, height, images, text):\n${sections.map((x) => `${x.i}. <${x.tag}${x.cls ? ` class="${x.cls}"` : ""}> y=${x.y} h=${x.h} imgs=${x.imgs} "${x.text}"`).join("\n")}`,
+    text: `Notes:\n${voices.map((v, i) => `${i + 1}. ${v.author}: """${v.body}"""`).join("\n")}\n\nSECTIONS (id, tag, top y in px, height, images, text):\n${sections.map((x) => `${x.i}. <${x.tag}${x.cls ? ` class="${x.cls}"` : ""}> y=${x.y} h=${x.h} imgs=${x.imgs} "${x.text}"`).join("\n")}\n\nIMAGES (id, tag, x, y, width, height, alt):\n${images.map((m) => `${m.i}. <${m.tag}> x=${m.x} y=${m.y} ${m.w}x${m.h}${m.alt ? ` "${m.alt}"` : ""}`).join("\n")}`,
     schema: PlanSchema,
     maxTokens: 1500,
     signal,
   });
   // The limits in the descriptions are advice the model sometimes ignores: clamp here instead of failing
   const parsed = PlanSchema.parse(JSON.parse(res.text));
-  const targets = parsed.targets.slice(0, 4).map((t) => ({ ...t, sections: t.sections.slice(0, 2), text: t.text.slice(0, 4) }));
+  const targets = parsed.targets.slice(0, 4).map((t) => ({ ...t, sections: t.sections.slice(0, 3), images: t.images.slice(0, 6), text: t.text.slice(0, 4) }));
   return { targets, model: res.model, costUsd: res.costUsd, usage: res.usage };
 }
 
@@ -69,7 +71,7 @@ export interface HoverResult {
   cursor: string;
 }
 
-export interface Capture { id: string; hint: string; sectionId: number; text: string; box: { y: number; h: number }; jpeg: Buffer }
+export interface Capture { id: string; hint: string; kind: "section" | "image"; sectionId: number; text: string; box: { y: number; h: number }; jpeg: Buffer }
 
 export interface ProbeReport {
   plan: ProbePlan;
@@ -153,6 +155,37 @@ const SECTIONS = `(() => {
   };
   walk(document.body, 0);
   return out;
+})()`;
+
+// Large images on the page, tagged for capture: the mockups, the renders, the photos a note may mean
+const IMAGES = `(() => {
+  const out = [];
+  for (const el of document.querySelectorAll("img, picture, video, canvas, svg, [style*=background-image]")) {
+    if (out.length >= 60) break;
+    if (el.closest("picture") && el.tagName !== "PICTURE") continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 240 || r.height < 160 || r.width > innerWidth * 1.2) continue;
+    if (out.some((o) => Math.abs(o.x - r.x) < 8 && Math.abs(o.y - (r.y + scrollY)) < 8 && Math.abs(o.w - r.width) < 8)) continue;
+    const i = out.length;
+    el.setAttribute("data-probe-img", String(i));
+    out.push({ i, tag: el.tagName.toLowerCase(), x: Math.round(r.x), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height), alt: (el.getAttribute("alt") || el.getAttribute("aria-label") || "").trim().slice(0, 60) });
+  }
+  return out;
+})()`;
+
+// Cookie banners sit on top of everything and end up in every capture: accept or hide them first
+const COOKIES = `(() => {
+  const yes = /^(accept|accept all|allow|allow all|agree|i agree|ok|okay|got it|aceptar|aceptar todo|aceptar todas|acepto|entendido|de acuerdo|permitir|consent|continue)\\b/i;
+  for (const b of document.querySelectorAll("button, a, [role=button]")) {
+    const box = b.closest("[class*=cookie], [id*=cookie], [class*=consent], [id*=consent], [class*=gdpr], [aria-label*=cookie]");
+    if (box && yes.test((b.innerText || "").trim())) { b.click(); return "clicked"; }
+  }
+  let hidden = 0;
+  for (const el of document.querySelectorAll("body *")) {
+    const cs = getComputedStyle(el);
+    if ((cs.position === "fixed" || cs.position === "sticky") && /cookie/i.test(el.innerText || "") && el.getBoundingClientRect().height < innerHeight * 0.6) { el.style.setProperty("display", "none", "important"); hidden++; }
+  }
+  return hidden ? "hidden " + hidden : "none";
 })()`;
 
 interface Candidate { i: number; role: "landmark" | "interactive" | "media"; tag: string; text: string; cls: string; box: HoverResult["box"]; fixed: boolean; vertical: boolean; children: number }
@@ -241,18 +274,35 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
     await page.evaluate(`(async () => { const h = document.documentElement.scrollHeight; for (let y = 0; y < Math.min(h, 4000); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 100)); } window.scrollTo(0, 0); })()`);
     await settle(page, 500);
 
+    await page.evaluate(COOKIES); await settle(page, 400);
     const sections = (await page.evaluate(SECTIONS)) as PageSection[];
+    const images = (await page.evaluate(IMAGES)) as PageImage[];
     const pageHeight = (await page.evaluate("document.documentElement.scrollHeight")) as number;
     const fullShot = Buffer.from(await page.screenshot({ type: "jpeg", quality: 50, clip: { x: 0, y: 0, width: 1440, height: Math.min(pageHeight, 6000) }, captureBeyondViewport: true }));
-    const plan = await planOnPage(voices, sections, fullShot, signal);
-    if (process.env.PROBE_DEBUG) console.log("probe plan:", JSON.stringify(plan.targets), "sections:", sections.map((x) => `${x.i}:${x.tag}@${x.y}+${x.h}`).join(" "));
+    const plan = await planOnPage(voices, sections, images, fullShot, signal);
+    if (process.env.PROBE_DEBUG) console.log("probe plan:", JSON.stringify(plan.targets), "sections:", sections.map((x) => `${x.i}:${x.tag}@${x.y}+${x.h}`).join(" "), "images:", images.length);
     if (!plan.targets.length) return null;
     const wants = (p: z.infer<typeof ProbeKind>) => plan.targets.some((t) => t.probes.includes(p));
 
     // Captures first, while nothing has been hovered: each section scrolled into view (lazy media, entrance animations) then clipped
     const captures: Capture[] = [];
     for (const target of plan.targets) {
-      for (const sid of target.sections.slice(0, 2)) {
+      for (const iid of target.images) {
+        if (captures.length >= 12) break;
+        const im = images.find((x) => x.i === iid);
+        if (!im || captures.some((c) => c.id === `i${iid}`)) continue;
+        try {
+          await page.evaluate(`window.scrollTo(0, ${Math.max(0, im.y - 200)})`); await settle(page, 600);
+          const r = (await page.evaluate(`(() => { const el = document.querySelector('[data-probe-img="${iid}"]'); if (!el) return null; const b = el.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y + scrollY), w: Math.round(b.width), h: Math.round(b.height) }; })()`)) as { x: number; y: number; w: number; h: number } | null;
+          if (!r || r.w < 120 || r.h < 80) continue;
+          const pad = 12;
+          const x = Math.max(0, r.x - pad), w = Math.min(1440 - x, r.w + pad * 2), h = Math.min(r.h + pad * 2, 1800);
+          const jpeg = Buffer.from(await page.screenshot({ type: "jpeg", quality: 72, clip: { x, y: Math.max(0, r.y - pad), width: w, height: h }, captureBeyondViewport: true }));
+          captures.push({ id: `i${iid}`, hint: target.hint, kind: "image", sectionId: -1, text: im.alt, box: { y: r.y, h }, jpeg });
+        } catch { /* gone or covered: skip */ }
+      }
+      for (const sid of target.sections.slice(0, 3)) {
+        if (captures.length >= 12) break;
         const sec = sections.find((x) => x.i === sid);
         if (!sec || captures.some((c) => c.sectionId === sid)) continue;
         try {
@@ -261,7 +311,7 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
           if (!r || r.h < 60) continue;
           const height = Math.min(r.h, 1800);
           const jpeg = Buffer.from(await page.screenshot({ type: "jpeg", quality: 68, clip: { x: 0, y: r.y, width: 1440, height }, captureBeyondViewport: true }));
-          captures.push({ id: `s${sid}`, hint: target.hint, sectionId: sid, text: sec.text, box: { y: r.y, h: height }, jpeg });
+          captures.push({ id: `s${sid}`, hint: target.hint, kind: "section", sectionId: sid, text: sec.text, box: { y: r.y, h: height }, jpeg });
         } catch { /* a section that vanished on scroll: skip it */ }
       }
     }

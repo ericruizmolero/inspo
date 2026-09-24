@@ -380,8 +380,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    to show the site's screenshot and its description under the name. The rows below slide down.
    It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
    ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
-   Which rows are open is decided in the Sidebar (is-open), so a fold never moves what is under the
-   pointer; :focus-within keeps the keyboard path. */
+   Which row is open is decided in the Sidebar (is-open, one at a time); :focus-within keeps the keyboard path. */
 .nav-item--pick-row {
   --pick-ease: cubic-bezier(0.65, 0, 0.35, 1);
   --pick-time: 0.4s;
@@ -394,15 +393,23 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 /* The card frame is the hover state now: the name row stays flat inside it */
 .nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
-.nav-item__card { min-height: 0; overflow: hidden; }
-/* The body only fades, on the same curve and clock as the fold: the clip does the movement, like an
-   accordion panel. Its fade sits in the first half of the clock, so it is fully there before the fold
-   settles and gone before the fold closes; the ease-in-out makes the two read as one motion. */
-.nav-item__card-inner { padding: 0 6px 6px; opacity: 0; transition: opacity calc(var(--pick-time) / 2) var(--pick-ease); }
-.nav-item--pick-row.is-open .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner { opacity: 1; }
+/* The body never moves or fades: it sits where it will end up and the track's clip edge passes over it
+   like a blind (the row's own background, dark or light, is the blind). Pinned to the top of the track,
+   so a row that opens or folds in place keeps its screenshot still. When the row opened "up" (the
+   Sidebar sets is-up: the row above was folding, and this title slid up by the same amount) the body is
+   pinned to the bottom instead: the track's bottom edge is the one that stays put on screen, so the
+   screenshot stays put too and the blind rises. All cards share one height (fixed shot ratio, fixed
+   three-line description), which is what makes the handover exact. */
+.nav-item__card { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
+.nav-item--pick-row.is-up .nav-item__card { justify-content: flex-end; }
+.nav-item__card-inner { padding: 0 6px 6px; }
 .nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
 .nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.nav-item__card p { margin: 0; padding: 7px 2px 2px; font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted); }
+.nav-item__card p {
+  margin: 0; padding: 7px 2px 2px; height: calc(3 * 1.4em + 9px); overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
+  font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted);
+}
 /* "Shuffle" deals the new rows in, one by one: each drops in from a few px up with a little blur,
    45ms apart (the island's own language); only after a shuffle, the first paint stays still */
 .nav-item--pick-row.is-dealt {
@@ -418,7 +425,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 @keyframes pick-flip { to { transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) {
   .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
-  .nav-item--pick-row, .nav-item__card-inner { transition: none; }
+  .nav-item--pick-row { transition: none; }
 }
 /* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
 .nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
@@ -1210,8 +1217,9 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-why__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 36px; }
 .dm-why__item { display: flex; flex-direction: column; gap: 18px; }
 .dm-why__shots { display: flex; flex-wrap: wrap; gap: 10px; }
-.dm-why__shot { display: block; flex: 1 1 480px; min-width: 0; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
-.dm-why__shot img { display: block; width: 100%; height: auto; max-height: 560px; object-fit: cover; object-position: top; }
+/* One capture fills the row; several tile in two or three columns. Never cropped: what was captured is what shows. */
+.dm-why__shot { display: block; flex: 1 1 340px; max-width: 100%; min-width: 0; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.dm-why__shot img { display: block; width: 100%; height: auto; }
 /* Quote at the left edge, detail at the right edge, the space between them is the layout */
 .dm-why__caption { display: flex; justify-content: space-between; align-items: flex-start; gap: 48px; }
 .dm-why__quote { margin: 0; flex: 0 1 44ch; min-width: 0; }

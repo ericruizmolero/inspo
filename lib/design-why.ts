@@ -29,12 +29,12 @@ Rules:
 - Quotes stay verbatim and in the person's language. "note" is read on screen by the team: write it in the language given below. Values are values (hex, px, ms, token names) in any language.
 - Short and dense. "values" are chips of 1-4 words, only real values from the spec (token names as the spec writes them, hex, px, ms, easing, weight). "note" is one instruction of at most 22 words for the designer who will reproduce this: the concrete treatment to take (placement, scale, spacing, tone, timing). It never restates the quote, never praises, never mentions the spec or what is missing. Only when it adds something the capture does not show by itself; otherwise empty.
 - You may also receive a PROBE REPORT: a headless browser visited the page, hovered the elements the notes point at, counted audio events, checked the cursor, watched the scroll and CAPTURED the sections the notes point at (the "captures" list, each with an id and the section's text). Hover and audio observations count as "measured": cite them ("color #111 → #e0afa8 on hover, 200ms", "2 audio events while hovering"). When the probe looked and found nothing (no audio event, no hover change, no matching element), say so plainly in the note and keep the status "unverifiable": absence in the probe is not proof of absence on a real visit.
-- For each highlight, list in "shots" the ids of the captures that show exactly that thing (usually one). A capture is worth more than any description: prefer pointing at it over describing what it shows.
+- For each highlight, list in "shots" the ids of the captures that show exactly that thing: all of them when several do (a note about mockups gets every mockup captured), in the best order first. A capture is worth more than any description: prefer pointing at it over describing what it shows.
 - A note that says nothing concrete ("cool", "check this", a greeting) produces no highlight. If nothing is concrete, return an empty list and an empty gist.`;
 
 export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 7 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 8 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {
@@ -67,14 +67,14 @@ export async function buildWhy(input: { spec: DesignSpec; url: string; voices: V
     model: DESIGN_WHY_MODEL,
     system: `${SYSTEM}\n\nLanguage: ${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,
     image: input.screenshot,
-    text: `URL: ${input.url}\n\nWhat the team said, in order:\n${voices}\n\n${input.probe ? `PROBE REPORT (observed by a headless browser):\n${JSON.stringify({ summary: input.probe.summary, audio: input.probe.audio, cursor: input.probe.cursor, scroll: input.probe.scroll, targets: input.probe.targets, captures: input.probe.captures.map((c) => ({ id: c.id, hint: c.hint, section: c.text, y: c.box.y, h: c.box.h })) })}\n\n` : ""}The DESIGN.md spec (JSON):\n${JSON.stringify(input.spec)}`,
+    text: `URL: ${input.url}\n\nWhat the team said, in order:\n${voices}\n\n${input.probe ? `PROBE REPORT (observed by a headless browser):\n${JSON.stringify({ summary: input.probe.summary, audio: input.probe.audio, cursor: input.probe.cursor, scroll: input.probe.scroll, targets: input.probe.targets, captures: input.probe.captures.map((c) => ({ id: c.id, kind: c.kind, hint: c.hint, text: c.text, y: c.box.y, h: c.box.h })) })}\n\n` : ""}The DESIGN.md spec (JSON):\n${JSON.stringify(input.spec)}`,
     schema: DesignWhySchema,
     maxTokens: 4000,
     signal: input.signal,
   });
   const out = DesignWhySchema.parse(JSON.parse(res.text));
   const urls = input.shotUrls ?? {};
-  const highlights = out.highlights.map((h) => ({ ...h, values: h.values.slice(0, 6), note: h.note.trim(), shots: h.shots.filter((id) => id in urls).slice(0, 3), shotUrls: h.shots.filter((id) => id in urls).slice(0, 3).map((id) => urls[id]) }));
+  const highlights = out.highlights.map((h) => ({ ...h, values: h.values.slice(0, 6), note: h.note.trim(), shots: h.shots.filter((id) => id in urls).slice(0, 8), shotUrls: h.shots.filter((id) => id in urls).slice(0, 8).map((id) => urls[id]) }));
   const why: DesignWhy = { highlights, model: res.model, createdAt: new Date().toISOString(), voices: input.voices.length, ...(input.probe ? { probe: { summary: input.probe.summary, ms: input.probe.ms, captures: input.probe.captures.length, hovered: input.probe.targets.reduce((n, t) => n + t.elements.length, 0), audioEvents: input.probe.targets.reduce((n, t) => n + t.elements.reduce((m, e) => m + e.audioEvents, 0), 0) } } : {}) };
   return { why, model: res.model, provider: res.provider, requestId: res.id, costUsd: res.costUsd, usage: res.usage };
 }

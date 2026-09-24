@@ -176,7 +176,7 @@ export const WhyHighlightSchema = z.object({
   status: WhyStatus.describe("measured: the spec has values for it. seen: visible in the screenshot but the spec has no numbers for it. unverifiable: not observable from styles or a still image (sound, hover, scroll, feel, speed)."),
   values: z.array(z.string()).describe("Only measured or seen: the concrete values behind it, as short chips of 1-4 words each, e.g. 'Mono 11px caps', '#ffffff', 'radius 0', 'ease-out 180ms', 'weight 510'. Token names as the spec writes them. Empty when unverifiable."),
   note: z.string().describe("One sentence in the reader's language, max 22 words, written for a designer who will reproduce this: the concrete treatment to take from it (placement, scale, spacing, tone, timing), as an instruction. Never restate the quote, never praise, never mention the spec or what is missing. For unverifiable things: what would be needed to check them. Empty when the capture and the values already say it all."),
-  shots: z.array(z.string()).describe("Ids of the probe captures (from the PROBE REPORT captures list) that show exactly this thing. Empty if none shows it, or if there is no probe report."),
+  shots: z.array(z.string()).describe("Ids of the probe captures (from the PROBE REPORT captures list) that show exactly this thing, all of them when several do. Empty if none shows it, or if there is no probe report."),
 });
 
 export const DesignWhySchema = z.object({
