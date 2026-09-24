@@ -306,14 +306,78 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .sidebar__scrollwrap.is-bottom::after { opacity: 1; }
 .sidebar__scroll > * { flex-shrink: 0; }
 
-.app-sidebar__header { gap: 12px; padding: 16px 12px 8px; }
+.app-sidebar__header { padding: 12px 12px 4px; }
 .app-sidebar__footer { gap: 8px; padding: 12px; border-top: 1px solid var(--sidebar-border); }
+
+/* ─── Curtain + island (after Angelo Libero) ─────────────────────────────── */
+/* The curtain, by transforms only, driven from InspoClient with the Web Animations API so it runs on the
+   compositor: the gap jumps, the column and the whole content block slide, and the cards near the viewport
+   fly from their old box to the new one, all on one curve. Transitioning the gap's width instead relaid out
+   the grid every frame and WebKit re-decoded every visible screenshot at each width (5 to 15 s frozen). */
+.shell { overflow-x: clip; }
+.shell [data-slot="sidebar-gap"] { transition: none; }
+.app-sidebar { left: 0; transition: none; will-change: transform; }
+[data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: translateX(-100%); }
+/* The workspace as a card at the top of the column */
+.app-sidebar__brand { display: flex; align-items: center; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.app-sidebar__brand .ws__trigger { padding: 4px 8px 4px 4px; border-radius: 9px; }
+.app-sidebar__brand .ws__trigger:hover { background: var(--surface-2); }
+.app-sidebar__add-row { padding: 8px 12px 4px; }
+.ws__count { color: var(--muted-2); font-variant-numeric: tabular-nums; }
+
+/* The pill, in the breadcrumb's place: the bar's own language (same height, radius and hairline as the
+   search box), no fill at rest, filled on hover or while the menu hangs open */
+.island { position: relative; display: flex; flex-direction: column; min-width: 0; animation: fade-in 0.3s ease-out both; }
+.island__pill { display: flex; align-items: center; height: 34px; max-width: 260px; border: 1px solid var(--border); border-radius: 10px; background: transparent; transition: background 0.15s, border-color 0.15s; }
+@media (hover: hover) { .island__pill:hover { background: var(--surface); } }
+.island.is-open .island__pill { background: var(--surface); border-color: var(--border-strong); }
+.island .ws { width: auto; min-width: 0; }
+.island .ws__trigger { height: 32px; padding: 0 6px 0 5px; gap: 8px; border-radius: 9px; }
+.island .ws__trigger:hover { background: transparent; }
+.island .ws__avatar { width: 20px; height: 20px; border-radius: 6px; font-size: 11px; }
+.island .ws__names { flex-direction: row; align-items: baseline; gap: 6px; }
+.island .ws__name { font-size: 13px; }
+.island .ws__kind { font-size: 12px; white-space: nowrap; }
+.island__chev {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 24px; height: 24px; margin-right: 4px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.island__chev:hover { background: var(--surface-2); color: var(--text); }
+.island.is-open .island__chev { transform: rotate(180deg); }
+/* The menu: a card hanging under the pill, over the grid. It folds with grid rows, opacity and a touch of blur;
+   the padding keeps its shadow inside the clip. Only the card takes clicks. */
+.island__body {
+  position: absolute; top: calc(100% + 8px); left: 0; width: 280px; z-index: 30;
+  display: grid; grid-template-rows: 0fr; pointer-events: none;
+  transition: grid-template-rows 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.island.is-open .island__body { grid-template-rows: 1fr; }
+.island__clip { min-height: 0; overflow: hidden; padding-bottom: 28px; }
+.island__card {
+  display: flex; flex-direction: column; max-height: calc(100svh - 110px); pointer-events: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card);
+  opacity: 0; filter: blur(6px); transform: translateY(-8px);
+  transition: opacity 0.3s, filter 0.3s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.island.is-open .island__card { opacity: 1; filter: blur(0); transform: none; }
+.island__card .app-sidebar__footer { border-radius: 0 0 12px 12px; }
+@media (prefers-reduced-motion: reduce) {
+  .island { animation: none; }
+  .island__body, .island__card, .island__chev { transition: none; }
+}
 .sidebar__footer-note { font-size: 12px; color: var(--muted-2); padding: 0 10px; }
 
 /* Menu rows keep the project's quiet icons: muted until hover or selected */
 .nav-item__icon { display: flex; color: var(--muted); flex-shrink: 0; transition: color 0.15s; }
 .nav-item:hover .nav-item__icon, .nav-item[data-active] .nav-item__icon { color: var(--text); }
 .nav-item__count { color: var(--muted); font-weight: 400; }
+/* Team rows: a round 18px avatar in the icon slot, initials when there is no photo */
+.nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
+/* The "invite" row is an affordance, not a destination: muted until hovered */
+.nav-item--quiet { color: var(--muted-2); }
+.nav-item--quiet:hover { color: var(--text); }
 
 /* Refero: the one solid button in the sidebar, first thing under the workspace */
 .sidebar__add { height: 38px; justify-content: flex-start; padding: 0 12px 0 10px; }
@@ -331,7 +395,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__trigger { position: relative; display: flex; }
 .topbar__trigger [data-slot="sidebar-trigger"] { color: var(--muted); }
 .topbar__trigger [data-slot="sidebar-trigger"]:hover { color: var(--text); }
-.topbar__sep { height: 16px; }
 /* Shortcut inside a tooltip */
 .kbd { margin-left: 6px; padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, var(--bg) 14%, transparent); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.02em; }
 .topbar__view { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -341,6 +404,18 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__logo, .topbar__add { display: none; }
 /* Mobbin: one wide search in the middle of the bar */
 .topbar__search { flex: 1; min-width: 0; }
+/* Quiet at rest (Eric: the bar shouted): no fill, a hairline border, muted icon; the fill comes with hover and focus */
+.topbar .search.is-ai .input {
+  height: 36px; border-radius: 10px;
+  background: transparent; border-color: var(--border);
+  font-size: 13px;
+}
+.topbar .search.is-ai .input::placeholder { color: var(--muted-2); }
+@media (hover: hover) { .topbar .search.is-ai .input:hover { background: var(--surface); } }
+.topbar .search.is-ai .input:focus { background: var(--surface); border-color: var(--border-strong); }
+.topbar .search.is-ai .search__icon { color: var(--muted-2); }
+.topbar .search.is-ai:focus-within .search__icon { color: var(--muted); }
+.topbar .search.is-ai .search__kbd { border: 0; color: var(--muted-2); font-size: 11px; }
 /* Desktop: centred on the whole bar, not on the space the breadcrumb leaves; it narrows before it reaches the breadcrumb */
 @media (min-width: 1200px) {
   .topbar__search { position: absolute; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 520px)); }
@@ -400,7 +475,7 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
 
 @media (max-width: 800px) {
   .topbar { height: 56px; gap: 8px; padding: 0 12px; }
-  .topbar__sep, .topbar__view { display: none; }
+  .topbar__view { display: none; }
   .topbar__logo { display: block; }
   .topbar__add { display: inline-flex; }
   .search__kbd { display: none; }
@@ -412,11 +487,21 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
 }
 
 /* ─── Grid ────────────────────────────────────────────────────────────────── */
+/* Masonry laid out by CSS from three numbers per card (InspoClient computes them: column, offset in column
+   widths, index in the column). Container units make the grid reflow with its container on its own, with no
+   render, and every card is one flat node keyed by item: it never remounts when the columns change. */
+.masonry-wrap { container-type: inline-size; }
 .masonry {
-  display: flex; align-items: flex-start;
-  gap: 16px; padding: 20px 20px 48px;
+  --m-pad: 20px; --m-pad-top: 20px; --m-pad-bottom: 48px; --m-gap: 16px;
+  --col: calc((100cqw - 2 * var(--m-pad) - (var(--n) - 1) * var(--m-gap)) / var(--n));
+  position: relative;
 }
-.masonry__col { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.card-item {
+  position: absolute;
+  width: var(--col);
+  left: calc(var(--m-pad) + var(--c) * (var(--col) + var(--m-gap)));
+  top: calc(var(--m-pad-top) + var(--y) * var(--col) + var(--k) * var(--m-gap));
+}
 
 .empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -425,8 +510,7 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
 .empty .display { color: var(--text-2); font-size: 20px; }
 
 @media (max-width: 800px) {
-  .masonry { gap: 10px; padding: 12px 12px 40px; }
-  .masonry__col { gap: 10px; }
+  .masonry { --m-pad: 12px; --m-pad-top: 12px; --m-pad-bottom: 40px; --m-gap: 10px; }
 }
 
 /* ─── Tile ────────────────────────────────────────────────────────────────── */
@@ -1271,7 +1355,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 }
 @keyframes ai-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @keyframes ai-sweep { from { background-position: -100% 0; } to { background-position: 300% 0; } }
-.ai-hero + .masonry { padding-top: 16px; }
+.ai-hero + .masonry-wrap .masonry { --m-pad-top: 16px; }
 @media (max-width: 800px) {
   .ai-hero { margin: 12px 12px 0; padding: 16px; gap: 12px; flex-wrap: wrap; }
   .ai-hero__badge { width: 32px; height: 32px; border-radius: 10px; }

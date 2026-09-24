@@ -4,14 +4,14 @@ import { addInspo, removeInspo, postComment as postCommentAction, removeComment,
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback, memo, type RefObject } from "react";
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
 import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
-import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView } from "./Sidebar";
+import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView, IslandPill } from "./Sidebar";
 import FilterBar from "./FilterBar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
@@ -27,7 +27,6 @@ import { useActivity } from "./useActivity";
 import { useT } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import CommandPalette from "./CommandPalette";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -94,12 +93,27 @@ const SIDEBAR_W = 256;
 const DESKTOP_MIN = 801;
 const RATIOS_KEY = "inspo:card-ratios";
 // Card height/width before measuring (the placeholder is 4:3) and gap between cards.
+/** Cards near the viewport: the only ones worth measuring and animating. Off-screen ones jump. */
+const nearViewport = (el: Element, margin = 300) => { const r = el.getBoundingClientRect(); return r.bottom > -margin && r.top < window.innerHeight + margin; };
+/** The curtain: the sidebar's slide and everything that rides with it share this length and curve */
+const CURTAIN_MS = 550;
+const CURTAIN_EASE = "cubic-bezier(0.65, 0, 0.35, 1)";
 const DEFAULT_RATIO = 0.75;
 const GAP_RATIO = 0.06;
 
 // Columns from the usable content width (window minus sidebar on desktop).
 // Computed synchronously so collapsing the sidebar and reflowing the cards
 // happen in the same render and GSAP Flip can animate it in one go.
+function columnsFor(winW: number, collapsed: boolean) {
+  if (!winW) return 4;
+  const desktop = winW >= DESKTOP_MIN;
+  const w = desktop ? winW - (collapsed ? 0 : SIDEBAR_W) : winW;
+  if (!desktop && w <= 520) return 1;
+  if (w <= 644) return 2;
+  if (w <= 1144) return 3;
+  if (w <= 1644) return 4;
+  return 5;
+}
 function useColumnCount(collapsed: boolean) {
   const [winW, setWinW] = useState(0);
   useEffect(() => {
@@ -108,16 +122,7 @@ function useColumnCount(collapsed: boolean) {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return useMemo(() => {
-    if (!winW) return 4;
-    const desktop = winW >= DESKTOP_MIN;
-    const w = desktop ? winW - (collapsed ? 0 : SIDEBAR_W) : winW;
-    if (!desktop && w <= 520) return 1;
-    if (w <= 644) return 2;
-    if (w <= 1144) return 3;
-    if (w <= 1644) return 4;
-    return 5;
-  }, [winW, collapsed]);
+  return useMemo(() => columnsFor(winW, collapsed), [winW, collapsed]);
 }
 
 
@@ -605,30 +610,91 @@ export default function InspoClient({
 
   // Collapsible sidebar (desktop only). SidebarProvider saves it in a cookie that the server reads
   const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
-  // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B); the cards follow with GSAP Flip
-  // while the sidebar slides with a CSS transition of the same length and curve
+  // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B). The curtain is transform-only and
+  // runs on the compositor (Web Animations API, not GSAP): the column slides, the whole content block slides
+  // with it, and every card near the viewport flies from its old box to its new one, all on the same curve
+  // and length, in the same frame. Nothing is laid out per frame and a busy main thread cannot stall it.
+  // The first GSAP version (Flip on every card, width transitions) froze WebKit for seconds and started late.
+  const curtain = useRef<{ anims: Animation[]; settle: () => void } | null>(null);
   const setSidebarOpen = (open: boolean) => {
     if (open === !collapsed) return;
-    gsap.registerPlugin(Flip);
-    // Grid cards and empty-screen blocks (data-flip) move in unison
-    const targets = [".card-item", "[data-flip]"];
-    const state = Flip.getState(targets);
     const next = !open;
+    // A second toggle mid-flight: land the running curtain first, then start the new one from there
+    if (curtain.current) { for (const a of curtain.current.anims) a.finish(); curtain.current.settle(); }
+    const content = document.querySelector<HTMLElement>(".content");
+    const column = document.querySelector<HTMLElement>(".app-sidebar");
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced || !content || !column || window.innerWidth < DESKTOP_MIN) {
+      flushSync(() => setCollapsed(next));
+      return;
+    }
+    // 1. Where everything is now. Cards up to half a screen away count (the reflow can bring them in), at most
+    // 60 of them: every animated card is its own compositor layer, and past a hundred WebKit chokes.
+    const margin = window.innerHeight / 2;
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item, [data-flip]")).filter((el) => nearViewport(el, margin)).slice(0, 60);
+    const before = new Map<HTMLElement, DOMRect>();
+    for (const el of cards) before.set(el, el.getBoundingClientRect());
+    const contentRectBefore = content.getBoundingClientRect();
+    const contentBefore = contentRectBefore.left;
+    // The card nearest the top of the viewport stays put: the scroll follows it into the new layout
+    let anchor: HTMLElement | undefined;
+    for (const el of cards) { const r = before.get(el)!; if (r.bottom > 110 && (!anchor || r.top < before.get(anchor)!.top)) anchor = el; }
+    // 2. The swap: the gap jumps, the content takes its new width, the pill replaces the breadcrumb
     flushSync(() => setCollapsed(next));
-    Flip.from(state, {
-      targets,
-      duration: 0.55,
-      ease: "power3.inOut",
-      scale: true,
-      absolute: false,
-      onComplete: () => gsap.set(targets, { clearProps: "transform" }),
-    });
+    if (anchor) { const dy = anchor.getBoundingClientRect().top - before.get(anchor)!.top; if (dy) window.scrollBy({ top: dy, behavior: "instant" }); }
+    // 3. Everything starts from where it was and glides to where it is. All the "after" boxes are read before
+    // any animation exists: once one is created its first keyframe already shows in the rects, and a card
+    // measured through the content block's own shift would cancel it and sit still.
+    const contentRect = content.getBoundingClientRect();
+    const dxContent = contentBefore - contentRect.left;
+    const after = new Map<HTMLElement, DOMRect>();
+    for (const el of cards) after.set(el, el.getBoundingClientRect());
+    const opts: KeyframeAnimationOptions = { duration: CURTAIN_MS, easing: CURTAIN_EASE };
+    // The canvas itself grows or shrinks with the curtain, not in one jump: the content block's width is
+    // animated too (main thread, but cheap: the grid wrapper is pinned to its final width in px, so the
+    // 125 absolutely positioned cards are never laid out again during the flight; only the bars follow).
+    // Its own transform stays a separate, accelerated animation. flex: none so the width is obeyed.
+    const wrap = content.querySelector<HTMLElement>(".masonry-wrap");
+    if (wrap) wrap.style.width = `${contentRect.width}px`;
+    content.style.flex = "none";
+    const anims: Animation[] = [
+      column.animate([{ transform: `translateX(${next ? 0 : -100}%)` }, { transform: `translateX(${next ? -100 : 0}%)` }], opts),
+      content.animate([{ transform: `translateX(${dxContent}px)` }, { transform: "none" }], opts),
+      content.animate([{ width: `${contentRectBefore.width}px` }, { width: `${contentRect.width}px` }], opts),
+    ];
+    for (const el of cards) {
+      const b = before.get(el)!, a = after.get(el)!;
+      if (!a.width || !a.height) continue;
+      const dx = b.left - a.left - dxContent, dy = b.top - a.top, sx = b.width / a.width, sy = b.height / a.height;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.002 && Math.abs(sy - 1) < 0.002) continue;
+      el.style.transformOrigin = "0 0";
+      anims.push(el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: "none" }], opts));
+    }
+    // 4. Landed: release the cards and the canvas
+    const settle = () => {
+      if (curtain.current?.anims !== anims) return;
+      curtain.current = null;
+      for (const el of cards) el.style.transformOrigin = "";
+      if (wrap) wrap.style.width = "";
+      content.style.flex = "";
+    };
+    curtain.current = { anims, settle };
+    Promise.all(anims.map((a) => a.finished)).then(settle, () => { /* cancelled: another toggle landed it */ });
   };
 
   const numCols = useColumnCount(collapsed);
   // On a phone the same trigger opens the menu sheet, so it says so
   const isMobile = useIsMobile();
   const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
+  // Desktop, sidebar collapsed: the island pill sits over the topbar and says what the breadcrumb said
+  const island = !isMobile && collapsed;
+  const viewLabel = type === "all" ? t.sidebar.all : t.labels.type[type];
+  // Everything under the workspace, shared by the docked column and the island menu
+  const navProps = {
+    quota, items, members, workspaceKind: workspace.kind, author, onAuthor: setAuthor, type,
+    isAll: type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0,
+    onType: setType, onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
+  };
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
 
@@ -689,16 +755,25 @@ export default function InspoClient({
     } catch { /* no storage */ }
   }, []);
 
-  const columns = useMemo(() => {
-    const cols: InspoItem[][] = Array.from({ length: numCols }, () => []);
-    const heights = new Array<number>(numCols).fill(0);
+  // Masonry as numbers: each card gets a column, a vertical offset in column widths (the ratios above it)
+  // and its index in the column. CSS turns them into left, top and width with container units, so the grid
+  // reflows with its container on its own, and a card that changes column keeps its DOM node (no remount,
+  // no image reload): the flat list is keyed by item, never by slot.
+  const layout = useMemo<GridLayout>(() => {
+    const y = new Array<number>(numCols).fill(0);
+    const count = new Array<number>(numCols).fill(0);
+    const slots: GridSlot[] = [];
     for (const item of filtered) {
       let c = 0;
-      for (let i = 1; i < numCols; i++) if (heights[i] < heights[c] - 0.001) c = i;
-      cols[c].push(item);
-      heights[c] += (ratiosRef.current[item.web] ?? DEFAULT_RATIO) + GAP_RATIO;
+      for (let i = 1; i < numCols; i++) if (y[i] + count[i] * GAP_RATIO < y[c] + count[c] * GAP_RATIO - 0.001) c = i;
+      slots.push({ item, c, y: y[c], k: count[c] });
+      y[c] += ratiosRef.current[item.web] ?? DEFAULT_RATIO;
+      count[c]++;
     }
-    return cols;
+    // The tallest column decides the height, but which one is tallest depends on the column width in px,
+    // which only CSS knows: max() over all of them
+    const height = `max(${y.map((v, i) => `calc(var(--m-pad-top) + ${v.toFixed(4)} * var(--col) + ${Math.max(0, count[i] - 1)} * var(--m-gap) + var(--m-pad-bottom))`).join(", ")})`;
+    return { n: numCols, slots, height };
     // ratiosVersion forces a recompute when measurements change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, numCols, ratiosVersion]);
@@ -708,13 +783,20 @@ export default function InspoClient({
     if (entering.current) { pendingRelayout.current = true; return; }
     pendingRelayout.current = false;
     gsap.registerPlugin(Flip);
-    const state = Flip.getState(".card-item");
+    // Only the cards on screen fly, and only with transforms: measuring all 125 took half a second in WebKit,
+    // and animating width and height relaid out the whole grid on every frame. That was the freeze.
+    Flip.killFlipsOf(".card-item", true);
+    const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item")).filter(nearViewport);
+    const state = Flip.getState(cards, { simple: true });
     flushSync(() => setRatiosVersion((v) => v + 1));
+    const clear = () => gsap.set(cards, { clearProps: "transform" });
     Flip.from(state, {
-      targets: ".card-item",
+      targets: cards,
       duration: 0.4,
       ease: "power2.inOut",
-      onComplete: () => gsap.set(".card-item", { clearProps: "transform" }),
+      scale: true,
+      onComplete: clear,
+      onInterrupt: clear,
     });
   };
   const relayoutRef = useRef(relayout);
@@ -743,7 +825,7 @@ export default function InspoClient({
     });
     grid.querySelectorAll<HTMLElement>(".card-item").forEach((el) => ro.observe(el));
     return () => { ro.disconnect(); window.clearTimeout(timer); };
-  }, [columns]);
+  }, [layout]);
 
   useEffect(() => {
     const el = gridRef.current;
@@ -765,7 +847,8 @@ export default function InspoClient({
       duration: isMount.current ? 0.45 : 0.3,
       stagger: isMount.current ? 0.035 : 0.025,
       ease: "power3.out",
-      clearProps: "all",
+      // Only what the tween touched: "all" wipes the inline style, and with it the card's grid position (--c, --y, --k)
+      clearProps: "opacity,transform",
       onComplete: () => {
         entering.current = false;
         if (pendingRelayout.current) relayoutRef.current();
@@ -779,6 +862,10 @@ export default function InspoClient({
   useActivity(area, workspace.id);
 
   runDesignMdRef.current = runDesignMd;
+  // The grid's handlers, behind one stable ref: the grid only re-renders when its data changes, never because
+  // the shell did (collapsing the sidebar used to re-render all 125 cards, 70 ms on the toggle's first frame)
+  const gridActions = useRef<GridActions>(null!);
+  gridActions.current = { setCommentsItemId, deleteItem, handleThumbnailUpload, handleThumbnailRemove, openDesignMd };
 
   return (
     <SidebarProvider open={!collapsed} onOpenChange={setSidebarOpen} className="shell">
@@ -875,24 +962,20 @@ export default function InspoClient({
         />
       )}
 
-      <Sidebar
-        quota={quota}
-        brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />}
-        items={items}
-        type={type}
-        isAll={type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0}
-        onType={setType}
-        onReset={resetFilters}
-        onAdd={() => setShowAdd(true)}
-        onDirectory={() => setShowDirectory(true)}
-      />
+      <Sidebar brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />} {...navProps} />
 
       <SidebarInset className="content">
         <header className="topbar">
           <span className="topbar__trigger">
             <SidebarTrigger aria-label={triggerLabel} />
           </span>
-          <Separator orientation="vertical" className="topbar__sep" />
+          {island ? (
+            <IslandPill
+              brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
+                subtitle={<>{viewLabel} <span className="ws__count">{filtered.length}</span></>} />}
+              {...navProps}
+            />
+          ) : (
           <Breadcrumb className="topbar__view" aria-label={t.settings.breadcrumb}>
             <BreadcrumbList>
               <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>
@@ -903,6 +986,7 @@ export default function InspoClient({
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
+          )}
           <Logo size={28} className="topbar__logo" />
           {/* The main search always looks like the AI search (spark + "Describe what you are after"), as the sidebar box did */}
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
@@ -978,35 +1062,90 @@ export default function InspoClient({
             <Button variant="ghost" size="sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</Button>
           </div>
         ) : (
-          <section ref={gridRef} className="masonry">
-            {columns.map((col, colIdx) => (
-              <div key={colIdx} className="masonry__col">
-                {col.map((item, itemIdx) => (
-                  <div key={`${item.web}-${colIdx}-${itemIdx}`} className="card-item" data-flip-id={item.web}>
-                    <InspoCard
-                      item={item}
-                      tags={tagMap[item.web]}
-                      score={ai && aiScores ? aiScores[item.web] : undefined}
-                      reason={ai && aiScores ? aiReasons?.[item.web] : undefined}
-                      commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
-                      onComments={item.id ? () => setCommentsItemId(item.id!) : undefined}
-                      onDelete={item.id ? () => deleteItem(item) : undefined}
-                      manualThumbnail={thumbMap[item.web]}
-                      onUpload={(file) => { handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
-                      onRemoveThumbnail={() => { handleThumbnailRemove(item.web); return Promise.resolve(); }}
-                      onDesignMd={() => openDesignMd(item)}
-                      designMdLoading={designMdJobs[item.web]?.status === "loading"}
-                      designMdReady={item.web in designMdIndex}
-                      designCover={designMdIndex[item.web]?.coverUrl}
-                      designScroll={designMdIndex[item.web]?.scrollUrl}
-                    />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </section>
+          <Grid
+            gridRef={gridRef} layout={layout} tagMap={tagMap}
+            aiScores={ai ? aiScores : null} aiReasons={ai ? aiReasons : null}
+            commentMap={commentMap} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
+            actions={gridActions}
+          />
         )}
       </SidebarInset>
     </SidebarProvider>
   );
 }
+
+interface GridActions {
+  setCommentsItemId: (id: string) => void;
+  deleteItem: (item: InspoItem) => Promise<void>;
+  handleThumbnailUpload: (web: string, file: File) => void;
+  handleThumbnailRemove: (web: string) => void;
+  openDesignMd: (item: InspoItem) => void;
+}
+
+/** The masonry. Memoised: it re-renders on new data (items, tags, comments, covers), not on shell state. */
+interface GridSlot { item: InspoItem; c: number; y: number; k: number }
+interface GridLayout { n: number; slots: GridSlot[]; height: string }
+
+const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, thumbMap, designMdJobs, designMdIndex, actions }: {
+  gridRef: RefObject<HTMLElement | null>;
+  layout: GridLayout;
+  tagMap: TagMap;
+  aiScores: Record<string, number> | null | undefined;
+  aiReasons: Record<string, string> | null | undefined;
+  commentMap: CommentMap;
+  thumbMap: ThumbnailMap;
+  designMdJobs: Record<string, DesignMdState>;
+  designMdIndex: Record<string, { coverUrl?: string; scrollUrl?: string }>;
+  actions: RefObject<GridActions>;
+}) {
+  return (
+    <div className="masonry-wrap">
+      <section ref={gridRef} className="masonry" style={{ "--n": layout.n, height: layout.height } as React.CSSProperties}>
+        {layout.slots.map(({ item, c, y, k }) => (
+          <div key={item.web} className="card-item" data-flip-id={item.web} style={{ "--c": c, "--y": y.toFixed(4), "--k": k } as React.CSSProperties}>
+            <Card
+              item={item}
+              tags={tagMap[item.web]}
+              score={aiScores ? aiScores[item.web] : undefined}
+              reason={aiScores ? aiReasons?.[item.web] : undefined}
+              commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
+              manualThumbnail={thumbMap[item.web]}
+              designMdLoading={designMdJobs[item.web]?.status === "loading"}
+              designMd={designMdIndex[item.web]}
+              actions={actions}
+            />
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+});
+
+/** One card with its handlers bound. Memoised on its own data, so a new layout (a sidebar toggle, a new
+ *  measurement) only moves the slot div around it and leaves the 125 card trees alone. */
+const Card = memo(function Card({ item, tags, score, reason, commentCount, manualThumbnail, designMdLoading, designMd, actions }: {
+  item: InspoItem; tags: InspoTags | undefined; score: number | undefined; reason: string | undefined; commentCount: number;
+  manualThumbnail: string | undefined; designMdLoading: boolean; designMd: { coverUrl?: string; scrollUrl?: string } | undefined;
+  actions: RefObject<GridActions>;
+}) {
+  const act = actions.current;
+  return (
+    <InspoCard
+      item={item}
+      tags={tags}
+      score={score}
+      reason={reason}
+      commentCount={commentCount}
+      onComments={item.id ? () => act.setCommentsItemId(item.id!) : undefined}
+      onDelete={item.id ? () => act.deleteItem(item) : undefined}
+      manualThumbnail={manualThumbnail}
+      onUpload={(file) => { act.handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
+      onRemoveThumbnail={() => { act.handleThumbnailRemove(item.web); return Promise.resolve(); }}
+      onDesignMd={() => act.openDesignMd(item)}
+      designMdLoading={designMdLoading}
+      designMdReady={designMd !== undefined}
+      designCover={designMd?.coverUrl}
+      designScroll={designMd?.scrollUrl}
+    />
+  );
+});

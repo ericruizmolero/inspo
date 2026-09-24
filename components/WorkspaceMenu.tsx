@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
@@ -44,8 +44,10 @@ const I = {
   ),
 };
 
-export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false }: {
+export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, subtitle }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
+  /** Second line under the name; without it, the kind of workspace */
+  subtitle?: ReactNode;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -82,9 +84,11 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
         <span className="ws__names">
           <span className="display ws__name">{workspace.name}</span>
           {/* If the name already says "Equipo" or "Team", it isn't repeated below */}
-          {(workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
-            <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
-          )}
+          {subtitle !== undefined
+            ? <span className="ws__kind">{subtitle}</span>
+            : (workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
+              <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
+            )}
         </span>
       </PopoverTrigger>
 

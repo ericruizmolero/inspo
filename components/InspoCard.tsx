@@ -262,6 +262,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             <img
               ref={manualImgRef}
               className={`tile__img${manualLoaded ? "" : " is-hidden"}`}
+                decoding="async"
               src={manualThumbnail.startsWith("https://")
                 ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
                 : manualThumbnail}
@@ -276,6 +277,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               <img
                 ref={coverImgRef}
                 className={`tile__img${coverLoaded ? "" : " is-hidden"}`}
+                decoding="async"
                 src={proxiedSrc(designCover!)}
                 alt={item.name}
                 loading="lazy"
@@ -299,6 +301,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           {!useManual && !useDesign && imgSrc && (
             <img
               className="tile__img"
+                decoding="async"
               src={imgSrc}
               alt={item.name}
               onError={() => {

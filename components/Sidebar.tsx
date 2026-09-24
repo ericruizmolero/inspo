@@ -7,6 +7,7 @@ import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
 import type { Term } from "@/lib/taxonomy";
 import { DIRECTORY_TOTAL } from "@/lib/directory";
 import { useT } from "./I18nProvider";
+import { UserAvatar } from "./WorkspaceMenu";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -100,6 +101,11 @@ const I = {
       <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" />
     </svg>
   ),
+  chevron: (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3.5 5.5L7 9l3.5-3.5" />
+    </svg>
+  ),
   compass: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="8" cy="8" r="6" /><path d="M10.5 5.5l-1.6 4-4 1.6 1.6-4z" />
@@ -177,12 +183,12 @@ export function Chips({ terms, counts, selected, onToggle, labels, images }: {
   );
 }
 
-function NavItem({ icon, label, count, active, onClick }: {
-  icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void;
+function NavItem({ icon, label, count, active, onClick, title }: {
+  icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void; title?: string;
 }) {
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item">
+      <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item" title={title}>
         <span className="nav-item__icon">{icon}</span>
         <span>{label}</span>
       </SidebarMenuButton>
@@ -199,12 +205,20 @@ export interface QuotaView {
   searches: { used: number; limit: number | null };
 }
 
+export interface SidebarMember { name: string; image: string | null }
+
 export interface SidebarProps {
   /** Plan and this month's usage (null until loaded) */
   quota?: QuotaView | null;
   /** Header: workspace switcher */
   brand: React.ReactNode;
   items: InspoItem[];
+  /** The workspace's people: each row filters the library by who added it */
+  members?: SidebarMember[];
+  /** A personal workspace offers "create a team" instead of "invite" */
+  workspaceKind?: "personal" | "team";
+  author: string;
+  onAuthor: (name: string) => void;
   type: FilterType;
   /** No filter and no search: "All" is the current view */
   isAll: boolean;
@@ -229,32 +243,29 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
   );
 }
 
-// Navigation only (Refero model): add, the whole library, the four collections and the directory.
-// Filters live in the bar over the grid (FilterBar), search in the top bar.
-export default function AppSidebar({ quota, brand, items, type, isAll, onType, onReset, onAdd, onDirectory }: SidebarProps) {
+/** Everything under the workspace: add, the whole library, the collections, the team, the directory and the plan.
+ *  Shared by the docked column, the phone sheet and the island menu that hangs from the top bar pill. */
+export function SidebarNav({ quota, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, onPick }: Omit<SidebarProps, "brand"> & {
+  /** Called after any choice (the phone sheet closes; the island menu stays open on purpose) */
+  onPick?: () => void;
+}) {
   const { t } = useT();
-  const { isMobile, setOpenMobile } = useSidebar();
-  // On a phone the sidebar is a sheet: opening a modal from it closes the sheet first
-  const fromSheet = (fn: () => void) => () => { if (isMobile) setOpenMobile(false); fn(); };
-  // Picking a collection on a phone closes the sheet so the result is visible
-  useEffect(() => { setOpenMobile(false); }, [type, setOpenMobile]);
+  const pick = (fn: () => void) => () => { onPick?.(); fn(); };
   const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
-
   return (
-    <Sidebar mobileTitle={t.app.menu} className="app-sidebar">
-      <SidebarHeader className="app-sidebar__header">
-        {brand}
-        <Button variant="primary" block className="sidebar__add" onClick={fromSheet(onAdd)}>
+    <>
+      <div className="app-sidebar__add-row">
+        <Button variant="primary" block className="sidebar__add" onClick={pick(onAdd)}>
           {I.plus} {t.sidebar.addReference}
         </Button>
-      </SidebarHeader>
+      </div>
 
       {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
       <SidebarContent className="overflow-hidden">
         <FadeScroll>
           <SidebarGroup>
             <SidebarMenu>
-              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={fromSheet(onReset)} />
+              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={pick(onReset)} />
               {TYPES.map((v) => (
                 <NavItem
                   key={v}
@@ -262,16 +273,44 @@ export default function AppSidebar({ quota, brand, items, type, isAll, onType, o
                   label={t.labels.type[v]}
                   count={countBy((i) => i.type === v)}
                   active={type === v}
-                  onClick={() => onType(type === v ? "all" : v)}
+                  onClick={pick(() => onType(type === v ? "all" : v))}
                 />
               ))}
+            </SidebarMenu>
+          </SidebarGroup>
+
+          {/* The team, visible from the first glance: this is a shared library, not a personal one.
+              Clicking a person applies the "Who" filter (counts live in the filter bar, not here);
+              the last row invites or creates the team. */}
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.sidebar.team}</SidebarGroupLabel>
+            <SidebarMenu>
+              {members.map((m) => (
+                <NavItem
+                  key={m.name}
+                  icon={<UserAvatar name={m.name} image={m.image} small className="nav-item__member" />}
+                  label={m.name}
+                  active={author === m.name}
+                  title={t.sidebar.addedBy(m.name)}
+                  onClick={pick(() => onAuthor(author === m.name ? "all" : m.name))}
+                />
+              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  className="nav-item nav-item--quiet"
+                  render={<Link href={workspaceKind === "personal" ? "/settings/members?create=1" : "/settings/members"} onClick={() => onPick?.()} />}
+                >
+                  <span className="nav-item__icon">{I.plus}</span>
+                  <span>{workspaceKind === "personal" ? t.sidebar.createTeam : t.sidebar.invite}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
 
           <SidebarGroup>
             <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
             <SidebarMenu>
-              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={fromSheet(onDirectory)} />
+              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={pick(onDirectory)} />
             </SidebarMenu>
           </SidebarGroup>
         </FadeScroll>
@@ -282,7 +321,68 @@ export default function AppSidebar({ quota, brand, items, type, isAll, onType, o
           <PlanMeter quota={quota} />
         </SidebarFooter>
       )}
+    </>
+  );
+}
+
+// Navigation only (Refero model): the workspace card, then SidebarNav. Filters live in the bar over the grid
+// (FilterBar), search in the top bar. Collapsed on desktop, the column slides away and IslandPill takes over.
+export default function AppSidebar({ brand, ...nav }: SidebarProps) {
+  const { t } = useT();
+  const { isMobile, setOpenMobile } = useSidebar();
+  // On a phone the sidebar is a sheet: any choice closes the sheet first so the result is visible
+  const onPick = isMobile ? () => setOpenMobile(false) : undefined;
+
+  return (
+    <Sidebar mobileTitle={t.app.menu} className="app-sidebar">
+      <SidebarHeader className="app-sidebar__header">
+        <div className="app-sidebar__brand">{brand}</div>
+      </SidebarHeader>
+      <SidebarNav {...nav} onPick={onPick} />
     </Sidebar>
+  );
+}
+
+/** Island (after Angelo Libero): with the column folded, the workspace lives as a quiet pill in the top bar,
+ *  in the bar's own language (same height and hairline as the search). Its chevron hangs the menu under it
+ *  as a card over the grid; it stays open while you pick filters and only a click outside or Escape folds it. */
+export function IslandPill({ brand, ...nav }: SidebarProps) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => { if (e.target instanceof Node && !ref.current?.contains(e.target)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
+  }, [open]);
+
+  return (
+    <div className={`island${open ? " is-open" : ""}`} ref={ref}>
+      <div className="island__pill">
+        {brand}
+        <button
+          type="button"
+          className="island__chev"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="island-menu"
+          aria-label={open ? t.sidebar.foldMenu : t.sidebar.unfoldMenu}
+        >
+          {I.chevron}
+        </button>
+      </div>
+      <div className="island__body" id="island-menu" inert={!open}>
+        <div className="island__clip">
+          <div className="island__card">
+            {/* No onPick: a choice inside the island filters without folding it; only a click outside or Escape folds it */}
+            <SidebarNav {...nav} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
