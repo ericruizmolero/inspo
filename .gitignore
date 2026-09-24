@@ -55,6 +55,7 @@ HANDOFF-*.md
 
 # DESIGN.md cache (dev)
 /public/design-md/
+public/design-why/
 /public/comments/
 prod.env
 

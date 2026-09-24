@@ -171,21 +171,29 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
 export const WhyStatus = z.enum(["measured", "seen", "unverifiable"]);
 
 export const WhyHighlightSchema = z.object({
-  quote: z.string().describe("The person's words, verbatim and in their language, trimmed to the part that names what they liked"),
+  quote: z.string().describe("The person's words, verbatim and in their language, trimmed to the part that names what they liked (max 20 words)"),
   author: z.string().describe("Who said it"),
-  status: WhyStatus.describe("measured: it maps to values in the spec or tokens. seen: visible in the screenshot but not measured. unverifiable: not observable from styles or a screenshot (sound, hover, scroll, feel)."),
-  where: z.string().describe("Which element or area of the page it refers to, 2-8 words in English. Empty if it cannot be located."),
-  evidence: z.string().describe("Only for measured or seen: the concrete values behind it (token names, hex, px, ms, easing, font, weight), one or two sentences in English. Empty when unverifiable."),
-  reproduce: z.string().describe("English. For measured/seen: what an agent must do to reproduce exactly this, one or two sentences citing tokens by name. For unverifiable: what would be needed to verify it (a recording, an interaction capture, the source).")
+  status: WhyStatus.describe("measured: the spec has values for it. seen: visible in the screenshot but the spec has no numbers for it. unverifiable: not observable from styles or a still image (sound, hover, scroll, feel, speed)."),
+  where: z.string().describe("The element or area of the page, 2-6 words in English. Empty if it cannot be located."),
+  values: z.array(z.string()).max(6).describe("Only measured or seen: the concrete values behind it, as short chips of 1-4 words each, e.g. 'Mono 11px caps', '#ffffff', 'radius 0', 'ease-out 180ms', 'weight 510'. Token names as the spec writes them. Empty when unverifiable."),
+  note: z.string().describe("English, max 25 words, no filler. For measured/seen: the one decision an agent must get right to reproduce it. For unverifiable: what would be needed to check it (a recording, an interaction capture, the source)."),
+  shots: z.array(z.string()).max(3).describe("Ids of the probe captures (from the PROBE REPORT captures list) that show exactly this thing. Empty if none shows it, or if there is no probe report."),
 });
 
 export const DesignWhySchema = z.object({
-  gist: z.string().describe("One sentence in English: what this team came to this site for, according to their own words. Empty if the notes say nothing concrete."),
-  highlights: z.array(WhyHighlightSchema).describe("One entry per distinct thing the people pointed at, in the order they said it. A comment that repeats an earlier point is merged into it, not repeated. Never add things nobody mentioned."),
+  highlights: z.array(WhyHighlightSchema).describe("One entry per distinct concrete thing the people pointed at, in the order they said it. A comment that repeats an earlier point merges into it. General remarks produce nothing. Never add things nobody mentioned."),
 });
 
-export type WhyHighlight = z.infer<typeof WhyHighlightSchema>;
-export type DesignWhy = z.infer<typeof DesignWhySchema> & { model: string; createdAt: string; voices: number };
+export type WhyHighlight = z.infer<typeof WhyHighlightSchema> & {
+  /** URLs of the captures behind `shots` (private Blob in production, /public locally) */
+  shotUrls?: string[];
+};
+export type DesignWhy = Omit<z.infer<typeof DesignWhySchema>, "highlights"> & {
+  highlights: WhyHighlight[];
+  model: string; createdAt: string; voices: number;
+  /** What the headless browser went to check, when the notes mentioned something interactive */
+  probe?: { summary: string[]; ms: number };
+};
 
 /** The section appended to the DESIGN.md of this workspace (the global file does not carry it). */
 export function renderWhyMd(why: DesignWhy): string {
@@ -194,13 +202,15 @@ export function renderWhyMd(why: DesignWhy): string {
   const p = (s = "") => L.push(s);
   p("## Why it's here");
   p();
-  if (why.gist) { p(why.gist); p(); }
+  p("What the team pointed at, in their words, connected to the measured values.");
+  p();
+  if (why.probe?.summary.length) { p(`Browser probe: ${why.probe.summary.join(" · ")}`); p(); }
   for (const h of why.highlights) {
-    p(`### "${h.quote}" — ${h.author}`);
-    p(`**Status:** ${h.status}${h.where ? ` · **Where:** ${h.where}` : ""}`);
-    if (h.evidence) p(`**Evidence:** ${h.evidence}`);
-    p(`**${h.status === "unverifiable" ? "To verify" : "To reproduce"}:** ${h.reproduce}`);
-    p();
+    p(`- "${h.quote}" — ${h.author}${h.where ? ` · ${h.where}` : ""} · ${h.status}`);
+    if (h.values?.length) p(`  - Values: ${h.values.join(" · ")}`); // older rows may predate the chips
+    p(`  - ${h.status === "unverifiable" ? "To verify" : "Get right"}: ${h.note}`);
+    if (h.shotUrls?.length) p(`  - Captures: ${h.shotUrls.join(" · ")}`);
   }
+  p();
   return L.join("\n");
 }

@@ -375,6 +375,42 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .nav-item__count { color: var(--muted); font-weight: 400; }
 /* Team rows: a round 18px avatar in the icon slot, initials when there is no photo */
 .nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
+/* Directory picks: the site's favicon on an 18px light plate (dark logos would vanish on the dark
+   sidebar), and on hover the same glass chip as the card actions, with the site's description under it */
+.nav-item__logo {
+  width: 18px; height: 18px; margin: -1px; border-radius: 5px; overflow: hidden; flex-shrink: 0;
+  display: grid; place-items: center; background: #f4f4f2; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  font-size: 10px; font-weight: 600; color: #555;
+  opacity: 0.85; transition: opacity 0.15s;
+}
+.nav-item__logo img { width: 12px; height: 12px; display: block; }
+.nav-item:hover .nav-item__logo { opacity: 1; }
+.nav-item__chip {
+  position: relative; margin-left: auto; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: rgba(10,10,10,0.62); color: rgba(255,255,255,0.82);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5);
+  opacity: 0; transform: translateX(4px);
+  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.nav-item--pick:hover .nav-item__chip, .nav-item--pick:focus-visible .nav-item__chip { opacity: 1; transform: none; }
+/* The label wraps: the sidebar is narrow and the descriptions are a sentence long */
+.nav-item__chip[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute; top: calc(100% + 7px); right: 0; z-index: 3;
+  width: max-content; max-width: 200px; padding: 6px 9px; border-radius: 7px;
+  font-size: 11px; font-weight: 500; line-height: 1.35; letter-spacing: 0; text-align: left;
+  color: rgba(255,255,255,0.92); background: rgba(10,10,10,0.82);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5);
+  opacity: 0; transform: translateY(-3px); pointer-events: none;
+  transition: opacity 0.15s, transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.nav-item--pick:hover .nav-item__chip::after { opacity: 1; transform: none; transition-delay: 0.12s; }
+/* The row must not clip the label hanging under the chip */
+.nav-item--pick { overflow: visible; }
 /* The "invite" row is an affordance, not a destination: muted until hovered */
 .nav-item--quiet { color: var(--muted-2); }
 .nav-item--quiet:hover { color: var(--text); }
@@ -1154,21 +1190,26 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-scale__family { font-size: 11px; color: var(--muted-2); }
 .dm-scale__sample { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Why it's here: the team's words on the left, the model's verdict on the right */
+/* Why it's here (v2): the team's words on the left, the verdict on the right: tag, value chips, one line */
 .dm-why__note { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); max-width: 60ch; }
-.dm-why__gist { font-size: 14px; line-height: 1.65; color: var(--text-2); margin: 0 0 24px; max-width: 60ch; }
 .dm-why__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.dm-why__item { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px; padding: 20px 0; border-top: 1px solid var(--border); }
+.dm-why__item { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 40px; padding: 22px 0; border-top: 1px solid var(--border); }
 .dm-why__item:first-child { border-top: 0; padding-top: 0; }
-.dm-why__quote { position: relative; margin: 0; padding-left: 22px; }
-.dm-why__mark { position: absolute; left: -2px; top: -6px; font-size: 30px; line-height: 1; color: var(--muted-2); }
-.dm-why__quote p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text); text-wrap: pretty; }
-.dm-why__quote footer { margin-top: 6px; font-size: 12px; color: var(--muted); }
-.dm-why__where { color: var(--text-2); }
-.dm-why__body { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.55; color: var(--text-2); }
-.dm-why__body p { margin: 0; }
-.dm-why__body b { font-weight: 500; color: var(--text); }
-.dm-why__status { margin-bottom: 2px; }
+.dm-why__item:last-child { padding-bottom: 0; }
+.dm-why__quote { margin: 0; }
+.dm-why__quote p { margin: 0; font-size: 17px; line-height: 1.4; letter-spacing: -0.01em; color: var(--text); text-wrap: pretty; }
+.dm-why__quote footer { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.dm-why__body { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
+.dm-why__line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--text-2); }
+.dm-why__values { display: flex; flex-wrap: wrap; gap: 6px; }
+.dm-why__value { font-family: var(--font-mono, ui-monospace, monospace); font-variant-numeric: tabular-nums; font-size: 12px; line-height: 1; padding: 6px 8px; border-radius: 6px; background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+.dm-why__note-text { margin: 0; font-size: 13px; line-height: 1.55; color: var(--text-2); max-width: 56ch; }
+.dm-why__shots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; width: 100%; }
+.dm-why__shot { display: block; flex: 1 1 260px; max-width: 100%; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.dm-why__shot img { display: block; width: 100%; height: auto; max-height: 360px; object-fit: cover; object-position: top; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.dm-why__shot:hover img { transform: scale(1.02); }
+.dm-why__probe { margin: 18px 0 0; font-size: 12px; line-height: 1.55; color: var(--muted); }
+.dm-why__probe b { font-weight: 500; color: var(--text-2); }
 .dm-why__item.is-measured .dm-why__status { color: var(--text); border-color: var(--text); }
 .dm-why__item.is-unverifiable .dm-why__status { color: var(--muted); border-style: dashed; }
 @media (max-width: 720px) { .dm-why__item { grid-template-columns: 1fr; gap: 14px; } }

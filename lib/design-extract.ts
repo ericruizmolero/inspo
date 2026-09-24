@@ -83,7 +83,7 @@ export interface ExtractResult {
 
 const MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-async function launch(): Promise<Browser> {
+export async function launch(): Promise<Browser> {
   const local = process.env.CHROME_PATH || (process.platform === "darwin" && fs.existsSync(MAC_CHROME) ? MAC_CHROME : null);
 
   if (local && !process.env.VERCEL) {

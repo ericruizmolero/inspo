@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
 import { renderWhyMd, type DesignSpec, type DesignWhy } from "@/types/design";
+import { proxiedSrc } from "@/lib/proxied-src";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { fmtDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
@@ -51,7 +52,7 @@ const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
 );
 const IcComment = (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h.5" /></svg>
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" /></svg>
 );
 const IcCopy = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="4.5" width="8" height="8" rx="1.6" /><path d="M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5" /></svg>
@@ -394,26 +395,37 @@ function WhySection({ state }: { state: WhyState }) {
       {why && why.voices === 0 && <p className="dm-why__note">{t.designMd.whyEmpty}</p>}
       {why && why.voices > 0 && !why.highlights.length && <p className="dm-why__note">{t.designMd.whyNothingConcrete}</p>}
       {why && why.highlights.length > 0 && (
-        <>
-          {why.gist && <p className="dm-why__gist">{why.gist}</p>}
-          <ol className="dm-why__list">
-            {why.highlights.map((h, i) => (
-              <li key={i} className={`dm-why__item is-${h.status}`}>
-                <blockquote className="dm-why__quote">
-                  <span className="display dm-why__mark" aria-hidden>“</span>
-                  <p>{h.quote}</p>
-                  <footer>{h.author}{h.where && <> · <span className="dm-why__where">{h.where}</span></>}</footer>
-                </blockquote>
-                <div className="dm-why__body">
+        <ol className="dm-why__list">
+          {why.highlights.map((h, i) => (
+            <li key={i} className={`dm-why__item is-${h.status}`}>
+              <blockquote className="dm-why__quote">
+                <p>{h.quote}</p>
+                <footer>{h.author}</footer>
+              </blockquote>
+              <div className="dm-why__body">
+                <div className="dm-why__line">
                   <span className="dm-tag dm-why__status">{t.designMd.whyStatus[h.status]}</span>
-                  {h.evidence && <p><b>{t.designMd.whyEvidence}</b> {h.evidence}</p>}
-                  <p><b>{h.status === "unverifiable" ? t.designMd.whyVerify : t.designMd.whyReproduce}</b> {h.reproduce}</p>
+                  {h.where && <span className="dm-why__where">{h.where}</span>}
                 </div>
-              </li>
-            ))}
-          </ol>
-        </>
+                {(h.values?.length ?? 0) > 0 && (
+                  <div className="dm-why__values">{h.values.map((v, j) => <code key={j} className="dm-why__value">{v}</code>)}</div>
+                )}
+                <p className="dm-why__note-text">{h.note}</p>
+                {h.shotUrls && h.shotUrls.length > 0 && (
+                  <div className="dm-why__shots">
+                    {h.shotUrls.map((u, j) => (
+                      <a key={j} className="dm-why__shot" href={proxiedSrc(u)} target="_blank" rel="noopener noreferrer">
+                        <img src={proxiedSrc(u)} alt="" loading="lazy" decoding="async" />
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
       )}
+      {why?.probe?.summary.length ? <p className="dm-why__probe"><b>{t.designMd.whyProbe}</b> {why.probe.summary.join(" · ")}</p> : null}
     </section>
   );
 }

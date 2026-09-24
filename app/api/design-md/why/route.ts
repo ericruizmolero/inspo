@@ -3,18 +3,19 @@ import { normalizeWebUrl } from "@/lib/url";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { listItemComments } from "@/lib/comments";
-import { getDesignMd, getDesignScreenshot } from "@/lib/design-store";
+import { getDesignMd, getDesignScreenshot, saveWhyShot } from "@/lib/design-store";
 import { latestRevision } from "@/lib/design-revise";
 import { getOrBuildWhy, type Voice } from "@/lib/design-why";
+import { probeSite } from "@/lib/design-probe";
 import { recordUsage } from "@/lib/usage";
 import { getErrors } from "@/lib/i18n";
 import type { DesignWhy } from "@/types/design";
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
-const EMPTY: DesignWhy = { gist: "", highlights: [], model: "", createdAt: "", voices: 0 };
+const EMPTY: DesignWhy = { highlights: [], model: "", createdAt: "", voices: 0 };
 
-// GET ?url=… → the team's "why it's here" for that site: cached while the note, the
+// GET ?url=… → the team's "why it's here" for that site (v2: chips, no prose): cached while the note, the
 // thread and the spec stay the same; rebuilt (one small model call) when any of them changes.
 export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
@@ -46,9 +47,20 @@ export async function GET(req: NextRequest) {
     const { why, built } = await getOrBuildWhy({
       organizationId: ctx.workspace.id, url, voices, specStamp, spec,
       screenshot: () => getDesignScreenshot(url), signal: req.signal,
+      // The browser goes to look at what the notes point at: captures the sections, hovers, listens
+      probe: async () => {
+        try {
+          const report = await probeSite(url, voices, req.signal);
+          if (!report) return null;
+          void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_why", model: report.plan.model, inputTokens: report.plan.usage.input, outputTokens: report.plan.usage.output, cacheReadTokens: report.plan.usage.cacheRead, costUsd: report.plan.costUsd, ref: url });
+          const shotUrls: Record<string, string> = {};
+          for (const c of report.captures) shotUrls[c.id] = await saveWhyShot(ctx.workspace.id, url, c.id, c.jpeg);
+          return { report, shotUrls };
+        } catch (e) { console.error("design-why probe failed:", url, e instanceof Error ? e.message : e); return null; }
+      },
     });
     if (built) {
-      console.log(`design-why ${url}: ${voices.length} voices → ${why.highlights.length} highlights, ${built.model} ${Date.now() - t0}ms`);
+      console.log(`design-why ${url}: ${voices.length} voices → ${why.highlights.length} highlights${why.probe ? `, probe ${why.probe.ms}ms` : ""}, ${built.model} ${Date.now() - t0}ms`);
       void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, {
         action: "design_why", model: built.model, inputTokens: built.usage.input, outputTokens: built.usage.output,
         cacheReadTokens: built.usage.cacheRead, costUsd: built.costUsd, provider: built.provider, requestId: built.requestId, ref: url,
