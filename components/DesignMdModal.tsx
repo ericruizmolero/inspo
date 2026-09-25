@@ -120,10 +120,20 @@ const IcLock = (
   <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M2 4V3a2.5 2.5 0 015 0v1h.5a1 1 0 011 1v3.5a1 1 0 01-1 1h-6a1 1 0 01-1-1V5a1 1 0 011-1H2zm1 0h3V3a1.5 1.5 0 00-3 0v1z" /></svg>
 );
 
-function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; bg: string; host: string; theme?: string }) {
+const LIVE_WIDTH = 1440;
+const LIVE_TIMEOUT_MS = 8000;
+
+function ScrollShot({ src, alt, bg, host, url, theme }: { src: string; alt: string; bg: string; host: string; url: string; theme?: string }) {
+  const { t } = useT();
   const boxRef = useRef<HTMLDivElement>(null);
   const [dist, setDist] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  // The live site, in a sandboxed frame over the screenshot. It loads from our own route (the
+  // site's headers would refuse a frame, and its assets need CORS the frame cannot get); the
+  // frame is 1440 wide and scaled to fit.
+  const [live, setLive] = useState<"off" | "loading" | "on" | "failed">("off");
+  const [liveSrc, setLiveSrc] = useState<string | null>(null);
+  const [liveScale, setLiveScale] = useState({ scale: 1, height: 900 });
 
   const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -134,18 +144,54 @@ function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; b
     setLoaded(true);
   };
 
+  useEffect(() => {
+    if (live !== "on") return;
+    const box = boxRef.current;
+    if (!box) return;
+    const measure = () => {
+      const scale = box.clientWidth / LIVE_WIDTH;
+      setLiveScale({ scale, height: Math.ceil(box.clientHeight / scale) });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(box);
+    return () => ro.disconnect();
+  }, [live]);
+
+  const toggleLive = async () => {
+    if (live === "on") { setLive("off"); return; }
+    if (live === "loading") return;
+    // "failed" retries: the site may have been slow, not gone
+    if (liveSrc) { setLive("on"); return; }
+    setLive("loading");
+    try {
+      const res = await fetch(`/api/live?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS) });
+      if (!res.ok) throw new Error(String(res.status));
+      const { src } = (await res.json()) as { src: string };
+      setLiveSrc(src);
+      setLive("on");
+    } catch {
+      setLive("failed");
+    }
+  };
+
   const duration = Math.max(6, Math.round(dist / 140));
   const proxied = src.startsWith("https://") ? `/api/thumbnail/img?url=${encodeURIComponent(src)}` : src;
+  const liveLabel = live === "loading" ? t.designMd.liveLoading : live === "failed" ? t.designMd.liveFailed : t.designMd.liveSite;
 
   return (
-    <div className={`dm-frame${theme === "dark" ? " dm-frame--dark" : ""}`} style={{ background: bg }}>
-      <div className="dm-frame__bar" aria-hidden>
-        <span className="dm-frame__left">
+    <div className={`dm-frame${theme === "dark" ? " dm-frame--dark" : ""}${live === "on" ? " dm-frame--live" : ""}`} style={{ background: bg }}>
+      <div className="dm-frame__bar">
+        <span className="dm-frame__left" aria-hidden>
           <span className="dm-frame__lights"><i /><i /><i /></span>
           <span className="dm-frame__nav">{IcChev}<span className="dm-frame__fwd">{IcChev}</span></span>
         </span>
-        <span className="dm-frame__url">{IcLock}<span>{host}</span></span>
-        <span />
+        <span className="dm-frame__url" aria-hidden>{IcLock}<span>{host}</span></span>
+        <span className="dm-frame__right">
+          <button type="button" className={`dm-frame__live is-${live}`} onClick={toggleLive} disabled={live === "loading"} aria-pressed={live === "on"} title={live === "failed" ? t.designMd.liveFailedTitle : undefined}>
+            <i />{liveLabel}
+          </button>
+        </span>
       </div>
       <div ref={boxRef} className={`dm-shot${loaded ? " is-loaded" : ""}`}>
         {!loaded && <div className="shimmer" />}
@@ -155,6 +201,17 @@ function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; b
           onLoad={onLoad}
           style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${duration}s` } as React.CSSProperties}
         />
+        {live === "on" && liveSrc && (
+          // allow-scripts only: the page runs, but in an opaque origin with no way to our session or DOM
+          <iframe
+            className="dm-live"
+            title={alt}
+            sandbox="allow-scripts"
+            referrerPolicy="no-referrer"
+            src={liveSrc}
+            style={{ width: LIVE_WIDTH, height: liveScale.height, transform: `scale(${liveScale.scale})` }}
+          />
+        )}
       </div>
     </div>
   );
@@ -508,7 +565,7 @@ function SpecPanel({ spec, entry, url, date, onRevise, why }: { spec: DesignSpec
           </div>
           {onRevise && <div className="dm-hero__revise"><SectionHead title={t.designMd.sections.general} section="general" onRevise={onRevise} /></div>}
         </div>
-        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
+        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} url={url} theme={spec.theme} />}
       </section>
 
       <WhySection state={why} />

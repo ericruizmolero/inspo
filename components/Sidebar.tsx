@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
 import type { Term } from "@/lib/taxonomy";
-import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteShot, type DirectorySite } from "@/lib/directory";
+import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import { UserAvatar } from "./WorkspaceMenu";
 import { Button } from "@/components/ui/button";
@@ -125,20 +125,25 @@ const I = {
 };
 
 /** The body of a directory pick's card, folded under the name until the row is hovered: the site's
- *  screenshot (public/directory), then its description. If the screenshot never loads, the slot stays
- *  (blank) so every card is the same height, which the fold-and-unfold handover relies on.
- *  The outer div is the grid track that folds; the padding lives inside so it folds to nothing. */
-function PickCard({ url, desc }: { url: string; desc: string }) {
+ *  screenshot (public/directory), what the site is, and a meta line with the kind of place it is and
+ *  its host. If the screenshot never loads, the slot stays (blank) so every card is the same height,
+ *  which the fold-and-unfold handover relies on. The outer span is the grid track that folds; the
+ *  padding lives inside so it folds to nothing. Spans, not divs: it all sits inside the row's <a>. */
+function PickCard({ url, desc, kind }: { url: string; desc: string; kind?: string }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="nav-item__card" aria-hidden>
-      <div className="nav-item__card-inner">
+    <span className="nav-item__card" aria-hidden>
+      <span className="nav-item__card-inner">
         <span className="nav-item__card-shot">
           {!failed && <img src={siteShot(url)} alt="" decoding="async" onError={() => setFailed(true)} />}
         </span>
-        <p>{desc}</p>
-      </div>
-    </div>
+        <span className="nav-item__card-desc">{desc}</span>
+        <span className="nav-item__card-meta">
+          {kind && <span className="nav-item__card-kind">{kind}</span>}
+          <span className="nav-item__card-host">{siteHost(url)}</span>
+        </span>
+      </span>
+    </span>
   );
 }
 
@@ -281,6 +286,7 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
 }) {
   const { t } = useT();
   const pick = (fn: () => void) => () => { onPick?.(); fn(); };
+  const groupTitle = (key?: string) => (key ? t.directory.groups[key as keyof typeof t.directory.groups]?.title : undefined);
   // The hand-picked seven first; "Shuffle" swaps them for seven others from the directory.
   // `round` is part of each row's key, so every shuffle remounts the rows and replays the stagger.
   const [picks, setPicks] = useState<DirectorySite[]>(SIDEBAR_PICKS);
@@ -369,16 +375,15 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
                   style={{ "--i": i } as React.CSSProperties}
                   onPointerEnter={() => enterRow(i)}
                 >
-                  <SidebarMenuButton
-                    className="nav-item nav-item--pick"
-                    render={<a href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.()} />}
-                  >
-                    <span className="truncate">{r.name}</span>
-                  </SidebarMenuButton>
-                  {/* Bare outward arrow, flush right where the counts sit (same badge slot), shown on hover */}
-                  <SidebarMenuBadge className="nav-item__ext" aria-hidden>{I.external}</SidebarMenuBadge>
-                  {/* Under the name, in flow: screenshot plus what the site is (the row frames both as a card on hover) */}
-                  <PickCard url={r.url} desc={t.directory.items[r.url]} />
+                  {/* One link for the whole card: the name row and, once open, the screenshot and the text under it */}
+                  <a className="nav-item__pick" href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.()}>
+                    <span className="nav-item__pick-name">
+                      <span className="truncate">{r.name}</span>
+                      {/* Bare outward arrow, flush right where the counts sit, shown on hover */}
+                      <span className="nav-item__ext" aria-hidden>{I.external}</span>
+                    </span>
+                    <PickCard url={r.url} desc={t.directory.items[r.url]} kind={groupTitle(siteGroupKey(r.url))} />
+                  </a>
                 </SidebarMenuItem>
               ))}
               {/* Stays open: shuffling is browsing, not a choice (no onPick) */}

@@ -2,13 +2,12 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { normalizeWebUrl } from "@/lib/url";
-import { isPublicHttpUrl, prepareLiveHtml, LIVE_MAX_BYTES } from "@/lib/live-html";
+import { isPublicHttpUrl, liveToken, livePath, LIVE_UA } from "@/lib/live-html";
 
-// The live view of a saved site: its HTML, fetched here (the site's own headers would forbid a
-// frame; we never send them on) and returned ready for a sandboxed srcdoc iframe. Only for
-// sites in the workspace's library, so this is a window onto what was saved and not an open proxy.
+// Opens the live view of a saved site: checks the site answers with a page, and hands the
+// frame the path to load it from (see lib/live-html.ts). Only sites in the workspace's
+// library: this is a window onto what was saved, not an open proxy.
 const FETCH_TIMEOUT_MS = 8000;
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
 
 export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
@@ -22,34 +21,19 @@ export async function GET(req: NextRequest) {
   let upstream: Response;
   try {
     upstream = await fetch(url, {
-      headers: {
-        "User-Agent": UA,
-        Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.8",
-      },
+      headers: { "User-Agent": LIVE_UA, Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8", "Accept-Language": "en-US,en;q=0.8" },
       redirect: "follow",
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      // One fetch an hour per site is plenty: the frame is a view, not a monitor
       next: { revalidate: 3600 },
     });
   } catch {
     return new Response("site unreachable", { status: 502 });
   }
   if (!upstream.ok) return new Response("site answered " + upstream.status, { status: 502 });
-  const type = upstream.headers.get("content-type") ?? "";
-  if (!type.includes("text/html")) return new Response("not a page", { status: 415 });
-  const length = Number(upstream.headers.get("content-length") ?? 0);
-  if (length > LIVE_MAX_BYTES) return new Response("page too large", { status: 413 });
+  if (!(upstream.headers.get("content-type") ?? "").includes("text/html")) return new Response("not a page", { status: 415 });
+  await upstream.body?.cancel();
 
-  const html = await upstream.text();
-  if (html.length > LIVE_MAX_BYTES) return new Response("page too large", { status: 413 });
-
-  return new Response(prepareLiveHtml(html, upstream.url || url), {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      // Read by fetch() and put in a srcdoc, never navigated to: no need to be framable itself
-      "Cache-Control": "private, max-age=3600",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+  // Where the site landed after redirects is what the frame loads (www, trailing slash, locale)
+  const final = new URL(upstream.url || url);
+  return Response.json({ src: livePath(liveToken(final.host), final) }, { headers: { "Cache-Control": "no-store" } });
 }

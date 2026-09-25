@@ -377,40 +377,49 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .nav-item__member.ws__avatar { width: 18px; height: 18px; font-size: 10px; margin: -1px; }
 /* Directory picks: plain rows, no logo (too many favicons are dark on transparent). On hover the row
    itself becomes a card: it takes the surface and a hairline, and grows in flow (grid rows, no overlay)
-   to show the site's screenshot and its description under the name. The rows below slide down.
+   to show the site's screenshot, what it is and its kind and host under the name. The rows below slide
+   down. The whole card is one link (the <a> is the grid), so the picture and the text open the site too.
    It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
    ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
    Which row is open is decided in the Sidebar (is-open, one at a time); :focus-within keeps the keyboard path. */
-.nav-item--pick-row {
-  --pick-ease: cubic-bezier(0.65, 0, 0.35, 1);
-  --pick-time: 0.4s;
+.nav-item--pick-row { --pick-ease: cubic-bezier(0.65, 0, 0.35, 1); --pick-time: 0.4s; }
+.nav-item__pick {
   display: grid; grid-template-rows: auto 0fr; border-radius: 8px;
+  color: var(--text-2); text-decoration: none; outline: none;
   background: transparent; box-shadow: inset 0 0 0 1px transparent;
-  transition: grid-template-rows var(--pick-time) var(--pick-ease), background var(--pick-time) var(--pick-ease), box-shadow var(--pick-time) var(--pick-ease);
+  transition: grid-template-rows var(--pick-time) var(--pick-ease), background var(--pick-time) var(--pick-ease), box-shadow var(--pick-time) var(--pick-ease), color 0.15s;
 }
-.nav-item--pick-row.is-open, .nav-item--pick-row:focus-within {
-  grid-template-rows: auto 1fr; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+.nav-item--pick-row.is-open .nav-item__pick, .nav-item--pick-row:focus-within .nav-item__pick {
+  grid-template-rows: auto 1fr; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); color: var(--text);
 }
-/* The card frame is the hover state now: the name row stays flat inside it */
-.nav-item--pick-row .nav-item--pick:hover, .nav-item--pick-row .nav-item--pick:active { background: transparent; }
+.nav-item__pick:focus-visible { box-shadow: inset 0 0 0 1px var(--border-strong); }
+/* The name row: same metrics as the other menu rows (32px, 8px inset, 14px) */
+.nav-item__pick-name { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; font-size: 14px; min-width: 0; }
+/* Outward arrow, bare, flush right (same edge as the counts), shown only while the row is hovered */
+.nav-item__ext { margin-left: auto; display: flex; color: var(--muted); opacity: 0; transition: opacity 0.15s; }
+.nav-item--pick-row.is-open .nav-item__ext, .nav-item--pick-row:focus-within .nav-item__ext { opacity: 1; }
 /* The body sits under the name, pinned to the top of its track. It is not part of the motion: while
    the row grows (and, moving down the list, slides up) the body is blank, and the screenshot and the
    text appear in place only once the row has settled, with a short fade and no movement. No layer
    over the picture, nothing sliding. When the row folds they are gone at once, so the fold never
    shows them on the move either. All cards share one height (fixed shot ratio, fixed three-line
-   description), which makes the hover handover between rows exact. */
-.nav-item__card { min-height: 0; overflow: hidden; }
-.nav-item__card-inner { padding: 0 6px 6px; opacity: 0; transition: opacity 0.08s; }
+   description, one meta line), which makes the hover handover between rows exact. */
+.nav-item__card { display: block; min-height: 0; overflow: hidden; }
+.nav-item__card-inner { display: flex; flex-direction: column; gap: 8px; padding: 2px 8px 9px; opacity: 0; transition: opacity 0.08s; }
 .nav-item--pick-row.is-open .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner {
   opacity: 1; transition: opacity 0.18s var(--pick-ease); transition-delay: var(--pick-time);
 }
-.nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 5px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+/* The shot lines up with the name's left edge; its corner sits inside the card's 8px one */
+.nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 4px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
 .nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.nav-item__card p {
-  margin: 0; padding: 7px 2px 2px; height: calc(3 * 1.4em + 9px); overflow: hidden;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
-  font-size: 11px; font-weight: 400; line-height: 1.4; letter-spacing: 0; color: var(--muted);
+.nav-item__card-desc {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+  height: calc(3 * 1.45em); font-size: 12px; font-weight: 400; line-height: 1.45; letter-spacing: 0; color: var(--muted); text-wrap: pretty;
 }
+/* Under the text, the kind of place it is (its directory group) and the host, both quiet */
+.nav-item__card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; font-size: 11px; line-height: 1.3; color: var(--muted-2); letter-spacing: 0.01em; }
+.nav-item__card-kind, .nav-item__card-host { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-item__card-host { flex-shrink: 0; max-width: 55%; margin-left: auto; }
 /* "Shuffle" deals the new rows in, one by one: each drops in from a few px up with a little blur,
    45ms apart (the island's own language); only after a shuffle, the first paint stays still */
 .nav-item--pick-row.is-dealt {
@@ -426,11 +435,8 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 @keyframes pick-flip { to { transform: rotate(180deg); } }
 @media (prefers-reduced-motion: reduce) {
   .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
-  .nav-item--pick-row, .nav-item__card-inner { transition: none; }
+  .nav-item__pick, .nav-item__card-inner { transition: none; }
 }
-/* Outward arrow, bare, in the badge slot (flush right, same edge as the counts), shown only while the row is hovered */
-.nav-item__ext { color: var(--muted); opacity: 0; transition: opacity 0.15s; }
-.nav-item--pick-row.is-open .nav-item__ext, .nav-item--pick-row:focus-within .nav-item__ext { opacity: 1; }
 /* The "invite" row is an affordance, not a destination: muted until hovered */
 .nav-item--quiet { color: var(--muted-2); }
 .nav-item--quiet:hover { color: var(--text); }
@@ -1160,6 +1166,27 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .dm-shot img { position: absolute; top: 0; left: 0; display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; }
 .dm-shot.is-loaded img { opacity: 1; animation: dm-scroll linear infinite alternate; }
 .dm-shot:hover img { animation-play-state: paused; }
+/* The live site: a 1440-wide frame scaled to the window, over the screenshot */
+.dm-frame__right { display: flex; justify-content: flex-end; }
+.dm-frame__live {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px 0 8px; border-radius: 7px;
+  border: 0; background: rgba(0,0,0,0.055); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);
+  font: inherit; font-size: 11px; letter-spacing: 0.01em; color: rgba(0,0,0,0.62); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.dm-frame__live i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.45; transition: opacity 0.15s, background 0.15s; }
+.dm-frame__live:hover { background: rgba(0,0,0,0.09); color: rgba(0,0,0,0.8); }
+.dm-frame__live:disabled { cursor: default; }
+.dm-frame__live.is-loading i { animation: dm-live-pulse 0.9s ease-in-out infinite; }
+.dm-frame__live.is-on { background: rgba(0,0,0,0.8); color: #fff; }
+.dm-frame__live.is-on i { background: #30d158; opacity: 1; }
+.dm-frame__live.is-failed { opacity: 0.6; }
+.dm-frame--dark .dm-frame__live { background: rgba(255,255,255,0.08); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.06); color: rgba(255,255,255,0.72); }
+.dm-frame--dark .dm-frame__live:hover { background: rgba(255,255,255,0.14); color: #fff; }
+.dm-frame--dark .dm-frame__live.is-on { background: #fff; color: rgba(0,0,0,0.85); }
+@keyframes dm-live-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.9; } }
+.dm-live { position: absolute; top: 0; left: 0; z-index: 1; border: 0; display: block; transform-origin: top left; background: #fff; }
+.dm-frame--live .dm-shot img { visibility: hidden; animation-play-state: paused; }
 @keyframes dm-scroll { 0%, 6% { transform: translateY(0); } 94%, 100% { transform: translateY(var(--dm-scroll, 0)); } }
 
 /* Palette strip */

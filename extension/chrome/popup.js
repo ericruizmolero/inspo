@@ -82,7 +82,7 @@ async function loadTab() {
   $("tab-title").textContent = cur?.title || url;
   // The address as it will be saved: host and path, without the scheme or a trailing slash
   try { const u = new URL(url); $("tab-host").textContent = ok ? (u.hostname.replace(/^www\./, "") + u.pathname).replace(/\/$/, "") : t("notWebsite"); } catch { $("tab-host").textContent = ""; }
-  if (cur?.favIconUrl && !/^chrome/.test(t.favIconUrl)) { $("tab-fav").src = t.favIconUrl; $("tab-fav").hidden = false; $("tab-fav-fallback").setAttribute("hidden", ""); }
+  if (cur?.favIconUrl && !/^chrome/.test(cur.favIconUrl)) { $("tab-fav").src = cur.favIconUrl; $("tab-fav").hidden = false; $("tab-fav-fallback").setAttribute("hidden", ""); }
   const saveBtn = $("btn-save"); saveBtn.hidden = false; saveBtn.disabled = !ok; saveBtn.classList.remove("is-busy"); saveBtn.textContent = t("save");
   $("btn-open").hidden = true;
   $("tab-note").hidden = !ok;
@@ -127,8 +127,9 @@ async function save() {
   note($("tab-msg"), "");
   try {
     const screenshot = shot || (await capture());
-    const note = $("tab-note").value.trim();
-    const r = await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot, note }) });
+    // "why": not "note", which is the helper that paints the messages below
+    const why = $("tab-note").value.trim();
+    const r = await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot, note: why }) });
     if (r.existed) { already(r.item); return; }
     note($("tab-msg"), t("savedIn", [ws()]), "ok");
     btn.hidden = true;

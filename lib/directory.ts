@@ -232,6 +232,11 @@ const SIDEBAR_PICK_URLS = [
   "https://styles.refero.design",
 ];
 const ALL_SITES = DIRECTORY.flatMap((g) => g.items);
+const GROUP_OF = new Map(DIRECTORY.flatMap((g) => g.items.map((r) => [r.url, g.key] as const)));
+/** The key of the group a site is listed under (its "kind": galleries, motion, type…) */
+export function siteGroupKey(url: string): string | undefined {
+  return GROUP_OF.get(url);
+}
 export const SIDEBAR_PICKS: DirectorySite[] = SIDEBAR_PICK_URLS
   .map((u) => ALL_SITES.find((r) => r.url === u))
   .filter((r): r is DirectorySite => !!r);
