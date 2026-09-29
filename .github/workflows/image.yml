@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      CAN_DEPLOY: ${{ secrets.COOLIFY_WEBHOOK != '' && secrets.COOLIFY_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,8 +44,9 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Deploy on Coolify
+        if: env.CAN_DEPLOY == 'true'
         env:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-        if: env.COOLIFY_WEBHOOK != ''
-        run: curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_WEBHOOK"
+        run: |
+          curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_WEBHOOK"
