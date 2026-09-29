@@ -2,8 +2,15 @@
 // The user/session/account/verification/organization/member/invitation tables
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
-import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex, check } from "drizzle-orm/pg-core";
 import type { InspoTags } from "@/types/inspo";
+
+/** CHECK that a text column holds one of these values */
+const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
+  check(name, sql`${col} in (${sql.join(values.map((v) => sql.raw(`'${v}'`)), sql`, `)})`);
+// Better Auth stores several roles comma-separated ("owner,admin")
+const ROLE_LIST = sql.raw(`'^(owner|admin|member)(,(owner|admin|member))*$'`);
 
 // ─── Better Auth ─────────────────────────────────────────────────────────────
 
@@ -57,8 +64,8 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("verification_identifier_idx").on(t.identifier)]);
 
-// A workspace = a Better Auth organization.
-// metadata (JSON) holds { kind: "personal" | "team" }.
+// A workspace = a Better Auth organization. kind and plan are our columns, declared to
+// Better Auth as additionalFields (lib/auth.ts). metadata is Better Auth's and we leave it empty.
 export const organization = pgTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -66,7 +73,14 @@ export const organization = pgTable("organization", {
   logo: text("logo"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   metadata: text("metadata"),
-});
+  /** "personal" (one per person, created by lib/workspace-core.ts) | "team" */
+  kind: text("kind").notNull().default("team"),
+  /** SaaS plan (lib/plans.ts), changed by hand with scripts/set-plan.ts */
+  plan: text("plan").notNull().default("solo"),
+}, (t) => [
+  oneOf("organization_kind_check", t.kind, ["personal", "team"]),
+  oneOf("organization_plan_check", t.plan, ["solo", "studio", "agency"]),
+]);
 
 export const member = pgTable("member", {
   id: text("id").primaryKey(),
@@ -78,6 +92,7 @@ export const member = pgTable("member", {
   index("member_organization_id_idx").on(t.organizationId),
   index("member_user_id_idx").on(t.userId),
   uniqueIndex("member_org_user_uq").on(t.organizationId, t.userId),
+  check("member_role_check", sql`${t.role} ~ ${ROLE_LIST}`),
 ]);
 
 export const invitation = pgTable("invitation", {
@@ -93,6 +108,9 @@ export const invitation = pgTable("invitation", {
 }, (t) => [
   index("invitation_organization_id_idx").on(t.organizationId),
   index("invitation_email_idx").on(t.email),
+  index("invitation_inviter_id_idx").on(t.inviterId),
+  check("invitation_role_check", sql`${t.role} ~ ${ROLE_LIST}`),
+  oneOf("invitation_status_check", t.status, ["pending", "accepted", "rejected", "canceled"]),
 ]);
 
 // ─── Inspo ───────────────────────────────────────────────────────────────────
@@ -121,6 +139,8 @@ export const inspoItem = pgTable("inspo_item", {
 }, (t) => [
   index("inspo_item_org_idx").on(t.organizationId),
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
+  index("inspo_item_created_by_idx").on(t.createdBy),
+  oneOf("inspo_item_type_check", t.type, ["inspiration", "videos", "ideas", "documentaries"]),
 ]);
 
 // ─── DESIGN.md revisions ─────────────────────────────────────────────────────
@@ -150,6 +170,8 @@ export const designRevision = pgTable("design_revision", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("design_revision_org_url_idx").on(t.organizationId, t.url),
+  index("design_revision_author_id_idx").on(t.authorId),
+  oneOf("design_revision_kind_check", t.kind, ["regeneration", "revision", "reversion"]),
 ]);
 
 // ─── Why it's here ──────────────────────────────────────────────────────────
@@ -192,6 +214,9 @@ export const inspoComment = pgTable("inspo_comment", {
   editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
+  // Deleting an item cascades here by item_id alone, which the index above cannot serve
+  index("inspo_comment_item_id_idx").on(t.itemId),
+  index("inspo_comment_author_id_idx").on(t.authorId),
 ]);
 
 // ─── AI usage ────────────────────────────────────────────────────────────────
@@ -223,6 +248,9 @@ export const aiUsage = pgTable("ai_usage", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
+  index("ai_usage_user_id_idx").on(t.userId),
+  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why"]),
+  oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 
 // ─── Activity (presence) ─────────────────────────────────────────────────────
@@ -250,6 +278,7 @@ export const activitySegment = pgTable("activity_segment", {
 }, (t) => [
   index("activity_segment_user_seen_idx").on(t.userId, t.lastSeenAt),
   index("activity_segment_seen_idx").on(t.lastSeenAt),
+  index("activity_segment_org_idx").on(t.organizationId),
 ]);
 
 // ─── App admins ──────────────────────────────────────────────────────────────
@@ -289,6 +318,7 @@ export const feedbackNote = pgTable("feedback_note", {
 }, (t) => [
   index("feedback_note_pending_idx").on(t.sentAt, t.updatedAt),
   index("feedback_note_user_path_idx").on(t.userId, t.path),
+  index("feedback_note_org_idx").on(t.organizationId),
 ]);
 
 // ─── Browser extension keys ─────────────────────────────────────────────────

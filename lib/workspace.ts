@@ -1,5 +1,5 @@
 // Server helpers: current session, active workspace and permissions.
-// A workspace is a Better Auth organization with metadata.kind = "personal" | "team".
+// A workspace is a Better Auth organization with kind = "personal" | "team".
 import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";

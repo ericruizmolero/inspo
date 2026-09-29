@@ -1,5 +1,5 @@
 {
-  "id": "b9e0d183-abac-4f3e-9df6-ee3cc26dd080",
+  "id": "1274d2af-d894-4424-b95d-b68ee3b76007",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -227,6 +227,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "activity_segment_org_idx": {
+          "name": "activity_segment_org_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -385,6 +400,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "ai_usage_user_id_idx": {
+          "name": "ai_usage_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -418,7 +448,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "ai_usage_action_check": {
+          "name": "ai_usage_action_check",
+          "value": "\"ai_usage\".\"action\" in ('design_md', 'vision', 'jev_tag', 'jev_search', 'jev_directory', 'explain', 'revise', 'design_why')"
+        },
+        "ai_usage_cost_source_check": {
+          "name": "ai_usage_cost_source_check",
+          "value": "\"ai_usage\".\"cost_source\" in ('real', 'estimated')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.app_admin": {
@@ -554,6 +593,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "design_revision_author_id_idx": {
+          "name": "design_revision_author_id_idx",
+          "columns": [
+            {
+              "expression": "author_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -587,7 +641,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "design_revision_kind_check": {
+          "name": "design_revision_kind_check",
+          "value": "\"design_revision\".\"kind\" in ('regeneration', 'revision', 'reversion')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.design_why": {
@@ -935,6 +994,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "feedback_note_org_idx": {
+          "name": "feedback_note_org_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1043,6 +1117,36 @@
             },
             {
               "expression": "item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "inspo_comment_item_id_idx": {
+          "name": "inspo_comment_item_id_idx",
+          "columns": [
+            {
+              "expression": "item_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "inspo_comment_author_id_idx": {
+          "name": "inspo_comment_author_id_idx",
+          "columns": [
+            {
+              "expression": "author_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1234,6 +1338,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "inspo_item_created_by_idx": {
+          "name": "inspo_item_created_by_idx",
+          "columns": [
+            {
+              "expression": "created_by",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1267,7 +1386,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "inspo_item_type_check": {
+          "name": "inspo_item_type_check",
+          "value": "\"inspo_item\".\"type\" in ('inspiration', 'videos', 'ideas', 'documentaries')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.invitation": {
@@ -1360,6 +1484,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "invitation_inviter_id_idx": {
+          "name": "invitation_inviter_id_idx",
+          "columns": [
+            {
+              "expression": "inviter_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -1393,7 +1532,16 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "invitation_role_check": {
+          "name": "invitation_role_check",
+          "value": "\"invitation\".\"role\" ~ '^(owner|admin|member)(,(owner|admin|member))*$'"
+        },
+        "invitation_status_check": {
+          "name": "invitation_status_check",
+          "value": "\"invitation\".\"status\" in ('pending', 'accepted', 'rejected', 'canceled')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.member": {
@@ -1516,7 +1664,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "member_role_check": {
+          "name": "member_role_check",
+          "value": "\"member\".\"role\" ~ '^(owner|admin|member)(,(owner|admin|member))*$'"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.organization": {
@@ -1558,6 +1711,20 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'team'"
+        },
+        "plan": {
+          "name": "plan",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'solo'"
         }
       },
       "indexes": {},
@@ -1573,7 +1740,16 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "organization_kind_check": {
+          "name": "organization_kind_check",
+          "value": "\"organization\".\"kind\" in ('personal', 'team')"
+        },
+        "organization_plan_check": {
+          "name": "organization_plan_check",
+          "value": "\"organization\".\"plan\" in ('solo', 'studio', 'agency')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.session": {

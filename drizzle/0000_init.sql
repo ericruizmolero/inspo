@@ -42,7 +42,9 @@ CREATE TABLE "ai_usage" (
 	"provider" text,
 	"request_id" text,
 	"ref" text,
-	"created_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "ai_usage_action_check" CHECK ("ai_usage"."action" in ('design_md', 'vision', 'jev_tag', 'jev_search', 'jev_directory', 'explain', 'revise', 'design_why')),
+	CONSTRAINT "ai_usage_cost_source_check" CHECK ("ai_usage"."cost_source" in ('real', 'estimated'))
 );
 --> statement-breakpoint
 CREATE TABLE "app_admin" (
@@ -63,7 +65,8 @@ CREATE TABLE "design_revision" (
 	"summary" text DEFAULT '' NOT NULL,
 	"warning" text,
 	"spec_json" jsonb NOT NULL,
-	"created_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "design_revision_kind_check" CHECK ("design_revision"."kind" in ('regeneration', 'revision', 'reversion'))
 );
 --> statement-breakpoint
 CREATE TABLE "design_why" (
@@ -129,7 +132,8 @@ CREATE TABLE "inspo_item" (
 	"thumbnail_url" text,
 	"tags_json" jsonb,
 	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "inspo_item_type_check" CHECK ("inspo_item"."type" in ('inspiration', 'videos', 'ideas', 'documentaries'))
 );
 --> statement-breakpoint
 CREATE TABLE "invitation" (
@@ -141,7 +145,9 @@ CREATE TABLE "invitation" (
 	"status" text DEFAULT 'pending' NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
-	"inviter_id" text NOT NULL
+	"inviter_id" text NOT NULL,
+	CONSTRAINT "invitation_role_check" CHECK ("invitation"."role" ~ '^(owner|admin|member)(,(owner|admin|member))*$'),
+	CONSTRAINT "invitation_status_check" CHECK ("invitation"."status" in ('pending', 'accepted', 'rejected', 'canceled'))
 );
 --> statement-breakpoint
 CREATE TABLE "member" (
@@ -149,7 +155,8 @@ CREATE TABLE "member" (
 	"organization_id" text NOT NULL,
 	"user_id" text NOT NULL,
 	"role" text DEFAULT 'member' NOT NULL,
-	"created_at" timestamp with time zone NOT NULL
+	"created_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "member_role_check" CHECK ("member"."role" ~ '^(owner|admin|member)(,(owner|admin|member))*$')
 );
 --> statement-breakpoint
 CREATE TABLE "organization" (
@@ -159,7 +166,11 @@ CREATE TABLE "organization" (
 	"logo" text,
 	"created_at" timestamp with time zone NOT NULL,
 	"metadata" text,
-	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
+	"kind" text DEFAULT 'team' NOT NULL,
+	"plan" text DEFAULT 'solo' NOT NULL,
+	CONSTRAINT "organization_slug_unique" UNIQUE("slug"),
+	CONSTRAINT "organization_kind_check" CHECK ("organization"."kind" in ('personal', 'team')),
+	CONSTRAINT "organization_plan_check" CHECK ("organization"."plan" in ('solo', 'studio', 'agency'))
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
@@ -222,19 +233,27 @@ ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("
 CREATE INDEX "account_user_id_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "activity_segment_user_seen_idx" ON "activity_segment" USING btree ("user_id","last_seen_at");--> statement-breakpoint
 CREATE INDEX "activity_segment_seen_idx" ON "activity_segment" USING btree ("last_seen_at");--> statement-breakpoint
+CREATE INDEX "activity_segment_org_idx" ON "activity_segment" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "ai_usage_org_created_idx" ON "ai_usage" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX "ai_usage_user_id_idx" ON "ai_usage" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "design_revision_org_url_idx" ON "design_revision" USING btree ("organization_id","url");--> statement-breakpoint
+CREATE INDEX "design_revision_author_id_idx" ON "design_revision" USING btree ("author_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "design_why_org_url_idx" ON "design_why" USING btree ("organization_id","url");--> statement-breakpoint
 CREATE UNIQUE INDEX "ext_key_hash_idx" ON "ext_key" USING btree ("hash");--> statement-breakpoint
 CREATE INDEX "ext_key_org_idx" ON "ext_key" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "ext_key_user_idx" ON "ext_key" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "feedback_note_pending_idx" ON "feedback_note" USING btree ("sent_at","updated_at");--> statement-breakpoint
 CREATE INDEX "feedback_note_user_path_idx" ON "feedback_note" USING btree ("user_id","path");--> statement-breakpoint
+CREATE INDEX "feedback_note_org_idx" ON "feedback_note" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "inspo_comment_org_item_idx" ON "inspo_comment" USING btree ("organization_id","item_id");--> statement-breakpoint
+CREATE INDEX "inspo_comment_item_id_idx" ON "inspo_comment" USING btree ("item_id");--> statement-breakpoint
+CREATE INDEX "inspo_comment_author_id_idx" ON "inspo_comment" USING btree ("author_id");--> statement-breakpoint
 CREATE INDEX "inspo_item_org_idx" ON "inspo_item" USING btree ("organization_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "inspo_item_org_web_uq" ON "inspo_item" USING btree ("organization_id","web_key");--> statement-breakpoint
+CREATE INDEX "inspo_item_created_by_idx" ON "inspo_item" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "invitation_organization_id_idx" ON "invitation" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "invitation_email_idx" ON "invitation" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "invitation_inviter_id_idx" ON "invitation" USING btree ("inviter_id");--> statement-breakpoint
 CREATE INDEX "member_organization_id_idx" ON "member" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "member_user_id_idx" ON "member" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "member_org_user_uq" ON "member" USING btree ("organization_id","user_id");--> statement-breakpoint

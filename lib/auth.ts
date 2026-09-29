@@ -10,7 +10,7 @@ import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
 import { isLocale, DEFAULT_LOCALE, localeFromCookieHeader, localeForNewUser, type Locale } from "./i18n/locale";
 import { getErrors } from "./i18n";
-import { planOf } from "./plans";
+import { planOf, DEFAULT_PLAN } from "./plans";
 import { eq } from "drizzle-orm";
 
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -143,6 +143,16 @@ export const auth = betterAuth({
     organization({
       allowUserToCreateOrganization: true,
       creatorRole: "owner",
+      // Our columns on the organization table. Set on the server only: kind by lib/workspace-core.ts
+      // (personal) or the column default (team), plan by scripts/set-plan.ts.
+      schema: {
+        organization: {
+          additionalFields: {
+            kind: { type: "string", required: false, input: false, defaultValue: "team" },
+            plan: { type: "string", required: false, input: false, defaultValue: DEFAULT_PLAN },
+          },
+        },
+      },
       invitationExpiresIn: 60 * 60 * 24 * 7,
       cancelPendingInvitationsOnReInvite: true,
       // The email doesn't decide whether the invitation is valid: the row already exists and the link works.
@@ -164,10 +174,6 @@ export const auth = betterAuth({
         }
       },
       organizationHooks: {
-        // Everything created from the UI is a team; lib/workspace.ts creates the personal ones
-        async beforeCreateOrganization({ organization: org }) {
-          return { data: { ...org, metadata: { kind: "team", ...(org.metadata ?? {}) } } };
-        },
         // Plan seat quota: checked on invite and on accept.
         // On invite, unaccepted invitations count too, except the one for this
         // same address: re-inviting replaces the pending one instead of adding to it.
@@ -227,9 +233,6 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 
-function planFromOrg(org: { metadata?: unknown }): string | null {
-  const m = org.metadata;
-  if (m && typeof m === "object") return (m as { plan?: string }).plan ?? null;
-  if (typeof m === "string") { try { return JSON.parse(m)?.plan ?? null; } catch { return null; } }
-  return null;
+function planFromOrg(org: Record<string, unknown>): string | null {
+  return typeof org.plan === "string" ? org.plan : null;
 }

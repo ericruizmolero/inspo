@@ -32,7 +32,7 @@ async function ensureUser(name: string, email: string) {
 async function ensureTeam() {
   const [o] = await db.select().from(schema.organization).where(eq(schema.organization.slug, TEAM_SLUG)).limit(1);
   if (o) return o;
-  const row = { id: newId(), name: TEAM_NAME, slug: TEAM_SLUG, logo: null, createdAt: new Date(), metadata: JSON.stringify({ kind: "team" }) };
+  const row = { id: newId(), name: TEAM_NAME, slug: TEAM_SLUG, logo: null, createdAt: new Date(), kind: "team" };
   await db.insert(schema.organization).values(row);
   console.log(`+ team ${TEAM_NAME}`);
   return row;

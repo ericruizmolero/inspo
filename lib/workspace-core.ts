@@ -16,7 +16,7 @@ export interface Workspace {
   role: Role;
   /** Company logo (small data URL or URL); null if none */
   logo: string | null;
-  /** SaaS plan (metadata.plan); "solo" if none */
+  /** SaaS plan (organization.plan) */
   plan: PlanKey;
 }
 
@@ -32,29 +32,16 @@ export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-function kindOf(metadata: string | null): WorkspaceKind {
-  try { return JSON.parse(metadata ?? "{}")?.kind === "personal" ? "personal" : "team"; }
-  catch { return "team"; }
-}
-export function planOfMetadata(metadata: string | null): PlanKey {
-  try { const p = JSON.parse(metadata ?? "{}")?.plan; return typeof p === "string" && isPlanKey(p) ? p : DEFAULT_PLAN; }
-  catch { return DEFAULT_PLAN; }
-}
+const planKey = (p: string): PlanKey => (isPlanKey(p) ? p : DEFAULT_PLAN);
 
 /**
- * Changes a workspace's plan, keeping the rest of the metadata.
- * ponytail: read and write in two statements, no transaction. Only
- * scripts/set-plan.ts calls it by hand; if a payment gateway ever calls it, it needs
- * a transaction or an UPDATE with jsonb_set (metadata is text, Better Auth writes it: cast it).
+ * Changes a workspace's plan.
  * Whoever downgrades must notify the owner if the team ends up over the limit:
  * notifyOverCapacity() in lib/quota.ts.
  */
 export async function setWorkspacePlan(organizationId: string, plan: PlanKey): Promise<void> {
-  const [row] = await db.select({ metadata: schema.organization.metadata }).from(schema.organization).where(eq(schema.organization.id, organizationId)).limit(1);
-  if (!row) throw new Error("Workspace not found");
-  let meta: Record<string, unknown> = {};
-  try { meta = JSON.parse(row.metadata ?? "{}") ?? {}; } catch { /* broken metadata: rewritten */ }
-  await db.update(schema.organization).set({ metadata: JSON.stringify({ ...meta, plan }) }).where(eq(schema.organization.id, organizationId));
+  const res = await db.update(schema.organization).set({ plan }).where(eq(schema.organization.id, organizationId));
+  if (!res.rowCount) throw new Error("Workspace not found");
 }
 
 export const newId = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
@@ -67,11 +54,11 @@ export function slugify(s: string): string {
 /** Creates the user's personal workspace if they don't have one yet. Returns its id. */
 export async function ensurePersonalWorkspace(userId: string, name: string, email: string): Promise<string> {
   const rows = await db
-    .select({ id: schema.organization.id, metadata: schema.organization.metadata })
+    .select({ id: schema.organization.id })
     .from(schema.member)
     .innerJoin(schema.organization, eq(schema.member.organizationId, schema.organization.id))
-    .where(eq(schema.member.userId, userId));
-  const personal = rows.find((r) => kindOf(r.metadata) === "personal");
+    .where(and(eq(schema.member.userId, userId), eq(schema.organization.kind, "personal")));
+  const personal = rows[0];
   if (personal) return personal.id;
 
   const id = newId();
@@ -81,7 +68,7 @@ export async function ensurePersonalWorkspace(userId: string, name: string, emai
     name: name || email.split("@")[0],
     slug: `p-${userId.slice(0, 8)}-${newId().slice(0, 6)}`,
     createdAt: now,
-    metadata: JSON.stringify({ kind: "personal" }),
+    kind: "personal",
   });
   await db.insert(schema.member).values({ id: newId(), organizationId: id, userId, role: "owner", createdAt: now });
   return id;
@@ -91,13 +78,13 @@ export async function listWorkspaces(userId: string): Promise<Workspace[]> {
   const rows = await db
     .select({
       id: schema.organization.id, name: schema.organization.name, slug: schema.organization.slug, logo: schema.organization.logo,
-      metadata: schema.organization.metadata, role: schema.member.role, createdAt: schema.organization.createdAt,
+      kind: schema.organization.kind, plan: schema.organization.plan, role: schema.member.role, createdAt: schema.organization.createdAt,
     })
     .from(schema.member)
     .innerJoin(schema.organization, eq(schema.member.organizationId, schema.organization.id))
     .where(eq(schema.member.userId, userId));
   return rows
-    .map((r) => ({ id: r.id, name: r.name, slug: r.slug, logo: r.logo ?? null, kind: kindOf(r.metadata), plan: planOfMetadata(r.metadata), role: (r.role.split(",")[0] as Role) ?? "member", createdAt: r.createdAt }))
+    .map((r) => ({ id: r.id, name: r.name, slug: r.slug, logo: r.logo ?? null, kind: r.kind as WorkspaceKind, plan: planKey(r.plan), role: (r.role.split(",")[0] as Role) ?? "member", createdAt: r.createdAt }))
     .sort((a, b) => (a.kind === b.kind ? +a.createdAt - +b.createdAt : a.kind === "personal" ? -1 : 1))
     .map(({ createdAt: _c, ...w }) => w);
 }

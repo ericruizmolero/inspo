@@ -148,7 +148,7 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
       .from(S).where(gte(S.startedAt, since)).groupBy(dayExpr),
     db.select({ area: S.area, seconds: sql<number>`sum(${S.seconds})`, users: sql<number>`count(distinct ${S.userId})` })
       .from(S).where(gte(S.lastSeenAt, since)).groupBy(S.area),
-    db.select({ userId: M.userId, name: O.name, metadata: O.metadata }).from(M).innerJoin(O, eq(M.organizationId, O.id)),
+    db.select({ userId: M.userId, name: O.name, kind: O.kind }).from(M).innerJoin(O, eq(M.organizationId, O.id)),
     db.select({ userId: SE.userId, at: SE.createdAt, expiresAt: SE.expiresAt, ua: SE.userAgent, name: U.name, email: U.email, image: U.image })
       .from(SE).innerJoin(U, eq(SE.userId, U.id)).orderBy(desc(SE.createdAt)).limit(60),
     Promise.all([
@@ -175,9 +175,7 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
   }
   const wsOf = new Map<string, string[]>();
   for (const m of memberships) {
-    let kind = "team";
-    try { kind = JSON.parse(m.metadata ?? "{}")?.kind ?? "team"; } catch { /* broken metadata */ }
-    if (kind === "personal") continue;
+    if (m.kind === "personal") continue;
     wsOf.set(m.userId, [...(wsOf.get(m.userId) ?? []), m.name]);
   }
 

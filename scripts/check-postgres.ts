@@ -14,7 +14,7 @@ async function main() {
   const now = new Date();
   const orgId = newId(), userId = newId();
   await db.insert(schema.user).values({ id: userId, name: "check", email: `check-${userId}@example.invalid`, createdAt: now, updatedAt: now });
-  await db.insert(schema.organization).values({ id: orgId, name: "check", slug: `check-${orgId}`, createdAt: now, metadata: JSON.stringify({ kind: "team" }) });
+  await db.insert(schema.organization).values({ id: orgId, name: "check", slug: `check-${orgId}`, createdAt: now, kind: "team" });
   try {
     // 1. setThumbnail reports success from rowCount
     const item = await addItem(orgId, { name: "Check", web: "https://check.example", author: "check", createdBy: userId });
@@ -34,7 +34,7 @@ async function main() {
     const today = startOfTodayMs(off);
     const at = (ms: number) => new Date(ms);
     for (const t of [today - 30 * 60000, today + 30 * 60000, today + 60 * 60000]) {
-      await db.insert(schema.aiUsage).values({ id: newId(), organizationId: orgId, action: "check", model: "check", createdAt: at(t) });
+      await db.insert(schema.aiUsage).values({ id: newId(), organizationId: orgId, action: "explain", model: "check", createdAt: at(t) });
     }
     const U = schema.aiUsage, day = dayOf(U.createdAt, off);
     const rows = await db.select({ day, n: sql<number>`count(*)::int` }).from(U).where(eq(U.organizationId, orgId)).groupBy(day).orderBy(day);

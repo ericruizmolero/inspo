@@ -42,7 +42,7 @@ async function addInvitation(email: string, expiresAt: Date, inviterId: string) 
 async function main() {
   const now = new Date();
   await db.insert(schema.organization).values({
-    id: orgId, name: TAG, slug: TAG, createdAt: now, metadata: JSON.stringify({ kind: "team", plan: "studio" }),
+    id: orgId, name: TAG, slug: TAG, createdAt: now, kind: "team", plan: "studio",
   });
   const owner = await addUser(0);
   await addMember(owner, now, "owner");

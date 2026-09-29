@@ -99,7 +99,7 @@ export async function usageOverview(days = 30): Promise<UsageOverview> {
       .from(U).where(where).groupBy(U.action),
     db.select({ userId: U.userId, name: sql<string | null>`max(${P.name})`, email: sql<string | null>`max(${P.email})`, image: sql<string | null>`max(${P.image})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
       .from(U).leftJoin(P, eq(U.userId, P.id)).where(where).groupBy(U.userId),
-    db.select({ id: U.organizationId, name: sql<string | null>`max(${O.name})`, metadata: sql<string | null>`max(${O.metadata})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
+    db.select({ id: U.organizationId, name: sql<string | null>`max(${O.name})`, kind: sql<string | null>`max(${O.kind})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
       .from(U).leftJoin(O, eq(U.organizationId, O.id)).where(where).groupBy(U.organizationId),
     db.select({ day: dayExpr, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
       .from(U).where(where).groupBy(dayExpr),
@@ -113,8 +113,7 @@ export async function usageOverview(days = 30): Promise<UsageOverview> {
     .map((r) => ({ userId: r.userId, name: r.name, email: r.email, image: r.image, usd: Number(r.micros) / 1e6, calls: Number(r.calls) }))
     .sort((a, b) => b.usd - a.usd);
   const workspaces = byWs.map((r) => {
-    let kind: "personal" | "team" = "team";
-    try { kind = JSON.parse(r.metadata ?? "{}")?.kind === "personal" ? "personal" : "team"; } catch { /* broken metadata */ }
+    const kind: "personal" | "team" = r.kind === "personal" ? "personal" : "team";
     return { id: r.id, name: r.name, kind, usd: Number(r.micros) / 1e6, calls: Number(r.calls) };
   }).sort((a, b) => b.usd - a.usd);
 

@@ -1,5 +1,5 @@
-// SaaS plans. No payment gateway yet: the plan lives in the organization's
-// metadata and is changed by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
+// SaaS plans. No payment gateway yet: the plan lives in organization.plan
+// and is changed by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
 // Quotas are monthly (calendar month) and counted on the ai_usage table.
 
 export type PlanKey = "solo" | "studio" | "agency";
