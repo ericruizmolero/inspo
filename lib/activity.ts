@@ -95,20 +95,23 @@ export async function touchSegment(userId: string, hb: Heartbeat, ua: string | n
   if (!ID_RE.test(hb.segmentId) || !ID_RE.test(hb.visitId)) return { ok: false, error: (await getErrors()).badIds, status: 400 };
   const area = String(hb.area || "").slice(0, 40) || "library";
   const path = String(hb.path || "/").slice(0, 200);
-  const now = Date.now();
+  const now = new Date();
   const S = schema.activitySegment;
-  const [row] = await db.select({ userId: S.userId, lastSeenAt: S.lastSeenAt }).from(S).where(eq(S.id, hb.segmentId)).limit(1);
-  if (!row) {
-    await db.insert(schema.activitySegment).values({
-      id: hb.segmentId, userId, organizationId: hb.organizationId ?? null, visitId: hb.visitId, area, path,
-      device: deviceSummary(ua), startedAt: new Date(now), lastSeenAt: new Date(now), seconds: 0,
-    }).onConflictDoNothing();
-    return { ok: true };
-  }
-  if (row.userId !== userId) return { ok: false, error: (await getErrors()).segmentNotYours, status: 403 };
-  const gap = now - row.lastSeenAt.getTime();
-  const add = gap > 0 && gap <= MAX_GAP_MS ? Math.round(gap / 1000) : 0;
-  await db.update(S).set({ lastSeenAt: new Date(now), seconds: sql`${S.seconds} + ${add}` }).where(eq(S.id, hb.segmentId));
+  // One statement: creates the segment, or adds the time since the last heartbeat if the gap
+  // is short (tab visible). The WHERE keeps someone else's segment untouched: no row comes back.
+  const gap = sql`extract(epoch from (excluded.last_seen_at - ${S.lastSeenAt}))`;
+  const rows = await db.insert(S).values({
+    id: hb.segmentId, userId, organizationId: hb.organizationId ?? null, visitId: hb.visitId, area, path,
+    device: deviceSummary(ua), startedAt: now, lastSeenAt: now, seconds: 0,
+  }).onConflictDoUpdate({
+    target: S.id,
+    set: {
+      lastSeenAt: sql`excluded.last_seen_at`,
+      seconds: sql`${S.seconds} + case when ${gap} > 0 and ${gap} <= ${MAX_GAP_MS / 1000} then round(${gap})::int else 0 end`,
+    },
+    setWhere: eq(S.userId, userId),
+  }).returning({ id: S.id });
+  if (!rows.length) return { ok: false, error: (await getErrors()).segmentNotYours, status: 403 };
   return { ok: true };
 }
 

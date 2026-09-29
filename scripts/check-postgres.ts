@@ -1,13 +1,28 @@
-// Check of the three places the Postgres move could break without a type error.
-// Not a test framework: assert. Runs against DATABASE_URL (local by default) and
-// leaves nothing behind: everything hangs off a throwaway workspace that is deleted at the end.
+// Check of the database behaviour that a type error would not catch: rowCount, cascades,
+// day grouping, file cleanup, bulk tagging and the heartbeat upsert.
+// Not a test framework: assert. Runs against DATABASE_URL (local by default) with local file
+// storage (no BLOB_READ_WRITE_TOKEN), and leaves nothing behind: everything hangs off a
+// throwaway workspace that is deleted at the end.
 //   npm run check:postgres
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
+delete process.env.BLOB_READ_WRITE_TOKEN;
 import assert from "node:assert/strict";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { newId, setThumbnail, deleteItem, addItem } from "../lib/items";
+import { newId, setThumbnail, deleteItem, addItem, setTagsBulk } from "../lib/items";
+import { touchSegment } from "../lib/activity";
+
+/** A local file under public/<dir>, returned as the URL the app stores */
+function localFile(dir: "thumbs" | "comments", name: string): string {
+  const full = path.join(process.cwd(), "public", dir);
+  mkdirSync(full, { recursive: true });
+  writeFileSync(path.join(full, name), "x");
+  return `/${dir}/${name}`;
+}
+const exists = (url: string) => existsSync(path.join(process.cwd(), "public", url));
 import { dayOf, daySlots, startOfTodayMs, tzOffsetSeconds } from "../lib/days";
 
 async function main() {
@@ -28,6 +43,43 @@ async function main() {
     assert.equal(await deleteItem(orgId, item.id), false, "second delete finds nothing");
     const [left] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.inspoComment).where(eq(schema.inspoComment.organizationId, orgId));
     assert.equal(left.n, 0, "comments cascade with the item");
+
+    // 4. Files: a replaced thumbnail is deleted unless another item still uses it,
+    // and deleting an item deletes its thumbnail and its comment screenshots
+    const tag = newId();
+    const a = await addItem(orgId, { name: "A", web: "https://a.check.example", author: "check" });
+    const b = await addItem(orgId, { name: "B", web: "https://b.check.example", author: "check" });
+    assert.ok(a.id && b.id);
+    const shared = localFile("thumbs", `${tag}-shared.png`), own = localFile("thumbs", `${tag}-own.png`), shot = localFile("comments", `${tag}-shot.png`);
+    await setThumbnail(orgId, a.web, shared);
+    await setThumbnail(orgId, b.web, shared);
+    await setThumbnail(orgId, a.web, own);
+    assert.ok(exists(shared), "a thumbnail B still uses stays");
+    await db.insert(schema.inspoComment).values({ id: newId(), organizationId: orgId, itemId: a.id, authorName: "check", body: "", attachments: [{ url: shot, w: 1, h: 1 }], createdAt: now });
+    await deleteItem(orgId, a.id);
+    assert.ok(!exists(own), "the deleted item's thumbnail is gone");
+    assert.ok(!exists(shot), "the deleted item's comment screenshot is gone");
+    await setThumbnail(orgId, b.web, null);
+    assert.ok(!exists(shared), "a thumbnail nobody uses is gone");
+
+    // 5. Bulk tags: one statement, the right rows
+    const c = await addItem(orgId, { name: "C", web: "https://c.check.example/", author: "check" });
+    await setTagsBulk(orgId, { "https://b.check.example": { summary: "b" } as never, "https://C.check.example": { summary: "c" } as never });
+    const tagged = await db.select({ web: schema.inspoItem.web, tags: schema.inspoItem.tagsJson }).from(schema.inspoItem).where(eq(schema.inspoItem.organizationId, orgId));
+    assert.deepEqual(Object.fromEntries(tagged.map((t) => [t.web, (t.tags as { summary?: string } | null)?.summary])), { "https://b.check.example": "b", [c.web]: "c" });
+
+    // 6. Heartbeat: creates, adds the gap, and refuses someone else's segment
+    const seg = `chk${newId().slice(0, 12)}`;
+    const beat = (uid: string) => touchSegment(uid, { segmentId: seg, visitId: seg, area: "library", path: "/", organizationId: orgId }, null);
+    assert.deepEqual(await beat(userId), { ok: true });
+    await db.update(schema.activitySegment).set({ lastSeenAt: new Date(Date.now() - 20_000) }).where(eq(schema.activitySegment.id, seg));
+    assert.deepEqual(await beat(userId), { ok: true });
+    const [s1] = await db.select({ seconds: schema.activitySegment.seconds }).from(schema.activitySegment).where(eq(schema.activitySegment.id, seg));
+    assert.ok(s1.seconds >= 19 && s1.seconds <= 21, `20 s gap counted (${s1.seconds})`);
+    const other = newId();
+    await db.insert(schema.user).values({ id: other, name: "other", email: `check-${other}@example.invalid`, createdAt: now, updatedAt: now });
+    assert.equal((await beat(other)).ok, false, "someone else's segment is refused");
+    await db.delete(schema.user).where(eq(schema.user.id, other));
 
     // 3. Day grouping in Madrid: 23:30 and 00:30 local fall on different days, and match daySlots
     const off = tzOffsetSeconds();

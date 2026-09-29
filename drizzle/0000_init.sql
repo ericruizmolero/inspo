@@ -235,6 +235,7 @@ CREATE INDEX "activity_segment_user_seen_idx" ON "activity_segment" USING btree 
 CREATE INDEX "activity_segment_seen_idx" ON "activity_segment" USING btree ("last_seen_at");--> statement-breakpoint
 CREATE INDEX "activity_segment_org_idx" ON "activity_segment" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "ai_usage_org_created_idx" ON "ai_usage" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX "ai_usage_org_action_created_idx" ON "ai_usage" USING btree ("organization_id","action","created_at");--> statement-breakpoint
 CREATE INDEX "ai_usage_user_id_idx" ON "ai_usage" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "design_revision_org_url_idx" ON "design_revision" USING btree ("organization_id","url");--> statement-breakpoint
 CREATE INDEX "design_revision_author_id_idx" ON "design_revision" USING btree ("author_id");--> statement-breakpoint

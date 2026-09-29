@@ -2,7 +2,8 @@
 // (see lib/items.ts); only file storage is left here.
 // Production: Vercel Blob (private, under inspo/<workspace>/thumbs/). Local: public/thumbs.
 import "server-only";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
+import { isBlobUrlUnder } from "./blob-url";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -28,3 +29,24 @@ export async function uploadThumbnail(organizationId: string, filename: string, 
   return `/thumbs/${name}`;
 }
 
+
+/** Is this URL a thumbnail from this workspace? (Blob or local) */
+export function ownsThumbnailFile(organizationId: string, url: string): boolean {
+  return USE_BLOB
+    ? isBlobUrlUnder(url, blobPrefix(organizationId))
+    : url.startsWith("/thumbs/") && !url.includes("..");
+}
+
+/** Delete without failing: an orphan thumbnail blocks nothing. */
+export async function deleteThumbnailFiles(organizationId: string, urls: string[]): Promise<void> {
+  const own = urls.filter((u) => ownsThumbnailFile(organizationId, u));
+  if (!own.length) return;
+  try {
+    if (USE_BLOB) await del(own);
+    else await Promise.all(own.map((u) => fs.unlink(path.join(THUMBS_DIR, path.basename(u))).catch(ignoreMissing)));
+  } catch (e) {
+    console.warn("Could not delete a thumbnail:", e);
+  }
+}
+
+const ignoreMissing = (e: NodeJS.ErrnoException) => { if (e.code !== "ENOENT") throw e; };

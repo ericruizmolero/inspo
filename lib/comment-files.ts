@@ -42,8 +42,10 @@ export async function deleteCommentFiles(organizationId: string, urls: string[])
   if (!own.length) return;
   try {
     if (USE_BLOB) await del(own);
-    else await Promise.all(own.map((u) => fs.unlink(path.join(LOCAL_DIR, path.basename(u)))));
+    else await Promise.all(own.map((u) => fs.unlink(path.join(LOCAL_DIR, path.basename(u))).catch(ignoreMissing)));
   } catch (e) {
     console.warn("Could not delete a comment attachment:", e);
   }
 }
+
+const ignoreMissing = (e: NodeJS.ErrnoException) => { if (e.code !== "ENOENT") throw e; };

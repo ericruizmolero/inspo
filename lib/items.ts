@@ -1,12 +1,13 @@
 // Access to inspiration items, always scoped to a workspace (organizationId).
 import "server-only";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
 import type { ThumbnailMap } from "./thumbnails";
 import { webKeyOf } from "./url";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
+import { collectItemFiles, dropUnusedFiles } from "./item-files";
 
 const T = schema.inspoItem;
 type Row = typeof T.$inferSelect;
@@ -108,9 +109,12 @@ export async function hasItem(organizationId: string, web: string): Promise<bool
   return !!r;
 }
 
+/** Sets or clears the manual thumbnail. The file it replaces is deleted if nothing else uses it. */
 export async function setThumbnail(organizationId: string, web: string, thumbnailUrl: string | null): Promise<boolean> {
-  const res = await db.update(T).set({ thumbnailUrl, updatedAt: new Date() })
-    .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web))));
+  const where = and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web)));
+  const [old] = await db.select({ url: T.thumbnailUrl }).from(T).where(where).limit(1);
+  const res = await db.update(T).set({ thumbnailUrl, updatedAt: new Date() }).where(where);
+  if (old?.url && old.url !== thumbnailUrl) await dropUnusedFiles(organizationId, { thumbnails: [old.url], attachments: [] });
   return (res.rowCount ?? 0) > 0;
 }
 
@@ -119,8 +123,15 @@ export async function setTags(organizationId: string, web: string, tags: InspoTa
     .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web))));
 }
 
+/** Many items at once: one UPDATE per 500 items instead of one per item. */
 export async function setTagsBulk(organizationId: string, map: TagMap): Promise<void> {
-  for (const [web, tags] of Object.entries(map)) await setTags(organizationId, web, tags);
+  const rows = Object.entries(map).map(([web, tags]) => sql`(${webKeyOf(web)}, ${JSON.stringify(tags)}::jsonb)`);
+  for (let i = 0; i < rows.length; i += 500) {
+    await db.execute(sql`
+      update ${T} set tags_json = v.tags, updated_at = now()
+      from (values ${sql.join(rows.slice(i, i + 500), sql`, `)}) as v(web_key, tags)
+      where ${T.organizationId} = ${organizationId} and ${T.webKey} = v.web_key`);
+  }
 }
 
 /** Does this thumbnail URL belong to the workspace? (for the image proxy) */
@@ -135,13 +146,18 @@ export async function webSet(organizationId: string): Promise<Set<string>> {
   return new Set(rows.map((r) => r.web));
 }
 
-export async function deleteItems(organizationId: string, ids: string[]) {
-  if (!ids.length) return;
-  await db.delete(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
+/**
+ * Deletes items. Their comment threads go with them (ON DELETE CASCADE), and their files
+ * (thumbnail, comment screenshots) are deleted from storage afterwards. Returns how many went.
+ */
+export async function deleteItems(organizationId: string, ids: string[]): Promise<number> {
+  if (!ids.length) return 0;
+  const files = await collectItemFiles(organizationId, ids);
+  const res = await db.delete(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
+  if (res.rowCount) await dropUnusedFiles(organizationId, files);
+  return res.rowCount ?? 0;
 }
 
-/** Deletes an item. Its comment thread goes with it (ON DELETE CASCADE). */
 export async function deleteItem(organizationId: string, id: string): Promise<boolean> {
-  const res = await db.delete(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
-  return (res.rowCount ?? 0) > 0;
+  return (await deleteItems(organizationId, [id])) > 0;
 }

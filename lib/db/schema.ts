@@ -248,6 +248,8 @@ export const aiUsage = pgTable("ai_usage", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
+  // Monthly quota count (lib/quota.ts): one workspace, one action, since the 1st
+  index("ai_usage_org_action_created_idx").on(t.organizationId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
   oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),

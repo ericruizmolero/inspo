@@ -11,6 +11,7 @@ import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail"
 import { isLocale, DEFAULT_LOCALE, localeFromCookieHeader, localeForNewUser, type Locale } from "./i18n/locale";
 import { getErrors } from "./i18n";
 import { planOf, DEFAULT_PLAN } from "./plans";
+import { collectItemFiles, dropUnusedFiles, type ItemFiles } from "./item-files";
 import { eq } from "drizzle-orm";
 
 const IS_PROD = process.env.NODE_ENV === "production";
@@ -174,6 +175,16 @@ export const auth = betterAuth({
         }
       },
       organizationHooks: {
+        // The database cascade removes every row of the workspace, but not its files in storage:
+        // their URLs are read before the delete and the files dropped after it
+        async beforeDeleteOrganization({ organization: org }) {
+          filesOfDeleted.set(org.id, await collectItemFiles(org.id));
+        },
+        async afterDeleteOrganization({ organization: org }) {
+          const files = filesOfDeleted.get(org.id);
+          filesOfDeleted.delete(org.id);
+          if (files) await dropUnusedFiles(org.id, files);
+        },
         // Plan seat quota: checked on invite and on accept.
         // On invite, unaccepted invitations count too, except the one for this
         // same address: re-inviting replaces the pending one instead of adding to it.
@@ -232,6 +243,9 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+
+/** Between beforeDeleteOrganization and afterDeleteOrganization of the same request */
+const filesOfDeleted = new Map<string, ItemFiles>();
 
 function planFromOrg(org: Record<string, unknown>): string | null {
   return typeof org.plan === "string" ? org.plan : null;
