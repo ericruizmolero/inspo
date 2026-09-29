@@ -6,9 +6,22 @@ Next.js 16, Postgres, Better Auth.
 ## Run it locally
 
 You need Node 22 or newer, a Postgres server on port 5432, and Google Chrome (for screenshots).
-On a Mac, [DBngin](https://dbngin.com) is the easiest way to run Postgres: add a PostgreSQL server,
-keep the default port and user, and start it. Nothing else can be on port 5432
-(if Homebrew Postgres is running, `brew services stop postgresql@17`).
+
+### Postgres on a Mac
+
+Two apps from the same people (DBngin is free, TablePlus has a free version), and you never touch a
+config file:
+
+- [DBngin](https://dbngin.com) runs the server. Click **+**, pick PostgreSQL, keep port `5432`
+  and start it. The green dot means it's up.
+- [TablePlus](https://tableplus.com) shows what's inside. New connection, PostgreSQL: host
+  `127.0.0.1`, port `5432`, user `postgres`, no password, database `criterio`. Refresh with ⌘R
+  after a migration.
+
+Only one server can hold port 5432. If Homebrew Postgres is running,
+`brew services stop postgresql@17` first.
+
+### Start
 
 ```bash
 npm install
@@ -25,7 +38,7 @@ workspace.
 `npm run seed -- --replace`.
 
 The database is `postgres://postgres@127.0.0.1:5432/criterio` with no password. That is the default,
-so `DATABASE_URL` stays unset locally. To look inside, point TablePlus (or any client) at it.
+so `DATABASE_URL` stays unset locally.
 
 ### Signing in
 
