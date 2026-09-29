@@ -2,13 +2,14 @@
 // Library changes made by the interface itself: adding and removing sites, comments, language.
 // What the extension asks for (key, not cookie) or takes minutes (tags, DESIGN.md) stays in app/api.
 import { cookies } from "next/headers";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
 import { addItem, deleteItem } from "@/lib/items";
 import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
+import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { addComment, deleteComment } from "@/lib/comments";
-import { siteTextWithin } from "@/lib/extract";
-import { normalizeWebUrl, guessName, typeFromUrl } from "@/lib/url";
+import { nameFor } from "@/lib/item-name";
+import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
@@ -21,7 +22,7 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
     const web = normalizeWebUrl(input.web ?? "");
     if (!web) throw new HttpError(400, (await getErrors()).badUrl);
     const item = await addItem(ctx.workspace.id, {
-      name: input.name?.trim() || guessName(web, await siteTextWithin(web)),
+      name: input.name?.trim() || await nameFor(web),
       web,
       type: input.type?.trim() || typeFromUrl(web),
       note: input.note, subNote: input.subNote,
@@ -55,9 +56,35 @@ export async function setFiled(projectId: string, itemIds: string[], on: boolean
   });
 }
 
+/** An image (or GIF) as an inspo of its own. The file was uploaded first via /api/media;
+ *  only its URL arrives here, and it must be in this workspace's media folder. */
+export async function addImage(input: { url: string; fileName?: string; type?: string; note?: string; projectId?: string }) {
+  return withCtx(async (ctx) => {
+    const url = String(input.url ?? "");
+    if (!ownsMediaFile(ctx.workspace.id, url)) throw new HttpError(400, (await getErrors()).imageNotHere);
+    const item = await addItem(ctx.workspace.id, {
+      name: nameFromFile(String(input.fileName ?? "")) || "Image",
+      web: url,
+      thumbnailUrl: url,
+      type: input.type?.trim() || "inspiration",
+      note: input.note,
+      author: ctx.user.name || ctx.user.email,
+      createdBy: ctx.user.id,
+    });
+    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+    return item;
+  });
+}
+
 /** Any member can remove a card (with its thread). If it was already gone, it is not an error. */
 export async function removeInspo(id: string) {
-  return withCtx(async (ctx) => { await deleteItem(ctx.workspace.id, id); });
+  return withCtx(async (ctx) => {
+    const [row] = await db.select({ web: schema.inspoItem.web }).from(schema.inspoItem)
+      .where(and(eq(schema.inspoItem.organizationId, ctx.workspace.id), eq(schema.inspoItem.id, String(id)))).limit(1);
+    await deleteItem(ctx.workspace.id, id);
+    // An uploaded image goes with its card: nothing else points at that file
+    if (row) await deleteMediaFile(ctx.workspace.id, row.web);
+  });
 }
 
 /** Attachments are uploaded first via /api/comments/upload; only their URLs arrive here. */

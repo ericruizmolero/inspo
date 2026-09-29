@@ -7,6 +7,8 @@ import { SECTORS, STYLES, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD } from "./taxono
 import en from "./i18n/en";
 import { fetchSiteText, SiteText } from "./extract";
 import { describeSite } from "./vision";
+import { mediaKindOf, postOf } from "./url";
+import { getStoredPost } from "./posts";
 import { recordUsage, type UsageCtx } from "./usage";
 
 let _client: TypeSafeClient | null = null;
@@ -61,8 +63,20 @@ function buildState(item: InspoItem, site: SiteText | null, visual: string | nul
   };
 }
 
+/** A saved post read as a page: author as title, its words as text */
+async function postAsSite(web: string): Promise<SiteText | null> {
+  const post = await getStoredPost(postOf(web)?.id ?? "");
+  if (!post) return null;
+  return {
+    title: `${post.author} (@${post.handle}) on X`, description: post.text, siteName: "X", lang: "", headings: [], textSample: post.text,
+    signals: { themeColor: null, fonts: [], colors: [], hasCanvas: false, hasVideo: post.media.some((m) => m.kind !== "photo"), imageCount: post.media.length, platform: "x" },
+  };
+}
+
 export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<InspoTags> {
-  const [site, vision] = await Promise.all([fetchSiteText(item.web), describeSite(item)]);
+  // An uploaded image has no page to read: only what the vision step sees. A post's page is its words.
+  const kind = mediaKindOf(item.web);
+  const [site, vision] = await Promise.all([kind === "image" ? null : kind === "post" ? postAsSite(item.web) : fetchSiteText(item.web), describeSite(item)]);
   const visual = vision?.text ?? null;
   if (vision) {
     console.log(`vision ${item.web}: ${vision.model} in/out ${vision.inputTokens}/${vision.outputTokens}`);

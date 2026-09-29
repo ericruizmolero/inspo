@@ -76,6 +76,8 @@ export async function findByWeb(organizationId: string, web: string): Promise<Ro
 export interface NewItem {
   name: string; web: string; type?: string; note?: string; subNote?: string;
   author: string; createdBy?: string | null; dateIso?: string;
+  /** Uploaded images are their own thumbnail */
+  thumbnailUrl?: string | null;
 }
 
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
@@ -95,6 +97,7 @@ export async function addItem(organizationId: string, input: NewItem): Promise<I
     createdBy: input.createdBy ?? null,
     note: (input.note ?? "").trim(),
     subNote: (input.subNote ?? "").trim() || null,
+    thumbnailUrl: input.thumbnailUrl ?? null,
     createdAt: now,
     updatedAt: now,
   };

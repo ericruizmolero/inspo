@@ -28,6 +28,7 @@ export const errors: typeof EnErrors = {
   missingAnnotation: "Falta la anotación",
   missingData: "Faltan datos",
   missingEmail: "Falta el correo",
+  mediaTooHeavy: "La imagen pesa demasiado (máx. 20 MB)",
   missingFile: "Falta el fichero",
   missingFileOrWebUrl: "Faltan file o webUrl",
   missingId: "Falta id",

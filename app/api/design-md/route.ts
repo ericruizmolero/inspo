@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { normalizeWebUrl } from "@/lib/url";
+import { normalizeWebUrl, mediaKindOf } from "@/lib/url";
 import { extractDesign } from "@/lib/design-extract";
 import { generateDesignMd } from "@/lib/design-md";
 import { getDesignMd, saveDesignMd } from "@/lib/design-store";
@@ -45,7 +45,8 @@ export async function GET(req: NextRequest) {
 
   // The workspace index is no longer requested here: it comes with the page (app/page.tsx)
   const url = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
-  if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
+  // An uploaded image is a private file, not a site: there is nothing to read
+  if (!url || mediaKindOf(url) === "image") return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
   if (!(await findByWeb(ctx.workspace.id, url))) {
     return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });
   }

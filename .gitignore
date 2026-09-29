@@ -57,6 +57,8 @@ HANDOFF-*.md
 /public/design-md/
 public/design-why/
 /public/comments/
+/public/media/
+/public/posts/
 prod.env
 
 # Chrome Web Store packages (node extension/build.mjs)

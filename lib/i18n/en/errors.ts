@@ -28,6 +28,7 @@ export const errors = {
   missingAnnotation: "The annotation is missing",
   missingData: "Some data is missing",
   missingEmail: "The email address is missing",
+  mediaTooHeavy: "The image is too heavy (20 MB max)",
   missingFile: "The file is missing",
   missingFileOrWebUrl: "Either file or webUrl is missing",
   missingId: "The id is missing",

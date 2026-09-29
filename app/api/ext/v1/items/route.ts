@@ -5,13 +5,14 @@ import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, rowToItem, setThumbnail, setTags } from "@/lib/items";
 import { uploadThumbnail } from "@/lib/thumbnails";
-import { siteTextWithin } from "@/lib/extract";
-import { normalizeWebUrl, guessName, typeFromUrl } from "@/lib/url";
+import { nameFor } from "@/lib/item-name";
+import { ensurePost, postThumb } from "@/lib/posts";
+import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
 import { classifyItem, jevEnabled } from "@/lib/jev";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 
-export const maxDuration = 60; // tagging runs in after(), once the response is sent
+export const maxDuration = 120; // tagging and importing a post (copying its video) run in after(), once the response is sent
 
 const MAX_SHOT_BYTES = 3 * 1024 * 1024;
 
@@ -36,9 +37,8 @@ export async function POST(req: NextRequest) {
   const existing = await findByWeb(ctx.workspace.id, web);
   if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing) });
 
-  // Name: the site's og:site_name or <title> with a time limit; if missing, the tab title
-  const site = await siteTextWithin(web);
-  const name = guessName(web, site ?? (body.title ? { title: body.title } : null));
+  // Name: a post's author and words, a video's title, the site's og:site_name or <title> with a time limit; if missing, the tab title
+  const name = await nameFor(web, body.title);
 
   try {
     const item = await addItem(ctx.workspace.id, {
@@ -55,9 +55,17 @@ export async function POST(req: NextRequest) {
       } catch (e) { console.error("ext: thumbnail not saved", e instanceof Error ? e.message : e); }
     }
 
-    // AI tags after responding, as the app does when a URL is pasted
-    if (jevEnabled()) {
+    // A post on X is imported after responding (its photos, frame and video are copied);
+    // its picture replaces the tab screenshot. Then the AI tags, as the app does when a URL is pasted.
+    const isPost = mediaKindOf(web) === "post";
+    if (isPost || jevEnabled()) {
       after(async () => {
+        if (isPost) {
+          const post = await ensurePost(web);
+          const thumb = post && postThumb(post);
+          if (thumb) await setThumbnail(ctx.workspace.id, web, thumb);
+        }
+        if (!jevEnabled()) return;
         try {
           const tags = await classifyItem(item, { organizationId: ctx.workspace.id, userId: ctx.user.id });
           await setTags(ctx.workspace.id, web, tags);

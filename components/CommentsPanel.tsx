@@ -10,6 +10,9 @@ import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT, messageOf } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
+import { mediaKindOf } from "@/lib/url";
+import VideoPlayer from "./VideoPlayer";
+import PostView from "./PostView";
 
 // Side panel for an inspo's comments, like a Figma pin thread:
 // the original note from whoever saved it opens the thread and any member replies below.
@@ -38,6 +41,8 @@ interface CommentsPanelProps {
    * (the sheet handles it) and a short header, since the brand is already in the bar.
    */
   variant?: "drawer" | "column";
+  /** A post from X reports the picture it got once imported (it becomes the card's thumbnail) */
+  onPostThumb?: (thumb: string) => void;
   /** This site's DESIGN.md status, for the "generate the MD to get the full sheet" notice */
   designMd?: { status: "none" | "loading" | "ready"; onGenerate: () => void; onOpen: () => void };
 }
@@ -182,7 +187,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onClose, variant = "drawer", designMd }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onClose, variant = "drawer", designMd, onPostThumb }: CommentsPanelProps) {
   const { locale, t } = useT();
   const column = variant === "column";
   const [draft, setDraft] = useState("");
@@ -316,7 +321,10 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     w1: ["72%", "58%", "80%"][i], w2: ["40%", "66%", "34%"][i],
   }));
 
-  const domain = (() => { try { return new URL(item.web).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+  // An uploaded image is not a site: its link opens the file itself, which is also the picture on top
+  const kind = mediaKindOf(item.web);
+  const href = kind === "image" && image ? image : item.web;
+  const domain = kind === "image" ? t.card.openImage : (() => { try { return new URL(item.web).hostname.replace(/^www\./, ""); } catch { return ""; } })();
   const replies = comments.length;
 
   return (
@@ -342,7 +350,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         <header className="cm-panel__head">
           <div className="cm-panel__title">
             <span className="display">{column ? t.comments.title : item.name}</span>
-            {!column && <a className="cm-panel__link" href={item.web} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
+            {!column && <a className="cm-panel__link" href={href} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
           </div>
           <span className="cm-panel__count">{replies === 0 ? t.comments.noReplies : t.comments.replies(replies)}</span>
           <Button variant="icon" onClick={onClose} aria-label={column ? t.comments.hide : t.common.close}>{IcX}</Button>
@@ -364,7 +372,16 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         )}
 
         <div ref={listRef} className="cm-list">
-          {image && (
+          {kind === "post" ? (
+            <PostView web={item.web} onThumb={onPostThumb} />
+          ) : kind === "video" ? (
+            <VideoPlayer web={item.web} title={item.name} />
+          ) : kind === "image" && image ? (
+            // Whole, not cropped: the image is the inspo
+            <a className="cm-shot cm-shot--whole" href={href} target="_blank" rel="noopener noreferrer" title={t.card.openImage}>
+              <img src={image} alt={item.name} loading="lazy" />
+            </a>
+          ) : image && (
             <a className="cm-shot" href={item.web} target="_blank" rel="noopener noreferrer" title={t.comments.openSite}>
               <img src={image} alt="" loading="lazy" />
             </a>

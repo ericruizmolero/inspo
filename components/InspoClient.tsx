@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -15,7 +15,8 @@ import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView, 
 import FilterBar from "./FilterBar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
-import { webKeyOf, nameFromHost, typeFromUrl } from "@/lib/url";
+import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile } from "@/lib/url";
+import { uploadMedia } from "@/lib/media-client";
 import DesignMdModal from "./DesignMdModal";
 import DirectoryModal from "./DirectoryModal";
 import EmptyStart from "./EmptyStart";
@@ -25,7 +26,7 @@ import { proxiedSrc } from "@/lib/proxied-src";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
-import { useT } from "./I18nProvider";
+import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
 import CommandPalette from "./CommandPalette";
@@ -85,6 +86,8 @@ interface RunDesignMdOpts {
 }
 
 function canAutoDesignMd(web: string): boolean {
+  // A DESIGN.md reads a site: an uploaded image or a video has none
+  if (mediaKindOf(web) !== "web") return false;
   try {
     const host = new URL(web).hostname.replace(/^www\./, "");
     return !NO_DESIGN_MD.some((d) => host === d || host.endsWith(`.${d}`));
@@ -350,6 +353,14 @@ export default function InspoClient({
     const key = webKeyOf(web);
     return items.some((i) => webKeyOf(i.web) === key);
   }, [items]);
+  // Reads a post on X and saves a copy of its photos, frame and video; its picture becomes the card's
+  const importPost = useCallback(async (web: string) => {
+    try {
+      const res = await fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }) });
+      const data = res.ok ? await res.json() : null;
+      if (data?.thumb) setThumbMap((prev) => (prev[web] ? prev : { ...prev, [web]: data.thumb }));
+    } catch { /* stays a typographic card */ }
+  }, []);
   const runDesignMdRef = useRef<(item: InspoItem, opts?: RunDesignMdOpts) => void>(() => {});
   const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
     const d = new Date();
@@ -366,8 +377,10 @@ export default function InspoClient({
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
-      // Full experience from the start: tags and DESIGN.md without asking
-      tagOne(item.web);
+      // Full experience from the start: tags and DESIGN.md without asking.
+      // A post on X is imported first (its picture is what the tags look at).
+      if (mediaKindOf(item.web) === "post") importPost(item.web).then(() => tagOne(item.web));
+      else tagOne(item.web);
       if (canAutoDesignMd(item.web)) runDesignMdRef.current(item);
       return item;
     } catch (e) {
@@ -375,7 +388,40 @@ export default function InspoClient({
       setAddError({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
       return null;
     }
-  }, [user, tagOne]);
+  }, [user, tagOne, importPost]);
+
+  // ─── Add an image ────────────────────────────────────────────────────────────
+  // Same optimistic card, showing the local file while it uploads; the uploaded
+  // file's URL becomes the item's address and its thumbnail.
+  const addByUpload = useCallback(async (input: NewInspoInput & { file: File }): Promise<InspoItem | null> => {
+    const d = new Date();
+    const local = URL.createObjectURL(input.file);
+    const temp: InspoItem = {
+      name: nameFromFile(input.file.name) || t.card.image, web: local, type: input.type, note: input.note,
+      date: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
+      addedBy: user.name || user.email,
+    };
+    setItems((prev) => [temp, ...prev]);
+    try {
+      const url = await uploadMedia(input.file, workspace.id);
+      const projectId = projectRef.current ?? undefined;
+      const r = await addImage({ url, fileName: input.file.name, type: input.type, note: input.note, projectId });
+      if (!r.ok) throw new Error(r.error);
+      const item = r.data;
+      if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
+      setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
+      setItems((prev) => prev.map((i) => (i === temp ? item : i)));
+      tagOne(item.web);
+      return item;
+    } catch (e) {
+      setItems((prev) => prev.filter((i) => i !== temp));
+      setAddError({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
+      return null;
+    } finally {
+      // The card already swapped to the uploaded file; give it a moment before dropping the local copy
+      setTimeout(() => URL.revokeObjectURL(local), 30_000);
+    }
+  }, [user, tagOne, workspace.id, t]);
 
   // A guest who pasted a URL on the start canvas comes back from login with ?add=<url>:
   // it saves itself and its DESIGN.md opens, as if pasted from inside.
@@ -606,6 +652,8 @@ export default function InspoClient({
   // The sheet only opens if the DESIGN.md exists (in session or on the server).
   // If it needs generating, it runs in the background and the bottom-right toast reports.
   const openDesignMd = (item: InspoItem) => {
+    // An image or a video has no site to read: its sheet is the thread, with the picture or the player on top
+    if (mediaKindOf(item.web) !== "web") { if (item.id) setCommentsItemId(item.id); return; }
     const job = designMdJobs[item.web];
     if (job?.status === "ready") { showDesignMd(item); return; }
     if (job?.status === "loading") return; // already running, the toast shows it
@@ -1030,6 +1078,7 @@ export default function InspoClient({
           image={thumbMap[commentsItem.web] ? proxiedSrc(thumbMap[commentsItem.web]) : designMdIndex[commentsItem.web]?.coverUrl ? proxiedSrc(designMdIndex[commentsItem.web].coverUrl!) : null}
           onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
           onDelete={(id) => deleteComment(commentsItem.id!, id)}
+          onPostThumb={(thumb) => setThumbMap((prev) => (prev[commentsItem.web] ? prev : { ...prev, [commentsItem.web]: thumb }))}
           onClose={() => setCommentsItemId(null)}
           designMd={canAutoDesignMd(commentsItem.web) ? {
             status: designMdJobs[commentsItem.web]?.status === "loading" ? "loading" : commentsItem.web in designMdIndex ? "ready" : "none",
@@ -1041,7 +1090,7 @@ export default function InspoClient({
       {showAdd && (
         <AddInspoModal
           onClose={() => setShowAdd(false)}
-          onSubmit={addByUrl}
+          onSubmit={(input) => { if (input.file) addByUpload({ ...input, file: input.file }); else addByUrl(input); }}
           isDuplicate={isDuplicate}
           project={currentProject?.name}
         />

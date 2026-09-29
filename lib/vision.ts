@@ -2,10 +2,14 @@
 // Jev (text only) can judge visual traits (typography, illustration, palette…).
 import { getOrCaptureShot } from "./screenshot";
 import { llm, llmEnabled } from "./llm";
+import { mediaKindOf, postOf } from "./url";
+import { getStoredPost, postThumb } from "./posts";
+import { readMediaFile } from "./media";
 
 // Describing a screenshot in 120 words doesn't need Opus: Haiku costs ten times less.
 const MODEL = process.env.VISION_MODEL || "anthropic/claude-haiku-4.5";
 const CAPTURE_TIMEOUT_MS = 45_000;
+const MAX_IMAGE_BYTES = 4.5 * 1024 * 1024;
 
 // Domains where the screenshot adds nothing (login walls, video, social)
 const SKIP = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "primevideo.com", "netflix.com"];
@@ -24,12 +28,13 @@ Describe only what is visible. Do not guess at animation. Do not name the brand'
 
 export interface VisionResult { text: string; model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; costUsd: number | null; provider: string | null; requestId: string | null }
 
-export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url: string }): Promise<VisionResult | null> {
+export async function describeScreenshot(jpeg: Buffer, ctx: { name: string; url: string; imageType?: string }): Promise<VisionResult | null> {
   const res = await llm({
     model: MODEL,
     system: SYSTEM,
     image: jpeg,
-    text: `Site: ${ctx.name} (${ctx.url}). Describe the screenshot.`,
+    imageType: ctx.imageType,
+    text: ctx.imageType ? `Image: ${ctx.name}. Describe it.` : `Site: ${ctx.name} (${ctx.url}). Describe the screenshot.`,
     maxTokens: 600,
   });
   const text = res.text.trim();
@@ -47,6 +52,18 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 /** Captures (or reuses) the screenshot and describes it. Returns null if not applicable or on failure. */
 export async function describeSite(item: { name: string; web: string }): Promise<VisionResult | null> {
   if (!visionEnabled()) return null;
+  // An uploaded image, or a post's photo or frame, is described as it is: there is no site to capture
+  const kind = mediaKindOf(item.web);
+  if (kind === "image" || kind === "post") {
+    const post = kind === "post" ? await getStoredPost(postOf(item.web)!.id) : null;
+    const picture = kind === "image" ? item.web : post && postThumb(post);
+    if (!picture) return null;
+    const file = await readMediaFile(picture);
+    // Past ~5 MB the model refuses the image; a heavy GIF goes untagged by sight
+    if (!file || file.data.length > MAX_IMAGE_BYTES) return null;
+    try { return await describeScreenshot(file.data, { name: item.name, url: item.web, imageType: file.type }); }
+    catch (e) { console.warn("vision: skipped", item.name, e instanceof Error ? e.message : e); return null; }
+  }
   let host = "";
   try { host = new URL(item.web).hostname.replace(/^www\./, ""); } catch { return null; }
   if (SKIP.some((d) => host === d || host.endsWith(`.${d}`))) return null;
