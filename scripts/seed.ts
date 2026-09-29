@@ -12,7 +12,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { Client } from "pg";
 import { getTableColumns, sql } from "drizzle-orm";
-import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
+import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import { databaseUrl } from "../lib/db/url";
 
 const FILE = path.join(process.cwd(), ".data", "seed.json");
@@ -25,9 +25,13 @@ async function tables() {
   // Parents before children, so foreign keys hold while loading
   const list: PgTable[] = [
     schema.user, schema.organization, schema.session, schema.account, schema.verification,
-    schema.member, schema.invitation, schema.inspoItem, schema.designRevision, schema.designWhy,
+    schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designRevision, schema.designWhy,
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
   ];
+  // A table added to the schema but not to this list would vanish from every dump without a word
+  const all = (Object.values(schema) as unknown[]).filter((v): v is PgTable => v instanceof PgTable);
+  const missing = all.filter((t) => !list.includes(t)).map((t) => getTableConfig(t).name);
+  if (missing.length) throw new Error(`scripts/seed.ts does not list: ${missing.join(", ")}. Add them in parent-first order.`);
   return list.map((t) => ({ table: t, name: getTableConfig(t).name, cols: getTableColumns(t) }));
 }
 
