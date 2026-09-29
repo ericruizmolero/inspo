@@ -17,9 +17,12 @@ export interface DesignMdEntry {
   screenshotUrl?: string;     // whole page at 1440px. /design-md/<key>.jpg locally, Blob URL (private) in production
   coverUrl?: string;          // 720x450, grid cover
   scrollUrl?: string;         // 720px wide, strip for the grid hover
+  logoUrl?: string;           // png of the logo as it sits on the page, at 2x (missing when none was found)
+  icons?: string[];           // up to 8 of the site's icons as standalone svg markup
+  fontFiles?: { family: string; formats: string[] }[]; // the file format each @font-face family is served in
 }
 
-export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer }
+export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer; logo?: Buffer | null }
 
 export type DesignMdIndex = Record<string, { generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string }>;
 
@@ -139,15 +142,15 @@ async function fsSetIndex(index: DesignMdIndex): Promise<void> {
   await fs.writeFile(FS_INDEX, JSON.stringify(index, null, 2));
 }
 
-async function saveImage(key: string, suffix: string, jpeg: Buffer): Promise<string> {
+async function saveImage(key: string, suffix: string, data: Buffer, ext: "jpg" | "png" = "jpg"): Promise<string> {
   const name = `${key}${suffix}`;
   if (USE_BLOB) {
-    const r = await put(`${PREFIX}${name}-${Date.now()}.jpg`, jpeg, { access: "private", contentType: "image/jpeg" });
+    const r = await put(`${PREFIX}${name}-${Date.now()}.${ext}`, data, { access: "private", contentType: ext === "png" ? "image/png" : "image/jpeg" });
     return r.url;
   }
   await fs.mkdir(FS_DIR, { recursive: true });
-  await fs.writeFile(path.join(FS_DIR, `${name}.jpg`), jpeg);
-  return `/design-md/${name}.jpg?v=${Date.now()}`;
+  await fs.writeFile(path.join(FS_DIR, `${name}.${ext}`), data);
+  return `/design-md/${name}.${ext}?v=${Date.now()}`;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -207,6 +210,7 @@ export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages):
       saveImage(key, "-cover", images.cover),
       saveImage(key, "-scroll", images.scroll),
     ]);
+    entry.logoUrl = images.logo ? await saveImage(key, "-logo", images.logo, "png") : undefined;
   }
   if (USE_BLOB) await blobSet(key, entry); else await fsSet(key, entry);
 

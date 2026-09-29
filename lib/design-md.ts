@@ -1,5 +1,5 @@
 import type { DesignTokens } from "./design-extract";
-import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/design";
+import { GeneratedSpecSchema, stripDashes, renderDesignMd, type DesignSpec } from "@/types/design";
 import { getErrors } from "./i18n";
 import { llm, LlmError } from "./llm";
 
@@ -12,7 +12,7 @@ You receive (1) a JSON of design tokens measured on the live page (computed styl
 The screenshot shows only the first 900px; the tokens cover the whole page. A color with a large background area is a section surface even if the screenshot does not show it. Never claim a color appears "only" somewhere based on the screenshot alone.
 
 Rules:
-- Write EVERYTHING in English.
+- Write EVERYTHING in English, except "es": the tagline and the brief again in Castilian Spanish (Spain), for the Spanish sheet, each line as short as its English one or shorter, with the same rules.
 - Concrete values: hex, px, font names, weights. Convert rgb()/rgba() to hex (8-digit hex when alpha matters).
 - Ignore noise: browser defaults, cookie banners, third-party widgets, one-off values with count 1 unless clearly intentional.
 - Name colors evocatively and consistently ("Obsidian", "Signal Blue", "Paper White"). Give each color a real role, not just "used on buttons".
@@ -26,10 +26,21 @@ Rules:
 - Components: 3 to 5 reusable primitives (primary button, secondary button, input, link, card, header, footer), only those that really exist. Never describe page sections (hero, image mosaic, logo carousel, feature rows): that is this landing's content, not the system. In each primitive cite tokens by name ("Obsidian background, small radius, body-sm text") and add only what is not in another section: height, padding, border, hover, active state.
 - Round px that come from rem: 11.7px is 12px, 21.06px is 21px, 115.2px is 115px or the nearest scale step. A conversion decimal is not a design decision.
 - Values must be CSS-ready: ASCII "-" for negatives (never "−"), line heights in the type scale as unitless ratios (1.5, not 27), and each type scale family written exactly as in the fonts list.
+- The brief is what a designer reads first, in a glance: look and feel, not inventory. Every value is ONE short sentence of 8 to 20 words (imagery may take two short ones, 30 words in all). Shorter is better. Never write counts ("180 icons", "28 images"), pixel sizes or hex values in it. Per key:
+  - typography: the families and the one decision that defines them.
+  - imagery: the look and feel of the pictures (kind, light, colour grading, crop, mood), one or two sentences.
+  - logo: the look and feel of the logo from tokens.logo and the screenshot (wordmark or symbol, how it is drawn, the character it gives).
+  - motion: how it feels, then the means: the library from tokens.stack if there is one, and only the dominant easing from tokens.motion written literally, e.g. "Quick and switch-like: cubic-bezier(0.25, 0.46, 0.45, 0.94) at 0.1s".
+  - iconography: outline or filled, stroke weight, corners, geometric or hand-drawn, the library if detected.
+  - voice: register and person in a few words, then a short verbatim quote from tokens.copy.
+  - color: a few words on the palette's mood, e.g. "matte blacks with one lime signal".
+  - framework: only the names in tokens.stack, comma separated, nothing else; "Not detected" when it is empty.
+- Never use em or en dashes (— –) or a double hyphen as punctuation, in any language: write a comma, a colon or a full stop instead. A range is written with a hyphen (12-16px).
 - If a value is doubtful, say so briefly in the role text instead of inventing it.`;
 
 /** Mechanical slips any model can make, fixed here so they never reach an agent's CSS. */
-export function normalizeSpec(spec: DesignSpec): DesignSpec {
+export function normalizeSpec(input: DesignSpec): DesignSpec {
+  const spec = stripDashes(input);
   const families = spec.fonts.map((f) => f.family);
   return {
     ...spec,
@@ -69,7 +80,7 @@ export async function generateDesignMd(
       system: SYSTEM,
       image: screenshot,
       text: `Source URL: ${tokens.finalUrl}\nDate: ${date}\n\nMeasured tokens (JSON):\n${JSON.stringify(tokens)}`,
-      schema: DesignSpecSchema,
+      schema: GeneratedSpecSchema,
       // Trap 2 (#5): reasoning eats the budget on long answers, so leave plenty of room
       maxTokens: 32000,
       effort: (process.env.DESIGN_MD_EFFORT as "low" | "medium" | "high") || "medium",
@@ -81,7 +92,7 @@ export async function generateDesignMd(
   }
 
   // U+2212 looks like a minus and breaks CSS when an agent pastes it
-  const spec = normalizeSpec(DesignSpecSchema.parse(JSON.parse(res.text.replace(/\u2212/g, "-"))));
+  const spec = normalizeSpec(GeneratedSpecSchema.parse(JSON.parse(res.text.replace(/\u2212/g, "-"))));
   return {
     spec,
     markdown: renderDesignMd(spec, tokens.finalUrl, date),

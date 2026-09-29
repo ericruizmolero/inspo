@@ -5,7 +5,7 @@ import { z } from "zod";
 import { desc, and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./workspace-core";
-import { DesignSpecSchema, renderDesignMd, type DesignSpec } from "@/types/design";
+import { DesignSpecSchema, renderDesignMd, stripDashes, type DesignSpec } from "@/types/design";
 import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import { llm } from "./llm";
 
@@ -22,6 +22,7 @@ export const SECTIONS: Record<string, string> = {
   system: "System (elevation, layout, imagery, motion)",
   related: "Related brands",
   prompt: "Prompt for agents",
+  brief: "Brief (typography, imagery, logo, motion, color, iconography, voice, framework)",
 };
 
 export interface RevisionMeta {
@@ -114,13 +115,13 @@ const systemFor = (locale: Locale) => `You maintain the DESIGN.md of a website f
 
 Rules:
 - Apply what the person asks for. They know the brand; their judgment overrides what was generated automatically.
-- Propagate the change to everything that depends on it: if a color changes, update its role, the components that use it, the description, the rules and the prompt for agents. The spec must stay coherent.
+- Propagate the change to everything that depends on it: if a color changes, update its role, the components that use it, the description, the brief, the rules and the prompt for agents. The spec must stay coherent.
 - Don't touch anything the comment doesn't affect. Keep the rest of the texts and values verbatim.
 - If the comment contradicts something clearly measured or visible in the screenshot (e.g. it says the background is white and the screenshot is black), apply it anyway but flag it in "warning".
 - If the comment is ambiguous, pick the most reasonable interpretation and explain it in "summary".
 - If the comment asks for no change (it's a test, a question or says nothing concrete), return "changed": false, "patch" "{}" and explain in "summary" what you'd need to be able to apply it.
 - "patch" is a string with a JSON object. It carries only the top-level keys that change, but each one complete: if you touch a color, the whole "colors" array with all colors; if you touch a rule, the whole "dos" or "donts". Don't include keys that don't change.
-- The spec text is in English (#27), even if the current spec or the comment is in Spanish.
+- The spec text is in English (#27), even if the current spec or the comment is in Spanish. The one exception is "es", the tagline and the brief in Castilian Spanish: if you change the tagline or the brief, return "es" updated too.
 - ${LANGUAGE[locale]}: the person reads those two on screen.
 - Respect the schema constraints: between 4 and 12 colors, 6-9 scale steps, 5-7 rules of each kind.`;
 
@@ -138,6 +139,6 @@ export async function reviseDesignSpec(input: {
   const text = res.text;
   const out = ReviseOutput.parse(JSON.parse(text));
   const patch = DesignSpecSchema.partial().parse(JSON.parse(out.patch || "{}"));
-  const spec = out.changed ? DesignSpecSchema.parse({ ...input.spec, ...patch }) : input.spec;
+  const spec = out.changed ? stripDashes(DesignSpecSchema.parse({ ...input.spec, ...patch })) : input.spec;
   return { changed: out.changed, spec, summary: out.summary, warning: out.warning, model: res.model, provider: res.provider, requestId: res.id, costUsd: res.costUsd, usage: res.usage };
 }

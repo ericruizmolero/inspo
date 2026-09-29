@@ -9,6 +9,10 @@ import { Button } from "@/components/ui/button";
 export interface DesignMdEntry {
   url: string; markdown: string; generatedAt: string; model: string; cached: boolean;
   spec?: DesignSpec; screenshotUrl?: string;
+  /** The logo cut from the page (png) and up to 8 of its icons as svg markup */
+  logoUrl?: string; icons?: string[];
+  /** The file format each @font-face family is served in */
+  fontFiles?: { family: string; formats: string[] }[];
   /** Workspace revision history, newest first */
   revisions?: RevisionMeta[];
 }
