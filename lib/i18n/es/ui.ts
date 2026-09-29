@@ -112,6 +112,7 @@ export const ui: typeof EnUi = {
   },
   feedback: {
     dragHint: "Arrastra para moverlo; doble clic para devolverlo a la esquina",
+    entryHint: "Señala cualquier cosa de la página y deja una nota al equipo",
     open: "Dar feedback",
     resume: "Seguir con el feedback",
     title: "Modo feedback",

@@ -10,10 +10,10 @@
 // from here: a labeled "Give feedback" pill, a panel that says what to do in three steps,
 // and one "Send to the team" button.
 //
-// Agentation exposes no API to start or stop feedback mode, so the hidden bar is clicked
-// programmatically. Only its stable attributes are used: the toggle's title
-// ("Start feedback mode", which disappears while active, and is how the mode is
-// detected), data-danger on "Clear all", and the position of the close button.
+// Agentation exposes no API to start or stop feedback mode: components/feedback-mode.ts
+// clicks its hidden bar. Where the page has a sidebar, the way in is "Give feedback" at its
+// foot (FeedbackEntry) and the floating dock only shows with unsent notes; elsewhere
+// (login, invitations, plans) the dock is a small icon. See globals.css.
 //
 // Each note is saved on the server as it is added (/api/feedback), just in case; the
 // email to the partners only goes out on "Send to the team". Signed out (login, plans,
@@ -24,39 +24,10 @@ import { usePathname } from "next/navigation";
 import { Agentation, loadAnnotations, type Annotation } from "agentation";
 import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
 import { useT } from "./I18nProvider";
+import { clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, isFeedbackModeOn as isModeOn } from "./feedback-mode";
 
 const ENDPOINT = "/api/feedback";
 type SendState = "idle" | "sending" | "sent" | "error";
-
-// ─── Driving Agentation's hidden bar ─────────────────────────────────────────
-
-const TOOLBAR = "[data-agentation-toolbar]";
-/** The closed toggle: Agentation drops its role and title while feedback mode is on */
-const TOGGLE = '[role="button"][title="Start feedback mode"]';
-
-const toolbar = () => document.querySelector<HTMLElement>(TOOLBAR);
-const isModeOn = () => { const t = toolbar(); return !!t && !t.querySelector(TOGGLE); };
-
-function enterMode() {
-  toolbar()?.querySelector<HTMLElement>(TOGGLE)?.click();
-}
-
-function exitMode() {
-  // The close button is the last control of the bar (second child of its container).
-  // The settings panel has buttons of its own, so it is left out.
-  const t = toolbar();
-  if (!t) return;
-  const controls = [...t.querySelectorAll<HTMLButtonElement>(":scope > div > div:nth-child(2) button")]
-    .filter((b) => !b.closest("[data-agentation-settings-panel]"));
-  const close = controls[controls.length - 1];
-  if (close) close.click();
-  else document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-}
-
-/** Agentation's "Clear all": removes the markers and its localStorage, then calls onAnnotationsClear */
-function clearMarkers() {
-  toolbar()?.querySelector<HTMLButtonElement>("button[data-danger]")?.click();
-}
 
 /**
  * Runs on the client before Agentation mounts (a state initializer of the parent runs
@@ -133,7 +104,6 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
     if (e.button !== 0 || !dockRef.current) return;
     const r = dockRef.current.getBoundingClientRect();
     drag.current = { x: e.clientX, y: e.clientY, right: window.innerWidth - r.right, bottom: window.innerHeight - r.bottom, moved: false };
-    dockRef.current.setPointerCapture(e.pointerId);
   };
   const onDockPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = drag.current;
@@ -141,7 +111,9 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
     // A few px of slack, so a plain click never counts as a drag
     if (!d.moved && Math.hypot(dx, dy) < 4) return;
-    if (!d.moved) { d.moved = true; setDragging(true); }
+    // The pointer is captured only once it is a drag: captured from pointerdown, Chrome sends
+    // the click to the dock instead of the button under it, and a plain click did nothing
+    if (!d.moved) { d.moved = true; setDragging(true); dockRef.current?.setPointerCapture(e.pointerId); }
     const { w, h } = dockSize();
     setPos(clampPos({ right: d.right - dx, bottom: d.bottom - dy }, w, h));
   };
@@ -305,7 +277,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
       ) : (
         <div
           ref={dockRef}
-          className={`fb-dock${dragging ? " is-dragging" : ""}`}
+          className={`fb-dock${dragging ? " is-dragging" : ""}${count > 0 ? " has-notes" : ""}`}
           data-feedback-toolbar="true"
           style={pos ? { right: pos.right, bottom: pos.bottom } : undefined}
           onPointerDown={onDockPointerDown}
@@ -317,7 +289,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
           title={t.feedback.dragHint}
         >
           {count > 0 && sendButton}
-          <button type="button" className="fb-pill" onClick={enterMode}>
+          <button type="button" className="fb-pill" onClick={enterMode} title={count > 0 ? undefined : t.feedback.entryHint}>
             <IconBubble />
             <span>{count > 0 ? t.feedback.resume : t.feedback.open}</span>
             {count > 0 && <span className="fb-count">{count}</span>}

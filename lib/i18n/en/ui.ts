@@ -114,6 +114,7 @@ export const ui = {
   },
   feedback: {
     dragHint: "Drag to move; double-click to send it back to the corner",
+    entryHint: "Point at anything on the page and leave a note for the team",
     open: "Give feedback",
     resume: "Keep giving feedback",
     title: "Feedback mode",

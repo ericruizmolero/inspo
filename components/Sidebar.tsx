@@ -8,6 +8,7 @@ import type { Term } from "@/lib/taxonomy";
 import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import { UserAvatar } from "./WorkspaceMenu";
+import FeedbackEntry from "./FeedbackEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -525,11 +526,10 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
         </FadeScroll>
       </SidebarContent>
 
-      {quota && (
-        <SidebarFooter className="app-sidebar__footer">
-          <PlanMeter quota={quota} />
-        </SidebarFooter>
-      )}
+      <SidebarFooter className="app-sidebar__footer">
+        <FeedbackEntry onPick={onPick} />
+        {quota && <PlanMeter quota={quota} />}
+      </SidebarFooter>
     </>
   );
 }

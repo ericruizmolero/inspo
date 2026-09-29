@@ -2053,6 +2053,14 @@ video.vp__media { object-fit: contain; }
 .ad-kpi__label { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
 .ad-kpi__value { font-weight: 600; font-size: 32px; line-height: 1; color: var(--text); font-variant-numeric: tabular-nums; }
 .ad-kpi__value--text { font-size: 24px; padding-top: 4px; }
+/* With "Give feedback" at the foot of the sidebar (FeedbackEntry), the dock only shows
+   when there are unsent notes on this page: it is the reminder to send them. */
+body:has([data-feedback-entry]) .fb-dock:not(.has-notes) { display: none; }
+/* Pages without a sidebar (login, invitations, plans): just the icon; the label stays for screen readers */
+.fb-dock:not(.has-notes) .fb-pill { width: 40px; padding: 0; justify-content: center; }
+.fb-dock:not(.has-notes) .fb-pill > span {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 .ad-kpi__sub { font-size: 11px; color: var(--muted); line-height: 1.4; }
 .ad-online { display: flex; align-items: center; gap: 8px; min-width: 0; margin-top: 2px; }
 .ad-online__avatars { display: flex; flex: none; }
