@@ -1,39 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Criterio
 
-## Getting Started
+A shared library of websites that inspire a team, with a DESIGN.md for each one.
+Next.js 16, Postgres, Better Auth.
 
-First, run the development server:
+## Run it locally
+
+You need Node 22 or newer, a Postgres server on port 5432, and Google Chrome (for screenshots).
+On a Mac, [DBngin](https://dbngin.com) is the easiest way to run Postgres: add a PostgreSQL server,
+keep the default port and user, and start it. Nothing else can be on port 5432
+(if Homebrew Postgres is running, `brew services stop postgresql@17`).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run db:init   # creates the "criterio" database, builds the tables, loads .data/seed.json
+npm run dev       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`db:init` needs `.data/seed.json`, a copy of the real data. It is not in git (it holds people's
+emails), so ask for it and drop it in `.data/`. Without it, `db:init` still builds the tables and
+then stops with a note. The app runs on the empty database: sign in and it creates your personal
+workspace.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`db:init` is safe to run twice: it never loads over existing data. To start over, run
+`npm run seed -- --replace`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The database is `postgres://postgres@127.0.0.1:5432/criterio` with no password. That is the default,
+so `DATABASE_URL` stays unset locally. To look inside, point TablePlus (or any client) at it.
 
-## Learn More
+### Signing in
 
-To learn more about Next.js, take a look at the following resources:
+The magic link isn't emailed locally. It prints in the terminal and lands in `.data/last-mail.txt`.
+To skip it, add `DEV_LOGIN_EMAIL=you@email.com` to `.env.local` and open `/api/dev-login`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### `.env.local`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Nothing is required. Each key switches one thing on:
 
-## Deploy on Vercel
+| Key | What it turns on |
+|---|---|
+| `DEV_LOGIN_EMAIL` | Sign in without the email step |
+| `OPENROUTER_API_KEY` | DESIGN.md, explain, revisions and vision (every model call) |
+| `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` | Jev: AI tags and search |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |
+| `RESEND_API_KEY` | Real emails. Leave it off unless you mean it: invitations go to real people |
+| `CHROME_EXECUTABLE_PATH` | Only if Chrome isn't in `/Applications` |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Two keys stay out of `.env.local` on purpose. `BLOB_READ_WRITE_TOKEN` writes to production storage,
+and the local database is a copy of production: deleting a thumbnail here would delete the real one.
+Without it, files go to `public/thumbs` and `public/comments`. And `DATABASE_URL`, unless you point at
+another Postgres on purpose.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel marks every production value as Sensitive, so `vercel env pull` only brings back the text
+`[SENSITIVE]`. Real values come from the person who holds them.
+
+### Checks
+
+```bash
+npm run check:postgres   # cascades, file cleanup, bulk tags, heartbeat, day grouping
+npm run check:seats      # plan seat limits
+npm run check:invites    # the invitation flow, against the running app
+```
+
+### Changing the schema
+
+Edit `lib/db/schema.ts`, then `npm run db:generate`. The app applies the new migration the next
+time it starts. Column names are snake_case; the TypeScript names stay camelCase.
 
 ## Multi-user and teams (SaaS)
 
@@ -59,9 +90,8 @@ cached per URL (global), but only those for URLs saved in the active workspace a
 - **Original Sheet migration**: `npm run migrate:sheet` (idempotent). Creates the `TEAM_MEMBERS` users,
   the `TEAM_NAME` team, and loads rows, thumbnails and tags.
 
-### Going to production (Vercel)
-1. Create a Postgres database and set `DATABASE_URL`.
-2. `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL=https://inspo.savvia.studio`.
+### Going to production
+1. Create a Postgres database, set `DATABASE_URL` and turn on scheduled backups.
+2. `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL` with the public URL.
 3. `RESEND_API_KEY` and `MAIL_FROM` with a verified domain.
-4. Deploy (the first request applies the migrations) and run `npm run migrate:sheet` once with those variables
-   to import the treseiscero library.
+4. Deploy. The app applies the migrations when it starts.
