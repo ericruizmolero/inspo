@@ -145,6 +145,27 @@ export async function deleteItems(organizationId: string, ids: string[]) {
   await db.delete(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
 }
 
+/**
+ * Rewrites the note (or sub-note) that opens the item's thread.
+ * Only whoever saved it, or someone who manages the workspace. Older rows have no createdBy,
+ * so for those the saved author name is what proves it is theirs.
+ * Returns the updated item, null if it does not exist, false if this person cannot edit it.
+ */
+export async function setItemNote(
+  organizationId: string, id: string, field: "note" | "subNote", text: string,
+  user: { id: string; name: string; email: string }, admin: boolean,
+): Promise<InspoItem | null | false> {
+  const [row] = await db.select().from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id))).limit(1);
+  if (!row) return null;
+  const own = row.createdBy ? row.createdBy === user.id : row.author === (user.name || user.email);
+  if (!own && !admin) return false;
+  const clean = text.replace(/\r\n/g, "\n").trim().slice(0, 4000);
+  const patch = field === "note" ? { note: clean } : { subNote: clean || null };
+  const updatedAt = new Date();
+  await db.update(T).set({ ...patch, updatedAt }).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
+  return rowToItem({ ...row, ...patch, updatedAt });
+}
+
 /** Deletes an item, its comment thread and its project links (Turso doesn't guarantee ON DELETE CASCADE). */
 export async function deleteItem(organizationId: string, id: string): Promise<boolean> {
   const C = schema.inspoComment, PI = schema.projectItem;

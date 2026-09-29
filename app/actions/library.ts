@@ -4,7 +4,7 @@
 import { cookies } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
-import { addItem, deleteItem } from "@/lib/items";
+import { addItem, deleteItem, setItemNote } from "@/lib/items";
 import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { addComment, deleteComment } from "@/lib/comments";
@@ -99,6 +99,18 @@ export async function removeComment(id: string) {
     if (!(await deleteComment(ctx.workspace.id, id, ctx.user.id, canManage(ctx.workspace.role)))) {
       throw new HttpError(403, (await getErrors()).cannotDeleteComment);
     }
+  });
+}
+
+/** Edits the original note (or sub-note) that opens the thread: whoever saved it, or a manager. */
+export async function editNote(itemId: string, field: "note" | "subNote", text: string) {
+  return withCtx(async (ctx) => {
+    const errors = await getErrors();
+    if (field !== "note" && field !== "subNote") throw new HttpError(400, errors.badBody);
+    const item = await setItemNote(ctx.workspace.id, String(itemId), field, String(text ?? ""), ctx.user, canManage(ctx.workspace.role));
+    if (item === null) throw new HttpError(404, errors.cardGone);
+    if (item === false) throw new HttpError(403, errors.cannotEditNote);
+    return item;
   });
 }
 

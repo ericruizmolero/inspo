@@ -11,6 +11,7 @@ export const errors = {
   badKey: "Invalid or revoked key. Connect the extension again.",
   badUrl: "That URL is not valid",
   cannotDeleteComment: "That comment cannot be deleted",
+  cannotEditNote: "Only whoever saved this site, or an admin, can edit its note",
   cannotRemoveSelf: "You cannot remove your own access",
   cardGone: "That card no longer exists",
   emptyComment: "The comment is empty",

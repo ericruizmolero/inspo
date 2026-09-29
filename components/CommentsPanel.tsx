@@ -34,6 +34,8 @@ interface CommentsPanelProps {
   image?: string | null;
   onPost: (body: string, attachments: CommentAttachment[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  /** Rewrites the original note or sub-note. Without it, the note is read-only. */
+  onEditNote?: (field: "note" | "subNote", text: string) => Promise<void>;
   onClose: () => void;
   /**
    * `drawer` (default): fixed side panel with a dark backdrop, closes with Escape.
@@ -55,6 +57,9 @@ const IcSend = (
 );
 const IcTrash = (
   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" /></svg>
+);
+const IcEdit = (
+  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11l-2.5.5L3 9z" /></svg>
 );
 const IcImage = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
@@ -126,6 +131,8 @@ interface Msg {
   /** true for the original note and the item's subcomment */
   original?: boolean;
   deletable?: boolean;
+  /** Original note or sub-note this person may rewrite */
+  editable?: boolean;
 }
 
 // Links inside the comment: http(s):// and www. are detected and rendered as hyperlinks
@@ -187,7 +194,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onClose, variant = "drawer", designMd, onPostThumb }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onEditNote, onClose, variant = "drawer", designMd, onPostThumb }: CommentsPanelProps) {
   const { locale, t } = useT();
   const column = variant === "column";
   const [draft, setDraft] = useState("");
@@ -203,6 +210,12 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   const dragDepth = useRef(0);
   const lightboxRef = useRef(lightbox);
   lightboxRef.current = lightbox;
+  // Inline editor for the original note: which message and its working text
+  const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -213,7 +226,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
         return;
       }
-      if (e.key === "Escape" && !column) onClose();
+      // Escape inside the note editor cancels the edit, it doesn't close the panel
+      if (e.key === "Escape" && !column && !editingRef.current) onClose();
     };
     document.addEventListener("keydown", onKey);
     const t = setInterval(() => setNow(Date.now()), 30000);
@@ -222,6 +236,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
 
   // In column mode focus isn't stolen: the sheet beside it is what's being read
   useEffect(() => { if (!column) textareaRef.current?.focus(); }, [item.id, column]);
+  useEffect(() => { setEditing(null); setEditError(null); }, [item.id]);
 
   // On inspo change or close, release the local previews
   const pendingRef = useRef(pending);
@@ -274,18 +289,19 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     const out: Msg[] = [];
     const author = item.addedBy || t.comments.noAuthor;
     const mine = author === user.name;
+    const editable = !!onEditNote && (mine || canManage);
     if (item.note) {
-      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true });
+      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
     }
     if (item.subNote) {
-      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true });
+      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
     }
     for (const c of comments) {
       const own = c.authorId === user.id;
       out.push({ id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage });
     }
     return out;
-  }, [item, comments, user, canManage, memberImages]);
+  }, [item, comments, user, canManage, memberImages, onEditNote]);
 
   // On open or when a new message arrives, scroll to the end of the thread
   useEffect(() => {
@@ -313,6 +329,23 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
       textareaRef.current?.focus();
     }
   };
+
+  const saveEdit = async () => {
+    if (!editing || !onEditNote || savingEdit) return;
+    const field = editing.id === "sub" ? "subNote" : "note";
+    const current = field === "note" ? item.note : item.subNote ?? "";
+    if (editing.text.trim() === current.trim()) { setEditing(null); return; }
+    setSavingEdit(true); setEditError(null);
+    try {
+      await onEditNote(field, editing.text);
+      setEditing(null);
+    } catch (e) {
+      setEditError(e instanceof Error && e.message ? e.message : t.comments.editFailed);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+  const cancelEdit = () => { setEditing(null); setEditError(null); };
 
   const others = memberNames.filter((n) => n && n !== user.name);
   // Ghost rows with the team's real avatars (you included)
@@ -427,7 +460,31 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 )}
                 <div className="cm-msg__row">
                   <div className="cm-msg__content">
-                    {m.body && <p className="cm-msg__body">{renderBody(m.body)}</p>}
+                    {editing?.id === m.id ? (
+                      <div className="cm-edit">
+                        <textarea
+                          className="input cm-edit__input"
+                          value={editing.text}
+                          rows={Math.min(8, Math.max(2, editing.text.split("\n").length + 1))}
+                          autoFocus
+                          onFocus={(e) => { const l = e.currentTarget.value.length; e.currentTarget.setSelectionRange(l, l); }}
+                          onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
+                          onKeyDown={(e) => {
+                            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); saveEdit(); }
+                            if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
+                          }}
+                        />
+                        <div className="cm-edit__foot">
+                          {editError
+                            ? <span className="cm-composer__error">{editError}</span>
+                            : <span className="cm-composer__hint">{t.comments.editHint}</span>}
+                          <Button variant="ghost" size="sm" type="button" onClick={cancelEdit} disabled={savingEdit}>{t.comments.cancelEdit}</Button>
+                          <Button variant="primary" size="sm" type="button" onClick={saveEdit} disabled={savingEdit}>
+                            {savingEdit ? <span className="spinner spinner--sm" /> : t.comments.saveEdit}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : m.body && <p className="cm-msg__body">{renderBody(m.body)}</p>}
                     {m.attachments.length > 0 && (
                       <div className={`cm-atts cm-atts--${Math.min(m.attachments.length, 3)}`}>
                         {m.attachments.map((a, j) => (
@@ -445,6 +502,9 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                       </div>
                     )}
                   </div>
+                  {m.editable && editing?.id !== m.id && (
+                    <button className="cm-msg__edit" title={t.comments.editNote} aria-label={t.comments.editNote} onClick={() => { setEditError(null); setEditing({ id: m.id, text: m.body }); }}>{IcEdit}</button>
+                  )}
                   {m.deletable && (
                     <button className="cm-msg__del" title={t.comments.deleteComment} onClick={() => onDelete(m.id)}>{IcTrash}</button>
                   )}

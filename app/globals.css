@@ -867,6 +867,14 @@ video.vp__media { object-fit: contain; }
 .cm-msg__del { flex-shrink: 0; width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted-2); border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s, background 0.15s; }
 .cm-msg:hover .cm-msg__del { opacity: 1; }
 .cm-msg__del:hover { background: var(--surface-2); color: var(--danger); }
+.cm-msg__edit { flex-shrink: 0; width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted-2); border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s, background 0.15s; }
+.cm-msg:hover .cm-msg__edit, .cm-msg__edit:focus-visible { opacity: 1; }
+.cm-msg__edit:hover { background: var(--surface-2); color: var(--text); }
+/* Inline editor for the original note */
+.cm-edit { display: flex; flex-direction: column; gap: 8px; }
+.cm-edit__input { font-size: 13px; line-height: 1.5; resize: vertical; }
+.cm-edit__foot { display: flex; align-items: center; gap: 6px; }
+.cm-edit__foot > span { margin-right: auto; }
 .cm-composer { display: flex; align-items: flex-start; gap: 10px; padding: 14px 20px 18px; border-top: 1px solid var(--border); background: var(--panel); }
 .cm-composer__box { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .cm-composer__input { min-height: 44px; }
@@ -874,7 +882,7 @@ video.vp__media { object-fit: contain; }
 .cm-composer__foot .btn { gap: 6px; }
 .cm-composer__hint { font-size: 11px; color: var(--muted-2); }
 .cm-composer__error { font-size: 11px; color: var(--danger); }
-@media (hover: none) { .cm-msg__del { opacity: 1; } }
+@media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
 
 /* Screenshots in comments (paste, drag or attach, as in Figma) */
 .cm-msg__content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
