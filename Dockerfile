@@ -4,6 +4,11 @@
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# One id per build (the workflow passes the commit). A tab still running the previous build then
+# reloads itself on its next navigation, instead of failing with "Failed to find Server Action".
+# Vercel set this on its own; a self-hosted build has to.
+ARG NEXT_DEPLOYMENT_ID=local
+ENV NEXT_DEPLOYMENT_ID=$NEXT_DEPLOYMENT_ID
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
