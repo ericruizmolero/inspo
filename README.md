@@ -43,8 +43,13 @@ email. Items, thumbnails and AI tags belong to a workspace; DESIGN.md sheets are
 cached per URL (global), but only those for URLs saved in the active workspace are visible.
 
 - **Auth**: Better Auth (`lib/auth.ts`), plugins `magicLink` + `organization`. Handler in `app/api/auth/[...all]`.
-- **DB**: SQLite/libsql with Drizzle (`lib/db/schema.ts`). Local: `.data/inspo.db`. Production: Turso (`DATABASE_URL` + `DATABASE_AUTH_TOKEN`).
-  Migrations live in `drizzle/` and run with `npm run db:migrate` (also in `predev` and `prebuild`).
+- **DB**: Postgres with Drizzle (`lib/db/schema.ts`). Local: the DBngin server, database `criterio`
+  (`postgres://postgres@127.0.0.1:5432/criterio`, the default when `DATABASE_URL` is unset). Production and staging: `DATABASE_URL`.
+  `npm run db:generate` writes a migration to `drizzle/`. The app applies pending ones when it starts
+  (`instrumentation.ts`, behind an advisory lock); builds and scripts never migrate.
+- **Local data**: `npm run db:init` creates the database if it is missing, applies the migrations and loads
+  `.data/seed.json`. That file holds real people's data, so it is git-ignored: copy it from a machine that has it
+  (`npm run seed:dump` writes it from the current database). `npm run seed -- --replace` reloads it.
 - **Workspaces**: `lib/workspace.ts` (session + active workspace + permissions) and `lib/workspace-core.ts` (pure queries).
   Roles: `owner`/`admin` can invite, remove members, batch tag and regenerate DESIGN.md; `member` adds items and thumbnails.
 - **Pages**: `/login`, `/settings/members` (members, invitations, create a team), `/invite/[id]`.
@@ -55,8 +60,8 @@ cached per URL (global), but only those for URLs saved in the active workspace a
   the `TEAM_NAME` team, and loads rows, thumbnails and tags.
 
 ### Going to production (Vercel)
-1. Create a Turso DB and set `DATABASE_URL` / `DATABASE_AUTH_TOKEN`.
+1. Create a Postgres database and set `DATABASE_URL`.
 2. `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL=https://inspo.savvia.studio`.
 3. `RESEND_API_KEY` and `MAIL_FROM` with a verified domain.
-4. Deploy (`prebuild` runs the migrations) and run `npm run migrate:sheet` once with those variables
+4. Deploy (the first request applies the migrations) and run `npm run migrate:sheet` once with those variables
    to import the treseiscero library.

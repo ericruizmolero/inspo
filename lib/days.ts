@@ -19,9 +19,11 @@ export function startOfTodayMs(off: number): number {
   return (day * 86400 - off) * 1000;
 }
 
-/** Day number (since 1970) of a ms timestamp column, for GROUP BY */
+/** Day number (since 1970) of a timestamp column in Madrid, for GROUP BY */
 export function dayOf(col: AnyColumn, off: number): SQL<number> {
-  return sql<number>`cast((${col} / 1000 + ${off}) / 86400 as integer)`;
+  // The offset goes in as a literal, not a parameter: the same expression is in SELECT and GROUP BY,
+  // and Postgres only sees them as equal if the text matches ($1 and $3 do not). It is our own integer.
+  return sql<number>`floor((extract(epoch from ${col}) + ${sql.raw(String(Math.trunc(off)))}) / 86400)::int`;
 }
 
 /** `date` is ISO (YYYY-MM-DD). The client formats the axis label in its language. */

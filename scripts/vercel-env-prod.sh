@@ -8,8 +8,7 @@ add() {
   vercel env rm "$1" production --yes >/dev/null 2>&1 || true
   printf '%s' "$2" | vercel env add "$1" production >/dev/null && echo "✓ $1"
 }
-add DATABASE_URL        "$(val TURSO_DATABASE_URL)"
-add DATABASE_AUTH_TOKEN "$(val TURSO_AUTH_TOKEN)"
+add DATABASE_URL        "$(val PROD_DATABASE_URL)"
 add BETTER_AUTH_SECRET  "$(openssl rand -base64 32)"
 add BETTER_AUTH_URL     "https://inspo.treseiscero.app"
 add RESEND_API_KEY      "$(val RESEND_API_KEY)"

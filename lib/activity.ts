@@ -138,11 +138,11 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
 
   const [users, perUser, perUserArea, sessions, daily, byArea, memberships, recentLogins, distinctCounts] = await Promise.all([
     db.select({ id: U.id, name: U.name, email: U.email, image: U.image, createdAt: U.createdAt }).from(U),
-    db.select({ userId: S.userId, seconds: sql<number>`sum(${S.seconds})`, visits: sql<number>`count(distinct ${S.visitId})`, lastSeen: sql<number>`max(${S.lastSeenAt})` })
+    db.select({ userId: S.userId, seconds: sql<number>`sum(${S.seconds})`, visits: sql<number>`count(distinct ${S.visitId})`, lastSeen: sql<number>`(extract(epoch from max(${S.lastSeenAt})) * 1000)::bigint` })
       .from(S).where(gte(S.lastSeenAt, since)).groupBy(S.userId),
     db.select({ userId: S.userId, area: S.area, seconds: sql<number>`sum(${S.seconds})` })
       .from(S).where(gte(S.lastSeenAt, since)).groupBy(S.userId, S.area),
-    db.select({ userId: SE.userId, open: sql<number>`sum(case when ${SE.expiresAt} > ${now} then 1 else 0 end)`, lastLogin: sql<number>`max(${SE.createdAt})` })
+    db.select({ userId: SE.userId, open: sql<number>`sum(case when ${SE.expiresAt} > ${new Date(now)} then 1 else 0 end)`, lastLogin: sql<number>`(extract(epoch from max(${SE.createdAt})) * 1000)::bigint` })
       .from(SE).groupBy(SE.userId),
     db.select({ day: dayExpr, users: sql<number>`count(distinct ${S.userId})`, seconds: sql<number>`sum(${S.seconds})` })
       .from(S).where(gte(S.startedAt, since)).groupBy(dayExpr),

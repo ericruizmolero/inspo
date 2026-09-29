@@ -40,4 +40,4 @@ npx tsx --conditions=react-server scripts/loop/04-context.ts [modelo]  # context
 npx tsx --conditions=react-server scripts/loop/05-report.ts    # renderiza y copia aquí
 ```
 
-Modelos por variable de entorno: `LOOP_CHEAP_MODEL` (DESIGN.md y señales) y `LOOP_SMART_MODEL` (patrones y contexto). Todo va por OpenRouter con la llave de `.env.local` y contra la copia local de la base de datos; no escribe en Turso, Blob ni en `ai_usage`.
+Modelos por variable de entorno: `LOOP_CHEAP_MODEL` (DESIGN.md y señales) y `LOOP_SMART_MODEL` (patrones y contexto). Todo va por OpenRouter con la llave de `.env.local` y contra la copia local de la base de datos; no escribe en producción, Blob ni en `ai_usage`.

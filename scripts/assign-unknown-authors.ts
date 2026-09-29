@@ -2,13 +2,12 @@
 // with no known author (legacy label "Both"). Sets the name and creator user.
 //   npx tsx scripts/assign-unknown-authors.ts                → local database, count only
 //   npx tsx scripts/assign-unknown-authors.ts --apply        → local database, writes
-//   npx tsx scripts/assign-unknown-authors.ts --prod --apply → Turso (TURSO_DATABASE_URL / TURSO_AUTH_TOKEN)
+//   npx tsx scripts/assign-unknown-authors.ts --prod --apply → production (PROD_DATABASE_URL)
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 const args = process.argv.slice(2);
 if (args.includes("--prod")) {
-  process.env.DATABASE_URL = process.env.TURSO_DATABASE_URL;
-  process.env.DATABASE_AUTH_TOKEN = process.env.TURSO_AUTH_TOKEN;
+  process.env.DATABASE_URL = process.env.PROD_DATABASE_URL;
 }
 const apply = args.includes("--apply");
 

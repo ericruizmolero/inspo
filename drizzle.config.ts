@@ -1,12 +1,11 @@
 import { defineConfig } from "drizzle-kit";
+import { databaseUrl } from "./lib/db/url";
 
-const url = process.env.DATABASE_URL || "file:.data/inspo.db";
-
+// drizzle-kit only generates migrations (npm run db:generate). The app applies them
+// when it starts (instrumentation.ts), never a build step or a script.
 export default defineConfig({
-  dialect: url.startsWith("file:") ? "sqlite" : "turso",
+  dialect: "postgresql",
   schema: "./lib/db/schema.ts",
   out: "./drizzle",
-  dbCredentials: url.startsWith("file:")
-    ? { url }
-    : { url, authToken: process.env.DATABASE_AUTH_TOKEN },
+  dbCredentials: { url: databaseUrl() },
 });

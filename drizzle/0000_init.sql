@@ -1,116 +1,242 @@
-CREATE TABLE `account` (
-	`id` text PRIMARY KEY NOT NULL,
-	`accountId` text NOT NULL,
-	`providerId` text NOT NULL,
-	`userId` text NOT NULL,
-	`accessToken` text,
-	`refreshToken` text,
-	`idToken` text,
-	`accessTokenExpiresAt` integer,
-	`refreshTokenExpiresAt` integer,
-	`scope` text,
-	`password` text,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+CREATE TABLE "account" (
+	"id" text PRIMARY KEY NOT NULL,
+	"accountId" text NOT NULL,
+	"providerId" text NOT NULL,
+	"userId" text NOT NULL,
+	"accessToken" text,
+	"refreshToken" text,
+	"idToken" text,
+	"accessTokenExpiresAt" timestamp with time zone,
+	"refreshTokenExpiresAt" timestamp with time zone,
+	"scope" text,
+	"password" text,
+	"createdAt" timestamp with time zone NOT NULL,
+	"updatedAt" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `account_userId_idx` ON `account` (`userId`);--> statement-breakpoint
-CREATE TABLE `inspo_item` (
-	`id` text PRIMARY KEY NOT NULL,
-	`organization_id` text NOT NULL,
-	`empresa` text NOT NULL,
-	`web` text NOT NULL,
-	`web_key` text NOT NULL,
-	`fecha` text NOT NULL,
-	`tipo` text DEFAULT 'Inspiración' NOT NULL,
-	`autor` text NOT NULL,
-	`created_by` text,
-	`comentarios` text DEFAULT '' NOT NULL,
-	`subcomentarios` text,
-	`thumbnail_url` text,
-	`tags_json` text,
-	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL,
-	FOREIGN KEY (`organization_id`) REFERENCES `organization`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`created_by`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE set null
+CREATE TABLE "activity_segment" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"organization_id" text,
+	"visit_id" text NOT NULL,
+	"area" text NOT NULL,
+	"path" text NOT NULL,
+	"device" text,
+	"started_at" timestamp with time zone NOT NULL,
+	"last_seen_at" timestamp with time zone NOT NULL,
+	"seconds" integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `inspo_item_org_idx` ON `inspo_item` (`organization_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `inspo_item_org_web_uq` ON `inspo_item` (`organization_id`,`web_key`);--> statement-breakpoint
-CREATE TABLE `invitation` (
-	`id` text PRIMARY KEY NOT NULL,
-	`organizationId` text NOT NULL,
-	`email` text NOT NULL,
-	`role` text,
-	`teamId` text,
-	`status` text DEFAULT 'pending' NOT NULL,
-	`expiresAt` integer NOT NULL,
-	`createdAt` integer NOT NULL,
-	`inviterId` text NOT NULL,
-	FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`inviterId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+CREATE TABLE "ai_usage" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"user_id" text,
+	"action" text NOT NULL,
+	"model" text NOT NULL,
+	"input_tokens" integer DEFAULT 0 NOT NULL,
+	"output_tokens" integer DEFAULT 0 NOT NULL,
+	"cache_read_tokens" integer DEFAULT 0 NOT NULL,
+	"units" integer DEFAULT 0 NOT NULL,
+	"cost_micros" integer DEFAULT 0 NOT NULL,
+	"cost_source" text DEFAULT 'estimated' NOT NULL,
+	"provider" text,
+	"request_id" text,
+	"ref" text,
+	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `invitation_organizationId_idx` ON `invitation` (`organizationId`);--> statement-breakpoint
-CREATE INDEX `invitation_email_idx` ON `invitation` (`email`);--> statement-breakpoint
-CREATE TABLE `member` (
-	`id` text PRIMARY KEY NOT NULL,
-	`organizationId` text NOT NULL,
-	`userId` text NOT NULL,
-	`role` text DEFAULT 'member' NOT NULL,
-	`createdAt` integer NOT NULL,
-	FOREIGN KEY (`organizationId`) REFERENCES `organization`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+CREATE TABLE "app_admin" (
+	"email" text PRIMARY KEY NOT NULL,
+	"added_by" text DEFAULT '' NOT NULL,
+	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `member_organizationId_idx` ON `member` (`organizationId`);--> statement-breakpoint
-CREATE INDEX `member_userId_idx` ON `member` (`userId`);--> statement-breakpoint
-CREATE UNIQUE INDEX `member_org_user_uq` ON `member` (`organizationId`,`userId`);--> statement-breakpoint
-CREATE TABLE `organization` (
-	`id` text PRIMARY KEY NOT NULL,
-	`name` text NOT NULL,
-	`slug` text NOT NULL,
-	`logo` text,
-	`createdAt` integer NOT NULL,
-	`metadata` text
+CREATE TABLE "design_revision" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"url" text NOT NULL,
+	"author_id" text,
+	"author_name" text NOT NULL,
+	"kind" text DEFAULT 'revision' NOT NULL,
+	"section" text,
+	"comment" text DEFAULT '' NOT NULL,
+	"summary" text DEFAULT '' NOT NULL,
+	"warning" text,
+	"spec_json" jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `organization_slug_unique` ON `organization` (`slug`);--> statement-breakpoint
-CREATE TABLE `session` (
-	`id` text PRIMARY KEY NOT NULL,
-	`expiresAt` integer NOT NULL,
-	`token` text NOT NULL,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL,
-	`ipAddress` text,
-	`userAgent` text,
-	`userId` text NOT NULL,
-	`activeOrganizationId` text,
-	`activeTeamId` text,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
+CREATE TABLE "design_why" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"url" text NOT NULL,
+	"stamp" text NOT NULL,
+	"model" text NOT NULL,
+	"why_json" jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
-CREATE INDEX `session_userId_idx` ON `session` (`userId`);--> statement-breakpoint
-CREATE TABLE `user` (
-	`id` text PRIMARY KEY NOT NULL,
-	`name` text NOT NULL,
-	`email` text NOT NULL,
-	`emailVerified` integer DEFAULT false NOT NULL,
-	`image` text,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL
+CREATE TABLE "ext_key" (
+	"id" text PRIMARY KEY NOT NULL,
+	"hash" text NOT NULL,
+	"prefix" text NOT NULL,
+	"name" text DEFAULT '' NOT NULL,
+	"user_id" text NOT NULL,
+	"organization_id" text NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"last_used_at" timestamp with time zone,
+	"revoked_at" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `user_email_unique` ON `user` (`email`);--> statement-breakpoint
-CREATE TABLE `verification` (
-	`id` text PRIMARY KEY NOT NULL,
-	`identifier` text NOT NULL,
-	`value` text NOT NULL,
-	`expiresAt` integer NOT NULL,
-	`createdAt` integer NOT NULL,
-	`updatedAt` integer NOT NULL
+CREATE TABLE "feedback_note" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text NOT NULL,
+	"organization_id" text,
+	"path" text NOT NULL,
+	"url" text NOT NULL,
+	"viewport" text,
+	"data" jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	"sent_at" timestamp with time zone,
+	"resolved_at" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);
+CREATE TABLE "inspo_comment" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"item_id" text NOT NULL,
+	"author_id" text,
+	"author_name" text NOT NULL,
+	"body" text NOT NULL,
+	"attachments" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"edited_at" timestamp with time zone
+);
+--> statement-breakpoint
+CREATE TABLE "inspo_item" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"name" text NOT NULL,
+	"web" text NOT NULL,
+	"web_key" text NOT NULL,
+	"date" text NOT NULL,
+	"type" text DEFAULT 'inspiration' NOT NULL,
+	"author" text NOT NULL,
+	"created_by" text,
+	"note" text DEFAULT '' NOT NULL,
+	"sub_note" text,
+	"thumbnail_url" text,
+	"tags_json" jsonb,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "invitation" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organizationId" text NOT NULL,
+	"email" text NOT NULL,
+	"role" text,
+	"teamId" text,
+	"status" text DEFAULT 'pending' NOT NULL,
+	"expiresAt" timestamp with time zone NOT NULL,
+	"createdAt" timestamp with time zone NOT NULL,
+	"inviterId" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "member" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organizationId" text NOT NULL,
+	"userId" text NOT NULL,
+	"role" text DEFAULT 'member' NOT NULL,
+	"createdAt" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "organization" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"slug" text NOT NULL,
+	"logo" text,
+	"createdAt" timestamp with time zone NOT NULL,
+	"metadata" text,
+	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
+CREATE TABLE "session" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expiresAt" timestamp with time zone NOT NULL,
+	"token" text NOT NULL,
+	"createdAt" timestamp with time zone NOT NULL,
+	"updatedAt" timestamp with time zone NOT NULL,
+	"ipAddress" text,
+	"userAgent" text,
+	"userId" text NOT NULL,
+	"activeOrganizationId" text,
+	"activeTeamId" text,
+	CONSTRAINT "session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "user" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"emailVerified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"language" text DEFAULT 'en' NOT NULL,
+	"createdAt" timestamp with time zone NOT NULL,
+	"updatedAt" timestamp with time zone NOT NULL,
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verification" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expiresAt" timestamp with time zone NOT NULL,
+	"createdAt" timestamp with time zone NOT NULL,
+	"updatedAt" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_segment" ADD CONSTRAINT "activity_segment_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "activity_segment" ADD CONSTRAINT "activity_segment_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ai_usage" ADD CONSTRAINT "ai_usage_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ai_usage" ADD CONSTRAINT "ai_usage_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "design_revision" ADD CONSTRAINT "design_revision_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "design_revision" ADD CONSTRAINT "design_revision_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "design_why" ADD CONSTRAINT "design_why_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ext_key" ADD CONSTRAINT "ext_key_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "ext_key" ADD CONSTRAINT "ext_key_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "feedback_note" ADD CONSTRAINT "feedback_note_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "feedback_note" ADD CONSTRAINT "feedback_note_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inspo_comment" ADD CONSTRAINT "inspo_comment_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inspo_comment" ADD CONSTRAINT "inspo_comment_item_id_inspo_item_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."inspo_item"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inspo_comment" ADD CONSTRAINT "inspo_comment_author_id_user_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inspo_item" ADD CONSTRAINT "inspo_item_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "inspo_item" ADD CONSTRAINT "inspo_item_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviterId_user_id_fk" FOREIGN KEY ("inviterId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member" ADD CONSTRAINT "member_organizationId_organization_id_fk" FOREIGN KEY ("organizationId") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "member" ADD CONSTRAINT "member_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_userId_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "account_userId_idx" ON "account" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "activity_segment_user_seen_idx" ON "activity_segment" USING btree ("user_id","last_seen_at");--> statement-breakpoint
+CREATE INDEX "activity_segment_seen_idx" ON "activity_segment" USING btree ("last_seen_at");--> statement-breakpoint
+CREATE INDEX "ai_usage_org_created_idx" ON "ai_usage" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE INDEX "design_revision_org_url_idx" ON "design_revision" USING btree ("organization_id","url");--> statement-breakpoint
+CREATE UNIQUE INDEX "design_why_org_url_idx" ON "design_why" USING btree ("organization_id","url");--> statement-breakpoint
+CREATE UNIQUE INDEX "ext_key_hash_idx" ON "ext_key" USING btree ("hash");--> statement-breakpoint
+CREATE INDEX "ext_key_org_idx" ON "ext_key" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "ext_key_user_idx" ON "ext_key" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "feedback_note_pending_idx" ON "feedback_note" USING btree ("sent_at","updated_at");--> statement-breakpoint
+CREATE INDEX "feedback_note_user_path_idx" ON "feedback_note" USING btree ("user_id","path");--> statement-breakpoint
+CREATE INDEX "inspo_comment_org_item_idx" ON "inspo_comment" USING btree ("organization_id","item_id");--> statement-breakpoint
+CREATE INDEX "inspo_item_org_idx" ON "inspo_item" USING btree ("organization_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "inspo_item_org_web_uq" ON "inspo_item" USING btree ("organization_id","web_key");--> statement-breakpoint
+CREATE INDEX "invitation_organizationId_idx" ON "invitation" USING btree ("organizationId");--> statement-breakpoint
+CREATE INDEX "invitation_email_idx" ON "invitation" USING btree ("email");--> statement-breakpoint
+CREATE INDEX "member_organizationId_idx" ON "member" USING btree ("organizationId");--> statement-breakpoint
+CREATE INDEX "member_userId_idx" ON "member" USING btree ("userId");--> statement-breakpoint
+CREATE UNIQUE INDEX "member_org_user_uq" ON "member" USING btree ("organizationId","userId");--> statement-breakpoint
+CREATE INDEX "session_userId_idx" ON "session" USING btree ("userId");--> statement-breakpoint
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");

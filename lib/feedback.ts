@@ -47,7 +47,7 @@ async function upsert(author: FeedbackAuthor, organizationId: string | null, ann
   const now = new Date();
   const path = pathOf(url);
   for (const a of annotations) {
-    const data = JSON.stringify(slim(a));
+    const data = slim(a) as Record<string, unknown>;
     await db.insert(F).values({
       id: noteId(a.id, author.id), userId: author.id, organizationId, path, url, viewport,
       data, createdAt: now, updatedAt: now, sentAt: null,
@@ -90,7 +90,7 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
 }
 
 type Row = {
-  id: string; userId: string; path: string; url: string; viewport: string | null; data: string;
+  id: string; userId: string; path: string; url: string; viewport: string | null; data: Record<string, unknown>;
   createdAt: Date; updatedAt: Date; sentAt: Date | null; resolvedAt: Date | null;
   name: string; email: string; image: string | null; workspace: string | null;
 };
@@ -110,8 +110,7 @@ const selection = {
 function groupBatches(rows: Row[]): FeedbackBatch[] {
   const batches = new Map<string, FeedbackBatch & { order: number[] }>();
   for (const r of rows) {
-    let a: Partial<Annotation> = {};
-    try { a = JSON.parse(r.data) as Partial<Annotation>; } catch { /* old or broken row: shown empty */ }
+    const a = r.data as Partial<Annotation>;
     const key = `${r.userId}|${r.path}|${r.sentAt ? r.sentAt.getTime() : "draft"}`;
     let b = batches.get(key);
     if (!b) {

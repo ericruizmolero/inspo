@@ -97,7 +97,7 @@ export const auth = betterAuth({
   appName: "criterio.design",
   baseURL: APP_URL || undefined,
   secret: process.env.BETTER_AUTH_SECRET,
-  database: drizzleAdapter(db, { provider: "sqlite", schema }),
+  database: drizzleAdapter(db, { provider: "pg", schema }),
   trustedOrigins: (request) => {
     // Apple returns the code by POST (form_post) from its domain, so it must be trusted
     const fixed = [APP_URL, process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "", "https://appleid.apple.com"].filter(Boolean);

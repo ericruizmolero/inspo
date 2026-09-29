@@ -75,7 +75,7 @@ export async function deleteComment(organizationId: string, id: string, userId: 
   const [row] = await db.select({ attachments: C.attachments }).from(C).where(where).limit(1);
   if (!row) return false;
   const res = await db.delete(C).where(where);
-  if ((res.rowsAffected ?? 0) === 0) return false;
+  if ((res.rowCount ?? 0) === 0) return false;
   const urls = Array.isArray(row.attachments) ? row.attachments.map((a) => a.url) : [];
   if (urls.length) await deleteCommentFiles(organizationId, urls);
   return true;

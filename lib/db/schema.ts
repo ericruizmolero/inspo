@@ -1,29 +1,30 @@
-// Database schema (SQLite/libsql via Drizzle).
+// Database schema (Postgres via Drizzle).
 // The user/session/account/verification/organization/member/invitation tables
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
+import type { InspoTags } from "@/types/inspo";
 
 // ─── Better Auth ─────────────────────────────────────────────────────────────
 
-export const user = sqliteTable("user", {
+export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: integer("emailVerified", { mode: "boolean" }).notNull().default(false),
+  emailVerified: boolean("emailVerified").notNull().default(false),
   image: text("image"),
   /** The person's language ("en" | "es"). Decides the language of the emails they get. */
   language: text("language").notNull().default("en"),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "date" }).notNull(),
 });
 
-export const session = sqliteTable("session", {
+export const session = pgTable("session", {
   id: text("id").primaryKey(),
-  expiresAt: integer("expiresAt", { mode: "timestamp_ms" }).notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
   token: text("token").notNull().unique(),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "date" }).notNull(),
   ipAddress: text("ipAddress"),
   userAgent: text("userAgent"),
   userId: text("userId").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -31,7 +32,7 @@ export const session = sqliteTable("session", {
   activeTeamId: text("activeTeamId"),
 }, (t) => [index("session_userId_idx").on(t.userId)]);
 
-export const account = sqliteTable("account", {
+export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("accountId").notNull(),
   providerId: text("providerId").notNull(),
@@ -39,55 +40,55 @@ export const account = sqliteTable("account", {
   accessToken: text("accessToken"),
   refreshToken: text("refreshToken"),
   idToken: text("idToken"),
-  accessTokenExpiresAt: integer("accessTokenExpiresAt", { mode: "timestamp_ms" }),
-  refreshTokenExpiresAt: integer("refreshTokenExpiresAt", { mode: "timestamp_ms" }),
+  accessTokenExpiresAt: timestamp("accessTokenExpiresAt", { withTimezone: true, mode: "date" }),
+  refreshTokenExpiresAt: timestamp("refreshTokenExpiresAt", { withTimezone: true, mode: "date" }),
   scope: text("scope"),
   password: text("password"),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("account_userId_idx").on(t.userId)]);
 
-export const verification = sqliteTable("verification", {
+export const verification = pgTable("verification", {
   id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
-  expiresAt: integer("expiresAt", { mode: "timestamp_ms" }).notNull(),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updatedAt", { mode: "timestamp_ms" }).notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("verification_identifier_idx").on(t.identifier)]);
 
 // A workspace = a Better Auth organization.
 // metadata (JSON) holds { kind: "personal" | "team" }.
-export const organization = sqliteTable("organization", {
+export const organization = pgTable("organization", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   logo: text("logo"),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
   metadata: text("metadata"),
 });
 
-export const member = sqliteTable("member", {
+export const member = pgTable("member", {
   id: text("id").primaryKey(),
   organizationId: text("organizationId").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("userId").notNull().references(() => user.id, { onDelete: "cascade" }),
   role: text("role").notNull().default("member"),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("member_organizationId_idx").on(t.organizationId),
   index("member_userId_idx").on(t.userId),
   uniqueIndex("member_org_user_uq").on(t.organizationId, t.userId),
 ]);
 
-export const invitation = sqliteTable("invitation", {
+export const invitation = pgTable("invitation", {
   id: text("id").primaryKey(),
   organizationId: text("organizationId").notNull().references(() => organization.id, { onDelete: "cascade" }),
   email: text("email").notNull(),
   role: text("role"),
   teamId: text("teamId"),
   status: text("status").notNull().default("pending"),
-  expiresAt: integer("expiresAt", { mode: "timestamp_ms" }).notNull(),
-  createdAt: integer("createdAt", { mode: "timestamp_ms" }).notNull(),
+  expiresAt: timestamp("expiresAt", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true, mode: "date" }).notNull(),
   inviterId: text("inviterId").notNull().references(() => user.id, { onDelete: "cascade" }),
 }, (t) => [
   index("invitation_organizationId_idx").on(t.organizationId),
@@ -96,7 +97,7 @@ export const invitation = sqliteTable("invitation", {
 
 // ─── Inspo ───────────────────────────────────────────────────────────────────
 
-export const inspoItem = sqliteTable("inspo_item", {
+export const inspoItem = pgTable("inspo_item", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
@@ -114,9 +115,9 @@ export const inspoItem = sqliteTable("inspo_item", {
   /** URL of the manual thumbnail (Blob in prod, /thumbs/... locally) */
   thumbnailUrl: text("thumbnail_url"),
   /** Serialized InspoTags (AI tags) */
-  tagsJson: text("tags_json"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  tagsJson: jsonb("tags_json").$type<InspoTags>(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("inspo_item_org_idx").on(t.organizationId),
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
@@ -127,7 +128,7 @@ export const inspoItem = sqliteTable("inspo_item", {
 // Each workspace stores its revisions on top: one row per change, with the full
 // resulting spec. The workspace's current spec is the one in the latest row.
 
-export const designRevision = sqliteTable("design_revision", {
+export const designRevision = pgTable("design_revision", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   /** Normalized URL (same as the global cache key) */
@@ -145,8 +146,8 @@ export const designRevision = sqliteTable("design_revision", {
   /** Claude's warning if the comment contradicts what was measured on the site */
   warning: text("warning"),
   /** Full DesignSpec after this change */
-  specJson: text("spec_json").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  specJson: jsonb("spec_json").$type<unknown>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("design_revision_org_url_idx").on(t.organizationId, t.url),
 ]);
@@ -155,7 +156,7 @@ export const designRevision = sqliteTable("design_revision", {
 // The DESIGN.md is global per URL, but the reason a site is in a library is the team's:
 // the note of whoever saved it and the thread. A model connects those words with what
 // was measured, and the result is cached here until the words or the spec change.
-export const designWhy = sqliteTable("design_why", {
+export const designWhy = pgTable("design_why", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   /** Normalized URL (same as the global cache key) */
@@ -164,8 +165,8 @@ export const designWhy = sqliteTable("design_why", {
   stamp: text("stamp").notNull(),
   model: text("model").notNull(),
   /** DesignWhy as JSON */
-  whyJson: text("why_json").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  whyJson: jsonb("why_json").$type<unknown>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   uniqueIndex("design_why_org_url_idx").on(t.organizationId, t.url),
 ]);
@@ -177,7 +178,7 @@ export const designWhy = sqliteTable("design_why", {
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
 
-export const inspoComment = sqliteTable("inspo_comment", {
+export const inspoComment = pgTable("inspo_comment", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
@@ -186,9 +187,9 @@ export const inspoComment = sqliteTable("inspo_comment", {
   authorName: text("author_name").notNull(),
   body: text("body").notNull(),
   /** Attached screenshots: JSON `[{ url, w, h, name }]` (private Blob URLs, or /public paths locally) */
-  attachments: text("attachments", { mode: "json" }).$type<CommentAttachmentRow[]>().notNull().default([]),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  editedAt: integer("edited_at", { mode: "timestamp_ms" }),
+  attachments: jsonb("attachments").$type<CommentAttachmentRow[]>().notNull().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
 ]);
@@ -197,7 +198,7 @@ export const inspoComment = sqliteTable("inspo_comment", {
 // One row per model call (Claude or Jev), with its estimated cost in USD
 // at the rate current when written (lib/usage.ts). The basis for SaaS pricing.
 
-export const aiUsage = sqliteTable("ai_usage", {
+export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
@@ -219,7 +220,7 @@ export const aiUsage = sqliteTable("ai_usage", {
   requestId: text("request_id"),
   /** URL, query… whatever helps explain the row */
   ref: text("ref"),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
 ]);
@@ -230,7 +231,7 @@ export const aiUsage = sqliteTable("ai_usage", {
 // tab is visible (components/useActivity.ts) and the server adds up the time
 // between heartbeats (lib/activity.ts). Feeds the /admin panel.
 
-export const activitySegment = sqliteTable("activity_segment", {
+export const activitySegment = pgTable("activity_segment", {
   /** Generated by the client (one per visit × area); only its owner can touch it */
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -242,8 +243,8 @@ export const activitySegment = sqliteTable("activity_segment", {
   path: text("path").notNull(),
   /** Readable browser summary: "Chrome · macOS" */
   device: text("device"),
-  startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
-  lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }).notNull(),
+  lastSeenAt: timestamp("last_seen_at", { withTimezone: true, mode: "date" }).notNull(),
   /** Seconds with the tab visible in this area */
   seconds: integer("seconds").notNull().default(0),
 }, (t) => [
@@ -255,19 +256,19 @@ export const activitySegment = sqliteTable("activity_segment", {
 // Who can see the activity panel (/admin). Managed from the panel itself
 // (lib/activity.ts); the fixed emails in DEFAULT_ADMINS / ADMIN_EMAILS are not stored here.
 
-export const appAdmin = sqliteTable("app_admin", {
+export const appAdmin = pgTable("app_admin", {
   /** Lowercase email */
   email: text("email").primaryKey(),
   /** Name of who granted access (shown in the list) */
   addedBy: text("added_by").notNull().default(""),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 });
 
 // ─── Visual feedback (Agentation) ────────────────────────────────────────────
 // Each note someone leaves with the feedback bar on the app itself. Stored as
 // they arrive and emailed to the partners (the /admin panel list) in batches:
 // on send/copy, or after a while with no new notes (lib/feedback.ts).
-export const feedbackNote = sqliteTable("feedback_note", {
+export const feedbackNote = pgTable("feedback_note", {
   /** `${annotation id}@${userId}`: Agentation generates the id in the browser */
   id: text("id").primaryKey(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
@@ -278,13 +279,13 @@ export const feedbackNote = sqliteTable("feedback_note", {
   /** "1440×900" at the time of annotating */
   viewport: text("viewport"),
   /** Full Agentation annotation as JSON (element, selector, text, styles…) */
-  data: text("data").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
   /** When the email with this note went out; null = not sent yet */
-  sentAt: integer("sent_at", { mode: "timestamp_ms" }),
+  sentAt: timestamp("sent_at", { withTimezone: true, mode: "date" }),
   /** When a partner marked it as dealt with in /admin; null = open. Only sent notes get resolved */
-  resolvedAt: integer("resolved_at", { mode: "timestamp_ms" }),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("feedback_note_pending_idx").on(t.sentAt, t.updatedAt),
   index("feedback_note_user_path_idx").on(t.userId, t.path),
@@ -295,7 +296,7 @@ export const feedbackNote = sqliteTable("feedback_note", {
 // the person picks a workspace at /extension/connect and gets a long key that the
 // extension stores. Only the key's SHA-256 digest lives here, never the key.
 // Each key works for one workspace; revoke it from /settings/extension or the extension itself.
-export const extKey = sqliteTable("ext_key", {
+export const extKey = pgTable("ext_key", {
   id: text("id").primaryKey(),
   /** Hex SHA-256 of the full key */
   hash: text("hash").notNull(),
@@ -305,10 +306,10 @@ export const extKey = sqliteTable("ext_key", {
   name: text("name").notNull().default(""),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  lastUsedAt: integer("last_used_at", { mode: "timestamp_ms" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: "date" }),
   /** null = active */
-  revokedAt: integer("revoked_at", { mode: "timestamp_ms" }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   uniqueIndex("ext_key_hash_idx").on(t.hash),
   index("ext_key_org_idx").on(t.organizationId),

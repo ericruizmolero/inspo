@@ -2,7 +2,7 @@
 //   npx tsx scripts/set-admin.ts <email>            → grants access
 //   npx tsx scripts/set-admin.ts <email> --remove   → removes it
 //   npx tsx scripts/set-admin.ts --list            → shows the list
-// Against production: DATABASE_URL=$TURSO_DATABASE_URL DATABASE_AUTH_TOKEN=$TURSO_AUTH_TOKEN npx tsx scripts/set-admin.ts …
+// Against production: DATABASE_URL=$PROD_DATABASE_URL npx tsx scripts/set-admin.ts …
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { eq } from "drizzle-orm";

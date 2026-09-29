@@ -1,9 +1,9 @@
 // Shared bits of the loop prototype (#42): env, local DB, output folders and a cost ledger.
 // Everything runs against the LOCAL database copy and writes to .data/loop/ (git-ignored).
-// Never touches Turso, Blob or ai_usage: this is a lab bench, not the product.
+// Never touches production, Blob or ai_usage: this is a lab bench, not the product.
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
-process.env.DATABASE_URL = "file:.data/inspo.db";
+process.env.DATABASE_URL = "postgres://postgres@127.0.0.1:5432/criterio";
 delete process.env.BLOB_READ_WRITE_TOKEN;
 
 import { createHash } from "crypto";
@@ -36,7 +36,7 @@ export async function savviaRefs(): Promise<Ref[]> {
     .where(and(eq(schema.inspoItem.organizationId, org.id), eq(schema.inspoItem.type, "inspiration")));
   return rows
     .filter((r) => { try { const h = new URL(r.web).hostname.replace(/^www\./, ""); return !SKIP_HOSTS.some((s) => h === s || h.endsWith(`.${s}`)); } catch { return false; } })
-    .map((r) => ({ id: r.id, key: keyOf(r.web), name: r.name, web: r.web, note: r.note, tags: r.tagsJson ? JSON.parse(r.tagsJson) as InspoTags : null }))
+    .map((r) => ({ id: r.id, key: keyOf(r.web), name: r.name, web: r.web, note: r.note, tags: r.tagsJson ?? null }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 

@@ -45,7 +45,7 @@ export function planOfMetadata(metadata: string | null): PlanKey {
  * Changes a workspace's plan, keeping the rest of the metadata.
  * ponytail: read and write in two statements, no transaction. Only
  * scripts/set-plan.ts calls it by hand; if a payment gateway ever calls it, it needs
- * a transaction or an UPDATE with json_set.
+ * a transaction or an UPDATE with jsonb_set (metadata is text, Better Auth writes it: cast it).
  * Whoever downgrades must notify the owner if the team ends up over the limit:
  * notifyOverCapacity() in lib/quota.ts.
  */

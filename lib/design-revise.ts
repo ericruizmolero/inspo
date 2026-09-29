@@ -54,14 +54,14 @@ export async function latestRevision(organizationId: string, url: string): Promi
     .where(and(eq(schema.designRevision.organizationId, organizationId), eq(schema.designRevision.url, url)))
     .orderBy(desc(schema.designRevision.createdAt)).limit(1);
   if (!row) return null;
-  return { meta: toMeta(row), spec: DesignSpecSchema.parse(JSON.parse(row.specJson)) };
+  return { meta: toMeta(row), spec: DesignSpecSchema.parse(row.specJson) };
 }
 
 export async function getRevisionSpec(organizationId: string, id: string): Promise<{ meta: RevisionMeta; spec: DesignSpec } | null> {
   const [row] = await db.select().from(schema.designRevision)
     .where(and(eq(schema.designRevision.organizationId, organizationId), eq(schema.designRevision.id, id))).limit(1);
   if (!row) return null;
-  return { meta: toMeta(row), spec: DesignSpecSchema.parse(JSON.parse(row.specJson)) };
+  return { meta: toMeta(row), spec: DesignSpecSchema.parse(row.specJson) };
 }
 
 export async function addRevision(input: {
@@ -72,7 +72,7 @@ export async function addRevision(input: {
     id: newId(), organizationId: input.organizationId, url: input.url,
     authorId: input.authorId, authorName: input.authorName, kind: input.kind,
     section: input.section ?? null, comment: input.comment ?? "", summary: input.summary,
-    warning: input.warning ?? null, specJson: JSON.stringify(input.spec), createdAt: new Date(),
+    warning: input.warning ?? null, specJson: input.spec, createdAt: new Date(),
   };
   await db.insert(schema.designRevision).values(row);
   return toMeta({ ...row });

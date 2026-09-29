@@ -1,1 +1,0 @@
-ALTER TABLE `feedback_note` ADD `resolved_at` integer;

@@ -41,11 +41,11 @@ export async function getWhy(organizationId: string, url: string): Promise<{ sta
   const [row] = await db.select().from(schema.designWhy)
     .where(and(eq(schema.designWhy.organizationId, organizationId), eq(schema.designWhy.url, url))).limit(1);
   if (!row) return null;
-  try { return { stamp: row.stamp, why: JSON.parse(row.whyJson) as DesignWhy }; } catch { return null; }
+  return { stamp: row.stamp, why: row.whyJson as DesignWhy };
 }
 
 async function saveWhy(organizationId: string, url: string, stamp: string, why: DesignWhy): Promise<void> {
-  const row = { id: newId(), organizationId, url, stamp, model: why.model, whyJson: JSON.stringify(why), createdAt: new Date() };
+  const row = { id: newId(), organizationId, url, stamp, model: why.model, whyJson: why, createdAt: new Date() };
   await db.insert(schema.designWhy).values(row)
     .onConflictDoUpdate({ target: [schema.designWhy.organizationId, schema.designWhy.url], set: { stamp, model: why.model, whyJson: row.whyJson, createdAt: row.createdAt } });
 }

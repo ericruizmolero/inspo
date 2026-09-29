@@ -62,7 +62,7 @@ export async function loadWorkspaceData(organizationId: string) {
   const tagMap: TagMap = {};
   for (const r of rows) {
     if (r.thumbnailUrl) thumbnailMap[r.web] = r.thumbnailUrl;
-    if (r.tagsJson) { try { tagMap[r.web] = JSON.parse(r.tagsJson) as InspoTags; } catch { /* ignore */ } }
+    if (r.tagsJson) tagMap[r.web] = r.tagsJson;
   }
   return { items, thumbnailMap, tagMap };
 }
@@ -111,11 +111,11 @@ export async function hasItem(organizationId: string, web: string): Promise<bool
 export async function setThumbnail(organizationId: string, web: string, thumbnailUrl: string | null): Promise<boolean> {
   const res = await db.update(T).set({ thumbnailUrl, updatedAt: new Date() })
     .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web))));
-  return (res.rowsAffected ?? 0) > 0;
+  return (res.rowCount ?? 0) > 0;
 }
 
 export async function setTags(organizationId: string, web: string, tags: InspoTags): Promise<void> {
-  await db.update(T).set({ tagsJson: JSON.stringify(tags), updatedAt: new Date() })
+  await db.update(T).set({ tagsJson: tags, updatedAt: new Date() })
     .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web))));
 }
 
@@ -140,10 +140,8 @@ export async function deleteItems(organizationId: string, ids: string[]) {
   await db.delete(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
 }
 
-/** Deletes an item and its comment thread (Turso doesn't guarantee ON DELETE CASCADE). */
+/** Deletes an item. Its comment thread goes with it (ON DELETE CASCADE). */
 export async function deleteItem(organizationId: string, id: string): Promise<boolean> {
-  const C = schema.inspoComment;
-  await db.delete(C).where(and(eq(C.organizationId, organizationId), eq(C.itemId, id)));
   const res = await db.delete(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
-  return (res.rowsAffected ?? 0) > 0;
+  return (res.rowCount ?? 0) > 0;
 }
