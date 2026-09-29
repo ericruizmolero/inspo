@@ -3,9 +3,11 @@
 import { hueFor, Avatar } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
-import { InspoItem, InspoTags } from "@/types/inspo";
+import { InspoItem, InspoTags, Project } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
+import ProjectPicker, { IconFolder } from "./ProjectPicker";
+import { mediaKindOf, videoEmbedOf, isGif, postThumbKind } from "@/lib/url";
 
 const BLOCKED = ["x.com", "twitter.com", "linkedin.com", "primevideo.com", "instagram.com", "youtube.com"];
 
@@ -16,12 +18,18 @@ function isBlocked(url: string) {
   const d = getDomain(url);
   return BLOCKED.some((b) => d.includes(b));
 }
+/** Our private blobs go through the proxy; anything else (local files, a video's frame, blob:) loads as is */
 
 type ImgSource = "idle" | "og" | "shot" | "error";
 
 // Images already resolved per URL: moving cards between columns makes React
 // remount them, and without this everything would download (and flicker) again.
 const imgCache = new Map<string, { src: string | null; source: ImgSource }>();
+
+/** The image a card already resolved for this URL, if any (the project start screen reuses it). */
+export function cachedCardImage(web: string): string | null {
+  return imgCache.get(web)?.src ?? null;
+}
 
 interface InspoCardProps {
   item: InspoItem;
@@ -41,6 +49,11 @@ interface InspoCardProps {
   caption?: { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number } | null;
   onComments?: () => void;
   onDelete?: () => Promise<void>; // remove the card from the workspace
+  /** The workspace's projects and the ones this card is filed in (the folder button); none = no button */
+  projects?: Project[];
+  projectIds?: string[];
+  onToggleProject?: (projectId: string, on: boolean) => void;
+  onCreateProject?: (name: string) => Promise<void>;
 }
 
 const IconUpload = (
@@ -68,14 +81,27 @@ const IconExternal = (
     <path d="M4 10l6-6M5 4h5v5" />
   </svg>
 );
+const IconPlay = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M4 2.5v9a.5.5 0 00.77.42l7-4.5a.5.5 0 000-.84l-7-4.5A.5.5 0 004 2.5z" /></svg>
+);
 const IconInfo = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
     <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
   </svg>
 );
 
-export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, caption, onComments, onDelete }: InspoCardProps) {
+export default function InspoCard({ item, tags, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject }: InspoCardProps) {
   const { t } = useT();
+  // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
+  const kind = mediaKindOf(item.web);
+  const video = kind === "video" ? videoEmbedOf(item.web) : null;
+  const manualThumbnail = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
+  const videoFile = video?.provider === "file" && !manualThumbnail;
+  const isSite = kind === "web";
+  // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
+  const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
+  const plays = kind === "video" || postKind === "video";
+  const gifChip = (kind === "image" && isGif(item.web)) || postKind === "gif";
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
   const [manualLoaded, setManualLoaded] = useState(false);
@@ -90,6 +116,8 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   // Delete in two taps: the first asks for confirmation on the button itself, the second deletes
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // The project menu keeps the action bar on screen while it is open (the pointer leaves the tile for it)
+  const [pickerOpen, setPickerOpen] = useState(false);
   // When the confirmation opened: a near-instant second click/tap/key doesn't count,
   // so deleting is always two deliberate actions (double click, double tap or Space don't delete).
   const confirmAt = useRef(0);
@@ -101,6 +129,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const suppressClick = useRef(false);
 
   const useManual = !!manualThumbnail && !manualFailed;
+  const [frameLoaded, setFrameLoaded] = useState(false);
+  const [frameFailed, setFrameFailed] = useState(false);
+  const useFrame = videoFile && !frameFailed;
   const useDesign = !useManual && !!designCover && !coverFailed;
 
   // Reset on thumbnail change, then check if the image was already cached
@@ -129,7 +160,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
 
   // Start loading when the tile enters the viewport
   useEffect(() => {
-    if (useManual || useDesign || source !== "idle") return;
+    if (useManual || useDesign || useFrame || source !== "idle") return;
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -138,7 +169,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [source, useManual, useDesign]);
+  }, [source, useManual, useDesign, useFrame]);
 
   // Fetch as blob so failed sources don't spam the console
   useEffect(() => {
@@ -175,9 +206,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, item.web]);
 
-  const domain = getDomain(item.web);
-  const isError = !useManual && !useDesign && source === "error";
-  const isLoaded = useManual ? manualLoaded : useDesign ? coverLoaded : !!imgSrc;
+  const domain = kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
+  const isError = !useManual && !useDesign && !useFrame && source === "error";
+  const isLoaded = useManual ? manualLoaded : useDesign ? coverLoaded : useFrame ? frameLoaded : !!imgSrc;
 
   const onScrollLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget, box = scrollBoxRef.current;
@@ -228,6 +259,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   const clickTarget: "md" | "comments" = designMdReady || !onComments ? "md" : "comments";
   const openInside = () => { if (clickTarget === "md") onDesignMd(); else onComments!(); };
 
+  const openHref = kind === "image" ? item.web : item.web;
+  const openLabel = kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
+
   const meta = (
     <div className="tile__meta">
       <span>{t.labels.type[item.type]}</span>
@@ -248,6 +282,17 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     </div>
   );
 
+  const filedCount = projectIds.length;
+  const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
+    <ProjectPicker
+      projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
+      className={`${className}${filedCount ? " is-filed" : ""}`}
+      label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
+    >
+      {IconFolder}{filedCount > 0 && <span className="tile__action-count">{filedCount}</span>}
+    </ProjectPicker>
+  );
+
   return (
     <div>
       <article
@@ -262,7 +307,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           {useManual && (
             <img
               ref={manualImgRef}
-              className={`tile__img${manualLoaded ? "" : " is-hidden"}`}
+              className={`tile__img${manualLoaded ? "" : " is-hidden"}${video?.poster && !uploadedThumb ? " tile__img--frame" : ""}`}
                 decoding="async"
               src={manualThumbnail}
               alt={item.name}
@@ -297,7 +342,21 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             </>
           )}
 
-          {!useManual && !useDesign && imgSrc && (
+          {useFrame && (
+            // A video file: its first frame, still. It plays in the thread.
+            <video
+              className={`tile__img${frameLoaded ? "" : " is-hidden"}`}
+              src={`${item.web}#t=0.1`}
+              muted playsInline preload="metadata"
+              onLoadedData={() => setFrameLoaded(true)}
+              onError={() => setFrameFailed(true)}
+            />
+          )}
+
+          {plays && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
+          {gifChip && isLoaded && score === undefined && <span className="tile__badge">{t.card.gif}</span>}
+
+          {!useManual && !useDesign && !useFrame && imgSrc && (
             <img
               className="tile__img"
                 decoding="async"
@@ -359,7 +418,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           )}
 
           <div
-            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
+            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -375,7 +434,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               </Fragment>
             ) : (
               <Fragment key="actions">
-            {manualThumbnail && (
+            {uploadedThumb && kind !== "image" && (
               <button className="tile__action tile__action--danger" data-tip={t.card.removeThumb} aria-label={t.card.removeThumb}
                 onClick={async (e) => { e.stopPropagation(); await onRemoveThumbnail(); }}>
                 {IconX}
@@ -387,19 +446,20 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 {IconComment}{commentCount > 0 && <span className="tile__action-count">{commentCount}</span>}
               </button>
             )}
-            <button
+            {picker("tile__action tile__action--pj", setPickerOpen)}
+            {isSite && <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
               data-tip={designMdLoading ? t.card.generatingDesignMd : designMdReady ? t.card.seeDesignMd : t.card.generateWithAi}
               onClick={(e) => { e.stopPropagation(); onDesignMd(); }}
             >
               {designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}
-            </button>
-            <button className="tile__action" data-tip={manualThumbnail ? t.card.replaceThumb : t.card.uploadThumb} aria-label={manualThumbnail ? t.card.replaceThumb : t.card.uploadThumb}
+            </button>}
+            {kind !== "image" && <button className="tile__action" data-tip={uploadedThumb ? t.card.replaceThumb : t.card.uploadThumb} aria-label={uploadedThumb ? t.card.replaceThumb : t.card.uploadThumb}
               onClick={triggerUpload}>
               {uploading ? <span className="spinner" /> : IconUpload}
-            </button>
-            <a className="tile__action tile__action--link" href={item.web} target="_blank" rel="noopener noreferrer"
-              data-tip={t.card.openSite} aria-label={t.card.openSite} onClick={(e) => e.stopPropagation()}>
+            </button>}
+            <a className="tile__action tile__action--link" href={openHref} target="_blank" rel="noopener noreferrer"
+              data-tip={openLabel} aria-label={openLabel} onClick={(e) => e.stopPropagation()}>
               {IconExternal}
             </a>
             {onDelete && (
@@ -454,8 +514,9 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             {IconComment}{commentCount > 0 && commentCount}
           </button>
         )}
-        <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>
-        <a className="tile__caption-md tile__caption-link" href={item.web} target="_blank" rel="noopener noreferrer" aria-label={t.card.openSite}>{IconExternal}</a>
+        {picker("tile__caption-md tile__caption-pj")}
+        {isSite && <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>}
+        <a className="tile__caption-md tile__caption-link" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (
           <Fragment key="confirm">
             <button className="tile__caption-md tile__caption-del is-confirm" onClick={handleDelete} disabled={deleting} aria-label={t.card.confirmDelete}>

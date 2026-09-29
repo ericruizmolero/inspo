@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
     ];
   },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
+  experimental: {
+    // proxy.ts runs before every route, and Next buffers the body for it up to this size (10 MB by
+    // default). Uploaded images can be 20 MB (lib/media.ts), so a bigger one would arrive cut short.
+    proxyClientMaxBodySize: "21mb",
+  },
   outputFileTracingIncludes: {
     // Migrations: instrumentation.ts applies them on start and reads the folder with readdir
     "/*": ["./drizzle/**/*"],

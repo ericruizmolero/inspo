@@ -4,11 +4,14 @@ import { ownsThumbnail } from "@/lib/items";
 import { blobPrefix } from "@/lib/thumbnails";
 import { commentPrefix } from "@/lib/comment-files";
 import { DESIGN_MD_PREFIX, whyShotPrefix } from "@/lib/design-store";
-import { getFile, fileUrl } from "@/lib/storage";
+import { mediaPrefix } from "@/lib/media";
+import { POSTS_PREFIX } from "@/lib/posts";
+import { openFile, fileUrl } from "@/lib/storage";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
-// The active workspace reads its thumbnails, comment screenshots and "why" captures;
-// DESIGN.md images are screenshots of public sites, shared by everyone signed in.
+// The active workspace reads its thumbnails, uploaded images, comment screenshots and "why" captures;
+// DESIGN.md images and saved posts from X are public content, shared by everyone signed in.
+// Streamed, and in ranges when asked (seeking a video, and Safari always): a post's video can be 60 MB.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...key]">) {
   const session = await requireCtx();
   if (isResponse(session)) return session;
@@ -17,14 +20,14 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const key = parts.join("/");
 
   const ws = session.workspace.id;
-  const allowed = [blobPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX].some((p) => key.startsWith(p))
+  const allowed = [blobPrefix(ws), mediaPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX].some((p) => key.startsWith(p))
     // A thumbnail stored under another prefix but set on one of this workspace's items
     || (await ownsThumbnail(ws, fileUrl(key)));
   if (!allowed) return new Response("forbidden", { status: 403 });
 
   try {
     const range = req.headers.get("range") ?? undefined;
-    const file = await getFile(key, range);
+    const file = await openFile(key, range);
     if (!file) return new Response("not found", { status: 404 });
     const headers: Record<string, string> = {
       "Content-Type": file.contentType,
@@ -34,7 +37,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
       "Cache-Control": "private, max-age=86400",
     };
     if (file.range) headers["Content-Range"] = file.range;
-    return new Response(new Uint8Array(file.body), { status: file.range ? 206 : 200, headers });
+    return new Response(file.stream, { status: file.range ? 206 : 200, headers });
   } catch (e) {
     console.error("files route:", e);
     return new Response("error", { status: 500 });

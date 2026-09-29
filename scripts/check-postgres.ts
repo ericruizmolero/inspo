@@ -11,6 +11,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
 import { newId, setThumbnail, deleteItem, addItem, setTagsBulk } from "../lib/items";
 import { touchSegment } from "../lib/activity";
+import { createProject, deleteProject, fileItems, loadProjects } from "../lib/projects";
 import { putFile, fileExists, getFile, keyOf } from "../lib/storage";
 import { blobPrefix } from "../lib/thumbnails";
 import { commentPrefix } from "../lib/comment-files";
@@ -64,6 +65,25 @@ async function main() {
     await setTagsBulk(orgId, { "https://b.check.example": { summary: "b" } as never, "https://C.check.example": { summary: "c" } as never });
     const tagged = await db.select({ web: schema.inspoItem.web, tags: schema.inspoItem.tagsJson }).from(schema.inspoItem).where(eq(schema.inspoItem.organizationId, orgId));
     assert.deepEqual(Object.fromEntries(tagged.map((t) => [t.web, (t.tags as { summary?: string } | null)?.summary])), { "https://b.check.example": "b", [c.web]: "c" });
+
+    // 7. Projects: an item's links go when the item goes; deleting a project keeps its items
+    const p1 = await createProject(orgId, "One", userId), p2 = await createProject(orgId, "Two", userId);
+    const [x, y] = await Promise.all([
+      addItem(orgId, { name: "X", web: "https://x.check.example", author: "check" }),
+      addItem(orgId, { name: "Y", web: "https://y.check.example", author: "check" }),
+    ]);
+    await fileItems(orgId, p1.id, [x.id!, y.id!], userId);
+    await fileItems(orgId, p2.id, [y.id!], userId);
+    await fileItems(orgId, p1.id, [x.id!], userId); // twice is not an error
+    await deleteItem(orgId, x.id!);
+    const links = (await loadProjects(orgId)).links;
+    assert.deepEqual(Object.keys(links), [y.id!], "a deleted item's links are gone");
+    assert.deepEqual([...links[y.id!]].sort(), [p1.id, p2.id].sort());
+    await deleteProject(orgId, p1.id);
+    const after = await loadProjects(orgId);
+    assert.deepEqual(after.links, { [y.id!]: [p2.id] }, "a deleted project's links are gone");
+    const [yRow] = await db.select({ id: schema.inspoItem.id }).from(schema.inspoItem).where(eq(schema.inspoItem.id, y.id!));
+    assert.ok(yRow, "the item itself stays");
 
     // 6. Heartbeat: creates, adds the gap, and refuses someone else's segment
     const seg = `chk${newId().slice(0, 12)}`;

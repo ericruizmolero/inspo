@@ -6,6 +6,7 @@
 // Keys stay the same (the Blob pathname), so a reference changes only its host:
 // https://<store>.private.blob.vercel-storage.com/<key> → /api/files/<key>. That makes the
 // rewrite a text replace, and running the script twice harmless: copied files are skipped.
+// Every other .json file (a saved post's post.json) is copied with the URLs inside rewritten.
 // Two kinds of Blob files change shape, because R2 can overwrite a key in place:
 //   inspo/design-md/<key>-<t>.json   → the newest becomes inspo/design-md/<key>.json
 //   inspo/design-md-index-<t>.json   → the newest becomes inspo/design-md-index.json
@@ -65,7 +66,11 @@ async function main() {
   for (const b of plain) {
     try {
       if (await fileExists(b.pathname)) { skipped++; continue; }
-      if (APPLY) { const f = await download(b); await putFile(b.pathname, f.body, f.type); }
+      if (APPLY) {
+        const f = await download(b);
+        const body = b.pathname.endsWith(".json") ? Buffer.from(rewrite(f.body.toString("utf8"))) : f.body;
+        await putFile(b.pathname, body, f.type);
+      }
       copied++;
       if (copied % 50 === 0) console.log(`  ${copied} copied…`);
     } catch (e) {
@@ -86,12 +91,14 @@ async function main() {
   console.log(`DESIGN.md: ${newestEntry.size} entries${newestIndex ? " and the index" : ""} ${APPLY ? "written" : "to write"} with R2 paths`);
 
   // References in the database
+  // An uploaded image's address (web) is its file, and web_key is that address lowercased
   const cols: [string, string][] = [
-    ["inspo_item", "thumbnail_url"], ["inspo_comment", "attachments"], ["design_why", "why_json"], ["design_revision", "spec_json"],
+    ["inspo_item", "web"], ["inspo_item", "web_key"], ["inspo_item", "thumbnail_url"],
+    ["inspo_comment", "attachments"], ["design_why", "why_json"], ["design_revision", "spec_json"],
   ];
   const pattern = "https://[a-z0-9.-]+\\.blob\\.vercel-storage\\.com/";
   for (const [table, col] of cols) {
-    const cast = col === "thumbnail_url" ? "" : "::jsonb";
+    const cast = ["web", "web_key", "thumbnail_url"].includes(col) ? "" : "::jsonb";
     const where = sql.raw(`"${col}"::text ~ '${pattern}'`);
     const n = Number((await db.execute(sql`select count(*) as n from ${sql.raw(`"${table}"`)} where ${where}`)).rows[0].n);
     if (APPLY && n) {

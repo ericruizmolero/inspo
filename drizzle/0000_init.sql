@@ -173,6 +173,24 @@ CREATE TABLE "organization" (
 	CONSTRAINT "organization_plan_check" CHECK ("organization"."plan" in ('solo', 'studio', 'agency'))
 );
 --> statement-breakpoint
+CREATE TABLE "project" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"name" text NOT NULL,
+	"created_by" text,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "project_item" (
+	"project_id" text NOT NULL,
+	"item_id" text NOT NULL,
+	"organization_id" text NOT NULL,
+	"added_by" text,
+	"created_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "project_item_project_id_item_id_pk" PRIMARY KEY("project_id","item_id")
+);
+--> statement-breakpoint
 CREATE TABLE "session" (
 	"id" text PRIMARY KEY NOT NULL,
 	"expires_at" timestamp with time zone NOT NULL,
@@ -229,6 +247,12 @@ ALTER TABLE "invitation" ADD CONSTRAINT "invitation_organization_id_organization
 ALTER TABLE "invitation" ADD CONSTRAINT "invitation_inviter_id_user_id_fk" FOREIGN KEY ("inviter_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "member" ADD CONSTRAINT "member_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "member" ADD CONSTRAINT "member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project" ADD CONSTRAINT "project_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project" ADD CONSTRAINT "project_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_item" ADD CONSTRAINT "project_item_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_item" ADD CONSTRAINT "project_item_item_id_inspo_item_id_fk" FOREIGN KEY ("item_id") REFERENCES "public"."inspo_item"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_item" ADD CONSTRAINT "project_item_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_item" ADD CONSTRAINT "project_item_added_by_user_id_fk" FOREIGN KEY ("added_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "account_user_id_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "activity_segment_user_seen_idx" ON "activity_segment" USING btree ("user_id","last_seen_at");--> statement-breakpoint
@@ -258,5 +282,10 @@ CREATE INDEX "invitation_inviter_id_idx" ON "invitation" USING btree ("inviter_i
 CREATE INDEX "member_organization_id_idx" ON "member" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "member_user_id_idx" ON "member" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "member_org_user_uq" ON "member" USING btree ("organization_id","user_id");--> statement-breakpoint
+CREATE INDEX "project_org_idx" ON "project" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "project_created_by_idx" ON "project" USING btree ("created_by");--> statement-breakpoint
+CREATE INDEX "project_item_org_idx" ON "project_item" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "project_item_item_idx" ON "project_item" USING btree ("item_id");--> statement-breakpoint
+CREATE INDEX "project_item_added_by_idx" ON "project_item" USING btree ("added_by");--> statement-breakpoint
 CREATE INDEX "session_user_id_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");

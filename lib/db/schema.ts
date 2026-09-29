@@ -3,7 +3,7 @@
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey } from "drizzle-orm/pg-core";
 import type { InspoTags } from "@/types/inspo";
 
 /** CHECK that a text column holds one of these values */
@@ -141,6 +141,37 @@ export const inspoItem = pgTable("inspo_item", {
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
   index("inspo_item_created_by_idx").on(t.createdBy),
   oneOf("inspo_item_type_check", t.type, ["inspiration", "videos", "ideas", "documentaries"]),
+]);
+
+// ─── Projects ────────────────────────────────────────────────────────────────
+// Spaces inside a workspace to file references by what they are for (a landing,
+// a UI library…). An item can be in several projects; one in none is in the Inbox.
+// Filing never copies the item: the DESIGN.md, tags and thread stay the item's.
+
+export const project = pgTable("project", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("project_org_idx").on(t.organizationId),
+  index("project_created_by_idx").on(t.createdBy),
+]);
+
+export const projectItem = pgTable("project_item", {
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  /** Repeated here so a whole workspace's links load in one query */
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  addedBy: text("added_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.projectId, t.itemId] }),
+  index("project_item_org_idx").on(t.organizationId),
+  index("project_item_item_idx").on(t.itemId),
+  index("project_item_added_by_idx").on(t.addedBy),
 ]);
 
 // ─── DESIGN.md revisions ─────────────────────────────────────────────────────

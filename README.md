@@ -37,6 +37,10 @@ workspace.
 `db:init` is safe to run twice: it never loads over existing data. To start over, run
 `npm run seed -- --replace`.
 
+To refresh `.data/seed.json` from production while it still runs on Turso: run `npm run db:init`
+on an empty database with the seed file moved away, then
+`TURSO_DATABASE_URL=… TURSO_AUTH_TOKEN=… npm run db:copy-turso -- --replace`, then `npm run seed:dump`.
+
 The database is `postgres://postgres@127.0.0.1:5432/criterio` with no password. That is the default,
 so `DATABASE_URL` stays unset locally.
 

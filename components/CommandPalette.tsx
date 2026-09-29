@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { InspoItem } from "@/types/inspo";
 import type { Workspace } from "@/lib/workspace-core";
-import { normalizeWebUrl } from "@/lib/url";
+import { normalizeWebUrl, mediaKindOf } from "@/lib/url";
 import { authClient } from "@/lib/auth-client";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
@@ -54,13 +54,16 @@ export default function CommandPalette({ open, onOpenChange, items, hasDesignMd,
         {items.length > 0 && (
           <CommandGroup heading={t.palette.inspirations}>
             {items.map((it) => {
-              const md = hasDesignMd(it.web);
+              // An image or a video opens its thread here, never a raw file or the provider in a new tab
+              const inside = hasDesignMd(it.web) || mediaKindOf(it.web) !== "web";
+              const isImage = mediaKindOf(it.web) === "image";
               return (
                 <CommandItem key={it.id ?? it.web} value={`${it.name} ${it.web}`}
-                  onSelect={run(() => md ? onOpenItem(it) : window.open(it.web, "_blank", "noopener"))}>
-                  <img className="cmdk-item__favicon" alt="" src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host(it.web))}&sz=32`} />
+                  onSelect={run(() => inside ? onOpenItem(it) : window.open(it.web, "_blank", "noopener"))}>
+                  <img className="cmdk-item__favicon" alt="" style={isImage ? { objectFit: "cover" } : undefined}
+                    src={isImage ? it.web : `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host(it.web))}&sz=32`} />
                   <span className="cmdk-item__label">{it.name}</span>
-                  <CommandShortcut>{md ? "DESIGN.md" : t.palette.openSite}</CommandShortcut>
+                  <CommandShortcut>{hasDesignMd(it.web) ? "DESIGN.md" : inside ? t.card.comments : t.palette.openSite}</CommandShortcut>
                 </CommandItem>
               );
             })}

@@ -3,7 +3,8 @@
 // and app/api/files/[...key]/route.ts serves it after checking who is asking.
 // The key is the same in both drivers, so a reference never changes when files move.
 import "server-only";
-import { promises as fs } from "fs";
+import { promises as fs, createReadStream } from "fs";
+import { Readable } from "stream";
 import path from "path";
 import {
   S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command,
@@ -22,11 +23,14 @@ export function keyOf(url: string): string | null {
 }
 
 export interface StoredFile { body: Buffer; contentType: string; size: number }
+/** A file as a stream, for serving: `range` is set (and the status is 206) when part of it was asked for */
+export interface OpenedFile { stream: ReadableStream<Uint8Array>; contentType: string; size: number; range?: string }
 export interface Listed { key: string; uploadedAt: Date }
 
 interface Driver {
   put(key: string, body: Buffer, contentType: string): Promise<void>;
   get(key: string, range?: string): Promise<(StoredFile & { range?: string; total?: number }) | null>;
+  open(key: string, range?: string): Promise<OpenedFile | null>;
   exists(key: string): Promise<boolean>;
   del(keys: string[]): Promise<void>;
   list(prefix: string): Promise<Listed[]>;
@@ -60,6 +64,15 @@ function r2(): Driver {
         throw e;
       }
     },
+    async open(key, range) {
+      try {
+        const r = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key, Range: range }));
+        return { stream: r.Body!.transformToWebStream(), contentType: r.ContentType || "application/octet-stream", size: r.ContentLength ?? 0, range: r.ContentRange };
+      } catch (e) {
+        if (missing(e)) return null;
+        throw e;
+      }
+    },
     async exists(key) {
       try { await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key })); return true; }
       catch (e) { if (missing(e)) return false; throw e; }
@@ -87,8 +100,17 @@ function r2(): Driver {
 const ROOT = path.join(process.cwd(), ".data", "files");
 const TYPES: Record<string, string> = {
   ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif",
-  ".json": "application/json", ".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".ogg": "audio/ogg",
+  ".avif": "image/avif", ".json": "application/json", ".mp4": "video/mp4", ".webm": "video/webm", ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".ogg": "audio/ogg",
 };
+
+/** "bytes=0-9" → [0, 9] within a file of `size` bytes; null for no range or one it can't serve */
+function parseRange(range: string | undefined, size: number): [number, number] | null {
+  const m = range && /^bytes=(\d*)-(\d*)$/.exec(range);
+  if (!m || (!m[1] && !m[2])) return null;
+  const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
+  const end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+  return start <= end ? [start, end] : null;
+}
 
 function disk(): Driver {
   const file = (key: string) => path.join(ROOT, ...key.split("/"));
@@ -102,14 +124,26 @@ function disk(): Driver {
       try {
         const all = await fs.readFile(file(key));
         const contentType = TYPES[path.extname(key).toLowerCase()] ?? "application/octet-stream";
-        const m = range && /^bytes=(\d*)-(\d*)$/.exec(range);
-        if (m && (m[1] || m[2])) {
-          const start = m[1] ? Number(m[1]) : Math.max(0, all.length - Number(m[2]));
-          const end = m[1] && m[2] ? Math.min(Number(m[2]), all.length - 1) : all.length - 1;
+        const part = parseRange(range, all.length);
+        if (part) {
+          const [start, end] = part;
           const body = all.subarray(start, end + 1);
           return { body, contentType, size: body.length, range: `bytes ${start}-${end}/${all.length}`, total: all.length };
         }
         return { body: all, contentType, size: all.length };
+      } catch (e) {
+        if (gone(e)) return null;
+        throw e;
+      }
+    },
+    async open(key, range) {
+      try {
+        const { size } = await fs.stat(file(key));
+        const contentType = TYPES[path.extname(key).toLowerCase()] ?? "application/octet-stream";
+        const part = parseRange(range, size);
+        const [start, end] = part ?? [0, size - 1];
+        const stream = Readable.toWeb(createReadStream(file(key), { start, end })) as ReadableStream<Uint8Array>;
+        return { stream, contentType, size: end - start + 1, range: part ? `bytes ${start}-${end}/${size}` : undefined };
       } catch (e) {
         if (gone(e)) return null;
         throw e;
@@ -155,6 +189,8 @@ export async function putFile(key: string, body: Buffer, contentType: string): P
   return fileUrl(key);
 }
 export const getFile = (key: string, range?: string) => d().get(key, range);
+/** For serving: streams the file (or the asked range) without holding it in memory */
+export const openFile = (key: string, range?: string) => d().open(key, range);
 export const fileExists = (key: string) => d().exists(key);
 export const listFiles = (prefix: string) => d().list(prefix);
 

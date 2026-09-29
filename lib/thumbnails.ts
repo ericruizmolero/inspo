@@ -2,6 +2,7 @@
 // (see lib/items.ts); only file storage is left here. Files: lib/storage.ts, under inspo/<workspace>/thumbs/.
 import "server-only";
 import { putFile, deleteFiles, keyOf } from "./storage";
+import { mediaPrefix } from "./media";
 
 export type ThumbnailMap = Record<string, string>;
 
@@ -13,9 +14,10 @@ export async function uploadThumbnail(organizationId: string, filename: string, 
   return putFile(`${blobPrefix(organizationId)}${Date.now()}-${safe}`, buffer, file.type || "image/jpeg");
 }
 
-/** Is this stored path a thumbnail from this workspace? */
+/** Is this stored path a thumbnail from this workspace? An uploaded image is its own item's thumbnail. */
 export function ownsThumbnailFile(organizationId: string, url: string): boolean {
-  return keyOf(url)?.startsWith(blobPrefix(organizationId)) ?? false;
+  const key = keyOf(url);
+  return !!key && (key.startsWith(blobPrefix(organizationId)) || key.startsWith(mediaPrefix(organizationId)));
 }
 
 /** Delete without failing: an orphan thumbnail blocks nothing. */

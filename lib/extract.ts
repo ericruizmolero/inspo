@@ -149,3 +149,27 @@ export async function fetchSiteText(url: string): Promise<SiteText | null> {
     (await fetchHtml(url, { "User-Agent": UA, Accept: "text/html,*/*" }));
   return html ? parseSiteText(html) : null;
 }
+
+// Video pages hide their title behind scripts and consent walls; their oEmbed endpoints
+// give it straight away, with no key.
+const OEMBED: [RegExp, string][] = [
+  [/(^|\.)(youtube\.com|youtu\.be)$/i, "https://www.youtube.com/oembed?format=json&url="],
+  [/(^|\.)vimeo\.com$/i, "https://vimeo.com/api/oembed.json?url="],
+  [/(^|\.)loom\.com$/i, "https://www.loom.com/v1/oembed?url="],
+];
+
+/** A video link's title from its provider's oEmbed, or null (not a known provider, timeout, gone). */
+export async function videoTitleWithin(url: string, ms = 4000): Promise<string | null> {
+  let host = "";
+  try { host = new URL(url).hostname; } catch { return null; }
+  const endpoint = OEMBED.find(([re]) => re.test(host))?.[1];
+  if (!endpoint) return null;
+  try {
+    const res = await fetch(endpoint + encodeURIComponent(url), { signal: AbortSignal.timeout(ms) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { title?: unknown };
+    return typeof data.title === "string" && data.title.trim() ? data.title.trim() : null;
+  } catch {
+    return null;
+  }
+}

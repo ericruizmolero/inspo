@@ -1,5 +1,6 @@
 import { getSession, getCtx, listMembers } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
+import { loadProjects } from "@/lib/projects";
 import InspoClient from "@/components/InspoClient";
 import type { ReactNode } from "react";
 import { isAdmin } from "@/lib/activity";
@@ -18,8 +19,9 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
 
   const ws = ctx.workspace;
   // Everything the library needs on open, in parallel and before painting
-  const [{ items, thumbnailMap, tagMap }, members, admin, quota, comments, designMdIndex, open] = await Promise.all([
+  const [{ items, thumbnailMap, tagMap }, { projects, links }, members, admin, quota, comments, designMdIndex, open] = await Promise.all([
     loadWorkspaceData(ws.id),
+    loadProjects(ws.id),
     listMembers(ws.id),
     isAdmin(ctx.user.email),
     quotaStatus(ws),
@@ -36,6 +38,8 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
       items={items}
       initialThumbnailMap={thumbnailMap}
       initialTagMap={tagMap}
+      initialProjects={projects}
+      initialProjectLinks={links}
       aiEnabled={!!process.env.TYPESAFE_API_KEY}
       user={ctx.user}
       workspace={ctx.workspace}

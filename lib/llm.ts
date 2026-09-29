@@ -12,6 +12,8 @@ export interface LlmInput {
   system: string;
   text: string;
   image?: Buffer | null;
+  /** Media type of `image` (a JPEG screenshot unless said otherwise) */
+  imageType?: string;
   /** Structured output. Only providers that honour it strictly are used. */
   schema?: z.ZodType;
   maxTokens: number;
@@ -39,7 +41,7 @@ export async function llm(i: LlmInput): Promise<LlmResult> {
   if (!key) throw new Error("OPENROUTER_API_KEY is not set");
 
   const user: unknown[] = [];
-  if (i.image) user.push({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${i.image.toString("base64")}` } });
+  if (i.image) user.push({ type: "image_url", image_url: { url: `data:${i.imageType ?? "image/jpeg"};base64,${i.image.toString("base64")}` } });
   user.push({ type: "text", text: i.text });
 
   const body = {
