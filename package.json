@@ -24,7 +24,8 @@
     "seed:dump": "tsx --conditions=react-server scripts/seed.ts dump",
     "db:init": "tsx --conditions=react-server scripts/seed.ts init",
     "move:blob-to-r2": "tsx --conditions=react-server scripts/move-blob-to-r2.ts",
-    "db:copy-turso": "tsx --conditions=react-server scripts/copy-turso.ts"
+    "db:copy-turso": "tsx --conditions=react-server scripts/copy-turso.ts",
+    "files:pull": "tsx scripts/pull-files.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",

@@ -73,8 +73,9 @@ on purpose.
 Thumbnails, comment screenshots, DESIGN.md images and captures live in a private Cloudflare R2
 bucket in production (`lib/storage.ts`, S3 API) and in `.data/files` locally. The database stores
 each one as a path, `/api/files/<key>`, and `app/api/files/[...key]/route.ts` serves it after
-checking the workspace. Images copied from production point at R2, so locally they show as broken
-unless you download them.
+checking the workspace. Images copied from production point at R2: to see them locally, run
+`npm run files:pull` once with the `R2_*` keys in the shell. It copies the bucket into
+`.data/files` (read-only on R2), so the local app shows them without holding the keys.
 
 Vercel marks every production value as Sensitive, so `vercel env pull` only brings back the text
 `[SENSITIVE]`. Real values come from the person who holds them.
