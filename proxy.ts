@@ -10,7 +10,8 @@ import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromH
 // /extension/privacy: the extension's privacy page, linked from the Chrome Web Store
 // /api/ext/: the browser extension gets in with its key (lib/ext-keys.ts), not a cookie
 // /api/live/a/: the live view's frame has an opaque origin and sends no cookies; a signed token in the path is its proof (lib/live-html.ts)
-const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/live\/a\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/];
+// /api/cron/: the scheduler has no session; each route checks CRON_SECRET itself
+const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/live\/a\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;
