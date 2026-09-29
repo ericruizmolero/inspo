@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
-import { renderWhyMd, type DesignSpec, type DesignWhy } from "@/types/design";
+import { BRIEF_KEYS, noDashes, type DesignSpec, type DesignBrief } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { fmtDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
@@ -56,9 +56,6 @@ const IcComment = (
 const IcCopy = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4.5" y="4.5" width="8" height="8" rx="1.6" /><path d="M9.5 4.5V3a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 3v5A1.5 1.5 0 003 9.5h1.5" /></svg>
 );
-const IcChevron = (
-  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 2L6.5 5l-3 3" /></svg>
-);
 const IcEdit = (
   <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11H3v-2z" /></svg>
 );
@@ -85,24 +82,6 @@ function useCopy(ms = 1400): [boolean, (text: string) => void] {
   return [copied, copy];
 }
 
-// Tries to load the families from Google Fonts. If they aren't there, the browser
-// ignores the sheet and the fallback declared in the spec applies.
-function useGoogleFonts(families: string[]) {
-  useEffect(() => {
-    const links = families.map((f) => {
-      const id = `gf-${f.replace(/\s+/g, "-").toLowerCase()}`;
-      if (document.getElementById(id)) return null;
-      const link = document.createElement("link");
-      link.id = id;
-      link.rel = "stylesheet";
-      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f).replace(/%20/g, "+")}:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap`;
-      document.head.appendChild(link);
-      return link;
-    });
-    return () => { links.forEach((l) => l?.remove()); };
-  }, [families.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
-}
-
 function pageBg(spec: DesignSpec): string {
   const neutrals = spec.colors.filter((c) => c.group === "neutral");
   const pick = (spec.theme === "dark" ? neutrals.find((c) => isDark(c.hex)) : neutrals.find((c) => !isDark(c.hex)))
@@ -119,20 +98,11 @@ const IcLock = (
   <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M2 4V3a2.5 2.5 0 015 0v1h.5a1 1 0 011 1v3.5a1 1 0 01-1 1h-6a1 1 0 01-1-1V5a1 1 0 011-1H2zm1 0h3V3a1.5 1.5 0 00-3 0v1z" /></svg>
 );
 
-const LIVE_WIDTH = 1440;
-const LIVE_TIMEOUT_MS = 8000;
 
-function ScrollShot({ src, alt, bg, host, url, theme }: { src: string; alt: string; bg: string; host: string; url: string; theme?: string }) {
-  const { t } = useT();
+function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; bg: string; host: string; theme?: string }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [dist, setDist] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  // The live site, in a sandboxed frame over the screenshot. It loads from our own route (the
-  // site's headers would refuse a frame, and its assets need CORS the frame cannot get); the
-  // frame is 1440 wide and scaled to fit.
-  const [live, setLive] = useState<"off" | "loading" | "on" | "failed">("off");
-  const [liveSrc, setLiveSrc] = useState<string | null>(null);
-  const [liveScale, setLiveScale] = useState({ scale: 1, height: 900 });
 
   const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -143,53 +113,16 @@ function ScrollShot({ src, alt, bg, host, url, theme }: { src: string; alt: stri
     setLoaded(true);
   };
 
-  useEffect(() => {
-    if (live !== "on") return;
-    const box = boxRef.current;
-    if (!box) return;
-    const measure = () => {
-      const scale = box.clientWidth / LIVE_WIDTH;
-      setLiveScale({ scale, height: Math.ceil(box.clientHeight / scale) });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(box);
-    return () => ro.disconnect();
-  }, [live]);
-
-  const toggleLive = async () => {
-    if (live === "on") { setLive("off"); return; }
-    if (live === "loading") return;
-    // "failed" retries: the site may have been slow, not gone
-    if (liveSrc) { setLive("on"); return; }
-    setLive("loading");
-    try {
-      const res = await fetch(`/api/live?url=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(LIVE_TIMEOUT_MS) });
-      if (!res.ok) throw new Error(String(res.status));
-      const { src } = (await res.json()) as { src: string };
-      setLiveSrc(src);
-      setLive("on");
-    } catch {
-      setLive("failed");
-    }
-  };
-
   const duration = Math.max(6, Math.round(dist / 140));
-  const liveLabel = live === "loading" ? t.designMd.liveLoading : live === "failed" ? t.designMd.liveFailed : t.designMd.liveSite;
 
   return (
-    <div className={`dm-frame${theme === "dark" ? " dm-frame--dark" : ""}${live === "on" ? " dm-frame--live" : ""}`} style={{ background: bg }}>
+    <div className={`dm-frame${theme === "dark" ? " dm-frame--dark" : ""}`} style={{ background: bg }}>
       <div className="dm-frame__bar">
         <span className="dm-frame__left" aria-hidden>
           <span className="dm-frame__lights"><i /><i /><i /></span>
           <span className="dm-frame__nav">{IcChev}<span className="dm-frame__fwd">{IcChev}</span></span>
         </span>
         <span className="dm-frame__url" aria-hidden>{IcLock}<span>{host}</span></span>
-        <span className="dm-frame__right">
-          <button type="button" className={`dm-frame__live is-${live}`} onClick={toggleLive} disabled={live === "loading"} aria-pressed={live === "on"} title={live === "failed" ? t.designMd.liveFailedTitle : undefined}>
-            <i />{liveLabel}
-          </button>
-        </span>
       </div>
       <div ref={boxRef} className={`dm-shot${loaded ? " is-loaded" : ""}`}>
         {!loaded && <div className="shimmer" />}
@@ -199,89 +132,89 @@ function ScrollShot({ src, alt, bg, host, url, theme }: { src: string; alt: stri
           onLoad={onLoad}
           style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${duration}s` } as React.CSSProperties}
         />
-        {live === "on" && liveSrc && (
-          // allow-scripts only: the page runs, but in an opaque origin with no way to our session or DOM
-          <iframe
-            className="dm-live"
-            title={alt}
-            sandbox="allow-scripts"
-            referrerPolicy="no-referrer"
-            src={liveSrc}
-            style={{ width: LIVE_WIDTH, height: liveScale.height, transform: `scale(${liveScale.scale})` }}
-          />
-        )}
       </div>
     </div>
   );
 }
 
-// ─── Colors ───────────────────────────────────────────────────────────────────
-// The order colors are grouped in; the label comes from the dictionary.
-const GROUPS: DesignSpec["colors"][number]["group"][] = ["brand", "accent", "semantic", "neutral"];
+// ─── Brief ────────────────────────────────────────────────────────────────────
+// One line per aspect. Specs from before the brief existed get what can be read off
+// their other fields; the rest asks for a regeneration.
+function briefOf(spec: DesignSpec, locale: Locale): Partial<DesignBrief> {
+  const own = (locale === "es" && spec.es?.brief) || spec.brief;
+  if (own) return Object.fromEntries(Object.entries(own).map(([k, v]) => [k, noDashes(v)]));
+  // First sentence, cut at a clause if it runs long: these fields were written as paragraphs
+  const first = (s: string) => {
+    const one = s.split(/(?<=\.)\s/)[0];
+    return one.length <= 120 ? one : `${one.split(/[:;(]/)[0].trim().slice(0, 117)}…`;
+  };
+  return {
+    imagery: noDashes(first(spec.imagery)),
+    motion: noDashes(first(spec.motion)),
+  };
+}
 
-function Swatch({ c }: { c: DesignSpec["colors"][number] }) {
+function ColorDot({ c }: { c: DesignSpec["colors"][number] }) {
   const { t } = useT();
   const [copied, copy] = useCopy();
   return (
-    <button className="dm-swatch" onClick={() => copy(c.hex)} title={t.designMd.copyHex}>
-      <span className="dm-swatch__chip" style={{ background: c.hex, color: isDark(c.hex) ? "rgba(255,255,255,0.85)" : "rgba(0,0,0,0.7)" }}>
-        <span className="dm-swatch__copy">{copied ? IcCheck : IcCopy}</span>
-      </span>
-      <span className="dm-swatch__name">{c.name}</span>
-      <span className="dm-swatch__hex">{copied ? t.designMd.copiedShort : c.hex}</span>
-      <span className="dm-swatch__role">{c.role}</span>
+    <button type="button" className="dm-dot" data-hex={copied ? t.common.copied : c.hex} style={{ background: c.hex, color: isDark(c.hex) ? "#fff" : "#000" }} onClick={() => copy(c.hex)} aria-label={`${c.name} ${c.hex} · ${t.designMd.copyHex}`}>
+      {copied && IcCheck}
     </button>
   );
 }
 
-function PaletteStrip({ colors }: { colors: DesignSpec["colors"] }) {
-  return (
-    <div className="dm-strip">
-      {colors.map((c) => (
-        <span key={c.name + c.hex} className="dm-strip__seg" style={{ background: c.hex }} title={`${c.name} · ${c.hex}`}>
-          <span style={{ color: isDark(c.hex) ? "rgba(255,255,255,0.8)" : "rgba(0,0,0,0.65)" }}>{c.hex}</span>
-        </span>
-      ))}
-    </div>
-  );
-}
+// The logo and the icons are shown on the site's own background, as they were measured
+// next/font serves "Inter" as "__Inter_1a2b3c": compare names without that wrapping
+const fontKey = (f: string) => f.replace(/^_+/, "").replace(/_[0-9a-f]{5,}$/i, "").replace(/[_\s-]+/g, " ").trim().toLowerCase();
 
-// ─── Typography ───────────────────────────────────────────────────────────────
-function FontCard({ f, sample }: { f: DesignSpec["fonts"][number]; sample: string }) {
-  const { t } = useT();
-  const stack = `"${f.family}", ${f.fallback}`;
-  const isDisplay = f.role === "display";
-  const weight = f.weights.includes(700) && !isDisplay ? 700 : f.weights[0] ?? 400;
+function Brief({ spec, logoUrl, icons, fontFiles, bg }: { spec: DesignSpec; logoUrl?: string; icons?: string[]; fontFiles?: { family: string; formats: string[] }[]; bg: string }) {
+  const { locale, t } = useT();
+  const brief = briefOf(spec, locale);
+  const families = [...new Set(spec.fonts.map((f) => f.family))].slice(0, 3);
+  const missing = <span className="dm-brief__missing">{t.designMd.briefMissing}</span>;
+  const cell: Record<(typeof BRIEF_KEYS)[number], ReactNode> = {
+    typography: (
+      <ul className="dm-fams">
+        {families.map((f) => {
+          const k = fontKey(f);
+          const file = fontFiles?.find((x) => fontKey(x.family) === k) ?? fontFiles?.find((x) => fontKey(x.family).startsWith(k) || k.startsWith(fontKey(x.family)));
+          return <li key={f}>{f}{file && <span className="dm-fams__fmt">.{file.formats[0]}</span>}</li>;
+        })}
+      </ul>
+    ),
+    imagery: brief.imagery ?? missing,
+    logo: logoUrl
+      ? <span className="dm-logo" style={{ background: bg }}><img srcSet={`${logoUrl} 2x`} alt={spec.brand} /></span>
+      : brief.logo ?? missing,
+    motion: brief.motion ?? missing,
+    color: <span className="dm-dots">{spec.colors.map((c) => <ColorDot key={c.name + c.hex} c={c} />)}</span>,
+    iconography: icons?.length ? (
+      <>
+        <span className="dm-icons" style={{ background: bg }}>
+          {icons.map((svg, i) => <img key={i} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} alt="" />)}
+        </span>
+        {brief.iconography && <span className="dm-brief__sub">{brief.iconography}</span>}
+      </>
+    ) : brief.iconography ?? missing,
+    voice: brief.voice ?? missing,
+    framework: brief.framework ?? missing,
+  };
   return (
-    <div className="dm-font">
-      <div className="dm-font__specimen" style={{ fontFamily: stack }}>
-        <div className="dm-font__aa" style={{ fontWeight: weight }}>Aa</div>
-        <div className="dm-font__line" style={{ fontWeight: weight }}>{sample}</div>
-        <div className="dm-font__glyphs">ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz 0123456789 &amp;?!</div>
-      </div>
-      <div className="dm-font__body">
-        <div className="dm-font__head">
-          <span className="dm-font__family">{f.family}</span>
-          <span className="dm-tag">{t.designMd.fontRoles[f.role]}</span>
+    <dl className="dm-brief">
+      {BRIEF_KEYS.map((k) => (
+        <div key={k} className="dm-brief__row">
+          <dt>{t.designMd.brief[k]}</dt>
+          <dd>{cell[k]}</dd>
         </div>
-        <p className="dm-font__usage">{f.usage}</p>
-        <dl className="dm-kv">
-          <dt>Weights</dt><dd>{f.weights.join(" · ")}</dd>
-          <dt>Sizes</dt><dd>{f.sizes}</dd>
-          <dt>Line height</dt><dd>{f.lineHeight}</dd>
-          <dt>Tracking</dt><dd>{f.letterSpacing}</dd>
-          <dt>Fallback</dt><dd className="dm-kv__mono">{f.fallback}</dd>
-        </dl>
-      </div>
-    </div>
+      ))}
+    </dl>
   );
 }
 
 // ─── Section header with "Suggest a change" ───────────────────────────────────
-function SectionHead({ title, meta, section, onRevise, open: expanded, onToggle }: {
+function SectionHead({ title, meta, section, onRevise }: {
   title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn;
-  /** Folding section: the title opens and closes it */
-  open?: boolean; onToggle?: () => void;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -315,13 +248,7 @@ function SectionHead({ title, meta, section, onRevise, open: expanded, onToggle 
   return (
     <>
       <header className="dm-section__head">
-        {onToggle ? (
-          <h2 className="dm-h">
-            <button type="button" className="dm-fold__toggle" aria-expanded={expanded} onClick={onToggle}>
-              <span className="dm-fold__chev" aria-hidden>{IcChevron}</span>{title}
-            </button>
-          </h2>
-        ) : <h2 className="dm-h">{title}</h2>}
+        <h2 className="dm-h">{title}</h2>
         <span className="dm-section__right">
           {meta && <span className="dm-section__meta">{meta}</span>}
           {onRevise && (
@@ -400,145 +327,17 @@ function History({ revisions, onRevert, busy }: { revisions: RevisionMeta[]; onR
   );
 }
 
-// Secondary sections start closed: the first screen is identity, color and type.
-function Fold({ title, meta, section, onRevise, children }: {
-  title: string; meta?: React.ReactNode; section: string; onRevise?: ReviseFn; children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  return (
-    <section className={`dm-section dm-fold${open ? " is-open" : ""}`}>
-      <SectionHead title={title} meta={meta} section={section} onRevise={onRevise} open={open} onToggle={() => setOpen((o) => !o)} />
-      {open && children}
-    </section>
-  );
-}
-
-// ─── Why it's here ─────────────────────────────────────────────────────────────
-// The human root of the inspo (the saver's note, the thread) connected to the measured
-// spec by a model. Per workspace and cached server-side; a new comment rebuilds it.
-type WhyState = { status: "loading" | "ready" | "error"; why?: DesignWhy; error?: string };
-
-function useWhy(url: string, ready: boolean, commentCount: number, specStamp: string): WhyState {
-  const [state, setState] = useState<WhyState>({ status: "loading" });
-  useEffect(() => {
-    if (!ready) return;
-    const ctrl = new AbortController();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    setState((s) => (s.why ? s : { status: "loading" }));
-    // A stale answer (the thread grew) shows at once while the server rebuilds; a few quiet
-    // refetches pick up the fresh one. Never a spinner over something we can already show.
-    const load = (attempt: number) => fetch(`/api/design-md/why?url=${encodeURIComponent(url)}`, { signal: ctrl.signal })
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-        setState({ status: "ready", why: data.why });
-        if (data.stale && attempt < 4) timer = setTimeout(() => load(attempt + 1), 20000);
-      })
-      .catch((e) => { if (!ctrl.signal.aborted) setState((s) => (s.why ? s : { status: "error", error: e instanceof Error ? e.message : String(e) })); });
-    load(0);
-    return () => { ctrl.abort(); clearTimeout(timer); };
-  }, [url, ready, commentCount, specStamp]);
-  return state;
-}
-
-function WhySection({ state }: { state: WhyState }) {
-  const { t } = useT();
-  const why = state.why;
-  // Captures open in a viewer inside the sheet (a new tab has no way back in the preview)
-  const [lightbox, setLightbox] = useState<{ list: { url: string; video?: boolean }[]; idx: number } | null>(null);
-  const lightboxRef = useRef(lightbox);
-  lightboxRef.current = lightbox;
-  useEffect(() => {
-    // Capture phase on window, ahead of the sheet's own Esc handler on document: Esc closes the viewer, not the sheet
-    const onKey = (e: KeyboardEvent) => {
-      const lb = lightboxRef.current;
-      if (!lb) return;
-      if (e.key === "Escape") { e.stopPropagation(); setLightbox(null); }
-      if (e.key === "ArrowRight") setLightbox({ list: lb.list, idx: (lb.idx + 1) % lb.list.length });
-      if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, []);
-  return (
-    <section className="dm-section dm-why">
-      <header className="dm-section__head">
-        <h2 className="dm-h">{t.designMd.sections.why}</h2>
-        {why && why.voices > 0 && <span className="dm-section__meta">{t.designMd.whyMeta(why.voices)}</span>}
-      </header>
-      {state.status === "loading" && !why && <p className="dm-why__note"><span className="spinner spinner--sm" /> {t.designMd.whyLoading}</p>}
-      {state.status === "error" && <p className="dm-why__note">{t.designMd.whyFailed}</p>}
-      {why && why.voices === 0 && <p className="dm-why__note">{t.designMd.whyEmpty}</p>}
-      {why && why.voices > 0 && !why.highlights.length && <p className="dm-why__note">{t.designMd.whyNothingConcrete}</p>}
-      {why && why.highlights.length > 0 && (
-        <ol className="dm-why__list">
-          {why.highlights.map((h, i) => (
-            <li key={i} className={`dm-why__item is-${h.status}`}>
-              {/* The thing itself first; the words read as its caption */}
-              {(() => {
-                // Videos of the interaction first (they move), then the stills; the viewer takes both
-                const media: { url: string; video?: boolean }[] = [...(h.videoUrls ?? []).map((url) => ({ url, video: true })), ...(h.shotUrls ?? []).map((url) => ({ url }))];
-                return media.length > 0 && (
-                  <div className="dm-why__shots" style={{ "--cols": Math.min(3, media.length) } as React.CSSProperties}>
-                    {media.map((m, j) => (
-                      <button key={j} type="button" className="dm-why__shot" onClick={() => setLightbox({ list: media, idx: j })} aria-label={t.comments.screenshot}>
-                        {m.video
-                          ? <video src={m.url} autoPlay muted loop playsInline preload="metadata" />
-                          : <img src={m.url} alt="" loading="lazy" decoding="async" />}
-                      </button>
-                    ))}
-                  </div>
-                );
-              })()}
-              <div className="dm-why__caption">
-                <blockquote className="dm-why__quote">
-                  <p>{h.quote}</p>
-                  <footer>{h.author}</footer>
-                </blockquote>
-                <div className="dm-why__body">
-                  {h.values.length > 0 && (
-                    <div className="dm-why__values">{h.values.map((v, j) => <code key={j} className="dm-why__value">{v}</code>)}</div>
-                  )}
-                  {h.status === "unverifiable" && <p className="dm-why__note-text dm-why__note-text--muted">{t.designMd.whyUnverifiable}{h.note ? ` ${h.note}` : ""}</p>}
-                  {h.status !== "unverifiable" && h.note && <p className="dm-why__note-text">{h.note}</p>}
-                  {h.audioUrls?.map((u, j) => <audio key={j} className="dm-why__audio" src={u} controls preload="metadata" />)}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
-      {lightbox && (() => {
-        const many = lightbox.list.length > 1;
-        const go = (d: number) => setLightbox({ list: lightbox.list, idx: (lightbox.idx + d + lightbox.list.length) % lightbox.list.length });
-        return (
-          <div className="cm-lightbox" role="dialog" onClick={() => setLightbox(null)}>
-            <Button variant="icon" className="cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</Button>
-            {many && <button className="cm-lightbox__nav is-prev" aria-label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
-            {lightbox.list[lightbox.idx].video
-              ? <video key={lightbox.idx} className="cm-lightbox__img" src={lightbox.list[lightbox.idx].url} controls autoPlay loop playsInline onClick={(e) => e.stopPropagation()} />
-              : <img key={lightbox.idx} className="cm-lightbox__img" src={lightbox.list[lightbox.idx].url} alt="" onClick={(e) => e.stopPropagation()} />}
-            {many && <button className="cm-lightbox__nav is-next" aria-label={t.comments.next} onClick={(e) => { e.stopPropagation(); go(1); }}>{IcChevron}</button>}
-            {many && <div className="cm-lightbox__caption"><span className="cm-lightbox__count">{lightbox.idx + 1} / {lightbox.list.length}</span></div>}
-          </div>
-        );
-      })()}
-    </section>
-  );
-}
-
 // ─── Sheet ────────────────────────────────────────────────────────────────────
-function SpecPanel({ spec, entry, url, date, onRevise, why }: { spec: DesignSpec; entry: { screenshotUrl?: string; model: string; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn; why: WhyState }) {
+// Brief on purpose: the screenshot and eight lines. Every value lives in the Markdown
+// tab and the downloaded file.
+function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; entry: { screenshotUrl?: string; logoUrl?: string; icons?: string[]; fontFiles?: { family: string; formats: string[] }[]; revisions?: RevisionMeta[] }; url: string; date: string; onRevise?: ReviseFn }) {
   const { locale, t } = useT();
-  useGoogleFonts(spec.fonts.map((f) => f.family));
   const [promptCopied, copyPrompt] = useCopy();
   const bg = pageBg(spec);
   const host = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const scale = [...spec.typeScale].sort((a, b) => b.size - a.size);
 
   return (
     <div className="dm-spec">
-      {/* Hero */}
       <section className="dm-hero">
         <div className="dm-hero__text">
           <div className="dm-eyebrow">
@@ -554,147 +353,16 @@ function SpecPanel({ spec, entry, url, date, onRevise, why }: { spec: DesignSpec
             ) : null}
           </div>
           <h1 className="display dm-brand">{spec.brand}</h1>
-          <p className="dm-tagline">{spec.tagline}</p>
-          <p className="dm-desc">{spec.description}</p>
+          <p className="dm-tagline">{noDashes((locale === "es" && spec.es?.tagline) || spec.tagline)}</p>
+          <Brief spec={spec} logoUrl={entry.logoUrl} icons={entry.icons} fontFiles={entry.fontFiles} bg={bg} />
           <div className="dm-hero__actions">
             <Button variant="ghost" size="sm" onClick={() => copyPrompt(spec.agentPrompt)}>
               {promptCopied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyPrompt}</>}
             </Button>
           </div>
-          {onRevise && <div className="dm-hero__revise"><SectionHead title={t.designMd.sections.general} section="general" onRevise={onRevise} /></div>}
+          {onRevise && <div className="dm-hero__revise"><SectionHead title={t.designMd.sections.brief} section="brief" onRevise={onRevise} /></div>}
         </div>
-        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} url={url} theme={spec.theme} />}
-      </section>
-
-      <WhySection state={why} />
-
-      {/* Colors */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.color} meta={t.designMd.colorMeta(spec.colors.length)} section="color" onRevise={onRevise} />
-        <PaletteStrip colors={spec.colors} />
-        {GROUPS.map((key) => {
-          const cs = spec.colors.filter((c) => c.group === key);
-          if (!cs.length) return null;
-          return (
-            <div key={key} className="dm-group">
-              <div className="dm-group__label">{t.designMd.colorGroups[key]}<span>{cs.length}</span></div>
-              <div className="dm-swatches">{cs.map((c) => <Swatch key={c.name + c.hex} c={c} />)}</div>
-            </div>
-          );
-        })}
-      </section>
-
-      {/* Typography */}
-      <section className="dm-section">
-        <SectionHead title={t.designMd.sections.typography} meta={spec.fonts.map((f) => f.family).join(" + ")} section="typography" onRevise={onRevise} />
-        <div className="dm-fonts">
-          {spec.fonts.map((f) => <FontCard key={f.family + f.role} f={f} sample={f.role === "mono" ? host : spec.tagline} />)}
-        </div>
-
-        <div className="dm-subhead">{t.designMd.scale}</div>
-        <div className="dm-scale">
-          {scale.map((t) => {
-            const f = spec.fonts.find((x) => x.family === t.family);
-            return (
-              <div key={t.role + t.size} className="dm-scale__row">
-                <div className="dm-scale__meta">
-                  <span className="dm-scale__role">{t.role}</span>
-                  <span className="dm-scale__vals">{Math.round(t.size)}px · {t.weight} · {t.lineHeight}{t.letterSpacing && t.letterSpacing !== "normal" ? ` · ${t.letterSpacing}` : ""}</span>
-                  <span className="dm-scale__family">{t.family}</span>
-                </div>
-                <div
-                  className="dm-scale__sample"
-                  style={{
-                    fontFamily: `"${t.family}", ${f?.fallback ?? "system-ui, sans-serif"}`,
-                    fontSize: Math.min(t.size, 64),
-                    fontWeight: t.weight,
-                    lineHeight: t.lineHeight,
-                    letterSpacing: t.letterSpacing === "normal" ? undefined : t.letterSpacing,
-                  }}
-                >
-                  {spec.brand}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Tokens */}
-      <Fold title={t.designMd.sections.spacing} meta={t.designMd.densityMeta(t.designMd.density[spec.spacing.density])} section="spacing" onRevise={onRevise}>
-        <div className="dm-tokens">
-          <div className="dm-token"><span className="dm-token__k">{t.designMd.baseUnit}</span><span className="dm-token__v">{spec.spacing.baseUnit}</span></div>
-          <div className="dm-token"><span className="dm-token__k">{t.designMd.maxWidth}</span><span className="dm-token__v">{spec.spacing.maxWidth}</span></div>
-          <div className="dm-token"><span className="dm-token__k">{t.designMd.sectionGap}</span><span className="dm-token__v">{spec.spacing.sectionGap}</span></div>
-          <div className="dm-token"><span className="dm-token__k">{t.designMd.cardPadding}</span><span className="dm-token__v">{spec.spacing.cardPadding}</span></div>
-          <div className="dm-token"><span className="dm-token__k">{t.designMd.elementGap}</span><span className="dm-token__v">{spec.spacing.elementGap}</span></div>
-          {spec.radii.map((r) => (
-            <div key={r.element} className="dm-token dm-token--radius">
-              <span className="dm-radius" style={{ borderRadius: r.value }} />
-              <span className="dm-token__k">{r.element}</span>
-              <span className="dm-token__v">{r.value}</span>
-            </div>
-          ))}
-        </div>
-      </Fold>
-
-      {/* Components */}
-      <Fold title={t.designMd.sections.components} meta={String(spec.components.length)} section="components" onRevise={onRevise}>
-        <div className="dm-components">
-          {spec.components.map((c) => (
-            <div key={c.name} className="dm-component">
-              <div className="dm-component__name">{c.name}</div>
-              <div className="dm-component__role">{c.role}</div>
-              <p className="dm-component__spec">{c.spec}</p>
-            </div>
-          ))}
-        </div>
-      </Fold>
-
-      {/* Do / Don't */}
-      <Fold title={t.designMd.sections.rules} section="rules" onRevise={onRevise}>
-        <div className="dm-two">
-          <ul className="dm-rules dm-rules--do">
-            {spec.dos.map((d, i) => <li key={i}><span className="dm-rules__mark">{IcCheck}</span>{d}</li>)}
-          </ul>
-          <ul className="dm-rules dm-rules--dont">
-            {spec.donts.map((d, i) => <li key={i}><span className="dm-rules__mark">{IcX}</span>{d}</li>)}
-          </ul>
-        </div>
-      </Fold>
-
-      {/* Notes */}
-      <Fold title={t.designMd.sections.system} section="system" onRevise={onRevise}>
-        <div className="dm-notes">
-          {[[t.designMd.elevation, spec.elevation], [t.designMd.layout, spec.layout], [t.designMd.imagery, spec.imagery], [t.designMd.motion, spec.motion]].map(([k, v]) => (
-            <div key={k} className="dm-note"><div className="dm-note__k">{k}</div><p>{v}</p></div>
-          ))}
-        </div>
-      </Fold>
-
-      {/* Similar */}
-      <Fold title={t.designMd.sections.related} section="related" onRevise={onRevise}>
-        <ul className="dm-similar">
-          {spec.similar.map((s) => <li key={s.brand}><strong>{s.brand}</strong><span>{s.why}</span></li>)}
-        </ul>
-      </Fold>
-
-      {/* Prompt */}
-      <section className="dm-section">
-        <div className="dm-prompt">
-          <div className="dm-prompt__head">
-            <div>
-              <div className="dm-h" style={{ margin: 0 }}>{t.designMd.agentPrompt}</div>
-              <div className="dm-section__meta">{t.designMd.agentPromptHint}</div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => copyPrompt(spec.agentPrompt)}>
-              {promptCopied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.common.copy}</>}
-            </Button>
-          </div>
-          <p className="dm-prompt__text">{spec.agentPrompt}</p>
-          {onRevise && <div className="dm-prompt__revise"><SectionHead title={t.designMd.sections.prompt} section="prompt" onRevise={onRevise} /></div>}
-        </div>
-        <div className="dm-colophon">{t.designMd.colophon(entry.model)}</div>
+        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
       </section>
     </div>
   );
@@ -716,10 +384,7 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
   const ready = state?.status === "ready" && !!entry;
   const spec = entry?.spec;
   const revisions = entry?.revisions ?? [];
-  // The team's "why": rebuilt when the thread grows or the spec changes (a revision, a regeneration)
-  const why = useWhy(url, ready, commentCount, `${entry?.generatedAt ?? ""}:${revisions[0]?.id ?? ""}`);
-  // This workspace's file: the global DESIGN.md plus its own "Why it's here"
-  const markdown = entry ? (why.why?.highlights.length ? `${entry.markdown}\n${renderWhyMd(why.why)}` : entry.markdown) : "";
+  const markdown = entry?.markdown ?? "";
 
   // Sends an objection to Claude and updates the entry with the corrected spec
   const revise: ReviseFn = async (section, comment) => {
@@ -836,7 +501,7 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
               ? <History revisions={revisions} onRevert={revert} busy={reverting} />
               : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>
           ) : activeView === "spec" && spec
-            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} why={why} />
+            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} />
             : (
               <div className="dm-md">
                 <div className="dm-md__head">

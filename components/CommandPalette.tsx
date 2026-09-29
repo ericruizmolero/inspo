@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { sectionIcon } from "./section-icons";
+import { enterFeedbackMode } from "./feedback-mode";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
 } from "@/components/ui/command";
@@ -49,6 +50,7 @@ export default function CommandPalette({ open, onOpenChange, items, hasDesignMd,
           )}
           <CommandItem onSelect={run(onAdd)}><span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addInspo}</CommandItem>
           <CommandItem onSelect={run(onDirectory)}><span className="cmdk-item__icon">{Icons.compass}</span>{t.palette.openDirectory}</CommandItem>
+          <CommandItem value={`feedback ${t.feedback.open}`} onSelect={run(enterFeedbackMode)}><span className="cmdk-item__icon">{sectionIcon("feedback")}</span>{t.feedback.open}</CommandItem>
         </CommandGroup>
 
         {items.length > 0 && (

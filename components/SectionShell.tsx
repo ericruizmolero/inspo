@@ -7,11 +7,12 @@ import type { ReactNode } from "react";
 import { useT } from "./I18nProvider";
 import Logo from "./Logo";
 import { sectionIcon } from "./section-icons";
+import FeedbackEntry from "./FeedbackEntry";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu,
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -54,6 +55,9 @@ function Nav({ title, base, groups }: { title: string; base: string; groups: She
           ))}
         </nav>
       </SidebarContent>
+      <SidebarFooter className="app-sidebar__footer">
+        <FeedbackEntry onPick={close} />
+      </SidebarFooter>
     </Sidebar>
   );
 }

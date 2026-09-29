@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { oklchToHex } from "../lib/design-extract";
 import { normalizeSpec } from "../lib/design-md";
-import type { DesignSpec } from "../types/design";
+import { noDashes, type DesignSpec } from "../types/design";
 
 // oklch → hex: the 21st.dev border measured by Opus is #27272a99
 const c = oklchToHex({ border: "oklch(0.274 0.005 286.033 / 0.6)", white: "oklch(1 0 0)", black: "oklch(0% 0 0)", keep: "rgb(1, 2, 3)" });
@@ -17,5 +17,12 @@ const spec = normalizeSpec({
 } as unknown as DesignSpec);
 assert.deepEqual(spec.fonts.map((f) => f.role), ["body", "mono"]);
 assert.deepEqual(spec.typeScale.map((t) => [t.family, t.lineHeight]), [["Jet Brains", 1.5], ["Founders Grotesk", 1.2]]);
+
+// No machine dashes in what people read: ranges keep a hyphen, the rest becomes a comma
+assert.equal(noDashes("Quick — almost instant — at 0.1s"), "Quick, almost instant, at 0.1s");
+assert.equal(noDashes("12–16px icons"), "12-16px icons");
+assert.equal(noDashes("Inter · Geist"), "Inter, Geist");
+assert.equal(noDashes("letter-spacing -0.5px and var(--x)"), "letter-spacing -0.5px and var(--x)");
+assert.equal(noDashes("Ends here —."), "Ends here.");
 
 console.log("check:design ok");

@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -551,6 +551,14 @@ export default function InspoClient({
     if (!r.ok) throw new Error(r.error);
     setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), r.data] }));
   };
+  const editNote = async (itemId: string, field: "note" | "subNote", text: string) => {
+    const r = await editNoteAction(itemId, field, text);
+    if (!r.ok) throw new Error(r.error);
+    const patch = { note: r.data.note, subNote: r.data.subNote };
+    setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...patch } : i)));
+    // The DESIGN.md sheet keeps its own copy of the item, so its thread column needs the new text too
+    setDesignMdItem((cur) => (cur?.id === itemId ? { ...cur, ...patch } : cur));
+  };
   const deleteComment = async (itemId: string, id: string) => {
     const r = await removeComment(id).catch(() => null);
     if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
@@ -1021,6 +1029,7 @@ export default function InspoClient({
               memberNames={memberNames}
               onPost={(body, attachments) => postComment(designMdItem.id!, body, attachments)}
               onDelete={(id) => deleteComment(designMdItem.id!, id)}
+              onEditNote={(field, text) => editNote(designMdItem.id!, field, text)}
               onClose={hide}
             />
           ) : undefined}
@@ -1078,6 +1087,7 @@ export default function InspoClient({
           onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
           onDelete={(id) => deleteComment(commentsItem.id!, id)}
           onPostThumb={(thumb) => setThumbMap((prev) => (prev[commentsItem.web] ? prev : { ...prev, [commentsItem.web]: thumb }))}
+          onEditNote={(field, text) => editNote(commentsItem.id!, field, text)}
           onClose={() => setCommentsItemId(null)}
           designMd={canAutoDesignMd(commentsItem.web) ? {
             status: designMdJobs[commentsItem.web]?.status === "loading" ? "loading" : commentsItem.web in designMdIndex ? "ready" : "none",

@@ -2,7 +2,19 @@ import { z } from "zod";
 
 // ─── Structured spec returned by the model ───────────────────────────────────
 
-export const DesignSpecSchema = z.object({
+// The first thing the sheet shows: one line per aspect, before any token
+export const DesignBriefSchema = z.object({
+  typography: z.string().describe("The families and the signature decision, e.g. 'High-contrast serif at 400 for headlines, Geist body, Geist Mono caps labels'"),
+  imagery: z.string().describe("The look and feel of the pictures, 1-2 sentences and max 30 words: kind (photo, illustration, 3D, product UI), light, colour grading, crop, texture and the mood they give. Never counts. 'Almost none, type carries the page' when there are none"),
+  logo: z.string().describe("The look and feel of the logo: wordmark, symbol or both, how it is drawn or set (typeface, case, weight, colour) and the character it gives. From tokens.logo and the screenshot. No pixel sizes"),
+  motion: z.string().describe("What moves and how it feels, then the means: the library from tokens.stack if any, and the dominant easing as a literal cubic-bezier() (or its CSS keyword) with its duration, from tokens.motion. 'Almost static, hover transitions only' when that is all"),
+  color: z.string().describe("The palette in one line: the base, the ink, the accent and its single job. Colour names from the colors list, no hex"),
+  iconography: z.string().describe("The look and feel of the icons from tokens.icons: outline or filled, stroke weight, corners, geometric or hand-drawn, library if detected. No counts or pixel sizes. 'No icons' when the count is near zero"),
+  voice: z.string().describe("Tone of the copy from tokens.copy: register, person, sentence length, casing, ending with one short verbatim quote from tokens.copy in quotation marks, in the site's language"),
+  framework: z.string().describe("Only the names in tokens.stack, comma separated and nothing else, e.g. 'Next.js, Tailwind CSS, GSAP'. 'Not detected' if it is empty. Never guess from looks"),
+}).describe("Glance-length summary: one short sentence of 8-20 words per aspect (imagery may take two), no counts, pixel sizes or hex, no markdown");
+
+const SpecFields = z.object({
   brand: z.string().describe("Brand or site name, short"),
   tagline: z.string().describe("Poetic descriptor of the visual atmosphere, 3-6 words, lowercase, e.g. 'white museum gallery at noon'"),
   theme: z.enum(["light", "dark"]),
@@ -55,7 +67,35 @@ export const DesignSpecSchema = z.object({
   agentPrompt: z.string().describe("Paragraph of 60-100 words an AI agent can paste to reproduce the style"),
 });
 
+// The sheet reads in the viewer's language; the rest of the spec is for agents and stays in English (#27)
+export const SpecEsSchema = z.object({
+  tagline: z.string(),
+  brief: DesignBriefSchema,
+}).describe("The tagline and the brief in Castilian Spanish (Spain): natural, not literal, same meaning, each line no longer than its English one (max 20 words). Font names, library names, CSS values and verbatim quotes stay exactly as they are");
+
+/** What the model must return: every field, the brief and its Spanish included */
+export const GeneratedSpecSchema = SpecFields.extend({ brief: DesignBriefSchema, es: SpecEsSchema });
+/** A stored spec: those generated before the brief existed carry neither */
+export const DesignSpecSchema = SpecFields.extend({ brief: DesignBriefSchema.optional(), es: SpecEsSchema.optional() });
+
 export type DesignSpec = z.infer<typeof DesignSpecSchema>;
+
+/** Dashes and middots read as machine prose: a range keeps a hyphen, any other one becomes a comma */
+export function noDashes(s: string): string {
+  return s
+    .replace(/(\d)\s*[\u2013\u2014]\s*(\d)/g, "$1-$2")
+    .replace(/\s*[\u2013\u2014]\s*|\s+--\s+|\s+\u00b7\s+/g, ", ")
+    .replace(/,\s*([,.;:])/g, "$1");
+}
+
+/** Every text in the spec without the model's dashes */
+export function stripDashes<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value), (_, v) => (typeof v === "string" ? noDashes(v) : v));
+}
+export type DesignBrief = z.infer<typeof DesignBriefSchema>;
+
+/** The brief's aspects, in the order the sheet reads them */
+export const BRIEF_KEYS = ["typography", "imagery", "logo", "motion", "color", "iconography", "voice", "framework"] as const satisfies readonly (keyof DesignBrief)[];
 
 // ─── Render to markdown (Refero-like format) ─────────────────────────────────
 
@@ -63,7 +103,7 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
   const L: string[] = [];
   const p = (s = "") => L.push(s);
 
-  p(`# ${spec.brand} — DESIGN.md`);
+  p(`# ${spec.brand}: DESIGN.md`);
   p(`> ${spec.tagline}`);
   p();
   p(`**Theme:** ${spec.theme}  `);
@@ -73,6 +113,13 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
   p();
   p(spec.description);
   p();
+
+  if (spec.brief) {
+    p("## At a glance");
+    p();
+    for (const k of BRIEF_KEYS) p(`- **${k[0].toUpperCase() + k.slice(1)}:** ${spec.brief[k]}`);
+    p();
+  }
 
   p("## Colors");
   p();
@@ -84,7 +131,7 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
   p("## Typography");
   p();
   for (const f of spec.fonts) {
-    p(`### ${f.family} — ${f.role}`);
+    p(`### ${f.family} (${f.role})`);
     p(f.usage);
     p(`- **Fallback:** ${f.fallback}`);
     p(`- **Weights:** ${f.weights.join(", ")}`);
@@ -153,7 +200,7 @@ export function renderDesignMd(spec: DesignSpec, url: string, date: string): str
 
   p("## Similar brands");
   p();
-  for (const s of spec.similar) p(`- **${s.brand}** — ${s.why}`);
+  for (const s of spec.similar) p(`- **${s.brand}**: ${s.why}`);
   p();
 
   p("## Agent prompt");

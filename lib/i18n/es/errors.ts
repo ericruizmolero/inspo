@@ -11,6 +11,7 @@ export const errors: typeof EnErrors = {
   badKey: "Llave no válida o revocada. Vuelve a conectar la extensión.",
   badUrl: "La URL no es válida",
   cannotDeleteComment: "No se puede borrar ese comentario",
+  cannotEditNote: "Solo quien guardó esta web, o un admin, puede editar su nota",
   cannotRemoveSelf: "No puedes quitarte el acceso a ti mismo",
   cardGone: "Esa tarjeta ya no existe",
   emptyComment: "El comentario está vacío",

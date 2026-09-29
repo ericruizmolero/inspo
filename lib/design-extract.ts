@@ -1,4 +1,4 @@
-import puppeteer, { type Browser } from "puppeteer-core";
+import puppeteer, { type Browser, type Page } from "puppeteer-core";
 import { gatedLaunch } from "./browser-gate";
 import fs from "fs";
 
@@ -70,6 +70,13 @@ export interface DesignTokens {
   };
   motion: { transitions: Tally[]; hasScrollAnimations: boolean };
   stats: { elementsScanned: number; imagesCount: number; hasVideo: boolean };
+  // Evidence for the brief (logo, iconography, voice, framework, imagery)
+  /** What the page is built with, from fingerprints in the DOM and its scripts, never from looks */
+  stack: string[];
+  logo: { kind: "svg" | "img" | "text"; width: number; height: number; label: string; text: string; font: string; color: string; src: string } | null;
+  icons: { count: number; outline: number; filled: number; strokeWidths: Tally[]; sizes: Tally[]; libraries: string[] };
+  copy: { h1: string; headings: string[]; ctas: string[]; nav: string[] };
+  media: { images: number; large: number; videos: number; canvases: number; svgIllustrations: number; backgroundImages: number };
 }
 
 export interface ExtractResult {
@@ -78,7 +85,12 @@ export interface ExtractResult {
   fullShot: Buffer;   // jpeg of the whole page at 1440px, up to 6000px (for the detail view)
   cover: Buffer;      // jpeg 720x450 (grid cover, ~25KB)
   scroll: Buffer;     // jpeg 720px wide, up to 2250px (strip that scrolls on hover, ~100KB)
+  logo: Buffer | null; // png of the logo as it sits on the page, at 2x
+  icons: string[];     // up to 8 of the page's icons as standalone svg markup, colours baked in
+  fontFiles: FontFile[]; // the file format each @font-face family is served in
 }
+
+export interface FontFile { family: string; formats: string[] }
 
 // ─── Browser ─────────────────────────────────────────────────────────────────
 
@@ -138,6 +150,7 @@ const COLLECT = `(() => {
   const fam = new Map(), sz = new Map(), wt = new Map(), lh = new Map(), ls = new Map();
   const pad = new Map(), gap = new Map(), mar = new Map(), mw = new Map();
   const rad = new Map(), sh = new Map(), tr = new Map();
+  let bgImages = 0;
 
   const sample = (el, cs) => ({
     tag: el.tagName.toLowerCase() + (el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).slice(0, 2).join(".") : ""),
@@ -174,11 +187,12 @@ const COLLECT = `(() => {
     if (cs.borderTopStyle !== "none" && parseFloat(cs.borderTopWidth) > 0 && !isTransparent(cs.borderTopColor)) tally(bd, cs.borderTopColor);
     if (cs.borderRadius && cs.borderRadius !== "0px") tally(rad, cs.borderRadius);
     if (cs.boxShadow && cs.boxShadow !== "none") tally(sh, cs.boxShadow);
+    if (cs.backgroundImage.includes("url(")) bgImages++;
     if (cs.padding && cs.padding !== "0px") tally(pad, cs.padding);
     if (cs.gap && cs.gap !== "normal" && cs.gap !== "0px") tally(gap, cs.gap);
     if (cs.marginTop !== "0px" || cs.marginBottom !== "0px") tally(mar, cs.marginTop + " / " + cs.marginBottom);
     if (cs.maxWidth && cs.maxWidth !== "none" && r.width > 600) tally(mw, cs.maxWidth);
-    if (cs.transitionDuration && cs.transitionDuration !== "0s") tally(tr, cs.transitionProperty.split(",")[0].trim() + " " + cs.transitionDuration.split(",")[0].trim() + " " + cs.transitionTimingFunction.split(",")[0].trim());
+    if (cs.transitionDuration && cs.transitionDuration !== "0s") tally(tr, cs.transitionProperty.split(",")[0].trim() + " " + cs.transitionDuration.split(",")[0].trim() + " " + cs.transitionTimingFunction.split(/,(?![^(]*\\))/)[0].trim()); // commas inside cubic-bezier() are not list separators
 
     const tag = el.tagName;
     if (/^H[1-3]$/.test(tag) && headings.length < 8) headings.push(sample(el, cs));
@@ -216,6 +230,174 @@ const COLLECT = `(() => {
   const fontLinks = [...document.querySelectorAll('link[rel="stylesheet"][href*="font"], link[href*="fonts.googleapis"], link[href*="typekit"], link[href*="fonts.bunny"]')].map(l => l.href).slice(0, 6);
 
   const meta = (n) => document.querySelector('meta[name="' + n + '"], meta[property="' + n + '"]')?.getAttribute("content") || "";
+  const has = (sel) => { try { return !!document.querySelector(sel); } catch { return false; } };
+  const txt = (el) => (el?.innerText || "").trim().replace(/\\s+/g, " ");
+  const uniq = (arr, n, len) => [...new Set(arr.map((s) => s.slice(0, len)).filter((s) => s.length > 1))].slice(0, n);
+
+  // Stack: fingerprints only. A site that hides them reads as "not detected", never as a guess.
+  const w = window, root = document.documentElement;
+  const srcs = [...document.scripts].map((s) => s.src).concat([...document.querySelectorAll("link[rel=stylesheet]")].map((l) => l.href)).join(" ");
+  const stack = [];
+  const add = (name, ok) => { if (ok && !stack.includes(name)) stack.push(name); };
+  const gen = meta("generator");
+  if (gen) stack.push("generator: " + gen.slice(0, 40));
+  add("Next.js", has("#__next") || /\\/_next\\//.test(srcs) || !!w.__NEXT_DATA__ || !!w.__next_f);
+  add("Nuxt", has("#__nuxt") || !!w.__NUXT__ || /\\/_nuxt\\//.test(srcs));
+  add("Astro", has("astro-island, [data-astro-cid]"));
+  add("SvelteKit", has("[data-sveltekit-preload-data], [data-sveltekit-hydrate]") || /\\/_app\\/immutable\\//.test(srcs));
+  add("Gatsby", has("#___gatsby"));
+  add("Remix", !!w.__remixContext);
+  add("Webflow", root.hasAttribute("data-wf-site") || /webflow/.test(srcs));
+  add("Framer", has("[data-framer-name], [data-framer-component-type]") || /framerusercontent|framer\\.com\\/m\\//.test(srcs));
+  add("Wix", /wixstatic|parastorage/.test(srcs));
+  add("Squarespace", /squarespace/.test(srcs));
+  add("Shopify", !!w.Shopify || /cdn\\.shopify/.test(srcs));
+  add("WordPress", /wp-content|wp-includes/.test(srcs));
+  add("Vue", has("[data-v-app]") || !!w.__VUE__);
+  add("React", !stack.includes("Next.js") && !stack.includes("Gatsby") && !stack.includes("Remix") && (has("[data-reactroot]") || [...document.querySelectorAll("body > div")].some((d) => Object.keys(d).some((k) => k.startsWith("__react")))));
+  const TW = /^(?:[a-z0-9-]+:)*-?(?:[mp][trblxy]?-\\d|gap-\\d|text-(?:xs|sm|base|lg|[2-9]?xl)$|bg-|rounded(?:-|$)|grid-cols-|[wh]-(?:\\d|full|screen|auto|\\[)|items-|justify-|font-(?:medium|semibold|bold)$|leading-|tracking-)/;
+  let twHits = 0, twAll = 0;
+  for (const el of [...document.querySelectorAll("body [class]")].slice(0, 600)) {
+    if (typeof el.className !== "string") continue;
+    for (const c of el.className.split(/\\s+/)) { if (!c) continue; twAll++; if (TW.test(c)) twHits++; }
+  }
+  add("Tailwind CSS", twAll > 50 && twHits / twAll > 0.3);
+  add("styled-components", has("style[data-styled]"));
+  add("Emotion", has("style[data-emotion]"));
+  add("GSAP", !!w.gsap || !!w.TweenMax);
+  add("ScrollTrigger", !!w.ScrollTrigger);
+  add("Lenis", root.classList.contains("lenis") || !!w.lenis);
+  add("Locomotive Scroll", has("[data-scroll-container]"));
+  add("Barba.js", has("[data-barba]"));
+  add("Three.js", !!w.THREE || !!w.__THREE__);
+  add("Spline", has("spline-viewer") || /spline/.test(srcs));
+  add("Lottie", has("lottie-player, dotlottie-player") || !!w.lottie || !!w.bodymovin);
+  add("Swiper", has(".swiper"));
+
+  // Logo: the home link or anything called logo, in the top of the page
+  // The box is what the logo paints (its svgs, images and text), not its container: a "logo"
+  // wrapper can span half the header.
+  const logoBox = (el) => {
+    const rects = [];
+    const walk = (n) => {
+      if (n.nodeType === 3) { if (n.textContent.trim()) { const rg = document.createRange(); rg.selectNodeContents(n); rects.push(rg.getBoundingClientRect()); } return; }
+      if (n.nodeType !== 1) return;
+      const cs = getComputedStyle(n);
+      if (cs.display === "none" || cs.visibility === "hidden" || parseFloat(cs.opacity) === 0) return;
+      if (/^(svg|img|canvas|picture|video)$/i.test(n.tagName)) { rects.push(n.getBoundingClientRect()); return; }
+      for (const c of n.childNodes) walk(c);
+    };
+    walk(el);
+    const vis = rects.filter((r) => r.width >= 2 && r.height >= 2);
+    if (!vis.length) return null;
+    const x = Math.min(...vis.map((r) => r.left)), y = Math.min(...vis.map((r) => r.top));
+    return { x, y, width: Math.max(...vis.map((r) => r.right)) - x, height: Math.max(...vis.map((r) => r.bottom)) - y };
+  };
+  const logoEl = (() => {
+    const cands = document.querySelectorAll('header a[href="/"], nav a[href="/"], a[href="' + location.origin + '/"], a[aria-label*="home" i], [class*="logo" i], [id*="logo" i], img[alt*="logo" i], svg[aria-label*="logo" i]');
+    for (const el of cands) {
+      const b = logoBox(el);
+      if (b && b.width >= 12 && b.height >= 8 && b.width <= 480 && b.height <= 160 && b.y < 240 && b.y >= -5) return el;
+    }
+    return null;
+  })();
+  window.__inspoLogoBox = () => (logoEl ? logoBox(logoEl) : null);
+  let logo = null;
+  if (logoEl) {
+    const r = logoBox(logoEl);
+    const svg = logoEl.tagName.toLowerCase() === "svg" ? logoEl : logoEl.querySelector("svg");
+    const img = logoEl.tagName === "IMG" ? logoEl : logoEl.querySelector("img");
+    const text = txt(logoEl).slice(0, 40);
+    const cs = getComputedStyle(logoEl);
+    let color = "";
+    const shape = svg?.querySelector("path, rect, circle, polygon, text");
+    if (shape) { const pcs = getComputedStyle(shape); color = pcs.fill !== "none" ? pcs.fill : pcs.stroke; }
+    logo = {
+      kind: svg ? "svg" : img ? "img" : "text", width: Math.round(r.width), height: Math.round(r.height),
+      label: (logoEl.getAttribute("aria-label") || img?.alt || svg?.querySelector("title")?.textContent || "").trim().slice(0, 60),
+      text, font: text ? cleanFont(cs.fontFamily) + " " + cs.fontWeight : "", color: color || (text ? cs.color : ""),
+      src: img ? (img.currentSrc || img.src).split("?")[0].split("/").pop().slice(0, 60) : "",
+    };
+  }
+
+  // Icons: small svgs outside the logo (outline or filled, stroke weight) and icon fonts.
+  // Up to 8 distinct shapes are kept as standalone markup, classes, styles and handlers out, so they
+  // draw inside an <img> (where nothing in them can run). All in the page's ink: an icon's own colour
+  // belongs to the button it sat on (white on black) and reads as nothing out of it.
+  const iconSvgs = [], iconShapes = new Set();
+  const ink = getComputedStyle(document.body).color;
+  const SHAPE = "path, circle, rect, line, polyline, polygon, ellipse";
+  const GEOM = ["d", "points", "cx", "cy", "r", "rx", "ry", "x", "y", "width", "height", "x1", "y1", "x2", "y2"];
+  const serializeIcon = (s, r) => {
+    if (s.querySelector("use, image, foreignObject, script")) return null;
+    // Same drawing at another size or colour is the same icon
+    const shape = [...s.querySelectorAll(SHAPE)].map((e) => e.tagName + GEOM.map((a) => e.getAttribute(a) || "").join(",")).join("|");
+    if (!shape || iconShapes.has(shape)) return null;
+    iconShapes.add(shape);
+    const c = s.cloneNode(true);
+    const from = [s, ...s.querySelectorAll("*")], to = [c, ...c.querySelectorAll("*")];
+    from.forEach((el, i) => {
+      const d = to[i];
+      for (const a of [...d.attributes]) if (/^on/i.test(a.name) || a.name === "class" || a.name === "style") d.removeAttribute(a.name);
+      if (!/^(path|circle|rect|line|polyline|polygon|ellipse)$/i.test(el.tagName)) return;
+      const pcs = getComputedStyle(el);
+      const paint = (v) => (v === "none" || /rgba\\([^)]*,\\s*0\\)/.test(v) ? "none" : ink);
+      d.setAttribute("fill", paint(pcs.fill));
+      d.setAttribute("stroke", paint(pcs.stroke));
+      if (pcs.stroke !== "none") { d.setAttribute("stroke-width", pcs.strokeWidth); d.setAttribute("stroke-linecap", pcs.strokeLinecap); d.setAttribute("stroke-linejoin", pcs.strokeLinejoin); }
+    });
+    c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    // Without a viewBox the drawing would not scale with the <img>: its user units are the old size
+    if (!c.getAttribute("viewBox")) c.setAttribute("viewBox", "0 0 " + (parseFloat(s.getAttribute("width")) || Math.round(r.width)) + " " + (parseFloat(s.getAttribute("height")) || Math.round(r.height)));
+    c.setAttribute("width", String(Math.round(r.width)));
+    c.setAttribute("height", String(Math.round(r.height)));
+    const out = new XMLSerializer().serializeToString(c);
+    return out.length <= 4000 ? out : null;
+  };
+  const sw = new Map(), isz = new Map();
+  let icount = 0, outline = 0, filled = 0, bigSvg = 0;
+  for (const s of [...document.querySelectorAll("svg")].slice(0, 400)) {
+    if ((logoEl && logoEl.contains(s)) || /logo/i.test(s.getAttribute("aria-label") || s.querySelector("title")?.textContent || "")) continue;
+    const r = s.getBoundingClientRect();
+    if (r.width < 6 || r.height < 6) continue;
+    if (r.width > 120 && r.height > 120) { bigSvg++; continue; }
+    if (r.width > 40 || r.height > 40) continue;
+    icount++;
+    tally(isz, Math.round(r.width) + "px");
+    if (iconSvgs.length < 8) { const svg = serializeIcon(s, r); if (svg) iconSvgs.push(svg); }
+    const shape = s.querySelector("path, circle, rect, line, polyline, polygon");
+    if (!shape) continue;
+    const pcs = getComputedStyle(shape);
+    if (pcs.stroke !== "none" && parseFloat(pcs.strokeWidth) > 0 && (pcs.fill === "none" || pcs.fill === "rgba(0, 0, 0, 0)")) { outline++; tally(sw, pcs.strokeWidth); } else filled++;
+  }
+  for (const img of document.images) { const r = img.getBoundingClientRect(); if (r.width >= 6 && r.width <= 40 && r.height <= 40 && /\\.svg/.test(img.src) && !(logoEl && logoEl.contains(img))) icount++; }
+  const iconLibs = [];
+  const lib = (name, sel) => { if (has(sel)) iconLibs.push(name); };
+  lib("Lucide", "[class*=lucide], [data-lucide]");
+  lib("Font Awesome", ".fa, .fas, .far, .fab, .fa-solid, .fa-regular");
+  lib("Material Symbols", ".material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons");
+  lib("Phosphor", ".ph-bold, .ph-fill, .ph-light, .ph-thin, [class*=phosphor]");
+  lib("Tabler", "[class*=tabler-icon]");
+  lib("Remix Icon", "[class^='ri-'], [class*=' ri-']");
+  lib("Bootstrap Icons", "[class^='bi-'], [class*=' bi-']");
+  lib("Iconify", "iconify-icon, .iconify");
+  lib("Heroicons", "[class*=heroicon]");
+
+  // Copy, for the voice: the words the page chose to say out loud
+  const copy = {
+    h1: txt(document.querySelector("h1")).slice(0, 140),
+    headings: uniq([...document.querySelectorAll("h2, h3")].map(txt), 8, 90),
+    ctas: uniq([...document.querySelectorAll("button, [role=button], a[class*=btn i], a[class*=button i], a[class*=cta i]")].map(txt).filter((s) => s.length <= 32), 8, 32),
+    nav: uniq([...document.querySelectorAll("header a, nav a")].map(txt), 8, 30),
+  };
+  const media = {
+    images: document.images.length,
+    large: [...document.images].filter((i) => i.getBoundingClientRect().width >= 300).length,
+    videos: document.querySelectorAll("video").length,
+    canvases: document.querySelectorAll("canvas").length,
+    svgIllustrations: bigSvg,
+    backgroundImages: bgImages,
+  };
   const bcs = getComputedStyle(document.body);
   const anim = [...document.styleSheets].some(s => { try { return [...s.cssRules].some(r => r.type === 7); } catch { return false; } });
 
@@ -232,8 +414,57 @@ const COLLECT = `(() => {
     components: { buttons, inputs, links, cards },
     motion: { transitions: top(tr, 8), hasScrollAnimations: anim || !!document.querySelector("[data-aos], [data-scroll], .gsap, [data-framer-name]") },
     stats: { elementsScanned: scanned, imagesCount: document.images.length, hasVideo: !!document.querySelector("video") },
+    stack, logo,
+    icons: { count: icount, outline, filled, strokeWidths: top(sw, 4), sizes: top(isz, 4), libraries: iconLibs },
+    copy, media, iconSvgs,
   };
 })()`;
+
+// ─── Font files ──────────────────────────────────────────────────────────────
+
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 InspoBot/1.0";
+const FORMAT: Record<string, string> = { truetype: "ttf", opentype: "otf", "embedded-opentype": "eot", "x-font-ttf": "ttf", "x-font-woff": "woff", sfnt: "ttf" };
+const RANK = ["woff2", "woff", "otf", "ttf", "eot", "svg"];
+
+// Every @font-face of the page, read through the DevTools protocol: it sees cross-origin sheets
+// (a CDN, Google Fonts, Typekit) that the page's own script is not allowed to read.
+async function fontFaceRules(page: Page): Promise<string[]> {
+  const cdp = await page.createCDPSession();
+  const ids: string[] = [];
+  cdp.on("CSS.styleSheetAdded", (e) => ids.push(e.header.styleSheetId));
+  try {
+    await cdp.send("DOM.enable");
+    await cdp.send("CSS.enable"); // announces the sheets already there
+    await new Promise((r) => setTimeout(r, 200));
+    const texts = await Promise.all(ids.slice(0, 120).map((id) =>
+      cdp.send("CSS.getStyleSheetText", { styleSheetId: id }).then((r) => r.text, () => "")));
+    return texts.flatMap((t) => (t.match(/@font-face\s*\{[^}]*\}/g) ?? []).slice(0, 60));
+  } catch {
+    return [];
+  } finally {
+    await cdp.detach().catch(() => {});
+  }
+}
+
+// The format of each family, from its @font-face src: format() hint, data: mime or file extension
+function fontFormats(blocks: string[]): FontFile[] {
+  const byFamily = new Map<string, Set<string>>();
+  for (const block of blocks) {
+    const family = block.match(/font-family:\s*["']?([^;"'}]+)/i)?.[1].trim();
+    if (!family) continue;
+    const formats = byFamily.get(family) ?? new Set<string>();
+    for (const [, src, hint] of block.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)(?:\s*format\(\s*["']?([\w-]+))?/gi)) {
+      const raw = hint ?? src.match(/^data:(?:font|application)\/([\w-]+)/i)?.[1] ?? src.split(/[?#]/)[0].match(/\.(woff2|woff|ttf|otf|eot|svg)$/i)?.[1];
+      if (!raw) continue;
+      const f = raw.toLowerCase().replace(/-variations$/, "");
+      formats.add(FORMAT[f] ?? f);
+    }
+    byFamily.set(family, formats);
+  }
+  return [...byFamily]
+    .filter(([, f]) => f.size)
+    .map(([family, f]) => ({ family, formats: [...f].sort((a, b) => RANK.indexOf(a) - RANK.indexOf(b)) }));
+}
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
@@ -247,7 +478,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
-    await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 InspoBot/1.0");
+    await page.setUserAgent(UA);
     await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9,es;q=0.8" });
 
     await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 }).catch(async () => {
@@ -264,7 +495,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     })()`);
     await new Promise((r) => setTimeout(r, 600));
 
-    const raw = (await page.evaluate(COLLECT)) as Omit<DesignTokens, "url" | "finalUrl" | "viewport"> & { pageHeight: number };
+    const raw = (await page.evaluate(COLLECT)) as Omit<DesignTokens, "url" | "finalUrl" | "viewport"> & { pageHeight: number; iconSvgs: string[] };
     const screenshot = Buffer.from(await page.screenshot({ type: "jpeg", quality: 70, fullPage: false }));
     const fullHeight = Math.min(raw.pageHeight, 6000);
     const fullShot = Buffer.from(await page.screenshot({
@@ -272,6 +503,20 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
       clip: { x: 0, y: 0, width: 1440, height: fullHeight },
       captureBeyondViewport: true,
     }));
+
+    // The logo as it sits on the page, at 2x so a 20px wordmark stays sharp
+    let logo: Buffer | null = null;
+    if (raw.logo) {
+      await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 2 });
+      await page.evaluate("window.scrollTo(0, 0)");
+      await new Promise((r) => setTimeout(r, 300));
+      const box = (await page.evaluate("window.__inspoLogoBox?.() ?? null")) as { x: number; y: number; width: number; height: number } | null;
+      if (box) {
+        const pad = 12;
+        const x = Math.max(0, box.x - pad), y = Math.max(0, box.y - pad);
+        logo = Buffer.from(await page.screenshot({ type: "png", clip: { x, y, width: box.width + pad * 2, height: box.height + pad * 2 } }));
+      }
+    }
 
     // Light versions for the grid: same viewport at 0.5 scale
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 0.5 });
@@ -283,7 +528,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
       captureBeyondViewport: true,
     }));
 
-    const { pageHeight, ...rest } = raw;
+    const { pageHeight, iconSvgs, ...rest } = raw;
     const tokens: DesignTokens = oklchToHex({
       url,
       finalUrl: page.url(),
@@ -291,7 +536,8 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
       ...rest,
     });
     signal?.throwIfAborted();
-    return { tokens, screenshot, fullShot, cover, scroll };
+    const fontFiles = fontFormats(await fontFaceRules(page));
+    return { tokens, screenshot, fullShot, cover, scroll, logo, icons: oklchToHex(iconSvgs), fontFiles };
   } finally {
     signal?.removeEventListener("abort", onAbort);
     await browser.close().catch(() => {});

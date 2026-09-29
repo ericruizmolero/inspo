@@ -15,9 +15,12 @@ export interface DesignMdEntry {
   screenshotUrl?: string;     // whole page at 1440px (a /api/files/… path)
   coverUrl?: string;          // 720x450, grid cover
   scrollUrl?: string;         // 720px wide, strip for the grid hover
+  logoUrl?: string;           // png of the logo as it sits on the page, at 2x (missing when none was found)
+  icons?: string[];           // up to 8 of the site's icons as standalone svg markup
+  fontFiles?: { family: string; formats: string[] }[]; // the file format each @font-face family is served in
 }
 
-export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer }
+export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer; logo?: Buffer | null }
 
 export type DesignMdIndex = Record<string, { generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string }>;
 
@@ -35,8 +38,8 @@ export function keyFor(url: string): string {
 
 const entryKey = (key: string) => `${DESIGN_MD_PREFIX}${key}.json`;
 
-async function saveImage(key: string, suffix: string, jpeg: Buffer): Promise<string> {
-  return putFile(`${DESIGN_MD_PREFIX}${key}${suffix}-${Date.now()}.jpg`, jpeg, "image/jpeg");
+async function saveImage(key: string, suffix: string, data: Buffer, ext: "jpg" | "png" = "jpg"): Promise<string> {
+  return putFile(`${DESIGN_MD_PREFIX}${key}${suffix}-${Date.now()}.${ext}`, data, ext === "png" ? "image/png" : "image/jpeg");
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -83,6 +86,7 @@ export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages):
       saveImage(key, "-cover", images.cover),
       saveImage(key, "-scroll", images.scroll),
     ]);
+    entry.logoUrl = images.logo ? await saveImage(key, "-logo", images.logo, "png") : undefined;
   }
   await putJson(entryKey(key), entry);
 
@@ -92,8 +96,8 @@ export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages):
 
   // The images this generation replaced, once nothing points at them
   if (before) {
-    const now = new Set([entry.screenshotUrl, entry.coverUrl, entry.scrollUrl]);
-    await deleteFiles([before.screenshotUrl, before.coverUrl, before.scrollUrl]
+    const now = new Set([entry.screenshotUrl, entry.coverUrl, entry.scrollUrl, entry.logoUrl]);
+    await deleteFiles([before.screenshotUrl, before.coverUrl, before.scrollUrl, before.logoUrl]
       .filter((u): u is string => !!u && !now.has(u)).map(keyOf).filter((k): k is string => !!k && k.startsWith(DESIGN_MD_PREFIX)));
   }
   return entry;
