@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import puppeteer, { Browser } from "puppeteer-core";
 import { webKeyOf } from "./url";
 import { getFile, fileExists, putFile } from "./storage";
+import { gatedLaunch } from "./browser-gate";
 
 const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
@@ -91,26 +92,11 @@ const HIDE_CSS = `
 
 const ACCEPT_TEXTS = ["aceptar", "accept", "agree", "allow", "ok", "got it", "entendido", "onartu"];
 
-// In-process gate so we don't launch a dozen Chromes at once. In a serverless
-// function memory allows one; locally, two.
-let active = 0;
-const waiters: (() => void)[] = [];
-const MAX_CONCURRENT = IS_SERVERLESS ? 1 : 2;
-async function acquire() {
-  if (active < MAX_CONCURRENT) { active++; return; }
-  await new Promise<void>((r) => waiters.push(r));
-  active++;
-}
-function release() {
-  active--;
-  waiters.shift()?.();
-}
-
 export async function captureHero(url: string): Promise<Buffer> {
-  await acquire();
   let browser: Browser | null = null;
   try {
-    browser = await launchBrowser();
+    // Waits for a free slot in the shared gate (lib/browser-gate.ts)
+    browser = await gatedLaunch(launchBrowser);
     const page = await browser.newPage();
     await page.setUserAgent(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 InspoBot/1.0"
@@ -142,7 +128,6 @@ export async function captureHero(url: string): Promise<Buffer> {
     return Buffer.from(jpeg);
   } finally {
     await browser?.close().catch(() => {});
-    release();
   }
 }
 

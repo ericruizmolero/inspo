@@ -1,4 +1,5 @@
 import puppeteer, { type Browser } from "puppeteer-core";
+import { gatedLaunch } from "./browser-gate";
 import fs from "fs";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -83,7 +84,10 @@ export interface ExtractResult {
 
 const MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
-export async function launch(): Promise<Browser> {
+/** A Chromium for extraction and the probe, behind the shared gate (lib/browser-gate.ts). */
+export const launch = (): Promise<Browser> => gatedLaunch(launchChromium);
+
+async function launchChromium(): Promise<Browser> {
   const local = process.env.CHROME_PATH || (process.platform === "darwin" && fs.existsSync(MAC_CHROME) ? MAC_CHROME : null);
 
   if (local && !process.env.VERCEL) {
