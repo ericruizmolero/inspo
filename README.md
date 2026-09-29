@@ -5,49 +5,61 @@ Next.js 16, Postgres, Better Auth.
 
 ## Run it locally
 
-You need Node 22 or newer, a Postgres server on port 5432, and Google Chrome (for screenshots).
+Five steps, about ten minutes. At the end you have the app on http://localhost:3000 with a copy
+of the real library: items, projects, DESIGN.md sheets and their images.
 
-### Postgres on a Mac
+### 1. Install the tools
 
-Two apps from the same people (DBngin is free, TablePlus has a free version), and you never touch a
-config file:
-
-- [DBngin](https://dbngin.com) runs the server. Click **+**, pick PostgreSQL, keep port `5432`
+- Node 22 or newer, and Google Chrome (the app drives it for screenshots).
+- [DBngin](https://dbngin.com) runs Postgres. Click **+**, pick PostgreSQL, keep port `5432`
   and start it. The green dot means it's up.
-- [TablePlus](https://tableplus.com) shows what's inside. New connection, PostgreSQL: host
-  `127.0.0.1`, port `5432`, user `postgres`, no password, database `criterio`. Refresh with ⌘R
-  after a migration.
+- [TablePlus](https://tableplus.com) (optional) shows what's inside. New connection, PostgreSQL:
+  host `127.0.0.1`, port `5432`, user `postgres`, no password, database `criterio`.
 
-Only one server can hold port 5432. If Homebrew Postgres is running,
-`brew services stop postgresql@17` first.
+DBngin is free and TablePlus has a free version. Only one server can hold port 5432: if Homebrew
+Postgres is running, `brew services stop postgresql@17` first.
 
-### Start
+### 2. Ask for two things
+
+Neither is in git, because both hold real people's data. Ask Alberto or Eric, and get them through
+a private channel (AirDrop, 1Password), never a shared chat:
+
+- **`.data/seed.json`**: the copy of the database. Put it in `.data/` in the repo.
+- **A read-only R2 key** for the `criterio-files` bucket: an Access Key ID and a Secret. It can
+  only download, so it's safe on a laptop.
+
+### 3. Install and load the data
 
 ```bash
 npm install
 npm run db:init   # creates the "criterio" database, builds the tables, loads .data/seed.json
+```
+
+`db:init` is safe to run twice: it never loads over existing data. To start over, run
+`npm run seed -- --replace`. Without the seed file it still builds the tables, and the app runs
+on an empty database.
+
+### 4. Download the images
+
+The database points at files in R2. Copy them to `.data/files` once, with the read-only key in
+the command, not in `.env.local`:
+
+```bash
+R2_ACCOUNT_ID=c7db41271c7e187b4cfd59e5b9f54e93 R2_BUCKET=criterio-files \
+R2_ACCESS_KEY_ID=<key> R2_SECRET_ACCESS_KEY=<secret> npm run files:pull
+```
+
+Run it again whenever you load a newer seed: it only brings what's new.
+
+### 5. Start
+
+```bash
 npm run dev       # http://localhost:3000
 ```
 
-`db:init` needs `.data/seed.json`, a copy of the real data. It is not in git (it holds people's
-emails), so ask for it and drop it in `.data/`. Without it, `db:init` still builds the tables and
-then stops with a note. The app runs on the empty database: sign in and it creates your personal
-workspace.
-
-`db:init` is safe to run twice: it never loads over existing data. To start over, run
-`npm run seed -- --replace`.
-
-To refresh `.data/seed.json` from production while it still runs on Turso: run `npm run db:init`
-on an empty database with the seed file moved away, then
-`TURSO_DATABASE_URL=… TURSO_AUTH_TOKEN=… npm run db:copy-turso -- --replace`, then `npm run seed:dump`.
-
-The database is `postgres://postgres@127.0.0.1:5432/criterio` with no password. That is the default,
-so `DATABASE_URL` stays unset locally.
-
-### Signing in
-
-The magic link isn't emailed locally. It prints in the terminal and lands in `.data/last-mail.txt`.
-To skip it, add `DEV_LOGIN_EMAIL=you@email.com` to `.env.local` and open `/api/dev-login`.
+To sign in, add `DEV_LOGIN_EMAIL=you@email.com` to `.env.local` (an address that exists in the
+seed) and open http://localhost:3000/api/dev-login. Without it, the magic link isn't emailed
+locally: it prints in the terminal and lands in `.data/last-mail.txt`.
 
 ### `.env.local`
 
@@ -57,33 +69,29 @@ Nothing is required. Each key switches one thing on:
 |---|---|
 | `DEV_LOGIN_EMAIL` | Sign in without the email step |
 | `OPENROUTER_API_KEY` | DESIGN.md, explain, revisions and vision (every model call) |
-| `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` | Jev: AI tags and search |
+| `TYPESAFE_API_KEY` | Jev: AI tags and search |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |
-| `RESEND_API_KEY` | Real emails. Leave it off unless you mean it: invitations go to real people |
 | `CHROME_EXECUTABLE_PATH` | Only if Chrome isn't in `/Applications` |
-| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Production only (see below). `R2_ENDPOINT` points the same code at any S3 server, MinIO for example |
 
-Two sets of keys stay out of `.env.local` on purpose. The `R2_*` keys write to production storage,
-and the local database is a copy of production: deleting a thumbnail here would delete the real one.
-Without them, files go to `.data/files`. And `DATABASE_URL`, unless you point at another Postgres
-on purpose.
+**Keep these out of `.env.local`:**
+
+- `R2_*` with a key that can write. The local database is a copy of production, so deleting a
+  thumbnail here would delete the real one. Without R2 keys the app uses `.data/files`.
+- `RESEND_API_KEY`, unless you mean it: invitations go to real people.
+- `DATABASE_URL`. Locally it defaults to `postgres://postgres@127.0.0.1:5432/criterio`.
+  If it holds anything that isn't a Postgres URL, the app ignores it and says so.
 
 ### Files
 
-Thumbnails, comment screenshots, DESIGN.md images and captures live in a private Cloudflare R2
-bucket in production (`lib/storage.ts`, S3 API) and in `.data/files` locally. The database stores
-each one as a path, `/api/files/<key>`, and `app/api/files/[...key]/route.ts` serves it after
-checking the workspace. Images copied from production point at R2: to see them locally, run
-`npm run files:pull` once with the `R2_*` keys in the shell. It copies the bucket into
-`.data/files` (read-only on R2), so the local app shows them without holding the keys.
-
-Vercel marks every production value as Sensitive, so `vercel env pull` only brings back the text
-`[SENSITIVE]`. Real values come from the person who holds them.
+Thumbnails, uploaded images, comment screenshots, DESIGN.md images and saved posts live in a
+private Cloudflare R2 bucket in production (`lib/storage.ts`, S3 API) and in `.data/files`
+locally. The database stores each one as a path, `/api/files/<key>`, and
+`app/api/files/[...key]/route.ts` serves it after checking the workspace.
 
 ### Checks
 
 ```bash
-npm run check:postgres   # cascades, file cleanup, bulk tags, heartbeat, day grouping
+npm run check:postgres   # cascades, file cleanup, projects, bulk tags, heartbeat, day grouping
 npm run check:seats      # plan seat limits
 npm run check:invites    # the invitation flow, against the running app
 ```
@@ -92,6 +100,20 @@ npm run check:invites    # the invitation flow, against the running app
 
 Edit `lib/db/schema.ts`, then `npm run db:generate`. The app applies the new migration the next
 time it starts. Column names are snake_case; the TypeScript names stay camelCase.
+
+**Never edit or regenerate a migration that's already in `drizzle/`.** Production has run it.
+Drizzle would try to run a changed one again and the app would stop starting. Every change is a
+new file.
+
+### For maintainers
+
+- **Refresh the seed** while production still runs on Turso: on an empty database, `npm run
+  db:init` with the seed file moved away, then `TURSO_DATABASE_URL=… TURSO_AUTH_TOKEN=… npm run
+  db:copy-turso -- --replace`, then `npm run seed:dump`.
+- **Make a read-only key for a teammate**: Cloudflare, R2, Manage API tokens, Create, permission
+  **Object Read only**, bucket `criterio-files`. One key per person, so you can revoke one.
+- **Production** runs on Coolify from the image GitHub Actions builds
+  (`ghcr.io/ericruizmolero/inspo`, `.github/workflows/image.yml`). Its variables live in Coolify.
 
 ## Multi-user and teams (SaaS)
 
@@ -104,10 +126,8 @@ cached per URL (global), but only those for URLs saved in the active workspace a
 - **DB**: Postgres with Drizzle (`lib/db/schema.ts`). Local: the DBngin server, database `criterio`
   (`postgres://postgres@127.0.0.1:5432/criterio`, the default when `DATABASE_URL` is unset). Production and staging: `DATABASE_URL`.
   `npm run db:generate` writes a migration to `drizzle/`. The app applies pending ones when it starts
-  (`instrumentation.ts`, behind an advisory lock); builds and scripts never migrate.
-- **Local data**: `npm run db:init` creates the database if it is missing, applies the migrations and loads
-  `.data/seed.json`. That file holds real people's data, so it is git-ignored: copy it from a machine that has it
-  (`npm run seed:dump` writes it from the current database). `npm run seed -- --replace` reloads it.
+  (`instrumentation.ts`, behind an advisory lock). Builds never migrate, and of the scripts only
+  `db:init` does, on a local database.
 - **Workspaces**: `lib/workspace.ts` (session + active workspace + permissions) and `lib/workspace-core.ts` (pure queries).
   Roles: `owner`/`admin` can invite, remove members, batch tag and regenerate DESIGN.md; `member` adds items and thumbnails.
 - **Pages**: `/login`, `/settings/members` (members, invitations, create a team), `/invite/[id]`.
