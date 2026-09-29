@@ -1,28 +1,21 @@
 // Check of the database behaviour that a type error would not catch: rowCount, cascades,
 // day grouping, file cleanup, bulk tagging and the heartbeat upsert.
-// Not a test framework: assert. Runs against DATABASE_URL (local by default) with local file
-// storage (no BLOB_READ_WRITE_TOKEN), and leaves nothing behind: everything hangs off a
-// throwaway workspace that is deleted at the end.
+// Not a test framework: assert. Runs against DATABASE_URL (local by default) and the storage
+// lib/storage.ts picks (.data/files, or R2 when R2_* is set), and leaves nothing behind:
+// everything hangs off a throwaway workspace that is deleted at the end.
 //   npm run check:postgres
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
-delete process.env.BLOB_READ_WRITE_TOKEN;
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import { eq, sql } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
 import { newId, setThumbnail, deleteItem, addItem, setTagsBulk } from "../lib/items";
 import { touchSegment } from "../lib/activity";
+import { putFile, fileExists, getFile, keyOf } from "../lib/storage";
+import { blobPrefix } from "../lib/thumbnails";
+import { commentPrefix } from "../lib/comment-files";
 
-/** A local file under public/<dir>, returned as the URL the app stores */
-function localFile(dir: "thumbs" | "comments", name: string): string {
-  const full = path.join(process.cwd(), "public", dir);
-  mkdirSync(full, { recursive: true });
-  writeFileSync(path.join(full, name), "x");
-  return `/${dir}/${name}`;
-}
-const exists = (url: string) => existsSync(path.join(process.cwd(), "public", url));
+const exists = (url: string) => fileExists(keyOf(url)!);
 import { dayOf, daySlots, startOfTodayMs, tzOffsetSeconds } from "../lib/days";
 
 async function main() {
@@ -50,17 +43,21 @@ async function main() {
     const a = await addItem(orgId, { name: "A", web: "https://a.check.example", author: "check" });
     const b = await addItem(orgId, { name: "B", web: "https://b.check.example", author: "check" });
     assert.ok(a.id && b.id);
-    const shared = localFile("thumbs", `${tag}-shared.png`), own = localFile("thumbs", `${tag}-own.png`), shot = localFile("comments", `${tag}-shot.png`);
+    const put = (prefix: string, name: string) => putFile(`${prefix}${tag}-${name}`, Buffer.from("x"), "image/png");
+    const shared = await put(blobPrefix(orgId), "shared.png"), own = await put(blobPrefix(orgId), "own.png"), shot = await put(commentPrefix(orgId), "shot.png");
+    assert.equal((await getFile(keyOf(shared)!))?.body.toString(), "x", "a stored file reads back");
+    const ranged = await getFile(keyOf(shared)!, "bytes=0-0");
+    assert.equal(ranged?.range, "bytes 0-0/1", "byte ranges work (video in Safari)");
     await setThumbnail(orgId, a.web, shared);
     await setThumbnail(orgId, b.web, shared);
     await setThumbnail(orgId, a.web, own);
-    assert.ok(exists(shared), "a thumbnail B still uses stays");
+    assert.ok(await exists(shared), "a thumbnail B still uses stays");
     await db.insert(schema.inspoComment).values({ id: newId(), organizationId: orgId, itemId: a.id, authorName: "check", body: "", attachments: [{ url: shot, w: 1, h: 1 }], createdAt: now });
     await deleteItem(orgId, a.id);
-    assert.ok(!exists(own), "the deleted item's thumbnail is gone");
-    assert.ok(!exists(shot), "the deleted item's comment screenshot is gone");
+    assert.ok(!await exists(own), "the deleted item's thumbnail is gone");
+    assert.ok(!await exists(shot), "the deleted item's comment screenshot is gone");
     await setThumbnail(orgId, b.web, null);
-    assert.ok(!exists(shared), "a thumbnail nobody uses is gone");
+    assert.ok(!await exists(shared), "a thumbnail nobody uses is gone");
 
     // 5. Bulk tags: one statement, the right rows
     const c = await addItem(orgId, { name: "C", web: "https://c.check.example/", author: "check" });

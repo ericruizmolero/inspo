@@ -57,11 +57,20 @@ Nothing is required. Each key switches one thing on:
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |
 | `RESEND_API_KEY` | Real emails. Leave it off unless you mean it: invitations go to real people |
 | `CHROME_EXECUTABLE_PATH` | Only if Chrome isn't in `/Applications` |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Production only (see below). `R2_ENDPOINT` points the same code at any S3 server, MinIO for example |
 
-Two keys stay out of `.env.local` on purpose. `BLOB_READ_WRITE_TOKEN` writes to production storage,
+Two sets of keys stay out of `.env.local` on purpose. The `R2_*` keys write to production storage,
 and the local database is a copy of production: deleting a thumbnail here would delete the real one.
-Without it, files go to `public/thumbs` and `public/comments`. And `DATABASE_URL`, unless you point at
-another Postgres on purpose.
+Without them, files go to `.data/files`. And `DATABASE_URL`, unless you point at another Postgres
+on purpose.
+
+### Files
+
+Thumbnails, comment screenshots, DESIGN.md images and captures live in a private Cloudflare R2
+bucket in production (`lib/storage.ts`, S3 API) and in `.data/files` locally. The database stores
+each one as a path, `/api/files/<key>`, and `app/api/files/[...key]/route.ts` serves it after
+checking the workspace. Images copied from production point at R2, so locally they show as broken
+unless you download them.
 
 Vercel marks every production value as Sensitive, so `vercel env pull` only brings back the text
 `[SENSITIVE]`. Real values come from the person who holds them.
@@ -105,6 +114,7 @@ cached per URL (global), but only those for URLs saved in the active workspace a
 
 ### Going to production
 1. Create a Postgres database, set `DATABASE_URL` and turn on scheduled backups.
+   Create a private R2 bucket and set the four `R2_*` keys.
 2. `BETTER_AUTH_SECRET` (`openssl rand -base64 32`) and `BETTER_AUTH_URL` with the public URL.
 3. `RESEND_API_KEY` and `MAIL_FROM` with a verified domain.
 4. Deploy. The app applies the migrations when it starts.

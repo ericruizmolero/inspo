@@ -20,7 +20,6 @@ import DesignMdModal from "./DesignMdModal";
 import DirectoryModal from "./DirectoryModal";
 import EmptyStart from "./EmptyStart";
 import CommentsPanel from "./CommentsPanel";
-import { proxiedSrc } from "@/lib/proxied-src";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
@@ -943,7 +942,7 @@ export default function InspoClient({
           canManage={workspace.role === "owner" || workspace.role === "admin"}
           memberImages={authorImages}
           memberNames={memberNames}
-          image={thumbMap[commentsItem.web] ? proxiedSrc(thumbMap[commentsItem.web]) : designMdIndex[commentsItem.web]?.coverUrl ? proxiedSrc(designMdIndex[commentsItem.web].coverUrl!) : null}
+          image={thumbMap[commentsItem.web] ? thumbMap[commentsItem.web] : designMdIndex[commentsItem.web]?.coverUrl ? designMdIndex[commentsItem.web].coverUrl! : null}
           onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
           onDelete={(id) => deleteComment(commentsItem.id!, id)}
           onClose={() => setCommentsItemId(null)}

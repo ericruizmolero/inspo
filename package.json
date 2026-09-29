@@ -22,13 +22,14 @@
     "check:url-keys": "tsx --conditions=react-server scripts/check-url-keys.ts",
     "check:postgres": "tsx --conditions=react-server scripts/check-postgres.ts",
     "seed:dump": "tsx --conditions=react-server scripts/seed.ts dump",
-    "db:init": "tsx --conditions=react-server scripts/seed.ts init"
+    "db:init": "tsx --conditions=react-server scripts/seed.ts init",
+    "move:blob-to-r2": "tsx --conditions=react-server scripts/move-blob-to-r2.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1142.0",
     "@base-ui/react": "^1.8.0",
     "@sparticuz/chromium": "^153.0.0",
     "@typesafe-ai/sdk": "^0.6.0",
-    "@vercel/blob": "^2.3.3",
     "agentation": "^3.0.2",
     "better-auth": "^1.7.5",
     "class-variance-authority": "^0.7.1",
@@ -56,6 +57,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vercel/blob": "^2.8.0",
     "dotenv": "^18.0.1",
     "drizzle-kit": "^0.31.10",
     "papaparse": "^5.7.0",

@@ -130,7 +130,7 @@ export const inspoItem = pgTable("inspo_item", {
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   note: text("note").notNull().default(""),
   subNote: text("sub_note"),
-  /** URL of the manual thumbnail (Blob in prod, /thumbs/... locally) */
+  /** Path of the manual thumbnail (/api/files/…, lib/storage.ts) */
   thumbnailUrl: text("thumbnail_url"),
   /** Serialized InspoTags (AI tags) */
   tagsJson: jsonb("tags_json").$type<InspoTags>(),

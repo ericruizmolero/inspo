@@ -1,6 +1,5 @@
 "use client";
 
-import { proxiedSrc } from "@/lib/proxied-src";
 import { hueFor, Avatar } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
@@ -265,9 +264,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               ref={manualImgRef}
               className={`tile__img${manualLoaded ? "" : " is-hidden"}`}
                 decoding="async"
-              src={manualThumbnail.startsWith("https://")
-                ? `/api/thumbnail/img?url=${encodeURIComponent(manualThumbnail)}`
-                : manualThumbnail}
+              src={manualThumbnail}
               alt={item.name}
               onLoad={() => setManualLoaded(true)}
               onError={() => setManualFailed(true)}
@@ -280,7 +277,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 ref={coverImgRef}
                 className={`tile__img${coverLoaded ? "" : " is-hidden"}`}
                 decoding="async"
-                src={proxiedSrc(designCover!)}
+                src={designCover!}
                 alt={item.name}
                 loading="lazy"
                 onLoad={() => setCoverLoaded(true)}
@@ -289,7 +286,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
               {designScroll && coverLoaded && hovering && (
                 <div ref={scrollBoxRef} className="tile__scroll">
                   <img
-                    src={proxiedSrc(designScroll)}
+                    src={designScroll}
                     alt=""
                     onLoad={onScrollLoad}
                     className={scrollDist > 0 ? "is-ready" : ""}

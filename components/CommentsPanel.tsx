@@ -3,7 +3,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { InspoItem, InspoComment, CommentAttachment } from "@/types/inspo";
 import type { SessionUser } from "@/lib/workspace-core";
-import { proxiedSrc } from "@/lib/proxied-src";
 import { prepareScreenshot } from "@/lib/image-client";
 import { fmtDate, fmtDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
@@ -422,7 +421,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                             title={a.name ?? t.comments.seeScreenshot}
                             onClick={() => setLightbox({ list: m.attachments, idx: j })}
                           >
-                            <img src={proxiedSrc(a.url)} alt={a.name ?? t.comments.screenshot} loading="lazy" />
+                            <img src={a.url} alt={a.name ?? t.comments.screenshot} loading="lazy" />
                           </button>
                         ))}
                       </div>
@@ -487,7 +486,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             <img
               key={a.url}
               className="cm-lightbox__img"
-              src={proxiedSrc(a.url)}
+              src={a.url}
               alt={a.name ?? t.comments.screenshot}
               onClick={(e) => e.stopPropagation()}
             />

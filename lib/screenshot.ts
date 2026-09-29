@@ -1,11 +1,9 @@
 import { createHash } from "crypto";
 import { promises as fs } from "fs";
-import path from "path";
-import { put, get, head } from "@vercel/blob";
 import puppeteer, { Browser } from "puppeteer-core";
 import { webKeyOf } from "./url";
+import { getFile, fileExists, putFile } from "./storage";
 
-const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 const VIEWPORT = { width: 1440, height: 900 };
@@ -14,56 +12,25 @@ const SETTLE_MS = 1500;
 const JPEG_QUALITY = 78;
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
+// One hero screenshot per site, shared across workspaces (lib/storage.ts, inspo/shots/).
 
 export function shotKey(url: string): string {
   return createHash("sha1").update(webKeyOf(url)).digest("hex");
 }
 
-const SHOTS_DIR = path.join(process.cwd(), "public", "shots");
+const shotFile = (url: string) => `inspo/shots/${shotKey(url)}.jpg`;
 
 export async function getStoredShot(url: string): Promise<Buffer | null> {
-  const key = shotKey(url);
-  if (USE_BLOB) {
-    try {
-      const res = await get(`inspo/shots/${key}.jpg`, { access: "private" });
-      if (!res || !res.stream) return null;
-      return Buffer.from(await new Response(res.stream).arrayBuffer());
-    } catch {
-      return null;
-    }
-  }
-  try {
-    return await fs.readFile(path.join(SHOTS_DIR, `${key}.jpg`));
-  } catch {
-    return null;
-  }
+  try { return (await getFile(shotFile(url)))?.body ?? null; } catch { return null; }
 }
 
 /** Is there a stored screenshot? Metadata only: doesn't download the image. */
 export async function hasStoredShot(url: string): Promise<boolean> {
-  const key = shotKey(url);
-  if (USE_BLOB) {
-    try { await head(`inspo/shots/${key}.jpg`); return true; } catch { return false; }
-  }
-  try { await fs.access(path.join(SHOTS_DIR, `${key}.jpg`)); return true; } catch { return false; }
+  try { return await fileExists(shotFile(url)); } catch { return false; }
 }
 
-/** Public path of the screenshot locally (public/shots). In production it goes through private blob. */
-export const localShotPath = (url: string) => `/shots/${shotKey(url)}.jpg`;
-
 async function storeShot(url: string, jpeg: Buffer): Promise<void> {
-  const key = shotKey(url);
-  if (USE_BLOB) {
-    await put(`inspo/shots/${key}.jpg`, jpeg, {
-      access: "private",
-      contentType: "image/jpeg",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    });
-    return;
-  }
-  await fs.mkdir(SHOTS_DIR, { recursive: true });
-  await fs.writeFile(path.join(SHOTS_DIR, `${key}.jpg`), jpeg);
+  await putFile(shotFile(url), jpeg, "image/jpeg");
 }
 
 // ─── Browser ─────────────────────────────────────────────────────────────────

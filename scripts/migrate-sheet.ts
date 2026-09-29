@@ -48,15 +48,13 @@ async function readJson<T>(file: string): Promise<T | null> {
   try { return JSON.parse(await fs.readFile(file, "utf-8")) as T; } catch { return null; }
 }
 
-// In production the old maps live in Blob; we read them with the same pattern as before
+// In production the old maps live in file storage (lib/storage.ts); the newest one wins
 async function readLegacyBlobMap<T>(prefix: string): Promise<T | null> {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) return null;
-  const { list } = await import("@vercel/blob");
-  const { blobs } = await list({ prefix });
-  const sorted = blobs.sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt));
-  for (const b of sorted) {
-    const res = await fetch(b.url, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
-    if (res.ok) return (await res.json()) as T;
+  const { listFiles, getJson } = await import("../lib/storage");
+  const files = (await listFiles(prefix)).sort((a, b) => +b.uploadedAt - +a.uploadedAt);
+  for (const f of files) {
+    const data = await getJson<T>(f.key);
+    if (data) return data;
   }
   return null;
 }

@@ -1,9 +1,7 @@
 import "server-only";
 import { webSet } from "./items";
 import { normalizeWebUrl, webKeyOf } from "./url";
-import { put, list, del } from "@vercel/blob";
-import { promises as fs } from "fs";
-import path from "path";
+import { putFile, getFile, getJson, putJson, deleteFiles, keyOf } from "./storage";
 import { createHash } from "crypto";
 
 import type { DesignSpec } from "@/types/design";
@@ -14,7 +12,7 @@ export interface DesignMdEntry {
   generatedAt: string;
   model: string;
   spec?: DesignSpec;          // missing in old entries
-  screenshotUrl?: string;     // whole page at 1440px. /design-md/<key>.jpg locally, Blob URL (private) in production
+  screenshotUrl?: string;     // whole page at 1440px (a /api/files/… path)
   coverUrl?: string;          // 720x450, grid cover
   scrollUrl?: string;         // 720px wide, strip for the grid hover
 }
@@ -23,172 +21,50 @@ export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer 
 
 export type DesignMdIndex = Record<string, { generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string }>;
 
-const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
-/** Blob prefix for DESIGN.md screenshots, covers and specs (shared across workspaces) */
+// Files (lib/storage.ts), shared across workspaces:
+//   inspo/design-md/<key>.json               one entry per site
+//   inspo/design-md/<key>[-cover|-scroll]-<t>.jpg  its images (the timestamp busts browser caches)
+//   inspo/design-md-index.json               every entry's summary, for the library grid
+/** Prefix of the DESIGN.md files (the file route lets any signed-in person read it) */
 export const DESIGN_MD_PREFIX = "inspo/design-md/";
-const PREFIX = DESIGN_MD_PREFIX;
-const INDEX_PREFIX = "inspo/design-md-index"; // outside PREFIX so it isn't mistaken for an entry
-const FS_DIR = path.join(process.cwd(), "public", "design-md");
-const FS_INDEX = path.join(FS_DIR, "_index.json");
+const INDEX_KEY = "inspo/design-md-index.json"; // outside the prefix so it isn't mistaken for an entry
 
 export function keyFor(url: string): string {
   return createHash("sha1").update(webKeyOf(url)).digest("hex").slice(0, 16);
 }
 
-// ─── Blob ────────────────────────────────────────────────────────────────────
-
-async function blobGet(key: string): Promise<DesignMdEntry | null> {
-  try {
-    const { blobs: all } = await list({ prefix: `${PREFIX}${key}` });
-    const blobs = all.filter((b) => b.pathname.endsWith(".json"));
-    if (!blobs.length) return null;
-    const newest = blobs.sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt))[0];
-    const res = await fetch(newest.url, {
-      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as DesignMdEntry;
-  } catch (e) {
-    console.error("design-store blobGet:", e);
-    return null;
-  }
-}
-
-async function blobSet(key: string, entry: DesignMdEntry): Promise<void> {
-  const { blobs: all } = await list({ prefix: `${PREFIX}${key}` });
-  const old = all.filter((b) => b.pathname.endsWith(".json"));
-  await put(`${PREFIX}${key}-${Date.now()}.json`, Buffer.from(JSON.stringify(entry)), {
-    access: "private",
-    contentType: "application/json",
-  });
-  if (old.length) await del(old.map((b) => b.url)).catch(() => {});
-}
-
-async function blobReadJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
-      cache: "no-store",
-    });
-    return res.ok ? ((await res.json()) as T) : null;
-  } catch {
-    return null;
-  }
-}
-
-async function blobGetIndex(): Promise<DesignMdIndex> {
-  try {
-    const { blobs } = await list({ prefix: INDEX_PREFIX });
-    const sorted = blobs.sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt));
-    for (const b of sorted) {
-      const data = await blobReadJson<DesignMdIndex>(b.url);
-      if (data && typeof data === "object") return data;
-    }
-    return {};
-  } catch (e) {
-    console.error("design-store blobGetIndex:", e);
-    return {};
-  }
-}
-
-async function blobSetIndex(index: DesignMdIndex): Promise<void> {
-  // Same as the thumbnail map: write the new version before deleting the old ones
-  const { blobs: old } = await list({ prefix: INDEX_PREFIX });
-  await put(`${INDEX_PREFIX}-${Date.now()}.json`, Buffer.from(JSON.stringify(index)), {
-    access: "private",
-    contentType: "application/json",
-  });
-  if (old.length) await del(old.map((b) => b.url)).catch(() => {});
-}
-
-// ─── Filesystem (dev) ────────────────────────────────────────────────────────
-
-async function fsGet(key: string): Promise<DesignMdEntry | null> {
-  try {
-    return JSON.parse(await fs.readFile(path.join(FS_DIR, `${key}.json`), "utf-8"));
-  } catch {
-    return null;
-  }
-}
-
-async function fsSet(key: string, entry: DesignMdEntry): Promise<void> {
-  await fs.mkdir(FS_DIR, { recursive: true });
-  await fs.writeFile(path.join(FS_DIR, `${key}.json`), JSON.stringify(entry, null, 2));
-}
-
-async function fsGetIndex(): Promise<DesignMdIndex> {
-  try {
-    return JSON.parse(await fs.readFile(FS_INDEX, "utf-8"));
-  } catch {
-    // No index: rebuild it from the entries on disk
-    const index: DesignMdIndex = {};
-    try {
-      for (const f of await fs.readdir(FS_DIR)) {
-        if (!f.endsWith(".json") || f.startsWith("_")) continue;
-        const e = JSON.parse(await fs.readFile(path.join(FS_DIR, f), "utf-8")) as DesignMdEntry;
-        if (e?.url) index[e.url] = { generatedAt: e.generatedAt, model: e.model, coverUrl: e.coverUrl, scrollUrl: e.scrollUrl };
-      }
-    } catch { /* empty folder */ }
-    return index;
-  }
-}
-
-async function fsSetIndex(index: DesignMdIndex): Promise<void> {
-  await fs.mkdir(FS_DIR, { recursive: true });
-  await fs.writeFile(FS_INDEX, JSON.stringify(index, null, 2));
-}
+const entryKey = (key: string) => `${DESIGN_MD_PREFIX}${key}.json`;
 
 async function saveImage(key: string, suffix: string, jpeg: Buffer): Promise<string> {
-  const name = `${key}${suffix}`;
-  if (USE_BLOB) {
-    const r = await put(`${PREFIX}${name}-${Date.now()}.jpg`, jpeg, { access: "private", contentType: "image/jpeg" });
-    return r.url;
-  }
-  await fs.mkdir(FS_DIR, { recursive: true });
-  await fs.writeFile(path.join(FS_DIR, `${name}.jpg`), jpeg);
-  return `/design-md/${name}.jpg?v=${Date.now()}`;
+  return putFile(`${DESIGN_MD_PREFIX}${key}${suffix}-${Date.now()}.jpg`, jpeg, "image/jpeg");
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
 
-export function getDesignMd(url: string): Promise<DesignMdEntry | null> {
-  const key = keyFor(url);
-  return USE_BLOB ? blobGet(key) : fsGet(key);
+export async function getDesignMd(url: string): Promise<DesignMdEntry | null> {
+  try { return await getJson<DesignMdEntry>(entryKey(keyFor(url))); }
+  catch (e) { console.error("design-store get:", e); return null; }
 }
 
-/** Blob prefix of a workspace's "why it's here" captures (the proxy allows it for that workspace) */
+/** Prefix of a workspace's "why it's here" captures (the file route allows it for that workspace) */
 export const whyShotPrefix = (organizationId: string) => `inspo/design-why/${organizationId}/`;
 
-/** Saves one capture of the site (image, video or sound) for this workspace's "why": Blob (private) in production, /public locally. Returns its URL. */
+/** Saves one capture of the site (image, video or sound) for this workspace's "why". Returns its path. */
 export async function saveWhyAsset(organizationId: string, url: string, id: string, data: Buffer, mime: string, ext: string): Promise<string> {
-  const name = `${keyFor(url)}-${id}`;
-  if (USE_BLOB) {
-    const r = await put(`${whyShotPrefix(organizationId)}${name}-${Date.now()}.${ext}`, data, { access: "private", contentType: mime });
-    return r.url;
-  }
-  const dir = path.join(process.cwd(), "public", "design-why", organizationId);
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(path.join(dir, `${name}.${ext}`), data);
-  return `/design-why/${organizationId}/${name}.${ext}?v=${Date.now()}`;
+  return putFile(`${whyShotPrefix(organizationId)}${keyFor(url)}-${id}-${Date.now()}.${ext}`, data, mime);
 }
 
 /** The full-page screenshot saved with the DESIGN.md (for models that need to look), or null. */
 export async function getDesignScreenshot(url: string): Promise<Buffer | null> {
-  const key = keyFor(url);
-  if (!USE_BLOB) {
-    try { return await fs.readFile(path.join(FS_DIR, `${key}.jpg`)); } catch { return null; }
-  }
-  const entry = await blobGet(key);
-  if (!entry?.screenshotUrl) return null;
-  try {
-    const res = await fetch(entry.screenshotUrl, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` }, cache: "no-store" });
-    return res.ok ? Buffer.from(await res.arrayBuffer()) : null;
-  } catch { return null; }
+  const entry = await getDesignMd(url);
+  const key = entry?.screenshotUrl ? keyOf(entry.screenshotUrl) : null;
+  if (!key) return null;
+  try { return (await getFile(key))?.body ?? null; } catch { return null; }
 }
 
-export function getDesignMdIndex(): Promise<DesignMdIndex> {
-  return USE_BLOB ? blobGetIndex() : fsGetIndex();
+export async function getDesignMdIndex(): Promise<DesignMdIndex> {
+  try { return (await getJson<DesignMdIndex>(INDEX_KEY)) ?? {}; }
+  catch (e) { console.error("design-store index:", e); return {}; }
 }
 
 /** The index trimmed to this workspace's sites. */
@@ -200,18 +76,25 @@ export async function designMdIndexFor(organizationId: string): Promise<DesignMd
 
 export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages): Promise<DesignMdEntry> {
   const key = keyFor(entry.url);
+  const before = images ? await getDesignMd(entry.url) : null;
   if (images) {
-    // Old images with the same key are overwritten locally; in Blob they stay orphaned until cleaned up
     [entry.screenshotUrl, entry.coverUrl, entry.scrollUrl] = await Promise.all([
       saveImage(key, "", images.fullShot),
       saveImage(key, "-cover", images.cover),
       saveImage(key, "-scroll", images.scroll),
     ]);
   }
-  if (USE_BLOB) await blobSet(key, entry); else await fsSet(key, entry);
+  await putJson(entryKey(key), entry);
 
   const index = await getDesignMdIndex();
   index[entry.url] = { generatedAt: entry.generatedAt, model: entry.model, coverUrl: entry.coverUrl, scrollUrl: entry.scrollUrl };
-  if (USE_BLOB) await blobSetIndex(index); else await fsSetIndex(index);
+  await putJson(INDEX_KEY, index);
+
+  // The images this generation replaced, once nothing points at them
+  if (before) {
+    const now = new Set([entry.screenshotUrl, entry.coverUrl, entry.scrollUrl]);
+    await deleteFiles([before.screenshotUrl, before.coverUrl, before.scrollUrl]
+      .filter((u): u is string => !!u && !now.has(u)).map(keyOf).filter((k): k is string => !!k && k.startsWith(DESIGN_MD_PREFIX)));
+  }
   return entry;
 }

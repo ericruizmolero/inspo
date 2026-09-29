@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
 import { renderWhyMd, type DesignSpec, type DesignWhy } from "@/types/design";
-import { proxiedSrc } from "@/lib/proxied-src";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { fmtDate } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
@@ -176,7 +175,6 @@ function ScrollShot({ src, alt, bg, host, url, theme }: { src: string; alt: stri
   };
 
   const duration = Math.max(6, Math.round(dist / 140));
-  const proxied = src.startsWith("https://") ? `/api/thumbnail/img?url=${encodeURIComponent(src)}` : src;
   const liveLabel = live === "loading" ? t.designMd.liveLoading : live === "failed" ? t.designMd.liveFailed : t.designMd.liveSite;
 
   return (
@@ -196,7 +194,7 @@ function ScrollShot({ src, alt, bg, host, url, theme }: { src: string; alt: stri
       <div ref={boxRef} className={`dm-shot${loaded ? " is-loaded" : ""}`}>
         {!loaded && <div className="shimmer" />}
         <img
-          src={proxied}
+          src={src}
           alt={alt}
           onLoad={onLoad}
           style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${duration}s` } as React.CSSProperties}
@@ -485,8 +483,8 @@ function WhySection({ state }: { state: WhyState }) {
                     {media.map((m, j) => (
                       <button key={j} type="button" className="dm-why__shot" onClick={() => setLightbox({ list: media, idx: j })} aria-label={t.comments.screenshot}>
                         {m.video
-                          ? <video src={proxiedSrc(m.url)} autoPlay muted loop playsInline preload="metadata" />
-                          : <img src={proxiedSrc(m.url)} alt="" loading="lazy" decoding="async" />}
+                          ? <video src={m.url} autoPlay muted loop playsInline preload="metadata" />
+                          : <img src={m.url} alt="" loading="lazy" decoding="async" />}
                       </button>
                     ))}
                   </div>
@@ -503,7 +501,7 @@ function WhySection({ state }: { state: WhyState }) {
                   )}
                   {h.status === "unverifiable" && <p className="dm-why__note-text dm-why__note-text--muted">{t.designMd.whyUnverifiable}{h.note ? ` ${h.note}` : ""}</p>}
                   {h.status !== "unverifiable" && h.note && <p className="dm-why__note-text">{h.note}</p>}
-                  {h.audioUrls?.map((u, j) => <audio key={j} className="dm-why__audio" src={proxiedSrc(u)} controls preload="metadata" />)}
+                  {h.audioUrls?.map((u, j) => <audio key={j} className="dm-why__audio" src={u} controls preload="metadata" />)}
                 </div>
               </div>
             </li>
@@ -518,8 +516,8 @@ function WhySection({ state }: { state: WhyState }) {
             <Button variant="icon" className="cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</Button>
             {many && <button className="cm-lightbox__nav is-prev" aria-label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
             {lightbox.list[lightbox.idx].video
-              ? <video key={lightbox.idx} className="cm-lightbox__img" src={proxiedSrc(lightbox.list[lightbox.idx].url)} controls autoPlay loop playsInline onClick={(e) => e.stopPropagation()} />
-              : <img key={lightbox.idx} className="cm-lightbox__img" src={proxiedSrc(lightbox.list[lightbox.idx].url)} alt="" onClick={(e) => e.stopPropagation()} />}
+              ? <video key={lightbox.idx} className="cm-lightbox__img" src={lightbox.list[lightbox.idx].url} controls autoPlay loop playsInline onClick={(e) => e.stopPropagation()} />
+              : <img key={lightbox.idx} className="cm-lightbox__img" src={lightbox.list[lightbox.idx].url} alt="" onClick={(e) => e.stopPropagation()} />}
             {many && <button className="cm-lightbox__nav is-next" aria-label={t.comments.next} onClick={(e) => { e.stopPropagation(); go(1); }}>{IcChevron}</button>}
             {many && <div className="cm-lightbox__caption"><span className="cm-lightbox__count">{lightbox.idx + 1} / {lightbox.list.length}</span></div>}
           </div>
