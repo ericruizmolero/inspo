@@ -440,9 +440,19 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* The "invite" row is an affordance, not a destination: muted until hovered */
 .nav-item--quiet { color: var(--muted-2); }
 .nav-item--quiet:hover { color: var(--text); }
+/* Projects: the count gives way to the "…" on hover (same corner); a name typed in place keeps the row's metrics */
+.nav-item--project:hover .nav-item__count, .nav-item--project:focus-within .nav-item__count { opacity: 0; }
+.nav-item__more { color: var(--muted); }
+.nav-item__more:hover { color: var(--text); }
+.nav-item--field { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.nav-item--field .nav-item__icon { color: var(--text); }
+.nav-item--field input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 14px; }
+.nav-item--field input::placeholder { color: var(--muted-2); }
 
 /* Refero: the one solid button in the sidebar, first thing under the workspace */
 .sidebar__add { height: 38px; justify-content: flex-start; padding: 0 12px 0 10px; }
+/* "Add to <project>": a long project name ends in an ellipsis instead of widening the button */
+.sidebar__add-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .content { flex: 1; min-width: 0; }
 
@@ -741,6 +751,8 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .tile__action--link { text-decoration: none; }
 .tile__action--cm.has-count { padding: 0 9px 0 8px; gap: 5px; }
 .tile__action-count { font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600; }
+/* The folder: filed cards show in how many projects, like the thread shows its replies */
+.tile__action--pj.is-filed { padding: 0 9px 0 8px; gap: 5px; color: #fff; }
 .tile__replies {
   display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
   font-size: 11px; color: rgba(255,255,255,0.75); text-shadow: 0 1px 2px rgba(0,0,0,0.5);
@@ -1836,6 +1848,21 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .ws__plus--solid { border-style: solid; }
 /* Account: clickable avatar for the photo; name editable in place */
 .ws__divider { height: 1px; background: var(--border); margin: 6px 0; }
+.ws__item--danger { color: var(--danger); }
+.ws__item--danger:hover { color: var(--danger); }
+
+/* Project picker (the folder button on a card) and a project's "…" menu: the workspace menu rows in a small panel */
+.pp { width: 248px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-m); padding: 6px; box-shadow: var(--shadow-pop); display: flex; flex-direction: column; }
+.pp--menu { width: 180px; }
+.pp__list { display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; }
+.pp__none { padding: 4px 8px 8px; font-size: 13px; color: var(--muted-2); }
+.pp__icon { display: flex; color: var(--muted); }
+.ws__item.is-active .pp__icon { color: var(--text); }
+.pp__new { display: flex; align-items: center; gap: 8px; padding: 4px 8px; flex-wrap: wrap; }
+.pp__new input { flex: 1; min-width: 0; height: 28px; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 13px; }
+.pp__new input::placeholder { color: var(--muted); }
+.pp__create { width: calc(100% - 28px); margin: 2px 0 2px 28px; padding: 6px 8px; border: 0; border-radius: var(--radius-s); background: var(--surface-2); color: var(--text); font-size: 12px; text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp__create:hover { background: var(--border); }
 
 /* Theme picker (System / Light / Dark): its own menu row, full width, three equal cells, text only */
 /* Columns come from the number of options: theme has 3 and language 2 */
@@ -2176,6 +2203,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .legal { display: flex; flex-direction: column; gap: 22px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+
 
 
 

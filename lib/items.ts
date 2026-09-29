@@ -137,13 +137,16 @@ export async function webSet(organizationId: string): Promise<Set<string>> {
 
 export async function deleteItems(organizationId: string, ids: string[]) {
   if (!ids.length) return;
+  const PI = schema.projectItem;
+  await db.delete(PI).where(and(eq(PI.organizationId, organizationId), inArray(PI.itemId, ids)));
   await db.delete(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
 }
 
-/** Deletes an item and its comment thread (Turso doesn't guarantee ON DELETE CASCADE). */
+/** Deletes an item, its comment thread and its project links (Turso doesn't guarantee ON DELETE CASCADE). */
 export async function deleteItem(organizationId: string, id: string): Promise<boolean> {
-  const C = schema.inspoComment;
+  const C = schema.inspoComment, PI = schema.projectItem;
   await db.delete(C).where(and(eq(C.organizationId, organizationId), eq(C.itemId, id)));
+  await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.itemId, id)));
   const res = await db.delete(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
   return (res.rowsAffected ?? 0) > 0;
 }

@@ -4,9 +4,10 @@ import { proxiedSrc } from "@/lib/proxied-src";
 import { hueFor, Avatar } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
-import { InspoItem, InspoTags } from "@/types/inspo";
+import { InspoItem, InspoTags, Project } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
+import ProjectPicker, { IconFolder } from "./ProjectPicker";
 
 const BLOCKED = ["x.com", "twitter.com", "linkedin.com", "primevideo.com", "instagram.com", "youtube.com"];
 
@@ -23,6 +24,11 @@ type ImgSource = "idle" | "og" | "shot" | "error";
 // Images already resolved per URL: moving cards between columns makes React
 // remount them, and without this everything would download (and flicker) again.
 const imgCache = new Map<string, { src: string | null; source: ImgSource }>();
+
+/** The image a card already resolved for this URL, if any (the project start screen reuses it). */
+export function cachedCardImage(web: string): string | null {
+  return imgCache.get(web)?.src ?? null;
+}
 
 interface InspoCardProps {
   item: InspoItem;
@@ -42,6 +48,11 @@ interface InspoCardProps {
   caption?: { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number } | null;
   onComments?: () => void;
   onDelete?: () => Promise<void>; // remove the card from the workspace
+  /** The workspace's projects and the ones this card is filed in (the folder button); none = no button */
+  projects?: Project[];
+  projectIds?: string[];
+  onToggleProject?: (projectId: string, on: boolean) => void;
+  onCreateProject?: (name: string) => Promise<void>;
 }
 
 const IconUpload = (
@@ -75,7 +86,7 @@ const IconInfo = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, caption, onComments, onDelete }: InspoCardProps) {
+export default function InspoCard({ item, tags, score, reason, manualThumbnail, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject }: InspoCardProps) {
   const { t } = useT();
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
@@ -91,6 +102,8 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
   // Delete in two taps: the first asks for confirmation on the button itself, the second deletes
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // The project menu keeps the action bar on screen while it is open (the pointer leaves the tile for it)
+  const [pickerOpen, setPickerOpen] = useState(false);
   // When the confirmation opened: a near-instant second click/tap/key doesn't count,
   // so deleting is always two deliberate actions (double click, double tap or Space don't delete).
   const confirmAt = useRef(0);
@@ -249,6 +262,17 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
     </div>
   );
 
+  const filedCount = projectIds.length;
+  const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
+    <ProjectPicker
+      projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
+      className={`${className}${filedCount ? " is-filed" : ""}`}
+      label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
+    >
+      {IconFolder}{filedCount > 0 && <span className="tile__action-count">{filedCount}</span>}
+    </ProjectPicker>
+  );
+
   return (
     <div>
       <article
@@ -362,7 +386,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
           )}
 
           <div
-            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
+            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -390,6 +414,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
                 {IconComment}{commentCount > 0 && <span className="tile__action-count">{commentCount}</span>}
               </button>
             )}
+            {picker("tile__action tile__action--pj", setPickerOpen)}
             <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
               data-tip={designMdLoading ? t.card.generatingDesignMd : designMdReady ? t.card.seeDesignMd : t.card.generateWithAi}
@@ -457,6 +482,7 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail, 
             {IconComment}{commentCount > 0 && commentCount}
           </button>
         )}
+        {picker("tile__caption-md tile__caption-pj")}
         <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>
         <a className="tile__caption-md tile__caption-link" href={item.web} target="_blank" rel="noopener noreferrer" aria-label={t.card.openSite}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (

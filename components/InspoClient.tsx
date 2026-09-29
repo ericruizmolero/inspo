@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem } from "@/app/actions/library";
+import { addInspo, removeInspo, postComment as postCommentAction, removeComment, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -8,7 +8,7 @@ import { useState, useMemo, useEffect, useRef, useCallback, memo, type RefObject
 import gsap from "gsap";
 import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
-import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment, InspoComment } from "@/types/inspo";
+import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
 import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView, IslandPill } from "./Sidebar";
@@ -19,6 +19,7 @@ import { webKeyOf, nameFromHost, typeFromUrl } from "@/lib/url";
 import DesignMdModal from "./DesignMdModal";
 import DirectoryModal from "./DirectoryModal";
 import EmptyStart from "./EmptyStart";
+import ProjectStart from "./ProjectStart";
 import CommentsPanel from "./CommentsPanel";
 import { proxiedSrc } from "@/lib/proxied-src";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
@@ -28,6 +29,7 @@ import { useT } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
 import CommandPalette from "./CommandPalette";
+import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -137,6 +139,8 @@ export default function InspoClient({
   items: initialItems,
   initialThumbnailMap = {},
   initialTagMap = {},
+  initialProjects = [],
+  initialProjectLinks = {},
   aiEnabled = false,
   user,
   workspace,
@@ -154,6 +158,8 @@ export default function InspoClient({
   initialDesignMdIndex?: Record<string, { coverUrl?: string; scrollUrl?: string }>;
   initialThumbnailMap?: ThumbnailMap;
   initialTagMap?: TagMap;
+  initialProjects?: Project[];
+  initialProjectLinks?: ProjectLinks;
   aiEnabled?: boolean;
   user: SessionUser;
   workspace: Workspace;
@@ -193,6 +199,25 @@ export default function InspoClient({
   const setSector = useCallback((v: string) => setParams({ sector: v }), [setParams]);
   const setStyle = useCallback((v: string) => setParams({ style: v }), [setParams]);
   const setQuery = useCallback((v: string) => { setQueryState(v); setParams({ q: v }, true); }, [setParams]);
+
+  // ─── Projects ──────────────────────────────────────────────────────────────
+  // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
+  const [projects, setProjects] = useState(initialProjects);
+  const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
+  const inParam = sp.get("in");
+  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : "all";
+  const currentProject = projects.find((p) => p.id === space) ?? null;
+  const setSpace = useCallback((v: string) => setParams({ in: v }), [setParams]);
+  // Adding from inside a project files it there: read at save time, whatever the callback closed over
+  const projectRef = useRef<string | null>(null);
+  projectRef.current = currentProject?.id ?? null;
+  const [confirm, confirmDialog] = useConfirm();
+
+  // The items in the current space (inbox, a project or everything), before any other filter
+  const spaceItems = useMemo(() => space === "all" ? items
+    : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
+    : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
+  [items, links, space]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
 
   // ─── AI: tags and search ────────────────────────────────────────────────────
@@ -335,9 +360,11 @@ export default function InspoClient({
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const r = await addInspo({ web: input.web, type: input.type, note: input.note });
+      const projectId = projectRef.current ?? undefined;
+      const r = await addInspo({ web: input.web, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
+      if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Full experience from the start: tags and DESIGN.md without asking
       tagOne(item.web);
@@ -397,6 +424,58 @@ export default function InspoClient({
       setAddError({ title: t.app.removeFailed, detail: e instanceof Error ? e.message : String(e) });
     }
   }, []);
+
+  // Projects change on screen first; if the server says no, they go back with a notice
+  const projectFailed = (e: unknown) => setAddError({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) });
+  const createProject = useCallback(async (name: string): Promise<Project | null> => {
+    const r = await newProject(name).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { projectFailed(new Error(r.error)); return null; }
+    setProjects((prev) => [...prev, r.data]);
+    return r.data;
+  }, []);
+  const renameProject = useCallback(async (id: string, name: string) => {
+    const before = projects.find((p) => p.id === id);
+    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
+    const r = await editProject(id, name).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { if (before) setProjects((prev) => prev.map((p) => (p.id === id ? before : p))); projectFailed(new Error(r.error)); }
+  }, [projects]);
+  const deleteProject = useCallback(async (project: Project) => {
+    if (!(await confirm({ title: t.projects.confirmRemove(project.name), description: t.projects.confirmRemoveHint, action: t.common.delete, danger: true }))) return;
+    const prevProjects = projects, prevLinks = links;
+    if (space === project.id) setParams({ in: "" }, true);
+    setProjects((prev) => prev.filter((p) => p.id !== project.id));
+    setLinks((prev) => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, v.filter((x) => x !== project.id)])));
+    const r = await removeProject(project.id).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setProjects(prevProjects); setLinks(prevLinks); projectFailed(new Error(r.error)); }
+  }, [projects, links, space, confirm, setParams]);
+  const toggleFiled = useCallback(async (item: InspoItem, projectId: string, on: boolean) => {
+    const id = item.id;
+    if (!id) return;
+    const flip = (want: boolean) => setLinks((prev) => {
+      const cur = (prev[id] ?? []).filter((x) => x !== projectId);
+      return { ...prev, [id]: want ? [...cur, projectId] : cur };
+    });
+    flip(on);
+    const r = await setFiled(projectId, [id], on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); }
+  }, []);
+  /** Several references into one project at once (the empty project's picker) */
+  const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
+    const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+    const prevLinks = links;
+    setLinks((prev) => {
+      const next = { ...prev };
+      for (const id of ids) next[id] = [...(next[id] ?? []).filter((x) => x !== projectId), projectId];
+      return next;
+    });
+    const r = await setFiled(projectId, ids, true).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); }
+  }, [links]);
+  const createAndFile = useCallback(async (item: InspoItem, name: string) => {
+    const p = await createProject(name);
+    if (p) await toggleFiled(item, p.id, true);
+  }, [createProject, toggleFiled]);
 
   // ─── Plan and quotas ───────────────────────────────────────────────────────
   // Arrives from the server with the page; re-read after spending quota (a new DESIGN.md)
@@ -605,7 +684,7 @@ export default function InspoClient({
 
   const resetFilters = useCallback(() => {
     setQueryState("");
-    setParams({ type: "", author: "", date: "", q: "", sector: "", style: "", tags: "" });
+    setParams({ type: "", author: "", date: "", q: "", sector: "", style: "", tags: "", in: "" });
   }, [setParams]);
 
   // Collapsible sidebar (desktop only). SidebarProvider saves it in a cookie that the server reads
@@ -688,12 +767,16 @@ export default function InspoClient({
   const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
   // Desktop, sidebar collapsed: the island pill sits over the topbar and says what the breadcrumb said
   const island = !isMobile && collapsed;
-  const viewLabel = type === "all" ? t.sidebar.all : t.labels.type[type];
+  const spaceLabel = space === "inbox" ? t.projects.inbox : currentProject?.name;
+  const typeLabel = type === "all" ? null : t.labels.type[type];
+  const viewLabel = spaceLabel ? (typeLabel ? `${spaceLabel} · ${typeLabel}` : spaceLabel) : typeLabel ?? t.sidebar.all;
   // Everything under the workspace, shared by the docked column and the island menu
   const navProps = {
     quota, items, members, workspaceKind: workspace.kind, author, onAuthor: setAuthor, type,
-    isAll: type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0,
+    isAll: space === "all" && type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0,
     onType: setType, onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
+    space, onSpace: setSpace, projects, links, spaceItems,
+    onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
   const gridRef = useRef<HTMLElement>(null);
   const isMount = useRef(true);
@@ -706,7 +789,7 @@ export default function InspoClient({
     const useAi = !!aiScores && ai && query.trim().length >= 3;
     const cutoff = useAi ? aiCutoff(aiScores!) : 0;
 
-    return [...items]
+    return [...spaceItems]
       .sort((a, b) => useAi
         ? (aiScores![b.web] ?? 0) - (aiScores![a.web] ?? 0)
         : parseDate(b.date) - parseDate(a.date))
@@ -733,7 +816,7 @@ export default function InspoClient({
         }
         return true;
       });
-  }, [items, type, author, date, query, tagMap, sector, style, selTags, ai, aiScores]);
+  }, [spaceItems, type, author, date, query, tagMap, sector, style, selTags, ai, aiScores]);
 
   // Best match among visible results (for the AI search header)
   const aiTop = useMemo(
@@ -865,10 +948,11 @@ export default function InspoClient({
   // The grid's handlers, behind one stable ref: the grid only re-renders when its data changes, never because
   // the shell did (collapsing the sidebar used to re-render all 125 cards, 70 ms on the toggle's first frame)
   const gridActions = useRef<GridActions>(null!);
-  gridActions.current = { setCommentsItemId, deleteItem, handleThumbnailUpload, handleThumbnailRemove, openDesignMd };
+  gridActions.current = { setCommentsItemId, deleteItem, handleThumbnailUpload, handleThumbnailRemove, openDesignMd, toggleFiled, createAndFile };
 
   return (
     <SidebarProvider open={!collapsed} onOpenChange={setSidebarOpen} className="shell">
+      {confirmDialog}
       {designMdItem && (
         <DesignMdModal
           url={designMdItem.web}
@@ -959,6 +1043,7 @@ export default function InspoClient({
           onClose={() => setShowAdd(false)}
           onSubmit={addByUrl}
           isDuplicate={isDuplicate}
+          project={currentProject?.name}
         />
       )}
 
@@ -981,7 +1066,7 @@ export default function InspoClient({
               <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="topbar__title">{type === "all" ? t.sidebar.all : t.labels.type[type]}</BreadcrumbPage>
+                <BreadcrumbPage className="topbar__title">{viewLabel}</BreadcrumbPage>
                 <span className="topbar__count">{filtered.length}</span>
               </BreadcrumbItem>
             </BreadcrumbList>
@@ -1036,7 +1121,7 @@ export default function InspoClient({
 
         {items.length > 0 && (
           <FilterBar
-            items={items} tagMap={tagMap}
+            items={spaceItems} tagMap={tagMap}
             authors={authors} authorImages={authorImages}
             author={author} date={date} sector={sector} style={style} selTags={selTags}
             onAuthor={setAuthor} onDate={setDate} onSector={setSector} onStyle={setStyle} onToggleTag={toggleTag}
@@ -1055,6 +1140,30 @@ export default function InspoClient({
             isDuplicate={isDuplicate}
             onDirectory={() => setShowDirectory(true)}
           />
+        ) : spaceItems.length === 0 && currentProject ? (
+          // An empty project is a starting point: paste a site, or bring references from the library
+          <ProjectStart
+            key={currentProject.id}
+            project={currentProject}
+            items={items}
+            links={links}
+            imageOf={(i) => thumbMap[i.web]
+              ? (thumbMap[i.web].startsWith("https://") ? `/api/thumbnail/img?url=${encodeURIComponent(thumbMap[i.web])}` : thumbMap[i.web])
+              : designMdIndex[i.web]?.coverUrl ? proxiedSrc(designMdIndex[i.web].coverUrl!) : null}
+            onAddUrl={async (web) => {
+              // Already in the library: filed here instead of "already saved"
+              const key = webKeyOf(web);
+              const saved = items.find((i) => webKeyOf(i.web) === key);
+              if (saved) await toggleFiled(saved, currentProject.id, true);
+              else await addByUrl({ web, type: typeFromUrl(web), note: "" });
+            }}
+            onFile={(picked) => fileMany(picked, currentProject.id)}
+          />
+        ) : spaceItems.length === 0 && space === "inbox" ? (
+          <div className="empty">
+            <span className="display">{t.projects.inboxEmptyTitle}</span>
+            <span>{t.projects.inboxEmptyHint}</span>
+          </div>
         ) : filtered.length === 0 ? (
           <div className="empty">
             <span className="display">{t.app.nothingHere}</span>
@@ -1066,6 +1175,7 @@ export default function InspoClient({
             gridRef={gridRef} layout={layout} tagMap={tagMap}
             aiScores={ai ? aiScores : null} aiReasons={ai ? aiReasons : null}
             commentMap={commentMap} authorImages={authorImages} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
+            projects={projects} links={links}
             actions={gridActions}
           />
         )}
@@ -1080,13 +1190,15 @@ interface GridActions {
   handleThumbnailUpload: (web: string, file: File) => void;
   handleThumbnailRemove: (web: string) => void;
   openDesignMd: (item: InspoItem) => void;
+  toggleFiled: (item: InspoItem, projectId: string, on: boolean) => void;
+  createAndFile: (item: InspoItem, name: string) => Promise<void>;
 }
 
 /** The masonry. Memoised: it re-renders on new data (items, tags, comments, covers), not on shell state. */
 interface GridSlot { item: InspoItem; c: number; y: number; k: number }
 interface GridLayout { n: number; slots: GridSlot[]; height: string }
 
-const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, actions }: {
+const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, projects, links, actions }: {
   gridRef: RefObject<HTMLElement | null>;
   layout: GridLayout;
   tagMap: TagMap;
@@ -1097,6 +1209,8 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
   thumbMap: ThumbnailMap;
   designMdJobs: Record<string, DesignMdState>;
   designMdIndex: Record<string, { coverUrl?: string; scrollUrl?: string }>;
+  projects: Project[];
+  links: ProjectLinks;
   actions: RefObject<GridActions>;
 }) {
   return (
@@ -1115,6 +1229,8 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
               manualThumbnail={thumbMap[item.web]}
               designMdLoading={designMdJobs[item.web]?.status === "loading"}
               designMd={designMdIndex[item.web]}
+              projects={projects}
+              projectIds={item.id ? links[item.id] : undefined}
               actions={actions}
             />
           </div>
@@ -1126,10 +1242,11 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
 
 /** One card with its handlers bound. Memoised on its own data, so a new layout (a sidebar toggle, a new
  *  measurement) only moves the slot div around it and leaves the 125 card trees alone. */
-const Card = memo(function Card({ item, tags, score, reason, commentCount, comments, authorImage, manualThumbnail, designMdLoading, designMd, actions }: {
+const Card = memo(function Card({ item, tags, score, reason, commentCount, comments, authorImage, manualThumbnail, designMdLoading, designMd, projects, projectIds, actions }: {
   item: InspoItem; tags: InspoTags | undefined; score: number | undefined; reason: string | undefined; commentCount: number;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: { coverUrl?: string; scrollUrl?: string } | undefined;
+  projects: Project[]; projectIds: string[] | undefined;
   actions: RefObject<GridActions>;
 }) {
   const act = actions.current;
@@ -1168,6 +1285,10 @@ const Card = memo(function Card({ item, tags, score, reason, commentCount, comme
       designMdReady={designMd !== undefined}
       designCover={designMd?.coverUrl}
       designScroll={designMd?.scrollUrl}
+      projects={item.id ? projects : undefined}
+      projectIds={projectIds}
+      onToggleProject={(projectId, on) => act.toggleFiled(item, projectId, on)}
+      onCreateProject={(name) => act.createAndFile(item, name)}
     />
   );
 });

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { eq } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
 import { addItem, deleteItem } from "@/lib/items";
+import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
 import { addComment, deleteComment } from "@/lib/comments";
 import { siteTextWithin } from "@/lib/extract";
 import { normalizeWebUrl, guessName, typeFromUrl } from "@/lib/url";
@@ -13,12 +14,13 @@ import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment } from "@/types/inspo";
 
-/** Only the URL is required: name and collection are inferred if missing. */
-export async function addInspo(input: { web: string; name?: string; type?: string; note?: string; subNote?: string }) {
+/** Only the URL is required: name and collection are inferred if missing.
+ *  Added from inside a project, it is filed there too (otherwise it lands in the Inbox). */
+export async function addInspo(input: { web: string; name?: string; type?: string; note?: string; subNote?: string; projectId?: string }) {
   return withCtx(async (ctx) => {
     const web = normalizeWebUrl(input.web ?? "");
     if (!web) throw new HttpError(400, (await getErrors()).badUrl);
-    return addItem(ctx.workspace.id, {
+    const item = await addItem(ctx.workspace.id, {
       name: input.name?.trim() || guessName(web, await siteTextWithin(web)),
       web,
       type: input.type?.trim() || typeFromUrl(web),
@@ -26,6 +28,30 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
       author: ctx.user.name || ctx.user.email,
       createdBy: ctx.user.id,
     });
+    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+    return item;
+  });
+}
+
+// Projects: any member can create, rename and delete them. Deleting one never deletes references.
+export async function newProject(name: string) {
+  return withCtx(async (ctx) => createProject(ctx.workspace.id, name, ctx.user.id));
+}
+
+export async function editProject(id: string, name: string) {
+  return withCtx(async (ctx) => renameProject(ctx.workspace.id, String(id), name));
+}
+
+export async function removeProject(id: string) {
+  return withCtx(async (ctx) => { await deleteProject(ctx.workspace.id, String(id)); });
+}
+
+/** Files items in a project (on) or takes them out (off). */
+export async function setFiled(projectId: string, itemIds: string[], on: boolean) {
+  return withCtx(async (ctx) => {
+    const ids = Array.isArray(itemIds) ? itemIds.map(String).slice(0, 500) : [];
+    if (on) await fileItems(ctx.workspace.id, String(projectId), ids, ctx.user.id);
+    else await unfileItems(ctx.workspace.id, String(projectId), ids);
   });
 }
 

@@ -21,12 +21,14 @@ interface AddInspoModalProps {
   onSubmit: (input: NewInspoInput) => void;
   /** Is that URL already saved? Saves a trip to the server to hear the same thing. */
   isDuplicate?: (web: string) => boolean;
+  /** Name of the project it will be filed in, when opened from inside one */
+  project?: string;
 }
 
 const TYPES = ["inspiration", "videos", "ideas", "documentaries"] as const;
 
 /** Only the URL is needed: name, screenshot, tags and collection are inferred. */
-export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddInspoModalProps) {
+export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project }: AddInspoModalProps) {
   const { t } = useT();
   const [raw, setRaw] = useState("");
   const [note, setNote] = useState("");
@@ -50,7 +52,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate }: AddIns
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent initialFocus={urlRef}>
         <div className="modal__header">
-          <DialogTitle>{t.add.title}</DialogTitle>
+          <DialogTitle>{project ? t.add.titleIn(project) : t.add.title}</DialogTitle>
           <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
         </div>
 

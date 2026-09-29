@@ -2,7 +2,7 @@
 // The user/session/account/verification/organization/member/invitation tables
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
-import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 
 // ─── Better Auth ─────────────────────────────────────────────────────────────
 
@@ -120,6 +120,35 @@ export const inspoItem = sqliteTable("inspo_item", {
 }, (t) => [
   index("inspo_item_org_idx").on(t.organizationId),
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
+]);
+
+// ─── Projects ────────────────────────────────────────────────────────────────
+// Spaces inside a workspace to file references by what they are for (a landing,
+// a UI library…). An item can be in several projects; one in none is in the Inbox.
+// Filing never copies the item: the DESIGN.md, tags and thread stay the item's.
+
+export const project = sqliteTable("project", {
+  id: text("id").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+}, (t) => [
+  index("project_org_idx").on(t.organizationId),
+]);
+
+export const projectItem = sqliteTable("project_item", {
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  /** Repeated here so a whole workspace's links load in one query */
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  addedBy: text("added_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.projectId, t.itemId] }),
+  index("project_item_org_idx").on(t.organizationId),
+  index("project_item_item_idx").on(t.itemId),
 ]);
 
 // ─── DESIGN.md revisions ─────────────────────────────────────────────────────

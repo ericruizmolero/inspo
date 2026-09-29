@@ -12,6 +12,11 @@ export interface InspoItem {
   subNote?: string;
 }
 
+// ─── Projects ────────────────────────────────────────────────────────────────
+export interface Project { id: string; name: string }
+/** item id → ids of the projects it is filed in (none = Inbox) */
+export type ProjectLinks = Record<string, string[]>;
+
 export type FilterType = "all" | InspoItem["type"];
 export type FilterAuthor = "all" | string;
 export type FilterDate = "all" | "thisMonth" | "thisYear";

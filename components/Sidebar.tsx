@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { FilterDate, FilterType, InspoItem } from "@/types/inspo";
+import { FilterDate, FilterType, InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import type { Term } from "@/lib/taxonomy";
 import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
-  SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
+  SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export const TYPES: InspoItem["type"][] = ["inspiration", "videos", "ideas", "documentaries"];
 export const DATES: Exclude<FilterDate, "all">[] = ["thisMonth", "thisYear"];
@@ -49,6 +50,21 @@ const I = {
   film: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
       <rect x="2" y="2.5" width="12" height="11" rx="2" /><path d="M5 2.5v11M11 2.5v11M2 8h12" />
+    </svg>
+  ),
+  inbox: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 9l1.6-5.2A1.5 1.5 0 015 2.8h6a1.5 1.5 0 011.4 1L14 9v3.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5z" /><path d="M2 9h3.2l.8 1.6h4l.8-1.6H14" />
+    </svg>
+  ),
+  folder: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
+      <path d="M2 4.5A1.5 1.5 0 013.5 3h2.8l1.5 1.7h4.7A1.5 1.5 0 0114 6.2v5.3a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 11.5z" />
+    </svg>
+  ),
+  dots: (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+      <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" /><circle cx="11" cy="7" r="1.2" />
     </svg>
   ),
   user: (
@@ -261,6 +277,76 @@ export interface SidebarProps {
   onReset: () => void;
   onAdd: () => void;
   onDirectory: () => void;
+  /** Where the library is looking: "all", "inbox" or a project id */
+  space: string;
+  onSpace: (space: string) => void;
+  projects: Project[];
+  links: ProjectLinks;
+  /** Items in the current space: the type rows count these */
+  spaceItems: InspoItem[];
+  onCreateProject: (name: string) => Promise<Project | null>;
+  onRenameProject: (id: string, name: string) => void;
+  onDeleteProject: (project: Project) => void;
+}
+
+/** A name typed in place (new project, rename): Enter or leaving the field saves, Esc drops it. */
+function NameField({ initial = "", placeholder, onSubmit, onCancel }: {
+  initial?: string; placeholder: string; onSubmit: (name: string) => void; onCancel: () => void;
+}) {
+  const [v, setV] = useState(initial);
+  const done = useRef(false);
+  const finish = (save: boolean) => {
+    if (done.current) return;
+    done.current = true;
+    const n = v.trim();
+    if (save && n && n !== initial) onSubmit(n); else onCancel();
+  };
+  return (
+    <SidebarMenuItem>
+      <div className="nav-item nav-item--field">
+        <span className="nav-item__icon">{I.folder}</span>
+        <input
+          autoFocus value={v} placeholder={placeholder} maxLength={60} aria-label={placeholder}
+          onChange={(e) => setV(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); finish(true); }
+            if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); }
+          }}
+          onBlur={() => finish(true)}
+        />
+      </div>
+    </SidebarMenuItem>
+  );
+}
+
+/** One project in the sidebar: goes to it; its "…" (on hover) renames or deletes it. */
+function ProjectRow({ project, count, active, onClick, onRename, onDelete }: {
+  project: Project; count: number; active: boolean; onClick: () => void; onRename: () => void; onDelete: () => void;
+}) {
+  const { t } = useT();
+  const [open, setOpen] = useState(false);
+  return (
+    <SidebarMenuItem className="nav-item--project">
+      <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item" title={project.name}>
+        <span className="nav-item__icon">{I.folder}</span>
+        <span className="truncate">{project.name}</span>
+      </SidebarMenuButton>
+      <SidebarMenuBadge className="nav-item__count">{count}</SidebarMenuBadge>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger render={<SidebarMenuAction showOnHover className="nav-item__more" aria-label={t.projects.options(project.name)} />}>
+          {I.dots}
+        </PopoverTrigger>
+        <PopoverContent align="start" side="right" className="pp pp--menu">
+          <button type="button" className="ws__item" onClick={() => { setOpen(false); onRename(); }}>
+            <span className="ws__item-name">{t.projects.rename}</span>
+          </button>
+          <button type="button" className="ws__item ws__item--danger" onClick={() => { setOpen(false); onDelete(); }}>
+            <span className="ws__item-name">{t.projects.remove}</span>
+          </button>
+        </PopoverContent>
+      </Popover>
+    </SidebarMenuItem>
+  );
 }
 
 /** This month's DESIGN.md quota: the only thing that runs out. Links to /settings/plan. */
@@ -280,7 +366,8 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
 
 /** Everything under the workspace: add, the whole library, the collections, the team, the directory and the plan.
  *  Shared by the docked column, the phone sheet and the island menu that hangs from the top bar pill. */
-export function SidebarNav({ quota, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, onPick }: Omit<SidebarProps, "brand"> & {
+export function SidebarNav({ quota, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, onPick,
+  space, onSpace, projects, links, spaceItems, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes; the island menu stays open on purpose) */
   onPick?: () => void;
 }) {
@@ -307,12 +394,22 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
   const foldAll = () => { cancelIntent(); setOpen(null); };
   useEffect(() => cancelIntent, []);
   const shuffle = () => { foldAll(); setPicks((cur) => shuffleSidebarPicks(cur)); setRound((n) => n + 1); };
-  const countBy = (pred: (i: InspoItem) => boolean) => items.filter(pred).length;
+  const countBy = (pred: (i: InspoItem) => boolean) => spaceItems.filter(pred).length;
+  // Projects: which one is being named in place ("new" = the row at the bottom), and each one's count
+  const [naming, setNaming] = useState<string | null>(null);
+  const projectCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const i of items) for (const p of (i.id && links[i.id]) || []) c[p] = (c[p] ?? 0) + 1;
+    return c;
+  }, [items, links]);
+  // Inside a project the button says where the reference will be filed
+  const addTo = projects.find((p) => p.id === space)?.name;
+  const inboxCount = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)).length, [items, links]);
   return (
     <>
       <div className="app-sidebar__add-row">
         <Button variant="primary" block className="sidebar__add" onClick={pick(onAdd)}>
-          {I.plus} {t.sidebar.addReference}
+          {I.plus} <span className="sidebar__add-label">{addTo ? t.sidebar.addTo(addTo) : t.sidebar.addReference}</span>
         </Button>
       </div>
 
@@ -332,6 +429,35 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
                   onClick={pick(() => onType(type === v ? "all" : v))}
                 />
               ))}
+            </SidebarMenu>
+          </SidebarGroup>
+
+          {/* Projects: spaces to file references by what they are for. The Inbox heads the group (what is
+              in no project yet), so it reads as the tray the projects empty; the last row creates one in place. */}
+          <SidebarGroup>
+            <SidebarGroupLabel>{t.projects.title}</SidebarGroupLabel>
+            <SidebarMenu>
+              <NavItem icon={I.inbox} label={t.projects.inbox} count={inboxCount} active={space === "inbox"} title={t.projects.inboxHint}
+                onClick={pick(() => onSpace(space === "inbox" ? "all" : "inbox"))} />
+              {projects.map((p) => naming === p.id ? (
+                <NameField key={p.id} initial={p.name} placeholder={t.projects.namePlaceholder}
+                  onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} onCancel={() => setNaming(null)} />
+              ) : (
+                <ProjectRow key={p.id} project={p} count={projectCounts[p.id] ?? 0} active={space === p.id}
+                  onClick={pick(() => onSpace(space === p.id ? "all" : p.id))}
+                  onRename={() => setNaming(p.id)} onDelete={() => onDeleteProject(p)} />
+              ))}
+              {naming === "new" ? (
+                <NameField placeholder={t.projects.namePlaceholder} onCancel={() => setNaming(null)}
+                  onSubmit={async (name) => { setNaming(null); const p = await onCreateProject(name); if (p) { onPick?.(); onSpace(p.id); } }} />
+              ) : (
+                <SidebarMenuItem>
+                  <SidebarMenuButton className="nav-item nav-item--quiet" onClick={() => setNaming("new")}>
+                    <span className="nav-item__icon">{I.plus}</span>
+                    <span>{t.projects.newProject}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroup>
 

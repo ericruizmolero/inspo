@@ -52,6 +52,8 @@ export const errors = {
   unavailable: "Not available",
   unknownEvent: "Unknown event",
   unknownSection: "Unknown section",
+  projectNameRequired: "Give the project a name",
+  projectNotFound: "That project no longer exists",
   urlAlreadyHere: "That URL is already in this workspace",
   urlNotInWorkspace: "That URL is not in the workspace",
   workspaceAdminsCan: "Only workspace admins can do this",

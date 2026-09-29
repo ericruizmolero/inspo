@@ -1,0 +1,41 @@
+/* Empty project: pick references from the library to bring in. Shares the first-run layout
+   (EmptyStart.module.css); these are only the pieces it adds. */
+.label { font-size: 13px; color: var(--muted); }
+.none { font-size: 13px; color: var(--muted); padding: 24px 0; }
+.grid { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.pick {
+  position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding: 8px 8px 10px; border-radius: var(--radius-m); text-align: left; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+@media (hover: hover) { .pick:hover { background: var(--surface-2); border-color: var(--border-strong); } }
+.pickOn, .pickOn:hover { border-color: var(--text-2); box-shadow: 0 0 0 1px var(--text-2); }
+.thumb { margin-bottom: 6px; }
+/* Round tick in the corner of the picture: empty ring until picked */
+.check {
+  position: absolute; top: 14px; right: 14px; display: grid; place-items: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0,0,0,0.35); border: 1.5px solid rgba(255,255,255,0.85); color: var(--bg);
+  opacity: 0; transition: opacity 0.12s;
+}
+.pick:hover .check, .pick:focus-visible .check, .pickOn .check { opacity: 1; }
+.pickOn .check { background: var(--text); border-color: var(--text); }
+.name { font-size: 13px; font-weight: 500; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.host { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+/* Floats over the bottom of the screen while there is a choice to confirm */
+.bar {
+  position: sticky; bottom: 20px; z-index: 5; margin-top: 24px;
+  display: flex; align-items: center; gap: 8px; max-width: 100%;
+  padding: 8px 8px 8px 16px; border-radius: 14px;
+  background: var(--surface-2); border: 1px solid var(--border-strong); box-shadow: var(--shadow-pop);
+}
+.barText { font-size: 13px; color: var(--text-2); white-space: nowrap; margin-right: 8px; }
+.barAction { min-width: 0; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .barAction { max-width: 140px; }
+}
+@media (prefers-reduced-motion: reduce) { .pick, .check { transition: none; } }

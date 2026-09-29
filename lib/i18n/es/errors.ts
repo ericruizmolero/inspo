@@ -52,6 +52,8 @@ export const errors: typeof EnErrors = {
   unavailable: "No disponible",
   unknownEvent: "Evento desconocido",
   unknownSection: "Sección desconocida",
+  projectNameRequired: "Ponle un nombre al proyecto",
+  projectNotFound: "Ese proyecto ya no existe",
   urlAlreadyHere: "Esa URL ya está en este workspace",
   urlNotInWorkspace: "Esa URL no está en el workspace",
   workspaceAdminsCan: "Solo los administradores del workspace pueden hacer esto",
