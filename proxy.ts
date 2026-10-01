@@ -58,5 +58,6 @@ export const config = {
   // directory/: static directory thumbnails, also shown signed out from the home page
   // opengraph-image and twitter-image: WhatsApp and friends request the share card without a session
   // showcase/: the fixed images beside /login, shown signed out
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon0.svg|icon1.png|apple-icon.png|icon-512.png|opengraph-image|twitter-image|thumbs/|design-md/|shots/|fonts/|directory/|showcase/).*)"],
+  // logo.png: the header logo, on the signed-out home and /login too
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon0.svg|icon1.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|thumbs/|design-md/|shots/|fonts/|directory/|showcase/).*)"],
 };

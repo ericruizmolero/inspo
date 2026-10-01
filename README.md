@@ -142,7 +142,7 @@ stores each one as a path, `/api/files/<key>`, and never as an R2 address.
   `/api/media` for a signed URL and PUTs the file straight to R2 (`lib/media-client.ts`). R2
   refuses a body of another size or type. Locally the file is posted to the app as before.
 - **R2 CORS** (Cloudflare, R2, `criterio-files`, Settings) must allow `PUT` from
-  `https://criterio.design` and `https://inspo-criterio-design.vercel.app`, or uploads fail.
+  `https://criterio.design` and `https://inspo-fawn-two.vercel.app`, or uploads fail.
   Add an origin there if the app gets a new domain.
 - Preview deployments use the same bucket as production. Deleting an item in a preview deletes
   its real image.
