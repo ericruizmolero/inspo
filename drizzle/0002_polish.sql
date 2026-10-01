@@ -1,0 +1,3 @@
+ALTER TABLE "ai_usage" DROP CONSTRAINT "ai_usage_action_check";--> statement-breakpoint
+ALTER TABLE "project" ADD COLUMN "polish" jsonb;--> statement-breakpoint
+ALTER TABLE "ai_usage" ADD CONSTRAINT "ai_usage_action_check" CHECK ("ai_usage"."action" in ('design_md', 'vision', 'jev_tag', 'jev_search', 'jev_directory', 'explain', 'revise', 'design_why', 'polish'));

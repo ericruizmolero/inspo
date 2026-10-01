@@ -21,6 +21,7 @@ import DesignMdModal from "./DesignMdModal";
 import DirectoryModal from "./DirectoryModal";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
+import PolishModal from "./PolishModal";
 import CommentsPanel from "./CommentsPanel";
 import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
@@ -324,6 +325,7 @@ export default function InspoClient({
     }
   };
   const [showAdd, setShowAdd] = useState(false);
+  const [showPolish, setShowPolish] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -1035,6 +1037,19 @@ export default function InspoClient({
           ) : undefined}
         />
       )}
+      {showPolish && currentProject && (
+        <PolishModal
+          project={currentProject}
+          board={spaceItems}
+          library={items}
+          tagMap={tagMap}
+          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+          comments={commentMap}
+          hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
+          onDiscard={async (picked) => { for (const i of picked) await toggleFiled(i, currentProject.id, false); }}
+          onClose={() => setShowPolish(false)}
+        />
+      )}
       <DesignMdToasts
         jobs={designMdJobs}
         openUrl={designMdItem?.web ?? null}
@@ -1134,6 +1149,9 @@ export default function InspoClient({
           {/* The main search always looks like the AI search (spark + "Describe what you are after"), as the sidebar box did */}
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
             ai aiLoading={aiLoading} shortcut />
+          {currentProject && (
+            <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+          )}
           <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
         </header>
 

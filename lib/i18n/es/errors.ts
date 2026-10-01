@@ -56,6 +56,7 @@ export const errors: typeof EnErrors = {
   unknownSection: "Sección desconocida",
   projectNameRequired: "Ponle un nombre al proyecto",
   projectNotFound: "Ese proyecto ya no existe",
+  polishBriefFirst: "Rellena el brief antes de pulir el tablero",
   urlAlreadyHere: "Esa URL ya está en este workspace",
   urlNotInWorkspace: "Esa URL no está en el workspace",
   workspaceAdminsCan: "Solo los administradores del workspace pueden hacer esto",

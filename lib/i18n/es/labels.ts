@@ -39,5 +39,6 @@ export const labels: typeof EnLabels = {
     explain: "Explicaciones de búsqueda",
     revise: "Revisiones de DESIGN.md",
     design_why: "Notas conectadas con el DESIGN.md",
+    polish: "Tableros pulidos",
   },
 };

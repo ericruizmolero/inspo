@@ -45,5 +45,6 @@ export const labels = {
     explain: "Search explanations",
     revise: "DESIGN.md revisions",
     design_why: "Notes connected to the DESIGN.md",
+    polish: "Boards polished",
   },
 };
