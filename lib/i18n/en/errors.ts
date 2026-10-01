@@ -56,6 +56,7 @@ export const errors = {
   unknownSection: "Unknown section",
   projectNameRequired: "Give the project a name",
   projectNotFound: "That project no longer exists",
+  polishBriefFirst: "Fill in the brief before polishing the board",
   urlAlreadyHere: "That URL is already in this workspace",
   urlNotInWorkspace: "That URL is not in the workspace",
   workspaceAdminsCan: "Only workspace admins can do this",

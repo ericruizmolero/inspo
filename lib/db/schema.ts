@@ -5,6 +5,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey } from "drizzle-orm/pg-core";
 import type { InspoTags } from "@/types/inspo";
+import type { PolishState } from "@/types/polish";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -153,6 +154,8 @@ export const project = pgTable("project", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  /** Polish: the brief, the decisions taken on the board and the last run of the games (types/polish.ts) */
+  polish: jsonb("polish").$type<PolishState>(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
@@ -258,7 +261,7 @@ export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why */
+  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish */
   action: text("action").notNull(),
   model: text("model").notNull(),
   inputTokens: integer("input_tokens").notNull().default(0),
@@ -282,7 +285,7 @@ export const aiUsage = pgTable("ai_usage", {
   // Monthly quota count (lib/quota.ts): one workspace, one action, since the 1st
   index("ai_usage_org_action_created_idx").on(t.organizationId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
-  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why"]),
+  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 
