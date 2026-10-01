@@ -1044,6 +1044,8 @@ export default function InspoClient({
           library={items}
           tagMap={tagMap}
           imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+          comments={commentMap}
+          hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
           onDiscard={async (picked) => { for (const i of picked) await toggleFiled(i, currentProject.id, false); }}
           onClose={() => setShowPolish(false)}
         />
@@ -1148,7 +1150,7 @@ export default function InspoClient({
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
             ai aiLoading={aiLoading} shortcut />
           {currentProject && (
-            <Button className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.spark} {t.polish.button}</Button>
+            <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
           )}
           <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
         </header>

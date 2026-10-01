@@ -474,8 +474,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__title { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar__count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .topbar__logo, .topbar__add { display: none; }
-/* Polish: only inside a project (InspoClient). Its label goes on small screens; the spark stays */
-.topbar__polish { flex-shrink: 0; gap: 6px; }
+/* Polish: only inside a project (InspoClient). A ghost button at the search's height and radius, so
+   it sits in the row without shouting; the gem is what makes it its own. Its label goes on small
+   screens; the gem stays */
+.topbar__polish { flex-shrink: 0; gap: 5px; height: 30px; padding: 0 10px 0 8px; margin-left: auto; border-radius: 8px; }
+.topbar__polish svg { color: var(--text); }
 /* Mobbin: one wide search in the middle of the bar */
 .topbar__search { flex: 1; min-width: 0; }
 /* Quiet at rest (Eric: the bar shouted): no fill, a hairline border, muted icon; the fill comes with hover and focus */
@@ -552,7 +555,7 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
   .topbar__view { display: none; }
   .topbar__logo { display: block; }
   .topbar__add { display: inline-flex; }
-  .topbar__polish { padding: 0 10px; font-size: 0; }
+  .topbar__polish { padding: 0 7px; font-size: 0; }
   .topbar__polish svg { font-size: 13px; }
   .search__kbd { display: none; }
   .fbar { top: 56px; padding: 8px 12px; flex-wrap: wrap; row-gap: 8px; }
@@ -1050,111 +1053,220 @@ video.vp__media { object-fit: contain; }
 
 /* ─── Polish a project: the brief (one question per screen, tabs as the index) and the games ─── */
 .modal--polish { max-width: 1040px; height: min(760px, 100dvh - 40px); }
-.pl-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; flex-shrink: 0; }
-.pl-head__spacer { width: 32px; flex-shrink: 0; }
-.pl-back { display: flex; transform: scaleX(-1); }
-.pl-tabs { flex: 1; display: flex; justify-content: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.pl-tab {
+.polish-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; flex-shrink: 0; }
+.polish-head__spacer { width: 32px; flex-shrink: 0; }
+.polish-back { display: flex; transform: scaleX(-1); }
+.polish-tabs { flex: 1; display: flex; justify-content: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.polish-tab {
   height: 32px; padding: 0 12px; border-radius: 999px;
   font-size: 13px; color: var(--muted); white-space: nowrap;
   transition: color 0.15s, background 0.15s;
 }
-.pl-tab:hover:not(:disabled) { color: var(--text); }
-.pl-tab.is-active { color: var(--text); background: var(--surface-2); font-weight: 500; }
-.pl-tab:disabled { opacity: 0.4; cursor: default; }
-.pl-body { flex: 1; min-height: 0; overflow-y: auto; padding: 24px 48px 40px; display: flex; justify-content: center; }
-.pl-step { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 22px; animation: fade-in 0.2s; }
-.pl-step--wide, .pl-step--tone { max-width: 860px; }
-.pl-loading, .pl-running { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 240px; color: var(--muted); font-size: 13px; }
-.pl-h { margin: 0; font-size: 26px; line-height: 1.15; color: var(--text); }
-.pl-lead { margin: -10px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); max-width: 560px; }
-.pl-text { font-size: 14px; }
-.pl-counter { align-self: flex-end; font-size: 11px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
-.pl-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.pl-card {
+.polish-tab:hover:not(:disabled) { color: var(--text); }
+.polish-tab.is-active { color: var(--text); background: var(--surface-2); font-weight: 500; }
+.polish-tab:disabled { opacity: 0.4; cursor: default; }
+/* Every step shares one column and one anatomy (title, lead, then the question), so the eye stays
+   put between tabs; a step shorter than the body sits in its vertical middle, a longer one scrolls */
+.polish-body {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 28px 48px 36px; display: flex; flex-direction: column; align-items: center;
+  /* What scrolls out fades at the edges instead of being cut; the padding keeps the title clear of the fade at rest */
+  mask-image: linear-gradient(to bottom, transparent, #000 24px, #000 calc(100% - 28px), transparent);
+}
+.polish-step { width: 100%; max-width: 760px; margin: auto 0; display: flex; flex-direction: column; gap: 24px; animation: fade-in 0.2s; }
+.polish-loading { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 240px; color: var(--muted); font-size: 13px; }
+/* Waiting for a run: the board shuffles as a fan of cards (one new card every half second) over a
+   progress bar and the list of steps, which tick on a clock; the last one spins until the answer lands */
+.polish-wait { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 24px 0; }
+.polish-wait__fan { position: relative; width: 100%; max-width: 520px; height: 190px; display: flex; justify-content: center; align-items: center; }
+.polish-wait__card {
+  position: absolute; width: 200px; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border-strong); background: var(--surface); box-shadow: var(--shadow-card);
+  will-change: transform;
+}
+.polish-wait__card .polish-thumb { position: absolute; inset: 0; font-size: 28px; }
+.polish-wait__bar { width: 100%; max-width: 360px; height: 3px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.polish-wait__bar span { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.polish-wait__steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; min-width: 260px; }
+.polish-wait__step { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--muted-2); transition: color 0.2s; }
+.polish-wait__step.is-now { color: var(--text); }
+.polish-wait__step.is-done { color: var(--muted); }
+.polish-wait__mark { width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--border-strong); flex-shrink: 0; }
+.polish-wait__step.is-done .polish-wait__mark { border-color: var(--success); background: var(--success); color: #fff; }
+.polish-wait__step.is-done .polish-wait__mark svg { width: 10px; height: 10px; }
+.polish-wait__step.is-now .polish-wait__mark { border-color: transparent; }
+.polish-wait__mark .spinner { width: 14px; height: 14px; }
+.polish-h { margin: 0; font-size: 26px; line-height: 1.15; color: var(--text); }
+.polish-lead { margin: -14px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); max-width: 600px; }
+.polish-text { font-size: 14px; }
+.polish-counter { align-self: flex-end; display: flex; align-items: center; gap: 12px; font-size: 11px; color: var(--muted-2); font-variant-numeric: tabular-nums; }
+.polish-counter__fill { font-size: 11px; color: var(--muted); text-decoration: underline dotted; text-underline-offset: 3px; }
+.polish-counter__fill:hover { color: var(--text); }
+.polish-sectors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.polish-sector {
   min-height: 56px; padding: 12px 14px; text-align: left;
   border: 1px solid var(--border); border-radius: var(--radius-m); background: var(--surface);
   font-size: 14px; color: var(--text-2);
   transition: border-color 0.15s, color 0.15s, background 0.15s, transform 0.1s;
 }
-.pl-card:hover { color: var(--text); border-color: var(--border-strong); }
-.pl-card.is-on { color: var(--text); border-color: var(--text); background: var(--surface-2); }
-.pl-card:active { transform: scale(0.98); }
-.pl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.pl-chip { height: 36px; padding: 0 16px; font-size: 13px; }
+.polish-sector:hover { color: var(--text); border-color: var(--border-strong); }
+.polish-sector.is-on { color: var(--text); border-color: var(--text); background: var(--surface-2); }
+.polish-sector:active { transform: scale(0.98); }
+.polish-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.polish-chip { height: 36px; padding: 0 16px; font-size: 13px; }
 /* A reference's picture: fills its box, the initial when there is none */
-.pl-thumb { display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--surface-2); color: var(--muted); font-weight: 600; }
-.pl-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.polish-thumb { display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--surface-2); color: var(--muted); font-weight: 600; }
+.polish-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 /* Tone: one look at a time, large, with a reference of the team's as its example; the row below jumps between them */
-.pl-tone__stage {
-  position: relative; aspect-ratio: 16 / 9; border-radius: var(--radius-l); overflow: hidden;
+.polish-tone__stage {
+  position: relative; aspect-ratio: 16 / 9; max-height: 380px; width: 100%; border-radius: var(--radius-l); overflow: hidden;
   background: var(--surface); border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   transition: border-color 0.2s;
 }
-.pl-tone__stage.is-on { border-color: var(--text); }
-.pl-tone__img { position: absolute; inset: 0; font-size: 48px; }
-.pl-tone__none { font-size: 13px; color: var(--muted); }
-.pl-tone__caption {
+.polish-tone__stage.is-on { border-color: var(--text); }
+.polish-tone__img { position: absolute; inset: 0; font-size: 48px; }
+.polish-tone__caption {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 48px 24px 20px;
   display: flex; flex-direction: column; gap: 4px;
   background: linear-gradient(to top, rgba(0,0,0,0.75), rgba(0,0,0,0)); color: #fff;
 }
-.pl-tone__name { font-size: 28px; }
-.pl-tone__from { font-size: 12px; opacity: 0.8; }
-.pl-tone__pick { position: absolute; right: 16px; bottom: 16px; }
-.pl-tone__picker { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-.pl-tone__dot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 72px; color: var(--muted); font-size: 11px; }
-.pl-tone__dot .pl-thumb { width: 56px; height: 56px; border-radius: 50%; border: 2px solid transparent; font-size: 16px; transition: border-color 0.15s, transform 0.15s; }
-.pl-tone__dot:hover .pl-thumb { transform: scale(1.05); }
-.pl-tone__dot.is-shown .pl-thumb { border-color: var(--text); }
-.pl-tone__dot.is-shown, .pl-tone__dot.is-on { color: var(--text); }
-.pl-tone__tick { position: absolute; top: 0; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; }
-.pl-tone__tick svg { width: 10px; height: 10px; }
-.pl-tone__label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.polish-tone__name { font-size: 28px; }
+.polish-tone__from { font-size: 12px; opacity: 0.8; }
+.polish-tone__pick { position: absolute; right: 16px; bottom: 16px; }
+.polish-tone__picker { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.polish-tone__dot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 72px; color: var(--muted); font-size: 11px; }
+.polish-tone__dot .polish-thumb { width: 56px; height: 56px; border-radius: 50%; border: 2px solid transparent; font-size: 16px; transition: border-color 0.15s, transform 0.15s; }
+.polish-tone__dot:hover .polish-thumb { transform: scale(1.05); }
+.polish-tone__dot.is-shown .polish-thumb { border-color: var(--text); }
+.polish-tone__dot.is-shown, .polish-tone__dot.is-on { color: var(--text); }
+.polish-tone__tick { position: absolute; top: 0; right: 6px; width: 18px; height: 18px; border-radius: 50%; background: var(--text); color: var(--bg); display: flex; align-items: center; justify-content: center; }
+.polish-tone__tick svg { width: 10px; height: 10px; }
+.polish-tone__label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 /* Avoid: the board as tiles to mark */
-.pl-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-.pl-pick { position: relative; display: flex; flex-direction: column; gap: 6px; text-align: left; border-radius: var(--radius-m); outline: 2px solid transparent; outline-offset: 2px; transition: outline-color 0.15s, opacity 0.15s; }
-.pl-pick .pl-thumb { aspect-ratio: 4 / 3; border-radius: 10px; font-size: 22px; }
-.pl-pick:hover { outline-color: var(--border-strong); }
-.pl-pick.is-on { outline-color: var(--danger); }
-.pl-pick.is-on .pl-thumb { opacity: 0.55; }
-.pl-pick__name { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pl-pick__mark { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--danger); color: #fff; display: none; align-items: center; justify-content: center; }
-.pl-pick.is-on .pl-pick__mark { display: flex; }
-/* The games */
-.pl-games { gap: 32px; }
-.pl-run { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: 48px 0; }
-.pl-run .pl-lead { margin: 0; }
-.pl-clean__icon { width: 44px; height: 44px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; }
-.pl-clean__icon svg { width: 20px; height: 20px; }
-.pl-game { display: flex; flex-direction: column; gap: 14px; }
-.pl-game__title { margin: 0; font-size: 18px; display: flex; align-items: baseline; gap: 8px; }
-.pl-game__n { font-size: 13px; color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; }
-.pl-group { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface); transition: opacity 0.15s; }
-.pl-group.is-busy { opacity: 0.5; pointer-events: none; }
-.pl-group__reason { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text); }
-.pl-group__refs { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-.pl-ref { display: flex; flex-direction: column; gap: 8px; }
-.pl-ref .pl-thumb { aspect-ratio: 4 / 3; border-radius: 10px; font-size: 22px; }
-.pl-ref__name { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pl-group__foot { display: flex; justify-content: flex-end; }
-.pl-tones { display: flex; flex-direction: column; gap: 10px; }
-.pl-group--row { flex-direction: row; align-items: center; gap: 16px; padding: 12px; }
-.pl-group--row .pl-thumb { width: 120px; aspect-ratio: 4 / 3; border-radius: 8px; flex-shrink: 0; font-size: 18px; }
-.pl-group__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.pl-group__main .pl-group__reason { font-size: 13px; color: var(--text-2); }
-.pl-group__actions { display: flex; gap: 8px; flex-shrink: 0; }
-.pl-again { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid var(--border); }
-.pl-again__note { font-size: 12px; color: var(--muted); }
-.pl-foot { display: flex; justify-content: flex-end; align-items: center; gap: 14px; padding: 14px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
-.pl-foot .modal__error { margin-right: auto; }
-.pl-foot__saved { font-size: 12px; color: var(--muted); }
+.polish-picks { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.polish-pick { position: relative; display: flex; flex-direction: column; gap: 6px; text-align: left; border-radius: var(--radius-m); outline: 2px solid transparent; outline-offset: 2px; transition: outline-color 0.15s, opacity 0.15s; }
+.polish-pick .polish-thumb { aspect-ratio: 4 / 3; border-radius: 10px; font-size: 22px; }
+.polish-pick:hover { outline-color: var(--border-strong); }
+.polish-pick.is-on { outline-color: var(--danger); }
+.polish-pick.is-on .polish-thumb { opacity: 0.55; }
+.polish-pick__name { font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.polish-pick__mark { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--danger); color: #fff; display: none; align-items: center; justify-content: center; }
+.polish-pick.is-on .polish-pick__mark { display: flex; }
+/* The games as a deck: every card in the same grid cell, the ones behind smaller and lower; the
+   top one flies off to the side it was answered with and the next takes its place */
+.polish-games { gap: 20px; }
+.polish-run { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: 48px 0; }
+.polish-run .polish-lead { margin: 0; }
+.polish-clean__icon { width: 44px; height: 44px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; }
+.polish-clean__icon svg { width: 20px; height: 20px; }
+.polish-deck__head { width: 100%; max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: baseline; }
+.polish-deck__kind { font-size: 13px; font-weight: 500; color: var(--text); }
+.polish-deck__n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.polish-deck__bar { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
+.polish-deck__bar span { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.3s; }
+.polish-deck { display: grid; width: 100%; max-width: 640px; margin: 0 auto; padding-top: 16px; }
+.polish-card {
+  grid-area: 1 / 1; display: flex; flex-direction: column; gap: 16px; padding: 16px;
+  border: 1px solid var(--border); border-radius: var(--radius-l); background: var(--surface);
+  box-shadow: var(--shadow-card);
+  transform-origin: 50% 100%;
+  transition: opacity 0.28s;
+}
+.polish-card--d0 { position: relative; z-index: 3; animation: polish-rise 0.32s cubic-bezier(0.2, 0.7, 0.2, 1); }
+.polish-card--d1 { z-index: 2; transform: translateY(-14px) scale(0.96); opacity: 0.7; pointer-events: none; }
+.polish-card--d2 { z-index: 1; transform: translateY(-28px) scale(0.92); opacity: 0.4; pointer-events: none; }
+/* The top tone card is dragged like a Tinder card (GSAP moves it, PolishModal); the stamps fade in with the drag */
+.polish-card--swipe.polish-card--d0 { cursor: grab; user-select: none; touch-action: pan-y; }
+.polish-card--swipe.polish-card--d0:active { cursor: grabbing; }
+.polish-card__stamp {
+  position: absolute; top: 28px; z-index: 2; padding: 6px 12px; border-radius: 8px; border: 2px solid;
+  font-size: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0; pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+}
+.polish-card__stamp--no { left: 28px; color: var(--danger); border-color: var(--danger); transform: rotate(-12deg); }
+.polish-card__stamp--yes { right: 28px; color: var(--success); border-color: var(--success); transform: rotate(12deg); }
+.polish-card.is-busy { pointer-events: none; }
+@keyframes polish-rise { from { transform: translateY(-14px) scale(0.96); opacity: 0.7; } to { transform: none; opacity: 1; } }
+.polish-card__media { aspect-ratio: 16 / 9; border-radius: 10px; font-size: 40px; }
+.polish-card__body { display: flex; flex-direction: column; gap: 6px; }
+.polish-card__name { font-size: 15px; font-weight: 500; color: var(--text); }
+.polish-card__reason { margin: 0; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.polish-card__hint { margin: 0; font-size: 12px; color: var(--muted); }
+.polish-card__actions { display: flex; justify-content: space-between; gap: 10px; }
+.polish-card__actions > :only-child { margin-left: auto; }
+.polish-card__no { color: var(--danger); }
+.polish-card__no:hover { border-color: var(--danger); }
+.polish-card__refs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+/* Hover and selection ring on the picture only, flush with its edge; the name sits outside it */
+.polish-card__ref { position: relative; display: flex; flex-direction: column; gap: 8px; text-align: left; border-radius: 10px; }
+.polish-card__ref .polish-thumb { aspect-ratio: 4 / 3; border-radius: 10px; font-size: 22px; box-shadow: 0 0 0 1px var(--border); transition: opacity 0.15s, box-shadow 0.15s; }
+.polish-card__ref:hover .polish-thumb { box-shadow: 0 0 0 1px var(--border-strong); }
+.polish-card__ref.is-on .polish-thumb { box-shadow: 0 0 0 2px var(--text); }
+.polish-card__ref:focus-visible { outline: none; }
+.polish-card__ref:focus-visible .polish-thumb { box-shadow: 0 0 0 2px var(--focus-ring); }
+.polish-card__refs:has(.is-on) .polish-card__ref:not(.is-on) .polish-thumb { opacity: 0.45; }
+.polish-card__refname { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.polish-card__ref.is-on .polish-card__refname { color: var(--text); }
+.polish-card__tick { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: var(--text); color: var(--bg); display: none; align-items: center; justify-content: center; }
+.polish-card__tick svg { width: 12px; height: 12px; }
+.polish-card__ref.is-on .polish-card__tick { display: flex; }
+.polish-card__pair { display: flex; gap: 8px; }
+/* The "i" on every picture opens that reference's sheet over the card */
+.polish-card__shot { position: relative; display: block; min-width: 0; }
+.polish-card__info {
+  position: absolute; top: 8px; left: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--text); border: 1px solid var(--border-strong);
+  backdrop-filter: blur(6px); opacity: 0; transition: opacity 0.15s, background 0.15s;
+}
+.polish-card__info svg { width: 12px; height: 12px; }
+.polish-card__shot:hover .polish-card__info, .polish-card__info:focus-visible { opacity: 1; }
+.polish-card__info:hover { background: var(--surface-2); }
+@media (hover: none) { .polish-card__info { opacity: 1; } }
+.polish-sheet {
+  position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column;
+  border-radius: var(--radius-l); background: var(--surface); animation: fade-in 0.15s;
+}
+.polish-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 12px 10px 16px; border-bottom: 1px solid var(--border); }
+.polish-sheet__title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.polish-sheet__link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--muted); }
+.polish-sheet__link:hover { color: var(--text); }
+.polish-sheet__link svg { width: 11px; height: 11px; }
+.polish-sheet__body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 14px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+.polish-sheet__body p { margin: 0; }
+.polish-sheet__labels { font-size: 12px; color: var(--muted); }
+.polish-sheet__h { margin: 0 0 4px; font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.polish-sheet__muted { color: var(--muted-2); }
+.polish-sheet__brief { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; }
+.polish-sheet__brief dt { color: var(--muted); }
+.polish-sheet__brief dd { margin: 0; }
+.polish-sheet__thread { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.polish-sheet__thread strong { font-weight: 500; color: var(--text); }
+/* Duel: two pictures face to face; the card is swiped towards the one that wins, or either is clicked */
+.polish-card__duel { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.polish-card__side { display: flex; flex-direction: column; gap: 8px; text-align: left; border-radius: 10px; }
+.polish-card__side .polish-thumb { aspect-ratio: 4 / 3; border-radius: 10px; font-size: 28px; box-shadow: 0 0 0 1px var(--border); transition: box-shadow 0.15s; }
+.polish-card__side:hover .polish-thumb { box-shadow: 0 0 0 2px var(--text); }
+.polish-card__pick { font-size: 12px; color: var(--muted); }
+.polish-card__side:hover .polish-card__pick { color: var(--text); }
+.polish-card__vs {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: var(--surface); border: 1px solid var(--border-strong); font-size: 11px; font-weight: 600; color: var(--muted); pointer-events: none;
+}
+.polish-card__stamp--pick { color: var(--text); border-color: var(--text); max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; letter-spacing: 0; }
+/* "Polish again": at the end of the deck a quiet row; on the finished screen it joins the centred block */
+.polish-again { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 8px; }
+.polish-run .polish-again { flex-direction: column; gap: 8px; padding-top: 4px; }
+.polish-again__note { font-size: 12px; color: var(--muted); }
+.polish-foot { display: flex; justify-content: flex-end; align-items: center; gap: 14px; padding: 14px 24px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.polish-foot .modal__error { margin-right: auto; }
+.polish-foot__saved { font-size: 12px; color: var(--muted); }
 @media (max-width: 720px) {
-  .pl-body { padding: 16px 20px 32px; }
-  .pl-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pl-group--row { flex-wrap: wrap; }
-  .pl-tone__name { font-size: 20px; }
+  .polish-body { padding: 16px 20px 32px; }
+  .polish-sectors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .polish-card__refs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .polish-tone__name { font-size: 20px; }
 }
 .modal__header {
   display: flex; align-items: center; gap: 12px;
