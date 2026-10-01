@@ -4,9 +4,9 @@
 // The extension paces itself: one batch per request, the next when this one answers.
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
-import { addItem, findByWeb, setThumbnail, setTags } from "@/lib/items";
+import { addItem, findByWeb, setThumbnail, setItemDate, setTags } from "@/lib/items";
 import { nameFor } from "@/lib/item-name";
-import { ensurePost, postThumb } from "@/lib/posts";
+import { ensurePost, postThumb, postDay } from "@/lib/posts";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
 import { classifyItem, jevEnabled } from "@/lib/jev";
 import { getErrors } from "@/lib/i18n";
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
   // The same address twice in one batch is saved once
   const seen = new Set<string>();
   const added: InspoItem[] = [];
+  const dated = new Set<string>(); // saved with a date from the extension: the post's own day is not needed
   const results = await eachLimit(body.items, NAME_AT_ONCE, async (it): Promise<Result> => {
     const raw = typeof it?.url === "string" ? it.url : "";
     const web = normalizeWebUrl(raw);
@@ -67,8 +68,10 @@ export async function POST(req: NextRequest) {
       const existing = await findByWeb(ctx.workspace.id, web);
       if (existing) return { url: raw, status: "existed", id: existing.id };
       const name = await nameFor(web, typeof it.title === "string" ? it.title : undefined);
-      const item = await addItem(ctx.workspace.id, { name, web, type: typeFromUrl(web), author, createdBy: ctx.user.id, dateIso: dateOf(it.date) });
+      const dateIso = dateOf(it.date);
+      const item = await addItem(ctx.workspace.id, { name, web, type: typeFromUrl(web), author, createdBy: ctx.user.id, dateIso });
       added.push(item);
+      if (dateIso) dated.add(web);
       return { url: raw, status: "added", id: item.id };
     } catch (err) {
       // 409: saved by someone else between the lookup and the insert
@@ -86,6 +89,9 @@ export async function POST(req: NextRequest) {
           const post = await ensurePost(item.web);
           const thumb = post && postThumb(post);
           if (thumb) await setThumbnail(ctx.workspace.id, item.web, thumb);
+          // A post that came without a date lands on the day it was published, not on today
+          const day = !dated.has(item.web) && post ? postDay(post) : undefined;
+          if (day) await setItemDate(ctx.workspace.id, item.web, day);
         }
         if (!jevEnabled()) return;
         const tags = await classifyItem(item, { organizationId: ctx.workspace.id, userId: ctx.user.id });

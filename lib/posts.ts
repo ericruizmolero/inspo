@@ -204,6 +204,14 @@ export function ensurePost(web: string): Promise<Post | null> {
 }
 
 /** The picture that stands for the post on its card: the first frame or photo we have a copy of */
+/** The day the post was published, YYYY-MM-DD, from either source's wording of its date */
+export function postDay(post: { createdAt: string | null }): string | undefined {
+  if (!post.createdAt) return undefined;
+  const t = new Date(post.createdAt).getTime();
+  if (Number.isNaN(t) || t > Date.now()) return undefined;
+  return new Date(t).toISOString().slice(0, 10);
+}
+
 export function postThumb(post: Post): string | null {
   const own = (u?: string) => (u && keyOf(u)?.startsWith(POSTS_PREFIX) ? u : null);
   for (const m of post.media) {
