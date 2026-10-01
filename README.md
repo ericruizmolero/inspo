@@ -39,6 +39,11 @@ npm run db:init   # creates the "criterio" database, builds the tables, loads .d
 `npm run seed -- --replace`. Without the seed file it still builds the tables, and the app runs
 on an empty database.
 
+To refresh your copy from production, put `PULL_DATABASE_URL` in `.env.local` (a read-only Neon
+role, ask for it like the seed) and run `npm run db:pull`. It reads production, rewrites
+`.data/seed.json`, and replaces everything in your local database. It refuses to write anywhere
+but a local database. Then `npm run files:pull` for the new images.
+
 ### 4. Download the images
 
 The database points at files in R2. Copy them to `.data/files` once, with the read-only key in

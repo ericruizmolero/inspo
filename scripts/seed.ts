@@ -3,14 +3,17 @@
 //   npm run seed:dump   → writes .data/seed.json from DATABASE_URL (local by default)
 //   npm run seed        → loads it into an empty database (--replace empties it first)
 //   npm run db:init     → creates the database if missing, applies the migrations, then seeds
-// db:init is the one script that migrates, and only against a local database: it is machine
-// setup. Everywhere else the app applies migrations when it starts (instrumentation.ts).
+//   npm run db:pull     → copies production (PULL_DATABASE_URL) over the local database:
+//                         dumps it to .data/seed.json, then db:init with --replace
+// db:init and db:pull are the scripts that migrate, and only against a local database: they are
+// machine setup. Everywhere else the app applies migrations when it starts (instrumentation.ts).
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 
 import { promises as fs } from "fs";
 import path from "path";
-import { Client } from "pg";
+import { Client, Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { getTableColumns, sql } from "drizzle-orm";
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import { databaseUrl } from "../lib/db/url";
@@ -35,8 +38,11 @@ async function tables() {
   return list.map((t) => ({ table: t, name: getTableConfig(t).name, cols: getTableColumns(t) }));
 }
 
-async function dump() {
-  const { db, pool } = await import("../lib/db");
+/** From DATABASE_URL (local by default), or from `from` when it is given */
+async function dump(from?: string) {
+  const app = await import("../lib/db");
+  const pool = from ? new Pool({ connectionString: from }) : app.pool;
+  const db = from ? drizzle(pool, { schema: app.schema }) : app.db;
   const out: Dump = { at: new Date().toISOString(), tables: {} };
   for (const { table, name } of await tables()) {
     out.tables[name] = await db.select().from(table);
@@ -46,6 +52,13 @@ async function dump() {
   await fs.writeFile(FILE, JSON.stringify(out));
   await pool.end();
   console.log(`→ ${path.relative(process.cwd(), FILE)}`);
+}
+
+/** The local database, or an error: loading over anything else would overwrite real data */
+function localUrl(script: string): URL {
+  const url = new URL(databaseUrl());
+  if (!LOCAL_HOSTS.has(url.hostname)) throw new Error(`${script} only writes to a local database, not ${url.hostname}`);
+  return url;
 }
 
 async function load(replace: boolean) {
@@ -78,9 +91,8 @@ async function load(replace: boolean) {
   console.log(`Loaded the dump from ${data.at}`);
 }
 
-async function init() {
-  const url = new URL(databaseUrl());
-  if (!LOCAL_HOSTS.has(url.hostname)) throw new Error(`db:init only sets up a local database, not ${url.hostname}`);
+async function init(replace = false) {
+  const url = localUrl("db:init");
   const name = decodeURIComponent(url.pathname.slice(1));
   const admin = new URL(url); admin.pathname = "/postgres";
   const c = new Client({ connectionString: admin.toString() });
@@ -92,9 +104,20 @@ async function init() {
   const { runMigrations } = await import("../lib/db/migrate");
   await runMigrations();
   console.log("Schema up to date");
-  await load(false);
+  await load(replace);
+}
+
+// Production is only read: a select per table. The local database is then emptied and refilled.
+async function pull() {
+  const from = process.env.PULL_DATABASE_URL?.trim();
+  if (!from) throw new Error("Set PULL_DATABASE_URL in .env.local to the production database (Neon, a read-only role)");
+  if (LOCAL_HOSTS.has(new URL(from).hostname)) throw new Error("PULL_DATABASE_URL is a local database: nothing to pull");
+  localUrl("db:pull");
+  console.log(`Reading ${new URL(from).hostname}`);
+  await dump(from);
+  await init(true);
 }
 
 const mode = process.argv[2];
-(mode === "dump" ? dump() : mode === "init" ? init() : load(process.argv.includes("--replace")))
+(mode === "dump" ? dump() : mode === "init" ? init() : mode === "pull" ? pull() : load(process.argv.includes("--replace")))
   .catch((e) => { console.error(e instanceof Error ? e.message : e); process.exit(1); });
