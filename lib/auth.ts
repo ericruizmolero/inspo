@@ -29,9 +29,12 @@ export function takeDevLink(): string | undefined {
 }
 
 // Public app URL. In production it's set with BETTER_AUTH_URL (or Vercel's);
-// in development it's left empty and Better Auth infers it from each request (the Ship
-// Studio preview uses a different port every time).
-export const APP_URL =
+// in development it's always empty and Better Auth infers it from each request (the Ship
+// Studio preview uses a different port every time). A BETTER_AUTH_URL pulled into .env.local
+// from Vercel would otherwise send every sign-in back to production.
+// Better Auth reads BETTER_AUTH_URL on its own when no baseURL is given, so in development it goes too.
+if (process.env.NODE_ENV === "development") delete process.env.BETTER_AUTH_URL;
+export const APP_URL = process.env.NODE_ENV === "development" ? "" :
   process.env.BETTER_AUTH_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");

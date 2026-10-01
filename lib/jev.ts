@@ -1,14 +1,10 @@
-// Classification with Jev (Typesafe AI). Server only.
+// Jev (Typesafe AI): search, and the polish screens. Server only. Tagging is lib/tagger.ts.
 import "server-only";
-import { TypeSafeClient, choice, noul } from "@typesafe-ai/sdk";
+import { TypeSafeClient, noul } from "@typesafe-ai/sdk";
 import type { JsonValue } from "@typesafe-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
-import { SECTORS, STYLES, TAGS, TAXONOMY_VERSION, TAG_THRESHOLD } from "./taxonomy";
+import { TAGS, TAG_THRESHOLD, viewOf } from "./taxonomy";
 import en from "./i18n/en";
-import { fetchSiteText, SiteText } from "./extract";
-import { describeSite } from "./vision";
-import { mediaKindOf, postOf } from "./url";
-import { getStoredPost } from "./posts";
 import { recordUsage, type UsageCtx } from "./usage";
 
 let _client: TypeSafeClient | null = null;
@@ -24,103 +20,6 @@ const billingOf = (res: object) => {
   const r = res as { usage?: { cost?: unknown }; provider?: string; id?: string };
   return { costUsd: typeof r.usage?.cost === "number" ? r.usage.cost : null, provider: r.provider ?? null, requestId: r.id ?? null };
 };
-
-const criteriaOf = (terms: typeof SECTORS) =>
-  Object.fromEntries(terms.map((t) => [t.key, t.description]));
-
-// ─── Tagging an item ───────────────────────────────────────────────────────────
-
-function buildState(item: InspoItem, site: SiteText | null, visual: string | null): { [k: string]: JsonValue } {
-  return {
-    name: item.name,
-    url: item.web,
-    collection: item.type,
-    curator_notes: [item.note, item.subNote].filter(Boolean).join(" — ") || null,
-    // What the screenshot shows, described by a vision model. It's the best
-    // evidence for visual traits (typography, illustration, palette, layout).
-    screenshot_description: visual,
-    page: site
-      ? {
-          title: site.title || null,
-          description: site.description || null,
-          site_name: site.siteName || null,
-          lang: site.lang || null,
-          headings: site.headings,
-          text_sample: site.textSample || null,
-        }
-      : { note: "Page content could not be fetched; rely on name, url and curator notes." } as { [k: string]: JsonValue },
-    html_signals: site
-      ? {
-          theme_color: site.signals.themeColor,
-          fonts: site.signals.fonts,
-          css_colors_seen: site.signals.colors,
-          has_canvas_or_webgl: site.signals.hasCanvas,
-          has_video: site.signals.hasVideo,
-          image_count: site.signals.imageCount,
-          platform: site.signals.platform,
-        }
-      : null,
-  };
-}
-
-/** A saved post read as a page: author as title, its words as text */
-async function postAsSite(web: string): Promise<SiteText | null> {
-  const post = await getStoredPost(postOf(web)?.id ?? "");
-  if (!post) return null;
-  return {
-    title: `${post.author} (@${post.handle}) on X`, description: post.text, siteName: "X", lang: "", headings: [], textSample: post.text,
-    signals: { themeColor: null, fonts: [], colors: [], hasCanvas: false, hasVideo: post.media.some((m) => m.kind !== "photo"), imageCount: post.media.length, platform: "x" },
-  };
-}
-
-export async function classifyItem(item: InspoItem, usage?: UsageCtx): Promise<InspoTags> {
-  // An uploaded image has no page to read: only what the vision step sees. A post's page is its words.
-  const kind = mediaKindOf(item.web);
-  const [site, vision] = await Promise.all([kind === "image" ? null : kind === "post" ? postAsSite(item.web) : fetchSiteText(item.web), describeSite(item)]);
-  const visual = vision?.text ?? null;
-  if (vision) {
-    console.log(`vision ${item.web}: ${vision.model} in/out ${vision.inputTokens}/${vision.outputTokens}`);
-    void recordUsage(usage, { action: "vision", model: vision.model, inputTokens: vision.inputTokens, outputTokens: vision.outputTokens, cacheReadTokens: vision.cacheReadTokens, costUsd: vision.costUsd, provider: vision.provider, requestId: vision.requestId, ref: item.web });
-  }
-  const state = buildState(item, site, visual);
-
-  const questions = {
-    sector: choice("What kind of website or piece is this?", criteriaOf(SECTORS)),
-    style: choice(
-      "Which visual style best describes it? Weigh screenshot_description most, then fonts, colors, copy and structure signals.",
-      criteriaOf(STYLES)
-    ),
-    ...Object.fromEntries(
-      TAGS.map((t) => [
-        `tag_${t.key}`,
-        noul(`Does this apply? ${t.description}`, {
-          true: "The evidence (screenshot_description first, then copy, headings, fonts, colors, signals, curator notes) supports this trait.",
-          false: "No evidence or the opposite is true.",
-        }),
-      ])
-    ),
-  };
-
-  const res = await client().systemOne({ state, questions });
-  void recordUsage(usage, { action: "jev_tag", model: "jev", units: 1, ...billingOf(res), ref: item.web });
-  const a = res.answers as Record<string, { type: string; choice?: string; probabilities?: Record<string, number>; noul?: number }>;
-
-  const tags: Record<string, number> = {};
-  for (const t of TAGS) tags[t.key] = Number(a[`tag_${t.key}`]?.noul ?? 0);
-
-  const sector = a.sector?.choice ?? "other";
-  const style = a.style?.choice ?? "minimal";
-  const summary = [site?.title, site?.description].filter(Boolean).join(" · ").slice(0, 300);
-
-  return {
-    sector, sectorP: a.sector?.probabilities?.[sector] ?? 0,
-    style, styleP: a.style?.probabilities?.[style] ?? 0,
-    tags, summary,
-    visual: visual ?? undefined,
-    at: new Date().toISOString(),
-    v: TAXONOMY_VERSION,
-  };
-}
 
 export const activeTags = (t: InspoTags | undefined) =>
   t ? TAGS.filter((x) => (t.tags[x.key] ?? 0) >= TAG_THRESHOLD).map((x) => x.key) : [];
@@ -146,6 +45,7 @@ const BATCH = 12;
 const CONCURRENCY = 6;
 
 export function summarize(item: InspoItem, t: InspoTags | undefined) {
+  const v = viewOf(t);
   return {
     name: item.name,
     url: item.web,
@@ -156,7 +56,15 @@ export function summarize(item: InspoItem, t: InspoTags | undefined) {
     // The model is spoken to in English, labels included
     sector: t ? en.taxonomy.sector[t.sector as keyof typeof en.taxonomy.sector] ?? t.sector : null,
     style: t ? en.taxonomy.style[t.style as keyof typeof en.taxonomy.style] ?? t.style : null,
-    traits: t ? activeTags(t).map((k) => en.taxonomy.tag[k as keyof typeof en.taxonomy.tag] ?? k) : [],
+    traits: v ? v.traits.map((k) => en.taxonomy.tag[k as keyof typeof en.taxonomy.tag] ?? k) : [],
+    // v3 tags, when it has them, with the workspace's own edits
+    ...(v && t?.v && t.v >= 3 ? {
+      colours: v.palette, sections: v.sections, elements: v.elements, type: v.type, layout: v.layout, keywords: v.keywords,
+    } : {}),
+    // Its own metadata, when it has some (v4)
+    ...(t?.meta ? {
+      made_by: v?.credits ?? [], declared_type: t.meta.kind ?? null, own_keywords: t.meta.keywords ?? [], place: t.meta.place ?? null,
+    } : {}),
   };
 }
 

@@ -171,3 +171,15 @@ export function webKeyOf(raw: string): string {
     return s.toLowerCase();
   }
 }
+
+// Videos and social posts are not sites of their own: no DESIGN.md, no page capture
+const NOT_A_SITE = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "tiktok.com", "primevideo.com", "netflix.com"];
+
+/** A website whose page can be read and captured (not an image, a video or a social post) */
+export function hasOwnPage(web: string): boolean {
+  if (mediaKindOf(web) !== "web") return false;
+  try {
+    const host = new URL(web).hostname.replace(/^www\./, "");
+    return !NOT_A_SITE.some((d) => host === d || host.endsWith(`.${d}`));
+  } catch { return false; }
+}

@@ -3,11 +3,14 @@
 import { hueFor, Avatar } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
-import { InspoItem, InspoTags, Project } from "@/types/inspo";
-import { TAGS, TAG_THRESHOLD } from "@/lib/taxonomy";
+import { InspoItem, InspoTags, Project, TagStatus } from "@/types/inspo";
+import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
 import ProjectPicker, { IconFolder } from "./ProjectPicker";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind } from "@/lib/url";
+import { useDecodedSrc } from "@/hooks/use-decoded-src";
+import { markShown, wasShown } from "@/lib/shown-images";
+import { useImageReady } from "@/hooks/use-image-ready";
 
 const BLOCKED = ["x.com", "twitter.com", "linkedin.com", "primevideo.com", "instagram.com", "youtube.com"];
 
@@ -26,6 +29,26 @@ type ImgSource = "idle" | "og" | "shot" | "error";
 // remount them, and without this everything would download (and flicker) again.
 const imgCache = new Map<string, { src: string | null; source: ImgSource }>();
 
+// Captures take seconds each and the server runs one Chrome at a time: a request waiting for its turn
+// still holds one of the browser's six connections to the app. At most two wait at once, so the
+// covers, avatars and pages that are ready never queue behind them.
+const CAPTURE_SLOTS = 2;
+let capturesOut = 0;
+const captureQueue: (() => void)[] = [];
+function captureSlot(signal: AbortSignal): Promise<() => void> {
+  const release = () => { capturesOut--; captureQueue.shift()?.(); };
+  if (capturesOut < CAPTURE_SLOTS) { capturesOut++; return Promise.resolve(release); }
+  return new Promise((resolve, reject) => {
+    const go = () => { capturesOut++; resolve(release); };
+    captureQueue.push(go);
+    signal.addEventListener("abort", () => {
+      const i = captureQueue.indexOf(go);
+      if (i >= 0) captureQueue.splice(i, 1);
+      reject(new DOMException("aborted", "AbortError"));
+    }, { once: true });
+  });
+}
+
 /** The image a card already resolved for this URL, if any (the project start screen reuses it). */
 export function cachedCardImage(web: string): string | null {
   return imgCache.get(web)?.src ?? null;
@@ -34,6 +57,8 @@ export function cachedCardImage(web: string): string | null {
 interface InspoCardProps {
   item: InspoItem;
   tags?: InspoTags;
+  /** Its tagging job while it isn't done: the card says it is gathering them */
+  tagJob?: TagStatus;
   score?: number;
   reason?: string;
   manualThumbnail?: string;
@@ -42,7 +67,9 @@ interface InspoCardProps {
   onDesignMd: () => void;
   designMdLoading?: boolean;
   designMdReady?: boolean;
-  designCover?: string;   // 720x450 cover generated with the DESIGN.md
+  designCover?: string;   // 720x450 cover generated with the DESIGN.md (on the canvas: the page)
+  /** The same picture through the app, tried once if designCover fails (a signed link that expired) */
+  designCoverFallback?: string;
   designScroll?: string;  // long strip that scrolls on hover
   commentCount?: number;  // replies in the thread (not counting the original note)
   /** What whoever saved it highlighted (the note), or failing that the first reply: shown under the tile */
@@ -54,6 +81,19 @@ interface InspoCardProps {
   projectIds?: string[];
   onToggleProject?: (projectId: string, on: boolean) => void;
   onCreateProject?: (name: string) => Promise<void>;
+  /** On the canvas: the whole page instead of a cover, sized before it loads, with the post-its as dots */
+  canvas?: {
+    /** Height/width of the media, when known (the layout already reserved it) */
+    ratio?: number;
+    /** Where the post-its sit, as fractions of the page */
+    pins?: { x: number; y: number }[];
+    /** The media loaded and its height/width was unknown or changed */
+    onMeasure?: (ratio: number) => void;
+    /** The page's own colour, painted until its image arrives */
+    color?: string;
+    /** The same page at other sizes: one already decoded stands in while the cover loads */
+    alternates?: (string | undefined)[];
+  };
 }
 
 const IconUpload = (
@@ -90,7 +130,7 @@ const IconInfo = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, canvas }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -104,13 +144,19 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
   const gifChip = (kind === "image" && isGif(item.web)) || postKind === "gif";
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
-  const [manualLoaded, setManualLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [whyOpen, setWhyOpen] = useState(false); // mobile: the % bubble opens on tap
-  const [coverLoaded, setCoverLoaded] = useState(false);
   // A cover or thumbnail that fails to load falls through to og:image / screenshot instead of shimmering forever
   const [manualFailed, setManualFailed] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
+  const [coverRetry, setCoverRetry] = useState(false);
+  // On the canvas the cover is never blank: another copy already decoded stands in while the one it
+  // wants loads, and a copy shown before is drawn at once (hooks/use-decoded-src.ts, lib/shown-images.ts)
+  const decodedCover = useDecodedSrc(coverSrc, canvas?.alternates);
+  const designCover = coverRetry && designCoverFallback ? designCoverFallback : canvas ? decodedCover : coverSrc;
+  // Each picture is ready at once when it was shown before in this tab, else once it loads (hooks/use-image-ready.ts)
+  const cover = useImageReady(designCover);
+  const manual = useImageReady(manualThumbnail);
   const [hovering, setHovering] = useState(false);
   const [scrollDist, setScrollDist] = useState(0);
   // Delete in two taps: the first asks for confirmation on the button itself, the second deletes
@@ -123,8 +169,6 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
   const confirmAt = useRef(0);
   const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const manualImgRef = useRef<HTMLImageElement>(null);
-  const coverImgRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
 
@@ -134,33 +178,16 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
   const useFrame = videoFile && !frameFailed;
   const useDesign = !useManual && !!designCover && !coverFailed;
 
-  // Reset on thumbnail change, then check if the image was already cached
-  useEffect(() => {
-    setManualLoaded(false);
-    setManualFailed(false);
-    const id = setTimeout(() => {
-      const el = manualImgRef.current;
-      if (el && el.complete && el.naturalWidth > 0) setManualLoaded(true);
-    }, 0);
-    return () => clearTimeout(id);
-  }, [manualThumbnail]);
+  // A new thumbnail or cover gets its own chance to load
+  useEffect(() => { setManualFailed(false); }, [manualThumbnail]);
+  useEffect(() => { setCoverFailed(false); }, [designCover]);
 
-  // Same for the DESIGN.md cover. The tile is server-rendered, so the browser
-  // often finishes loading the cover before React hydrates and attaches onLoad:
-  // the event is lost and the tile would shimmer forever over a loaded image.
-  useEffect(() => {
-    setCoverLoaded(false);
-    setCoverFailed(false);
-    const id = setTimeout(() => {
-      const el = coverImgRef.current;
-      if (el && el.complete && el.naturalWidth > 0) setCoverLoaded(true);
-    }, 0);
-    return () => clearTimeout(id);
-  }, [designCover]);
 
   // Start loading when the tile enters the viewport
   useEffect(() => {
     if (useManual || useDesign || useFrame || source !== "idle") return;
+    // On the canvas only the cards near the screen are mounted at all: being here is being in view
+    if (canvas) { setSource("og"); return; }
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -169,46 +196,75 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
     );
     observer.observe(el);
     return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- canvas mode never changes for a card
   }, [source, useManual, useDesign, useFrame]);
 
   // Fetch as blob so failed sources don't spam the console
   useEffect(() => {
     if (source === "idle" || source === "error" || imgSrc) return;
     const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), source === "shot" ? 60000 : 15000);
+    let cancelled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    let release: (() => void) | null = null;
     // og:image first (cheap); if the site has none, capture its hero server-side.
     // The "v" changes the screenshot URL when the server gets fixed: old 502s
     // stay in the browser cache and without this would keep showing for a while.
     const apiUrl = source === "og"
       ? `/api/og?url=${encodeURIComponent(item.web)}`
       : `/api/shot?url=${encodeURIComponent(item.web)}&v=2`;
+    const capture = source === "shot";
 
-    fetch(apiUrl, { signal: ctrl.signal })
+    // A capture waits for a slot; its time limit only starts once it is actually asked for
+    (capture ? captureSlot(ctrl.signal).then((r) => { release = r; }) : Promise.resolve())
+      .then(() => {
+        timeout = setTimeout(() => ctrl.abort(), capture ? 90000 : 15000);
+        return fetch(apiUrl, { signal: ctrl.signal });
+      })
       .then((res) => {
         // 204 = the site has no og:image or the screenshot failed: move to the next method
         if (!res.ok || res.status === 204 || !res.headers.get("content-type")?.startsWith("image/")) throw new Error(`${res.status}`);
         return res.blob();
       })
       .then((blob) => {
-        clearTimeout(timeout);
         const src = URL.createObjectURL(blob);
         imgCache.set(item.web, { src, source });
-        setImgSrc(src);
+        if (!cancelled) setImgSrc(src);
       })
       .catch(() => {
-        clearTimeout(timeout);
+        if (cancelled) return; // the card went away: nothing failed
         if (source === "og") { setSource("shot"); setImgSrc(null); }
         else { imgCache.set(item.web, { src: null, source: "error" }); setSource("error"); }
-      });
+      })
+      .finally(() => { clearTimeout(timeout); release?.(); });
 
-    return () => { ctrl.abort(); clearTimeout(timeout); };
+    return () => { cancelled = true; ctrl.abort(); clearTimeout(timeout); };
     // imgSrc only avoids a repeat download when it already comes from the cache
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, item.web]);
 
   const domain = kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
   const isError = !useManual && !useDesign && !useFrame && source === "error";
-  const isLoaded = useManual ? manualLoaded : useDesign ? coverLoaded : useFrame ? frameLoaded : !!imgSrc;
+  const isLoaded = useManual ? manual.ready : useDesign ? cover.ready : useFrame ? frameLoaded : !!imgSrc;
+
+  // On the canvas the media's real shape matters: the layout sizes the slot from it.
+  // Load events don't bubble, but they do pass through the capture phase on their way down.
+  const onMeasure = canvas?.onMeasure;
+  const knownRatio = canvas?.ratio;
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !onMeasure) return;
+    const onLoad = (e: Event) => {
+      const m = e.target;
+      const w = m instanceof HTMLImageElement ? m.naturalWidth : m instanceof HTMLVideoElement ? m.videoWidth : 0;
+      const h = m instanceof HTMLImageElement ? m.naturalHeight : m instanceof HTMLVideoElement ? m.videoHeight : 0;
+      if (!w || !h) return;
+      const r = h / w;
+      if (knownRatio === undefined || Math.abs(knownRatio - r) > 0.01) onMeasure(r);
+    };
+    el.addEventListener("load", onLoad, true);
+    el.addEventListener("loadeddata", onLoad, true);
+    return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
+  }, [onMeasure, knownRatio]);
 
   const onScrollLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget, box = scrollBoxRef.current;
@@ -271,11 +327,18 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
     </div>
   );
 
+  // Traits as everyone sees them: one somebody removed doesn't come back on the card
+  const kept = new Set(viewOf(tags)?.traits ?? []);
   const activeTags = tags
-    ? TAGS.filter((t) => (tags.tags[t.key] ?? 0) >= TAG_THRESHOLD)
+    ? TAGS.filter((t) => kept.has(t.key) && (tags.tags[t.key] ?? 0) >= TAG_THRESHOLD)
         .sort((a, b) => tags.tags[b.key] - tags.tags[a.key]).slice(0, 3)
     : [];
-  const aiChips = tags && (
+  const gathering = tagJob === "pending" || tagJob === "running";
+  const aiChips = gathering ? (
+    <div className="tile__tags" role="status">
+      <span className="tile__tag tile__tag--gathering">{t.card.gatheringTags}</span>
+    </div>
+  ) : tags && (
     <div className="tile__tags">
       <span className="tile__tag tile__tag--style">{t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style}</span>
       {activeTags.map((x) => <span key={x.key} className="tile__tag">{t.taxonomy.tag[x.key as keyof typeof t.taxonomy.tag] ?? x.key}</span>)}
@@ -296,22 +359,23 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
   return (
     <div>
       <article
-        className="tile"
+        className={`tile${canvas ? " tile--canvas" : ""}`}
         onClick={() => { if (suppressClick.current) return; openInside(); }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
-        <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}>
-          {!isLoaded && !isError && <div className="shimmer" />}
+        <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}
+          style={canvas?.ratio ? { aspectRatio: `1 / ${canvas.ratio}`, background: canvas.color } : undefined}>
+          {!isLoaded && !isError && !canvas?.color && <div className="shimmer" />}
 
           {useManual && (
             <img
-              ref={manualImgRef}
-              className={`tile__img${manualLoaded ? "" : " is-hidden"}${video?.poster && !uploadedThumb ? " tile__img--frame" : ""}`}
-                decoding="async"
+              ref={manual.ref}
+              className={`tile__img${manual.ready ? "" : " is-hidden"}${manual.instant ? " is-instant" : ""}${video?.poster && !uploadedThumb ? " tile__img--frame" : ""}`}
+              decoding={manual.decoding}
               src={manualThumbnail}
               alt={item.name}
-              onLoad={() => setManualLoaded(true)}
+              onLoad={manual.onLoad}
               onError={() => setManualFailed(true)}
             />
           )}
@@ -319,16 +383,16 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
           {useDesign && (
             <>
               <img
-                ref={coverImgRef}
-                className={`tile__img${coverLoaded ? "" : " is-hidden"}`}
-                decoding="async"
+                ref={cover.ref}
+                className={`tile__img${cover.ready ? "" : " is-hidden"}${cover.instant ? " is-instant" : ""}`}
+                decoding={cover.decoding}
                 src={designCover!}
                 alt={item.name}
-                loading="lazy"
-                onLoad={() => setCoverLoaded(true)}
-                onError={() => setCoverFailed(true)}
+                loading={canvas ? undefined : "lazy"}
+                onLoad={cover.onLoad}
+                onError={() => { if (designCoverFallback && !coverRetry) setCoverRetry(true); else setCoverFailed(true); }}
               />
-              {designScroll && coverLoaded && hovering && (
+              {designScroll && !canvas && cover.ready && hovering && (
                 <div ref={scrollBoxRef} className="tile__scroll">
                   <img
                     src={designScroll}
@@ -353,13 +417,19 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
             />
           )}
 
+          {canvas?.pins && isLoaded && canvas.pins.length > 0 && (
+            <span className="tile__pins" aria-hidden>
+              {canvas.pins.map((p, i) => <i key={i} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} />)}
+            </span>
+          )}
           {plays && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
           {gifChip && isLoaded && score === undefined && <span className="tile__badge">{t.card.gif}</span>}
 
           {!useManual && !useDesign && !useFrame && imgSrc && (
             <img
-              className="tile__img"
-                decoding="async"
+              className={`tile__img${wasShown(imgSrc) ? " is-instant" : ""}`}
+              decoding={wasShown(imgSrc) ? "sync" : "async"}
+              onLoad={() => markShown(imgSrc)}
               src={imgSrc}
               alt={item.name}
               onError={() => {
@@ -399,6 +469,10 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
             </span>
           </div>
 
+          {/* Found by search without Jev's reading: why it is here, in the tags the words found */}
+          {score === undefined && reason && (
+            <div className="tile__score"><span className="tile__score-pct tile__why">{reason}</span></div>
+          )}
           {score !== undefined && (
             <div
               className={`tile__score has-why${whyOpen ? " is-open" : ""}`}

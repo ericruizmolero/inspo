@@ -1,16 +1,23 @@
 // Access to inspiration items, always scoped to a workspace (organizationId).
 import "server-only";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
-import type { InspoItem, InspoTags, TagMap } from "@/types/inspo";
+import type { InspoItem, InspoTags, TagMap, TagStatus, UserTags } from "@/types/inspo";
 import type { ThumbnailMap } from "./thumbnails";
 import { webKeyOf } from "./url";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
 import { collectItemFiles, dropUnusedFiles } from "./item-files";
+import { statusOf } from "./tag-jobs";
+import { cleanTag, MAX_ADDED } from "./taxonomy";
 
 const T = schema.inspoItem;
-type Row = typeof T.$inferSelect;
+// Every column but the embedding: 1024 floats per row that only search by meaning reads (lib/embed.ts)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { embedding: _e, embeddingAt: _ea, ...ROW } = getTableColumns(T);
+export const ITEM_COLUMNS = ROW;
+export type ItemRow = Omit<typeof T.$inferSelect, "embedding" | "embeddingAt">;
+type Row = ItemRow;
 
 const TYPES = new Set(["inspiration", "videos", "ideas", "documentaries"]);
 export { newId };
@@ -47,29 +54,60 @@ export function rowToItem(r: Row): InspoItem {
   };
 }
 
-export async function listRows(organizationId: string): Promise<Row[]> {
-  return db.select().from(T).where(eq(T.organizationId, organizationId)).orderBy(desc(T.date), desc(T.createdAt));
+/** The workspace's rows, newest first. With `webs`, only those addresses. */
+export async function listRows(organizationId: string, webs?: string[]): Promise<Row[]> {
+  const where = webs ? and(eq(T.organizationId, organizationId), inArray(T.web, webs)) : eq(T.organizationId, organizationId);
+  return db.select(ROW).from(T).where(where).orderBy(desc(T.date), desc(T.createdAt));
 }
 
 export async function listItems(organizationId: string): Promise<InspoItem[]> {
   return (await listRows(organizationId)).map(rowToItem);
 }
 
-/** Items + thumbnail map + tag map in a single query. */
-export async function loadWorkspaceData(organizationId: string) {
-  const rows = await listRows(organizationId);
+/** An item's tags as the client gets them: the AI's, with the workspace's edits attached */
+export const tagsOfRow = (r: Pick<Row, "tagsJson" | "tagsUser">): InspoTags | null =>
+  r.tagsJson ? { ...r.tagsJson, user: r.tagsUser ?? undefined } : null;
+
+/** Items + thumbnail map + tag map + the tagging jobs not done, in a single query. With `webs`, only those. */
+export async function loadWorkspaceData(organizationId: string, webs?: string[]) {
+  const rows = await listRows(organizationId, webs);
   const items = rows.map(rowToItem);
   const thumbnailMap: ThumbnailMap = {};
   const tagMap: TagMap = {};
+  const tagJobs: Record<string, TagStatus> = {};
   for (const r of rows) {
     if (r.thumbnailUrl) thumbnailMap[r.web] = r.thumbnailUrl;
-    if (r.tagsJson) tagMap[r.web] = r.tagsJson;
+    const tags = tagsOfRow(r);
+    if (tags) tagMap[r.web] = tags;
+    const job = statusOf(r);
+    if (job) tagJobs[r.web] = job;
   }
-  return { items, thumbnailMap, tagMap };
+  return { items, thumbnailMap, tagMap, tagJobs };
+}
+
+/** Adds or removes one tag by hand. `remove` is a selector ("s:pricing", "k:coffee", "t:dark").
+ *  Returns the item's edits after the change, or null if the item isn't in the workspace. */
+export async function editUserTags(organizationId: string, id: string, change: { add?: string; remove?: string }): Promise<UserTags | null> {
+  const where = and(eq(T.organizationId, organizationId), eq(T.id, id));
+  const [row] = await db.select({ user: T.tagsUser }).from(T).where(where).limit(1);
+  if (!row) return null;
+  const added = new Set(row.user?.added ?? []), removed = new Set(row.user?.removed ?? []);
+  const add = change.add ? cleanTag(change.add) : "";
+  if (add) { removed.delete(`k:${add}`); if (added.size < MAX_ADDED) added.add(add); }
+  if (change.remove) {
+    const sel = change.remove.slice(0, 60);
+    // A tag somebody added just goes; one the AI gave is remembered as removed, so a new tagging keeps it out
+    if (sel.startsWith("k:")) added.delete(sel.slice(2));
+    removed.add(sel);
+  }
+  const user: UserTags = { added: [...added], removed: [...removed] };
+  // New words, new meaning: the vector is cleared in the same write (lib/embed.ts makes it again)
+  await db.update(T).set({ tagsUser: user, embedding: null, updatedAt: new Date() }).where(where);
+  return user;
 }
 
 export async function findByWeb(organizationId: string, web: string): Promise<Row | null> {
-  const [r] = await db.select().from(T)
+  const [r] = await db.select(ROW).from(T)
     .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web)))).limit(1);
   return r ?? null;
 }
@@ -122,7 +160,7 @@ export async function setThumbnail(organizationId: string, web: string, thumbnai
 }
 
 export async function setTags(organizationId: string, web: string, tags: InspoTags): Promise<void> {
-  await db.update(T).set({ tagsJson: tags, updatedAt: new Date() })
+  await db.update(T).set({ tagsJson: tags, tagStatus: "done", updatedAt: new Date() })
     .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web))));
 }
 
@@ -131,7 +169,7 @@ export async function setTagsBulk(organizationId: string, map: TagMap): Promise<
   const rows = Object.entries(map).map(([web, tags]) => sql`(${webKeyOf(web)}, ${JSON.stringify(tags)}::jsonb)`);
   for (let i = 0; i < rows.length; i += 500) {
     await db.execute(sql`
-      update ${T} set tags_json = v.tags, updated_at = now()
+      update ${T} set tags_json = v.tags, tag_status = 'done', updated_at = now()
       from (values ${sql.join(rows.slice(i, i + 500), sql`, `)}) as v(web_key, tags)
       where ${T.organizationId} = ${organizationId} and ${T.webKey} = v.web_key`);
   }
@@ -171,14 +209,15 @@ export async function setItemNote(
   organizationId: string, id: string, field: "note" | "subNote", text: string,
   user: { id: string; name: string; email: string }, admin: boolean,
 ): Promise<InspoItem | null | false> {
-  const [row] = await db.select().from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id))).limit(1);
+  const [row] = await db.select(ROW).from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id))).limit(1);
   if (!row) return null;
   const own = row.createdBy ? row.createdBy === user.id : row.author === (user.name || user.email);
   if (!own && !admin) return false;
   const clean = text.replace(/\r\n/g, "\n").trim().slice(0, 4000);
   const patch = field === "note" ? { note: clean } : { subNote: clean || null };
   const updatedAt = new Date();
-  await db.update(T).set({ ...patch, updatedAt }).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
+  // New words, new meaning: the vector is cleared in the same write (lib/embed.ts makes it again)
+  await db.update(T).set({ ...patch, embedding: null, updatedAt }).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
   return rowToItem({ ...row, ...patch, updatedAt });
 }
 

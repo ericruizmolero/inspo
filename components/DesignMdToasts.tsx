@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 export interface DesignMdEntry {
   url: string; markdown: string; generatedAt: string; model: string; cached: boolean;
   spec?: DesignSpec; screenshotUrl?: string;
+  /** Cover and hover strip, and the whole page at 720 and 288px wide with its height at 1440 */
+  coverUrl?: string; scrollUrl?: string; tileUrl?: string; thumbUrl?: string; shotH?: number;
   /** The logo cut from the page (png) and up to 8 of its icons as svg markup */
   logoUrl?: string; icons?: string[];
   /** The file format each @font-face family is served in */
@@ -50,6 +52,9 @@ function hostOf(url: string): string {
 const IcStop = (
   <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden><rect x="1.5" y="1.5" width="7" height="7" rx="1.5" /></svg>
 );
+
+/** The site's DESIGN.md says it is dark: the panel opens dark to match */
+export const isDarkSite = (entry: DesignMdEntry | undefined) => entry?.spec?.theme === "dark";
 
 interface DesignMdToastsProps {
   jobs: Record<string, DesignMdState>;

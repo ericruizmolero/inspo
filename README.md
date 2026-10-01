@@ -13,7 +13,7 @@ No server to look after. Each part is a managed service:
 | Database | **Neon** Postgres, AWS Frankfurt | Connected through the Vercel integration. Point-in-time restore |
 | Files | **Cloudflare R2**, private bucket `criterio-files` | Served and uploaded through signed URLs (see [Files](#files)) |
 | Email | **Resend** | Magic links and invitations |
-| AI | **OpenRouter** (every model call), **Typesafe** (Jev: tags and search) | |
+| AI | **OpenRouter** (every model call, tags included), **Typesafe** (Jev: search and polish) | |
 
 - A push to `main` deploys production.
 - Every pull request gets a preview URL with its own copy of the database (a Neon branch).
@@ -110,8 +110,12 @@ Nothing is required. Each key switches one thing on:
 |---|---|
 | `DEV_LOGIN_EMAIL` | Sign in without the email step |
 | `PULL_DATABASE_URL` | `npm run db:pull` (read-only Neon role) |
-| `OPENROUTER_API_KEY` | DESIGN.md, explain, revisions and vision (every model call) |
-| `TYPESAFE_API_KEY` | Jev: AI tags and search |
+| `OPENROUTER_API_KEY` | DESIGN.md, explain, revisions, tags and search translation (every model call) |
+| `TAG_MODEL` | Optional. Tagging model, default `google/gemini-2.5-flash-lite` (`npm run tags:bakeoff` compares others) |
+| `TAG_FALLBACK_MODEL` | Optional. Model for a job's last try, default `mistralai/mistral-small-3.2-24b-instruct` |
+| `QUERY_MODEL` | Optional. Model that turns a search into English, default `TAG_MODEL` |
+| `CRON_SECRET` | Vercel Cron: the tagging worker (`/api/cron/tag-pending`, every minute) and the usage check |
+| `TYPESAFE_API_KEY` | Jev: AI search and polish |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |
 | `CHROME_EXECUTABLE_PATH` | Only if Chrome isn't in `/Applications` |
 
@@ -192,6 +196,7 @@ local database.
 
 ```bash
 npm run check:postgres   # cascades, file cleanup, projects, bulk tags, heartbeat, day grouping
+npm run tags:bakeoff     # tagging models side by side on real items (read only), HTML in .data/
 npm run check:seats      # plan seat limits
 npm run check:invites    # the invitation flow, against the running app (npm run dev first)
 npm run check:locale     # which language each page and email uses

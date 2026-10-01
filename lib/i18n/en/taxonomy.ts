@@ -38,4 +38,28 @@ export const taxonomy = {
     humor: "Humour",
     storytelling: "Storytelling",
   },
+  color: {
+    black: "Black", white: "White", grey: "Grey", beige: "Beige", brown: "Brown", red: "Red", orange: "Orange",
+    yellow: "Yellow", green: "Green", teal: "Teal", blue: "Blue", purple: "Purple", pink: "Pink",
+  },
+  section: {
+    hero: "Hero", nav: "Navigation", logos: "Logo wall", features: "Features", bento: "Bento grid", stats: "Stats",
+    pricing: "Pricing", testimonials: "Testimonials", faq: "FAQ", cta: "Call to action", team: "Team",
+    work: "Work / case studies", gallery: "Gallery", products: "Products", blog: "Blog / news", newsletter: "Newsletter",
+    contact: "Contact", comparison: "Comparison", integrations: "Integrations", process: "Steps / process", footer: "Footer",
+  },
+  element: {
+    marquee: "Marquee", carousel: "Carousel", tabs: "Tabs", accordion: "Accordion", video: "Video", "3d-object": "3D object",
+    mockups: "Mockups", illustration: "Illustration", photography: "Photography", icons: "Icons", badges: "Badges",
+    form: "Form", code: "Code", charts: "Charts", map: "Map", gradient: "Gradient", glass: "Glass", grain: "Grain",
+    shapes: "Shapes", collage: "Collage", emoji: "Emoji", cards: "Cards",
+  },
+  type: {
+    serif: "Serif", sans: "Sans serif", mono: "Mono", display: "Display", oversized: "Oversized", condensed: "Condensed",
+    handwritten: "Handwritten", caps: "All caps", outlined: "Outlined",
+  },
+  layout: {
+    centered: "Centered", split: "Split", asymmetric: "Asymmetric", "full-bleed": "Full bleed", columns: "Columns",
+    dense: "Dense", airy: "Airy", "long-scroll": "Long scroll", sidebar: "Sidebar",
+  },
 };

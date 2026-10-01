@@ -2,43 +2,19 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
+import type { InspoItem, InspoTags, TagStatus } from "@/types/inspo";
+import { FACETS, cleanTag, viewOf } from "@/lib/taxonomy";
 import { BRIEF_KEYS, noDashes, type DesignSpec, type DesignBrief } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
-import { fmtDate } from "@/lib/i18n/format";
+import { fmtDate, timeAgo } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 
-interface DesignMdModalProps {
-  url: string;
-  name: string;
-  state: DesignMdState | undefined;
-  onClose: () => void;
-  onRegenerate: () => void;
-  onRevised: (patch: Partial<DesignMdEntry>) => void;
-  /**
-   * The inspo's comment thread, as a column right of the sheet: rendered with
-   * CommentsPanel in `column` mode; `hide` is what its close button should call.
-   */
-  comments?: (hide: () => void) => ReactNode;
-  /** How many replies there are, for the bar button */
-  commentCount?: number;
-  /** Name of the library it belongs to, first step of the breadcrumb */
-  libraryName?: string;
-}
 
 type ReviseFn = (section: string, comment: string) => Promise<{ summary: string; warning: string | null; unchanged?: boolean }>;
-
-export function timeAgo(iso: string, locale: Locale, t: Dict): string {
-  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
-  if (s < 60) return t.designMd.justNow;
-  if (s < 3600) return t.designMd.minsAgo(Math.floor(s / 60));
-  if (s < 86400) return t.designMd.hoursAgo(Math.floor(s / 3600));
-  if (s < 86400 * 7) return t.designMd.daysAgo(Math.floor(s / 86400));
-  return fmtDate(iso, locale, { day: "2-digit", month: "short" });
-}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const IcCheck = (
@@ -73,10 +49,14 @@ function isDark(hex: string): boolean {
 
 function useCopy(ms = 1400): [boolean, (text: string) => void] {
   const [copied, setCopied] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+  // A copy right before the panel closes doesn't touch it once it is gone
+  useEffect(() => () => window.clearTimeout(timer.current), []);
   const copy = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), ms);
+      window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => setCopied(false), ms);
     });
   };
   return [copied, copy];
@@ -87,54 +67,6 @@ function pageBg(spec: DesignSpec): string {
   const pick = (spec.theme === "dark" ? neutrals.find((c) => isDark(c.hex)) : neutrals.find((c) => !isDark(c.hex)))
     ?? neutrals[0] ?? spec.colors[0];
   return pick?.hex ?? (spec.theme === "dark" ? "#0d0d0d" : "#ffffff");
-}
-
-// ─── Auto-scrolling screenshot, in a Safari window ───────────────────────────
-// The bar is glass: the screenshot passes under it blurred while it scrolls.
-const IcChev = (
-  <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6.5 2L3.5 5l3 3" /></svg>
-);
-const IcLock = (
-  <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M2 4V3a2.5 2.5 0 015 0v1h.5a1 1 0 011 1v3.5a1 1 0 01-1 1h-6a1 1 0 01-1-1V5a1 1 0 011-1H2zm1 0h3V3a1.5 1.5 0 00-3 0v1z" /></svg>
-);
-
-
-function ScrollShot({ src, alt, bg, host, theme }: { src: string; alt: string; bg: string; host: string; theme?: string }) {
-  const boxRef = useRef<HTMLDivElement>(null);
-  const [dist, setDist] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-
-  const onLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.currentTarget;
-    const box = boxRef.current;
-    if (!box) return;
-    const rendered = (img.naturalHeight / img.naturalWidth) * box.clientWidth;
-    setDist(Math.max(0, rendered - box.clientHeight));
-    setLoaded(true);
-  };
-
-  const duration = Math.max(6, Math.round(dist / 140));
-
-  return (
-    <div className={`dm-frame${theme === "dark" ? " dm-frame--dark" : ""}`} style={{ background: bg }}>
-      <div className="dm-frame__bar">
-        <span className="dm-frame__left" aria-hidden>
-          <span className="dm-frame__lights"><i /><i /><i /></span>
-          <span className="dm-frame__nav">{IcChev}<span className="dm-frame__fwd">{IcChev}</span></span>
-        </span>
-        <span className="dm-frame__url" aria-hidden>{IcLock}<span>{host}</span></span>
-      </div>
-      <div ref={boxRef} className={`dm-shot${loaded ? " is-loaded" : ""}`}>
-        {!loaded && <div className="shimmer" />}
-        <img
-          src={src}
-          alt={alt}
-          onLoad={onLoad}
-          style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${duration}s` } as React.CSSProperties}
-        />
-      </div>
-    </div>
-  );
 }
 
 // ─── Brief ────────────────────────────────────────────────────────────────────
@@ -362,26 +294,127 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
           </div>
           {onRevise && <div className="dm-hero__revise"><SectionHead title={t.designMd.sections.brief} section="brief" onRevise={onRevise} /></div>}
         </div>
-        {entry.screenshotUrl && <ScrollShot src={entry.screenshotUrl} alt={spec.brand} bg={bg} host={host.split("/")[0]} theme={spec.theme} />}
       </section>
     </div>
   );
 }
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
-// The sheet only opens once the DESIGN.md exists: generation lives in the
-// bottom-right toast (DesignMdToasts), there is no progress screen here.
-export default function DesignMdModal({ url, name, state, onClose, onRegenerate, onRevised, comments, commentCount = 0, libraryName }: DesignMdModalProps) {
+// ─── Panel ────────────────────────────────────────────────────────────────────
+// Opens on the right for any reference while the canvas stays live on the left. The page comes first,
+// with the team's post-its on it; the DESIGN.md (spec, file, history) sits in the tabs beside it, and
+// the rest of the thread (the saver's note and plain replies) in a column that slides over the page.
+type View = "page" | "spec" | "md" | "history";
+
+/** The item's tags, in one list like mymind: the page's colours as a bar, then every tag. A tag filters the
+ *  library; its × removes it; the field at the end adds one. While the job runs, it says so. */
+function TagStrip({ tags, job, onTag, onEdit, onRetry }: {
+  tags?: InspoTags; job?: TagStatus;
+  onTag?: (sel: string) => void; onEdit?: (change: { add?: string; remove?: string }) => void; onRetry?: () => void;
+}) {
+  const { t } = useT();
+  const [draft, setDraft] = useState("");
+  if (job === "pending" || job === "running") {
+    return <div className="ip-tags" role="status"><span className="chip ip-tags__gathering">{t.panel.tagsGathering}</span></div>;
+  }
+  if (job === "failed" && !tags) {
+    return (
+      <div className="ip-tags">
+        <span className="ip-tags__failed">{t.panel.tagsFailed}</span>
+        {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>{t.common.retry}</Button>}
+      </div>
+    );
+  }
+  const v = viewOf(tags);
+  if (!tags || !v) return null;
+  const labels: Record<string, Record<string, string>> = { sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
+  // `sel` filters, `drop` removes: the same for facets and keywords; a trait filters bare and is removed as "t:"
+  const chips = [
+    // Who made it comes first: it is what the item says about itself, not what the AI saw
+    ...v.credits.map((k) => ({ sel: `a:${k}`, drop: `a:${k}`, label: t.panel.byCredit(k) })),
+    ...FACETS.filter((f) => f.field !== "palette").flatMap((f) => v[f.field].map((k) => ({ sel: `${f.prefix}:${k}`, drop: `${f.prefix}:${k}`, label: labels[f.field][k] ?? k }))),
+    ...v.traits.map((k) => ({ sel: k, drop: `t:${k}`, label: t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k })),
+    ...v.keywords.map((k) => ({ sel: `k:${k}`, drop: `k:${k}`, label: k })),
+  ];
+  // A trait and an element can share a word (photography, illustration): one pill is enough
+  const shown = new Set<string>();
+  const unique = chips.filter((c) => !shown.has(c.label.toLowerCase()) && !!shown.add(c.label.toLowerCase()));
+  const colors = (tags.colors ?? []).filter((c) => v.palette.includes(c.family));
+  const add = () => { const tag = cleanTag(draft); if (tag) onEdit?.({ add: tag }); setDraft(""); };
+  return (
+    <div className="ip-tags">
+      {colors.length > 0 && (
+        <span className="ip-tags__palette" role="group" aria-label={t.sidebar.colors}>
+          {colors.map((c) => {
+            const name = `${t.taxonomy.color[c.family as keyof typeof t.taxonomy.color] ?? c.family} · ${c.hex}`;
+            return (
+              <button key={c.family} type="button" className="ip-tags__color" style={{ background: c.hex, flexGrow: c.share }}
+                title={name} aria-label={name} onClick={() => onTag?.(`c:${c.family}`)} />
+            );
+          })}
+        </span>
+      )}
+      {unique.map((c) => (
+        <span key={c.drop} className="chip ip-tags__chip">
+          <button type="button" className="ip-tags__label" onClick={() => onTag?.(c.sel)}>{c.label}</button>
+          {onEdit && (
+            <button type="button" className="ip-tags__x" aria-label={t.panel.removeTag(c.label)} onClick={() => onEdit({ remove: c.drop })}>{IcX}</button>
+          )}
+        </span>
+      ))}
+      {onEdit && (
+        <input
+          className="ip-tags__add" value={draft} placeholder={`+ ${t.panel.addTag}`} aria-label={t.panel.addTag} maxLength={40}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); add(); }
+            // Escape empties the field first; it reaches the panel (close) only when the field is empty
+            if (e.key === "Escape" && draft) { e.preventDefault(); e.stopPropagation(); setDraft(""); }
+          }}
+          onBlur={add}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRetryTags, state, canDesignMd, page, thread, threadCount, onClose, onGenerate, onRegenerate, onRevised, libraryName }: {
+  item: InspoItem;
+  /** The item's AI tags, once it has them */
+  tags?: InspoTags;
+  /** Filters the library by one tag (a trait key or a prefixed facet) */
+  onTag?: (sel: string) => void;
+  /** Its tagging job while it isn't done */
+  tagJob?: TagStatus;
+  /** Adds a tag by hand or removes one (a selector) */
+  onEditTags?: (change: { add?: string; remove?: string }) => void;
+  /** Gathers the tags again after a failure */
+  onRetryTags?: () => void;
+  /** This site's DESIGN.md job: loading, ready (with the entry) or failed */
+  state: DesignMdState | undefined;
+  /** A site that can have a DESIGN.md (not an image, a video or a post) */
+  canDesignMd: boolean;
+  /** The page with its post-its (PageNotes); null for videos and posts, whose thread is the panel */
+  page: ReactNode | null;
+  /** The thread column; `hide` closes it */
+  thread: (hide: (() => void) | null) => ReactNode;
+  threadCount: number;
+  onClose: () => void;
+  onGenerate: () => void;
+  onRegenerate: () => void;
+  onRevised: (patch: Partial<DesignMdEntry>) => void;
+  /** Name of the library it belongs to, first step of the breadcrumb */
+  libraryName?: string;
+}) {
   const { locale, t } = useT();
   const [copied, copy] = useCopy(1600);
-  const [view, setView] = useState<"spec" | "md" | "history">("spec");
+  const [view, setView] = useState<View>("page");
+  const [threadOpen, setThreadOpen] = useState(false);
   const [reverting, setReverting] = useState(false);
-  // The comments column starts open on wide screens; on narrow ones it
-  // overlays the sheet and opens by hand from the bar.
-  const [commentsOpen, setCommentsOpen] = useState(() => typeof window === "undefined" || window.innerWidth >= 1024);
+  const url = item.web;
 
   const entry = state?.entry;
   const ready = state?.status === "ready" && !!entry;
+  const loading = state?.status === "loading";
   const spec = entry?.spec;
   const revisions = entry?.revisions ?? [];
   const markdown = entry?.markdown ?? "";
@@ -411,112 +444,161 @@ export default function DesignMdModal({ url, name, state, onClose, onRegenerate,
     } finally { setReverting(false); }
   };
 
+  // Escape folds the thread first, then closes the panel. A note being written eats its own Escape.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const threadOpenRef = useRef(threadOpen);
+  threadOpenRef.current = threadOpen;
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      if (document.querySelector(".cm-lightbox, [role=dialog][data-open], .modal-backdrop")) return;
+      if (threadOpenRef.current) setThreadOpen(false); else closeRef.current();
+    };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
-  }, [onClose]);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   const download = () => {
     if (!entry) return;
     const blob = new Blob([markdown], { type: "text/markdown" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md`;
+    a.download = `${item.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md`;
     a.click();
     URL.revokeObjectURL(a.href);
   };
 
+  // Closed by a click it slides back out to its edge, the way it came in. Escape (a key) closes at once.
+  const asideRef = useRef<HTMLElement>(null);
+  const leaving = useRef(false);
+  const leave = () => {
+    const el = asideRef.current;
+    if (leaving.current) return;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onClose(); return; }
+    leaving.current = true;
+    el.animate([{ transform: "none", opacity: 1 }, { transform: "translateX(32px)", opacity: 0 }], {
+      duration: 200, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards",
+    }).finished.then(onClose, onClose);
+  };
+
   const date = entry ? fmtDate(entry.generatedAt, locale, { day: "2-digit", month: "short", year: "numeric" }) : "";
-  const showTabs = ready && !!spec;
-  const activeView = spec ? view : "md";
-  const barHost = url.replace(/^https?:\/\//, "").split("/")[0];
+  const host = url.replace(/^https?:\/\//, "").split("/")[0];
   const [iconOk, setIconOk] = useState(true);
+  const isSite = canDesignMd;
+  // Another reference in the same panel: it stays put (no slide in again) and starts on its page
+  useEffect(() => { setView("page"); setThreadOpen(false); setIconOk(true); }, [url]);
+
+  // What the DESIGN.md tabs show before there is one
+  const notReady = loading ? (
+    <div className="ip-state"><span className="spinner" /><span>{t.panel.generating}</span></div>
+  ) : state?.status === "error" ? (
+    <div className="ip-state is-error"><span>{state.error}</span><Button variant="ghost" size="sm" onClick={onGenerate}>{t.common.retry}</Button></div>
+  ) : (
+    <div className="ip-state"><span>{t.panel.noDesignMd}</span><Button variant="primary" size="sm" onClick={onGenerate}>{t.panel.generate}</Button></div>
+  );
+
+  const tab = (v: View, label: ReactNode) => (
+    <button role="tab" aria-selected={view === v} className={`dm-tab${view === v ? " is-active" : ""}`} onClick={() => setView(v)}>{label}</button>
+  );
 
   return (
-    <div className="dm">
-      <header className="dm-bar">
-        <Button variant="icon" className="dm-bar__close" onClick={onClose} aria-label={t.common.close}>{IcX}</Button>
+    <aside ref={asideRef} className="ip" role="dialog" aria-label={item.name}>
+      <header className="ip-bar">
+        <Button variant="icon" className="dm-bar__close" onClick={leave} aria-label={t.common.close}>{IcX}</Button>
         <div className="dm-bar__id">
           <span className="dm-bar__icon" aria-hidden>
-            {iconOk && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(barHost)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
-            {!iconOk && <span>{(spec?.brand ?? name).slice(0, 1).toUpperCase()}</span>}
+            {iconOk && isSite && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
+            {(!iconOk || !isSite) && <span>{(spec?.brand ?? item.name).slice(0, 1).toUpperCase()}</span>}
           </span>
           <div className="dm-bar__title">
-            <span className="display dm-bar__brand">{spec?.brand ?? name}</span>
-            {/* Where this is: the library, the site, the file */}
+            <span className="display dm-bar__brand">{spec?.brand ?? item.name}</span>
             <Breadcrumb className="dm-bar__meta" aria-label={t.settings.breadcrumb}>
               <BreadcrumbList>
                 {libraryName && (
                   <>
-                    <BreadcrumbItem><button type="button" className="dm-bar__crumb" onClick={onClose}>{libraryName}</button></BreadcrumbItem>
+                    <BreadcrumbItem><button type="button" className="dm-bar__crumb" onClick={leave}>{libraryName}</button></BreadcrumbItem>
                     <BreadcrumbSeparator />
                   </>
                 )}
-                <BreadcrumbItem><a href={url} target="_blank" rel="noopener noreferrer">{barHost}</a></BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <button type="button" className="dm-bar__file" onClick={download} disabled={!ready} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
-                </BreadcrumbItem>
+                <BreadcrumbItem><a href={url} target="_blank" rel="noopener noreferrer">{isSite ? host : t.card.openImage}</a></BreadcrumbItem>
+                {ready && (
+                  <>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <button type="button" className="dm-bar__file" onClick={download} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
+                    </BreadcrumbItem>
+                  </>
+                )}
               </BreadcrumbList>
             </Breadcrumb>
           </div>
         </div>
-        {showTabs && (
-          <div className="dm-tabs" role="tablist">
-            <button role="tab" aria-selected={activeView === "spec"} className={`dm-tab${activeView === "spec" ? " is-active" : ""}`} onClick={() => setView("spec")}>{t.designMd.tabSpec}</button>
-            <button role="tab" aria-selected={activeView === "md"} className={`dm-tab${activeView === "md" ? " is-active" : ""}`} onClick={() => setView("md")}>{t.designMd.tabMarkdown}</button>
-            <button role="tab" aria-selected={activeView === "history"} className={`dm-tab${activeView === "history" ? " is-active" : ""}`} onClick={() => setView("history")}>
-              {t.designMd.tabHistory}{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}
-            </button>
-          </div>
-        )}
-        <div className="dm-bar__actions">
-          {comments && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`dm-bar__comments${commentsOpen ? " is-active" : ""}`}
-              onClick={() => setCommentsOpen((o) => !o)}
-              aria-pressed={commentsOpen}
-              title={commentsOpen ? t.designMd.hideComments : t.designMd.showComments}
-            >
-              {IcComment}<span className="dm-bar__comments-label">{t.designMd.comments}</span><span className="dm-tab__count">{commentCount}</span>
-            </Button>
-          )}
-          <Button variant="ghost" size="sm" onClick={onRegenerate} disabled={!ready}>{t.designMd.regenerate}</Button>
-          <Button variant="ghost" size="sm" onClick={download} disabled={!ready}>{t.designMd.download}</Button>
-          <Button variant="primary" size="sm" onClick={() => entry && copy(markdown)} disabled={!ready}>
-            {copied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyMd}</>}
+        {page && (
+          <Button
+            variant="ghost" size="sm"
+            className={`dm-bar__comments ip-bar__thread${threadOpen ? " is-active" : ""}`}
+            onClick={() => setThreadOpen((o) => !o)}
+            aria-pressed={threadOpen}
+            title={threadOpen ? t.designMd.hideComments : t.designMd.showComments}
+          >
+            {IcComment}<span className="dm-bar__comments-label">{t.panel.thread}</span><span className="dm-tab__count">{threadCount}</span>
           </Button>
-        </div>
+        )}
       </header>
 
-      {ready && entry && (
-        <div className={`dm-content${comments && commentsOpen ? " has-comments" : ""}`}>
-        <div className="dm-body">
-          {activeView === "history" ? (
-            revisions.length
-              ? <History revisions={revisions} onRevert={revert} busy={reverting} />
-              : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>
-          ) : activeView === "spec" && spec
-            ? <SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} />
-            : (
-              <div className="dm-md">
-                <div className="dm-md__head">
-                  <span>{name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
-                  <span>{t.designMd.words(markdown.split(/\s+/).length)} · {date}</span>
-                </div>
-                <pre className="dm-md__pre">{markdown}</pre>
-              </div>
-            )}
-        </div>
-        {comments && commentsOpen && (
-          <div className="dm-side">{comments(() => setCommentsOpen(false))}</div>
-        )}
+      <TagStrip tags={tags} job={tagJob} onTag={onTag} onEdit={onEditTags} onRetry={onRetryTags} />
+
+      {isSite && (
+        <div className="ip-tabs">
+          <div className="dm-tabs" role="tablist">
+            {tab("page", t.panel.tabPage)}
+            {tab("spec", <>{t.designMd.tabSpec}{loading && <span className="spinner spinner--sm ip-tabs__spin" />}</>)}
+            {tab("md", t.designMd.tabMarkdown)}
+            {tab("history", <>{t.designMd.tabHistory}{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}</>)}
+          </div>
+          {view !== "page" && ready && (
+            <div className="ip-tabs__actions">
+              <Button variant="ghost" size="sm" onClick={onRegenerate}>{t.designMd.regenerate}</Button>
+              <Button variant="ghost" size="sm" onClick={download}>{t.designMd.download}</Button>
+              <Button variant="primary" size="sm" onClick={() => copy(markdown)}>
+                {copied ? <>{IcCheck} {t.common.copied}</> : <>{IcCopy} {t.designMd.copyMd}</>}
+              </Button>
+            </div>
+          )}
         </div>
       )}
-    </div>
+
+      <div className="ip-body">
+        {!page ? (
+          <div className="ip-thread is-full">{thread(null)}</div>
+        ) : view === "page" ? (
+          <div className="ip-page">{page}</div>
+        ) : !ready || !entry ? (
+          notReady
+        ) : view === "history" ? (
+          <div className="ip-scroll">
+            {revisions.length
+              ? <History revisions={revisions} onRevert={revert} busy={reverting} />
+              : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>}
+          </div>
+        ) : view === "spec" && spec ? (
+          <div className="ip-scroll"><SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} /></div>
+        ) : (
+          <div className="ip-scroll">
+            <div className="dm-md">
+              <div className="dm-md__head">
+                <span>{item.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
+                <span>{t.designMd.words(markdown.split(/\s+/).length)} · {date}</span>
+              </div>
+              <pre className="dm-md__pre">{markdown}</pre>
+            </div>
+          </div>
+        )}
+        {page && threadOpen && <div className="ip-thread">{thread(() => setThreadOpen(false))}</div>}
+      </div>
+    </aside>
   );
 }
+
+/** The site is dark by its own spec (the page's window bar follows) */

@@ -2,6 +2,8 @@
 // (which only understands text). Uses the same proxy as /api/og.
 
 import "server-only";
+import { pageMeta } from "./meta";
+import type { InspoMeta } from "@/types/inspo";
 
 // External proxy to read sites that block data center IPs. WEB_PROXY_URL="" turns it off.
 const DEFAULT_PROXY = "https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy";
@@ -31,6 +33,8 @@ export interface SiteText {
   lang: string;
   headings: string[];
   textSample: string;
+  /** Author, publisher, keywords… from its meta tags and JSON-LD (lib/meta.ts) */
+  meta?: InspoMeta;
   signals: {
     themeColor: string | null;
     fonts: string[];
@@ -103,6 +107,7 @@ export function parseSiteText(html: string): SiteText {
 
   return {
     title, description, siteName, lang, headings, textSample,
+    meta: pageMeta(html),
     signals: {
       themeColor: meta(html, "name", "theme-color") || null,
       fonts: uniq([...fonts, ...googleFonts], 8),

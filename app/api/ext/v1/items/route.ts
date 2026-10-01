@@ -3,16 +3,17 @@
 // server, same as when a URL is pasted in the app.
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
-import { addItem, findByWeb, rowToItem, setThumbnail, setTags } from "@/lib/items";
+import { addItem, findByWeb, rowToItem, setThumbnail } from "@/lib/items";
 import { uploadThumbnail } from "@/lib/thumbnails";
 import { nameFor } from "@/lib/item-name";
 import { ensurePost, postThumb } from "@/lib/posts";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
-import { classifyItem, jevEnabled } from "@/lib/jev";
+import { taggerEnabled } from "@/lib/tagger";
+import { startTagJob } from "@/lib/tag-jobs";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 
-export const maxDuration = 120; // tagging and importing a post (copying its video) run in after(), once the response is sent
+export const maxDuration = 300; // tagging (with a whole-page capture) and importing a post (copying its video) run in after(), once the response is sent
 
 const MAX_SHOT_BYTES = 3 * 1024 * 1024;
 
@@ -58,18 +59,14 @@ export async function POST(req: NextRequest) {
     // A post on X is imported after responding (its photos, frame and video are copied);
     // its picture replaces the tab screenshot. Then the AI tags, as the app does when a URL is pasted.
     const isPost = mediaKindOf(web) === "post";
-    if (isPost || jevEnabled()) {
+    if (isPost || taggerEnabled()) {
       after(async () => {
         if (isPost) {
           const post = await ensurePost(web);
           const thumb = post && postThumb(post);
           if (thumb) await setThumbnail(ctx.workspace.id, web, thumb);
         }
-        if (!jevEnabled()) return;
-        try {
-          const tags = await classifyItem(item, { organizationId: ctx.workspace.id, userId: ctx.user.id });
-          await setTags(ctx.workspace.id, web, tags);
-        } catch (e) { console.error("ext: tagging failed", web, e instanceof Error ? e.message : e); }
+        if (taggerEnabled() && item.id) await startTagJob(ctx.workspace.id, item.id, ctx.user.id);
       });
     }
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "./CreateTeamDialog";
+import { useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -56,8 +57,11 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // Inside the library the switch is instant (the other workspaces are already loaded); elsewhere the page refreshes
+  const instant = useWorkspaceSwitch();
   const switchTo = async (id: string) => {
     if (id === workspace.id) { setOpen(false); return; }
+    if (instant) { setOpen(false); await instant.switchTo(id); return; }
     setBusy(true);
     await authClient.organization.setActive({ organizationId: id });
     setOpen(false); setBusy(false);
@@ -75,8 +79,8 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
 
   return (
     <div className="ws" ref={ref}>
-      <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="ws__trigger">
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) instant?.prefetch(); }}>
+      <PopoverTrigger className="ws__trigger" onPointerEnter={() => instant?.prefetch()}>
         {/* The personal workspace is you: it shows your photo, not the initial */}
         {workspace.kind === "personal" && !workspace.logo
           ? <UserAvatar name={user.name} image={user.image} />
