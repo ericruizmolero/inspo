@@ -43,6 +43,10 @@ async function load() {
   $("import-lead").textContent = t("importLead", [ws()]);
   setView("import");
   await loadTree();
+  // Opened from one of the popup's buttons: that source comes into view, its button focused
+  const source = new URLSearchParams(location.search).get("source");
+  const btn = source === "x" ? $("btn-x") : source === "browser" ? $("btn-browser") : null;
+  if (btn) { $(`src-${source}`).scrollIntoView({ block: "start" }); if (!btn.disabled) btn.focus(); }
   api("/me").then((me) => {
     state.workspace = me.workspace; state.workspaces = me.workspaces || []; state.user = me.user;
     chrome.storage.local.set({ workspace: me.workspace, workspaces: state.workspaces, user: me.user });

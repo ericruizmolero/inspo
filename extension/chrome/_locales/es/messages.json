@@ -90,9 +90,6 @@
       }
     }
   },
-  "importLink": {
-    "message": "Importar marcadores"
-  },
   "importTitle": {
     "message": "Importa tus marcadores"
   },
@@ -228,5 +225,14 @@
   },
   "doneTitle": {
     "message": "Importación terminada"
+  },
+  "importLabel": {
+    "message": "Importar"
+  },
+  "importXShort": {
+    "message": "Guardados de X"
+  },
+  "importBrowserShort": {
+    "message": "Marcadores de Chrome"
   }
 }

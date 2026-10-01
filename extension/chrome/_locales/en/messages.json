@@ -90,9 +90,6 @@
       }
     }
   },
-  "importLink": {
-    "message": "Import bookmarks"
-  },
   "importTitle": {
     "message": "Import your bookmarks"
   },
@@ -228,5 +225,14 @@
   },
   "doneTitle": {
     "message": "Import finished"
+  },
+  "importLabel": {
+    "message": "Import"
+  },
+  "importXShort": {
+    "message": "Bookmarks on X"
+  },
+  "importBrowserShort": {
+    "message": "Chrome bookmarks"
   }
 }
