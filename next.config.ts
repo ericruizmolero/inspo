@@ -23,8 +23,6 @@ const nextConfig: NextConfig = {
     proxyClientMaxBodySize: "21mb",
   },
   outputFileTracingIncludes: {
-    // Migrations: instrumentation.ts applies them on start and reads the folder with readdir
-    "/*": ["./drizzle/**/*"],
     "/api/shot": CHROMIUM_BIN,
     "/api/design-md": CHROMIUM_BIN,
     // Share card: reads the TTF fonts with readFile, which tracing doesn't see
