@@ -6,7 +6,7 @@
 //   npm run db:pull     → copies production (PULL_DATABASE_URL) over the local database:
 //                         dumps it to .data/seed.json, then db:init with --replace
 // db:init and db:pull are the scripts that migrate, and only against a local database: they are
-// machine setup. Everywhere else the app applies migrations when it starts (instrumentation.ts).
+// machine setup. Deploys migrate in the build (scripts/migrate.ts), `next dev` when it starts.
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 

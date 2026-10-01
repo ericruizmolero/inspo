@@ -148,23 +148,27 @@ stores each one as a path, `/api/files/<key>`, and never as an R2 address.
 Postgres with Drizzle (`lib/db/schema.ts`). Column names are snake_case; the TypeScript names stay
 camelCase.
 
-To change the schema, edit `lib/db/schema.ts`, then `npm run db:generate`. The app applies the new
-migration the next time it starts (`instrumentation.ts`): locally on `npm run dev`, in production on
-the first request after a deploy.
+To change the schema, edit `lib/db/schema.ts`, then `npm run db:generate`. Locally, `npm run dev`
+applies the new migration when it starts (`instrumentation.ts`). On Vercel, every build applies it
+before `next build` (`scripts/migrate.ts`, the `buildCommand` in `vercel.json`): a pull request's
+preview migrates the preview database, the merge into `main` migrates production. If a migration
+fails, the build fails and the previous deploy stays live.
 
 **Never edit or regenerate a migration that's already in `drizzle/`.** Production has run it.
 Drizzle would try to run a changed one again and the app would stop starting. Every change is a
 new file.
 
 - Migrations run behind an advisory lock, on a direct connection (`DATABASE_URL_UNPOOLED`): the
-  pooled one can't hold a session lock. Builds never migrate. Of the scripts, only `db:init` and
-  `db:pull` do, and only on a local database.
-- A pull request's preview runs its migrations on its own Neon branch, never on production.
+  pooled one can't hold a session lock. Of the scripts, only `db:migrate` (the build), `db:init`
+  and `db:pull` migrate; the last two only on a local database.
+- Two databases: production is the Neon branch `main`, every preview shares the branch `preview`.
+  Migrations from pull requests that never merge stay in `preview`. To start it again from
+  production: Neon console, Branches, `preview`, **Reset from parent**.
 - Restoring after a mistake: Neon console, the project, **Restore**, pick the minute before.
 
 ## Deploys and environment variables
 
-- Push to `main`: production. Open a pull request: a preview with its own database branch.
+- Push to `main`: production. Open a pull request: a preview on the preview database.
   A comment on the PR links to it. Preview URLs ask for a Vercel login.
 - Roll back: Vercel, Deployments, the last good one, **Promote to Production**. Instant.
 - The variables live in Vercel (Settings, Environment Variables). `vercel env ls` lists them.
@@ -172,7 +176,8 @@ new file.
 
 | Variable | Set by |
 |---|---|
-| `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `PG*`, `POSTGRES_*` | The Neon integration. Don't edit them by hand |
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `PG*`, `POSTGRES_*` (Production) | The Neon integration. Don't edit them by hand |
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (Preview) | By hand: the connection strings of the Neon branch `preview` |
 | `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | By hand. A key with Object Read & Write on `criterio-files` |
 | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | By hand. The URL is the public one, `https://criterio.design` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | By hand |

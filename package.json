@@ -8,6 +8,7 @@
     "start": "next start",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
+    "db:migrate": "tsx scripts/migrate.ts",
     "seed": "tsx --conditions=react-server scripts/seed.ts",
     "migrate:sheet": "tsx --conditions=react-server scripts/migrate-sheet.ts",
     "shots:directory": "tsx --conditions=react-server scripts/directory-shots.ts",

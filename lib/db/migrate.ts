@@ -1,11 +1,12 @@
-// Applies pending migrations (./drizzle) when a server instance starts (instrumentation.ts).
-// Only the app runs this. Scripts and background jobs import lib/db and never migrate.
-// Several instances can start at once (Vercel cold starts, a deploy): a Postgres advisory
-// lock makes them take turns, and the ones that come after find nothing pending.
+// Applies pending migrations (./drizzle). Called by the Vercel build (scripts/migrate.ts), by
+// `next dev` on the local database (instrumentation.ts), and by db:init and db:pull. Other scripts
+// and background jobs import lib/db and never migrate.
+// Two runs can overlap (two builds against the preview branch at once): a Postgres advisory
+// lock makes them take turns, and the one that comes after finds nothing pending.
 //
 // The lock belongs to a session, so it runs on a connection of its own, never the pool's.
 // Behind Neon's pooler (PgBouncer, transaction mode) a session lock can land on a server
-// connection nobody unlocks, and every later instance would wait on it for good: with
+// connection nobody unlocks, and every later run would wait on it for good: with
 // DATABASE_URL_UNPOOLED set (Neon's direct host), migrations go there instead.
 import path from "path";
 import { Client } from "pg";
