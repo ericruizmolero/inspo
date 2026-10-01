@@ -17,10 +17,13 @@ export function ownsMediaFile(organizationId: string, url: string): boolean {
   return keyOf(url)?.startsWith(mediaPrefix(organizationId)) ?? false;
 }
 
+/** A new, unused key in this workspace's media folder */
+export const newMediaKey = (organizationId: string, type: string) =>
+  `${mediaPrefix(organizationId)}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${EXT[type] ?? "jpg"}`;
+
 export async function uploadMediaFile(organizationId: string, file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
-  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${EXT[file.type] ?? "jpg"}`;
-  return putFile(`${mediaPrefix(organizationId)}${name}`, buffer, file.type);
+  return putFile(newMediaKey(organizationId, file.type), buffer, file.type);
 }
 
 /** Delete without failing: an orphan file blocks nothing. */

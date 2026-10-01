@@ -23,12 +23,14 @@
     "check:postgres": "tsx --conditions=react-server scripts/check-postgres.ts",
     "seed:dump": "tsx --conditions=react-server scripts/seed.ts dump",
     "db:init": "tsx --conditions=react-server scripts/seed.ts init",
+    "db:pull": "tsx --conditions=react-server scripts/seed.ts pull",
     "move:blob-to-r2": "tsx --conditions=react-server scripts/move-blob-to-r2.ts",
     "db:copy-turso": "tsx --conditions=react-server scripts/copy-turso.ts",
     "files:pull": "tsx scripts/pull-files.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
     "@base-ui/react": "^1.8.0",
     "@sparticuz/chromium": "^153.0.0",
     "@typesafe-ai/sdk": "^0.6.0",

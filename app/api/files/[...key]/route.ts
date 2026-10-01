@@ -6,12 +6,13 @@ import { commentPrefix } from "@/lib/comment-files";
 import { DESIGN_MD_PREFIX, whyShotPrefix } from "@/lib/design-store";
 import { mediaPrefix } from "@/lib/media";
 import { POSTS_PREFIX } from "@/lib/posts";
-import { openFile, fileUrl } from "@/lib/storage";
+import { openFile, fileUrl, signedFileUrl } from "@/lib/storage";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
 // The active workspace reads its thumbnails, uploaded images, comment screenshots and "why" captures;
 // DESIGN.md images and saved posts from X are public content, shared by everyone signed in.
-// Streamed, and in ranges when asked (seeking a video, and Safari always): a post's video can be 60 MB.
+// With R2 the answer is a redirect to a signed R2 URL: the bytes, ranges included, come from R2,
+// so a 60 MB video never runs through a function. On disk (development) the file is streamed here.
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...key]">) {
   const session = await requireCtx();
   if (isResponse(session)) return session;
@@ -26,6 +27,11 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   if (!allowed) return new Response("forbidden", { status: 403 });
 
   try {
+    const signed = await signedFileUrl(key);
+    if (signed) {
+      // The redirect is cached as long as the URL it points to stays valid (lib/storage.ts)
+      return new Response(null, { status: 302, headers: { Location: signed.url, "Cache-Control": `private, max-age=${signed.maxAge}` } });
+    }
     const range = req.headers.get("range") ?? undefined;
     const file = await openFile(key, range);
     if (!file) return new Response("not found", { status: 404 });

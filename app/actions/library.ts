@@ -7,6 +7,7 @@ import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
 import { addItem, deleteItem, setItemNote } from "@/lib/items";
 import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
+import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
 import { nameFor } from "@/lib/item-name";
 import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
@@ -57,11 +58,12 @@ export async function setFiled(projectId: string, itemIds: string[], on: boolean
 }
 
 /** An image (or GIF) as an inspo of its own. The file was uploaded first via /api/media;
- *  only its URL arrives here, and it must be in this workspace's media folder. */
+ *  only its URL arrives here, and it must be in this workspace's media folder and exist:
+ *  the browser uploads straight to R2, so the app never saw the file arrive. */
 export async function addImage(input: { url: string; fileName?: string; type?: string; note?: string; projectId?: string }) {
   return withCtx(async (ctx) => {
     const url = String(input.url ?? "");
-    if (!ownsMediaFile(ctx.workspace.id, url)) throw new HttpError(400, (await getErrors()).imageNotHere);
+    if (!ownsMediaFile(ctx.workspace.id, url) || !(await fileExists(keyOf(url)!))) throw new HttpError(400, (await getErrors()).imageNotHere);
     const item = await addItem(ctx.workspace.id, {
       name: nameFromFile(String(input.fileName ?? "")) || "Image",
       web: url,

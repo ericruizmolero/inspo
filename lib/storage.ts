@@ -1,6 +1,8 @@
 // File storage. Production: a private Cloudflare R2 bucket (S3 API), when R2_* is set.
 // Local: .data/files. Either way the app stores a file as its path, /api/files/<key>,
-// and app/api/files/[...key]/route.ts serves it after checking who is asking.
+// and app/api/files/[...key]/route.ts checks who is asking. With R2 it then redirects to a
+// short-lived signed URL, so the bytes come from R2 and never pass through a function; on disk
+// it streams them. Large uploads also skip the app: the browser PUTs to a signed URL (uploadUrl).
 // The key is the same in both drivers, so a reference never changes when files move.
 import "server-only";
 import { promises as fs, createReadStream } from "fs";
@@ -9,6 +11,7 @@ import path from "path";
 import {
   S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const FILES_BASE = "/api/files/";
 
@@ -26,6 +29,8 @@ export interface StoredFile { body: Buffer; contentType: string; size: number }
 /** A file as a stream, for serving: `range` is set (and the status is 206) when part of it was asked for */
 export interface OpenedFile { stream: ReadableStream<Uint8Array>; contentType: string; size: number; range?: string }
 export interface Listed { key: string; uploadedAt: Date }
+/** A signed address on R2: `maxAge` is how long, in seconds, it can still be cached */
+export interface SignedGet { url: string; maxAge: number }
 
 interface Driver {
   put(key: string, body: Buffer, contentType: string): Promise<void>;
@@ -34,6 +39,9 @@ interface Driver {
   exists(key: string): Promise<boolean>;
   del(keys: string[]): Promise<void>;
   list(prefix: string): Promise<Listed[]>;
+  /** Only R2 has these: the disk driver serves and receives files itself */
+  signGet?(key: string): Promise<SignedGet>;
+  signPut?(key: string, contentType: string, size: number): Promise<string>;
 }
 
 // ─── R2 ──────────────────────────────────────────────────────────────────────
@@ -91,6 +99,25 @@ function r2(): Driver {
         token = r.IsTruncated ? r.NextContinuationToken : undefined;
       } while (token);
       return out;
+    },
+    async signGet(key) {
+      // Signed from the start of the hour, valid for two: the same file keeps the same URL for
+      // an hour, so the browser's cache still works, and every URL handed out lives an hour or more.
+      const hour = 3600_000;
+      const from = Math.floor(Date.now() / hour) * hour;
+      const url = await getSignedUrl(s3, new GetObjectCommand({
+        Bucket: bucket, Key: key,
+        // Keys carry a timestamp: a changed file gets a new key, so a day of caching is safe
+        ResponseCacheControl: "private, max-age=86400",
+      }), { signingDate: new Date(from), expiresIn: 7200 });
+      return { url, maxAge: Math.max(0, Math.floor((from + 2 * hour - Date.now()) / 1000) - 300) };
+    },
+    async signPut(key, contentType, size) {
+      // Type and length are signed: R2 refuses a body of another size or type than the one checked
+      return getSignedUrl(s3, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType, ContentLength: size }), {
+        expiresIn: 600,
+        signableHeaders: new Set(["content-type", "content-length"]),
+      });
     },
   };
 }
@@ -192,6 +219,11 @@ export const getFile = (key: string, range?: string) => d().get(key, range);
 /** For serving: streams the file (or the asked range) without holding it in memory */
 export const openFile = (key: string, range?: string) => d().open(key, range);
 export const fileExists = (key: string) => d().exists(key);
+/** Where the browser can fetch a file straight from R2, or null on disk (then the route streams it) */
+export const signedFileUrl = (key: string): Promise<SignedGet | null> => d().signGet?.(key) ?? Promise.resolve(null);
+/** Where the browser can PUT a file straight to R2, or null on disk (then it posts it to the app) */
+export const uploadUrl = (key: string, contentType: string, size: number): Promise<string | null> =>
+  d().signPut?.(key, contentType, size) ?? Promise.resolve(null);
 export const listFiles = (prefix: string) => d().list(prefix);
 
 /** Deletes files by key. Never throws: an orphan file blocks nothing. */
