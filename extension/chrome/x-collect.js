@@ -31,16 +31,20 @@
     } catch { finish("stopped"); resolve(); }
   });
 
-  // Each post's own link is the one with its time inside; quoted posts have no such link
+  // Each post's own link is the one with its time inside; quoted posts have no such link.
+  // That time is the post's date, which the item keeps: an old post lands on its day, not on today's.
   const harvest = () => {
     const fresh = [];
     for (const a of document.querySelectorAll('article[data-testid="tweet"] a[href*="/status/"]')) {
-      if (!a.querySelector("time")) continue;
+      const time = a.querySelector("time");
+      if (!time) continue;
       const m = (a.getAttribute("href") || "").match(/^\/(\w{1,15})\/status\/(\d{1,25})/);
       if (!m) continue;
       const url = `https://x.com/${m[1]}/status/${m[2]}`;
       if (seen.has(url)) continue;
-      seen.add(url); fresh.push(url);
+      seen.add(url);
+      const date = (time.getAttribute("datetime") || "").slice(0, 10);
+      fresh.push(/^\d{4}-\d{2}-\d{2}$/.test(date) ? { url, date } : { url });
     }
     return fresh;
   };
@@ -60,7 +64,7 @@
     // Nothing drawn yet: X is still loading, so this doesn't count as the end of the list
     if (!seen.size && !document.querySelector('article[data-testid="tweet"]') && waited++ < WAIT_TICKS) { show("criterio.design …"); return; }
     const fresh = harvest();
-    if (fresh.length) { idle = 0; await send({ type: "x-found", urls: fresh, found: seen.size }); }
+    if (fresh.length) { idle = 0; await send({ type: "x-found", items: fresh, found: seen.size }); }
     else { idle++; retry(); }
     show(`criterio.design · ${seen.size}`);
     if (idle >= IDLE_TICKS) { finish("end"); return; }

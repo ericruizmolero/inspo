@@ -34,11 +34,20 @@ async function eachLimit<T, R>(list: T[], n: number, fn: (x: T) => Promise<R>): 
   return out;
 }
 
-// POST { items: [{ url, title? }], source? } → { ok, results: [{ url, status, id? }] }
+/** The item's date as the extension knows it (a bookmark's day, a post's day), never ahead of today */
+function dateOf(date: unknown): string | undefined {
+  if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return undefined;
+  const today = new Date().toISOString().slice(0, 10);
+  return date > today || date < "2000-01-01" ? undefined : date;
+}
+
+// POST { items: [{ url, title?, date? }], source? } → { ok, results: [{ url, status, id? }] }
+// `date` (YYYY-MM-DD) is the day the address was saved or published, so an import lands each
+// reference on its own day on the board instead of piling them all on today.
 export async function POST(req: NextRequest) {
   const ctx = await requireExtCtx(req);
   if (ctx instanceof Response) return ctx;
-  const body = (await req.json().catch(() => ({}))) as { items?: { url?: string; title?: string }[]; source?: string };
+  const body = (await req.json().catch(() => ({}))) as { items?: { url?: string; title?: string; date?: string }[]; source?: string };
   if (!Array.isArray(body.items) || body.items.length > MAX_PER_BATCH) {
     return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
   }
@@ -58,7 +67,7 @@ export async function POST(req: NextRequest) {
       const existing = await findByWeb(ctx.workspace.id, web);
       if (existing) return { url: raw, status: "existed", id: existing.id };
       const name = await nameFor(web, typeof it.title === "string" ? it.title : undefined);
-      const item = await addItem(ctx.workspace.id, { name, web, type: typeFromUrl(web), author, createdBy: ctx.user.id });
+      const item = await addItem(ctx.workspace.id, { name, web, type: typeFromUrl(web), author, createdBy: ctx.user.id, dateIso: dateOf(it.date) });
       added.push(item);
       return { url: raw, status: "added", id: item.id };
     } catch (err) {

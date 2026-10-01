@@ -76,12 +76,14 @@ $("btn-connect").addEventListener("click", async () => {
 // Folders as nested checkboxes; a folder's count is every web page under it, subfolders included.
 
 const isWeb = (url) => /^https?:\/\//.test(url || "");
+// The day a bookmark was saved, as the item's date: an old bookmark lands on its day, not on today's
+const dayOf = (ms) => (ms ? new Date(ms).toISOString().slice(0, 10) : undefined);
 const folders = new Map(); // id → { node, urls: [{url,title}] (whole subtree) }
 
 function collect(node) {
   const urls = [];
   for (const c of node.children || []) {
-    if (c.url) { if (isWeb(c.url)) urls.push({ url: c.url, title: c.title }); }
+    if (c.url) { if (isWeb(c.url)) urls.push({ url: c.url, title: c.title, date: dayOf(c.dateAdded) }); }
     else urls.push(...collect(c));
   }
   folders.set(node.id, { node, urls });
@@ -172,7 +174,7 @@ $("btn-x").addEventListener("click", async () => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!current || current.source !== "x" || sender.tab?.id !== xTabId) return false;
   if (msg?.type === "x-found") {
-    current.add(msg.urls.map((url) => ({ url })));
+    current.add(msg.items);
     sendResponse({ stop: current.stopped });
   } else if (msg?.type === "x-done") {
     if (msg.reason === "logged-out") current.finish(t("xNotLoggedIn"), "error");
