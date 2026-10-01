@@ -19,10 +19,6 @@ No server to look after. Each part is a managed service:
 - Every pull request gets a preview URL with its own copy of the database (a Neon branch).
 - The daily cron (`/api/cron/usage-check`) is in `vercel.json`.
 
-> Until the DNS of `criterio.design` points to Vercel, the domain still serves the old Coolify
-> server on Hetzner. `.github/workflows/image.yml` and the `Dockerfile` only exist for that server.
-> Remove them once it's shut down.
-
 ## Run it locally
 
 Five steps, about ten minutes. At the end you have the app on http://localhost:3000 with a copy
