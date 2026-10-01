@@ -145,4 +145,5 @@ h1, p { margin: 0; }
 
 .foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 .foot[hidden] { display: none; }
+.foot__links { display: flex; gap: 12px; flex-shrink: 0; }
 .foot__who { font-size: 11px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

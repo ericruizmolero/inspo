@@ -21,9 +21,30 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `DELETE /me` | The extension revokes its own key when it disconnects |
 | `GET /items/lookup?url=` | Is this site already saved? |
 | `POST /items` | Saves `{ url, title, screenshot }` |
+| `POST /items/batch` | Saves up to 25 `{ url, title }` at once (the import page) |
 
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
+
+## Importing bookmarks
+
+"Import bookmarks" in the popup's footer opens `import.html` in a tab of its own (the popup closes as
+soon as it loses focus, and an import takes minutes). Two sources:
+
+- **This browser**: the bookmark folders (`bookmarks` permission), ticked by folder; only `http(s)`
+  addresses go.
+- **X**: Chrome asks for `https://x.com/*` (an optional permission, granted on the click), the page opens
+  `x.com/i/bookmarks` in a new tab and injects `x-collect.js` with `chrome.scripting`. The collector
+  scrolls to the end, reporting each post's address as it appears (`a[href*="/status/"]` with a
+  `<time>` inside, which is how a post's own permalink looks), and stops after ~11 s without anything
+  new, when the import page says stop, or when that page is gone. If the person is not signed in to X
+  it reports `logged-out`. There is no official API involved: if X changes its markup, this selector
+  is what to fix.
+
+Either way the addresses go to `POST /items/batch` in batches of 25, one request at a time, and the
+page shows the counts (found, saved, already here, not web pages, failed). The server names, tags and
+gets the thumbnail of each one after answering, as when a URL is pasted in the app: an import of a few
+hundred bookmarks is done in a few minutes, the cards fill in over the following ones.
 
 ## Workspaces
 

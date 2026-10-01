@@ -47,13 +47,18 @@ para el alta ni para la ficha.
 ## Pestaña "Privacy practices"
 
 - **Single purpose:** "Save the current tab (address, title and a screenshot) to the user's
-  criterio.design library."
+  criterio.design library, and import the user's existing bookmarks into it."
 - **Justificación de permisos:**
   - `activeTab`: read the current tab's URL and title and capture its visible area when the
     user clicks the extension.
   - `storage`: keep the access key and workspace name the user chose.
   - `host_permissions` (criterio.design): call the criterio.design API to check and save
     sites; the content script runs only on the page that hands the key to the extension.
+  - `bookmarks`: list the user's bookmark folders on the import page so they can choose
+    which folders to import; read only, nothing is changed.
+  - `scripting` + optional `https://x.com/*`: when the user presses "Import from X", scroll
+    through their own bookmarks page on x.com and read the addresses of the saved posts.
+    Requested at that moment with `chrome.permissions.request`, never at install.
 - **Remote code:** No.
 - **Uso de datos:** marcar "Website content" (la captura y el título) y "Web history" NO
   (no se guarda historial; solo la página que el usuario guarda a propósito). Los tres

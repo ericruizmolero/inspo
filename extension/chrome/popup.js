@@ -173,6 +173,8 @@ $("btn-save").addEventListener("click", save);
 // ⌘/Ctrl+Enter in the note saves, as in the app's comment box
 $("tab-note").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !$("btn-save").disabled) save(); });
 $("btn-disconnect").addEventListener("click", () => disconnect(true));
+// Importing takes a while and the popup closes on its own: it happens in a tab of its own (import.html)
+$("btn-import").addEventListener("click", async () => { await chrome.tabs.create({ url: chrome.runtime.getURL("import.html") }); window.close(); });
 
 // If the key arrives while the popup is open (connect tab), it refreshes itself
 chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && changes.key) load(); });
