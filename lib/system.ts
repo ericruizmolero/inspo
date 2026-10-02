@@ -130,7 +130,7 @@ const cleanArea = async (area: string): Promise<SystemArea> => {
  * A person writes the decision of an area (or confirms the model's as it is). From here on, runs
  * leave this area alone. An empty decision empties the area: nothing decided, open to the board.
  */
-export async function decideArea(organizationId: string, projectId: string, areaKey: string, input: { decision: string; confidence?: number }, author: { id: string; name: string }): Promise<ProjectSystem> {
+export async function decideArea(organizationId: string, projectId: string, areaKey: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[] }, author: { id: string; name: string }): Promise<ProjectSystem> {
   await projectRow(organizationId, projectId);
   const area = await cleanArea(areaKey);
   const decision = String(input.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
@@ -141,8 +141,15 @@ export async function decideArea(organizationId: string, projectId: string, area
     await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null }, { id: author.id, name: author.name }, now);
   } else {
     const confidence = typeof input.confidence === "number" && Number.isFinite(input.confidence) ? Math.max(0, Math.min(100, Math.round(input.confidence))) : Math.max(current.confidence, 80);
-    // A confirmed proposal keeps the references that led to it; a rewritten one keeps them too, they still back it
-    await writeArea(organizationId, projectId, { area, decision, confidence, evidence: current.evidence, source: "team", decidedBy: author.id }, { id: author.id, name: author.name }, now);
+    // A confirmed proposal keeps the references that led to it; a rewritten one keeps them too, they still back it.
+    // A picked option brings its own (only references of this workspace, each once)
+    let evidence = current.evidence;
+    if (Array.isArray(input.evidence)) {
+      const ids = [...new Set(input.evidence.map((e) => String(e?.itemId ?? "")).filter(Boolean))].slice(0, 20);
+      const mine = new Set((ids.length ? await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids))) : []).map((r) => r.id));
+      evidence = input.evidence.filter((e) => mine.has(e.itemId)).map((e) => ({ itemId: e.itemId, take: String(e.take ?? "").trim().slice(0, 200) }));
+    }
+    await writeArea(organizationId, projectId, { area, decision, confidence, evidence, source: "team", decidedBy: author.id }, { id: author.id, name: author.name }, now);
   }
   return getSystem(organizationId, projectId);
 }
@@ -342,4 +349,67 @@ export function runSystem(input: { organizationId: string; projectId: string; us
   inflight.set(key, job);
   job.finally(() => inflight.delete(key)).catch(() => {});
   return job;
+}
+
+// ─── Polish an area: the directions the board allows, for the team to pick ──────────────────────
+
+const OPTIONS_SYSTEM = `A design team keeps a board of references for one project (websites, images, posts), each with the note of whoever saved it, the team's comments, what they pointed at and, for websites, a brief measured from the live page. The project has a SYSTEM with eight areas (typography, color, layout, motion, iconography, logo, imagery, voice). One area is weakly decided or empty, and the team wants to settle it.
+
+Your job: lay out the 2 or 3 DIRECTIONS the board actually allows for that area, so the team can pick one. Each direction is a decision written for this project, as an instruction an agent can execute (1 to 3 sentences, max 60 words), backed by the references that point that way.
+
+Rules:
+- Directions come from the board, not from taste. Two references that pull different ways make two directions; if the board only supports one direction, return that one alone (and a second only if the team's words make another plausible).
+- Directions must differ in substance (a serif headline vs a grotesque headline; a monochrome palette vs one accent; dense bento vs airy single column), not in wording.
+- Each direction has a "why": one sentence of at most 24 words, for the team, saying what the project would feel like if it goes this way. No verdict, no advice.
+- "evidence" lists the references behind that direction by id, each with a "take" of at most 20 words: what to take from it for this area. Only references that speak to the area. Ids are short codes: use them exactly as given, never invent one.
+- Order the directions from best supported to least. No markdown, no dashes as punctuation.`;
+
+const OptionsSchema = z.object({
+  options: z.array(z.object({
+    decision: z.string(),
+    why: z.string(),
+    evidence: z.array(z.object({ ref: z.string(), take: z.string() })),
+  })),
+});
+
+export interface AreaOption { decision: string; why: string; evidence: SystemEvidence[] }
+
+/** The directions the board allows for one area. Nothing is written: the team picks and that picks writes. */
+export async function proposeOptions(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale }): Promise<AreaOption[]> {
+  const area = await cleanArea(input.area);
+  const project = await projectRow(input.organizationId, input.projectId);
+  const [{ refs }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+  if (!refs.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
+  const codes = new Map(refs.map((r) => [r.code, r.itemId]));
+  const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
+  const standing = current.areas.find((a) => a.area === area)!;
+  const others = current.areas.filter((a) => a.area !== area && a.decision).map((a) => ({ area: a.area, status: a.source, decision: a.decision }));
+  const text = [
+    `Project: ${project.name}`,
+    `Area to settle: ${area}`,
+    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+    `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
+    `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
+    `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
+  ].join("\n\n");
+  let res: Awaited<ReturnType<typeof llm>>;
+  try {
+    res = await llm({ model: SYSTEM_MODEL, system: `${OPTIONS_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: OptionsSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
+  } catch (err) {
+    if (!(err instanceof LlmError) || !err.finishReason) throw err;
+    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+  }
+  void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId} ${area} options` });
+  const out = OptionsSchema.parse(JSON.parse(res.text));
+  return out.options.slice(0, 3).map((o) => {
+    const seen = new Set<string>();
+    const evidence: SystemEvidence[] = [];
+    for (const e of o.evidence) {
+      const itemId = codes.get(e.ref);
+      if (!itemId || seen.has(itemId)) continue;
+      seen.add(itemId);
+      evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
+    }
+    return { decision: o.decision.trim().replace(/\s+/g, " ").slice(0, DECISION_MAX), why: o.why.trim().slice(0, 200), evidence };
+  }).filter((o) => o.decision);
 }

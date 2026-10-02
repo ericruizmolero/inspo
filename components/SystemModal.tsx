@@ -5,7 +5,8 @@
 // Exports criterio.md, the file an agent reads before designing.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { InspoItem, Project } from "@/types/inspo";
-import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState } from "@/types/system";
+import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence } from "@/types/system";
+import type { AreaOption } from "@/lib/system";
 import { renderCriterioMd } from "@/lib/criterio-md";
 import { loadSystem, decideSystemArea, releaseSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -16,6 +17,9 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui
 
 interface Props {
   project: Project;
+  /** The system as the library knows it (null before the first load); every change goes back through onSystem */
+  system: ProjectSystem | null;
+  onSystem: (system: ProjectSystem) => void;
   /** The references in the project, as the grid shows them */
   board: InspoItem[];
   /** The whole library: evidence may point at a reference that left the project */
@@ -42,29 +46,61 @@ interface CardProps {
   running: boolean;
   itemOf: (id: string) => InspoItem | undefined;
   imageOf: (item: InspoItem) => string | null;
-  onDecide: (decision: string) => Promise<void>;
+  onDecide: (decision: string, evidence?: SystemEvidence[]) => Promise<void>;
   onRelease: () => Promise<void>;
+  /** The directions the board allows for this area (one model call) */
+  onOptions: () => Promise<AreaOption[]>;
+  hasBoard: boolean;
 }
 
-function AreaCard({ area, label, busy, running, itemOf, imageOf, onDecide, onRelease }: CardProps) {
+function AreaCard({ area, label, busy, running, itemOf, imageOf, onDecide, onRelease, onOptions, hasBoard }: CardProps) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(area.decision);
   const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState<AreaOption[] | null>(null);
+  const [loadingOptions, setLoadingOptions] = useState(false);
   useEffect(() => { if (!editing) setDraft(area.decision); }, [area.decision, editing]);
+  // Once the team decides, the game is over for this area
+  useEffect(() => { if (area.source === "team") setOptions(null); }, [area.source]);
+  const polish = async () => {
+    setLoadingOptions(true);
+    try { setOptions(await onOptions()); } catch { /* the error shows above the grid */ }
+    finally { setLoadingOptions(false); }
+  };
   const level = confidenceOf(area);
   const evidence = area.evidence.map((e) => ({ ...e, item: itemOf(e.itemId) })).filter((e) => e.item);
   const badge = area.source === "team" ? t.system.confidence.team : level === "high" ? t.system.confidence.high : level === "low" ? t.system.confidence.low : null;
   const save = async () => { await onDecide(draft); setEditing(false); };
 
   return (
-    <article className={`sys-card is-${level}${area.source === "team" ? " is-team" : ""}${busy || running ? " is-busy" : ""}`} aria-busy={busy || running}>
+    <article className={`sys-card is-${level}${area.source === "team" ? " is-team" : ""}${options ? " is-options" : ""}${busy || running ? " is-busy" : ""}`} aria-busy={busy || running || loadingOptions}>
       <header className="sys-card__head">
         <h3 className="sys-card__name">{label}</h3>
         {badge && <span className={`sys-badge sys-badge--${area.source === "team" ? "team" : level}`}>{area.source === "team" && Icons.check}{badge}</span>}
       </header>
 
-      {editing ? (
+      {loadingOptions ? (
+        <div className="sys-options"><p className="sys-options__hint"><span className="spinner spinner--sm" /> {t.system.polishing}</p></div>
+      ) : options ? (
+        <div className="sys-options">
+          <p className="sys-options__hint">{t.system.optionsHint}</p>
+          {options.map((o, i) => {
+            const refs = o.evidence.map((e) => ({ ...e, item: itemOf(e.itemId) })).filter((e) => e.item);
+            return (
+              <div key={i} className="sys-option">
+                <p className="sys-option__text">{o.decision}</p>
+                {o.why && <p className="sys-option__why">{o.why}</p>}
+                <div className="sys-option__row">
+                  <span className="sys-evidence__thumbs">{refs.slice(0, 6).map((e) => <Thumb key={e.itemId} item={e.item!} image={imageOf(e.item!)} />)}</span>
+                  <Button variant="primary" size="sm" disabled={busy} onClick={() => void onDecide(o.decision, o.evidence)}>{Icons.check} {t.system.pick}</Button>
+                </div>
+              </div>
+            );
+          })}
+          <div className="sys-card__actions"><Button variant="ghost" size="sm" onClick={() => setOptions(null)}>{t.system.cancel}</Button></div>
+        </div>
+      ) : editing ? (
         <div className="sys-edit">
           <textarea className="input sys-edit__text" rows={4} maxLength={DECISION_MAX} value={draft} autoFocus
             placeholder={t.system.placeholder} onChange={(e) => setDraft(e.target.value)}
@@ -96,6 +132,7 @@ function AreaCard({ area, label, busy, running, itemOf, imageOf, onDecide, onRel
           )}
           <div className="sys-card__actions">
             {area.source === "model" && <Button variant="primary" size="sm" disabled={busy} onClick={() => void onDecide(area.decision)}>{Icons.check} {t.system.confirm}</Button>}
+            {area.source === "model" && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void polish()}>{Icons.gem} {t.system.polishArea}</Button>}
             <Button variant="ghost" size="sm" disabled={busy} onClick={() => setEditing(true)}>{t.system.edit}</Button>
             {area.source === "team" && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void onRelease()}>{t.system.release}</Button>}
           </div>
@@ -106,6 +143,7 @@ function AreaCard({ area, label, busy, running, itemOf, imageOf, onDecide, onRel
           <p className="sys-card__hint">{t.system.emptyHint}</p>
           <div className="sys-card__actions">
             <Button variant="ghost" size="sm" disabled={busy} onClick={() => setEditing(true)}>{t.system.write}</Button>
+            {hasBoard && <Button variant="ghost" size="sm" disabled={busy} onClick={() => void polish()}>{Icons.gem} {t.system.polishArea}</Button>}
           </div>
         </>
       )}
@@ -113,24 +151,25 @@ function AreaCard({ area, label, busy, running, itemOf, imageOf, onDecide, onRel
   );
 }
 
-export default function SystemModal({ project, board, library, imageOf, onClose }: Props) {
+export default function SystemModal({ project, system, onSystem, board, library, imageOf, onClose }: Props) {
   const { t } = useT();
-  const [system, setSystem] = useState<ProjectSystem | null>(null);
+  const setSystem = onSystem;
   const [boardStamp, setBoardStamp] = useState<{ stamp: string; itemIds: string[] } | null>(null);
   const [running, setRunning] = useState(false);
   const [busy, setBusy] = useState<Set<SystemArea>>(() => new Set());
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  // Fresh on open: another member may have decided something, and the board's stamp says if the run is stale
   useEffect(() => {
     let alive = true;
     loadSystem(project.id).then((r) => {
       if (!alive) return;
-      if (!r.ok) { setError(r.error); setSystem(emptySystem(project.id)); return; }
+      if (!r.ok) { setError(r.error); if (!system) setSystem(emptySystem(project.id)); return; }
       setSystem(r.data.system); setBoardStamp(r.data.board);
     });
     return () => { alive = false; };
-  }, [project.id]);
+  }, [project.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const itemOf = useMemo(() => { const m = new Map(library.filter((i) => i.id).map((i) => [i.id!, i])); return (id: string) => m.get(id); }, [library]);
   const labels = t.system.areas as Record<SystemArea, string>;
@@ -159,6 +198,14 @@ export default function SystemModal({ project, board, library, imageOf, onClose 
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy((s) => { const n = new Set(s); n.delete(area); return n; }); }
   };
+
+  const options = useCallback(async (area: SystemArea): Promise<AreaOption[]> => {
+    setError("");
+    const res = await fetch("/api/system/options", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: project.id, area }) });
+    const json = await res.json().catch(() => ({})) as { options?: AreaOption[]; error?: string };
+    if (!res.ok || json.error || !json.options) { setError(json.error || t.system.optionsFailed); throw new Error(json.error || t.system.optionsFailed); }
+    return json.options;
+  }, [project.id, t]);
 
   const markdown = useMemo(() => system ? renderCriterioMd({
     project: project.name, system,
@@ -218,8 +265,9 @@ export default function SystemModal({ project, board, library, imageOf, onClose 
             <div className="sys-grid">
               {system.areas.map((a) => (
                 <AreaCard key={a.area} area={a} label={labels[a.area]} busy={busy.has(a.area)} running={running} itemOf={itemOf} imageOf={imageOf}
-                  onDecide={(decision) => withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision }))}
-                  onRelease={() => withBusy(a.area, () => releaseSystemArea(project.id, a.area))} />
+                  onDecide={(decision, evidence) => withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, evidence }))}
+                  onRelease={() => withBusy(a.area, () => releaseSystemArea(project.id, a.area))}
+                  onOptions={() => options(a.area)} hasBoard={board.length > 0} />
               ))}
             </div>
           </>}

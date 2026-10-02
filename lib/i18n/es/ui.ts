@@ -348,6 +348,12 @@ export const ui: typeof EnUi = {
     copy: "Copiar",
     download: "Descargar",
     failed: "No se pudo leer el tabl\u00f3n",
+    fill: (n: number, total: number): string => `${n}/${total}`,
+    polishArea: "Pulir esta \u00e1rea",
+    polishing: "Buscando las direcciones que permite el tabl\u00f3n\u2026",
+    optionsHint: "Las direcciones que permite tu tabl\u00f3n. Elige una y queda decidida por el equipo.",
+    pick: "Elegir esta",
+    optionsFailed: "No se pudieron leer las direcciones",
     by: (name: string): string => `Decidido por ${name}`,
     md: {
       intro: "El sistema de dise\u00f1o de este proyecto tal y como est\u00e1 decidido. Sigue las \u00e1reas decididas; donde un \u00e1rea est\u00e9 abierta, pregunta antes de inventar.",

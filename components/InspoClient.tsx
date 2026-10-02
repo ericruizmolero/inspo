@@ -22,6 +22,7 @@ import { layoutCanvas, keyOf, TILE_W, DEFAULT_RATIO, CANVAS_MAX_RATIO } from "@/
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
+import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
@@ -133,6 +134,7 @@ export default function InspoClient({
   initialTagJobs = {},
   initialProjects = [],
   initialProjectLinks = {},
+  initialSystems = {},
   aiEnabled = false,
   user,
   workspace,
@@ -154,6 +156,8 @@ export default function InspoClient({
   initialTagJobs?: Record<string, TagStatus>;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
+  /** Each project's system, by project id (lib/system.ts) */
+  initialSystems?: Record<string, ProjectSystem>;
   aiEnabled?: boolean;
   user: SessionUser;
   workspace: Workspace;
@@ -203,9 +207,34 @@ export default function InspoClient({
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
   const [projects, setProjects] = useState(initialProjects);
   const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
+  // The systems, alive: filing a reference into a project that has started its system re-reads the
+  // board a moment later (one cheap model call), so the system never lags behind the board
+  const [systems, setSystems] = useState(initialSystems);
+  const systemsRef = useRef(systems);
+  systemsRef.current = systems;
+  const systemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const refreshSystem = useCallback((projectId: string) => {
+    if (!systemsRef.current[projectId]?.run) return;  // the team has not read the board yet: nothing to keep alive
+    clearTimeout(systemTimers.current[projectId]);
+    systemTimers.current[projectId] = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId }) });
+        const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
+        if (res.ok && !json.error) setSystems((prev) => ({ ...prev, [projectId]: json }));
+      } catch { /* the modal shows the board as unread; the next read catches up */ }
+    }, 2500);
+  }, []);
+  const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
   const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : "all";
   const currentProject = projects.find((p) => p.id === space) ?? null;
+  const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
+  const systemFilled = currentSystem ? currentSystem.areas.filter((a) => a.decision).length : 0;
+  const systemStale = useMemo(() => {
+    if (!currentProject || !currentSystem?.run) return 0;
+    const boardIds = items.filter((i) => i.id && links[i.id]?.includes(currentProject.id)).map((i) => i.id!);
+    return staleness(currentSystem, boardIds).unread;
+  }, [currentProject, currentSystem, items, links]);
   const setSpace = useCallback((v: string) => setParams({ in: v }), [setParams]);
   // Adding from inside a project files it there: read at save time, whatever the callback closed over
   const projectRef = useRef<string | null>(null);
@@ -325,6 +354,7 @@ export default function InspoClient({
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
+      if (projectId) refreshSystem(projectId);
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Full experience from the start: tags and DESIGN.md without asking.
       // A post on X is imported first (its picture is what the tags look at).
@@ -359,6 +389,7 @@ export default function InspoClient({
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
+      if (projectId) refreshSystem(projectId);
       setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       watch(item.web);
@@ -453,8 +484,9 @@ export default function InspoClient({
     });
     flip(on);
     const r = await setFiled(projectId, [id], on).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); }
-  }, []);
+    if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); return; }
+    refreshSystem(projectId);
+  }, [refreshSystem]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
     const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
@@ -466,8 +498,9 @@ export default function InspoClient({
       return next;
     });
     const r = await setFiled(projectId, ids, true).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); }
-  }, [links]);
+    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); return; }
+    refreshSystem(projectId);
+  }, [links, refreshSystem]);
   const createAndFile = useCallback(async (item: InspoItem, name: string) => {
     const p = await createProject(name);
     if (p) await toggleFiled(item, p.id, true);
@@ -802,7 +835,7 @@ export default function InspoClient({
     quota, items,
     isAll: space === "all" && !filtering,
     onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
-    space, onSpace: setSpace, projects, links,
+    space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
 
@@ -976,6 +1009,8 @@ export default function InspoClient({
       {showSystem && currentProject && (
         <SystemModal
           project={currentProject}
+          system={systems[currentProject.id] ?? null}
+          onSystem={(sys) => setSystem(currentProject.id, sys)}
           board={spaceItems}
           library={items}
           imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
@@ -1060,7 +1095,11 @@ export default function InspoClient({
           <div className="topbar__actions">
             {currentProject && (
               <>
-                <Button variant="ghost" className="topbar__polish topbar__system" onClick={() => setShowSystem(true)}>{Icons.compass} {t.system.button}</Button>
+                <Button variant="ghost" className="topbar__polish topbar__system" onClick={() => setShowSystem(true)} title={systemStale ? t.system.stale(systemStale) : undefined}>
+                  {Icons.compass} {t.system.button}
+                  <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
+                  {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
+                </Button>
                 <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
               </>
             )}

@@ -3,6 +3,7 @@
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
 import { getSystem, boardStamp, decideArea, releaseArea } from "@/lib/system";
+import type { SystemEvidence } from "@/types/system";
 
 export async function loadSystem(projectId: string) {
   return withCtx(async (ctx) => {
@@ -13,7 +14,7 @@ export async function loadSystem(projectId: string) {
 }
 
 /** Any member decides: the system is the team's. An empty decision empties the area. */
-export async function decideSystemArea(projectId: string, area: string, input: { decision: string; confidence?: number }) {
+export async function decideSystemArea(projectId: string, area: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[] }) {
   return withCtx(async (ctx) => decideArea(ctx.workspace.id, String(projectId), String(area), input ?? { decision: "" }, { id: ctx.user.id, name: ctx.user.name }));
 }
 

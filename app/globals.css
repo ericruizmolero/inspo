@@ -2872,3 +2872,17 @@ button.postit__num { cursor: pointer; }
   .sys-head { flex-direction: column; }
   .sys-head__actions { justify-content: flex-start; }
 }
+/* System fill: a fraction on the topbar button, a dot when the board moved on, a ring per project in the sidebar */
+.topbar__fill { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 2px; }
+.topbar__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); margin-left: 2px; }
+.nav-item__count { display: inline-flex; align-items: center; gap: 5px; }
+.nav-item__ring { color: var(--muted); flex-shrink: 0; }
+.nav-item__ring.is-full { color: var(--success); }
+.sys-options { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.sys-options__hint { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.sys-option { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: var(--radius-s); border: 1px solid var(--border); background: var(--panel); }
+.sys-option__text { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text); }
+.sys-option__why { margin: 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.sys-option__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sys-card.is-options { grid-column: span 2; }
+@media (max-width: 560px) { .sys-card.is-options { grid-column: auto; } }

@@ -350,6 +350,12 @@ export const ui = {
     copy: "Copy",
     download: "Download",
     failed: "Could not read the board",
+    fill: (n: number, total: number): string => `${n}/${total}`,
+    polishArea: "Polish this area",
+    polishing: "Looking for the directions the board allows\u2026",
+    optionsHint: "The directions your board allows. Pick one and it is decided by the team.",
+    pick: "Pick this one",
+    optionsFailed: "Could not read the directions",
     by: (name: string): string => `Decided by ${name}`,
     md: {
       intro: "The design system of this project as decided so far. Follow the decided areas; where an area is open, ask before inventing.",
