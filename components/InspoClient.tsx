@@ -24,6 +24,7 @@ import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
 import ProjectChooser from "./ProjectChooser";
+const TriageModal = dynamic(() => import("./TriageModal"), { ssr: false });
 import { assignSystemArea } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
@@ -315,6 +316,7 @@ export default function InspoClient({
 
   const [showAdd, setShowAdd] = useState(false);
   const [showPolish, setShowPolish] = useState(false);
+  const [showTriage, setShowTriage] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -1026,6 +1028,18 @@ export default function InspoClient({
           libraryName={workspace.name}
         />
       )}
+      {showTriage && (
+        <TriageModal
+          inbox={spaceItems}
+          projects={projects}
+          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+          onApplied={(picks, sys) => {
+            setLinks((prev) => { const next = { ...prev }; for (const p of picks) next[p.itemId] = [...(next[p.itemId] ?? []).filter((x) => x !== p.projectId), p.projectId]; return next; });
+            setSystems(sys);
+          }}
+          onClose={() => setShowTriage(false)}
+        />
+      )}
       {showPolish && currentProject && (
         <PolishModal
           project={currentProject}
@@ -1102,6 +1116,12 @@ export default function InspoClient({
           <Logo size={28} className="topbar__logo" />
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
+            {space === "inbox" && spaceItems.length > 0 && projects.length > 0 && (
+              <>
+                <Button variant="ghost" className="topbar__polish" onClick={() => setShowTriage(true)} title={t.triage.hint(spaceItems.length)}>{Icons.spark} {t.triage.button}</Button>
+                <span className="topbar__actions-sep" aria-hidden />
+              </>
+            )}
             {currentProject && (
               <>
                 <span className="topbar__modes" role="tablist" aria-label={t.system.button}>

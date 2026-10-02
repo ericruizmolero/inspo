@@ -2,6 +2,7 @@
 // The first screen inside a workspace: what are you making? Name a project and land on its system,
 // empty and waiting; or pick one the team already has. The whole library is one link away.
 import { useState } from "react";
+import { savePolishBrief } from "@/app/actions/polish";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { useT } from "./I18nProvider";
@@ -19,13 +20,20 @@ export default function ProjectChooser({ projects, systems, items, links, onPick
 }) {
   const { t } = useT();
   const [name, setName] = useState("");
+  const [about, setAbout] = useState("");
   const [busy, setBusy] = useState(false);
   const counts: Record<string, number> = {};
   for (const i of items) for (const p of (i.id && links[i.id]) || []) counts[p] = (counts[p] ?? 0) + 1;
   const create = async () => {
     const n = name.trim(); if (!n || busy) return;
     setBusy(true);
-    try { const p = await onCreate(n); if (p) onPick(p.id); } finally { setBusy(false); }
+    try {
+      const p = await onCreate(n);
+      if (!p) return;
+      // The sentence is the project's brief from the first minute: the first reading of the board follows it
+      if (about.trim()) await savePolishBrief(p.id, { about: about.trim() }).catch(() => null);
+      onPick(p.id);
+    } finally { setBusy(false); }
   };
   return (
     <div className="chooser">
@@ -35,7 +43,9 @@ export default function ProjectChooser({ projects, systems, items, links, onPick
         <p className="chooser__lead">{t.chooser.lead}</p>
         <form className="chooser__new" onSubmit={(e) => { e.preventDefault(); void create(); }}>
           <input className="input input--lg chooser__input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.chooser.placeholder} maxLength={60} disabled={busy} autoFocus aria-label={t.chooser.placeholder} />
-          <Button variant="primary" type="submit" disabled={busy || !name.trim()}>{busy ? <span className="spinner spinner--sm" /> : Icons.arrow} {t.chooser.start}</Button>
+          <textarea className="input chooser__about" rows={2} value={about} onChange={(e) => setAbout(e.target.value)} placeholder={t.chooser.aboutPlaceholder} maxLength={500} disabled={busy} aria-label={t.chooser.aboutPlaceholder}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void create(); }} />
+          <Button variant="primary" type="submit" className="chooser__go" disabled={busy || !name.trim()}>{busy ? <span className="spinner spinner--sm" /> : Icons.arrow} {t.chooser.start}</Button>
         </form>
         {projects.length > 0 && (
           <div className="chooser__list">

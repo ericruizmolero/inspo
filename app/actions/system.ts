@@ -2,7 +2,8 @@
 // The project's system: read it, confirm or write an area, hand an area back to the board.
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
-import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence } from "@/lib/system";
+import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, applyTriage } from "@/lib/system";
+import type { SystemArea } from "@/types/system";
 import type { SystemEvidence } from "@/types/system";
 
 export async function loadSystem(projectId: string) {
@@ -40,4 +41,9 @@ export async function loadSystemHistory(projectId: string) {
 /** From the board: this reference belongs to (or leaves) an area of the project's system. */
 export async function assignSystemArea(projectId: string, area: string, itemId: string, on: boolean) {
   return withCtx(async (ctx) => assignEvidence(ctx.workspace.id, String(projectId), String(area), String(itemId), !!on, { id: ctx.user.id, name: ctx.user.name }));
+}
+
+/** The reviewed proposals of the Inbox triage: file and hang each reference. */
+export async function applySystemTriage(picks: { itemId: string; projectId: string; areas: SystemArea[] }[]) {
+  return withCtx(async (ctx) => applyTriage(ctx.workspace.id, Array.isArray(picks) ? picks.slice(0, 300).map((p) => ({ itemId: String(p.itemId), projectId: String(p.projectId), areas: Array.isArray(p.areas) ? p.areas : [] })) : [], { id: ctx.user.id, name: ctx.user.name }));
 }

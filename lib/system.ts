@@ -532,3 +532,73 @@ export async function assignEvidence(organizationId: string, projectId: string, 
   void author;
   return getSystem(organizationId, projectId);
 }
+
+// ─── Organising the Inbox ────────────────────────────────────────────────────────────────────────
+// Two hundred bookmarks saved from X, nothing filed: the model reads each one and says which project
+// it serves and which areas of that project's system it speaks to. The team reviews the list and
+// applies it in one go; nothing moves until then.
+
+export interface TriageProposal { itemId: string; projectId: string | null; areas: SystemArea[]; reason: string }
+
+const TRIAGE_SYSTEM = `A design team keeps a library of references (websites, images, posts, videos), each with the note of whoever saved it and a summary of what it shows. They have PROJECTS, each with a brief and a system of eight areas: typography, color, layout, motion, iconography, logo, imagery, voice (tone of the copy). A pile of references is still unfiled.
+
+Your job: for each unfiled reference, say which project it serves and which areas of that project's system it speaks to.
+
+Rules:
+- Read the saver's note first: it says why the reference is here. Then the summary and the look.
+- Only file a reference under a project when it clearly serves that project's brief or system; otherwise project null. Guessing files noise the team has to undo.
+- areas: only the ones the reference actually speaks to (a palette, a typeface, a layout pattern, a motion, an icon style, a logo, a kind of imagery, a tone of copy). Usually one or two. Empty is fine when nothing concrete stands out.
+- reason: one sentence of at most 16 words, for the team, saying what to take from it. No praise.
+- Ids are short codes: use them exactly as given and never invent one.`;
+
+const TriageSchema = z.object({
+  items: z.array(z.object({ id: z.string(), project: z.string().nullable(), areas: z.array(z.enum(SYSTEM_AREAS)), reason: z.string() })),
+});
+
+const TRIAGE_BATCH = 60;
+
+export async function triageInbox(input: { organizationId: string; itemIds?: string[]; usage: UsageCtx; locale?: Locale }): Promise<TriageProposal[]> {
+  const org = input.organizationId;
+  // The unfiled references (or the ones asked for), and what the projects are about
+  const filed = new Set((await db.select({ itemId: PI.itemId }).from(PI).where(eq(PI.organizationId, org))).map((r) => r.itemId));
+  const rowsAll = await db.select({ row: T }).from(T).where(eq(T.organizationId, org)).orderBy(desc(T.createdAt));
+  const want = input.itemIds?.length ? new Set(input.itemIds) : null;
+  const rows = rowsAll.filter(({ row }) => (want ? want.has(row.id) : !filed.has(row.id))).slice(0, 240);
+  if (!rows.length) return [];
+  const projects = await db.select({ id: P.id, name: P.name, polish: P.polish }).from(P).where(eq(P.organizationId, org)).orderBy(asc(P.createdAt));
+  const systems = await loadSystems(org);
+  const pcodes = new Map(projects.map((p, i) => [`p${i + 1}`, p.id]));
+  const projectsText = projects.map((p, i) => ({ id: `p${i + 1}`, name: p.name, brief: briefForModel(p.polish?.brief), system: systems[p.id]?.summary || undefined,
+    decided: systems[p.id]?.areas.filter((a) => a.decision).map((a) => ({ area: a.area, decision: a.decision })) }));
+  const out: TriageProposal[] = [];
+  for (let b = 0; b < rows.length; b += TRIAGE_BATCH) {
+    const batch = rows.slice(b, b + TRIAGE_BATCH);
+    const codes = new Map(batch.map(({ row }, i) => [`r${i + 1}`, row.id]));
+    const refs = batch.map(({ row }, i) => ({ id: `r${i + 1}`, kind: mediaKindOf(row.web), ...summarize(rowToItem(row), row.tagsJson ?? undefined) }));
+    const text = `Projects (JSON): ${JSON.stringify(projectsText)}\n\nUnfiled references (JSON): ${JSON.stringify(refs)}`;
+    const res = await llm({ model: SYSTEM_MODEL, system: `${TRIAGE_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: TriageSchema, maxTokens: 16000, effort: "low" });
+    void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `inbox triage ${batch.length}` });
+    const parsed = TriageSchema.parse(JSON.parse(res.text));
+    for (const it of parsed.items) {
+      const itemId = codes.get(it.id);
+      if (!itemId) continue;
+      out.push({ itemId, projectId: it.project ? pcodes.get(it.project) ?? null : null, areas: [...new Set(it.areas)], reason: it.reason.trim().slice(0, 160) });
+    }
+    console.log(`triage ${org}: ${batch.length} refs → ${parsed.items.filter((i) => i.project).length} filed, ${res.usage.input}+${res.usage.output} tokens, ${res.costUsd ?? "?"} USD`);
+  }
+  return out;
+}
+
+/** The team said yes: file each reference in its project and hang it from its areas. */
+export async function applyTriage(organizationId: string, picks: { itemId: string; projectId: string; areas: SystemArea[] }[], author: { id: string; name: string }): Promise<{ filed: number; systems: Record<string, ProjectSystem> }> {
+  const { fileItems } = await import("./projects");
+  const byProject = new Map<string, { itemId: string; areas: SystemArea[] }[]>();
+  for (const p of picks) byProject.set(p.projectId, [...(byProject.get(p.projectId) ?? []), { itemId: p.itemId, areas: p.areas }]);
+  let filed = 0;
+  for (const [projectId, list] of byProject) {
+    await fileItems(organizationId, projectId, list.map((x) => x.itemId), author.id);
+    filed += list.length;
+    for (const x of list) for (const area of x.areas) if (AREA_SET.has(area)) await assignEvidence(organizationId, projectId, area, x.itemId, true, author);
+  }
+  return { filed, systems: await loadSystems(organizationId) };
+}

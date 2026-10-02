@@ -396,6 +396,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const labels = t.system.areas as Record<SystemArea, string>;
   const sys = system ?? emptySystem(project.id);
   const filled = sys.areas.filter((a) => a.decision).length;
+  // How polished the system is: every area counts, a team decision as 100, an open area as 0
+  const polishPct = Math.round(sys.areas.reduce((n, a) => n + (a.source === "team" ? 100 : a.decision ? a.confidence : 0), 0) / SYSTEM_AREAS.length);
   const stale = boardStamp ? staleness(sys, boardStamp.itemIds, boardStamp.stamp) : null;
   const byItem = useMemo(() => new Map(visuals.map((v) => [v.itemId, v])), [visuals]);
   const visualsFor = (a: SystemAreaState): { vs: RefVisual[]; fromBoard: boolean } => {
@@ -519,6 +521,12 @@ export default function SystemView({ project, system, onSystem, board, library, 
             <Button variant="ghost" size="sm" onClick={download} disabled={!filled} title={t.system.exportHint}>{t.system.download}</Button>
             {!board.length && <Button variant="ghost" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
           </div>
+          {filled > 0 && (
+            <div className="sysn-polish" title={t.system.polishHint}>
+              <span className="sysn-polish__bar"><b style={{ width: `${polishPct}%` }} /></span>
+              <small>{t.system.polishPct(polishPct)}</small>
+            </div>
+          )}
           <small className="sysn-core__meta">{t.system.filled(filled, SYSTEM_AREAS.length)}{stale && (stale.unread > 0 || stale.wordsChanged) ? ` · ${stale.unread > 0 ? t.system.stale(stale.unread) : t.system.staleWords}` : ""}</small>
         </section>
 
