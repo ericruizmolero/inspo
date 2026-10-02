@@ -142,7 +142,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const day = (at: number) => new Date(at).toLocaleDateString(locale, { day: "numeric", month: "short" });
   // Each tab is a link to its space: a plain click switches in place (the search stays), a modified click
   // opens the space the way the browser opens any link
-  const hrefOf = (id: string) => (id === "all" ? "/" : `/?in=${encodeURIComponent(id)}`);
+  const hrefOf = (id: string) => (id === "all" ? "/?in=library" : `/?in=${encodeURIComponent(id)}`);
   const go = (id: string) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();

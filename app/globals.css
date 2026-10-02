@@ -3009,3 +3009,20 @@ button.postit__num { cursor: pointer; }
 .sysn-node__label { display: inline-flex; align-items: center; gap: 6px; }
 .sysn-node__n { font-weight: 500; color: var(--muted); }
 .sysn-node.is-open .sysn-node__n { color: var(--text); }
+/* What are you making? The first screen inside a workspace */
+.chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: 120px 24px 120px; background: var(--bg);
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 7%, transparent) 1px, transparent 0); background-size: 24px 24px; }
+.chooser__inner { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
+.chooser__title { margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
+.chooser__lead { margin: 0; font-size: 15px; line-height: 1.55; color: var(--text-2); max-width: 540px; }
+.chooser__new { display: flex; gap: 8px; width: 100%; } .chooser__input { flex: 1; }
+.chooser__list { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 18px; }
+.chooser__section { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.chooser__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.chooser__card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-align: left; cursor: pointer; transition: border-color 0.15s, transform 0.15s var(--ease-out); }
+.chooser__card:hover { border-color: var(--text); transform: translateY(-1px); }
+.chooser__card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
+.chooser__card-name { font-size: 15px; font-weight: 500; } .chooser__card-meta { font-size: 11px; color: var(--muted); }
+.chooser__card-summary { font-size: 12px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.chooser__library { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 13px; cursor: pointer; } .chooser__library:hover { color: var(--text); }
+.pp__icon--mono { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.02em; }

@@ -2,7 +2,7 @@
 // The project's system: read it, confirm or write an area, hand an area back to the board.
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
-import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea } from "@/lib/system";
+import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence } from "@/lib/system";
 import type { SystemEvidence } from "@/types/system";
 
 export async function loadSystem(projectId: string) {
@@ -35,4 +35,9 @@ export async function undoSystemArea(projectId: string, area: string) {
 
 export async function loadSystemHistory(projectId: string) {
   return withCtx(async (ctx) => areaHistory(ctx.workspace.id, String(projectId)));
+}
+
+/** From the board: this reference belongs to (or leaves) an area of the project's system. */
+export async function assignSystemArea(projectId: string, area: string, itemId: string, on: boolean) {
+  return withCtx(async (ctx) => assignEvidence(ctx.workspace.id, String(projectId), String(area), String(itemId), !!on, { id: ctx.user.id, name: ctx.user.name }));
 }

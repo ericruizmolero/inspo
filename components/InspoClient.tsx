@@ -22,7 +22,9 @@ import { layoutCanvas, keyOf, TILE_W, DEFAULT_RATIO, CANVAS_MAX_RATIO } from "@/
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
-import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
+import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
+import ProjectChooser from "./ProjectChooser";
+import { assignSystemArea } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
@@ -226,26 +228,34 @@ export default function InspoClient({
   }, []);
   const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
-  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : "all";
+  // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
+  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   // Inside a project the system comes first; the board is a mode (?view=board)
   const projectView: "system" | "board" = currentProject && sp.get("view") !== "board" ? "system" : "board";
   const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === "board" ? "board" : "" }), [setParams]);
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
+  // Which areas of the current project's system each reference backs (for the card's "to the system")
+  const backsByItem = useMemo(() => {
+    const m = new Map<string, SystemArea[]>();
+    for (const a of currentSystem?.areas ?? []) for (const e of a.evidence) m.set(e.itemId, [...(m.get(e.itemId) ?? []), a.area]);
+    return m;
+  }, [currentSystem]);
+  const backsOf = useCallback((id: string) => backsByItem.get(id) ?? EMPTY_AREAS, [backsByItem]);
   const systemFilled = currentSystem ? currentSystem.areas.filter((a) => a.decision).length : 0;
   const systemStale = useMemo(() => {
     if (!currentProject || !currentSystem?.run) return 0;
     const boardIds = items.filter((i) => i.id && links[i.id]?.includes(currentProject.id)).map((i) => i.id!);
     return staleness(currentSystem, boardIds).unread;
   }, [currentProject, currentSystem, items, links]);
-  const setSpace = useCallback((v: string) => setParams({ in: v }), [setParams]);
+  const setSpace = useCallback((v: string) => setParams({ in: v === "all" ? "library" : v === "home" ? "" : v }), [setParams]);
   // Adding from inside a project files it there: read at save time, whatever the callback closed over
   const projectRef = useRef<string | null>(null);
   projectRef.current = currentProject?.id ?? null;
   const [confirm, confirmDialog] = useConfirm();
 
   // The items in the current space (inbox, a project or everything), before any other filter
-  const spaceItems = useMemo(() => space === "all" ? items
+  const spaceItems = useMemo(() => space === "all" || space === "home" ? items
     : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
   [items, links, space]);
@@ -911,7 +921,15 @@ export default function InspoClient({
   runDesignMdRef.current = runDesignMd;
   // The cards' handlers, behind one stable ref: a card only re-renders when its own data changes
   const gridActions = useRef<GridActions>(null!);
-  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, measure };
+  // From a card inside a project: this piece belongs to an area of the system. The node counts it at once
+  const toggleArea = useCallback(async (item: InspoItem, area: SystemArea, on: boolean) => {
+    const projectId = projectRef.current;
+    if (!projectId || !item.id) return;
+    const r = await assignSystemArea(projectId, area, item.id, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+    setSystem(projectId, r.data);
+  }, [setSystem]);
+  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure };
 
   // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
   // they were pinned; the column holds all of them with their replies
@@ -1105,7 +1123,17 @@ export default function InspoClient({
           </div>
         </header>
 
-        {items.length === 0 ? (
+        {space === "home" ? (
+          <ProjectChooser
+            projects={projects}
+            systems={systems}
+            items={items}
+            links={links}
+            onPick={(id) => setSpace(id)}
+            onCreate={createProject}
+            onLibrary={() => setSpace("all")}
+          />
+        ) : items.length === 0 ? (
           <EmptyStart
             onAddUrl={async (web) => {
               // First inspo: saved and its DESIGN.md opened directly, so the app shows what it does
@@ -1174,6 +1202,7 @@ export default function InspoClient({
                   shot={pageShots[item.web]}
                   projects={projects}
                   projectIds={item.id ? links[item.id] : undefined}
+                  backs={currentProject && item.id ? backsOf(item.id) : undefined}
                   actions={gridActions}
                 />
               )}
@@ -1205,6 +1234,8 @@ export default function InspoClient({
   );
 }
 
+const EMPTY_AREAS: SystemArea[] = [];
+
 interface GridActions {
   openItem: (item: InspoItem, opts?: { generate?: boolean }) => void;
   deleteItem: (item: InspoItem) => Promise<void>;
@@ -1212,12 +1243,15 @@ interface GridActions {
   handleThumbnailRemove: (web: string) => void;
   toggleFiled: (item: InspoItem, projectId: string, on: boolean) => void;
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
+  toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
+  /** Inside a project: the areas of its system this reference backs */
+  backs?: SystemArea[];
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
@@ -1281,6 +1315,8 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       projectIds={projectIds}
       onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}
       onCreateProject={(name) => act().createAndFile(item, name)}
+      backs={backs}
+      onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
       canvas={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );

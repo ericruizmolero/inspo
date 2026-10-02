@@ -7,6 +7,11 @@ import { InspoItem, InspoTags, Project, TagStatus } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
 import ProjectPicker, { IconFolder } from "./ProjectPicker";
+import AreaPicker from "./AreaPicker";
+const IconCompass = (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><circle cx="8" cy="8" r="6.2" /><path d="M10.6 5.4 9.2 9.2 5.4 10.6 6.8 6.8z" /></svg>
+);
+import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind } from "@/lib/url";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
@@ -81,6 +86,9 @@ interface InspoCardProps {
   projectIds?: string[];
   onToggleProject?: (projectId: string, on: boolean) => void;
   onCreateProject?: (name: string) => Promise<void>;
+  /** Inside a project: the areas of its system this piece backs, and the toggle to file it under one */
+  backs?: SystemArea[];
+  onToggleArea?: (area: SystemArea, on: boolean) => void;
   /** On the canvas: the whole page instead of a cover, sized before it loads, with the post-its as dots */
   canvas?: {
     /** Height/width of the media, when known (the layout already reserved it) */
@@ -130,7 +138,7 @@ const IconInfo = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, canvas }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, canvas }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -346,6 +354,12 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   );
 
   const filedCount = projectIds.length;
+  const areaPicker = (className: string, onOpenChange?: (o: boolean) => void) => onToggleArea && (
+    <AreaPicker backs={backs} onToggle={onToggleArea} onOpenChange={onOpenChange}
+      className={`${className}${backs.length ? " is-filed" : ""}`} label={backs.length ? t.system.inSystem(backs.length) : t.system.toSystem}>
+      {IconCompass}{backs.length > 0 && <span className="tile__action-count">{backs.length}</span>}
+    </AreaPicker>
+  );
   const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
     <ProjectPicker
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
@@ -521,6 +535,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               </button>
             )}
             {picker("tile__action tile__action--pj", setPickerOpen)}
+            {areaPicker("tile__action tile__action--pj", setPickerOpen)}
             {isSite && <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
               data-tip={designMdLoading ? t.card.generatingDesignMd : designMdReady ? t.card.seeDesignMd : t.card.generateWithAi}
@@ -589,6 +604,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           </button>
         )}
         {picker("tile__caption-md tile__caption-pj")}
+        {areaPicker("tile__caption-md tile__caption-pj")}
         {isSite && <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>}
         <a className="tile__caption-md tile__caption-link" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (

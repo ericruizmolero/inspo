@@ -247,6 +247,7 @@ Rules:
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
 - confidence is 0-100: how many references agree, how concrete and how explicit the evidence is. One passing mention is 25-40; two or three references that agree with concrete values is 60-80; the team saying it in so many words plus measured values is 85+.
 - evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
+- A reference marked "filed_by_team" under an area was put there by a person from the board: it is a directive. Decide that area from those references first, and keep them in its evidence.
 - You receive the SYSTEM AS IT STANDS. Areas marked "team" were decided by a person: they are facts about the project, keep every other area coherent with them and return them unchanged (same text). Areas marked "model" are your previous proposals: keep what the board still supports, change what new evidence changes, do not rephrase for the sake of it.
 - The summary is the project's criterio in one paragraph (max 90 words): what it is, who it speaks to, the few decisions that define its look. Written so that an agent that reads only this paragraph would already design in the right direction. Empty string if the board is empty.
 - No markdown, no dashes as punctuation, no counts of references in the text. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
@@ -289,7 +290,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       status: a.source ?? "empty",
       decision: a.decision || undefined,
       confidence: a.decision ? a.confidence : undefined,
-      evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) : undefined,
+      evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take || undefined, filed_by_team: e.pinned || undefined })) : undefined,
     }));
     const text = [
       `Project: ${project.name}`,
@@ -329,17 +330,20 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       const got = byArea.get(cur.area);
       const decision = (got?.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
       // Back to item ids; an invented code or a repeated reference is dropped
-      const seen = new Set<string>();
-      const evidence: SystemEvidence[] = [];
+      // What a person filed under the area stays, whatever the model made of it
+      const pinned = cur.evidence.filter((e) => e.pinned && codes.has(codeOf.get(e.itemId) ?? ""));
+      const seen = new Set<string>(pinned.map((e) => e.itemId));
+      const evidence: SystemEvidence[] = [...pinned];
       for (const e of got?.evidence ?? []) {
         const itemId = codes.get(e.ref);
-        if (!itemId || seen.has(itemId)) continue;
+        if (!itemId) continue;
+        if (seen.has(itemId)) { const p = evidence.find((x) => x.itemId === itemId); if (p && !p.take) p.take = e.take.trim().slice(0, 200); continue; }
         seen.add(itemId);
         evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
       }
       const next: Omit<SystemAreaState, "updatedAt"> = decision
         ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null }
-        : { area: cur.area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null };
+        : { area: cur.area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null };
       const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence);
       if (same && (cur.decision || cur.updatedAt !== emptySystem(input.projectId).areas[0].updatedAt)) continue;
       await writeArea(input.organizationId, input.projectId, next, { id: null, name: res.model }, now);
@@ -504,5 +508,27 @@ export async function revertArea(organizationId: string, projectId: string, area
     const evidence = Array.isArray(previous.evidence) ? (previous.evidence as SystemEvidence[]) : [];
     await writeArea(organizationId, projectId, { area, decision: previous.decision, confidence: previous.confidence, evidence, source: previous.source as "model" | "team", decidedBy: previous.source === "team" ? author.id : null }, author, now);
   }
+  return getSystem(organizationId, projectId);
+}
+
+// ─── Filing a reference under an area, from the board ───────────────────────────────────────────
+// The team says where a piece belongs (this clip is Motion, this capture is Imagery). The node counts
+// it at once; the next run decides the area from what was filed.
+
+export async function assignEvidence(organizationId: string, projectId: string, areaKey: string, itemId: string, on: boolean, author: { id: string; name: string }): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const [mine] = await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, itemId))).limit(1);
+  if (!mine) throw new HttpError(404, (await getErrors()).itemNotInWorkspace);
+  const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
+  const rest = current.evidence.filter((e) => e.itemId !== itemId);
+  const kept = current.evidence.find((e) => e.itemId === itemId);
+  const evidence: SystemEvidence[] = on ? [...rest, { itemId, take: kept?.take ?? "", pinned: true }] : rest;
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  // Filing is not deciding: the decision and its source stay as they were, only the evidence moves
+  await db.insert(A).values({ projectId, organizationId, area, decision: current.decision, confidence: current.confidence, evidence, source: current.source, decidedBy: current.decidedBy, updatedAt: now })
+    .onConflictDoUpdate({ target: [A.projectId, A.area], set: { evidence, updatedAt: now } });
+  void author;
   return getSystem(organizationId, projectId);
 }

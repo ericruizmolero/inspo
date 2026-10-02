@@ -11,6 +11,8 @@ export interface SystemEvidence {
   itemId: string;
   /** What to take from this reference for this area, one short instruction (max 20 words) */
   take: string;
+  /** Filed under this area by a person from the board: runs keep it and decide from it */
+  pinned?: boolean;
 }
 
 export type SystemSource = "model" | "team";
