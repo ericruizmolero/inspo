@@ -3062,15 +3062,18 @@ button.postit__num { cursor: pointer; }
 .tile__proposal-areas button.is-on { background: #f2f2ef; color: #0e0e0d; border-color: #f2f2ef; }
 .tile--proposed .tile__overlay, .tile--proposed .tile__score { display: none; }
 
-/* ─── Glass, not white: the island, the actions pill, the search dock and the zoom pill are frosted ─── */
+/* ─── Glass, not white: the island, the actions pill, the search dock and the zoom pill are dark glass,
+   almost transparent, with white ink and a hairline of light where the edge catches it ─── */
 :root {
-  --dock-surface: rgba(255, 255, 255, 0.66);
-  --dock-hover: rgba(255, 255, 255, 0.55);
-  --dock-chip: rgba(255, 255, 255, 0.85);
-  --dock-fill: rgba(0, 0, 0, 0.08);
-  --dock-line: rgba(255, 255, 255, 0.5);
-  --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.1);
-  --dock-blur: blur(22px) saturate(1.6);
+  --dock-ink: #f2f2ef; --dock-ink-2: #cfcfca; --dock-muted: #9a9a94;
+  --dock-surface: rgba(16, 16, 15, 0.38);
+  --dock-hover: rgba(255, 255, 255, 0.08);
+  --dock-chip: rgba(255, 255, 255, 0.14);
+  --dock-fill: rgba(255, 255, 255, 0.12);
+  --dock-line: rgba(255, 255, 255, 0.16);
+  --dock-danger: #ff6b61;
+  --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.2);
+  --dock-blur: blur(20px) saturate(1.5);
 }
 .island, .island-pop.island-pop, .canvas-zoom, .sb--dock .sb__menu,
 .shell:not(.shell--docked) .topbar__actions {
@@ -3079,6 +3082,9 @@ button.postit__num { cursor: pointer; }
 .sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
-/* A hairline of light on the top edge, the way glass catches it */
-.island, .canvas-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
-.island__tab.is-on { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
+.island, .canvas-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
+.island__tab.is-on { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+/* The search dock's field reads white text too */
+.sb--dock .sb__field input, .sb--dock .sb__field .input { color: var(--dock-ink); }
+.sb--dock .sb__field input::placeholder { color: var(--dock-muted); }
+.sb--dock .sb__field svg { color: var(--dock-muted); }

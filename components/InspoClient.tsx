@@ -327,6 +327,9 @@ export default function InspoClient({
       const json = await res.json().catch(() => ({})) as { proposals?: TriageProposal[]; error?: string };
       if (!res.ok || json.error || !json.proposals) throw new Error(json.error || t.triage.failed);
       setTriage(Object.fromEntries(json.proposals.map((p) => [p.itemId, p])));
+      // Bring the camera to the first proposal, close enough to read it
+      const first = json.proposals.find((p) => p.projectId) ?? json.proposals[0];
+      if (first) setTimeout(() => canvasRef.current?.focus(first.itemId), 50);
     } catch (e) { setAddError({ title: t.triage.failed, detail: e instanceof Error ? e.message : String(e) }); }
     finally { setTriageRunning(false); }
   }, [t]);
@@ -342,7 +345,13 @@ export default function InspoClient({
     if (!r.ok) { setAddError({ title: t.triage.failed, detail: r.error }); return; }
     setLinks((prev) => { const next = { ...prev }; for (const p of valid) next[p.itemId] = [...(next[p.itemId] ?? []).filter((x) => x !== p.projectId), p.projectId]; return next; });
     setSystems(r.data.systems);
-    setTriage((m) => { if (!m) return m; const n = { ...m }; for (const p of valid) delete n[p.itemId]; return Object.keys(n).length ? n : null; });
+    setTriage((m) => {
+      if (!m) return m; const n = { ...m }; for (const p of valid) delete n[p.itemId];
+      // On to the next proposal
+      const next = Object.values(n).find((p) => p.projectId);
+      if (next && valid.length === 1) setTimeout(() => canvasRef.current?.focus(next.itemId), 50);
+      return Object.keys(n).length ? n : null;
+    });
   }, [t]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
