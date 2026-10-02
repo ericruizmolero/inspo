@@ -402,6 +402,12 @@ export const ui = {
     library: (n: number): string => `See the whole library (${n})`,
   },
   triage: {
+    acceptAll: (n: number): string => (n === 1 ? "File the 1 proposed" : `File all ${n} proposed`),
+    exit: "Done",
+    reading: "Reading\u2026",
+    accept: "File it",
+    dismiss: "Not this one",
+    none: "No project fits this one",
     button: "Organise",
     title: "Organise the Inbox",
     running: (n: number): string => `Reading ${n} references and the projects\u2026`,

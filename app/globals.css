@@ -3049,3 +3049,36 @@ button.postit__num { cursor: pointer; }
 .sysn-polish { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 260px; }
 .sysn-polish__bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; } .sysn-polish__bar b { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.6s var(--ease-out); }
 .sysn-polish small { font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Organising the Inbox: the model's proposal sits on the card; one click files it */
+.tile__proposal { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 4; display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border-radius: 12px; background: rgba(12,12,11,0.88); backdrop-filter: blur(10px); color: #f2f2ef; box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); font-size: 12px; cursor: default; }
+.tile__proposal-row { display: flex; align-items: center; gap: 6px; }
+.tile__proposal-project { flex: 1; min-width: 0; height: 26px; padding: 0 8px; border-radius: 7px; border: 1px solid rgba(255,255,250,0.14); background: rgba(255,255,250,0.06); color: #f2f2ef; font: inherit; font-weight: 500; }
+.tile__proposal-ok { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border-radius: 7px; border: 0; background: #f2f2ef; color: #0e0e0d; font: inherit; font-weight: 500; cursor: pointer; }
+.tile__proposal-ok:hover { background: #fff; } .tile__proposal-ok:disabled { opacity: 0.4; cursor: default; }
+.tile__proposal-x { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; border: 0; background: transparent; color: #b6b6b1; cursor: pointer; } .tile__proposal-x:hover { color: #fff; background: rgba(255,255,250,0.08); }
+.tile__proposal-why { margin: 0; color: #b6b6b1; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tile__proposal-areas { display: flex; flex-wrap: wrap; gap: 3px; }
+.tile__proposal-areas button { height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid rgba(255,255,250,0.14); background: transparent; color: #b6b6b1; font: inherit; font-size: 11px; cursor: pointer; }
+.tile__proposal-areas button.is-on { background: #f2f2ef; color: #0e0e0d; border-color: #f2f2ef; }
+.tile--proposed .tile__overlay, .tile--proposed .tile__score { display: none; }
+
+/* ─── Glass, not white: the island, the actions pill, the search dock and the zoom pill are frosted ─── */
+:root {
+  --dock-surface: rgba(255, 255, 255, 0.66);
+  --dock-hover: rgba(255, 255, 255, 0.55);
+  --dock-chip: rgba(255, 255, 255, 0.85);
+  --dock-fill: rgba(0, 0, 0, 0.08);
+  --dock-line: rgba(255, 255, 255, 0.5);
+  --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.35), 0 1px 3px rgba(0,0,0,0.1);
+  --dock-blur: blur(22px) saturate(1.6);
+}
+.island, .island-pop.island-pop, .canvas-zoom, .sb--dock .sb__menu,
+.shell:not(.shell--docked) .topbar__actions {
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+}
+.sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+}
+/* A hairline of light on the top edge, the way glass catches it */
+.island, .canvas-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
+.island__tab.is-on { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }

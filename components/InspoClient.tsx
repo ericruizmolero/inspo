@@ -24,7 +24,8 @@ import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
 import ProjectChooser from "./ProjectChooser";
-const TriageModal = dynamic(() => import("./TriageModal"), { ssr: false });
+import type { TriageProposal } from "@/lib/system";
+import { applySystemTriage } from "@/app/actions/system";
 import { assignSystemArea } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
@@ -316,7 +317,33 @@ export default function InspoClient({
 
   const [showAdd, setShowAdd] = useState(false);
   const [showPolish, setShowPolish] = useState(false);
-  const [showTriage, setShowTriage] = useState(false);
+  // Organising the Inbox: the model's proposal per reference sits on its card until the team accepts, changes or dismisses it
+  const [triage, setTriage] = useState<Record<string, TriageProposal> | null>(null);
+  const [triageRunning, setTriageRunning] = useState(false);
+  const runTriage = useCallback(async (ids: string[]) => {
+    setTriageRunning(true);
+    try {
+      const res = await fetch("/api/system/triage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemIds: ids }) });
+      const json = await res.json().catch(() => ({})) as { proposals?: TriageProposal[]; error?: string };
+      if (!res.ok || json.error || !json.proposals) throw new Error(json.error || t.triage.failed);
+      setTriage(Object.fromEntries(json.proposals.map((p) => [p.itemId, p])));
+    } catch (e) { setAddError({ title: t.triage.failed, detail: e instanceof Error ? e.message : String(e) }); }
+    finally { setTriageRunning(false); }
+  }, [t]);
+  const patchTriage = useCallback((itemId: string, patch: Partial<TriageProposal> | null) => setTriage((m) => {
+    if (!m) return m; const n = { ...m };
+    if (patch === null) delete n[itemId]; else n[itemId] = { ...n[itemId], ...patch };
+    return n;
+  }), []);
+  const acceptTriage = useCallback(async (picks: TriageProposal[]) => {
+    const valid = picks.filter((p): p is TriageProposal & { projectId: string } => !!p.projectId);
+    if (!valid.length) return;
+    const r = await applySystemTriage(valid.map((p) => ({ itemId: p.itemId, projectId: p.projectId, areas: p.areas }))).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setAddError({ title: t.triage.failed, detail: r.error }); return; }
+    setLinks((prev) => { const next = { ...prev }; for (const p of valid) next[p.itemId] = [...(next[p.itemId] ?? []).filter((x) => x !== p.projectId), p.projectId]; return next; });
+    setSystems(r.data.systems);
+    setTriage((m) => { if (!m) return m; const n = { ...m }; for (const p of valid) delete n[p.itemId]; return Object.keys(n).length ? n : null; });
+  }, [t]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -931,7 +958,7 @@ export default function InspoClient({
     if (!r.ok) { projectFailed(new Error(r.error)); return; }
     setSystem(projectId, r.data);
   }, [setSystem]);
-  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure };
+  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, acceptProposal: (p) => void acceptTriage([p]), patchProposal: patchTriage };
 
   // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
   // they were pinned; the column holds all of them with their replies
@@ -1028,18 +1055,6 @@ export default function InspoClient({
           libraryName={workspace.name}
         />
       )}
-      {showTriage && (
-        <TriageModal
-          inbox={spaceItems}
-          projects={projects}
-          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
-          onApplied={(picks, sys) => {
-            setLinks((prev) => { const next = { ...prev }; for (const p of picks) next[p.itemId] = [...(next[p.itemId] ?? []).filter((x) => x !== p.projectId), p.projectId]; return next; });
-            setSystems(sys);
-          }}
-          onClose={() => setShowTriage(false)}
-        />
-      )}
       {showPolish && currentProject && (
         <PolishModal
           project={currentProject}
@@ -1118,7 +1133,16 @@ export default function InspoClient({
           <div className="topbar__actions">
             {space === "inbox" && spaceItems.length > 0 && projects.length > 0 && (
               <>
-                <Button variant="ghost" className="topbar__polish" onClick={() => setShowTriage(true)} title={t.triage.hint(spaceItems.length)}>{Icons.spark} {t.triage.button}</Button>
+                {triage ? (
+                  <>
+                    <Button variant="primary" size="sm" className="topbar__polish" onClick={() => void acceptTriage(Object.values(triage))} disabled={!Object.values(triage).some((p) => p.projectId)}>{Icons.check} {t.triage.acceptAll(Object.values(triage).filter((p) => p.projectId).length)}</Button>
+                    <Button variant="ghost" size="sm" className="topbar__polish" onClick={() => setTriage(null)}>{t.triage.exit}</Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" className="topbar__polish" disabled={triageRunning} onClick={() => void runTriage(spaceItems.map((i) => i.id).filter((x): x is string => !!x))} title={t.triage.hint(spaceItems.length)}>
+                    {triageRunning ? <span className="spinner spinner--sm" /> : Icons.spark} {triageRunning ? t.triage.reading : t.triage.button}
+                  </Button>
+                )}
                 <span className="topbar__actions-sep" aria-hidden />
               </>
             )}
@@ -1223,6 +1247,7 @@ export default function InspoClient({
                   projects={projects}
                   projectIds={item.id ? links[item.id] : undefined}
                   backs={currentProject && item.id ? backsOf(item.id) : undefined}
+                  proposal={triage && item.id ? triage[item.id] ?? null : undefined}
                   actions={gridActions}
                 />
               )}
@@ -1265,13 +1290,17 @@ interface GridActions {
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
   toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
+  acceptProposal: (p: TriageProposal) => void;
+  patchProposal: (itemId: string, patch: Partial<TriageProposal> | null) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, proposal, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
+  /** While organising the Inbox: the model's proposal for this reference (null = none for it) */
+  proposal?: TriageProposal | null;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
@@ -1337,6 +1366,14 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       onCreateProject={(name) => act().createAndFile(item, name)}
       backs={backs}
       onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
+      proposal={proposal === undefined ? undefined : proposal ? {
+        ...proposal,
+        projects: projects,
+        onAccept: () => act().acceptProposal(proposal),
+        onDismiss: () => act().patchProposal(proposal.itemId, null),
+        onProject: (projectId) => act().patchProposal(proposal.itemId, { projectId }),
+        onArea: (area, on) => act().patchProposal(proposal.itemId, { areas: on ? [...proposal.areas, area] : proposal.areas.filter((a) => a !== area) }),
+      } : null}
       canvas={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );

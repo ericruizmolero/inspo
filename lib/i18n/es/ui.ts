@@ -400,6 +400,12 @@ export const ui: typeof EnUi = {
     library: (n: number): string => `Ver toda la biblioteca (${n})`,
   },
   triage: {
+    acceptAll: (n: number): string => (n === 1 ? "Archivar la propuesta" : `Archivar las ${n} propuestas`),
+    exit: "Listo",
+    reading: "Leyendo\u2026",
+    accept: "Archivar",
+    dismiss: "Esta no",
+    none: "Ning\u00fan proyecto encaja con esta",
     button: "Organizar",
     title: "Organizar el Inbox",
     running: (n: number): string => `Leyendo ${n} referencias y los proyectos\u2026`,

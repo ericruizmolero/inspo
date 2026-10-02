@@ -8,10 +8,11 @@ import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
 import ProjectPicker, { IconFolder } from "./ProjectPicker";
 import AreaPicker from "./AreaPicker";
+import { Icons } from "./Sidebar";
 const IconCompass = (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><circle cx="8" cy="8" r="6.2" /><path d="M10.6 5.4 9.2 9.2 5.4 10.6 6.8 6.8z" /></svg>
 );
-import type { SystemArea } from "@/types/system";
+import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind } from "@/lib/url";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
@@ -89,6 +90,11 @@ interface InspoCardProps {
   /** Inside a project: the areas of its system this piece backs, and the toggle to file it under one */
   backs?: SystemArea[];
   onToggleArea?: (area: SystemArea, on: boolean) => void;
+  /** While the Inbox is being organised: the model's proposal for this piece, to accept, change or dismiss on the card */
+  proposal?: {
+    projectId: string | null; areas: SystemArea[]; reason: string; projects: Project[];
+    onAccept: () => void; onDismiss: () => void; onProject: (projectId: string | null) => void; onArea: (area: SystemArea, on: boolean) => void;
+  } | null;
   /** On the canvas: the whole page instead of a cover, sized before it loads, with the post-its as dots */
   canvas?: {
     /** Height/width of the media, when known (the layout already reserved it) */
@@ -138,7 +144,7 @@ const IconInfo = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, canvas }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, proposal, canvas }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -373,11 +379,27 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   return (
     <div>
       <article
-        className={`tile${canvas ? " tile--canvas" : ""}`}
+        className={`tile${canvas ? " tile--canvas" : ""}${proposal ? " tile--proposed" : ""}`}
         onClick={() => { if (suppressClick.current) return; openInside(); }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
+        {proposal && (
+          <div className="tile__proposal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+            <div className="tile__proposal-row">
+              <select className="tile__proposal-project" value={proposal.projectId ?? ""} aria-label={t.triage.project} onChange={(e) => proposal.onProject(e.target.value || null)}>
+                <option value="">{t.triage.none}</option>
+                {proposal.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <button type="button" className="tile__proposal-ok" disabled={!proposal.projectId} onClick={proposal.onAccept}>{Icons.check} {t.triage.accept}</button>
+              <button type="button" className="tile__proposal-x" aria-label={t.triage.dismiss} title={t.triage.dismiss} onClick={proposal.onDismiss}>{Icons.x}</button>
+            </div>
+            {proposal.reason && <p className="tile__proposal-why">{proposal.reason}</p>}
+            <div className="tile__proposal-areas">
+              {SYSTEM_AREAS.map((k) => { const on = proposal.areas.includes(k); return <button key={k} type="button" className={on ? "is-on" : ""} aria-pressed={on} onClick={() => proposal.onArea(k, !on)}>{(t.system.areas as Record<SystemArea, string>)[k]}</button>; })}
+            </div>
+          </div>
+        )}
         <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}
           style={canvas?.ratio ? { aspectRatio: `1 / ${canvas.ratio}`, background: canvas.color } : undefined}>
           {!isLoaded && !isError && !canvas?.color && <div className="shimmer" />}
