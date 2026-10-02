@@ -89,9 +89,20 @@ export interface AgentScope {
   area?: string | null;
   /** The reference open in the panel, if any */
   openItemId?: string | null;
+  /** The card or orbit reference the pointer was on last, a few seconds before the request */
+  hoverItemId?: string | null;
+  /** References ticked on the system's ring (picking for an area) */
+  pickedIds?: string[] | null;
+  /** References the last request touched, so "and put it in color too" follows */
+  recentIds?: string[] | null;
   /** What is on screen right now (after filters), so "these" means something */
   visibleIds?: string[] | null;
+  /** The last exchanges of this conversation, oldest first */
+  history?: AgentTurn[] | null;
 }
+
+/** One earlier exchange, as the interface keeps it */
+export interface AgentTurn { text: string; say: string; did: string[] }
 
 /** One line of what happened, for the interface to say in the reader's language */
 export interface AgentDone {
@@ -105,6 +116,8 @@ export interface AgentDone {
   area?: SystemArea;
   name?: string;
   text?: string;
+  /** The references it touched, so the next request can say "it" */
+  items?: string[];
   /** For file and assign: in (true) or out (false) */
   on?: boolean;
   topic?: z.infer<typeof Topic>;
@@ -153,7 +166,8 @@ The catalogue (kind: what it does):
 Several actions in one request are fine, in order.
 
 How to read the request:
-- "this", "these", "esta", "estas": the reference open in the panel if there is one, otherwise what is on screen. If nothing is open and the request needs one reference, do not guess: say what you need in "say" and return no actions.
+- "this", "these", "esta", "estas", "it", "la": in this order, the reference marked "open" (in the panel), then "under_pointer" (the card the pointer was on last, seconds before they sent the request), then the ones marked "picked" (ticked on the ring), then "recent" (what the previous request touched), then what is "on_screen" when the request clearly means all of them. If none of these fits and the request needs one reference, do not guess: say what you need in "say" and return no actions.
+- The earlier exchanges of this conversation come with the request: a short follow-up ("and in color too", "undo that", "the other one") continues them.
 - A project named loosely ("la landing", "savvia") is the closest project by name. No project named and one is open: that one.
 - Putting a reference under an area ("add this to motion") is "assign": it files the reference in the project too.
 - "Undo", "deshaz", "vuelve atrás" on an area is "undo". "Take X off motion", "quita X de motion" is "assign" with on false.
@@ -185,7 +199,8 @@ async function context(ctx: Ctx, scope: AgentScope) {
   const current = scope.projectId && projects.some((p) => p.id === scope.projectId) ? scope.projectId : null;
   // The current board first, then the open and visible ones, then the rest, newest first
   const visible = new Set(scope.visibleIds ?? []);
-  const rank = (id: string) => (id === scope.openItemId ? 0 : current && links[id]?.includes(current) ? 1 : visible.has(id) ? 2 : 3);
+  const picked = new Set(scope.pickedIds ?? []), recent = new Set(scope.recentIds ?? []);
+  const rank = (id: string) => (id === scope.openItemId || id === scope.hoverItemId ? 0 : picked.has(id) || recent.has(id) ? 1 : current && links[id]?.includes(current) ? 2 : visible.has(id) ? 3 : 4);
   const ordered = rows.map((r) => r.row).sort((a, b) => rank(a.id) - rank(b.id)).slice(0, MAX_REFS);
   const codes: Codes = { items: new Map(), projects: new Map() };
   const pcode = new Map<string, string>();
@@ -199,6 +214,9 @@ async function context(ctx: Ctx, scope: AgentScope) {
       note: [item.note, item.subNote].filter(Boolean).join(" ").slice(0, 140) || undefined,
       in: (links[row.id] ?? []).map((p) => pcode.get(p)).filter(Boolean),
       open: row.id === scope.openItemId || undefined,
+      under_pointer: row.id === scope.hoverItemId || undefined,
+      picked: picked.has(row.id) || undefined,
+      recent: recent.has(row.id) || undefined,
       on_screen: visible.has(row.id) || undefined,
     };
   });
@@ -218,6 +236,7 @@ async function context(ctx: Ctx, scope: AgentScope) {
     view: scope.view ?? null,
     open_area: scope.area && (SYSTEM_AREAS as readonly string[]).includes(scope.area) ? scope.area : null,
     open_reference: scope.openItemId && codes.items.size ? [...codes.items].find(([, id]) => id === scope.openItemId)?.[0] ?? null : null,
+    under_pointer: !!scope.hoverItemId, picked: picked.size, recent: recent.size,
     on_screen: visible.size,
   };
   return { codes, projects, links, systems, where, projectsText, refs };
@@ -267,11 +286,11 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         }
         case "file":
           if (a.on) await fileItems(org, a.project, a.items, author.id); else await unfileItems(org, a.project, a.items);
-          line.n = a.items.length; line.project = names.get(a.project); line.on = a.on; projectsTouched = true; systemsTouched = true; break;
+          line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.on = a.on; projectsTouched = true; systemsTouched = true; break;
         case "assign":
           if (a.on) await fileItems(org, a.project, a.items, author.id);
           for (const id of a.items) await assignEvidence(org, a.project, a.area, id, a.on, author);
-          line.n = a.items.length; line.project = names.get(a.project); line.area = a.area; line.on = a.on; projectsTouched = true; systemsTouched = true; break;
+          line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.area = a.area; line.on = a.on; projectsTouched = true; systemsTouched = true; break;
         case "decide":
           await decideArea(org, a.project, a.area, { decision: a.decision, why: a.why }, author);
           line.project = names.get(a.project); line.area = a.area; line.text = a.decision; systemsTouched = true; break;
@@ -302,18 +321,18 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           const item = await addItem(org, { name: await nameFor(web), web, type: typeFromUrl(web), author: author.name, createdBy: author.id });
           if (a.project && item.id) { await fileItems(org, a.project, [item.id], author.id); line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
           if (item.id && taggerEnabled()) void startTagJob(org, item.id, author.id).catch(() => null);
-          (patch.added ??= []).push(item); line.name = item.name; break;
+          (patch.added ??= []).push(item); line.name = item.name; if (item.id) line.items = [item.id]; break;
         }
         case "note": {
           const r = await setItemNote(org, a.item, "note", a.text, ctx.user, true);
           if (!r) throw new HttpError(404, (await getErrors()).cardGone);
-          line.name = r.name; line.text = a.text; break;
+          line.name = r.name; line.text = a.text; line.items = [a.item]; break;
         }
-        case "comment": await addComment(org, { itemId: a.item, authorId: author.id, authorName: author.name.split("@")[0], body: a.text }); line.name = await itemName(a.item); line.text = a.text; break;
+        case "comment": await addComment(org, { itemId: a.item, authorId: author.id, authorName: author.name.split("@")[0], body: a.text }); line.name = await itemName(a.item); line.text = a.text; line.items = [a.item]; break;
         case "tag": {
           const r = await editUserTags(org, a.item, { add: a.add ?? undefined, remove: a.remove ?? undefined });
           if (!r) throw new HttpError(404, (await getErrors()).cardGone);
-          line.name = await itemName(a.item); line.text = a.add ?? a.remove ?? ""; break;
+          line.name = await itemName(a.item); line.text = a.add ?? a.remove ?? ""; line.items = [a.item]; break;
         }
         case "delete_items":
           for (const id of a.items) await deleteItem(org, id);
@@ -335,13 +354,16 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
   const locale = input.locale ?? DEFAULT_LOCALE;
   const text = input.text.trim().slice(0, 1000);
   const c = await context(ctx, input.scope);
+  const history = (Array.isArray(input.scope.history) ? input.scope.history : []).slice(-6)
+    .map((h) => ({ request: String(h.text ?? "").slice(0, 300), answer: String(h.say ?? "").slice(0, 300), did: Array.isArray(h.did) ? h.did.slice(0, 8).map(String) : [] }));
   const body = [
     `Where the person is (JSON): ${JSON.stringify(c.where)}`,
     `Areas: ${SYSTEM_AREAS.join(", ")}`,
     `Projects (JSON): ${JSON.stringify(c.projectsText)}`,
     `References (JSON, the open and the current board first): ${JSON.stringify(c.refs)}`,
+    history.length ? `Earlier exchanges of this conversation, oldest first (JSON): ${JSON.stringify(history)}` : "",
     `The person's request: ${JSON.stringify(text)}`,
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
     res = await llm({ model: SYSTEM_MODEL, system: `${PLAN_SYSTEM}\n\n${LANGUAGE[locale]}`, text: body, schema: PlanSchema, maxTokens: 6000, effort: "low" });

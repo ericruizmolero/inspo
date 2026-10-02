@@ -25,6 +25,9 @@ interface Props {
   imageOf: (item: InspoItem) => string | null;
   /** Switch to the board (Curar) */
   onOpenBoard: () => void;
+  /** Open this area from outside (the agent's "go to motion"); `n` makes the same area open again */
+  focusArea?: { area: SystemArea; n: number } | null;
+  onOpenChange?: (area: SystemArea | null) => void;
 }
 
 // ─── Reading the material ────────────────────────────────────────────────────
@@ -421,7 +424,7 @@ function spread(angles: number[], min: number): number[] {
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
-export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, onOpenChange }: Props) {
   const { t } = useT();
   const setSystem = onSystem;
   const [visuals, setVisuals] = useState<RefVisual[]>([]);
@@ -432,6 +435,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState<SystemArea | null>(null);
+  useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
+  useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   // Picking: the team chooses, on the ring, the references an area should be decided from
   const [picking, setPicking] = useState<Set<string> | null>(null);
   useEffect(() => { setPicking(null); }, [open]);
@@ -655,7 +660,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           const cls = `sysn-ref${picking ? " is-pickable" : ""}${picked ? " is-picked" : ""}${!picking && (hover || open) && !related ? " is-dim" : ""}${!picking && related && (open || hover === id) ? " is-lit" : ""}`;
           const toggle = () => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
           return (
-            <button key={id} type="button" className={cls} style={{ left: it.x, top: it.y }} title={it.item.name} aria-pressed={picking ? picked : undefined}
+            <button key={id} type="button" className={cls} style={{ left: it.x, top: it.y }} title={it.item.name} aria-pressed={picking ? picked : undefined} data-id={id}
               onClick={picking ? toggle : undefined} onMouseEnter={() => setHover(id)} onMouseLeave={() => setHover(null)}>
               <Thumb item={it.item} image={imageOf(it.item)} />
               <small>{it.item.name}</small>

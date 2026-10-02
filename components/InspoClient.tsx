@@ -23,7 +23,7 @@ import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
-import type { AgentAction, AgentDone, AgentPatch, AgentReply } from "@/lib/agent";
+import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "@/lib/agent";
 import ProjectChooser from "./ProjectChooser";
 import type { TriageProposal } from "@/lib/system";
 import { applySystemTriage } from "@/app/actions/system";
@@ -975,6 +975,19 @@ export default function InspoClient({
   // server plans and runs what is safe, and what it changed comes back as a patch the state applies.
   // Deleting comes back pending and waits for a yes here.
   const [agent, setAgent] = useState<{ text: string; busy: boolean; say?: string; done: AgentDone[]; pending: AgentAction[]; error?: string } | null>(null);
+  // The thread: the last exchanges go with each request, so "and put it in color too" means something
+  const agentLog = useRef<AgentTurn[]>([]);
+  const recentIds = useRef<string[]>([]);
+  // "This reference": the card the pointer was on last counts for a few seconds (clicking into the box
+  // moves the pointer away from it), read from the DOM so no card re-renders for it
+  const hovered = useRef<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    const over = (e: MouseEvent) => { const el = (e.target as HTMLElement | null)?.closest?.("[data-id].tile, [data-id].sysn-ref") as HTMLElement | null; if (el?.dataset.id) hovered.current = { id: el.dataset.id, at: Date.now() }; };
+    document.addEventListener("mouseover", over);
+    return () => document.removeEventListener("mouseover", over);
+  }, []);
+  const [openArea, setOpenArea] = useState<SystemArea | null>(null);
+  const [focusArea, setFocusArea] = useState<{ area: SystemArea; n: number } | null>(null);
   const applyAgentPatch = useCallback((patch: AgentPatch) => {
     if (patch.projects) setProjects(patch.projects);
     if (patch.links) setLinks(patch.links);
@@ -989,12 +1002,19 @@ export default function InspoClient({
       if (d.kind === "go" && d.go) {
         if (d.go.space) setSpace(d.go.space === "library" ? "all" : d.go.space);
         if (d.go.view) setProjectView(d.go.view);
+        if (d.go.area) { setProjectView("system"); setFocusArea((f) => ({ area: d.go!.area!, n: (f?.n ?? 0) + 1 })); }
       }
     }
   }, [setQuery, setSpace, setProjectView]);
   const askAgent = useCallback(async (text: string) => {
     setAgent({ text, busy: true, done: [], pending: [] });
-    const scope = { projectId: currentProject?.id ?? null, space, view: currentProject ? projectView : null, openItemId: panelItem?.id ?? null, visibleIds: filtered.slice(0, 200).map((i) => i.id).filter((x): x is string => !!x) };
+    const picked = [...document.querySelectorAll<HTMLElement>(".sysn-ref.is-picked[data-id]")].map((el) => el.dataset.id!).filter(Boolean);
+    const scope = {
+      projectId: currentProject?.id ?? null, space, view: currentProject ? projectView : null, area: currentProject && projectView === "system" ? openArea : null,
+      openItemId: panelItem?.id ?? null, hoverItemId: hovered.current && Date.now() - hovered.current.at < 12000 ? hovered.current.id : null, pickedIds: picked, recentIds: recentIds.current,
+      visibleIds: filtered.slice(0, 200).map((i) => i.id).filter((x): x is string => !!x),
+      history: agentLog.current.slice(-6),
+    };
     try {
       const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, scope }) });
       const json = await res.json().catch(() => ({})) as AgentReply & { error?: string };
@@ -1004,10 +1024,13 @@ export default function InspoClient({
       // A command leaves the box empty; a search keeps its words in it
       if (!json.done.some((d) => d.kind === "search")) setQuery("");
       setAgent({ text, busy: false, say: json.say, done: json.done, pending: json.pending });
+      const touched = json.done.flatMap((d) => d.items ?? []);
+      if (touched.length) recentIds.current = [...new Set(touched)].slice(0, 40);
+      agentLog.current = [...agentLog.current, { text, say: json.say, did: json.done.filter((d) => d.ok).map((d) => [d.kind, d.project, d.area, d.name, d.n].filter((x) => x !== undefined).join(" ")) }].slice(-6);
     } catch (e) {
       setAgent({ text, busy: false, done: [], pending: [], error: e instanceof Error ? e.message : String(e) });
     }
-  }, [currentProject, space, projectView, panelItem, filtered, applyAgentPatch, followAgent, setQuery]);
+  }, [currentProject, space, projectView, openArea, panelItem, filtered, applyAgentPatch, followAgent, setQuery]);
   const confirmAgent = useCallback(async () => {
     if (!agent?.pending.length) return;
     setAgent({ ...agent, busy: true });
@@ -1259,6 +1282,8 @@ export default function InspoClient({
             library={items}
             imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
             onOpenBoard={() => setProjectView("board")}
+            focusArea={focusArea}
+            onOpenChange={setOpenArea}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
@@ -1362,7 +1387,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose }: {
     const area = d.area ? areas[d.area] ?? d.area : "";
     switch (d.kind) {
       case "search": return did.search(d.text ?? "");
-      case "go": return did.go(d.project ?? (d.go?.space === "inbox" ? "Inbox" : d.go?.space === "library" ? t.sidebar.all : ""));
+      case "go": return did.go(d.go?.area ? `${areas[d.go.area] ?? d.go.area}${d.project ? ` (${d.project})` : ""}` : d.project ?? (d.go?.space === "inbox" ? "Inbox" : d.go?.space === "library" ? t.sidebar.all : ""));
       case "file": return did.file(d.n ?? 0, d.project ?? "", d.on !== false);
       case "assign": return did.assign(d.n ?? 0, area, d.on !== false);
       case "decide": return did.decide(area);

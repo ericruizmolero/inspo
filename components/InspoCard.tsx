@@ -380,6 +380,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     <div>
       <article
         className={`tile${canvas ? " tile--canvas" : ""}${proposal ? " tile--proposed" : ""}`}
+        data-id={item.id}
         onClick={() => { if (suppressClick.current) return; openInside(); }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
