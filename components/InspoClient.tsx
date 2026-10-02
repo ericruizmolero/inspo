@@ -1031,6 +1031,21 @@ export default function InspoClient({
       setAgent({ text, busy: false, done: [], pending: [], error: e instanceof Error ? e.message : String(e) });
     }
   }, [currentProject, space, projectView, openArea, panelItem, filtered, applyAgentPatch, followAgent, setQuery]);
+  // One line back: its undo actions run as a confirmed batch, and the line says so
+  const undoAgent = useCallback(async (i: number) => {
+    const line = agent?.done[i];
+    if (!agent || !line?.undo?.length || agent.busy) return;
+    setAgent({ ...agent, busy: true });
+    try {
+      const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: line.undo }) });
+      const json = await res.json().catch(() => ({})) as { done: AgentDone[]; patch: AgentPatch; error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      applyAgentPatch(json.patch);
+      setAgent({ ...agent, busy: false, done: agent.done.map((d, j) => (j === i ? { ...d, undo: undefined, undone: true } : d)) });
+    } catch (e) {
+      setAgent({ ...agent, busy: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }, [agent, applyAgentPatch]);
   const confirmAgent = useCallback(async () => {
     if (!agent?.pending.length) return;
     setAgent({ ...agent, busy: true });
@@ -1358,7 +1373,7 @@ export default function InspoClient({
               </p>
             )}
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
-              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} />
+              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onUndo={(i) => void undoAgent(i)} />
             )}
             <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
               vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy} />
@@ -1372,12 +1387,13 @@ export default function InspoClient({
 const EMPTY_AREAS: SystemArea[] = [];
 
 /** What the agent said and did, above the box; the pending steps wait here for a yes */
-function AgentCard({ agent, projects, onConfirm, onCancel, onClose }: {
-  agent: { text: string; busy: boolean; say?: string; done: AgentDone[]; pending: AgentAction[]; error?: string };
+function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
+  agent: { text: string; busy: boolean; say?: string; done: (AgentDone & { undone?: boolean })[]; pending: AgentAction[]; error?: string };
   projects: Project[];
   onConfirm: () => void;
   onCancel: () => void;
   onClose: () => void;
+  onUndo: (i: number) => void;
 }) {
   const { t } = useT();
   const areas = t.system.areas as Record<string, string>;
@@ -1427,8 +1443,11 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose }: {
       {agent.say && <p className="dock__agent-say">{agent.say}</p>}
       {agent.done.filter((d) => d.kind !== "guide").length > 0 && (
         <ul className="dock__agent-did">
-          {agent.done.filter((d) => d.kind !== "guide").map((d, i) => (
-            <li key={i} className={d.ok ? "" : "is-failed"}>{d.ok ? Icons.check : Icons.x} <span>{d.ok ? line(d) : d.error}{d.ok && d.kind === "decide" && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span></li>
+          {agent.done.map((d, i) => d.kind === "guide" ? null : (
+            <li key={i} className={`${d.ok ? "" : "is-failed"}${d.undone ? " is-undone" : ""}`}>{d.ok ? Icons.check : Icons.x}
+              <span>{d.ok ? line(d) : d.error}{d.ok && (d.kind === "decide" || d.kind === "organize") && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span>
+              {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
+            </li>
           ))}
         </ul>
       )}

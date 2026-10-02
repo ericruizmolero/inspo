@@ -6,7 +6,7 @@ import { llmEnabled } from "@/lib/llm";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors, getLocale } from "@/lib/i18n";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 // POST { text, scope } → the agent plans from the request and runs what is safe; deletions come back as `pending`.
 // POST { run: Action[] } → the person said yes: the pending actions run as they are.

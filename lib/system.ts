@@ -540,6 +540,18 @@ export async function assignEvidence(organizationId: string, projectId: string, 
   return getSystem(organizationId, projectId);
 }
 
+/** References that left the project leave its system too: their evidence goes from every area, in one pass. */
+export async function dropEvidence(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
+  const gone = new Set(itemIds);
+  const rows = await db.select().from(A).where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId)));
+  const now = new Date();
+  for (const r of rows) {
+    const evidence = Array.isArray(r.evidence) ? (r.evidence as SystemEvidence[]) : [];
+    const kept = evidence.filter((e) => !gone.has(e.itemId));
+    if (kept.length !== evidence.length) await db.update(A).set({ evidence: kept, updatedAt: now }).where(and(eq(A.projectId, projectId), eq(A.area, r.area)));
+  }
+}
+
 // ─── Organising the Inbox ────────────────────────────────────────────────────────────────────────
 // Two hundred bookmarks saved from X, nothing filed: the model reads each one and says which project
 // it serves and which areas of that project's system it speaks to. The team reviews the list and
@@ -577,23 +589,26 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
   const pcodes = new Map(projects.map((p, i) => [`p${i + 1}`, p.id]));
   const projectsText = projects.map((p, i) => ({ id: `p${i + 1}`, name: p.name, brief: briefForModel(p.polish?.brief), system: systems[p.id]?.summary || undefined,
     decided: systems[p.id]?.areas.filter((a) => a.decision).map((a) => ({ area: a.area, decision: a.decision })) }));
-  const out: TriageProposal[] = [];
-  for (let b = 0; b < rows.length; b += TRIAGE_BATCH) {
-    const batch = rows.slice(b, b + TRIAGE_BATCH);
+  // The batches run at once: a batch takes one to three minutes, the inbox has several
+  const batches: typeof rows[] = [];
+  for (let b = 0; b < rows.length; b += TRIAGE_BATCH) batches.push(rows.slice(b, b + TRIAGE_BATCH));
+  const results = await Promise.all(batches.map(async (batch) => {
     const codes = new Map(batch.map(({ row }, i) => [`r${i + 1}`, row.id]));
     const refs = batch.map(({ row }, i) => ({ id: `r${i + 1}`, kind: mediaKindOf(row.web), ...summarize(rowToItem(row), row.tagsJson ?? undefined) }));
     const text = `Projects (JSON): ${JSON.stringify(projectsText)}\n\nUnfiled references (JSON): ${JSON.stringify(refs)}`;
     const res = await llm({ model: SYSTEM_MODEL, system: `${TRIAGE_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: TriageSchema, maxTokens: 16000, effort: "low" });
     void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `inbox triage ${batch.length}` });
     const parsed = TriageSchema.parse(JSON.parse(res.text));
+    const out: TriageProposal[] = [];
     for (const it of parsed.items) {
       const itemId = codes.get(it.id);
       if (!itemId) continue;
       out.push({ itemId, projectId: it.project ? pcodes.get(it.project) ?? null : null, areas: [...new Set(it.areas)], reason: it.reason.trim().slice(0, 160) });
     }
-    console.log(`triage ${org}: ${batch.length} refs → ${parsed.items.filter((i) => i.project).length} filed, ${res.usage.input}+${res.usage.output} tokens, ${res.costUsd ?? "?"} USD`);
-  }
-  return out;
+    console.log(`triage ${org}: ${batch.length} refs → ${parsed.items.filter((i) => i.project).length} filed, ${res.usage.input}+${res.usage.output} tokens, ${res.costUsd ?? "?"} USD, ${res.ms} ms`);
+    return out;
+  }));
+  return results.flat();
 }
 
 /** The team said yes: file each reference in its project and hang it from its areas. */

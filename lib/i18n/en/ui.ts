@@ -518,6 +518,8 @@ export const ui = {
     dismiss: "Close",
     open: "Open",
     pendingTitle: (n: number): string => (n === 1 ? "One step needs your yes" : `${n} steps need your yes`),
+    undo: "Undo",
+    undone: "Undone",
     did: {
       search: (text: string): string => `Searching \u00ab${text}\u00bb`,
       go: (where: string): string => `Going to ${where}`,

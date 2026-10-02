@@ -6,7 +6,7 @@ import { llmEnabled } from "@/lib/llm";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors, getLocale } from "@/lib/i18n";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 // POST { itemIds? } → for each unfiled reference (or the ones given), the project and areas it belongs to.
 // A proposal only: applying it goes through the applySystemTriage action.

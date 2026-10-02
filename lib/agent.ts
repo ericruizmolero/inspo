@@ -21,7 +21,7 @@ import { saveBrief } from "./polish";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
 import { taggerEnabled } from "./tagger";
-import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, runSystem, curateArea, triageInbox, applyTriage } from "./system";
+import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 
@@ -118,6 +118,8 @@ export interface AgentDone {
   text?: string;
   /** The references it touched, so the next request can say "it" */
   items?: string[];
+  /** The actions that take this one back, when it has them (filing, hanging, organising) */
+  undo?: AgentAction[];
   /** For file and assign: in (true) or out (false) */
   on?: boolean;
   topic?: z.infer<typeof Topic>;
@@ -285,12 +287,17 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           line.go = { space, view: a.view, area: a.area }; if (space && names.has(space)) line.project = names.get(space); break;
         }
         case "file":
-          if (a.on) await fileItems(org, a.project, a.items, author.id); else await unfileItems(org, a.project, a.items);
-          line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.on = a.on; projectsTouched = true; systemsTouched = true; break;
+          if (a.on) await fileItems(org, a.project, a.items, author.id);
+          else { await unfileItems(org, a.project, a.items); await dropEvidence(org, a.project, a.items); }
+          line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.on = a.on; projectsTouched = true; systemsTouched = true;
+          if (a.on) line.undo = [{ kind: "file", items: a.items, project: a.project, on: false }];
+          break;
         case "assign":
           if (a.on) await fileItems(org, a.project, a.items, author.id);
           for (const id of a.items) await assignEvidence(org, a.project, a.area, id, a.on, author);
-          line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.area = a.area; line.on = a.on; projectsTouched = true; systemsTouched = true; break;
+          line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.area = a.area; line.on = a.on; projectsTouched = true; systemsTouched = true;
+          line.undo = [{ kind: "assign", items: a.items, project: a.project, area: a.area, on: !a.on }];
+          break;
         case "decide":
           await decideArea(org, a.project, a.area, { decision: a.decision, why: a.why }, author);
           line.project = names.get(a.project); line.area = a.area; line.text = a.decision; systemsTouched = true; break;
@@ -305,7 +312,13 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           const proposals = await triageInbox({ organizationId: org, itemIds: a.items ?? undefined, usage, locale });
           const picks = proposals.filter((p): p is typeof p & { projectId: string } => !!p.projectId);
           const r = await applyTriage(org, picks, author);
-          line.n = r.filed; projectsTouched = true; systemsTouched = true; break;
+          line.n = r.filed; line.items = picks.map((p) => p.itemId); projectsTouched = true; systemsTouched = true;
+          // Taking it back: each project gives its references back to the inbox (and its areas drop them)
+          const byProject = new Map<string, string[]>();
+          for (const p of picks) byProject.set(p.projectId, [...(byProject.get(p.projectId) ?? []), p.itemId]);
+          line.undo = [...byProject].map(([project, items]) => ({ kind: "file", items, project, on: false }));
+          line.text = [...byProject].map(([project, items]) => `${names.get(project) ?? project}: ${items.length}`).join(" · ");
+          break;
         }
         case "create_project": {
           const p = await createProject(org, a.name.trim().slice(0, 60), author.id);

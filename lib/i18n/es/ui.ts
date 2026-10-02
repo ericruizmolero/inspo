@@ -516,6 +516,8 @@ export const ui: typeof EnUi = {
     dismiss: "Cerrar",
     open: "Abrir",
     pendingTitle: (n: number): string => (n === 1 ? "Un paso necesita tu s\u00ed" : `${n} pasos necesitan tu s\u00ed`),
+    undo: "Deshacer",
+    undone: "Deshecho",
     did: {
       search: (text: string): string => `Buscando \u00ab${text}\u00bb`,
       go: (where: string): string => `Voy a ${where}`,

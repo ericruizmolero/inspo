@@ -3156,3 +3156,7 @@ button.postit__num { cursor: pointer; }
 .dock__agent .btn { height: 30px; font-size: 12.5px; }
 .dock__agent .btn--ghost { color: var(--dock-ink-2); } .dock__agent .btn--ghost:hover { color: var(--dock-ink); background: var(--dock-hover); }
 .dock__agent .btn--primary { background: var(--dock-ink); color: #111110; border-color: transparent; }
+.dock__agent-did li.is-undone > span { text-decoration: line-through; color: var(--dock-muted); }
+.dock__agent-undo { margin-left: auto; flex: none; height: 22px; padding: 0 8px; border: 0; border-radius: 7px; background: var(--dock-fill); color: var(--dock-ink); font: inherit; font-size: 11.5px; cursor: pointer; }
+.dock__agent-undo:hover:not(:disabled) { background: var(--dock-chip); }
+.dock__agent-undone { margin-left: auto; flex: none; font-size: 11.5px; color: var(--dock-muted); }
