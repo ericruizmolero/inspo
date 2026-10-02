@@ -91,11 +91,18 @@ export default function Canvas({
   // With every card mounted, a moving camera only matters to React when the copy must get smaller (the
   // level goes down at once); the rest waits for it to rest. The zoom % is written straight to the button.
   const pctRef = useRef<HTMLButtonElement>(null);
+  const fitLabelRef = useRef(t.canvas.fit);
+  fitLabelRef.current = t.canvas.fit;
   const levelRef = useRef<ShotLevel>("tile");
   const mountAllRef = useRef(true);
   const camera = useCanvasCamera(viewportRef, worldRef, {
     onView: (v) => {
-      if (pctRef.current) pctRef.current.textContent = `${Math.round(v.z * 100)}%`;
+      if (pctRef.current) {
+        const pct = `${Math.round(v.z * 100)}%`;
+        pctRef.current.textContent = pct;
+        // The name says what the button does, and keeps the number it shows
+        pctRef.current.setAttribute("aria-label", `${pct} · ${fitLabelRef.current}`);
+      }
       const smaller = LEVELS.indexOf(nextLevel(levelRef.current, v.z)) < LEVELS.indexOf(levelRef.current);
       setView((cur) => (!cur || v.resting || smaller || !mountAllRef.current ? v : cur));
     },

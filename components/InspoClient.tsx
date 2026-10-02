@@ -9,7 +9,8 @@ import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment,
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
 import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, type Filter } from "@/lib/search-query";
-import Sidebar, { Icons, type QuotaView, IslandPill } from "./Sidebar";
+import Sidebar, { Icons, type QuotaView } from "./Sidebar";
+import Island from "./Island";
 import SearchBar from "./SearchBar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
@@ -38,6 +39,9 @@ const loadItemPanel = () => import("./ItemPanel");
 const loadCommentsPanel = () => import("./CommentsPanel");
 const ItemPanel = dynamic(loadItemPanel, { ssr: false });
 const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
+// A video's or a post's own view, in the reference sheet's page card; only loaded when one opens
+const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
+const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const PolishModal = dynamic(() => import("./PolishModal"), { ssr: false });
 const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
@@ -97,14 +101,11 @@ const TAG_WATCH_MS = 5 * 60 * 1000;
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
 const RATIOS_KEY = "inspo:canvas-ratios";
-/** What floats over the canvas: the island (12 + 256 + 12), the bars on top, the zoom pill at the bottom */
-const ISLAND_W = 280;
+/** What floats over the canvas: the bars on top, the zoom pill at the bottom */
 const TOP_DESKTOP = 64;
 const TOP_MOBILE = 64;
 /** The search dock at the bottom, with the results line over it */
 const BOTTOM = 112;
-/** The side panel's width (CSS .ip): clamp(440px, 46vw, 820px) */
-const panelWidth = (vw: number) => Math.min(820, Math.max(440, vw * 0.46));
 
 function useWindowWidth() {
   const [w, setW] = useState(0);
@@ -140,7 +141,6 @@ export default function InspoClient({
   initialQuota = null,
   initialComments = {},
   initialDesignMdIndex = {},
-  initialSidebarOpen = true,
   initialPageShots = {},
 }: {
   items: InspoItem[];
@@ -160,8 +160,6 @@ export default function InspoClient({
   members?: { name: string; image: string | null }[];
   /** Can see the activity panel (/admin) */
   isAdmin?: boolean;
-  /** Saved sidebar state, read from the sidebar_state cookie on the server */
-  initialSidebarOpen?: boolean;
   /** Each site's stored full-page screenshot (lib/page-shots.ts): what the canvas draws */
   initialPageShots?: Record<string, PageShot>;
 }) {
@@ -496,8 +494,8 @@ export default function InspoClient({
     const t = setInterval(loadComments, 20000);
     return () => clearInterval(t);
   }, [panelItem, loadComments]);
-  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor) => {
-    const r = await postCommentAction(itemId, body, attachments, anchor);
+  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor, parentId?: string) => {
+    const r = await postCommentAction(itemId, body, attachments, anchor, parentId);
     if (!r.ok) throw new Error(r.error);
     setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), r.data] }));
   };
@@ -509,9 +507,12 @@ export default function InspoClient({
     // The panel keeps its own copy of the item, so its thread needs the new text too
     setPanelItem((cur) => (cur?.id === itemId ? { ...cur, ...patch } : cur));
   };
+  // A comment goes with its replies: when others answered it, ask first
   const deleteComment = async (itemId: string, id: string) => {
+    const replies = (commentMap[itemId] ?? []).filter((c) => c.parentId === id).length;
+    if (replies && !(await confirm({ title: t.comments.deleteThread, description: t.comments.deleteThreadHint(replies), action: t.common.delete, danger: true }))) return;
     const r = await removeComment(id).catch(() => null);
-    if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
+    if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id && c.parentId !== id) }));
   };
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
   // Index of DESIGN.md already generated: server + those finished this session
@@ -699,15 +700,9 @@ export default function InspoClient({
     window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
   }, []);
 
-  // The island (desktop): the sidebar floats over the canvas and folds away; SidebarProvider saves it in a cookie
-  const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
-  const setSidebarOpen = (open: boolean) => setCollapsed(!open);
-  // On a phone the same trigger opens the menu sheet, so it says so
+  // Desktop has no sidebar: the island in the top bar holds the projects and the workspace menu. A phone keeps
+  // the sidebar as a sheet behind the menu button.
   const isMobile = useIsMobile();
-  const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
-  // Desktop, island folded: the workspace pill sits in the top bar and says where you are
-  const island = !isMobile && collapsed;
-  const viewLabel = space === "inbox" ? t.projects.inbox : currentProject?.name ?? t.sidebar.all;
 
   // ─── Search ─────────────────────────────────────────────────────────────────
   // Three layers, each shown as soon as it is there (lib/search-query.ts):
@@ -797,15 +792,12 @@ export default function InspoClient({
     return out;
   }, [filtered, words, tagMap, t]);
 
-  // The sidebar's people are a shortcut to their chip
-  const people = useMemo(() => filters.filter((f) => f.kind === "person").map((f) => f.value), [filters]);
   const swatches = useMemo(() => Object.fromEntries(COLORS.map((c) => [c.key, c.description])), []);
 
-  // Everything under the workspace, shared by the island and the pill's menu
+  // Everything under the workspace, for the sidebar (the docked column and the phone sheet)
   const filtering = filters.length > 0 || words.length > 0;
   const navProps = {
-    quota, items, members, workspaceKind: workspace.kind,
-    people, onPerson: (name: string) => toggleFilter({ kind: "person", value: name }),
+    quota, items,
     isAll: space === "all" && !filtering,
     onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
     space, onSpace: setSpace, projects, links,
@@ -867,10 +859,10 @@ export default function InspoClient({
   const desktop = winW >= DESKTOP_MIN;
   const insets = useMemo(() => ({
     top: desktop ? TOP_DESKTOP : TOP_MOBILE,
-    left: desktop && !collapsed ? ISLAND_W : 0,
-    right: desktop && panelItem ? panelWidth(winW) : 0,
+    left: 0,
+    right: 0,
     bottom: BOTTOM,
-  }), [desktop, collapsed, panelItem, winW]);
+  }), [desktop]);
   const canvasRef = useRef<CanvasHandle | null>(null);
   // The camera frames the results again when the chips change or a slower layer answers, not on every key
   const fitKey = `${space}|${filters.map(filterKey).join(",")}|${near ? 1 : 0}|${jevScores ? 1 : 0}|${filtering ? filtered.length : -1}`;
@@ -884,16 +876,33 @@ export default function InspoClient({
   const gridActions = useRef<GridActions>(null!);
   gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, measure };
 
-  // The open reference: its page, its post-its and the rest of its thread
+  // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
+  // they were pinned; the column holds all of them with their replies
   const panelThread = panelItem?.id ? commentMap[panelItem.id] : undefined;
   const panelComments = panelThread ?? [];
-  // The same array while the thread doesn't change, so the post-its don't re-render on every key typed
-  const panelNotes = useMemo(() => (panelThread ?? []).filter((c) => c.anchor), [panelThread]);
+  // The same objects while the comments don't change, so the post-its don't re-render on every key typed
+  const { panelNotes, pins, repliesOf } = useMemo(() => {
+    const all = panelThread ?? [];
+    const notes = all.filter((c) => c.anchor && !c.parentId);
+    const pins: Record<string, number> = {};
+    [...notes].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).forEach((c, i) => { pins[c.id] = i + 1; });
+    // The map keeps the comments' own order: oldest first
+    const repliesOf: Record<string, InspoComment[]> = {};
+    for (const c of all) if (c.parentId) (repliesOf[c.parentId] ??= []).push(c);
+    return { panelNotes: notes, pins, repliesOf };
+  }, [panelThread]);
+  // A comment picked on one side shows on the other: the post-it on the page, the thread in the column.
+  // `n` changes on every pick, so picking the same one again still asks the column to open.
+  const [commentFocus, setCommentFocus] = useState<{ id: string; n: number } | null>(null);
+  const focusComment = useCallback((id: string) => setCommentFocus({ id, n: Date.now() }), []);
+  useEffect(() => { setCommentFocus(null); }, [panelItem?.id]);
   const canManage = workspace.role === "owner" || workspace.role === "admin";
   const panelPage = (() => {
     if (!panelItem) return null;
     const kind = mediaKindOf(panelItem.web);
-    if (kind === "video" || kind === "post") return null;
+    // A video or a post is its own page: it fills the page card, with no post-its
+    if (kind === "video") return <div className="ip-media"><VideoPlayer web={panelItem.web} title={panelItem.name} /></div>;
+    if (kind === "post") return <div className="ip-media"><PostView web={panelItem.web} onThumb={(thumb: string) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))} /></div>;
     const job = designMdJobs[panelItem.web];
     const src = kind === "image"
       ? thumbMap[panelItem.web] ?? panelItem.web
@@ -911,12 +920,17 @@ export default function InspoClient({
         canManage={canManage}
         onPin={(body, anchor) => postComment(panelItem.id!, body, [], anchor)}
         onDelete={(id) => deleteComment(panelItem.id!, id)}
+        pins={pins}
+        replies={repliesOf}
+        focusId={commentFocus?.id ?? null}
+        onFocus={focusComment}
+        onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
       />
     );
   })();
 
   return (
-    <SidebarProvider open={!collapsed} onOpenChange={setSidebarOpen} className="shell">
+    <SidebarProvider defaultOpen={false} className="shell">
       {confirmDialog}
       {panelItem && (
         <ItemPanel
@@ -929,22 +943,25 @@ export default function InspoClient({
           state={designMdJobs[panelItem.web]}
           canDesignMd={canAutoDesignMd(panelItem.web)}
           page={panelItem.id ? panelPage : null}
-          threadCount={panelComments.filter((c) => !c.anchor).length + (panelItem.note ? 1 : 0)}
-          thread={(hide) => panelItem.id ? (
+          thread={panelItem.id ? (
             <CommentsPanel
               variant="column"
               item={panelItem}
-              comments={panelComments.filter((c) => !c.anchor)}
+              comments={panelComments}
               user={user}
               canManage={canManage}
               memberImages={authorImages}
               memberNames={memberNames}
               image={null}
+              showMedia={false}
               onPost={(body, attachments) => postComment(panelItem.id!, body, attachments)}
               onDelete={(id) => deleteComment(panelItem.id!, id)}
               onPostThumb={(thumb) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))}
               onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
-              onClose={hide ?? closePanel}
+              onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
+              pins={pins}
+              focusId={commentFocus?.id ?? null}
+              onFocus={panelPage ? focusComment : undefined}
             />
           ) : null}
           onClose={closePanel}
@@ -1016,25 +1033,26 @@ export default function InspoClient({
         />
       )}
 
-      <Sidebar brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />} {...navProps} />
+      {isMobile && <Sidebar brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />} {...navProps} />}
 
-      <SidebarInset className={`content${panelItem ? " has-panel" : ""}`}>
+      <SidebarInset className="content">
         <header className="topbar">
           <span className="topbar__trigger">
-            <SidebarTrigger aria-label={triggerLabel} />
+            <SidebarTrigger aria-label={t.app.menu} />
           </span>
-          {island && (
-            <IslandPill
-              brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-                subtitle={<>{viewLabel} <span className="ws__count">{filtered.length}</span></>} />}
-              {...navProps}
-            />
-          )}
+          <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
+            items={items} links={links} projects={projects} space={space} onSpace={setSpace}
+            onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
+            onDirectory={() => setShowDirectory(true)} quota={quota} />
           <Logo size={28} className="topbar__logo" />
-          {currentProject && (
-            <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
-          )}
-          <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
+          {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
+          <div className="topbar__actions">
+            {currentProject && (
+              <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+            )}
+            {currentProject && <span className="topbar__actions-sep" aria-hidden />}
+            <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
+          </div>
         </header>
 
         {items.length === 0 ? (
@@ -1076,7 +1094,7 @@ export default function InspoClient({
               slots={slots}
               insets={insets}
               fitKey={fitKey}
-              focusKey={panelItem ? keyOf(panelItem) : null}
+              focusKey={null}
               handleRef={canvasRef}
               renderCard={(item, level) => (
                 <Card

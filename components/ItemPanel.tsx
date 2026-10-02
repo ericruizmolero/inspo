@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
 import type { InspoItem, InspoTags, TagStatus } from "@/types/inspo";
 import { FACETS, cleanTag, viewOf } from "@/lib/taxonomy";
@@ -25,6 +25,12 @@ const IcDoc = (
 );
 const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
+);
+const IcPlus = (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
+);
+const IcSpark = (
+  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden><path d="M8 2c.6 3.4 2.6 5.4 6 6-3.4.6-5.4 2.6-6 6-.6-3.4-2.6-5.4-6-6 3.4-.6 5.4-2.6 6-6z" /></svg>
 );
 const IcComment = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" /></svg>
@@ -300,84 +306,155 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 }
 
 // ─── Panel ────────────────────────────────────────────────────────────────────
-// Opens on the right for any reference while the canvas stays live on the left. The page comes first,
-// with the team's post-its on it; the DESIGN.md (spec, file, history) sits in the tabs beside it, and
-// the rest of the thread (the saver's note and plain replies) in a column that slides over the page.
+// A sheet over the canvas, which dims behind it; the island and the search dock stay where they are, above
+// it. The first view is a board of cards: the page with its post-its, its colours, the tags people added,
+// what the AI read (by facet) and the conversation. The DESIGN.md (spec, file, history) is in the tabs.
 type View = "page" | "spec" | "md" | "history";
 
-/** The item's tags, in one list like mymind: the page's colours as a bar, then every tag. A tag filters the
- *  library; its × removes it; the field at the end adds one. While the job runs, it says so. */
-function TagStrip({ tags, job, onTag, onEdit, onRetry }: {
-  tags?: InspoTags; job?: TagStatus;
-  onTag?: (sel: string) => void; onEdit?: (change: { add?: string; remove?: string }) => void; onRetry?: () => void;
-}) {
+// Where the last press landed, so the sheet grows out of the card that opened it. Read once when it opens;
+// a press older than a second (a link, the keyboard) leaves the sheet growing from its middle.
+let lastPress: { x: number; y: number; at: number } | null = null;
+if (typeof window !== "undefined") {
+  window.addEventListener("pointerdown", (e) => { lastPress = { x: e.clientX, y: e.clientY, at: Date.now() }; }, { capture: true, passive: true });
+}
+
+/** A facet's hue: each kind of tag the AI reads keeps its colour, pale, so the groups read apart at a glance */
+const FACET_HUE = { kind: 210, sections: 160, elements: 28, type: 268, layout: 330, traits: 190, keywords: 90 } as const;
+type FacetKey = keyof typeof FACET_HUE;
+/** The first groups shown before "Show all" */
+const AI_GROUPS_SHOWN = 3;
+
+/** The page's colours as swatches: hex, name and share. A swatch filters the library by its colour family */
+function ColoursCard({ tags, onTag }: { tags: InspoTags; onTag?: (sel: string) => void }) {
   const { t } = useT();
-  const [draft, setDraft] = useState("");
-  if (job === "pending" || job === "running") {
-    return <div className="ip-tags" role="status"><span className="chip ip-tags__gathering">{t.panel.tagsGathering}</span></div>;
-  }
-  if (job === "failed" && !tags) {
-    return (
-      <div className="ip-tags">
-        <span className="ip-tags__failed">{t.panel.tagsFailed}</span>
-        {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>{t.common.retry}</Button>}
-      </div>
-    );
-  }
   const v = viewOf(tags);
-  if (!tags || !v) return null;
-  const labels: Record<string, Record<string, string>> = { sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
-  // `sel` filters, `drop` removes: the same for facets and keywords; a trait filters bare and is removed as "t:"
-  const chips = [
-    // Who made it comes first: it is what the item says about itself, not what the AI saw
-    ...v.credits.map((k) => ({ sel: `a:${k}`, drop: `a:${k}`, label: t.panel.byCredit(k) })),
-    ...FACETS.filter((f) => f.field !== "palette").flatMap((f) => v[f.field].map((k) => ({ sel: `${f.prefix}:${k}`, drop: `${f.prefix}:${k}`, label: labels[f.field][k] ?? k }))),
-    ...v.traits.map((k) => ({ sel: k, drop: `t:${k}`, label: t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k })),
-    ...v.keywords.map((k) => ({ sel: `k:${k}`, drop: `k:${k}`, label: k })),
-  ];
-  // A trait and an element can share a word (photography, illustration): one pill is enough
-  const shown = new Set<string>();
-  const unique = chips.filter((c) => !shown.has(c.label.toLowerCase()) && !!shown.add(c.label.toLowerCase()));
-  const colors = (tags.colors ?? []).filter((c) => v.palette.includes(c.family));
-  const add = () => { const tag = cleanTag(draft); if (tag) onEdit?.({ add: tag }); setDraft(""); };
+  const colors = (tags.colors ?? []).filter((c) => !v || v.palette.includes(c.family));
+  if (!colors.length) return null;
   return (
-    <div className="ip-tags">
-      {colors.length > 0 && (
-        <span className="ip-tags__palette" role="group" aria-label={t.sidebar.colors}>
-          {colors.map((c) => {
-            const name = `${t.taxonomy.color[c.family as keyof typeof t.taxonomy.color] ?? c.family} · ${c.hex}`;
-            return (
-              <button key={c.family} type="button" className="ip-tags__color" style={{ background: c.hex, flexGrow: c.share }}
-                title={name} aria-label={name} onClick={() => onTag?.(`c:${c.family}`)} />
-            );
-          })}
-        </span>
-      )}
-      {unique.map((c) => (
-        <span key={c.drop} className="chip ip-tags__chip">
-          <button type="button" className="ip-tags__label" onClick={() => onTag?.(c.sel)}>{c.label}</button>
-          {onEdit && (
-            <button type="button" className="ip-tags__x" aria-label={t.panel.removeTag(c.label)} onClick={() => onEdit({ remove: c.drop })}>{IcX}</button>
-          )}
-        </span>
-      ))}
-      {onEdit && (
-        <input
-          className="ip-tags__add" value={draft} placeholder={`+ ${t.panel.addTag}`} aria-label={t.panel.addTag} maxLength={40}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); add(); }
-            // Escape empties the field first; it reaches the panel (close) only when the field is empty
-            if (e.key === "Escape" && draft) { e.preventDefault(); e.stopPropagation(); setDraft(""); }
-          }}
-          onBlur={add}
-        />
-      )}
-    </div>
+    <section className="ip-card ip-card--colours" aria-label={t.panel.colours}>
+      <h3 className="ip-card__title">{t.panel.colours}<span className="ip-card__aside">{t.panel.fromPage(colors.length)}</span></h3>
+      <div className="ip-swatches">
+        {colors.map((c) => {
+          const name = t.taxonomy.color[c.family as keyof typeof t.taxonomy.color] ?? c.family;
+          return (
+            <button key={c.family} type="button" className="ip-swatch" onClick={() => onTag?.(`c:${c.family}`)} title={`${name} · ${c.hex}`}>
+              <i style={{ background: c.hex }} aria-hidden />
+              <span className="ip-swatch__hex">{c.hex}</span>
+              <span>{name} · {Math.round(c.share * 100)}%</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
 
-export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRetryTags, state, canDesignMd, page, thread, threadCount, onClose, onGenerate, onRegenerate, onRevised, libraryName }: {
+/** The tags people added: the only ones with a ×. The field to add one comes first, so it is always in reach */
+function YourTagsCard({ tags, onTag, onEdit }: { tags?: InspoTags; onTag?: (sel: string) => void; onEdit?: (change: { add?: string; remove?: string }) => void }) {
+  const { t } = useT();
+  const [draft, setDraft] = useState("");
+  const added = tags?.user?.added ?? [];
+  const add = () => { const tag = cleanTag(draft); if (tag) onEdit?.({ add: tag }); setDraft(""); };
+  return (
+    <section className="ip-card ip-card--yours" aria-label={t.panel.yourTags}>
+      <h3 className="ip-card__title">{t.panel.yourTags}<em>· {t.panel.editable}</em></h3>
+      <div className="ip-yours">
+        {onEdit && (
+          <label className="ip-yours__add">
+            {IcPlus}
+            <input
+              value={draft} placeholder={t.panel.addTag} aria-label={t.panel.addTag} maxLength={40}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") { e.preventDefault(); add(); }
+                // Escape empties the field first; it reaches the panel (close) only when the field is empty
+                if (e.key === "Escape" && draft) { e.preventDefault(); e.stopPropagation(); setDraft(""); }
+              }}
+              onBlur={add}
+            />
+          </label>
+        )}
+        {added.map((k) => (
+          <span key={k} className="ip-yours__tag">
+            <button type="button" className="ip-yours__label" onClick={() => onTag?.(`k:${k}`)}>{k}</button>
+            {onEdit && <button type="button" className="ip-yours__x" aria-label={t.panel.removeTag(k)} onClick={() => onEdit({ remove: `k:${k}` })}>{IcX}</button>}
+          </span>
+        ))}
+      </div>
+      {!added.length && <p className="ip-card__note">{t.panel.yourTagsEmpty}</p>}
+    </section>
+  );
+}
+
+/** What the AI read in the page, by facet, each with its hue. Read-only: a tag filters the library. The first
+ *  groups show, the rest fold under "Show all". While the job runs, or after it failed, it says so. */
+function AiTagsCard({ tags, job, onTag, onRetry }: { tags?: InspoTags; job?: TagStatus; onTag?: (sel: string) => void; onRetry?: () => void }) {
+  const { t } = useT();
+  const [all, setAll] = useState(false);
+  const head = (
+    <h3 className="ip-card__title">
+      {t.panel.seenByAi}<span className="ip-ai-badge">{IcSpark}AI</span>
+      {tags && <span className="ip-card__aside">{t.panel.toFilter}</span>}
+    </h3>
+  );
+  if (job === "pending" || job === "running" || (!tags && job !== "failed")) {
+    return <section className="ip-card ip-card--ai">{head}<p className="ip-card__note" role="status">{t.panel.tagsGathering}</p></section>;
+  }
+  if (!tags) {
+    return (
+      <section className="ip-card ip-card--ai">{head}
+        <p className="ip-card__note">{t.panel.tagsFailed}</p>
+        {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>{t.common.retry}</Button>}
+      </section>
+    );
+  }
+  const v = viewOf(tags);
+  if (!v) return null;
+  const mine = new Set(tags.user?.added ?? []);
+  const label = (field: string, k: string) => {
+    const maps: Record<string, Record<string, string>> = { sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
+    return maps[field]?.[k] ?? k;
+  };
+  // Each chip filters by its selector; the kind (sector, style) only describes, so it is not a button
+  const groups: { key: FacetKey; chips: { sel?: string; label: string }[] }[] = [
+    { key: "kind" as const, chips: [
+      ...v.credits.map((k) => ({ sel: `a:${k}`, label: t.panel.byCredit(k) })),
+      ...(tags.sector ? [{ label: t.taxonomy.sector[tags.sector as keyof typeof t.taxonomy.sector] ?? tags.sector }] : []),
+      ...(tags.style ? [{ label: t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style }] : []),
+    ] },
+    ...FACETS.filter((f) => f.field !== "palette").map((f) => ({
+      key: f.field as FacetKey, chips: v[f.field].map((k) => ({ sel: `${f.prefix}:${k}`, label: label(f.field, k) })),
+    })),
+    { key: "traits" as const, chips: v.traits.map((k) => ({ sel: k, label: t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k })) },
+    // The AI's own keywords; the ones somebody added live in "Your tags"
+    { key: "keywords" as const, chips: v.keywords.filter((k) => !mine.has(k)).map((k) => ({ sel: `k:${k}`, label: k })) },
+  ].filter((g) => g.chips.length);
+  const shown = all ? groups : groups.slice(0, AI_GROUPS_SHOWN);
+  return (
+    <section className="ip-card ip-card--ai" aria-label={t.panel.seenByAi}>
+      {head}
+      <div className="ip-facets">
+        {shown.map((g) => (
+          <div key={g.key} className="ip-facet" style={{ "--h": FACET_HUE[g.key] } as React.CSSProperties}>
+            <span className="ip-facet__name">{t.panel.facets[g.key]}</span>
+            <div className="ip-facet__tags">
+              {g.chips.map((c) => c.sel
+                ? <button key={c.sel} type="button" className="ip-facet__tag" onClick={() => onTag?.(c.sel!)}>{c.label}</button>
+                : <span key={c.label} className="ip-facet__tag is-static">{c.label}</span>)}
+            </div>
+          </div>
+        ))}
+      </div>
+      {groups.length > AI_GROUPS_SHOWN && (
+        <button type="button" className="ip-card__more" aria-expanded={all} onClick={() => setAll((a) => !a)}>
+          {all ? t.panel.showLess : t.panel.showAll}
+        </button>
+      )}
+    </section>
+  );
+}
+
+export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRetryTags, state, canDesignMd, page, thread, onClose, onGenerate, onRegenerate, onRevised, libraryName }: {
   item: InspoItem;
   /** The item's AI tags, once it has them */
   tags?: InspoTags;
@@ -393,11 +470,10 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
   state: DesignMdState | undefined;
   /** A site that can have a DESIGN.md (not an image, a video or a post) */
   canDesignMd: boolean;
-  /** The page with its post-its (PageNotes); null for videos and posts, whose thread is the panel */
+  /** The page with its post-its (PageNotes), or the video or post itself */
   page: ReactNode | null;
-  /** The thread column; `hide` closes it */
-  thread: (hide: (() => void) | null) => ReactNode;
-  threadCount: number;
+  /** The conversation: the note, the comments and their replies */
+  thread: ReactNode;
   onClose: () => void;
   onGenerate: () => void;
   onRegenerate: () => void;
@@ -408,7 +484,6 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
   const { locale, t } = useT();
   const [copied, copy] = useCopy(1600);
   const [view, setView] = useState<View>("page");
-  const [threadOpen, setThreadOpen] = useState(false);
   const [reverting, setReverting] = useState(false);
   const url = item.web;
 
@@ -444,16 +519,14 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
     } finally { setReverting(false); }
   };
 
-  // Escape folds the thread first, then closes the panel. A note being written eats its own Escape.
+  // Escape closes the sheet. A note being written eats its own Escape.
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
-  const threadOpenRef = useRef(threadOpen);
-  threadOpenRef.current = threadOpen;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape" || e.defaultPrevented) return;
       if (document.querySelector(".cm-lightbox, [role=dialog][data-open], .modal-backdrop")) return;
-      if (threadOpenRef.current) setThreadOpen(false); else closeRef.current();
+      closeRef.current();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -469,17 +542,30 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
     URL.revokeObjectURL(a.href);
   };
 
-  // Closed by a click it slides back out to its edge, the way it came in. Escape (a key) closes at once.
+  // Opened from a card, the sheet grows out of that point: the origin goes on the sheet before its first paint
   const asideRef = useRef<HTMLElement>(null);
+  const dimRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = asideRef.current;
+    if (!el || !lastPress || Date.now() - lastPress.at > 1000) return;
+    const r = el.getBoundingClientRect();
+    el.style.transformOrigin = `${lastPress.x - r.left}px ${lastPress.y - r.top}px`;
+  }, []);
+
+  // Closed by a click it goes back into where it came from, quicker than it came, and the dim lifts with it.
+  // With reduced motion only the fade stays. Escape (a key) closes at once.
   const leaving = useRef(false);
   const leave = () => {
     const el = asideRef.current;
     if (leaving.current) return;
-    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { onClose(); return; }
+    if (!el) { onClose(); return; }
     leaving.current = true;
-    el.animate([{ transform: "none", opacity: 1 }, { transform: "translateX(32px)", opacity: 0 }], {
-      duration: 200, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards",
-    }).finished.then(onClose, onClose);
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timing = { duration: 150, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" as const };
+    dimRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], timing);
+    el.animate(still
+      ? [{ opacity: 1 }, { opacity: 0 }]
+      : [{ transform: "none", opacity: 1 }, { transform: "scale(0.96)", opacity: 0 }], timing).finished.then(onClose, onClose);
   };
 
   const date = entry ? fmtDate(entry.generatedAt, locale, { day: "2-digit", month: "short", year: "numeric" }) : "";
@@ -487,7 +573,7 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
   const [iconOk, setIconOk] = useState(true);
   const isSite = canDesignMd;
   // Another reference in the same panel: it stays put (no slide in again) and starts on its page
-  useEffect(() => { setView("page"); setThreadOpen(false); setIconOk(true); }, [url]);
+  useEffect(() => { setView("page"); setIconOk(true); }, [url]);
 
   // What the DESIGN.md tabs show before there is one
   const notReady = loading ? (
@@ -503,62 +589,40 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
   );
 
   return (
-    <aside ref={asideRef} className="ip" role="dialog" aria-label={item.name}>
-      <header className="ip-bar">
-        <Button variant="icon" className="dm-bar__close" onClick={leave} aria-label={t.common.close}>{IcX}</Button>
-        <div className="dm-bar__id">
-          <span className="dm-bar__icon" aria-hidden>
-            {iconOk && isSite && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
-            {(!iconOk || !isSite) && <span>{(spec?.brand ?? item.name).slice(0, 1).toUpperCase()}</span>}
-          </span>
-          <div className="dm-bar__title">
-            <span className="display dm-bar__brand">{spec?.brand ?? item.name}</span>
-            <Breadcrumb className="dm-bar__meta" aria-label={t.settings.breadcrumb}>
-              <BreadcrumbList>
-                {libraryName && (
-                  <>
-                    <BreadcrumbItem><button type="button" className="dm-bar__crumb" onClick={leave}>{libraryName}</button></BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                  </>
-                )}
-                <BreadcrumbItem><a href={url} target="_blank" rel="noopener noreferrer">{isSite ? host : t.card.openImage}</a></BreadcrumbItem>
-                {ready && (
-                  <>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      <button type="button" className="dm-bar__file" onClick={download} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
-                    </BreadcrumbItem>
-                  </>
-                )}
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </div>
-        {page && (
-          <Button
-            variant="ghost" size="sm"
-            className={`dm-bar__comments ip-bar__thread${threadOpen ? " is-active" : ""}`}
-            onClick={() => setThreadOpen((o) => !o)}
-            aria-pressed={threadOpen}
-            title={threadOpen ? t.designMd.hideComments : t.designMd.showComments}
-          >
-            {IcComment}<span className="dm-bar__comments-label">{t.panel.thread}</span><span className="dm-tab__count">{threadCount}</span>
-          </Button>
-        )}
-      </header>
-
-      <TagStrip tags={tags} job={tagJob} onTag={onTag} onEdit={onEditTags} onRetry={onRetryTags} />
-
-      {isSite && (
-        <div className="ip-tabs">
-          <div className="dm-tabs" role="tablist">
-            {tab("page", t.panel.tabPage)}
-            {tab("spec", <>{t.designMd.tabSpec}{loading && <span className="spinner spinner--sm ip-tabs__spin" />}</>)}
-            {tab("md", t.designMd.tabMarkdown)}
-            {tab("history", <>{t.designMd.tabHistory}{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}</>)}
+    <div className="ip-layer">
+      <div ref={dimRef} className="ip-dim" onClick={leave} aria-hidden />
+      <aside ref={asideRef} className="ip" role="dialog" aria-modal="true" aria-label={item.name}>
+        <header className="ip-bar">
+          <div className="dm-bar__id">
+            <span className="dm-bar__icon" aria-hidden>
+              {iconOk && isSite && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
+              {(!iconOk || !isSite) && <span>{(spec?.brand ?? item.name).slice(0, 1).toUpperCase()}</span>}
+            </span>
+            <div className="dm-bar__title">
+              <span className="display dm-bar__brand">{spec?.brand ?? item.name}</span>
+              <Breadcrumb className="dm-bar__meta" aria-label={t.settings.breadcrumb}>
+                <BreadcrumbList>
+                  {libraryName && (
+                    <>
+                      <BreadcrumbItem><button type="button" className="dm-bar__crumb" onClick={leave}>{libraryName}</button></BreadcrumbItem>
+                      <BreadcrumbSeparator />
+                    </>
+                  )}
+                  <BreadcrumbItem><a href={url} target="_blank" rel="noopener noreferrer">{isSite ? host : t.card.openImage}</a></BreadcrumbItem>
+                  {ready && (
+                    <>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <button type="button" className="dm-bar__file" onClick={download} title={t.designMd.downloadFile}>{IcDoc}DESIGN.md</button>
+                      </BreadcrumbItem>
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
           </div>
           {view !== "page" && ready && (
-            <div className="ip-tabs__actions">
+            <div className="ip-bar__actions">
               <Button variant="ghost" size="sm" onClick={onRegenerate}>{t.designMd.regenerate}</Button>
               <Button variant="ghost" size="sm" onClick={download}>{t.designMd.download}</Button>
               <Button variant="primary" size="sm" onClick={() => copy(markdown)}>
@@ -566,38 +630,53 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
               </Button>
             </div>
           )}
-        </div>
-      )}
-
-      <div className="ip-body">
-        {!page ? (
-          <div className="ip-thread is-full">{thread(null)}</div>
-        ) : view === "page" ? (
-          <div className="ip-page">{page}</div>
-        ) : !ready || !entry ? (
-          notReady
-        ) : view === "history" ? (
-          <div className="ip-scroll">
-            {revisions.length
-              ? <History revisions={revisions} onRevert={revert} busy={reverting} />
-              : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>}
-          </div>
-        ) : view === "spec" && spec ? (
-          <div className="ip-scroll"><SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} /></div>
-        ) : (
-          <div className="ip-scroll">
-            <div className="dm-md">
-              <div className="dm-md__head">
-                <span>{item.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
-                <span>{t.designMd.words(markdown.split(/\s+/).length)} · {date}</span>
-              </div>
-              <pre className="dm-md__pre">{markdown}</pre>
+          {isSite && (
+            <div className="dm-tabs ip-bar__tabs" role="tablist">
+              {tab("page", t.panel.tabPage)}
+              {tab("spec", <>{t.designMd.tabSpec}{loading && <span className="spinner spinner--sm ip-tabs__spin" />}</>)}
+              {tab("md", t.designMd.tabMarkdown)}
+              {tab("history", <>{t.designMd.tabHistory}{revisions.length > 0 && <span className="dm-tab__count">{revisions.length}</span>}</>)}
             </div>
+          )}
+          <Button variant="icon" className="ip-bar__close" onClick={leave} aria-label={t.common.close}>{IcX}</Button>
+        </header>
+
+        {view === "page" ? (
+          // The board: the page down the left, what it is in the middle, the conversation on the right
+          <div className="ip-bento">
+            <section className="ip-card ip-card--page" aria-label={t.panel.tabPage}>{page}</section>
+            {tags && <ColoursCard tags={tags} onTag={onTag} />}
+            <YourTagsCard tags={tags} onTag={onTag} onEdit={onEditTags} />
+            <AiTagsCard tags={tags} job={tagJob} onTag={onTag} onRetry={onRetryTags} />
+            <section className="ip-card ip-card--talk">{thread}</section>
+          </div>
+        ) : (
+          <div className="ip-body">
+            {!ready || !entry ? (
+              notReady
+            ) : view === "history" ? (
+              <div className="ip-scroll">
+                {revisions.length
+                  ? <History revisions={revisions} onRevert={revert} busy={reverting} />
+                  : <div className="dm-history dm-history--empty">{t.designMd.historyEmpty}</div>}
+              </div>
+            ) : view === "spec" && spec ? (
+              <div className="ip-scroll"><SpecPanel spec={spec} entry={entry} url={url} date={date} onRevise={revise} /></div>
+            ) : (
+              <div className="ip-scroll">
+                <div className="dm-md">
+                  <div className="dm-md__head">
+                    <span>{item.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-DESIGN.md</span>
+                    <span>{t.designMd.words(markdown.split(/\s+/).length)} · {date}</span>
+                  </div>
+                  <pre className="dm-md__pre">{markdown}</pre>
+                </div>
+              </div>
+            )}
           </div>
         )}
-        {page && threadOpen && <div className="ip-thread">{thread(() => setThreadOpen(false))}</div>}
-      </div>
-    </aside>
+      </aside>
+    </div>
   );
 }
 

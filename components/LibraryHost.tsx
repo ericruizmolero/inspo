@@ -31,12 +31,11 @@ function fetchLibrary(id: string): Promise<LibraryData | null> {
   return p;
 }
 
-export default function LibraryHost({ library, user, workspaces, aiEnabled, initialSidebarOpen }: {
+export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
   library: LibraryData;
   user: SessionUser;
   workspaces: Workspace[];
   aiEnabled: boolean;
-  initialSidebarOpen: boolean;
 }) {
   const [shown, setShown] = useState(library);
   // Bumped to remount the library when a stale copy is replaced by fresh data
@@ -101,7 +100,6 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled, init
         initialQuota={shown.initialQuota}
         initialComments={shown.initialComments}
         initialDesignMdIndex={shown.initialDesignMdIndex}
-        initialSidebarOpen={initialSidebarOpen}
         initialPageShots={shown.initialPageShots}
       />
     </WorkspaceSwitchContext.Provider>

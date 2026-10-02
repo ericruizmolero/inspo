@@ -6,6 +6,8 @@ import type { NextConfig } from "next";
 const CHROMIUM_BIN = ["./node_modules/@sparticuz/chromium/bin/**/*"];
 
 const nextConfig: NextConfig = {
+  // Development only: the bottom-left corner holds the zoom pill, so the indicator takes the free corner
+  devIndicators: { position: "bottom-right" },
   // Settings moved under /settings (22/09/2026). Old links, bookmarks and emails keep working;
   // the query passes through.
   async redirects() {

@@ -1,6 +1,5 @@
 import { getSession, getCtx } from "@/lib/workspace";
 import type { ReactNode } from "react";
-import { sidebarOpen } from "@/lib/sidebar-state";
 import { loadLibrary } from "@/lib/library";
 import LibraryHost from "@/components/LibraryHost";
 
@@ -10,8 +9,8 @@ import LibraryHost from "@/components/LibraryHost";
 export default async function LibraryLayout({ children }: { children: ReactNode }) {
   if (!(await getSession())) return children;
   const ctx = await getCtx();
-  // Everything the library needs on open, in parallel and before painting
-  const [library, open] = await Promise.all([loadLibrary(ctx.user, ctx.workspace), sidebarOpen()]);
+  // Everything the library needs on open, before painting
+  const library = await loadLibrary(ctx.user, ctx.workspace);
 
   return (
     <>
@@ -21,7 +20,6 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
         user={ctx.user}
         workspaces={ctx.workspaces}
         aiEnabled={!!process.env.TYPESAFE_API_KEY}
-        initialSidebarOpen={open}
       />
       {children}
     </>

@@ -321,7 +321,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    pill in the top bar. Nothing under it moves: the canvas is never laid out again. */
 .shell { height: 100svh; min-height: 0; overflow: hidden; }
 @media (min-width: 801px) {
-  .shell [data-slot="sidebar-gap"] { display: none; }
+  .shell:not(.shell--docked) [data-slot="sidebar-gap"] { display: none; }
   .app-sidebar {
     top: 12px; bottom: 12px; left: 12px; height: auto; z-index: 40;
     transition: transform 280ms var(--ease-drawer), opacity 200ms var(--ease-out);
@@ -338,7 +338,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    nothing is laid out again while it slides */
 @media (min-width: 801px) {
   .topbar__trigger, .canvas-zoom { transition: transform 280ms var(--ease-drawer); }
-  .shell:has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .canvas-zoom) { transform: translateX(280px); }
+  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .canvas-zoom) { transform: translateX(280px); }
 }
 /* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
 :root[data-instant] :is(.app-sidebar, .topbar__trigger, .canvas-zoom) { transition: none; }
@@ -347,54 +347,120 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: none; }
   .topbar__trigger, .canvas-zoom { transition: none; }
 }
+/* Settings and the other sections keep the docked column: it takes its room and the page moves aside,
+   the page scrolls, and the top bar is a band of its own over it */
+.shell--docked { height: auto; overflow: visible; overflow-x: clip; }
+.shell--docked [data-slot="sidebar-gap"] { transition: none; }
+.shell--docked .content { height: auto; overflow: visible; }
+.shell--docked .topbar {
+  position: sticky; pointer-events: auto;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
 /* The workspace as a card at the top of the column */
 .app-sidebar__brand { display: flex; align-items: center; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
 .app-sidebar__brand .ws__trigger { padding: 4px 8px 4px 4px; border-radius: 9px; }
 .app-sidebar__brand .ws__trigger:hover { background: var(--surface-2); }
 .app-sidebar__add-row { padding: 8px 12px 4px; }
-.ws__count { color: var(--muted-2); font-variant-numeric: tabular-nums; }
-
-/* The pill, in the breadcrumb's place: the bar's own language (same height, radius and hairline as the
-   search box), no fill at rest, filled on hover or while the menu hangs open */
-.island { position: relative; display: flex; flex-direction: column; min-width: 0; animation: fade-in 0.3s ease-out both; }
-.island__pill { display: flex; align-items: center; height: 34px; max-width: 260px; border: 1px solid var(--border); border-radius: 10px; background: transparent; transition: background 0.15s, border-color 0.15s; }
-@media (hover: hover) { .island__pill:hover { background: var(--surface); } }
-.island.is-open .island__pill { background: var(--surface); border-color: var(--border-strong); }
-.island .ws { width: auto; min-width: 0; }
-.island .ws__trigger { height: 32px; padding: 0 6px 0 5px; gap: 8px; border-radius: 9px; }
-.island .ws__trigger:hover { background: transparent; }
-.island .ws__avatar { width: 20px; height: 20px; border-radius: 6px; font-size: 11px; }
-.island .ws__names { flex-direction: row; align-items: baseline; gap: 6px; }
-.island .ws__name { font-size: 13px; }
-.island .ws__kind { font-size: 12px; white-space: nowrap; }
-.island__chev {
-  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 24px; height: 24px; margin-right: 4px; border: 0; border-radius: 8px;
-  background: transparent; color: var(--muted); cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+/* ─── The island (components/Island.tsx) ─────────────────────────────────────
+   Desktop only. The projects as tabs in a white bar, the search dock's material (the same white in both
+   themes, its hairline and shadow): 44 tall like a touch target, 14 round to the dock's 56/18. The
+   workspace is its avatar at the start; the selected tab is the search's chip, ringed so it reads without
+   colour. Nothing moves on selection: people switch projects all day. Inner radius 9 = 14 - 5 (concentric).
+   Focus on the white surfaces is the dock's ink: the app's ring is pale on dark and vanishes here. */
+.island, .canvas-zoom, .island-pop { --focus-ring: var(--dock-ink); }
+.island {
+  position: relative; display: flex; align-items: center; min-width: 0; height: 44px; padding: 0 5px;
+  border-radius: 14px; background: var(--dock-surface); color: var(--dock-ink);
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
-.island__chev:hover { background: var(--surface-2); color: var(--text); }
-.island.is-open .island__chev { transform: rotate(180deg); }
-/* The menu: a card hanging under the pill, over the grid. It folds with grid rows, opacity and a touch of blur;
-   the padding keeps its shadow inside the clip. Only the card takes clicks. */
-.island__body {
-  position: absolute; top: calc(100% + 8px); left: 0; width: 280px; z-index: 30;
-  display: grid; grid-template-rows: 0fr; pointer-events: none;
-  transition: grid-template-rows 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+@media (max-width: 800px) { .island { display: none; } }
+.island__ws {
+  display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; height: 34px; padding: 0 2px 0 6px;
+  border: 0; border-radius: 9px; background: none; cursor: pointer; transition: background-color 150ms ease;
 }
-.island.is-open .island__body { grid-template-rows: 1fr; }
-.island__clip { min-height: 0; overflow: hidden; padding-bottom: 28px; }
-.island__card {
-  display: flex; flex-direction: column; max-height: calc(100svh - 110px); pointer-events: auto;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card);
-  opacity: 0; filter: blur(6px); transform: translateY(-8px);
-  transition: opacity 0.3s, filter 0.3s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+.island .ws__avatar { width: 22px; height: 22px; border-radius: 6px; font-size: 11px; background: var(--dock-fill); color: var(--dock-ink); }
+.island__chev { display: grid; place-items: center; width: 18px; color: var(--dock-muted); }
+.island__sep { flex-shrink: 0; width: 1px; height: 18px; margin: 0 6px 0 4px; background: var(--dock-line); }
+.island__tabs { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.island__tab {
+  display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; height: 34px; padding: 0 12px;
+  border: 0; border-radius: 9px; background: none; color: var(--dock-ink-2);
+  font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.island.is-open .island__card { opacity: 1; filter: blur(0); transform: none; }
-.island__card .app-sidebar__footer { border-radius: 0 0 12px 12px; }
+.island__tab.is-on { background: var(--dock-chip); color: var(--dock-ink); box-shadow: inset 0 0 0 1px var(--dock-muted); }
+@media (forced-colors: active) { .island__tab.is-on { outline: 2px solid Highlight; outline-offset: -2px; } }
+/* A long name stops at 200px; the tab's tooltip keeps it whole */
+.island__label { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.island__n { font-weight: 400; color: var(--dock-muted); font-variant-numeric: tabular-nums; }
+/* The selected project: one chip, two targets (go to it; its ⌄ renames or deletes it) */
+.island__tab--split { gap: 0; padding: 0; }
+.island__tab-main { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 4px 0 12px; border: 0; border-radius: 9px 0 0 9px; background: none; color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
+.island__tab-more { display: grid; place-items: center; width: 26px; height: 34px; padding: 0 2px 0 0; border: 0; border-radius: 0 9px 9px 0; background: none; color: var(--dock-muted); cursor: pointer; transition: color 150ms ease; }
+.island__tab--more { gap: 4px; padding-right: 8px; color: var(--dock-muted); }
+.island__tab--more svg, .island__tab-more svg { width: 12px; height: 12px; }
+.island__tab--add { padding: 0 10px; color: var(--dock-muted); }
+.island__tab--field { width: auto; cursor: text; background: var(--dock-surface); color: var(--dock-ink); box-shadow: inset 0 0 0 1px var(--dock-muted); outline: none; }
+.island__tab--field::placeholder { color: var(--dock-muted); }
+@media (hover: hover) and (pointer: fine) {
+  .island__ws:hover { background: var(--dock-hover); }
+  .island__ws:hover .island__chev, .island__tab-more:hover { color: var(--dock-ink); }
+  .island__tab:not(.is-on):not(.island__tab--field):hover { background: var(--dock-hover); color: var(--dock-ink); }
+}
+/* Every project tab at its own width, out of sight: Island.tsx reads it to decide how many fit */
+.island__measure { position: absolute; top: 0; left: 0; display: flex; gap: 2px; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+/* The workspace menu's extras: the plan sits inside the menu with its own padding */
+.island__plan { padding: 4px 2px; }
+/* "N more": the other projects, with who filed into each last and when */
+.island__others { width: 280px; }
+.island__other { align-items: center; }
+.island__other-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.island__other-text .ws__item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.island__other-meta { font-size: 12px; color: var(--muted); }
+/* The workspace menu hangs from the avatar, not from a card */
+.ws--inline { display: contents; }
+.ws__menu.ws__menu--inline { width: 260px; }
+/* The menus that open from the island are its material too: white in both themes, the dock's hairline and
+   shadow, the island's ink, the search's chip on hover. Item radius 8 = 14 - 6 */
+.island-pop.island-pop {
+  background: var(--dock-surface); border: 0; border-radius: 14px; padding: 6px; color: var(--dock-ink);
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+}
+.island-pop .ws__section { padding: 8px 8px 4px; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dock-muted); }
+.island-pop .ws__item { min-height: 34px; padding: 7px 8px; border-radius: 8px; color: var(--dock-ink-2); font-size: 13px; font-weight: 500; }
+.island-pop .ws__item:hover, .island-pop .ws__item.is-active { color: var(--dock-ink); }
+.island-pop .ws__item:hover { background: var(--dock-hover); }
+.island-pop .ws__item--muted { color: var(--dock-muted); }
+.island-pop .ws__item--danger, .island-pop .ws__item--danger:hover { color: var(--dock-danger); }
+.island-pop .ws__item-kind, .island-pop .island__other-meta { color: var(--dock-muted); }
+.island-pop .ws__item-check { color: var(--dock-ink); }
+.island-pop .pp__icon { color: var(--dock-muted); }
+.island-pop .ws__avatar { background: var(--dock-fill); color: var(--dock-ink); }
+.island-pop .ws__plus { border-color: var(--dock-line); color: var(--dock-muted); }
+.island-pop .ws__item:hover .ws__plus { color: var(--dock-ink); }
+.island-pop .ws__divider { background: var(--dock-line); }
+.island-pop .sidebar__plan:hover { background: var(--dock-hover); }
+.island-pop .sidebar__plan-head, .island-pop .sidebar__plan-note { color: var(--dock-muted); }
+.island-pop .sidebar__plan-note { font-size: 12px; }
+.island-pop .sidebar__plan-head strong { color: var(--dock-ink); }
+.island-pop .sidebar__plan.is-full .sidebar__plan-note { color: var(--dock-danger); }
+.island-pop .quota__bar { background: var(--dock-fill); }
+.island-pop .quota__bar span { background: var(--dock-ink); }
+.island-pop .quota__bar span.is-full { background: var(--dock-danger); }
+/* They grow out of the control that opened them (Base UI sets --transform-origin at the trigger) and fold
+   back into it, a touch quicker on the way out. Transitions, not keyframes: a second click mid-open retargets.
+   Reduced motion keeps the fade and drops the scale. */
+.island-pop {
+  transform-origin: var(--transform-origin);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.island-pop[data-ending-style] { transition-duration: 150ms; }
+.island-pop[data-starting-style], .island-pop[data-ending-style] { opacity: 0; transform: scale(0.95); }
 @media (prefers-reduced-motion: reduce) {
-  .island { animation: none; }
-  .island__body, .island__card, .island__chev { transition: none; }
+  .island-pop { transition-property: opacity; }
+  .island-pop[data-starting-style], .island-pop[data-ending-style] { transform: none; }
 }
 .sidebar__footer-note { font-size: 12px; color: var(--muted-2); padding: 0 10px; }
 
@@ -495,7 +561,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 .topbar > * { pointer-events: auto; }
 /* Over pictures, the controls carry their own glass */
-.topbar__trigger [data-slot="sidebar-trigger"], .island__pill {
+.topbar__trigger [data-slot="sidebar-trigger"] {
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
 }
@@ -503,6 +569,31 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__trigger { position: relative; display: flex; }
 .topbar__trigger [data-slot="sidebar-trigger"] { color: var(--muted); }
 .topbar__trigger [data-slot="sidebar-trigger"]:hover { color: var(--text); }
+/* In the library on desktop there is no sidebar, so no trigger. Polish and add are one white pill on the right,
+   the island's twin: same height, radius, material and tabs, a hairline between them */
+.topbar__actions { display: contents; }
+.topbar__actions-sep { display: none; }
+@media (min-width: 801px) {
+  .shell:not(.shell--docked) .topbar { height: 68px; }
+  .shell:not(.shell--docked) .topbar__trigger { display: none; }
+  .shell:not(.shell--docked) .topbar__actions {
+    display: flex; align-items: center; gap: 2px; flex-shrink: 0; height: 44px; margin-left: auto; padding: 0 5px;
+    border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+    --focus-ring: var(--dock-ink);
+  }
+  .shell:not(.shell--docked) .topbar__actions-sep { display: block; width: 1px; height: 18px; margin: 0 4px; background: var(--dock-line); }
+  .shell:not(.shell--docked) .topbar__actions :is(.topbar__polish, .topbar__add) {
+    display: inline-flex; align-items: center; height: 34px; margin: 0; border: 0; border-radius: 9px;
+    background: none; color: var(--dock-ink-2); font-size: 14px; font-weight: 500;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+  .shell:not(.shell--docked) .topbar__actions .topbar__polish { gap: 7px; padding: 0 12px 0 10px; }
+  .shell:not(.shell--docked) .topbar__actions .topbar__polish svg { color: var(--dock-ink); }
+  .shell:not(.shell--docked) .topbar__actions .topbar__add { width: 34px; justify-content: center; padding: 0; color: var(--dock-ink); }
+}
+@media (min-width: 801px) and (hover: hover) and (pointer: fine) {
+  .shell:not(.shell--docked) .topbar__actions :is(.topbar__polish, .topbar__add):hover { background: var(--dock-hover); color: var(--dock-ink); }
+}
 /* Shortcut inside a tooltip */
 .kbd { margin-left: 6px; padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, var(--bg) 14%, transparent); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.02em; }
 .topbar__view { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -595,10 +686,6 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
   width: min(720px, calc(100% - 32px)); transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 8px;
 }
-.content.has-panel .dock {
-  left: calc((100% - clamp(440px, 46vw, 820px)) / 2);
-  width: min(720px, calc(100% - clamp(440px, 46vw, 820px) - 32px));
-}
 .dock .sb { width: 100%; }
 .dock__status {
   margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-variant-numeric: tabular-nums;
@@ -615,14 +702,17 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
   .sb--dock .sb__menu { transition: opacity 140ms var(--ease-out); @starting-style { opacity: 0; transform: none; } }
   .dock__status { transition: opacity 180ms var(--ease-out); @starting-style { opacity: 0; transform: none; } }
 }
-.sb--dock {
-  --dock-ink: #111110; --dock-ink-2: #55554f; --dock-muted: #8c8c86; --dock-chip: #efefec; --dock-line: rgba(0,0,0,0.09);
+/* The dock's material is the same in both themes; the island and the add button share it */
+:root {
+  --dock-ink: #111110; --dock-ink-2: #55554f; --dock-muted: #6a6a65; --dock-chip: #efefec; --dock-line: rgba(0,0,0,0.09);
+  --dock-surface: #fff; --dock-hover: #f6f6f4; --dock-fill: #e8e8e4; --dock-danger: #c23a30;
+  --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.12);
 }
 .sb--dock .sb__field,
 .sb--dock .sb__field:hover,
 .sb--dock:focus-within .sb__field {
   min-height: 56px; padding: 10px 12px 10px 48px; border-radius: 18px; gap: 8px;
-  background: #fff; border: 1px solid var(--dock-line);
+  background: var(--dock-surface); border: 1px solid var(--dock-line);
   -webkit-backdrop-filter: none; backdrop-filter: none;
   box-shadow: 0 18px 48px -12px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.12);
 }
@@ -645,7 +735,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 /* The suggestions open upwards, over the canvas, on the same white */
 .sb--dock .sb__menu {
   top: auto; bottom: calc(100% + 8px); padding: 6px;
-  background: #fff; border: 1px solid var(--dock-line); border-radius: 16px;
+  background: var(--dock-surface); border: 1px solid var(--dock-line); border-radius: 16px;
   box-shadow: 0 18px 48px -12px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.1);
 }
 /* The list opens many times a minute while typing: a short rise from the bar (it grows from where it
@@ -660,7 +750,6 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 .sb--dock .sb__option-group { color: var(--dock-muted); font-size: 12px; }
 @media (max-width: 800px) {
   .dock { bottom: calc(12px + env(safe-area-inset-bottom)); width: calc(100% - 24px); }
-  .content.has-panel .dock { display: none; }
   .sb--dock .sb__field { min-height: 52px; }
   .sb--dock .sb__icon { height: 52px; }
 }
@@ -674,7 +763,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
   .dir-row__add, .dir-add, .chip, .btn-icon, .sb__field { transition: none; }
-  .chip:active, .btn-icon:active, .dir-add:active { transform: none; }
+  .chip:active, .btn-icon:active, .dir-add:active, .canvas-zoom button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -960,9 +1049,9 @@ video.vp__media { object-fit: contain; }
 .cm-msg.is-grouped { margin-top: -8px; }
 .cm-msg__head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .cm-msg__name { font-size: 13px; font-weight: 500; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
-.cm-msg__you { font-size: 11px; font-weight: 500; color: var(--muted); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); }
+.cm-msg__you { font-size: 12px; font-weight: 500; color: var(--muted); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); }
 .cm-msg__tag { font-size: 11px; color: var(--muted-2); padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); }
-.cm-msg__time { margin-left: auto; font-size: 11px; color: var(--muted-2); white-space: nowrap; }
+.cm-msg__time { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .cm-msg__row { display: flex; align-items: flex-start; gap: 8px; padding-left: 34px; }
 .cm-msg__body { flex: 1; margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-2); white-space: pre-wrap; word-break: break-word; }
 .cm-msg.is-original .cm-msg__body { color: var(--text); }
@@ -979,10 +1068,37 @@ video.vp__media { object-fit: contain; }
 .cm-link:hover svg { opacity: 1; }
 .cm-msg.is-mine .cm-msg__body { color: var(--text); }
 .cm-msg__del { flex-shrink: 0; width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted-2); border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s, background 0.15s; }
-.cm-msg:hover .cm-msg__del { opacity: 1; }
+.cm-msg:hover .cm-msg__del, .cm-msg__del:focus-visible { opacity: 1; }
 .cm-msg__del:hover { background: var(--surface-2); color: var(--danger); }
 .cm-msg__edit { flex-shrink: 0; width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted-2); border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s, background 0.15s; }
 .cm-msg:hover .cm-msg__edit, .cm-msg__edit:focus-visible { opacity: 1; }
+/* One comment and its replies. A pinned one names its post-it with the same number, in the post-it's
+   colours; picked from the page it takes a wash of that colour. Replies hang from the comment on a rule
+   that starts under its avatar (26/2). */
+.cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
+.cm-thread.is-focus { background: color-mix(in srgb, var(--postit) var(--postit-wash-on), transparent); }
+/* A post-it's thread, replies included: the post-it's yellow down its edge and a wash of it behind. The
+   wash lightens a dark column, so it stays faint there (muted text keeps 4.5:1 on it); picked, the edge
+   widens too, so the change does not rest on the wash alone. */
+.cm-thread.is-pinned { background: color-mix(in srgb, var(--postit) var(--postit-wash), transparent); box-shadow: inset 3px 0 0 var(--postit); }
+.cm-thread.is-pinned.is-focus { background: color-mix(in srgb, var(--postit) var(--postit-wash-on), transparent); box-shadow: inset 5px 0 0 var(--postit); }
+.cm-thread.is-pinned .cm-replies { border-left-color: color-mix(in srgb, var(--postit) 70%, transparent); }
+.cm-replies { display: flex; flex-direction: column; gap: 10px; margin-left: 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--border-strong); }
+.cm-pin { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; height: 20px; padding: 0 8px 0 2px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; }
+.cm-pin:disabled { cursor: default; }
+.cm-pin__n { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--postit); color: var(--postit-ink); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cm-reply-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 26px; margin-left: 26px; padding: 0 8px; border: 0; border-radius: var(--radius-s); background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; }
+.cm-thread__foot { display: flex; align-items: center; gap: 4px; margin-left: 26px; }
+.cm-thread__foot .cm-reply-btn { margin-left: 0; }
+.cm-thread__count { font-size: 12px; color: var(--muted); }
+.cm-reply { display: flex; align-items: flex-start; gap: 8px; margin-left: 26px; }
+.cm-reply .cm-avatar { margin-top: 6px; }
+.cm-reply__box { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cm-reply__input { min-height: 32px; padding: 6px 10px; font-size: 13px; resize: none; }
+@media (hover: hover) and (pointer: fine) {
+  .cm-pin:not(:disabled):hover { background: var(--surface-3); color: var(--text); }
+  .cm-reply-btn:hover { background: var(--surface-2); color: var(--text); }
+}
 .cm-msg__edit:hover { background: var(--surface-2); color: var(--text); }
 /* Inline editor for the original note */
 .cm-edit { display: flex; flex-direction: column; gap: 8px; }
@@ -2433,108 +2549,164 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   transform: rotate(-4deg) scale(calc(1 / max(var(--z, 1), 0.35)));
 }
 
-/* Zoom, fit and tidy: a small pill in the bottom-left corner, clear of the island */
+/* Zoom and fit: a white pill in the bottom-left corner, the island's material. Its left edge is the island's,
+   its middle is the search dock's middle (20 + 56/2 = 26 + 44/2) */
 .canvas-zoom {
-  position: absolute; left: 16px; bottom: 16px; z-index: 12;
-  display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px;
-  border-radius: 10px; background: color-mix(in srgb, var(--panel) 88%, transparent);
-  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-  box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
+  position: absolute; left: 12px; bottom: calc(26px + env(safe-area-inset-bottom)); z-index: 12;
+  display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 5px;
+  border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
 .canvas-zoom button {
-  display: inline-flex; align-items: center; justify-content: center; height: 26px; border: 0; border-radius: 7px;
-  background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  display: inline-flex; align-items: center; justify-content: center; height: 34px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--dock-ink-2); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .canvas-zoom button:hover { background: var(--surface-2); color: var(--text); } }
-.canvas-zoom button { transition: background 150ms ease, color 150ms ease, transform 120ms var(--ease-out); }
-.canvas-zoom button:active { transform: scale(0.97); }
-.canvas-zoom__btn { width: 26px; }
-.canvas-zoom__pct { min-width: 46px; padding: 0 6px; font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .canvas-zoom button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
+.canvas-zoom button:active { transform: scale(0.96); }
+.canvas-zoom__btn { width: 34px; color: var(--dock-ink); }
+.canvas-zoom__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 
-/* ─── Side panel ──────────────────────────────────────────────────────────── */
-/* One reference on the right, the canvas still live on the left. The page with its post-its first;
-   the DESIGN.md in the tabs; the rest of the thread in a column that slides over the page. */
-.ip {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 60;
-  width: clamp(440px, 46vw, 820px);
-  display: flex; flex-direction: column;
-  background: var(--panel); border-left: 1px solid var(--border); box-shadow: var(--shadow-drawer);
-  /* Slides in from the edge it lives on; ItemPanel sends it back the same way when closed by a click */
-  transition: transform 280ms var(--ease-drawer), opacity 200ms var(--ease-out);
+/* ─── The reference sheet (components/ItemPanel.tsx) ─────────────────────────
+   A sheet over the canvas, which dims behind it. It sits under the island and the search dock (z 18, below
+   the top bar's 20 and the dock's 25), which keep their place, and it stops above the dock. Inside, a
+   board of cards: the page, its colours, the tags people added, what the AI read, the conversation.
+   Radii nest: 20 outside, 10 padding, 10 for the cards. */
+.ip-layer { position: fixed; inset: 0; z-index: 18; pointer-events: none; }
+.ip-dim {
+  position: absolute; inset: 0; pointer-events: auto; background: rgba(8, 8, 7, 0.55);
+  transition: opacity 200ms var(--ease-out);
 }
-@starting-style { .ip { transform: translateX(32px); opacity: 0; } }
+@starting-style { .ip-dim { opacity: 0; } }
+:root[data-theme="light"] .ip-dim { background: rgba(30, 30, 26, 0.32); }
+.ip {
+  position: absolute; top: 68px; bottom: calc(88px + env(safe-area-inset-bottom)); left: 12px; right: 12px;
+  max-width: 1520px; margin-inline: auto; pointer-events: auto;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--bg); border-radius: 20px; box-shadow: 0 0 0 1px var(--border-strong), var(--shadow-modal);
+  /* It grows out of the card that was clicked: ItemPanel sets the origin at that point (the middle when
+     there is none) and closes it back into it. Escape, a key, closes at once. */
+  transform-origin: 50% 40%;
+  transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+@starting-style { .ip { transform: scale(0.96); opacity: 0; } }
 .ip-bar {
   display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  height: 56px; padding: 0 12px 0 8px; border-bottom: 1px solid var(--border);
+  height: 60px; padding: 0 12px 0 8px; border-bottom: 1px solid var(--border); background: var(--panel);
 }
-.ip-bar .dm-bar__id { flex: 1; min-width: 0; padding-left: 10px; }
-.ip-bar__thread { flex-shrink: 0; }
-.ip-tabs { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding: 8px 12px; border-bottom: 1px solid var(--border); }
-.ip-tags {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; flex-shrink: 0; padding: 10px 12px;
-  border-bottom: 1px solid var(--border); max-height: 128px; overflow-y: auto;
-}
-.ip-tags__palette { display: flex; width: 112px; height: 26px; flex-shrink: 0; margin: 0 4px 0 1px; border-radius: 6px; overflow: hidden; box-shadow: 0 0 0 1px rgba(255,255,255,0.24); }
-html[data-theme="light"] .ip-tags__palette { box-shadow: 0 0 0 1px rgba(0,0,0,0.18); }
-.ip-tags__color { flex-basis: 0; min-width: 6px; height: 100%; padding: 0; border: 0; cursor: pointer; }
-/* Two rings, light and dark, so focus shows on any colour */
-.ip-tags__color:focus-visible { position: relative; outline: 2px solid var(--text); outline-offset: -2px; box-shadow: inset 0 0 0 4px var(--panel); }
-/* A tag is two buttons in one pill: its word filters, its × removes. The × is always there, faint until hovered. */
-.ip-tags__chip { flex-shrink: 0; gap: 0; padding: 0; overflow: hidden; }
-.ip-tags__label { padding: 0 4px 0 10px; height: 100%; min-height: 26px; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
-.ip-tags__x {
-  display: inline-grid; place-items: center; width: 22px; min-height: 26px; padding: 0 6px 0 0; border: 0; background: none;
-  color: var(--muted); cursor: pointer; opacity: 0.45; transition: opacity 120ms ease, color 120ms ease;
-}
-.ip-tags__x svg { width: 12px; height: 12px; }
-.ip-tags__chip:hover .ip-tags__x, .ip-tags__x:focus-visible { opacity: 1; }
-.ip-tags__x:hover { color: var(--text); }
-@media (hover: none) { .ip-tags__x { opacity: 0.8; } }
-.ip-tags__add {
-  flex: 1 0 120px; min-width: 120px; height: 26px; padding: 0 10px; border: 1px dashed var(--border); border-radius: 999px;
-  background: none; color: var(--text); font: inherit; font-size: 13px;
-}
-.ip-tags__add::placeholder { color: var(--muted); }
-.ip-tags__add:focus { outline: none; border-style: solid; border-color: var(--text); }
-.ip-tags__gathering {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%) 0 0 / 200% 100%;
-  animation: gather-sheen 1.8s linear infinite; color: var(--muted);
-}
-html[data-theme="light"] .ip-tags__gathering { background-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.07) 50%, transparent 100%); }
-@media (prefers-reduced-motion: reduce) { .ip-tags__gathering { animation: none; } }
-.ip-tags__failed { font-size: 13px; color: var(--muted); }
-.ip-tabs .dm-tabs { margin-left: 0; }
-.ip-tabs__actions { display: flex; gap: 4px; margin-left: auto; }
+.ip-bar .dm-bar__id { flex: 1; min-width: 0; padding-left: 8px; }
+.ip-bar__tabs { flex-shrink: 0; margin-left: 0; }
+.ip-bar__actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ip-bar__close { flex-shrink: 0; }
 .ip-tabs__spin { margin-left: 6px; }
-.ip-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.ip-page { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.ip-bento {
+  flex: 1; min-height: 0; display: grid; gap: 10px; padding: 10px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: "page colours talk" "page yours talk" "page ai talk";
+}
+.ip-card {
+  min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  padding: 14px 16px; border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px var(--border);
+}
+.ip-card--page { grid-area: page; padding: 0; }
+.ip-card--colours { grid-area: colours; }
+.ip-card--yours { grid-area: yours; }
+.ip-card--ai { grid-area: ai; overflow-y: auto; overscroll-behavior: contain; }
+.ip-card--talk { grid-area: talk; padding: 0; }
+.ip-card__title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text); }
+.ip-card__title em { font-style: normal; font-weight: 400; color: var(--muted); }
+.ip-card__aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ip-card__note { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.ip-card__more {
+  align-self: flex-start; margin-top: 12px; padding: 0; border: 0; background: none; color: var(--text-2);
+  font: inherit; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.ip-media { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+
+/* The page's colours, as swatches with their hex, name and share. A swatch filters by its colour family */
+.ip-swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.ip-swatch {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; border: 0; background: none;
+  color: var(--muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+}
+.ip-swatch i { width: 48px; height: 48px; margin-bottom: 4px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--border-strong); transition: box-shadow 150ms ease; }
+.ip-swatch__hex { color: var(--text); font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .ip-swatch:hover i { box-shadow: inset 0 0 0 1px var(--border-strong), 0 0 0 2px var(--text-2); } }
+
+/* The tags people added: the post-it's yellow, because a person put them there. Only these have a × */
+.ip-card--yours { background: color-mix(in srgb, var(--postit) 12%, var(--panel)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--postit) 55%, transparent); }
+.ip-card--yours .ip-card__title em, .ip-card--yours .ip-card__note { color: var(--text-2); }
+.ip-yours { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ip-yours__add {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; cursor: text;
+  background: var(--panel); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--postit) 70%, var(--border-strong)); color: var(--text);
+}
+.ip-yours__add svg { flex-shrink: 0; color: var(--text-2); }
+.ip-yours__add input { width: 120px; padding: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; font-size: 13px; }
+.ip-yours__add input::placeholder { color: var(--text-2); }
+.ip-yours__add:focus-within { box-shadow: inset 0 0 0 1.5px var(--text); }
+.ip-yours__tag { display: inline-flex; align-items: center; height: 30px; border-radius: 8px; background: var(--postit); color: var(--postit-ink); --focus-ring: var(--postit-ink); }
+.ip-yours__label { height: 100%; padding: 0 4px 0 10px; border: 0; background: none; color: inherit; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.ip-yours__x { display: grid; place-items: center; width: 26px; height: 100%; padding: 0 4px 0 0; border: 0; background: none; color: inherit; opacity: 0.7; cursor: pointer; }
+.ip-yours__x:hover { opacity: 1; }
+
+/* What the AI read, by facet: each facet keeps a pale hue of its own, so the groups read apart. Read-only;
+   a tag filters the library */
+.ip-ai-badge { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--surface-2); color: var(--text-2); font-size: 12px; font-weight: 600; }
+.ip-facets { display: flex; flex-direction: column; gap: 10px; }
+.ip-facet { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px; align-items: start; }
+.ip-facet__name { display: flex; align-items: center; gap: 6px; padding-top: 5px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ip-facet__name::before { content: ""; flex-shrink: 0; width: 8px; height: 8px; border-radius: 2px; background: hsl(var(--h) 55% 55%); }
+.ip-facet__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ip-facet__tag {
+  height: 26px; padding: 0 9px; border: 0; border-radius: 8px; white-space: nowrap; cursor: pointer;
+  background: hsl(var(--h) 60% 95%); color: hsl(var(--h) 45% 26%); font: inherit; font-size: 12px; font-weight: 500;
+  display: inline-flex; align-items: center; transition: background-color 150ms ease;
+}
+.ip-facet__tag.is-static { cursor: default; }
+:root:not([data-theme="light"]) .ip-facet__tag { background: hsl(var(--h) 25% 17%); color: hsl(var(--h) 55% 82%); }
+@media (hover: hover) and (pointer: fine) {
+  .ip-facet__tag:not(.is-static):hover { background: hsl(var(--h) 60% 90%); }
+  :root:not([data-theme="light"]) .ip-facet__tag:not(.is-static):hover { background: hsl(var(--h) 25% 23%); }
+}
+
+.ip-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
 .ip-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .ip-scroll .dm-spec { padding: 28px 28px 80px; }
 .ip-scroll .dm-md { padding: 20px 20px 80px; }
 .ip-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px; text-align: center; font-size: 13px; line-height: 1.5; color: var(--muted); text-wrap: balance; }
 .ip-state.is-error { color: var(--danger); }
-.ip-thread {
-  position: absolute; top: 0; right: 0; bottom: 0; z-index: 4; width: min(380px, 100%);
-  display: flex; flex-direction: column; background: var(--panel); border-left: 1px solid var(--border);
-  box-shadow: var(--shadow-drawer);
-  /* A transition, not keyframes: toggled quickly it carries on from where it is */
-  transition: transform 220ms var(--ease-out), opacity 220ms var(--ease-out);
+
+/* Narrower: the page on the left, the other cards stacked on the right, the conversation last */
+@media (max-width: 1100px) {
+  .ip-bento {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: "page colours" "page yours" "page ai" "page talk";
+  }
 }
-@starting-style { .ip-thread { transform: translateX(16px); opacity: 0; } }
-.ip-thread.is-full { position: relative; width: 100%; flex: 1; min-height: 0; border-left: 0; box-shadow: none; transition: none; }
+/* A phone: the whole screen, the cards one under the other */
 @media (max-width: 800px) {
-  .ip { width: 100vw; border-left: 0; }
-  .ip-tabs { overflow-x: auto; }
-  .ip-tabs__actions { display: none; }
+  .ip-layer { z-index: 60; }
+  .ip { inset: 0; max-width: none; border-radius: 0; }
+  .ip-bar { height: auto; flex-wrap: wrap; padding: 8px; }
+  .ip-bar__tabs { order: 3; width: 100%; overflow-x: auto; }
+  .ip-bar__actions { display: none; }
+  .ip-bento { display: flex; flex-direction: column; overflow-y: auto; }
+  .ip-card { flex-shrink: 0; }
+  .ip-card--page { height: 70svh; }
+  .ip-card--talk { height: 70svh; }
+  .ip-card--ai { overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ip, .ip-thread { transition: opacity 200ms var(--ease-out); }
-  @starting-style { .ip, .ip-thread { transform: none; opacity: 0; } }
+  .ip { transition: opacity 200ms var(--ease-out); }
+  @starting-style { .ip { transform: none; opacity: 0; } }
 }
 
 /* ─── The page with its post-its ──────────────────────────────────────────── */
-:root { --postit: #fde68a; --postit-ink: #3d3206; }
+:root { --postit: #fde68a; --postit-ink: #3d3206; --postit-wash: 4%; --postit-wash-on: 6%; }
+:root[data-theme="light"] { --postit-wash: 7%; --postit-wash-on: 15%; }
 .pn { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); }
 .pn-bar {
   position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px;
@@ -2591,25 +2763,45 @@ html[data-theme="light"] .ip-tags__gathering { background-image: linear-gradient
 @starting-style { .postit__paper { opacity: 0; transform: rotate(var(--tilt, 0deg)) scale(0.96); } }
 /* Near the right edge the paper hangs to the left of its pin */
 .postit.is-flipped .postit__paper { left: auto; right: 4px; transform-origin: 100% 0; }
-.postit__head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 11px; }
+.postit__head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; }
 .postit__head .cm-avatar { box-shadow: 0 0 0 1px rgba(0,0,0,0.12); }
 .postit__who { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.postit__when { opacity: 0.6; white-space: nowrap; }
+.postit__when { opacity: 0.8; white-space: nowrap; }
 .postit__del {
   display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: auto; border: 0; border-radius: 4px;
   background: transparent; color: inherit; opacity: 0; cursor: pointer; transition: opacity 0.15s, background 0.15s;
 }
 .postit:hover .postit__del, .postit__del:focus-visible { opacity: 0.7; }
+/* Touch has no hover: the delete buttons stay in sight */
+@media (hover: none) {
+  .cm-msg__del, .cm-msg__edit { opacity: 1; }
+  .postit__del { opacity: 0.7; }
+}
 .postit__del:hover { opacity: 1; background: rgba(0,0,0,0.08); }
 .postit__body { margin: 0; font-size: 13px; line-height: 1.42; white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
-.postit__older { display: block; margin-top: 6px; font-size: 10px; letter-spacing: 0.02em; opacity: 0.6; }
+.postit__older { display: block; margin-top: 6px; font-size: 12px; opacity: 0.8; }
 .postit.is-draft .postit__paper { box-shadow: 0 0 0 2px rgba(61, 50, 6, 0.25), 0 14px 30px -8px rgba(0,0,0,0.5); }
+/* A post-it is a comment: its number in the column, a way to its thread, the ink as its focus ring on the paper */
+.postit { --focus-ring: var(--postit-ink); }
+.postit__num { display: inline-grid; place-items: center; flex-shrink: 0; min-width: 16px; height: 16px; padding: 0 4px; border: 0; border-radius: 999px; background: var(--postit-ink); color: var(--postit); font: inherit; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+button.postit__num { cursor: pointer; }
+/* The replies on the paper: the latest three under a fold of ink, each with its face and first name; a
+   field to answer in place. Older ones wait in the comments column. */
+.postit__replies { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--postit-ink) 18%, transparent); }
+.postit__reply { display: flex; align-items: flex-start; gap: 6px; }
+.postit__reply .cm-avatar { flex-shrink: 0; margin-top: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,0.12); }
+.postit__reply p { margin: 0; min-width: 0; font-size: 12px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.postit__reply b { font-weight: 600; }
+.postit__link { align-self: flex-start; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
+.postit__link:disabled { cursor: default; text-decoration: none; }
+.postit__input--reply { font-size: 12px; }
+.postit.is-focus .postit__paper { box-shadow: 0 0 0 2px var(--postit-ink), 0 1px 1px rgba(0,0,0,0.12), 0 10px 24px -8px rgba(0,0,0,0.45); }
 .postit__input {
   display: block; width: 100%; resize: none; border: 0; outline: none; padding: 0; background: transparent;
   color: inherit; font: inherit; font-size: 13px; line-height: 1.42;
 }
-.postit__input::placeholder { color: rgba(61, 50, 6, 0.5); }
-.postit__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 10px; opacity: 0.85; }
+.postit__input::placeholder { color: rgba(61, 50, 6, 0.75); }
+.postit__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; }
 .postit__error { color: #9b1c1c; }
 .postit__send {
   height: 22px; padding: 0 10px; border: 0; border-radius: 6px; background: var(--postit-ink); color: var(--postit);

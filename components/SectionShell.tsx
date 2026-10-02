@@ -94,7 +94,7 @@ export default function SectionShell({ title, base, groups, wide = false, defaul
   title: string; base: string; groups: ShellGroup[]; wide?: boolean; defaultOpen?: boolean; children: ReactNode;
 }) {
   return (
-    <SidebarProvider className="shell" defaultOpen={defaultOpen}>
+    <SidebarProvider className="shell shell--docked" defaultOpen={defaultOpen}>
       <Nav title={title} base={base} groups={groups} />
       <SidebarInset className="content">
         <header className="topbar">
