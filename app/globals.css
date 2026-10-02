@@ -316,9 +316,9 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .app-sidebar__footer { gap: 8px; padding: 12px; border-top: 1px solid var(--sidebar-border); }
 
 /* ─── The island (after Angelo Libero) ─────────────────────────────────── */
-/* The page is the canvas, edge to edge. On desktop the sidebar is an island floating over it: a card
+/* The page is the board, edge to edge. On desktop the sidebar is an island floating over it: a card
    inset from the window's edges that slides away to the left when folded (⌘B), leaving the workspace
-   pill in the top bar. Nothing under it moves: the canvas is never laid out again. */
+   pill in the top bar. The cards under it make room for it, on the same curve (components/Grid.tsx). */
 .shell { height: 100svh; min-height: 0; overflow: hidden; }
 @media (min-width: 801px) {
   .shell [data-slot="sidebar-gap"] { display: none; }
@@ -334,18 +334,18 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
     box-shadow: 0 0 0 1px var(--border), var(--shadow-pop);
   }
 }
-/* What sits left of the canvas moves aside for the island with it, on the same curve: by transform, so
+/* What sits left of the board moves aside for the island with it, on the same curve: by transform, so
    nothing is laid out again while it slides */
 @media (min-width: 801px) {
-  .topbar__trigger, .canvas-zoom { transition: transform 280ms var(--ease-drawer); }
-  .shell:has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .canvas-zoom) { transform: translateX(280px); }
+  .topbar__trigger { transition: transform 280ms var(--ease-drawer); }
+  .shell:has([data-slot="sidebar"][data-state="expanded"]) .topbar__trigger { transform: translateX(280px); }
 }
 /* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
-:root[data-instant] :is(.app-sidebar, .topbar__trigger, .canvas-zoom) { transition: none; }
+:root[data-instant] :is(.app-sidebar, .topbar__trigger) { transition: none; }
 @media (min-width: 801px) and (prefers-reduced-motion: reduce) {
   .app-sidebar { transition: opacity 200ms var(--ease-out); }
   [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: none; }
-  .topbar__trigger, .canvas-zoom { transition: none; }
+  .topbar__trigger { transition: none; }
 }
 /* The workspace as a card at the top of the column */
 .app-sidebar__brand { display: flex; align-items: center; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
@@ -486,7 +486,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .content { position: relative; flex: 1; min-width: 0; height: 100svh; overflow: hidden; }
 
 /* Inset header: sidebar trigger and the current view on desktop; trigger, mark, search and add on a phone */
-/* The bars float over the canvas: no band, only their controls take the pointer */
+/* The bars float over the board: no band, only their controls take the pointer */
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 20;
   display: flex; align-items: center; gap: 10px;
@@ -589,7 +589,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 
 /* ─── The search dock: the search at the bottom, like a conversation ─────────────
    Solid white in both themes and larger than anything else on screen: it is the way in. It sits centred
-   on the canvas (left of the panel when one is open); the suggestions open upwards. */
+   on the board (left of the panel when one is open); the suggestions open upwards. */
 .dock {
   position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 25;
   width: min(720px, calc(100% - 32px)); transform: translateX(-50%);
@@ -598,6 +598,13 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 .content.has-panel .dock {
   left: calc((100% - clamp(440px, 46vw, 820px)) / 2);
   width: min(720px, calc(100% - clamp(440px, 46vw, 820px) - 32px));
+}
+/* With the island out as well, the dock centres in what is left of the board between the two */
+@media (min-width: 801px) {
+  .shell:has([data-slot="sidebar"][data-state="expanded"]) .content.has-panel .dock {
+    left: calc(280px + (100% - 280px - clamp(440px, 46vw, 820px)) / 2);
+    width: min(720px, calc(100% - 280px - clamp(440px, 46vw, 820px) - 32px));
+  }
 }
 .dock .sb { width: 100%; }
 .dock__status {
@@ -642,7 +649,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 .sb--dock .sb__clear:hover, .sb--dock .sb__clear:focus-visible { color: var(--dock-ink); background: rgba(0,0,0,0.06); }
 .sb--dock .sb__gathering { color: var(--dock-ink-2); font-size: 13px; }
 .sb--dock .spinner { border-color: rgba(0,0,0,0.15); border-top-color: var(--dock-ink); }
-/* The suggestions open upwards, over the canvas, on the same white */
+/* The suggestions open upwards, over the board, on the same white */
 .sb--dock .sb__menu {
   top: auto; bottom: calc(100% + 8px); padding: 6px;
   background: #fff; border: 1px solid var(--dock-line); border-radius: 16px;
@@ -694,7 +701,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
   gap: 8px; min-height: 60vh; color: var(--muted); font-size: 13px;
 }
 .empty .display { color: var(--text-2); font-size: 20px; }
-/* Nothing matches: said over the dimmed canvas, which stays where it was */
+/* Nothing matches: said over the empty board */
 .empty--over { position: absolute; inset: 0; z-index: 5; min-height: 0; pointer-events: none; }
 .empty--over > * { pointer-events: auto; }
 
@@ -2362,98 +2369,94 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
 
-/* ─── Canvas ──────────────────────────────────────────────────────────────── */
-/* The library as one plane: every reference as its whole page, where the team left it.
-   One layer carries the camera's transform (hooks/use-canvas-camera.ts); it only turns into a
-   bitmap while the camera moves, so at rest the pages and their text are drawn sharp. */
-.canvas {
-  position: absolute; inset: 0; overflow: hidden; touch-action: none;
+/* ─── Board ───────────────────────────────────────────────────────────────── */
+/* The library as a masonry that scrolls like a page (components/Grid.tsx): the scroller fills the content
+   under the floating bars, and every card is one flat node placed by transform from numbers the layout
+   already knows. Only the cards near the viewport exist. */
+.board {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
   background-color: var(--bg);
-  /* A faint dot grid, so empty space still reads as a surface you can move over */
-  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 0);
-  background-size: 24px 24px;
-  cursor: default; user-select: none; -webkit-user-select: none;
 }
-.canvas[data-space], .canvas[data-panning] { cursor: grab; }
-.canvas[data-panning] { cursor: grabbing; }
-.canvas[data-panning] .canvas-tile, .canvas[data-space] .canvas-tile { pointer-events: none; }
-.canvas__world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
-.canvas[data-moving] .canvas__world { will-change: transform; }
-/* A tile moves by transform only. While searching, the cards that stay glide to their new place: a
-   transition (not keyframes), so a key pressed mid-way retargets from where the card is. Ease-out, not
-   ease-in-out, because the move answers a key and has to start at once. */
-.canvas-tile {
+.board__world { position: relative; width: 100%; }
+/* A tile moves by transform only. When the layout changes (a search, the island, a zoom), the cards that
+   stay glide to their new place: a transition (not keyframes), so a key pressed mid-way retargets from where
+   the card is. The island's curve, so a card and the island that pushed it land together. */
+.board-tile {
   position: absolute; left: 0; top: 0;
-  transition: transform 280ms var(--ease-out), opacity 200ms var(--ease-out);
-  /* A card's layout never reaches the others: a note or an image loading in one doesn't lay out the canvas.
+  transition: transform 280ms var(--ease-drawer), width 280ms var(--ease-drawer);
+  /* A card's layout never reaches the others: a note or an image loading in one doesn't lay out the board.
      No paint containment, which would clip the post-it dots and the shadow at the card's edge. */
   contain: layout style;
 }
-/* A new result arrives a beat after the ones before it in rank (--arrive, set by Canvas.tsx) */
-.canvas-tile[data-arrive] > * {
+/* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
+:root[data-instant] .board-tile { transition: none; }
+/* A new result arrives a beat after the ones before it in rank (--arrive, set by Grid.tsx) */
+.board-tile[data-arrive] > * {
   transition: opacity 220ms var(--ease-out) var(--arrive, 0ms), transform 220ms var(--ease-out) var(--arrive, 0ms);
   @starting-style { opacity: 0; transform: scale(0.96); }
 }
-/* A result that stopped matching fades where it stands, faster than results arrive, and takes no clicks */
-.canvas-tile[data-leave] {
-  opacity: 0; pointer-events: none;
-  transition: transform 150ms var(--ease-out), opacity 150ms var(--ease-out);
-}
 @media (prefers-reduced-motion: reduce) {
-  /* Fewer moves, the same information: cards change place at once, arrive and leave by opacity alone */
-  .canvas-tile { transition: opacity 200ms var(--ease-out); }
-  .canvas-tile[data-arrive] > * { transition: opacity 200ms var(--ease-out) var(--arrive, 0ms); @starting-style { opacity: 0; transform: none; } }
-  .canvas-tile[data-leave] { transition: opacity 150ms var(--ease-out); }
+  /* Fewer moves, the same information: cards change place at once and arrive by opacity alone */
+  .board-tile { transition: none; }
+  .board-tile[data-arrive] > * { transition: opacity 200ms var(--ease-out) var(--arrive, 0ms); @starting-style { opacity: 0; transform: none; } }
 }
-/* The first paint only: a short wave out from the centre (CSS, so it stays smooth while the page is
-   still busy loading). Cards that come into view later are just there. */
-.canvas-tile[data-enter] > * { animation: canvas-enter 300ms var(--ease-out) var(--enter, 0ms) both; }
-@keyframes canvas-enter { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
-@media (prefers-reduced-motion: reduce) { .canvas-tile[data-enter] > * { animation: fade-in 200ms var(--ease-out) var(--enter, 0ms) both; } }
+/* The first paint only: the cards arrive top down, a few ms apart (CSS, so it stays smooth while the page
+   is still busy loading). Cards that come into view later are just there. */
+.board-tile[data-enter] > * { animation: board-enter 300ms var(--ease-out) var(--enter, 0ms) both; }
+@keyframes board-enter { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@media (prefers-reduced-motion: reduce) { .board-tile[data-enter] > * { animation: fade-in 200ms var(--ease-out) var(--enter, 0ms) both; } }
 
-/* The pages are drawn whole: no crop, no hover lift (the canvas moves, the cards don't) */
-.tile--canvas { transition: box-shadow 150ms ease; }
-.tile--canvas:hover { transform: none; }
-@media (hover: hover) and (pointer: fine) { .tile--canvas:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 30%, transparent); } }
-.tile--canvas .tile__img { max-height: none; transition: opacity 200ms var(--ease-out); }
+/* The pages are drawn from their top, cut at the card's ratio: no crop to a cover, no hover lift */
+.tile--board { transition: box-shadow 150ms ease; }
+.tile--board:hover { transform: none; }
+@media (hover: hover) and (pointer: fine) { .tile--board:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 30%, transparent); } }
+.tile--board .tile__img { max-height: none; transition: opacity 200ms var(--ease-out); }
 /* Shown before in this tab (lib/shown-images.ts): it is already there, nothing to fade in */
-.tile--canvas .tile__img.is-instant { transition: none; }
-.tile--canvas:hover .tile__img { transform: none; }
-.tile--canvas .tile__media[style] .tile__img { height: 100%; object-fit: cover; object-position: top; }
+.tile--board .tile__img.is-instant { transition: none; }
+.tile--board:hover .tile__img { transform: none; }
+.tile--board .tile__media[style] .tile__img { height: 100%; object-fit: cover; object-position: top; }
 /* The page is the card: no title, tags or gradient over it, only the actions on hover */
-.tile--canvas .tile__overlay { display: none; }
-.tile--canvas { border-radius: 10px; }
+.tile--board .tile__overlay { display: none; }
+.tile--board { border-radius: 10px; }
+/* Under the tile the note is a fixed box (two lines at most) and so is the touch caption: the layout
+   knows every card's height without measuring it (Grid.tsx CAPTION_H, TOUCH_CAPTION_H) */
+.board .tile__note { box-sizing: border-box; height: 48px; overflow: hidden; }
+.board .tile__caption { box-sizing: border-box; height: 42px; padding: 0 12px; align-items: center; }
 /* Zoomed far out the card's words are smaller than a pixel: only the pages remain */
-.canvas[data-level="thumb"] .tile__note, .canvas[data-level="thumb"] .tile__overlay, .canvas[data-level="thumb"] .tile__actions { visibility: hidden; }
+.board[data-level="thumb"] .tile__note, .board[data-level="thumb"] .tile__caption, .board[data-level="thumb"] .tile__actions { display: none; }
 /* The post-its on a page, as dots where they sit */
 .tile__pins { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .tile__pins i {
   position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 3px;
   background: var(--postit); box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,0,0,0.08);
-  transform: rotate(-4deg) scale(calc(1 / max(var(--z, 1), 0.35)));
+  transform: rotate(-4deg);
 }
 
-/* Zoom, fit and tidy: a small pill in the bottom-left corner, clear of the island */
-.canvas-zoom {
-  position: absolute; left: 16px; bottom: 16px; z-index: 12;
+/* Zoom: how many columns. A small pill in the bottom-right corner, clear of the island and the dock;
+   left of the panel when one is open. A phone gets its columns from its width alone. */
+.board-zoom {
+  position: absolute; right: 16px; bottom: 16px; z-index: 12;
   display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px;
   border-radius: 10px; background: color-mix(in srgb, var(--panel) 88%, transparent);
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
 }
-.canvas-zoom button {
+.board-zoom button {
   display: inline-flex; align-items: center; justify-content: center; height: 26px; border: 0; border-radius: 7px;
   background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .canvas-zoom button:hover { background: var(--surface-2); color: var(--text); } }
-.canvas-zoom button { transition: background 150ms ease, color 150ms ease, transform 120ms var(--ease-out); }
-.canvas-zoom button:active { transform: scale(0.97); }
-.canvas-zoom__btn { width: 26px; }
-.canvas-zoom__pct { min-width: 46px; padding: 0 6px; font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .board-zoom button:not(:disabled):hover { background: var(--surface-2); color: var(--text); } }
+.board-zoom button:active { transform: scale(0.97); }
+.board-zoom button:disabled { opacity: 0.35; cursor: default; }
+.board-zoom__btn { width: 26px; }
+.board-zoom__cols { min-width: 46px; padding: 0 6px; font-variant-numeric: tabular-nums; }
+/* With a card open the dock takes the room left of the panel: the zoom waits */
+.content.has-panel .board-zoom { display: none; }
+@media (max-width: 800px) { .board-zoom { display: none; } }
 
 /* ─── Side panel ──────────────────────────────────────────────────────────── */
-/* One reference on the right, the canvas still live on the left. The page with its post-its first;
+/* One reference on the right, the board still live on the left. The page with its post-its first;
    the DESIGN.md in the tabs; the rest of the thread in a column that slides over the page. */
 .ip {
   position: fixed; top: 0; right: 0; bottom: 0; z-index: 60;

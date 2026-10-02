@@ -387,10 +387,11 @@ export const ui: typeof EnUi = {
       generic: "No se pudo entrar. Vuelve a intentarlo.",
     },
   },
-  canvas: {
+  zoom: {
     zoomIn: "Acercar",
     zoomOut: "Alejar",
-    fitHint: "Verlo todo (\u23180)",
+    columns: (n: number) => `${n} col`,
+    resetHint: "Volver al tama\u00f1o de siempre",
   },
   search: {
     placeholder: "Busca una persona, una fecha, un color, una secci\u00f3n, o descr\u00edbelo",

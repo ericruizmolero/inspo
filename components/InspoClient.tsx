@@ -4,7 +4,7 @@ import { addInspo, addImage, removeInspo, postComment as postCommentAction, remo
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
 import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, CommentAnchor, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
@@ -16,8 +16,8 @@ import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
-import Canvas, { type CanvasHandle, type ShotLevel } from "./Canvas";
-import { layoutCanvas, keyOf, TILE_W, DEFAULT_RATIO, CANVAS_MAX_RATIO } from "@/lib/canvas-layout";
+import Grid, { DEFAULT_ZOOM, ZOOM_WIDTHS, type ShotLevel } from "./Grid";
+import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
@@ -96,8 +96,10 @@ const TAG_WATCH_MS = 5 * 60 * 1000;
 
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
-const RATIOS_KEY = "inspo:canvas-ratios";
-/** What floats over the canvas: the island (12 + 256 + 12), the bars on top, the zoom pill at the bottom */
+const RATIOS_KEY = "inspo:ratios";
+/** The zoom (how many columns the board shows), kept for the next visit */
+const ZOOM_KEY = "inspo:zoom";
+/** What floats over the board: the island (12 + 256 + 12), the bars on top, the zoom pill at the bottom */
 const ISLAND_W = 280;
 const TOP_DESKTOP = 64;
 const TOP_MOBILE = 64;
@@ -162,7 +164,7 @@ export default function InspoClient({
   isAdmin?: boolean;
   /** Saved sidebar state, read from the sidebar_state cookie on the server */
   initialSidebarOpen?: boolean;
-  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the canvas draws */
+  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the board draws */
   initialPageShots?: Record<string, PageShot>;
 }) {
   const { t } = useT();
@@ -488,7 +490,7 @@ export default function InspoClient({
       if (res.ok) setCommentMap(await res.json());
     } catch { /* offline: retried on the next cycle */ }
   }, []);
-  // The panel: one reference open on the right, the canvas still live on the left
+  // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
   // With the thread in view, refresh every 20 s to see what others write
   useEffect(() => {
@@ -588,7 +590,7 @@ export default function InspoClient({
       setDesignMdIndex((prev) => ({ ...prev, [url]: {
         coverUrl: body.coverUrl, scrollUrl: body.scrollUrl, shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH,
       } }));
-      // A new DESIGN.md brings the page's capture: the canvas draws it from now on
+      // A new DESIGN.md brings the page's capture: the board draws it from now on
       if (body.topUrl && body.tileUrl && body.thumbUrl && body.screenshotUrl && body.shotH) {
         setPageShots((prev) => ({ ...prev, [url]: { shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH, color: body.color } }));
       }
@@ -699,7 +701,7 @@ export default function InspoClient({
     window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
   }, []);
 
-  // The island (desktop): the sidebar floats over the canvas and folds away; SidebarProvider saves it in a cookie
+  // The island (desktop): the sidebar floats over the board and folds away; SidebarProvider saves it in a cookie
   const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
   const setSidebarOpen = (open: boolean) => setCollapsed(!open);
   // On a phone the same trigger opens the menu sheet, so it says so
@@ -812,7 +814,7 @@ export default function InspoClient({
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
 
-  // ─── Canvas ─────────────────────────────────────────────────────────────────
+  // ─── Board ──────────────────────────────────────────────────────────────────
   // At rest, the whole space, newest first. While searching, only the results, laid out again in the
   // order they rank: the best one top left. What doesn't match isn't there.
   const boardItems = useMemo(
@@ -853,16 +855,28 @@ export default function InspoClient({
   }, []);
   const ratioOf = useCallback((item: InspoItem) => {
     const shot = pageShots[item.web];
-    // A site is drawn as its page, cut at the canvas's maximum height, unless someone chose a thumbnail for it
-    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, CANVAS_MAX_RATIO);
+    // A site is drawn as its page from the top, cut at the board's maximum height, unless someone chose a thumbnail for it
+    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, BOARD_MAX_RATIO);
     // Not measured yet: a site will arrive as a tall page, anything else about as a cover
-    return ratios[item.web] ?? (mediaKindOf(item.web) === "web" ? 1.5 : DEFAULT_RATIO);
+    return Math.min(ratios[item.web] ?? (mediaKindOf(item.web) === "web" ? BOARD_MAX_RATIO : DEFAULT_RATIO), BOARD_MAX_RATIO);
   }, [pageShots, thumbMap, ratios]);
 
-  // Always the automatic layout: columns, newest first. Nobody moves cards by hand (for now).
-  const slots = useMemo(() => layoutCanvas(boardItems, undefined, (i) => TILE_W * ratioOf(i)), [boardItems, ratioOf]);
+  // The zoom: how many columns, kept for the next visit. Read before the first paint (a layout effect),
+  // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
+  const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
+  useLayoutEffect(() => {
+    try {
+      const kept = localStorage.getItem(ZOOM_KEY);
+      const z = kept === null ? NaN : Number(kept);
+      if (Number.isInteger(z) && z >= 0 && z < ZOOM_WIDTHS.length) setZoomState(z);
+    } catch { /* no storage */ }
+  }, []);
+  const setZoom = useCallback((z: number) => {
+    setZoomState(z);
+    try { localStorage.setItem(ZOOM_KEY, String(z)); } catch { /* no storage */ }
+  }, []);
 
-  // What floats over the canvas, so framing keeps clear of it
+  // What floats over the board, so the cards keep clear of it
   const winW = useWindowWidth();
   const desktop = winW >= DESKTOP_MIN;
   const insets = useMemo(() => ({
@@ -871,9 +885,8 @@ export default function InspoClient({
     right: desktop && panelItem ? panelWidth(winW) : 0,
     bottom: BOTTOM,
   }), [desktop, collapsed, panelItem, winW]);
-  const canvasRef = useRef<CanvasHandle | null>(null);
-  // The camera frames the results again when the chips change or a slower layer answers, not on every key
-  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${near ? 1 : 0}|${jevScores ? 1 : 0}|${filtering ? filtered.length : -1}`;
+  // The board starts from the top again when the space or the search changes, not when a slower layer reorders
+  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${filtering ? text : ""}`;
 
   // Presence: which area the person is in right now (read by the /admin panel)
   const area = panelItem ? "design-md" : showDirectory ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
@@ -1000,7 +1013,7 @@ export default function InspoClient({
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
         onAddUrl={(web) => {
-          // Already saved: show it on the canvas instead of saving it twice
+          // Already saved: show it on the board instead of saving it twice
           if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
           addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
@@ -1071,13 +1084,14 @@ export default function InspoClient({
           </div>
         ) : (
           <>
-            <Canvas
+            <Grid
               items={boardItems}
-              slots={slots}
+              ratioOf={ratioOf}
               insets={insets}
+              zoom={zoom}
+              onZoom={setZoom}
               fitKey={fitKey}
               focusKey={panelItem ? keyOf(panelItem) : null}
-              handleRef={canvasRef}
               renderCard={(item, level) => (
                 <Card
                   item={item}
@@ -1173,9 +1187,9 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   // The post-its on the part of the page the card shows, as dots where they sit
   const pins = useMemo(() => {
     if (!showsPage) return undefined;
-    const shown = Math.min(shot!.shotH, 1440 * CANVAS_MAX_RATIO);
+    const shown = Math.min(shot!.shotH, 1440 * ratio);
     return (comments ?? []).filter((c) => c.anchor).map((c) => ({ x: c.anchor!.x, y: (c.anchor!.y * c.anchor!.h) / shown })).filter((p) => p.y <= 1);
-  }, [comments, showsPage, shot]);
+  }, [comments, showsPage, shot, ratio]);
   const open = () => act().openItem(item);
   // Always the whole card, at every zoom: its note and its thread are always there. Only the copy of the
   // page changes with the zoom (288, 720 or 1440px), swapped without a blank frame.
@@ -1202,7 +1216,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       projectIds={projectIds}
       onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}
       onCreateProject={(name) => act().createAndFile(item, name)}
-      canvas={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
+      board={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
 });

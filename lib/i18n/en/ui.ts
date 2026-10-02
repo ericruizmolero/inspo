@@ -389,10 +389,11 @@ export const ui = {
       generic: "Could not sign in. Try again.",
     },
   },
-  canvas: {
+  zoom: {
     zoomIn: "Zoom in",
     zoomOut: "Zoom out",
-    fitHint: "See everything (\u23180)",
+    columns: (n: number): string => `${n} col`,
+    resetHint: "Back to the usual size",
   },
   search: {
     placeholder: "Search a person, a date, a colour, a section, or describe it",
