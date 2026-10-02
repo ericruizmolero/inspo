@@ -12,7 +12,7 @@ const CONCURRENCY = 8;
 /** Workspaces looked at per run, enough to keep the slots full */
 const WORKSPACES = 100;
 
-// The tagging worker, run every minute by Vercel Cron (vercel.json). Every add starts its own job; this takes
+// The tagging worker, run once a day by Vercel Cron (vercel.json; Hobby allows no more). Every add starts its own job; this takes
 // what is left: imports bigger than a workspace's share, failures with tries left, runs lost with their
 // server, and every item again after a new taxonomy. It shares the slots between workspaces in turn, so a
 // workspace with 10,000 items to tag doesn't hold up one with 3, and stops taking jobs at the run's budget.
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     while (!throttled && turn.length && busyInARow < turn.length && Date.now() < deadline) {
       const org = turn[next++ % turn.length];
       const r = await runNextJob(org);
-      // The provider asks to slow down: the whole run stops taking jobs, the next minute tries again
+      // The provider asks to slow down: the whole run stops taking jobs, the next run tries again
       if (r === "throttled") { throttled = true; break; }
       if (r === "busy") { busyInARow++; continue; }
       busyInARow = 0;

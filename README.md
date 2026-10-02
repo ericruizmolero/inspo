@@ -114,7 +114,7 @@ Nothing is required. Each key switches one thing on:
 | `TAG_MODEL` | Optional. Tagging model, default `google/gemini-2.5-flash-lite` (`npm run tags:bakeoff` compares others) |
 | `TAG_FALLBACK_MODEL` | Optional. Model for a job's last try, default `mistralai/mistral-small-3.2-24b-instruct` |
 | `QUERY_MODEL` | Optional. Model that turns a search into English, default `TAG_MODEL` |
-| `CRON_SECRET` | Vercel Cron: the tagging worker (`/api/cron/tag-pending`, every minute) and the usage check |
+| `CRON_SECRET` | Vercel Cron: the tagging worker (`/api/cron/tag-pending`, once a day on Hobby) and the usage check |
 | `TYPESAFE_API_KEY` | Jev: AI search and polish |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |
 | `CHROME_EXECUTABLE_PATH` | Only if Chrome isn't in `/Applications` |

@@ -4,7 +4,7 @@
 // (after(), in the add itself, not in the browser). Jobs are claimed under a lock per workspace, so one
 // workspace never runs more than PER_WORKSPACE at once: a big import doesn't open 300 browsers, and the
 // rest stay pending. A run that finishes takes the workspace's next pending job (startTagJob), so an
-// import keeps moving without waiting; the worker (app/api/cron/tag-pending, every minute) takes the rest:
+// import keeps moving without waiting; the worker (app/api/cron/tag-pending, once a day) takes the rest:
 // failures with tries left, runs lost with their server (older than STALE_MS), and every item again
 // when TAXONOMY_VERSION changes.
 import "server-only";
