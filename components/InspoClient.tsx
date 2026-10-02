@@ -855,8 +855,9 @@ export default function InspoClient({
   }, []);
   const ratioOf = useCallback((item: InspoItem) => {
     const shot = pageShots[item.web];
-    // A site is its page's top as a 16:10 cover (as the DESIGN.md covers were), unless someone chose a thumbnail for it
-    if (shot && !thumbMap[item.web]) return DEFAULT_RATIO;
+    // A site is its page from the top, as tall as the page is up to the board's cut, unless someone chose a
+    // thumbnail for it: short pages stay short, long ones get cut, and the columns fall into a masonry
+    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, BOARD_MAX_RATIO);
     // Anything else keeps its own shape, cut at the board's maximum height; unmeasured, it arrives as a cover
     return Math.min(ratios[item.web] ?? DEFAULT_RATIO, BOARD_MAX_RATIO);
   }, [pageShots, thumbMap, ratios]);

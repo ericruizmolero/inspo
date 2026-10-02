@@ -266,6 +266,11 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
   }, [onMeasure, knownRatio]);
 
+  // No picture at all: the typographic poster is 4:3 (CSS .tile__fallback), and the layout hears it
+  useEffect(() => {
+    if (isError && onMeasure && (knownRatio === undefined || Math.abs(knownRatio - 0.75) > 0.01)) onMeasure(0.75);
+  }, [isError, onMeasure, knownRatio]);
+
   const onScrollLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget, box = scrollBoxRef.current;
     if (!box) return;
