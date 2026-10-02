@@ -6,6 +6,7 @@ import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
 import type { Project, ProjectLinks } from "@/types/inspo";
+import { dropSpace, dropFromSpace } from "./canvas";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -47,6 +48,7 @@ export async function renameProject(organizationId: string, id: string, name: st
  *  Its links go with it (ON DELETE CASCADE). */
 export async function deleteProject(organizationId: string, id: string): Promise<void> {
   await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, id)));
+  await dropSpace(organizationId, id);
 }
 
 /** Files items in a project. Both have to belong to the workspace; already filed is not an error. */
@@ -66,4 +68,5 @@ export async function fileItems(organizationId: string, projectId: string, itemI
 export async function unfileItems(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
   if (!itemIds.length) return;
   await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
+  await dropFromSpace(organizationId, projectId, itemIds);
 }

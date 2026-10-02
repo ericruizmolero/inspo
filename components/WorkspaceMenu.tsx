@@ -6,6 +6,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "./CreateTeamDialog";
+import { useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -14,6 +15,16 @@ export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspac
   return (
     <span className={`ws__avatar${small ? " ws__avatar--sm" : ""}`} aria-hidden>
       {workspace.logo ? <img src={workspace.logo} alt="" /> : workspace.name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+}
+
+/** A workspace as a place: always square. The personal one shows your photo when it has no logo */
+export function WorkspaceFace({ workspace, user, small }: { workspace: Pick<Workspace, "name" | "logo" | "kind">; user: Pick<SessionUser, "name" | "image">; small?: boolean }) {
+  if (workspace.kind !== "personal" || workspace.logo) return <WorkspaceAvatar workspace={workspace} small={small} />;
+  return (
+    <span className={`ws__avatar${small ? " ws__avatar--sm" : ""}`} aria-hidden>
+      {user.image ? <img src={user.image} alt="" /> : user.name.slice(0, 1).toUpperCase()}
     </span>
   );
 }
@@ -44,10 +55,14 @@ const I = {
   ),
 };
 
-export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, subtitle }: {
+export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
-  /** Second line under the name; without it, the kind of workspace */
-  subtitle?: ReactNode;
+  /** What opens the menu, in place of the workspace card (the island's avatar); the menu then hangs from it */
+  trigger?: ReactNode;
+  triggerClassName?: string;
+  triggerLabel?: string;
+  /** Rows above Settings (the island puts the directory, feedback and the plan here); any click in them closes the menu */
+  extras?: ReactNode;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -56,8 +71,11 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  // Inside the library the switch is instant (the other workspaces are already loaded); elsewhere the page refreshes
+  const instant = useWorkspaceSwitch();
   const switchTo = async (id: string) => {
     if (id === workspace.id) { setOpen(false); return; }
+    if (instant) { setOpen(false); await instant.switchTo(id); return; }
     setBusy(true);
     await authClient.organization.setActive({ organizationId: id });
     setOpen(false); setBusy(false);
@@ -74,30 +92,30 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   const teams = workspaces.filter((w) => w.kind === "team");
 
   return (
-    <div className="ws" ref={ref}>
-      <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="ws__trigger">
-        {/* The personal workspace is you: it shows your photo, not the initial */}
-        {workspace.kind === "personal" && !workspace.logo
-          ? <UserAvatar name={user.name} image={user.image} />
-          : <WorkspaceAvatar workspace={workspace} />}
-        <span className="ws__names">
-          <span className="display ws__name">{workspace.name}</span>
-          {/* If the name already says "Equipo" or "Team", it isn't repeated below */}
-          {subtitle !== undefined
-            ? <span className="ws__kind">{subtitle}</span>
-            : (workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
-              <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
-            )}
-        </span>
+    <div className={trigger ? "ws ws--inline" : "ws"} ref={ref}>
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) instant?.prefetch(); }}>
+      <PopoverTrigger className={triggerClassName ?? "ws__trigger"} aria-label={triggerLabel} onPointerEnter={() => instant?.prefetch()}>
+        {trigger ?? (
+          <>
+            {/* The personal workspace shows your photo, square like every workspace */}
+            <WorkspaceFace workspace={workspace} user={user} />
+            <span className="ws__names">
+              <span className="display ws__name">{workspace.name}</span>
+              {/* If the name already says "Equipo" or "Team", it isn't repeated below */}
+              {(workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
+                <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
+              )}
+            </span>
+          </>
+        )}
       </PopoverTrigger>
 
-      {/* Anchored to the whole .ws block, so the panel spans the sidebar */}
-      <PopoverContent className="ws__menu" anchor={ref}>
+      {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip */}
+      <PopoverContent className={trigger ? "ws__menu ws__menu--inline island-pop" : "ws__menu"} anchor={trigger ? undefined : ref}>
           <div className="ws__section">{t.ws.workspaces}</div>
           {personal.map((w) => (
             <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>
-              {w.logo ? <WorkspaceAvatar workspace={w} small /> : <UserAvatar name={user.name} image={user.image} small />}
+              <WorkspaceFace workspace={w} user={user} small />
               <span className="ws__item-name">{w.name}</span>
               <span className="ws__item-kind">{t.ws.personal}</span>
               {w.id === workspace.id && <span className="ws__item-check">{I.check}</span>}
@@ -116,6 +134,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           </button>
 
           <div className="ws__divider" />
+          {extras && <div className="ws__extras" onClick={() => setOpen(false)}>{extras}</div>}
           <Link className="ws__item" href="/settings" onClick={() => setOpen(false)}>
             <span className="ws__plus ws__plus--solid" aria-hidden>{I.gear}</span>
             <span className="ws__item-name">{t.ws.settings}</span>

@@ -1,10 +1,16 @@
 "use server";
 // Library changes made by the interface itself: adding and removing sites, comments, language.
-// What the extension asks for (key, not cookie) or takes minutes (tags, DESIGN.md) stays in app/api.
+// What the extension asks for (key, not cookie) or takes minutes (DESIGN.md) stays in app/api.
+// Tagging is the exception: an add starts its item's job after answering (lib/tag-jobs.ts), so it runs
+// whatever the browser does next. The library pages give their actions the time for it (maxDuration).
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
-import { addItem, deleteItem, setItemNote } from "@/lib/items";
+import { addItem, deleteItem, setItemNote, editUserTags } from "@/lib/items";
+import { startTagJob } from "@/lib/tag-jobs";
+import { embedItems, staleEmbedding } from "@/lib/embed";
+import { taggerEnabled } from "@/lib/tagger";
 import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { fileExists, keyOf } from "@/lib/storage";
@@ -14,7 +20,25 @@ import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
-import type { CommentAttachment } from "@/types/inspo";
+import type { CommentAttachment, CommentAnchor } from "@/types/inspo";
+
+/** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
+ *  so a failure leaves it for the worker instead of keeping the old vector. */
+function embedAfter(itemId: string) {
+  after(() => embedItems([itemId]).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+}
+
+/** Its thread changed, which lives in another table: the vector is cleared first, then made again */
+async function reembed(itemId: string) {
+  await staleEmbedding(itemId);
+  embedAfter(itemId);
+}
+
+/** Gathers the new item's tags once the add has answered (then the workspace's next pending ones).
+ *  The worker retries it if this run fails. */
+function startTagging(organizationId: string, itemId: string | undefined, userId: string) {
+  if (itemId && taggerEnabled()) after(() => startTagJob(organizationId, itemId, userId));
+}
 
 /** Only the URL is required: name and collection are inferred if missing.
  *  Added from inside a project, it is filed there too (otherwise it lands in the Inbox). */
@@ -31,6 +55,7 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
       createdBy: ctx.user.id,
     });
     if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+    startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
   });
 }
@@ -74,6 +99,7 @@ export async function addImage(input: { url: string; fileName?: string; type?: s
       createdBy: ctx.user.id,
     });
     if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+    startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
   });
 }
@@ -89,18 +115,24 @@ export async function removeInspo(id: string) {
   });
 }
 
-/** Attachments are uploaded first via /api/comments/upload; only their URLs arrive here. */
-export async function postComment(itemId: string, body: string, attachments: CommentAttachment[]) {
-  return withCtx(async (ctx) =>
-    addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments }));
+/** Attachments are uploaded first via /api/comments/upload; only their URLs arrive here.
+ *  With an anchor it is a post-it pinned on the page; with a parent, a reply to that comment. */
+export async function postComment(itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor, parentId?: string) {
+  return withCtx(async (ctx) => {
+    const comment = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments, anchor, parentId });
+    // The thread is searchable
+    if (comment.body.trim()) await reembed(String(itemId));
+    return comment;
+  });
 }
+
 
 /** Own comments, or any if they manage the workspace. */
 export async function removeComment(id: string) {
   return withCtx(async (ctx) => {
-    if (!(await deleteComment(ctx.workspace.id, id, ctx.user.id, canManage(ctx.workspace.role)))) {
-      throw new HttpError(403, (await getErrors()).cannotDeleteComment);
-    }
+    const itemId = await deleteComment(ctx.workspace.id, id, ctx.user.id, canManage(ctx.workspace.role));
+    if (!itemId) throw new HttpError(403, (await getErrors()).cannotDeleteComment);
+    await reembed(itemId);
   });
 }
 
@@ -112,6 +144,7 @@ export async function editNote(itemId: string, field: "note" | "subNote", text: 
     const item = await setItemNote(ctx.workspace.id, String(itemId), field, String(text ?? ""), ctx.user, canManage(ctx.workspace.role));
     if (item === null) throw new HttpError(404, errors.cardGone);
     if (item === false) throw new HttpError(403, errors.cannotEditNote);
+    embedAfter(String(itemId));
     return item;
   });
 }
@@ -135,5 +168,20 @@ export async function workspaceOfItem(itemId: string) {
       .from(schema.inspoItem).where(eq(schema.inspoItem.id, itemId)).limit(1);
     if (!row || !ctx.workspaces.some((w) => w.id === row.organizationId)) return null;
     return row.organizationId;
+  });
+}
+
+/** Adds a tag by hand, or removes one (a selector: "s:pricing", "k:coffee", "t:dark"). Any member can.
+ *  The edits are the workspace's and stay when the AI tags the item again. */
+export async function editTags(itemId: string, change: { add?: string; remove?: string }) {
+  return withCtx(async (ctx) => {
+    const user = await editUserTags(ctx.workspace.id, String(itemId), {
+      add: typeof change.add === "string" ? change.add : undefined,
+      remove: typeof change.remove === "string" ? change.remove : undefined,
+    });
+    if (!user) throw new HttpError(404, (await getErrors()).urlNotInWorkspace);
+    embedAfter(String(itemId));
+    (await import("@/lib/jev")).clearSearchCache();
+    return user;
   });
 }

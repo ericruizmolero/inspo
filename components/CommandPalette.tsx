@@ -1,6 +1,7 @@
 "use client";
 // Cmd+K: find an inspiration, save a URL, switch workspace, jump to a settings section.
-import { useState } from "react";
+import { useWorkspaceSwitch } from "./workspace-switch";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { InspoItem } from "@/types/inspo";
 import type { Workspace } from "@/lib/workspace-core";
@@ -30,7 +31,11 @@ export default function CommandPalette({ open, onOpenChange, items, hasDesignMd,
 
   // Every choice closes the palette first, then acts
   const run = (fn: () => void) => () => { onOpenChange(false); setSearch(""); fn(); };
+  const instant = useWorkspaceSwitch();
+  // ⌘K can switch workspace: the others start loading as it opens
+  useEffect(() => { if (open && workspaces.length > 1) instant?.prefetch(); }, [open, workspaces.length, instant]);
   const switchTo = async (id: string) => {
+    if (instant) { await instant.switchTo(id); return; }
     await authClient.organization.setActive({ organizationId: id });
     router.refresh();
   };

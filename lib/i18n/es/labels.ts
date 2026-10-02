@@ -7,15 +7,6 @@ export const labels: typeof EnLabels = {
     ideas: "Ideas",
     documentaries: "Documentales",
   },
-  date: {
-    all: "Todos",
-    thisMonth: "Este mes",
-    thisYear: "Este año",
-  },
-  author: {
-    all: "Todos",
-    Both: "Ambos",
-  },
   area: {
     library: "Biblioteca",
     search: "Búsqueda IA",
@@ -40,5 +31,8 @@ export const labels: typeof EnLabels = {
     revise: "Revisiones de DESIGN.md",
     design_why: "Notas conectadas con el DESIGN.md",
     polish: "Tableros pulidos",
+    auto_tag: "Inspos etiquetados",
+    query_en: "Búsquedas traducidas",
+    embed: "Búsqueda por significado",
   },
 };

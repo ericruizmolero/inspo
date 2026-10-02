@@ -3,8 +3,8 @@
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey } from "drizzle-orm/pg-core";
-import type { InspoTags } from "@/types/inspo";
+import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
+import type { InspoTags, UserTags } from "@/types/inspo";
 import type { PolishState } from "@/types/polish";
 
 /** CHECK that a text column holds one of these values */
@@ -135,13 +135,35 @@ export const inspoItem = pgTable("inspo_item", {
   thumbnailUrl: text("thumbnail_url"),
   /** Serialized InspoTags (AI tags) */
   tagsJson: jsonb("tags_json").$type<InspoTags>(),
+  /** The workspace's own edits on top of the AI tags: they survive a new tagging (lib/taxonomy.ts viewOf) */
+  tagsUser: jsonb("tags_user").$type<UserTags>(),
+  /** The tagging job (lib/tag-jobs.ts): pending → running → done | failed */
+  tagStatus: text("tag_status").notNull().default("pending"),
+  tagAttempts: integer("tag_attempts").notNull().default(0),
+  /** When the running attempt started: a run older than the job's limit was lost and can be claimed again */
+  tagStartedAt: timestamp("tag_started_at", { withTimezone: true, mode: "date" }),
+  tagError: text("tag_error"),
+  /** What it means, for search by meaning (lib/embed.ts): name, tags, notes and thread, embedded.
+   *  Null = to embed (again): the worker fills it. */
+  embedding: vector("embedding", { dimensions: 1024 }),
+  embeddingAt: timestamp("embedding_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("inspo_item_org_idx").on(t.organizationId),
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
   index("inspo_item_created_by_idx").on(t.createdBy),
+  // The cron's sweep: only the few rows not done
+  index("inspo_item_tag_status_idx").on(t.tagStatus).where(sql`${t.tagStatus} <> 'done'`),
+  index("inspo_item_embedding_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
+  // Rows tagged with another taxonomy (lib/tag-jobs.ts claimable)
+  index("inspo_item_tags_version_idx").on(sql`coalesce((${t.tagsJson}->>'v')::int, 0)`).where(sql`${t.tagStatus} = 'done'`),
+  // The embed worker's backlog, newest first (lib/embed.ts embedPending: read backwards, it matches DESC)
+  index("inspo_item_embed_pending_idx").on(t.createdAt).where(sql`${t.embedding} is null and ${t.tagStatus} = 'done'`),
+  // The same address in other workspaces, whose tags a new save can copy (lib/tagger.ts)
+  index("inspo_item_web_key_idx").on(t.webKey),
   oneOf("inspo_item_type_check", t.type, ["inspiration", "videos", "ideas", "documentaries"]),
+  oneOf("inspo_item_tag_status_check", t.tagStatus, ["pending", "running", "done", "failed"]),
 ]);
 
 // ─── Projects ────────────────────────────────────────────────────────────────
@@ -175,6 +197,25 @@ export const projectItem = pgTable("project_item", {
   index("project_item_org_idx").on(t.organizationId),
   index("project_item_item_idx").on(t.itemId),
   index("project_item_added_by_idx").on(t.addedBy),
+]);
+
+// ─── Canvas ──────────────────────────────────────────────────────────────────
+// Where each reference sits on a space's canvas, in canvas units (a tile is 360 wide).
+// The space is "all", "inbox" or a project id: plain text, so a project's rows are removed
+// by hand when it goes (lib/canvas.ts). A reference with no row is placed automatically.
+
+export const canvasPosition = pgTable("canvas_position", {
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  space: text("space").notNull(),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  x: real("x").notNull(),
+  y: real("y").notNull(),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.organizationId, t.space, t.itemId] }),
+  index("canvas_position_item_idx").on(t.itemId),
+  index("canvas_position_updated_by_idx").on(t.updatedBy),
 ]);
 
 // ─── DESIGN.md revisions ─────────────────────────────────────────────────────
@@ -228,9 +269,10 @@ export const designWhy = pgTable("design_why", {
 ]);
 
 // ─── Comments per inspo ──────────────────────────────────────────────────────
-// Flat thread per item (like a Figma pin thread). The item's original note
-// (comments/subcomments) stays in inspo_item and renders as the first message
-// of the thread; replies from any member go here.
+// One kind of thing: a comment on a reference. Pinned (anchor set) it is a post-it at a place on the page;
+// without an anchor it is about the whole reference. Either can have replies, one level deep (a reply has
+// a parent_id, no anchor and no replies of its own). The item's original note stays in inspo_item and
+// opens the list.
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
 
@@ -244,13 +286,25 @@ export const inspoComment = pgTable("inspo_comment", {
   body: text("body").notNull(),
   /** Attached screenshots: JSON `[{ url, w, h, name }]` (private Blob URLs, or /public paths locally) */
   attachments: jsonb("attachments").$type<CommentAttachmentRow[]>().notNull().default([]),
+  /** The comment this one answers. Null: a comment of its own (pinned or about the whole reference) */
+  parentId: text("parent_id").references((): AnyPgColumn => inspoComment.id, { onDelete: "cascade" }),
+  /** A post-it pinned on the page: x and y as 0..1 of the image box, and the page height (in 1440px-wide
+   *  pixels) when it was pinned, so the pin keeps its place if a new capture changes the page's height.
+   *  All three null: a comment about the whole reference, or a reply. */
+  anchorX: real("anchor_x"),
+  anchorY: real("anchor_y"),
+  anchorH: integer("anchor_h"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
+  check("inspo_comment_anchor_check", sql`(${t.anchorX} is null) = (${t.anchorY} is null) and (${t.anchorX} is null) = (${t.anchorH} is null)`),
   // Deleting an item cascades here by item_id alone, which the index above cannot serve
   index("inspo_comment_item_id_idx").on(t.itemId),
   index("inspo_comment_author_id_idx").on(t.authorId),
+  // A reply sits under its comment, never on the page
+  check("inspo_comment_reply_check", sql`${t.parentId} is null or ${t.anchorX} is null`),
+  index("inspo_comment_parent_id_idx").on(t.parentId),
 ]);
 
 // ─── AI usage ────────────────────────────────────────────────────────────────
@@ -261,7 +315,7 @@ export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish */
+  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish | auto_tag | query_en | embed */
   action: text("action").notNull(),
   model: text("model").notNull(),
   inputTokens: integer("input_tokens").notNull().default(0),
@@ -285,7 +339,7 @@ export const aiUsage = pgTable("ai_usage", {
   // Monthly quota count (lib/quota.ts): one workspace, one action, since the 1st
   index("ai_usage_org_action_created_idx").on(t.organizationId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
-  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish"]),
+  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 

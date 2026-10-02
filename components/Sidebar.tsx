@@ -3,11 +3,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { FilterDate, FilterType, InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import type { Term } from "@/lib/taxonomy";
+import { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
-import { UserAvatar } from "./WorkspaceMenu";
 import FeedbackEntry from "./FeedbackEntry";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +15,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-export const TYPES: InspoItem["type"][] = ["inspiration", "videos", "ideas", "documentaries"];
-export const DATES: Exclude<FilterDate, "all">[] = ["thisMonth", "thisYear"];
 
 // ─── Icons (16px, 1.5 stroke) ─────────────────────────────────────────────────
 const I = {
@@ -171,9 +167,6 @@ function PickCard({ url, desc, kind }: { url: string; desc: string; kind?: strin
   );
 }
 
-const TYPE_ICON: Record<InspoItem["type"], React.ReactNode> = {
-  inspiration: I.spark, videos: I.play, ideas: I.bulb, documentaries: I.film,
-};
 
 export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading, shortcut }: {
   value: string; onChange: (v: string) => void; className?: string; autoFocus?: boolean;
@@ -219,28 +212,6 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   );
 }
 
-export function Chips({ terms, counts, selected, onToggle, labels, images }: {
-  terms: Term[]; counts: Record<string, number>; selected: string[]; onToggle: (k: string) => void;
-  labels: Record<string, string>; images?: Record<string, string>;
-}) {
-  const { t: dict } = useT();
-  const visible = terms.filter((t) => (counts[t.key] ?? 0) > 0 || selected.includes(t.key));
-  if (!visible.length) return <div className="chips__empty">{dict.sidebar.notTagged}</div>;
-  return (
-    <div className="chips">
-      {visible.map((t) => {
-        const on = selected.includes(t.key);
-        return (
-          <button key={t.key} className={`chip${on ? " is-active" : ""}`} onClick={() => onToggle(t.key)}>
-            {images?.[t.key] && <span className="fbar__avatar"><img src={images[t.key]} alt="" /></span>}
-            {labels[t.key] ?? t.key}<span className="chip__count">{counts[t.key] ?? 0}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }: {
   icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void; title?: string;
   onPointerEnter?: () => void;
@@ -256,7 +227,6 @@ function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }:
   );
 }
 
-export interface TaggingState { running: boolean; done: number; total: number; error?: string }
 
 export interface QuotaView {
   planName: string;
@@ -264,24 +234,14 @@ export interface QuotaView {
   searches: { used: number; limit: number | null };
 }
 
-export interface SidebarMember { name: string; image: string | null }
-
 export interface SidebarProps {
   /** Plan and this month's usage (null until loaded) */
   quota?: QuotaView | null;
   /** Header: workspace switcher */
   brand: React.ReactNode;
   items: InspoItem[];
-  /** The workspace's people: each row filters the library by who added it */
-  members?: SidebarMember[];
-  /** A personal workspace offers "create a team" instead of "invite" */
-  workspaceKind?: "personal" | "team";
-  author: string;
-  onAuthor: (name: string) => void;
-  type: FilterType;
-  /** No filter and no search: "All" is the current view */
+  /** No search and the whole library: "All" is the current view */
   isAll: boolean;
-  onType: (t: FilterType) => void;
   onReset: () => void;
   onAdd: () => void;
   onDirectory: () => void;
@@ -290,8 +250,6 @@ export interface SidebarProps {
   onSpace: (space: string) => void;
   projects: Project[];
   links: ProjectLinks;
-  /** Items in the current space: the type rows count these */
-  spaceItems: InspoItem[];
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
@@ -357,8 +315,22 @@ function ProjectRow({ project, count, active, onClick, onRename, onDelete }: {
   );
 }
 
+/** How many references each space holds: the whole library, the Inbox (in no project) and each project */
+export function useSpaceCounts(items: InspoItem[], links: ProjectLinks) {
+  return useMemo(() => {
+    const byProject: Record<string, number> = {};
+    let inbox = 0;
+    for (const i of items) {
+      const filed = (i.id && links[i.id]) || [];
+      if (!filed.length) inbox++;
+      for (const p of filed) byProject[p] = (byProject[p] ?? 0) + 1;
+    }
+    return { all: items.length, inbox, byProject };
+  }, [items, links]);
+}
+
 /** This month's DESIGN.md quota: the only thing that runs out. Links to /settings/plan. */
-function PlanMeter({ quota }: { quota: QuotaView }) {
+export function PlanMeter({ quota }: { quota: QuotaView }) {
   const { t } = useT();
   const { used, limit } = quota.designMd;
   const full = limit !== null && used >= limit;
@@ -372,11 +344,11 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
   );
 }
 
-/** Everything under the workspace: add, the whole library, the collections, the team, the directory and the plan.
- *  Shared by the docked column, the phone sheet and the island menu that hangs from the top bar pill. */
-export function SidebarNav({ quota, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, onPick,
-  space, onSpace, projects, links, spaceItems, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
-  /** Called after any choice (the phone sheet closes; the island menu stays open on purpose) */
+/** Everything under the workspace: add, the whole library, the projects, the directory and the plan.
+ *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
+export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, onPick,
+  space, onSpace, projects, links, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
+  /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;
 }) {
   const { t } = useT();
@@ -402,17 +374,11 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
   const foldAll = () => { cancelIntent(); setOpen(null); };
   useEffect(() => cancelIntent, []);
   const shuffle = () => { foldAll(); setPicks((cur) => shuffleSidebarPicks(cur)); setRound((n) => n + 1); };
-  const countBy = (pred: (i: InspoItem) => boolean) => spaceItems.filter(pred).length;
   // Projects: which one is being named in place ("new" = the row at the bottom), and each one's count
   const [naming, setNaming] = useState<string | null>(null);
-  const projectCounts = useMemo(() => {
-    const c: Record<string, number> = {};
-    for (const i of items) for (const p of (i.id && links[i.id]) || []) c[p] = (c[p] ?? 0) + 1;
-    return c;
-  }, [items, links]);
+  const counts = useSpaceCounts(items, links);
   // Inside a project the button says where the reference will be filed
   const addTo = projects.find((p) => p.id === space)?.name;
-  const inboxCount = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)).length, [items, links]);
   return (
     <>
       <div className="app-sidebar__add-row">
@@ -426,17 +392,8 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
         <FadeScroll>
           <SidebarGroup>
             <SidebarMenu>
+              {/* Kinds, dates and every tag are searched now, from the box: "All" is the way back */}
               <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={pick(onReset)} />
-              {TYPES.map((v) => (
-                <NavItem
-                  key={v}
-                  icon={TYPE_ICON[v]}
-                  label={t.labels.type[v]}
-                  count={countBy((i) => i.type === v)}
-                  active={type === v}
-                  onClick={pick(() => onType(type === v ? "all" : v))}
-                />
-              ))}
             </SidebarMenu>
           </SidebarGroup>
 
@@ -445,13 +402,13 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
           <SidebarGroup>
             <SidebarGroupLabel>{t.projects.title}</SidebarGroupLabel>
             <SidebarMenu>
-              <NavItem icon={I.inbox} label={t.projects.inbox} count={inboxCount} active={space === "inbox"} title={t.projects.inboxHint}
+              <NavItem icon={I.inbox} label={t.projects.inbox} count={counts.inbox} active={space === "inbox"} title={t.projects.inboxHint}
                 onClick={pick(() => onSpace(space === "inbox" ? "all" : "inbox"))} />
               {projects.map((p) => naming === p.id ? (
                 <NameField key={p.id} initial={p.name} placeholder={t.projects.namePlaceholder}
                   onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} onCancel={() => setNaming(null)} />
               ) : (
-                <ProjectRow key={p.id} project={p} count={projectCounts[p.id] ?? 0} active={space === p.id}
+                <ProjectRow key={p.id} project={p} count={counts.byProject[p.id] ?? 0} active={space === p.id}
                   onClick={pick(() => onSpace(space === p.id ? "all" : p.id))}
                   onRename={() => setNaming(p.id)} onDelete={() => onDeleteProject(p)} />
               ))}
@@ -466,34 +423,6 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-            </SidebarMenu>
-          </SidebarGroup>
-
-          {/* The team, visible from the first glance: this is a shared library, not a personal one.
-              Clicking a person applies the "Who" filter (counts live in the filter bar, not here);
-              the last row invites or creates the team. */}
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.team}</SidebarGroupLabel>
-            <SidebarMenu>
-              {members.map((m) => (
-                <NavItem
-                  key={m.name}
-                  icon={<UserAvatar name={m.name} image={m.image} small className="nav-item__member" />}
-                  label={m.name}
-                  active={author === m.name}
-                  title={t.sidebar.addedBy(m.name)}
-                  onClick={pick(() => onAuthor(author === m.name ? "all" : m.name))}
-                />
-              ))}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  className="nav-item nav-item--quiet"
-                  render={<Link href={workspaceKind === "personal" ? "/settings/members?create=1" : "/settings/members"} onClick={() => onPick?.()} />}
-                >
-                  <span className="nav-item__icon">{I.plus}</span>
-                  <span>{workspaceKind === "personal" ? t.sidebar.createTeam : t.sidebar.invite}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
 
@@ -541,8 +470,8 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
   );
 }
 
-// Navigation only (Refero model): the workspace card, then SidebarNav. Filters live in the bar over the grid
-// (FilterBar), search in the top bar. Collapsed on desktop, the column slides away and IslandPill takes over.
+// Navigation only (Refero model): the workspace card, then SidebarNav. Every filter lives in the search.
+// Collapsed on desktop, the column slides away and the island (components/Island.tsx) takes over.
 export default function AppSidebar({ brand, ...nav }: SidebarProps) {
   const { t } = useT();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -556,49 +485,6 @@ export default function AppSidebar({ brand, ...nav }: SidebarProps) {
       </SidebarHeader>
       <SidebarNav {...nav} onPick={onPick} />
     </Sidebar>
-  );
-}
-
-/** Island (after Angelo Libero): with the column folded, the workspace lives as a quiet pill in the top bar,
- *  in the bar's own language (same height and hairline as the search). Its chevron hangs the menu under it
- *  as a card over the grid; it stays open while you pick filters and only a click outside or Escape folds it. */
-export function IslandPill({ brand, ...nav }: SidebarProps) {
-  const { t } = useT();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: PointerEvent) => { if (e.target instanceof Node && !ref.current?.contains(e.target)) setOpen(false); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    document.addEventListener("pointerdown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("pointerdown", onDown); document.removeEventListener("keydown", onKey); };
-  }, [open]);
-
-  return (
-    <div className={`island${open ? " is-open" : ""}`} ref={ref}>
-      <div className="island__pill">
-        {brand}
-        <button
-          type="button"
-          className="island__chev"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="island-menu"
-          aria-label={open ? t.sidebar.foldMenu : t.sidebar.unfoldMenu}
-        >
-          {I.chevron}
-        </button>
-      </div>
-      <div className="island__body" id="island-menu" inert={!open}>
-        <div className="island__clip">
-          <div className="island__card">
-            {/* No onPick: a choice inside the island filters without folding it; only a click outside or Escape folds it */}
-            <SidebarNav {...nav} />
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }
 

@@ -1,14 +1,7 @@
-import { getSession, getCtx, listMembers } from "@/lib/workspace";
-import { loadWorkspaceData } from "@/lib/items";
-import { loadProjects } from "@/lib/projects";
-import InspoClient from "@/components/InspoClient";
+import { getSession, getCtx } from "@/lib/workspace";
 import type { ReactNode } from "react";
-import { isAdmin } from "@/lib/activity";
-import { quotaStatus } from "@/lib/quota";
-import { listComments } from "@/lib/comments";
-import { designMdIndexFor } from "@/lib/design-store";
-import { sidebarOpen } from "@/lib/sidebar-state";
-
+import { loadLibrary } from "@/lib/library";
+import LibraryHost from "@/components/LibraryHost";
 
 // The library lives in this layout so it stays mounted between / and /i/[id]: opening a DESIGN.md
 // changes the URL (history.pushState) without a remount, and a refresh keeps the running jobs.
@@ -16,42 +9,19 @@ import { sidebarOpen } from "@/lib/sidebar-state";
 export default async function LibraryLayout({ children }: { children: ReactNode }) {
   if (!(await getSession())) return children;
   const ctx = await getCtx();
-
-  const ws = ctx.workspace;
-  // Everything the library needs on open, in parallel and before painting
-  const [{ items, thumbnailMap, tagMap }, { projects, links }, members, admin, quota, comments, designMdIndex, open] = await Promise.all([
-    loadWorkspaceData(ws.id),
-    loadProjects(ws.id),
-    listMembers(ws.id),
-    isAdmin(ctx.user.email),
-    quotaStatus(ws),
-    listComments(ws.id),
-    designMdIndexFor(ws.id),
-    sidebarOpen(),
-  ]);
+  // Everything the library needs on open, before painting
+  const library = await loadLibrary(ctx.user, ctx.workspace);
 
   return (
     <>
-    {/* key: switching workspace remounts the client (clean item and filter state) */}
-    <InspoClient
-      key={ctx.workspace.id}
-      items={items}
-      initialThumbnailMap={thumbnailMap}
-      initialTagMap={tagMap}
-      initialProjects={projects}
-      initialProjectLinks={links}
-      aiEnabled={!!process.env.TYPESAFE_API_KEY}
-      user={ctx.user}
-      workspace={ctx.workspace}
-      workspaces={ctx.workspaces}
-      members={members.map((m) => ({ name: m.name, image: m.image ?? null }))}
-      isAdmin={admin}
-      initialQuota={quota}
-      initialComments={comments}
-      initialDesignMdIndex={designMdIndex}
-      initialSidebarOpen={open}
-    />
-    {children}
+      {/* The host shows this workspace and, on a switch, another one at once (components/LibraryHost.tsx) */}
+      <LibraryHost
+        library={library}
+        user={ctx.user}
+        workspaces={ctx.workspaces}
+        aiEnabled={!!process.env.TYPESAFE_API_KEY}
+      />
+      {children}
     </>
   );
 }

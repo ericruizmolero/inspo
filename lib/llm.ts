@@ -33,7 +33,8 @@ export interface LlmResult {
 }
 
 export class LlmError extends Error {
-  constructor(message: string, readonly finishReason: string | null = null, readonly raw = "") { super(message); }
+  /** `status`: the HTTP status when OpenRouter refused the call (429: rate limited) */
+  constructor(message: string, readonly finishReason: string | null = null, readonly raw = "", readonly status: number | null = null) { super(message); }
 }
 
 export async function llm(i: LlmInput): Promise<LlmResult> {
@@ -71,7 +72,7 @@ export async function llm(i: LlmInput): Promise<LlmResult> {
   const json = await res.json().catch(() => null) as OpenRouterResponse | null;
   if (!res.ok || !json || json.error) {
     const e = json?.error;
-    throw new LlmError(`OpenRouter ${res.status}: ${e?.message ?? res.statusText}${e?.metadata?.raw ? ` (${String(e.metadata.raw).slice(0, 300)})` : ""}`);
+    throw new LlmError(`OpenRouter ${res.status}: ${e?.message ?? res.statusText}${e?.metadata?.raw ? ` (${String(e.metadata.raw).slice(0, 300)})` : ""}`, null, "", res.status);
   }
 
   const choice = json.choices?.[0];

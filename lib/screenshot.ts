@@ -4,6 +4,7 @@ import puppeteer, { Browser } from "puppeteer-core";
 import { webKeyOf } from "./url";
 import { getFile, fileExists, putFile } from "./storage";
 import { gatedLaunch } from "./browser-gate";
+import type { PageShot } from "@/types/inspo";
 
 const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
@@ -11,6 +12,8 @@ const VIEWPORT = { width: 1440, height: 900 };
 const GOTO_TIMEOUT_MS = 20000;
 const SETTLE_MS = 1500;
 const JPEG_QUALITY = 78;
+/** The whole page is cut here, as the DESIGN.md capture does */
+const MAX_PAGE_H = 6000;
 
 // ─── Storage ─────────────────────────────────────────────────────────────────
 // One hero screenshot per site, shared across workspaces (lib/storage.ts, inspo/shots/).
@@ -92,7 +95,8 @@ const HIDE_CSS = `
 
 const ACCEPT_TEXTS = ["aceptar", "accept", "agree", "allow", "ok", "got it", "entendido", "onartu"];
 
-export async function captureHero(url: string): Promise<Buffer> {
+/** The first screen of the site; with `full`, the whole page (up to 6000px tall), scrolled once so lazy parts load */
+export async function captureHero(url: string, full = false): Promise<Buffer> {
   let browser: Browser | null = null;
   try {
     // Waits for a free slot in the shared gate (lib/browser-gate.ts)
@@ -124,6 +128,18 @@ export async function captureHero(url: string): Promise<Buffer> {
     await page.evaluate(() => (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready).catch(() => {});
     await new Promise((r) => setTimeout(r, SETTLE_MS));
 
+    if (full) {
+      await page.evaluate(`(async () => {
+        const h = document.documentElement.scrollHeight;
+        for (let y = 0; y < Math.min(h, ${MAX_PAGE_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
+        window.scrollTo(0, 0);
+      })()`).catch(() => {});
+      await new Promise((r) => setTimeout(r, 600));
+      const h = (await page.evaluate("document.documentElement.scrollHeight").catch(() => VIEWPORT.height)) as number;
+      const height = Math.max(VIEWPORT.height, Math.min(Number(h) || VIEWPORT.height, MAX_PAGE_H));
+      const jpeg = await page.screenshot({ type: "jpeg", quality: 62, clip: { x: 0, y: 0, width: VIEWPORT.width, height }, captureBeyondViewport: true });
+      return Buffer.from(jpeg);
+    }
     const jpeg = await page.screenshot({ type: "jpeg", quality: JPEG_QUALITY, fullPage: false });
     return Buffer.from(jpeg);
   } finally {
@@ -137,4 +153,33 @@ export async function getOrCaptureShot(url: string): Promise<Buffer> {
   const jpeg = await captureHero(url);
   await storeShot(url, jpeg);
   return jpeg;
+}
+
+// ─── Whole page ──────────────────────────────────────────────────────────────
+// Sites without a DESIGN.md get a full-page capture of their own, once (lib/page-shots.ts).
+
+/** Captures the whole page and stores it with its canvas copies */
+export async function capturePage(url: string): Promise<PageShot> {
+  const { savePageShot } = await import("./page-shots");
+  return savePageShot(url, shotKey(url), await captureHero(url, true));
+}
+
+/**
+ * One browser run for everything a new site needs: the whole page with its canvas copies, and the card's
+ * first screen cut from it when there is none yet. Returns the whole page (for the tagger).
+ */
+export async function captureNewPage(url: string): Promise<Buffer> {
+  const full = await captureHero(url, true);
+  const { savePageShot } = await import("./page-shots");
+  const sharp = (await import("sharp")).default;
+  await Promise.all([
+    savePageShot(url, shotKey(url), full),
+    hasStoredShot(url).then(async (has) => {
+      if (has) return;
+      const { width = VIEWPORT.width, height = VIEWPORT.height } = await sharp(full).metadata();
+      const top = await sharp(full).extract({ left: 0, top: 0, width, height: Math.min(height, VIEWPORT.height) }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
+      await storeShot(url, top);
+    }),
+  ]);
+  return full;
 }

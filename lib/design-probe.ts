@@ -8,6 +8,7 @@ import type { Browser, Page } from "puppeteer-core";
 import { launch } from "./design-extract";
 import { llm } from "./llm";
 import type { Voice } from "./design-why";
+import { voiceText } from "./comment-context";
 
 // Locating a section from a description needs eyes and judgment: the same model as the "why"
 export const PLAN_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -48,7 +49,7 @@ async function planOnPage(voices: Voice[], sections: PageSection[], images: Page
     model: PLAN_MODEL,
     system: PLAN_SYSTEM,
     image: fullShot,
-    text: `Notes:\n${voices.map((v, i) => `${i + 1}. ${v.author}: """${v.body}"""`).join("\n")}\n\nSECTIONS (id, tag, top y in px, height, images, text):\n${sections.map((x) => `${x.i}. <${x.tag}${x.cls ? ` class="${x.cls}"` : ""}> y=${x.y} h=${x.h} imgs=${x.imgs} "${x.text}"`).join("\n")}\n\nIMAGES (id, tag, x, y, width, height, alt):\n${images.map((m) => `${m.i}. <${m.tag}> x=${m.x} y=${m.y} ${m.w}x${m.h}${m.alt ? ` "${m.alt}"` : ""}`).join("\n")}`,
+    text: `Notes:\n${voices.map((v, i) => `${i + 1}. ${voiceText(v)}`).join("\n")}\n\nSECTIONS (id, tag, top y in px, height, images, text):\n${sections.map((x) => `${x.i}. <${x.tag}${x.cls ? ` class="${x.cls}"` : ""}> y=${x.y} h=${x.h} imgs=${x.imgs} "${x.text}"`).join("\n")}\n\nIMAGES (id, tag, x, y, width, height, alt):\n${images.map((m) => `${m.i}. <${m.tag}> x=${m.x} y=${m.y} ${m.w}x${m.h}${m.alt ? ` "${m.alt}"` : ""}`).join("\n")}`,
     schema: PlanSchema,
     maxTokens: 1500,
     signal,

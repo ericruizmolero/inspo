@@ -1,0 +1,3 @@
+CREATE INDEX "inspo_item_tags_version_idx" ON "inspo_item" USING btree (coalesce(("tags_json"->>'v')::int, 0)) WHERE "inspo_item"."tag_status" = 'done';--> statement-breakpoint
+CREATE INDEX "inspo_item_embed_pending_idx" ON "inspo_item" USING btree ("created_at") WHERE "inspo_item"."embedding" is null and "inspo_item"."tag_status" = 'done';--> statement-breakpoint
+CREATE INDEX "inspo_item_web_key_idx" ON "inspo_item" USING btree ("web_key");

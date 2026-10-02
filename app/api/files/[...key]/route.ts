@@ -6,6 +6,7 @@ import { commentPrefix } from "@/lib/comment-files";
 import { DESIGN_MD_PREFIX, whyShotPrefix } from "@/lib/design-store";
 import { mediaPrefix } from "@/lib/media";
 import { POSTS_PREFIX } from "@/lib/posts";
+import { PAGES_PREFIX } from "@/lib/page-shots";
 import { openFile, fileUrl, signedFileUrl } from "@/lib/storage";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const key = parts.join("/");
 
   const ws = session.workspace.id;
-  const allowed = [blobPrefix(ws), mediaPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX].some((p) => key.startsWith(p))
+  const allowed = [blobPrefix(ws), mediaPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX].some((p) => key.startsWith(p))
     // A thumbnail stored under another prefix but set on one of this workspace's items
     || (await ownsThumbnail(ws, fileUrl(key)));
   if (!allowed) return new Response("forbidden", { status: 403 });

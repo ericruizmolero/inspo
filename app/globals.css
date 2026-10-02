@@ -28,6 +28,12 @@
   --shadow-card: 0 8px 24px -8px rgba(0,0,0,0.5);
   --focus-ring: color-mix(in srgb, var(--text) 55%, transparent);
 
+  /* Motion: strong curves (the built-in ones are too weak). Out for entering and leaving, in-out for
+     things moving on screen, drawer for panels that slide in from an edge. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
   --radius-s: 8px;
   --radius-m: 12px;
   --radius-l: 16px;
@@ -309,63 +315,152 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .app-sidebar__header { padding: 12px 12px 4px; }
 .app-sidebar__footer { gap: 8px; padding: 12px; border-top: 1px solid var(--sidebar-border); }
 
-/* ─── Curtain + island (after Angelo Libero) ─────────────────────────────── */
-/* The curtain, by transforms only, driven from InspoClient with the Web Animations API so it runs on the
-   compositor: the gap jumps, the column and the whole content block slide, and the cards near the viewport
-   fly from their old box to the new one, all on one curve. Transitioning the gap's width instead relaid out
-   the grid every frame and WebKit re-decoded every visible screenshot at each width (5 to 15 s frozen). */
-.shell { overflow-x: clip; }
-.shell [data-slot="sidebar-gap"] { transition: none; }
-.app-sidebar { left: 0; transition: none; will-change: transform; }
-[data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: translateX(-100%); }
+/* ─── The island (after Angelo Libero) ─────────────────────────────────── */
+/* The page is the canvas, edge to edge. On desktop the sidebar is an island floating over it: a card
+   inset from the window's edges that slides away to the left when folded (⌘B), leaving the workspace
+   pill in the top bar. Nothing under it moves: the canvas is never laid out again. */
+.shell { height: 100svh; min-height: 0; overflow: hidden; }
+@media (min-width: 801px) {
+  .shell:not(.shell--docked) [data-slot="sidebar-gap"] { display: none; }
+  .app-sidebar {
+    top: 12px; bottom: 12px; left: 12px; height: auto; z-index: 40;
+    transition: transform 280ms var(--ease-drawer), opacity 200ms var(--ease-out);
+  }
+  [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { left: 12px; transform: translateX(calc(-100% - 24px)); opacity: 0; pointer-events: none; }
+  .app-sidebar > [data-slot="sidebar-inner"] {
+    border-radius: 16px; overflow: hidden;
+    background: color-mix(in srgb, var(--panel) 94%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+    box-shadow: 0 0 0 1px var(--border), var(--shadow-pop);
+  }
+}
+/* What sits left of the canvas moves aside for the island with it, on the same curve: by transform, so
+   nothing is laid out again while it slides */
+@media (min-width: 801px) {
+  .topbar__trigger, .canvas-zoom { transition: transform 280ms var(--ease-drawer); }
+  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .canvas-zoom) { transform: translateX(280px); }
+}
+/* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
+:root[data-instant] :is(.app-sidebar, .topbar__trigger, .canvas-zoom) { transition: none; }
+@media (min-width: 801px) and (prefers-reduced-motion: reduce) {
+  .app-sidebar { transition: opacity 200ms var(--ease-out); }
+  [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: none; }
+  .topbar__trigger, .canvas-zoom { transition: none; }
+}
+/* Settings and the other sections keep the docked column: it takes its room and the page moves aside,
+   the page scrolls, and the top bar is a band of its own over it */
+.shell--docked { height: auto; overflow: visible; overflow-x: clip; }
+.shell--docked [data-slot="sidebar-gap"] { transition: none; }
+.shell--docked .content { height: auto; overflow: visible; }
+.shell--docked .topbar {
+  position: sticky; pointer-events: auto;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
 /* The workspace as a card at the top of the column */
 .app-sidebar__brand { display: flex; align-items: center; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
 .app-sidebar__brand .ws__trigger { padding: 4px 8px 4px 4px; border-radius: 9px; }
 .app-sidebar__brand .ws__trigger:hover { background: var(--surface-2); }
 .app-sidebar__add-row { padding: 8px 12px 4px; }
-.ws__count { color: var(--muted-2); font-variant-numeric: tabular-nums; }
-
-/* The pill, in the breadcrumb's place: the bar's own language (same height, radius and hairline as the
-   search box), no fill at rest, filled on hover or while the menu hangs open */
-.island { position: relative; display: flex; flex-direction: column; min-width: 0; animation: fade-in 0.3s ease-out both; }
-.island__pill { display: flex; align-items: center; height: 34px; max-width: 260px; border: 1px solid var(--border); border-radius: 10px; background: transparent; transition: background 0.15s, border-color 0.15s; }
-@media (hover: hover) { .island__pill:hover { background: var(--surface); } }
-.island.is-open .island__pill { background: var(--surface); border-color: var(--border-strong); }
-.island .ws { width: auto; min-width: 0; }
-.island .ws__trigger { height: 32px; padding: 0 6px 0 5px; gap: 8px; border-radius: 9px; }
-.island .ws__trigger:hover { background: transparent; }
-.island .ws__avatar { width: 20px; height: 20px; border-radius: 6px; font-size: 11px; }
-.island .ws__names { flex-direction: row; align-items: baseline; gap: 6px; }
-.island .ws__name { font-size: 13px; }
-.island .ws__kind { font-size: 12px; white-space: nowrap; }
-.island__chev {
-  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
-  width: 24px; height: 24px; margin-right: 4px; border: 0; border-radius: 8px;
-  background: transparent; color: var(--muted); cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+/* ─── The island (components/Island.tsx) ─────────────────────────────────────
+   Desktop only. The projects as tabs in a white bar, the search dock's material (the same white in both
+   themes, its hairline and shadow): 44 tall like a touch target, 14 round to the dock's 56/18. The
+   workspace is its avatar at the start; the selected tab is the search's chip, ringed so it reads without
+   colour. Nothing moves on selection: people switch projects all day. Inner radius 9 = 14 - 5 (concentric).
+   Focus on the white surfaces is the dock's ink: the app's ring is pale on dark and vanishes here. */
+.island, .canvas-zoom, .island-pop { --focus-ring: var(--dock-ink); }
+.island {
+  position: relative; display: flex; align-items: center; min-width: 0; height: 44px; padding: 0 5px;
+  border-radius: 14px; background: var(--dock-surface); color: var(--dock-ink);
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
-.island__chev:hover { background: var(--surface-2); color: var(--text); }
-.island.is-open .island__chev { transform: rotate(180deg); }
-/* The menu: a card hanging under the pill, over the grid. It folds with grid rows, opacity and a touch of blur;
-   the padding keeps its shadow inside the clip. Only the card takes clicks. */
-.island__body {
-  position: absolute; top: calc(100% + 8px); left: 0; width: 280px; z-index: 30;
-  display: grid; grid-template-rows: 0fr; pointer-events: none;
-  transition: grid-template-rows 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+@media (max-width: 800px) { .island { display: none; } }
+.island__ws {
+  display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; height: 34px; padding: 0 2px 0 6px;
+  border: 0; border-radius: 9px; background: none; cursor: pointer; transition: background-color 150ms ease;
 }
-.island.is-open .island__body { grid-template-rows: 1fr; }
-.island__clip { min-height: 0; overflow: hidden; padding-bottom: 28px; }
-.island__card {
-  display: flex; flex-direction: column; max-height: calc(100svh - 110px); pointer-events: auto;
-  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-card);
-  opacity: 0; filter: blur(6px); transform: translateY(-8px);
-  transition: opacity 0.3s, filter 0.3s, transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+.island .ws__avatar { width: 22px; height: 22px; border-radius: 6px; font-size: 11px; background: var(--dock-fill); color: var(--dock-ink); }
+.island__chev { display: grid; place-items: center; width: 18px; color: var(--dock-muted); }
+.island__sep { flex-shrink: 0; width: 1px; height: 18px; margin: 0 6px 0 4px; background: var(--dock-line); }
+.island__tabs { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.island__tab {
+  display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; height: 34px; padding: 0 12px;
+  border: 0; border-radius: 9px; background: none; color: var(--dock-ink-2);
+  font: inherit; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
 }
-.island.is-open .island__card { opacity: 1; filter: blur(0); transform: none; }
-.island__card .app-sidebar__footer { border-radius: 0 0 12px 12px; }
+.island__tab.is-on { background: var(--dock-chip); color: var(--dock-ink); box-shadow: inset 0 0 0 1px var(--dock-muted); }
+@media (forced-colors: active) { .island__tab.is-on { outline: 2px solid Highlight; outline-offset: -2px; } }
+/* A long name stops at 200px; the tab's tooltip keeps it whole */
+.island__label { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.island__n { font-weight: 400; color: var(--dock-muted); font-variant-numeric: tabular-nums; }
+/* The selected project: one chip, two targets (go to it; its ⌄ renames or deletes it) */
+.island__tab--split { gap: 0; padding: 0; }
+.island__tab-main { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 4px 0 12px; border: 0; border-radius: 9px 0 0 9px; background: none; color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
+.island__tab-more { display: grid; place-items: center; width: 26px; height: 34px; padding: 0 2px 0 0; border: 0; border-radius: 0 9px 9px 0; background: none; color: var(--dock-muted); cursor: pointer; transition: color 150ms ease; }
+.island__tab--more { gap: 4px; padding-right: 8px; color: var(--dock-muted); }
+.island__tab--more svg, .island__tab-more svg { width: 12px; height: 12px; }
+.island__tab--add { padding: 0 10px; color: var(--dock-muted); }
+.island__tab--field { width: auto; cursor: text; background: var(--dock-surface); color: var(--dock-ink); box-shadow: inset 0 0 0 1px var(--dock-muted); outline: none; }
+.island__tab--field::placeholder { color: var(--dock-muted); }
+@media (hover: hover) and (pointer: fine) {
+  .island__ws:hover { background: var(--dock-hover); }
+  .island__ws:hover .island__chev, .island__tab-more:hover { color: var(--dock-ink); }
+  .island__tab:not(.is-on):not(.island__tab--field):hover { background: var(--dock-hover); color: var(--dock-ink); }
+}
+/* Every project tab at its own width, out of sight: Island.tsx reads it to decide how many fit */
+.island__measure { position: absolute; top: 0; left: 0; display: flex; gap: 2px; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+/* The workspace menu's extras: the plan sits inside the menu with its own padding */
+.island__plan { padding: 4px 2px; }
+/* "N more": the other projects, with who filed into each last and when */
+.island__others { width: 280px; }
+.island__other { align-items: center; }
+.island__other-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.island__other-text .ws__item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.island__other-meta { font-size: 12px; color: var(--muted); }
+/* The workspace menu hangs from the avatar, not from a card */
+.ws--inline { display: contents; }
+.ws__menu.ws__menu--inline { width: 260px; }
+/* The menus that open from the island are its material too: white in both themes, the dock's hairline and
+   shadow, the island's ink, the search's chip on hover. Item radius 8 = 14 - 6 */
+.island-pop.island-pop {
+  background: var(--dock-surface); border: 0; border-radius: 14px; padding: 6px; color: var(--dock-ink);
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+}
+.island-pop .ws__section { padding: 8px 8px 4px; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dock-muted); }
+.island-pop .ws__item { min-height: 34px; padding: 7px 8px; border-radius: 8px; color: var(--dock-ink-2); font-size: 13px; font-weight: 500; }
+.island-pop .ws__item:hover, .island-pop .ws__item.is-active { color: var(--dock-ink); }
+.island-pop .ws__item:hover { background: var(--dock-hover); }
+.island-pop .ws__item--muted { color: var(--dock-muted); }
+.island-pop .ws__item--danger, .island-pop .ws__item--danger:hover { color: var(--dock-danger); }
+.island-pop .ws__item-kind, .island-pop .island__other-meta { color: var(--dock-muted); }
+.island-pop .ws__item-check { color: var(--dock-ink); }
+.island-pop .pp__icon { color: var(--dock-muted); }
+.island-pop .ws__avatar { background: var(--dock-fill); color: var(--dock-ink); }
+.island-pop .ws__plus { border-color: var(--dock-line); color: var(--dock-muted); }
+.island-pop .ws__item:hover .ws__plus { color: var(--dock-ink); }
+.island-pop .ws__divider { background: var(--dock-line); }
+.island-pop .sidebar__plan:hover { background: var(--dock-hover); }
+.island-pop .sidebar__plan-head, .island-pop .sidebar__plan-note { color: var(--dock-muted); }
+.island-pop .sidebar__plan-note { font-size: 12px; }
+.island-pop .sidebar__plan-head strong { color: var(--dock-ink); }
+.island-pop .sidebar__plan.is-full .sidebar__plan-note { color: var(--dock-danger); }
+.island-pop .quota__bar { background: var(--dock-fill); }
+.island-pop .quota__bar span { background: var(--dock-ink); }
+.island-pop .quota__bar span.is-full { background: var(--dock-danger); }
+/* They grow out of the control that opened them (Base UI sets --transform-origin at the trigger) and fold
+   back into it, a touch quicker on the way out. Transitions, not keyframes: a second click mid-open retargets.
+   Reduced motion keeps the fade and drops the scale. */
+.island-pop {
+  transform-origin: var(--transform-origin);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.island-pop[data-ending-style] { transition-duration: 150ms; }
+.island-pop[data-starting-style], .island-pop[data-ending-style] { opacity: 0; transform: scale(0.95); }
 @media (prefers-reduced-motion: reduce) {
-  .island { animation: none; }
-  .island__body, .island__card, .island__chev { transition: none; }
+  .island-pop { transition-property: opacity; }
+  .island-pop[data-starting-style], .island-pop[data-ending-style] { transform: none; }
 }
 .sidebar__footer-note { font-size: 12px; color: var(--muted-2); padding: 0 10px; }
 
@@ -454,19 +549,51 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* "Add to <project>": a long project name ends in an ellipsis instead of widening the button */
 .sidebar__add-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.content { flex: 1; min-width: 0; }
+.content { position: relative; flex: 1; min-width: 0; height: 100svh; overflow: hidden; }
 
 /* Inset header: sidebar trigger and the current view on desktop; trigger, mark, search and add on a phone */
+/* The bars float over the canvas: no band, only their controls take the pointer */
 .topbar {
-  position: sticky; top: 0; z-index: 20;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
   display: flex; align-items: center; gap: 10px;
-  height: 52px; padding: 0 16px 0 12px;
-  background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
+  height: 56px; padding: 0 16px 0 12px;
+  pointer-events: none;
 }
+.topbar > * { pointer-events: auto; }
+/* Over pictures, the controls carry their own glass */
+.topbar__trigger [data-slot="sidebar-trigger"] {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+}
+.topbar__trigger [data-slot="sidebar-trigger"] { box-shadow: inset 0 0 0 1px var(--border); }
 .topbar__trigger { position: relative; display: flex; }
 .topbar__trigger [data-slot="sidebar-trigger"] { color: var(--muted); }
 .topbar__trigger [data-slot="sidebar-trigger"]:hover { color: var(--text); }
+/* In the library on desktop there is no sidebar, so no trigger. Polish and add are one white pill on the right,
+   the island's twin: same height, radius, material and tabs, a hairline between them */
+.topbar__actions { display: contents; }
+.topbar__actions-sep { display: none; }
+@media (min-width: 801px) {
+  .shell:not(.shell--docked) .topbar { height: 68px; }
+  .shell:not(.shell--docked) .topbar__trigger { display: none; }
+  .shell:not(.shell--docked) .topbar__actions {
+    display: flex; align-items: center; gap: 2px; flex-shrink: 0; height: 44px; margin-left: auto; padding: 0 5px;
+    border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+    --focus-ring: var(--dock-ink);
+  }
+  .shell:not(.shell--docked) .topbar__actions-sep { display: block; width: 1px; height: 18px; margin: 0 4px; background: var(--dock-line); }
+  .shell:not(.shell--docked) .topbar__actions :is(.topbar__polish, .topbar__add) {
+    display: inline-flex; align-items: center; height: 34px; margin: 0; border: 0; border-radius: 9px;
+    background: none; color: var(--dock-ink-2); font-size: 14px; font-weight: 500;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+  .shell:not(.shell--docked) .topbar__actions .topbar__polish { gap: 7px; padding: 0 12px 0 10px; }
+  .shell:not(.shell--docked) .topbar__actions .topbar__polish svg { color: var(--dock-ink); }
+  .shell:not(.shell--docked) .topbar__actions .topbar__add { width: 34px; justify-content: center; padding: 0; color: var(--dock-ink); }
+}
+@media (min-width: 801px) and (hover: hover) and (pointer: fine) {
+  .shell:not(.shell--docked) .topbar__actions :is(.topbar__polish, .topbar__add):hover { background: var(--dock-hover); color: var(--dock-ink); }
+}
 /* Shortcut inside a tooltip */
 .kbd { margin-left: 6px; padding: 1px 5px; border-radius: 4px; background: color-mix(in srgb, var(--bg) 14%, transparent); font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.02em; }
 .topbar__view { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
@@ -479,12 +606,12 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    screens; the gem stays */
 .topbar__polish { flex-shrink: 0; gap: 5px; height: 30px; padding: 0 10px 0 8px; margin-left: auto; border-radius: 8px; }
 .topbar__polish svg { color: var(--text); }
-/* Mobbin: one wide search in the middle of the bar */
-.topbar__search { flex: 1; min-width: 0; }
+/* The top bar keeps the workspace and the actions; the search lives in the dock at the bottom */
 /* Quiet at rest (Eric: the bar shouted): no fill, a hairline border, muted icon; the fill comes with hover and focus */
 .topbar .search.is-ai .input {
   height: 36px; border-radius: 10px;
-  background: transparent; border-color: var(--border);
+  background: color-mix(in srgb, var(--bg) 72%, transparent); border-color: var(--border);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   font-size: 13px;
 }
 .topbar .search.is-ai .input::placeholder { color: var(--muted-2); }
@@ -493,10 +620,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar .search.is-ai .search__icon { color: var(--muted-2); }
 .topbar .search.is-ai:focus-within .search__icon { color: var(--muted); }
 .topbar .search.is-ai .search__kbd { border: 0; color: var(--muted-2); font-size: 11px; }
-/* Desktop: centred on the whole bar, not on the space the breadcrumb leaves; it narrows before it reaches the breadcrumb */
-@media (min-width: 1200px) {
-  .topbar__search { position: absolute; left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 520px)); }
-}
 .search__kbd {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 20px; height: 20px; padding: 0 5px; border-radius: 5px;
@@ -504,50 +627,143 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   font-variant-numeric: tabular-nums; font-size: 11px; line-height: 1;
 }
 
-/* ─── Filter row over the grid (Mobbin) ─────────────────────────────────── */
-.fbar {
-  position: sticky; top: 52px; z-index: 15;
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 20px;
-  background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(12px);
+/* ─── The search bar (components/SearchBar.tsx) ──────────────────────────────
+   One field that grows with its chips; quiet at rest like the bar it replaced, a surface on hover and focus.
+   The suggestions hang under it as a menu. */
+.sb { position: relative; }
+.sb__field {
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 6px;
+  min-height: 36px; padding: 3px 8px 3px 34px; border-radius: 10px; cursor: text;
+  background: color-mix(in srgb, var(--bg) 72%, transparent); border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  overflow-x: auto; scrollbar-width: none; transition: background 0.15s, border-color 0.15s;
 }
-.fbar__when { flex-shrink: 0; }
-.fbar__active { display: flex; align-items: center; gap: 6px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.fbar__active::-webkit-scrollbar { display: none; }
-.fbar__pill { flex-shrink: 0; height: 28px; padding: 0 8px 0 12px; }
-.fbar__pill-x { display: flex; opacity: 0.6; transition: opacity 0.15s; }
-@media (hover: hover) { .fbar__pill:hover .fbar__pill-x { opacity: 1; } }
-.fbar__avatar { width: 16px; height: 16px; margin-left: -6px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
-.fbar__avatar img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; outline: 1px solid rgba(255,255,255,0.08); outline-offset: -1px; }
-html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
-.fbar__clear { flex-shrink: 0; border-color: transparent; }
-.fbar__end { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.fbar__open { padding-left: 8px; }
-.fbar__open.is-on { border-color: var(--text-2); color: var(--text); }
-.fbar__count {
-  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
-  background: var(--text); color: var(--bg);
-  font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums;
+.sb__field::-webkit-scrollbar { display: none; }
+@media (hover: hover) { .sb__field:hover { background: var(--surface); } }
+.sb:focus-within .sb__field { background: var(--surface); border-color: var(--border-strong); }
+.sb.is-open .sb__field { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.sb__icon { position: absolute; left: 11px; top: 0; height: 36px; display: flex; align-items: center; color: var(--muted-2); pointer-events: none; }
+.sb:focus-within .sb__icon { color: var(--muted); }
+.sb__input { flex: 1; min-width: 120px; height: 28px; padding: 0; border: 0; outline: none; background: none; color: var(--text); font: inherit; font-size: 13px; }
+.sb__input::placeholder { color: var(--muted-2); }
+.sb__chip {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  height: 24px; padding: 0 2px 0 9px; border-radius: 999px;
+  background: var(--surface-3); color: var(--text); font-size: 12px; white-space: nowrap;
 }
-.fbar__panel {
-  width: min(420px, calc(100vw - 32px)); max-height: min(560px, 70vh); overflow-y: auto;
-  display: flex; flex-direction: column; gap: 18px; padding: 16px 12px 18px;
-  background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-l);
-  box-shadow: var(--shadow-pop); outline: none;
+.sb__chip-x { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.sb__chip-x svg { width: 11px; height: 11px; }
+.sb__chip-x:hover, .sb__chip-x:focus-visible { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); }
+.sb__swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14); }
+.sb__face { width: 16px; height: 16px; margin-left: -4px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.sb__right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; }
+.sb__right .search__kbd { border: 0; color: var(--muted-2); font-size: 11px; }
+.sb__clear { display: inline-grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
+.sb__clear:hover, .sb__clear:focus-visible { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+.sb__gathering { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sb__gathering svg { animation: gather-pulse 1.6s ease-in-out infinite; }
+@keyframes gather-pulse { 50% { opacity: 0.35; } }
+.sb__menu {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 30; margin: 0; padding: 4px; list-style: none;
+  background: var(--surface); border: 1px solid var(--border-strong); border-top: 0;
+  border-radius: 0 0 10px 10px; box-shadow: var(--shadow-pop);
 }
-.fbar__group { display: flex; flex-direction: column; gap: 8px; }
-.fbar__label { margin: 0; padding: 0 12px; font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.fbar__panel .chip.is-active .chip__count { color: var(--bg); }
+.sb__option {
+  display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border-radius: 6px;
+  font-size: 13px; color: var(--text-2); cursor: pointer;
+}
+.sb__option.is-active { background: var(--surface-3); color: var(--text); }
+.sb__option-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb__option-group { flex-shrink: 0; font-size: 11px; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { .sb__gathering svg { animation: none; } }
+
+/* ─── The search dock: the search at the bottom, like a conversation ─────────────
+   Solid white in both themes and larger than anything else on screen: it is the way in. It sits centred
+   on the canvas (left of the panel when one is open); the suggestions open upwards. */
+.dock {
+  position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 25;
+  width: min(720px, calc(100% - 32px)); transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.dock .sb { width: 100%; }
+.dock__status {
+  margin: 0; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-variant-numeric: tabular-nums;
+  color: var(--text-2); background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: inset 0 0 0 1px var(--border);
+}
+.dock__status-more { color: var(--muted); }
+/* The count comes in with the first result; the number itself changes at once */
+.dock__status {
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb--dock .sb__menu { transition: opacity 140ms var(--ease-out); @starting-style { opacity: 0; transform: none; } }
+  .dock__status { transition: opacity 180ms var(--ease-out); @starting-style { opacity: 0; transform: none; } }
+}
+/* The dock's material is the same in both themes; the island and the add button share it */
+:root {
+  --dock-ink: #111110; --dock-ink-2: #55554f; --dock-muted: #6a6a65; --dock-chip: #efefec; --dock-line: rgba(0,0,0,0.09);
+  --dock-surface: #fff; --dock-hover: #f6f6f4; --dock-fill: #e8e8e4; --dock-danger: #c23a30;
+  --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.12);
+}
+.sb--dock .sb__field,
+.sb--dock .sb__field:hover,
+.sb--dock:focus-within .sb__field {
+  min-height: 56px; padding: 10px 12px 10px 48px; border-radius: 18px; gap: 8px;
+  background: var(--dock-surface); border: 1px solid var(--dock-line);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: 0 18px 48px -12px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.12);
+}
+.sb--dock:focus-within .sb__field { box-shadow: 0 18px 48px -12px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.12), 0 0 0 3px color-mix(in srgb, #fff 35%, transparent); }
+.sb--dock.is-open .sb__field { border-radius: 18px; }
+.sb--dock .sb__icon { left: 18px; height: 56px; color: var(--dock-ink); }
+.sb--dock .sb__icon svg { width: 18px; height: 18px; }
+.sb--dock .sb__input { height: 34px; font-size: 16px; color: var(--dock-ink); }
+.sb--dock .sb__input::placeholder { color: var(--dock-muted); }
+.sb--dock .sb__chip { height: 30px; padding: 0 3px 0 11px; font-size: 14px; background: var(--dock-chip); color: var(--dock-ink); }
+.sb--dock .sb__chip-x { color: var(--dock-muted); }
+.sb--dock .sb__chip-x:hover, .sb--dock .sb__chip-x:focus-visible { color: var(--dock-ink); background: rgba(0,0,0,0.07); }
+.sb--dock .sb__face { width: 20px; height: 20px; }
+.sb--dock .sb__swatch { width: 12px; height: 12px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.14); }
+.sb--dock .sb__right .search__kbd { color: var(--dock-muted); border: 1px solid var(--dock-line); }
+.sb--dock .sb__clear { width: 30px; height: 30px; border-radius: 10px; color: var(--dock-muted); }
+.sb--dock .sb__clear:hover, .sb--dock .sb__clear:focus-visible { color: var(--dock-ink); background: rgba(0,0,0,0.06); }
+.sb--dock .sb__gathering { color: var(--dock-ink-2); font-size: 13px; }
+.sb--dock .spinner { border-color: rgba(0,0,0,0.15); border-top-color: var(--dock-ink); }
+/* The suggestions open upwards, over the canvas, on the same white */
+.sb--dock .sb__menu {
+  top: auto; bottom: calc(100% + 8px); padding: 6px;
+  background: var(--dock-surface); border: 1px solid var(--dock-line); border-radius: 16px;
+  box-shadow: 0 18px 48px -12px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.1);
+}
+/* The list opens many times a minute while typing: a short rise from the bar (it grows from where it
+   hangs), and no exit, which would leave the old suggestions on screen after the key */
+.sb--dock .sb__menu {
+  transform-origin: 50% 100%;
+  transition: opacity 140ms var(--ease-out), transform 140ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(4px) scale(0.98); }
+}
+.sb--dock .sb__option { height: 40px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: var(--dock-ink-2); }
+.sb--dock .sb__option.is-active { background: var(--dock-chip); color: var(--dock-ink); }
+.sb--dock .sb__option-group { color: var(--dock-muted); font-size: 12px; }
+@media (max-width: 800px) {
+  .dock { bottom: calc(12px + env(safe-area-inset-bottom)); width: calc(100% - 24px); }
+  .sb--dock .sb__field { min-height: 52px; }
+  .sb--dock .sb__icon { height: 52px; }
+}
+
 /* Touch: 44px targets without changing the look. The pills wrap instead of scrolling, so nothing clips the larger target */
 @media (pointer: coarse) {
-  .fbar__active { flex-wrap: wrap; overflow: visible; }
-  .fbar__pill, .fbar__clear, .dir-add { position: relative; }
-  .fbar__pill::after, .fbar__clear::after, .dir-add::after { content: ""; position: absolute; inset: -8px -2px; }
+  .dir-add, .sb__chip-x { position: relative; }
+  .dir-add::after, .sb__chip-x::after { content: ""; position: absolute; inset: -8px -2px; }
+  .sb__option { height: 44px; }
 }
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
-  .dir-row__add, .dir-add, .chip, .btn-icon, .fbar__pill-x { transition: none; }
-  .chip:active, .btn-icon:active, .dir-add:active { transform: none; }
+  .dir-row__add, .dir-add, .chip, .btn-icon, .sb__field { transition: none; }
+  .chip:active, .btn-icon:active, .dir-add:active, .canvas-zoom button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -558,28 +774,8 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
   .topbar__polish { padding: 0 7px; font-size: 0; }
   .topbar__polish svg { font-size: 13px; }
   .search__kbd { display: none; }
-  .fbar { top: 56px; padding: 8px 12px; flex-wrap: wrap; row-gap: 8px; }
-  /* Pills take their own line under the row */
-  .fbar__active { order: 3; width: 100%; }
-  .fbar__active:empty { display: none; }
-  .fbar__when .seg__item { padding: 0 9px; }
-}
-
-/* ─── Grid ────────────────────────────────────────────────────────────────── */
-/* Masonry laid out by CSS from three numbers per card (InspoClient computes them: column, offset in column
-   widths, index in the column). Container units make the grid reflow with its container on its own, with no
-   render, and every card is one flat node keyed by item: it never remounts when the columns change. */
-.masonry-wrap { container-type: inline-size; }
-.masonry {
-  --m-pad: 20px; --m-pad-top: 20px; --m-pad-bottom: 48px; --m-gap: 16px;
-  --col: calc((100cqw - 2 * var(--m-pad) - (var(--n) - 1) * var(--m-gap)) / var(--n));
-  position: relative;
-}
-.card-item {
-  position: absolute;
-  width: var(--col);
-  left: calc(var(--m-pad) + var(--c) * (var(--col) + var(--m-gap)));
-  top: calc(var(--m-pad-top) + var(--y) * var(--col) + var(--k) * var(--m-gap));
+  .sb__gathering { display: none; }
+  .sb__input { font-size: 16px; } /* iOS zooms into smaller fields */
 }
 
 .empty {
@@ -587,10 +783,10 @@ html[data-theme="light"] .fbar__avatar img { outline-color: rgba(0,0,0,0.08); }
   gap: 8px; min-height: 60vh; color: var(--muted); font-size: 13px;
 }
 .empty .display { color: var(--text-2); font-size: 20px; }
+/* Nothing matches: said over the dimmed canvas, which stays where it was */
+.empty--over { position: absolute; inset: 0; z-index: 5; min-height: 0; pointer-events: none; }
+.empty--over > * { pointer-events: auto; }
 
-@media (max-width: 800px) {
-  .masonry { --m-pad: 12px; --m-pad-top: 12px; --m-pad-bottom: 40px; --m-gap: 10px; }
-}
 
 /* ─── Tile ────────────────────────────────────────────────────────────────── */
 .tile {
@@ -636,7 +832,7 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .tile__scroll:has(img.is-ready) { opacity: 1; }
 .tile__scroll img { display: block; width: 100%; height: auto; }
 .tile__scroll img.is-ready { animation: dm-scroll linear infinite alternate; }
-@media (prefers-reduced-motion: reduce) { .tile__scroll img.is-ready, .dm-shot.is-loaded img { animation-play-state: paused; } }
+@media (prefers-reduced-motion: reduce) { .tile__scroll img.is-ready { animation-play-state: paused; } }
 
 /* No screenshot: type poster tinted per domain (--fb-hue) with the initial as a watermark */
 .tile__fallback {
@@ -853,9 +1049,9 @@ video.vp__media { object-fit: contain; }
 .cm-msg.is-grouped { margin-top: -8px; }
 .cm-msg__head { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .cm-msg__name { font-size: 13px; font-weight: 500; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
-.cm-msg__you { font-size: 11px; font-weight: 500; color: var(--muted); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); }
+.cm-msg__you { font-size: 12px; font-weight: 500; color: var(--muted); padding: 1px 5px; border-radius: 4px; background: var(--surface-2); }
 .cm-msg__tag { font-size: 11px; color: var(--muted-2); padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); }
-.cm-msg__time { margin-left: auto; font-size: 11px; color: var(--muted-2); white-space: nowrap; }
+.cm-msg__time { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; }
 .cm-msg__row { display: flex; align-items: flex-start; gap: 8px; padding-left: 34px; }
 .cm-msg__body { flex: 1; margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-2); white-space: pre-wrap; word-break: break-word; }
 .cm-msg.is-original .cm-msg__body { color: var(--text); }
@@ -872,10 +1068,37 @@ video.vp__media { object-fit: contain; }
 .cm-link:hover svg { opacity: 1; }
 .cm-msg.is-mine .cm-msg__body { color: var(--text); }
 .cm-msg__del { flex-shrink: 0; width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted-2); border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s, background 0.15s; }
-.cm-msg:hover .cm-msg__del { opacity: 1; }
+.cm-msg:hover .cm-msg__del, .cm-msg__del:focus-visible { opacity: 1; }
 .cm-msg__del:hover { background: var(--surface-2); color: var(--danger); }
 .cm-msg__edit { flex-shrink: 0; width: 22px; height: 22px; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted-2); border-radius: 6px; opacity: 0; transition: opacity 0.15s, color 0.15s, background 0.15s; }
 .cm-msg:hover .cm-msg__edit, .cm-msg__edit:focus-visible { opacity: 1; }
+/* One comment and its replies. A pinned one names its post-it with the same number, in the post-it's
+   colours; picked from the page it takes a wash of that colour. Replies hang from the comment on a rule
+   that starts under its avatar (26/2). */
+.cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
+.cm-thread.is-focus { background: color-mix(in srgb, var(--postit) var(--postit-wash-on), transparent); }
+/* A post-it's thread, replies included: the post-it's yellow down its edge and a wash of it behind. The
+   wash lightens a dark column, so it stays faint there (muted text keeps 4.5:1 on it); picked, the edge
+   widens too, so the change does not rest on the wash alone. */
+.cm-thread.is-pinned { background: color-mix(in srgb, var(--postit) var(--postit-wash), transparent); box-shadow: inset 3px 0 0 var(--postit); }
+.cm-thread.is-pinned.is-focus { background: color-mix(in srgb, var(--postit) var(--postit-wash-on), transparent); box-shadow: inset 5px 0 0 var(--postit); }
+.cm-thread.is-pinned .cm-replies { border-left-color: color-mix(in srgb, var(--postit) 70%, transparent); }
+.cm-replies { display: flex; flex-direction: column; gap: 10px; margin-left: 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--border-strong); }
+.cm-pin { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; height: 20px; padding: 0 8px 0 2px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; }
+.cm-pin:disabled { cursor: default; }
+.cm-pin__n { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: var(--postit); color: var(--postit-ink); font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cm-reply-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 26px; margin-left: 26px; padding: 0 8px; border: 0; border-radius: var(--radius-s); background: none; color: var(--muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 150ms ease, color 150ms ease; }
+.cm-thread__foot { display: flex; align-items: center; gap: 4px; margin-left: 26px; }
+.cm-thread__foot .cm-reply-btn { margin-left: 0; }
+.cm-thread__count { font-size: 12px; color: var(--muted); }
+.cm-reply { display: flex; align-items: flex-start; gap: 8px; margin-left: 26px; }
+.cm-reply .cm-avatar { margin-top: 6px; }
+.cm-reply__box { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cm-reply__input { min-height: 32px; padding: 6px 10px; font-size: 13px; resize: none; }
+@media (hover: hover) and (pointer: fine) {
+  .cm-pin:not(:disabled):hover { background: var(--surface-3); color: var(--text); }
+  .cm-reply-btn:hover { background: var(--surface-2); color: var(--text); }
+}
 .cm-msg__edit:hover { background: var(--surface-2); color: var(--text); }
 /* Inline editor for the original note */
 .cm-edit { display: flex; flex-direction: column; gap: 8px; }
@@ -1326,8 +1549,7 @@ video.vp__media { object-fit: contain; }
 .picker-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .picker-item__busy { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); }
 
-/* ─── DESIGN.md: full-screen sheet ─────────────────────────────────────────── */
-.dm { position: fixed; inset: 0; z-index: 200; background: var(--bg); display: flex; flex-direction: column; animation: fade-in 0.15s; }
+/* ─── DESIGN.md: the sheet's parts, now inside the side panel (.ip) ───────── */
 
 /* Bar */
 .dm-bar {
@@ -1357,16 +1579,6 @@ video.vp__media { object-fit: contain; }
 .dm-bar__actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: auto; }
 .dm-tabs + .dm-bar__actions { margin-left: 0; }
 .dm-body { flex: 1; min-height: 0; overflow-y: auto; }
-/* Sheet + comment thread in a column on the right (so what people liked about the site stays at hand) */
-.dm-content { position: relative; flex: 1; min-height: 0; display: flex; }
-.dm-side { width: 380px; flex-shrink: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--panel); }
-.dm-bar__comments { gap: 6px; }
-.dm-bar__comments.is-active { background: var(--surface-3); color: var(--text); }
-.dm-bar__comments .dm-tab__count { margin-left: 0; }
-@media (max-width: 1023px) {
-  .dm-side { position: absolute; top: 0; right: 0; bottom: 0; z-index: 5; width: min(420px, 100vw); box-shadow: var(--shadow-drawer); animation: cm-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
-}
-
 /* Sheet */
 .dm-spec { max-width: 1160px; margin: 0 auto; padding: 48px 40px 120px; }
 .dm-section { padding: 40px 0 0; margin-top: 40px; border-top: 1px solid var(--border); }
@@ -1423,7 +1635,7 @@ video.vp__media { object-fit: contain; }
 
 /* Hero */
 /* Both columns share height: the window grows to the foot of the text and shows more of the site on scroll */
-.dm-hero { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: stretch; }
+.dm-hero { display: block; }
 .dm-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 22px; flex-wrap: wrap; }
 .dm-eyebrow__sep { color: var(--muted-2); }
 .dm-theme { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px 0 7px; border-radius: 999px; border: 1px solid var(--border-strong); font-size: 11px; color: var(--text-2); text-transform: capitalize; }
@@ -1463,44 +1675,12 @@ video.vp__media { object-fit: contain; }
 .dm-icons { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--border); }
 .dm-icons img { display: block; height: 20px; width: auto; }
 
-/* Screenshot framed in a Safari window with a glass bar */
-.dm-frame {
-  position: relative; display: flex; flex-direction: column; border-radius: 14px; overflow: hidden; isolation: isolate;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.10), inset 0 1px 0 rgba(255,255,255,0.14),
-    0 40px 90px -30px rgba(0,0,0,0.85), 0 14px 36px -18px rgba(0,0,0,0.6);
-}
-.dm-frame__bar {
-  position: absolute; top: 0; left: 0; right: 0; z-index: 2; height: 40px; padding: 0 12px;
-  display: grid; grid-template-columns: 1fr minmax(0, auto) 1fr; align-items: center;
-  background: rgba(255,255,255,0.58);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7); backdrop-filter: blur(22px) saturate(1.7);
-  border-bottom: 1px solid rgba(0,0,0,0.09);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
-  color: rgba(0,0,0,0.55);
-}
-.dm-frame--dark .dm-frame__bar { background: rgba(28,28,30,0.55); border-bottom-color: rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
-.dm-frame__left { display: flex; align-items: center; gap: 14px; }
+/* Traffic lights for the page's window bar (PageNotes) */
 .dm-frame__lights { display: flex; gap: 7px; }
 .dm-frame__lights i { width: 11px; height: 11px; border-radius: 50%; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.18), inset 0 1px 1px rgba(255,255,255,0.35); }
 .dm-frame__lights i:nth-child(1) { background: #ff5f57; }
 .dm-frame__lights i:nth-child(2) { background: #febc2e; }
 .dm-frame__lights i:nth-child(3) { background: #28c840; }
-.dm-frame__nav { display: flex; align-items: center; gap: 12px; opacity: 0.55; }
-.dm-frame__fwd { display: inline-flex; transform: rotate(180deg); opacity: 0.5; }
-.dm-frame__url {
-  justify-self: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 26px; min-width: min(46%, 260px); max-width: 100%; padding: 0 12px; border-radius: 8px;
-  background: rgba(0,0,0,0.055); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);
-  font-variant-numeric: tabular-nums; font-size: 11px; letter-spacing: 0.01em; color: rgba(0,0,0,0.62);
-}
-.dm-frame__url > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dm-frame__url svg { flex-shrink: 0; opacity: 0.6; }
-.dm-frame--dark .dm-frame__url { background: rgba(255,255,255,0.08); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.06); color: rgba(255,255,255,0.72); }
-.dm-shot { position: relative; flex: 1; width: 100%; min-height: 340px; overflow: hidden; }
-/* The image is out of flow: the window height is set by the text beside it, not the full screenshot */
-.dm-shot img { position: absolute; top: 0; left: 0; display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; }
-.dm-shot.is-loaded img { opacity: 1; animation: dm-scroll linear infinite alternate; }
-.dm-shot:hover img { animation-play-state: paused; }
 @keyframes dm-scroll { 0%, 6% { transform: translateY(0); } 94%, 100% { transform: translateY(var(--dm-scroll, 0)); } }
 
 .dm-tag { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--border-strong); border-radius: 999px; padding: 3px 8px; }
@@ -1518,9 +1698,6 @@ video.vp__media { object-fit: contain; }
   .dm-bar__comments-label { display: none; }
   .dm-spec { padding: 24px 16px 80px; }
   .dm-section { padding-top: 28px; margin-top: 28px; }
-  .dm-hero { grid-template-columns: 1fr; gap: 24px; }
-  .dm-hero__text { order: 2; } .dm-frame { order: 1; }
-  .dm-shot { flex: none; min-height: 0; aspect-ratio: 16 / 11; }
   .dm-md { padding: 16px 12px 80px; }
 }
 
@@ -1610,108 +1787,7 @@ video.vp__media { object-fit: contain; }
 .search.is-ai .input { border-color: var(--border-strong); }
 .search.is-ai .search__icon { color: var(--text); }
 
-/* AI search results header */
-.ai-hero {
-  position: relative;
-  display: flex; align-items: flex-start; gap: 16px;
-  margin: 20px 20px 0; padding: 22px 22px 24px;
-  border: 1px solid var(--border-strong); border-radius: var(--radius-l);
-  background:
-    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--text) 7%, transparent), transparent 55%),
-    var(--panel);
-  animation: fade-in 0.25s ease;
-}
-.ai-hero__badge {
-  flex-shrink: 0; display: grid; place-items: center;
-  width: 40px; height: 40px; border-radius: 12px;
-  background: var(--text); color: var(--bg);
-  box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
-  transition: background 0.2s, color 0.2s;
-}
-.ai-hero__badge .spinner { width: 16px; height: 16px; }
-.ai-hero.is-loading .ai-hero__badge { background: var(--surface-3); color: var(--text); }
-.ai-hero.is-error .ai-hero__badge { background: rgba(229,100,90,0.14); color: var(--danger); box-shadow: 0 0 0 1px rgba(229,100,90,0.35); }
-.ai-hero__main { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; padding-top: 2px; }
-.ai-hero__eyebrow { font-size: 12px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); transition: color 0.2s; }
-.ai-hero.is-error .ai-hero__eyebrow { color: var(--danger); }
-.ai-hero__query {
-  margin: 0; font-weight: 600;
-  font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text);
-  overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  transition: opacity 0.2s;
-}
-.ai-hero.is-loading .ai-hero__query { opacity: 0.5; }
-.ai-hero__meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; min-height: 24px; }
-.ai-hero__pill {
-  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px;
-  border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border);
-  font-size: 12px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums;
-}
-.ai-hero__pill strong { font-weight: 500; color: var(--text); }
-.ai-hero__pill--error { color: var(--danger); border-color: rgba(229,100,90,0.35); background: rgba(229,100,90,0.08); white-space: normal; height: auto; padding: 4px 10px; }
-.ai-hero__hint { font-size: 12px; color: var(--muted); }
-/* Pill with "i": the bubble explains what the percentage is (hover on desktop, tap on mobile). */
-.ai-hero__pill--info { position: relative; cursor: help; padding-right: 8px; }
-.ai-hero__pill--info:focus-visible { outline: 1px solid var(--text-2); outline-offset: 2px; }
-.info-i { display: inline-grid; place-items: center; margin-left: 6px; color: var(--muted); transition: color 0.2s; }
-.ai-hero__pill--info:hover .info-i, .ai-hero__pill--info:focus-visible .info-i { color: var(--text); }
-.info-tip {
-  position: absolute; top: calc(100% + 8px); left: 0; z-index: 10;
-  width: max-content; max-width: min(300px, calc(100vw - 48px)); text-align: left;
-  padding: 10px 12px; border-radius: var(--radius-m);
-  font-size: 12px; line-height: 1.45; color: var(--text-2); white-space: normal;
-  background: var(--surface-2); border: 1px solid var(--border);
-  box-shadow: var(--shadow-card);
-  opacity: 0; transform: translateY(-4px); pointer-events: none;
-  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.ai-hero__pill--info:hover .info-tip, .ai-hero__pill--info:focus-visible .info-tip { opacity: 1; transform: none; pointer-events: auto; }
-.ai-hero__skeleton {
-  display: inline-block; height: 24px; border-radius: 999px;
-  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-3) 50%, var(--surface) 100%);
-  background-size: 200% 100%; animation: ai-shimmer 1.2s linear infinite;
-}
-.ai-hero__clear {
-  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; align-self: flex-start;
-  height: 32px; padding: 0 8px 0 10px; margin-top: 4px;
-  border: 1px solid var(--border-strong); border-radius: 999px; background: transparent;
-  color: var(--text-2); font-size: 13px;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.ai-hero__clear kbd {
-  font-size: 11px; line-height: 1; padding: 3px 5px; margin-left: 2px;
-  border-radius: 5px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border);
-}
-.ai-hero__clear:hover { background: var(--surface); color: var(--text); border-color: var(--text-2); }
-.ai-hero__clear:hover kbd { color: var(--text-2); }
-.ai-hero__bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; opacity: 0; transition: opacity 0.2s; border-radius: 0 0 var(--radius-l) var(--radius-l); }
-.ai-hero.is-loading .ai-hero__bar {
-  opacity: 1;
-  background: linear-gradient(90deg, transparent, var(--text) 50%, transparent);
-  background-size: 50% 100%; animation: ai-sweep 1.4s ease-in-out infinite;
-}
-@keyframes ai-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-@keyframes ai-sweep { from { background-position: -100% 0; } to { background-position: 300% 0; } }
-.ai-hero + .masonry-wrap .masonry { --m-pad-top: 16px; }
-@media (max-width: 800px) {
-  .ai-hero { margin: 12px 12px 0; padding: 16px; gap: 12px; flex-wrap: wrap; }
-  .ai-hero__badge { width: 32px; height: 32px; border-radius: 10px; }
-  .ai-hero__query { font-size: 24px; }
-  .ai-hero__hint { display: none; }
-  .ai-hero__clear { order: 3; margin-top: 0; }
-  .ai-hero__clear kbd { display: none; }
-  /* On mobile the bubble anchors to the pill row, not the pill, so it does not overflow on the right */
-  .ai-hero__meta { position: relative; }
-  .ai-hero__pill--info { position: static; }
-  .info-tip { max-width: calc(100vw - 56px); }
-}
-/* No mouse: the pill opens on tap (it stays focused) */
-@media (hover: none) {
-  .ai-hero__pill--info:focus .info-tip { opacity: 1; transform: none; pointer-events: auto; }
-  .ai-hero__pill--info:focus .info-i { color: var(--text); }
-}
 
-.sidebar__tag-all { justify-content: center; }
 
 .tile__tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .tile__tag {
@@ -1720,6 +1796,13 @@ video.vp__media { object-fit: contain; }
   backdrop-filter: blur(4px);
 }
 .tile__tag--style { background: rgba(255,255,255,0.9); color: #000; }
+/* While the tag job runs: a light passes over the pill, the moment the tags are being gathered */
+.tile__tag--gathering {
+  background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.1) 100%) 0 0 / 200% 100%;
+  animation: gather-sheen 1.8s linear infinite;
+}
+@keyframes gather-sheen { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .tile__tag--gathering { animation: none; } }
 /* Match badge: same glass pill as .tile__actions (28px, ring, blur), on the left.
    The reason hangs from it as a bubble (hover on desktop, tap on mobile), with the same surface. */
 .tile__score { position: absolute; top: 10px; left: 10px; z-index: 2; }
@@ -1732,6 +1815,7 @@ video.vp__media { object-fit: contain; }
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5);
 }
 .tile__score.has-why .tile__score-pct { cursor: help; }
+.tile__why { display: block; max-width: 240px; padding: 0 10px; line-height: 28px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile__score-pct { padding-right: 8px; gap: 8px; }
 .tile__score-i { display: inline-grid; place-items: center; color: rgba(255,255,255,0.55); transition: color 0.2s; }
 .tile__score:hover .tile__score-i, .tile__score.is-open .tile__score-i { color: rgba(255,255,255,0.95); }
@@ -2360,12 +2444,9 @@ body:has([data-feedback-entry]) .fb-dock:not(.has-notes) { display: none; }
 /* The thread panel is fixed on the right: whatever docks bottom-right (feedback, toasts) moves left of it,
    so the button never sits on the composer. On phones the panel is the whole width and they leave the screen. */
 body:has(.cm-panel:not(.cm-panel--column)) :is(.fb-dock, .fb-panel, .toasts) { right: calc(min(420px, 100vw) + 1.25rem); }
-/* The DESIGN.md sheet keeps its thread in a 380px column on the right, whose composer ends in the
-   corner too: same move. Below 1024px that column is a 420px drawer. A dragged dock (inline position) wins. */
-body:has(.dm-side) :is(.fb-dock, .fb-panel, .toasts) { right: calc(380px + 1.25rem); }
-@media (max-width: 1023px) {
-  body:has(.dm-side) :is(.fb-dock, .fb-panel, .toasts) { right: calc(min(420px, 100vw) + 1.25rem); }
-}
+/* The side panel takes the right edge: the same move, by its width. A dragged dock (inline position) wins. */
+body:has(.ip) :is(.fb-dock, .fb-panel, .toasts) { right: calc(clamp(440px, 46vw, 820px) + 1.25rem); }
+@media (max-width: 800px) { body:has(.ip) :is(.fb-dock, .fb-panel) { display: none; } }
 /* The feedback button owns the corner: toasts stack above it */
 body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .fb-count {
@@ -2396,3 +2477,336 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .legal { display: flex; flex-direction: column; gap: 22px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+
+/* ─── Canvas ──────────────────────────────────────────────────────────────── */
+/* The library as one plane: every reference as its whole page, where the team left it.
+   One layer carries the camera's transform (hooks/use-canvas-camera.ts); it only turns into a
+   bitmap while the camera moves, so at rest the pages and their text are drawn sharp. */
+.canvas {
+  position: absolute; inset: 0; overflow: hidden; touch-action: none;
+  background-color: var(--bg);
+  /* A faint dot grid, so empty space still reads as a surface you can move over */
+  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 0);
+  background-size: 24px 24px;
+  cursor: default; user-select: none; -webkit-user-select: none;
+}
+.canvas[data-space], .canvas[data-panning] { cursor: grab; }
+.canvas[data-panning] { cursor: grabbing; }
+.canvas[data-panning] .canvas-tile, .canvas[data-space] .canvas-tile { pointer-events: none; }
+.canvas__world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
+.canvas[data-moving] .canvas__world { will-change: transform; }
+/* A tile moves by transform only. While searching, the cards that stay glide to their new place: a
+   transition (not keyframes), so a key pressed mid-way retargets from where the card is. Ease-out, not
+   ease-in-out, because the move answers a key and has to start at once. */
+.canvas-tile {
+  position: absolute; left: 0; top: 0;
+  transition: transform 280ms var(--ease-out), opacity 200ms var(--ease-out);
+  /* A card's layout never reaches the others: a note or an image loading in one doesn't lay out the canvas.
+     No paint containment, which would clip the post-it dots and the shadow at the card's edge. */
+  contain: layout style;
+}
+/* A new result arrives a beat after the ones before it in rank (--arrive, set by Canvas.tsx) */
+.canvas-tile[data-arrive] > * {
+  transition: opacity 220ms var(--ease-out) var(--arrive, 0ms), transform 220ms var(--ease-out) var(--arrive, 0ms);
+  @starting-style { opacity: 0; transform: scale(0.96); }
+}
+/* A result that stopped matching fades where it stands, faster than results arrive, and takes no clicks */
+.canvas-tile[data-leave] {
+  opacity: 0; pointer-events: none;
+  transition: transform 150ms var(--ease-out), opacity 150ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Fewer moves, the same information: cards change place at once, arrive and leave by opacity alone */
+  .canvas-tile { transition: opacity 200ms var(--ease-out); }
+  .canvas-tile[data-arrive] > * { transition: opacity 200ms var(--ease-out) var(--arrive, 0ms); @starting-style { opacity: 0; transform: none; } }
+  .canvas-tile[data-leave] { transition: opacity 150ms var(--ease-out); }
+}
+/* The first paint only: a short wave out from the centre (CSS, so it stays smooth while the page is
+   still busy loading). Cards that come into view later are just there. */
+.canvas-tile[data-enter] > * { animation: canvas-enter 300ms var(--ease-out) var(--enter, 0ms) both; }
+@keyframes canvas-enter { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@media (prefers-reduced-motion: reduce) { .canvas-tile[data-enter] > * { animation: fade-in 200ms var(--ease-out) var(--enter, 0ms) both; } }
+
+/* The pages are drawn whole: no crop, no hover lift (the canvas moves, the cards don't) */
+.tile--canvas { transition: box-shadow 150ms ease; }
+.tile--canvas:hover { transform: none; }
+@media (hover: hover) and (pointer: fine) { .tile--canvas:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 30%, transparent); } }
+.tile--canvas .tile__img { max-height: none; transition: opacity 200ms var(--ease-out); }
+/* Shown before in this tab (lib/shown-images.ts): it is already there, nothing to fade in */
+.tile--canvas .tile__img.is-instant { transition: none; }
+.tile--canvas:hover .tile__img { transform: none; }
+.tile--canvas .tile__media[style] .tile__img { height: 100%; object-fit: cover; object-position: top; }
+/* The page is the card: no title, tags or gradient over it, only the actions on hover */
+.tile--canvas .tile__overlay { display: none; }
+.tile--canvas { border-radius: 10px; }
+/* Zoomed far out the card's words are smaller than a pixel: only the pages remain */
+.canvas[data-level="thumb"] .tile__note, .canvas[data-level="thumb"] .tile__overlay, .canvas[data-level="thumb"] .tile__actions { visibility: hidden; }
+/* The post-its on a page, as dots where they sit */
+.tile__pins { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.tile__pins i {
+  position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 3px;
+  background: var(--postit); box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,0,0,0.08);
+  transform: rotate(-4deg) scale(calc(1 / max(var(--z, 1), 0.35)));
+}
+
+/* Zoom and fit: a white pill in the bottom-left corner, the island's material. Its left edge is the island's,
+   its middle is the search dock's middle (20 + 56/2 = 26 + 44/2) */
+.canvas-zoom {
+  position: absolute; left: 12px; bottom: calc(26px + env(safe-area-inset-bottom)); z-index: 12;
+  display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 5px;
+  border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+}
+.canvas-zoom button {
+  display: inline-flex; align-items: center; justify-content: center; height: 34px; border: 0; border-radius: 9px;
+  background: transparent; color: var(--dock-ink-2); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .canvas-zoom button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
+.canvas-zoom button:active { transform: scale(0.96); }
+.canvas-zoom__btn { width: 34px; color: var(--dock-ink); }
+.canvas-zoom__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+
+/* ─── The reference sheet (components/ItemPanel.tsx) ─────────────────────────
+   A sheet over the canvas, which dims behind it. It sits under the island and the search dock (z 18, below
+   the top bar's 20 and the dock's 25), which keep their place, and it stops above the dock. Inside, a
+   board of cards: the page, its colours, the tags people added, what the AI read, the conversation.
+   Radii nest: 20 outside, 10 padding, 10 for the cards. */
+.ip-layer { position: fixed; inset: 0; z-index: 18; pointer-events: none; }
+.ip-dim {
+  position: absolute; inset: 0; pointer-events: auto; background: rgba(8, 8, 7, 0.55);
+  transition: opacity 200ms var(--ease-out);
+}
+@starting-style { .ip-dim { opacity: 0; } }
+:root[data-theme="light"] .ip-dim { background: rgba(30, 30, 26, 0.32); }
+.ip {
+  position: absolute; top: 68px; bottom: calc(88px + env(safe-area-inset-bottom)); left: 12px; right: 12px;
+  max-width: 1520px; margin-inline: auto; pointer-events: auto;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--bg); border-radius: 20px; box-shadow: 0 0 0 1px var(--border-strong), var(--shadow-modal);
+  /* It grows out of the card that was clicked: ItemPanel sets the origin at that point (the middle when
+     there is none) and closes it back into it. Escape, a key, closes at once. */
+  transform-origin: 50% 40%;
+  transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+@starting-style { .ip { transform: scale(0.96); opacity: 0; } }
+.ip-bar {
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  height: 60px; padding: 0 12px 0 8px; border-bottom: 1px solid var(--border); background: var(--panel);
+}
+.ip-bar .dm-bar__id { flex: 1; min-width: 0; padding-left: 8px; }
+.ip-bar__tabs { flex-shrink: 0; margin-left: 0; }
+.ip-bar__actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ip-bar__close { flex-shrink: 0; }
+.ip-tabs__spin { margin-left: 6px; }
+
+.ip-bento {
+  flex: 1; min-height: 0; display: grid; gap: 10px; padding: 10px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: "page colours talk" "page yours talk" "page ai talk";
+}
+.ip-card {
+  min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  padding: 14px 16px; border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px var(--border);
+}
+.ip-card--page { grid-area: page; padding: 0; }
+.ip-card--colours { grid-area: colours; }
+.ip-card--yours { grid-area: yours; }
+.ip-card--ai { grid-area: ai; overflow-y: auto; overscroll-behavior: contain; }
+.ip-card--talk { grid-area: talk; padding: 0; }
+.ip-card__title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text); }
+.ip-card__title em { font-style: normal; font-weight: 400; color: var(--muted); }
+.ip-card__aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ip-card__note { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.ip-card__more {
+  align-self: flex-start; margin-top: 12px; padding: 0; border: 0; background: none; color: var(--text-2);
+  font: inherit; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.ip-media { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+
+/* The page's colours, as swatches with their hex, name and share. A swatch filters by its colour family */
+.ip-swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.ip-swatch {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; border: 0; background: none;
+  color: var(--muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer;
+}
+.ip-swatch i { width: 48px; height: 48px; margin-bottom: 4px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--border-strong); transition: box-shadow 150ms ease; }
+.ip-swatch__hex { color: var(--text); font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .ip-swatch:hover i { box-shadow: inset 0 0 0 1px var(--border-strong), 0 0 0 2px var(--text-2); } }
+
+/* The tags people added: the post-it's yellow, because a person put them there. Only these have a × */
+.ip-card--yours { background: color-mix(in srgb, var(--postit) 12%, var(--panel)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--postit) 55%, transparent); }
+.ip-card--yours .ip-card__title em, .ip-card--yours .ip-card__note { color: var(--text-2); }
+.ip-yours { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ip-yours__add {
+  display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; cursor: text;
+  background: var(--panel); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--postit) 70%, var(--border-strong)); color: var(--text);
+}
+.ip-yours__add svg { flex-shrink: 0; color: var(--text-2); }
+.ip-yours__add input { width: 120px; padding: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; font-size: 13px; }
+.ip-yours__add input::placeholder { color: var(--text-2); }
+.ip-yours__add:focus-within { box-shadow: inset 0 0 0 1.5px var(--text); }
+.ip-yours__tag { display: inline-flex; align-items: center; height: 30px; border-radius: 8px; background: var(--postit); color: var(--postit-ink); --focus-ring: var(--postit-ink); }
+.ip-yours__label { height: 100%; padding: 0 4px 0 10px; border: 0; background: none; color: inherit; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.ip-yours__x { display: grid; place-items: center; width: 26px; height: 100%; padding: 0 4px 0 0; border: 0; background: none; color: inherit; opacity: 0.7; cursor: pointer; }
+.ip-yours__x:hover { opacity: 1; }
+
+/* What the AI read, by facet: each facet keeps a pale hue of its own, so the groups read apart. Read-only;
+   a tag filters the library */
+.ip-ai-badge { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--surface-2); color: var(--text-2); font-size: 12px; font-weight: 600; }
+.ip-facets { display: flex; flex-direction: column; gap: 10px; }
+.ip-facet { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 8px; align-items: start; }
+.ip-facet__name { display: flex; align-items: center; gap: 6px; padding-top: 5px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.ip-facet__name::before { content: ""; flex-shrink: 0; width: 8px; height: 8px; border-radius: 2px; background: hsl(var(--h) 55% 55%); }
+.ip-facet__tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ip-facet__tag {
+  height: 26px; padding: 0 9px; border: 0; border-radius: 8px; white-space: nowrap; cursor: pointer;
+  background: hsl(var(--h) 60% 95%); color: hsl(var(--h) 45% 26%); font: inherit; font-size: 12px; font-weight: 500;
+  display: inline-flex; align-items: center; transition: background-color 150ms ease;
+}
+.ip-facet__tag.is-static { cursor: default; }
+:root:not([data-theme="light"]) .ip-facet__tag { background: hsl(var(--h) 25% 17%); color: hsl(var(--h) 55% 82%); }
+@media (hover: hover) and (pointer: fine) {
+  .ip-facet__tag:not(.is-static):hover { background: hsl(var(--h) 60% 90%); }
+  :root:not([data-theme="light"]) .ip-facet__tag:not(.is-static):hover { background: hsl(var(--h) 25% 23%); }
+}
+
+.ip-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
+.ip-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.ip-scroll .dm-spec { padding: 28px 28px 80px; }
+.ip-scroll .dm-md { padding: 20px 20px 80px; }
+.ip-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 40px; text-align: center; font-size: 13px; line-height: 1.5; color: var(--muted); text-wrap: balance; }
+.ip-state.is-error { color: var(--danger); }
+
+/* Narrower: the page on the left, the other cards stacked on the right, the conversation last */
+@media (max-width: 1100px) {
+  .ip-bento {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: "page colours" "page yours" "page ai" "page talk";
+  }
+}
+/* A phone: the whole screen, the cards one under the other */
+@media (max-width: 800px) {
+  .ip-layer { z-index: 60; }
+  .ip { inset: 0; max-width: none; border-radius: 0; }
+  .ip-bar { height: auto; flex-wrap: wrap; padding: 8px; }
+  .ip-bar__tabs { order: 3; width: 100%; overflow-x: auto; }
+  .ip-bar__actions { display: none; }
+  .ip-bento { display: flex; flex-direction: column; overflow-y: auto; }
+  .ip-card { flex-shrink: 0; }
+  .ip-card--page { height: 70svh; }
+  .ip-card--talk { height: 70svh; }
+  .ip-card--ai { overflow: visible; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ip { transition: opacity 200ms var(--ease-out); }
+  @starting-style { .ip { transform: none; opacity: 0; } }
+}
+
+/* ─── The page with its post-its ──────────────────────────────────────────── */
+:root { --postit: #fde68a; --postit-ink: #3d3206; --postit-wash: 4%; --postit-wash-on: 6%; }
+:root[data-theme="light"] { --postit-wash: 7%; --postit-wash-on: 15%; }
+.pn { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); }
+.pn-bar {
+  position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  height: 40px; padding: 0 10px 0 14px;
+  background: rgba(246, 246, 244, 0.82); color: rgba(0,0,0,0.55);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7); backdrop-filter: blur(22px) saturate(1.7);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.pn-bar.is-dark { background: rgba(28,28,30,0.78); color: rgba(255,255,255,0.6); border-bottom-color: rgba(255,255,255,0.08); }
+.pn-bar__url {
+  justify-self: center; display: inline-flex; align-items: center; gap: 6px; height: 24px; max-width: 100%; padding: 0 12px;
+  border-radius: 7px; background: rgba(0,0,0,0.055); font-size: 11px; font-variant-numeric: tabular-nums; color: inherit;
+}
+.pn-bar.is-dark .pn-bar__url { background: rgba(255,255,255,0.08); }
+.pn-bar__url span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pn-bar__end { display: flex; justify-content: flex-end; min-width: 56px; }
+.pn-bar__toggle {
+  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 0; border-radius: 7px;
+  background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer;
+}
+.pn-bar__toggle:hover { background: rgba(0,0,0,0.06); }
+.pn-bar.is-dark .pn-bar__toggle:hover { background: rgba(255,255,255,0.08); }
+.pn-bar__dot { width: 9px; height: 9px; border-radius: 2px; background: var(--postit); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
+.pn-bar__count { font-variant-numeric: tabular-nums; opacity: 0.7; }
+.pn-page { position: relative; min-height: 240px; }
+.pn-page.is-pinnable { cursor: crosshair; }
+.pn-page img { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; user-select: none; -webkit-user-drag: none; }
+.pn-page img.is-loaded { opacity: 1; }
+.pn-page .shimmer { position: absolute; inset: 0; min-height: 240px; }
+.pn-empty { display: grid; place-items: center; min-height: 320px; color: var(--muted); font-size: 13px; }
+.pn-hint {
+  position: sticky; bottom: 14px; z-index: 3; width: max-content; margin: -44px auto 14px; padding: 6px 12px;
+  border-radius: 999px; background: color-mix(in srgb, var(--panel) 86%, transparent); color: var(--text-2); font-size: 12px;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
+  pointer-events: none; animation: fade-in 200ms var(--ease-out) 400ms both;
+}
+
+/* A post-it: paper, a touch tilted, stuck by its corner to the spot it is about */
+.postit { position: absolute; z-index: 1; width: 0; height: 0; cursor: default; }
+.postit.is-front { z-index: 2; }
+.postit__pin {
+  position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border-radius: 50%;
+  background: #e5484d; box-shadow: 0 1px 3px rgba(0,0,0,0.4), inset 0 -2px 2px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.4);
+}
+.postit__paper {
+  position: absolute; top: 4px; left: 4px; width: 208px; padding: 10px 12px 11px;
+  background: var(--postit); color: var(--postit-ink);
+  border-radius: 2px 2px 6px 2px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.12), 0 10px 24px -8px rgba(0,0,0,0.45);
+  transform: rotate(var(--tilt, 0deg)); transform-origin: 0 0;
+  /* Grows out of its pin (the transform origin) */
+  transition: transform 200ms var(--ease-out), opacity 200ms var(--ease-out);
+}
+@starting-style { .postit__paper { opacity: 0; transform: rotate(var(--tilt, 0deg)) scale(0.96); } }
+/* Near the right edge the paper hangs to the left of its pin */
+.postit.is-flipped .postit__paper { left: auto; right: 4px; transform-origin: 100% 0; }
+.postit__head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; font-size: 12px; }
+.postit__head .cm-avatar { box-shadow: 0 0 0 1px rgba(0,0,0,0.12); }
+.postit__who { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.postit__when { opacity: 0.8; white-space: nowrap; }
+.postit__del {
+  display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: auto; border: 0; border-radius: 4px;
+  background: transparent; color: inherit; opacity: 0; cursor: pointer; transition: opacity 0.15s, background 0.15s;
+}
+.postit:hover .postit__del, .postit__del:focus-visible { opacity: 0.7; }
+/* Touch has no hover: the delete buttons stay in sight */
+@media (hover: none) {
+  .cm-msg__del, .cm-msg__edit { opacity: 1; }
+  .postit__del { opacity: 0.7; }
+}
+.postit__del:hover { opacity: 1; background: rgba(0,0,0,0.08); }
+.postit__body { margin: 0; font-size: 13px; line-height: 1.42; white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
+.postit__older { display: block; margin-top: 6px; font-size: 12px; opacity: 0.8; }
+.postit.is-draft .postit__paper { box-shadow: 0 0 0 2px rgba(61, 50, 6, 0.25), 0 14px 30px -8px rgba(0,0,0,0.5); }
+/* A post-it is a comment: its number in the column, a way to its thread, the ink as its focus ring on the paper */
+.postit { --focus-ring: var(--postit-ink); }
+.postit__num { display: inline-grid; place-items: center; flex-shrink: 0; min-width: 16px; height: 16px; padding: 0 4px; border: 0; border-radius: 999px; background: var(--postit-ink); color: var(--postit); font: inherit; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+button.postit__num { cursor: pointer; }
+/* The replies on the paper: the latest three under a fold of ink, each with its face and first name; a
+   field to answer in place. Older ones wait in the comments column. */
+.postit__replies { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--postit-ink) 18%, transparent); }
+.postit__reply { display: flex; align-items: flex-start; gap: 6px; }
+.postit__reply .cm-avatar { flex-shrink: 0; margin-top: 1px; box-shadow: 0 0 0 1px rgba(0,0,0,0.12); }
+.postit__reply p { margin: 0; min-width: 0; font-size: 12px; line-height: 1.4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.postit__reply b { font-weight: 600; }
+.postit__link { align-self: flex-start; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; cursor: pointer; }
+.postit__link:disabled { cursor: default; text-decoration: none; }
+.postit__input--reply { font-size: 12px; }
+.postit.is-focus .postit__paper { box-shadow: 0 0 0 2px var(--postit-ink), 0 1px 1px rgba(0,0,0,0.12), 0 10px 24px -8px rgba(0,0,0,0.45); }
+.postit__input {
+  display: block; width: 100%; resize: none; border: 0; outline: none; padding: 0; background: transparent;
+  color: inherit; font: inherit; font-size: 13px; line-height: 1.42;
+}
+.postit__input::placeholder { color: rgba(61, 50, 6, 0.75); }
+.postit__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; }
+.postit__error { color: #9b1c1c; }
+.postit__send {
+  height: 22px; padding: 0 10px; border: 0; border-radius: 6px; background: var(--postit-ink); color: var(--postit);
+  font: inherit; font-size: 11px; font-weight: 600; cursor: pointer;
+}
+.postit__send:disabled { opacity: 0.4; cursor: default; }
+.pn-page.is-hidden-notes .postit { display: none; }
+@media (prefers-reduced-motion: reduce) { @starting-style { .postit__paper { opacity: 0; transform: rotate(var(--tilt, 0deg)); } } }

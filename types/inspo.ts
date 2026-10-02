@@ -17,13 +17,40 @@ export interface Project { id: string; name: string }
 /** item id → ids of the projects it is filed in (none = Inbox) */
 export type ProjectLinks = Record<string, string[]>;
 
-export type FilterType = "all" | InspoItem["type"];
-export type FilterAuthor = "all" | string;
-export type FilterDate = "all" | "thisMonth" | "thisYear";
 
-// ─── AI tags (Jev) ────────────────────────────────────────────────────────────
+// ─── AI tags (lib/tagger.ts) ──────────────────────────────────────────────────
+export interface InspoColor {
+  hex: string;
+  /** Share of the page's pixels, 0–1 */
+  share: number;
+  /** A COLORS key */
+  family: string;
+}
+
+/** What the item says about itself, read without a model: a page's meta tags and JSON-LD, a post's
+ *  author and hashtags, an image's EXIF/XMP/IPTC (lib/meta.ts). Every field is optional. */
+export interface InspoMeta {
+  /** Person who made or wrote it */
+  author?: string;
+  /** Studio, company or publication behind it */
+  publisher?: string;
+  /** @handle on X */
+  handle?: string;
+  /** schema.org type or og:type: Product, Article, Person, Organization… */
+  kind?: string;
+  /** The page's own keywords and tags, a post's hashtags, an image's keywords */
+  keywords?: string[];
+  /** ISO date it was published or taken */
+  date?: string;
+  /** Tool that built the page (Framer, Webflow…) or edited the image */
+  generator?: string;
+  place?: string;
+  camera?: string;
+  copyright?: string;
+}
+
 export interface InspoTags {
-  /** Sector picked by Jev (a SECTORS key) */
+  /** Sector (a SECTORS key) */
   sector: string;
   sectorP: number;
   /** Dominant style (a STYLES key) */
@@ -33,13 +60,44 @@ export interface InspoTags {
   tags: Record<string, number>;
   /** Short site summary (title + description) for AI search */
   summary: string;
-  /** Visual description of the screenshot by Claude (empty if there was none) */
+  /** Visual description of the screenshot (empty if there was none) */
   visual?: string;
+  // v3: missing on older tags
+  /** Main colours read from the pixels, largest first */
+  colors?: InspoColor[];
+  /** Colour families present (COLORS keys), largest first */
+  palette?: string[];
+  theme?: "light" | "dark" | "mixed";
+  /** SECTIONS keys */
+  sections?: string[];
+  /** ELEMENTS keys */
+  elements?: string[];
+  /** TYPE keys */
+  type?: string[];
+  /** LAYOUT keys */
+  layout?: string[];
+  /** Free words in English, for search only */
+  keywords?: string[];
+  /** Model that tagged it */
+  model?: string;
+  /** The item's own metadata (v4) */
+  meta?: InspoMeta;
+  /** The workspace's own edits (inspo_item.tags_user), attached when the item is loaded */
+  user?: UserTags;
   /** ISO date of when it was tagged */
   at: string;
   /** Taxonomy version used */
   v: number;
 }
+
+/** A workspace's own edits on an item's tags. `removed` holds selectors ("s:pricing", "k:coffee", "t:dark"). */
+export interface UserTags {
+  added: string[];
+  removed: string[];
+}
+
+/** The tagging job of an item that has no current tags yet (done items are not listed) */
+export type TagStatus = "pending" | "running" | "failed";
 
 export type TagMap = Record<string, InspoTags>;
 
@@ -61,8 +119,33 @@ export interface InspoComment {
   authorImage: string | null;
   body: string;
   attachments: CommentAttachment[];
+  /** Pinned at a place on the page: a post-it (lib/db/schema.ts inspoComment). None: about the whole
+   *  reference, or a reply */
+  anchor?: CommentAnchor;
+  /** The comment this one answers (one level: a reply never has replies) */
+  parentId?: string;
   /** ISO */
   createdAt: string;
 }
 
+/** x and y as 0..1 of the page image; h the page height (in 1440px-wide pixels) when it was pinned */
+export interface CommentAnchor { x: number; y: number; h: number }
+
+/** Where each reference sits on each space's canvas: { space: { itemId: { x, y } } } */
+export type CanvasPositions = Record<string, Record<string, { x: number; y: number }>>;
+
 export type CommentMap = Record<string, InspoComment[]>;
+
+/** What the library knows of each site's DESIGN.md without loading it (lib/design-store.ts DesignMdIndexEntry) */
+export interface DesignIndexEntry extends Partial<PageShot> { coverUrl?: string; scrollUrl?: string }
+
+/** A site's full-page screenshot, stored once (lib/page-shots.ts): the whole page for the panel, and its
+ *  top (cut at twice its width) at 1440, 720 and 288px for the canvas. shotH: the whole page's height at 1440. */
+export interface PageShot {
+  shotUrl: string; topUrl: string; tileUrl: string; thumbUrl: string; shotH: number;
+  /** The page's most common colour (#rrggbb), painted before the image arrives */
+  color?: string;
+  /** When the canvas copies above are signed bucket links: the same files through the app, for when a link expires */
+  paths?: { topUrl: string; tileUrl: string; thumbUrl: string };
+}
+export type DesignIndex = Record<string, DesignIndexEntry>;

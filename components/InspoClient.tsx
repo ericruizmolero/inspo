@@ -1,40 +1,50 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, editTags as editTagsAction } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback, memo, type RefObject } from "react";
-import gsap from "gsap";
-import { Flip } from "gsap/Flip";
-import { flushSync } from "react-dom";
-import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks } from "@/types/inspo";
+import { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
+import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, CommentAnchor, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
-import { TAG_THRESHOLD, TAXONOMY_VERSION } from "@/lib/taxonomy";
-import Sidebar, { SearchBox, Icons, TaggingState, TYPES, DATES, type QuotaView, IslandPill } from "./Sidebar";
-import FilterBar from "./FilterBar";
+import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
+import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, type Filter } from "@/lib/search-query";
+import Sidebar, { Icons, type QuotaView } from "./Sidebar";
+import Island from "./Island";
+import SearchBar from "./SearchBar";
 import InspoCard from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
-import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile } from "@/lib/url";
+import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
-import DesignMdModal from "./DesignMdModal";
-import DirectoryModal from "./DirectoryModal";
+import PageNotes from "./PageNotes";
+import Canvas, { type CanvasHandle, type ShotLevel } from "./Canvas";
+import { layoutCanvas, keyOf, TILE_W, DEFAULT_RATIO, CANVAS_MAX_RATIO } from "@/lib/canvas-layout";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
-import PolishModal from "./PolishModal";
-import CommentsPanel from "./CommentsPanel";
-import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
+import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
-import CommandPalette from "./CommandPalette";
 import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import Logo from "@/components/Logo";
+import dynamic from "next/dynamic";
+
+// Opened by a click or a shortcut, never on the first paint: each loads on its own, and the panel (the
+// most used) is fetched once the page is idle, so the first click doesn't wait for it
+const loadItemPanel = () => import("./ItemPanel");
+const loadCommentsPanel = () => import("./CommentsPanel");
+const ItemPanel = dynamic(loadItemPanel, { ssr: false });
+const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
+// A video's or a post's own view, in the reference sheet's page card; only loaded when one opens
+const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
+const PostView = dynamic(() => import("./PostView"), { ssr: false });
+const PolishModal = dynamic(() => import("./PolishModal"), { ssr: false });
+const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
+const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
 async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<File> {
@@ -72,76 +82,54 @@ function parseDate(s: string): number {
   return isNaN(ts) ? 0 : ts;
 }
 
-function normalize(s: string) {
-  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-}
-
 // Saving a new site kicks off the full experience (screenshot, tags and
 // DESIGN.md). Videos and social posts have no design system to extract.
-const NO_DESIGN_MD = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "instagram.com", "linkedin.com", "tiktok.com", "primevideo.com", "netflix.com"];
 interface RunDesignMdOpts {
   force?: boolean;         // regenerate even if it exists (costs money, admins only)
   quiet?: boolean;         // cache expected: the toast only shows if it takes a while
   openWhenReady?: boolean; // open the sheet on its own when done
 }
 
-function canAutoDesignMd(web: string): boolean {
-  // A DESIGN.md reads a site: an uploaded image or a video has none
-  if (mediaKindOf(web) !== "web") return false;
-  try {
-    const host = new URL(web).hostname.replace(/^www\./, "");
-    return !NO_DESIGN_MD.some((d) => host === d || host.endsWith(`.${d}`));
-  } catch { return false; }
-}
+// A DESIGN.md reads a site: an uploaded image, a video or a social post has none
+const canAutoDesignMd = hasOwnPage;
 
-const SIDEBAR_W = 256;
+/** A new item's job is asked about every 4 s, for up to 5 minutes (a whole-page capture can take one);
+ *  past that it keeps "gathering" until the page is opened again */
+const TAG_POLL_MS = 4000;
+const TAG_WATCH_MS = 5 * 60 * 1000;
+
 const DESKTOP_MIN = 801;
-const RATIOS_KEY = "inspo:card-ratios";
-// Card height/width before measuring (the placeholder is 4:3) and gap between cards.
-/** Cards near the viewport: the only ones worth measuring and animating. Off-screen ones jump. */
-const nearViewport = (el: Element, margin = 300) => { const r = el.getBoundingClientRect(); return r.bottom > -margin && r.top < window.innerHeight + margin; };
-/** The curtain: the sidebar's slide and everything that rides with it share this length and curve */
-const CURTAIN_MS = 550;
-const CURTAIN_EASE = "cubic-bezier(0.65, 0, 0.35, 1)";
-const DEFAULT_RATIO = 0.75;
-const GAP_RATIO = 0.06;
+/** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
+const RATIOS_KEY = "inspo:canvas-ratios";
+/** What floats over the canvas: the bars on top, the zoom pill at the bottom */
+const TOP_DESKTOP = 64;
+const TOP_MOBILE = 64;
+/** The search dock at the bottom, with the results line over it */
+const BOTTOM = 112;
 
-// Columns from the usable content width (window minus sidebar on desktop).
-// Computed synchronously so collapsing the sidebar and reflowing the cards
-// happen in the same render and GSAP Flip can animate it in one go.
-function columnsFor(winW: number, collapsed: boolean) {
-  if (!winW) return 4;
-  const desktop = winW >= DESKTOP_MIN;
-  const w = desktop ? winW - (collapsed ? 0 : SIDEBAR_W) : winW;
-  if (!desktop && w <= 520) return 1;
-  if (w <= 644) return 2;
-  if (w <= 1144) return 3;
-  if (w <= 1644) return 4;
-  return 5;
-}
-function useColumnCount(collapsed: boolean) {
-  const [winW, setWinW] = useState(0);
+function useWindowWidth() {
+  const [w, setW] = useState(0);
   useEffect(() => {
-    const update = () => setWinW(window.innerWidth);
+    const update = () => setW(window.innerWidth);
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  return useMemo(() => columnsFor(winW, collapsed), [winW, collapsed]);
+  return w;
 }
 
 
-// Jev scores conservatively: we show what scores above 0.4 and, if that's few,
-// at least the top 8 as long as they're above 0.3.
-function aiCutoff(scores: Record<string, number>) {
-  const sorted = Object.values(scores).sort((a, b) => b - a);
-  return Math.max(0.3, Math.min(0.4, sorted[7] ?? 0));
-}
+/** Waits before asking for meaning (layer 2) and for Jev (layer 3): the first answers every few keys, the second once the typing settles */
+const SEMANTIC_WAIT_MS = 180;
+const JEV_WAIT_MS = 700;
+/** Jev reads only the nearest few */
+const JEV_TOP = 20;
 
 export default function InspoClient({
   items: initialItems,
   initialThumbnailMap = {},
   initialTagMap = {},
+  initialTagJobs = {},
   initialProjects = [],
   initialProjectLinks = {},
   aiEnabled = false,
@@ -153,14 +141,16 @@ export default function InspoClient({
   initialQuota = null,
   initialComments = {},
   initialDesignMdIndex = {},
-  initialSidebarOpen = true,
+  initialPageShots = {},
 }: {
   items: InspoItem[];
   initialQuota?: QuotaView | null;
   initialComments?: CommentMap;
-  initialDesignMdIndex?: Record<string, { coverUrl?: string; scrollUrl?: string }>;
+  initialDesignMdIndex?: DesignIndex;
   initialThumbnailMap?: ThumbnailMap;
   initialTagMap?: TagMap;
+  /** Items whose tagging job isn't done (lib/tag-jobs.ts) */
+  initialTagJobs?: Record<string, TagStatus>;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
   aiEnabled?: boolean;
@@ -170,25 +160,20 @@ export default function InspoClient({
   members?: { name: string; image: string | null }[];
   /** Can see the activity panel (/admin) */
   isAdmin?: boolean;
-  /** Saved sidebar state, read from the sidebar_state cookie on the server */
-  initialSidebarOpen?: boolean;
+  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the canvas draws */
+  initialPageShots?: Record<string, PageShot>;
 }) {
   const { t } = useT();
   const [items, setItems] = useState(initialItems);
-  // Filters live in the URL (?tipo=&autor=&fecha=&sector=&estilo=&tags=a,b&q=): a filtered view can be
-  // shared and Back undoes a filter. history.pushState/replaceState sync with useSearchParams without a navigation.
+  // The search lives in the URL (?f=person:Eric&f=tag:c:blue&q=serif): a search can be shared and Back
+  // undoes a chip. Older links (?type= ?author= ?tags=…) are read as chips. history.pushState/replaceState
+  // sync with useSearchParams without a navigation.
   const sp = useSearchParams();
-  const typeParam = sp.get("type") as FilterType | null;
-  const type: FilterType = typeParam && TYPES.includes(typeParam as InspoItem["type"]) ? typeParam : "all";
-  const dateParam = sp.get("date") as FilterDate | null;
-  const date: FilterDate = dateParam && DATES.includes(dateParam as (typeof DATES)[number]) ? dateParam : "all";
-  const author: FilterAuthor = sp.get("author") || "all";
-  const sector = sp.get("sector") || "all";
-  const style = sp.get("style") || "all";
+  // The chips are read from every param but ?q=, so typing (which rewrites ?q=) never rebuilds them
+  const chipKey = (() => { const p = new URLSearchParams(sp.toString()); p.delete("q"); return p.toString(); })();
+  const filters = useMemo(() => filtersFromParams(new URLSearchParams(chipKey)), [chipKey]);
   // The search box keeps its own state (a controlled input can't wait for the router) and copies itself into ?q=
   const [query, setQueryState] = useState(() => sp.get("q") ?? "");
-  const tagsParam = sp.get("tags") ?? "";
-  const selTags = useMemo(() => tagsParam.split(",").filter(Boolean), [tagsParam]);
   // "all" and "" drop the key. Typing replaces the entry; every other change adds one, so Back undoes it.
   const setParams = useCallback((patch: Record<string, string>, replace = false) => {
     const p = new URLSearchParams(window.location.search);
@@ -196,12 +181,22 @@ export default function InspoClient({
     const url = window.location.pathname + (p.size ? `?${p}` : "");
     if (replace) window.history.replaceState(null, "", url); else window.history.pushState(null, "", url);
   }, []);
-  const setType = useCallback((v: FilterType) => setParams({ type: v }), [setParams]);
-  const setAuthor = useCallback((v: FilterAuthor) => setParams({ author: v }), [setParams]);
-  const setDate = useCallback((v: FilterDate) => setParams({ date: v }), [setParams]);
-  const setSector = useCallback((v: string) => setParams({ sector: v }), [setParams]);
-  const setStyle = useCallback((v: string) => setParams({ style: v }), [setParams]);
   const setQuery = useCallback((v: string) => { setQueryState(v); setParams({ q: v }, true); }, [setParams]);
+  // Each chip change is a history entry; the old filter params go once they are chips
+  const setFilters = useCallback((next: Filter[]) => {
+    const p = new URLSearchParams(window.location.search);
+    p.delete("f");
+    for (const k of LEGACY_PARAMS) p.delete(k);
+    for (const f of next) p.append("f", filterKey(f));
+    window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+  }, []);
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+  /** Adds a chip, or takes it away when it is already there (a tag clicked in the panel, a person in the sidebar) */
+  const toggleFilter = useCallback((f: Filter) => {
+    const cur = filtersRef.current;
+    setFilters(cur.some((x) => filterKey(x) === filterKey(f)) ? cur.filter((x) => filterKey(x) !== filterKey(f)) : [...cur, f]);
+  }, [setFilters]);
 
   // ─── Projects ──────────────────────────────────────────────────────────────
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
@@ -223,107 +218,58 @@ export default function InspoClient({
   [items, links, space]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
 
-  // ─── AI: tags and search ────────────────────────────────────────────────────
+  // ─── Tags ───────────────────────────────────────────────────────────────────
   const [tagMap, setTagMap] = useState<TagMap>(initialTagMap);
-  // No "normal" mode: if Jev is configured, search is always AI
-  const ai = aiEnabled;
-  const [aiScores, setAiScores] = useState<Record<string, number> | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiReasons, setAiReasons] = useState<Record<string, string> | null>(null);
-  const [aiError, setAiError] = useState("");
-  const [tagging, setTagging] = useState<TaggingState>({ running: false, done: 0, total: 0 });
 
-  const pending = useMemo(
-    () => items.filter((i) => !tagMap[i.web] || tagMap[i.web].v !== TAXONOMY_VERSION).length,
-    [items, tagMap]
-  );
-
-  const toggleTag = useCallback((k: string) => {
-    setParams({ tags: (selTags.includes(k) ? selTags.filter((x) => x !== k) : [...selTags, k]).join(",") });
-  }, [selTags, setParams]);
-
-  // AI search: debounce and call /api/search
-  const aiQuery = ai ? query.trim() : "";
+  // ─── Tags: one job per item, on the server ──────────────────────────────────
+  // Every add starts its item's job (lib/tag-jobs.ts), whatever the tab does next. Here: which items are
+  // still gathering, and asking how they go for the ones added or retried in this tab.
+  const [tagJobs, setTagJobs] = useState<Record<string, TagStatus>>(initialTagJobs);
+  const [watching, setWatching] = useState<Record<string, number>>({}); // web → when it started
+  const watch = useCallback((web: string) => {
+    setTagJobs((prev) => ({ ...prev, [web]: "pending" }));
+    setWatching((prev) => ({ ...prev, [web]: Date.now() }));
+  }, []);
   useEffect(() => {
-    if (!aiEnabled || aiQuery.length < 3) { setAiScores(null); setAiLoading(false); setAiError(""); return; }
-    const ctrl = new AbortController();
+    const webs = Object.keys(watching);
+    if (!webs.length) return;
     const id = setTimeout(async () => {
-      setAiLoading(true); setAiError("");
       try {
-        const res = await fetch("/api/search", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ q: aiQuery }), signal: ctrl.signal,
+        const res = await fetch(`/api/tags?${webs.map((w) => `web=${encodeURIComponent(w)}`).join("&")}`);
+        if (!res.ok) throw new Error(String(res.status));
+        const data = (await res.json()) as { jobs: Record<string, TagStatus>; tags: TagMap };
+        setTagMap((prev) => ({ ...prev, ...data.tags }));
+        setTagJobs((prev) => {
+          const next = { ...prev };
+          for (const w of webs) { if (data.jobs[w]) next[w] = data.jobs[w]; else delete next[w]; }
+          return next;
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-        setAiScores(data.scores);
-        if (!data.cached) loadQuota();
-        setAiReasons(null);
-      } catch (e) {
-        if ((e as Error).name !== "AbortError") setAiError(String((e as Error).message ?? e));
-      } finally {
-        if (!ctrl.signal.aborted) setAiLoading(false);
-      }
-    }, 900);
-    return () => { clearTimeout(id); ctrl.abort(); };
-  }, [aiQuery, aiEnabled]);
-
-  // Why each result: Claude writes one sentence per visible item (once scores are in)
-  useEffect(() => {
-    if (!aiScores || !aiQuery) { setAiReasons(null); return; }
-    const cutoff = aiCutoff(aiScores);
-    const results = Object.entries(aiScores)
-      .filter(([, s]) => s >= cutoff)
-      .sort((a, b) => b[1] - a[1]).slice(0, 40)
-      .map(([web, score]) => ({ web, score }));
-    if (!results.length) return;
-    const ctrl = new AbortController();
-    fetch("/api/explain", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ q: aiQuery, results }), signal: ctrl.signal,
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.reasons) setAiReasons(d.reasons); })
-      .catch(() => {});
-    return () => ctrl.abort();
-  }, [aiScores, aiQuery]);
-
-  // Tags a newly added item (no PIN; the server checks it is in the sheet)
-  const tagOne = useCallback(async (web: string) => {
-    if (!aiEnabled) return;
-    try {
-      const res = await fetch("/api/tags", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }),
-      });
-      if (!res.ok) return;
-      const { tags } = (await res.json()) as { tags: InspoTags };
-      setTagMap((prev) => ({ ...prev, [web]: tags }));
-    } catch { /* stays pending */ }
-  }, [aiEnabled]);
-
-  // Batch tagging of pending items (workspace admins only), in rounds until done
-  const tagAll = async () => {
-    const total = pending;
-    setTagging({ running: true, done: 0, total });
-    let done = 0;
-    try {
-      for (let guard = 0; guard < 40; guard++) {
-        const res = await fetch("/api/tags", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ all: true }),
+        setWatching((prev) => {
+          const next = { ...prev };
+          for (const w of webs) if (!data.jobs[w] || data.jobs[w] === "failed" || Date.now() - prev[w] > TAG_WATCH_MS) delete next[w];
+          return next;
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-        setTagMap((prev) => ({ ...prev, ...data.map }));
-        done += data.done;
-        setTagging({ running: true, done, total });
-        if (data.remaining <= 0 || data.done === 0) break;
-      }
-      setTagging({ running: false, done, total });
-    } catch (e) {
-      setTagging({ running: false, done, total, error: String((e as Error).message ?? e) });
-    }
-  };
+      } catch { setWatching((prev) => ({ ...prev })); } // asks again next round
+    }, TAG_POLL_MS);
+    return () => clearTimeout(id);
+  }, [watching]);
+  const gathering = useMemo(() => items.filter((i) => tagJobs[i.web] === "pending" || tagJobs[i.web] === "running").length, [items, tagJobs]);
+
+  // Gathers an item's tags again (after a failure, or for a fresh look)
+  const retryTags = useCallback(async (web: string) => {
+    watch(web);
+    const res = await fetch("/api/tags", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }) }).catch(() => null);
+    if (!res?.ok) setTagJobs((prev) => ({ ...prev, [web]: "failed" }));
+  }, [watch]);
+
+  // Adds or removes one tag by hand; the edits are the workspace's and outlive a new tagging
+  const editTags = useCallback(async (item: InspoItem, change: { add?: string; remove?: string }) => {
+    if (!item.id) return;
+    const r = await editTagsAction(item.id, change);
+    if (!r.ok) { setAddError({ title: t.app.saveFailed, detail: r.error }); return; }
+    setTagMap((prev) => (prev[item.web] ? { ...prev, [item.web]: { ...prev[item.web], user: r.data } } : prev));
+  }, [t]);
+
   const [showAdd, setShowAdd] = useState(false);
   const [showPolish, setShowPolish] = useState(false);
   useEffect(() => {
@@ -332,7 +278,7 @@ export default function InspoClient({
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
-      if (document.querySelector(".modal-backdrop, .dm, .cp")) return; // something open on top
+      if (document.querySelector(".modal-backdrop, .cp")) return; // something open on top
       e.preventDefault();
       setShowAdd(true);
     };
@@ -380,8 +326,9 @@ export default function InspoClient({
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Full experience from the start: tags and DESIGN.md without asking.
       // A post on X is imported first (its picture is what the tags look at).
-      if (mediaKindOf(item.web) === "post") importPost(item.web).then(() => tagOne(item.web));
-      else tagOne(item.web);
+      // Its tags are already being gathered on the server: the card shows it until they arrive
+      if (mediaKindOf(item.web) === "post") importPost(item.web);
+      watch(item.web);
       if (canAutoDesignMd(item.web)) runDesignMdRef.current(item);
       return item;
     } catch (e) {
@@ -389,7 +336,7 @@ export default function InspoClient({
       setAddError({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
       return null;
     }
-  }, [user, tagOne, importPost]);
+  }, [user, watch, importPost]);
 
   // ─── Add an image ────────────────────────────────────────────────────────────
   // Same optimistic card, showing the local file while it uploads; the uploaded
@@ -412,7 +359,7 @@ export default function InspoClient({
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
-      tagOne(item.web);
+      watch(item.web);
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
@@ -422,7 +369,7 @@ export default function InspoClient({
       // The card already swapped to the uploaded file; give it a moment before dropping the local copy
       setTimeout(() => URL.revokeObjectURL(local), 30_000);
     }
-  }, [user, tagOne, workspace.id, t]);
+  }, [user, watch, workspace.id, t]);
 
   // A guest who pasted a URL on the start canvas comes back from login with ?add=<url>:
   // it saves itself and its DESIGN.md opens, as if pasted from inside.
@@ -533,23 +480,22 @@ export default function InspoClient({
 
   // ─── Comments ──────────────────────────────────────────────────────────────
   const [commentMap, setCommentMap] = useState<CommentMap>(initialComments);
-  const [commentsItemId, setCommentsItemId] = useState<string | null>(null);
   const loadComments = useCallback(async () => {
     try {
       const res = await fetch("/api/comments");
       if (res.ok) setCommentMap(await res.json());
     } catch { /* offline: retried on the next cycle */ }
   }, []);
-  // With the thread in view (drawer or sheet column), refresh every 20 s to see what others write
-  const [designMdItem, setDesignMdItem] = useState<InspoItem | null>(null);
+  // The panel: one reference open on the right, the canvas still live on the left
+  const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
+  // With the thread in view, refresh every 20 s to see what others write
   useEffect(() => {
-    if (!commentsItemId && !designMdItem) return;
+    if (!panelItem) return;
     const t = setInterval(loadComments, 20000);
     return () => clearInterval(t);
-  }, [commentsItemId, designMdItem, loadComments]);
-  const commentsItem = useMemo(() => items.find((i) => i.id === commentsItemId) ?? null, [items, commentsItemId]);
-  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[]) => {
-    const r = await postCommentAction(itemId, body, attachments);
+  }, [panelItem, loadComments]);
+  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor, parentId?: string) => {
+    const r = await postCommentAction(itemId, body, attachments, anchor, parentId);
     if (!r.ok) throw new Error(r.error);
     setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), r.data] }));
   };
@@ -558,16 +504,20 @@ export default function InspoClient({
     if (!r.ok) throw new Error(r.error);
     const patch = { note: r.data.note, subNote: r.data.subNote };
     setItems((prev) => prev.map((i) => (i.id === itemId ? { ...i, ...patch } : i)));
-    // The DESIGN.md sheet keeps its own copy of the item, so its thread column needs the new text too
-    setDesignMdItem((cur) => (cur?.id === itemId ? { ...cur, ...patch } : cur));
+    // The panel keeps its own copy of the item, so its thread needs the new text too
+    setPanelItem((cur) => (cur?.id === itemId ? { ...cur, ...patch } : cur));
   };
+  // A comment goes with its replies: when others answered it, ask first
   const deleteComment = async (itemId: string, id: string) => {
+    const replies = (commentMap[itemId] ?? []).filter((c) => c.parentId === id).length;
+    if (replies && !(await confirm({ title: t.comments.deleteThread, description: t.comments.deleteThreadHint(replies), action: t.common.delete, danger: true }))) return;
     const r = await removeComment(id).catch(() => null);
-    if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id) }));
+    if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id && c.parentId !== id) }));
   };
   const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
   // Index of DESIGN.md already generated: server + those finished this session
-  const [designMdIndex, setDesignMdIndex] = useState(initialDesignMdIndex);
+  const [designMdIndex, setDesignMdIndex] = useState<DesignIndex>(initialDesignMdIndex);
+  const [pageShots, setPageShots] = useState<Record<string, PageShot>>(initialPageShots);
 
   // Any workspace member can change thumbnails; the server checks the session.
   const handleThumbnailUpload = async (webUrl: string, file: File) => {
@@ -588,38 +538,38 @@ export default function InspoClient({
   };
 
 
-  // ─── DESIGN.md ────────────────────────────────────────────────────────────
-  // Generation lives here, not in the modal. The sheet only opens once the
-  // DESIGN.md exists; while generating, everything happens in the bottom-right
-  // toast (progress, Stop, Done). There is no loading screen in between.
+  // ─── The panel and the DESIGN.md ────────────────────────────────────────────
+  // The panel opens at once for any reference: the page and its post-its first. The DESIGN.md is fetched
+  // quietly when it exists; generating one (it costs) waits for a click, and runs in the bottom-right
+  // toast, so closing the panel never stops it.
   const patchJob = (url: string, patch: Partial<DesignMdState>) =>
     setDesignMdJobs((prev) => ({ ...prev, [url]: { ...prev[url], ...patch } }));
   const dropJob = (url: string) =>
     setDesignMdJobs((prev) => { const next = { ...prev }; delete next[url]; return next; });
 
-  // One in-flight request per URL: stop = abort the fetch (the server closes Chromium
-  // and cuts Claude off when the last client leaves) and also send DELETE just in case.
-  // The sheet carries the thread in a column: opening it closes the comments drawer if open
-  // Each open DESIGN.md has its own URL (/i/<id>): it can be shared, and Back closes it.
+  // Each open reference has its own URL (/i/<id>): it can be shared, and Back closes it.
   // The URL changes with history.pushState, which Next syncs with usePathname without a navigation.
   const pushedRef = useRef(false);
-  const showDesignMd = (item: InspoItem) => {
-    setDesignMdItem(item); setCommentsItemId(null);
+  const showPanel = (item: InspoItem) => {
+    setPanelItem(item);
     if (item.id && window.location.pathname !== `/i/${item.id}`) {
-      window.history.pushState(null, "", `/i/${item.id}${window.location.search}`);
-      pushedRef.current = true;
+      // From one open reference to another: replace, so Back goes to the library and not through each one
+      if (window.location.pathname.startsWith("/i/")) window.history.replaceState(null, "", `/i/${item.id}${window.location.search}`);
+      else { window.history.pushState(null, "", `/i/${item.id}${window.location.search}`); pushedRef.current = true; }
     }
   };
-  const closeDesignMd = () => {
-    if (!window.location.pathname.startsWith("/i/")) { setDesignMdItem(null); return; }
+  const closePanel = () => {
+    if (!window.location.pathname.startsWith("/i/")) { setPanelItem(null); return; }
     // Opened here: step back, so Back and close do the same. Opened from a shared link: go to the library.
     if (pushedRef.current) { window.history.back(); return; }
     window.history.replaceState(null, "", `/${window.location.search}`);
-    setDesignMdItem(null);
+    setPanelItem(null);
   };
   const designMdCtrls = useRef(new Map<string, AbortController>());
-  const designMdItemRef = useRef<InspoItem | null>(null);
+  const panelItemRef = useRef<InspoItem | null>(null);
 
+  // One in-flight request per URL: stop = abort the fetch (the server closes Chromium
+  // and cuts Claude off when the last client leaves) and also send DELETE just in case.
   const runDesignMd = async (item: InspoItem, opts: RunDesignMdOpts = {}) => {
     const url = item.web;
     designMdCtrls.current.get(url)?.abort();
@@ -634,11 +584,18 @@ export default function InspoClient({
       const body = await res.json().catch(() => ({}));
       if (ctrl.signal.aborted) return false;
       if (!res.ok) throw new Error(body.error ?? `Error ${res.status}`);
-      patchJob(url, { status: "ready", entry: body, error: undefined });
-      setDesignMdIndex((prev) => ({ ...prev, [url]: { coverUrl: body.coverUrl, scrollUrl: body.scrollUrl } }));
+      // Seen already when it was asked for from the open panel: no "Done" toast for what is on screen
+      patchJob(url, { status: "ready", entry: body, error: undefined, ...(panelItemRef.current?.web === url ? { seen: true } : {}) });
+      setDesignMdIndex((prev) => ({ ...prev, [url]: {
+        coverUrl: body.coverUrl, scrollUrl: body.scrollUrl, shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH,
+      } }));
+      // A new DESIGN.md brings the page's capture: the canvas draws it from now on
+      if (body.topUrl && body.tileUrl && body.thumbUrl && body.screenshotUrl && body.shotH) {
+        setPageShots((prev) => ({ ...prev, [url]: { shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH, color: body.color } }));
+      }
       if (!body.cached) loadQuota();
-      // Open on its own only if no other sheet is in front; if there is, the "Done" toast stays
-      if (opts.openWhenReady && !designMdItemRef.current) showDesignMd(item);
+      // Open on its own only if no other reference is in front; if there is, the "Done" toast stays
+      if (opts.openWhenReady && !panelItemRef.current) showPanel(item);
       return true;
     } catch (e) {
       if (ctrl.signal.aborted) return false; // stopped by the user: the job is already gone
@@ -658,25 +615,19 @@ export default function InspoClient({
     fetch(`/api/design-md?url=${encodeURIComponent(url)}`, { method: "DELETE", keepalive: true }).catch(() => {});
   };
 
-  // The sheet only opens if the DESIGN.md exists (in session or on the server).
-  // If it needs generating, it runs in the background and the bottom-right toast reports.
-  const openDesignMd = (item: InspoItem) => {
-    // An image or a video has no site to read: its sheet is the thread, with the picture or the player on top
-    if (mediaKindOf(item.web) !== "web") { if (item.id) setCommentsItemId(item.id); return; }
+  /** Opens a reference in the panel. Its DESIGN.md loads quietly when one exists; `generate` makes one. */
+  const openItem = (item: InspoItem, { generate = false } = {}) => {
+    showPanel(item);
+    if (!canAutoDesignMd(item.web)) return;
     const job = designMdJobs[item.web];
-    if (job?.status === "ready") { showDesignMd(item); return; }
-    if (job?.status === "loading") return; // already running, the toast shows it
-    if (item.web in designMdIndex) {
-      // Exists on the server: fetched from cache (near instant) and opened on arrival
-      runDesignMd(item, { quiet: true, openWhenReady: true });
-      return;
-    }
-    runDesignMd(item);
+    if (job?.status === "ready" || job?.status === "loading") return;
+    if (item.web in designMdIndex) runDesignMd(item, { quiet: true });
+    else if (generate) runDesignMd(item);
   };
 
-  const openDesignMdByUrl = (url: string) => {
+  const openItemByUrl = (url: string) => {
     const item = items.find((i) => i.web === url);
-    if (item) openDesignMd(item);
+    if (item) openItem(item);
   };
   const retryDesignMdByUrl = (url: string) => {
     const item = items.find((i) => i.web === url);
@@ -684,15 +635,21 @@ export default function InspoClient({
   };
 
   // Regenerating costs money: the server only allows it for workspace admins.
-  // The sheet closes and the toast carries the process; when done, the new sheet opens on its own.
-  const regenerateDesignMd = (item: InspoItem) => {
-    closeDesignMd();
-    runDesignMd(item, { force: true, openWhenReady: true });
-  };
-  designMdItemRef.current = designMdItem;
+  // The panel stays open and shows the work in its DESIGN.md tabs.
+  const regenerateDesignMd = (item: InspoItem) => { runDesignMd(item, { force: true }); };
+  panelItemRef.current = panelItem;
 
   // Cmd+K (Ctrl+K) opens the command palette from anywhere in the library
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // Mounted on its first ⌘K, then kept so it can animate closed
+  const [paletteUsed, setPaletteUsed] = useState(false);
+  if (paletteOpen && !paletteUsed) setPaletteUsed(true);
+  useEffect(() => {
+    const preload = () => { void loadItemPanel(); void loadCommentsPanel(); };
+    if (typeof window.requestIdleCallback !== "function") { const id = setTimeout(preload, 2000); return () => clearTimeout(id); }
+    const id = window.requestIdleCallback(preload, { timeout: 4000 });
+    return () => window.cancelIdleCallback(id);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setPaletteOpen((o) => !o); }
@@ -701,18 +658,18 @@ export default function InspoClient({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // The path decides what is open: Back or Forward move between the library and a DESIGN.md,
-  // and a shared /i/<id> link opens that inspiration when the library loads
+  // The path decides what is open: Back or Forward move between the library and a reference,
+  // and a shared /i/<id> link opens that reference when the library loads
   const pathname = usePathname();
   useEffect(() => {
     const id = pathname.match(/^\/i\/([^/]+)/)?.[1];
     if (!id) {
-      if (designMdItemRef.current) { pushedRef.current = false; setDesignMdItem(null); }
+      if (panelItemRef.current) { pushedRef.current = false; setPanelItem(null); }
       return;
     }
-    if (designMdItemRef.current?.id === id) return;
+    if (panelItemRef.current?.id === id) return;
     const item = items.find((i) => i.id === id);
-    if (item) { openDesignMd(item); return; }
+    if (item) { openItem(item); return; }
     // Not in this workspace: if it is in another one of mine, switch to it; the library remounts and opens it
     workspaceOfItem(id).then(async (r) => {
       if (!r.ok || !r.data || r.data === workspace.id) return;
@@ -722,319 +679,296 @@ export default function InspoClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
   }, [pathname]);
 
-  // Whatever shows in the modal counts as seen
+  // Whatever shows in the panel counts as seen
   useEffect(() => {
-    const url = designMdItem?.web;
+    const url = panelItem?.web;
     if (!url) return;
     const job = designMdJobs[url];
     if (job && job.status !== "loading" && !job.seen) patchJob(url, { seen: true });
-  }, [designMdItem, designMdJobs]);
+  }, [panelItem, designMdJobs]);
 
   // "Who": only workspace members who added something. Legacy sheet labels
   // ("Both" = no known author) aren't offered as a filter; those sites stay under "all".
   const memberNames = useMemo(() => members.map((m) => m.name), [members]);
   const authorImages = useMemo(() => Object.fromEntries(members.filter((m) => m.image).map((m) => [m.name, m.image!])), [members]);
-  const authors = useMemo(() => {
-    const used = new Set(items.map((i) => i.addedBy).filter(Boolean));
-    return memberNames.filter((n) => used.has(n));
-  }, [items, memberNames]);
 
+  // Back to everything: the whole library, no chips, no words
   const resetFilters = useCallback(() => {
     setQueryState("");
-    setParams({ type: "", author: "", date: "", q: "", sector: "", style: "", tags: "", in: "" });
-  }, [setParams]);
+    const p = new URLSearchParams(window.location.search);
+    for (const k of ["f", "q", "in", ...LEGACY_PARAMS]) p.delete(k);
+    window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+  }, []);
 
-  // Collapsible sidebar (desktop only). SidebarProvider saves it in a cookie that the server reads
-  const [collapsed, setCollapsed] = useState(!initialSidebarOpen);
-  // shadcn's SidebarProvider asks for the change (trigger, rail or Cmd+B). The curtain is transform-only and
-  // runs on the compositor (Web Animations API, not GSAP): the column slides, the whole content block slides
-  // with it, and every card near the viewport flies from its old box to its new one, all on the same curve
-  // and length, in the same frame. Nothing is laid out per frame and a busy main thread cannot stall it.
-  // The first GSAP version (Flip on every card, width transitions) froze WebKit for seconds and started late.
-  const curtain = useRef<{ anims: Animation[]; settle: () => void } | null>(null);
-  const setSidebarOpen = (open: boolean) => {
-    if (open === !collapsed) return;
-    const next = !open;
-    // A second toggle mid-flight: land the running curtain first, then start the new one from there
-    if (curtain.current) { for (const a of curtain.current.anims) a.finish(); curtain.current.settle(); }
-    const content = document.querySelector<HTMLElement>(".content");
-    const column = document.querySelector<HTMLElement>(".app-sidebar");
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduced || !content || !column || window.innerWidth < DESKTOP_MIN) {
-      flushSync(() => setCollapsed(next));
-      return;
-    }
-    // 1. Where everything is now. Cards up to half a screen away count (the reflow can bring them in), at most
-    // 60 of them: every animated card is its own compositor layer, and past a hundred WebKit chokes.
-    const margin = window.innerHeight / 2;
-    const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item, [data-flip]")).filter((el) => nearViewport(el, margin)).slice(0, 60);
-    const before = new Map<HTMLElement, DOMRect>();
-    for (const el of cards) before.set(el, el.getBoundingClientRect());
-    const contentRectBefore = content.getBoundingClientRect();
-    const contentBefore = contentRectBefore.left;
-    // The card nearest the top of the viewport stays put: the scroll follows it into the new layout
-    let anchor: HTMLElement | undefined;
-    for (const el of cards) { const r = before.get(el)!; if (r.bottom > 110 && (!anchor || r.top < before.get(anchor)!.top)) anchor = el; }
-    // 2. The swap: the gap jumps, the content takes its new width, the pill replaces the breadcrumb
-    flushSync(() => setCollapsed(next));
-    if (anchor) { const dy = anchor.getBoundingClientRect().top - before.get(anchor)!.top; if (dy) window.scrollBy({ top: dy, behavior: "instant" }); }
-    // 3. Everything starts from where it was and glides to where it is. All the "after" boxes are read before
-    // any animation exists: once one is created its first keyframe already shows in the rects, and a card
-    // measured through the content block's own shift would cancel it and sit still.
-    const contentRect = content.getBoundingClientRect();
-    const dxContent = contentBefore - contentRect.left;
-    const after = new Map<HTMLElement, DOMRect>();
-    for (const el of cards) after.set(el, el.getBoundingClientRect());
-    const opts: KeyframeAnimationOptions = { duration: CURTAIN_MS, easing: CURTAIN_EASE };
-    // The canvas itself grows or shrinks with the curtain, not in one jump: the content block's width is
-    // animated too (main thread, but cheap: the grid wrapper is pinned to its final width in px, so the
-    // 125 absolutely positioned cards are never laid out again during the flight; only the bars follow).
-    // Its own transform stays a separate, accelerated animation. flex: none so the width is obeyed.
-    const wrap = content.querySelector<HTMLElement>(".masonry-wrap");
-    if (wrap) wrap.style.width = `${contentRect.width}px`;
-    content.style.flex = "none";
-    const anims: Animation[] = [
-      column.animate([{ transform: `translateX(${next ? 0 : -100}%)` }, { transform: `translateX(${next ? -100 : 0}%)` }], opts),
-      content.animate([{ transform: `translateX(${dxContent}px)` }, { transform: "none" }], opts),
-      content.animate([{ width: `${contentRectBefore.width}px` }, { width: `${contentRect.width}px` }], opts),
-    ];
-    for (const el of cards) {
-      const b = before.get(el)!, a = after.get(el)!;
-      if (!a.width || !a.height) continue;
-      const dx = b.left - a.left - dxContent, dy = b.top - a.top, sx = b.width / a.width, sy = b.height / a.height;
-      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.002 && Math.abs(sy - 1) < 0.002) continue;
-      el.style.transformOrigin = "0 0";
-      anims.push(el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: "none" }], opts));
-    }
-    // 4. Landed: release the cards and the canvas
-    const settle = () => {
-      if (curtain.current?.anims !== anims) return;
-      curtain.current = null;
-      for (const el of cards) el.style.transformOrigin = "";
-      if (wrap) wrap.style.width = "";
-      content.style.flex = "";
-    };
-    curtain.current = { anims, settle };
-    Promise.all(anims.map((a) => a.finished)).then(settle, () => { /* cancelled: another toggle landed it */ });
-  };
-
-  const numCols = useColumnCount(collapsed);
-  // On a phone the same trigger opens the menu sheet, so it says so
+  // Desktop has no sidebar: the island in the top bar holds the projects and the workspace menu. A phone keeps
+  // the sidebar as a sheet behind the menu button.
   const isMobile = useIsMobile();
-  const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
-  // Desktop, sidebar collapsed: the island pill sits over the topbar and says what the breadcrumb said
-  const island = !isMobile && collapsed;
-  const spaceLabel = space === "inbox" ? t.projects.inbox : currentProject?.name;
-  const typeLabel = type === "all" ? null : t.labels.type[type];
-  const viewLabel = spaceLabel ? (typeLabel ? `${spaceLabel} · ${typeLabel}` : spaceLabel) : typeLabel ?? t.sidebar.all;
-  // Everything under the workspace, shared by the docked column and the island menu
+
+  // ─── Search ─────────────────────────────────────────────────────────────────
+  // Three layers, each shown as soon as it is there (lib/search-query.ts):
+  // 1. here, every keystroke: chips filter, words match each item's text (tags in both languages, notes, thread);
+  // 2. /api/search/semantic, a fraction of a second later: nearness in meaning, any language;
+  // 3. /api/search, for descriptive queries: Jev reads the nearest 20 and reorders them.
+  // The box answers every key at once; the ranking and the new layout follow when the browser has room
+  const searched = useDeferredValue(query);
+  const words = useMemo(() => queryWords(searched), [searched]);
+  const text = searched.trim();
+  const index = useMemo(() => textIndex(items, tagMap, commentMap), [items, tagMap, commentMap]);
+  const vocab = useMemo(() => vocabulary(items, tagMap, memberNames), [items, tagMap, memberNames]);
+  // The space, through the chips
+  const base = useMemo(() => {
+    if (!filters.length) return spaceItems;
+    const test = filterTest(filters);
+    return spaceItems.filter((i) => test(i, tagMap[i.web]));
+  }, [spaceItems, tagMap, filters]);
+  const local = useMemo(() => localScores(base.map((i) => i.web), index, words), [base, index, words]);
+
+  const [semantic, setSemantic] = useState<{ q: string; scores: Record<string, number> } | null>(null);
+  const [semanticBusy, setSemanticBusy] = useState(false);
+  useEffect(() => {
+    if (text.length < 3) { setSemantic(null); setSemanticBusy(false); return; }
+    const ctrl = new AbortController();
+    const id = setTimeout(async () => {
+      setSemanticBusy(true);
+      try {
+        const res = await fetch("/api/search/semantic", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: text }), signal: ctrl.signal });
+        const data = res.ok ? await res.json() : null;
+        if (data?.scores) setSemantic({ q: text, scores: data.scores });
+      } catch { /* the words layer stands alone */ }
+      finally { if (!ctrl.signal.aborted) setSemanticBusy(false); }
+    }, SEMANTIC_WAIT_MS);
+    return () => { clearTimeout(id); ctrl.abort(); };
+  }, [text]);
+  // Only this query's answer counts: an older one would reorder the wrong results
+  const near = semantic?.q === text ? semantic.scores : null;
+
+  const [jev, setJev] = useState<{ q: string; scores: Record<string, number> } | null>(null);
+  const [jevBusy, setJevBusy] = useState(false);
+  const jevFor = useMemo(() => {
+    if (!aiEnabled || !near || !isDescriptive(words, local.size)) return null;
+    return rankText(base.map((i) => i.web), local, near, null).order.slice(0, JEV_TOP);
+  }, [near, words, local, base, aiEnabled]);
+  const jevKey = jevFor ? `${text}|${jevFor.join(",")}` : "";
+  useEffect(() => {
+    if (!jevFor?.length) { setJevBusy(false); return; }
+    const ctrl = new AbortController();
+    const id = setTimeout(async () => {
+      setJevBusy(true);
+      try {
+        const res = await fetch("/api/search", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q: text, webs: jevFor }), signal: ctrl.signal });
+        const data = res.ok ? await res.json() : null;
+        if (data?.scores) { setJev({ q: text, scores: data.scores }); if (!data.cached) loadQuota(); }
+      } catch { /* the first two layers stand */ }
+      finally { if (!ctrl.signal.aborted) setJevBusy(false); }
+    }, JEV_WAIT_MS);
+    return () => { clearTimeout(id); ctrl.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jevKey]);
+  const jevScores = jev?.q === text ? jev.scores : null;
+
+  const ranked = useMemo(() => (words.length || near ? rankText(base.map((i) => i.web), local, near, jevScores) : null), [words, near, base, local, jevScores]);
+  const filtered = useMemo(() => {
+    if (!ranked) return [...base].sort((a, b) => parseDate(b.date) - parseDate(a.date));
+    const byWeb = new Map(base.map((i) => [i.web, i]));
+    return ranked.order.map((w) => byWeb.get(w)!).filter(Boolean);
+  }, [ranked, base]);
+  const searchBusy = semanticBusy || jevBusy;
+
+  // Why each result is there: the tags the words found, else "close in meaning". Free, and instant.
+  const reasons = useMemo(() => {
+    if (!words.length) return null;
+    const out: Record<string, string> = {};
+    const labelMaps: Record<string, Record<string, string>> = { palette: t.taxonomy.color, sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
+    for (const it of filtered.slice(0, 200)) {
+      const v = viewOf(tagMap[it.web]);
+      const labels = v ? [
+        ...FACETS.flatMap((f) => v[f.field].map((k) => labelMaps[f.field][k] ?? k)),
+        ...v.traits.map((k) => t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k),
+        ...v.keywords, ...v.credits,
+      ] : [];
+      const hit = labels.filter((l) => words.some((w) => norm(l).split(/\s+/).some((p) => p.startsWith(w)))).slice(0, 3);
+      out[it.web] = hit.length ? hit.join(" · ") : t.search.nearInMeaning;
+    }
+    return out;
+  }, [filtered, words, tagMap, t]);
+
+  const swatches = useMemo(() => Object.fromEntries(COLORS.map((c) => [c.key, c.description])), []);
+
+  // Everything under the workspace, for the sidebar (the docked column and the phone sheet)
+  const filtering = filters.length > 0 || words.length > 0;
   const navProps = {
-    quota, items, members, workspaceKind: workspace.kind, author, onAuthor: setAuthor, type,
-    isAll: space === "all" && type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0,
-    onType: setType, onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
-    space, onSpace: setSpace, projects, links, spaceItems,
+    quota, items,
+    isAll: space === "all" && !filtering,
+    onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
+    space, onSpace: setSpace, projects, links,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
-  const gridRef = useRef<HTMLElement>(null);
-  const isMount = useRef(true);
 
-  const filtered = useMemo(() => {
-    const now = new Date();
-    const thisYear = now.getFullYear();
-    const thisMonth = now.getMonth();
-    const q = normalize(query.trim());
-    const useAi = !!aiScores && ai && query.trim().length >= 3;
-    const cutoff = useAi ? aiCutoff(aiScores!) : 0;
-
-    return [...spaceItems]
-      .sort((a, b) => useAi
-        ? (aiScores![b.web] ?? 0) - (aiScores![a.web] ?? 0)
-        : parseDate(b.date) - parseDate(a.date))
-      .filter((item) => {
-        const t = tagMap[item.web];
-        if (sector !== "all" && t?.sector !== sector) return false;
-        if (style !== "all" && t?.style !== style) return false;
-        if (selTags.length && !selTags.every((k) => (t?.tags[k] ?? 0) >= TAG_THRESHOLD)) return false;
-        if (useAi) {
-          if ((aiScores![item.web] ?? 0) < cutoff) return false;
-        }
-        if (type !== "all" && item.type !== type) return false;
-        if (author !== "all" && item.addedBy !== author) return false;
-        if (date !== "all") {
-          const ts = parseDate(item.date);
-          if (ts === 0) return false;
-          const d = new Date(ts);
-          if (date === "thisYear" && d.getFullYear() !== thisYear) return false;
-          if (date === "thisMonth" && (d.getFullYear() !== thisYear || d.getMonth() !== thisMonth)) return false;
-        }
-        if (q && !useAi) {
-          const haystack = normalize([item.name, item.note, item.subNote ?? "", item.web].join(" "));
-          if (!haystack.includes(q)) return false;
-        }
-        return true;
-      });
-  }, [spaceItems, type, author, date, query, tagMap, sector, style, selTags, ai, aiScores]);
-
-  // Best match among visible results (for the AI search header)
-  const aiTop = useMemo(
-    () => (ai && aiScores ? filtered.reduce((m, it) => Math.max(m, aiScores[it.web] ?? 0), 0) : 0),
-    [filtered, ai, aiScores],
+  // ─── Canvas ─────────────────────────────────────────────────────────────────
+  // At rest, the whole space, newest first. While searching, only the results, laid out again in the
+  // order they rank: the best one top left. What doesn't match isn't there.
+  const boardItems = useMemo(
+    () => (filtering ? filtered : [...spaceItems].sort((a, b) => parseDate(b.date) - parseDate(a.date))),
+    [filtering, filtered, spaceItems],
   );
 
-  // Real masonry: each card goes to the shortest column by its measured height
-  // (height/width, so it doesn't depend on column width). Measurements are cached in
-  // localStorage so the second visit loads already balanced.
-  const ratiosRef = useRef<Record<string, number>>({});
-  const [ratiosVersion, setRatiosVersion] = useState(0);
-  const entering = useRef(false);
-  const pendingRelayout = useRef(false);
+  // Height/width of what each card shows: the page height from the index, else measured once and kept
+  const [ratios, setRatios] = useState<Record<string, number>>({});
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(RATIOS_KEY) || "{}");
-      if (saved && typeof saved === "object") { ratiosRef.current = saved; setRatiosVersion((v) => v + 1); }
+      if (saved && typeof saved === "object") setRatios(saved);
     } catch { /* no storage */ }
   }, []);
-
-  // Masonry as numbers: each card gets a column, a vertical offset in column widths (the ratios above it)
-  // and its index in the column. CSS turns them into left, top and width with container units, so the grid
-  // reflows with its container on its own, and a card that changes column keeps its DOM node (no remount,
-  // no image reload): the flat list is keyed by item, never by slot.
-  const layout = useMemo<GridLayout>(() => {
-    const y = new Array<number>(numCols).fill(0);
-    const count = new Array<number>(numCols).fill(0);
-    const slots: GridSlot[] = [];
-    for (const item of filtered) {
-      let c = 0;
-      for (let i = 1; i < numCols; i++) if (y[i] + count[i] * GAP_RATIO < y[c] + count[c] * GAP_RATIO - 0.001) c = i;
-      slots.push({ item, c, y: y[c], k: count[c] });
-      y[c] += ratiosRef.current[item.web] ?? DEFAULT_RATIO;
-      count[c]++;
-    }
-    // The tallest column decides the height, but which one is tallest depends on the column width in px,
-    // which only CSS knows: max() over all of them
-    const height = `max(${y.map((v, i) => `calc(var(--m-pad-top) + ${v.toFixed(4)} * var(--col) + ${Math.max(0, count[i] - 1)} * var(--m-gap) + var(--m-pad-bottom))`).join(", ")})`;
-    return { n: numCols, slots, height };
-    // ratiosVersion forces a recompute when measurements change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, numCols, ratiosVersion]);
-
-  const relayout = () => {
-    try { localStorage.setItem(RATIOS_KEY, JSON.stringify(ratiosRef.current)); } catch { /* no storage */ }
-    if (entering.current) { pendingRelayout.current = true; return; }
-    pendingRelayout.current = false;
-    gsap.registerPlugin(Flip);
-    // Only the cards on screen fly, and only with transforms: measuring all 125 took half a second in WebKit,
-    // and animating width and height relaid out the whole grid on every frame. That was the freeze.
-    Flip.killFlipsOf(".card-item", true);
-    const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item")).filter(nearViewport);
-    const state = Flip.getState(cards, { simple: true });
-    flushSync(() => setRatiosVersion((v) => v + 1));
-    const clear = () => gsap.set(cards, { clearProps: "transform" });
-    Flip.from(state, {
-      targets: cards,
-      duration: 0.4,
-      ease: "power2.inOut",
-      scale: true,
-      onComplete: clear,
-      onInterrupt: clear,
+  // Cards that load together measure together: their ratios are applied once per frame (one new layout,
+  // not one per image) and saved a moment after the last one
+  const pendingRatios = useRef<Record<string, number> | null>(null);
+  const saveRatios = useRef<number | undefined>(undefined);
+  const measure = useCallback((web: string, r: number) => {
+    const first = !pendingRatios.current;
+    pendingRatios.current = { ...pendingRatios.current, [web]: r };
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const batch = pendingRatios.current!;
+      pendingRatios.current = null;
+      setRatios((prev) => {
+        const changed = Object.entries(batch).filter(([w, v]) => prev[w] === undefined || Math.abs(prev[w] - v) >= 0.01);
+        if (!changed.length) return prev;
+        const next = { ...prev, ...Object.fromEntries(changed) };
+        window.clearTimeout(saveRatios.current);
+        saveRatios.current = window.setTimeout(() => {
+          try { localStorage.setItem(RATIOS_KEY, JSON.stringify(next)); } catch { /* no storage */ }
+        }, 500);
+        return next;
+      });
     });
-  };
-  const relayoutRef = useRef(relayout);
-  relayoutRef.current = relayout;
+  }, []);
+  const ratioOf = useCallback((item: InspoItem) => {
+    const shot = pageShots[item.web];
+    // A site is drawn as its page, cut at the canvas's maximum height, unless someone chose a thumbnail for it
+    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, CANVAS_MAX_RATIO);
+    // Not measured yet: a site will arrive as a tall page, anything else about as a cover
+    return ratios[item.web] ?? (mediaKindOf(item.web) === "web" ? 1.5 : DEFAULT_RATIO);
+  }, [pageShots, thumbMap, ratios]);
 
-  // Measures each card when its size changes (image loaded, new thumbnail…)
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-    let timer: number | undefined;
-    const ro = new ResizeObserver((entries) => {
-      let changed = false;
-      for (const e of entries) {
-        const el = e.target as HTMLElement;
-        const id = el.dataset.flipId;
-        if (!id || el.querySelector(".tile__media.is-loading")) continue;
-        const w = el.clientWidth, h = el.clientHeight;
-        if (!w || !h) continue;
-        const r = h / w;
-        const prev = ratiosRef.current[id];
-        if (prev === undefined || Math.abs(prev - r) > 0.02) { ratiosRef.current[id] = r; changed = true; }
-      }
-      if (!changed) return;
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => relayoutRef.current(), 200);
-    });
-    grid.querySelectorAll<HTMLElement>(".card-item").forEach((el) => ro.observe(el));
-    return () => { ro.disconnect(); window.clearTimeout(timer); };
-  }, [layout]);
+  // Always the automatic layout: columns, newest first. Nobody moves cards by hand (for now).
+  const slots = useMemo(() => layoutCanvas(boardItems, undefined, (i) => TILE_W * ratioOf(i)), [boardItems, ratioOf]);
 
-  useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
-    const cards = Array.from(el.querySelectorAll<HTMLElement>(".card-item"));
-    if (!cards.length) return;
-
-    const sorted = cards.slice().sort((a, b) => {
-      const ra = a.getBoundingClientRect();
-      const rb = b.getBoundingClientRect();
-      if (Math.abs(ra.top - rb.top) > 20) return ra.top - rb.top;
-      return ra.left - rb.left;
-    });
-
-    entering.current = true;
-    gsap.from(sorted, {
-      opacity: 0,
-      y: isMount.current ? 16 : 8,
-      duration: isMount.current ? 0.45 : 0.3,
-      stagger: isMount.current ? 0.035 : 0.025,
-      ease: "power3.out",
-      // Only what the tween touched: "all" wipes the inline style, and with it the card's grid position (--c, --y, --k)
-      clearProps: "opacity,transform",
-      onComplete: () => {
-        entering.current = false;
-        if (pendingRelayout.current) relayoutRef.current();
-      },
-    });
-    isMount.current = false;
-  }, [filtered]);
+  // What floats over the canvas, so framing keeps clear of it
+  const winW = useWindowWidth();
+  const desktop = winW >= DESKTOP_MIN;
+  const insets = useMemo(() => ({
+    top: desktop ? TOP_DESKTOP : TOP_MOBILE,
+    left: 0,
+    right: 0,
+    bottom: BOTTOM,
+  }), [desktop]);
+  const canvasRef = useRef<CanvasHandle | null>(null);
+  // The camera frames the results again when the chips change or a slower layer answers, not on every key
+  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${near ? 1 : 0}|${jevScores ? 1 : 0}|${filtering ? filtered.length : -1}`;
 
   // Presence: which area the person is in right now (read by the /admin panel)
-  const area = designMdItem ? "design-md" : commentsItem ? "comments" : showDirectory ? "directory" : showAdd ? "add" : aiScores ? "search" : "library";
+  const area = panelItem ? "design-md" : showDirectory ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
   useActivity(area, workspace.id);
 
   runDesignMdRef.current = runDesignMd;
-  // The grid's handlers, behind one stable ref: the grid only re-renders when its data changes, never because
-  // the shell did (collapsing the sidebar used to re-render all 125 cards, 70 ms on the toggle's first frame)
+  // The cards' handlers, behind one stable ref: a card only re-renders when its own data changes
   const gridActions = useRef<GridActions>(null!);
-  gridActions.current = { setCommentsItemId, deleteItem, handleThumbnailUpload, handleThumbnailRemove, openDesignMd, toggleFiled, createAndFile };
+  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, measure };
+
+  // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
+  // they were pinned; the column holds all of them with their replies
+  const panelThread = panelItem?.id ? commentMap[panelItem.id] : undefined;
+  const panelComments = panelThread ?? [];
+  // The same objects while the comments don't change, so the post-its don't re-render on every key typed
+  const { panelNotes, pins, repliesOf } = useMemo(() => {
+    const all = panelThread ?? [];
+    const notes = all.filter((c) => c.anchor && !c.parentId);
+    const pins: Record<string, number> = {};
+    [...notes].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).forEach((c, i) => { pins[c.id] = i + 1; });
+    // The map keeps the comments' own order: oldest first
+    const repliesOf: Record<string, InspoComment[]> = {};
+    for (const c of all) if (c.parentId) (repliesOf[c.parentId] ??= []).push(c);
+    return { panelNotes: notes, pins, repliesOf };
+  }, [panelThread]);
+  // A comment picked on one side shows on the other: the post-it on the page, the thread in the column.
+  // `n` changes on every pick, so picking the same one again still asks the column to open.
+  const [commentFocus, setCommentFocus] = useState<{ id: string; n: number } | null>(null);
+  const focusComment = useCallback((id: string) => setCommentFocus({ id, n: Date.now() }), []);
+  useEffect(() => { setCommentFocus(null); }, [panelItem?.id]);
+  const canManage = workspace.role === "owner" || workspace.role === "admin";
+  const panelPage = (() => {
+    if (!panelItem) return null;
+    const kind = mediaKindOf(panelItem.web);
+    // A video or a post is its own page: it fills the page card, with no post-its
+    if (kind === "video") return <div className="ip-media"><VideoPlayer web={panelItem.web} title={panelItem.name} /></div>;
+    if (kind === "post") return <div className="ip-media"><PostView web={panelItem.web} onThumb={(thumb: string) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))} /></div>;
+    const job = designMdJobs[panelItem.web];
+    const src = kind === "image"
+      ? thumbMap[panelItem.web] ?? panelItem.web
+      : job?.entry?.screenshotUrl ?? pageShots[panelItem.web]?.shotUrl ?? thumbMap[panelItem.web] ?? `/api/shot?url=${encodeURIComponent(panelItem.web)}&v=2`;
+    const host = (() => { try { return new URL(panelItem.web).hostname.replace(/^www\./, ""); } catch { return panelItem.name; } })();
+    return (
+      <PageNotes
+        key={panelItem.web}
+        src={src}
+        alt={panelItem.name}
+        host={kind === "image" ? panelItem.name : host}
+        dark={isDarkSite(job?.entry)}
+        notes={panelNotes}
+        user={user}
+        canManage={canManage}
+        onPin={(body, anchor) => postComment(panelItem.id!, body, [], anchor)}
+        onDelete={(id) => deleteComment(panelItem.id!, id)}
+        pins={pins}
+        replies={repliesOf}
+        focusId={commentFocus?.id ?? null}
+        onFocus={focusComment}
+        onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
+      />
+    );
+  })();
 
   return (
-    <SidebarProvider open={!collapsed} onOpenChange={setSidebarOpen} className="shell">
+    <SidebarProvider defaultOpen={false} className="shell">
       {confirmDialog}
-      {designMdItem && (
-        <DesignMdModal
-          url={designMdItem.web}
-          name={designMdItem.name}
-          state={designMdJobs[designMdItem.web]}
-          onClose={closeDesignMd}
-          libraryName={workspace.name}
-          onRegenerate={() => regenerateDesignMd(designMdItem)}
-          onRevised={(patch) => patchJob(designMdItem.web, { entry: { ...designMdJobs[designMdItem.web]?.entry!, ...patch } })}
-          commentCount={designMdItem.id ? (commentMap[designMdItem.id]?.length ?? 0) : 0}
-          comments={designMdItem.id ? (hide) => (
+      {panelItem && (
+        <ItemPanel
+          item={panelItem}
+          tags={tagMap[panelItem.web]}
+          tagJob={tagJobs[panelItem.web]}
+          onRetryTags={() => retryTags(panelItem.web)}
+          onEditTags={(change) => editTags(panelItem, change)}
+          onTag={(sel) => { if (!filters.some((f) => f.kind === "tag" && f.value === sel)) toggleFilter({ kind: "tag", value: sel }); closePanel(); }}
+          state={designMdJobs[panelItem.web]}
+          canDesignMd={canAutoDesignMd(panelItem.web)}
+          page={panelItem.id ? panelPage : null}
+          thread={panelItem.id ? (
             <CommentsPanel
               variant="column"
-              item={designMdItem}
-              comments={commentMap[designMdItem.id!] ?? []}
+              item={panelItem}
+              comments={panelComments}
               user={user}
-              canManage={workspace.role === "owner" || workspace.role === "admin"}
+              canManage={canManage}
               memberImages={authorImages}
               memberNames={memberNames}
-              onPost={(body, attachments) => postComment(designMdItem.id!, body, attachments)}
-              onDelete={(id) => deleteComment(designMdItem.id!, id)}
-              onEditNote={(field, text) => editNote(designMdItem.id!, field, text)}
-              onClose={hide}
+              image={null}
+              showMedia={false}
+              onPost={(body, attachments) => postComment(panelItem.id!, body, attachments)}
+              onDelete={(id) => deleteComment(panelItem.id!, id)}
+              onPostThumb={(thumb) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))}
+              onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
+              onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
+              pins={pins}
+              focusId={commentFocus?.id ?? null}
+              onFocus={panelPage ? focusComment : undefined}
             />
-          ) : undefined}
+          ) : null}
+          onClose={closePanel}
+          onGenerate={() => runDesignMd(panelItem)}
+          onRegenerate={() => regenerateDesignMd(panelItem)}
+          onRevised={(patch) => patchJob(panelItem.web, { entry: { ...designMdJobs[panelItem.web]?.entry!, ...patch } })}
+          libraryName={workspace.name}
         />
       )}
       {showPolish && currentProject && (
@@ -1052,8 +986,8 @@ export default function InspoClient({
       )}
       <DesignMdToasts
         jobs={designMdJobs}
-        openUrl={designMdItem?.web ?? null}
-        onOpen={openDesignMdByUrl}
+        openUrl={panelItem?.web ?? null}
+        onOpen={openItemByUrl}
         onDismiss={(url) => patchJob(url, { seen: true })}
         onCancel={cancelDesignMd}
         onRetry={retryDesignMdByUrl}
@@ -1073,7 +1007,7 @@ export default function InspoClient({
           isAdded={isDuplicate}
         />
       )}
-      <CommandPalette
+      {paletteUsed && <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
         items={items}
@@ -1081,36 +1015,15 @@ export default function InspoClient({
         workspace={workspace}
         workspaces={workspaces}
         isAdmin={isAdmin}
-        onOpenItem={openDesignMd}
+        onOpenItem={(item) => openItem(item)}
         onAddUrl={(web) => {
-          // Already saved: show it in the grid instead of saving it twice
+          // Already saved: show it on the canvas instead of saving it twice
           if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
           addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
         onAdd={() => setShowAdd(true)}
         onDirectory={() => setShowDirectory(true)}
-      />
-      {commentsItem && (
-        <CommentsPanel
-          item={commentsItem}
-          comments={commentMap[commentsItem.id!] ?? []}
-          user={user}
-          canManage={workspace.role === "owner" || workspace.role === "admin"}
-          memberImages={authorImages}
-          memberNames={memberNames}
-          image={thumbMap[commentsItem.web] ? thumbMap[commentsItem.web] : designMdIndex[commentsItem.web]?.coverUrl ? designMdIndex[commentsItem.web].coverUrl! : null}
-          onPost={(body, attachments) => postComment(commentsItem.id!, body, attachments)}
-          onDelete={(id) => deleteComment(commentsItem.id!, id)}
-          onPostThumb={(thumb) => setThumbMap((prev) => (prev[commentsItem.web] ? prev : { ...prev, [commentsItem.web]: thumb }))}
-          onEditNote={(field, text) => editNote(commentsItem.id!, field, text)}
-          onClose={() => setCommentsItemId(null)}
-          designMd={canAutoDesignMd(commentsItem.web) ? {
-            status: designMdJobs[commentsItem.web]?.status === "loading" ? "loading" : commentsItem.web in designMdIndex ? "ready" : "none",
-            onGenerate: () => runDesignMd(commentsItem, { openWhenReady: true }),
-            onOpen: () => openDesignMd(commentsItem),
-          } : undefined}
-        />
-      )}
+      />}
       {showAdd && (
         <AddInspoModal
           onClose={() => setShowAdd(false)}
@@ -1120,91 +1033,27 @@ export default function InspoClient({
         />
       )}
 
-      <Sidebar brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />} {...navProps} />
+      {isMobile && <Sidebar brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin} />} {...navProps} />}
 
       <SidebarInset className="content">
         <header className="topbar">
           <span className="topbar__trigger">
-            <SidebarTrigger aria-label={triggerLabel} />
+            <SidebarTrigger aria-label={t.app.menu} />
           </span>
-          {island ? (
-            <IslandPill
-              brand={<WorkspaceMenu user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-                subtitle={<>{viewLabel} <span className="ws__count">{filtered.length}</span></>} />}
-              {...navProps}
-            />
-          ) : (
-          <Breadcrumb className="topbar__view" aria-label={t.settings.breadcrumb}>
-            <BreadcrumbList>
-              <BreadcrumbItem className="topbar__ws">{workspace.name}</BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage className="topbar__title">{viewLabel}</BreadcrumbPage>
-                <span className="topbar__count">{filtered.length}</span>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-          )}
+          <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
+            items={items} links={links} projects={projects} space={space} onSpace={setSpace}
+            onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
+            onDirectory={() => setShowDirectory(true)} quota={quota} />
           <Logo size={28} className="topbar__logo" />
-          {/* The main search always looks like the AI search (spark + "Describe what you are after"), as the sidebar box did */}
-          <SearchBox className="topbar__search" value={query} onChange={setQuery}
-            ai aiLoading={aiLoading} shortcut />
-          {currentProject && (
-            <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
-          )}
-          <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
+          {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
+          <div className="topbar__actions">
+            {currentProject && (
+              <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+            )}
+            {currentProject && <span className="topbar__actions-sep" aria-hidden />}
+            <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
+          </div>
         </header>
-
-        {ai && query.trim().length >= 3 && (aiLoading || aiError || aiScores) && (
-          <header className={`ai-hero${aiLoading ? " is-loading" : ""}${aiError ? " is-error" : ""}`} role="status" aria-live="polite">
-            <div className="ai-hero__badge" aria-hidden>
-              {aiLoading ? <span className="spinner" /> : aiError ? Icons.x : Icons.spark}
-            </div>
-            <div className="ai-hero__main">
-              <div className="ai-hero__eyebrow">
-                {aiLoading ? t.app.searching : aiError ? t.app.searchFailed : t.app.resultsFor}
-              </div>
-              <h2 className="ai-hero__query">{query.trim()}</h2>
-              <div className="ai-hero__meta">
-                {aiLoading ? (
-                  <>
-                    <span className="ai-hero__skeleton" style={{ width: 120 }} />
-                    <span className="ai-hero__skeleton" style={{ width: 72 }} />
-                  </>
-                ) : aiError ? (
-                  <span className="ai-hero__pill ai-hero__pill--error">{aiError}</span>
-                ) : (
-                  <>
-                    <span className="ai-hero__pill"><strong>{filtered.length}</strong> {t.app.results(filtered.length)}</span>
-                    {aiTop > 0 && (
-                      <button type="button" className="ai-hero__pill ai-hero__pill--info" aria-describedby="ai-score-tip">
-                        {t.app.bestMatch} <strong>{Math.round(aiTop * 100)}%</strong>
-                        <span className="info-i" aria-hidden>{Icons.info}</span>
-                        <span className="info-tip" role="tooltip" id="ai-score-tip">{t.app.scoreTip}</span>
-                      </button>
-                    )}
-                    <span className="ai-hero__hint">{t.app.sortedByMatch}</span>
-                  </>
-                )}
-              </div>
-            </div>
-            <button className="ai-hero__clear" onClick={() => setQuery("")}>
-              {Icons.x}<span>{t.app.clear}</span><kbd>Esc</kbd>
-            </button>
-            <span className="ai-hero__bar" aria-hidden />
-          </header>
-        )}
-
-        {items.length > 0 && (
-          <FilterBar
-            items={spaceItems} tagMap={tagMap}
-            authors={authors} authorImages={authorImages}
-            author={author} date={date} sector={sector} style={style} selTags={selTags}
-            onAuthor={setAuthor} onDate={setDate} onSector={setSector} onStyle={setStyle} onToggleTag={toggleTag}
-            onClear={() => setParams({ author: "", date: "", sector: "", style: "", tags: "" })}
-            aiEnabled={aiEnabled} pending={pending} tagging={tagging} onTagAll={tagAll}
-          />
-        )}
 
         {items.length === 0 ? (
           <EmptyStart
@@ -1238,20 +1087,57 @@ export default function InspoClient({
             <span className="display">{t.projects.inboxEmptyTitle}</span>
             <span>{t.projects.inboxEmptyHint}</span>
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty">
-            <span className="display">{t.app.nothingHere}</span>
-            <span>{aiLoading ? t.app.searchingShort : t.app.tryAnother}</span>
-            <Button variant="ghost" size="sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</Button>
-          </div>
         ) : (
-          <Grid
-            gridRef={gridRef} layout={layout} tagMap={tagMap}
-            aiScores={ai ? aiScores : null} aiReasons={ai ? aiReasons : null}
-            commentMap={commentMap} authorImages={authorImages} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
-            projects={projects} links={links}
-            actions={gridActions}
-          />
+          <>
+            <Canvas
+              items={boardItems}
+              slots={slots}
+              insets={insets}
+              fitKey={fitKey}
+              focusKey={null}
+              handleRef={canvasRef}
+              renderCard={(item, level) => (
+                <Card
+                  item={item}
+                  level={level}
+                  ratio={ratioOf(item)}
+                  tags={tagMap[item.web]}
+                  tagJob={tagJobs[item.web]}
+                  score={jevScores?.[item.web]}
+                  reason={reasons?.[item.web]}
+                  comments={item.id ? commentMap[item.id] : undefined}
+                  authorImage={authorImages[item.addedBy]}
+                  manualThumbnail={thumbMap[item.web]}
+                  designMdLoading={designMdJobs[item.web]?.status === "loading"}
+                  designMd={designMdIndex[item.web]}
+                  shot={pageShots[item.web]}
+                  projects={projects}
+                  projectIds={item.id ? links[item.id] : undefined}
+                  actions={gridActions}
+                />
+              )}
+            />
+            {filtered.length === 0 && (
+              <div className="empty empty--over">
+                <span className="display">{t.app.nothingHere}</span>
+                <span>{searchBusy ? t.app.searchingShort : t.app.tryAnother}</span>
+                <Button variant="ghost" size="sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</Button>
+              </div>
+            )}
+          </>
+        )}
+        {/* The one way to find anything, at the bottom like a conversation: people, dates, kinds, every tag,
+            and what it means. Solid and bright in both themes, so it is the first thing the eye finds. */}
+        {items.length > 0 && (
+          <div className="dock">
+            {filtering && (
+              <p className="dock__status" role="status" aria-live="polite">
+                {t.search.results(filtered.length)}{jevBusy && <span className="dock__status-more"> · {t.search.reading}</span>}
+              </p>
+            )}
+            <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
+              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} />
+          </div>
         )}
       </SidebarInset>
     </SidebarProvider>
@@ -1259,71 +1145,26 @@ export default function InspoClient({
 }
 
 interface GridActions {
-  setCommentsItemId: (id: string) => void;
+  openItem: (item: InspoItem, opts?: { generate?: boolean }) => void;
   deleteItem: (item: InspoItem) => Promise<void>;
   handleThumbnailUpload: (web: string, file: File) => void;
   handleThumbnailRemove: (web: string) => void;
-  openDesignMd: (item: InspoItem) => void;
   toggleFiled: (item: InspoItem, projectId: string, on: boolean) => void;
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
+  measure: (web: string, ratio: number) => void;
 }
 
-/** The masonry. Memoised: it re-renders on new data (items, tags, comments, covers), not on shell state. */
-interface GridSlot { item: InspoItem; c: number; y: number; k: number }
-interface GridLayout { n: number; slots: GridSlot[]; height: string }
-
-const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, projects, links, actions }: {
-  gridRef: RefObject<HTMLElement | null>;
-  layout: GridLayout;
-  tagMap: TagMap;
-  aiScores: Record<string, number> | null | undefined;
-  aiReasons: Record<string, string> | null | undefined;
-  commentMap: CommentMap;
-  authorImages: Record<string, string>;
-  thumbMap: ThumbnailMap;
-  designMdJobs: Record<string, DesignMdState>;
-  designMdIndex: Record<string, { coverUrl?: string; scrollUrl?: string }>;
-  projects: Project[];
-  links: ProjectLinks;
-  actions: RefObject<GridActions>;
-}) {
-  return (
-    <div className="masonry-wrap">
-      <section ref={gridRef} className="masonry" style={{ "--n": layout.n, height: layout.height } as React.CSSProperties}>
-        {layout.slots.map(({ item, c, y, k }) => (
-          <div key={item.web} className="card-item" data-flip-id={item.web} style={{ "--c": c, "--y": y.toFixed(4), "--k": k } as React.CSSProperties}>
-            <Card
-              item={item}
-              tags={tagMap[item.web]}
-              score={aiScores ? aiScores[item.web] : undefined}
-              reason={aiScores ? aiReasons?.[item.web] : undefined}
-              commentCount={item.id ? (commentMap[item.id]?.length ?? 0) : 0}
-              comments={item.id ? commentMap[item.id] : undefined}
-              authorImage={authorImages[item.addedBy]}
-              manualThumbnail={thumbMap[item.web]}
-              designMdLoading={designMdJobs[item.web]?.status === "loading"}
-              designMd={designMdIndex[item.web]}
-              projects={projects}
-              projectIds={item.id ? links[item.id] : undefined}
-              actions={actions}
-            />
-          </div>
-        ))}
-      </section>
-    </div>
-  );
-});
-
-/** One card with its handlers bound. Memoised on its own data, so a new layout (a sidebar toggle, a new
- *  measurement) only moves the slot div around it and leaves the 125 card trees alone. */
-const Card = memo(function Card({ item, tags, score, reason, commentCount, comments, authorImage, manualThumbnail, designMdLoading, designMd, projects, projectIds, actions }: {
-  item: InspoItem; tags: InspoTags | undefined; score: number | undefined; reason: string | undefined; commentCount: number;
+/** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, actions }: {
+  item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
-  manualThumbnail: string | undefined; designMdLoading: boolean; designMd: { coverUrl?: string; scrollUrl?: string } | undefined;
+  manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
   actions: RefObject<GridActions>;
 }) {
-  const act = actions.current;
+  // The handlers are read when used, never kept from this render: the card re-renders only with its own data
+  const act = () => actions.current;
+  const onMeasure = useCallback((r: number) => actions.current.measure(item.web, r), [actions, item.web]);
   // Under the tile: the note of whoever saved it; with no note, the first reply with text.
   // `people` are everyone in the thread (saver first, then each new voice), at most three circles;
   // `more` counts the replies not already on the line (a lone comment shown as the line is not "1 reply").
@@ -1341,28 +1182,45 @@ const Card = memo(function Card({ item, tags, score, reason, commentCount, comme
     const more = (comments?.length ?? 0) - (item.note.trim() ? 0 : 1);
     return { ...root, people, more: Math.max(0, more) };
   }, [item.note, item.addedBy, authorImage, comments]);
+  // The page's top, at the size it is seen: a site someone gave a thumbnail keeps that thumbnail
+  const showsPage = !manualThumbnail && !!shot;
+  const key = level === "thumb" ? "thumbUrl" : level === "tile" ? "tileUrl" : "topUrl";
+  const page = showsPage ? shot![key] : designMd?.coverUrl;
+  // The same page at the other sizes: whichever is already decoded stands in while this one loads
+  const alternates = useMemo(() => (shot ? [shot.tileUrl, shot.thumbUrl, shot.topUrl] : undefined), [shot]);
+  // The post-its on the part of the page the card shows, as dots where they sit
+  const pins = useMemo(() => {
+    if (!showsPage) return undefined;
+    const shown = Math.min(shot!.shotH, 1440 * CANVAS_MAX_RATIO);
+    return (comments ?? []).filter((c) => c.anchor).map((c) => ({ x: c.anchor!.x, y: (c.anchor!.y * c.anchor!.h) / shown })).filter((p) => p.y <= 1);
+  }, [comments, showsPage, shot]);
+  const open = () => act().openItem(item);
+  // Always the whole card, at every zoom: its note and its thread are always there. Only the copy of the
+  // page changes with the zoom (288, 720 or 1440px), swapped without a blank frame.
   return (
     <InspoCard
       item={item}
       tags={tags}
+      tagJob={tagJob}
       score={score}
       reason={reason}
-      commentCount={commentCount}
+      commentCount={comments?.length ?? 0}
       caption={caption}
-      onComments={item.id ? () => act.setCommentsItemId(item.id!) : undefined}
-      onDelete={item.id ? () => act.deleteItem(item) : undefined}
+      onComments={item.id ? open : undefined}
+      onDelete={item.id ? () => act().deleteItem(item) : undefined}
       manualThumbnail={manualThumbnail}
-      onUpload={(file) => { act.handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
-      onRemoveThumbnail={() => { act.handleThumbnailRemove(item.web); return Promise.resolve(); }}
-      onDesignMd={() => act.openDesignMd(item)}
+      onUpload={(file) => { act().handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
+      onRemoveThumbnail={() => { act().handleThumbnailRemove(item.web); return Promise.resolve(); }}
+      onDesignMd={() => act().openItem(item, { generate: true })}
       designMdLoading={designMdLoading}
       designMdReady={designMd !== undefined}
-      designCover={designMd?.coverUrl}
-      designScroll={designMd?.scrollUrl}
+      designCover={page}
+      designCoverFallback={showsPage ? shot!.paths?.[key] : undefined}
       projects={item.id ? projects : undefined}
       projectIds={projectIds}
-      onToggleProject={(projectId, on) => act.toggleFiled(item, projectId, on)}
-      onCreateProject={(name) => act.createAndFile(item, name)}
+      onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}
+      onCreateProject={(name) => act().createAndFile(item, name)}
+      canvas={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
 });

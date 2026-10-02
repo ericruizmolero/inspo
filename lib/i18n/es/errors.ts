@@ -15,6 +15,7 @@ export const errors: typeof EnErrors = {
   cannotRemoveSelf: "No puedes quitarte el acceso a ti mismo",
   cardGone: "Esa tarjeta ya no existe",
   emptyComment: "El comentario está vacío",
+  replyGone: "El comentario al que respondías ya no está",
   encodeFailed: "No se pudo codificar la imagen",
   fixedAccess: "Ese acceso es fijo y no se puede quitar desde aquí",
   generationStopped: "Generación parada",

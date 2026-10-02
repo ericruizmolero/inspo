@@ -9,17 +9,6 @@ export const labels = {
     ideas: "Ideas",
     documentaries: "Documentaries",
   },
-  /** Date filter */
-  date: {
-    all: "All",
-    thisMonth: "This month",
-    thisYear: "This year",
-  },
-  /** "Both" is the author inherited from the sheet: not a person, "we don't know who" */
-  author: {
-    all: "All",
-    Both: "Both",
-  },
   /** activity_segment.area */
   area: {
     library: "Library",
@@ -46,5 +35,8 @@ export const labels = {
     revise: "DESIGN.md revisions",
     design_why: "Notes connected to the DESIGN.md",
     polish: "Boards polished",
+    auto_tag: "Inspos tagged",
+    query_en: "Searches translated",
+    embed: "Search by meaning",
   },
 };

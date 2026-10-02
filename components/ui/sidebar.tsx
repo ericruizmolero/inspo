@@ -99,7 +99,10 @@ function SidebarProvider({
         (event.metaKey || event.ctrlKey)
       ) {
         event.preventDefault()
+        // A shortcut is pressed too often to wait for: no slide, the island is simply there or gone
+        document.documentElement.dataset.instant = ""
         toggleSidebar()
+        requestAnimationFrame(() => requestAnimationFrame(() => { delete document.documentElement.dataset.instant }))
       }
     }
 

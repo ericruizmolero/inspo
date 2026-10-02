@@ -3,6 +3,7 @@ import { webSet } from "./items";
 import { normalizeWebUrl, webKeyOf } from "./url";
 import { putFile, getFile, getJson, putJson, deleteFiles, keyOf } from "./storage";
 import { createHash } from "crypto";
+import { makeCanvasCopies, colorOfStored } from "./page-shots";
 
 import type { DesignSpec } from "@/types/design";
 
@@ -16,13 +17,28 @@ export interface DesignMdEntry {
   coverUrl?: string;          // 720x450, grid cover
   scrollUrl?: string;         // 720px wide, strip for the grid hover
   logoUrl?: string;           // png of the logo as it sits on the page, at 2x (missing when none was found)
+  shotH?: number;             // height of screenshotUrl in px (1440 wide): the canvas sizes the card before it loads
+  topUrl?: string;            // the top of the page (cut at twice its width) at 1440, 720 and 288px: the canvas
+  tileUrl?: string;
+  thumbUrl?: string;
+  color?: string;             // the page's most common colour, painted on the canvas before the image
   icons?: string[];           // up to 8 of the site's icons as standalone svg markup
   fontFiles?: { family: string; formats: string[] }[]; // the file format each @font-face family is served in
 }
 
 export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer; logo?: Buffer | null }
 
-export type DesignMdIndex = Record<string, { generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string }>;
+export interface DesignMdIndexEntry {
+  generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string;
+  /** The whole page (shotUrl), its top at 1440, 720 and 288 wide, and the whole page's height at 1440 */
+  shotUrl?: string; topUrl?: string; tileUrl?: string; thumbUrl?: string; shotH?: number; color?: string;
+}
+export type DesignMdIndex = Record<string, DesignMdIndexEntry>;
+
+const indexEntry = (e: DesignMdEntry): DesignMdIndexEntry => ({
+  generatedAt: e.generatedAt, model: e.model, coverUrl: e.coverUrl, scrollUrl: e.scrollUrl,
+  shotUrl: e.screenshotUrl, topUrl: e.topUrl, tileUrl: e.tileUrl, thumbUrl: e.thumbUrl, shotH: e.shotH, color: e.color,
+});
 
 // Files (lib/storage.ts), shared across workspaces:
 //   inspo/design-md/<key>.json               one entry per site
@@ -65,40 +81,102 @@ export async function getDesignScreenshot(url: string): Promise<Buffer | null> {
   try { return (await getFile(key))?.body ?? null; } catch { return null; }
 }
 
-export async function getDesignMdIndex(): Promise<DesignMdIndex> {
-  try { return (await getJson<DesignMdIndex>(INDEX_KEY)) ?? {}; }
-  catch (e) { console.error("design-store index:", e); return {}; }
+// Read on every library load: kept in memory for a short while, and replaced by what this process writes.
+// Callers that change it copy it first.
+const INDEX_FRESH_MS = 20_000;
+let indexCache: { at: number; index: Promise<DesignMdIndex> } | null = null;
+export function getDesignMdIndex(): Promise<DesignMdIndex> {
+  if (indexCache && Date.now() - indexCache.at < INDEX_FRESH_MS) return indexCache.index;
+  const index = getJson<DesignMdIndex>(INDEX_KEY).then((v) => v ?? {}, (e) => { console.error("design-store index:", e); return {}; });
+  indexCache = { at: Date.now(), index };
+  return index;
+}
+async function writeIndex(index: DesignMdIndex) {
+  await putJson(INDEX_KEY, index);
+  indexCache = { at: Date.now(), index: Promise.resolve(index) };
 }
 
-/** The index trimmed to this workspace's sites. */
-export async function designMdIndexFor(organizationId: string): Promise<DesignMdIndex> {
-  const [index, mine] = await Promise.all([getDesignMdIndex(), webSet(organizationId)]);
+/** The index trimmed to this workspace's sites. `webs`: its addresses when the caller already has them. */
+export async function designMdIndexFor(organizationId: string, webs?: Set<string>): Promise<DesignMdIndex> {
+  const [index, mine] = await Promise.all([getDesignMdIndex(), webs ?? webSet(organizationId)]);
   const norm = new Set([...mine].map((w) => normalizeWebUrl(w) ?? w));
   return Object.fromEntries(Object.entries(index).filter(([u]) => norm.has(u)));
+}
+
+/** The canvas copies of the page (lib/page-shots.ts). Never throws: a page without them still shows. */
+async function canvasShots(key: string, fullShot: Buffer): Promise<Pick<DesignMdEntry, "shotH" | "topUrl" | "tileUrl" | "thumbUrl" | "color">> {
+  try { return await makeCanvasCopies(`${DESIGN_MD_PREFIX}${key}`, fullShot); }
+  catch (e) { console.warn("design-store canvas shots:", e); return {}; }
+}
+
+const imagesOf = (e: DesignMdEntry | null) => e ? [e.screenshotUrl, e.coverUrl, e.scrollUrl, e.logoUrl, e.topUrl, e.tileUrl, e.thumbUrl] : [];
+
+/** Deletes the design images `before` had that `after` no longer points at */
+async function dropReplaced(before: DesignMdEntry | null, after: DesignMdEntry) {
+  if (!before) return;
+  const now = new Set(imagesOf(after));
+  await deleteFiles(imagesOf(before)
+    .filter((u): u is string => !!u && !now.has(u)).map(keyOf).filter((k): k is string => !!k && k.startsWith(DESIGN_MD_PREFIX)));
 }
 
 export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages): Promise<DesignMdEntry> {
   const key = keyFor(entry.url);
   const before = images ? await getDesignMd(entry.url) : null;
   if (images) {
-    [entry.screenshotUrl, entry.coverUrl, entry.scrollUrl] = await Promise.all([
+    const [screenshotUrl, coverUrl, scrollUrl, shots] = await Promise.all([
       saveImage(key, "", images.fullShot),
       saveImage(key, "-cover", images.cover),
       saveImage(key, "-scroll", images.scroll),
+      canvasShots(key, images.fullShot),
     ]);
+    Object.assign(entry, { screenshotUrl, coverUrl, scrollUrl, shotH: undefined, topUrl: undefined, tileUrl: undefined, thumbUrl: undefined, color: undefined }, shots);
     entry.logoUrl = images.logo ? await saveImage(key, "-logo", images.logo, "png") : undefined;
   }
   await putJson(entryKey(key), entry);
 
-  const index = await getDesignMdIndex();
-  index[entry.url] = { generatedAt: entry.generatedAt, model: entry.model, coverUrl: entry.coverUrl, scrollUrl: entry.scrollUrl };
-  await putJson(INDEX_KEY, index);
+  indexCache = null; // read it fresh before changing it: another process may have written since
+  const index = { ...(await getDesignMdIndex()) };
+  index[entry.url] = indexEntry(entry);
+  await writeIndex(index);
 
   // The images this generation replaced, once nothing points at them
-  if (before) {
-    const now = new Set([entry.screenshotUrl, entry.coverUrl, entry.scrollUrl, entry.logoUrl]);
-    await deleteFiles([before.screenshotUrl, before.coverUrl, before.scrollUrl, before.logoUrl]
-      .filter((u): u is string => !!u && !now.has(u)).map(keyOf).filter((k): k is string => !!k && k.startsWith(DESIGN_MD_PREFIX)));
-  }
+  await dropReplaced(before, entry);
   return entry;
+}
+
+/**
+ * Entries saved before the canvas existed have no page height and no smaller copies: makes them from the
+ * full screenshot already stored. Safe to run twice (entries that have them are skipped). Returns how many changed.
+ */
+export async function backfillCanvasShots(log: (msg: string) => void = () => {}): Promise<number> {
+  indexCache = null;
+  const index = { ...(await getDesignMdIndex()) };
+  let done = 0;
+  for (const url of Object.keys(index)) {
+    const entry = await getDesignMd(url);
+    if (!entry?.screenshotUrl || (entry.shotH && entry.topUrl && entry.tileUrl && entry.thumbUrl)) {
+      // Cut before the colour existed: read it off the stored thumb
+      if (entry?.thumbUrl && !entry.color) {
+        const color = await colorOfStored(entry.thumbUrl);
+        if (color) { entry.color = color; await putJson(entryKey(keyFor(url)), entry); log(`${url}: ${color}`); }
+      }
+      // The entry has them but the index missed them (written before this field existed)
+      if (entry?.topUrl && (!index[url].topUrl || index[url].color !== entry.color)) { index[url] = indexEntry(entry); done++; }
+      continue;
+    }
+    const k = keyOf(entry.screenshotUrl);
+    const file = k ? await getFile(k).catch(() => null) : null;
+    if (!file) { log(`skip ${url}: screenshot not found`); continue; }
+    const shots = await canvasShots(keyFor(url), file.body);
+    if (!shots.shotH) { log(`skip ${url}: could not resize`); continue; }
+    const before = { ...entry };
+    Object.assign(entry, shots);
+    await putJson(entryKey(keyFor(url)), entry);
+    index[url] = indexEntry(entry);
+    await dropReplaced(before, entry);
+    done++;
+    log(`${url}: ${shots.shotH}px`);
+  }
+  if (done) await writeIndex(index);
+  return done;
 }
