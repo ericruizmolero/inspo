@@ -17,13 +17,14 @@ export async function POST(req: NextRequest) {
   const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
   if (blocked) return blocked;
 
-  const body = (await req.json().catch(() => ({}))) as { projectId?: string; area?: string };
+  const body = (await req.json().catch(() => ({}))) as { projectId?: string; area?: string; itemIds?: string[] };
   const projectId = String(body.projectId ?? "").trim();
   const area = String(body.area ?? "").trim();
   if (!projectId || !area) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
 
   try {
-    const options = await proposeOptions({ organizationId: ctx.workspace.id, projectId, area, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, locale: await getLocale() });
+    const onlyItemIds = Array.isArray(body.itemIds) ? body.itemIds.map(String).slice(0, 60) : undefined;
+    const options = await proposeOptions({ organizationId: ctx.workspace.id, projectId, area, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, locale: await getLocale(), onlyItemIds });
     return Response.json({ options });
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });

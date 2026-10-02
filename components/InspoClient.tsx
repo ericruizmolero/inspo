@@ -44,7 +44,7 @@ const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const PolishModal = dynamic(() => import("./PolishModal"), { ssr: false });
-const SystemModal = dynamic(() => import("./SystemModal"), { ssr: false });
+const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
 const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 
@@ -228,6 +228,9 @@ export default function InspoClient({
   const inParam = sp.get("in");
   const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : "all";
   const currentProject = projects.find((p) => p.id === space) ?? null;
+  // Inside a project the system comes first; the board is a mode (?view=board)
+  const projectView: "system" | "board" = currentProject && sp.get("view") !== "board" ? "system" : "board";
+  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === "board" ? "board" : "" }), [setParams]);
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
   const systemFilled = currentSystem ? currentSystem.areas.filter((a) => a.decision).length : 0;
   const systemStale = useMemo(() => {
@@ -302,7 +305,6 @@ export default function InspoClient({
 
   const [showAdd, setShowAdd] = useState(false);
   const [showPolish, setShowPolish] = useState(false);
-  const [showSystem, setShowSystem] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -1006,17 +1008,6 @@ export default function InspoClient({
           libraryName={workspace.name}
         />
       )}
-      {showSystem && currentProject && (
-        <SystemModal
-          project={currentProject}
-          system={systems[currentProject.id] ?? null}
-          onSystem={(sys) => setSystem(currentProject.id, sys)}
-          board={spaceItems}
-          library={items}
-          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
-          onClose={() => setShowSystem(false)}
-        />
-      )}
       {showPolish && currentProject && (
         <PolishModal
           project={currentProject}
@@ -1095,11 +1086,17 @@ export default function InspoClient({
           <div className="topbar__actions">
             {currentProject && (
               <>
-                <Button variant="ghost" className="topbar__polish topbar__system" onClick={() => setShowSystem(true)} title={systemStale ? t.system.stale(systemStale) : undefined}>
-                  {Icons.compass} {t.system.button}
-                  <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
-                  {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
-                </Button>
+                <span className="topbar__modes" role="tablist" aria-label={t.system.button}>
+                  <button type="button" role="tab" className={`topbar__mode topbar__system${projectView === "system" ? " is-on" : ""}`} aria-selected={projectView === "system"}
+                    title={systemStale ? t.system.stale(systemStale) : undefined} onClick={() => setProjectView("system")}>
+                    {Icons.compass} {t.system.modeSystem}
+                    <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
+                    {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
+                  </button>
+                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => setProjectView("board")}>
+                    {Icons.all} {t.system.modeBoard}
+                  </button>
+                </span>
                 <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
               </>
             )}
@@ -1117,6 +1114,17 @@ export default function InspoClient({
             }}
             isDuplicate={isDuplicate}
             onDirectory={() => setShowDirectory(true)}
+          />
+        ) : currentProject && projectView === "system" ? (
+          <SystemView
+            key={currentProject.id}
+            project={currentProject}
+            system={systems[currentProject.id] ?? null}
+            onSystem={(sys) => setSystem(currentProject.id, sys)}
+            board={spaceItems}
+            library={items}
+            imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+            onOpenBoard={() => setProjectView("board")}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library

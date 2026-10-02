@@ -5,7 +5,7 @@
 // One run costs a fraction of a cent (DeepSeek, the DESIGN.md model), so a run per change is fine.
 import "server-only";
 import { createHash } from "crypto";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
@@ -375,10 +375,13 @@ const OptionsSchema = z.object({
 export interface AreaOption { decision: string; why: string; evidence: SystemEvidence[] }
 
 /** The directions the board allows for one area. Nothing is written: the team picks and that picks writes. */
-export async function proposeOptions(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale }): Promise<AreaOption[]> {
+export async function proposeOptions(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale; onlyItemIds?: string[] }): Promise<AreaOption[]> {
   const area = await cleanArea(input.area);
   const project = await projectRow(input.organizationId, input.projectId);
-  const [{ refs }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+  const [{ refs: all }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+  // The team may hand-pick the references this area should be decided from
+  const only = input.onlyItemIds?.length ? new Set(input.onlyItemIds) : null;
+  const refs = only ? all.filter((r) => only.has(r.itemId)) : all;
   if (!refs.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
   const codes = new Map(refs.map((r) => [r.code, r.itemId]));
   const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
@@ -390,8 +393,9 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
     `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
+    only ? `The team picked these references for this area, on purpose: build the directions from them alone.` : "",
     `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
-  ].join("\n\n");
+  ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
     res = await llm({ model: SYSTEM_MODEL, system: `${OPTIONS_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: OptionsSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
@@ -412,4 +416,93 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     }
     return { decision: o.decision.trim().replace(/\s+/g, " ").slice(0, DECISION_MAX), why: o.why.trim().slice(0, 200), evidence };
   }).filter((o) => o.decision);
+}
+
+// ─── Visual material behind the system ──────────────────────────────────────────────────────────
+// The sheet of each reference holds what the screen can show instead of describing: palettes, families,
+// radii, the easing, the page captures. Read once per open, never generated here.
+
+export interface RefVisual {
+  itemId: string;
+  name: string;
+  web: string;
+  cover: string | null;
+  scroll: string | null;
+  colors: { name: string; hex: string; group: "brand" | "accent" | "neutral" | "semantic" }[];
+  fonts: { family: string; role: "display" | "body" | "mono" | "ui"; weights: number[] }[];
+  radii: { element: string; value: string }[];
+  /** The dominant easing as `cubic-bezier(a, b, c, d)` or a CSS keyword, and its duration in ms, when the sheet has them */
+  easing: string | null;
+  durationMs: number | null;
+  logo: string | null;
+  icons: string[];
+  voice: string | null;
+  tagline: string | null;
+}
+
+const EASING_RE = /cubic-bezier\(\s*[\d.]+\s*,\s*-?[\d.]+\s*,\s*[\d.]+\s*,\s*-?[\d.]+\s*\)|\b(ease-in-out|ease-out|ease-in|linear|ease)\b/;
+const DURATION_RE = /(\d+(?:[.,]\d+)?)\s*(ms|s)\b/;
+
+export async function boardVisuals(organizationId: string, projectId: string): Promise<RefVisual[]> {
+  const rows = await db.select({ row: T }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
+    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
+  const index = await getDesignMdIndex();
+  return Promise.all(rows.slice(0, MAX_BOARD).map(async ({ row }) => {
+    const base: RefVisual = { itemId: row.id, name: row.name, web: row.web, cover: null, scroll: null, colors: [], fonts: [], radii: [], easing: null, durationMs: null, logo: null, icons: [], voice: null, tagline: null };
+    if (mediaKindOf(row.web) !== "web" || !(row.web in index || webKeyOf(row.web) in index)) return base;
+    const e = await getDesignMd(row.web);
+    if (!e) return base;
+    const s = e.spec;
+    const motion = `${s?.brief?.motion ?? ""} ${s?.motion ?? ""}`;
+    const easing = motion.match(EASING_RE)?.[0] ?? null;
+    const dur = motion.match(DURATION_RE);
+    const durationMs = dur ? Math.round(parseFloat(dur[1].replace(",", ".")) * (dur[2] === "s" ? 1000 : 1)) : null;
+    return {
+      ...base,
+      cover: e.coverUrl ?? e.screenshotUrl ?? null,
+      scroll: e.scrollUrl ?? null,
+      colors: (s?.colors ?? []).map((c) => ({ name: c.name, hex: c.hex, group: c.group })),
+      fonts: (s?.fonts ?? []).map((f) => ({ family: f.family, role: f.role, weights: f.weights })),
+      radii: s?.radii ?? [],
+      easing, durationMs,
+      logo: e.logoUrl ?? null,
+      icons: (e.icons ?? []).slice(0, 8),
+      voice: s?.brief?.voice ?? null,
+      tagline: s?.tagline ?? null,
+    };
+  }));
+}
+
+// ─── History and undo ───────────────────────────────────────────────────────────────────────────
+// Every change to an area left a revision: who (a person or the model), what, when. The screen shows
+// the trail and can step back one change.
+
+export interface AreaRevision { decision: string; confidence: number; source: "model" | "team"; authorName: string; at: string }
+
+export async function areaHistory(organizationId: string, projectId: string, perArea = 6): Promise<Record<string, AreaRevision[]>> {
+  const rows = await db.select({ area: R.area, decision: R.decision, confidence: R.confidence, source: R.source, authorName: R.authorName, createdAt: R.createdAt })
+    .from(R).where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(desc(R.createdAt));
+  const out: Record<string, AreaRevision[]> = {};
+  for (const r of rows) {
+    const list = (out[r.area] ??= []);
+    if (list.length < perArea) list.push({ decision: r.decision, confidence: r.confidence, source: r.source as "model" | "team", authorName: r.authorName, at: r.createdAt.toISOString() });
+  }
+  return out;
+}
+
+/** Steps an area back to what it said before its last change. The step itself is a change by this person. */
+export async function revertArea(organizationId: string, projectId: string, areaKey: string, author: { id: string; name: string }): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const rows = await db.select().from(R).where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId), eq(R.area, area))).orderBy(desc(R.createdAt)).limit(2);
+  const previous = rows[1];
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  if (!previous) {
+    await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null }, author, now);
+  } else {
+    const evidence = Array.isArray(previous.evidence) ? (previous.evidence as SystemEvidence[]) : [];
+    await writeArea(organizationId, projectId, { area, decision: previous.decision, confidence: previous.confidence, evidence, source: previous.source as "model" | "team", decidedBy: previous.source === "team" ? author.id : null }, author, now);
+  }
+  return getSystem(organizationId, projectId);
 }
