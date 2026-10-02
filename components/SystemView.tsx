@@ -426,8 +426,24 @@ export default function SystemView({ project, system, onSystem, board, library, 
     let want = refs.map((i, k) => { const bs = backs.get(i.id!) ?? []; return bs.length ? circularMean(bs.map((b) => areaAngle.get(b)!)) : -Math.PI / 2 + ((k + 0.5) / Math.max(refs.length, 1)) * TAU + Math.PI / 8; });
     want = spread(want, Math.min(TAU / Math.max(refs.length, 1), narrow ? 0.5 : 0.36));
     const items = refs.map((i, k) => ({ item: i, ...polar(c, r2.x, r2.y, want[k]), areas: backs.get(i.id!) ?? [] }));
+    // The open area pulls its references out of the ring and fans them around itself, all at the same level
+    if (open) {
+      const node = areas.find((a) => a.key === open)!;
+      const mine = items.filter((it) => it.areas.includes(open));
+      const n = mine.length;
+      if (n) {
+        const away = Math.atan2(node.y - c.y, node.x - c.x);  // fan on the side facing away from the centre
+        const span = Math.min(Math.PI * 1.1, 0.55 * n);
+        const rad = 120 + Math.min(n, 8) * 9;
+        mine.forEach((it, k) => {
+          const a = n === 1 ? away : away - span / 2 + (span * k) / (n - 1);
+          it.x = Math.min(size.w - 60, Math.max(60, node.x + Math.cos(a) * rad * 1.25));
+          it.y = Math.min(size.h - 70, Math.max(top, node.y + Math.sin(a) * rad));
+        });
+      }
+    }
     return { c, areas, items, narrow };
-  }, [size, board, sys.areas]);
+  }, [size, board, sys.areas, open]);
 
   const withBusy = async (area: SystemArea, fn: () => Promise<{ ok: true; data: ProjectSystem } | { ok: false; error: string }>) => {
     setBusy((s) => new Set([...s, area])); setError("");
@@ -514,7 +530,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
             <button key={pos.key} type="button" className={`sysn-node is-${level}${a.source === "team" ? " is-team" : ""}${open === pos.key ? " is-open" : ""}${running || busy.has(pos.key) ? " is-busy" : ""}`}
               style={{ left: pos.x, top: pos.y }} onClick={() => setOpen(open === pos.key ? null : pos.key)}
               onMouseEnter={() => setHover(pos.key)} onMouseLeave={() => setHover(null)} aria-pressed={open === pos.key}>
-              <span className="sysn-node__label">{labels[pos.key]}</span>
+              <span className="sysn-node__label">{labels[pos.key]}{a.evidence.length > 0 && <b className="sysn-node__n">{a.evidence.length}</b>}</span>
               {a.decision && <MiniSpecimen area={a} vs={vs} sample={project.name} />}
               <span className="sysn-node__line">{a.decision ? headlineOf(a.decision) : t.system.open}</span>
               {a.decision && a.source !== "team" && <i className="sysv-meter"><b style={{ width: `${a.confidence}%` }} /></i>}
@@ -526,7 +542,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
           const id = it.item.id!;
           const picked = picking?.has(id) ?? false;
           const related = (open && it.areas.includes(open)) || hover === id || (!!hover && it.areas.includes(hover as SystemArea));
-          const cls = `sysn-ref${picking ? " is-pickable" : ""}${picked ? " is-picked" : ""}${!picking && hover && !related ? " is-dim" : ""}${!picking && related && (open || hover === id) ? " is-lit" : ""}`;
+          // While an area is open its references come forward and the rest step back
+          const cls = `sysn-ref${picking ? " is-pickable" : ""}${picked ? " is-picked" : ""}${!picking && (hover || open) && !related ? " is-dim" : ""}${!picking && related && (open || hover === id) ? " is-lit" : ""}`;
           const toggle = () => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
           return (
             <button key={id} type="button" className={cls} style={{ left: it.x, top: it.y }} title={it.item.name} aria-pressed={picking ? picked : undefined}

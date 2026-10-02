@@ -3004,3 +3004,8 @@ button.postit__num { cursor: pointer; }
 .sysn-ref__check svg { width: 11px; height: 11px; } .sysn-ref.is-picked .sysn-ref__check { background: var(--text); color: var(--bg); border-color: var(--text); }
 .sysv-tool.is-on { background: var(--text); color: var(--bg); }
 .sysv-picking { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--border-strong); }
+/* A node's references fan out around it when it opens; the count sits on the label */
+.sysn-ref { transition: left 0.45s var(--ease-out), top 0.45s var(--ease-out), opacity 0.2s, transform 0.2s var(--ease-out); }
+.sysn-node__label { display: inline-flex; align-items: center; gap: 6px; }
+.sysn-node__n { font-weight: 500; color: var(--muted); }
+.sysn-node.is-open .sysn-node__n { color: var(--text); }
