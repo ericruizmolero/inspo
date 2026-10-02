@@ -6,7 +6,7 @@
 // cards within a screen of the viewport are mounted: a board of 300 or 3000 costs what a few screens cost.
 // A card that changes place glides there (a CSS transition on its transform, so a key pressed mid-way
 // retargets instead of restarting); a new result arrives a beat after the one ranked before it.
-// The zoom is the number of columns: more of them to see more at once, fewer to look closer.
+// The layout is a number of columns to choose from: more of them to see more at once, fewer to look closer.
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { InspoItem } from "@/types/inspo";
@@ -21,10 +21,11 @@ const levelFor = (col: number): ShotLevel => (screenPx(col) <= 300 ? "thumb" : s
 /** What floats over the board on each side (the bars, the island, the panel): the cards keep clear of it */
 export interface Insets { top: number; left: number; right: number; bottom: number }
 
-/** The zoom levels: the width a column aims for, in CSS px; the board fits as many columns as it can */
-export const ZOOM_WIDTHS = [150, 210, 290, 400, 560];
+/** The layouts to choose from: how many columns. A phone takes its own from its width. */
+export const COLUMNS = [2, 3, 4, 5];
 export const DEFAULT_ZOOM = 2;
-const MAX_COLS = 12;
+/** Narrower than this a card can't be read: with the panel open, fewer columns than chosen */
+const MIN_COL = 180;
 const PAD = 20;
 const GAP = 16;
 /** Under the media: the note line, two lines at most, in a fixed box (CSS .tile--board .tile__note) so no card is measured */
@@ -75,7 +76,7 @@ export default function Grid({ items, ratioOf, insets, zoom, onZoom, fitKey, foc
   /** Height/width of what each card shows, known before it loads (the page's height from the index, or a measurement) */
   ratioOf: (item: InspoItem) => number;
   insets: Insets;
-  /** Index into ZOOM_WIDTHS */
+  /** Index into COLUMNS */
   zoom: number;
   onZoom: (zoom: number) => void;
   /** Changes when the board should start from the top again (another space, another search) */
@@ -101,7 +102,8 @@ export default function Grid({ items, ratioOf, insets, zoom, onZoom, fitKey, foc
   // ─── The layout, as numbers ─────────────────────────────────────────────────
   const padL = PAD + insets.left, padR = PAD + insets.right, padTop = insets.top + PAD / 2, padBottom = insets.bottom + PAD;
   const room = Math.max(0, width - padL - padR);
-  const cols = Math.max(1, Math.min(MAX_COLS, Math.round((room + GAP) / (ZOOM_WIDTHS[zoom] + GAP))));
+  const fit = Math.max(1, Math.floor((room + GAP) / (MIN_COL + GAP)));
+  const cols = width && width < 801 ? (width <= 520 ? 1 : 2) : Math.min(COLUMNS[zoom], fit);
   const col = (room - (cols - 1) * GAP) / cols;
   const level = levelFor(col);
   // Zoomed far out the note is smaller than its line: only the pages remain
@@ -218,14 +220,10 @@ export default function Grid({ items, ratioOf, insets, zoom, onZoom, fitKey, foc
         })}
       </div>
 
-      <div className="board-zoom">
-        <button type="button" className="board-zoom__btn" onClick={() => onZoom(Math.max(0, zoom - 1))} disabled={zoom === 0} aria-label={t.zoom.zoomOut}>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 6h7" /></svg>
-        </button>
-        <button type="button" className="board-zoom__cols" onClick={() => onZoom(DEFAULT_ZOOM)} title={t.zoom.resetHint}>{t.zoom.columns(cols)}</button>
-        <button type="button" className="board-zoom__btn" onClick={() => onZoom(Math.min(ZOOM_WIDTHS.length - 1, zoom + 1))} disabled={zoom === ZOOM_WIDTHS.length - 1} aria-label={t.zoom.zoomIn}>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 6h7M6 2.5v7" /></svg>
-        </button>
+      <div className="board-zoom" role="group">
+        {COLUMNS.map((n, i) => (
+          <button key={n} type="button" className="board-zoom__n" aria-pressed={i === zoom} aria-label={t.zoom.columns(n)} title={t.zoom.columns(n)} onClick={() => onZoom(i)}>{n}</button>
+        ))}
       </div>
     </div>
   );

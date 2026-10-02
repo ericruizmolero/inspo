@@ -2406,18 +2406,10 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 @keyframes board-enter { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
 @media (prefers-reduced-motion: reduce) { .board-tile[data-enter] > * { animation: fade-in 200ms var(--ease-out) var(--enter, 0ms) both; } }
 
-/* The pages are drawn from their top, cut at the card's ratio: no crop to a cover, no hover lift */
-.tile--board { transition: box-shadow 150ms ease; }
-.tile--board:hover { transform: none; }
-@media (hover: hover) and (pointer: fine) { .tile--board:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 30%, transparent); } }
-.tile--board .tile__img { max-height: none; transition: opacity 200ms var(--ease-out); }
-/* Shown before in this tab (lib/shown-images.ts): it is already there, nothing to fade in */
-.tile--board .tile__img.is-instant { transition: none; }
-.tile--board:hover .tile__img { transform: none; }
+/* The card as in the old grid (cover, overlay and scroll strip on hover), only its media is sized before
+   it loads: the page's top fills the box the layout gave it */
+.tile--board .tile__img { max-height: none; }
 .tile--board .tile__media[style] .tile__img { height: 100%; object-fit: cover; object-position: top; }
-/* The page is the card: no title, tags or gradient over it, only the actions on hover */
-.tile--board .tile__overlay { display: none; }
-.tile--board { border-radius: 10px; }
 /* Under the tile the note is a fixed box (two lines at most) and so is the touch caption: the layout
    knows every card's height without measuring it (Grid.tsx CAPTION_H, TOUCH_CAPTION_H) */
 .board .tile__note { box-sizing: border-box; height: 48px; overflow: hidden; }
@@ -2432,8 +2424,8 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   transform: rotate(-4deg);
 }
 
-/* Zoom: how many columns. A small pill in the bottom-right corner, clear of the island and the dock;
-   left of the panel when one is open. A phone gets its columns from its width alone. */
+/* The layouts: a small pill in the bottom-right corner, one button per column count, clear of the island
+   and the dock. A phone gets its columns from its width alone. */
 .board-zoom {
   position: absolute; right: 16px; bottom: 16px; z-index: 12;
   display: flex; align-items: center; gap: 2px; height: 34px; padding: 0 4px;
@@ -2441,16 +2433,14 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
 }
-.board-zoom button {
-  display: inline-flex; align-items: center; justify-content: center; height: 26px; border: 0; border-radius: 7px;
-  background: transparent; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
+.board-zoom__n {
+  display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 26px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--muted); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer;
   transition: background 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .board-zoom button:not(:disabled):hover { background: var(--surface-2); color: var(--text); } }
-.board-zoom button:active { transform: scale(0.97); }
-.board-zoom button:disabled { opacity: 0.35; cursor: default; }
-.board-zoom__btn { width: 26px; }
-.board-zoom__cols { min-width: 46px; padding: 0 6px; font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .board-zoom__n:hover { color: var(--text); } }
+.board-zoom__n:active { transform: scale(0.97); }
+.board-zoom__n[aria-pressed="true"] { background: var(--surface-2); color: var(--text); }
 /* With a card open the dock takes the room left of the panel: the zoom waits */
 .content.has-panel .board-zoom { display: none; }
 @media (max-width: 800px) { .board-zoom { display: none; } }

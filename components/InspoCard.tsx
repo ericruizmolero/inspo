@@ -81,7 +81,7 @@ interface InspoCardProps {
   projectIds?: string[];
   onToggleProject?: (projectId: string, on: boolean) => void;
   onCreateProject?: (name: string) => Promise<void>;
-  /** On the board: the whole page instead of a cover, sized before it loads, with the post-its as dots */
+  /** On the board: the page's top as the cover, sized before it loads, with the post-its as dots */
   board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
     ratio?: number;
@@ -392,7 +392,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
                 onLoad={cover.onLoad}
                 onError={() => { if (designCoverFallback && !coverRetry) setCoverRetry(true); else setCoverFailed(true); }}
               />
-              {designScroll && !board && cover.ready && hovering && (
+              {designScroll && cover.ready && hovering && (
                 <div ref={scrollBoxRef} className="tile__scroll">
                   <img
                     src={designScroll}

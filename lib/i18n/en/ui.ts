@@ -390,10 +390,7 @@ export const ui = {
     },
   },
   zoom: {
-    zoomIn: "Zoom in",
-    zoomOut: "Zoom out",
-    columns: (n: number): string => `${n} col`,
-    resetHint: "Back to the usual size",
+    columns: (n: number): string => `${n} columns`,
   },
   search: {
     placeholder: "Search a person, a date, a colour, a section, or describe it",

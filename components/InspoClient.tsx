@@ -16,7 +16,7 @@ import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
-import Grid, { DEFAULT_ZOOM, ZOOM_WIDTHS, type ShotLevel } from "./Grid";
+import Grid, { DEFAULT_ZOOM, COLUMNS, type ShotLevel } from "./Grid";
 import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
@@ -855,10 +855,10 @@ export default function InspoClient({
   }, []);
   const ratioOf = useCallback((item: InspoItem) => {
     const shot = pageShots[item.web];
-    // A site is drawn as its page from the top, cut at the board's maximum height, unless someone chose a thumbnail for it
-    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, BOARD_MAX_RATIO);
-    // Not measured yet: a site will arrive as a tall page, anything else about as a cover
-    return Math.min(ratios[item.web] ?? (mediaKindOf(item.web) === "web" ? BOARD_MAX_RATIO : DEFAULT_RATIO), BOARD_MAX_RATIO);
+    // A site is its page's top as a 16:10 cover (as the DESIGN.md covers were), unless someone chose a thumbnail for it
+    if (shot && !thumbMap[item.web]) return DEFAULT_RATIO;
+    // Anything else keeps its own shape, cut at the board's maximum height; unmeasured, it arrives as a cover
+    return Math.min(ratios[item.web] ?? DEFAULT_RATIO, BOARD_MAX_RATIO);
   }, [pageShots, thumbMap, ratios]);
 
   // The zoom: how many columns, kept for the next visit. Read before the first paint (a layout effect),
@@ -868,7 +868,7 @@ export default function InspoClient({
     try {
       const kept = localStorage.getItem(ZOOM_KEY);
       const z = kept === null ? NaN : Number(kept);
-      if (Number.isInteger(z) && z >= 0 && z < ZOOM_WIDTHS.length) setZoomState(z);
+      if (Number.isInteger(z) && z >= 0 && z < COLUMNS.length) setZoomState(z);
     } catch { /* no storage */ }
   }, []);
   const setZoom = useCallback((z: number) => {
@@ -1212,6 +1212,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       designMdReady={designMd !== undefined}
       designCover={page}
       designCoverFallback={showsPage ? shot!.paths?.[key] : undefined}
+      designScroll={designMd?.scrollUrl}
       projects={item.id ? projects : undefined}
       projectIds={projectIds}
       onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}

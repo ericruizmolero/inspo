@@ -388,10 +388,7 @@ export const ui: typeof EnUi = {
     },
   },
   zoom: {
-    zoomIn: "Acercar",
-    zoomOut: "Alejar",
-    columns: (n: number) => `${n} col`,
-    resetHint: "Volver al tama\u00f1o de siempre",
+    columns: (n: number): string => `${n} columnas`,
   },
   search: {
     placeholder: "Busca una persona, una fecha, un color, una secci\u00f3n, o descr\u00edbelo",
