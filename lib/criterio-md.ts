@@ -9,7 +9,7 @@ export interface CriterioMdInput {
   /** The workspace's references by id, for the names and URLs behind each decision */
   items: Record<string, { name: string; web: string }>;
   labels: Record<SystemArea, string>;
-  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string };
+  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string };
 }
 
 export function renderCriterioMd({ project, system, items, labels, strings }: CriterioMdInput): string {
@@ -38,6 +38,7 @@ export function renderCriterioMd({ project, system, items, labels, strings }: Cr
     const status = a.source === "team" ? strings.decided : strings.proposed;
     p(a.decision);
     p();
+    if (a.why) { p(`**${strings.why}:** ${a.why}`); p(); }
     p(`- **${status}**${level === "low" ? ` · ${strings.confidence} ${a.confidence}/100` : ""}`);
     if (a.evidence.length) {
       p(`- **${strings.evidence}:**`);

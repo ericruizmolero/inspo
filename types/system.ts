@@ -27,8 +27,41 @@ export interface SystemAreaState {
   /** "model": proposed from the board, the next run may change it. "team": a person wrote or confirmed it, runs leave it alone. null: empty */
   source: SystemSource | null;
   decidedBy: string | null;
+  /** The criterio: why this decision and not the rest */
+  why: string;
+  /** The agent's curation of what the board offers for this area, for the team to review */
+  curation: AreaCuration | null;
   /** ISO */
   updatedAt: string;
+}
+
+/** One thing the board offers for an area: a family, a palette, an easing, a capture, a line of copy */
+export interface AreaCandidate {
+  id: string;
+  label: string;
+  /** Short qualifier: the role of a family, the number of colours, the duration of an easing */
+  detail?: string;
+  /** References it comes from */
+  refs: string[];
+  /** What the specimen needs, by area */
+  visual: { families?: { family: string; weights: number[]; role: string }[]; colors?: { hex: string; name: string }[]; easing?: string; durationMs?: number; image?: string | null; text?: string; radii?: string[]; icons?: string[] };
+}
+
+export interface CandidateVerdict {
+  id: string;
+  keep: boolean;
+  /** One line: what it brings, or why it goes */
+  reason: string;
+  /** Set by a person: the agent's verdict was flipped or its reason rewritten */
+  byTeam?: boolean;
+}
+
+export interface AreaCuration {
+  candidates: AreaCandidate[];
+  verdicts: CandidateVerdict[];
+  model: string;
+  /** ISO */
+  at: string;
 }
 
 /** The last model run, kept to tell when the board has moved on */
@@ -66,7 +99,7 @@ export function emptySystem(projectId: string): ProjectSystem {
   return {
     projectId,
     summary: "",
-    areas: SYSTEM_AREAS.map((area) => ({ area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, updatedAt: now })),
+    areas: SYSTEM_AREAS.map((area) => ({ area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "", curation: null, updatedAt: now })),
     run: null,
     updatedAt: null,
   };

@@ -469,6 +469,10 @@ export const systemArea = pgTable("system_area", {
   /** "model": proposed from the board, the next run may change it. "team": written or confirmed by a person, runs leave it alone. null: empty */
   source: text("source"),
   decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
+  /** The criterio behind the decision: why this and not the rest, in the team's words (or the agent's, until confirmed) */
+  why: text("why").notNull().default(""),
+  /** The agent's curation of the candidates the board offers for this area: kept or discarded, each with its reason (types/system.ts AreaCuration) */
+  curationJson: jsonb("curation_json").$type<unknown>(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.area] }),
@@ -488,6 +492,7 @@ export const systemAreaRevision = pgTable("system_area_revision", {
   evidence: jsonb("evidence").$type<unknown>().notNull().default([]),
   /** "model" | "team" */
   source: text("source").notNull(),
+  why: text("why").notNull().default(""),
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
   /** The person, or the model name */
   authorName: text("author_name").notNull(),

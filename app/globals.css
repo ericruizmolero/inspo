@@ -3092,3 +3092,28 @@ button.postit__num { cursor: pointer; }
 .sb--dock .sb__input { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb--dock .sb__right { flex-shrink: 0; }
 .sb--dock .sb__field { overflow-x: hidden; }
+/* The table of an area: candidates kept or discarded by the agent, flipped by the team */
+.sysc-table { display: flex; flex-direction: column; gap: 8px; }
+.sysc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sysc { display: grid; grid-template-columns: 96px 1fr auto; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel); transition: opacity 0.2s; }
+.sysc.is-out { opacity: 0.5; } .sysc.is-out:hover { opacity: 0.8; }
+.sysc.is-kept { border-color: color-mix(in srgb, var(--text) 25%, var(--border)); }
+.sysc.is-team { border-style: dashed; }
+.sysc__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.sysc__label { font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: baseline; gap: 6px; } .sysc__label small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.sysc__reason { padding: 0; border: 0; background: none; text-align: left; font-size: 12px; line-height: 1.4; color: var(--muted); cursor: text; } .sysc__reason:hover { color: var(--text-2); }
+.sysc__reason-input { height: 28px; font-size: 12px; }
+.sysc__verdict { display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--border-strong); background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; white-space: nowrap; }
+.sysc__verdict.is-kept { background: var(--text); color: var(--bg); border-color: var(--text); } .sysc__verdict svg { width: 12px; height: 12px; }
+.sysc-spec { display: flex; align-items: center; justify-content: center; width: 96px; height: 56px; border-radius: 8px; background: var(--surface); overflow: hidden; }
+.sysc-spec--type { font-size: 22px; line-height: 1; color: var(--text); padding: 0 6px; white-space: nowrap; }
+.sysc-spec--colors { gap: 0; } .sysc-spec--colors i { flex: 1; height: 100%; }
+.sysc-spec--motion { position: relative; } .sysc-spec--motion svg { width: 60px; height: 36px; } .sysc-spec--motion path { fill: none; stroke: var(--text); stroke-width: 2; }
+.sysc-spec--motion i { position: absolute; bottom: 4px; left: 4px; width: 6px; height: 6px; border-radius: 50%; background: var(--text); animation-name: sysv-move; animation-iteration-count: infinite; animation-direction: alternate; }
+.sysc-spec--icons { gap: 4px; padding: 0 6px; } .sysc-spec--icons i { display: inline-flex; width: 16px; height: 16px; color: var(--text); } .sysc-spec--icons svg { width: 100%; height: 100%; }
+.sysc-spec--img img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.sysc-spec--text { font-family: Georgia, serif; font-size: 11px; line-height: 1.3; color: var(--text-2); padding: 6px 8px; align-items: flex-start; text-align: left; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.sysv-decision { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.sysv-why { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted); cursor: text; } .sysv-why b { font-weight: 500; color: var(--text-2); }
+.sysv-edit__why { min-height: 56px; }
+@media (max-width: 560px) { .sysc { grid-template-columns: 72px 1fr; } .sysc__verdict { grid-column: 1 / -1; justify-self: start; } }

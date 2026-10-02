@@ -58,6 +58,7 @@ export const errors: typeof EnErrors = {
   projectNameRequired: "Ponle un nombre al proyecto",
   projectNotFound: "Ese proyecto ya no existe",
   polishBriefFirst: "Rellena el brief antes de pulir el tablero",
+  systemNoCandidates: "El tablón no ofrece nada para esta área todavía: trae una referencia que hable de ella",
   systemEmptyBoard: "Añade una referencia al proyecto antes de construir su sistema",
   urlAlreadyHere: "Esa URL ya está en este workspace",
   urlNotInWorkspace: "Esa URL no está en el workspace",

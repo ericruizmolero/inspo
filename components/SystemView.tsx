@@ -5,10 +5,10 @@
 // with a confidence) and the team (confirms, rewrites, steps back, hands it back to the board).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { InspoItem, Project } from "@/types/inspo";
-import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence } from "@/types/system";
+import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
 import { renderCriterioMd } from "@/lib/criterio-md";
-import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, undoSystemArea } from "@/app/actions/system";
+import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, undoSystemArea, setSystemVerdict } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { cachedCardImage } from "./InspoCard";
@@ -153,6 +153,65 @@ function IconSet({ vs }: { vs: RefVisual[] }) {
   return <div className="sysv-icons">{icons.map((svg, i) => <span key={i} dangerouslySetInnerHTML={{ __html: svg }} />)}</div>;
 }
 
+
+// ─── The table: everything the board offers for the area, curated by the agent ─────────────────
+
+function CandidateSpecimen({ c, sample }: { c: AreaCandidate; sample: string }) {
+  const v = c.visual;
+  // The project's first word as the specimen, when it fits; otherwise the classic pair
+  const word = sample.split(/\s+/)[0] ?? "";
+  const specimen = word.length >= 2 && word.length <= 9 ? word : "Aa";
+  if (v.families?.length) { const f = v.families[0]; return <span className="sysc-spec sysc-spec--type" style={{ fontFamily: fontStack(f.family), fontWeight: f.weights[0] ?? 500 }}>{specimen}</span>; }
+  if (v.colors?.length) return <span className="sysc-spec sysc-spec--colors">{v.colors.slice(0, 8).map((x) => <i key={x.hex} style={{ background: x.hex }} title={`${x.name} ${x.hex}`} />)}</span>;
+  if (v.easing) { const [x1, y1, x2, y2] = bezierOf(v.easing); return <span className="sysc-spec sysc-spec--motion"><svg viewBox="0 0 60 36" aria-hidden><path d={`M 3 33 C ${3 + x1 * 54} ${33 - y1 * 30}, ${3 + x2 * 54} ${33 - y2 * 30}, 57 3`} /></svg><i style={{ animationTimingFunction: v.easing, animationDuration: `${Math.max(300, Math.min(v.durationMs ?? 400, 2000))}ms` }} /></span>; }
+  if (v.icons?.length) return <span className="sysc-spec sysc-spec--icons">{v.icons.slice(0, 6).map((svg, i) => <i key={i} dangerouslySetInnerHTML={{ __html: svg }} />)}</span>;
+  if (v.image) return <span className="sysc-spec sysc-spec--img"><img src={v.image} alt="" loading="lazy" decoding="async" /></span>;
+  if (v.text) return <span className="sysc-spec sysc-spec--text">“{v.text.slice(0, 120)}”</span>;
+  return null;
+}
+
+function AreaTable({ curation, sample, busy, itemOf, imageOf, onFlip, onReason }: {
+  curation: AreaCuration; sample: string; busy: boolean;
+  itemOf: (id: string) => InspoItem | undefined; imageOf: (item: InspoItem) => string | null;
+  onFlip: (id: string, keep: boolean) => void; onReason: (id: string, reason: string) => void;
+}) {
+  const { t } = useT();
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const verdictOf = (id: string) => curation.verdicts.find((v) => v.id === id);
+  const kept = curation.candidates.filter((c) => verdictOf(c.id)?.keep);
+  const out = curation.candidates.filter((c) => !verdictOf(c.id)?.keep);
+  const row = (c: AreaCandidate) => {
+    const v = verdictOf(c.id);
+    const refs = c.refs.map((id) => itemOf(id)).filter((x): x is InspoItem => !!x);
+    return (
+      <li key={c.id} className={`sysc${v?.keep ? " is-kept" : " is-out"}${v?.byTeam ? " is-team" : ""}`}>
+        <CandidateSpecimen c={c} sample={sample} />
+        <div className="sysc__text">
+          <span className="sysc__label">{c.label}{c.detail && <small>{c.detail}</small>}</span>
+          {editing === c.id ? (
+            <input className="input sysc__reason-input" value={draft} autoFocus maxLength={160} onChange={(e) => setDraft(e.target.value)}
+              onBlur={() => { if (draft.trim() !== (v?.reason ?? "")) onReason(c.id, draft.trim()); setEditing(null); }}
+              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditing(null); }} />
+          ) : (
+            <button type="button" className="sysc__reason" title={t.system.editReason} onClick={() => { setDraft(v?.reason ?? ""); setEditing(c.id); }}>{v?.reason || t.system.noReason}</button>
+          )}
+          <span className="sysv-thumbs">{refs.slice(0, 5).map((it) => <Thumb key={it.id} item={it} image={imageOf(it)} />)}</span>
+        </div>
+        <button type="button" className={`sysc__verdict${v?.keep ? " is-kept" : ""}`} disabled={busy} aria-pressed={!!v?.keep} onClick={() => onFlip(c.id, !v?.keep)}>
+          {v?.keep ? <>{Icons.check} {t.system.kept}</> : t.system.discarded}
+        </button>
+      </li>
+    );
+  };
+  return (
+    <div className="sysc-table">
+      <p className="sysv-muted">{t.system.tableHint(curation.candidates.length, kept.length)}</p>
+      <ul className="sysc-list">{kept.map(row)}{out.map(row)}</ul>
+    </div>
+  );
+}
+
 // ─── A card ──────────────────────────────────────────────────────────────────
 
 interface TileProps {
@@ -168,10 +227,14 @@ interface TileProps {
   hasBoard: boolean;
   itemOf: (id: string) => InspoItem | undefined;
   imageOf: (item: InspoItem) => string | null;
-  onDecide: (decision: string, evidence?: SystemEvidence[]) => Promise<void>;
+  onDecide: (decision: string, evidence?: SystemEvidence[], why?: string) => Promise<void>;
   onRelease: () => Promise<void>;
   onUndo: () => Promise<void>;
   onOptions: (itemIds?: string[]) => Promise<AreaOption[]>;
+  /** The agent curates the table (again, keeping what the team fixed) */
+  onCurate: (keep?: Record<string, boolean>) => Promise<void>;
+  onVerdict: (id: string, keep: boolean, reason?: string) => Promise<void>;
+  curating: boolean;
   /** Picking references on the ring for this area: how many are chosen, and the controls */
   picking: { active: boolean; count: number; start: () => void; stop: () => void; propose: () => Promise<AreaOption[]> } | null;
 }
@@ -181,10 +244,12 @@ const headlineOf = (decision: string) => {
   return first.length > 72 ? `${first.slice(0, 70).replace(/\s+\S*$/, "")}…` : first;
 };
 
-function Tile({ area, label, visuals, fromBoard, sample, history, busy, running, hasBoard, itemOf, imageOf, onDecide, onRelease, onUndo, onOptions, picking }: TileProps) {
+function Tile({ area, label, visuals, fromBoard, sample, history, busy, running, hasBoard, itemOf, imageOf, onDecide, onRelease, onUndo, onOptions, picking, onCurate, onVerdict, curating }: TileProps) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(area.decision);
+  const [whyDraft, setWhyDraft] = useState(area.why);
+  useEffect(() => { setWhyDraft(area.why); }, [area.why]);
   const [options, setOptions] = useState<AreaOption[] | null>(null);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -196,7 +261,7 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
   const level = confidenceOf(area);
   const evidence = area.evidence.map((e) => ({ ...e, item: itemOf(e.itemId) })).filter((e) => e.item);
   const polish = async (fn: () => Promise<AreaOption[]> = onOptions) => { setLoadingOptions(true); try { setOptions(await fn()); picking?.stop(); } catch { /* the error shows in the middle */ } finally { setLoadingOptions(false); } };
-  const save = async () => { if (draft.trim() === area.decision.trim()) { setEditing(false); return; } await onDecide(draft); setEditing(false); };
+  const save = async () => { if (draft.trim() === area.decision.trim() && whyDraft.trim() === area.why.trim()) { setEditing(false); return; } await onDecide(draft, undefined, whyDraft); setEditing(false); };
 
   const specimen = (() => {
     switch (area.area) {
@@ -219,6 +284,7 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
         <span className="sysv-tile__tools">
           {area.decision && area.source === "model" && <button type="button" className="sysv-tool sysv-tool--ok" disabled={busy} title={t.system.confirm} aria-label={t.system.confirm} onClick={() => void onDecide(area.decision)}>{Icons.check}</button>}
           {hasBoard && area.source !== "team" && <button type="button" className="sysv-tool" disabled={busy} title={t.system.polishArea} aria-label={t.system.polishArea} onClick={() => void polish()}>{Icons.gem}</button>}
+          {hasBoard && <button type="button" className="sysv-tool" disabled={busy || curating} title={area.curation ? t.system.recurate : t.system.curate} aria-label={area.curation ? t.system.recurate : t.system.curate} onClick={() => void onCurate(area.curation ? Object.fromEntries(area.curation.verdicts.filter((v) => v.byTeam).map((v) => [v.id, v.keep])) : undefined)}>{Icons.spark}</button>}
           {picking && <button type="button" className={`sysv-tool${picking.active ? " is-on" : ""}`} disabled={busy} title={t.system.pickRefs} aria-label={t.system.pickRefs} aria-pressed={picking.active} onClick={() => (picking.active ? picking.stop() : picking.start())}>{Icons.all}</button>}
           <button type="button" className="sysv-tool" disabled={busy} title={area.decision ? t.system.edit : t.system.write} aria-label={area.decision ? t.system.edit : t.system.write} onClick={() => setEditing(true)}>{Icons.sliders}</button>
           {history.length > 0 && <button type="button" className="sysv-tool" disabled={busy} title={t.system.undo} aria-label={t.system.undo} onClick={() => void onUndo()}>{Icons.shuffle}</button>}
@@ -259,12 +325,20 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
             </div>
           )}
           <h3 className="sysv-tile__title">{area.decision ? headlineOf(area.decision) : t.system.empty}</h3>
-          {specimen && <div className={`sysv-tile__specimen${fromBoard ? " is-board" : ""}`}>{specimen}{fromBoard && <small className="sysv-tile__board-note">{t.system.fromBoard}</small>}</div>}
+          {curating ? (
+            <p className="sysv-muted"><span className="spinner spinner--sm" /> {t.system.curating}</p>
+          ) : area.curation ? (
+            <AreaTable curation={area.curation} sample={sample} busy={busy} itemOf={itemOf} imageOf={imageOf}
+              onFlip={(id, keep) => void onVerdict(id, keep)} onReason={(id, reason) => void onVerdict(id, area.curation!.verdicts.find((v) => v.id === id)?.keep ?? false, reason)} />
+          ) : specimen && <div className={`sysv-tile__specimen${fromBoard ? " is-board" : ""}`}>{specimen}{fromBoard && <small className="sysv-tile__board-note">{t.system.fromBoard}</small>}</div>}
 
           {editing ? (
             <div className="sysv-edit">
               <textarea ref={text} className="input sysv-edit__text" rows={4} maxLength={DECISION_MAX} value={draft} placeholder={t.system.placeholder}
                 onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") setEditing(false); if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void save(); }} />
+              <textarea className="input sysv-edit__text sysv-edit__why" rows={2} maxLength={400} value={whyDraft} placeholder={t.system.whyPlaceholder}
+                onChange={(e) => setWhyDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Escape") setEditing(false); if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void save(); }} />
               <div className="sysv-edit__row">
                 <Button variant="primary" size="sm" disabled={busy} onClick={() => void save()}>{t.system.save}</Button>
@@ -273,7 +347,11 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
               </div>
             </div>
           ) : area.decision ? (
-            <p className="sysv-tile__decision" onClick={() => setEditing(true)} title={t.system.edit}>{area.decision}</p>
+            <div className="sysv-decision">
+              <p className="sysv-tile__decision" onClick={() => setEditing(true)} title={t.system.edit}>{area.decision}</p>
+              {area.why && <p className="sysv-why" onClick={() => setEditing(true)} title={t.system.edit}><b>{t.system.whyLabel}</b> {area.why}</p>}
+              {area.source !== "team" && <Button variant="primary" size="sm" disabled={busy} onClick={() => void onDecide(area.decision, undefined, area.why)}>{Icons.check} {t.system.confirmWhy}</Button>}
+            </div>
           ) : (
             <p className="sysv-tile__empty">{hasBoard ? t.system.emptyHint : t.system.noBoardShort}</p>
           )}
@@ -295,7 +373,7 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
           {showLog && (
             <div className="sysv-log">
               {evidence.map((e) => <div key={e.itemId} className="sysv-log__row"><b>{e.item!.name}</b>{e.take && <span>{e.take}</span>}</div>)}
-              {history.slice(0, 4).map((h, i) => <div key={i} className="sysv-log__row sysv-log__row--hist"><b>{h.source === "model" ? t.system.theBoard : h.authorName}</b><span>{h.decision ? headlineOf(h.decision) : t.system.cleared} · {new Date(h.at).toLocaleString(undefined, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></div>)}
+              {history.slice(0, 4).map((h, i) => <div key={i} className="sysv-log__row sysv-log__row--hist"><b>{h.source === "model" ? t.system.theBoard : h.authorName}</b><span>{h.decision ? headlineOf(h.decision) : t.system.cleared}{h.why ? ` · ${h.why}` : ""} · {new Date(h.at).toLocaleString(undefined, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span></div>)}
             </div>
           )}
         </>
@@ -457,6 +535,26 @@ export default function SystemView({ project, system, onSystem, board, library, 
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy((s) => { const n = new Set(s); n.delete(area); return n; }); }
   };
+  const [curatingArea, setCuratingArea] = useState<SystemArea | null>(null);
+  const curate = useCallback(async (area: SystemArea, keep?: Record<string, boolean>) => {
+    setCuratingArea(area); setError("");
+    try {
+      const res = await fetch("/api/system/curate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: project.id, area, keep }) });
+      const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || t.system.failed);
+      setSystem(json);
+      void loadSystem(project.id).then((x) => { if (x.ok) setHistory(x.data.history); });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setCuratingArea(null); }
+  }, [project.id, t, setSystem]);
+  // Agent first: an open area with material and no table yet gets its table curated on the spot
+  const curatedOnce = useRef(new Set<string>());
+  useEffect(() => {
+    if (!open || !system || curatingArea) return;
+    const a = system.areas.find((x) => x.area === open);
+    if (a && !a.curation && visuals.length && board.length && !curatedOnce.current.has(open)) { curatedOnce.current.add(open); void curate(open); }
+  }, [open, system, visuals.length, board.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const options = useCallback(async (area: SystemArea, itemIds?: string[]): Promise<AreaOption[]> => {
     setError("");
     const res = await fetch("/api/system/options", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: project.id, area, itemIds }) });
@@ -484,7 +582,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
     return (
       <Tile key={a.area} area={a} label={labels[a.area]} visuals={vs} fromBoard={fromBoard} sample={project.name} history={history[a.area] ?? []}
         busy={busy.has(a.area)} running={running} hasBoard={board.length > 0} itemOf={itemOf} imageOf={imageOf}
-        onDecide={(decision, evidence) => withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, evidence }))}
+        onDecide={(decision, evidence, why) => withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, evidence, why }))}
+        onCurate={(keep) => curate(a.area, keep)}
+        onVerdict={(id, keep, reason) => withBusy(a.area, () => setSystemVerdict(project.id, a.area, { id, keep, reason }))}
+        curating={curatingArea === a.area}
         onRelease={() => withBusy(a.area, () => releaseSystemArea(project.id, a.area))}
         onUndo={() => withBusy(a.area, () => undoSystemArea(project.id, a.area))}
         onOptions={(ids) => options(a.area, ids)}

@@ -2,7 +2,7 @@
 // The project's system: read it, confirm or write an area, hand an area back to the board.
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
-import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, applyTriage } from "@/lib/system";
+import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, applyTriage, setVerdict } from "@/lib/system";
 import type { SystemArea } from "@/types/system";
 import type { SystemEvidence } from "@/types/system";
 
@@ -15,7 +15,7 @@ export async function loadSystem(projectId: string) {
 }
 
 /** Any member decides: the system is the team's. An empty decision empties the area. */
-export async function decideSystemArea(projectId: string, area: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[] }) {
+export async function decideSystemArea(projectId: string, area: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[]; why?: string }) {
   return withCtx(async (ctx) => decideArea(ctx.workspace.id, String(projectId), String(area), input ?? { decision: "" }, { id: ctx.user.id, name: ctx.user.name }));
 }
 
@@ -46,4 +46,9 @@ export async function assignSystemArea(projectId: string, area: string, itemId: 
 /** The reviewed proposals of the Inbox triage: file and hang each reference. */
 export async function applySystemTriage(picks: { itemId: string; projectId: string; areas: SystemArea[] }[]) {
   return withCtx(async (ctx) => applyTriage(ctx.workspace.id, Array.isArray(picks) ? picks.slice(0, 300).map((p) => ({ itemId: String(p.itemId), projectId: String(p.projectId), areas: Array.isArray(p.areas) ? p.areas : [] })) : [], { id: ctx.user.id, name: ctx.user.name }));
+}
+
+/** On the table: a person keeps or discards a candidate, or rewrites its reason. */
+export async function setSystemVerdict(projectId: string, area: string, verdict: { id: string; keep: boolean; reason?: string }) {
+  return withCtx(async (ctx) => setVerdict(ctx.workspace.id, String(projectId), String(area), { id: String(verdict.id), keep: !!verdict.keep, reason: verdict.reason }));
 }

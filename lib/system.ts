@@ -19,7 +19,8 @@ import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
 import { recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, SYSTEM_AREAS, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun } from "@/types/system";
+import { DECISION_MAX, SYSTEM_AREAS, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
+import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
 
 const P = schema.project;
@@ -57,6 +58,8 @@ const areaState = (r: AreaRow): SystemAreaState => ({
   evidence: Array.isArray(r.evidence) ? (r.evidence as SystemEvidence[]) : [],
   source: (r.source as SystemAreaState["source"]) ?? null,
   decidedBy: r.decidedBy,
+  why: r.why ?? "",
+  curation: (r.curationJson as AreaCuration | null) ?? null,
   updatedAt: r.updatedAt.toISOString(),
 });
 
@@ -105,18 +108,20 @@ async function ensureHead(organizationId: string, projectId: string, now: Date):
   await db.insert(S).values({ projectId, organizationId, summary: "", runJson: null, createdAt: now, updatedAt: now }).onConflictDoNothing();
 }
 
-async function writeArea(organizationId: string, projectId: string, next: Omit<SystemAreaState, "updatedAt">, author: { id: string | null; name: string }, now: Date): Promise<void> {
+type AreaWrite = Omit<SystemAreaState, "updatedAt" | "why" | "curation"> & { why?: string; curation?: AreaCuration | null };
+
+async function writeArea(organizationId: string, projectId: string, next: AreaWrite, author: { id: string | null; name: string }, now: Date): Promise<void> {
+  const why = (next.why ?? "").trim().slice(0, 400);
+  const set: Record<string, unknown> = { decision: next.decision, confidence: next.confidence, evidence: next.evidence, source: next.source, decidedBy: next.decidedBy, why, updatedAt: now };
+  if (next.curation !== undefined) set.curationJson = next.curation;
   await db.insert(A).values({
     projectId, organizationId, area: next.area, decision: next.decision, confidence: next.confidence, evidence: next.evidence,
-    source: next.source, decidedBy: next.decidedBy, updatedAt: now,
-  }).onConflictDoUpdate({
-    target: [A.projectId, A.area],
-    set: { decision: next.decision, confidence: next.confidence, evidence: next.evidence, source: next.source, decidedBy: next.decidedBy, updatedAt: now },
-  });
+    source: next.source, decidedBy: next.decidedBy, why, curationJson: next.curation ?? null, updatedAt: now,
+  }).onConflictDoUpdate({ target: [A.projectId, A.area], set });
   if (next.source) {
     await db.insert(R).values({
       id: newId(), projectId, organizationId, area: next.area, decision: next.decision, confidence: next.confidence, evidence: next.evidence,
-      source: next.source, authorId: author.id, authorName: author.name, createdAt: now,
+      source: next.source, why, authorId: author.id, authorName: author.name, createdAt: now,
     });
   }
 }
@@ -130,7 +135,7 @@ const cleanArea = async (area: string): Promise<SystemArea> => {
  * A person writes the decision of an area (or confirms the model's as it is). From here on, runs
  * leave this area alone. An empty decision empties the area: nothing decided, open to the board.
  */
-export async function decideArea(organizationId: string, projectId: string, areaKey: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[] }, author: { id: string; name: string }): Promise<ProjectSystem> {
+export async function decideArea(organizationId: string, projectId: string, areaKey: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[]; why?: string }, author: { id: string; name: string }): Promise<ProjectSystem> {
   await projectRow(organizationId, projectId);
   const area = await cleanArea(areaKey);
   const decision = String(input.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
@@ -138,7 +143,7 @@ export async function decideArea(organizationId: string, projectId: string, area
   const now = new Date();
   await ensureHead(organizationId, projectId, now);
   if (!decision) {
-    await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null }, { id: author.id, name: author.name }, now);
+    await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "" }, { id: author.id, name: author.name }, now);
   } else {
     const confidence = typeof input.confidence === "number" && Number.isFinite(input.confidence) ? Math.max(0, Math.min(100, Math.round(input.confidence))) : Math.max(current.confidence, 80);
     // A confirmed proposal keeps the references that led to it; a rewritten one keeps them too, they still back it.
@@ -149,7 +154,7 @@ export async function decideArea(organizationId: string, projectId: string, area
       const mine = new Set((ids.length ? await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids))) : []).map((r) => r.id));
       evidence = input.evidence.filter((e) => mine.has(e.itemId)).map((e) => ({ itemId: e.itemId, take: String(e.take ?? "").trim().slice(0, 200) }));
     }
-    await writeArea(organizationId, projectId, { area, decision, confidence, evidence, source: "team", decidedBy: author.id }, { id: author.id, name: author.name }, now);
+    await writeArea(organizationId, projectId, { area, decision, confidence, evidence, source: "team", decidedBy: author.id, why: typeof input.why === "string" ? input.why : current.why }, { id: author.id, name: author.name }, now);
   }
   return getSystem(organizationId, projectId);
 }
@@ -245,6 +250,7 @@ Rules:
 - The team's words come first. A note, a comment or a thing they pointed at says WHY a reference is here: that is the decision's root. The measured brief says WHAT the reference does: use it to make the decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - A decision is an instruction an agent can execute for THIS project, in 1 to 3 sentences (max 60 words): concrete values when the evidence has them, the principle when it does not. Write what the project will do, not what the references do ("Headlines in a high-contrast serif at 400, body in a geist-like grotesque", not "r1 uses a serif").
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
+- "why" is the criterio behind the decision: why this and not the rest, in one or two sentences (max 40 words), rooted in the brief and the team's words. Empty when the area is empty.
 - confidence is 0-100: how many references agree, how concrete and how explicit the evidence is. One passing mention is 25-40; two or three references that agree with concrete values is 60-80; the team saying it in so many words plus measured values is 85+.
 - evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
 - A reference marked "filed_by_team" under an area was put there by a person from the board: it is a directive. Decide that area from those references first, and keep them in its evidence.
@@ -262,6 +268,7 @@ const OutSchema = z.object({
   areas: z.array(z.object({
     area: z.enum(SYSTEM_AREAS),
     decision: z.string(),
+    why: z.string(),
     confidence: z.number().int().min(0).max(100),
     evidence: z.array(z.object({ ref: z.string(), take: z.string() })),
   })),
@@ -341,10 +348,10 @@ export function runSystem(input: { organizationId: string; projectId: string; us
         seen.add(itemId);
         evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
       }
-      const next: Omit<SystemAreaState, "updatedAt"> = decision
-        ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null }
-        : { area: cur.area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null };
-      const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence);
+      const next: AreaWrite = decision
+        ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null, why: got?.why ?? "" }
+        : { area: cur.area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null, why: "" };
+      const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence) && (next.why ?? "") === cur.why;
       if (same && (cur.decision || cur.updatedAt !== emptySystem(input.projectId).areas[0].updatedAt)) continue;
       await writeArea(input.organizationId, input.projectId, next, { id: null, name: res.model }, now);
     }
@@ -481,15 +488,15 @@ export async function boardVisuals(organizationId: string, projectId: string): P
 // Every change to an area left a revision: who (a person or the model), what, when. The screen shows
 // the trail and can step back one change.
 
-export interface AreaRevision { decision: string; confidence: number; source: "model" | "team"; authorName: string; at: string }
+export interface AreaRevision { decision: string; why: string; confidence: number; source: "model" | "team"; authorName: string; at: string }
 
 export async function areaHistory(organizationId: string, projectId: string, perArea = 6): Promise<Record<string, AreaRevision[]>> {
-  const rows = await db.select({ area: R.area, decision: R.decision, confidence: R.confidence, source: R.source, authorName: R.authorName, createdAt: R.createdAt })
+  const rows = await db.select({ area: R.area, decision: R.decision, why: R.why, confidence: R.confidence, source: R.source, authorName: R.authorName, createdAt: R.createdAt })
     .from(R).where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(desc(R.createdAt));
   const out: Record<string, AreaRevision[]> = {};
   for (const r of rows) {
     const list = (out[r.area] ??= []);
-    if (list.length < perArea) list.push({ decision: r.decision, confidence: r.confidence, source: r.source as "model" | "team", authorName: r.authorName, at: r.createdAt.toISOString() });
+    if (list.length < perArea) list.push({ decision: r.decision, why: r.why ?? "", confidence: r.confidence, source: r.source as "model" | "team", authorName: r.authorName, at: r.createdAt.toISOString() });
   }
   return out;
 }
@@ -503,10 +510,10 @@ export async function revertArea(organizationId: string, projectId: string, area
   const now = new Date();
   await ensureHead(organizationId, projectId, now);
   if (!previous) {
-    await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null }, author, now);
+    await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "" }, author, now);
   } else {
     const evidence = Array.isArray(previous.evidence) ? (previous.evidence as SystemEvidence[]) : [];
-    await writeArea(organizationId, projectId, { area, decision: previous.decision, confidence: previous.confidence, evidence, source: previous.source as "model" | "team", decidedBy: previous.source === "team" ? author.id : null }, author, now);
+    await writeArea(organizationId, projectId, { area, decision: previous.decision, confidence: previous.confidence, evidence, source: previous.source as "model" | "team", decidedBy: previous.source === "team" ? author.id : null, why: previous.why ?? "" }, author, now);
   }
   return getSystem(organizationId, projectId);
 }
@@ -527,7 +534,7 @@ export async function assignEvidence(organizationId: string, projectId: string, 
   const now = new Date();
   await ensureHead(organizationId, projectId, now);
   // Filing is not deciding: the decision and its source stay as they were, only the evidence moves
-  await db.insert(A).values({ projectId, organizationId, area, decision: current.decision, confidence: current.confidence, evidence, source: current.source, decidedBy: current.decidedBy, updatedAt: now })
+  await db.insert(A).values({ projectId, organizationId, area, decision: current.decision, confidence: current.confidence, evidence, source: current.source, decidedBy: current.decidedBy, why: current.why, curationJson: current.curation, updatedAt: now })
     .onConflictDoUpdate({ target: [A.projectId, A.area], set: { evidence, updatedAt: now } });
   void author;
   return getSystem(organizationId, projectId);
@@ -601,4 +608,89 @@ export async function applyTriage(organizationId: string, picks: { itemId: strin
     for (const x of list) for (const area of x.areas) if (AREA_SET.has(area)) await assignEvidence(organizationId, projectId, area, x.itemId, true, author);
   }
   return { filed, systems: await loadSystems(organizationId) };
+}
+
+// ─── The table of an area: everything the board offers, curated by the agent ─────────────────────
+// For one area the board offers candidates (the families found, the palettes, the easings, the lines
+// of copy). The agent keeps or discards each with a reason, drafts the decision and the criterio behind
+// it, and writes it all as the area's proposal. The team flips what it wants and confirms.
+
+const CURATE_SYSTEM = `A design team keeps a board of references for one project and is deciding one AREA of the project's design system (typography, color, layout, motion, iconography, logo, imagery or voice). The board offers CANDIDATES for that area: the typefaces found across the references, their palettes, their easings, their captures, their lines of copy. Each candidate says which references it comes from, and each reference comes with the team's note and comments (why they saved it).
+
+Your job, as the team's agent: decide the area from the candidates, the way a senior designer who knows the brief would.
+- For every candidate, "keep" true or false and a "reason" of at most 16 words, for the team: what it brings to this project, or why it goes. Judge against the brief and the team's words first, then against coherence (one or two families, one palette logic, one easing). Keeping everything is not deciding; keeping nothing is only right when nothing fits.
+- "decision": the area's decision as an instruction an agent can execute (1 to 3 sentences, max 60 words), built from what you kept, with the concrete values the candidates carry.
+- "why": the criterio, in one or two sentences (max 40 words): why this and not the rest, rooted in the brief and what the team said. This is the part the team will read twice.
+- "confidence" 0-100 as in the system: how far the board and the brief back the decision.
+- Ids are short codes: use them exactly as given, never invent one. No markdown, no dashes as punctuation.`;
+
+const CurateSchema = z.object({
+  verdicts: z.array(z.object({ id: z.string(), keep: z.boolean(), reason: z.string() })),
+  decision: z.string(),
+  why: z.string(),
+  confidence: z.number().int().min(0).max(100),
+});
+
+export async function curateArea(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale; keep?: Record<string, boolean> }): Promise<ProjectSystem> {
+  const area = await cleanArea(input.area);
+  const project = await projectRow(input.organizationId, input.projectId);
+  const [visuals, { refs }, current] = await Promise.all([boardVisuals(input.organizationId, input.projectId), loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+  const candidates = areaCandidates(area, visuals);
+  if (!candidates.length) throw new HttpError(400, (await getErrors()).systemNoCandidates);
+  const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
+  const standing = current.areas.find((a) => a.area === area)!;
+  const text = [
+    `Project: ${project.name}`,
+    `Area: ${area}`,
+    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+    `The area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, why: standing.why, source: standing.source } : null)}`,
+    input.keep && Object.keys(input.keep).length ? `The team already settled some candidates, keep these verdicts exactly (JSON): ${JSON.stringify(input.keep)}` : "",
+    `Candidates (JSON): ${JSON.stringify(candidates.map((c) => ({ id: c.id, label: c.label, detail: c.detail, refs: c.refs.map((id) => codeOf.get(id) ?? id), ...c.visual })))}`,
+    `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
+  ].filter(Boolean).join("\n\n");
+  let res: Awaited<ReturnType<typeof llm>>;
+  try {
+    res = await llm({ model: SYSTEM_MODEL, system: `${CURATE_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: CurateSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
+  } catch (err) {
+    if (!(err instanceof LlmError) || !err.finishReason) throw err;
+    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+  }
+  void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId} ${area} curate` });
+  const out = CurateSchema.parse(JSON.parse(res.text));
+  const ids = new Set(candidates.map((c) => c.id));
+  const verdicts: CandidateVerdict[] = candidates.map((c) => {
+    const v = out.verdicts.find((x) => x.id === c.id);
+    const forced = input.keep?.[c.id];
+    return { id: c.id, keep: forced ?? v?.keep ?? false, reason: (v?.reason ?? "").trim().slice(0, 160), byTeam: forced !== undefined || undefined };
+  }).filter((v) => ids.has(v.id));
+  const curation: AreaCuration = { candidates, verdicts, model: res.model, at: new Date().toISOString() };
+  // The references behind what was kept become the evidence; what the team filed stays
+  const keptRefs = new Set(candidates.filter((c) => verdicts.find((v) => v.id === c.id)?.keep).flatMap((c) => c.refs));
+  const pinned = standing.evidence.filter((e) => e.pinned);
+  const evidence: SystemEvidence[] = [...pinned, ...[...keptRefs].filter((id) => !pinned.some((e) => e.itemId === id)).map((id) => ({ itemId: id, take: standing.evidence.find((e) => e.itemId === id)?.take ?? "" }))];
+  const now = new Date();
+  await ensureHead(input.organizationId, input.projectId, now);
+  if (standing.source === "team") {
+    // A decided area keeps its decision: only the table is written, for the team to look at
+    await db.update(A).set({ curationJson: curation, updatedAt: now }).where(and(eq(A.projectId, input.projectId), eq(A.area, area)));
+  } else {
+    const decision = out.decision.trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+    await writeArea(input.organizationId, input.projectId, decision
+      ? { area, decision, confidence: Math.max(1, out.confidence), evidence, source: "model", decidedBy: null, why: out.why, curation }
+      : { area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null, why: "", curation }, { id: null, name: res.model }, now);
+  }
+  console.log(`curate ${input.projectId} ${area}: ${candidates.length} candidates, ${verdicts.filter((v) => v.keep).length} kept, ${res.costUsd ?? "?"} USD`);
+  return getSystem(input.organizationId, input.projectId);
+}
+
+/** A person flips a verdict on the table (or rewrites its reason). The decision is not touched: that is confirm. */
+export async function setVerdict(organizationId: string, projectId: string, areaKey: string, verdict: { id: string; keep: boolean; reason?: string }): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
+  if (!current.curation) return getSystem(organizationId, projectId);
+  const verdicts = current.curation.verdicts.map((v) => (v.id === verdict.id ? { ...v, keep: !!verdict.keep, reason: typeof verdict.reason === "string" ? verdict.reason.trim().slice(0, 160) : v.reason, byTeam: true } : v));
+  const curation: AreaCuration = { ...current.curation, verdicts };
+  await db.update(A).set({ curationJson: curation, updatedAt: new Date() }).where(and(eq(A.projectId, projectId), eq(A.area, area)));
+  return getSystem(organizationId, projectId);
 }
