@@ -160,17 +160,6 @@ export default function SystemModal({ project, system, onSystem, board, library,
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
-  // Fresh on open: another member may have decided something, and the board's stamp says if the run is stale
-  useEffect(() => {
-    let alive = true;
-    loadSystem(project.id).then((r) => {
-      if (!alive) return;
-      if (!r.ok) { setError(r.error); if (!system) setSystem(emptySystem(project.id)); return; }
-      setSystem(r.data.system); setBoardStamp(r.data.board);
-    });
-    return () => { alive = false; };
-  }, [project.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const itemOf = useMemo(() => { const m = new Map(library.filter((i) => i.id).map((i) => [i.id!, i])); return (id: string) => m.get(id); }, [library]);
   const labels = t.system.areas as Record<SystemArea, string>;
   const filled = system ? system.areas.filter((a) => a.decision).length : 0;
@@ -188,6 +177,19 @@ export default function SystemModal({ project, system, onSystem, board, library,
       setError(e instanceof Error ? e.message : String(e));
     } finally { setRunning(false); }
   }, [project.id, t]);
+
+  // Fresh on open: another member may have decided something, and the board's stamp says if the run is stale
+  useEffect(() => {
+    let alive = true;
+    loadSystem(project.id).then((r) => {
+      if (!alive) return;
+      if (!r.ok) { setError(r.error); if (!system) setSystem(emptySystem(project.id)); return; }
+      setSystem(r.data.system); setBoardStamp(r.data.board);
+      // Everything starts where it ends: a project with references and no reading yet reads itself on first open
+      if (!r.data.system.run && r.data.board.itemIds.length) void run();
+    });
+    return () => { alive = false; };
+  }, [project.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const withBusy = async (area: SystemArea, fn: () => Promise<{ ok: true; data: ProjectSystem } | { ok: false; error: string }>) => {
     setBusy((s) => new Set([...s, area])); setError("");

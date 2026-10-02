@@ -9,9 +9,10 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
+import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { parseDate } from "@/lib/search-query";
 import WorkspaceMenu, { WorkspaceFace } from "./WorkspaceMenu";
-import { Icons, PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
+import { FillRing, Icons, PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
 import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
 import { useT } from "./I18nProvider";
@@ -50,10 +51,12 @@ function NameTab({ initial = "", onSubmit, onCancel }: { initial?: string; onSub
   );
 }
 
-export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, space, onSpace,
+export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, space, onSpace,
   onCreateProject, onRenameProject, onDeleteProject, onDirectory, quota }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
+  /** Each project's system: a ring on its tab says how much of it is decided */
+  systems?: Record<string, ProjectSystem>;
   /** "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
@@ -145,11 +148,12 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     e.preventDefault();
     onSpace(id);
   };
-  const label = (name: string, n: number) => <><span className="island__label">{name}</span> <span className="island__n">{n}</span></>;
+  const filledOf = (id: string) => systems[id]?.areas.filter((a) => a.decision).length ?? 0;
+  const label = (name: string, n: number, id?: string) => <><span className="island__label">{name}</span> <span className="island__n">{n}</span>{id && filledOf(id) > 0 && <span className="island__ring"><FillRing filled={filledOf(id)} total={SYSTEM_AREAS.length} /></span>}</>;
   const tab = (id: string, name: string, n: number, fixed?: boolean) => (
     <a key={id} href={hrefOf(id)} className={`island__tab${space === id ? " is-on" : ""}`} aria-current={space === id ? "page" : undefined}
       title={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
-      {label(name, n)}
+      {label(name, n, fixed ? undefined : id)}
     </a>
   );
 
@@ -189,7 +193,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           <span key={p.id} className="island__tab is-on island__tab--split">
             <a href={hrefOf(p.id)} className="island__tab-main" aria-current="page"
               title={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
-              {label(p.name, counts.byProject[p.id] ?? 0)}
+              {label(p.name, counts.byProject[p.id] ?? 0, p.id)}
             </a>
             <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
               <PopoverTrigger className="island__tab-more" aria-label={t.projects.options(p.name)}>{Icons.chevron}</PopoverTrigger>
@@ -239,10 +243,10 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
       <div className="island__measure" ref={sizesRef} aria-hidden>
         {order.map((p) => p.id === space ? (
           <span key={p.id} data-id={p.id} className="island__tab island__tab--split">
-            <span className="island__tab-main">{label(p.name, counts.byProject[p.id] ?? 0)}</span><span className="island__tab-more" />
+            <span className="island__tab-main">{label(p.name, counts.byProject[p.id] ?? 0, p.id)}</span><span className="island__tab-more" />
           </span>
         ) : (
-          <span key={p.id} data-id={p.id} className="island__tab">{label(p.name, counts.byProject[p.id] ?? 0)}</span>
+          <span key={p.id} data-id={p.id} className="island__tab">{label(p.name, counts.byProject[p.id] ?? 0, p.id)}</span>
         ))}
         <span data-id="more" className="island__tab island__tab--more">{t.projects.more(order.length)} {Icons.chevron}</span>
       </div>

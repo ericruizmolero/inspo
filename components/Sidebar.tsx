@@ -290,7 +290,7 @@ function NameField({ initial = "", placeholder, onSubmit, onCancel }: {
 
 /** One project in the sidebar: goes to it; its "…" (on hover) renames or deletes it. */
 /** How much of the project's system is decided: a ring that fills area by area */
-function FillRing({ filled, total }: { filled: number; total: number }) {
+export function FillRing({ filled, total }: { filled: number; total: number }) {
   const { t } = useT();
   const r = 4.5, c = 2 * Math.PI * r;
   return (

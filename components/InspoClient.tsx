@@ -1087,7 +1087,7 @@ export default function InspoClient({
             <SidebarTrigger aria-label={t.app.menu} />
           </span>
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-            items={items} links={links} projects={projects} space={space} onSpace={setSpace}
+            items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
             onDirectory={() => setShowDirectory(true)} quota={quota} />
           <Logo size={28} className="topbar__logo" />
