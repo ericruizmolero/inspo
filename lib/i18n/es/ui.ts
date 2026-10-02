@@ -495,7 +495,7 @@ export const ui: typeof EnUi = {
     fitHint: "Verlo todo (\u23180)",
   },
   search: {
-    placeholder: "Busca una persona, una fecha, un color, una secci\u00f3n, o descr\u00edbelo",
+    placeholder: "Busca o describe lo que quieres",
     placeholderShort: "Busca o descr\u00edbelo",
     remove: (what: string) => `Quitar ${what}`,
     suggestions: "Sugerencias",

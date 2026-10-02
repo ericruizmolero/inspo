@@ -497,7 +497,7 @@ export const ui = {
     fitHint: "See everything (\u23180)",
   },
   search: {
-    placeholder: "Search a person, a date, a colour, a section, or describe it",
+    placeholder: "Search, or describe what you want",
     placeholderShort: "Search or describe it",
     remove: (what: string): string => `Remove ${what}`,
     suggestions: "Suggestions",

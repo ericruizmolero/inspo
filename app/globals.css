@@ -3070,7 +3070,7 @@ button.postit__num { cursor: pointer; }
   --dock-hover: rgba(255, 255, 255, 0.08);
   --dock-chip: rgba(255, 255, 255, 0.14);
   --dock-fill: rgba(255, 255, 255, 0.12);
-  --dock-line: rgba(255, 255, 255, 0.16);
+  --dock-line: rgba(255, 255, 255, 0.06);
   --dock-danger: #ff6b61;
   --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.2);
   --dock-blur: blur(20px) saturate(1.5);
@@ -3082,9 +3082,13 @@ button.postit__num { cursor: pointer; }
 .sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
-.island, .canvas-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
-.island__tab.is-on { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+.island, .canvas-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
+.island__tab.is-on { box-shadow: none; }
 /* The search dock's field reads white text too */
 .sb--dock .sb__field input, .sb--dock .sb__field .input { color: var(--dock-ink); }
 .sb--dock .sb__field input::placeholder { color: var(--dock-muted); }
 .sb--dock .sb__field svg { color: var(--dock-muted); }
+/* The dock's field: the placeholder trims instead of running under the status and the shortcut */
+.sb--dock .sb__input { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sb--dock .sb__right { flex-shrink: 0; }
+.sb--dock .sb__field { overflow-x: hidden; }
