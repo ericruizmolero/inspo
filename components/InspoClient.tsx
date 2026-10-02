@@ -43,6 +43,7 @@ const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const PolishModal = dynamic(() => import("./PolishModal"), { ssr: false });
+const SystemModal = dynamic(() => import("./SystemModal"), { ssr: false });
 const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 
@@ -272,6 +273,7 @@ export default function InspoClient({
 
   const [showAdd, setShowAdd] = useState(false);
   const [showPolish, setShowPolish] = useState(false);
+  const [showSystem, setShowSystem] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -971,6 +973,15 @@ export default function InspoClient({
           libraryName={workspace.name}
         />
       )}
+      {showSystem && currentProject && (
+        <SystemModal
+          project={currentProject}
+          board={spaceItems}
+          library={items}
+          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+          onClose={() => setShowSystem(false)}
+        />
+      )}
       {showPolish && currentProject && (
         <PolishModal
           project={currentProject}
@@ -1048,7 +1059,10 @@ export default function InspoClient({
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
             {currentProject && (
-              <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+              <>
+                <Button variant="ghost" className="topbar__polish topbar__system" onClick={() => setShowSystem(true)}>{Icons.compass} {t.system.button}</Button>
+                <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+              </>
             )}
             {currentProject && <span className="topbar__actions-sep" aria-hidden />}
             <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>

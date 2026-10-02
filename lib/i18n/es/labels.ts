@@ -34,5 +34,6 @@ export const labels: typeof EnLabels = {
     auto_tag: "Inspos etiquetados",
     query_en: "Búsquedas traducidas",
     embed: "Búsqueda por significado",
+    system: "Sistemas construidos",
   },
 };

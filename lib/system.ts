@@ -1,0 +1,345 @@
+// The project's system: eight areas, each with the decision the board supports so far. A model reads
+// the board (the team's words first: notes, threads, the brief; then what the DESIGN.md measured)
+// and proposes; a person confirms, rewrites or leaves an area to the board. Areas the team decided
+// are never touched by a run. Every change leaves a revision, so the system can be read back in time.
+// One run costs a fraction of a cent (DeepSeek, the DESIGN.md model), so a run per change is fine.
+import "server-only";
+import { createHash } from "crypto";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import { z } from "zod";
+import { db, schema } from "./db";
+import { HttpError, newId } from "./workspace-core";
+import { getErrors } from "./i18n";
+import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { llm, LlmError } from "./llm";
+import { summarize } from "./jev";
+import { rowToItem } from "./items";
+import { mediaKindOf, webKeyOf } from "./url";
+import { getDesignMd, getDesignMdIndex } from "./design-store";
+import { getWhy } from "./design-why";
+import { recordUsage, type UsageCtx } from "./usage";
+import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
+import { DECISION_MAX, SYSTEM_AREAS, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun } from "@/types/system";
+import type { PolishBrief } from "@/types/polish";
+
+const P = schema.project;
+const PI = schema.projectItem;
+const T = schema.inspoItem;
+const C = schema.inspoComment;
+const S = schema.projectSystem;
+const A = schema.systemArea;
+const R = schema.systemAreaRevision;
+
+export const SYSTEM_MODEL = process.env.SYSTEM_MODEL || process.env.DESIGN_MD_MODEL || "deepseek/deepseek-v4.1-flash";
+/** Bumps when the prompt or the output shape changes, so an old run reads as stale */
+const PROMPT_VERSION = 1;
+/** References read per run; beyond this the board is cut, not refused */
+const MAX_BOARD = 120;
+/** Thread comments sent per reference: the latest ones, each cut to 300 characters */
+const COMMENTS_PER_REF = 6;
+const AREA_SET = new Set<string>(SYSTEM_AREAS);
+
+// ─── Read ────────────────────────────────────────────────────────────────────
+
+async function projectRow(organizationId: string, projectId: string) {
+  const [row] = await db.select({ id: P.id, name: P.name, polish: P.polish }).from(P)
+    .where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
+  if (!row) throw new HttpError(404, (await getErrors()).projectNotFound);
+  return row;
+}
+
+type AreaRow = typeof A.$inferSelect;
+
+const areaState = (r: AreaRow): SystemAreaState => ({
+  area: r.area as SystemArea,
+  decision: r.decision,
+  confidence: r.confidence,
+  evidence: Array.isArray(r.evidence) ? (r.evidence as SystemEvidence[]) : [],
+  source: (r.source as SystemAreaState["source"]) ?? null,
+  decidedBy: r.decidedBy,
+  updatedAt: r.updatedAt.toISOString(),
+});
+
+/** The system as it stands: always the eight areas, the ones never written come back empty. */
+export async function getSystem(organizationId: string, projectId: string): Promise<ProjectSystem> {
+  const [[head], rows] = await Promise.all([
+    db.select().from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId))).limit(1),
+    db.select().from(A).where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId))),
+  ]);
+  const base = emptySystem(projectId);
+  const byArea = new Map(rows.map((r) => [r.area, areaState(r)]));
+  const areas = base.areas.map((a) => byArea.get(a.area) ?? a);
+  const latest = [head?.updatedAt, ...rows.map((r) => r.updatedAt)].filter((d): d is Date => !!d).sort((a, b) => b.getTime() - a.getTime())[0];
+  return {
+    projectId,
+    summary: head?.summary ?? "",
+    areas,
+    run: (head?.runJson as SystemRun | null) ?? null,
+    updatedAt: latest?.toISOString() ?? null,
+  };
+}
+
+/** The systems of every project in the workspace, for the sidebar (how full each one is). */
+export async function loadSystems(organizationId: string): Promise<Record<string, ProjectSystem>> {
+  const ids = (await db.select({ id: P.id }).from(P).where(eq(P.organizationId, organizationId))).map((r) => r.id);
+  if (!ids.length) return {};
+  const [heads, rows] = await Promise.all([
+    db.select().from(S).where(and(eq(S.organizationId, organizationId), inArray(S.projectId, ids))),
+    db.select().from(A).where(and(eq(A.organizationId, organizationId), inArray(A.projectId, ids))),
+  ]);
+  const out: Record<string, ProjectSystem> = {};
+  for (const id of ids) out[id] = emptySystem(id);
+  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
+  for (const r of rows) {
+    const sys = out[r.projectId];
+    const i = SYSTEM_AREAS.indexOf(r.area as SystemArea);
+    if (i >= 0) sys.areas[i] = areaState(r);
+    if (!sys.updatedAt || r.updatedAt.toISOString() > sys.updatedAt) sys.updatedAt = r.updatedAt.toISOString();
+  }
+  return out;
+}
+
+// ─── Write (the team) ────────────────────────────────────────────────────────
+
+async function ensureHead(organizationId: string, projectId: string, now: Date): Promise<void> {
+  await db.insert(S).values({ projectId, organizationId, summary: "", runJson: null, createdAt: now, updatedAt: now }).onConflictDoNothing();
+}
+
+async function writeArea(organizationId: string, projectId: string, next: Omit<SystemAreaState, "updatedAt">, author: { id: string | null; name: string }, now: Date): Promise<void> {
+  await db.insert(A).values({
+    projectId, organizationId, area: next.area, decision: next.decision, confidence: next.confidence, evidence: next.evidence,
+    source: next.source, decidedBy: next.decidedBy, updatedAt: now,
+  }).onConflictDoUpdate({
+    target: [A.projectId, A.area],
+    set: { decision: next.decision, confidence: next.confidence, evidence: next.evidence, source: next.source, decidedBy: next.decidedBy, updatedAt: now },
+  });
+  if (next.source) {
+    await db.insert(R).values({
+      id: newId(), projectId, organizationId, area: next.area, decision: next.decision, confidence: next.confidence, evidence: next.evidence,
+      source: next.source, authorId: author.id, authorName: author.name, createdAt: now,
+    });
+  }
+}
+
+const cleanArea = async (area: string): Promise<SystemArea> => {
+  if (!AREA_SET.has(area)) throw new HttpError(400, (await getErrors()).badBody);
+  return area as SystemArea;
+};
+
+/**
+ * A person writes the decision of an area (or confirms the model's as it is). From here on, runs
+ * leave this area alone. An empty decision empties the area: nothing decided, open to the board.
+ */
+export async function decideArea(organizationId: string, projectId: string, areaKey: string, input: { decision: string; confidence?: number }, author: { id: string; name: string }): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const decision = String(input.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+  const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  if (!decision) {
+    await writeArea(organizationId, projectId, { area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null }, { id: author.id, name: author.name }, now);
+  } else {
+    const confidence = typeof input.confidence === "number" && Number.isFinite(input.confidence) ? Math.max(0, Math.min(100, Math.round(input.confidence))) : Math.max(current.confidence, 80);
+    // A confirmed proposal keeps the references that led to it; a rewritten one keeps them too, they still back it
+    await writeArea(organizationId, projectId, { area, decision, confidence, evidence: current.evidence, source: "team", decidedBy: author.id }, { id: author.id, name: author.name }, now);
+  }
+  return getSystem(organizationId, projectId);
+}
+
+/** The team hands an area back to the board: its text stays, but the next run may change it. */
+export async function releaseArea(organizationId: string, projectId: string, areaKey: string, author: { id: string; name: string }): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
+  if (current.source !== "team") return getSystem(organizationId, projectId);
+  const now = new Date();
+  await db.update(A).set({ source: current.decision ? "model" : null, decidedBy: null, updatedAt: now })
+    .where(and(eq(A.projectId, projectId), eq(A.area, area)));
+  void author;
+  return getSystem(organizationId, projectId);
+}
+
+// ─── The board, as the model reads it ────────────────────────────────────────
+
+interface BoardRef {
+  code: string;
+  itemId: string;
+  words: string[];
+  ref: Record<string, unknown>;
+}
+
+/**
+ * Everything known about each reference, the team's words first. The stamp fingerprints the words,
+ * so a new note or comment reads as a stale run even when no reference was added.
+ */
+async function loadBoard(organizationId: string, projectId: string): Promise<{ refs: BoardRef[]; stamp: string }> {
+  const rows = await db.select({ row: T, at: PI.createdAt }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
+    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
+  const board = rows.slice(0, MAX_BOARD);
+  const ids = board.map(({ row }) => row.id);
+  const threads = ids.length
+    ? await db.select({ itemId: C.itemId, author: C.authorName, body: C.body }).from(C)
+        .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, ids))).orderBy(C.createdAt)
+    : [];
+  const byItem = new Map<string, string[]>();
+  for (const c of threads) byItem.set(c.itemId, [...(byItem.get(c.itemId) ?? []), `${c.author}: ${c.body.trim().slice(0, 300)}`]);
+
+  // DESIGN.md sheets and "why it's here", only the ones that exist; never generated here
+  const index = await getDesignMdIndex();
+  const sheets = await Promise.all(board.map(async ({ row }) => {
+    if (mediaKindOf(row.web) !== "web" || !(row.web in index || webKeyOf(row.web) in index)) return { brief: null, layout: null, why: null };
+    const [entry, why] = await Promise.all([getDesignMd(row.web), getWhy(organizationId, row.web)]);
+    const b = entry?.spec?.brief;
+    const brief = b ? Object.fromEntries(BRIEF_KEYS.filter((k) => k !== "framework" && b[k]).map((k) => [k, b[k]])) as Partial<DesignBrief> : null;
+    return { brief, layout: entry?.spec?.layout ?? null, why: (why?.why as DesignWhy | undefined) ?? null };
+  }));
+
+  const refs: BoardRef[] = board.map(({ row }, i) => {
+    const item = rowToItem(row);
+    const comments = (byItem.get(row.id) ?? []).slice(-COMMENTS_PER_REF);
+    const { brief, layout, why } = sheets[i];
+    const pointed = why?.highlights?.map((h) => ({ quote: h.quote, by: h.author, values: h.values?.length ? h.values : undefined, take: h.note || undefined })) ?? [];
+    const base = summarize(item, row.tagsJson ?? undefined);
+    return {
+      code: `r${i + 1}`,
+      itemId: row.id,
+      words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
+      ref: {
+        id: `r${i + 1}`, kind: mediaKindOf(row.web), ...base,
+        team_comments: comments.length ? comments : undefined,
+        team_pointed_at: pointed.length ? pointed : undefined,
+        measured: brief || layout ? { ...brief, layout: layout ?? undefined } : undefined,
+      },
+    };
+  });
+  const stamp = createHash("sha1").update(JSON.stringify({ ids, w: refs.map((r) => r.words), m: SYSTEM_MODEL, v: PROMPT_VERSION })).digest("hex").slice(0, 20);
+  return { refs, stamp };
+}
+
+/** The current board's stamp, so the client can tell a stale run without running */
+export async function boardStamp(organizationId: string, projectId: string): Promise<{ stamp: string; itemIds: string[] }> {
+  const { refs, stamp } = await loadBoard(organizationId, projectId);
+  return { stamp, itemIds: refs.map((r) => r.itemId) };
+}
+
+function briefForModel(b: PolishBrief | null | undefined) {
+  if (!b) return null;
+  return { about: b.about || null, audience_note: b.audienceNote || null, tone: b.tone.length ? b.tone : null, avoid: b.avoid || null, first_five_seconds: b.firstSeconds || null };
+}
+
+// ─── The run ─────────────────────────────────────────────────────────────────
+
+const SYSTEM = `A design team keeps a board of references for one project: websites, images and posts they saved, each with the note of whoever saved it, the team's comments, what the team pointed at on it, and (for websites) a brief measured from the live page. From this board you build the PROJECT'S SYSTEM: what the project has decided about its own design, in eight areas: typography, color, layout, motion, iconography, logo, imagery, voice (tone of the copy).
+
+The system is alive and starts empty. Your job is to fill only what the board supports, and to say how far it supports it.
+
+Rules:
+- The team's words come first. A note, a comment or a thing they pointed at says WHY a reference is here: that is the decision's root. The measured brief says WHAT the reference does: use it to make the decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
+- A decision is an instruction an agent can execute for THIS project, in 1 to 3 sentences (max 60 words): concrete values when the evidence has them, the principle when it does not. Write what the project will do, not what the references do ("Headlines in a high-contrast serif at 400, body in a geist-like grotesque", not "r1 uses a serif").
+- An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
+- confidence is 0-100: how many references agree, how concrete and how explicit the evidence is. One passing mention is 25-40; two or three references that agree with concrete values is 60-80; the team saying it in so many words plus measured values is 85+.
+- evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
+- You receive the SYSTEM AS IT STANDS. Areas marked "team" were decided by a person: they are facts about the project, keep every other area coherent with them and return them unchanged (same text). Areas marked "model" are your previous proposals: keep what the board still supports, change what new evidence changes, do not rephrase for the sake of it.
+- The summary is the project's criterio in one paragraph (max 90 words): what it is, who it speaks to, the few decisions that define its look. Written so that an agent that reads only this paragraph would already design in the right direction. Empty string if the board is empty.
+- No markdown, no dashes as punctuation, no counts of references in the text. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
+
+const LANGUAGE: Record<Locale, string> = {
+  en: "Write decisions, takes and the summary in English.",
+  es: "Write decisions, takes and the summary in Castilian Spanish (Spain), natural and direct.",
+};
+
+const OutSchema = z.object({
+  summary: z.string(),
+  areas: z.array(z.object({
+    area: z.enum(SYSTEM_AREAS),
+    decision: z.string(),
+    confidence: z.number().int().min(0).max(100),
+    evidence: z.array(z.object({ ref: z.string(), take: z.string() })),
+  })),
+});
+
+// One run per project at a time: two tabs must not pay twice for the same board
+const inflight = new Map<string, Promise<ProjectSystem>>();
+
+/**
+ * Reads the board and writes the system: the model's proposal for every area the team has not
+ * decided, the summary and the run. Always costs (little): the client asks when the run is stale.
+ */
+export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; locale?: Locale }): Promise<ProjectSystem> {
+  const key = `${input.organizationId}|${input.projectId}`;
+  const running = inflight.get(key);
+  if (running) return running;
+  const job = (async () => {
+    const project = await projectRow(input.organizationId, input.projectId);
+    const [{ refs, stamp }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+    if (!refs.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
+
+    const codes = new Map(refs.map((r) => [r.code, r.itemId]));
+    const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
+    const standing = current.areas.map((a) => ({
+      area: a.area,
+      status: a.source ?? "empty",
+      decision: a.decision || undefined,
+      confidence: a.decision ? a.confidence : undefined,
+      evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) : undefined,
+    }));
+    const text = [
+      `Project: ${project.name}`,
+      `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+      `System as it stands (JSON): ${JSON.stringify(standing)}`,
+      `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
+    ].join("\n\n");
+
+    let res: Awaited<ReturnType<typeof llm>>;
+    try {
+      res = await llm({
+        model: SYSTEM_MODEL,
+        system: `${SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,
+        text,
+        schema: OutSchema,
+        // Reasoning counts against the budget: room for it, the answer itself is short
+        maxTokens: 16000,
+        effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
+      });
+    } catch (err) {
+      if (!(err instanceof LlmError) || !err.finishReason) throw err;
+      throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+    }
+    void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId}` });
+    const out = OutSchema.parse(JSON.parse(res.text));
+    console.log(`system ${input.projectId}: ${refs.length} refs → ${out.areas.filter((a) => a.decision.trim()).length} areas filled, ${res.usage.input}+${res.usage.output} tokens, ${res.ms} ms, ${res.costUsd ?? "?"} USD`);
+
+    const now = new Date();
+    await ensureHead(input.organizationId, input.projectId, now);
+    const run: SystemRun = { itemIds: refs.map((r) => r.itemId), stamp, model: res.model, at: now.toISOString() };
+    await db.update(S).set({ summary: out.summary.trim().slice(0, 1200), runJson: run, updatedAt: now })
+      .where(and(eq(S.organizationId, input.organizationId), eq(S.projectId, input.projectId)));
+
+    const byArea = new Map(out.areas.map((a) => [a.area, a]));
+    for (const cur of current.areas) {
+      if (cur.source === "team") continue;  // the team's word stands
+      const got = byArea.get(cur.area);
+      const decision = (got?.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+      // Back to item ids; an invented code or a repeated reference is dropped
+      const seen = new Set<string>();
+      const evidence: SystemEvidence[] = [];
+      for (const e of got?.evidence ?? []) {
+        const itemId = codes.get(e.ref);
+        if (!itemId || seen.has(itemId)) continue;
+        seen.add(itemId);
+        evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
+      }
+      const next: Omit<SystemAreaState, "updatedAt"> = decision
+        ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null }
+        : { area: cur.area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null };
+      const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence);
+      if (same && (cur.decision || cur.updatedAt !== emptySystem(input.projectId).areas[0].updatedAt)) continue;
+      await writeArea(input.organizationId, input.projectId, next, { id: null, name: res.model }, now);
+    }
+    return getSystem(input.organizationId, input.projectId);
+  })();
+  inflight.set(key, job);
+  job.finally(() => inflight.delete(key)).catch(() => {});
+  return job;
+}

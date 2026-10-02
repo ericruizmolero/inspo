@@ -38,5 +38,6 @@ export const labels = {
     auto_tag: "Inspos tagged",
     query_en: "Searches translated",
     embed: "Search by meaning",
+    system: "Systems built",
   },
 };
