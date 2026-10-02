@@ -10,12 +10,19 @@ import { newId } from "./workspace-core";
 import { llm } from "./llm";
 import { DesignWhySchema, type DesignSpec, type DesignWhy } from "@/types/design";
 import type { ProbeReport } from "./design-probe";
+import { voiceText } from "./comment-context";
 import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 
 // Vision + judgment over a finished spec. Haiku padded every answer with prose; Sonnet keeps to values (a few cents).
 export const DESIGN_WHY_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
 
-export interface Voice { author: string; body: string; at: string; kind: "note" | "comment" }
+export interface Voice {
+  author: string; body: string; at: string; kind: "note" | "comment";
+  /** A pinned comment's place on the page, in words (lib/comment-context.ts) */
+  place?: string;
+  /** The replies under a comment, oldest first */
+  replies?: { author: string; body: string }[];
+}
 
 const SYSTEM = `A design team keeps a library of reference websites. For each site they have a DESIGN.md: a structured spec measured from the live page (colors, type, spacing, components, motion). What the spec cannot know is WHY the team saved the site. That is in the words of whoever saved it (the note) and in the comments of the thread.
 
@@ -34,7 +41,7 @@ Rules:
 
 export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 11 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body, v.place ?? "", (v.replies ?? []).map((r) => [r.author, r.body])]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 12 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {
@@ -62,7 +69,7 @@ const LANGUAGE: Record<Locale, string> = {
 };
 
 export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; locale?: Locale; signal?: AbortSignal }): Promise<BuildResult> {
-  const voices = input.voices.map((v, i) => `${i + 1}. [${v.kind === "note" ? "note of whoever saved it" : "comment"}] ${v.author} (${v.at.slice(0, 10)}): """${v.body}"""`).join("\n");
+  const voices = input.voices.map((v, i) => `${i + 1}. [${v.kind === "note" ? "note of whoever saved it" : "comment"}] (${v.at.slice(0, 10)}) ${voiceText(v)}`).join("\n");
   const res = await llm({
     model: DESIGN_WHY_MODEL,
     system: `${SYSTEM}\n\nLanguage: ${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,

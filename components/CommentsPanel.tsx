@@ -13,8 +13,9 @@ import { mediaKindOf } from "@/lib/url";
 import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
 
-// Side panel for an inspo's comments, like a Figma pin thread:
-// the original note from whoever saved it opens the thread and any member replies below.
+// Side panel for an inspo's comments. The original note from whoever saved it opens the list; then each
+// comment as a thread, oldest first: pinned ones (post-its on the page) carry their number and a way to the
+// pin, the rest are about the whole reference. Any member can reply under any comment, one level deep.
 // Screenshots are pasted (⌘V), dragged onto the panel or attached with the clip; they upload
 // as soon as they're dropped and travel with the comment as a list of URLs.
 
@@ -35,7 +36,10 @@ interface CommentsPanelProps {
   onDelete: (id: string) => Promise<void>;
   /** Rewrites the original note or sub-note. Without it, the note is read-only. */
   onEditNote?: (field: "note" | "subNote", text: string) => Promise<void>;
-  onClose: () => void;
+  /** Without it (the reference sheet, where the conversation is a card) there is no close button */
+  onClose?: () => void;
+  /** The reference's picture, video or post above the comments; off where the page has its own card */
+  showMedia?: boolean;
   /**
    * `drawer` (default): fixed side panel with a dark backdrop, closes with Escape.
    * `column`: column embedded in the DESIGN.md sheet; no backdrop, no Escape
@@ -46,6 +50,14 @@ interface CommentsPanelProps {
   onPostThumb?: (thumb: string) => void;
   /** This site's DESIGN.md status, for the "generate the MD to get the full sheet" notice */
   designMd?: { status: "none" | "loading" | "ready"; onGenerate: () => void; onOpen: () => void };
+  /** Answers a comment. Without it, threads are read-only */
+  onReply?: (parentId: string, body: string) => Promise<void>;
+  /** Each pinned comment's number, the one on its post-it */
+  pins?: Record<string, number>;
+  /** The comment to bring into view (its post-it was opened on the page) */
+  focusId?: string | null;
+  /** Shows a pinned comment's post-it on the page */
+  onFocus?: (id: string) => void;
 }
 
 const IcX = (
@@ -132,7 +144,12 @@ interface Msg {
   deletable?: boolean;
   /** Original note or sub-note this person may rewrite */
   editable?: boolean;
+  /** A pinned comment's number (its post-it on the page) */
+  pin?: number;
 }
+
+/** A comment and the replies under it */
+interface Thread { head: Msg; replies: Msg[] }
 
 // Links inside the comment: http(s):// and www. are detected and rendered as hyperlinks
 // with a short domain (no protocol or trailing slash) so they don't break the panel width.
@@ -193,7 +210,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onEditNote, onClose, variant = "drawer", designMd, onPostThumb }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onEditNote, onClose, showMedia = true, variant = "drawer", designMd, onPostThumb, onReply, pins = {}, focusId, onFocus }: CommentsPanelProps) {
   const { locale, t } = useT();
   const column = variant === "column";
   const [draft, setDraft] = useState("");
@@ -215,6 +232,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   const [editError, setEditError] = useState<string | null>(null);
   const editingRef = useRef(editing);
   editingRef.current = editing;
+  // The reply being written, under which comment
+  const [replying, setReplying] = useState<{ id: string; text: string; sending: boolean; error?: string } | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -226,7 +245,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         return;
       }
       // Escape inside the note editor cancels the edit, it doesn't close the panel
-      if (e.key === "Escape" && !column && !editingRef.current) onClose();
+      if (e.key === "Escape" && !column && !editingRef.current) onClose?.();
     };
     document.addEventListener("keydown", onKey);
     const t = setInterval(() => setNow(Date.now()), 30000);
@@ -235,7 +254,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
 
   // In column mode focus isn't stolen: the sheet beside it is what's being read
   useEffect(() => { if (!column) textareaRef.current?.focus(); }, [item.id, column]);
-  useEffect(() => { setEditing(null); setEditError(null); }, [item.id]);
+  useEffect(() => { setEditing(null); setEditError(null); setReplying(null); }, [item.id]);
 
   // On inspo change or close, release the local previews
   const pendingRef = useRef(pending);
@@ -284,29 +303,68 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     textareaRef.current?.focus();
   };
 
-  const msgs = useMemo<Msg[]>(() => {
-    const out: Msg[] = [];
+  // The note that opens the list, then each comment as a thread with its replies under it
+  const { originals, threads } = useMemo(() => {
+    const originals: Msg[] = [];
     const author = item.addedBy || t.comments.noAuthor;
     const mine = author === user.name;
     const editable = !!onEditNote && (mine || canManage);
     if (item.note) {
-      out.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
+      originals.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
     }
     if (item.subNote) {
-      out.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
+      originals.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
     }
-    for (const c of comments) {
+    const toMsg = (c: InspoComment): Msg => {
       const own = c.authorId === user.id;
-      out.push({ id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage });
+      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage, pin: pins[c.id] };
+    };
+    const ids = new Set(comments.map((c) => c.id));
+    const threads: Thread[] = [];
+    const byId = new Map<string, Thread>();
+    // A reply whose comment is gone stands on its own rather than vanishing
+    for (const c of comments) {
+      if (c.parentId && ids.has(c.parentId)) continue;
+      const th = { head: toMsg(c), replies: [] };
+      threads.push(th); byId.set(c.id, th);
     }
-    return out;
-  }, [item, comments, user, canManage, memberImages, onEditNote]);
+    for (const c of comments) if (c.parentId && ids.has(c.parentId)) byId.get(c.parentId)?.replies.push(toMsg(c));
+    return { originals, threads };
+  }, [item, comments, user, canManage, memberImages, onEditNote, pins]);
+  const total = originals.length + threads.reduce((n, th) => n + 1 + th.replies.length, 0);
 
-  // On open or when a new message arrives, scroll to the end of the thread
+  // On open or when a new message arrives, scroll to the end of the list
   useEffect(() => {
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [msgs.length, item.id]);
+  }, [total, item.id]);
+
+  // A post-it opened on the page brings its thread into view
+  useEffect(() => {
+    if (!focusId) return;
+    const el = listRef.current?.querySelector<HTMLElement>(`[data-thread="${CSS.escape(focusId)}"]`);
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
+  }, [focusId]);
+
+  // When the reply field closes, the keyboard goes back to its thread's Reply button, not to the top of the page
+  const closeReply = (id: string) => {
+    setReplying(null);
+    requestAnimationFrame(() => listRef.current?.querySelector<HTMLElement>(`[data-reply-for="${CSS.escape(id)}"]`)?.focus());
+  };
+
+  const sendReply = async () => {
+    if (!replying || !onReply || replying.sending) return;
+    const body = replying.text.trim();
+    if (!body) return;
+    setReplying({ ...replying, sending: true, error: undefined });
+    try {
+      await onReply(replying.id, body);
+      closeReply(replying.id);
+    } catch (e) {
+      setReplying((r) => r && { ...r, sending: false, error: e instanceof Error ? e.message : t.comments.sendFailed });
+    }
+  };
 
   const uploading = pending.some((p) => p.status === "uploading");
   const ready = pending.filter((p): p is Pending & { url: string } => p.status === "ready" && !!p.url);
@@ -357,11 +415,80 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   const kind = mediaKindOf(item.web);
   const href = kind === "image" && image ? image : item.web;
   const domain = kind === "image" ? t.card.openImage : (() => { try { return new URL(item.web).hostname.replace(/^www\./, ""); } catch { return ""; } })();
-  const replies = comments.length;
+  const count = comments.length;
+
+  const renderMsg = (m: Msg, grouped: boolean) => (
+    <div key={m.id} className={`cm-msg${m.mine ? " is-mine" : ""}${m.original ? " is-original" : ""}${grouped ? " is-grouped" : ""}`}>
+      {!grouped && (
+        <div className="cm-msg__head">
+          <Avatar name={m.name} image={m.image} />
+          <span className="cm-msg__name">{m.name}{m.mine && <span className="cm-msg__you">{t.comments.you}</span>}</span>
+          {m.original && <span className="cm-msg__tag">{m.id === "sub" ? t.comments.subComment : t.comments.originalNote}</span>}
+          {m.pin !== undefined && (
+            <button type="button" className="cm-pin" onClick={() => onFocus?.(m.id)} disabled={!onFocus} aria-label={t.comments.showOnPage(m.pin)} title={t.comments.showOnPage(m.pin)}>
+              <span className="cm-pin__n">{m.pin}</span>{t.comments.postIt}
+            </button>
+          )}
+          <span className="cm-msg__time" title={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
+        </div>
+      )}
+      <div className="cm-msg__row">
+        <div className="cm-msg__content">
+          {editing?.id === m.id ? (
+            <div className="cm-edit">
+              <textarea
+                className="input cm-edit__input"
+                value={editing.text}
+                rows={Math.min(8, Math.max(2, editing.text.split("\n").length + 1))}
+                autoFocus
+                onFocus={(e) => { const l = e.currentTarget.value.length; e.currentTarget.setSelectionRange(l, l); }}
+                onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); saveEdit(); }
+                  if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
+                }}
+              />
+              <div className="cm-edit__foot">
+                {editError
+                  ? <span className="cm-composer__error">{editError}</span>
+                  : <span className="cm-composer__hint">{t.comments.editHint}</span>}
+                <Button variant="ghost" size="sm" type="button" onClick={cancelEdit} disabled={savingEdit}>{t.comments.cancelEdit}</Button>
+                <Button variant="primary" size="sm" type="button" onClick={saveEdit} disabled={savingEdit}>
+                  {savingEdit ? <span className="spinner spinner--sm" /> : t.comments.saveEdit}
+                </Button>
+              </div>
+            </div>
+          ) : m.body && <p className="cm-msg__body">{renderBody(m.body)}</p>}
+          {m.attachments.length > 0 && (
+            <div className={`cm-atts cm-atts--${Math.min(m.attachments.length, 3)}`}>
+              {m.attachments.map((a, j) => (
+                <button
+                  key={a.url}
+                  type="button"
+                  className="cm-att"
+                  style={m.attachments.length === 1 && a.w && a.h ? { aspectRatio: `${a.w} / ${a.h}` } : undefined}
+                  title={a.name ?? t.comments.seeScreenshot}
+                  onClick={() => setLightbox({ list: m.attachments, idx: j })}
+                >
+                  <img src={a.url} alt={a.name ?? t.comments.screenshot} loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        {m.editable && editing?.id !== m.id && (
+          <button className="cm-msg__edit" title={t.comments.editNote} aria-label={t.comments.editNote} onClick={() => { setEditError(null); setEditing({ id: m.id, text: m.body }); }}>{IcEdit}</button>
+        )}
+        {m.deletable && (
+          <button className="cm-msg__del" title={t.comments.deleteComment} aria-label={t.comments.deleteComment} onClick={() => onDelete(m.id)}>{IcTrash}</button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
-      {!column && <div className="cm-backdrop" onClick={onClose} />}
+      {!column && <div className="cm-backdrop" onClick={() => onClose?.()} />}
       <aside
         className={`cm-panel${column ? " cm-panel--column" : ""}${dragging ? " is-dragging" : ""}`}
         role="dialog"
@@ -384,8 +511,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             <span className="display">{column ? t.comments.title : item.name}</span>
             {!column && <a className="cm-panel__link" href={href} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
           </div>
-          <span className="cm-panel__count">{replies === 0 ? t.comments.noReplies : t.comments.replies(replies)}</span>
-          <Button variant="icon" onClick={onClose} aria-label={column ? t.comments.hide : t.common.close}>{IcX}</Button>
+          <span className="cm-panel__count">{count === 0 ? t.comments.noComments : t.comments.count(count)}</span>
+          {onClose && <Button variant="icon" onClick={onClose} aria-label={column ? t.comments.hide : t.common.close}>{IcX}</Button>}
         </header>
 
         {designMd && !column && (
@@ -404,7 +531,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         )}
 
         <div ref={listRef} className="cm-list">
-          {kind === "post" ? (
+          {!showMedia ? null : kind === "post" ? (
             <PostView web={item.web} onThumb={onPostThumb} />
           ) : kind === "video" ? (
             <VideoPlayer web={item.web} title={item.name} />
@@ -418,7 +545,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               <img src={image} alt="" loading="lazy" />
             </a>
           )}
-          {msgs.length === 0 && (
+          {originals.length === 0 && threads.length === 0 && (
             <div className="cm-empty">
               <div className="cm-empty__ghosts" aria-hidden>
                 {ghosts.map((g, i) => (
@@ -444,73 +571,47 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               </div>
             </div>
           )}
-          {msgs.map((m, i) => {
-            const prev = msgs[i - 1];
-            const grouped = prev && prev.name === m.name && prev.original === m.original && Math.abs(Date.parse(prev.at) - Date.parse(m.at)) < 5 * 60000;
-            return (
-              <div key={m.id} className={`cm-msg${m.mine ? " is-mine" : ""}${m.original ? " is-original" : ""}${grouped ? " is-grouped" : ""}`}>
-                {!grouped && (
-                  <div className="cm-msg__head">
-                    <Avatar name={m.name} image={m.image} />
-                    <span className="cm-msg__name">{m.name}{m.mine && <span className="cm-msg__you">{t.comments.you}</span>}</span>
-                    {m.original && <span className="cm-msg__tag">{m.id === "sub" ? t.comments.subComment : t.comments.originalNote}</span>}
-                    <span className="cm-msg__time" title={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
+          {originals.map((m, i) => renderMsg(m, !!originals[i - 1] && originals[i - 1].name === m.name && Math.abs(Date.parse(originals[i - 1].at) - Date.parse(m.at)) < 5 * 60000))}
+          {threads.map(({ head, replies }) => (
+            // A post-it's thread wears the post-it's colour from its comment down to its last reply
+            <div key={head.id} data-thread={head.id} className={`cm-thread${head.pin !== undefined ? " is-pinned" : ""}${focusId === head.id ? " is-focus" : ""}`}>
+              {renderMsg(head, false)}
+              {replies.length > 0 && <div className="cm-replies">{replies.map((r, i) => renderMsg(r, !!replies[i - 1] && replies[i - 1].name === r.name && Math.abs(Date.parse(replies[i - 1].at) - Date.parse(r.at)) < 5 * 60000))}</div>}
+              {onReply && (replying?.id === head.id ? (
+                <form className="cm-reply" onSubmit={(e) => { e.preventDefault(); sendReply(); }}>
+                  <Avatar name={user.name || user.email} image={user.image} size={20} />
+                  <div className="cm-reply__box">
+                    <textarea
+                      className="input cm-reply__input"
+                      autoFocus
+                      rows={Math.min(6, Math.max(1, replying.text.split("\n").length))}
+                      value={replying.text}
+                      disabled={replying.sending}
+                      placeholder={t.comments.reply}
+                      aria-label={t.comments.reply}
+                      onChange={(e) => setReplying({ ...replying, text: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
+                        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeReply(head.id); }
+                      }}
+                      onBlur={() => { if (!replying.text.trim()) setReplying(null); }}
+                    />
+                    {replying.error && <span className="cm-composer__error">{replying.error}</span>}
                   </div>
-                )}
-                <div className="cm-msg__row">
-                  <div className="cm-msg__content">
-                    {editing?.id === m.id ? (
-                      <div className="cm-edit">
-                        <textarea
-                          className="input cm-edit__input"
-                          value={editing.text}
-                          rows={Math.min(8, Math.max(2, editing.text.split("\n").length + 1))}
-                          autoFocus
-                          onFocus={(e) => { const l = e.currentTarget.value.length; e.currentTarget.setSelectionRange(l, l); }}
-                          onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
-                          onKeyDown={(e) => {
-                            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); saveEdit(); }
-                            if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
-                          }}
-                        />
-                        <div className="cm-edit__foot">
-                          {editError
-                            ? <span className="cm-composer__error">{editError}</span>
-                            : <span className="cm-composer__hint">{t.comments.editHint}</span>}
-                          <Button variant="ghost" size="sm" type="button" onClick={cancelEdit} disabled={savingEdit}>{t.comments.cancelEdit}</Button>
-                          <Button variant="primary" size="sm" type="button" onClick={saveEdit} disabled={savingEdit}>
-                            {savingEdit ? <span className="spinner spinner--sm" /> : t.comments.saveEdit}
-                          </Button>
-                        </div>
-                      </div>
-                    ) : m.body && <p className="cm-msg__body">{renderBody(m.body)}</p>}
-                    {m.attachments.length > 0 && (
-                      <div className={`cm-atts cm-atts--${Math.min(m.attachments.length, 3)}`}>
-                        {m.attachments.map((a, j) => (
-                          <button
-                            key={a.url}
-                            type="button"
-                            className="cm-att"
-                            style={m.attachments.length === 1 && a.w && a.h ? { aspectRatio: `${a.w} / ${a.h}` } : undefined}
-                            title={a.name ?? t.comments.seeScreenshot}
-                            onClick={() => setLightbox({ list: m.attachments, idx: j })}
-                          >
-                            <img src={a.url} alt={a.name ?? t.comments.screenshot} loading="lazy" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {m.editable && editing?.id !== m.id && (
-                    <button className="cm-msg__edit" title={t.comments.editNote} aria-label={t.comments.editNote} onClick={() => { setEditError(null); setEditing({ id: m.id, text: m.body }); }}>{IcEdit}</button>
-                  )}
-                  {m.deletable && (
-                    <button className="cm-msg__del" title={t.comments.deleteComment} onClick={() => onDelete(m.id)}>{IcTrash}</button>
-                  )}
+                  <Button variant="primary" size="sm" type="submit" onMouseDown={(e) => e.preventDefault()} disabled={replying.sending || !replying.text.trim()}>
+                    {replying.sending ? <span className="spinner spinner--sm" /> : t.comments.send}
+                  </Button>
+                </form>
+              ) : (
+                <div className="cm-thread__foot">
+                  <button type="button" className="cm-reply-btn" data-reply-for={head.id} onClick={() => setReplying({ id: head.id, text: "", sending: false })}>
+                    {t.comments.replyTo}
+                  </button>
+                  {replies.length > 0 && <span className="cm-thread__count">{t.comments.replies(replies.length)}</span>}
                 </div>
-              </div>
-            );
-          })}
+              ))}
+            </div>
+          ))}
         </div>
 
         <form className="cm-composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
@@ -521,7 +622,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               className="input cm-composer__input"
               rows={2}
               value={draft}
-              placeholder={replies === 0 && !item.note ? t.comments.firstComment : t.comments.reply}
+              placeholder={count === 0 && !item.note ? t.comments.firstComment : t.comments.addComment}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); submit(); } }}
             />

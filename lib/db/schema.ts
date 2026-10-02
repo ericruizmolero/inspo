@@ -3,7 +3,7 @@
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { PolishState } from "@/types/polish";
 
@@ -269,9 +269,10 @@ export const designWhy = pgTable("design_why", {
 ]);
 
 // ─── Comments per inspo ──────────────────────────────────────────────────────
-// Flat thread per item (like a Figma pin thread). The item's original note
-// (comments/subcomments) stays in inspo_item and renders as the first message
-// of the thread; replies from any member go here.
+// One kind of thing: a comment on a reference. Pinned (anchor set) it is a post-it at a place on the page;
+// without an anchor it is about the whole reference. Either can have replies, one level deep (a reply has
+// a parent_id, no anchor and no replies of its own). The item's original note stays in inspo_item and
+// opens the list.
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
 
@@ -285,9 +286,11 @@ export const inspoComment = pgTable("inspo_comment", {
   body: text("body").notNull(),
   /** Attached screenshots: JSON `[{ url, w, h, name }]` (private Blob URLs, or /public paths locally) */
   attachments: jsonb("attachments").$type<CommentAttachmentRow[]>().notNull().default([]),
+  /** The comment this one answers. Null: a comment of its own (pinned or about the whole reference) */
+  parentId: text("parent_id").references((): AnyPgColumn => inspoComment.id, { onDelete: "cascade" }),
   /** A post-it pinned on the page: x and y as 0..1 of the image box, and the page height (in 1440px-wide
    *  pixels) when it was pinned, so the pin keeps its place if a new capture changes the page's height.
-   *  All three null: a plain reply in the thread. */
+   *  All three null: a comment about the whole reference, or a reply. */
   anchorX: real("anchor_x"),
   anchorY: real("anchor_y"),
   anchorH: integer("anchor_h"),
@@ -299,6 +302,9 @@ export const inspoComment = pgTable("inspo_comment", {
   // Deleting an item cascades here by item_id alone, which the index above cannot serve
   index("inspo_comment_item_id_idx").on(t.itemId),
   index("inspo_comment_author_id_idx").on(t.authorId),
+  // A reply sits under its comment, never on the page
+  check("inspo_comment_reply_check", sql`${t.parentId} is null or ${t.anchorX} is null`),
+  index("inspo_comment_parent_id_idx").on(t.parentId),
 ]);
 
 // ─── AI usage ────────────────────────────────────────────────────────────────

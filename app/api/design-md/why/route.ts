@@ -3,6 +3,7 @@ import { normalizeWebUrl } from "@/lib/url";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { listItemComments } from "@/lib/comments";
+import { threadsOf } from "@/lib/comment-context";
 import { getDesignMd, getDesignScreenshot, saveWhyAsset } from "@/lib/design-store";
 import { latestRevision } from "@/lib/design-revise";
 import { getOrBuildWhy, type Voice } from "@/lib/design-why";
@@ -26,12 +27,19 @@ export async function GET(req: NextRequest) {
   const item = await findByWeb(ctx.workspace.id, url);
   if (!item) return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 403 });
 
-  // The voices: the saver's note first, then the thread (text only; a bare screenshot says nothing quotable)
+  // The voices: the saver's note first, then each comment with where it is pinned and its replies
   const voices: Voice[] = [];
   const note = (item.note ?? "").trim();
   if (note) voices.push({ author: item.author, body: note.slice(0, 1000), at: item.createdAt.toISOString(), kind: "note" });
   const comments = item.id ? await listItemComments(ctx.workspace.id, item.id) : [];
-  for (const c of comments) if (c.body.trim()) voices.push({ author: c.authorName, body: c.body.trim().slice(0, 1000), at: c.createdAt, kind: "comment" });
+  const threads = threadsOf(comments.map((c) => ({ id: c.id, parentId: c.parentId, author: c.authorName, body: c.body, at: c.createdAt, anchor: c.anchor })));
+  for (const t of threads) {
+    voices.push({
+      author: t.author, body: t.body.slice(0, 1000), at: t.at, kind: "comment",
+      ...(t.place ? { place: t.place } : {}),
+      ...(t.replies.length ? { replies: t.replies.map((r) => ({ author: r.author, body: r.body.slice(0, 1000) })) } : {}),
+    });
+  }
   if (!voices.length) return Response.json({ why: EMPTY, cached: true });
 
   const base = await getDesignMd(url);

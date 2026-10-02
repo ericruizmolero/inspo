@@ -57,6 +57,13 @@
       "when": 1790884507081,
       "tag": "0007_perf_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790944036688,
+      "tag": "0008_comment_replies",
+      "breakpoints": true
     }
   ]
 }

@@ -15,6 +15,7 @@ export const errors = {
   cannotRemoveSelf: "You cannot remove your own access",
   cardGone: "That card no longer exists",
   emptyComment: "The comment is empty",
+  replyGone: "The comment you replied to is gone",
   encodeFailed: "The image could not be encoded",
   fixedAccess: "That access is fixed and cannot be removed from here",
   generationStopped: "Generation stopped",

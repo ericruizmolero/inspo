@@ -116,10 +116,10 @@ export async function removeInspo(id: string) {
 }
 
 /** Attachments are uploaded first via /api/comments/upload; only their URLs arrive here.
- *  With an anchor it is a post-it pinned on the page. */
-export async function postComment(itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor) {
+ *  With an anchor it is a post-it pinned on the page; with a parent, a reply to that comment. */
+export async function postComment(itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor, parentId?: string) {
   return withCtx(async (ctx) => {
-    const comment = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments, anchor });
+    const comment = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments, anchor, parentId });
     // The thread is searchable
     if (comment.body.trim()) await reembed(String(itemId));
     return comment;

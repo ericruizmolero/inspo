@@ -119,8 +119,11 @@ export interface InspoComment {
   authorImage: string | null;
   body: string;
   attachments: CommentAttachment[];
-  /** A post-it pinned on the page (lib/db/schema.ts inspoComment); none: a plain reply */
+  /** Pinned at a place on the page: a post-it (lib/db/schema.ts inspoComment). None: about the whole
+   *  reference, or a reply */
   anchor?: CommentAnchor;
+  /** The comment this one answers (one level: a reply never has replies) */
+  parentId?: string;
   /** ISO */
   createdAt: string;
 }

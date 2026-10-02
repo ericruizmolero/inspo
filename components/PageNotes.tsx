@@ -1,8 +1,10 @@
 "use client";
 
-// The whole page, with the team's notes stuck on it like post-its. A click anywhere on the page
-// opens a blank one at that spot; it pins with ↵. Each note keeps its place as a fraction of the
-// page, plus the page height it was pinned on, so a new capture of a longer page doesn't move it.
+// The whole page, with the team's pinned comments stuck on it like post-its. A click anywhere on the page
+// opens a blank one at that spot; it pins with ↵. Each keeps its place as a fraction of the page, plus the
+// page height it was pinned on, so a new capture of a longer page doesn't move it. A post-it is a comment
+// like any other: it carries the number it has in the comments column, shows its latest replies and takes
+// new ones in place. The whole thread is also in the column.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { InspoComment, CommentAnchor } from "@/types/inspo";
@@ -28,19 +30,32 @@ function tiltOf(id: string) {
 /** Page height in 1440px-wide pixels: the unit a pin remembers */
 const at1440 = (img: HTMLImageElement) => Math.round((img.naturalHeight * 1440) / (img.naturalWidth || 1440));
 
-export default function PageNotes({ src, alt, host, dark, notes, user, canManage, onPin, onDelete }: {
+/** Replies shown on the paper; the rest wait in the comments column */
+const SHOWN_REPLIES = 3;
+
+export default function PageNotes({ src, alt, host, dark, notes, user, canManage, onPin, onDelete, pins = {}, replies = {}, focusId, onFocus, onReply }: {
   /** The page image, or null when there is no capture yet */
   src: string | null;
   alt: string;
   host: string;
   /** The site is dark: the window bar follows */
   dark?: boolean;
-  /** Only the notes pinned on the page; the rest of the thread lives in its own column */
+  /** Only the comments pinned on the page; all of them, with their replies, are in the comments column */
   notes: InspoComment[];
   user: SessionUser;
   canManage: boolean;
   onPin: (body: string, anchor: CommentAnchor) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  /** Each pinned comment's number, the same as in the comments column */
+  pins?: Record<string, number>;
+  /** Each one's replies, oldest first */
+  replies?: Record<string, InspoComment[]>;
+  /** The comment picked in the column: its post-it comes to the front and into view */
+  focusId?: string | null;
+  /** Opens a post-it's thread in the comments column */
+  onFocus?: (id: string) => void;
+  /** Answers a post-it from the paper itself */
+  onReply?: (parentId: string, body: string) => Promise<void>;
 }) {
   const { t, locale } = useT();
   const [pageH, setPageH] = useState<number | null>(null);
@@ -48,8 +63,19 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
   const [hidden, setHidden] = useState(false);
   const [draft, setDraft] = useState<{ x: number; y: number; text: string; sending: boolean; error?: string } | null>(null);
   const [front, setFront] = useState<string | null>(null);
+  // The reply being written on a post-it
+  const [reply, setReply] = useState<{ id: string; text: string; sending: boolean; error?: string } | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const pageRef = useRef<HTMLDivElement>(null);
+
+  // A comment picked in the column: its post-it comes to the front and into view
+  useEffect(() => {
+    if (!focusId) return;
+    setFront(focusId);
+    const el = pageRef.current?.querySelector<HTMLElement>(`[data-note="${CSS.escape(focusId)}"]`);
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el?.scrollIntoView({ block: "center", behavior: still ? "auto" : "smooth" });
+  }, [focusId]);
 
   // A new page (another item, or the real capture replacing the quick one): measure it again
   useEffect(() => {
@@ -74,6 +100,41 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
     setDraft({ x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)), text: "", sending: false });
   };
 
+  const sendReply = async () => {
+    if (!reply || !onReply || reply.sending) return;
+    const body = reply.text.trim();
+    if (!body) { setReply(null); return; }
+    setReply({ ...reply, sending: true, error: undefined });
+    try {
+      await onReply(reply.id, body);
+      closeReply(reply.id);
+    } catch (e) {
+      setReply((r) => r && { ...r, sending: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
+  // The keyboard's way to pin: a draft in the middle of the part of the page in view
+  const pinInView = () => {
+    const page = pageRef.current;
+    if (!page || !pageH || hidden) return;
+    const r = page.getBoundingClientRect();
+    const top = Math.max(r.top, 0), bottom = Math.min(r.bottom, window.innerHeight);
+    const y = r.height ? ((top + bottom) / 2 - r.top) / r.height : 0.5;
+    setDraft({ x: 0.5, y: Math.max(0, Math.min(1, y)), text: "", sending: false });
+  };
+
+  // When the draft closes (pinned or dropped), the keyboard goes back to "Pin a note"
+  const closeDraft = () => {
+    setDraft(null);
+    requestAnimationFrame(() => pageRef.current?.closest(".pn")?.querySelector<HTMLElement>("[data-pin-note]")?.focus());
+  };
+
+  // When a post-it's reply field closes, the keyboard goes back to its Reply link
+  const closeReply = (id: string) => {
+    setReply(null);
+    requestAnimationFrame(() => pageRef.current?.querySelector<HTMLElement>(`[data-reply-for="${CSS.escape(id)}"]`)?.focus());
+  };
+
   const submit = async () => {
     if (!draft || !pageH || draft.sending) return;
     const body = draft.text.trim();
@@ -81,7 +142,7 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
     setDraft({ ...draft, sending: true, error: undefined });
     try {
       await onPin(body, { x: draft.x, y: draft.y, h: pageH });
-      setDraft(null);
+      closeDraft();
     } catch (e) {
       setDraft((d) => d && { ...d, sending: false, error: e instanceof Error ? e.message : String(e) });
     }
@@ -95,6 +156,9 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
         <span className="dm-frame__lights" aria-hidden><i /><i /><i /></span>
         <span className="pn-bar__url">{IcLock}<span>{host}</span></span>
         <span className="pn-bar__end">
+          {src && !failed && !!pageH && !hidden && !draft && (
+            <button type="button" className="pn-bar__toggle" data-pin-note onClick={pinInView}>{t.panel.addNote}</button>
+          )}
           {notes.length > 0 && (
             <button type="button" className="pn-bar__toggle" onClick={() => setHidden((h) => !h)} aria-pressed={hidden}>
               <i className="pn-bar__dot" aria-hidden />{hidden ? t.panel.showNotes : t.panel.hideNotes}<span className="pn-bar__count">{notes.length}</span>
@@ -120,14 +184,17 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
             const mine = c.authorId === user.id;
             const older = Math.abs(c.anchor!.h - pageH) > 40;
             return (
-              <div key={c.id} className={`postit${p.flip ? " is-flipped" : ""}${front === c.id ? " is-front" : ""}`}
+              <div key={c.id} data-note={c.id} className={`postit${p.flip ? " is-flipped" : ""}${front === c.id ? " is-front" : ""}${focusId === c.id ? " is-focus" : ""}`}
                 style={{ left: p.left, top: p.top, "--tilt": `${tiltOf(c.id)}deg` } as React.CSSProperties}
                 onPointerDown={() => setFront(c.id)}>
                 <i className="postit__pin" aria-hidden />
                 <div className="postit__paper">
                   <div className="postit__head">
+                    {pins[c.id] !== undefined && (onFocus
+                      ? <button type="button" className="postit__num" onClick={() => onFocus(c.id)} aria-label={t.comments.openThread(pins[c.id])} title={t.comments.openThread(pins[c.id])}>{pins[c.id]}</button>
+                      : <span className="postit__num" aria-hidden>{pins[c.id]}</span>)}
                     <Avatar name={c.authorName} image={c.authorImage} size={16} />
-                    <span className="postit__who">{c.authorName}</span>
+                    <span className="postit__who" title={c.authorName}>{c.authorName}</span>
                     <span className="postit__when">{timeAgo(c.createdAt, locale, t)}</span>
                     {(mine || canManage) && (
                       <button type="button" className="postit__del" onClick={() => onDelete(c.id)} aria-label={t.panel.deleteNote} title={t.panel.deleteNote}>{IcX}</button>
@@ -135,6 +202,52 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
                   </div>
                   <p className="postit__body">{c.body}</p>
                   {older && <span className="postit__older">{t.panel.olderCapture}</span>}
+                  {(() => {
+                    const rs = replies[c.id] ?? [];
+                    const earlier = rs.length - SHOWN_REPLIES;
+                    const writing = reply?.id === c.id;
+                    if (!rs.length && !onReply) return null;
+                    return (
+                      <div className="postit__replies">
+                        {earlier > 0 && (
+                          <button type="button" className="postit__link" onClick={() => onFocus?.(c.id)} disabled={!onFocus}>{t.comments.earlier(earlier)}</button>
+                        )}
+                        {rs.slice(-SHOWN_REPLIES).map((r) => (
+                          <div key={r.id} className="postit__reply">
+                            <Avatar name={r.authorName} image={r.authorImage} size={14} />
+                            <p><b>{r.authorName.split(" ")[0]}</b> {r.body}</p>
+                          </div>
+                        ))}
+                        {onReply && (writing ? (
+                          <>
+                            <textarea
+                              className="postit__input postit__input--reply"
+                              autoFocus
+                              rows={2}
+                              value={reply.text}
+                              disabled={reply.sending}
+                              placeholder={t.comments.reply}
+                              aria-label={t.comments.reply}
+                              onChange={(e) => setReply({ ...reply, text: e.target.value })}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
+                                if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeReply(c.id); }
+                              }}
+                              onBlur={() => { if (!reply.text.trim()) setReply(null); }}
+                            />
+                            <div className="postit__foot">
+                              {reply.error ? <span className="postit__error">{reply.error}</span> : <span>{t.comments.replyKeys}</span>}
+                              <button type="button" className="postit__send" onMouseDown={(e) => e.preventDefault()} onClick={sendReply} disabled={reply.sending || !reply.text.trim()}>
+                                {reply.sending ? <span className="spinner spinner--sm" /> : t.comments.send}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <button type="button" className="postit__link" data-reply-for={c.id} onClick={() => { setFront(c.id); setReply({ id: c.id, text: "", sending: false }); }}>{t.comments.replyTo}</button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             );
@@ -157,7 +270,7 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
                   onChange={(e) => setDraft({ ...draft, text: e.target.value })}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
-                    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); setDraft(null); }
+                    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeDraft(); }
                   }}
                   onBlur={() => { if (!draft.text.trim()) setDraft(null); }}
                 />

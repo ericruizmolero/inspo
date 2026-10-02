@@ -14,6 +14,7 @@ import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import { llm } from "./llm";
 import { jevEnabled, screenDuels, screenDupes, screenTone, summarize } from "./jev";
 import { addComment, listItemComments } from "./comments";
+import { threadLines, type CommentRowLike } from "./comment-context";
 import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
 import { getDesignMd, getDesignMdIndex } from "./design-store";
@@ -245,11 +246,18 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ i
   const board = rows.slice(0, MAX_BOARD);
   const ids = board.map(({ row }) => row.id);
   const threads = ids.length
-    ? await db.select({ itemId: C.itemId, author: C.authorName, body: C.body, at: C.createdAt }).from(C)
+    ? await db.select({ id: C.id, itemId: C.itemId, parentId: C.parentId, author: C.authorName, body: C.body, at: C.createdAt, anchorX: C.anchorX, anchorY: C.anchorY }).from(C)
         .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, ids))).orderBy(C.createdAt)
     : [];
-  const byItem = new Map<string, string[]>();
-  for (const c of threads) byItem.set(c.itemId, [...(byItem.get(c.itemId) ?? []), `${c.author}: ${c.body.trim().slice(0, 300)}`]);
+  // Each reference's comments as threads: where each is pinned and what was answered under it
+  const rowsByItem = new Map<string, CommentRowLike[]>();
+  for (const c of threads) {
+    rowsByItem.set(c.itemId, [...(rowsByItem.get(c.itemId) ?? []), {
+      id: c.id, parentId: c.parentId, author: c.author, body: c.body, at: c.at,
+      anchor: c.anchorX !== null && c.anchorY !== null ? { x: c.anchorX, y: c.anchorY } : null,
+    }]);
+  }
+  const byItem = new Map([...rowsByItem].map(([id, rows]) => [id, threadLines(rows, 300)]));
   // DESIGN.md briefs: only the ones that exist (the index says), read in parallel, never generated here
   const index = await getDesignMdIndex();
   const briefs = await Promise.all(board.map(async ({ row }) => {
