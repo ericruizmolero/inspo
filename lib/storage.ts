@@ -55,6 +55,9 @@ function r2(): Driver {
     // Path-style keeps it working against MinIO and other S3 servers in development
     forcePathStyle: true,
   });
+  // Signed URLs of the current hour, by key (signGet)
+  const signed = new Map<string, Promise<string>>();
+  let signedHour = 0;
   const missing = (e: unknown) => (e as { name?: string; $metadata?: { httpStatusCode?: number } }).name === "NoSuchKey"
     || (e as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode === 404;
   return {
@@ -105,12 +108,20 @@ function r2(): Driver {
       // an hour, so the browser's cache still works, and every URL handed out lives an hour or more.
       const hour = 3600_000;
       const from = Math.floor(Date.now() / hour) * hour;
-      const url = await getSignedUrl(s3, new GetObjectCommand({
-        Bucket: bucket, Key: key,
-        // Keys carry a timestamp: a changed file gets a new key, so a day of caching is safe
-        ResponseCacheControl: "private, max-age=86400",
-      }), { signingDate: new Date(from), expiresIn: 7200 });
-      return { url, maxAge: Math.max(0, Math.floor((from + 2 * hour - Date.now()) / 1000) - 300) };
+      // The same key signs to the same URL all hour, so each one is signed once an hour. A library load
+      // signs hundreds, and going through the SDK every time cost seconds.
+      if (signedHour !== from) { signed.clear(); signedHour = from; }
+      let url = signed.get(key);
+      if (!url) {
+        url = getSignedUrl(s3, new GetObjectCommand({
+          Bucket: bucket, Key: key,
+          // Keys carry a timestamp: a changed file gets a new key, so a day of caching is safe
+          ResponseCacheControl: "private, max-age=86400",
+        }), { signingDate: new Date(from), expiresIn: 7200 });
+        signed.set(key, url);
+        url.catch(() => signed.delete(key));
+      }
+      return { url: await url, maxAge: Math.max(0, Math.floor((from + 2 * hour - Date.now()) / 1000) - 300) };
     },
     async signPut(key, contentType, size) {
       // Type and length are signed: R2 refuses a body of another size or type than the one checked
