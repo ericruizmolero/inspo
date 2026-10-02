@@ -4,6 +4,7 @@ import "server-only";
 import { listMembers } from "./workspace";
 import { loadWorkspaceData } from "./items";
 import { loadProjects } from "./projects";
+import { loadSystems } from "./system";
 import { isAdmin } from "./activity";
 import { quotaStatus } from "./quota";
 import { listComments } from "./comments";
@@ -15,9 +16,10 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   // Both shared indexes (R2) are read while the database answers; they are cached, so the calls below reuse them
   const pages = getPageIndex();
   void getDesignMdIndex();
-  const [{ items, thumbnailMap, tagMap, tagJobs }, { projects, links }, members, admin, quota, comments] = await Promise.all([
+  const [{ items, thumbnailMap, tagMap, tagJobs }, { projects, links }, systems, members, admin, quota, comments] = await Promise.all([
     loadWorkspaceData(ws.id),
     loadProjects(ws.id),
+    loadSystems(ws.id),
     listMembers(ws.id),
     isAdmin(user.email),
     quotaStatus(ws),
@@ -36,6 +38,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     initialTagJobs: tagJobs,
     initialProjects: projects,
     initialProjectLinks: links,
+    initialSystems: systems,
     members: members.map((m) => ({ name: m.name, image: m.image ?? null })),
     isAdmin: admin,
     initialQuota: quota,

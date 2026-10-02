@@ -91,6 +91,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
         initialTagJobs={shown.initialTagJobs}
         initialProjects={shown.initialProjects}
         initialProjectLinks={shown.initialProjectLinks}
+        initialSystems={shown.initialSystems}
         aiEnabled={aiEnabled}
         user={user}
         workspace={shown.workspace}
