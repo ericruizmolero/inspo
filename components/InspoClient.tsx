@@ -23,6 +23,7 @@ import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
+import type { AgentAction, AgentDone, AgentPatch, AgentReply } from "@/lib/agent";
 import ProjectChooser from "./ProjectChooser";
 import type { TriageProposal } from "@/lib/system";
 import { applySystemTriage } from "@/app/actions/system";
@@ -969,6 +970,58 @@ export default function InspoClient({
   }, [setSystem]);
   gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, acceptProposal: (p) => void acceptTriage([p]), patchProposal: patchTriage };
 
+  // ─── The agent: every action, asked for in words from the search box ──────────
+  // The request goes with where the person is (project, view, open reference, what is on screen); the
+  // server plans and runs what is safe, and what it changed comes back as a patch the state applies.
+  // Deleting comes back pending and waits for a yes here.
+  const [agent, setAgent] = useState<{ text: string; busy: boolean; say?: string; done: AgentDone[]; pending: AgentAction[]; error?: string } | null>(null);
+  const applyAgentPatch = useCallback((patch: AgentPatch) => {
+    if (patch.projects) setProjects(patch.projects);
+    if (patch.links) setLinks(patch.links);
+    if (patch.systems) setSystems((prev) => ({ ...prev, ...patch.systems }));
+    if (patch.added?.length) setItems((prev) => [...patch.added!.filter((a) => !prev.some((i) => i.id === a.id)), ...prev]);
+    if (patch.removed?.length) { const gone = new Set(patch.removed); setItems((prev) => prev.filter((i) => !i.id || !gone.has(i.id))); }
+  }, []);
+  const followAgent = useCallback((done: AgentDone[]) => {
+    for (const d of done) {
+      if (!d.ok) continue;
+      if (d.kind === "search" && d.text) setQuery(d.text);
+      if (d.kind === "go" && d.go) {
+        if (d.go.space) setSpace(d.go.space === "library" ? "all" : d.go.space);
+        if (d.go.view) setProjectView(d.go.view);
+      }
+    }
+  }, [setQuery, setSpace, setProjectView]);
+  const askAgent = useCallback(async (text: string) => {
+    setAgent({ text, busy: true, done: [], pending: [] });
+    const scope = { projectId: currentProject?.id ?? null, space, view: currentProject ? projectView : null, openItemId: panelItem?.id ?? null, visibleIds: filtered.slice(0, 200).map((i) => i.id).filter((x): x is string => !!x) };
+    try {
+      const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, scope }) });
+      const json = await res.json().catch(() => ({})) as AgentReply & { error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      applyAgentPatch(json.patch);
+      followAgent(json.done);
+      // A command leaves the box empty; a search keeps its words in it
+      if (!json.done.some((d) => d.kind === "search")) setQuery("");
+      setAgent({ text, busy: false, say: json.say, done: json.done, pending: json.pending });
+    } catch (e) {
+      setAgent({ text, busy: false, done: [], pending: [], error: e instanceof Error ? e.message : String(e) });
+    }
+  }, [currentProject, space, projectView, panelItem, filtered, applyAgentPatch, followAgent, setQuery]);
+  const confirmAgent = useCallback(async () => {
+    if (!agent?.pending.length) return;
+    setAgent({ ...agent, busy: true });
+    try {
+      const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: agent.pending }) });
+      const json = await res.json().catch(() => ({})) as { done: AgentDone[]; patch: AgentPatch; error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      applyAgentPatch(json.patch);
+      setAgent({ ...agent, busy: false, done: [...agent.done, ...json.done], pending: [] });
+    } catch (e) {
+      setAgent({ ...agent, busy: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }, [agent, applyAgentPatch]);
+
   // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
   // they were pinned; the column holds all of them with their replies
   const panelThread = panelItem?.id ? commentMap[panelItem.id] : undefined;
@@ -1279,8 +1332,11 @@ export default function InspoClient({
                 {t.search.results(filtered.length)}{jevBusy && <span className="dock__status-more"> · {t.search.reading}</span>}
               </p>
             )}
+            {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
+              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} />
+            )}
             <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
-              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} />
+              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy} />
           </div>
         )}
       </SidebarInset>
@@ -1289,6 +1345,87 @@ export default function InspoClient({
 }
 
 const EMPTY_AREAS: SystemArea[] = [];
+
+/** What the agent said and did, above the box; the pending steps wait here for a yes */
+function AgentCard({ agent, projects, onConfirm, onCancel, onClose }: {
+  agent: { text: string; busy: boolean; say?: string; done: AgentDone[]; pending: AgentAction[]; error?: string };
+  projects: Project[];
+  onConfirm: () => void;
+  onCancel: () => void;
+  onClose: () => void;
+}) {
+  const { t } = useT();
+  const areas = t.system.areas as Record<string, string>;
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
+  const line = (d: AgentDone): string => {
+    const did = t.agent.did;
+    const area = d.area ? areas[d.area] ?? d.area : "";
+    switch (d.kind) {
+      case "search": return did.search(d.text ?? "");
+      case "go": return did.go(d.project ?? (d.go?.space === "inbox" ? "Inbox" : d.go?.space === "library" ? t.sidebar.all : ""));
+      case "file": return did.file(d.n ?? 0, d.project ?? "", d.on !== false);
+      case "assign": return did.assign(d.n ?? 0, area, d.on !== false);
+      case "decide": return did.decide(area);
+      case "clear": return did.clear(area);
+      case "release": return did.release(area);
+      case "undo": return did.undo(area);
+      case "read_board": return did.read_board(d.project ?? "");
+      case "curate": return did.curate(area);
+      case "organize": return did.organize(d.n ?? 0);
+      case "create_project": return did.create_project(d.project ?? "");
+      case "rename_project": return did.rename_project(d.project ?? "");
+      case "delete_project": return did.delete_project(d.project ?? "");
+      case "brief": return did.brief(d.project ?? "");
+      case "add_url": return did.add_url(d.name ?? "");
+      case "note": return did.note(d.name ?? "");
+      case "comment": return did.comment(d.name ?? "");
+      case "tag": return did.tag(d.name ?? "");
+      case "delete_items": return did.delete_items(d.n ?? 0);
+      case "guide": return did.guide;
+    }
+  };
+  const will = (a: AgentAction): string => {
+    if (a.kind === "delete_items") return t.agent.will.delete_items(a.items.length);
+    if (a.kind === "delete_project") return t.agent.will.delete_project(projectName(a.project));
+    if (a.kind === "clear") return t.agent.will.clear(areas[a.area] ?? a.area);
+    return a.kind;
+  };
+  const guides = agent.done.filter((d) => d.kind === "guide" && d.ok);
+  return (
+    <div className="dock__agent" role="status" aria-live="polite">
+      <div className="dock__agent-head">
+        <span className="dock__agent-q">{agent.text}</span>
+        <button type="button" className="dock__agent-x" aria-label={t.agent.dismiss} onClick={onClose}>{Icons.x}</button>
+      </div>
+      {agent.busy && !agent.say ? <p className="dock__agent-say"><span className="spinner spinner--sm" /> {t.agent.thinking}</p> : null}
+      {agent.error && <p className="dock__agent-say dock__agent-say--error">{t.agent.failed}: {agent.error}</p>}
+      {agent.say && <p className="dock__agent-say">{agent.say}</p>}
+      {agent.done.filter((d) => d.kind !== "guide").length > 0 && (
+        <ul className="dock__agent-did">
+          {agent.done.filter((d) => d.kind !== "guide").map((d, i) => (
+            <li key={i} className={d.ok ? "" : "is-failed"}>{d.ok ? Icons.check : Icons.x} <span>{d.ok ? line(d) : d.error}{d.ok && d.kind === "decide" && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span></li>
+          ))}
+        </ul>
+      )}
+      {guides.map((g, i) => (
+        <div key={`g${i}`} className="dock__agent-guide">
+          <p>{g.text}</p>
+          {g.topic && g.topic !== "other" && g.topic !== "export_md" && <a className="btn btn--sm btn--primary" href="/extension/connect" target="_blank" rel="noreferrer">{Icons.arrow} {t.agent.guides[g.topic]}</a>}
+        </div>
+      ))}
+      {agent.pending.length > 0 && (
+        <div className="dock__agent-pending">
+          <span className="dock__agent-pending-title">{t.agent.pendingTitle(agent.pending.length)}</span>
+          <ul>{agent.pending.map((a, i) => <li key={i}>{will(a)}</li>)}</ul>
+          <div className="dock__agent-actions">
+            <Button variant="primary" size="sm" disabled={agent.busy} onClick={onConfirm}>{agent.busy ? <span className="spinner spinner--sm" /> : Icons.check} {t.agent.confirm}</Button>
+            <Button variant="ghost" size="sm" disabled={agent.busy} onClick={onCancel}>{t.agent.cancel}</Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface GridActions {
   openItem: (item: InspoItem, opts?: { generate?: boolean }) => void;

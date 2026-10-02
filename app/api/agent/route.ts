@@ -1,0 +1,34 @@
+import { NextRequest } from "next/server";
+import { requireCtx, isResponse } from "@/lib/workspace";
+import { HttpError } from "@/lib/workspace-core";
+import { ask, confirm, type AgentScope } from "@/lib/agent";
+import { llmEnabled } from "@/lib/llm";
+import { assertSeatsOk, quotaBlock } from "@/lib/quota";
+import { getErrors, getLocale } from "@/lib/i18n";
+
+export const maxDuration = 120;
+
+// POST { text, scope } → the agent plans from the request and runs what is safe; deletions come back as `pending`.
+// POST { run: Action[] } → the person said yes: the pending actions run as they are.
+export async function POST(req: NextRequest) {
+  if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
+  const ctx = await requireCtx();
+  if (isResponse(ctx)) return ctx;
+  const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
+  if (blocked) return blocked;
+  const body = (await req.json().catch(() => ({}))) as { text?: string; scope?: AgentScope; run?: unknown };
+  const usage = { organizationId: ctx.workspace.id, userId: ctx.user.id };
+  const locale = await getLocale();
+  try {
+    if (Array.isArray(body.run)) return Response.json(await confirm(ctx, body.run, usage, locale));
+    const text = String(body.text ?? "").trim();
+    if (!text) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
+    const scope = body.scope && typeof body.scope === "object" ? body.scope : {};
+    return Response.json(await ask(ctx, { text, scope, usage, locale }));
+  } catch (e) {
+    if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("agent error:", msg);
+    return Response.json({ error: msg }, { status: 500 });
+  }
+}
