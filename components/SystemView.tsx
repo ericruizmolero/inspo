@@ -632,7 +632,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           </header>
           {error && <p className="sysv-error" role="alert">{error}</p>}
           {view === "md" && (
-            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen}
+            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied}
               onSave={(area, decision, why) => withBusy(area, () => decideSystemArea(project.id, area, { decision, why }))} />
           )}
           {view === "bento" && sys.summary && (

@@ -438,9 +438,10 @@ export const ui: typeof EnUi = {
     },
     views: { label: "C\u00f3mo ver el sistema", bento: "Bento", markdown: "Markdown" },
     mdView: {
-      hint: "El mismo sistema, como lo lee una IA. Edita un bloque y se guarda como decisi\u00f3n del equipo; o p\u00eddeselo al agente en el buscador.",
+      hint: "Pulsa un bloque para editarlo, o p\u00eddeselo al agente.",
+      copy: "Copiar",
       openArea: "Abrir el \u00e1rea",
-      editHint: "\u2318\u21b5 guarda, Esc cancela. Dejarlo vac\u00edo abre el \u00e1rea otra vez.",
+      editHint: "\u2318\u21b5 guarda, Esc cancela",
     },
     sample: {
       more: "Ver m\u00e1s",

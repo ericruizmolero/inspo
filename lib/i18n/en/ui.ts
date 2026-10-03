@@ -440,9 +440,10 @@ export const ui = {
     },
     views: { label: "How to see the system", bento: "Bento", markdown: "Markdown" },
     mdView: {
-      hint: "The same system, as an AI reads it. Edit a block and it is saved as the team's decision; or ask the agent in the search box.",
+      hint: "Press a block to edit it, or ask the agent.",
+      copy: "Copy",
       openArea: "Open the area",
-      editHint: "\u2318\u21b5 saves, Esc cancels. Leaving it empty opens the area again.",
+      editHint: "\u2318\u21b5 saves, Esc cancels",
     },
     sample: {
       more: "See more",
