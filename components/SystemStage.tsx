@@ -68,9 +68,13 @@ interface StripProps {
   material?: (item: InspoItem) => ReactNode;
   /** The card shows the page down its length (imagery) */
   tall?: boolean;
+  /** Something else on the stage already says the area is empty (its starter) */
+  quiet?: boolean;
+  /** The references that are ideal for this area, from the project or the rest of the library: the picker offers them first */
+  ideal?: InspoItem[];
 }
 
-export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onToggle, picking, material, tall }: StripProps) {
+export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onToggle, picking, material, tall, quiet, ideal = [] }: StripProps) {
   const { t } = useT();
   const [adding, setAdding] = useState(false);
   const [q, setQ] = useState("");
@@ -84,8 +88,11 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
   }, [adding]);
   const inArea = useMemo(() => new Set(refs.map((i) => i.id)), [refs]);
   const match = (i: InspoItem) => { const s = q.trim().toLowerCase(); return !s || i.name.toLowerCase().includes(s) || i.web.toLowerCase().includes(s); };
-  const fromBoard = board.filter((i) => i.id && match(i));
-  const fromInbox = inbox.filter((i) => i.id && match(i)).slice(0, 60);
+  // What is ideal for the area first; the rest of the project and of what no project has yet after it, without repeating
+  const fromIdeal = ideal.filter((i) => i.id && match(i)).slice(0, 12);
+  const idealIds = new Set(fromIdeal.map((i) => i.id));
+  const fromBoard = board.filter((i) => i.id && !idealIds.has(i.id) && match(i));
+  const fromInbox = inbox.filter((i) => i.id && !idealIds.has(i.id) && match(i)).slice(0, 60);
   const card = (i: InspoItem) => {
     const on = inArea.has(i.id);
     return (
@@ -107,14 +114,15 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
           <div className="sysf-picker" role="dialog" aria-label={t.system.stage.add}>
             <input className="sysf-picker__search" value={q} autoFocus placeholder={t.system.stage.search} onChange={(e) => setQ(e.target.value)} />
             <div className="sysf-picker__scroll">
+              {fromIdeal.length > 0 && <><p className="sysf-picker__title">{t.system.stage.idealFor(areaLabel)}</p><div className="sysf-picker__grid">{fromIdeal.map(card)}</div></>}
               {fromBoard.length > 0 && <><p className="sysf-picker__title">{t.system.stage.inProject}</p><div className="sysf-picker__grid">{fromBoard.map(card)}</div></>}
               {fromInbox.length > 0 && <><p className="sysf-picker__title">{t.projects.unfiled} <small>{t.system.stage.inboxHint}</small></p><div className="sysf-picker__grid">{fromInbox.map(card)}</div></>}
-              {fromBoard.length + fromInbox.length === 0 && <p className="sysv-muted">{t.system.stage.nothing}</p>}
+              {fromIdeal.length + fromBoard.length + fromInbox.length === 0 && <p className="sysv-muted">{t.system.stage.nothing}</p>}
             </div>
           </div>
         )}
       </header>
-      {refs.length === 0 && <p className="sysf-refs__none">{t.system.stage.none(areaLabel)}</p>}
+      {refs.length === 0 && !quiet && <p className="sysf-refs__none">{t.system.stage.none(areaLabel)}</p>}
       {refs.length > 0 && (
         <div className={`sysf-refs__row${tall ? " sysf-refs__row--tall" : ""}`}>
           {refs.map((i) => {

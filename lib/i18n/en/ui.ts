@@ -428,6 +428,7 @@ export const ui = {
     confirmWhy: "Confirm decision and criterio",
     by: (name: string): string => `Decided by ${name}`,
     stage: {
+      idealFor: (area: string): string => `Ideal for ${area}`,
       refsOf: (area: string): string => `References for ${area}`,
       back: "Back to the system",
       none: (area: string): string => `No references in ${area} yet. Showing what the whole board brings.`,
@@ -437,6 +438,19 @@ export const ui = {
       inProject: "In the project",
       inboxHint: "adding it files it in the project",
       nothing: "Nothing by that name.",
+    },
+    start: {
+      asking: (area: string): string => `Thinking what to ask you about ${area}\u2026`,
+      nothing: "Nothing in your library fits this area yet. Add a reference that speaks to it.",
+      loading: (area: string): string => `Looking at the board and your library for anything about ${area}\u2026`,
+      inProject: "The project already has something",
+      inLibrary: "From your library, for inspiration",
+      libraryHint: "adding it files it in the project",
+      add: (area: string): string => `Add to ${area}`,
+      added: "Already in the area",
+      ownPlaceholder: "Or say it in your own words",
+      use: "Use",
+      again: "Look again",
     },
     views: { label: "How to see the system", bento: "Bento", markdown: "Markdown" },
     mdView: {
@@ -537,10 +551,8 @@ export const ui = {
   },
   card: {
     replies: (n: number): string => (n === 1 ? "1 reply" : `${n} replies`),
-    openDesignMd: "Open DESIGN.md",
     generatingDesignMd: "Generating DESIGN.md\u2026",
     gatheringTags: "Gathering tags",
-    generateDesignMd: "Generate DESIGN.md",
     seeDesignMd: "See DESIGN.md",
     generateWithAi: "Generate DESIGN.md with AI (30-90 s)",
     seeComments: "See comments",

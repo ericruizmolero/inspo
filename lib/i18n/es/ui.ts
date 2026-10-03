@@ -426,6 +426,7 @@ export const ui: typeof EnUi = {
     confirmWhy: "Confirmar decisi\u00f3n y criterio",
     by: (name: string): string => `Decidido por ${name}`,
     stage: {
+      idealFor: (area: string): string => `Ideales para ${area}`,
       refsOf: (area: string): string => `Referencias de ${area}`,
       back: "Volver al sistema",
       none: (area: string): string => `Ninguna referencia en ${area} todav\u00eda. Se muestra lo que trae el tabl\u00f3n entero.`,
@@ -435,6 +436,19 @@ export const ui: typeof EnUi = {
       inProject: "En el proyecto",
       inboxHint: "al a\u00f1adirla se archiva en el proyecto",
       nothing: "Nada con ese nombre.",
+    },
+    start: {
+      asking: (area: string): string => `Pensando qu\u00e9 preguntarte sobre ${area}\u2026`,
+      nothing: "Nada en tu biblioteca encaja con esta \u00e1rea todav\u00eda. A\u00f1ade una referencia que hable de ella.",
+      loading: (area: string): string => `Mirando el tabl\u00f3n y tu biblioteca por si hay algo de ${area}\u2026`,
+      inProject: "En el proyecto ya hay algo",
+      inLibrary: "De tu biblioteca, para inspirarte",
+      libraryHint: "al a\u00f1adirla se archiva en el proyecto",
+      add: (area: string): string => `A\u00f1adir a ${area}`,
+      added: "Ya est\u00e1 en el \u00e1rea",
+      ownPlaceholder: "O cu\u00e9ntalo con tus palabras",
+      use: "Usar",
+      again: "Volver a mirar",
     },
     views: { label: "C\u00f3mo ver el sistema", bento: "Bento", markdown: "Markdown" },
     mdView: {
@@ -535,10 +549,8 @@ export const ui: typeof EnUi = {
   },
   card: {
     replies: (n: number) => (n === 1 ? "1 respuesta" : `${n} respuestas`),
-    openDesignMd: "Abrir DESIGN.md",
     generatingDesignMd: "Generando DESIGN.md\u2026",
     gatheringTags: "Buscando etiquetas",
-    generateDesignMd: "Generar DESIGN.md",
     seeDesignMd: "Ver DESIGN.md",
     generateWithAi: "Generar DESIGN.md con IA (30-90 s)",
     seeComments: "Ver comentarios",

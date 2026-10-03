@@ -332,3 +332,39 @@
 .mdv-edit__row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 8px; }
 .mdv-edit__row small { margin-left: 6px; font-size: 12px; color: var(--md-dim); font-variant-numeric: tabular-nums; } .mdv-edit__row small.is-over { color: #ff8f85; }
 .mdv-edit__row .btn--ghost { color: var(--md-ink); }
+
+/* ─── Starting an empty area (components/SystemStarter.tsx): what the agent found on the board, what it
+   would bring from the library, and the question that gets the area going ─── */
+.stt { display: flex; flex-direction: column; gap: 20px; max-width: 1040px; }
+.stt-say { margin: 0; display: flex; align-items: flex-start; gap: 9px; font-size: 15px; line-height: 1.5; color: var(--text); }
+.stt-say > svg { flex-shrink: 0; width: 15px; height: 15px; margin-top: 4px; color: var(--muted); }
+.stt-say--loading { align-items: center; font-size: 13.5px; color: var(--muted); }
+.stt-again { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; height: 26px; min-width: 26px; padding: 0 6px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; }
+.stt-again svg { width: 13px; height: 13px; } .stt-again:hover { background: var(--surface); color: var(--text); }
+.stt-group { display: flex; flex-direction: column; gap: 10px; }
+.stt-title { margin: 0; display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; font-weight: 550; color: var(--text); }
+.stt-title small { font-size: 12px; font-weight: 400; color: var(--muted); }
+.stt-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px 12px; }
+.stt-card { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; color: var(--text-2); font: inherit; text-align: left; cursor: pointer; transition: opacity 0.2s; }
+.stt-card .stt-card__img { width: 100%; height: auto; aspect-ratio: 16 / 10; margin: 0; border: 0; border-radius: 12px; font-size: 20px; background: var(--surface); transition: transform 0.18s var(--ease-out); }
+.stt-card .stt-card__img img { object-position: top; }
+.stt-card__name { padding: 0 2px; font-size: 12.5px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stt-card__why { padding: 0 2px; font-size: 12px; line-height: 1.4; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.stt-card__mark { position: absolute; top: 8px; right: 8px; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(12,12,11,0.72); color: #f2f2ef; }
+.stt-card__mark svg { width: 13px; height: 13px; }
+@media (hover: hover) { .stt-card:not(:disabled):hover .stt-card__img { transform: translateY(-2px); } .stt-card:not(:disabled):hover .stt-card__mark { background: #f2f2ef; color: #0e0e0d; } }
+.stt-card.is-on { cursor: default; } .stt-card.is-on .stt-card__mark { background: #f2f2ef; color: #0e0e0d; }
+.stt-card.is-busy { opacity: 0.45; pointer-events: none; }
+.stt-question { margin: 6px 0 0; font-size: 19px; line-height: 1.25; letter-spacing: -0.01em; font-weight: 600; color: var(--text); }
+.stt-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px; }
+.stt-option { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 0; border-radius: 14px; background: var(--surface); color: var(--text-2); font: inherit; text-align: left; cursor: pointer; transition: background 0.15s, transform 0.15s var(--ease-out); }
+.stt-option b { font-size: 14px; font-weight: 600; color: var(--text); }
+.stt-option span { font-size: 12.5px; line-height: 1.45; }
+.stt-option:hover { background: var(--surface-2); } .stt-option:active { transform: scale(0.99); } .stt-option:disabled { opacity: 0.5; cursor: default; }
+.stt-own { display: flex; gap: 6px; }
+.stt-own__input { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 13.5px; outline: none; }
+.stt-own__input::placeholder { color: var(--muted); } .stt-own__input:focus-visible { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.stt-own__go { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--text); color: var(--bg); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.stt-own__go svg { width: 13px; height: 13px; } .stt-own__go:disabled { opacity: 0.35; cursor: default; }
+.stt-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 10px; }
+.stt-card .stt-card__img { border-radius: 10px; }

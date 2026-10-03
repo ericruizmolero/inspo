@@ -17,6 +17,8 @@ import { areaIcon } from "./area-icons";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
 import SystemMarkdown from "./SystemMarkdown";
+import AreaStarter, { useAreaIdeals } from "./SystemStarter";
+import { areaCandidates } from "@/lib/candidates";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -411,6 +413,10 @@ function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, 
   );
 }
 
+/** Whether the references carry something to show for an area whose specimen is their own material (an empty box says nothing) */
+const hasMaterial = (area: SystemArea, vs: RefVisual[]) =>
+  area === "logo" ? vs.some((v) => v.logo) : area === "iconography" ? vs.some((v) => v.icons.length) : area === "imagery" ? vs.some((v) => v.cover || v.scroll) : true;
+
 /** The areas whose result is seen on the sample (typography has it inside its tester) */
 const SAMPLE_AREAS = new Set<SystemArea>(["color", "layout", "motion", "voice"]);
 
@@ -445,6 +451,15 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [choices, setChoice] = useSampleChoices(project.id);
   const [colorRole, setColorRole] = useState<ColorRole>("bg");
   const [replay, setReplay] = useState(0);
+  // The references that are ideal for the open area (a base, no model): the picker offers them first
+  const ideals = useAreaIdeals(project.id, open);
+  // The areas opened with nothing behind them: their starter stays until the area is decided, also after a first reference comes in
+  const [starting, setStarting] = useState<Set<SystemArea>>(() => new Set());
+  useEffect(() => {
+    if (!open || !system) return;
+    const a = system.areas.find((x) => x.area === open);
+    if (a && !a.decision && !a.evidence.length) setStarting((s) => (s.has(open) ? s : new Set([...s, open])));
+  }, [open, system]);
   // Picking: the team chooses, among the area's references, the ones it should be decided from
   const [picking, setPicking] = useState<Set<string> | null>(null);
   useEffect(() => { setPicking(null); }, [open]);
@@ -515,7 +530,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
   useEffect(() => {
     if (!open || !system || curatingArea) return;
     const a = system.areas.find((x) => x.area === open);
-    if (a && !a.curation && visuals.length && board.length && !curatedOnce.current.has(open)) { curatedOnce.current.add(open); void curate(open); }
+    // Only when the board offers something for the area: with nothing to lay on the table the area starts another way (AreaStarter)
+    if (a && !a.curation && visuals.length && board.length && !curatedOnce.current.has(open) && areaCandidates(open, visuals).length) { curatedOnce.current.add(open); void curate(open); }
   }, [open, system, visuals.length, board.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const options = useCallback(async (area: SystemArea, itemIds?: string[]): Promise<AreaOption[]> => {
@@ -696,6 +712,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
                 {error && <p className="sysv-error" role="alert">{error}</p>}
                 {/* First what the area draws from: each reference with what it brings, to touch and try on the sample */}
                 <RefStrip areaLabel={labels[a.area]} refs={own} board={board} inbox={inbox} pending={pendingRefs}
+                  quiet={!a.decision && (own.length === 0 || starting.has(a.area))}
+                  ideal={ideals ? [...ideals.board, ...ideals.library].map((x) => itemOf(x.itemId)).filter((x): x is InspoItem => !!x) : []}
                   tall={a.area === "imagery"} imageOf={a.area === "imagery" ? (i) => byItem.get(i.id!)?.scroll ?? imageOf(i) : imageOf}
                   material={(i) => (
                     <RefMaterial area={a.area} v={byItem.get(i.id!)}
@@ -706,6 +724,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   )}
                   onToggle={(item, on) => void toggleRef(a.area, item, on)}
                   picking={picking ? { picked: picking, toggle: (id) => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; }) } : null} />
+                {!a.decision && (own.length === 0 || starting.has(a.area)) && (
+                  <AreaStarter projectId={project.id} area={a.area} areaLabel={labels[a.area]} inArea={new Set(own.map((i) => i.id!))} itemOf={itemOf} imageOf={imageOf}
+                    pending={pendingRefs} busy={busy.has(a.area)} onAdd={(item) => void toggleRef(a.area, item, true)}
+                    onDecide={(decision, why) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why }))} />
+                )}
                 {a.area === "typography" ? (
                   // With nothing filed under typography yet, the tester tries what the whole board brings
                   <TypeTester projectId={project.id} projectName={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={own.length ? own : board} visuals={visuals}
@@ -727,7 +750,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                     ) : a.curation ? (
                       <AreaTable curation={a.curation} sample={project.name} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
                         onFlip={(id, keep) => verdict(id, keep)} onReason={(id, reason) => verdict(id, a.curation!.verdicts.find((v) => v.id === id)?.keep ?? false, reason)} />
-                    ) : !SAMPLE_AREAS.has(a.area) && specimen && <div className="sysv-tile__specimen sysf-specimen">{specimen}</div>}
+                    ) : !SAMPLE_AREAS.has(a.area) && hasMaterial(a.area, vs) && <div className="sysv-tile__specimen sysf-specimen">{specimen}</div>}
                   </>
                 )}
               </div>

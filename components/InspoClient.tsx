@@ -974,6 +974,9 @@ export default function InspoClient({
     [commentMap],
   );
 
+  // A small picture of any reference, wherever one is shown outside the board: the thumbnail someone gave it, the
+  // DESIGN.md cover, or the stored copy of its page (so a reference without a DESIGN.md is not a blank)
+  const smallImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null, [thumbMap, designMdIndex, pageShots]);
   // The zoom: one step out of 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
   // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
   const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
@@ -1209,7 +1212,7 @@ export default function InspoClient({
           board={spaceItems}
           library={items}
           tagMap={tagMap}
-          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+          imageOf={smallImageOf}
           comments={commentMap}
           hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
           archived={items.filter((i) => i.id && shelf[i.id]?.includes(currentProject.id))}
@@ -1363,7 +1366,7 @@ export default function InspoClient({
             library={items}
             inbox={items.filter((i) => !(i.id && links[i.id]?.length))}
             onFile={(item) => toggleFiled(item, currentProject.id, true)}
-            imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+            imageOf={smallImageOf}
             onOpenBoard={() => setProjectView("board")}
             focusArea={focusArea}
             onOpenChange={setOpenArea}
@@ -1376,7 +1379,7 @@ export default function InspoClient({
             project={currentProject}
             items={items}
             links={links}
-            imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+            imageOf={smallImageOf}
             onAddUrl={async (web) => {
               // Already in the library: filed here instead of "already saved"
               const key = webKeyOf(web);
@@ -1445,7 +1448,7 @@ export default function InspoClient({
               </p>
             )}
             {filtering && currentProject && projectView === "system" && filtered.length > 0 && (
-              <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null} onOpen={openItem} />
+              <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={smallImageOf} onOpen={openItem} />
             )}
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onUndo={(i) => void undoAgent(i)} />
