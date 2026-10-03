@@ -17,7 +17,7 @@ import { addItem, deleteItem, rowToItem, setItemNote, editUserTags } from "./ite
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, fileItems, unfileItems } from "./projects";
-import { saveBrief } from "./polish";
+import { saveBrief, setClientBrand } from "./polish";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
 import { taggerEnabled } from "./tagger";
@@ -59,6 +59,8 @@ const ActionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("rename_project"), project: z.string(), name: z.string() }),
   z.object({ kind: z.literal("delete_project"), project: z.string() }),
   z.object({ kind: z.literal("brief"), project: z.string(), about: z.string() }),
+  // A redesign: which reference is the client's current site (null: not a redesign any more)
+  z.object({ kind: z.literal("client"), project: z.string(), item: z.string().nullable() }),
   z.object({ kind: z.literal("add_url"), url: z.string(), project: z.string().nullable() }),
   z.object({ kind: z.literal("note"), item: z.string(), text: z.string() }),
   z.object({ kind: z.literal("comment"), item: z.string(), text: z.string() }),
@@ -163,7 +165,7 @@ The catalogue (kind: what it does):
 - decide: write an area's decision and its why, as the team's. never: what an area must NEVER do. "add" carries the rule itself, written out in 3 to 12 words in the person's language (e.g. add: "rebotes y curvas elásticas", remove: null); "remove" carries the words of a rule to take out (add: null). Never leave both empty: one action per rule. Use it for "never…", "no more…", "we threw away…", "don't use…", and leave the decision alone. release: hand an area back to the board (the model may change it again). clear: empty an area. undo: one step back in an area (its previous text).
 - read_board: the model reads the whole board and proposes every area it can. curate: the model sets the table of one area (candidates kept and discarded, with reasons) and drafts its decision.
 - organize: the model files the unfiled references (the inbox, or the given ones) into projects and areas.
-- create_project (name, about), rename_project, delete_project, brief (the project's about, one paragraph).
+- create_project (name, about), rename_project, delete_project, brief (the project's about, one paragraph). client: mark the reference that is the client's current site, when the project is a redesign ("esta es la web del cliente", "es un rediseño de X"); item null to unmark.
 - add_url: save a web by its URL (and file it in a project). note: rewrite a reference's note. comment: leave a comment on a reference. tag: add or remove a tag (free word, lowercase).
 - delete_items: delete references.
 - guide: how to do what the app cannot do from here (importing from a browser, the extension).
@@ -264,6 +266,7 @@ const resolveIn = (codes: Codes, action: AgentAction): AgentAction | null => {
     case "file": case "assign": { const p = project(action.project); const its = items(action.items); return p && its.length ? { ...action, project: p, items: its } : null; }
     case "delete_items": { const its = items(action.items); return its.length ? { ...action, items: its } : null; }
     case "note": case "comment": case "tag": { const i = item(action.item); return i ? { ...action, item: i } : null; }
+    case "client": { const p = project(action.project); const i = action.item ? item(action.item) : null; return p && (i || !action.item) ? { ...action, project: p, item: i } : null; }
     default: { const p = project(action.project); return p ? { ...action, project: p } : null; }
   }
 };
@@ -339,6 +342,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         case "rename_project": { const p = await renameProject(org, a.project, a.name.trim().slice(0, 60)); line.project = p.name; line.text = names.get(a.project); projectsTouched = true; break; }
         case "delete_project": line.project = names.get(a.project); await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
         case "brief": await saveBrief(org, a.project, { about: a.about.trim() }, author.id); line.project = names.get(a.project); line.text = a.about; break;
+        case "client": await setClientBrand(org, a.project, a.item, author.id); line.project = names.get(a.project); line.on = !!a.item; line.items = a.item ? [a.item] : []; projectsTouched = true; break;
         case "add_url": {
           const web = normalizeWebUrl(a.url);
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
@@ -414,7 +418,7 @@ export async function confirm(ctx: Ctx, actions: unknown, usage: UsageCtx, local
   const projectIds = new Set((await db.select({ id: P.id }).from(P).where(eq(P.organizationId, org))).map((r) => r.id));
   const ok = parsed.filter((a) => !CLIENT_SIDE.has(a.kind)).filter((a) => {
     if ("items" in a && Array.isArray(a.items) && a.items.some((i) => !itemIds.has(i))) return false;
-    if ("item" in a && !itemIds.has(a.item)) return false;
+    if ("item" in a && a.item !== null && !itemIds.has(a.item)) return false;
     if ("project" in a && typeof a.project === "string" && !projectIds.has(a.project)) return false;
     return true;
   });

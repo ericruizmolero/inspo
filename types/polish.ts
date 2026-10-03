@@ -32,6 +32,8 @@ export interface PolishBrief {
   avoid: string;
   /** What a visitor must understand in the first five seconds */
   firstSeconds: string;
+  /** A redesign: the reference on the board that is the client's current site. Its copy, typefaces, logo and figures are the source of truth */
+  clientItemId?: string | null;
   /** ISO */
   updatedAt: string;
   updatedBy?: string;

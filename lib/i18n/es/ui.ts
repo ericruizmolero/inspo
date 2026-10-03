@@ -452,6 +452,13 @@ export const ui: typeof EnUi = {
       use: "Usar",
       again: "Volver a mirar",
     },
+    client: {
+      ask: "\u00bfEs un redise\u00f1o? Marca la web del cliente",
+      redesignOf: "Redise\u00f1o de",
+      hint: "La web actual del cliente manda: su copy, sus fuentes, su logo y sus cifras se toman tal cual. El resto del tabl\u00f3n inspira lo dem\u00e1s.",
+      clear: "Ya no es un redise\u00f1o",
+      none: "A\u00f1ade al proyecto la web actual del cliente y m\u00e1rcala aqu\u00ed.",
+    },
     views: { label: "C\u00f3mo ver el sistema", bento: "Bento", markdown: "Markdown" },
     mdView: {
       hint: "Pulsa un bloque para editarlo, o p\u00eddeselo al agente.",
@@ -518,6 +525,7 @@ export const ui: typeof EnUi = {
       take: "Tomar",
       why: "Por qu\u00e9",
       never: "Nunca",
+      client: "Redise\u00f1o de la web del cliente, que manda en copy, fuentes, logo y cifras",
     },
   },
   chooser: {
@@ -644,6 +652,8 @@ export const ui: typeof EnUi = {
       assign: (n: number, area: string, on: boolean): string => on ? `${n === 1 ? "1 referencia" : `${n} referencias`} en ${area}` : `${n === 1 ? "1 referencia" : `${n} referencias`} fuera de ${area}`,
       neverAdd: (area: string, rule: string): string => `En ${area}, nunca: \u00ab${rule}\u00bb`,
       neverRemove: (area: string, rule: string): string => `Fuera de lo que ${area} nunca hace: \u00ab${rule}\u00bb`,
+      client: (project: string): string => `${project}: marcada la web del cliente`,
+      clientOff: (project: string): string => `${project} ya no es un redise\u00f1o`,
       decide: (area: string): string => `${area} reescrita`,
       clear: (area: string): string => `${area} vaciada`,
       release: (area: string): string => `${area} devuelta al tabl\u00f3n`,

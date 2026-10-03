@@ -454,6 +454,13 @@ export const ui = {
       use: "Use",
       again: "Look again",
     },
+    client: {
+      ask: "A redesign? Mark the client's site",
+      redesignOf: "Redesign of",
+      hint: "The client's current site rules: its copy, typefaces, logo and figures are taken as they are. The rest of the board inspires everything else.",
+      clear: "Not a redesign any more",
+      none: "Add the client's current site to the project and mark it here.",
+    },
     views: { label: "How to see the system", bento: "Bento", markdown: "Markdown" },
     mdView: {
       hint: "Press a block to edit it, or ask the agent.",
@@ -520,6 +527,7 @@ export const ui = {
       take: "Take",
       why: "Why",
       never: "Never",
+      client: "Redesign of the client's site, which rules copy, typefaces, logo and figures",
     },
   },
   chooser: {
@@ -646,6 +654,8 @@ export const ui = {
       assign: (n: number, area: string, on: boolean): string => on ? `${n === 1 ? "1 reference" : `${n} references`} under ${area}` : `${n === 1 ? "1 reference" : `${n} references`} out of ${area}`,
       neverAdd: (area: string, rule: string): string => `In ${area}, never: \u201c${rule}\u201d`,
       neverRemove: (area: string, rule: string): string => `No longer ruled out in ${area}: \u201c${rule}\u201d`,
+      client: (project: string): string => `${project}: the client's site is marked`,
+      clientOff: (project: string): string => `${project} is not a redesign any more`,
       decide: (area: string): string => `${area} rewritten`,
       clear: (area: string): string => `${area} emptied`,
       release: (area: string): string => `${area} handed back to the board`,

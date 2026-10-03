@@ -2,6 +2,7 @@
 
 import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
+import { setProjectClient } from "@/app/actions/polish";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
@@ -1384,6 +1385,12 @@ export default function InspoClient({
             focusArea={focusArea}
             onOpenChange={setOpenArea}
             matches={matchIds}
+            onClient={async (itemId) => {
+              const id = currentProject.id;
+              const r = await setProjectClient(id, itemId).catch((e) => ({ ok: false as const, error: String(e) }));
+              if (!r.ok) { projectFailed(new Error(r.error)); return; }
+              setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, clientItemId: itemId } : p)));
+            }}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
@@ -1533,6 +1540,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       case "rename_project": return did.rename_project(d.project ?? "");
       case "delete_project": return did.delete_project(d.project ?? "");
       case "brief": return did.brief(d.project ?? "");
+      case "client": return d.on ? did.client(d.project ?? "") : did.clientOff(d.project ?? "");
       case "add_url": return did.add_url(d.name ?? "");
       case "note": return did.note(d.name ?? "");
       case "comment": return did.comment(d.name ?? "");

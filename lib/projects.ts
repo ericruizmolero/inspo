@@ -25,7 +25,7 @@ async function cleanName(name: string): Promise<string> {
  */
 export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks; shelf: ProjectLinks }> {
   const [projects, rows] = await Promise.all([
-    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'` }).from(P).where(eq(P.organizationId, organizationId)).orderBy(asc(P.createdAt)),
+    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'`, clientItemId: sql<string | null>`${P.polish}->'brief'->>'clientItemId'` }).from(P).where(eq(P.organizationId, organizationId)).orderBy(asc(P.createdAt)),
     db.select({ projectId: PI.projectId, itemId: PI.itemId, archivedAt: PI.archivedAt }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};

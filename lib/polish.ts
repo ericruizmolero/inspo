@@ -115,6 +115,7 @@ export function cleanBrief(input: Partial<PolishBrief>, userId: string): PolishB
     avoidItems: ids(input.avoidItems, 50),
     avoid: text(input.avoid),
     firstSeconds: text(input.firstSeconds),
+    clientItemId: typeof input.clientItemId === "string" && input.clientItemId ? input.clientItemId.slice(0, 40) : null,
     updatedAt: new Date().toISOString(),
     updatedBy: userId,
   };
@@ -122,9 +123,22 @@ export function cleanBrief(input: Partial<PolishBrief>, userId: string): PolishB
 
 export async function saveBrief(organizationId: string, projectId: string, input: Partial<PolishBrief>, userId: string): Promise<PolishState> {
   const state = stateOf((await projectRow(organizationId, projectId)).polish as Stored | null);
-  const next: Stored = { ...state, brief: cleanBrief(input, userId) };
+  // What is not sent stays: the agent's "brief" sends only the sentence, and the client's site is set on its own (setClientBrand)
+  const next: Stored = { ...state, brief: cleanBrief({ ...(state.brief ?? {}), ...input }, userId) };
   await savePolish(organizationId, projectId, next);
   return withWhys(organizationId, projectId, next);
+}
+
+/** Marks the reference that is the client's current site (a redesign), or clears it. Only a reference filed in the project */
+export async function setClientBrand(organizationId: string, projectId: string, itemId: string | null, userId: string): Promise<void> {
+  const state = stateOf((await projectRow(organizationId, projectId)).polish as Stored | null);
+  if (itemId) {
+    const [own] = await db.select({ id: schema.projectItem.itemId }).from(schema.projectItem)
+      .where(and(eq(schema.projectItem.organizationId, organizationId), eq(schema.projectItem.projectId, projectId), eq(schema.projectItem.itemId, itemId))).limit(1);
+    if (!own) throw new HttpError(400, (await getErrors()).badBody);
+  }
+  const base = state.brief ?? cleanBrief({}, userId);
+  await savePolish(organizationId, projectId, { ...state, brief: { ...base, clientItemId: itemId, updatedAt: new Date().toISOString(), updatedBy: userId } });
 }
 
 // ─── Decisions ───────────────────────────────────────────────────────────────

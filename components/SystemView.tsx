@@ -41,6 +41,8 @@ interface Props {
   onOpenChange?: (area: SystemArea | null) => void;
   /** While the search box filters: the references it found. The rest step back */
   matches?: Set<string> | null;
+  /** A redesign: marks which reference is the client's current site (null clears it) */
+  onClient?: (itemId: string | null) => Promise<void>;
 }
 
 // ─── Reading the material ────────────────────────────────────────────────────
@@ -421,13 +423,13 @@ function BentoColor({ vs, chosen, labels }: { vs: RefVisual[]; chosen: { bg?: st
 /** Typography on the bento: the sample itself, small. The project's name and its sentence in the pairing
  *  chosen on the area's stage, in the references' real faces, on the colours and the radius the other areas
  *  have put on it. Until the faces arrive, the families by name. */
-function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, curation, choices, cta, more }: {
+function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, curation, clientItemId, choices, cta, more }: {
   projectId: string; name: string; intent: string; summary: string;
-  refs: InspoItem[]; visuals: RefVisual[]; fallback: RefVisual[]; curation: AreaCuration | null;
+  refs: InspoItem[]; visuals: RefVisual[]; fallback: RefVisual[]; curation: AreaCuration | null; clientItemId: string | null;
   choices: SampleChoices; cta: string; more: string;
 }) {
   const { rows } = useTypeRows(projectId, refs, visuals);
-  const pair = useTypePair(projectId, rows, curation);
+  const pair = useTypePair(projectId, rows, curation, clientItemId);
   if (!pair.title || !pair.body) return <TypeSpecimen vs={fallback} sample={name} />;
   const fams = [...new Set([pair.title, pair.subtitle, pair.body].filter((x): x is NonNullable<typeof x> => !!x).map((x) => x.row.label))];
   return (
@@ -443,12 +445,48 @@ function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, 
 const hasMaterial = (area: SystemArea, vs: RefVisual[]) =>
   area === "logo" ? vs.some((v) => v.logo) : area === "iconography" ? vs.some((v) => v.icons.length) : area === "imagery" ? vs.some((v) => v.cover || v.scroll) : true;
 
+/** A redesign: which reference is the client's current site. Its copy, typefaces, logo and figures rule the system */
+function ClientPicker({ client, board, imageOf, onPick }: { client: InspoItem | null; board: InspoItem[]; imageOf: (item: InspoItem) => string | null; onPick: (itemId: string | null) => Promise<void> }) {
+  const { t } = useT();
+  const s = t.system.client;
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const pick = async (id: string | null) => { setBusy(true); try { await onPick(id); setOpen(false); } finally { setBusy(false); } };
+  const webs = board.filter((i) => i.id && /^https?:/.test(i.web));
+  return (
+    <div className="sysb-client">
+      {client ? (
+        <span className="sysb-client__on" title={s.hint}>
+          <Thumb item={client} image={imageOf(client)} />
+          <span>{s.redesignOf} <b>{client.name}</b></span>
+          <button type="button" className="sysb-client__x" disabled={busy} aria-label={s.clear} title={s.clear} onClick={() => void pick(null)}>{Icons.x}</button>
+        </span>
+      ) : (
+        <button type="button" className="sysb-client__ask" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{s.ask}</button>
+      )}
+      {open && !client && (
+        <div className="sysb-client__pop" role="dialog" aria-label={s.ask}>
+          <p className="sysb-client__hint">{s.hint}</p>
+          <div className="sysb-client__list">
+            {webs.map((i) => (
+              <button key={i.id} type="button" className="sysb-client__item" disabled={busy} onClick={() => void pick(i.id!)}>
+                <Thumb item={i} image={imageOf(i)} /><span>{i.name}</span>
+              </button>
+            ))}
+            {!webs.length && <p className="sysv-muted">{s.none}</p>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** The areas whose result is seen on the sample (typography has it inside its tester) */
 const SAMPLE_AREAS = new Set<SystemArea>(["color", "layout", "motion", "voice"]);
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
-export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, onClient }: Props) {
   const { t } = useT();
   const setSystem = onSystem;
   const [visuals, setVisuals] = useState<RefVisual[]>([]);
@@ -517,6 +555,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   const itemOf = useMemo(() => { const m = new Map(library.filter((i) => i.id).map((i) => [i.id!, i])); return (id: string) => m.get(id); }, [library]);
   const labels = t.system.areas as Record<SystemArea, string>;
+  // A redesign: the client's current site, filed in the project
+  const clientItem = project.clientItemId ? board.find((i) => i.id === project.clientItemId) ?? null : null;
   const sys = system ?? emptySystem(project.id);
   const filled = sys.areas.filter((a) => a.decision).length;
   // How polished the system is: every area counts, a team decision as 100, an open area as 0
@@ -573,7 +613,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
     project: project.name, system: sys,
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
-  }), [sys, project.name, library, labels, t]);
+    client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
+  }), [sys, project.name, library, labels, t, clientItem]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // The system, as the tiles a person reads or as the file an agent reads: the same thing, seen two ways. Kept on this machine
   const [view, setViewNow] = useState<"bento" | "md">("bento");
@@ -590,7 +631,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // The faces of the sample come from typography's references wherever it is shown; with none filed yet, from the first of the board
   const typeArea = sys.areas.find((a) => a.area === "typography");
   const typeOwn = (typeArea?.evidence ?? []).map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
-  const typeRefs = typeOwn.length ? typeOwn : board.slice(0, 8);
+  const typeRefs = useMemo(() => {
+    const base = typeOwn.length ? typeOwn : board.slice(0, 8);
+    return clientItem && !base.some((i) => i.id === clientItem.id) ? [clientItem, ...base] : base;
+  }, [typeOwn.map((i) => i.id).join(), board, clientItem]); // eslint-disable-line react-hooks/exhaustive-deps
   // A reference joins or leaves an area from its stage. One from the Inbox is filed in the project first
   const [pendingRefs, setPendingRefs] = useState<Set<string>>(() => new Set());
   const toggleRef = async (area: SystemArea, item: InspoItem, on: boolean) => {
@@ -640,6 +684,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
             <div className="sysb-head__text">
               <h1 className="sysb-title">{project.name}</h1>
               {project.intent && <p className="sysb-intent">{project.intent}</p>}
+              {onClient && <ClientPicker client={clientItem} board={board} imageOf={imageOf} onPick={onClient} />}
             </div>
             <div className="sysb-head__side">
               <div className="tt-modes sysb-views" role="tablist" aria-label={t.system.views.label}>
@@ -711,7 +756,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   <div className="sysb-tile__specimen">
                     {a.area === "typography"
                       // With nothing filed under typography yet, the tile tries what the first of the board brings
-                      ? <BentoType projectId={project.id} name={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={typeRefs} visuals={visuals} fallback={vs} curation={a.curation} choices={choices} cta={t.system.type.comp.cta} more={t.system.sample.more} />
+                      ? <BentoType projectId={project.id} name={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={typeRefs} visuals={visuals} fallback={vs} curation={a.curation} clientItemId={clientItem?.id ?? null} choices={choices} cta={t.system.type.comp.cta} more={t.system.sample.more} />
                       : a.area === "color" ? <BentoColor vs={vs} chosen={sampleColors(choices)} labels={t.system.sample.colorRoles} />
                       : specimenOf(a, vs, project.name)}
                   </div>
@@ -764,7 +809,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   // With nothing filed under typography yet, the tester tries what the whole board brings
                   <TypeTester projectId={project.id} projectName={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={own.length ? own : board} visuals={visuals}
                     curation={a.curation} curating={curatingArea === a.area} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
-                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict} choices={choices} onChoice={setChoice}
+                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict} choices={choices} onChoice={setChoice} clientItemId={clientItem?.id ?? null}
                     onUse={(decision) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why: a.why }))} />
                 ) : (
                   <>
@@ -773,7 +818,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                       <AreaSample area={a.area} projectId={project.id} projectName={project.name} intent={project.intent ?? ""} summary={sys.summary}
                         typeRefs={typeRefs} visuals={visuals} areaVisuals={vs} typeCuration={typeArea?.curation ?? null}
                         choices={choices} onChoice={setChoice} colorRole={colorRole} onColorRole={setColorRole} replay={replay} onReplay={() => setReplay((n) => n + 1)}
-                        busy={busy.has(a.area)}
+                        busy={busy.has(a.area)} clientItemId={clientItem?.id ?? null}
                         onUse={a.area === "color" ? (decision) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why: a.why })) : undefined} />
                     )}
                     {curatingArea === a.area ? (

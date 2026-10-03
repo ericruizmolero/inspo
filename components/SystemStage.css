@@ -376,3 +376,19 @@
 .sysv-never li { font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
 .sysv-never li::marker { color: var(--muted); }
 .sysv-never__label { margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+
+/* A redesign: the client's site, under the project's name */
+.sysb-client { position: relative; margin-top: 10px; }
+.sysb-client__ask { height: 30px; padding: 0 11px; border: 0; border-radius: 9px; background: transparent; box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--text-2); font: inherit; font-size: 12.5px; cursor: pointer; }
+.sysb-client__ask:hover { color: var(--text); background: var(--surface); }
+.sysb-client__on { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 4px 0 4px; border-radius: 10px; background: var(--surface); font-size: 13px; color: var(--text-2); }
+.sysb-client__on .sysv-thumb { width: 40px; height: 26px; margin: 0; border: 0; border-radius: 6px; } .sysb-client__on .sysv-thumb img { object-position: top; }
+.sysb-client__on b { font-weight: 600; color: var(--text); }
+.sysb-client__x { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.sysb-client__x svg { width: 12px; height: 12px; } .sysb-client__x:hover { color: var(--text); background: var(--surface-2); }
+.sysb-client__pop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: min(420px, 90vw); padding: 12px; border-radius: 14px; background: var(--panel); box-shadow: 0 18px 48px -12px rgba(0,0,0,0.5), 0 0 0 1px var(--border); display: flex; flex-direction: column; gap: 8px; }
+.sysb-client__hint { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.sysb-client__list { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; }
+.sysb-client__item { display: flex; align-items: center; gap: 10px; padding: 6px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.sysb-client__item:hover { background: var(--surface); color: var(--text); }
+.sysb-client__item .sysv-thumb { width: 52px; height: 34px; margin: 0; border: 0; border-radius: 6px; } .sysb-client__item .sysv-thumb img { object-position: top; }

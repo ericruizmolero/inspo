@@ -12,7 +12,9 @@ export interface CriterioMdInput {
   /** The workspace's references by id, for the names and URLs behind each decision */
   items: Record<string, { name: string; web: string }>;
   labels: Record<SystemArea, string>;
-  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string };
+  /** A redesign: the client's current site, whose copy, typefaces, logo and figures rule */
+  client?: { name: string; web: string } | null;
+  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string };
 }
 
 export type CriterioBlock =
@@ -30,9 +32,9 @@ export type CriterioBlock =
     meta: string[];
   };
 
-export function criterioBlocks({ project, system, items, labels, strings }: CriterioMdInput): CriterioBlock[] {
+export function criterioBlocks({ project, system, items, labels, strings, client }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
-  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`] }];
+  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`, ...(client ? [`**${strings.client}:** [${client.name}](${client.web})`] : [])] }];
   if (system.summary) blocks.push({ kind: "summary", heading: strings.summary, text: system.summary });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);

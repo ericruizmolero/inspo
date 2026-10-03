@@ -252,6 +252,12 @@ export async function boardStamp(organizationId: string, projectId: string): Pro
   return { stamp, itemIds: refs.map((r) => r.itemId) };
 }
 
+/** The board as the model reads it, with the client's current site marked when the project is a redesign */
+function markClient(refs: BoardRef[], brief: PolishBrief | null | undefined) {
+  const id = brief?.clientItemId;
+  return refs.map((r) => (id && r.itemId === id ? { ...r.ref, client_site: true } : r.ref));
+}
+
 function briefForModel(b: PolishBrief | null | undefined) {
   if (!b) return null;
   return { about: b.about || null, audience_note: b.audienceNote || null, tone: b.tone.length ? b.tone : null, avoid: b.avoid || null, first_five_seconds: b.firstSeconds || null };
@@ -264,6 +270,7 @@ const SYSTEM = `A design team keeps a board of references for one project: websi
 The system is alive and starts empty. Your job is to fill only what the board supports, and to say how far it supports it.
 
 Rules:
+- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), typefaces (as its stylesheets name them), logo and figures are the source of truth: carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.
 - The team's words come first. A note, a comment or a thing they pointed at says WHY a reference is here: that is the decision's root. The measured brief says WHAT the reference does: use it to make the decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - A decision is an instruction an agent can execute for THIS project, in 1 to 3 sentences (max 60 words): concrete values when the evidence has them, the principle when it does not. Write what the project will do, not what the references do ("Headlines in a high-contrast serif at 400, body in a geist-like grotesque", not "r1 uses a serif").
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
@@ -321,7 +328,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       `Project: ${project.name}`,
       `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
       `System as it stands (JSON): ${JSON.stringify(standing)}`,
-      `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
+      `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
     ].join("\n\n");
 
     let res: Awaited<ReturnType<typeof llm>>;
@@ -387,6 +394,7 @@ const OPTIONS_SYSTEM = `A design team keeps a board of references for one projec
 Your job: lay out the 2 or 3 DIRECTIONS the board actually allows for that area, so the team can pick one. Each direction is a decision written for this project, as an instruction an agent can execute (1 to 3 sentences, max 60 words), backed by the references that point that way.
 
 Rules:
+- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), typefaces (as its stylesheets name them), logo and figures are the source of truth: carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.
 - Directions come from the board, not from taste. Two references that pull different ways make two directions; if the board only supports one direction, return that one alone (and a second only if the team's words make another plausible).
 - Directions must differ in substance (a serif headline vs a grotesque headline; a monochrome palette vs one accent; dense bento vs airy single column), not in wording.
 - Each direction has a "why": one sentence of at most 24 words, for the team, saying what the project would feel like if it goes this way. No verdict, no advice.
@@ -424,7 +432,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
     only ? `The team picked these references for this area, on purpose: build the directions from them alone.` : "",
-    `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
+    `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
@@ -579,6 +587,7 @@ export async function startAreaAsk(input: StartInput): Promise<AreaStartAsk> {
     current.areas.find((x) => x.area === area)?.never ? `Ruled out by the team for this area, never offer them:\n${current.areas.find((x) => x.area === area)!.never}` : "",
     `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
     `In a paragraph: ${current.summary || "(not written yet)"}`,
+    project.polish?.brief?.clientItemId ? `This project is a REDESIGN of the client's current site (${String(refs.find((r) => r.itemId === project.polish!.brief!.clientItemId)?.ref.url ?? "on the board")}): for typography, logo and voice the answers take what that site already uses, never something new.` : "",
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
     `What the team said about the references on the board (JSON): ${JSON.stringify(refs.map((r) => { const x = r.ref as Record<string, unknown>; return { name: x.name, notes: x.curator_notes ?? undefined, team_comments: x.team_comments }; }))}`,
   ].join("\n\n");
@@ -794,6 +803,7 @@ export async function applyTriage(organizationId: string, picks: { itemId: strin
 const CURATE_SYSTEM = `A design team keeps a board of references for one project and is deciding one AREA of the project's design system (typography, color, layout, motion and interaction, iconography, logo, imagery or voice). The board offers CANDIDATES for that area: the typefaces found across the references, their palettes, their easings, their captures, their lines of copy. Each candidate says which references it comes from, and each reference comes with the team's note and comments (why they saved it).
 
 Your job, as the team's agent: decide the area from the candidates, the way a senior designer who knows the brief would.
+- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), typefaces (as its stylesheets name them), logo and figures are the source of truth: carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.
 - For every candidate, "keep" true or false and a "reason" of at most 16 words, for the team: what it brings to this project, or why it goes. Judge against the brief and the team's words first, then against coherence (one or two families, one palette logic, one easing). Keeping everything is not deciding; keeping nothing is only right when nothing fits.
 - "decision": the area's decision as an instruction an agent can execute (1 to 3 sentences, max 60 words), built from what you kept, with the concrete values the candidates carry.
 - "why": the criterio, in one or two sentences (max 40 words): why this and not the rest, rooted in the brief and what the team said. This is the part the team will read twice.
@@ -822,7 +832,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
     `The area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, why: standing.why, source: standing.source } : null)}`,
     input.keep && Object.keys(input.keep).length ? `The team already settled some candidates, keep these verdicts exactly (JSON): ${JSON.stringify(input.keep)}` : "",
     `Candidates (JSON): ${JSON.stringify(candidates.map((c) => ({ id: c.id, label: c.label, detail: c.detail, refs: c.refs.map((id) => codeOf.get(id) ?? id), ...c.visual })))}`,
-    `References on the board (JSON): ${JSON.stringify(refs.map((r) => r.ref))}`,
+    `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
