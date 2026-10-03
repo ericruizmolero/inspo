@@ -21,7 +21,7 @@ import { saveBrief } from "./polish";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
 import { taggerEnabled } from "./tagger";
-import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage } from "./system";
+import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 
@@ -46,6 +46,8 @@ const ActionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("assign"), items: z.array(z.string()), project: z.string(), area: Area, on: z.boolean() }),
   // Writes the area as the team's: the person dictated it, runs leave it alone
   z.object({ kind: z.literal("decide"), project: z.string(), area: Area, decision: z.string(), why: z.string() }),
+  // What an area must never do: a rule added, or one taken out (matched by its words)
+  z.object({ kind: z.literal("never"), project: z.string(), area: Area, add: z.string().nullable(), remove: z.string().nullable() }),
   z.object({ kind: z.literal("release"), project: z.string(), area: Area }),
   z.object({ kind: z.literal("clear"), project: z.string(), area: Area }),
   z.object({ kind: z.literal("undo"), project: z.string(), area: Area }),
@@ -158,7 +160,7 @@ const PLAN_SYSTEM = `You are the agent inside a design team's tool. The team kee
 The catalogue (kind: what it does):
 - search: a search of the library by words. go: open a project (or "inbox", "library", "home"), a view ("system" or "board"), an area.
 - file: put references in a project (on true) or take them out (on false). assign: hang references from an area of a project's system (on true) or take them off it (on false).
-- decide: write an area's decision and its why, as the team's. release: hand an area back to the board (the model may change it again). clear: empty an area. undo: one step back in an area (its previous text).
+- decide: write an area's decision and its why, as the team's. never: what an area must NEVER do. "add" carries the rule itself, written out in 3 to 12 words in the person's language (e.g. add: "rebotes y curvas elásticas", remove: null); "remove" carries the words of a rule to take out (add: null). Never leave both empty: one action per rule. Use it for "never…", "no more…", "we threw away…", "don't use…", and leave the decision alone. release: hand an area back to the board (the model may change it again). clear: empty an area. undo: one step back in an area (its previous text).
 - read_board: the model reads the whole board and proposes every area it can. curate: the model sets the table of one area (candidates kept and discarded, with reasons) and drafts its decision.
 - organize: the model files the unfiled references (the inbox, or the given ones) into projects and areas.
 - create_project (name, about), rename_project, delete_project, brief (the project's about, one paragraph).
@@ -168,6 +170,7 @@ The catalogue (kind: what it does):
 Several actions in one request are fine, in order.
 
 How to read the request:
+- A prohibition ("never…", "no…", "nada de…", "sin…", "fuera…") about an area is a "never" action. Do not also rewrite the decision with "decide": the decision stays exactly as it is.
 - "this", "these", "esta", "estas", "it", "la": in this order, the reference marked "open" (in the panel), then "under_pointer" (the card the pointer was on last, seconds before they sent the request), then the ones marked "picked" (ticked on the ring), then "recent" (what the previous request touched), then what is "on_screen" when the request clearly means all of them. If none of these fits and the request needs one reference, do not guess: say what you need in "say" and return no actions.
 - The earlier exchanges of this conversation come with the request: a short follow-up ("and in color too", "undo that", "the other one") continues them.
 - A project named loosely ("la landing", "savvia") is the closest project by name. No project named and one is open: that one.
@@ -301,6 +304,14 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         case "decide":
           await decideArea(org, a.project, a.area, { decision: a.decision, why: a.why }, author);
           line.project = names.get(a.project); line.area = a.area; line.text = a.decision; systemsTouched = true; break;
+        case "never": {
+          const cur = (await getSystem(org, a.project)).areas.find((x) => x.area === a.area)?.never ?? "";
+          let lines = cur.split("\n").filter(Boolean);
+          if (a.remove) { const r = a.remove.toLowerCase(); lines = lines.filter((l) => !l.toLowerCase().includes(r) && !r.includes(l.toLowerCase())); }
+          if (a.add?.trim() && !lines.some((l) => l.toLowerCase() === a.add!.trim().toLowerCase())) lines.push(a.add.trim());
+          await setAreaNever(org, a.project, a.area, lines.join("\n"));
+          line.project = names.get(a.project); line.area = a.area; line.text = a.add ?? a.remove ?? ""; line.on = !!a.add; systemsTouched = true; break;
+        }
         case "clear":
           await decideArea(org, a.project, a.area, { decision: "" }, author);
           line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;

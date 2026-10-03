@@ -368,3 +368,11 @@
 .stt-own__go svg { width: 13px; height: 13px; } .stt-own__go:disabled { opacity: 0.35; cursor: default; }
 .stt-cards { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 10px; }
 .stt-card .stt-card__img { border-radius: 10px; }
+
+/* What an area never does: under the decision, quiet, a rule a line */
+.sysv-never { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--danger, #e5484d) 7%, transparent); cursor: text; }
+.sysv-never b { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.sysv-never ul { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 2px; }
+.sysv-never li { font-size: 12.5px; line-height: 1.45; color: var(--text-2); }
+.sysv-never li::marker { color: var(--muted); }
+.sysv-never__label { margin-top: 2px; font-size: 12px; font-weight: 600; color: var(--text-2); }

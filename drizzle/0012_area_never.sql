@@ -1,0 +1,1 @@
+ALTER TABLE "system_area" ADD COLUMN IF NOT EXISTS "never" text DEFAULT '' NOT NULL;

@@ -22,7 +22,7 @@ import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
 import { recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, SYSTEM_AREAS, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
+import { DECISION_MAX, NEVER_MAX, SYSTEM_AREAS, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
 
@@ -62,6 +62,7 @@ const areaState = (r: AreaRow): SystemAreaState => ({
   source: (r.source as SystemAreaState["source"]) ?? null,
   decidedBy: r.decidedBy,
   why: r.why ?? "",
+  never: r.never ?? "",
   curation: (r.curationJson as AreaCuration | null) ?? null,
   updatedAt: r.updatedAt.toISOString(),
 });
@@ -111,7 +112,7 @@ async function ensureHead(organizationId: string, projectId: string, now: Date):
   await db.insert(S).values({ projectId, organizationId, summary: "", runJson: null, createdAt: now, updatedAt: now }).onConflictDoNothing();
 }
 
-type AreaWrite = Omit<SystemAreaState, "updatedAt" | "why" | "curation"> & { why?: string; curation?: AreaCuration | null };
+type AreaWrite = Omit<SystemAreaState, "updatedAt" | "why" | "curation" | "never"> & { why?: string; curation?: AreaCuration | null };
 
 async function writeArea(organizationId: string, projectId: string, next: AreaWrite, author: { id: string | null; name: string }, now: Date): Promise<void> {
   const why = (next.why ?? "").trim().slice(0, 400);
@@ -159,6 +160,19 @@ export async function decideArea(organizationId: string, projectId: string, area
     }
     await writeArea(organizationId, projectId, { area, decision, confidence, evidence, source: "team", decidedBy: author.id, why: typeof input.why === "string" ? input.why : current.why }, { id: author.id, name: author.name }, now);
   }
+  return getSystem(organizationId, projectId);
+}
+
+/** What an area must never do, as the team wrote it (one rule per line). Apart from the decision: writing it
+ *  neither confirms nor changes what the area decided, and the board's runs leave it alone. */
+export async function setAreaNever(organizationId: string, projectId: string, areaKey: string, never: string): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const text = String(never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX);
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  await db.insert(A).values({ projectId, organizationId, area, never: text, updatedAt: now })
+    .onConflictDoUpdate({ target: [A.projectId, A.area], set: { never: text, updatedAt: now } });
   return getSystem(organizationId, projectId);
 }
 
@@ -301,6 +315,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       decision: a.decision || undefined,
       confidence: a.decision ? a.confidence : undefined,
       evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take || undefined, filed_by_team: e.pinned || undefined })) : undefined,
+      never: a.never ? a.never.split("\n") : undefined,
     }));
     const text = [
       `Project: ${project.name}`,
@@ -404,6 +419,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
   const text = [
     `Project: ${project.name}`,
     `Area to settle: ${area}`,
+    standing.never ? `The team ruled these out for this area, never propose them (one per line):\n${standing.never}` : "",
     `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
     `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
@@ -560,6 +576,7 @@ export async function startAreaAsk(input: StartInput): Promise<AreaStartAsk> {
   const text = [
     `Project: ${project.name}`,
     `The empty area: ${area}`,
+    current.areas.find((x) => x.area === area)?.never ? `Ruled out by the team for this area, never offer them:\n${current.areas.find((x) => x.area === area)!.never}` : "",
     `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
     `In a paragraph: ${current.summary || "(not written yet)"}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,

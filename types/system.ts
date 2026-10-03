@@ -29,6 +29,8 @@ export interface SystemAreaState {
   decidedBy: string | null;
   /** The criterio: why this decision and not the rest */
   why: string;
+  /** What this area must never do, one rule per line (what was tried and thrown away). Kept apart from the decision */
+  never: string;
   /** The agent's curation of what the board offers for this area, for the team to review */
   curation: AreaCuration | null;
   /** ISO */
@@ -87,6 +89,8 @@ export interface ProjectSystem {
 }
 
 export const DECISION_MAX = 600;
+/** The never list of an area, all its lines together */
+export const NEVER_MAX = 800;
 
 /** Three looks on screen: nothing decided, a proposal the board half supports, a decision to build on */
 export type Confidence = "empty" | "low" | "high";
@@ -99,7 +103,7 @@ export function emptySystem(projectId: string): ProjectSystem {
   return {
     projectId,
     summary: "",
-    areas: SYSTEM_AREAS.map((area) => ({ area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "", curation: null, updatedAt: now })),
+    areas: SYSTEM_AREAS.map((area) => ({ area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "", never: "", curation: null, updatedAt: now })),
     run: null,
     updatedAt: null,
   };

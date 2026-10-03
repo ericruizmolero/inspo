@@ -1522,6 +1522,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       case "file": return did.file(d.n ?? 0, d.project ?? "", d.on !== false);
       case "assign": return did.assign(d.n ?? 0, area, d.on !== false);
       case "decide": return did.decide(area);
+      case "never": return d.on ? did.neverAdd(area, d.text ?? "") : did.neverRemove(area, d.text ?? "");
       case "clear": return did.clear(area);
       case "release": return did.release(area);
       case "undo": return did.undo(area);

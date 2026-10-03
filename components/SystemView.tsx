@@ -6,11 +6,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { InspoItem, Project } from "@/types/inspo";
-import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
+import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
 import { blocksToMd, criterioBlocks } from "@/lib/criterio-md";
 import { fontStack } from "@/lib/font-names";
-import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
+import { loadSystem, loadSystemVisuals, decideSystemArea, setSystemNever, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
@@ -217,6 +217,8 @@ interface TileProps {
   itemOf: (id: string) => InspoItem | undefined;
   imageOf: (item: InspoItem) => string | null;
   onDecide: (decision: string, evidence?: SystemEvidence[], why?: string) => Promise<void>;
+  /** What the area must never do, one rule per line */
+  onNever: (never: string) => Promise<void>;
   onRelease: () => Promise<void>;
   onUndo: () => Promise<void>;
   onOptions: (itemIds?: string[]) => Promise<AreaOption[]>;
@@ -228,6 +230,16 @@ interface TileProps {
   stage?: boolean;
   /** Picking, among the area's references on its stage, the ones it should be decided from: how many are chosen, and the controls */
   picking: { active: boolean; count: number; start: () => void; stop: () => void; propose: () => Promise<AreaOption[]> } | null;
+}
+
+/** What an area must never do, under its decision: the rules the team threw away, one a line */
+function NeverList({ text, label, onEdit }: { text: string; label: string; onEdit: () => void }) {
+  return (
+    <div className="sysv-never" onClick={onEdit} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") onEdit(); }}>
+      <b>{label}</b>
+      <ul>{text.split("\n").filter(Boolean).map((l, i) => <li key={i}>{l}</li>)}</ul>
+    </div>
+  );
 }
 
 const headlineOf = (decision: string) => {
@@ -249,12 +261,14 @@ function specimenOf(area: SystemAreaState, visuals: RefVisual[], sample: string)
   }
 }
 
-function Tile({ area, label, visuals, fromBoard, sample, history, busy, running, hasBoard, itemOf, imageOf, onDecide, onRelease, onUndo, onOptions, picking, onCurate, onVerdict, curating, stage }: TileProps) {
+function Tile({ area, label, visuals, fromBoard, sample, history, busy, running, hasBoard, itemOf, imageOf, onDecide, onNever, onRelease, onUndo, onOptions, picking, onCurate, onVerdict, curating, stage }: TileProps) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(area.decision);
   const [whyDraft, setWhyDraft] = useState(area.why);
   useEffect(() => { setWhyDraft(area.why); }, [area.why]);
+  const [neverDraft, setNeverDraft] = useState(area.never);
+  useEffect(() => { setNeverDraft(area.never); }, [area.never]);
   const [options, setOptions] = useState<AreaOption[] | null>(null);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -266,7 +280,11 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
   const level = confidenceOf(area);
   const evidence = area.evidence.map((e) => ({ ...e, item: itemOf(e.itemId) })).filter((e) => e.item);
   const polish = async (fn: () => Promise<AreaOption[]> = onOptions) => { setLoadingOptions(true); try { setOptions(await fn()); picking?.stop(); } catch { /* the error shows in the middle */ } finally { setLoadingOptions(false); } };
-  const save = async () => { if (draft.trim() === area.decision.trim() && whyDraft.trim() === area.why.trim()) { setEditing(false); return; } await onDecide(draft, undefined, whyDraft); setEditing(false); };
+  const save = async () => {
+    if (draft.trim() !== area.decision.trim() || whyDraft.trim() !== area.why.trim()) await onDecide(draft, undefined, whyDraft);
+    if (neverDraft.trim() !== area.never.trim()) await onNever(neverDraft);
+    setEditing(false);
+  };
 
   const specimen = stage ? null : specimenOf(area, visuals, sample);
   const status = area.source === "team" ? t.system.confidence.team : level === "high" ? t.system.confidence.high : level === "low" ? t.system.confidence.low : null;
@@ -334,6 +352,10 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
               <textarea className="input sysv-edit__text sysv-edit__why" rows={2} maxLength={400} value={whyDraft} placeholder={t.system.whyPlaceholder}
                 onChange={(e) => setWhyDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Escape") setEditing(false); if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void save(); }} />
+              <label className="sysv-never__label">{t.system.md.never}</label>
+              <textarea className="input sysv-edit__text sysv-edit__why" rows={3} maxLength={NEVER_MAX} value={neverDraft} placeholder={t.system.neverPlaceholder}
+                onChange={(e) => setNeverDraft(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape") setEditing(false); if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void save(); }} />
               <div className="sysv-edit__row">
                 <Button variant="primary" size="sm" disabled={busy} onClick={() => void save()}>{t.system.save}</Button>
                 <Button variant="ghost" size="sm" disabled={busy} onClick={() => setEditing(false)}>{t.system.cancel}</Button>
@@ -344,10 +366,14 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
             <div className="sysv-decision">
               <p className="sysv-tile__decision" onClick={() => setEditing(true)} title={t.system.edit}>{area.decision}</p>
               {area.why && <p className="sysv-why" onClick={() => setEditing(true)} title={t.system.edit}><b>{t.system.whyLabel}</b> {area.why}</p>}
+              {area.never && <NeverList text={area.never} label={t.system.md.never} onEdit={() => setEditing(true)} />}
               {area.source !== "team" && <Button variant="primary" size="sm" disabled={busy} onClick={() => void onDecide(area.decision, undefined, area.why)}>{Icons.check} {t.system.confirmWhy}</Button>}
             </div>
           ) : (
-            <p className="sysv-tile__empty">{hasBoard ? t.system.emptyHint : t.system.noBoardShort}</p>
+            <>
+              <p className="sysv-tile__empty">{hasBoard ? t.system.emptyHint : t.system.noBoardShort}</p>
+              {area.never && <NeverList text={area.never} label={t.system.md.never} onEdit={() => setEditing(true)} />}
+            </>
           )}
 
           <footer className="sysv-tile__foot">
@@ -588,6 +614,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
       <Tile key={a.area} stage={stage} area={a} label={labels[a.area]} visuals={vs} fromBoard={fromBoard} sample={project.name} history={history[a.area] ?? []}
         busy={busy.has(a.area)} running={running} hasBoard={board.length > 0} itemOf={itemOf} imageOf={imageOf}
         onDecide={(decision, evidence, why) => withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, evidence, why }))}
+        onNever={(never) => withBusy(a.area, () => setSystemNever(project.id, a.area, never))}
         onCurate={(keep) => curate(a.area, keep)}
         onVerdict={(id, keep, reason) => withBusy(a.area, () => setSystemVerdict(project.id, a.area, { id, keep, reason }))}
         curating={curatingArea === a.area}
@@ -649,7 +676,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
           {error && <p className="sysv-error" role="alert">{error}</p>}
           {view === "md" && (
             <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied}
-              onSave={(area, decision, why) => withBusy(area, () => decideSystemArea(project.id, area, { decision, why }))} />
+              onSave={async (area, next) => {
+                const cur = sys.areas.find((x) => x.area === area)!;
+                if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));
+                if (next.never !== cur.never.trim()) await withBusy(area, () => setSystemNever(project.id, area, next.never));
+              }} />
           )}
           {view === "bento" && sys.summary && (
             <details className="sysn-core__criterio sysb-criterio">

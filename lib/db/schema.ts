@@ -475,6 +475,8 @@ export const systemArea = pgTable("system_area", {
   decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
   /** The criterio behind the decision: why this and not the rest, in the team's words (or the agent's, until confirmed) */
   why: text("why").notNull().default(""),
+  /** What this area must never do, one rule per line: what the team tried and threw away, so no one proposes it again */
+  never: text("never").notNull().default(""),
   /** The agent's curation of the candidates the board offers for this area: kept or discarded, each with its reason (types/system.ts AreaCuration) */
   curationJson: jsonb("curation_json").$type<unknown>(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
