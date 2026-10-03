@@ -89,6 +89,8 @@ export const ui: typeof EnUi = {
     retry: "Volver a intentarlo",
   },
   ws: {
+    manageTeam: "Gestionar equipo",
+    savedBy: (name: string): string => `Lo que ha guardado ${name}`,
     workspaces: "Workspaces",
     menuFor: (name: string): string => `${name}, menú del espacio`,
     personal: "Personal",
@@ -144,6 +146,7 @@ export const ui: typeof EnUi = {
     dismiss: "Descartar",
   },
   sidebar: {
+    library: "Biblioteca",
     addReference: "Añadir referencia",
     addTo: (project: string): string => `Añadir a ${project}`,
     discover: "Descubrir",
@@ -215,6 +218,10 @@ export const ui: typeof EnUi = {
     showing: (shown: number, total: number) => `${shown} de ${total}`,
   },
   projects: {
+    unfiled: "Sin proyecto",
+    createNew: "Crear proyecto",
+    aboutPlaceholder: "De qu\u00e9 va, en una frase (opcional)",
+    newHint: "La frase gu\u00eda la primera lectura",
     title: "Proyectos",
     inbox: "Inbox",
     inboxHint: "Referencias que aún no están en ningún proyecto",

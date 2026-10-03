@@ -109,7 +109,8 @@ const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
 const RATIOS_KEY = "inspo:ratios";
 /** The zoom (columns away from the usual number, see components/Grid.tsx), kept for the next visit */
-const ZOOM_KEY = "inspo:board-zoom";
+// ":2": the default moved one step out (DEFAULT_ZOOM -1); a zoom kept under the old key meant something else
+const ZOOM_KEY = "inspo:board-zoom:2";
 /** What floats over the board: the bars on top, the search dock at the bottom */
 const TOP_DESKTOP = 64;
 const TOP_MOBILE = 64;
@@ -263,6 +264,8 @@ export default function InspoClient({
   projectRef.current = currentProject?.id ?? null;
   const [confirm, confirmDialog] = useConfirm();
 
+  // What no project has taken (nor archived): the library's second view
+  const unfiledCount = useMemo(() => items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length))).length, [items, links, shelf]);
   // The items in the current space (inbox, a project or everything), before any other filter
   const spaceItems = useMemo(() => space === "all" || space === "home" ? items
     : space === "inbox" ? items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length)))
@@ -971,7 +974,7 @@ export default function InspoClient({
     [commentMap],
   );
 
-  // The zoom: 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
+  // The zoom: one step out of 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
   // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
   const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
   useLayoutEffect(() => {
@@ -1275,10 +1278,25 @@ export default function InspoClient({
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
+            members={members} onPerson={(name) => { if (space === "home") setSpace("all"); toggleFilter({ kind: "person", value: name }); }}
             onDirectory={() => setShowDirectory(true)} quota={quota} />
           <Logo size={28} className="topbar__logo" />
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
+            {/* The library is one place: everything, or only what no project has taken yet */}
+            {(space === "all" || space === "inbox") && projects.length > 0 && (
+              <>
+                <span className="topbar__modes" role="tablist" aria-label={t.sidebar.library}>
+                  <button type="button" role="tab" className={`topbar__mode${space === "all" ? " is-on" : ""}`} aria-selected={space === "all"} onClick={() => setSpace("all")}>
+                    {Icons.all} {t.sidebar.all} <span className="topbar__fill">{items.length}</span>
+                  </button>
+                  <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
+                    {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
+                  </button>
+                </span>
+                <span className="topbar__actions-sep" aria-hidden />
+              </>
+            )}
             {space === "inbox" && spaceItems.length > 0 && projects.length > 0 && (
               <>
                 {triage ? (

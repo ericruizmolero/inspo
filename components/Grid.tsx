@@ -22,8 +22,9 @@ const levelFor = (col: number): ShotLevel => (screenPx(col) <= 300 ? "thumb" : s
 /** What floats over the board on each side (the bars, the island, the panel): the cards keep clear of it */
 export interface Insets { top: number; left: number; right: number; bottom: number }
 
-/** The zoom is columns away from the usual number: positive is closer (fewer columns). A phone takes its own from its width. */
-export const DEFAULT_ZOOM = 0;
+/** The zoom is columns away from the usual number: positive is closer (fewer columns). A phone takes its own from its width.
+ *  The board opens one step out (one column more than 100%): more of the library at a glance. */
+export const DEFAULT_ZOOM = -1;
 /** How wide a card aims to be at 100%: the usual number of columns is however many of these fit */
 const BASE_COL = 360;
 const MIN_COLS = 2;

@@ -91,6 +91,8 @@ export const ui = {
     retry: "Try again",
   },
   ws: {
+    manageTeam: "Manage team",
+    savedBy: (name: string): string => `What ${name} saved`,
     workspaces: "Workspaces",
     menuFor: (name: string): string => `${name}, workspace menu`,
     personal: "Personal",
@@ -146,6 +148,7 @@ export const ui = {
     dismiss: "Dismiss",
   },
   sidebar: {
+    library: "Library",
     addReference: "Add reference",
     addTo: (project: string): string => `Add to ${project}`,
     discover: "Discover",
@@ -217,6 +220,10 @@ export const ui = {
     showing: (shown: number, total: number): string => `${shown} of ${total}`,
   },
   projects: {
+    unfiled: "No project",
+    createNew: "Create project",
+    aboutPlaceholder: "What it is about, in a sentence (optional)",
+    newHint: "The sentence guides the first reading",
     title: "Projects",
     inbox: "Inbox",
     inboxHint: "References not filed in any project yet",

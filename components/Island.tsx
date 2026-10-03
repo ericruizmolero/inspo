@@ -7,11 +7,13 @@
 // tab while they fit beside the right-hand pill (and at most MAX_TABS of them), the most recently active
 // first; "N more" lists the rest.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { savePolishBrief } from "@/app/actions/polish";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { parseDate } from "@/lib/search-query";
-import WorkspaceMenu, { WorkspaceFace } from "./WorkspaceMenu";
+import WorkspaceMenu, { UserAvatar, WorkspaceFace } from "./WorkspaceMenu";
 import { FillRing, Icons, PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
 import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
@@ -51,12 +53,44 @@ function NameTab({ initial = "", onSubmit, onCancel }: { initial?: string; onSub
   );
 }
 
-export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, space, onSpace,
-  onCreateProject, onRenameProject, onDeleteProject, onDirectory, quota }: {
+/** A new project, asked for where the + is: its name and, if the team has it, the sentence it opens with
+ *  (the brief the first reading of the board follows). Enter in the name, or ⌘↵ in the sentence, creates it. */
+function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: string) => Promise<void>; onDone: () => void }) {
+  const { t } = useT();
+  const [name, setName] = useState("");
+  const [about, setAbout] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    const n = name.trim();
+    if (!n || busy) return;
+    setBusy(true);
+    try { await onCreate(n, about.trim()); onDone(); } finally { setBusy(false); }
+  };
+  return (
+    <form className="island__new-form" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
+      <span className="island__new-title">{t.projects.newProject}</span>
+      <input autoFocus value={name} maxLength={60} disabled={busy} placeholder={t.projects.namePlaceholder} aria-label={t.projects.namePlaceholder}
+        onChange={(e) => setName(e.target.value)} />
+      <textarea rows={3} value={about} maxLength={500} disabled={busy} placeholder={t.projects.aboutPlaceholder} aria-label={t.projects.aboutPlaceholder}
+        onChange={(e) => setAbout(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit(); } }} />
+      <div className="island__new-foot">
+        <span className="island__new-hint">{t.projects.newHint}</span>
+        <button type="submit" className="island__new-go" disabled={busy || !name.trim()}>{busy && <span className="spinner spinner--sm" />}{t.projects.createNew}</button>
+      </div>
+    </form>
+  );
+}
+
+export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace,
+  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
   systems?: Record<string, ProjectSystem>;
+  /** The team, listed in the workspace menu; picking someone filters by what they saved */
+  members?: { name: string; image: string | null }[];
+  onPerson?: (name: string) => void;
   /** "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
@@ -139,6 +173,16 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: projects.filter((p) => keep.has(p.id)), hidden: order.filter((p) => !keep.has(p.id)) };
   }, [projects, order, fit]);
 
+  // The library is one tab: everything saved. What isn't in a project yet is a view of it (the right-hand pill)
+  const inLibrary = space === "all" || space === "inbox";
+  const createNew = async (name: string, about: string) => {
+    const p = await onCreateProject(name);
+    if (!p) return;
+    // The sentence is the project's brief from the first minute, as on the first screen
+    if (about) await savePolishBrief(p.id, { about }).catch(() => null);
+    onSpace(p.id);
+  };
+
   const day = (at: number) => new Date(at).toLocaleDateString(locale, { day: "numeric", month: "short" });
   // Each tab is a link to its space: a plain click switches in place (the search stays), a modified click
   // opens the space the way the browser opens any link
@@ -168,6 +212,41 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           <span className="island__chev" aria-hidden>{Icons.chevron}</span>
         </>}
         extras={<>
+          {/* The projects as folders and the team, one click from anywhere */}
+          <div className="ws__section">{t.projects.title}</div>
+          {projects.length > 0 && (
+            <div className="island__menu-list">
+              {projects.map((p) => (
+                <button key={p.id} type="button" className={`ws__item${space === p.id ? " is-active" : ""}`} onClick={() => onSpace(p.id)}>
+                  <span className="pp__icon" aria-hidden>{Icons.folder}</span>
+                  <span className="ws__item-name">{p.name}</span>
+                  <span className="island__n">{counts.byProject[p.id] ?? 0}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {/* After the menu has closed: opening one popover on the click that closes another shuts it at once */}
+          <button type="button" className="ws__item ws__item--muted" onClick={() => setTimeout(() => setNaming("new"), 150)}>
+            <span className="ws__plus" aria-hidden>{Icons.plus}</span>
+            <span className="ws__item-name">{t.projects.newProject}</span>
+          </button>
+          <div className="ws__divider" />
+          <div className="ws__section">{t.team.title}</div>
+          {members.length > 0 && (
+            <div className="island__menu-list">
+              {members.map((m) => (
+                <button key={m.name} type="button" className="ws__item" title={t.ws.savedBy(m.name)} onClick={() => onPerson?.(m.name)}>
+                  <UserAvatar name={m.name} image={m.image} small />
+                  <span className="ws__item-name">{m.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <Link className="ws__item ws__item--muted" href="/settings/members">
+            <span className="ws__plus" aria-hidden>{Icons.plus}</span>
+            <span className="ws__item-name">{t.ws.manageTeam}</span>
+          </Link>
+          <div className="ws__divider" />
           <button type="button" className="ws__item" onClick={onDirectory}>
             <span className="ws__plus ws__plus--solid" aria-hidden>{Icons.compass}</span>
             <span className="ws__item-name">{t.palette.openDirectory}</span>
@@ -183,8 +262,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
       <span className="island__sep" aria-hidden />
 
       <nav className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
-        {tab("all", t.sidebar.all, counts.all, true)}
-        {tab("inbox", t.projects.inbox, counts.inbox, true)}
+        <a href={hrefOf("all")} className={`island__tab${inLibrary ? " is-on" : ""}`} aria-current={inLibrary ? "page" : undefined} data-fixed onClick={go("all")}>
+          {label(t.sidebar.library, counts.all)}
+        </a>
         {shown.map((p) => naming === p.id ? (
           <NameTab key={p.id} initial={p.name} onCancel={() => setNaming(null)}
             onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} />
@@ -230,13 +310,12 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           </Popover>
         )}
 
-        {naming === "new" ? (
-          <NameTab onCancel={() => setNaming(null)}
-            onSubmit={async (name) => { setNaming(null); const p = await onCreateProject(name); if (p) onSpace(p.id); }} />
-        ) : (
-          <button type="button" className="island__tab island__tab--add" aria-label={t.projects.newProject} data-tip={t.projects.newProject}
-            data-fixed onClick={() => setNaming("new")}>{Icons.plus}</button>
-        )}
+        <Popover open={naming === "new"} onOpenChange={(o) => setNaming(o ? "new" : null)}>
+          <PopoverTrigger className="island__tab island__tab--add" aria-label={t.projects.newProject} data-tip={naming === "new" ? undefined : t.projects.newProject} data-fixed>{Icons.plus}</PopoverTrigger>
+          <PopoverContent align="start" className="pp island-pop island__new">
+            <NewProject onCreate={createNew} onDone={() => setNaming(null)} />
+          </PopoverContent>
+        </Popover>
       </nav>
 
       {/* Every project tab and "N more" at their own width, out of sight, for the measure above */}

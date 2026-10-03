@@ -3237,3 +3237,33 @@ button.postit__num { cursor: pointer; }
 .dock__agent-undo { margin-left: auto; flex: none; height: 22px; padding: 0 8px; border: 0; border-radius: 7px; background: var(--dock-fill); color: var(--dock-ink); font: inherit; font-size: 11.5px; cursor: pointer; }
 .dock__agent-undo:hover:not(:disabled) { background: var(--dock-chip); }
 .dock__agent-undone { margin-left: auto; flex: none; font-size: 11.5px; color: var(--dock-muted); }
+
+/* ─── More body in the glass (3 Oct): white ink has to read whatever is behind it, a white page included.
+   The bars keep some of the board through them; the menus that hang from them are almost solid. ─── */
+:root {
+  --dock-surface: rgba(18, 18, 17, 0.84);
+  --dock-surface-pop: rgba(22, 22, 21, 0.95);
+  --dock-blur: blur(24px) saturate(1.3);
+}
+.island-pop.island-pop, .sb--dock .sb__menu, .dock__agent { background: var(--dock-surface-pop); }
+/* The workspace menu also lists the projects and the team: long lists scroll inside it */
+.island__menu-list { display: flex; flex-direction: column; max-height: 204px; overflow-y: auto; overscroll-behavior: contain; }
+.island-pop .ws__item .island__n { margin-left: auto; font-size: 12px; }
+.island-pop .ws__avatar--user { border-radius: 50%; }
+/* A new project, from the +: a small form in the island's glass */
+.island-pop.island-pop.island__new { width: 320px; padding: 12px; }
+.island__new-form { display: flex; flex-direction: column; gap: 8px; }
+.island__new-title { font-size: 12px; font-weight: 500; color: var(--dock-muted); }
+.island__new-form :is(input, textarea) {
+  width: 100%; box-sizing: border-box; border: 0; border-radius: 9px; padding: 9px 10px; background: var(--dock-fill);
+  color: var(--dock-ink); font: inherit; font-size: 14px; line-height: 1.4; outline: none; resize: none;
+}
+.island__new-form :is(input, textarea)::placeholder { color: var(--dock-muted); }
+.island__new-form :is(input, textarea):focus-visible { box-shadow: inset 0 0 0 1px var(--dock-muted); }
+.island__new-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.island__new-hint { font-size: 12px; line-height: 1.3; color: var(--dock-muted); }
+.island__new-go {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; height: 32px; padding: 0 12px; border: 0; border-radius: 9px;
+  background: var(--dock-ink); color: #111110; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.island__new-go:disabled { opacity: 0.4; cursor: default; }
