@@ -8,11 +8,25 @@ The popup follows the browser language: English by default, Spanish when the bro
 Every text lives in `chrome/_locales/<lang>/messages.json` (Chrome's own i18n; `popup.js` reads them
 with `chrome.i18n.getMessage`). To add a language, copy `_locales/en` and translate the messages.
 
+## How people get it
+
+`criterio.design/extension/install` is the guide: download, load it in Chrome, connect, save the first
+site. While the extension is not in the Chrome Web Store it is installed by hand, from the zip the
+guide links to (`/extension/download`, built from `extension/chrome` at build time, without the
+localhost entries). Right after it is installed the extension opens the guide (or reloads it if it is
+already open), the page sees it and offers to connect. Settings → Browser extension links to the guide,
+and so does the library: `content.js` runs on every page of the app, and a browser where the extension
+is missing or has no key gets an "Install extension" button beside the + (`useExtensionMissing`).
+
+The guide also knows the installed version (`content.js` says it) and tells the person when the zip
+is newer. A hand-installed extension does not update itself: bump `version` in `manifest.json` with
+every change that should reach people, and they download it again.
+
 ## How it signs in
 
-It doesn't use the site's session cookie (Safari doesn't allow that reliably). Pressing
-"Connect to criterio.design" opens `criterio.design/extension/connect`: there you pick the workspace and
-a long key (`crit_…`) is created, which the extension stores in `chrome.storage.local`. Every
+It doesn't use the site's session cookie (Safari doesn't allow that reliably). The last step of the
+guide, or pressing "Connect to criterio.design" in the popup (which opens
+`criterio.design/extension/connect`), creates a long key (`crit_…`), which the extension stores in `chrome.storage.local`. Every
 call goes with `Authorization: Bearer crit_…` to the versioned routes under `/api/ext/v1/`:
 
 | Route | What it does |
@@ -21,9 +35,30 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `DELETE /me` | The extension revokes its own key when it disconnects |
 | `GET /items/lookup?url=` | Is this site already saved? |
 | `POST /items` | Saves `{ url, title, screenshot }` |
+| `POST /items/batch` | Saves up to 25 `{ url, title }` at once (the import page) |
 
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
+
+## Importing bookmarks
+
+"Import bookmarks" in the popup's footer opens `import.html` in a tab of its own (the popup closes as
+soon as it loses focus, and an import takes minutes). Two sources:
+
+- **This browser**: the bookmark folders (`bookmarks` permission), ticked by folder; only `http(s)`
+  addresses go.
+- **X**: Chrome asks for `https://x.com/*` (an optional permission, granted on the click), the page opens
+  `x.com/i/bookmarks` in a new tab and injects `x-collect.js` with `chrome.scripting`. The collector
+  scrolls to the end, reporting each post's address as it appears (`a[href*="/status/"]` with a
+  `<time>` inside, which is how a post's own permalink looks), and stops after ~11 s without anything
+  new, when the import page says stop, or when that page is gone. If the person is not signed in to X
+  it reports `logged-out`. There is no official API involved: if X changes its markup, this selector
+  is what to fix.
+
+Either way the addresses go to `POST /items/batch` in batches of 25, one request at a time, and the
+page shows the counts (found, saved, already here, not web pages, failed). The server names, tags and
+gets the thumbnail of each one after answering, as when a URL is pasted in the app: an import of a few
+hundred bookmarks is done in a few minutes, the cards fill in over the following ones.
 
 ## Workspaces
 

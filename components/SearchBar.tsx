@@ -44,7 +44,7 @@ function ChipMark({ f, swatches, faces }: { f: Filter; swatches: Record<string, 
   return null;
 }
 
-export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "" }: {
+export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking }: {
   filters: Filter[];
   text: string;
   onFilters: (f: Filter[]) => void;
@@ -59,6 +59,9 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   /** Person → avatar */
   faces: Record<string, string>;
   className?: string;
+  /** The words are a request, not a search: Enter (with no suggestion open) or ⌘Enter hands them to the agent */
+  onAsk?: (text: string) => void;
+  asking?: boolean;
 }) {
   const { t } = useT();
   const ref = useRef<HTMLInputElement>(null);
@@ -70,7 +73,9 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   const options = useMemo(() => (focused && !closed ? suggest(text, vocab, filters) : []), [focused, closed, text, vocab, filters]);
   // New words, first suggestion: reset while rendering, not in an effect after the paint
   const [lastText, setLastText] = useState(text);
-  if (text !== lastText) { setLastText(text); setActive(0); }
+  // Enter sends the words to the agent unless the person walked into the list with the arrows
+  const [walked, setWalked] = useState(false);
+  if (text !== lastText) { setLastText(text); setActive(0); setWalked(false); }
 
   // "/" from anywhere focuses the box
   useEffect(() => {
@@ -93,13 +98,17 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   };
   const drop = (f: Filter) => { onFilters(filters.filter((x) => filterKey(x) !== filterKey(f))); ref.current?.focus(); };
 
+  const ask = () => { const v = text.trim(); if (v && onAsk && !asking) onAsk(v); };
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && onAsk) { e.preventDefault(); ask(); return; }
     if (options.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
       setActive((a) => (a + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length);
+      setWalked(true);
       return;
     }
-    if (options.length && (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey))) { e.preventDefault(); take(options[active]); return; }
+    if (options.length && ((e.key === "Enter" && (walked || !onAsk)) || (e.key === "Tab" && !e.shiftKey))) { e.preventDefault(); take(options[active]); return; }
+    if (e.key === "Enter" && onAsk && text.trim()) { e.preventDefault(); ask(); return; }
     if (e.key === "Backspace" && !text && filters.length && ref.current?.selectionStart === 0) { e.preventDefault(); onFilters(filters.slice(0, -1)); return; }
     if (e.key === "Escape") {
       if (options.length) { e.preventDefault(); setClosed(true); return; }
@@ -143,6 +152,11 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
         />
         <span className="sb__right">
           {gathering ? <span className="sb__gathering" role="status">{Icons.spark} {t.sidebar.gathering(gathering)}</span> : null}
+          {onAsk && text.trim() && (
+            <button type="button" className="sb__ask" disabled={asking} aria-label={t.agent.ask} title={t.agent.hint} onClick={(e) => { e.stopPropagation(); ask(); }}>
+              {asking ? <span className="spinner spinner--sm" /> : Icons.spark}<span className="sb__ask-label">{asking ? t.agent.thinking : t.agent.ask}</span>
+            </button>
+          )}
           {empty ? <kbd className="search__kbd" aria-hidden>/</kbd> : (
             <button type="button" className="sb__clear" aria-label={t.search.clear} onClick={(e) => { e.stopPropagation(); onText(""); onFilters([]); }}>{Icons.x}</button>
           )}

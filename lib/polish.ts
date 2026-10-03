@@ -5,14 +5,14 @@
 // reference: leaving a project is `unfileItems` (lib/projects.ts).
 import "server-only";
 import { createHash } from "crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import { llm } from "./llm";
-import { jevEnabled, screenDuels, screenDupes, screenTone, summarize } from "./jev";
+import { jevEnabled, screenDuels, screenDupes, screenTone, screenWeight, summarize } from "./jev";
 import { addComment, listItemComments } from "./comments";
 import { threadLines, type CommentRowLike } from "./comment-context";
 import { rowToItem } from "./items";
@@ -22,7 +22,7 @@ import { BRIEF_KEYS, type DesignBrief } from "@/types/design";
 import { SECTORS, STYLES } from "./taxonomy";
 import en from "./i18n/en";
 import { recordUsage, type UsageCtx } from "./usage";
-import { AUDIENCES, BRIEF_TEXT_MAX, pairKey, type Duel, type DupeGroup, type OffTone, type PolishBrief, type PolishRun, type PolishState } from "@/types/polish";
+import { AUDIENCES, BOARD_TARGET, BRIEF_TEXT_MAX, TAKES, WHY_NOTE_MAX, pairKey, type Duel, type DupeGroup, type Light, type OffTone, type PolishBrief, type PolishRun, type PolishState, type Take, type Why } from "@/types/polish";
 import type { InspoItem, InspoTags } from "@/types/inspo";
 
 const P = schema.project;
@@ -35,7 +35,7 @@ const C = schema.inspoComment;
 // Without a Jev key, Sonnet reads the whole board (slower, pricier, same answer shape).
 export const POLISH_MODEL = process.env.POLISH_MODEL || "anthropic/claude-sonnet-5";
 /** Bumps when a prompt or the output shape changes, so an old run is offered again */
-const PROMPT_VERSION = 3;
+const PROMPT_VERSION = 4;
 /** References read per run; beyond this a board is cut, not refused */
 const MAX_BOARD = 120;
 /** Thread comments sent per reference: the latest ones, each cut to 300 characters */
@@ -46,6 +46,7 @@ const TONE_CANDIDATE = 0.75;
 const TONE_CANDIDATES_MAX = 24;
 const DUPE_CANDIDATE = 0.55;
 const DUEL_CANDIDATE = 0.55;
+const LIGHT_CANDIDATES_MAX = 30;
 /** A reference may be in this many duels: losing one settles the rest it was in */
 const DUELS_PER_REF = 2;
 
@@ -56,18 +57,42 @@ async function projectRow(organizationId: string, projectId: string) {
   return row;
 }
 
-const stateOf = (polish: PolishState | null | undefined): PolishState => ({
+/** What project.polish holds; the whys live on project_item and join it on the way out */
+type Stored = Omit<PolishState, "whys">;
+
+const stateOf = (polish: Partial<Stored> | null | undefined): Stored => ({
   brief: polish?.brief ?? null,
-  decisions: { notDupes: polish?.decisions?.notDupes ?? [], keptTone: polish?.decisions?.keptTone ?? [], keptDuels: polish?.decisions?.keptDuels ?? [] },
+  decisions: { notDupes: polish?.decisions?.notDupes ?? [], keptTone: polish?.decisions?.keptTone ?? [], keptDuels: polish?.decisions?.keptDuels ?? [], keptLight: polish?.decisions?.keptLight ?? [] },
   run: polish?.run ?? null,
 });
 
-export async function getPolish(organizationId: string, projectId: string): Promise<PolishState> {
-  return stateOf((await projectRow(organizationId, projectId)).polish);
+async function loadWhys(organizationId: string, projectId: string): Promise<Record<string, Why>> {
+  const rows = await db.select({ itemId: PI.itemId, why: PI.why }).from(PI)
+    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), isNull(PI.archivedAt)));
+  return Object.fromEntries(rows.filter((r) => r.why).map((r) => [r.itemId, r.why!]));
 }
 
-async function savePolish(organizationId: string, projectId: string, polish: PolishState): Promise<void> {
-  await db.update(P).set({ polish, updatedAt: new Date() }).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId)));
+const withWhys = async (organizationId: string, projectId: string, stored: Stored): Promise<PolishState> =>
+  ({ ...stored, whys: await loadWhys(organizationId, projectId) });
+
+export async function getPolish(organizationId: string, projectId: string): Promise<PolishState> {
+  return withWhys(organizationId, projectId, stateOf((await projectRow(organizationId, projectId)).polish as Stored | null));
+}
+
+async function savePolish(organizationId: string, projectId: string, polish: Stored): Promise<void> {
+  await db.update(P).set({ polish: polish as PolishState, updatedAt: new Date() }).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId)));
+}
+
+// ─── Why ─────────────────────────────────────────────────────────────────────
+
+const TAKE_KEYS = new Set<string>(TAKES);
+
+/** The team's why for one reference in this project: which of the six things they take from it, and a line. */
+export async function saveWhy(organizationId: string, projectId: string, itemId: string, input: Partial<Why>, userId: string): Promise<PolishState> {
+  const takes = (Array.isArray(input.takes) ? input.takes.map(String) : []).filter((k): k is Take => TAKE_KEYS.has(k)).slice(0, TAKES.length);
+  const why: Why = { takes: [...new Set(takes)], note: String(input.note ?? "").trim().slice(0, WHY_NOTE_MAX), updatedAt: new Date().toISOString(), updatedBy: userId };
+  await db.update(PI).set({ why }).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), eq(PI.itemId, itemId)));
+  return getPolish(organizationId, projectId);
 }
 
 // ─── Brief ───────────────────────────────────────────────────────────────────
@@ -96,17 +121,17 @@ export function cleanBrief(input: Partial<PolishBrief>, userId: string): PolishB
 }
 
 export async function saveBrief(organizationId: string, projectId: string, input: Partial<PolishBrief>, userId: string): Promise<PolishState> {
-  const state = stateOf((await projectRow(organizationId, projectId)).polish);
-  const next: PolishState = { ...state, brief: cleanBrief(input, userId) };
+  const state = stateOf((await projectRow(organizationId, projectId)).polish as Stored | null);
+  const next: Stored = { ...state, brief: cleanBrief(input, userId) };
   await savePolish(organizationId, projectId, next);
-  return next;
+  return withWhys(organizationId, projectId, next);
 }
 
 // ─── Decisions ───────────────────────────────────────────────────────────────
 
-/** Remembers an answer: these are not duplicates, this one does fit the tone, or both sides of a duel stay. */
-export async function addDecision(organizationId: string, projectId: string, d: { notDupes?: string[]; keptTone?: string[]; keptDuel?: string[] }): Promise<PolishState> {
-  const state = stateOf((await projectRow(organizationId, projectId)).polish);
+/** Remembers an answer: not duplicates, fits the tone, both sides of a duel stay, or stays despite weighing little. */
+export async function addDecision(organizationId: string, projectId: string, d: { notDupes?: string[]; keptTone?: string[]; keptDuel?: string[]; keptLight?: string[] }): Promise<PolishState> {
+  const state = stateOf((await projectRow(organizationId, projectId)).polish as Stored | null);
   const notDupes = new Set(state.decisions.notDupes);
   const group = ids(d.notDupes, 20);
   for (let i = 0; i < group.length; i++) for (let j = i + 1; j < group.length; j++) notDupes.add(pairKey(group[i], group[j]));
@@ -114,9 +139,10 @@ export async function addDecision(organizationId: string, projectId: string, d: 
   const keptDuels = new Set(state.decisions.keptDuels ?? []);
   const duel = ids(d.keptDuel, 2);
   if (duel.length === 2) keptDuels.add(pairKey(duel[0], duel[1]));
-  const next: PolishState = { ...state, decisions: { notDupes: [...notDupes].slice(-2000), keptTone: [...keptTone].slice(-1000), keptDuels: [...keptDuels].slice(-1000) } };
+  const keptLight = new Set([...(state.decisions.keptLight ?? []), ...ids(d.keptLight, 50)]);
+  const next: Stored = { ...state, decisions: { notDupes: [...notDupes].slice(-2000), keptTone: [...keptTone].slice(-1000), keptDuels: [...keptDuels].slice(-1000), keptLight: [...keptLight].slice(-1000) } };
   await savePolish(organizationId, projectId, next);
-  return next;
+  return withWhys(organizationId, projectId, next);
 }
 
 /**
@@ -153,8 +179,11 @@ const ToneSchema = z.object({
 const DuelsSchema = z.object({
   duels: z.array(z.object({ ids: z.array(z.string()), reason: z.string() })),
 });
+const LightSchema = z.object({
+  light: z.array(z.object({ id: z.string(), reason: z.string() })),
+});
 
-const CONTEXT = `A design team keeps a board of references for one project: websites, but also images, videos and social posts ("kind"). Each reference comes with its name, URL, the curator's notes (why they saved it), the team's comments under it, a summary of the page, a description of how it looks ("look": for an image or a post, what the picture itself shows), classifier labels (sector, style, traits) and, for some sites, the DESIGN.md brief the team generated (typography, imagery, motion, color, voice). Use everything given; an image or a post has no page, so judge it by its look and the team's words, and never fault it for lacking what only a website has. Ids are short codes: use them exactly as given and never invent one.`;
+const CONTEXT = `A design team keeps a board of references for one project: websites, but also images, videos and social posts ("kind"). Each reference comes with its name, URL, the curator's notes (why they saved it), the team's comments under it, what the team takes from it for this project ("what_the_team_takes": which of color, typography, composition, rhythm, tone or a detail, and a line), a summary of the page, a description of how it looks ("look": for an image or a post, what the picture itself shows), classifier labels (sector, style, traits) and, for some sites, the DESIGN.md brief the team generated (typography, imagery, motion, color, voice). Use everything given; an image or a post has no page, so judge it by its look and the team's words, and never fault it for lacking what only a website has. Ids are short codes: use them exactly as given and never invent one.`;
 
 const DUPES_SYSTEM = `${CONTEXT}
 
@@ -210,6 +239,15 @@ Rules:
 - A difference of sector or subject is not a duel. Two references the team could follow at once are not a duel. Dropping every pair is a fine answer.
 - "reason" is one sentence of at most 24 words naming the two directions, written for the team in the language given below. No verdict, no advice.`;
 
+const LIGHT_CONFIRM = `${CONTEXT}
+
+The team wrote a brief and wants the board down to about a dozen references that each earn their place. A fast classifier shortlisted the references that seem to weigh least for the project. Your job: for each one, say in one sentence what it is not bringing, so the team can decide whether it leaves the board (it stays in the project's archive). Keep the shortlist's order unless one clearly weighs more than the rest; drop from your answer any that in fact earns its place.
+
+Rules:
+- Only shortlisted ids may appear in your answer, each once.
+- A reference with a reason written by the team (notes, comments, what they take from it) earns its place unless the reason itself is off the brief.
+- "reason" is one sentence of at most 20 words, written for the team in the language given below. No praise, no advice.`;
+
 const LANGUAGE: Record<Locale, string> = {
   en: "Language: write every \"reason\" in English.",
   es: "Language: write every \"reason\" in Castilian Spanish (Spanish from Spain).",
@@ -240,9 +278,9 @@ export function runStamp(brief: PolishBrief): string {
  * The project's references with everything known about them: tags, the thread under each one (the
  * team's words are what the games judge by) and, when the team generated it, the DESIGN.md brief.
  */
-async function loadBoard(organizationId: string, projectId: string): Promise<{ item: InspoItem; tags: InspoTags | undefined; comments: string[]; brief: Partial<DesignBrief> | null }[]> {
-  const rows = await db.select({ row: T }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
-    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId)));
+async function loadBoard(organizationId: string, projectId: string): Promise<{ item: InspoItem; tags: InspoTags | undefined; comments: string[]; brief: Partial<DesignBrief> | null; why: Why | null }[]> {
+  const rows = await db.select({ row: T, why: PI.why }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
+    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), isNull(PI.archivedAt)));
   const board = rows.slice(0, MAX_BOARD);
   const ids = board.map(({ row }) => row.id);
   const threads = ids.length
@@ -266,7 +304,7 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ i
     const b = entry?.spec?.brief;
     return b ? Object.fromEntries(BRIEF_KEYS.filter((k) => b[k]).map((k) => [k, b[k]])) as Partial<DesignBrief> : null;
   }));
-  return board.map(({ row }, i) => ({ item: rowToItem(row), tags: row.tagsJson ?? undefined, comments: (byItem.get(row.id) ?? []).slice(-COMMENTS_PER_REF), brief: briefs[i] }));
+  return board.map(({ row, why }, i) => ({ item: rowToItem(row), tags: row.tagsJson ?? undefined, comments: (byItem.get(row.id) ?? []).slice(-COMMENTS_PER_REF), brief: briefs[i], why: why ?? null }));
 }
 
 /** Connected pairs become one group (a↔b and b↔c make a, b, c), each capped so a chain does not swallow the board */
@@ -291,13 +329,15 @@ export function runPolish(input: { organizationId: string; projectId: string; us
   const running = inflight.get(key);
   if (running) return running;
   const job = (async () => {
-    const state = stateOf((await projectRow(input.organizationId, input.projectId)).polish);
+    const state = stateOf((await projectRow(input.organizationId, input.projectId)).polish as Stored | null);
     if (!state.brief) throw new HttpError(400, (await getErrors()).polishBriefFirst);
     const board = await loadBoard(input.organizationId, input.projectId);
     const codes = new Map<string, string>();  // short code → item id
-    const refs = board.map(({ item, tags, comments, brief: designBrief }, i) => {
+    const refs = board.map(({ item, tags, comments, brief: designBrief, why }, i) => {
       const code = `r${i + 1}`; codes.set(code, item.id!);
-      return { id: code, kind: mediaKindOf(item.web), ...summarize(item, tags), team_comments: comments, design_brief: designBrief };
+      // The why, in the model's words: which of the six things the team takes from it, and their line
+      const taken = why ? { takes: why.takes.map((k) => en.polish.takes[k]), note: why.note || null } : null;
+      return { id: code, kind: mediaKindOf(item.web), ...summarize(item, tags), team_comments: comments, design_brief: designBrief, what_the_team_takes: taken };
     });
     const marked = new Set(state.brief.avoidItems);
     const avoidExamples = refs.filter((r, i) => marked.has(board[i].item.id!)).map((r) => r.id);
@@ -317,6 +357,7 @@ export function runPolish(input: { organizationId: string; projectId: string; us
     let dupesOut: z.infer<typeof DupesSchema> = { groups: [] };
     let toneOut: z.infer<typeof ToneSchema> = { off_tone: [] };
     let duelsOut: z.infer<typeof DuelsSchema> = { duels: [] };
+    let lightOut: z.infer<typeof LightSchema> = { light: [] };
 
     if (jevEnabled() && refs.length >= 1) {
       // Step one: Jev over the whole board. One usage row for both screens
@@ -324,15 +365,19 @@ export function runPolish(input: { organizationId: string; projectId: string; us
       const examples = refs.filter((r) => avoidExamples.includes(r.id));
       const candidates = refs.filter((r) => !avoidExamples.includes(r.id));
       const none = Promise.resolve({ pairs: [], billing: { costUsd: null, provider: null, calls: 0 } });
-      const [tone, dupes, duels] = await Promise.all([
+      // Size: only a board above the target is weighed, and only as many are shortlisted as it is over by
+      const over = Math.max(0, refs.length - BOARD_TARGET);
+      const [tone, dupes, duels, weight] = await Promise.all([
         screenTone(brief, candidates, examples),
         candidates.length >= 2 ? screenDupes(state.brief.about || null, candidates) : none,
         candidates.length >= 2 ? screenDuels(brief, candidates) : none,
+        over > 0 ? screenWeight(brief, candidates) : Promise.resolve({ scores: new Map<string, number>(), billing: { costUsd: null, provider: null, calls: 0 } }),
       ]);
-      const costs = [tone.billing.costUsd, dupes.billing.costUsd, duels.billing.costUsd];
+      const costs = [tone.billing.costUsd, dupes.billing.costUsd, duels.billing.costUsd, weight.billing.costUsd];
       void recordUsage(input.usage, { action: "polish", model: "jev", units: refs.length, costUsd: costs.every((c) => c !== null) ? costs.reduce((n: number, c) => n + c!, 0) : null, provider: tone.billing.provider ?? dupes.billing.provider, ref: `${ref} screen` });
 
       const toneShort = [...tone.scores].filter(([, p]) => p >= TONE_CANDIDATE).sort((a, b) => b[1] - a[1]).slice(0, TONE_CANDIDATES_MAX).map(([id]) => id);
+      const lightShort = [...weight.scores].sort((a, b) => a[1] - b[1]).slice(0, Math.min(over, LIGHT_CANDIDATES_MAX)).map(([id]) => id);
       const groups = groupPairs(dupes.pairs.filter((x) => x.p >= DUPE_CANDIDATE));
       // Duels: the strongest pairs, each reference in a couple at most, as many as references
       const duelPairs: [string, string][] = [];
@@ -346,7 +391,7 @@ export function runPolish(input: { organizationId: string; projectId: string; us
       const shortlist = (ids: string[]) => `Shortlisted references (JSON):\n${JSON.stringify(ids.map((id) => byCode.get(id)!))}`;
 
       // Step two: Sonnet, only where Jev found something
-      [dupesOut, toneOut, duelsOut] = await Promise.all([
+      [dupesOut, toneOut, duelsOut, lightOut] = await Promise.all([
         groups.length
           ? ask("dupes", DUPES_CONFIRM, `${briefText}\n\nProposed groups (ids): ${JSON.stringify(groups)}\n\n${shortlist(groups.flat())}`, DupesSchema, 4000 + groups.flat().length * 150)
           : Promise.resolve({ groups: [] }),
@@ -356,6 +401,9 @@ export function runPolish(input: { organizationId: string; projectId: string; us
         duelPairs.length
           ? ask("duels", DUELS_CONFIRM, `${briefText}\n\nProposed pairs (ids): ${JSON.stringify(duelPairs)}\n\n${shortlist(duelPairs.flat())}`, DuelsSchema, 4000 + duelPairs.length * 200)
           : Promise.resolve({ duels: [] }),
+        lightShort.length
+          ? ask("light", LIGHT_CONFIRM, `${briefText}\n\nShortlist, lightest first (ids): ${JSON.stringify(lightShort)}\n\n${shortlist(lightShort)}`, LightSchema, 4000 + lightShort.length * 150)
+          : Promise.resolve({ light: [] }),
       ]);
       console.log(`polish ${input.projectId}: jev ${tone.billing.calls + dupes.billing.calls + duels.billing.calls} calls → ${toneShort.length} tone candidates, ${groups.length} candidate groups, ${duelPairs.length} candidate duels`);
     } else {
@@ -393,11 +441,19 @@ export function runPolish(input: { organizationId: string; projectId: string; us
       dueling.add(pairKey(pair[0], pair[1]));
       duelsList.push({ ids: [pair[0], pair[1]], reason: d.reason.trim().slice(0, 200) });
     }
-    const run: PolishRun = { stamp: runStamp(state.brief), itemIds: board.map((b) => b.item.id!), dupes, offTone, duels: duelsList, model, at: new Date().toISOString() };
-    const next: PolishState = { ...state, run };
+    const weighed = new Set<string>();
+    const light: Light[] = [];
+    for (const l of lightOut.light) {
+      const id = codes.get(l.id);
+      if (!id || weighed.has(id) || marked.has(id)) continue;
+      weighed.add(id);
+      light.push({ id, reason: l.reason.trim().slice(0, 200) });
+    }
+    const run: PolishRun = { stamp: runStamp(state.brief), itemIds: board.map((b) => b.item.id!), dupes, offTone, duels: duelsList, light, model, at: new Date().toISOString() };
+    const next: Stored = { ...state, run };
     await savePolish(input.organizationId, input.projectId, next);
-    console.log(`polish ${input.projectId}: ${refs.length} refs → ${dupes.length} groups, ${offTone.length} off tone, ${duelsList.length} duels`);
-    return next;
+    console.log(`polish ${input.projectId}: ${refs.length} refs → ${dupes.length} groups, ${offTone.length} off tone, ${duelsList.length} duels, ${light.length} light`);
+    return withWhys(input.organizationId, input.projectId, next);
   })().finally(() => { inflight.delete(key); });
   inflight.set(key, job);
   return job;

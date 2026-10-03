@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
-import type { PolishState } from "@/types/polish";
+import type { PolishState, Why } from "@/types/polish";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -192,6 +192,10 @@ export const projectItem = pgTable("project_item", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   addedBy: text("added_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  /** Set when the reference leaves the board but stays with the project (Polish: "lo que no pesa"); null on the board */
+  archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+  /** What the team takes from this reference for this project: the "why" (types/polish.ts) */
+  why: jsonb("why").$type<Why>(),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.itemId] }),
   index("project_item_org_idx").on(t.organizationId),
@@ -315,7 +319,7 @@ export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
-  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish | auto_tag | query_en | embed */
+  /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish | auto_tag | query_en | embed | system */
   action: text("action").notNull(),
   model: text("model").notNull(),
   inputTokens: integer("input_tokens").notNull().default(0),
@@ -339,7 +343,7 @@ export const aiUsage = pgTable("ai_usage", {
   // Monthly quota count (lib/quota.ts): one workspace, one action, since the 1st
   index("ai_usage_org_action_created_idx").on(t.organizationId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
-  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed"]),
+  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 
@@ -434,4 +438,72 @@ export const extKey = pgTable("ext_key", {
   uniqueIndex("ext_key_hash_idx").on(t.hash),
   index("ext_key_org_idx").on(t.organizationId),
   index("ext_key_user_idx").on(t.userId),
+]);
+
+// ─── The project's system ────────────────────────────────────────────────────
+// What a project has decided about its design, area by area, alive from the first reference:
+// the board feeds it, the team confirms it, agents read it (criterio.md). One row per project
+// holds the summary and the last run; one row per area holds the decision as it stands. Every
+// change to an area leaves a revision, so the system can be read back in time.
+
+export const SYSTEM_AREA_KEYS = ["typography", "color", "layout", "motion", "iconography", "logo", "imagery", "voice"] as const;
+
+export const projectSystem = pgTable("project_system", {
+  projectId: text("project_id").primaryKey().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** The project's criterio in one paragraph, written by the model from the board; empty until the first run */
+  summary: text("summary").notNull().default(""),
+  /** The last model run: which references it read, with which prompt, when (types/system.ts SystemRun) */
+  runJson: jsonb("run_json").$type<unknown>(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [index("project_system_org_idx").on(t.organizationId)]);
+
+export const systemArea = pgTable("system_area", {
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** One of SYSTEM_AREA_KEYS */
+  area: text("area").notNull(),
+  /** The decision as it stands; empty = the project has not decided this yet */
+  decision: text("decision").notNull().default(""),
+  /** 0-100: how far the board backs the decision. 0 when empty */
+  confidence: integer("confidence").notNull().default(0),
+  /** References behind the decision and what each one brings: [{ itemId, take }] (types/system.ts) */
+  evidence: jsonb("evidence").$type<unknown>().notNull().default([]),
+  /** "model": proposed from the board, the next run may change it. "team": written or confirmed by a person, runs leave it alone. null: empty */
+  source: text("source"),
+  decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
+  /** The criterio behind the decision: why this and not the rest, in the team's words (or the agent's, until confirmed) */
+  why: text("why").notNull().default(""),
+  /** The agent's curation of the candidates the board offers for this area: kept or discarded, each with its reason (types/system.ts AreaCuration) */
+  curationJson: jsonb("curation_json").$type<unknown>(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.projectId, t.area] }),
+  index("system_area_org_idx").on(t.organizationId),
+  oneOf("system_area_area_check", t.area, SYSTEM_AREA_KEYS),
+  check("system_area_source_check", sql`${t.source} is null or ${t.source} in ('model', 'team')`),
+  check("system_area_confidence_check", sql`${t.confidence} between 0 and 100`),
+]);
+
+export const systemAreaRevision = pgTable("system_area_revision", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  area: text("area").notNull(),
+  decision: text("decision").notNull(),
+  confidence: integer("confidence").notNull(),
+  evidence: jsonb("evidence").$type<unknown>().notNull().default([]),
+  /** "model" | "team" */
+  source: text("source").notNull(),
+  why: text("why").notNull().default(""),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  /** The person, or the model name */
+  authorName: text("author_name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("system_area_revision_project_idx").on(t.projectId, t.area, t.createdAt),
+  index("system_area_revision_org_idx").on(t.organizationId),
+  index("system_area_revision_author_idx").on(t.authorId),
+  oneOf("system_area_revision_source_check", t.source, ["model", "team"]),
 ]);

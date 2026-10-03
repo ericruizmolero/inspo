@@ -29,9 +29,6 @@ const IcX = (
 const IcPlus = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
 );
-const IcSpark = (
-  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden><path d="M8 2c.6 3.4 2.6 5.4 6 6-3.4.6-5.4 2.6-6 6-.6-3.4-2.6-5.4-6-6 3.4-.6 5.4-2.6 6-6z" /></svg>
-);
 const IcComment = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" /></svg>
 );
@@ -307,8 +304,8 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
 
 // ─── Panel ────────────────────────────────────────────────────────────────────
 // A sheet over the canvas, which dims behind it; the island and the search dock stay where they are, above
-// it. The first view is a board of cards: the page with its post-its, its colours, the tags people added,
-// what the AI read (by facet) and the conversation. The DESIGN.md (spec, file, history) is in the tabs.
+// it. The first view is a board of two halves: the page with its post-its and, under it, its tags; and the
+// conversation, which is what people come here for. The DESIGN.md (spec, file, history) is in the tabs.
 type View = "page" | "spec" | "md" | "history";
 
 // Where the last press landed, so the sheet grows out of the card that opened it. Read once when it opens;
@@ -318,47 +315,75 @@ if (typeof window !== "undefined") {
   window.addEventListener("pointerdown", (e) => { lastPress = { x: e.clientX, y: e.clientY, at: Date.now() }; }, { capture: true, passive: true });
 }
 
-/** A facet's hue: each kind of tag the AI reads keeps its colour, pale, so the groups read apart at a glance */
+/** A facet's hue: each kind of tag the AI reads keeps its colour, pale, so the kinds read apart at a glance */
 const FACET_HUE = { kind: 210, sections: 160, elements: 28, type: 268, layout: 330, traits: 190, keywords: 90 } as const;
 type FacetKey = keyof typeof FACET_HUE;
-/** The first groups shown before "Show all" */
-const AI_GROUPS_SHOWN = 3;
+/** The tags shown before "Show all" */
+const TAGS_SHOWN = 14;
 
-/** The page's colours as swatches: hex, name and share. A swatch filters the library by its colour family */
-function ColoursCard({ tags, onTag }: { tags: InspoTags; onTag?: (sel: string) => void }) {
+/** Everything the reference is tagged with, in one quiet strip under the page: its colours as dots, the tags
+ *  somebody added (the post-it's yellow, the only ones with a ×), what the AI read (each facet its hue) and,
+ *  last, the field to add one. A tag filters the library. While the job runs, or after it failed, it says so. */
+function TagsCard({ tags, job, onTag, onEdit, onRetry }: {
+  tags?: InspoTags; job?: TagStatus; onTag?: (sel: string) => void;
+  onEdit?: (change: { add?: string; remove?: string }) => void; onRetry?: () => void;
+}) {
   const { t } = useT();
-  const v = viewOf(tags);
-  const colors = (tags.colors ?? []).filter((c) => !v || v.palette.includes(c.family));
-  if (!colors.length) return null;
-  return (
-    <section className="ip-card ip-card--colours" aria-label={t.panel.colours}>
-      <h3 className="ip-card__title">{t.panel.colours}<span className="ip-card__aside">{t.panel.fromPage(colors.length)}</span></h3>
-      <div className="ip-swatches">
-        {colors.map((c) => {
-          const name = t.taxonomy.color[c.family as keyof typeof t.taxonomy.color] ?? c.family;
-          return (
-            <button key={c.family} type="button" className="ip-swatch" onClick={() => onTag?.(`c:${c.family}`)} title={`${name} · ${c.hex}`}>
-              <i style={{ background: c.hex }} aria-hidden />
-              <span className="ip-swatch__hex">{c.hex}</span>
-              <span>{name} · {Math.round(c.share * 100)}%</span>
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-/** The tags people added: the only ones with a ×. The field to add one comes first, so it is always in reach */
-function YourTagsCard({ tags, onTag, onEdit }: { tags?: InspoTags; onTag?: (sel: string) => void; onEdit?: (change: { add?: string; remove?: string }) => void }) {
-  const { t } = useT();
+  const [all, setAll] = useState(false);
   const [draft, setDraft] = useState("");
-  const added = tags?.user?.added ?? [];
   const add = () => { const tag = cleanTag(draft); if (tag) onEdit?.({ add: tag }); setDraft(""); };
+  const v = tags ? viewOf(tags) : null;
+  const added = tags?.user?.added ?? [];
+  const mine = new Set(added);
+  const colors = (tags?.colors ?? []).filter((c) => !v || v.palette.includes(c.family));
+  const label = (field: string, k: string) => {
+    const maps: Record<string, Record<string, string>> = { sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
+    return maps[field]?.[k] ?? k;
+  };
+  // Each chip filters by its selector; the kind (sector, style) only describes, so it is not a button
+  const chips: { facet: FacetKey; sel?: string; label: string }[] = !tags || !v ? [] : [
+    ...v.credits.map((k) => ({ facet: "kind" as const, sel: `a:${k}`, label: t.panel.byCredit(k) })),
+    ...(tags.sector ? [{ facet: "kind" as const, label: t.taxonomy.sector[tags.sector as keyof typeof t.taxonomy.sector] ?? tags.sector }] : []),
+    ...(tags.style ? [{ facet: "kind" as const, label: t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style }] : []),
+    ...FACETS.filter((f) => f.field !== "palette").flatMap((f) => v[f.field].map((k) => ({ facet: f.field as FacetKey, sel: `${f.prefix}:${k}`, label: label(f.field, k) }))),
+    ...v.traits.map((k) => ({ facet: "traits" as const, sel: k, label: t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k })),
+    // The AI's own keywords; the ones somebody added come first, in yellow
+    ...v.keywords.filter((k) => !mine.has(k)).map((k) => ({ facet: "keywords" as const, sel: `k:${k}`, label: k })),
+  ];
+  const shown = all ? chips : chips.slice(0, TAGS_SHOWN);
+  const gathering = job === "pending" || job === "running" || (!tags && job !== "failed");
   return (
-    <section className="ip-card ip-card--yours" aria-label={t.panel.yourTags}>
-      <h3 className="ip-card__title">{t.panel.yourTags}<em>· {t.panel.editable}</em></h3>
-      <div className="ip-yours">
+    <section className="ip-card ip-card--tags" aria-label={t.panel.tags}>
+      <h3 className="ip-card__title">
+        {t.panel.tags}
+        {(chips.length > 0 || added.length > 0 || colors.length > 0) && <span className="ip-card__aside">{t.panel.toFilter}</span>}
+      </h3>
+      <div className="ip-tags">
+        {colors.length > 0 && (
+          <span className="ip-tags__colours">
+            {colors.map((c) => {
+              const name = t.taxonomy.color[c.family as keyof typeof t.taxonomy.color] ?? c.family;
+              return <button key={c.family} type="button" className="ip-tags__colour" style={{ background: c.hex }} onClick={() => onTag?.(`c:${c.family}`)} title={`${name} · ${c.hex}`} aria-label={`${name} ${c.hex}`} />;
+            })}
+          </span>
+        )}
+        {added.map((k) => (
+          <span key={k} className="ip-yours__tag">
+            <button type="button" className="ip-yours__label" onClick={() => onTag?.(`k:${k}`)}>{k}</button>
+            {onEdit && <button type="button" className="ip-yours__x" aria-label={t.panel.removeTag(k)} onClick={() => onEdit({ remove: `k:${k}` })}>{IcX}</button>}
+          </span>
+        ))}
+        {shown.map((c) => {
+          const hue = { "--h": FACET_HUE[c.facet] } as React.CSSProperties;
+          return c.sel
+            ? <button key={c.sel} type="button" className="ip-tag" style={hue} title={t.panel.facets[c.facet]} onClick={() => onTag?.(c.sel!)}>{c.label}</button>
+            : <span key={`${c.facet}:${c.label}`} className="ip-tag is-static" style={hue} title={t.panel.facets[c.facet]}>{c.label}</span>;
+        })}
+        {chips.length > TAGS_SHOWN && (
+          <button type="button" className="ip-tags__more" aria-expanded={all} title={all ? undefined : t.panel.showAll} onClick={() => setAll((a) => !a)}>
+            {all ? t.panel.showLess : `+${chips.length - TAGS_SHOWN}`}
+          </button>
+        )}
         {onEdit && (
           <label className="ip-yours__add">
             {IcPlus}
@@ -374,82 +399,15 @@ function YourTagsCard({ tags, onTag, onEdit }: { tags?: InspoTags; onTag?: (sel:
             />
           </label>
         )}
-        {added.map((k) => (
-          <span key={k} className="ip-yours__tag">
-            <button type="button" className="ip-yours__label" onClick={() => onTag?.(`k:${k}`)}>{k}</button>
-            {onEdit && <button type="button" className="ip-yours__x" aria-label={t.panel.removeTag(k)} onClick={() => onEdit({ remove: `k:${k}` })}>{IcX}</button>}
-          </span>
-        ))}
       </div>
-      {!added.length && <p className="ip-card__note">{t.panel.yourTagsEmpty}</p>}
-    </section>
-  );
-}
-
-/** What the AI read in the page, by facet, each with its hue. Read-only: a tag filters the library. The first
- *  groups show, the rest fold under "Show all". While the job runs, or after it failed, it says so. */
-function AiTagsCard({ tags, job, onTag, onRetry }: { tags?: InspoTags; job?: TagStatus; onTag?: (sel: string) => void; onRetry?: () => void }) {
-  const { t } = useT();
-  const [all, setAll] = useState(false);
-  const head = (
-    <h3 className="ip-card__title">
-      {t.panel.seenByAi}<span className="ip-ai-badge">{IcSpark}AI</span>
-      {tags && <span className="ip-card__aside">{t.panel.toFilter}</span>}
-    </h3>
-  );
-  if (job === "pending" || job === "running" || (!tags && job !== "failed")) {
-    return <section className="ip-card ip-card--ai">{head}<p className="ip-card__note" role="status">{t.panel.tagsGathering}</p></section>;
-  }
-  if (!tags) {
-    return (
-      <section className="ip-card ip-card--ai">{head}
-        <p className="ip-card__note">{t.panel.tagsFailed}</p>
-        {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>{t.common.retry}</Button>}
-      </section>
-    );
-  }
-  const v = viewOf(tags);
-  if (!v) return null;
-  const mine = new Set(tags.user?.added ?? []);
-  const label = (field: string, k: string) => {
-    const maps: Record<string, Record<string, string>> = { sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
-    return maps[field]?.[k] ?? k;
-  };
-  // Each chip filters by its selector; the kind (sector, style) only describes, so it is not a button
-  const groups: { key: FacetKey; chips: { sel?: string; label: string }[] }[] = [
-    { key: "kind" as const, chips: [
-      ...v.credits.map((k) => ({ sel: `a:${k}`, label: t.panel.byCredit(k) })),
-      ...(tags.sector ? [{ label: t.taxonomy.sector[tags.sector as keyof typeof t.taxonomy.sector] ?? tags.sector }] : []),
-      ...(tags.style ? [{ label: t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style }] : []),
-    ] },
-    ...FACETS.filter((f) => f.field !== "palette").map((f) => ({
-      key: f.field as FacetKey, chips: v[f.field].map((k) => ({ sel: `${f.prefix}:${k}`, label: label(f.field, k) })),
-    })),
-    { key: "traits" as const, chips: v.traits.map((k) => ({ sel: k, label: t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k })) },
-    // The AI's own keywords; the ones somebody added live in "Your tags"
-    { key: "keywords" as const, chips: v.keywords.filter((k) => !mine.has(k)).map((k) => ({ sel: `k:${k}`, label: k })) },
-  ].filter((g) => g.chips.length);
-  const shown = all ? groups : groups.slice(0, AI_GROUPS_SHOWN);
-  return (
-    <section className="ip-card ip-card--ai" aria-label={t.panel.seenByAi}>
-      {head}
-      <div className="ip-facets">
-        {shown.map((g) => (
-          <div key={g.key} className="ip-facet" style={{ "--h": FACET_HUE[g.key] } as React.CSSProperties}>
-            <span className="ip-facet__name">{t.panel.facets[g.key]}</span>
-            <div className="ip-facet__tags">
-              {g.chips.map((c) => c.sel
-                ? <button key={c.sel} type="button" className="ip-facet__tag" onClick={() => onTag?.(c.sel!)}>{c.label}</button>
-                : <span key={c.label} className="ip-facet__tag is-static">{c.label}</span>)}
-            </div>
-          </div>
-        ))}
-      </div>
-      {groups.length > AI_GROUPS_SHOWN && (
-        <button type="button" className="ip-card__more" aria-expanded={all} onClick={() => setAll((a) => !a)}>
-          {all ? t.panel.showLess : t.panel.showAll}
-        </button>
-      )}
+      {gathering
+        ? <p className="ip-card__note" role="status">{t.panel.tagsGathering}</p>
+        : !tags && (
+          <p className="ip-card__note">
+            {t.panel.tagsFailed}
+            {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>{t.common.retry}</Button>}
+          </p>
+        )}
     </section>
   );
 }
@@ -642,13 +600,11 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
         </header>
 
         {view === "page" ? (
-          // The board: the page down the left, what it is in the middle, the conversation on the right
+          // The board: the page with its tags underneath on the left, the conversation down the right
           <div className="ip-bento">
             <section className="ip-card ip-card--page" aria-label={t.panel.tabPage}>{page}</section>
-            {tags && <ColoursCard tags={tags} onTag={onTag} />}
-            <YourTagsCard tags={tags} onTag={onTag} onEdit={onEditTags} />
-            <AiTagsCard tags={tags} job={tagJob} onTag={onTag} onRetry={onRetryTags} />
             <section className="ip-card ip-card--talk">{thread}</section>
+            <TagsCard tags={tags} job={tagJob} onTag={onTag} onEdit={onEditTags} onRetry={onRetryTags} />
           </div>
         ) : (
           <div className="ip-body">

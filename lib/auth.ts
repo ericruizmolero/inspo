@@ -33,8 +33,12 @@ export function takeDevLink(): string | undefined {
 // Studio preview uses a different port every time). A BETTER_AUTH_URL pulled into .env.local
 // from Vercel would otherwise send every sign-in back to production.
 // Better Auth reads BETTER_AUTH_URL on its own when no baseURL is given, so in development it goes too.
-if (process.env.NODE_ENV === "development") delete process.env.BETTER_AUTH_URL;
-export const APP_URL = process.env.NODE_ENV === "development" ? "" :
+// A Vercel preview has no URL of its own in the env (BETTER_AUTH_URL is production's or empty, and
+// VERCEL_PROJECT_PRODUCTION_URL is criterio.design): it infers the URL from each request too, or every
+// magic link sent from a preview would open production.
+const IS_PREVIEW = process.env.VERCEL_ENV === "preview";
+if (process.env.NODE_ENV === "development" || IS_PREVIEW) delete process.env.BETTER_AUTH_URL;
+export const APP_URL = process.env.NODE_ENV === "development" || IS_PREVIEW ? "" :
   process.env.BETTER_AUTH_URL ||
   process.env.NEXT_PUBLIC_APP_URL ||
   (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "");
@@ -104,7 +108,8 @@ export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
   trustedOrigins: (request) => {
     // Apple returns the code by POST (form_post) from its domain, so it must be trusted
-    const fixed = [APP_URL, process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "", "https://appleid.apple.com"].filter(Boolean);
+    // A preview answers on two hosts: the deployment's own and the branch alias (…-git-<branch>-…)
+    const fixed = [APP_URL, process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "", process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : "", "https://appleid.apple.com"].filter(Boolean);
     // In development we trust the requesting origin (the preview's localhost:<port>)
     // In development we trust any local port (the preview changes port)
     const dyn = !IS_PROD ? ["http://localhost:*", "http://127.0.0.1:*", originOf(request?.headers, request)].filter(Boolean) : [];

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { InspoItem, Project, ProjectLinks } from "@/types/inspo";
+import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import FeedbackEntry from "./FeedbackEntry";
@@ -250,6 +251,8 @@ export interface SidebarProps {
   onSpace: (space: string) => void;
   projects: Project[];
   links: ProjectLinks;
+  /** Each project's system, for the ring that says how much of it is decided */
+  systems?: Record<string, ProjectSystem>;
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
@@ -286,8 +289,21 @@ function NameField({ initial = "", placeholder, onSubmit, onCancel }: {
 }
 
 /** One project in the sidebar: goes to it; its "…" (on hover) renames or deletes it. */
-function ProjectRow({ project, count, active, onClick, onRename, onDelete }: {
-  project: Project; count: number; active: boolean; onClick: () => void; onRename: () => void; onDelete: () => void;
+/** How much of the project's system is decided: a ring that fills area by area */
+export function FillRing({ filled, total }: { filled: number; total: number }) {
+  const { t } = useT();
+  const r = 4.5, c = 2 * Math.PI * r;
+  return (
+    <svg className={`nav-item__ring${filled === total ? " is-full" : ""}`} viewBox="0 0 12 12" width="12" height="12" role="img" aria-label={t.system.filled(filled, total)}>
+      <circle cx="6" cy="6" r={r} fill="none" stroke="currentColor" strokeOpacity="0.25" strokeWidth="1.6" />
+      <circle cx="6" cy="6" r={r} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" transform="rotate(-90 6 6)"
+        strokeDasharray={`${(c * filled) / total} ${c}`} />
+    </svg>
+  );
+}
+
+function ProjectRow({ project, count, filled, active, onClick, onRename, onDelete }: {
+  project: Project; count: number; filled: number; active: boolean; onClick: () => void; onRename: () => void; onDelete: () => void;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -297,7 +313,7 @@ function ProjectRow({ project, count, active, onClick, onRename, onDelete }: {
         <span className="nav-item__icon">{I.folder}</span>
         <span className="truncate">{project.name}</span>
       </SidebarMenuButton>
-      <SidebarMenuBadge className="nav-item__count">{count}</SidebarMenuBadge>
+      <SidebarMenuBadge className="nav-item__count">{filled > 0 && <FillRing filled={filled} total={SYSTEM_AREAS.length} />}{count}</SidebarMenuBadge>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger render={<SidebarMenuAction showOnHover className="nav-item__more" aria-label={t.projects.options(project.name)} />}>
           {I.dots}
@@ -347,7 +363,7 @@ export function PlanMeter({ quota }: { quota: QuotaView }) {
 /** Everything under the workspace: add, the whole library, the projects, the directory and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
 export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, onPick,
-  space, onSpace, projects, links, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
+  space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;
 }) {
@@ -408,7 +424,7 @@ export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, o
                 <NameField key={p.id} initial={p.name} placeholder={t.projects.namePlaceholder}
                   onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} onCancel={() => setNaming(null)} />
               ) : (
-                <ProjectRow key={p.id} project={p} count={counts.byProject[p.id] ?? 0} active={space === p.id}
+                <ProjectRow key={p.id} project={p} count={counts.byProject[p.id] ?? 0} filled={systems[p.id]?.areas.filter((a) => a.decision).length ?? 0} active={space === p.id}
                   onClick={pick(() => onSpace(space === p.id ? "all" : p.id))}
                   onRename={() => setNaming(p.id)} onDelete={() => onDeleteProject(p)} />
               ))}

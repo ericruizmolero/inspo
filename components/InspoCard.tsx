@@ -7,6 +7,13 @@ import { InspoItem, InspoTags, Project, TagStatus } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
 import ProjectPicker, { IconFolder } from "./ProjectPicker";
+import AreaPicker from "./AreaPicker";
+import { areaIcon } from "./area-icons";
+import { Icons } from "./Sidebar";
+const IconCompass = (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><circle cx="8" cy="8" r="6.2" /><path d="M10.6 5.4 9.2 9.2 5.4 10.6 6.8 6.8z" /></svg>
+);
+import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind } from "@/lib/url";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
@@ -67,7 +74,7 @@ interface InspoCardProps {
   onDesignMd: () => void;
   designMdLoading?: boolean;
   designMdReady?: boolean;
-  designCover?: string;   // 720x450 cover generated with the DESIGN.md (on the canvas: the page)
+  designCover?: string;   // 720x450 cover generated with the DESIGN.md (on the board: the page)
   /** The same picture through the app, tried once if designCover fails (a signed link that expired) */
   designCoverFallback?: string;
   designScroll?: string;  // long strip that scrolls on hover
@@ -81,8 +88,16 @@ interface InspoCardProps {
   projectIds?: string[];
   onToggleProject?: (projectId: string, on: boolean) => void;
   onCreateProject?: (name: string) => Promise<void>;
-  /** On the canvas: the whole page instead of a cover, sized before it loads, with the post-its as dots */
-  canvas?: {
+  /** Inside a project: the areas of its system this piece backs, and the toggle to file it under one */
+  backs?: SystemArea[];
+  onToggleArea?: (area: SystemArea, on: boolean) => void;
+  /** While the Inbox is being organised: the model's proposal for this piece, to accept, change or dismiss on the card */
+  proposal?: {
+    projectId: string | null; areas: SystemArea[]; reason: string; projects: Project[];
+    onAccept: () => void; onDismiss: () => void; onProject: (projectId: string | null) => void; onArea: (area: SystemArea, on: boolean) => void;
+  } | null;
+  /** On the board: the page's top as the cover, sized before it loads, with the post-its as dots */
+  board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
     ratio?: number;
     /** Where the post-its sit, as fractions of the page */
@@ -130,7 +145,7 @@ const IconInfo = (
   </svg>
 );
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, canvas }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, proposal, board }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -150,10 +165,10 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const [manualFailed, setManualFailed] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [coverRetry, setCoverRetry] = useState(false);
-  // On the canvas the cover is never blank: another copy already decoded stands in while the one it
+  // On the board the cover is never blank: another copy already decoded stands in while the one it
   // wants loads, and a copy shown before is drawn at once (hooks/use-decoded-src.ts, lib/shown-images.ts)
-  const decodedCover = useDecodedSrc(coverSrc, canvas?.alternates);
-  const designCover = coverRetry && designCoverFallback ? designCoverFallback : canvas ? decodedCover : coverSrc;
+  const decodedCover = useDecodedSrc(coverSrc, board?.alternates);
+  const designCover = coverRetry && designCoverFallback ? designCoverFallback : board ? decodedCover : coverSrc;
   // Each picture is ready at once when it was shown before in this tab, else once it loads (hooks/use-image-ready.ts)
   const cover = useImageReady(designCover);
   const manual = useImageReady(manualThumbnail);
@@ -178,6 +193,14 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const useFrame = videoFile && !frameFailed;
   const useDesign = !useManual && !!designCover && !coverFailed;
 
+  // The strip that scrolls on hover is fetched once the cover has been up a moment, behind everything else:
+  // when the pointer arrives it comes from the cache and the scroll starts at once
+  useEffect(() => {
+    if (!designScroll || !useDesign || !cover.ready) return;
+    const timer = setTimeout(() => { const img = new Image(); img.fetchPriority = "low"; img.src = designScroll; }, 400);
+    return () => clearTimeout(timer);
+  }, [designScroll, useDesign, cover.ready]);
+
   // A new thumbnail or cover gets its own chance to load
   useEffect(() => { setManualFailed(false); }, [manualThumbnail]);
   useEffect(() => { setCoverFailed(false); }, [designCover]);
@@ -186,8 +209,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   // Start loading when the tile enters the viewport
   useEffect(() => {
     if (useManual || useDesign || useFrame || source !== "idle") return;
-    // On the canvas only the cards near the screen are mounted at all: being here is being in view
-    if (canvas) { setSource("og"); return; }
+    // On the board only the cards near the screen are mounted at all: being here is being in view
+    if (board) { setSource("og"); return; }
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -196,7 +219,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     );
     observer.observe(el);
     return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- canvas mode never changes for a card
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- board mode never changes for a card
   }, [source, useManual, useDesign, useFrame]);
 
   // Fetch as blob so failed sources don't spam the console
@@ -246,25 +269,34 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const isError = !useManual && !useDesign && !useFrame && source === "error";
   const isLoaded = useManual ? manual.ready : useDesign ? cover.ready : useFrame ? frameLoaded : !!imgSrc;
 
-  // On the canvas the media's real shape matters: the layout sizes the slot from it.
+  // On the board the media's real shape matters: the layout sizes the slot from it.
   // Load events don't bubble, but they do pass through the capture phase on their way down.
-  const onMeasure = canvas?.onMeasure;
-  const knownRatio = canvas?.ratio;
+  const onMeasure = board?.onMeasure;
+  const knownRatio = board?.ratio;
   useEffect(() => {
     const el = containerRef.current;
     if (!el || !onMeasure) return;
-    const onLoad = (e: Event) => {
-      const m = e.target;
+    const read = (m: EventTarget | null) => {
+      // Only the thumbnail gives the tile its shape: the strip that scrolls over it on hover is the whole page
+      if (m instanceof Element && m.closest(".tile__scroll")) return;
       const w = m instanceof HTMLImageElement ? m.naturalWidth : m instanceof HTMLVideoElement ? m.videoWidth : 0;
       const h = m instanceof HTMLImageElement ? m.naturalHeight : m instanceof HTMLVideoElement ? m.videoHeight : 0;
       if (!w || !h) return;
       const r = h / w;
       if (knownRatio === undefined || Math.abs(knownRatio - r) > 0.01) onMeasure(r);
     };
+    const onLoad = (e: Event) => read(e.target);
+    // A thumbnail already there (loaded before this listens, or kept with a shape the strip once gave it)
+    read(el.querySelector(":scope > img.tile__img"));
     el.addEventListener("load", onLoad, true);
     el.addEventListener("loadeddata", onLoad, true);
     return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
   }, [onMeasure, knownRatio]);
+
+  // No picture at all: the typographic poster is 4:3 (CSS .tile__fallback), and the layout hears it
+  useEffect(() => {
+    if (isError && onMeasure && (knownRatio === undefined || Math.abs(knownRatio - 0.75) > 0.01)) onMeasure(0.75);
+  }, [isError, onMeasure, knownRatio]);
 
   const onScrollLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget, box = scrollBoxRef.current;
@@ -346,6 +378,12 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   );
 
   const filedCount = projectIds.length;
+  const areaPicker = (className: string, onOpenChange?: (o: boolean) => void) => onToggleArea && (
+    <AreaPicker backs={backs} onToggle={onToggleArea} onOpenChange={onOpenChange}
+      className={`${className}${backs.length ? " is-filed" : ""}`} label={backs.length ? t.system.inSystem(backs.length) : t.system.toSystem}>
+      {IconCompass}{backs.length > 0 && <span className="tile__action-count">{backs.length}</span>}
+    </AreaPicker>
+  );
   const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
     <ProjectPicker
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
@@ -359,14 +397,31 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   return (
     <div>
       <article
-        className={`tile${canvas ? " tile--canvas" : ""}`}
+        className={`tile${board ? " tile--board" : ""}${proposal ? " tile--proposed" : ""}`}
+        data-id={item.id}
         onClick={() => { if (suppressClick.current) return; openInside(); }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
+        {proposal && (
+          <div className="tile__proposal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+            <div className="tile__proposal-row">
+              <select className="tile__proposal-project" value={proposal.projectId ?? ""} aria-label={t.triage.project} onChange={(e) => proposal.onProject(e.target.value || null)}>
+                <option value="">{t.triage.none}</option>
+                {proposal.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <button type="button" className="tile__proposal-ok" disabled={!proposal.projectId} onClick={proposal.onAccept}>{Icons.check} {t.triage.accept}</button>
+              <button type="button" className="tile__proposal-x" aria-label={t.triage.dismiss} title={t.triage.dismiss} onClick={proposal.onDismiss}>{Icons.x}</button>
+            </div>
+            {proposal.reason && <p className="tile__proposal-why">{proposal.reason}</p>}
+            <div className="tile__proposal-areas">
+              {SYSTEM_AREAS.map((k) => { const on = proposal.areas.includes(k); return <button key={k} type="button" className={on ? "is-on" : ""} aria-pressed={on} onClick={() => proposal.onArea(k, !on)}>{areaIcon(k, 12)}{(t.system.areas as Record<SystemArea, string>)[k]}</button>; })}
+            </div>
+          </div>
+        )}
         <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}
-          style={canvas?.ratio ? { aspectRatio: `1 / ${canvas.ratio}`, background: canvas.color } : undefined}>
-          {!isLoaded && !isError && !canvas?.color && <div className="shimmer" />}
+          style={board?.ratio ? { aspectRatio: `1 / ${board.ratio}`, background: board.color } : undefined}>
+          {!isLoaded && !isError && !board?.color && <div className="shimmer" />}
 
           {useManual && (
             <img
@@ -388,11 +443,11 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
                 decoding={cover.decoding}
                 src={designCover!}
                 alt={item.name}
-                loading={canvas ? undefined : "lazy"}
+                loading={board ? undefined : "lazy"}
                 onLoad={cover.onLoad}
                 onError={() => { if (designCoverFallback && !coverRetry) setCoverRetry(true); else setCoverFailed(true); }}
               />
-              {designScroll && !canvas && cover.ready && hovering && (
+              {designScroll && cover.ready && hovering && (
                 <div ref={scrollBoxRef} className="tile__scroll">
                   <img
                     src={designScroll}
@@ -417,9 +472,9 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             />
           )}
 
-          {canvas?.pins && isLoaded && canvas.pins.length > 0 && (
+          {board?.pins && isLoaded && board.pins.length > 0 && (
             <span className="tile__pins" aria-hidden>
-              {canvas.pins.map((p, i) => <i key={i} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} />)}
+              {board.pins.map((p, i) => <i key={i} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} />)}
             </span>
           )}
           {plays && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
@@ -456,18 +511,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               </div>
             </div>
           )}
-
-          <div className="tile__overlay">
-            <div className="display tile__title">{item.name}</div>
-            {meta}
-            {commentCount > 0 && (
-              <span className="tile__replies">{IconComment}{t.card.replies(commentCount)}</span>
-            )}
-            {aiChips}
-            <span className="tile__cta">
-              {clickTarget === "md" ? (designMdReady ? t.card.openDesignMd : designMdLoading ? t.card.generatingDesignMd : t.card.generateDesignMd) : (commentCount > 0 ? t.card.seeComments : t.card.comment)}
-            </span>
-          </div>
 
           {/* Found by search without Jev's reading: why it is here, in the tags the words found */}
           {score === undefined && reason && (
@@ -521,6 +564,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               </button>
             )}
             {picker("tile__action tile__action--pj", setPickerOpen)}
+            {areaPicker("tile__action tile__action--pj", setPickerOpen)}
             {isSite && <button
               className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
               data-tip={designMdLoading ? t.card.generatingDesignMd : designMdReady ? t.card.seeDesignMd : t.card.generateWithAi}
@@ -589,6 +633,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           </button>
         )}
         {picker("tile__caption-md tile__caption-pj")}
+        {areaPicker("tile__caption-md tile__caption-pj")}
         {isSite && <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>}
         <a className="tile__caption-md tile__caption-link" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (

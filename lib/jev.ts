@@ -253,3 +253,27 @@ export async function screenDuels(brief: JsonValue, refs: BoardRef[]): Promise<{
   }
   return { pairs: [...best.values()], billing: sumBilling(results) };
 }
+
+/** Per reference code, the probability (0–1) that the board would miss it: what weighs for the brief. */
+export async function screenWeight(brief: JsonValue, refs: BoardRef[]): Promise<{ scores: Map<string, number>; billing: ScreenBilling }> {
+  const batches: BoardRef[][] = [];
+  for (let i = 0; i < refs.length; i += SCREEN_BATCH) batches.push(refs.slice(i, i + SCREEN_BATCH));
+  const results = await pool(batches, CONCURRENCY, async (batch) => {
+    const state = {
+      note: "A design team keeps a board of references for one project, with a brief, and wants it down to a dozen that each earn their place. Weigh each reference by what it brings the project: a reason the team wrote (curator_notes, team_comments, what_the_team_takes) weighs most; a look that fits the brief's tone and audience weighs; a reference nobody said anything about, or that only repeats what others bring, weighs little.",
+      brief,
+      references: batch,
+    };
+    const questions = Object.fromEntries(batch.map((r) => [
+      r.id,
+      noul(`Would the board lose something if the reference with id "${r.id}" left it?`, {
+        true: "It brings the project something the team pointed at, or a look the brief asks for, that no other reference brings.",
+        false: "Nothing written on it, or what it brings is marginal or already on the board.",
+      }),
+    ]));
+    const res = await client().systemOne({ state, questions });
+    const a = res.answers as Record<string, { noul?: number }>;
+    return { ...billingOf(res), scores: batch.map((r) => [r.id, Number(a[r.id]?.noul ?? 0)] as const) };
+  });
+  return { scores: new Map(results.flatMap((r) => r.scores)), billing: sumBilling(results) };
+}

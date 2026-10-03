@@ -22,6 +22,7 @@
     "check:usage": "tsx --conditions=react-server scripts/check-usage.ts",
     "check:url-keys": "tsx --conditions=react-server scripts/check-url-keys.ts",
     "check:postgres": "tsx --conditions=react-server scripts/check-postgres.ts",
+    "check:system": "tsx --conditions=react-server scripts/check-system.ts",
     "seed:dump": "tsx --conditions=react-server scripts/seed.ts dump",
     "db:init": "tsx --conditions=react-server scripts/seed.ts init",
     "db:pull": "tsx --conditions=react-server scripts/seed.ts pull",

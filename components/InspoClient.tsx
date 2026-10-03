@@ -1,10 +1,10 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, editTags as editTagsAction } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
 import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, CommentAnchor, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
@@ -12,16 +12,22 @@ import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, q
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
-import InspoCard from "./InspoCard";
+import InspoCard, { cachedCardImage } from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
-import Canvas, { type CanvasHandle, type ShotLevel } from "./Canvas";
-import { layoutCanvas, keyOf, TILE_W, DEFAULT_RATIO, CANVAS_MAX_RATIO } from "@/lib/canvas-layout";
+import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
+import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
+import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
+import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "@/lib/agent";
+import ProjectChooser from "./ProjectChooser";
+import type { TriageProposal } from "@/lib/system";
+import { applySystemTriage } from "@/app/actions/system";
+import { assignSystemArea } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
@@ -30,6 +36,9 @@ import { Button } from "@/components/ui/button";
 import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useExtensionMissing } from "@/hooks/use-extension";
+import { sectionIcon } from "./section-icons";
+import Link from "next/link";
 import Logo from "@/components/Logo";
 import dynamic from "next/dynamic";
 
@@ -43,6 +52,7 @@ const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const PolishModal = dynamic(() => import("./PolishModal"), { ssr: false });
+const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
 const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 
@@ -100,8 +110,11 @@ const TAG_WATCH_MS = 5 * 60 * 1000;
 
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
-const RATIOS_KEY = "inspo:canvas-ratios";
-/** What floats over the canvas: the bars on top, the zoom pill at the bottom */
+const RATIOS_KEY = "inspo:ratios";
+/** The zoom (columns away from the usual number, see components/Grid.tsx), kept for the next visit */
+// ":2": the default moved one step out (DEFAULT_ZOOM -1); a zoom kept under the old key meant something else
+const ZOOM_KEY = "inspo:board-zoom:2";
+/** What floats over the board: the bars on top, the search dock at the bottom */
 const TOP_DESKTOP = 64;
 const TOP_MOBILE = 64;
 /** The search dock at the bottom, with the results line over it */
@@ -132,6 +145,8 @@ export default function InspoClient({
   initialTagJobs = {},
   initialProjects = [],
   initialProjectLinks = {},
+  initialProjectShelf = {},
+  initialSystems = {},
   aiEnabled = false,
   user,
   workspace,
@@ -153,6 +168,10 @@ export default function InspoClient({
   initialTagJobs?: Record<string, TagStatus>;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
+  /** Archived by Polish: off the project's board, still the project's (not in the Inbox either) */
+  initialProjectShelf?: ProjectLinks;
+  /** Each project's system, by project id (lib/system.ts) */
+  initialSystems?: Record<string, ProjectSystem>;
   aiEnabled?: boolean;
   user: SessionUser;
   workspace: Workspace;
@@ -160,7 +179,7 @@ export default function InspoClient({
   members?: { name: string; image: string | null }[];
   /** Can see the activity panel (/admin) */
   isAdmin?: boolean;
-  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the canvas draws */
+  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the board draws */
   initialPageShots?: Record<string, PageShot>;
 }) {
   const { t } = useT();
@@ -202,18 +221,57 @@ export default function InspoClient({
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
   const [projects, setProjects] = useState(initialProjects);
   const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
+  const [shelf, setShelf] = useState<ProjectLinks>(initialProjectShelf);
+  // The systems, alive: filing a reference into a project that has started its system re-reads the
+  // board a moment later (one cheap model call), so the system never lags behind the board
+  const [systems, setSystems] = useState(initialSystems);
+  const systemsRef = useRef(systems);
+  systemsRef.current = systems;
+  const systemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const refreshSystem = useCallback((projectId: string) => {
+    if (!systemsRef.current[projectId]?.run) return;  // the team has not read the board yet: nothing to keep alive
+    clearTimeout(systemTimers.current[projectId]);
+    systemTimers.current[projectId] = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId }) });
+        const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
+        if (res.ok && !json.error) setSystems((prev) => ({ ...prev, [projectId]: json }));
+      } catch { /* the modal shows the board as unread; the next read catches up */ }
+    }, 2500);
+  }, []);
+  const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
-  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : "all";
+  // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
+  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
-  const setSpace = useCallback((v: string) => setParams({ in: v }), [setParams]);
+  // Inside a project the system comes first; the board is a mode (?view=board)
+  const projectView: "system" | "board" = currentProject && sp.get("view") !== "board" ? "system" : "board";
+  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === "board" ? "board" : "" }), [setParams]);
+  const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
+  // Which areas of the current project's system each reference backs (for the card's "to the system")
+  const backsByItem = useMemo(() => {
+    const m = new Map<string, SystemArea[]>();
+    for (const a of currentSystem?.areas ?? []) for (const e of a.evidence) m.set(e.itemId, [...(m.get(e.itemId) ?? []), a.area]);
+    return m;
+  }, [currentSystem]);
+  const backsOf = useCallback((id: string) => backsByItem.get(id) ?? EMPTY_AREAS, [backsByItem]);
+  const systemFilled = currentSystem ? currentSystem.areas.filter((a) => a.decision).length : 0;
+  const systemStale = useMemo(() => {
+    if (!currentProject || !currentSystem?.run) return 0;
+    const boardIds = items.filter((i) => i.id && links[i.id]?.includes(currentProject.id)).map((i) => i.id!);
+    return staleness(currentSystem, boardIds).unread;
+  }, [currentProject, currentSystem, items, links]);
+  const setSpace = useCallback((v: string) => setParams({ in: v === "all" ? "library" : v === "home" ? "" : v }), [setParams]);
   // Adding from inside a project files it there: read at save time, whatever the callback closed over
   const projectRef = useRef<string | null>(null);
   projectRef.current = currentProject?.id ?? null;
   const [confirm, confirmDialog] = useConfirm();
 
+  // What no project has taken (nor archived): the library's second view
+  const unfiledCount = useMemo(() => items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length))).length, [items, links, shelf]);
   // The items in the current space (inbox, a project or everything), before any other filter
-  const spaceItems = useMemo(() => space === "all" ? items
-    : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
+  const spaceItems = useMemo(() => space === "all" || space === "home" ? items
+    : space === "inbox" ? items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length)))
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
   [items, links, space]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
@@ -272,6 +330,43 @@ export default function InspoClient({
 
   const [showAdd, setShowAdd] = useState(false);
   const [showPolish, setShowPolish] = useState(false);
+  // Organising the Inbox: the model's proposal per reference sits on its card until the team accepts, changes or dismisses it
+  const [triage, setTriage] = useState<Record<string, TriageProposal> | null>(null);
+  const [triageRunning, setTriageRunning] = useState(false);
+  const gridRef = useRef<GridHandle | null>(null);
+  const runTriage = useCallback(async (ids: string[]) => {
+    setTriageRunning(true);
+    try {
+      const res = await fetch("/api/system/triage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemIds: ids }) });
+      const json = await res.json().catch(() => ({})) as { proposals?: TriageProposal[]; error?: string };
+      if (!res.ok || json.error || !json.proposals) throw new Error(json.error || t.triage.failed);
+      setTriage(Object.fromEntries(json.proposals.map((p) => [p.itemId, p])));
+      // Bring the first proposal into view
+      const first = json.proposals.find((p) => p.projectId) ?? json.proposals[0];
+      if (first) setTimeout(() => gridRef.current?.focus(first.itemId), 50);
+    } catch (e) { setAddError({ title: t.triage.failed, detail: e instanceof Error ? e.message : String(e) }); }
+    finally { setTriageRunning(false); }
+  }, [t]);
+  const patchTriage = useCallback((itemId: string, patch: Partial<TriageProposal> | null) => setTriage((m) => {
+    if (!m) return m; const n = { ...m };
+    if (patch === null) delete n[itemId]; else n[itemId] = { ...n[itemId], ...patch };
+    return n;
+  }), []);
+  const acceptTriage = useCallback(async (picks: TriageProposal[]) => {
+    const valid = picks.filter((p): p is TriageProposal & { projectId: string } => !!p.projectId);
+    if (!valid.length) return;
+    const r = await applySystemTriage(valid.map((p) => ({ itemId: p.itemId, projectId: p.projectId, areas: p.areas }))).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setAddError({ title: t.triage.failed, detail: r.error }); return; }
+    setLinks((prev) => { const next = { ...prev }; for (const p of valid) next[p.itemId] = [...(next[p.itemId] ?? []).filter((x) => x !== p.projectId), p.projectId]; return next; });
+    setSystems(r.data.systems);
+    setTriage((m) => {
+      if (!m) return m; const n = { ...m }; for (const p of valid) delete n[p.itemId];
+      // On to the next proposal
+      const next = Object.values(n).find((p) => p.projectId);
+      if (next && valid.length === 1) setTimeout(() => gridRef.current?.focus(next.itemId), 50);
+      return Object.keys(n).length ? n : null;
+    });
+  }, [t]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -323,6 +418,7 @@ export default function InspoClient({
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
+      if (projectId) refreshSystem(projectId);
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Full experience from the start: tags and DESIGN.md without asking.
       // A post on X is imported first (its picture is what the tags look at).
@@ -357,6 +453,7 @@ export default function InspoClient({
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
+      if (projectId) refreshSystem(projectId);
       setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       watch(item.web);
@@ -450,9 +547,28 @@ export default function InspoClient({
       return { ...prev, [id]: want ? [...cur, projectId] : cur };
     });
     flip(on);
+    // Filing an archived reference again brings it back to the board (the server does the same)
+    if (on) setShelf((prev) => (prev[id]?.includes(projectId) ? { ...prev, [id]: prev[id].filter((x) => x !== projectId) } : prev));
     const r = await setFiled(projectId, [id], on).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); }
-  }, []);
+    if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); return; }
+    refreshSystem(projectId);
+  }, [refreshSystem]);
+  /** Polish's archive: off the board but still the project's (on), or back on it (off). The why stays with the row */
+  const setProjectArchive = useCallback(async (picked: InspoItem[], projectId: string, on: boolean) => {
+    const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+    const move = (from: ProjectLinks, to: ProjectLinks): [ProjectLinks, ProjectLinks] => {
+      const a = { ...from }, b = { ...to };
+      for (const id of ids) { a[id] = (a[id] ?? []).filter((x) => x !== projectId); b[id] = [...(b[id] ?? []).filter((x) => x !== projectId), projectId]; }
+      return [a, b];
+    };
+    const prevLinks = links, prevShelf = shelf;
+    const [a, b] = on ? move(links, shelf) : move(shelf, links);
+    if (on) { setLinks(a); setShelf(b); } else { setShelf(a); setLinks(b); }
+    const r = await setProjectArchived(projectId, ids, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setLinks(prevLinks); setShelf(prevShelf); projectFailed(new Error(r.error)); throw new Error(r.error); }
+    refreshSystem(projectId);
+  }, [links, shelf, refreshSystem]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
     const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
@@ -464,8 +580,9 @@ export default function InspoClient({
       return next;
     });
     const r = await setFiled(projectId, ids, true).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); }
-  }, [links]);
+    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); return; }
+    refreshSystem(projectId);
+  }, [links, refreshSystem]);
   const createAndFile = useCallback(async (item: InspoItem, name: string) => {
     const p = await createProject(name);
     if (p) await toggleFiled(item, p.id, true);
@@ -486,7 +603,7 @@ export default function InspoClient({
       if (res.ok) setCommentMap(await res.json());
     } catch { /* offline: retried on the next cycle */ }
   }, []);
-  // The panel: one reference open on the right, the canvas still live on the left
+  // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
   // With the thread in view, refresh every 20 s to see what others write
   useEffect(() => {
@@ -589,7 +706,7 @@ export default function InspoClient({
       setDesignMdIndex((prev) => ({ ...prev, [url]: {
         coverUrl: body.coverUrl, scrollUrl: body.scrollUrl, shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH,
       } }));
-      // A new DESIGN.md brings the page's capture: the canvas draws it from now on
+      // A new DESIGN.md brings the page's capture: the board draws it from now on
       if (body.topUrl && body.tileUrl && body.thumbUrl && body.screenshotUrl && body.shotH) {
         setPageShots((prev) => ({ ...prev, [url]: { shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH, color: body.color } }));
       }
@@ -703,6 +820,7 @@ export default function InspoClient({
   // Desktop has no sidebar: the island in the top bar holds the projects and the workspace menu. A phone keeps
   // the sidebar as a sheet behind the menu button.
   const isMobile = useIsMobile();
+  const extMissing = useExtensionMissing();
 
   // ─── Search ─────────────────────────────────────────────────────────────────
   // Three layers, each shown as soon as it is there (lib/search-query.ts):
@@ -796,15 +914,17 @@ export default function InspoClient({
 
   // Everything under the workspace, for the sidebar (the docked column and the phone sheet)
   const filtering = filters.length > 0 || words.length > 0;
+  // In the system the search doesn't take references away: the ones it found stay lit
+  const matchIds = useMemo(() => (filtering ? new Set(filtered.map((i) => i.id).filter((x): x is string => !!x)) : null), [filtering, filtered]);
   const navProps = {
     quota, items,
     isAll: space === "all" && !filtering,
     onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
-    space, onSpace: setSpace, projects, links,
+    space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
 
-  // ─── Canvas ─────────────────────────────────────────────────────────────────
+  // ─── Board ──────────────────────────────────────────────────────────────────
   // At rest, the whole space, newest first. While searching, only the results, laid out again in the
   // order they rank: the best one top left. What doesn't match isn't there.
   const boardItems = useMemo(
@@ -845,16 +965,38 @@ export default function InspoClient({
   }, []);
   const ratioOf = useCallback((item: InspoItem) => {
     const shot = pageShots[item.web];
-    // A site is drawn as its page, cut at the canvas's maximum height, unless someone chose a thumbnail for it
-    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, CANVAS_MAX_RATIO);
-    // Not measured yet: a site will arrive as a tall page, anything else about as a cover
-    return ratios[item.web] ?? (mediaKindOf(item.web) === "web" ? 1.5 : DEFAULT_RATIO);
+    // A site is its page from the top, as tall as the page is up to the board's cut, unless someone chose a
+    // thumbnail for it: short pages stay short, long ones get cut, and the columns fall into a masonry
+    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, BOARD_MAX_RATIO);
+    // Anything else keeps its own shape, cut at the board's maximum height; unmeasured, it arrives as a cover
+    return Math.min(ratios[item.web] ?? DEFAULT_RATIO, BOARD_MAX_RATIO);
   }, [pageShots, thumbMap, ratios]);
 
-  // Always the automatic layout: columns, newest first. Nobody moves cards by hand (for now).
-  const slots = useMemo(() => layoutCanvas(boardItems, undefined, (i) => TILE_W * ratioOf(i)), [boardItems, ratioOf]);
+  // A card with nothing written under it takes no room for a line: the next card sits right below
+  const hasNote = useCallback(
+    (item: InspoItem) => !!item.note.trim() || !!(item.id && commentMap[item.id]?.some((c) => c.body.trim())),
+    [commentMap],
+  );
 
-  // What floats over the canvas, so framing keeps clear of it
+  // A small picture of any reference, wherever one is shown outside the board: the thumbnail someone gave it, the
+  // DESIGN.md cover, or the stored copy of its page (so a reference without a DESIGN.md is not a blank)
+  const smallImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null, [thumbMap, designMdIndex, pageShots]);
+  // The zoom: one step out of 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
+  // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
+  const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
+  useLayoutEffect(() => {
+    try {
+      const kept = localStorage.getItem(ZOOM_KEY);
+      const z = kept === null ? NaN : Number(kept);
+      if (Number.isInteger(z) && Math.abs(z) < 8) setZoomState(z);
+    } catch { /* no storage */ }
+  }, []);
+  const setZoom = useCallback((z: number) => {
+    setZoomState(z);
+    try { localStorage.setItem(ZOOM_KEY, String(z)); } catch { /* no storage */ }
+  }, []);
+
+  // What floats over the board, so the cards keep clear of it
   const winW = useWindowWidth();
   const desktop = winW >= DESKTOP_MIN;
   const insets = useMemo(() => ({
@@ -863,9 +1005,8 @@ export default function InspoClient({
     right: 0,
     bottom: BOTTOM,
   }), [desktop]);
-  const canvasRef = useRef<CanvasHandle | null>(null);
-  // The camera frames the results again when the chips change or a slower layer answers, not on every key
-  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${near ? 1 : 0}|${jevScores ? 1 : 0}|${filtering ? filtered.length : -1}`;
+  // The board starts from the top again when the space or the search changes, not when a slower layer reorders
+  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${filtering ? text : ""}`;
 
   // Presence: which area the person is in right now (read by the /admin panel)
   const area = panelItem ? "design-md" : showDirectory ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
@@ -874,7 +1015,105 @@ export default function InspoClient({
   runDesignMdRef.current = runDesignMd;
   // The cards' handlers, behind one stable ref: a card only re-renders when its own data changes
   const gridActions = useRef<GridActions>(null!);
-  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, measure };
+  // From a card inside a project: this piece belongs to an area of the system. The node counts it at once
+  const toggleArea = useCallback(async (item: InspoItem, area: SystemArea, on: boolean) => {
+    const projectId = projectRef.current;
+    if (!projectId || !item.id) return;
+    const r = await assignSystemArea(projectId, area, item.id, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+    setSystem(projectId, r.data);
+  }, [setSystem]);
+  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, acceptProposal: (p) => void acceptTriage([p]), patchProposal: patchTriage };
+
+  // ─── The agent: every action, asked for in words from the search box ──────────
+  // The request goes with where the person is (project, view, open reference, what is on screen); the
+  // server plans and runs what is safe, and what it changed comes back as a patch the state applies.
+  // Deleting comes back pending and waits for a yes here.
+  const [agent, setAgent] = useState<{ text: string; busy: boolean; say?: string; done: AgentDone[]; pending: AgentAction[]; error?: string } | null>(null);
+  // The thread: the last exchanges go with each request, so "and put it in color too" means something
+  const agentLog = useRef<AgentTurn[]>([]);
+  const recentIds = useRef<string[]>([]);
+  // "This reference": the card the pointer was on last counts for a few seconds (clicking into the box
+  // moves the pointer away from it), read from the DOM so no card re-renders for it
+  const hovered = useRef<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    const over = (e: MouseEvent) => { const el = (e.target as HTMLElement | null)?.closest?.("[data-id].tile, [data-id].sysf-ref") as HTMLElement | null; if (el?.dataset.id) hovered.current = { id: el.dataset.id, at: Date.now() }; };
+    document.addEventListener("mouseover", over);
+    return () => document.removeEventListener("mouseover", over);
+  }, []);
+  const [openArea, setOpenArea] = useState<SystemArea | null>(null);
+  const [focusArea, setFocusArea] = useState<{ area: SystemArea; n: number } | null>(null);
+  const applyAgentPatch = useCallback((patch: AgentPatch) => {
+    if (patch.projects) setProjects(patch.projects);
+    if (patch.links) setLinks(patch.links);
+    if (patch.systems) setSystems((prev) => ({ ...prev, ...patch.systems }));
+    if (patch.added?.length) setItems((prev) => [...patch.added!.filter((a) => !prev.some((i) => i.id === a.id)), ...prev]);
+    if (patch.removed?.length) { const gone = new Set(patch.removed); setItems((prev) => prev.filter((i) => !i.id || !gone.has(i.id))); }
+  }, []);
+  const followAgent = useCallback((done: AgentDone[]) => {
+    for (const d of done) {
+      if (!d.ok) continue;
+      if (d.kind === "search" && d.text) setQuery(d.text);
+      if (d.kind === "go" && d.go) {
+        if (d.go.space) setSpace(d.go.space === "library" ? "all" : d.go.space);
+        if (d.go.view) setProjectView(d.go.view);
+        if (d.go.area) { setProjectView("system"); setFocusArea((f) => ({ area: d.go!.area!, n: (f?.n ?? 0) + 1 })); }
+      }
+    }
+  }, [setQuery, setSpace, setProjectView]);
+  const askAgent = useCallback(async (text: string) => {
+    setAgent({ text, busy: true, done: [], pending: [] });
+    const picked = [...document.querySelectorAll<HTMLElement>(".sysf-ref.is-picked[data-id]")].map((el) => el.dataset.id!).filter(Boolean);
+    const scope = {
+      projectId: currentProject?.id ?? null, space, view: currentProject ? projectView : null, area: currentProject && projectView === "system" ? openArea : null,
+      openItemId: panelItem?.id ?? null, hoverItemId: hovered.current && Date.now() - hovered.current.at < 12000 ? hovered.current.id : null, pickedIds: picked, recentIds: recentIds.current,
+      visibleIds: filtered.slice(0, 200).map((i) => i.id).filter((x): x is string => !!x),
+      history: agentLog.current.slice(-6),
+    };
+    try {
+      const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, scope }) });
+      const json = await res.json().catch(() => ({})) as AgentReply & { error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      applyAgentPatch(json.patch);
+      followAgent(json.done);
+      // A command leaves the box empty; a search keeps its words in it
+      if (!json.done.some((d) => d.kind === "search")) setQuery("");
+      setAgent({ text, busy: false, say: json.say, done: json.done, pending: json.pending });
+      const touched = json.done.flatMap((d) => d.items ?? []);
+      if (touched.length) recentIds.current = [...new Set(touched)].slice(0, 40);
+      agentLog.current = [...agentLog.current, { text, say: json.say, did: json.done.filter((d) => d.ok).map((d) => [d.kind, d.project, d.area, d.name, d.n].filter((x) => x !== undefined).join(" ")) }].slice(-6);
+    } catch (e) {
+      setAgent({ text, busy: false, done: [], pending: [], error: e instanceof Error ? e.message : String(e) });
+    }
+  }, [currentProject, space, projectView, openArea, panelItem, filtered, applyAgentPatch, followAgent, setQuery]);
+  // One line back: its undo actions run as a confirmed batch, and the line says so
+  const undoAgent = useCallback(async (i: number) => {
+    const line = agent?.done[i];
+    if (!agent || !line?.undo?.length || agent.busy) return;
+    setAgent({ ...agent, busy: true });
+    try {
+      const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: line.undo }) });
+      const json = await res.json().catch(() => ({})) as { done: AgentDone[]; patch: AgentPatch; error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      applyAgentPatch(json.patch);
+      setAgent({ ...agent, busy: false, done: agent.done.map((d, j) => (j === i ? { ...d, undo: undefined, undone: true } : d)) });
+    } catch (e) {
+      setAgent({ ...agent, busy: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }, [agent, applyAgentPatch]);
+  const confirmAgent = useCallback(async () => {
+    if (!agent?.pending.length) return;
+    setAgent({ ...agent, busy: true });
+    try {
+      const res = await fetch("/api/agent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ run: agent.pending }) });
+      const json = await res.json().catch(() => ({})) as { done: AgentDone[]; patch: AgentPatch; error?: string };
+      if (!res.ok || json.error) throw new Error(json.error || res.statusText);
+      applyAgentPatch(json.patch);
+      setAgent({ ...agent, busy: false, done: [...agent.done, ...json.done], pending: [] });
+    } catch (e) {
+      setAgent({ ...agent, busy: false, error: e instanceof Error ? e.message : String(e) });
+    }
+  }, [agent, applyAgentPatch]);
 
   // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
   // they were pinned; the column holds all of them with their replies
@@ -977,10 +1216,13 @@ export default function InspoClient({
           board={spaceItems}
           library={items}
           tagMap={tagMap}
-          imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+          imageOf={smallImageOf}
           comments={commentMap}
           hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
-          onDiscard={async (picked) => { for (const i of picked) await toggleFiled(i, currentProject.id, false); }}
+          archived={items.filter((i) => i.id && shelf[i.id]?.includes(currentProject.id))}
+          onArchive={(picked, on) => setProjectArchive(picked, currentProject.id, on)}
+          onSearch={(q) => { setSpace("all"); setQuery(q); }}
+          onBrief={(about) => setProjects((prev) => prev.map((p) => (p.id === currentProject.id ? { ...p, intent: about || null } : p)))}
           onClose={() => setShowPolish(false)}
         />
       )}
@@ -1017,7 +1259,7 @@ export default function InspoClient({
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
         onAddUrl={(web) => {
-          // Already saved: show it on the canvas instead of saving it twice
+          // Already saved: show it on the board instead of saving it twice
           if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
           addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
@@ -1041,21 +1283,83 @@ export default function InspoClient({
             <SidebarTrigger aria-label={t.app.menu} />
           </span>
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-            items={items} links={links} projects={projects} space={space} onSpace={setSpace}
+            items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
+            members={members} onPerson={(name) => { if (space === "home") setSpace("all"); toggleFilter({ kind: "person", value: name }); }}
             onDirectory={() => setShowDirectory(true)} quota={quota} />
           <Logo size={28} className="topbar__logo" />
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
+            {/* The library is one place: everything, or only what no project has taken yet */}
+            {(space === "all" || space === "inbox") && projects.length > 0 && (
+              <>
+                <span className="topbar__modes" role="tablist" aria-label={t.sidebar.library}>
+                  <button type="button" role="tab" className={`topbar__mode${space === "all" ? " is-on" : ""}`} aria-selected={space === "all"} onClick={() => setSpace("all")}>
+                    {Icons.all} {t.sidebar.all} <span className="topbar__fill">{items.length}</span>
+                  </button>
+                  <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
+                    {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
+                  </button>
+                </span>
+                <span className="topbar__actions-sep" aria-hidden />
+              </>
+            )}
+            {space === "inbox" && spaceItems.length > 0 && projects.length > 0 && (
+              <>
+                {triage ? (
+                  <>
+                    <Button variant="primary" size="sm" className="topbar__polish" onClick={() => void acceptTriage(Object.values(triage))} disabled={!Object.values(triage).some((p) => p.projectId)}>{Icons.check} {t.triage.acceptAll(Object.values(triage).filter((p) => p.projectId).length)}</Button>
+                    <Button variant="ghost" size="sm" className="topbar__polish" onClick={() => setTriage(null)}>{t.triage.exit}</Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" className="topbar__polish" disabled={triageRunning} onClick={() => void runTriage(spaceItems.map((i) => i.id).filter((x): x is string => !!x))} title={t.triage.hint(spaceItems.length)}>
+                    {triageRunning ? <span className="spinner spinner--sm" /> : Icons.spark} {triageRunning ? t.triage.reading : t.triage.button}
+                  </Button>
+                )}
+                <span className="topbar__actions-sep" aria-hidden />
+              </>
+            )}
             {currentProject && (
-              <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+              <>
+                <span className="topbar__modes" role="tablist" aria-label={t.system.button}>
+                  <button type="button" role="tab" className={`topbar__mode topbar__system${projectView === "system" ? " is-on" : ""}`} aria-selected={projectView === "system"}
+                    title={systemStale ? t.system.stale(systemStale) : undefined} onClick={() => setProjectView("system")}>
+                    {Icons.compass} {t.system.modeSystem}
+                    <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
+                    {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
+                  </button>
+                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => setProjectView("board")}>
+                    {Icons.all} {t.system.modeBoard}
+                  </button>
+                </span>
+                <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
+              </>
             )}
             {currentProject && <span className="topbar__actions-sep" aria-hidden />}
+            {/* A browser without the extension, or with it unconnected: the way to the guide, beside the other way of adding */}
+            {extMissing && (
+              <>
+                <Link href="/extension/install" className="btn btn--ghost topbar__polish topbar__ext" title={t.ext.nudge.hint}>
+                  {sectionIcon("extension")} {t.ext.nudge[extMissing]}
+                </Link>
+                <span className="topbar__actions-sep" aria-hidden />
+              </>
+            )}
             <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
           </div>
         </header>
 
-        {items.length === 0 ? (
+        {space === "home" ? (
+          <ProjectChooser
+            projects={projects}
+            systems={systems}
+            items={items}
+            links={links}
+            onPick={(id) => setSpace(id)}
+            onCreate={createProject}
+            onLibrary={() => setSpace("all")}
+          />
+        ) : items.length === 0 ? (
           <EmptyStart
             onAddUrl={async (web) => {
               // First inspo: saved and its DESIGN.md opened directly, so the app shows what it does
@@ -1065,6 +1369,22 @@ export default function InspoClient({
             isDuplicate={isDuplicate}
             onDirectory={() => setShowDirectory(true)}
           />
+        ) : currentProject && projectView === "system" ? (
+          <SystemView
+            key={currentProject.id}
+            project={currentProject}
+            system={systems[currentProject.id] ?? null}
+            onSystem={(sys) => setSystem(currentProject.id, sys)}
+            board={spaceItems}
+            library={items}
+            inbox={items.filter((i) => !(i.id && links[i.id]?.length))}
+            onFile={(item) => toggleFiled(item, currentProject.id, true)}
+            imageOf={smallImageOf}
+            onOpenBoard={() => setProjectView("board")}
+            focusArea={focusArea}
+            onOpenChange={setOpenArea}
+            matches={matchIds}
+          />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
           <ProjectStart
@@ -1072,7 +1392,7 @@ export default function InspoClient({
             project={currentProject}
             items={items}
             links={links}
-            imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
+            imageOf={smallImageOf}
             onAddUrl={async (web) => {
               // Already in the library: filed here instead of "already saved"
               const key = webKeyOf(web);
@@ -1089,13 +1409,16 @@ export default function InspoClient({
           </div>
         ) : (
           <>
-            <Canvas
+            <Grid
               items={boardItems}
-              slots={slots}
+              ratioOf={ratioOf}
+              hasNote={hasNote}
               insets={insets}
+              zoom={zoom}
+              onZoom={setZoom}
               fitKey={fitKey}
-              focusKey={null}
-              handleRef={canvasRef}
+              focusKey={panelItem ? keyOf(panelItem) : null}
+              handleRef={gridRef}
               renderCard={(item, level) => (
                 <Card
                   item={item}
@@ -1113,6 +1436,8 @@ export default function InspoClient({
                   shot={pageShots[item.web]}
                   projects={projects}
                   projectIds={item.id ? links[item.id] : undefined}
+                  backs={currentProject && item.id ? backsOf(item.id) : undefined}
+                  proposal={triage && item.id ? triage[item.id] ?? null : undefined}
                   actions={gridActions}
                 />
               )}
@@ -1135,12 +1460,129 @@ export default function InspoClient({
                 {t.search.results(filtered.length)}{jevBusy && <span className="dock__status-more"> · {t.search.reading}</span>}
               </p>
             )}
+            {filtering && currentProject && projectView === "system" && filtered.length > 0 && (
+              <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={smallImageOf} onOpen={openItem} />
+            )}
+            {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
+              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onUndo={(i) => void undoAgent(i)} />
+            )}
             <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
-              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} />
+              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy} />
           </div>
         )}
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+const EMPTY_AREAS: SystemArea[] = [];
+
+/** What the agent said and did, above the box; the pending steps wait here for a yes */
+/** What a search found, in the system view: there the references sit around the areas, some of them off
+ *  screen, so the results come to the dock as a row to open from */
+const DOCK_RESULTS = 24;
+function DockResults({ label, items, imageOf, onOpen }: { label: string; items: InspoItem[]; imageOf: (item: InspoItem) => string | null; onOpen: (item: InspoItem) => void }) {
+  return (
+    <ul className="dock__results" aria-label={label}>
+      {items.map((it) => (
+        <li key={it.id ?? it.web}>
+          <button type="button" className="dock__result" title={it.name} onClick={() => onOpen(it)}>
+            <DockResultThumb item={it} image={imageOf(it)} />
+            <span className="dock__result-name">{it.name}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+function DockResultThumb({ item, image }: { item: InspoItem; image: string | null }) {
+  const [at, setAt] = useState(0);
+  const srcs = [image, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
+  const src = srcs[at];
+  return <span className="dock__result-thumb" aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
+}
+
+function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
+  agent: { text: string; busy: boolean; say?: string; done: (AgentDone & { undone?: boolean })[]; pending: AgentAction[]; error?: string };
+  projects: Project[];
+  onConfirm: () => void;
+  onCancel: () => void;
+  onClose: () => void;
+  onUndo: (i: number) => void;
+}) {
+  const { t } = useT();
+  const areas = t.system.areas as Record<string, string>;
+  const projectName = (id: string) => projects.find((p) => p.id === id)?.name ?? id;
+  const line = (d: AgentDone): string => {
+    const did = t.agent.did;
+    const area = d.area ? areas[d.area] ?? d.area : "";
+    switch (d.kind) {
+      case "search": return did.search(d.text ?? "");
+      case "go": return did.go(d.go?.area ? `${areas[d.go.area] ?? d.go.area}${d.project ? ` (${d.project})` : ""}` : d.project ?? (d.go?.space === "inbox" ? "Inbox" : d.go?.space === "library" ? t.sidebar.all : ""));
+      case "file": return did.file(d.n ?? 0, d.project ?? "", d.on !== false);
+      case "assign": return did.assign(d.n ?? 0, area, d.on !== false);
+      case "decide": return did.decide(area);
+      case "clear": return did.clear(area);
+      case "release": return did.release(area);
+      case "undo": return did.undo(area);
+      case "read_board": return did.read_board(d.project ?? "");
+      case "curate": return did.curate(area);
+      case "organize": return did.organize(d.n ?? 0);
+      case "create_project": return did.create_project(d.project ?? "");
+      case "rename_project": return did.rename_project(d.project ?? "");
+      case "delete_project": return did.delete_project(d.project ?? "");
+      case "brief": return did.brief(d.project ?? "");
+      case "add_url": return did.add_url(d.name ?? "");
+      case "note": return did.note(d.name ?? "");
+      case "comment": return did.comment(d.name ?? "");
+      case "tag": return did.tag(d.name ?? "");
+      case "delete_items": return did.delete_items(d.n ?? 0);
+      case "guide": return did.guide;
+    }
+  };
+  const will = (a: AgentAction): string => {
+    if (a.kind === "delete_items") return t.agent.will.delete_items(a.items.length);
+    if (a.kind === "delete_project") return t.agent.will.delete_project(projectName(a.project));
+    if (a.kind === "clear") return t.agent.will.clear(areas[a.area] ?? a.area);
+    return a.kind;
+  };
+  const guides = agent.done.filter((d) => d.kind === "guide" && d.ok);
+  return (
+    <div className="dock__agent" role="status" aria-live="polite">
+      <div className="dock__agent-head">
+        <span className="dock__agent-q">{agent.text}</span>
+        <button type="button" className="dock__agent-x" aria-label={t.agent.dismiss} onClick={onClose}>{Icons.x}</button>
+      </div>
+      {agent.busy && !agent.say ? <p className="dock__agent-say"><span className="spinner spinner--sm" /> {t.agent.thinking}</p> : null}
+      {agent.error && <p className="dock__agent-say dock__agent-say--error">{t.agent.failed}: {agent.error}</p>}
+      {agent.say && <p className="dock__agent-say">{agent.say}</p>}
+      {agent.done.filter((d) => d.kind !== "guide").length > 0 && (
+        <ul className="dock__agent-did">
+          {agent.done.map((d, i) => d.kind === "guide" ? null : (
+            <li key={i} className={`${d.ok ? "" : "is-failed"}${d.undone ? " is-undone" : ""}`}>{d.ok ? Icons.check : Icons.x}
+              <span>{d.ok ? line(d) : d.error}{d.ok && (d.kind === "decide" || d.kind === "organize") && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span>
+              {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
+            </li>
+          ))}
+        </ul>
+      )}
+      {guides.map((g, i) => (
+        <div key={`g${i}`} className="dock__agent-guide">
+          <p>{g.text}</p>
+          {g.topic && g.topic !== "other" && g.topic !== "export_md" && <a className="btn btn--sm btn--primary" href="/extension/connect" target="_blank" rel="noreferrer">{Icons.arrow} {t.agent.guides[g.topic]}</a>}
+        </div>
+      ))}
+      {agent.pending.length > 0 && (
+        <div className="dock__agent-pending">
+          <span className="dock__agent-pending-title">{t.agent.pendingTitle(agent.pending.length)}</span>
+          <ul>{agent.pending.map((a, i) => <li key={i}>{will(a)}</li>)}</ul>
+          <div className="dock__agent-actions">
+            <Button variant="primary" size="sm" disabled={agent.busy} onClick={onConfirm}>{agent.busy ? <span className="spinner spinner--sm" /> : Icons.check} {t.agent.confirm}</Button>
+            <Button variant="ghost" size="sm" disabled={agent.busy} onClick={onCancel}>{t.agent.cancel}</Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1151,12 +1593,19 @@ interface GridActions {
   handleThumbnailRemove: (web: string) => void;
   toggleFiled: (item: InspoItem, projectId: string, on: boolean) => void;
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
+  toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
+  acceptProposal: (p: TriageProposal) => void;
+  patchProposal: (itemId: string, patch: Partial<TriageProposal> | null) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, proposal, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
+  /** Inside a project: the areas of its system this reference backs */
+  backs?: SystemArea[];
+  /** While organising the Inbox: the model's proposal for this reference (null = none for it) */
+  proposal?: TriageProposal | null;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
@@ -1191,9 +1640,9 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   // The post-its on the part of the page the card shows, as dots where they sit
   const pins = useMemo(() => {
     if (!showsPage) return undefined;
-    const shown = Math.min(shot!.shotH, 1440 * CANVAS_MAX_RATIO);
+    const shown = Math.min(shot!.shotH, 1440 * ratio);
     return (comments ?? []).filter((c) => c.anchor).map((c) => ({ x: c.anchor!.x, y: (c.anchor!.y * c.anchor!.h) / shown })).filter((p) => p.y <= 1);
-  }, [comments, showsPage, shot]);
+  }, [comments, showsPage, shot, ratio]);
   const open = () => act().openItem(item);
   // Always the whole card, at every zoom: its note and its thread are always there. Only the copy of the
   // page changes with the zoom (288, 720 or 1440px), swapped without a blank frame.
@@ -1216,11 +1665,22 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       designMdReady={designMd !== undefined}
       designCover={page}
       designCoverFallback={showsPage ? shot!.paths?.[key] : undefined}
+      designScroll={designMd?.scrollUrl}
       projects={item.id ? projects : undefined}
       projectIds={projectIds}
       onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}
       onCreateProject={(name) => act().createAndFile(item, name)}
-      canvas={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
+      backs={backs}
+      onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
+      proposal={proposal === undefined ? undefined : proposal ? {
+        ...proposal,
+        projects: projects,
+        onAccept: () => act().acceptProposal(proposal),
+        onDismiss: () => act().patchProposal(proposal.itemId, null),
+        onProject: (projectId) => act().patchProposal(proposal.itemId, { projectId }),
+        onArea: (area, on) => act().patchProposal(proposal.itemId, { areas: on ? [...proposal.areas, area] : proposal.areas.filter((a) => a !== area) }),
+      } : null}
+      board={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
 });

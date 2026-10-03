@@ -2,8 +2,8 @@
 // Polish: the project's brief and the decisions taken on its board. The model calls
 // (the games) take longer and go through app/api/polish.
 import { withCtx } from "@/lib/workspace";
-import { getPolish, saveBrief, addDecision, mergeInto } from "@/lib/polish";
-import type { PolishBrief } from "@/types/polish";
+import { getPolish, saveBrief, addDecision, mergeInto, saveWhy } from "@/lib/polish";
+import type { PolishBrief, Why } from "@/types/polish";
 
 export async function loadPolish(projectId: string) {
   return withCtx(async (ctx) => getPolish(ctx.workspace.id, String(projectId)));
@@ -15,8 +15,13 @@ export async function savePolishBrief(projectId: string, brief: Partial<PolishBr
 }
 
 /** Remembers an answer so the same question is not asked again. */
-export async function decidePolish(projectId: string, decision: { notDupes?: string[]; keptTone?: string[]; keptDuel?: string[] }) {
+export async function decidePolish(projectId: string, decision: { notDupes?: string[]; keptTone?: string[]; keptDuel?: string[]; keptLight?: string[] }) {
   return withCtx(async (ctx) => addDecision(ctx.workspace.id, String(projectId), decision ?? {}));
+}
+
+/** The why of one reference in this project: what the team takes from it. */
+export async function savePolishWhy(projectId: string, itemId: string, why: Partial<Why>) {
+  return withCtx(async (ctx) => saveWhy(ctx.workspace.id, String(projectId), String(itemId), why ?? {}, ctx.user.id));
 }
 
 /** Duplicates, merged: what was written on the ones that leave is kept on the one that stays. */

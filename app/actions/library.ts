@@ -11,7 +11,7 @@ import { addItem, deleteItem, setItemNote, editUserTags } from "@/lib/items";
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
-import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
+import { createProject, renameProject, deleteProject, fileItems, unfileItems, setArchived } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
@@ -71,6 +71,14 @@ export async function editProject(id: string, name: string) {
 
 export async function removeProject(id: string) {
   return withCtx(async (ctx) => { await deleteProject(ctx.workspace.id, String(id)); });
+}
+
+/** Archives items of a project (on: off the board, still the project's) or brings them back (off). */
+export async function setProjectArchived(projectId: string, itemIds: string[], on: boolean) {
+  return withCtx(async (ctx) => {
+    const ids = Array.isArray(itemIds) ? itemIds.map(String).slice(0, 500) : [];
+    await setArchived(ctx.workspace.id, String(projectId), ids, on);
+  });
 }
 
 /** Files items in a project (on) or takes them out (off). */

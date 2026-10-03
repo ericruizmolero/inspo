@@ -7,19 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-
-// Messages between this page and extension/chrome/content.js (same tab, same origin)
-const FROM_PAGE = "criterio";
-const FROM_EXT = "criterio-ext";
-
-function browserName(fallback: string): string {
-  const ua = navigator.userAgent;
-  if (/Edg\//.test(ua)) return "Edge";
-  if (/Arc\//.test(ua)) return "Arc";
-  if (/Chrome\//.test(ua)) return "Chrome";
-  if (/Safari\//.test(ua)) return "Safari";
-  return fallback;
-}
+import { browserName, useExtension } from "@/hooks/use-extension";
 
 export default function ConnectPanel({ currentId }: { currentId: string }) {
   const { t } = useT();
@@ -27,23 +15,10 @@ export default function ConnectPanel({ currentId }: { currentId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ key: string } | null>(null);
-  const [extPresent, setExtPresent] = useState(false);
-  const [received, setReceived] = useState(false);
+  const { info, received, handKey } = useExtension();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => { setName(browserName(t.ext.browser)); }, [t.ext.browser]);
-
-  // The extension announces it is listening and confirms when it saves the key
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin || e.data?.source !== FROM_EXT) return;
-      if (e.data.type === "ext-hello") setExtPresent(true);
-      if (e.data.type === "ext-key-received") setReceived(true);
-    };
-    window.addEventListener("message", onMessage);
-    window.postMessage({ source: FROM_PAGE, type: "page-hello" }, window.location.origin);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +29,7 @@ export default function ConnectPanel({ currentId }: { currentId: string }) {
       const data = r.data;
       setResult(data);
       // Hand it to the extension; if it is not there, the copy button remains
-      window.postMessage({ source: FROM_PAGE, type: "ext-key", key: data.key, base: window.location.origin, workspace: data.workspace }, window.location.origin);
+      handKey(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally { setBusy(false); }
@@ -71,7 +46,7 @@ export default function ConnectPanel({ currentId }: { currentId: string }) {
         <Card>
           <CardHeader>
             <CardTitle>{t.ext.keyCreated}</CardTitle>
-            {!received && <CardDescription>{extPresent ? t.ext.handingOver : t.ext.notDetected}</CardDescription>}
+            {!received && <CardDescription>{info ? t.ext.handingOver : t.ext.notDetected}</CardDescription>}
           </CardHeader>
           <CardContent>
             {received ? (

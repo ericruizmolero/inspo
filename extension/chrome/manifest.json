@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "criterio.design",
   "description": "__MSG_extDescription__",
-  "version": "0.2.1",
+  "version": "0.3.1",
   "default_locale": "en",
   "icons": {
     "16": "icons/icon16.png",
@@ -23,17 +23,22 @@
   },
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "bookmarks",
+    "scripting"
   ],
   "host_permissions": [
     "https://criterio.design/*",
     "http://localhost/*"
   ],
+  "optional_host_permissions": [
+    "https://x.com/*"
+  ],
   "content_scripts": [
     {
       "matches": [
-        "https://criterio.design/extension/connect*",
-        "http://localhost/extension/connect*"
+        "https://criterio.design/*",
+        "http://localhost/*"
       ],
       "js": [
         "content.js"
