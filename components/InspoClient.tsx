@@ -1471,7 +1471,7 @@ export default function InspoClient({
               <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={smallImageOf} onOpen={openItem} />
             )}
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
-              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onUndo={(i) => void undoAgent(i)} />
+              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
             )}
             <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
               vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy} />
@@ -1509,13 +1509,15 @@ function DockResultThumb({ item, image }: { item: InspoItem; image: string | nul
   return <span className="dock__result-thumb" aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
 }
 
-function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
+function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAsk }: {
   agent: { text: string; busy: boolean; say?: string; done: (AgentDone & { undone?: boolean })[]; pending: AgentAction[]; error?: string };
   projects: Project[];
   onConfirm: () => void;
   onCancel: () => void;
   onClose: () => void;
   onUndo: (i: number) => void;
+  /** An answer to the agent's question: its order, asked as a new request */
+  onAsk: (order: string) => void;
 }) {
   const { t } = useT();
   const areas = t.system.areas as Record<string, string>;
@@ -1547,6 +1549,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       case "tag": return did.tag(d.name ?? "");
       case "delete_items": return did.delete_items(d.n ?? 0);
       case "guide": return did.guide;
+      case "ask": return d.text ?? "";
     }
   };
   const will = (a: AgentAction): string => {
@@ -1556,6 +1559,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
     return a.kind;
   };
   const guides = agent.done.filter((d) => d.kind === "guide" && d.ok);
+  const asks = agent.done.filter((d) => d.kind === "ask" && d.ok && d.options?.length);
   return (
     <div className="dock__agent" role="status" aria-live="polite">
       <div className="dock__agent-head">
@@ -1565,9 +1569,9 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       {agent.busy && !agent.say ? <p className="dock__agent-say"><span className="spinner spinner--sm" /> {t.agent.thinking}</p> : null}
       {agent.error && <p className="dock__agent-say dock__agent-say--error">{t.agent.failed}: {agent.error}</p>}
       {agent.say && <p className="dock__agent-say">{agent.say}</p>}
-      {agent.done.filter((d) => d.kind !== "guide").length > 0 && (
+      {agent.done.filter((d) => d.kind !== "guide" && d.kind !== "ask").length > 0 && (
         <ul className="dock__agent-did">
-          {agent.done.map((d, i) => d.kind === "guide" ? null : (
+          {agent.done.map((d, i) => d.kind === "guide" || d.kind === "ask" ? null : (
             <li key={i} className={`${d.ok ? "" : "is-failed"}${d.undone ? " is-undone" : ""}`}>{d.ok ? Icons.check : Icons.x}
               <span>{d.ok ? line(d) : d.error}{d.ok && (d.kind === "decide" || d.kind === "organize") && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span>
               {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
@@ -1575,6 +1579,14 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
           ))}
         </ul>
       )}
+      {asks.map((q, i) => (
+        <div key={`q${i}`} className="dock__agent-ask">
+          <p>{q.text}</p>
+          <div className="dock__agent-options">
+            {q.options!.map((o) => <button key={o.label} type="button" className="dock__agent-option" disabled={agent.busy} title={o.order} onClick={() => onAsk(o.order)}>{o.label}</button>)}
+          </div>
+        </div>
+      ))}
       {guides.map((g, i) => (
         <div key={`g${i}`} className="dock__agent-guide">
           <p>{g.text}</p>

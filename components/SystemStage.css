@@ -392,3 +392,10 @@
 .sysb-client__item { display: flex; align-items: center; gap: 10px; padding: 6px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .sysb-client__item:hover { background: var(--surface); color: var(--text); }
 .sysb-client__item .sysv-thumb { width: 52px; height: 34px; margin: 0; border: 0; border-radius: 6px; } .sysb-client__item .sysv-thumb img { object-position: top; }
+
+/* The agent asks instead of guessing: the question and the answers, each one an order */
+.dock__agent-ask { display: flex; flex-direction: column; gap: 8px; }
+.dock__agent-ask p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--dock-ink); font-weight: 500; }
+.dock__agent-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.dock__agent-option { height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--dock-fill); color: var(--dock-ink); font: inherit; font-size: 13px; cursor: pointer; }
+.dock__agent-option:hover { background: var(--dock-chip); } .dock__agent-option:disabled { opacity: 0.5; cursor: default; }

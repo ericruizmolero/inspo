@@ -66,6 +66,8 @@ const ActionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("comment"), item: z.string(), text: z.string() }),
   z.object({ kind: z.literal("tag"), item: z.string(), add: z.string().nullable(), remove: z.string().nullable() }),
   z.object({ kind: z.literal("delete_items"), items: z.array(z.string()) }),
+  // A request with two readings: one question and the orders each answer would give, for the person to pick
+  z.object({ kind: z.literal("ask"), question: z.string(), options: z.array(z.object({ label: z.string(), order: z.string() })) }),
   // What the app cannot do by itself: say how, and where the button is
   z.object({ kind: z.literal("guide"), topic: Topic, text: z.string() }),
 ]);
@@ -79,7 +81,7 @@ const PlanSchema = z.object({
 /** Actions that destroy something: planned, shown, run only when the person says so */
 const DANGEROUS = new Set<AgentAction["kind"]>(["delete_items", "delete_project", "clear"]);
 /** Actions the interface runs itself (nothing changes on the server) */
-const CLIENT_SIDE = new Set<AgentAction["kind"]>(["search", "go", "guide"]);
+const CLIENT_SIDE = new Set<AgentAction["kind"]>(["search", "go", "guide", "ask"]);
 
 // ─── Where the person is ─────────────────────────────────────────────────────
 
@@ -127,6 +129,8 @@ export interface AgentDone {
   /** For file and assign: in (true) or out (false) */
   on?: boolean;
   topic?: z.infer<typeof Topic>;
+  /** ask: the answers to pick from, each the order it would give */
+  options?: { label: string; order: string }[];
   /** For the interface's own actions */
   go?: { space: string | null; view: "system" | "board" | null; area: SystemArea | null };
 }
@@ -169,9 +173,11 @@ The catalogue (kind: what it does):
 - add_url: save a web by its URL (and file it in a project). note: rewrite a reference's note. comment: leave a comment on a reference. tag: add or remove a tag (free word, lowercase).
 - delete_items: delete references.
 - guide: how to do what the app cannot do from here (importing from a browser, the extension).
+- ask: a question with 2 to 4 options, each with a short "label" and the full "order" you would run if picked (written as the person would say it, naming the project and area). Nothing else runs in that turn.
 Several actions in one request are fine, in order.
 
 How to read the request:
+- When a request admits two readings that lead to opposite results (a requirement or a complaint, more or less of something, which of two areas or projects, add or replace), do not guess: return a single "ask" action. When one reading is clearly the likelier, act on it.
 - A prohibition ("never…", "no…", "nada de…", "sin…", "fuera…") about an area is a "never" action. Do not also rewrite the decision with "decide": the decision stays exactly as it is.
 - "this", "these", "esta", "estas", "it", "la": in this order, the reference marked "open" (in the panel), then "under_pointer" (the card the pointer was on last, seconds before they sent the request), then the ones marked "picked" (ticked on the ring), then "recent" (what the previous request touched), then what is "on_screen" when the request clearly means all of them. If none of these fits and the request needs one reference, do not guess: say what you need in "say" and return no actions.
 - The earlier exchanges of this conversation come with the request: a short follow-up ("and in color too", "undo that", "the other one") continues them.
@@ -256,7 +262,7 @@ const resolveIn = (codes: Codes, action: AgentAction): AgentAction | null => {
   const items = (cs: string[]) => cs.map(item).filter((x): x is string => !!x);
   const project = (c: string) => codes.projects.get(c) ?? ([...codes.projects.values()].includes(c) ? c : null);
   switch (action.kind) {
-    case "search": case "guide": case "create_project": return action;
+    case "search": case "guide": case "create_project": case "ask": return action;
     case "go": {
       const p = action.project && !["inbox", "library", "home"].includes(action.project) ? project(action.project) : action.project;
       return { ...action, project: p ?? null };
@@ -288,6 +294,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
       switch (a.kind) {
         case "search": line.text = a.text; break;
         case "guide": line.topic = a.topic; line.text = a.text; break;
+        case "ask": line.text = a.question.trim().slice(0, 160); line.options = a.options.slice(0, 4).map((o) => ({ label: o.label.trim().slice(0, 40), order: o.order.trim().slice(0, 300) })).filter((o) => o.label && o.order); break;
         case "go": {
           const space = a.project ?? created;
           line.go = { space, view: a.view, area: a.area }; if (space && names.has(space)) line.project = names.get(space); break;
