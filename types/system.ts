@@ -115,3 +115,27 @@ export function staleness(system: ProjectSystem, boardIds: string[], stamp?: str
   const read = new Set(system.run.itemIds);
   return { unread: boardIds.filter((id) => !read.has(id)).length, wordsChanged: !!stamp && stamp !== system.run.stamp };
 }
+
+/** A template: a whole system (eight areas with decision, why and never, the paragraph) and the recipe of the
+ *  work it came from, to start a project from. "from" and "to" say what it turned into what: a client's site
+ *  and the redesign, for instance. */
+export interface ProjectTemplate {
+  /** Where the work started (the client's site), when there was one */
+  from: string;
+  /** What it ended as (the published result) */
+  to: string;
+  /** What it is, in a sentence */
+  about: string;
+}
+export const RECIPE_MAX = 200_000;
+
+/** A template as the library lists it */
+export interface TemplateCard {
+  id: string;
+  name: string;
+  template: ProjectTemplate;
+  system: ProjectSystem;
+  /** Characters of the recipe; 0 when it has none */
+  recipeSize: number;
+  createdAt: string;
+}

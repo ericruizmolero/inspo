@@ -178,6 +178,10 @@ export const project = pgTable("project", {
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   /** Polish: the brief, the decisions taken on the board and the last run of the games (types/polish.ts) */
   polish: jsonb("polish").$type<PolishState>(),
+  /** Set when this is a template, not a project: where the work started and where it ended (types/system.ts ProjectTemplate) */
+  template: jsonb("template").$type<unknown>(),
+  /** The recipe: how the work was done, as a Markdown document an agent can follow (the process of a template) */
+  recipe: text("recipe").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [

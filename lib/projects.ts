@@ -1,7 +1,7 @@
 // Projects: spaces inside a workspace to file references (schema.project / schema.projectItem).
 // Always scoped to a workspace; an item in no project is in the Inbox.
 import "server-only";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
@@ -25,7 +25,7 @@ async function cleanName(name: string): Promise<string> {
  */
 export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks; shelf: ProjectLinks }> {
   const [projects, rows] = await Promise.all([
-    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'`, clientItemId: sql<string | null>`${P.polish}->'brief'->>'clientItemId'` }).from(P).where(eq(P.organizationId, organizationId)).orderBy(asc(P.createdAt)),
+    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'`, clientItemId: sql<string | null>`${P.polish}->'brief'->>'clientItemId'`, hasRecipe: sql<boolean>`${P.recipe} <> ''` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
     db.select({ projectId: PI.projectId, itemId: PI.itemId, archivedAt: PI.archivedAt }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};

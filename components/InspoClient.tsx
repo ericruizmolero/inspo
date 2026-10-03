@@ -28,8 +28,9 @@ import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "
 import ProjectChooser from "./ProjectChooser";
 import type { TriageProposal } from "@/lib/system";
 import { applySystemTriage } from "@/app/actions/system";
-import { assignSystemArea } from "@/app/actions/system";
+import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
+import TemplatesView from "./TemplatesView";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -243,7 +244,7 @@ export default function InspoClient({
   const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
-  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "templates" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   // Inside a project the system comes first; the board is a mode (?view=board)
   const projectView: "system" | "board" = currentProject && sp.get("view") !== "board" ? "system" : "board";
@@ -1292,14 +1293,19 @@ export default function InspoClient({
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
             {/* The library is one place: everything, or only what no project has taken yet */}
-            {(space === "all" || space === "inbox") && projects.length > 0 && (
+            {(space === "all" || space === "inbox" || space === "templates") && (
               <>
                 <span className="topbar__modes" role="tablist" aria-label={t.sidebar.library}>
                   <button type="button" role="tab" className={`topbar__mode${space === "all" ? " is-on" : ""}`} aria-selected={space === "all"} onClick={() => setSpace("all")}>
                     {Icons.all} {t.sidebar.all} <span className="topbar__fill">{items.length}</span>
                   </button>
-                  <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
-                    {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
+                  {projects.length > 0 && (
+                    <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
+                      {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
+                    </button>
+                  )}
+                  <button type="button" role="tab" className={`topbar__mode${space === "templates" ? " is-on" : ""}`} aria-selected={space === "templates"} title={t.templates.lead} onClick={() => setSpace("templates")}>
+                    {Icons.compass} {t.templates.title}
                   </button>
                 </span>
                 <span className="topbar__actions-sep" aria-hidden />
@@ -1350,7 +1356,9 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "home" ? (
+        {space === "templates" ? (
+          <TemplatesView onStarted={(p) => { setProjects((prev) => [...prev, p]); setSpace(p.id); void loadSystem(p.id).then((r) => { if (r.ok) setSystem(p.id, r.data.system); }); }} />
+        ) : space === "home" ? (
           <ProjectChooser
             projects={projects}
             systems={systems}

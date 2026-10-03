@@ -1,0 +1,86 @@
+{
+  "name": "Rediseño de home · Multiverse Computing",
+  "template": {
+    "from": "https://multiversecomputing.com",
+    "to": "https://multiversecomputing.treseiscero.app",
+    "about": "Rediseño a ciegas de la home de una empresa de deep tech para presentar al cliente: su copy y su marca, con un nivel de diseño y de detalle que hoy no tiene. Cinco días y 31 entregas con IA."
+  },
+  "summary": "Home de una empresa de compresión de modelos de IA, en un solo tema oscuro. Schibsted Grotesk para todo el texto y JetBrains Mono, la de su propia web, para cifras y etiquetas. Un rojo que marca una sola cosa por escena. Ritmo por fondos alternos y hairlines, dos radios y ninguno más. Ilustraciones isométricas dibujadas por código, con material y sin juguete. Y un movimiento que llega y se para: gravedad sin rebotes, nada en bucle, hover solo donde hay acción.",
+  "areas": {
+    "typography": {
+      "decision": "Schibsted Grotesk 400, 500 y 600, con itálica 400, para todo el texto. JetBrains Mono 400 y 500 para cifras, kickers, etiquetas y specs. Titulares en caja baja, también los que el cliente escribe en caja alta. text-wrap balance en escritorio y pretty por debajo de 720px; tabular-nums en cifras.",
+      "why": "La mono es la que usa la web real de Multiverse, leída de sus hojas de estilo: la marca del cliente manda sobre el gusto.",
+      "never": [
+        "Inter, Roboto, Arial o Space Grotesk por defecto",
+        "Una mono que no sea la de la marca del cliente"
+      ]
+    },
+    "color": {
+      "decision": "Un solo tema, oscuro. Fondos #15181C, #1B1F24, #22272D y #2A3037; tinta #F8FAFC, #C9CED5 y #8E959E; líneas en tinta al 12 y al 22 %. Rojo #F01438 para rellenos y reglas, #FF5C77 para texto y rgba(240,20,56,.14) para fondos teñidos. Logos de clientes en tinta monocroma.",
+      "why": "Si todo es rojo, nada es rojo: el rojo marca una cosa por escena, el modelo.",
+      "never": [
+        "Un segundo tema",
+        "Un footer de otro color que la página",
+        "Fotos de prensa o de stock fuera de paleta",
+        "Retratos en el rojo de marca: van en los grises de la página, techo #A6ADB5"
+      ]
+    },
+    "layout": {
+      "decision": "Ancho máximo 1440px y gutter clamp(20px, 4vw, 64px). El ritmo lo dan dos fondos alternando por secciones, con hairline arriba y abajo de las elevadas. Dos radios: 6px para toda caja y control, 2px para marcas pequeñas. Las rejillas de información son una hoja: celdas unidas, cantos rectos, divisiones dashed que sobresalen. Una sola sección centrada, como ruptura. Altos en dvh o lvh, nunca vh.",
+      "why": "Ocho radios distintos en una página fue el olor de una web sin sistema.",
+      "never": [
+        "Tarjetas SaaS separadas con gap donde la información es una rejilla",
+        "Píxeles fijos para algo que sangra fuera del gutter",
+        "Interpolar hacia auto (flex-basis, height, width)",
+        "Clases en el marcado sin regla CSS detrás, o id duplicados"
+      ]
+    },
+    "motion": {
+      "decision": "Una firma por sección, no un fade-up uniforme. Lo que pesa cae con gravedad (power2.in) y lo de debajo cede 3,2px y vuelve. Las ilustraciones se dibujan al entrar, contorno y luego color, y se quedan quietas; una animación de datos pasa una vez y para. Hover solo donde hay acción: el CTA primario cierra cinco barras a tres en 180ms y revela puntos en 24px junto al cursor, con un pulso de 1,05s desde el punto por el que entras. Elegir una pestaña o un testimonio es un click. Todo lo infinito va en transform u opacity y se pausa fuera de pantalla.",
+      "why": "Los rebotes le quitan seriedad a una empresa de deep tech; el movimiento llega y se para.",
+      "never": [
+        "Rebotes de cualquier tipo: elastic, back, overshoot, squash-and-stretch",
+        "Caídas con ease-out cuando se pide peso: frenan como una pluma",
+        "Bucles decorativos, incluida una línea de escaneo",
+        "Hover en lo que no se pulsa o en lo que ya está abierto",
+        "Cambiar el color del CTA al hover, o icono en los CTA secundarios",
+        "Animar box-shadow o left en bucle"
+      ]
+    },
+    "iconography": {
+      "decision": "Nada de iconos de stock. Cada producto lleva su símbolo real, recortado de su propio logotipo; cada sector, su icono propio. Flechas y chevrons de la marca, no genéricos.",
+      "why": "Un glifo inventado para un producto que ya tiene logo en la página es lo primero que el cliente detecta.",
+      "never": [
+        "Glifos inventados para un producto que ya tiene logotipo",
+        "El mismo icono en todas las piezas de un bloque",
+        "Iconos genéricos en un círculo gris como única ilustración"
+      ]
+    },
+    "logo": {
+      "decision": "El isotipo real, en su variante de 9 bandas, impreso en la tapa del modelo en cada ilustración. El footer termina en el logo real, no en piezas que se le parecen. Logo del nav a 52px sin mover la altura del header. Logos de clientes igualados por tinta medida, no por caja.",
+      "why": "Donde va la marca va la marca.",
+      "never": [
+        "Barras que imitan el isotipo",
+        "El isotipo completo a tamaño pequeño: sus franjas bajan del píxel"
+      ]
+    },
+    "imagery": {
+      "decision": "Quince ilustraciones isométricas dibujadas por código, en unidades de mundo, cada una con una línea de lo que afirma y ningún sujeto repetido. Material: una sola luz arriba a la izquierda, degradado por cara, cantos en sombra de su propia cara, sombra de contacto, reflejo del rojo sobre la placa y barrido especular. Retratos del equipo en rampa gris a 180px y opacidad plena.",
+      "why": "«Parece de juguete» siempre significa que falta material, no que sobra.",
+      "never": [
+        "Caras planas de un color con contorno negro de 1px",
+        "Ilustraciones como dibujo de líneas",
+        "Dos ilustraciones que cuentan lo mismo con el mismo objeto",
+        "Retratos «a trazo» hechos por código cuando la referencia es una pintura"
+      ]
+    },
+    "voice": {
+      "decision": "El copy es del cliente: titular principal, cierre y frases de posicionamiento, literales de su web actual. Titulares nuevos solo en las secciones que no tenían. Cifras de sus notas de prensa. Un estado se cuenta de una sola manera.",
+      "why": "Si el cliente ve copy nuevo, deja de mirar el diseño; cambiar su posicionamiento es una decisión estratégica que no nos toca.",
+      "never": [
+        "Fechas o cifras inventadas",
+        "Un producto «coming soon» en un sitio y «early access» en otro"
+      ]
+    }
+  }
+}

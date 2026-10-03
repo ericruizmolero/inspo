@@ -454,7 +454,7 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
 // ─── The sample on the other areas' stages ───────────────────────────────────
 // The same piece typography is tried on, in the faces chosen there, with this area's controls beside it.
 
-export function AreaSample({ area, projectId, projectName, intent, summary, typeRefs, visuals, areaVisuals, typeCuration, choices, onChoice, colorRole, onColorRole, replay, onReplay, busy, onUse, clientItemId }: {
+export function AreaSample({ area, projectId, projectName, intent, summary, typeRefs, visuals, areaVisuals, typeCuration, choices, onChoice, colorRole, onColorRole, replay, onReplay, busy, onUse, clientItemId, namedFaces }: {
   area: SystemArea; projectId: string; projectName: string; intent: string; summary: string;
   /** The references typography draws from (for the faces), and every reference's sheet */
   typeRefs: InspoItem[]; visuals: RefVisual[];
@@ -466,6 +466,8 @@ export function AreaSample({ area, projectId, projectName, intent, summary, type
   replay: number; onReplay: () => void;
   busy: boolean; onUse?: (decision: string) => void;
   clientItemId?: string | null;
+  /** With no references to read faces from: the families the typography decision names */
+  namedFaces?: { title?: string; body?: string };
 }) {
   const { t } = useT();
   const tt = t.system.type;
@@ -473,7 +475,8 @@ export function AreaSample({ area, projectId, projectName, intent, summary, type
   const pair = useTypePair(projectId, rows, typeCuration, clientItemId);
   const [trio, setTrio] = useState(false);
   const variants = variantsFor(area, areaVisuals);
-  const faces = { title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) };
+  const named = (f?: string) => (f ? { fontFamily: `"${f}", system-ui, sans-serif` } : undefined);
+  const faces = pair.title ? { title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) } : { title: named(namedFaces?.title), subtitle: named(namedFaces?.body), body: named(namedFaces?.body) };
   const toggle = variants.length === 3 && (
     <button type="button" className={`smp-trio__toggle${trio ? " is-on" : ""}`} aria-pressed={trio} onClick={() => { setTrio((v) => !v); onReplay(); }}>{trio ? t.system.sample.one : t.system.sample.three}</button>
   );
@@ -494,7 +497,7 @@ export function AreaSample({ area, projectId, projectName, intent, summary, type
   return (
     <div className="tt-comp">
       <Sample title={projectName} subtitle={intent || tt.comp.subtitleSample} body={summary || tt.paragraphSample} cta={tt.comp.cta} more={t.system.sample.more}
-        faces={{ title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) }} choices={choices} replay={replay} />
+        faces={faces} choices={choices} replay={replay} />
       <div className="smp-side">
         {toggle}
         <SampleControls area={area} choices={choices} onChoice={onChoice} colorRole={colorRole} onColorRole={onColorRole} visuals={areaVisuals} onReplay={onReplay} busy={busy} onUse={onUse} />

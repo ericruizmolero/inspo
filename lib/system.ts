@@ -5,7 +5,7 @@
 // One run costs a fraction of a cent (DeepSeek, the DESIGN.md model), so a run per change is fine.
 import "server-only";
 import { createHash } from "crypto";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
@@ -88,7 +88,7 @@ export async function getSystem(organizationId: string, projectId: string): Prom
 
 /** The systems of every project in the workspace, for the sidebar (how full each one is). */
 export async function loadSystems(organizationId: string): Promise<Record<string, ProjectSystem>> {
-  const ids = (await db.select({ id: P.id }).from(P).where(eq(P.organizationId, organizationId))).map((r) => r.id);
+  const ids = (await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)))).map((r) => r.id);
   if (!ids.length) return {};
   const [heads, rows] = await Promise.all([
     db.select().from(S).where(and(eq(S.organizationId, organizationId), inArray(S.projectId, ids))),
@@ -174,6 +174,25 @@ export async function setAreaNever(organizationId: string, projectId: string, ar
   await db.insert(A).values({ projectId, organizationId, area, never: text, updatedAt: now })
     .onConflictDoUpdate({ target: [A.projectId, A.area], set: { never: text, updatedAt: now } });
   return getSystem(organizationId, projectId);
+}
+
+/** Copies a project's system into another: every area (decision, why, never), the paragraph. As "team" when the copy
+ *  is a template (its decisions are the work's), as "model" proposals when a project starts from one (the
+ *  team confirms them in its own project). No references travel: they belong to the project they came from. */
+export async function copySystem(organizationId: string, fromProjectId: string, toProjectId: string, as: "team" | "model", author: { id: string; name: string }): Promise<void> {
+  const from = await getSystem(organizationId, fromProjectId);
+  const now = new Date();
+  await db.insert(S).values({ projectId: toProjectId, organizationId, summary: from.summary, runJson: null, createdAt: now, updatedAt: now })
+    .onConflictDoUpdate({ target: S.projectId, set: { summary: from.summary, updatedAt: now } });
+  for (const a of from.areas) {
+    if (!a.decision && !a.never) continue;
+    const source = a.decision ? as : null;
+    const confidence = a.decision ? (as === "team" ? 100 : 70) : 0;
+    const row = { decision: a.decision, confidence, evidence: [], source, decidedBy: as === "team" && a.decision ? author.id : null, why: a.why, never: a.never, curationJson: null, updatedAt: now };
+    await db.insert(A).values({ projectId: toProjectId, organizationId, area: a.area, ...row })
+      .onConflictDoUpdate({ target: [A.projectId, A.area], set: row });
+    if (a.decision) await db.insert(R).values({ id: newId(), projectId: toProjectId, organizationId, area: a.area, decision: a.decision, confidence, evidence: [], source: as, why: a.why, authorId: author.id, authorName: author.name, createdAt: now });
+  }
 }
 
 /** The team hands an area back to the board: its text stays, but the next run may change it. */
@@ -754,7 +773,7 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
   const want = input.itemIds?.length ? new Set(input.itemIds) : null;
   const rows = rowsAll.filter(({ row }) => (want ? want.has(row.id) : !filed.has(row.id))).slice(0, 240);
   if (!rows.length) return [];
-  const projects = await db.select({ id: P.id, name: P.name, polish: P.polish }).from(P).where(eq(P.organizationId, org)).orderBy(asc(P.createdAt));
+  const projects = await db.select({ id: P.id, name: P.name, polish: P.polish }).from(P).where(and(eq(P.organizationId, org), isNull(P.template))).orderBy(asc(P.createdAt));
   const systems = await loadSystems(org);
   const pcodes = new Map(projects.map((p, i) => [`p${i + 1}`, p.id]));
   const projectsText = projects.map((p, i) => ({ id: `p${i + 1}`, name: p.name, brief: briefForModel(p.polish?.brief), system: systems[p.id]?.summary || undefined,

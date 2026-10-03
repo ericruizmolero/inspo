@@ -17,6 +17,7 @@ import { areaIcon } from "./area-icons";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
 import SystemMarkdown from "./SystemMarkdown";
+import { keepAsTemplate } from "@/app/actions/templates";
 import AreaStarter, { useAreaIdeals } from "./SystemStarter";
 import { areaCandidates } from "@/lib/candidates";
 import { Button } from "@/components/ui/button";
@@ -418,6 +419,37 @@ function BentoColor({ vs, chosen, labels }: { vs: RefVisual[]; chosen: { bg?: st
   );
 }
 
+/** A system with no references behind it yet (a project started from a template) still shows its result: the
+ *  colours, radii, curve and families its decisions name, read from their words, as if one reference carried them */
+function visualFromDecisions(sys: ProjectSystem): RefVisual | null {
+  const text = (k: SystemArea) => sys.areas.find((a) => a.area === k)?.decision ?? "";
+  const colors = [...new Set((text("color").match(/#[0-9a-f]{6}\b/gi) ?? []).map((h) => h.toLowerCase()))]
+    // A colour with hue is the brand; greys, near-blacks and near-whites are the neutrals
+    .map((hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255); return { name: hex, hex, group: (Math.max(r, g, b) - Math.min(r, g, b) > 0.3 ? "brand" : "neutral") as "brand" | "neutral" }; });
+  // Only the sentences that speak of radii: a layout decision also names widths and gutters in px
+  const radiusText = text("layout").split(/(?<=[.;])\s/).filter((s) => /radi|radius|redonde/i.test(s)).join(" ");
+  const radii = [...new Set(radiusText.match(/\b\d{1,2}px\b/g) ?? [])].filter((v) => parseInt(v) <= 40).map((value) => ({ element: "decision", value }));
+  const easing = text("motion").match(/cubic-bezier\([^)]*\)/)?.[0] ?? (/power2\.in\b/.test(text("motion")) ? "cubic-bezier(0.55, 0.085, 0.68, 0.53)" : null);
+  const fams = [...text("typography").matchAll(/([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+){0,2}) (?=\d00\b)/g)].map((m) => m[1]).filter((f, i, all) => all.indexOf(f) === i);
+  const fonts = fams.map((family, i) => ({ family, role: (i === 0 ? "display" : /mono/i.test(family) ? "mono" : "body") as "display" | "body" | "mono", weights: [400] }));
+  if (!colors.length && !radii.length && !easing && !fonts.length) return null;
+  return { itemId: "decisions", name: "", web: "", cover: null, scroll: null, colors, fonts, radii, easing, durationMs: null, logo: null, icons: [], voice: null, tagline: null };
+}
+
+/** The families a system names, loaded from Google Fonts when they are there (a face it does not have is simply not found) */
+function useNamedFonts(families: string[]) {
+  const key = families.join("|");
+  useEffect(() => {
+    if (!families.length) return;
+    const id = `named-fonts-${key.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id; link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?${families.map((f) => `family=${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;500;600`).join("&")}&display=swap`;
+    document.head.appendChild(link);
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 // ─── The bento: what each area shows on its tile ───────────────────────────────
 
 /** Typography on the bento: the sample itself, small. The project's name and its sentence in the pairing
@@ -481,6 +513,39 @@ function ClientPicker({ client, board, imageOf, onPick }: { client: InspoItem | 
   );
 }
 
+/** The project's system, kept as a template in the library: a copy, with where the work started and where it ended */
+function KeepAsTemplate({ project, client }: { project: Project; client: InspoItem | null }) {
+  const { t } = useT();
+  const s = t.templates;
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(project.name);
+  const [from, setFrom] = useState(client?.web ?? "");
+  const [to, setTo] = useState("");
+  const [about, setAbout] = useState(project.intent ?? "");
+  const [state, setState] = useState<"idle" | "busy" | "done">("idle");
+  const save = async () => {
+    setState("busy");
+    const r = await keepAsTemplate(project.id, { name, from, to, about });
+    setState(r.ok ? "done" : "idle");
+    if (r.ok) setTimeout(() => { setOpen(false); setState("idle"); }, 1400);
+  };
+  return (
+    <span className="sysb-keep">
+      <Button size="sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{s.keep}</Button>
+      {open && (
+        <form className="sysb-client__pop sysb-keep__pop" onSubmit={(e) => { e.preventDefault(); void save(); }}>
+          <p className="sysb-client__hint">{s.keepHint}</p>
+          <label>{s.name}<input className="smp-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></label>
+          <label>{s.from}<input className="smp-input" value={from} placeholder="https://" onChange={(e) => setFrom(e.target.value)} /></label>
+          <label>{s.to}<input className="smp-input" value={to} placeholder="https://" onChange={(e) => setTo(e.target.value)} /></label>
+          <label>{s.about}<textarea className="smp-input" rows={2} value={about} maxLength={400} onChange={(e) => setAbout(e.target.value)} /></label>
+          <Button variant="primary" size="sm" type="submit" disabled={state !== "idle" || !name.trim()}>{state === "busy" ? <span className="spinner spinner--sm" /> : Icons.check} {state === "done" ? s.kept : s.keep}</Button>
+        </form>
+      )}
+    </span>
+  );
+}
+
 /** The areas whose result is seen on the sample (typography has it inside its tester) */
 const SAMPLE_AREAS = new Set<SystemArea>(["color", "layout", "motion", "voice"]);
 
@@ -512,7 +577,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   // The sample every area paints: what has been tried on it, which colour role the next swatch fills, and its replay
-  const [choices, setChoice] = useSampleChoices(project.id);
+  const [tried, setChoice] = useSampleChoices(project.id);
   const [colorRole, setColorRole] = useState<ColorRole>("bg");
   const [replay, setReplay] = useState(0);
   // The references that are ideal for the open area (a base, no model): the picker offers them first
@@ -564,9 +629,27 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const stale = boardStamp ? staleness(sys, boardStamp.itemIds, boardStamp.stamp) : null;
   const unread = !!stale && (stale.unread > 0 || stale.wordsChanged);
   const byItem = useMemo(() => new Map(visuals.map((v) => [v.itemId, v])), [visuals]);
+  // With no references behind the system yet, its own decisions are the material
+  const fromWords = useMemo(() => (visuals.length ? null : visualFromDecisions(sys)), [visuals.length, sys]);
+  useNamedFonts(fromWords?.fonts.map((f) => f.family) ?? []);
+  // ...and, until the team tries something else on it, the sample wears what those decisions say
+  const decidedLook = useMemo(() => {
+    if (!fromWords) return {};
+    const cs = [...fromWords.colors].sort((a, b) => luminance(a.hex) - luminance(b.hex));
+    const dark = /oscur|dark|negro|black/i.test(sys.areas.find((a) => a.area === "color")?.decision ?? "");
+    const neutrals = cs.filter((c) => c.group === "neutral");
+    const look: Partial<SampleChoices> = {};
+    if (neutrals.length >= 2) { look.bg = (dark ? neutrals[0] : neutrals[neutrals.length - 1]).hex; look.ink = (dark ? neutrals[neutrals.length - 1] : neutrals[0]).hex; }
+    const brand = fromWords.colors.find((c) => c.group === "brand");
+    if (brand) look.accent = brand.hex;
+    if (fromWords.radii.length) look.radius = [...fromWords.radii].sort((a, b) => parseInt(b.value) - parseInt(a.value))[0].value;
+    if (fromWords.easing) look.easing = fromWords.easing;
+    return look;
+  }, [fromWords, sys.areas]);
+  const choices = useMemo(() => ({ ...decidedLook, ...tried }), [decidedLook, tried]);
   const visualsFor = (a: SystemAreaState): { vs: RefVisual[]; fromBoard: boolean } => {
     const own = a.evidence.map((e) => byItem.get(e.itemId)).filter((v): v is RefVisual => !!v);
-    return own.length ? { vs: own, fromBoard: false } : { vs: visuals, fromBoard: true };
+    return own.length ? { vs: own, fromBoard: false } : fromWords ? { vs: [fromWords], fromBoard: false } : { vs: visuals, fromBoard: true };
   };
 
   const withBusy = async (area: SystemArea, fn: () => Promise<{ ok: true; data: ProjectSystem } | { ok: false; error: string }>) => {
@@ -715,12 +798,13 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   </span>
                 )}
                 {!board.length && <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
+                {filled > 0 && <KeepAsTemplate project={project} client={clientItem} />}
               </div>
             </div>
           </header>
           {error && <p className="sysv-error" role="alert">{error}</p>}
           {view === "md" && (
-            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied}
+            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
               onSave={async (area, next) => {
                 const cur = sys.areas.find((x) => x.area === area)!;
                 if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));
@@ -819,6 +903,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                         typeRefs={typeRefs} visuals={visuals} areaVisuals={vs} typeCuration={typeArea?.curation ?? null}
                         choices={choices} onChoice={setChoice} colorRole={colorRole} onColorRole={setColorRole} replay={replay} onReplay={() => setReplay((n) => n + 1)}
                         busy={busy.has(a.area)} clientItemId={clientItem?.id ?? null}
+                        namedFaces={fromWords ? { title: fromWords.fonts[0]?.family, body: fromWords.fonts.find((f) => f.role === "body")?.family ?? fromWords.fonts[0]?.family } : undefined}
                         onUse={a.area === "color" ? (decision) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why: a.why })) : undefined} />
                     )}
                     {curatingArea === a.area ? (
