@@ -1,33 +1,33 @@
-// Every site on the canvas is drawn from a full-page screenshot taken once and stored: the DESIGN.md
+// Every site on the board is drawn from a full-page screenshot taken once and stored: the DESIGN.md
 // capture when the site has one, otherwise a capture of its own (scripts/capture-pages.ts, and on add).
-// The canvas never renders a site, it only loads images: the top of the page, cut at CANVAS_MAX_RATIO,
+// The board never renders a site, it only loads images: the top of the page, cut at PAGE_MAX_RATIO,
 // at three widths. The panel shows the whole page.
 import "server-only";
 import { putFile, getFile, getJson, putJson, deleteFiles, keyOf, signedFileUrl } from "./storage";
 import { normalizeWebUrl } from "./url";
 import { webSet } from "./items";
-import { CANVAS_MAX_RATIO } from "./canvas-layout";
+import { PAGE_MAX_RATIO } from "./board";
 import type { PageShot } from "@/types/inspo";
 
-/** The page's most common colour, as #rrggbb: what the canvas paints before the image arrives */
+/** The page's most common colour, as #rrggbb: what the board paints before the image arrives */
 export async function colorOf(image: Buffer): Promise<string> {
   const sharp = (await import("sharp")).default;
   const { r, g, b } = (await sharp(image).stats()).dominant;
   return `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
 }
 
-/** The colour of a stored canvas copy (its thumb), or undefined when it can't be read */
+/** The colour of a stored board copy (its thumb), or undefined when it can't be read */
 export async function colorOfStored(url: string | undefined): Promise<string | undefined> {
   const k = url ? keyOf(url) : null;
   const f = k ? await getFile(k).catch(() => null) : null;
   return f ? colorOf(f.body).catch(() => undefined) : undefined;
 }
 
-/** The three canvas copies of a page, cut at CANVAS_MAX_RATIO. `prefix` is a storage key without extension. */
+/** The three board copies of a page, cut at PAGE_MAX_RATIO. `prefix` is a storage key without extension. */
 export async function makeCanvasCopies(prefix: string, full: Buffer): Promise<Omit<PageShot, "shotUrl">> {
   const sharp = (await import("sharp")).default;
   const { width = 1440, height = 900 } = await sharp(full).metadata();
-  const top = Math.min(height, Math.round(width * CANVAS_MAX_RATIO));
+  const top = Math.min(height, Math.round(width * PAGE_MAX_RATIO));
   const cut = () => sharp(full).extract({ left: 0, top: 0, width, height: top });
   const [topJ, tileJ, thumbJ] = await Promise.all([
     cut().jpeg({ quality: 72, mozjpeg: true }).toBuffer(),
@@ -62,7 +62,7 @@ export function getPageIndex(): Promise<PageIndex> {
 // Captures finish one after another in this process: the index is read and written in turn
 let writing: Promise<unknown> = Promise.resolve();
 
-/** Stores a full-page capture and its canvas copies, and lists it in the index */
+/** Stores a full-page capture and its board copies, and lists it in the index */
 export async function savePageShot(url: string, key: string, full: Buffer): Promise<PageShot> {
   const t = Date.now();
   const shotUrl = await putFile(`${PAGES_PREFIX}${key}-${t}.jpg`, full, "image/jpeg");
@@ -117,7 +117,7 @@ export async function pageShotsFor(organizationId: string, designIndex: Record<s
 }
 
 /**
- * The canvas copies as signed R2 links, so the browser loads them straight from the bucket, all at once,
+ * The board copies as signed R2 links, so the browser loads them straight from the bucket, all at once,
  * instead of one round trip through the app per image. A link lives an hour or more; `signed` keeps the
  * app paths, which the card falls back to if a tab outlives the link. On disk nothing changes.
  */

@@ -4,6 +4,8 @@ import type { RefVisual } from "./system";
 import type { AreaCandidate, SystemArea } from "@/types/system";
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "x";
+/** The id a family has on the typography table, so the type tester finds its verdict */
+export const fontCandidateId = (family: string) => `font-${slug(family)}`;
 
 export function areaCandidates(area: SystemArea, vs: RefVisual[]): AreaCandidate[] {
   switch (area) {
@@ -11,7 +13,7 @@ export function areaCandidates(area: SystemArea, vs: RefVisual[]): AreaCandidate
       const map = new Map<string, AreaCandidate>();
       for (const v of vs) for (const f of v.fonts) {
         const k = f.family.toLowerCase();
-        const c = map.get(k) ?? { id: `font-${slug(f.family)}`, label: f.family, detail: f.role, refs: [], visual: { families: [{ family: f.family, weights: f.weights, role: f.role }] } };
+        const c = map.get(k) ?? { id: fontCandidateId(f.family), label: f.family, detail: f.role, refs: [], visual: { families: [{ family: f.family, weights: f.weights, role: f.role }] } };
         if (!c.refs.includes(v.itemId)) c.refs.push(v.itemId);
         map.set(k, c);
       }

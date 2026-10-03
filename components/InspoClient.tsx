@@ -4,7 +4,7 @@ import { addInspo, addImage, removeInspo, postComment as postCommentAction, remo
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
 import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, CommentAnchor, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
@@ -12,13 +12,13 @@ import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, q
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
-import InspoCard from "./InspoCard";
+import InspoCard, { cachedCardImage } from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
-import Canvas, { type CanvasHandle, type ShotLevel } from "./Canvas";
-import { layoutCanvas, keyOf, TILE_W, DEFAULT_RATIO, CANVAS_MAX_RATIO } from "@/lib/canvas-layout";
+import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
+import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
@@ -107,8 +107,10 @@ const TAG_WATCH_MS = 5 * 60 * 1000;
 
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
-const RATIOS_KEY = "inspo:canvas-ratios";
-/** What floats over the canvas: the bars on top, the zoom pill at the bottom */
+const RATIOS_KEY = "inspo:ratios";
+/** The zoom (columns away from the usual number, see components/Grid.tsx), kept for the next visit */
+const ZOOM_KEY = "inspo:board-zoom";
+/** What floats over the board: the bars on top, the search dock at the bottom */
 const TOP_DESKTOP = 64;
 const TOP_MOBILE = 64;
 /** The search dock at the bottom, with the results line over it */
@@ -170,7 +172,7 @@ export default function InspoClient({
   members?: { name: string; image: string | null }[];
   /** Can see the activity panel (/admin) */
   isAdmin?: boolean;
-  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the canvas draws */
+  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the board draws */
   initialPageShots?: Record<string, PageShot>;
 }) {
   const { t } = useT();
@@ -321,6 +323,7 @@ export default function InspoClient({
   // Organising the Inbox: the model's proposal per reference sits on its card until the team accepts, changes or dismisses it
   const [triage, setTriage] = useState<Record<string, TriageProposal> | null>(null);
   const [triageRunning, setTriageRunning] = useState(false);
+  const gridRef = useRef<GridHandle | null>(null);
   const runTriage = useCallback(async (ids: string[]) => {
     setTriageRunning(true);
     try {
@@ -328,9 +331,9 @@ export default function InspoClient({
       const json = await res.json().catch(() => ({})) as { proposals?: TriageProposal[]; error?: string };
       if (!res.ok || json.error || !json.proposals) throw new Error(json.error || t.triage.failed);
       setTriage(Object.fromEntries(json.proposals.map((p) => [p.itemId, p])));
-      // Bring the camera to the first proposal, close enough to read it
+      // Bring the first proposal into view
       const first = json.proposals.find((p) => p.projectId) ?? json.proposals[0];
-      if (first) setTimeout(() => canvasRef.current?.focus(first.itemId), 50);
+      if (first) setTimeout(() => gridRef.current?.focus(first.itemId), 50);
     } catch (e) { setAddError({ title: t.triage.failed, detail: e instanceof Error ? e.message : String(e) }); }
     finally { setTriageRunning(false); }
   }, [t]);
@@ -350,7 +353,7 @@ export default function InspoClient({
       if (!m) return m; const n = { ...m }; for (const p of valid) delete n[p.itemId];
       // On to the next proposal
       const next = Object.values(n).find((p) => p.projectId);
-      if (next && valid.length === 1) setTimeout(() => canvasRef.current?.focus(next.itemId), 50);
+      if (next && valid.length === 1) setTimeout(() => gridRef.current?.focus(next.itemId), 50);
       return Object.keys(n).length ? n : null;
     });
   }, [t]);
@@ -572,7 +575,7 @@ export default function InspoClient({
       if (res.ok) setCommentMap(await res.json());
     } catch { /* offline: retried on the next cycle */ }
   }, []);
-  // The panel: one reference open on the right, the canvas still live on the left
+  // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
   // With the thread in view, refresh every 20 s to see what others write
   useEffect(() => {
@@ -675,7 +678,7 @@ export default function InspoClient({
       setDesignMdIndex((prev) => ({ ...prev, [url]: {
         coverUrl: body.coverUrl, scrollUrl: body.scrollUrl, shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH,
       } }));
-      // A new DESIGN.md brings the page's capture: the canvas draws it from now on
+      // A new DESIGN.md brings the page's capture: the board draws it from now on
       if (body.topUrl && body.tileUrl && body.thumbUrl && body.screenshotUrl && body.shotH) {
         setPageShots((prev) => ({ ...prev, [url]: { shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH, color: body.color } }));
       }
@@ -882,6 +885,8 @@ export default function InspoClient({
 
   // Everything under the workspace, for the sidebar (the docked column and the phone sheet)
   const filtering = filters.length > 0 || words.length > 0;
+  // In the system the search doesn't take references away: the ones it found stay lit
+  const matchIds = useMemo(() => (filtering ? new Set(filtered.map((i) => i.id).filter((x): x is string => !!x)) : null), [filtering, filtered]);
   const navProps = {
     quota, items,
     isAll: space === "all" && !filtering,
@@ -890,7 +895,7 @@ export default function InspoClient({
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
 
-  // ─── Canvas ─────────────────────────────────────────────────────────────────
+  // ─── Board ──────────────────────────────────────────────────────────────────
   // At rest, the whole space, newest first. While searching, only the results, laid out again in the
   // order they rank: the best one top left. What doesn't match isn't there.
   const boardItems = useMemo(
@@ -931,16 +936,35 @@ export default function InspoClient({
   }, []);
   const ratioOf = useCallback((item: InspoItem) => {
     const shot = pageShots[item.web];
-    // A site is drawn as its page, cut at the canvas's maximum height, unless someone chose a thumbnail for it
-    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, CANVAS_MAX_RATIO);
-    // Not measured yet: a site will arrive as a tall page, anything else about as a cover
-    return ratios[item.web] ?? (mediaKindOf(item.web) === "web" ? 1.5 : DEFAULT_RATIO);
+    // A site is its page from the top, as tall as the page is up to the board's cut, unless someone chose a
+    // thumbnail for it: short pages stay short, long ones get cut, and the columns fall into a masonry
+    if (shot && !thumbMap[item.web]) return Math.min(shot.shotH / 1440, BOARD_MAX_RATIO);
+    // Anything else keeps its own shape, cut at the board's maximum height; unmeasured, it arrives as a cover
+    return Math.min(ratios[item.web] ?? DEFAULT_RATIO, BOARD_MAX_RATIO);
   }, [pageShots, thumbMap, ratios]);
 
-  // Always the automatic layout: columns, newest first. Nobody moves cards by hand (for now).
-  const slots = useMemo(() => layoutCanvas(boardItems, undefined, (i) => TILE_W * ratioOf(i)), [boardItems, ratioOf]);
+  // A card with nothing written under it takes no room for a line: the next card sits right below
+  const hasNote = useCallback(
+    (item: InspoItem) => !!item.note.trim() || !!(item.id && commentMap[item.id]?.some((c) => c.body.trim())),
+    [commentMap],
+  );
 
-  // What floats over the canvas, so framing keeps clear of it
+  // The zoom: 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
+  // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
+  const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
+  useLayoutEffect(() => {
+    try {
+      const kept = localStorage.getItem(ZOOM_KEY);
+      const z = kept === null ? NaN : Number(kept);
+      if (Number.isInteger(z) && Math.abs(z) < 8) setZoomState(z);
+    } catch { /* no storage */ }
+  }, []);
+  const setZoom = useCallback((z: number) => {
+    setZoomState(z);
+    try { localStorage.setItem(ZOOM_KEY, String(z)); } catch { /* no storage */ }
+  }, []);
+
+  // What floats over the board, so the cards keep clear of it
   const winW = useWindowWidth();
   const desktop = winW >= DESKTOP_MIN;
   const insets = useMemo(() => ({
@@ -949,9 +973,8 @@ export default function InspoClient({
     right: 0,
     bottom: BOTTOM,
   }), [desktop]);
-  const canvasRef = useRef<CanvasHandle | null>(null);
-  // The camera frames the results again when the chips change or a slower layer answers, not on every key
-  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${near ? 1 : 0}|${jevScores ? 1 : 0}|${filtering ? filtered.length : -1}`;
+  // The board starts from the top again when the space or the search changes, not when a slower layer reorders
+  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${filtering ? text : ""}`;
 
   // Presence: which area the person is in right now (read by the /admin panel)
   const area = panelItem ? "design-md" : showDirectory ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
@@ -1201,7 +1224,7 @@ export default function InspoClient({
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
         onAddUrl={(web) => {
-          // Already saved: show it on the canvas instead of saving it twice
+          // Already saved: show it on the board instead of saving it twice
           if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
           addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
@@ -1295,10 +1318,13 @@ export default function InspoClient({
             onSystem={(sys) => setSystem(currentProject.id, sys)}
             board={spaceItems}
             library={items}
+            inbox={items.filter((i) => !(i.id && links[i.id]?.length))}
+            onFile={(item) => toggleFiled(item, currentProject.id, true)}
             imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
             onOpenBoard={() => setProjectView("board")}
             focusArea={focusArea}
             onOpenChange={setOpenArea}
+            matches={matchIds}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
@@ -1324,13 +1350,16 @@ export default function InspoClient({
           </div>
         ) : (
           <>
-            <Canvas
+            <Grid
               items={boardItems}
-              slots={slots}
+              ratioOf={ratioOf}
+              hasNote={hasNote}
               insets={insets}
+              zoom={zoom}
+              onZoom={setZoom}
               fitKey={fitKey}
-              focusKey={null}
-              handleRef={canvasRef}
+              focusKey={panelItem ? keyOf(panelItem) : null}
+              handleRef={gridRef}
               renderCard={(item, level) => (
                 <Card
                   item={item}
@@ -1372,6 +1401,9 @@ export default function InspoClient({
                 {t.search.results(filtered.length)}{jevBusy && <span className="dock__status-more"> · {t.search.reading}</span>}
               </p>
             )}
+            {filtering && currentProject && projectView === "system" && filtered.length > 0 && (
+              <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null} onOpen={openItem} />
+            )}
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onUndo={(i) => void undoAgent(i)} />
             )}
@@ -1387,6 +1419,30 @@ export default function InspoClient({
 const EMPTY_AREAS: SystemArea[] = [];
 
 /** What the agent said and did, above the box; the pending steps wait here for a yes */
+/** What a search found, in the system view: there the references sit around the areas, some of them off
+ *  screen, so the results come to the dock as a row to open from */
+const DOCK_RESULTS = 24;
+function DockResults({ label, items, imageOf, onOpen }: { label: string; items: InspoItem[]; imageOf: (item: InspoItem) => string | null; onOpen: (item: InspoItem) => void }) {
+  return (
+    <ul className="dock__results" aria-label={label}>
+      {items.map((it) => (
+        <li key={it.id ?? it.web}>
+          <button type="button" className="dock__result" title={it.name} onClick={() => onOpen(it)}>
+            <DockResultThumb item={it} image={imageOf(it)} />
+            <span className="dock__result-name">{it.name}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+function DockResultThumb({ item, image }: { item: InspoItem; image: string | null }) {
+  const [at, setAt] = useState(0);
+  const srcs = [image, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
+  const src = srcs[at];
+  return <span className="dock__result-thumb" aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
+}
+
 function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
   agent: { text: string; busy: boolean; say?: string; done: (AgentDone & { undone?: boolean })[]; pending: AgentAction[]; error?: string };
   projects: Project[];
@@ -1525,9 +1581,9 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   // The post-its on the part of the page the card shows, as dots where they sit
   const pins = useMemo(() => {
     if (!showsPage) return undefined;
-    const shown = Math.min(shot!.shotH, 1440 * CANVAS_MAX_RATIO);
+    const shown = Math.min(shot!.shotH, 1440 * ratio);
     return (comments ?? []).filter((c) => c.anchor).map((c) => ({ x: c.anchor!.x, y: (c.anchor!.y * c.anchor!.h) / shown })).filter((p) => p.y <= 1);
-  }, [comments, showsPage, shot]);
+  }, [comments, showsPage, shot, ratio]);
   const open = () => act().openItem(item);
   // Always the whole card, at every zoom: its note and its thread are always there. Only the copy of the
   // page changes with the zoom (288, 720 or 1440px), swapped without a blank frame.
@@ -1550,6 +1606,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       designMdReady={designMd !== undefined}
       designCover={page}
       designCoverFallback={showsPage ? shot!.paths?.[key] : undefined}
+      designScroll={designMd?.scrollUrl}
       projects={item.id ? projects : undefined}
       projectIds={projectIds}
       onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}
@@ -1564,7 +1621,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
         onProject: (projectId) => act().patchProposal(proposal.itemId, { projectId }),
         onArea: (area, on) => act().patchProposal(proposal.itemId, { areas: on ? [...proposal.areas, area] : proposal.areas.filter((a) => a !== area) }),
       } : null}
-      canvas={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
+      board={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
 });

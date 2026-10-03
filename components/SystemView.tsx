@@ -4,14 +4,17 @@
 // captures) instead of describing it. A card is a negotiation between the board (the model proposes,
 // with a confidence) and the team (confirms, rewrites, steps back, hands it back to the board).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { InspoItem, Project } from "@/types/inspo";
 import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
 import { renderCriterioMd } from "@/lib/criterio-md";
-import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, undoSystemArea, setSystemVerdict } from "@/app/actions/system";
+import { fontStack } from "@/lib/font-names";
+import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
-import { cachedCardImage } from "./InspoCard";
+import { areaIcon } from "./area-icons";
+import { AreaTabs, RefStrip, Thumb, TypeTester } from "./SystemStage";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -23,18 +26,20 @@ interface Props {
   /** The whole library: evidence may point at a reference that left the project */
   library: InspoItem[];
   imageOf: (item: InspoItem) => string | null;
+  /** The references not filed in any project: an area can take one straight from here */
+  inbox: InspoItem[];
+  /** Files a reference in this project (what adding one from the Inbox does first) */
+  onFile: (item: InspoItem) => Promise<void>;
   /** Switch to the board (Curar) */
   onOpenBoard: () => void;
   /** Open this area from outside (the agent's "go to motion"); `n` makes the same area open again */
   focusArea?: { area: SystemArea; n: number } | null;
   onOpenChange?: (area: SystemArea | null) => void;
+  /** While the search box filters: the references it found. The rest step back */
+  matches?: Set<string> | null;
 }
 
 // ─── Reading the material ────────────────────────────────────────────────────
-
-const SERIF = /serif|kalice|louize|tiempos|canela|garamond|times|georgia|playfair|editorial|freight|caslon|baskerville|didot|bodoni|minion|literata|lora|merriweather|spectral|fraunces|newsreader|reckless|ogg|roslindale|signifier|domaine|gt sectra|gt alpina|sabon|cardo|cormorant/i;
-const MONO = /mono|courier|menlo|jetbrains|fira code|source code|consolas/i;
-const fontStack = (family: string) => `"${family}", ${MONO.test(family) ? "ui-monospace, monospace" : SERIF.test(family) ? "Georgia, 'Times New Roman', serif" : "'Inter', system-ui, sans-serif"}`;
 
 const luminance = (hex: string) => {
   const m = hex.replace("#", "").slice(0, 6);
@@ -66,13 +71,6 @@ function bezierOf(easing: string): [number, number, number, number] {
   const m = easing.match(/cubic-bezier\(([^)]+)\)/);
   if (m) { const n = m[1].split(",").map((x) => parseFloat(x)); if (n.length === 4 && n.every((x) => Number.isFinite(x))) return n as [number, number, number, number]; }
   return BEZIER[easing] ?? BEZIER.ease;
-}
-
-function Thumb({ item, image }: { item: InspoItem; image: string | null }) {
-  const [at, setAt] = useState(0);
-  const srcs = [image, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
-  const src = srcs[at];
-  return <span className="sysv-thumb" aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
 }
 
 // ─── Specimens ───────────────────────────────────────────────────────────────
@@ -238,6 +236,8 @@ interface TileProps {
   onCurate: (keep?: Record<string, boolean>) => Promise<void>;
   onVerdict: (id: string, keep: boolean, reason?: string) => Promise<void>;
   curating: boolean;
+  /** On the stage the material (specimen, table) is shown beside the card, not inside it */
+  stage?: boolean;
   /** Picking references on the ring for this area: how many are chosen, and the controls */
   picking: { active: boolean; count: number; start: () => void; stop: () => void; propose: () => Promise<AreaOption[]> } | null;
 }
@@ -247,7 +247,21 @@ const headlineOf = (decision: string) => {
   return first.length > 72 ? `${first.slice(0, 70).replace(/\s+\S*$/, "")}…` : first;
 };
 
-function Tile({ area, label, visuals, fromBoard, sample, history, busy, running, hasBoard, itemOf, imageOf, onDecide, onRelease, onUndo, onOptions, picking, onCurate, onVerdict, curating }: TileProps) {
+/** What an area can show instead of describing: its palette, its families, its captures */
+function specimenOf(area: SystemAreaState, visuals: RefVisual[], sample: string) {
+  switch (area.area) {
+    case "typography": return <TypeSpecimen vs={visuals} sample={sample} />;
+    case "color": return <Palette vs={visuals} />;
+    case "layout": return <><Mosaic vs={visuals} /><Radii vs={visuals} /></>;
+    case "motion": return <Motion vs={visuals} />;
+    case "imagery": return <Mosaic vs={visuals} strips />;
+    case "logo": return <Logos vs={visuals} />;
+    case "iconography": return <IconSet vs={visuals} />;
+    case "voice": return area.decision ? <blockquote className="sysv-quote" style={{ fontFamily: fontStack(families(visuals).find((f) => f.role === "display")?.family ?? "Inter") }}>{headlineOf(area.decision)}</blockquote> : null;
+  }
+}
+
+function Tile({ area, label, visuals, fromBoard, sample, history, busy, running, hasBoard, itemOf, imageOf, onDecide, onRelease, onUndo, onOptions, picking, onCurate, onVerdict, curating, stage }: TileProps) {
   const { t } = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(area.decision);
@@ -266,24 +280,13 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
   const polish = async (fn: () => Promise<AreaOption[]> = onOptions) => { setLoadingOptions(true); try { setOptions(await fn()); picking?.stop(); } catch { /* the error shows in the middle */ } finally { setLoadingOptions(false); } };
   const save = async () => { if (draft.trim() === area.decision.trim() && whyDraft.trim() === area.why.trim()) { setEditing(false); return; } await onDecide(draft, undefined, whyDraft); setEditing(false); };
 
-  const specimen = (() => {
-    switch (area.area) {
-      case "typography": return <TypeSpecimen vs={visuals} sample={sample} />;
-      case "color": return <Palette vs={visuals} />;
-      case "layout": return <><Mosaic vs={visuals} /><Radii vs={visuals} /></>;
-      case "motion": return <Motion vs={visuals} />;
-      case "imagery": return <Mosaic vs={visuals} strips />;
-      case "logo": return <Logos vs={visuals} />;
-      case "iconography": return <IconSet vs={visuals} />;
-      case "voice": return area.decision ? <blockquote className="sysv-quote" style={{ fontFamily: fontStack(families(visuals).find((f) => f.role === "display")?.family ?? "Inter") }}>{headlineOf(area.decision)}</blockquote> : null;
-    }
-  })();
+  const specimen = stage ? null : specimenOf(area, visuals, sample);
   const status = area.source === "team" ? t.system.confidence.team : level === "high" ? t.system.confidence.high : level === "low" ? t.system.confidence.low : null;
 
   return (
     <article className={`sysv-tile sysv-tile--${area.area} is-${level}${area.source === "team" ? " is-team" : ""}${options ? " is-options" : ""}${busy || running ? " is-busy" : ""}`} aria-busy={busy || running || loadingOptions}>
       <header className="sysv-tile__head">
-        <span className="sysv-tile__eyebrow">{label}</span>
+        <span className="sysv-tile__eyebrow">{areaIcon(area.area, 14)}{label}</span>
         <span className="sysv-tile__tools">
           {area.decision && area.source === "model" && <button type="button" className="sysv-tool sysv-tool--ok" disabled={busy} title={t.system.confirm} aria-label={t.system.confirm} onClick={() => void onDecide(area.decision)}>{Icons.check}</button>}
           {hasBoard && area.source !== "team" && <button type="button" className="sysv-tool" disabled={busy} title={t.system.polishArea} aria-label={t.system.polishArea} onClick={() => void polish()}>{Icons.gem}</button>}
@@ -328,7 +331,7 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
             </div>
           )}
           <h3 className="sysv-tile__title">{area.decision ? headlineOf(area.decision) : t.system.empty}</h3>
-          {curating ? (
+          {stage ? null : curating ? (
             <p className="sysv-muted"><span className="spinner spinner--sm" /> {t.system.curating}</p>
           ) : area.curation ? (
             <AreaTable curation={area.curation} sample={sample} busy={busy} itemOf={itemOf} imageOf={imageOf}
@@ -405,7 +408,24 @@ function MiniSpecimen({ area, vs, sample }: { area: SystemAreaState; vs: RefVisu
 interface Pt { x: number; y: number }
 const TAU = Math.PI * 2;
 const polar = (c: Pt, rx: number, ry: number, a: number): Pt => ({ x: c.x + Math.cos(a) * rx, y: c.y + Math.sin(a) * ry });
+/** A soft connector: it leaves along the longer axis and arrives the same way, so links never cut across each other at odd angles */
+const link = (a: Pt, b: Pt) => {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  return Math.abs(dx) > Math.abs(dy)
+    ? `M${a.x} ${a.y}C${a.x + dx / 2} ${a.y} ${b.x - dx / 2} ${b.y} ${b.x} ${b.y}`
+    : `M${a.x} ${a.y}C${a.x} ${a.y + dy / 2} ${b.x} ${b.y - dy / 2} ${b.x} ${b.y}`;
+};
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const circularMean = (angles: number[]) => Math.atan2(angles.reduce((s, a) => s + Math.sin(a), 0), angles.reduce((s, a) => s + Math.cos(a), 0));
+/** Where a reference sits on its ring: between the areas it backs when they are neighbours; when they pull apart, by the one
+ * with the fewest references seated so far, so its one visible link stays short and no area is left without company */
+const homeAngle = (angles: number[], seated: Map<number, number>) => {
+  const pull = Math.hypot(angles.reduce((s, a) => s + Math.sin(a), 0), angles.reduce((s, a) => s + Math.cos(a), 0)) / angles.length;
+  if (pull > 0.75) return circularMean(angles);
+  const a = angles.reduce((best, x) => ((seated.get(x) ?? 0) < (seated.get(best) ?? 0) ? x : best));
+  seated.set(a, (seated.get(a) ?? 0) + 1);
+  return a;
+};
 /** Pushes angles apart on the ring until each has `min` radians of room, keeping their order */
 function spread(angles: number[], min: number): number[] {
   const idx = angles.map((a, i) => [((a % TAU) + TAU) % TAU, i] as const).sort((p, q) => p[0] - q[0]);
@@ -424,7 +444,7 @@ function spread(angles: number[], min: number): number[] {
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
-export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, onOpenChange }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, matches }: Props) {
   const { t } = useT();
   const setSystem = onSystem;
   const [visuals, setVisuals] = useState<RefVisual[]>([]);
@@ -434,18 +454,39 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [busy, setBusy] = useState<Set<SystemArea>>(() => new Set());
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [open, setOpen] = useState<SystemArea | null>(null);
+  const [open, setOpenNow] = useState<SystemArea | null>(null);
+  // Opening an area clears the sea for its stage: the nodes fold into tabs (and back) as one movement where the browser can
+  const setOpen = useCallback((next: SystemArea | null) => {
+    const doc = document as Document & { startViewTransition?: (fn: () => void) => unknown };
+    if (doc.startViewTransition && window.matchMedia("(min-width: 801px)").matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) doc.startViewTransition(() => flushSync(() => setOpenNow(next)));
+    else setOpenNow(next);
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape" && !(e.target as HTMLElement | null)?.closest?.("input, textarea, [contenteditable]")) setOpen(null); };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [open, setOpen]);
   useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   // Picking: the team chooses, on the ring, the references an area should be decided from
   const [picking, setPicking] = useState<Set<string> | null>(null);
   useEffect(() => { setPicking(null); }, [open]);
   const [hover, setHover] = useState<string | null>(null);  // an area key or an item id
+  // Moved by hand: where a node was left, as fractions of the sea so it survives a resize. Kept in this browser, per project
+  const layoutKey = `criterio:system-layout:${project.id}`;
+  const [moved, setMoved] = useState<Record<string, Pt>>({});
+  useEffect(() => { try { setMoved(JSON.parse(localStorage.getItem(layoutKey) ?? "{}") as Record<string, Pt>); } catch { setMoved({}); } }, [layoutKey]);
+  const keep = (m: Record<string, Pt>) => { setMoved(m); try { if (Object.keys(m).length) localStorage.setItem(layoutKey, JSON.stringify(m)); else localStorage.removeItem(layoutKey); } catch { /* private window: it lasts the visit */ } };
+  const drag = useRef<{ key: string; pointer: number; sx: number; sy: number; ox: number; oy: number; on: boolean } | null>(null);
+  const dragged = useRef(false);  // the click that ends a drag opens nothing
+  const [dragging, setDragging] = useState<string | null>(null);
   const sea = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState({ w: 1200, h: 800 });
   useEffect(() => {
     const el = sea.current; if (!el) return;
-    const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }));
+    // Hidden behind a stage the sea measures nothing: its last size stands until it is back
+    const ro = new ResizeObserver(([e]) => { if (e.contentRect.width) setSize({ w: e.contentRect.width, h: e.contentRect.height }); });
     ro.observe(el); return () => ro.disconnect();
   }, []);
 
@@ -482,6 +523,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // How polished the system is: every area counts, a team decision as 100, an open area as 0
   const polishPct = Math.round(sys.areas.reduce((n, a) => n + (a.source === "team" ? 100 : a.decision ? a.confidence : 0), 0) / SYSTEM_AREAS.length);
   const stale = boardStamp ? staleness(sys, boardStamp.itemIds, boardStamp.stamp) : null;
+  const unread = !!stale && (stale.unread > 0 || stale.wordsChanged);
   const byItem = useMemo(() => new Map(visuals.map((v) => [v.itemId, v])), [visuals]);
   const visualsFor = (a: SystemAreaState): { vs: RefVisual[]; fromBoard: boolean } => {
     const own = a.evidence.map((e) => byItem.get(e.itemId)).filter((v): v is RefVisual => !!v);
@@ -495,6 +537,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
     const top = 96, bottom = size.h - 150;
     const c: Pt = { x: size.w / 2, y: (top + bottom) / 2 };
     const narrow = size.w < 900;
+    const put = (key: string, d: Pt): Pt => { const m = moved[key]; return m ? { x: m.x * size.w, y: m.y * size.h } : d; };
     const r2 = { x: Math.min(size.w / 2 - 70, 760), y: Math.min((bottom - top) / 2 - 36, 430) };
     const r1 = { x: Math.min(r2.x * 0.62, 470), y: Math.min(r2.y * 0.68, 290) };
     // Eight slots on a rounded rectangle, so the cards never crowd at the sides the way an ellipse does
@@ -503,18 +546,20 @@ export default function SystemView({ project, system, onSystem, board, library, 
     const areas = SYSTEM_AREAS.map((k, i) => {
       const [sx, sy] = SLOTS[i];
       areaAngle.set(k, Math.atan2(sy * r1.y, sx * r1.x));
-      return { key: k, x: c.x + sx * r1.x, y: c.y + sy * r1.y };
+      return { key: k, ...put(`area:${k}`, { x: c.x + sx * r1.x, y: c.y + sy * r1.y }) };
     });
     const refs = board.filter((i) => i.id);
     const backs = new Map<string, SystemArea[]>();
     for (const a of sys.areas) for (const e of a.evidence) backs.set(e.itemId, [...(backs.get(e.itemId) ?? []), a.area]);
-    let want = refs.map((i, k) => { const bs = backs.get(i.id!) ?? []; return bs.length ? circularMean(bs.map((b) => areaAngle.get(b)!)) : -Math.PI / 2 + ((k + 0.5) / Math.max(refs.length, 1)) * TAU + Math.PI / 8; });
+    const seated = new Map<number, number>();
+    for (const bs of backs.values()) if (bs.length === 1) { const a = areaAngle.get(bs[0])!; seated.set(a, (seated.get(a) ?? 0) + 1); }
+    let want = refs.map((i, k) => { const bs = backs.get(i.id!) ?? []; return bs.length ? homeAngle(bs.map((b) => areaAngle.get(b)!), seated) : -Math.PI / 2 + ((k + 0.5) / Math.max(refs.length, 1)) * TAU + Math.PI / 8; });
     want = spread(want, Math.min(TAU / Math.max(refs.length, 1), narrow ? 0.5 : 0.36));
-    const items = refs.map((i, k) => ({ item: i, ...polar(c, r2.x, r2.y, want[k]), areas: backs.get(i.id!) ?? [] }));
+    const items = refs.map((i, k) => ({ item: i, ...put(i.id!, polar(c, r2.x, r2.y, want[k])), areas: backs.get(i.id!) ?? [], near: null as SystemArea | null }));
     // The open area pulls its references out of the ring and fans them around itself, all at the same level
     if (open) {
       const node = areas.find((a) => a.key === open)!;
-      const mine = items.filter((it) => it.areas.includes(open));
+      const mine = items.filter((it) => it.areas.includes(open) && !moved[it.item.id!]);  // one placed by hand stays where it was left
       const n = mine.length;
       if (n) {
         const away = Math.atan2(node.y - c.y, node.x - c.x);  // fan on the side facing away from the centre
@@ -527,8 +572,33 @@ export default function SystemView({ project, system, onSystem, board, library, 
         });
       }
     }
+    // Each reference is tied to the nearest area it backs; its other links only show when asked for
+    for (const it of items) {
+      let best = Infinity;
+      for (const k of it.areas) { const a = areas.find((x) => x.key === k)!; const d = Math.hypot(a.x - it.x, a.y - it.y); if (d < best) { best = d; it.near = k; } }
+    }
     return { c, areas, items, narrow };
-  }, [size, board, sys.areas, open]);
+  }, [size, board, sys.areas, open, moved]);
+
+  // Any node can be dragged. A press that never travels is still a click
+  const dragOf = (key: string, at: Pt) => {
+    const to = (e: React.PointerEvent, d: NonNullable<typeof drag.current>) => ({ ...moved, [key]: { x: clamp(d.ox + e.clientX - d.sx, 60, size.w - 60) / size.w, y: clamp(d.oy + e.clientY - d.sy, 76, size.h - 50) / size.h } });
+    const end = (e: React.PointerEvent) => {
+      const d = drag.current; drag.current = null;
+      if (!d?.on) return;
+      dragged.current = true; setTimeout(() => { dragged.current = false; }, 0);
+      setDragging(null); keep(to(e, d));
+    };
+    return {
+      onPointerDown: (e: React.PointerEvent) => { if (e.button === 0) drag.current = { key, pointer: e.pointerId, sx: e.clientX, sy: e.clientY, ox: at.x, oy: at.y, on: false }; },
+      onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
+        const d = drag.current; if (!d || d.key !== key || d.pointer !== e.pointerId) return;
+        if (!d.on) { if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 4) return; d.on = true; e.currentTarget.setPointerCapture(e.pointerId); setDragging(key); }
+        setMoved(to(e, d));
+      },
+      onPointerUp: end, onPointerCancel: end,
+    };
+  };
 
   const withBusy = async (area: SystemArea, fn: () => Promise<{ ok: true; data: ProjectSystem } | { ok: false; error: string }>) => {
     setBusy((s) => new Set([...s, area])); setError("");
@@ -582,10 +652,30 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   const openArea = open ? sys.areas.find((a) => a.area === open) ?? null : null;
   const lit = (areaKey: SystemArea, itemId: string) => hover === areaKey || hover === itemId || open === areaKey;
-  const tileFor = (a: SystemAreaState) => {
+  // At rest the sea is only the areas: an open area brings out its own references, and choosing among them brings out the whole board
+  const shown = picking ? geo.items : open ? geo.items.filter((it) => it.areas.includes(open)) : [];
+  const missed = (itemId: string) => !!matches && !matches.has(itemId);
+  // A reference joins or leaves an area from its stage. One from the Inbox is filed in the project first
+  const [pendingRefs, setPendingRefs] = useState<Set<string>>(() => new Set());
+  const toggleRef = async (area: SystemArea, item: InspoItem, on: boolean) => {
+    const id = item.id;
+    if (!id || pendingRefs.has(id)) return;
+    setPendingRefs((s) => new Set([...s, id])); setError("");
+    try {
+      const filing = on && !board.some((i) => i.id === id);
+      if (filing) await onFile(item);
+      const r = await assignSystemArea(project.id, area, id, on).catch((e) => ({ ok: false as const, error: String(e) }));
+      if (!r.ok) throw new Error(r.error);
+      setSystem(r.data);
+      // Filing made the view load the system again, maybe from before this: the last word is read once more
+      if (filing) void loadSystem(project.id).then((x) => { if (x.ok) setSystem(x.data.system); });
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { setPendingRefs((s) => { const n = new Set(s); n.delete(id); return n; }); }
+  };
+  const tileFor = (a: SystemAreaState, stage = false) => {
     const { vs, fromBoard } = visualsFor(a);
     return (
-      <Tile key={a.area} area={a} label={labels[a.area]} visuals={vs} fromBoard={fromBoard} sample={project.name} history={history[a.area] ?? []}
+      <Tile key={a.area} stage={stage} area={a} label={labels[a.area]} visuals={vs} fromBoard={fromBoard} sample={project.name} history={history[a.area] ?? []}
         busy={busy.has(a.area)} running={running} hasBoard={board.length > 0} itemOf={itemOf} imageOf={imageOf}
         onDecide={(decision, evidence, why) => withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, evidence, why }))}
         onCurate={(keep) => curate(a.area, keep)}
@@ -605,11 +695,15 @@ export default function SystemView({ project, system, onSystem, board, library, 
   };
 
   return (
-    <div className={`sysv${openArea ? " has-panel" : ""}`} aria-busy={!system}>
+    <div className={`sysv${openArea ? " is-stage" : ""}`} aria-busy={!system}>
       <div className="sysv-sea" ref={sea}>
         <svg className="sysn-lines" width={size.w} height={size.h} aria-hidden>
-          {geo.areas.map((a) => <line key={a.key} x1={geo.c.x} y1={geo.c.y} x2={a.x} y2={a.y} className={`sysn-line sysn-line--core${open === a.key || hover === a.key ? " is-lit" : ""}`} />)}
-          {geo.items.flatMap((it) => it.areas.map((k) => { const a = geo.areas.find((x) => x.key === k)!; return <line key={`${it.item.id}-${k}`} x1={it.x} y1={it.y} x2={a.x} y2={a.y} className={`sysn-line${lit(k, it.item.id!) ? " is-lit" : ""}${hover && !lit(k, it.item.id!) ? " is-dim" : ""}`} />; }))}
+          {shown.flatMap((it) => it.areas.map((k) => {
+            const on = lit(k, it.item.id!);
+            if (!on) return null;
+            const a = geo.areas.find((x) => x.key === k)!;
+            return <path key={`${it.item.id}-${k}`} d={link({ x: it.x, y: it.y - 8 }, a)} className={`sysn-line${on ? " is-lit" : ""}${!on && (hover || missed(it.item.id!)) ? " is-dim" : ""}`} />;
+          }))}
         </svg>
 
         {/* The centre stays quiet: the nodes are the system. Name, one line of state, three small actions;
@@ -617,25 +711,34 @@ export default function SystemView({ project, system, onSystem, board, library, 
         <section className="sysn-core" style={{ left: geo.c.x, top: geo.c.y }}>
           <h1 className="sysn-core__title">{project.name}</h1>
           {filled > 0 ? (
-            <div className="sysn-polish" title={t.system.polishHint}>
-              <small>{t.system.fill(filled, SYSTEM_AREAS.length)} · {t.system.polishPct(polishPct)}{stale && (stale.unread > 0 || stale.wordsChanged) ? <> · <i className="sysn-polish__dot" aria-hidden /> {stale.unread > 0 ? t.system.staleShort(stale.unread) : t.system.staleWordsShort}</> : null}</small>
-              <span className="sysn-polish__bar"><b style={{ width: `${polishPct}%` }} /></span>
-            </div>
+            <p className="sysn-core__state" title={t.system.polishHint}>
+              <svg className="sysn-core__ring" viewBox="0 0 14 14" width="14" height="14" aria-hidden>
+                <circle cx="7" cy="7" r="5.25" />
+                <circle cx="7" cy="7" r="5.25" pathLength={100} strokeDasharray={`${polishPct} 100`} transform="rotate(-90 7 7)" />
+              </svg>
+              <b>{t.system.polishPct(polishPct)}</b>
+              <span>{t.system.filled(filled, SYSTEM_AREAS.length)}</span>
+            </p>
           ) : (
             <p className="sysn-core__summary sysv-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>
           )}
           {error && <p className="sysv-error" role="alert">{error}</p>}
+          {/* One thing asks for attention at a time: reading the board is solid only while there is something unread */}
           <div className="sysn-core__actions">
-            <Button variant="ghost" size="sm" onClick={() => void run()} disabled={running || !board.length} title={sys.run ? t.system.rerun : t.system.run}>
-              {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {sys.run ? t.system.rerun : t.system.run}</>}
+            <Button variant={board.length && (unread || !filled) ? "primary" : "default"} size="sm" onClick={() => void run()} disabled={running || !board.length} title={sys.run ? t.system.rerun : t.system.run}>
+              {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {!sys.run ? t.system.run : stale && stale.unread > 0 ? t.system.readNew(stale.unread) : stale?.wordsChanged ? t.system.readWords : t.system.rerun}</>}
             </Button>
-            {filled > 0 && <Button variant="ghost" size="sm" onClick={() => void copy()} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>}
-            {filled > 0 && <Button variant="icon" onClick={download} aria-label={t.system.download} title={t.system.download}>{Icons.arrow}</Button>}
-            {!board.length && <Button variant="ghost" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
+            {filled > 0 && (
+              <span className="sysn-core__file">
+                <Button size="sm" onClick={() => void copy()} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>
+                <Button size="sm" onClick={download} aria-label={t.system.download} title={t.system.download}>{Icons.arrow}</Button>
+              </span>
+            )}
+            {!board.length && <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
           </div>
           {sys.summary && (
             <details className="sysn-core__criterio">
-              <summary>{t.system.criterio}</summary>
+              <summary>{t.system.criterio}{Icons.chevron}</summary>
               <p className="sysn-core__summary">{sys.summary}</p>
             </details>
           )}
@@ -646,10 +749,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
           const level = confidenceOf(a);
           const { vs } = visualsFor(a);
           return (
-            <button key={pos.key} type="button" className={`sysn-node is-${level}${a.source === "team" ? " is-team" : ""}${open === pos.key ? " is-open" : ""}${running || busy.has(pos.key) ? " is-busy" : ""}`}
-              style={{ left: pos.x, top: pos.y }} onClick={() => setOpen(open === pos.key ? null : pos.key)}
+            <button key={pos.key} type="button" className={`sysn-node is-${level}${a.source === "team" ? " is-team" : ""}${open === pos.key ? " is-open" : ""}${running || busy.has(pos.key) ? " is-busy" : ""}${dragging === `area:${pos.key}` ? " is-dragging" : ""}`}
+              style={{ left: pos.x, top: pos.y, viewTransitionName: `sysa-${pos.key}` }} {...dragOf(`area:${pos.key}`, pos)} onClick={() => { if (!dragged.current) setOpen(open === pos.key ? null : pos.key); }}
               onMouseEnter={() => setHover(pos.key)} onMouseLeave={() => setHover(null)} aria-pressed={open === pos.key}>
-              <span className="sysn-node__label">{labels[pos.key]}{a.evidence.length > 0 && <b className="sysn-node__n">{a.evidence.length}</b>}</span>
+              <span className="sysn-node__label">{areaIcon(pos.key, 13)}{labels[pos.key]}{a.evidence.length > 0 && <b className="sysn-node__n">{a.evidence.length}</b>}</span>
               {a.decision && <MiniSpecimen area={a} vs={vs} sample={project.name} />}
               <span className="sysn-node__line">{a.decision ? headlineOf(a.decision) : t.system.open}</span>
               {a.decision && a.source !== "team" && <i className="sysv-meter"><b style={{ width: `${a.confidence}%` }} /></i>}
@@ -657,15 +760,15 @@ export default function SystemView({ project, system, onSystem, board, library, 
           );
         })}
 
-        {geo.items.map((it) => {
+        {shown.map((it) => {
           const id = it.item.id!;
           const picked = picking?.has(id) ?? false;
           const related = (open && it.areas.includes(open)) || hover === id || (!!hover && it.areas.includes(hover as SystemArea));
-          // While an area is open its references come forward and the rest step back
-          const cls = `sysn-ref${picking ? " is-pickable" : ""}${picked ? " is-picked" : ""}${!picking && (hover || open) && !related ? " is-dim" : ""}${!picking && related && (open || hover === id) ? " is-lit" : ""}`;
-          const toggle = () => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+          // While an area is open its references come forward and the rest step back; so does what a search didn't find
+          const cls = `sysn-ref${picking ? " is-pickable" : ""}${picked ? " is-picked" : ""}${!picking && (((hover || open) && !related) || (missed(id) && hover !== id)) ? " is-dim" : ""}${!picking && related && (open || hover === id) ? " is-lit" : ""}${dragging === id ? " is-dragging" : ""}`;
+          const toggle = () => setPicking((p) => { if (!p || dragged.current) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
           return (
-            <button key={id} type="button" className={cls} style={{ left: it.x, top: it.y }} title={it.item.name} aria-pressed={picking ? picked : undefined} data-id={id}
+            <button key={id} type="button" className={cls} style={{ left: it.x, top: it.y }} title={it.item.name} aria-pressed={picking ? picked : undefined} data-id={id} {...dragOf(id, it)}
               onClick={picking ? toggle : undefined} onMouseEnter={() => setHover(id)} onMouseLeave={() => setHover(null)}>
               <Thumb item={it.item} image={imageOf(it.item)} />
               <small>{it.item.name}</small>
@@ -673,17 +776,45 @@ export default function SystemView({ project, system, onSystem, board, library, 
             </button>
           );
         })}
+        {Object.keys(moved).length > 0 && <Button size="sm" className="sysv-tidy" onClick={() => keep({})}>{t.system.tidy}</Button>}
       </div>
 
-      {openArea && (
-        <aside className="sysv-panel" aria-label={labels[openArea.area]}>
-          <button type="button" className="sysv-panel__close btn-icon" aria-label={t.common.close} onClick={() => setOpen(null)}>{Icons.x}</button>
-          {tileFor(openArea)}
-        </aside>
-      )}
+      {/* An open area takes the screen: the nodes are its tabs, the canvas its stage, the decision beside it */}
+      {openArea && (() => {
+        const a = openArea;
+        const own = a.evidence.map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
+        const { vs } = visualsFor(a);
+        const verdict = (id: string, keep: boolean, reason?: string) => void withBusy(a.area, () => setSystemVerdict(project.id, a.area, { id, keep, reason }));
+        const specimen = specimenOf(a, vs, project.name);
+        return (
+          <div className="sysf">
+            <AreaTabs areas={sys.areas} labels={labels} open={a.area} onOpen={setOpen} onBack={() => setOpen(null)} projectName={project.name} />
+            <div className="sysf-body">
+              <div className="sysf-main" key={a.area}>
+                {error && <p className="sysv-error" role="alert">{error}</p>}
+                <RefStrip areaLabel={labels[a.area]} refs={own} board={board} inbox={inbox} imageOf={imageOf} pending={pendingRefs}
+                  onToggle={(item, on) => void toggleRef(a.area, item, on)}
+                  picking={picking ? { picked: picking, toggle: (id) => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; }) } : null} />
+                {a.area === "typography" ? (
+                  // With nothing filed under typography yet, the tester tries what the whole board brings
+                  <TypeTester projectId={project.id} projectName={project.name} summary={sys.summary} refs={own.length ? own : board} visuals={visuals}
+                    curation={a.curation} curating={curatingArea === a.area} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
+                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict} />
+                ) : curatingArea === a.area ? (
+                  <p className="sysv-muted"><span className="spinner spinner--sm" /> {t.system.curating}</p>
+                ) : a.curation ? (
+                  <AreaTable curation={a.curation} sample={project.name} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
+                    onFlip={(id, keep) => verdict(id, keep)} onReason={(id, reason) => verdict(id, a.curation!.verdicts.find((v) => v.id === id)?.keep ?? false, reason)} />
+                ) : specimen && <div className="sysv-tile__specimen sysf-specimen">{specimen}</div>}
+              </div>
+              <aside className="sysf-aside" aria-label={labels[a.area]}>{tileFor(a, true)}</aside>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Phones: the sea needs room, so the cards stack instead */}
-      <div className="sysv-stack">{sys.areas.map(tileFor)}</div>
+      <div className="sysv-stack">{sys.areas.map((a) => tileFor(a))}</div>
     </div>
   );
 }

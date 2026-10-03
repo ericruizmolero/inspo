@@ -6,6 +6,7 @@ import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
+import { areaIcon } from "./area-icons";
 
 export default function AreaPicker({ backs, onToggle, onOpenChange, className, label, children }: {
   /** Areas this reference already backs in the current project */
@@ -31,7 +32,7 @@ export default function AreaPicker({ backs, onToggle, onOpenChange, className, l
             const on = backs.includes(k);
             return (
               <button key={k} type="button" className={`ws__item${on ? " is-active" : ""}`} aria-pressed={on} onClick={() => onToggle(k, !on)}>
-                <span className="pp__icon pp__icon--mono" aria-hidden>{labels[k].slice(0, 2)}</span>
+                <span className="pp__icon">{areaIcon(k)}</span>
                 <span className="ws__item-name">{labels[k]}</span>
                 {on && <span className="ws__item-check">{Icons.check}</span>}
               </button>

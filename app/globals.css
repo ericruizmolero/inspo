@@ -316,9 +316,9 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .app-sidebar__footer { gap: 8px; padding: 12px; border-top: 1px solid var(--sidebar-border); }
 
 /* ─── The island (after Angelo Libero) ─────────────────────────────────── */
-/* The page is the canvas, edge to edge. On desktop the sidebar is an island floating over it: a card
+/* The page is the board, edge to edge. On desktop the sidebar is an island floating over it: a card
    inset from the window's edges that slides away to the left when folded (⌘B), leaving the workspace
-   pill in the top bar. Nothing under it moves: the canvas is never laid out again. */
+   pill in the top bar. Nothing under it moves: the board is never laid out again. */
 .shell { height: 100svh; min-height: 0; overflow: hidden; }
 @media (min-width: 801px) {
   .shell:not(.shell--docked) [data-slot="sidebar-gap"] { display: none; }
@@ -334,18 +334,18 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
     box-shadow: 0 0 0 1px var(--border), var(--shadow-pop);
   }
 }
-/* What sits left of the canvas moves aside for the island with it, on the same curve: by transform, so
+/* What sits left of the board moves aside for the island with it, on the same curve: by transform, so
    nothing is laid out again while it slides */
 @media (min-width: 801px) {
-  .topbar__trigger, .canvas-zoom { transition: transform 280ms var(--ease-drawer); }
-  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .canvas-zoom) { transform: translateX(280px); }
+  .topbar__trigger, .board-zoom { transition: transform 280ms var(--ease-drawer); }
+  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .board-zoom) { transform: translateX(280px); }
 }
 /* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
-:root[data-instant] :is(.app-sidebar, .topbar__trigger, .canvas-zoom) { transition: none; }
+:root[data-instant] :is(.app-sidebar, .topbar__trigger, .board-zoom) { transition: none; }
 @media (min-width: 801px) and (prefers-reduced-motion: reduce) {
   .app-sidebar { transition: opacity 200ms var(--ease-out); }
   [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: none; }
-  .topbar__trigger, .canvas-zoom { transition: none; }
+  .topbar__trigger, .board-zoom { transition: none; }
 }
 /* Settings and the other sections keep the docked column: it takes its room and the page moves aside,
    the page scrolls, and the top bar is a band of its own over it */
@@ -369,7 +369,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    workspace is its avatar at the start; the selected tab is the search's chip, ringed so it reads without
    colour. Nothing moves on selection: people switch projects all day. Inner radius 9 = 14 - 5 (concentric).
    Focus on the white surfaces is the dock's ink: the app's ring is pale on dark and vanishes here. */
-.island, .canvas-zoom, .island-pop { --focus-ring: var(--dock-ink); }
+.island, .board-zoom, .island-pop { --focus-ring: var(--dock-ink); }
 .island {
   position: relative; display: flex; align-items: center; min-width: 0; height: 44px; padding: 0 5px;
   border-radius: 14px; background: var(--dock-surface); color: var(--dock-ink);
@@ -552,7 +552,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .content { position: relative; flex: 1; min-width: 0; height: 100svh; overflow: hidden; }
 
 /* Inset header: sidebar trigger and the current view on desktop; trigger, mark, search and add on a phone */
-/* The bars float over the canvas: no band, only their controls take the pointer */
+/* The bars float over the board: no band, only their controls take the pointer */
 .topbar {
   position: absolute; top: 0; left: 0; right: 0; z-index: 20;
   display: flex; align-items: center; gap: 10px;
@@ -680,7 +680,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 
 /* ─── The search dock: the search at the bottom, like a conversation ─────────────
    Solid white in both themes and larger than anything else on screen: it is the way in. It sits centred
-   on the canvas (left of the panel when one is open); the suggestions open upwards. */
+   on the board (left of the panel when one is open); the suggestions open upwards. */
 .dock {
   position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 25;
   width: min(720px, calc(100% - 32px)); transform: translateX(-50%);
@@ -732,7 +732,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 .sb--dock .sb__clear:hover, .sb--dock .sb__clear:focus-visible { color: var(--dock-ink); background: rgba(0,0,0,0.06); }
 .sb--dock .sb__gathering { color: var(--dock-ink-2); font-size: 13px; }
 .sb--dock .spinner { border-color: rgba(0,0,0,0.15); border-top-color: var(--dock-ink); }
-/* The suggestions open upwards, over the canvas, on the same white */
+/* The suggestions open upwards, over the board, on the same white */
 .sb--dock .sb__menu {
   top: auto; bottom: calc(100% + 8px); padding: 6px;
   background: var(--dock-surface); border: 1px solid var(--dock-line); border-radius: 16px;
@@ -763,7 +763,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
   .dir-row__add, .dir-add, .chip, .btn-icon, .sb__field { transition: none; }
-  .chip:active, .btn-icon:active, .dir-add:active, .canvas-zoom button:active { transform: none; }
+  .chip:active, .btn-icon:active, .dir-add:active, .board-zoom button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -783,7 +783,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
   gap: 8px; min-height: 60vh; color: var(--muted); font-size: 13px;
 }
 .empty .display { color: var(--text-2); font-size: 20px; }
-/* Nothing matches: said over the dimmed canvas, which stays where it was */
+/* Nothing matches: said over the empty board */
 .empty--over { position: absolute; inset: 0; z-index: 5; min-height: 0; pointer-events: none; }
 .empty--over > * { pointer-events: auto; }
 
@@ -2478,93 +2478,82 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .legal h2 { margin: 0 0 6px; font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
 .legal p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
 
-/* ─── Canvas ──────────────────────────────────────────────────────────────── */
-/* The library as one plane: every reference as its whole page, where the team left it.
-   One layer carries the camera's transform (hooks/use-canvas-camera.ts); it only turns into a
-   bitmap while the camera moves, so at rest the pages and their text are drawn sharp. */
-.canvas {
-  position: absolute; inset: 0; overflow: hidden; touch-action: none;
+/* ─── Board ───────────────────────────────────────────────────────────────── */
+/* The library as a masonry that scrolls like a page (components/Grid.tsx): the scroller fills the content
+   under the floating bars, and every card is one flat node placed by transform from numbers the layout
+   already knows. Only the cards near the viewport exist. */
+.board {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
   background-color: var(--bg);
-  /* A faint dot grid, so empty space still reads as a surface you can move over */
-  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 9%, transparent) 1px, transparent 0);
-  background-size: 24px 24px;
-  cursor: default; user-select: none; -webkit-user-select: none;
 }
-.canvas[data-space], .canvas[data-panning] { cursor: grab; }
-.canvas[data-panning] { cursor: grabbing; }
-.canvas[data-panning] .canvas-tile, .canvas[data-space] .canvas-tile { pointer-events: none; }
-.canvas__world { position: absolute; left: 0; top: 0; width: 0; height: 0; transform-origin: 0 0; }
-.canvas[data-moving] .canvas__world { will-change: transform; }
-/* A tile moves by transform only. While searching, the cards that stay glide to their new place: a
-   transition (not keyframes), so a key pressed mid-way retargets from where the card is. Ease-out, not
-   ease-in-out, because the move answers a key and has to start at once. */
-.canvas-tile {
+.board__world { position: relative; width: 100%; }
+/* A tile moves by transform only. When the layout changes (a search, the island, a zoom), the cards that
+   stay glide to their new place: a transition (not keyframes), so a key pressed mid-way retargets from where
+   the card is. The island's curve, so a card and the island that pushed it land together. */
+.board-tile {
   position: absolute; left: 0; top: 0;
-  transition: transform 280ms var(--ease-out), opacity 200ms var(--ease-out);
-  /* A card's layout never reaches the others: a note or an image loading in one doesn't lay out the canvas.
+  transition: transform 280ms var(--ease-drawer), width 280ms var(--ease-drawer);
+  /* A card's layout never reaches the others: a note or an image loading in one doesn't lay out the board.
      No paint containment, which would clip the post-it dots and the shadow at the card's edge. */
   contain: layout style;
 }
-/* A new result arrives a beat after the ones before it in rank (--arrive, set by Canvas.tsx) */
-.canvas-tile[data-arrive] > * {
+/* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
+:root[data-instant] .board-tile { transition: none; }
+/* A new result arrives a beat after the ones before it in rank (--arrive, set by Grid.tsx) */
+.board-tile[data-arrive] > * {
   transition: opacity 220ms var(--ease-out) var(--arrive, 0ms), transform 220ms var(--ease-out) var(--arrive, 0ms);
   @starting-style { opacity: 0; transform: scale(0.96); }
 }
-/* A result that stopped matching fades where it stands, faster than results arrive, and takes no clicks */
-.canvas-tile[data-leave] {
-  opacity: 0; pointer-events: none;
-  transition: transform 150ms var(--ease-out), opacity 150ms var(--ease-out);
-}
 @media (prefers-reduced-motion: reduce) {
-  /* Fewer moves, the same information: cards change place at once, arrive and leave by opacity alone */
-  .canvas-tile { transition: opacity 200ms var(--ease-out); }
-  .canvas-tile[data-arrive] > * { transition: opacity 200ms var(--ease-out) var(--arrive, 0ms); @starting-style { opacity: 0; transform: none; } }
-  .canvas-tile[data-leave] { transition: opacity 150ms var(--ease-out); }
+  /* Fewer moves, the same information: cards change place at once and arrive by opacity alone */
+  .board-tile { transition: none; }
+  .board-tile[data-arrive] > * { transition: opacity 200ms var(--ease-out) var(--arrive, 0ms); @starting-style { opacity: 0; transform: none; } }
 }
-/* The first paint only: a short wave out from the centre (CSS, so it stays smooth while the page is
-   still busy loading). Cards that come into view later are just there. */
-.canvas-tile[data-enter] > * { animation: canvas-enter 300ms var(--ease-out) var(--enter, 0ms) both; }
-@keyframes canvas-enter { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
-@media (prefers-reduced-motion: reduce) { .canvas-tile[data-enter] > * { animation: fade-in 200ms var(--ease-out) var(--enter, 0ms) both; } }
+/* The first paint only: the cards arrive top down, a few ms apart (CSS, so it stays smooth while the page
+   is still busy loading). Cards that come into view later are just there. */
+.board-tile[data-enter] > * { animation: board-enter 300ms var(--ease-out) var(--enter, 0ms) both; }
+@keyframes board-enter { from { opacity: 0; transform: translateY(8px) scale(0.98); } }
+@media (prefers-reduced-motion: reduce) { .board-tile[data-enter] > * { animation: fade-in 200ms var(--ease-out) var(--enter, 0ms) both; } }
 
-/* The pages are drawn whole: no crop, no hover lift (the canvas moves, the cards don't) */
-.tile--canvas { transition: box-shadow 150ms ease; }
-.tile--canvas:hover { transform: none; }
-@media (hover: hover) and (pointer: fine) { .tile--canvas:hover { box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 30%, transparent); } }
-.tile--canvas .tile__img { max-height: none; transition: opacity 200ms var(--ease-out); }
-/* Shown before in this tab (lib/shown-images.ts): it is already there, nothing to fade in */
-.tile--canvas .tile__img.is-instant { transition: none; }
-.tile--canvas:hover .tile__img { transform: none; }
-.tile--canvas .tile__media[style] .tile__img { height: 100%; object-fit: cover; object-position: top; }
-/* The page is the card: no title, tags or gradient over it, only the actions on hover */
-.tile--canvas .tile__overlay { display: none; }
-.tile--canvas { border-radius: 10px; }
-/* Zoomed far out the card's words are smaller than a pixel: only the pages remain */
-.canvas[data-level="thumb"] .tile__note, .canvas[data-level="thumb"] .tile__overlay, .canvas[data-level="thumb"] .tile__actions { visibility: hidden; }
+/* The card as in the old grid (cover, overlay and scroll strip on hover), only its media is sized before
+   it loads: the page's top fills the box the layout gave it */
+.tile--board .tile__img { max-height: none; }
+.tile--board .tile__media[style] .tile__img { height: 100%; object-fit: cover; object-position: top; }
+/* Under the tile the note is a fixed box (two lines at most) and so is the touch caption: the layout
+   knows every card's height without measuring it (Grid.tsx CAPTION_H, TOUCH_CAPTION_H) */
+.board .tile__note { box-sizing: border-box; height: 44px; padding-top: 6px; overflow: hidden; }
+/* Nothing written yet: no line and no room for one, the card sits flush on the next (the thread opens with the card) */
+.board .tile__note.is-empty { display: none; }
+.board .tile__caption { box-sizing: border-box; height: 42px; padding: 0 12px; align-items: center; }
+/* Zoomed far out a note is a few words a line: only the pages remain (Grid.tsx BARE_COL) */
+.board[data-bare] .tile__note, .board[data-bare] .tile__caption, .board[data-bare] .tile__actions { display: none; }
 /* The post-its on a page, as dots where they sit */
 .tile__pins { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .tile__pins i {
   position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 3px;
   background: var(--postit); box-shadow: 0 2px 6px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(0,0,0,0.08);
-  transform: rotate(-4deg) scale(calc(1 / max(var(--z, 1), 0.35)));
+  transform: rotate(-4deg);
 }
 
-/* Zoom and fit: a white pill in the bottom-left corner, the island's material. Its left edge is the island's,
-   its middle is the search dock's middle (20 + 56/2 = 26 + 44/2) */
-.canvas-zoom {
+/* Zoom: how many columns, said as a size (100% is the usual one). A white pill in the bottom-left corner,
+   the island's material. Its left edge is the island's, its middle is the search dock's middle
+   (20 + 56/2 = 26 + 44/2). A phone gets its columns from its width alone. */
+.board-zoom {
   position: absolute; left: 12px; bottom: calc(26px + env(safe-area-inset-bottom)); z-index: 12;
   display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 5px;
   border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
-.canvas-zoom button {
+.board-zoom button {
   display: inline-flex; align-items: center; justify-content: center; height: 34px; border: 0; border-radius: 9px;
   background: transparent; color: var(--dock-ink-2); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .canvas-zoom button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
-.canvas-zoom button:active { transform: scale(0.96); }
-.canvas-zoom__btn { width: 34px; color: var(--dock-ink); }
-.canvas-zoom__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+@media (hover: hover) and (pointer: fine) { .board-zoom button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
+.board-zoom button:active { transform: scale(0.96); }
+.board-zoom button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.board-zoom__btn { width: 34px; color: var(--dock-ink); }
+.board-zoom__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+@media (max-width: 800px) { .board-zoom { display: none; } }
 
 /* ─── The reference sheet (components/ItemPanel.tsx) ─────────────────────────
    A sheet over the canvas, which dims behind it. It sits under the island and the search dock (z 18, below
@@ -2896,35 +2885,53 @@ button.postit__num { cursor: pointer; }
 .sysv-sea { position: relative; flex: 1; min-width: 0; overflow: hidden; padding-top: 56px;
   background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 7%, transparent) 1px, transparent 0); background-size: 24px 24px; }
 .sysn-lines { position: absolute; inset: 0; pointer-events: none; }
-.sysn-line { stroke: color-mix(in srgb, var(--text) 16%, transparent); stroke-width: 1; transition: stroke 0.2s, opacity 0.2s; }
-.sysn-line--core { stroke: color-mix(in srgb, var(--text) 9%, transparent); stroke-dasharray: 3 5; }
-.sysn-line.is-lit { stroke: var(--text); stroke-width: 1.4; }
-.sysn-line.is-dim { opacity: 0.25; }
+/* Few lines, and quiet: soft links from an open area to its references, nothing at rest */
+.sysn-line { fill: none; stroke: color-mix(in srgb, var(--text) 13%, transparent); stroke-width: 1; transition: stroke 0.2s, opacity 0.2s; }
+.sysn-line.is-lit { stroke: color-mix(in srgb, var(--text) 62%, transparent); stroke-width: 1.25; }
+.sysn-line.is-dim { opacity: 0.3; }
+/* Nodes move by hand */
+.sysn-node, .sysn-ref { touch-action: none; user-select: none; -webkit-user-select: none; }
+.sysn-node.is-dragging, .sysn-ref.is-dragging { transition: none; cursor: grabbing; z-index: 5; }
+.sysn-node.is-dragging { box-shadow: 0 22px 48px -16px rgba(0,0,0,0.65); }
+/* References are not there at rest: they come out with the area that is opened */
+.sysn-ref { animation: fade-in 0.25s var(--ease-out); }
+.sysv-tidy { position: absolute; left: 20px; bottom: 28px; z-index: 4; color: var(--text-2); }
 /* The project, in the middle */
 /* The centre: quiet, no box, so the lines run under it and the nodes carry the weight */
-.sysn-core { position: absolute; transform: translate(-50%, -50%); width: min(360px, 34vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 16px 20px; border-radius: 20px; background: radial-gradient(closest-side, color-mix(in srgb, var(--bg) 92%, transparent), transparent); }
+.sysn-core { position: absolute; transform: translate(-50%, -50%); width: min(400px, 36vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 16px 20px; border-radius: 20px; background: radial-gradient(closest-side, color-mix(in srgb, var(--bg) 92%, transparent), transparent); }
 .sysn-core__title { margin: 0; font-family: var(--font-display, var(--font)); font-size: clamp(22px, 2.2vw, 30px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
 .sysn-core__summary { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-.sysn-core__actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; }
-.sysn-core__actions .btn { height: 28px; padding: 0 10px; font-size: 12px; color: var(--text-2); }
-.sysn-core__actions .btn:hover { color: var(--text); }
-.sysn-core__actions .btn-icon { width: 28px; height: 28px; color: var(--text-2); } .sysn-core__actions .btn-icon svg { transform: rotate(90deg); width: 14px; height: 14px; }
+/* The state in one line of plain text: a ring for how polished, then how many areas are decided */
+.sysn-core__state { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sysn-core__state b { font-weight: 550; color: var(--text); }
+.sysn-core__ring { flex-shrink: 0; color: var(--text); } .sysn-core__ring circle { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; transition: stroke-dasharray 0.6s var(--ease-out); } .sysn-core__ring circle:first-child { opacity: 0.18; }
+/* Soft, borderless buttons; the file is one chip in two halves: its name copies it, the arrow downloads it */
+.sysn-core__actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 2px; }
+.sysn-core__actions .btn { font-size: 12.5px; padding: 0 12px; } .sysn-core__actions .btn svg { width: 14px; height: 14px; }
+.sysn-core__actions .btn:not(.btn--primary) { color: var(--text-2); } .sysn-core__actions .btn:not(.btn--primary):hover { color: var(--text); }
+.sysn-core__file { display: inline-flex; }
+.sysn-core__file .btn:first-child { border-radius: 8px 0 0 8px; padding-right: 6px; }
+.sysn-core__file .btn:last-child { border-radius: 0 8px 8px 0; padding: 0 9px 0 5px; } .sysn-core__file .btn:last-child svg { transform: rotate(90deg); }
 .sysn-core__criterio { width: 100%; }
-.sysn-core__criterio summary { list-style: none; cursor: pointer; font-size: 11px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.02em; }
+.sysn-core__criterio summary { display: inline-flex; align-items: center; gap: 3px; list-style: none; cursor: pointer; font-size: 12.5px; color: var(--muted); }
+.sysn-core__criterio summary svg { width: 12px; height: 12px; transition: transform 0.2s var(--ease-out); } .sysn-core__criterio[open] summary svg { transform: rotate(180deg); }
 .sysn-core__criterio summary::-webkit-details-marker { display: none; }
 .sysn-core__criterio summary:hover { color: var(--text-2); }
 .sysn-core__criterio[open] summary { color: var(--text-2); margin-bottom: 6px; }
-.sysn-core__meta { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* An area node: a mono label on a light tag, a mini specimen, one line of the decision */
-.sysn-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 168px; padding: 10px 12px 10px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); text-align: left; cursor: pointer; box-shadow: var(--shadow-card); transition: transform 0.2s var(--ease-out), box-shadow 0.2s, border-color 0.2s; }
-.sysn-node:hover, .sysn-node.is-open { transform: translate(-50%, -50%) scale(1.04); border-color: var(--text); box-shadow: 0 16px 40px -16px rgba(0,0,0,0.6); z-index: 3; }
-.sysn-node.is-empty { background: transparent; border-style: dashed; box-shadow: none; }
+.sysn-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; width: 168px; padding: 12px 14px 14px; border-radius: 14px; border: 0; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; box-shadow: var(--shadow-card); transition: transform 0.2s var(--ease-out), box-shadow 0.2s, background 0.2s; }
+/* No outlines: a decided area is a solid card, an open one its ghost, and the team's word a green dot */
+.sysn-node:hover, .sysn-node.is-open { transform: translate(-50%, -50%) scale(1.04); background: var(--surface-2); box-shadow: 0 16px 40px -16px rgba(0,0,0,0.6); z-index: 3; }
+.sysn-node.is-empty { background: color-mix(in srgb, var(--surface) 45%, var(--bg)); box-shadow: none; }
+.sysn-node.is-empty:hover, .sysn-node.is-empty.is-open { background: var(--surface); }
+.sysn-node.is-empty .sysn-node__label { color: var(--muted); }
 .sysn-node.is-empty .sysn-node__line { color: var(--muted-2); }
-.sysn-node.is-team { border-color: color-mix(in srgb, var(--success) 55%, var(--border-strong)); }
+.sysn-node.is-team .sysn-node__label::after { content: ""; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
 .sysn-node.is-busy { opacity: 0.55; }
-.sysn-node__label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; color: var(--text); padding: 2px 6px; border-radius: 4px; background: var(--surface-2); }
+/* The name of an area is a title, not code: the app's own sans, a step heavier than the line under it */
+.sysn-node__label { align-self: stretch; font-size: 12.5px; font-weight: 550; line-height: 1.2; letter-spacing: -0.005em; color: var(--text); }
 .sysn-node__line { font-size: 12px; line-height: 1.4; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.sysn-node .sysv-meter { width: 100%; }
+.sysn-node .sysv-meter { width: 100%; height: 2px; margin-top: 2px; color: var(--text-2); background: color-mix(in srgb, var(--text) 9%, transparent); }
 .sysn-mini { display: inline-flex; align-items: center; gap: 3px; height: 26px; }
 .sysn-mini--colors i { width: 22px; height: 22px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.12); }
 .sysn-mini--type { font-size: 26px; line-height: 1; color: var(--text); }
@@ -2951,7 +2958,7 @@ button.postit__num { cursor: pointer; }
 .sysv-tile.is-team { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
 .sysv-tile.is-busy { opacity: 0.55; pointer-events: none; }
 .sysv-tile__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.sysv-tile__eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; color: var(--muted); }
+.sysv-tile__eyebrow { font-size: 12.5px; font-weight: 550; color: var(--text-2); }
 .sysv-tile__tools { display: flex; gap: 2px; }
 .sysv-tool { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 7px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .sysv-tool:hover { background: var(--surface-2); color: var(--text); } .sysv-tool:disabled { opacity: 0.4; cursor: default; }
@@ -3018,11 +3025,11 @@ button.postit__num { cursor: pointer; }
 .sysn-node__label { display: inline-flex; align-items: center; gap: 6px; }
 /* The icon of an area goes before its name everywhere: it never shrinks and takes the ink of the label */
 .area-icon { flex-shrink: 0; }
-.sysn-node__label .area-icon { margin-left: -1px; color: var(--text-2); }
+.sysn-node__label .area-icon { color: var(--text-2); }
 .sysn-node:hover .sysn-node__label .area-icon, .sysn-node.is-open .sysn-node__label .area-icon { color: var(--text); }
 .sysv-tile__eyebrow { display: inline-flex; align-items: center; gap: 6px; }
 .tile__proposal-areas button { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; }
-.sysn-node__n { font-weight: 500; color: var(--muted); }
+.sysn-node__n { font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sysn-node.is-open .sysn-node__n { color: var(--text); }
 /* What are you making? The first screen inside a workspace */
 .chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: 120px 24px 120px; background: var(--bg);
@@ -3060,10 +3067,6 @@ button.postit__num { cursor: pointer; }
 .triage__select { height: 32px; font-size: 12px; }
 @media (max-width: 720px) { .triage__row { grid-template-columns: auto 1fr; } .triage__select { grid-column: 1 / -1; } }
 .chooser__new { flex-wrap: wrap; } .chooser__about { flex-basis: 100%; height: auto; min-height: 60px; padding: 10px 12px; font-size: 14px; line-height: 1.45; resize: vertical; } .chooser__go { margin-left: auto; }
-.sysn-polish { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; max-width: 220px; }
-.sysn-polish__bar { width: 100%; height: 3px; border-radius: 2px; background: var(--surface-3); overflow: hidden; } .sysn-polish__bar b { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.6s var(--ease-out); }
-.sysn-polish small { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-.sysn-polish__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text); display: inline-block; }
 /* Organising the Inbox: the model's proposal sits on the card; one click files it */
 .tile__proposal { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 4; display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border-radius: 12px; background: rgba(12,12,11,0.88); backdrop-filter: blur(10px); color: #f2f2ef; box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); font-size: 12px; cursor: default; }
 .tile__proposal-row { display: flex; align-items: center; gap: 6px; }
@@ -3074,6 +3077,23 @@ button.postit__num { cursor: pointer; }
 .tile__proposal-why { margin: 0; color: #b6b6b1; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tile__proposal-areas { display: flex; flex-wrap: wrap; gap: 3px; }
 .tile__proposal-areas button { height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid rgba(255,255,250,0.14); background: transparent; color: #b6b6b1; font: inherit; font-size: 11px; cursor: pointer; }
+/* The results of a search in the system view: a row to open from, in the dock's glass */
+.dock__results {
+  width: 100%; box-sizing: border-box; margin: 0; padding: 10px; list-style: none; border-radius: 18px;
+  display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
+  background: var(--dock-surface); border: 1px solid var(--dock-line);
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur); box-shadow: var(--dock-shadow);
+  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(6px); }
+}
+.dock__results::-webkit-scrollbar { display: none; }
+.dock__results li { flex: none; }
+.dock__result { display: flex; flex-direction: column; gap: 6px; width: 116px; padding: 0; border: 0; background: none; color: var(--dock-ink-2); font: inherit; font-size: 12px; line-height: 1.3; text-align: left; cursor: pointer; }
+.dock__result-thumb { display: grid; place-items: center; width: 116px; height: 74px; border-radius: 10px; overflow: hidden; background: var(--dock-fill); color: var(--dock-muted); font-size: 14px; transition: transform 0.2s var(--ease-out); }
+.dock__result-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.dock__result-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dock__result:hover, .dock__result:focus-visible { color: var(--dock-ink); outline: none; }
+.dock__result:hover .dock__result-thumb, .dock__result:focus-visible .dock__result-thumb { transform: translateY(-2px); }
 .tile__proposal-areas button.is-on { background: #f2f2ef; color: #0e0e0d; border-color: #f2f2ef; }
 .tile--proposed .tile__overlay, .tile--proposed .tile__score { display: none; }
 
@@ -3090,14 +3110,14 @@ button.postit__num { cursor: pointer; }
   --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.2);
   --dock-blur: blur(20px) saturate(1.5);
 }
-.island, .island-pop.island-pop, .canvas-zoom, .sb--dock .sb__menu,
+.island, .island-pop.island-pop, .board-zoom, .sb--dock .sb__menu,
 .shell:not(.shell--docked) .topbar__actions {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
 .sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
-.island, .canvas-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
+.island, .board-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
 .island__tab.is-on { box-shadow: none; }
 /* The search dock's field reads white text too */
 .sb--dock .sb__field input, .sb--dock .sb__field .input { color: var(--dock-ink); }
