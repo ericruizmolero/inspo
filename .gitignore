@@ -63,3 +63,6 @@ prod.env
 
 # Chrome Web Store packages (node extension/build.mjs)
 extension/dist/
+
+# Session scratch (dev logs, probes)
+/scratchpad/
