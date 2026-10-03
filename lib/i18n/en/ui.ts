@@ -438,6 +438,12 @@ export const ui = {
       inboxHint: "adding it files it in the project",
       nothing: "Nothing by that name.",
     },
+    views: { label: "How to see the system", bento: "Bento", markdown: "Markdown" },
+    mdView: {
+      hint: "The same system, as an AI reads it. Edit a block and it is saved as the team's decision; or ask the agent in the search box.",
+      openArea: "Open the area",
+      editHint: "\u2318\u21b5 saves, Esc cancels. Leaving it empty opens the area again.",
+    },
     sample: {
       more: "See more",
       tryIt: "Try it on the sample",

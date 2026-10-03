@@ -295,3 +295,34 @@
 .sysb-tile--layout .sysv-radius i { width: 24px; height: 24px; }
 .sysb-tile__refs .sysv-thumb { width: 40px; height: 26px; }
 .smp--compact[style*="--smp-bg"] { padding: 18px 22px; }
+
+/* ─── criterio.md in sight (components/SystemMarkdown.tsx): the file an agent reads, as a page. The marks
+   of Markdown stay, quiet; a block is pressed to edit it. ─── */
+.sysb-views { margin-right: 4px; }
+.mdv { max-width: 760px; display: flex; flex-direction: column; gap: 26px; padding: 6px 0 40px; }
+.mdv-hint { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--muted); }
+.mdv-mark { color: var(--muted-2); font-weight: 400; user-select: none; }
+.mdv-head { display: flex; flex-direction: column; gap: 10px; }
+.mdv-h1 { margin: 0; font-size: 26px; line-height: 1.15; letter-spacing: -0.015em; color: var(--text); }
+.mdv-quote { margin: 0; padding-left: 14px; border-left: 2px solid var(--border-strong); font-size: 14.5px; line-height: 1.55; color: var(--text-2); }
+.mdv-block { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.2s; }
+.mdv-block.is-busy { opacity: 0.55; }
+.mdv-h2 { margin: 0; display: flex; align-items: center; gap: 7px; font-size: 17px; line-height: 1.3; font-weight: 600; color: var(--text); }
+.mdv-h2 svg { flex-shrink: 0; }
+.mdv-h2__tools { margin-left: auto; display: inline-flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
+.mdv-block:hover .mdv-h2__tools, .mdv-block:focus-within .mdv-h2__tools, .mdv-block.is-editing .mdv-h2__tools { opacity: 1; }
+@media (hover: none) { .mdv-h2__tools { opacity: 1; } }
+.mdv-tool { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 400; cursor: pointer; }
+.mdv-tool svg { width: 13px; height: 13px; } .mdv-tool:hover { background: var(--surface); color: var(--text); }
+.mdv-text { margin: 0; font-size: 15px; line-height: 1.62; color: var(--text-2); overflow-wrap: anywhere; }
+.mdv-text b { font-weight: 600; color: var(--text); }
+.mdv-press { cursor: text; border-radius: 8px; transition: background 0.15s, box-shadow 0.15s; }
+.mdv-press:hover, .mdv-press:focus-visible { background: var(--surface); box-shadow: 0 0 0 8px var(--surface); outline: none; }
+.mdv-open { color: var(--muted); font-style: italic; }
+.mdv-meta { margin: 0; font-size: 13px; line-height: 1.5; color: var(--muted); overflow-wrap: anywhere; }
+.mdv-meta b { font-weight: 500; color: var(--text-2); } .mdv-meta a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; } .mdv-meta a:hover { color: var(--text); }
+.mdv-edit { display: flex; flex-direction: column; gap: 8px; }
+.mdv-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 0; border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 15px; line-height: 1.6; outline: none; resize: vertical; }
+.mdv-input:focus-visible { box-shadow: inset 0 0 0 1px var(--border-strong); background: var(--surface-2); }
+.mdv-edit__why { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--text-2); } .mdv-edit__why b { font-weight: 600; color: var(--text); }
+.mdv-edit__row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; } .mdv-edit__row small { margin-left: 6px; font-size: 12px; color: var(--muted); }

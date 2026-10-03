@@ -436,6 +436,12 @@ export const ui: typeof EnUi = {
       inboxHint: "al a\u00f1adirla se archiva en el proyecto",
       nothing: "Nada con ese nombre.",
     },
+    views: { label: "C\u00f3mo ver el sistema", bento: "Bento", markdown: "Markdown" },
+    mdView: {
+      hint: "El mismo sistema, como lo lee una IA. Edita un bloque y se guarda como decisi\u00f3n del equipo; o p\u00eddeselo al agente en el buscador.",
+      openArea: "Abrir el \u00e1rea",
+      editHint: "\u2318\u21b5 guarda, Esc cancela. Dejarlo vac\u00edo abre el \u00e1rea otra vez.",
+    },
     sample: {
       more: "Ver m\u00e1s",
       tryIt: "Probar en la muestra",

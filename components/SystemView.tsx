@@ -8,7 +8,7 @@ import { flushSync } from "react-dom";
 import type { InspoItem, Project } from "@/types/inspo";
 import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
-import { renderCriterioMd } from "@/lib/criterio-md";
+import { blocksToMd, criterioBlocks } from "@/lib/criterio-md";
 import { fontStack } from "@/lib/font-names";
 import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -16,6 +16,7 @@ import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
+import SystemMarkdown from "./SystemMarkdown";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -525,11 +526,17 @@ export default function SystemView({ project, system, onSystem, board, library, 
     return json.options;
   }, [project.id, t]);
 
-  const markdown = useMemo(() => renderCriterioMd({
+  // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place
+  const blocks = useMemo(() => criterioBlocks({
     project: project.name, system: sys,
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
   }), [sys, project.name, library, labels, t]);
+  const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
+  // The system, as the tiles a person reads or as the file an agent reads: the same thing, seen two ways. Kept on this machine
+  const [view, setViewNow] = useState<"bento" | "md">("bento");
+  useEffect(() => { try { if (localStorage.getItem("criterio:system-view") === "md") setViewNow("md"); } catch { /* private mode */ } }, []);
+  const setView = (v: "bento" | "md") => { setViewNow(v); try { localStorage.setItem("criterio:system-view", v); } catch { /* it lasts the visit */ } };
   const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* the download still works */ } };
   const download = () => {
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -592,6 +599,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
               {project.intent && <p className="sysb-intent">{project.intent}</p>}
             </div>
             <div className="sysb-head__side">
+              <div className="tt-modes sysb-views" role="tablist" aria-label={t.system.views.label}>
+                <button type="button" role="tab" aria-selected={view === "bento"} className={`tt-mode${view === "bento" ? " is-on" : ""}`} onClick={() => setView("bento")}>{t.system.views.bento}</button>
+                <button type="button" role="tab" aria-selected={view === "md"} className={`tt-mode${view === "md" ? " is-on" : ""}`} onClick={() => setView("md")}>{t.system.views.markdown}</button>
+              </div>
               {filled > 0 ? (
                 <p className="sysn-core__state" title={t.system.polishHint}>
                   <svg className="sysn-core__ring" viewBox="0 0 14 14" width="14" height="14" aria-hidden>
@@ -620,14 +631,18 @@ export default function SystemView({ project, system, onSystem, board, library, 
             </div>
           </header>
           {error && <p className="sysv-error" role="alert">{error}</p>}
-          {sys.summary && (
+          {view === "md" && (
+            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen}
+              onSave={(area, decision, why) => withBusy(area, () => decideSystemArea(project.id, area, { decision, why }))} />
+          )}
+          {view === "bento" && sys.summary && (
             <details className="sysn-core__criterio sysb-criterio">
               <summary>{t.system.criterio}{Icons.chevron}</summary>
               <p className="sysn-core__summary">{sys.summary}</p>
             </details>
           )}
 
-          <div className="sysb-grid">
+          {view === "bento" && <div className="sysb-grid">
             {sys.areas.map((a) => {
               const level = confidenceOf(a);
               const { vs } = visualsFor(a);
@@ -662,7 +677,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                 </article>
               );
             })}
-          </div>
+          </div>}
         </div>
       </div>
 
