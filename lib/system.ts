@@ -259,7 +259,7 @@ function briefForModel(b: PolishBrief | null | undefined) {
 
 // ─── The run ─────────────────────────────────────────────────────────────────
 
-const SYSTEM = `A design team keeps a board of references for one project: websites, images and posts they saved, each with the note of whoever saved it, the team's comments, what the team pointed at on it, and (for websites) a brief measured from the live page. From this board you build the PROJECT'S SYSTEM: what the project has decided about its own design, in eight areas: typography, color, layout, motion, iconography, logo, imagery, voice (tone of the copy).
+const SYSTEM = `A design team keeps a board of references for one project: websites, images and posts they saved, each with the note of whoever saved it, the team's comments, what the team pointed at on it, and (for websites) a brief measured from the live page. From this board you build the PROJECT'S SYSTEM: what the project has decided about its own design, in eight areas: typography, color, layout, motion (and interaction: hovers, buttons, what answers the pointer), iconography, logo, imagery, voice (tone of the copy).
 
 The system is alive and starts empty. Your job is to fill only what the board supports, and to say how far it supports it.
 
@@ -720,7 +720,7 @@ export async function dropEvidence(organizationId: string, projectId: string, it
 
 export interface TriageProposal { itemId: string; projectId: string | null; areas: SystemArea[]; reason: string }
 
-const TRIAGE_SYSTEM = `A design team keeps a library of references (websites, images, posts, videos), each with the note of whoever saved it and a summary of what it shows. They have PROJECTS, each with a brief and a system of eight areas: typography, color, layout, motion, iconography, logo, imagery, voice (tone of the copy). A pile of references is still unfiled.
+const TRIAGE_SYSTEM = `A design team keeps a library of references (websites, images, posts, videos), each with the note of whoever saved it and a summary of what it shows. They have PROJECTS, each with a brief and a system of eight areas: typography, color, layout, motion (and interaction: hovers, buttons, what answers the pointer), iconography, logo, imagery, voice (tone of the copy). A pile of references is still unfiled.
 
 Your job: for each unfiled reference, say which project it serves and which areas of that project's system it speaks to.
 
