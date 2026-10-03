@@ -492,6 +492,25 @@ export const systemArea = pgTable("system_area", {
   check("system_area_confidence_check", sql`${t.confidence} between 0 and 100`),
 ]);
 
+/** The team talking about one area of a project's system: what they think of the decision, what they would try */
+export const systemAreaComment = pgTable("system_area_comment", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  area: text("area").notNull(),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  /** Name at the time of writing (in case the user is gone) */
+  authorName: text("author_name").notNull(),
+  body: text("body").notNull(),
+  /** What the line is about: an option tried on the sample ({ choice, label }) or a reference ({ itemId }). Null: the area as a whole */
+  about: jsonb("about").$type<unknown>(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("system_area_comment_project_idx").on(t.projectId, t.area, t.createdAt),
+  index("system_area_comment_org_idx").on(t.organizationId),
+  oneOf("system_area_comment_area_check", t.area, SYSTEM_AREA_KEYS),
+]);
+
 export const systemAreaRevision = pgTable("system_area_revision", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),

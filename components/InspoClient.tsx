@@ -1043,6 +1043,37 @@ export default function InspoClient({
     document.addEventListener("mouseover", over);
     return () => document.removeEventListener("mouseover", over);
   }, []);
+  // "/" with the pointer on a card hands that card to the agent: it stays as "this" until it is taken away or used
+  const [agentTarget, setAgentTarget] = useState<string | null>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      const h = hovered.current;
+      const under = document.querySelectorAll(":hover");
+      const still = h && [...under].some((n) => (n as HTMLElement).dataset?.id === h.id);
+      if (h && still) setAgentTarget(h.id);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+  // The reference handed to the agent, and what can be done with it in one click: hang it from an area of the
+  // project you are in (or the last one there is), file it in a project
+  const agentTargetItem = useMemo(() => (agentTarget ? items.find((i) => i.id === agentTarget) ?? null : null), [agentTarget, items]);
+  const agentQuick = useMemo(() => {
+    if (!agentTargetItem?.id) return [];
+    const q = t.agent.quick;
+    const areaLabels = t.system.areas as Record<SystemArea, string>;
+    const here = currentProject ?? projects[projects.length - 1] ?? null;
+    const out: { label: string; order: string }[] = [];
+    if (here) {
+      for (const k of SYSTEM_AREAS) out.push({ label: q.toArea(areaLabels[k]), order: q.toAreaOrder(areaLabels[k], here.name) });
+      if (!links[agentTargetItem.id]?.includes(here.id)) out.push({ label: q.file(here.name), order: q.fileOrder(here.name) });
+    }
+    for (const p of projects) if (p.id !== here?.id && !links[agentTargetItem.id]?.includes(p.id)) out.push({ label: q.file(p.name), order: q.fileOrder(p.name) });
+    return out.slice(0, 12);
+  }, [agentTargetItem, currentProject, projects, links, t]);
   const [openArea, setOpenArea] = useState<SystemArea | null>(null);
   const [focusArea, setFocusArea] = useState<{ area: SystemArea; n: number } | null>(null);
   const applyAgentPatch = useCallback((patch: AgentPatch) => {
@@ -1068,7 +1099,7 @@ export default function InspoClient({
     const picked = [...document.querySelectorAll<HTMLElement>(".sysf-ref.is-picked[data-id]")].map((el) => el.dataset.id!).filter(Boolean);
     const scope = {
       projectId: currentProject?.id ?? null, space, view: currentProject ? projectView : null, area: currentProject && projectView === "system" ? openArea : null,
-      openItemId: panelItem?.id ?? null, hoverItemId: hovered.current && Date.now() - hovered.current.at < 12000 ? hovered.current.id : null, pickedIds: picked, recentIds: recentIds.current,
+      openItemId: panelItem?.id ?? null, hoverItemId: agentTarget ?? (hovered.current && Date.now() - hovered.current.at < 12000 ? hovered.current.id : null), pickedIds: picked, recentIds: recentIds.current,
       visibleIds: filtered.slice(0, 200).map((i) => i.id).filter((x): x is string => !!x),
       history: agentLog.current.slice(-6),
     };
@@ -1081,13 +1112,15 @@ export default function InspoClient({
       // A command leaves the box empty; a search keeps its words in it
       if (!json.done.some((d) => d.kind === "search")) setQuery("");
       setAgent({ text, busy: false, say: json.say, done: json.done, pending: json.pending });
+      // Used: the next order speaks of what was touched ("y de color también"), not of a card held for good
+      if (json.done.some((d) => d.ok && d.kind !== "ask")) setAgentTarget(null);
       const touched = json.done.flatMap((d) => d.items ?? []);
       if (touched.length) recentIds.current = [...new Set(touched)].slice(0, 40);
       agentLog.current = [...agentLog.current, { text, say: json.say, did: json.done.filter((d) => d.ok).map((d) => [d.kind, d.project, d.area, d.name, d.n].filter((x) => x !== undefined).join(" ")) }].slice(-6);
     } catch (e) {
       setAgent({ text, busy: false, done: [], pending: [], error: e instanceof Error ? e.message : String(e) });
     }
-  }, [currentProject, space, projectView, openArea, panelItem, filtered, applyAgentPatch, followAgent, setQuery]);
+  }, [currentProject, space, projectView, openArea, panelItem, filtered, applyAgentPatch, followAgent, setQuery, agentTarget]);
   // One line back: its undo actions run as a confirmed batch, and the line says so
   const undoAgent = useCallback(async (i: number) => {
     const line = agent?.done[i];
@@ -1481,8 +1514,11 @@ export default function InspoClient({
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
             )}
+            {/* The card handed to the agent wears a ring wherever it is shown */}
+            {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--dock-ink, #f2f2ef) !important; outline-offset: 3px; }`}</style>}
             <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
-              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy} />
+              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
+              target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
           </div>
         )}
       </SidebarInset>

@@ -662,6 +662,17 @@ export const ui = {
     columns: (n: number): string => `${n} columns`,
   },
   agent: {
+    handHint: "Press / to hand it to the agent",
+    thisOne: "This:",
+    dropTarget: "Let go of this reference",
+    targetPlaceholder: "What do I do with it? E.g. to typography, file it, what is good about it?",
+    quickTitle: (name: string): string => `With \u201c${name}\u201d, in one click`,
+    quick: {
+      toArea: (area: string): string => `To ${area}`,
+      toAreaOrder: (area: string, project: string): string => `hang this from ${area} in ${project}`,
+      file: (project: string): string => `File in ${project}`,
+      fileOrder: (project: string): string => `file this in ${project}`,
+    },
     ask: "Ask the agent",
     hint: "\u21b5 asks the agent",
     thinking: "On it\u2026",
@@ -1170,5 +1181,15 @@ export const ui = {
     withPending: (allows: string, members: string, pending: string): string =>
       `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan in /planes.`,
     movePlan: (allows: string): string => `${allows} Move up a plan in /planes to invite more.`,
+  },
+  areaThread: {
+    title: "Conversation",
+    empty: "Nobody has said anything about this area yet. Say what convinces you of the decision, or what you would try.",
+    placeholder: "What you think of this area…",
+    send: "Send",
+    on: (name: string): string => `on ${name}`,
+    remove: "Delete",
+    about: "About",
+    tryIt: "Put it on the sample",
   },
 };
