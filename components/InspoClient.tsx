@@ -2,6 +2,7 @@
 
 import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
+import { setProjectClient } from "@/app/actions/polish";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
@@ -27,8 +28,9 @@ import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "
 import ProjectChooser from "./ProjectChooser";
 import type { TriageProposal } from "@/lib/system";
 import { applySystemTriage } from "@/app/actions/system";
-import { assignSystemArea } from "@/app/actions/system";
+import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
+import TemplatesView from "./TemplatesView";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -242,7 +244,7 @@ export default function InspoClient({
   const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
-  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "templates" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   // Inside a project the system comes first; the board is a mode (?view=board)
   const projectView: "system" | "board" = currentProject && sp.get("view") !== "board" ? "system" : "board";
@@ -1291,14 +1293,19 @@ export default function InspoClient({
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
             {/* The library is one place: everything, or only what no project has taken yet */}
-            {(space === "all" || space === "inbox") && projects.length > 0 && (
+            {(space === "all" || space === "inbox" || space === "templates") && (
               <>
                 <span className="topbar__modes" role="tablist" aria-label={t.sidebar.library}>
                   <button type="button" role="tab" className={`topbar__mode${space === "all" ? " is-on" : ""}`} aria-selected={space === "all"} onClick={() => setSpace("all")}>
                     {Icons.all} {t.sidebar.all} <span className="topbar__fill">{items.length}</span>
                   </button>
-                  <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
-                    {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
+                  {projects.length > 0 && (
+                    <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
+                      {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
+                    </button>
+                  )}
+                  <button type="button" role="tab" className={`topbar__mode${space === "templates" ? " is-on" : ""}`} aria-selected={space === "templates"} title={t.templates.lead} onClick={() => setSpace("templates")}>
+                    {Icons.compass} {t.templates.title}
                   </button>
                 </span>
                 <span className="topbar__actions-sep" aria-hidden />
@@ -1349,7 +1356,9 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "home" ? (
+        {space === "templates" ? (
+          <TemplatesView onStarted={(p) => { setProjects((prev) => [...prev, p]); setSpace(p.id); void loadSystem(p.id).then((r) => { if (r.ok) setSystem(p.id, r.data.system); }); }} />
+        ) : space === "home" ? (
           <ProjectChooser
             projects={projects}
             systems={systems}
@@ -1384,6 +1393,12 @@ export default function InspoClient({
             focusArea={focusArea}
             onOpenChange={setOpenArea}
             matches={matchIds}
+            onClient={async (itemId) => {
+              const id = currentProject.id;
+              const r = await setProjectClient(id, itemId).catch((e) => ({ ok: false as const, error: String(e) }));
+              if (!r.ok) { projectFailed(new Error(r.error)); return; }
+              setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, clientItemId: itemId } : p)));
+            }}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
@@ -1464,7 +1479,7 @@ export default function InspoClient({
               <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={smallImageOf} onOpen={openItem} />
             )}
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
-              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onUndo={(i) => void undoAgent(i)} />
+              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
             )}
             <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
               vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy} />
@@ -1502,13 +1517,15 @@ function DockResultThumb({ item, image }: { item: InspoItem; image: string | nul
   return <span className="dock__result-thumb" aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
 }
 
-function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
+function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAsk }: {
   agent: { text: string; busy: boolean; say?: string; done: (AgentDone & { undone?: boolean })[]; pending: AgentAction[]; error?: string };
   projects: Project[];
   onConfirm: () => void;
   onCancel: () => void;
   onClose: () => void;
   onUndo: (i: number) => void;
+  /** An answer to the agent's question: its order, asked as a new request */
+  onAsk: (order: string) => void;
 }) {
   const { t } = useT();
   const areas = t.system.areas as Record<string, string>;
@@ -1522,6 +1539,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       case "file": return did.file(d.n ?? 0, d.project ?? "", d.on !== false);
       case "assign": return did.assign(d.n ?? 0, area, d.on !== false);
       case "decide": return did.decide(area);
+      case "never": return d.on ? did.neverAdd(area, d.text ?? "") : did.neverRemove(area, d.text ?? "");
       case "clear": return did.clear(area);
       case "release": return did.release(area);
       case "undo": return did.undo(area);
@@ -1532,12 +1550,14 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       case "rename_project": return did.rename_project(d.project ?? "");
       case "delete_project": return did.delete_project(d.project ?? "");
       case "brief": return did.brief(d.project ?? "");
+      case "client": return d.on ? did.client(d.project ?? "") : did.clientOff(d.project ?? "");
       case "add_url": return did.add_url(d.name ?? "");
       case "note": return did.note(d.name ?? "");
       case "comment": return did.comment(d.name ?? "");
       case "tag": return did.tag(d.name ?? "");
       case "delete_items": return did.delete_items(d.n ?? 0);
       case "guide": return did.guide;
+      case "ask": return d.text ?? "";
     }
   };
   const will = (a: AgentAction): string => {
@@ -1547,6 +1567,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
     return a.kind;
   };
   const guides = agent.done.filter((d) => d.kind === "guide" && d.ok);
+  const asks = agent.done.filter((d) => d.kind === "ask" && d.ok && d.options?.length);
   return (
     <div className="dock__agent" role="status" aria-live="polite">
       <div className="dock__agent-head">
@@ -1556,9 +1577,9 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
       {agent.busy && !agent.say ? <p className="dock__agent-say"><span className="spinner spinner--sm" /> {t.agent.thinking}</p> : null}
       {agent.error && <p className="dock__agent-say dock__agent-say--error">{t.agent.failed}: {agent.error}</p>}
       {agent.say && <p className="dock__agent-say">{agent.say}</p>}
-      {agent.done.filter((d) => d.kind !== "guide").length > 0 && (
+      {agent.done.filter((d) => d.kind !== "guide" && d.kind !== "ask").length > 0 && (
         <ul className="dock__agent-did">
-          {agent.done.map((d, i) => d.kind === "guide" ? null : (
+          {agent.done.map((d, i) => d.kind === "guide" || d.kind === "ask" ? null : (
             <li key={i} className={`${d.ok ? "" : "is-failed"}${d.undone ? " is-undone" : ""}`}>{d.ok ? Icons.check : Icons.x}
               <span>{d.ok ? line(d) : d.error}{d.ok && (d.kind === "decide" || d.kind === "organize") && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span>
               {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
@@ -1566,6 +1587,14 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo }: {
           ))}
         </ul>
       )}
+      {asks.map((q, i) => (
+        <div key={`q${i}`} className="dock__agent-ask">
+          <p>{q.text}</p>
+          <div className="dock__agent-options">
+            {q.options!.map((o) => <button key={o.label} type="button" className="dock__agent-option" disabled={agent.busy} title={o.order} onClick={() => onAsk(o.order)}>{o.label}</button>)}
+          </div>
+        </div>
+      ))}
       {guides.map((g, i) => (
         <div key={`g${i}`} className="dock__agent-guide">
           <p>{g.text}</p>

@@ -174,7 +174,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   }, [projects, order, fit]);
 
   // The library is one tab: everything saved. What isn't in a project yet is a view of it (the right-hand pill)
-  const inLibrary = space === "all" || space === "inbox";
+  const inLibrary = space === "all" || space === "inbox" || space === "templates";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
     if (!p) return;

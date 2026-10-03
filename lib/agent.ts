@@ -17,11 +17,11 @@ import { addItem, deleteItem, rowToItem, setItemNote, editUserTags } from "./ite
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, fileItems, unfileItems } from "./projects";
-import { saveBrief } from "./polish";
+import { saveBrief, setClientBrand } from "./polish";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
 import { taggerEnabled } from "./tagger";
-import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage } from "./system";
+import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 
@@ -46,6 +46,8 @@ const ActionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("assign"), items: z.array(z.string()), project: z.string(), area: Area, on: z.boolean() }),
   // Writes the area as the team's: the person dictated it, runs leave it alone
   z.object({ kind: z.literal("decide"), project: z.string(), area: Area, decision: z.string(), why: z.string() }),
+  // What an area must never do: a rule added, or one taken out (matched by its words)
+  z.object({ kind: z.literal("never"), project: z.string(), area: Area, add: z.string().nullable(), remove: z.string().nullable() }),
   z.object({ kind: z.literal("release"), project: z.string(), area: Area }),
   z.object({ kind: z.literal("clear"), project: z.string(), area: Area }),
   z.object({ kind: z.literal("undo"), project: z.string(), area: Area }),
@@ -57,11 +59,15 @@ const ActionSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("rename_project"), project: z.string(), name: z.string() }),
   z.object({ kind: z.literal("delete_project"), project: z.string() }),
   z.object({ kind: z.literal("brief"), project: z.string(), about: z.string() }),
+  // A redesign: which reference is the client's current site (null: not a redesign any more)
+  z.object({ kind: z.literal("client"), project: z.string(), item: z.string().nullable() }),
   z.object({ kind: z.literal("add_url"), url: z.string(), project: z.string().nullable() }),
   z.object({ kind: z.literal("note"), item: z.string(), text: z.string() }),
   z.object({ kind: z.literal("comment"), item: z.string(), text: z.string() }),
   z.object({ kind: z.literal("tag"), item: z.string(), add: z.string().nullable(), remove: z.string().nullable() }),
   z.object({ kind: z.literal("delete_items"), items: z.array(z.string()) }),
+  // A request with two readings: one question and the orders each answer would give, for the person to pick
+  z.object({ kind: z.literal("ask"), question: z.string(), options: z.array(z.object({ label: z.string(), order: z.string() })) }),
   // What the app cannot do by itself: say how, and where the button is
   z.object({ kind: z.literal("guide"), topic: Topic, text: z.string() }),
 ]);
@@ -75,7 +81,7 @@ const PlanSchema = z.object({
 /** Actions that destroy something: planned, shown, run only when the person says so */
 const DANGEROUS = new Set<AgentAction["kind"]>(["delete_items", "delete_project", "clear"]);
 /** Actions the interface runs itself (nothing changes on the server) */
-const CLIENT_SIDE = new Set<AgentAction["kind"]>(["search", "go", "guide"]);
+const CLIENT_SIDE = new Set<AgentAction["kind"]>(["search", "go", "guide", "ask"]);
 
 // ─── Where the person is ─────────────────────────────────────────────────────
 
@@ -123,6 +129,8 @@ export interface AgentDone {
   /** For file and assign: in (true) or out (false) */
   on?: boolean;
   topic?: z.infer<typeof Topic>;
+  /** ask: the answers to pick from, each the order it would give */
+  options?: { label: string; order: string }[];
   /** For the interface's own actions */
   go?: { space: string | null; view: "system" | "board" | null; area: SystemArea | null };
 }
@@ -153,21 +161,25 @@ const IMPORT_NOTE = IMPORT_READY
   ? "The browser extension saves the page you are on and imports your X bookmarks and Chrome bookmarks in one go; the button under this message opens it."
   : "Today the browser extension saves the page you are on (the button under this message opens it); importing X bookmarks and Chrome bookmarks in one go is being built and is not available yet. Say that plainly, and that meanwhile they can paste URLs here and you add them.";
 
-const PLAN_SYSTEM = `You are the agent inside a design team's tool. The team keeps a library of references (websites, images, posts, videos), files them into PROJECTS, and each project has a SYSTEM of eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with a decision and the criterio behind it. A person just typed a request. Turn it into actions from the catalogue, or answer. You CAN do everything in the catalogue; never say you cannot do something that is in it.
+const PLAN_SYSTEM = `You are the agent inside a design team's tool. The team keeps a library of references (websites, images, posts, videos), files them into PROJECTS, and each project has a SYSTEM of eight areas (typography, color, layout, motion, iconography, logo, imagery, voice; "motion" is motion AND interaction: hovers, buttons, what answers the pointer), each with a decision and the criterio behind it. A person just typed a request. Turn it into actions from the catalogue, or answer. You CAN do everything in the catalogue; never say you cannot do something that is in it.
 
 The catalogue (kind: what it does):
 - search: a search of the library by words. go: open a project (or "inbox", "library", "home"), a view ("system" or "board"), an area.
 - file: put references in a project (on true) or take them out (on false). assign: hang references from an area of a project's system (on true) or take them off it (on false).
-- decide: write an area's decision and its why, as the team's. release: hand an area back to the board (the model may change it again). clear: empty an area. undo: one step back in an area (its previous text).
+- decide: write an area's decision and its why, as the team's. never: what an area must NEVER do. "add" carries the rule itself, written out in 3 to 12 words in the person's language (e.g. add: "rebotes y curvas elásticas", remove: null); "remove" carries the words of a rule to take out (add: null). Never leave both empty: one action per rule. Use it for "never…", "no more…", "we threw away…", "don't use…", and leave the decision alone. release: hand an area back to the board (the model may change it again). clear: empty an area. undo: one step back in an area (its previous text).
 - read_board: the model reads the whole board and proposes every area it can. curate: the model sets the table of one area (candidates kept and discarded, with reasons) and drafts its decision.
 - organize: the model files the unfiled references (the inbox, or the given ones) into projects and areas.
-- create_project (name, about), rename_project, delete_project, brief (the project's about, one paragraph).
+- create_project (name, about), rename_project, delete_project, brief (the project's about, one paragraph). client: mark the reference that is the client's current site, when the project is a redesign ("esta es la web del cliente", "es un rediseño de X"); item null to unmark.
 - add_url: save a web by its URL (and file it in a project). note: rewrite a reference's note. comment: leave a comment on a reference. tag: add or remove a tag (free word, lowercase).
 - delete_items: delete references.
 - guide: how to do what the app cannot do from here (importing from a browser, the extension).
+- ask: a question with 2 to 4 options, each with a short "label" and the full "order" you would run if picked (written as the person would say it, naming the project and area). Nothing else runs in that turn.
 Several actions in one request are fine, in order.
 
 How to read the request:
+- A matter of degree with no value given ("más redondeadas", "más oscuro", "más lento", "un poco más grande"): "ask" with three options at clearly different degrees, each order carrying a concrete value ("layout de Landing Savvia con radio de 16px"). Never pick one degree yourself.
+- When a request admits two readings that lead to opposite results (a requirement or a complaint, more or less of something, which of two areas or projects, add or replace), do not guess: return a single "ask" action. When one reading is clearly the likelier, act on it.
+- A prohibition ("never…", "no…", "nada de…", "sin…", "fuera…") about an area is a "never" action. Do not also rewrite the decision with "decide": the decision stays exactly as it is.
 - "this", "these", "esta", "estas", "it", "la": in this order, the reference marked "open" (in the panel), then "under_pointer" (the card the pointer was on last, seconds before they sent the request), then the ones marked "picked" (ticked on the ring), then "recent" (what the previous request touched), then what is "on_screen" when the request clearly means all of them. If none of these fits and the request needs one reference, do not guess: say what you need in "say" and return no actions.
 - The earlier exchanges of this conversation come with the request: a short follow-up ("and in color too", "undo that", "the other one") continues them.
 - A project named loosely ("la landing", "savvia") is the closest project by name. No project named and one is open: that one.
@@ -251,7 +263,7 @@ const resolveIn = (codes: Codes, action: AgentAction): AgentAction | null => {
   const items = (cs: string[]) => cs.map(item).filter((x): x is string => !!x);
   const project = (c: string) => codes.projects.get(c) ?? ([...codes.projects.values()].includes(c) ? c : null);
   switch (action.kind) {
-    case "search": case "guide": case "create_project": return action;
+    case "search": case "guide": case "create_project": case "ask": return action;
     case "go": {
       const p = action.project && !["inbox", "library", "home"].includes(action.project) ? project(action.project) : action.project;
       return { ...action, project: p ?? null };
@@ -261,6 +273,7 @@ const resolveIn = (codes: Codes, action: AgentAction): AgentAction | null => {
     case "file": case "assign": { const p = project(action.project); const its = items(action.items); return p && its.length ? { ...action, project: p, items: its } : null; }
     case "delete_items": { const its = items(action.items); return its.length ? { ...action, items: its } : null; }
     case "note": case "comment": case "tag": { const i = item(action.item); return i ? { ...action, item: i } : null; }
+    case "client": { const p = project(action.project); const i = action.item ? item(action.item) : null; return p && (i || !action.item) ? { ...action, project: p, item: i } : null; }
     default: { const p = project(action.project); return p ? { ...action, project: p } : null; }
   }
 };
@@ -282,6 +295,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
       switch (a.kind) {
         case "search": line.text = a.text; break;
         case "guide": line.topic = a.topic; line.text = a.text; break;
+        case "ask": line.text = a.question.trim().slice(0, 160); line.options = a.options.slice(0, 4).map((o) => ({ label: o.label.trim().slice(0, 40), order: o.order.trim().slice(0, 300) })).filter((o) => o.label && o.order); break;
         case "go": {
           const space = a.project ?? created;
           line.go = { space, view: a.view, area: a.area }; if (space && names.has(space)) line.project = names.get(space); break;
@@ -301,6 +315,14 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         case "decide":
           await decideArea(org, a.project, a.area, { decision: a.decision, why: a.why }, author);
           line.project = names.get(a.project); line.area = a.area; line.text = a.decision; systemsTouched = true; break;
+        case "never": {
+          const cur = (await getSystem(org, a.project)).areas.find((x) => x.area === a.area)?.never ?? "";
+          let lines = cur.split("\n").filter(Boolean);
+          if (a.remove) { const r = a.remove.toLowerCase(); lines = lines.filter((l) => !l.toLowerCase().includes(r) && !r.includes(l.toLowerCase())); }
+          if (a.add?.trim() && !lines.some((l) => l.toLowerCase() === a.add!.trim().toLowerCase())) lines.push(a.add.trim());
+          await setAreaNever(org, a.project, a.area, lines.join("\n"));
+          line.project = names.get(a.project); line.area = a.area; line.text = a.add ?? a.remove ?? ""; line.on = !!a.add; systemsTouched = true; break;
+        }
         case "clear":
           await decideArea(org, a.project, a.area, { decision: "" }, author);
           line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;
@@ -328,6 +350,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         case "rename_project": { const p = await renameProject(org, a.project, a.name.trim().slice(0, 60)); line.project = p.name; line.text = names.get(a.project); projectsTouched = true; break; }
         case "delete_project": line.project = names.get(a.project); await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
         case "brief": await saveBrief(org, a.project, { about: a.about.trim() }, author.id); line.project = names.get(a.project); line.text = a.about; break;
+        case "client": await setClientBrand(org, a.project, a.item, author.id); line.project = names.get(a.project); line.on = !!a.item; line.items = a.item ? [a.item] : []; projectsTouched = true; break;
         case "add_url": {
           const web = normalizeWebUrl(a.url);
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
@@ -403,7 +426,7 @@ export async function confirm(ctx: Ctx, actions: unknown, usage: UsageCtx, local
   const projectIds = new Set((await db.select({ id: P.id }).from(P).where(eq(P.organizationId, org))).map((r) => r.id));
   const ok = parsed.filter((a) => !CLIENT_SIDE.has(a.kind)).filter((a) => {
     if ("items" in a && Array.isArray(a.items) && a.items.some((i) => !itemIds.has(i))) return false;
-    if ("item" in a && !itemIds.has(a.item)) return false;
+    if ("item" in a && a.item !== null && !itemIds.has(a.item)) return false;
     if ("project" in a && typeof a.project === "string" && !projectIds.has(a.project)) return false;
     return true;
   });

@@ -16,7 +16,7 @@ import { Icons } from "./Sidebar";
 import { Button } from "@/components/ui/button";
 import { areaIcon } from "./area-icons";
 import { cachedCardImage } from "./InspoCard";
-import { Sample, SampleControls, type ColorRole, type SampleChoices } from "./SystemSample";
+import { Sample, SampleControls, variantsFor, type ColorRole, type SampleChoices } from "./SystemSample";
 import "./SystemStage.css";
 
 export function Thumb({ item, image, className = "" }: { item: InspoItem; image: string | null; className?: string }) {
@@ -272,7 +272,7 @@ type PairPick = { key: string; weight: number };
 const defaultWeight = (row: TypeRow) => row.prefer ?? (row.weights.includes(400) ? 400 : row.weights[0] ?? 400);
 const PAIR_EVENT = "criterio:type-pair";
 
-export function useTypePair(projectId: string, rows: TypeRow[], curation: AreaCuration | null) {
+export function useTypePair(projectId: string, rows: TypeRow[], curation: AreaCuration | null, clientItemId?: string | null) {
   const store = `criterio:type-pair:${projectId}`;
   const [saved, setSaved] = useState<Partial<Record<PairRole, PairPick>>>({});
   useEffect(() => {
@@ -282,8 +282,10 @@ export function useTypePair(projectId: string, rows: TypeRow[], curation: AreaCu
     return () => window.removeEventListener(PAIR_EVENT, read);
   }, [store]);
   const kept = (row: TypeRow) => !!curation?.verdicts.find((v) => row.ids.includes(v.id))?.keep;
-  const first = (role: Role) => rows.find((r) => r.role === role && kept(r)) ?? rows.find((r) => r.role === role);
-  const title = first("display") ?? rows.find(kept) ?? rows[0];
+  // A redesign starts from the client's own faces; otherwise from what the agent kept
+  const client = (row: TypeRow) => !!clientItemId && row.refs.includes(clientItemId);
+  const first = (role: Role) => rows.find((r) => r.role === role && client(r)) ?? rows.find((r) => r.role === role && kept(r)) ?? rows.find((r) => r.role === role);
+  const title = first("display") ?? rows.find(client) ?? rows.find(kept) ?? rows[0];
   const body = first("body") ?? rows.find((r) => r !== title && kept(r)) ?? rows.find((r) => r !== title) ?? title;
   const base: Record<PairRole, TypeRow | undefined> = { title, subtitle: body, body };
   const of = (role: PairRole) => {
@@ -325,12 +327,14 @@ interface TesterProps {
   onReason: (id: string, keep: boolean, reason: string) => void;
   /** The pairing on the sample becomes the area's decision, as the team's */
   onUse: (decision: string) => void;
+  /** A redesign: the client's site, whose faces the pairing starts from */
+  clientItemId?: string | null;
   /** What the other areas have put on the sample (its colours, its radius): typography is tried on the same piece */
   choices: SampleChoices;
   onChoice: (patch: Partial<SampleChoices>) => void;
 }
 
-export function TypeTester({ projectId, projectName, intent, summary, refs, visuals, curation, curating, busy, itemOf, imageOf, onFlip, onReason, onUse, choices, onChoice }: TesterProps) {
+export function TypeTester({ projectId, projectName, intent, summary, refs, visuals, curation, curating, busy, itemOf, imageOf, onFlip, onReason, onUse, choices, onChoice, clientItemId }: TesterProps) {
   const { t } = useT();
   const tt = t.system.type;
   const [mode, setMode] = useState<Mode>("headline");
@@ -345,7 +349,7 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
   const [draft, setDraft] = useState("");
 
   const { rows, silent, loading } = useTypeRows(projectId, refs, visuals);
-  const pair = useTypePair(projectId, rows, curation);
+  const pair = useTypePair(projectId, rows, curation, clientItemId);
 
   const sample = text.trim() || (mode === "headline" ? projectName : mode === "paragraph" ? summary || tt.paragraphSample : ALPHABET);
   const size = sizes[mode];
@@ -450,7 +454,7 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
 // ─── The sample on the other areas' stages ───────────────────────────────────
 // The same piece typography is tried on, in the faces chosen there, with this area's controls beside it.
 
-export function AreaSample({ area, projectId, projectName, intent, summary, typeRefs, visuals, areaVisuals, typeCuration, choices, onChoice, colorRole, onColorRole, replay, onReplay, busy, onUse }: {
+export function AreaSample({ area, projectId, projectName, intent, summary, typeRefs, visuals, areaVisuals, typeCuration, choices, onChoice, colorRole, onColorRole, replay, onReplay, busy, onUse, clientItemId, namedFaces }: {
   area: SystemArea; projectId: string; projectName: string; intent: string; summary: string;
   /** The references typography draws from (for the faces), and every reference's sheet */
   typeRefs: InspoItem[]; visuals: RefVisual[];
@@ -461,16 +465,43 @@ export function AreaSample({ area, projectId, projectName, intent, summary, type
   colorRole: ColorRole; onColorRole: (role: ColorRole) => void;
   replay: number; onReplay: () => void;
   busy: boolean; onUse?: (decision: string) => void;
+  clientItemId?: string | null;
+  /** With no references to read faces from: the families the typography decision names */
+  namedFaces?: { title?: string; body?: string };
 }) {
   const { t } = useT();
   const tt = t.system.type;
   const { rows } = useTypeRows(projectId, typeRefs, visuals);
-  const pair = useTypePair(projectId, rows, typeCuration);
+  const pair = useTypePair(projectId, rows, typeCuration, clientItemId);
+  const [trio, setTrio] = useState(false);
+  const variants = variantsFor(area, areaVisuals);
+  const named = (f?: string) => (f ? { fontFamily: `"${f}", system-ui, sans-serif` } : undefined);
+  const faces = pair.title ? { title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) } : { title: named(namedFaces?.title), subtitle: named(namedFaces?.body), body: named(namedFaces?.body) };
+  const toggle = variants.length === 3 && (
+    <button type="button" className={`smp-trio__toggle${trio ? " is-on" : ""}`} aria-pressed={trio} onClick={() => { setTrio((v) => !v); onReplay(); }}>{trio ? t.system.sample.one : t.system.sample.three}</button>
+  );
+  if (trio) return (
+    <div className="smp-trio">
+      <div className="smp-trio__head"><span>{t.system.sample.threeHint}</span>{toggle}</div>
+      <div className="smp-trio__row">
+        {variants.map((v) => (
+          <div key={v.label} className="smp-trio__cell">
+            <Sample compact title={projectName} subtitle={intent || tt.comp.subtitleSample} body="" cta={tt.comp.cta} more={t.system.sample.more}
+              faces={faces} choices={{ ...choices, ...v.patch, ...(v.patch.bg && !choices.ink ? {} : {}) }} replay={replay} />
+            <button type="button" className="smp-trio__pick" onClick={() => { onChoice(v.patch); setTrio(false); onReplay(); }}>{Icons.check} <span>{v.label}</span></button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   return (
     <div className="tt-comp">
       <Sample title={projectName} subtitle={intent || tt.comp.subtitleSample} body={summary || tt.paragraphSample} cta={tt.comp.cta} more={t.system.sample.more}
-        faces={{ title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) }} choices={choices} replay={replay} />
-      <SampleControls area={area} choices={choices} onChoice={onChoice} colorRole={colorRole} onColorRole={onColorRole} visuals={areaVisuals} onReplay={onReplay} busy={busy} onUse={onUse} />
+        faces={faces} choices={choices} replay={replay} />
+      <div className="smp-side">
+        {toggle}
+        <SampleControls area={area} choices={choices} onChoice={onChoice} colorRole={colorRole} onColorRole={onColorRole} visuals={areaVisuals} onReplay={onReplay} busy={busy} onUse={onUse} />
+      </div>
     </div>
   );
 }

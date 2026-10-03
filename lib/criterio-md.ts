@@ -12,7 +12,9 @@ export interface CriterioMdInput {
   /** The workspace's references by id, for the names and URLs behind each decision */
   items: Record<string, { name: string; web: string }>;
   labels: Record<SystemArea, string>;
-  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string };
+  /** A redesign: the client's current site, whose copy, typefaces, logo and figures rule */
+  client?: { name: string; web: string } | null;
+  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string };
 }
 
 export type CriterioBlock =
@@ -23,18 +25,20 @@ export type CriterioBlock =
     kind: "area"; area: SystemArea; heading: string;
     /** Empty when the area is open */
     decision: string; why: string;
-    whyLabel: string; openText: string;
+    /** What the area must never do, one rule per line */
+    never: string;
+    whyLabel: string; neverLabel: string; openText: string;
     /** The status and the references behind the decision, as lines of the file */
     meta: string[];
   };
 
-export function criterioBlocks({ project, system, items, labels, strings }: CriterioMdInput): CriterioBlock[] {
+export function criterioBlocks({ project, system, items, labels, strings, client }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
-  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`] }];
+  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`, ...(client ? [`**${strings.client}:** [${client.name}](${client.web})`] : [])] }];
   if (system.summary) blocks.push({ kind: "summary", heading: strings.summary, text: system.summary });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
-    const base = { kind: "area" as const, area: key, heading: labels[key], whyLabel: strings.why, openText: strings.open };
+    const base = { kind: "area" as const, area: key, heading: labels[key], whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
     if (!a || !a.decision) { blocks.push({ ...base, decision: "", why: "", meta: [] }); continue; }
     const level = confidenceOf(a);
     const status = a.source === "team" ? strings.decided : strings.proposed;
@@ -52,6 +56,9 @@ export function criterioBlocks({ project, system, items, labels, strings }: Crit
   return blocks;
 }
 
+/** An area's never list: one rule a line under its bold label */
+export const neverMd = (b: { never: string; neverLabel: string }) => [`**${b.neverLabel}:**`, ...b.never.split("\n").filter(Boolean).map((l) => `- ${l}`)].join("\n");
+
 /** The file, from its blocks */
 export function blocksToMd(blocks: CriterioBlock[]): string {
   const L: string[] = [];
@@ -61,10 +68,11 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
     if (b.kind === "summary") { p(`## ${b.heading}`); p(); p(b.text); p(); continue; }
     p(`## ${b.heading}`);
     p();
-    if (!b.decision) { p(`_${b.openText}_`); p(); continue; }
+    if (!b.decision) { p(`_${b.openText}_`); p(); if (b.never) { p(neverMd(b)); p(); } continue; }
     p(b.decision);
     p();
     if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); }
+    if (b.never) { p(neverMd(b)); p(); }
     for (const line of b.meta) p(line);
     p();
   }

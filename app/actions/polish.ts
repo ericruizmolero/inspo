@@ -2,7 +2,7 @@
 // Polish: the project's brief and the decisions taken on its board. The model calls
 // (the games) take longer and go through app/api/polish.
 import { withCtx } from "@/lib/workspace";
-import { getPolish, saveBrief, addDecision, mergeInto, saveWhy } from "@/lib/polish";
+import { getPolish, saveBrief, addDecision, mergeInto, saveWhy, setClientBrand } from "@/lib/polish";
 import type { PolishBrief, Why } from "@/types/polish";
 
 export async function loadPolish(projectId: string) {
@@ -12,6 +12,11 @@ export async function loadPolish(projectId: string) {
 /** Any member writes the brief: the board is the team's. */
 export async function savePolishBrief(projectId: string, brief: Partial<PolishBrief>) {
   return withCtx(async (ctx) => saveBrief(ctx.workspace.id, String(projectId), brief ?? {}, ctx.user.id));
+}
+
+/** A redesign: which reference on the board is the client's current site (null clears it). */
+export async function setProjectClient(projectId: string, itemId: string | null) {
+  return withCtx(async (ctx) => setClientBrand(ctx.workspace.id, String(projectId), itemId ? String(itemId) : null, ctx.user.id));
 }
 
 /** Remembers an answer so the same question is not asked again. */
