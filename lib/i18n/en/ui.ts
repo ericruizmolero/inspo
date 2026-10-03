@@ -662,6 +662,17 @@ export const ui = {
     columns: (n: number): string => `${n} columns`,
   },
   agent: {
+    handHint: "Press / to hand it to the agent",
+    thisOne: "This:",
+    dropTarget: "Let go of this reference",
+    targetPlaceholder: "What do I do with it? E.g. to typography, file it, what is good about it?",
+    quickTitle: (name: string): string => `With \u201c${name}\u201d, in one click`,
+    quick: {
+      toArea: (area: string): string => `To ${area}`,
+      toAreaOrder: (area: string, project: string): string => `hang this from ${area} in ${project}`,
+      file: (project: string): string => `File in ${project}`,
+      fileOrder: (project: string): string => `file this in ${project}`,
+    },
     ask: "Ask the agent",
     hint: "\u21b5 asks the agent",
     thinking: "On it\u2026",

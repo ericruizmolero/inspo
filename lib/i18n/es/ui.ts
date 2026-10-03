@@ -660,6 +660,17 @@ export const ui: typeof EnUi = {
     columns: (n: number): string => `${n} columnas`,
   },
   agent: {
+    handHint: "Pulsa / para pas\u00e1rsela al agente",
+    thisOne: "Esto:",
+    dropTarget: "Soltar esta referencia",
+    targetPlaceholder: "\u00bfQu\u00e9 hago con esto? Ej.: a tipograf\u00eda, arch\u00edvala, \u00bfqu\u00e9 tiene de bueno?",
+    quickTitle: (name: string): string => `Con \u00ab${name}\u00bb, en un clic`,
+    quick: {
+      toArea: (area: string): string => `A ${area}`,
+      toAreaOrder: (area: string, project: string): string => `cuelga esto de ${area} en ${project}`,
+      file: (project: string): string => `Archivar en ${project}`,
+      fileOrder: (project: string): string => `archiva esto en ${project}`,
+    },
     ask: "Ped\u00edrselo al agente",
     hint: "\u21b5 se lo pide al agente",
     thinking: "Voy\u2026",

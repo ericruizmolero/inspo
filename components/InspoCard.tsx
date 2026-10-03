@@ -403,6 +403,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
+        {/* Pressing "/" over a card hands it to the agent: the corner says so while the pointer is on it */}
+        {hovering && !proposal && <kbd className="tile__agent-hint" title={t.agent.handHint} aria-hidden>/</kbd>}
         {proposal && (
           <div className="tile__proposal" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
             <div className="tile__proposal-row">

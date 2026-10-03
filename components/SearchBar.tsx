@@ -10,6 +10,7 @@ import { filterKey, suggest, type Filter, type Term2 } from "@/lib/search-query"
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import type { Dict } from "@/lib/i18n/en";
+import "./AgentTarget.css";
 
 /** What a chip says, in the reader's language */
 export function filterLabel(f: Filter, t: Dict): string {
@@ -44,7 +45,7 @@ function ChipMark({ f, swatches, faces }: { f: Filter; swatches: Record<string, 
   return null;
 }
 
-export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking }: {
+export default function SearchBar({ filters, text, onFilters, onText, vocab, busy, gathering, swatches, faces, className = "", onAsk, asking, target, onClearTarget, quick = [] }: {
   filters: Filter[];
   text: string;
   onFilters: (f: Filter[]) => void;
@@ -62,6 +63,11 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   /** The words are a request, not a search: Enter (with no suggestion open) or ⌘Enter hands them to the agent */
   onAsk?: (text: string) => void;
   asking?: boolean;
+  /** The reference handed to the agent with "/" over its card: what "this" means until it is taken away */
+  target?: { name: string; image: string | null } | null;
+  onClearTarget?: () => void;
+  /** What can be done with it in one click: each one an order for the agent */
+  quick?: { label: string; order: string }[];
 }) {
   const { t } = useT();
   const ref = useRef<HTMLInputElement>(null);
@@ -110,10 +116,12 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
     if (options.length && ((e.key === "Enter" && (walked || !onAsk)) || (e.key === "Tab" && !e.shiftKey))) { e.preventDefault(); take(options[active]); return; }
     if (e.key === "Enter" && onAsk && text.trim()) { e.preventDefault(); ask(); return; }
     if (e.key === "Backspace" && !text && filters.length && ref.current?.selectionStart === 0) { e.preventDefault(); onFilters(filters.slice(0, -1)); return; }
+    if (e.key === "Backspace" && !text && !filters.length && target && onClearTarget) { e.preventDefault(); onClearTarget(); return; }
     if (e.key === "Escape") {
       if (options.length) { e.preventDefault(); setClosed(true); return; }
       if (text) { e.preventDefault(); onText(""); return; }
       if (filters.length) { e.preventDefault(); onFilters([]); return; }
+      if (target && onClearTarget) { e.preventDefault(); onClearTarget(); return; }
       ref.current?.blur();
     }
   };
@@ -123,7 +131,14 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   return (
     <div className={`sb ${className}${open ? " is-open" : ""}`}>
       <div className="sb__field" onClick={() => ref.current?.focus()}>
-        <span className="sb__icon" aria-hidden>{busy ? <span className="spinner spinner--sm" /> : Icons.search}</span>
+        <span className="sb__icon" aria-hidden>{busy ? <span className="spinner spinner--sm" /> : target ? Icons.spark : Icons.search}</span>
+        {target && (
+          <span className="sb__chip sb__chip--target" title={target.name}>
+            {target.image ? <img className="sb__target-img" src={target.image} alt="" /> : <span className="sb__target-img sb__target-img--blank">{target.name.slice(0, 1).toUpperCase()}</span>}
+            <span className="sb__chip-label"><small>{t.agent.thisOne}</small> {target.name}</span>
+            <button type="button" className="sb__chip-x" aria-label={t.agent.dropTarget} title={t.agent.dropTarget} onClick={(e) => { e.stopPropagation(); onClearTarget?.(); }}>{Icons.x}</button>
+          </span>
+        )}
         {filters.map((f) => {
           const label = filterLabel(f, t);
           return (
@@ -144,7 +159,7 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
           aria-autocomplete="list"
           aria-activedescendant={open ? `${listId}-${active}` : undefined}
           aria-label={t.search.placeholderShort}
-          placeholder={filters.length ? "" : t.search.placeholder}
+          placeholder={target ? t.agent.targetPlaceholder : filters.length ? "" : t.search.placeholder}
           onChange={(e) => { onText(e.target.value); setClosed(false); }}
           onKeyDown={onKeyDown}
           onFocus={() => { setFocused(true); setClosed(false); }}
@@ -162,7 +177,20 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
           )}
         </span>
       </div>
-      {open && (
+      {/* With a reference handed over and nothing typed: what can be done with it, one click each */}
+      {target && focused && !text.trim() && quick.length > 0 && onAsk && (
+        <div className="sb__menu sb__quick" role="group" aria-label={t.agent.quickTitle(target.name)}>
+          <span className="sb__quick-title">{t.agent.quickTitle(target.name)}</span>
+          <div className="sb__quick-list">
+            {quick.map((q) => (
+              <button key={q.order} type="button" className="sb__quick-btn" disabled={asking} title={q.order}
+                // Before the field's blur, so the click lands
+                onMouseDown={(e) => { e.preventDefault(); onAsk(q.order); }}>{q.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      {open && !(target && !text.trim()) && (
         <ul id={listId} role="listbox" className="sb__menu" aria-label={t.search.suggestions}>
           {options.map((o, i) => (
             <li
