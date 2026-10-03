@@ -70,3 +70,20 @@ export async function setRecipe(organizationId: string, projectId: string, recip
 export async function deleteTemplate(organizationId: string, templateId: string): Promise<void> {
   await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, templateId), isNotNull(P.template)));
 }
+
+/**
+ * The published result of a template as a page: the whole page and its top, captured once with Chromium and
+ * kept in the shared page index (lib/page-shots.ts), like any site the library holds. Null without a result.
+ */
+export async function templatePage(organizationId: string, templateId: string): Promise<{ topUrl: string; shotUrl: string; shotH: number; color?: string } | null> {
+  const [row] = await db.select({ template: P.template }).from(P)
+    .where(and(eq(P.organizationId, organizationId), eq(P.id, templateId), isNotNull(P.template))).limit(1);
+  if (!row) throw new HttpError(404, (await getErrors()).badBody);
+  const url = cleanTemplate((row.template ?? {}) as Partial<ProjectTemplate>).to;
+  if (!url) return null;
+  const { getPageIndex } = await import("./page-shots");
+  const { capturePage } = await import("./screenshot");
+  const { normalizeWebUrl } = await import("./url");
+  const shot = (await getPageIndex())[normalizeWebUrl(url) ?? url] ?? await capturePage(url);
+  return { topUrl: shot.topUrl, shotUrl: shot.shotUrl, shotH: shot.shotH, color: shot.color };
+}

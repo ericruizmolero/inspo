@@ -2,7 +2,7 @@
 // The library's templates: whole systems to start a project from. Each one says what it turned into what (a
 // client's site and its redesign), shows its eight areas with what they decided and what they never do, and
 // carries the recipe of the work. Using one starts a project with that system as proposals and the recipe.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Project } from "@/types/inspo";
 import { SYSTEM_AREAS, type SystemArea, type TemplateCard } from "@/types/system";
 import { loadRecipe, loadTemplates, removeTemplate, startFromTemplate } from "@/app/actions/templates";
@@ -17,6 +17,43 @@ function download(name: string, text: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
   a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+
+type Page = { topUrl: string; shotUrl: string; shotH: number; color?: string };
+
+/** The published result in a browser window, as the DESIGN.md sheet shows a site: its first screen, and on
+ *  hover the whole page scrolling, eased at each end. Captured with Chromium the first time it is asked for. */
+function ResultPage({ id, url }: { id: string; url: string }) {
+  const [page, setPage] = useState<Page | null | "failed">(null);
+  const [dist, setDist] = useState(0);
+  const boxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/templates/${id}/page`).then((r) => (r.ok ? r.json() : null)).then((p: Page | null) => { if (alive) setPage(p ?? "failed"); }, () => { if (alive) setPage("failed"); });
+    return () => { alive = false; };
+  }, [id]);
+  if (page === "failed") return null;
+  const onFull = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget, box = boxRef.current;
+    if (box) setDist(Math.max(0, (img.naturalHeight / img.naturalWidth) * box.clientWidth - box.clientHeight));
+  };
+  return (
+    <a className="tpl-page" href={url} target="_blank" rel="noreferrer">
+      <span className="pn-bar is-dark tpl-page__bar">
+        <span className="dm-frame__lights" aria-hidden><i /><i /><i /></span>
+        <span className="pn-bar__url"><span>{host(url)}</span></span>
+        <span />
+      </span>
+      <div ref={boxRef} className="tpl-page__view" style={page?.color ? { background: page.color } : undefined}>
+        {!page && <div className="shimmer" />}
+        {page && <img className="tpl-page__top" src={page.topUrl} alt={host(url)} />}
+        {page && (
+          <img className="tpl-page__full" src={page.shotUrl} alt="" aria-hidden fetchPriority="low" onLoad={onFull}
+            style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${Math.max(4, Math.round(dist / 170))}s` } as React.CSSProperties} />
+        )}
+      </div>
+    </a>
+  );
 }
 
 function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: TemplateCard, name: string) => Promise<void>; onDelete: (tpl: TemplateCard) => Promise<void> }) {
@@ -66,6 +103,8 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
           )}
         </div>
       </header>
+
+      {tpl.template.to && <ResultPage id={tpl.id} url={tpl.template.to} />}
 
       <p className="tpl-meta">{s.meta(decided, SYSTEM_AREAS.length, nevers)}{tpl.recipeSize > 0 && ` · ${s.withRecipe}`}</p>
       <ul className="tpl-areas">
