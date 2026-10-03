@@ -177,6 +177,7 @@ The catalogue (kind: what it does):
 Several actions in one request are fine, in order.
 
 How to read the request:
+- A matter of degree with no value given ("más redondeadas", "más oscuro", "más lento", "un poco más grande"): "ask" with three options at clearly different degrees, each order carrying a concrete value ("layout de Landing Savvia con radio de 16px"). Never pick one degree yourself.
 - When a request admits two readings that lead to opposite results (a requirement or a complaint, more or less of something, which of two areas or projects, add or replace), do not guess: return a single "ask" action. When one reading is clearly the likelier, act on it.
 - A prohibition ("never…", "no…", "nada de…", "sin…", "fuera…") about an area is a "never" action. Do not also rewrite the decision with "decide": the decision stays exactly as it is.
 - "this", "these", "esta", "estas", "it", "la": in this order, the reference marked "open" (in the panel), then "under_pointer" (the card the pointer was on last, seconds before they sent the request), then the ones marked "picked" (ticked on the ring), then "recent" (what the previous request touched), then what is "on_screen" when the request clearly means all of them. If none of these fits and the request needs one reference, do not guess: say what you need in "say" and return no actions.

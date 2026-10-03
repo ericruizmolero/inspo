@@ -469,6 +469,9 @@ export const ui = {
       editHint: "\u2318\u21b5 saves, Esc cancels",
     },
     sample: {
+      three: "See three variants",
+      one: "Back to one",
+      threeHint: "Three degrees side by side: pick the one that works.",
       more: "See more",
       tryIt: "Try it on the sample",
       noMaterial: "Nothing for this area",

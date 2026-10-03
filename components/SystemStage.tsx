@@ -16,7 +16,7 @@ import { Icons } from "./Sidebar";
 import { Button } from "@/components/ui/button";
 import { areaIcon } from "./area-icons";
 import { cachedCardImage } from "./InspoCard";
-import { Sample, SampleControls, type ColorRole, type SampleChoices } from "./SystemSample";
+import { Sample, SampleControls, variantsFor, type ColorRole, type SampleChoices } from "./SystemSample";
 import "./SystemStage.css";
 
 export function Thumb({ item, image, className = "" }: { item: InspoItem; image: string | null; className?: string }) {
@@ -471,11 +471,34 @@ export function AreaSample({ area, projectId, projectName, intent, summary, type
   const tt = t.system.type;
   const { rows } = useTypeRows(projectId, typeRefs, visuals);
   const pair = useTypePair(projectId, rows, typeCuration, clientItemId);
+  const [trio, setTrio] = useState(false);
+  const variants = variantsFor(area, areaVisuals);
+  const faces = { title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) };
+  const toggle = variants.length === 3 && (
+    <button type="button" className={`smp-trio__toggle${trio ? " is-on" : ""}`} aria-pressed={trio} onClick={() => { setTrio((v) => !v); onReplay(); }}>{trio ? t.system.sample.one : t.system.sample.three}</button>
+  );
+  if (trio) return (
+    <div className="smp-trio">
+      <div className="smp-trio__head"><span>{t.system.sample.threeHint}</span>{toggle}</div>
+      <div className="smp-trio__row">
+        {variants.map((v) => (
+          <div key={v.label} className="smp-trio__cell">
+            <Sample compact title={projectName} subtitle={intent || tt.comp.subtitleSample} body="" cta={tt.comp.cta} more={t.system.sample.more}
+              faces={faces} choices={{ ...choices, ...v.patch, ...(v.patch.bg && !choices.ink ? {} : {}) }} replay={replay} />
+            <button type="button" className="smp-trio__pick" onClick={() => { onChoice(v.patch); setTrio(false); onReplay(); }}>{Icons.check} <span>{v.label}</span></button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   return (
     <div className="tt-comp">
       <Sample title={projectName} subtitle={intent || tt.comp.subtitleSample} body={summary || tt.paragraphSample} cta={tt.comp.cta} more={t.system.sample.more}
         faces={{ title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) }} choices={choices} replay={replay} />
-      <SampleControls area={area} choices={choices} onChoice={onChoice} colorRole={colorRole} onColorRole={onColorRole} visuals={areaVisuals} onReplay={onReplay} busy={busy} onUse={onUse} />
+      <div className="smp-side">
+        {toggle}
+        <SampleControls area={area} choices={choices} onChoice={onChoice} colorRole={colorRole} onColorRole={onColorRole} visuals={areaVisuals} onReplay={onReplay} busy={busy} onUse={onUse} />
+      </div>
     </div>
   );
 }

@@ -167,13 +167,47 @@ export function RefMaterial({ area, v, onColor, onRadius, onEasing, onHeadline }
   }
 }
 
-// ─── The controls beside the sample, per area ────────────────────────────────
-
 const PRESETS: { label: string; easing: string }[] = [
   { label: "ease-out", easing: "cubic-bezier(0.23, 1, 0.32, 1)" },
   { label: "ease-in-out", easing: "cubic-bezier(0.77, 0, 0.175, 1)" },
   { label: "spring", easing: "cubic-bezier(0.34, 1.56, 0.64, 1)" },
 ];
+
+// ─── Three at once ───────────────────────────────────────────────────────────
+// A matter of degree is settled by seeing three side by side, not one per round (Multiverse: four rounds
+// for a tint, solved the moment three were on the page together). From the area's references first.
+
+export interface SampleVariant { label: string; patch: Partial<SampleChoices> }
+const px = (v: string) => parseFloat(v) || 0;
+export function variantsFor(area: SystemArea, visuals: RefVisual[]): SampleVariant[] {
+  if (area === "color") {
+    const seen = new Set<string>();
+    const colors = visuals.flatMap((v) => v.colors).filter((c) => c.group !== "semantic" && /^#[0-9a-f]{6}/i.test(c.hex) && !seen.has(c.hex.slice(0, 7).toLowerCase()) && seen.add(c.hex.slice(0, 7).toLowerCase()));
+    const byLum = [...colors].sort((a, b) => luminance(a.hex) - luminance(b.hex));
+    const light = byLum[byLum.length - 1]?.hex.slice(0, 7) ?? "#f6f5f1";
+    const dark = byLum[0]?.hex.slice(0, 7) ?? "#141413";
+    const brand = (colors.find((c) => c.group === "brand" || c.group === "accent")?.hex ?? byLum[Math.floor(byLum.length / 2)]?.hex ?? "#2d2d2b").slice(0, 7);
+    const grounds = [...new Set([light, dark, brand].map((h) => h.toLowerCase()))].slice(0, 3);
+    while (grounds.length < 3) grounds.push(["#f6f5f1", "#141413", "#e8e2d6"][grounds.length]);
+    return grounds.map((bg) => ({ label: bg, patch: { bg, ink: undefined } }));
+  }
+  if (area === "layout") {
+    const seen = new Set<string>();
+    const radii = visuals.flatMap((v) => v.radii).map((r) => r.value).filter((v) => /^\d+(\.\d+)?px$/.test(v) && px(v) <= 40 && !seen.has(v) && seen.add(v)).sort((a, b) => px(a) - px(b));
+    const pick = radii.length >= 3 ? [radii[0], radii[Math.floor(radii.length / 2)], radii[radii.length - 1]] : [...new Set([...radii, "4px", "12px", "24px"])].sort((a, b) => px(a) - px(b)).slice(0, 3);
+    return pick.map((radius) => ({ label: radius, patch: { radius } }));
+  }
+  if (area === "motion") {
+    const seen = new Set<string>();
+    const fromRefs = visuals.filter((v) => v.easing && isEasing(v.easing) && !seen.has(v.easing) && seen.add(v.easing)).map((v) => ({ label: v.name, patch: { easing: v.easing!, ...(v.durationMs ? { durationMs: v.durationMs } : {}) } }));
+    const presets = PRESETS.filter((p) => !seen.has(p.easing)).map((p) => ({ label: p.label, patch: { easing: p.easing } }));
+    return [...fromRefs, ...presets].slice(0, 3);
+  }
+  return [];
+}
+
+// ─── The controls beside the sample, per area ────────────────────────────────
+
 
 export function SampleControls({ area, choices, onChoice, colorRole, onColorRole, visuals, onReplay, busy, onUse }: {
   area: SystemArea; choices: SampleChoices; onChoice: (patch: Partial<SampleChoices>) => void;

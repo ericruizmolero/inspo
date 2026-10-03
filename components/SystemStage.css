@@ -399,3 +399,18 @@
 .dock__agent-options { display: flex; flex-wrap: wrap; gap: 6px; }
 .dock__agent-option { height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--dock-fill); color: var(--dock-ink); font: inherit; font-size: 13px; cursor: pointer; }
 .dock__agent-option:hover { background: var(--dock-chip); } .dock__agent-option:disabled { opacity: 0.5; cursor: default; }
+
+/* Three variants side by side: a matter of degree is chosen by seeing them together */
+.smp-side { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.smp-trio__toggle { align-self: flex-start; height: 30px; padding: 0 11px; border: 0; border-radius: 9px; background: var(--surface); color: var(--text-2); font: inherit; font-size: 12.5px; cursor: pointer; box-shadow: inset 0 0 0 1px var(--border-strong); }
+.smp-trio__toggle:hover, .smp-trio__toggle.is-on { color: var(--text); background: var(--surface-2); }
+.smp-trio { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.smp-trio__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--muted); }
+.smp-trio__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.smp-trio__cell { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.smp-trio__cell .smp--compact { padding: 22px 22px 24px; border-radius: 16px; background: var(--smp-bg, var(--surface)); min-height: 220px; }
+.smp-trio__cell .smp--compact .smp__title { font-size: clamp(26px, 2.6vw, 40px); }
+.smp-trio__cell .smp--compact .smp__sub { font-size: 14px; }
+.smp-trio__pick { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; border: 0; border-radius: 10px; background: var(--surface); color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.smp-trio__pick svg { width: 13px; height: 13px; } .smp-trio__pick:hover { background: var(--text); color: var(--bg); }
+@media (max-width: 900px) { .smp-trio__row { grid-template-columns: minmax(0, 1fr); } }

@@ -467,6 +467,9 @@ export const ui: typeof EnUi = {
       editHint: "\u2318\u21b5 guarda, Esc cancela",
     },
     sample: {
+      three: "Ver tres variantes",
+      one: "Volver a una",
+      threeHint: "Tres grados lado a lado: elige el que va.",
       more: "Ver m\u00e1s",
       tryIt: "Probar en la muestra",
       noMaterial: "Sin datos de esta \u00e1rea",
