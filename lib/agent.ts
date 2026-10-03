@@ -155,7 +155,7 @@ const IMPORT_NOTE = IMPORT_READY
   ? "The browser extension saves the page you are on and imports your X bookmarks and Chrome bookmarks in one go; the button under this message opens it."
   : "Today the browser extension saves the page you are on (the button under this message opens it); importing X bookmarks and Chrome bookmarks in one go is being built and is not available yet. Say that plainly, and that meanwhile they can paste URLs here and you add them.";
 
-const PLAN_SYSTEM = `You are the agent inside a design team's tool. The team keeps a library of references (websites, images, posts, videos), files them into PROJECTS, and each project has a SYSTEM of eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with a decision and the criterio behind it. A person just typed a request. Turn it into actions from the catalogue, or answer. You CAN do everything in the catalogue; never say you cannot do something that is in it.
+const PLAN_SYSTEM = `You are the agent inside a design team's tool. The team keeps a library of references (websites, images, posts, videos), files them into PROJECTS, and each project has a SYSTEM of eight areas (typography, color, layout, motion, iconography, logo, imagery, voice; "motion" is motion AND interaction: hovers, buttons, what answers the pointer), each with a decision and the criterio behind it. A person just typed a request. Turn it into actions from the catalogue, or answer. You CAN do everything in the catalogue; never say you cannot do something that is in it.
 
 The catalogue (kind: what it does):
 - search: a search of the library by words. go: open a project (or "inbox", "library", "home"), a view ("system" or "board"), an area.

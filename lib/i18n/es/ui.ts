@@ -352,7 +352,7 @@ export const ui: typeof EnUi = {
     button: "Sistema",
     title: (name: string): string => `Sistema de \u00ab${name}\u00bb`,
     lead: "Lo que este proyecto ha decidido sobre su dise\u00f1o, \u00e1rea por \u00e1rea. El tabl\u00f3n lo rellena, t\u00fa lo confirmas, tus agentes lo leen.",
-    areas: { typography: "Tipograf\u00eda", color: "Color", layout: "Layout", motion: "Motion", iconography: "Iconograf\u00eda", logo: "Logo", imagery: "Imagen", voice: "Voz y tono" },
+    areas: { typography: "Tipograf\u00eda", color: "Color", layout: "Layout", motion: "Motion e interacci\u00f3n", iconography: "Iconograf\u00eda", logo: "Logo", imagery: "Imagen", voice: "Voz y tono" },
     empty: "Nada decidido todav\u00eda",
     emptyHint: "A\u00f1ade una referencia que hable de esto, o escribe la decisi\u00f3n t\u00fa.",
     filled: (n: number, total: number): string => `${n} de ${total} \u00e1reas decididas`,

@@ -382,7 +382,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
 
 // ─── Polish an area: the directions the board allows, for the team to pick ──────────────────────
 
-const OPTIONS_SYSTEM = `A design team keeps a board of references for one project (websites, images, posts), each with the note of whoever saved it, the team's comments, what they pointed at and, for websites, a brief measured from the live page. The project has a SYSTEM with eight areas (typography, color, layout, motion, iconography, logo, imagery, voice). One area is weakly decided or empty, and the team wants to settle it.
+const OPTIONS_SYSTEM = `A design team keeps a board of references for one project (websites, images, posts), each with the note of whoever saved it, the team's comments, what they pointed at and, for websites, a brief measured from the live page. The project has a SYSTEM with eight areas (typography, color, layout, motion, iconography, logo, imagery, voice; motion covers interaction too: hovers, buttons, what answers the pointer). One area is weakly decided or empty, and the team wants to settle it.
 
 Your job: lay out the 2 or 3 DIRECTIONS the board actually allows for that area, so the team can pick one. Each direction is a decision written for this project, as an instruction an agent can execute (1 to 3 sentences, max 60 words), backed by the references that point that way.
 
@@ -456,9 +456,9 @@ export async function proposeOptions(input: { organizationId: string; projectId:
 // answers it could have. Nothing is written: adding a reference goes through assignEvidence, picking an
 // answer through decideArea.
 
-const START_AREAS = `What each area is about. typography: families, sizes, weights. color: palette and how it is used. layout: grid, spacing, radii, density. motion: how things move and respond. iconography: the icon set, its stroke and style. logo: the project's own mark (wordmark, symbol, monogram), how it sits and in what colour. imagery: photos, illustration, captures, how they are framed. voice: how the copy sounds.`;
+const START_AREAS = `What each area is about. typography: families, sizes, weights. color: palette and how it is used. layout: grid, spacing, radii, density. motion: motion and interaction, how things move and how they answer the pointer (hovers, buttons, what is clicked, what only hovers). iconography: the icon set, its stroke and style. logo: the project's own mark (wordmark, symbol, monogram), how it sits and in what colour. imagery: photos, illustration, captures, how they are framed. voice: how the copy sounds.`;
 
-const START_ASK_SYSTEM = `A design team is building the SYSTEM of one project: eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with a decision. One area is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.
+const START_ASK_SYSTEM = `A design team is building the SYSTEM of one project: eight areas (typography, color, layout, motion, iconography, logo, imagery, voice; motion covers interaction too: hovers, buttons, what answers the pointer), each with a decision. One area is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.
 
 ${START_AREAS}
 
@@ -502,7 +502,7 @@ const AREA_SEARCH: Record<SystemArea, { q: string; words: RegExp }> = {
   typography: { q: "typeface, type foundry, typography specimen, fonts, lettering", words: /\b(tipograf\w*|typograph\w*|typefaces?|fonts?|fuentes?|foundry|serif\w*|lettering|typos?|tipos?)\b/gi },
   color: { q: "colour palette, color system, gradients, colourful", words: /\b(colou?r\w*|palet\w*|gradient\w*|degradad\w*|monocrom\w*|monochrom\w*)\b/gi },
   layout: { q: "grid layout, bento grid, editorial layout, composition", words: /\b(layouts?|grids?|ret[ií]culas?|bentos?|maquetaci[oó]n|composici[oó]n|composition)\b/gi },
-  motion: { q: "animation, motion design, micro-interactions, transitions, scroll effects", words: /\b(motion|animaci\w*|animat\w*|transici\w*|transition\w*|hovers?|scroll\w*|interacci\w*|interaction\w*)\b/gi },
+  motion: { q: "animation, motion design, micro-interactions, hover effects, buttons, interaction design, transitions, scroll effects", words: /\b(motion|animaci\w*|animat\w*|transici\w*|transition\w*|hovers?|scroll\w*|interacci\w*|interaction\w*)\b/gi },
   iconography: { q: "icon set, icon library, pictograms, interface icons", words: /\b(icons?|iconos?|iconograf\w*|iconograph\w*|pictogram\w*|glyphs?)\b/gi },
   logo: { q: "logo, logotype, wordmark, brand identity, brand guidelines, branding studio", words: /\b(logos?|logotip\w*|logotypes?|wordmarks?|monogram\w*|isotipos?|brand\w*|identity|identidad\w*|marcas?|guidelines?)\b/gi },
   imagery: { q: "photography, illustration, art direction, 3D renders, imagery", words: /\b(foto\w*|photo\w*|ilustraci\w*|illustration\w*|im[aá]gen\w*|imagery|renders?|3d|mockups?)\b/gi },
@@ -727,7 +727,7 @@ Your job: for each unfiled reference, say which project it serves and which area
 Rules:
 - Read the saver's note first: it says why the reference is here. Then the summary and the look.
 - Only file a reference under a project when it clearly serves that project's brief or system; otherwise project null. Guessing files noise the team has to undo.
-- areas: only the ones the reference actually speaks to (a palette, a typeface, a layout pattern, a motion, an icon style, a logo, a kind of imagery, a tone of copy). Usually one or two. Empty is fine when nothing concrete stands out.
+- areas: only the ones the reference actually speaks to (a palette, a typeface, a layout pattern, a motion or an interaction (hovers, buttons), an icon style, a logo, a kind of imagery, a tone of copy). Usually one or two. Empty is fine when nothing concrete stands out.
 - reason: one sentence of at most 16 words, for the team, saying what to take from it. No praise.
 - Ids are short codes: use them exactly as given and never invent one.`;
 
@@ -791,7 +791,7 @@ export async function applyTriage(organizationId: string, picks: { itemId: strin
 // of copy). The agent keeps or discards each with a reason, drafts the decision and the criterio behind
 // it, and writes it all as the area's proposal. The team flips what it wants and confirms.
 
-const CURATE_SYSTEM = `A design team keeps a board of references for one project and is deciding one AREA of the project's design system (typography, color, layout, motion, iconography, logo, imagery or voice). The board offers CANDIDATES for that area: the typefaces found across the references, their palettes, their easings, their captures, their lines of copy. Each candidate says which references it comes from, and each reference comes with the team's note and comments (why they saved it).
+const CURATE_SYSTEM = `A design team keeps a board of references for one project and is deciding one AREA of the project's design system (typography, color, layout, motion and interaction, iconography, logo, imagery or voice). The board offers CANDIDATES for that area: the typefaces found across the references, their palettes, their easings, their captures, their lines of copy. Each candidate says which references it comes from, and each reference comes with the team's note and comments (why they saved it).
 
 Your job, as the team's agent: decide the area from the candidates, the way a senior designer who knows the brief would.
 - For every candidate, "keep" true or false and a "reason" of at most 16 words, for the team: what it brings to this project, or why it goes. Judge against the brief and the team's words first, then against coherence (one or two families, one palette logic, one easing). Keeping everything is not deciding; keeping nothing is only right when nothing fits.

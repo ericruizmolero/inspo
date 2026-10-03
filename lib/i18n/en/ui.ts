@@ -354,7 +354,7 @@ export const ui = {
     button: "System",
     title: (name: string): string => `System of \u201c${name}\u201d`,
     lead: "What this project has decided about its design, area by area. The board fills it in, you confirm it, your agents read it.",
-    areas: { typography: "Typography", color: "Color", layout: "Layout", motion: "Motion", iconography: "Iconography", logo: "Logo", imagery: "Imagery", voice: "Voice and tone" },
+    areas: { typography: "Typography", color: "Color", layout: "Layout", motion: "Motion & interaction", iconography: "Iconography", logo: "Logo", imagery: "Imagery", voice: "Voice and tone" },
     empty: "Nothing decided yet",
     emptyHint: "Add a reference that speaks to this, or write the decision yourself.",
     filled: (n: number, total: number): string => `${n} of ${total} areas decided`,
