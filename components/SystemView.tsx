@@ -14,6 +14,7 @@ import { loadSystem, loadSystemVisuals, decideSystemArea, setSystemNever, releas
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
+import AreaThread from "./AreaThread";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
 import SystemMarkdown from "./SystemMarkdown";
@@ -915,7 +916,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   </>
                 )}
               </div>
-              <aside className="sysf-aside" aria-label={labels[a.area]}>{tileFor(a, true)}</aside>
+              <aside className="sysf-aside" aria-label={labels[a.area]}>{tileFor(a, true)}<AreaThread projectId={project.id} area={a.area} refs={own} /></aside>
             </div>
           </div>
         );

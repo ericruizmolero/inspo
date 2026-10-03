@@ -1171,4 +1171,12 @@ export const ui = {
       `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan in /planes.`,
     movePlan: (allows: string): string => `${allows} Move up a plan in /planes to invite more.`,
   },
+  areaThread: {
+    title: "Conversation",
+    empty: "Nobody has said anything about this area yet. Say what convinces you of the decision, or what you would try.",
+    placeholder: "What you think of this area…",
+    send: "Send",
+    on: (name: string): string => `on ${name}`,
+    remove: "Delete",
+  },
 };

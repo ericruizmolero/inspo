@@ -1169,4 +1169,12 @@ export const ui: typeof EnUi = {
       `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancela una invitación en /equipo o amplía el plan en /planes.`,
     movePlan: (allows: string): string => `${allows} Amplía el plan en /planes para invitar a más.`,
   },
+  areaThread: {
+    title: "Conversación",
+    empty: "Nadie ha dicho nada de esta área todavía. Di qué te convence de la decisión o qué probarías.",
+    placeholder: "Qué piensas de esta área…",
+    send: "Enviar",
+    on: (name: string): string => `en ${name}`,
+    remove: "Borrar",
+  },
 };
