@@ -2901,10 +2901,19 @@ button.postit__num { cursor: pointer; }
 .sysn-line.is-lit { stroke: var(--text); stroke-width: 1.4; }
 .sysn-line.is-dim { opacity: 0.25; }
 /* The project, in the middle */
-.sysn-core { position: absolute; transform: translate(-50%, -50%); width: min(440px, 40vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 18px 24px; border-radius: 20px; background: color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter: blur(8px); }
-.sysn-core__title { margin: 0; font-family: var(--font-display, var(--font)); font-size: clamp(26px, 3vw, 38px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
-.sysn-core__summary { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-.sysn-core__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 4px; }
+/* The centre: quiet, no box, so the lines run under it and the nodes carry the weight */
+.sysn-core { position: absolute; transform: translate(-50%, -50%); width: min(360px, 34vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 16px 20px; border-radius: 20px; background: radial-gradient(closest-side, color-mix(in srgb, var(--bg) 92%, transparent), transparent); }
+.sysn-core__title { margin: 0; font-family: var(--font-display, var(--font)); font-size: clamp(22px, 2.2vw, 30px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
+.sysn-core__summary { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.sysn-core__actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; }
+.sysn-core__actions .btn { height: 28px; padding: 0 10px; font-size: 12px; color: var(--text-2); }
+.sysn-core__actions .btn:hover { color: var(--text); }
+.sysn-core__actions .btn-icon { width: 28px; height: 28px; color: var(--text-2); } .sysn-core__actions .btn-icon svg { transform: rotate(90deg); width: 14px; height: 14px; }
+.sysn-core__criterio { width: 100%; }
+.sysn-core__criterio summary { list-style: none; cursor: pointer; font-size: 11px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.02em; }
+.sysn-core__criterio summary::-webkit-details-marker { display: none; }
+.sysn-core__criterio summary:hover { color: var(--text-2); }
+.sysn-core__criterio[open] summary { color: var(--text-2); margin-bottom: 6px; }
 .sysn-core__meta { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* An area node: a mono label on a light tag, a mini specimen, one line of the decision */
 .sysn-node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 168px; padding: 10px 12px 10px; border-radius: 12px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); text-align: left; cursor: pointer; box-shadow: var(--shadow-card); transition: transform 0.2s var(--ease-out), box-shadow 0.2s, border-color 0.2s; }
@@ -3007,6 +3016,12 @@ button.postit__num { cursor: pointer; }
 /* A node's references fan out around it when it opens; the count sits on the label */
 .sysn-ref { transition: left 0.45s var(--ease-out), top 0.45s var(--ease-out), opacity 0.2s, transform 0.2s var(--ease-out); }
 .sysn-node__label { display: inline-flex; align-items: center; gap: 6px; }
+/* The icon of an area goes before its name everywhere: it never shrinks and takes the ink of the label */
+.area-icon { flex-shrink: 0; }
+.sysn-node__label .area-icon { margin-left: -1px; color: var(--text-2); }
+.sysn-node:hover .sysn-node__label .area-icon, .sysn-node.is-open .sysn-node__label .area-icon { color: var(--text); }
+.sysv-tile__eyebrow { display: inline-flex; align-items: center; gap: 6px; }
+.tile__proposal-areas button { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; }
 .sysn-node__n { font-weight: 500; color: var(--muted); }
 .sysn-node.is-open .sysn-node__n { color: var(--text); }
 /* What are you making? The first screen inside a workspace */
@@ -3025,7 +3040,6 @@ button.postit__num { cursor: pointer; }
 .chooser__card-name { font-size: 15px; font-weight: 500; } .chooser__card-meta { font-size: 11px; color: var(--muted); }
 .chooser__card-summary { font-size: 12px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .chooser__library { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 13px; cursor: pointer; } .chooser__library:hover { color: var(--text); }
-.pp__icon--mono { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.02em; }
 /* Organise the Inbox */
 .modal--triage { max-width: 960px; height: min(820px, 100dvh - 40px); display: flex; flex-direction: column; }
 .triage { gap: 22px; }
@@ -3046,9 +3060,10 @@ button.postit__num { cursor: pointer; }
 .triage__select { height: 32px; font-size: 12px; }
 @media (max-width: 720px) { .triage__row { grid-template-columns: auto 1fr; } .triage__select { grid-column: 1 / -1; } }
 .chooser__new { flex-wrap: wrap; } .chooser__about { flex-basis: 100%; height: auto; min-height: 60px; padding: 10px 12px; font-size: 14px; line-height: 1.45; resize: vertical; } .chooser__go { margin-left: auto; }
-.sysn-polish { display: flex; align-items: center; gap: 8px; width: 100%; max-width: 260px; }
-.sysn-polish__bar { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; } .sysn-polish__bar b { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.6s var(--ease-out); }
-.sysn-polish small { font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sysn-polish { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; max-width: 220px; }
+.sysn-polish__bar { width: 100%; height: 3px; border-radius: 2px; background: var(--surface-3); overflow: hidden; } .sysn-polish__bar b { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.6s var(--ease-out); }
+.sysn-polish small { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sysn-polish__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text); display: inline-block; }
 /* Organising the Inbox: the model's proposal sits on the card; one click files it */
 .tile__proposal { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 4; display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border-radius: 12px; background: rgba(12,12,11,0.88); backdrop-filter: blur(10px); color: #f2f2ef; box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); font-size: 12px; cursor: default; }
 .tile__proposal-row { display: flex; align-items: center; gap: 6px; }

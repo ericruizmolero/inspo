@@ -612,28 +612,33 @@ export default function SystemView({ project, system, onSystem, board, library, 
           {geo.items.flatMap((it) => it.areas.map((k) => { const a = geo.areas.find((x) => x.key === k)!; return <line key={`${it.item.id}-${k}`} x1={it.x} y1={it.y} x2={a.x} y2={a.y} className={`sysn-line${lit(k, it.item.id!) ? " is-lit" : ""}${hover && !lit(k, it.item.id!) ? " is-dim" : ""}`} />; }))}
         </svg>
 
+        {/* The centre stays quiet: the nodes are the system. Name, one line of state, three small actions;
+            the criterio paragraph unfolds only when asked for */}
         <section className="sysn-core" style={{ left: geo.c.x, top: geo.c.y }}>
-          <span className="sysv-tile__eyebrow">{t.system.heroEyebrow}</span>
           <h1 className="sysn-core__title">{project.name}</h1>
-          {sys.summary
-            ? <p className="sysn-core__summary">{sys.summary}</p>
-            : <p className="sysn-core__summary sysv-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>}
+          {filled > 0 ? (
+            <div className="sysn-polish" title={t.system.polishHint}>
+              <small>{t.system.fill(filled, SYSTEM_AREAS.length)} · {t.system.polishPct(polishPct)}{stale && (stale.unread > 0 || stale.wordsChanged) ? <> · <i className="sysn-polish__dot" aria-hidden /> {stale.unread > 0 ? t.system.staleShort(stale.unread) : t.system.staleWordsShort}</> : null}</small>
+              <span className="sysn-polish__bar"><b style={{ width: `${polishPct}%` }} /></span>
+            </div>
+          ) : (
+            <p className="sysn-core__summary sysv-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>
+          )}
           {error && <p className="sysv-error" role="alert">{error}</p>}
           <div className="sysn-core__actions">
-            <Button variant="primary" size="sm" onClick={() => void run()} disabled={running || !board.length}>
+            <Button variant="ghost" size="sm" onClick={() => void run()} disabled={running || !board.length} title={sys.run ? t.system.rerun : t.system.run}>
               {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {sys.run ? t.system.rerun : t.system.run}</>}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => void copy()} disabled={!filled} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>
-            <Button variant="ghost" size="sm" onClick={download} disabled={!filled} title={t.system.exportHint}>{t.system.download}</Button>
+            {filled > 0 && <Button variant="ghost" size="sm" onClick={() => void copy()} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>}
+            {filled > 0 && <Button variant="icon" onClick={download} aria-label={t.system.download} title={t.system.download}>{Icons.arrow}</Button>}
             {!board.length && <Button variant="ghost" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
           </div>
-          {filled > 0 && (
-            <div className="sysn-polish" title={t.system.polishHint}>
-              <span className="sysn-polish__bar"><b style={{ width: `${polishPct}%` }} /></span>
-              <small>{t.system.polishPct(polishPct)}</small>
-            </div>
+          {sys.summary && (
+            <details className="sysn-core__criterio">
+              <summary>{t.system.criterio}</summary>
+              <p className="sysn-core__summary">{sys.summary}</p>
+            </details>
           )}
-          <small className="sysn-core__meta">{t.system.filled(filled, SYSTEM_AREAS.length)}{stale && (stale.unread > 0 || stale.wordsChanged) ? ` · ${stale.unread > 0 ? t.system.stale(stale.unread) : t.system.staleWords}` : ""}</small>
         </section>
 
         {geo.areas.map((pos) => {
