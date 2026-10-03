@@ -50,7 +50,8 @@ export default function PostView({ web, onThumb }: { web: string; onThumb?: (thu
   );
 }
 
-/** A video plays X's own best file; if X no longer serves it, our lighter copy. A gif loops, silent, like on X.
+/** A video plays X's own best file; if X no longer serves it, our lighter copy. Both loop on their own,
+ *  silent, like on X; the controls are there for the sound. A gif loops the same way, without controls.
  *  X refuses its files to requests carrying another site's Referer, and <video> can't drop it on its own:
  *  X's file plays inside a tiny frame whose document sends no Referer. Our own copy plays directly. */
 function Moving({ m }: { m: PostMedia }) {
@@ -61,11 +62,11 @@ function Moving({ m }: { m: PostMedia }) {
   if (!/^https:\/\/video\.twimg\.com\//.test(m.src)) {
     const src = m.src || m.backup || "";
     return <video className="pv__video" style={{ aspectRatio: ratio }} src={src} poster={poster || undefined}
-      {...(gif ? { autoPlay: true, loop: true, muted: true } : { controls: true, preload: "metadata" })} playsInline />;
+      autoPlay loop muted {...(gif ? {} : { controls: true })} playsInline />;
   }
   const attr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const doc = `<!doctype html><meta name="referrer" content="no-referrer"><style>html,body{margin:0;height:100%;background:#000}video{display:block;width:100%;height:100%;object-fit:contain}</style>`
-    + `<video src="${attr(m.src)}" poster="${attr(poster)}" data-backup="${attr(backup)}" playsinline ${gif ? "autoplay loop muted" : "controls preload=\"metadata\""}`
-    + ` onerror="var b=this.dataset.backup;if(b&&this.getAttribute('src')!==b){this.src=b;${gif ? "this.play()" : ""}}"></video>`;
+    + `<video src="${attr(m.src)}" poster="${attr(poster)}" data-backup="${attr(backup)}" playsinline autoplay loop muted${gif ? "" : " controls"}`
+    + ` onerror="var b=this.dataset.backup;if(b&&this.getAttribute('src')!==b){this.src=b;this.play()}"></video>`;
   return <iframe className="pv__video pv__video--frame" style={{ aspectRatio: ratio }} srcDoc={doc} title="" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />;
 }

@@ -96,11 +96,14 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
   const kind = mediaKindOf(item.web);
   const video = kind === "video" ? videoEmbedOf(item.web) : null;
   const manualThumbnail = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
-  const videoFile = video?.provider === "file" && !manualThumbnail;
   const isSite = kind === "web";
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
   const plays = kind === "video" || postKind === "video";
+  // What loops silently on the board: a video file, or our copy of a post's video or gif, which sits
+  // next to its poster (lib/posts.ts). YouTube and the like only play in the thread.
+  const loopSrc = video?.provider === "file" ? item.web
+    : postKind ? uploadedThumb!.replace(/\/poster-(video|gif)\.\w+$/, "/$1.mp4") : null;
   const gifChip = (kind === "image" && isGif(item.web)) || postKind === "gif";
   const [source, setSource] = useState<ImgSource>(() => isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
   const [imgSrc, setImgSrc] = useState<string | null>(() => imgCache.get(item.web)?.src ?? null); // blob URL
@@ -128,11 +131,36 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
 
+  // A loop that does not load (a post whose copy was too big to keep) leaves its poster, like before
+  const [loopFailed, setLoopFailed] = useState(false);
+  const [loopPlaying, setLoopPlaying] = useState(false);
+  const useLoop = !!loopSrc && !loopFailed;
+  const loopRef = useRef<HTMLVideoElement>(null);
   const useManual = !!manualThumbnail && !manualFailed;
+  // A video file with no poster: the file's own first frame gives the tile its shape
+  const useFrame = useLoop && !useManual;
   const [frameLoaded, setFrameLoaded] = useState(false);
-  const [frameFailed, setFrameFailed] = useState(false);
-  const useFrame = videoFile && !frameFailed;
-  const useDesign = !useManual && !!designCover && !coverFailed;
+  const useDesign = !useManual && !useFrame && !!designCover && !coverFailed;
+
+  // The loop costs nothing until the tile is on screen: no byte of the file is asked for before
+  // (its poster stands in), and it pauses as soon as the tile leaves. With hundreds of tiles only the
+  // handful in view ever play. Under reduced motion it stays on its poster.
+  useEffect(() => {
+    const v = loopRef.current;
+    if (!v || !useLoop || !loopSrc) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let inView = false;
+    const play = () => { if (!v.getAttribute("src")) v.src = loopSrc; v.play().catch(() => {}); };
+    const io = new IntersectionObserver(([e]) => {
+      inView = e.isIntersecting;
+      if (inView) play(); else v.pause();
+    }, { rootMargin: "100px" });
+    io.observe(v);
+    // A tab opened in the background refuses to play until it is looked at: try again then
+    const onVisible = () => { if (document.visibilityState === "visible" && inView) play(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { io.disconnect(); document.removeEventListener("visibilitychange", onVisible); v.pause(); };
+  }, [useLoop, loopSrc]);
 
   // Reset on thumbnail change, then check if the image was already cached
   useEffect(() => {
@@ -342,18 +370,21 @@ export default function InspoCard({ item, tags, score, reason, manualThumbnail: 
             </>
           )}
 
-          {useFrame && (
-            // A video file: its first frame, still. It plays in the thread.
+          {useLoop && (
+            // The file, looping silent over its poster once it plays. Without a poster it is the tile
+            // itself, with just its metadata until it plays.
             <video
-              className={`tile__img${frameLoaded ? "" : " is-hidden"}`}
-              src={`${item.web}#t=0.1`}
-              muted playsInline preload="metadata"
+              ref={loopRef}
+              className={useFrame ? `tile__img${frameLoaded ? "" : " is-hidden"}` : `tile__loop${loopPlaying ? " is-playing" : ""}`}
+              src={useFrame ? `${loopSrc}#t=0.1` : undefined}
+              muted loop playsInline preload={useFrame ? "metadata" : "none"}
               onLoadedData={() => setFrameLoaded(true)}
-              onError={() => setFrameFailed(true)}
+              onPlaying={() => setLoopPlaying(true)}
+              onError={() => { setLoopFailed(true); setFrameLoaded(false); }}
             />
           )}
 
-          {plays && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
+          {plays && isLoaded && !useLoop && <span className="tile__play" aria-hidden>{IconPlay}</span>}
           {gifChip && isLoaded && score === undefined && <span className="tile__badge">{t.card.gif}</span>}
 
           {!useManual && !useDesign && !useFrame && imgSrc && (

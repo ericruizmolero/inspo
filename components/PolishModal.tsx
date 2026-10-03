@@ -7,9 +7,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import gsap from "gsap";
 import type { CommentMap, InspoItem, Project, TagMap } from "@/types/inspo";
 import { BRIEF_KEYS, type DesignSpec } from "@/types/design";
-import { AUDIENCES, BRIEF_TEXT_MAX, EMPTY_POLISH, pendingOf, type Audience, type Duel, type DupeGroup, type OffTone, type PolishBrief, type PolishState } from "@/types/polish";
+import { AUDIENCES, BOARD_TARGET, BRIEF_TEXT_MAX, EMPTY_POLISH, TAKES, WHY_NOTE_MAX, gapsOf, pendingOf, type Audience, type Duel, type DupeGroup, type Light, type OffTone, type PolishBrief, type PolishState, type Take } from "@/types/polish";
 import { SECTORS, STYLES } from "@/lib/taxonomy";
-import { loadPolish, savePolishBrief, decidePolish, mergePolish } from "@/app/actions/polish";
+import { loadPolish, savePolishBrief, decidePolish, mergePolish, savePolishWhy } from "@/app/actions/polish";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { cachedCardImage } from "./InspoCard";
@@ -34,8 +34,14 @@ interface Props {
   comments: CommentMap;
   /** Whether a DESIGN.md already exists for the site: the sheet only reads, never generates one */
   hasDesignMd: (web: string) => boolean;
-  /** Takes references out of the project (they stay in the library). Resolves when done. */
-  onDiscard: (items: InspoItem[]) => Promise<void>;
+  /** The project's archive: off the board, still the project's */
+  archived: InspoItem[];
+  /** To the archive (on) or back to the board (off). Resolves when done, throws when it failed. */
+  onArchive: (items: InspoItem[], on: boolean) => Promise<void>;
+  /** A gap to fill: search the library for it (closes the modal) */
+  onSearch: (query: string) => void;
+  /** The brief was saved: its intention line, for the project header */
+  onBrief?: (about: string) => void;
   onClose: () => void;
 }
 
@@ -205,9 +211,15 @@ function Sheet({ item, tags, comments, hasDesignMd, onClose }: { item: InspoItem
   );
 }
 
-type Card = { kind: "tone"; key: string; o: OffTone } | { kind: "duel"; key: string; d: Duel } | { kind: "dupe"; key: string; g: DupeGroup };
-interface Tally { out: number; kept: number; merged: number; apart: number }
-const EMPTY_TALLY: Tally = { out: 0, kept: 0, merged: 0, apart: 0 };
+type Card =
+  | { kind: "why"; key: string; id: string }
+  | { kind: "tone"; key: string; o: OffTone }
+  | { kind: "duel"; key: string; d: Duel }
+  | { kind: "dupe"; key: string; g: DupeGroup }
+  | { kind: "light"; key: string; l: Light }
+  | { kind: "gap"; key: string; take: Take };
+interface Tally { out: number; kept: number; merged: number; apart: number; why: number; gaps: number }
+const EMPTY_TALLY: Tally = { out: 0, kept: 0, merged: 0, apart: 0, why: 0, gaps: 0 };
 /** How long the answered card takes to fly off (GSAP, in answer() below) */
 const LEAVE_MS = 320;
 
@@ -215,13 +227,16 @@ const LEAVE_MS = 320;
  * The open questions as a deck of cards: the top one is answered, flies off (left: out of the
  * project, right: stays) and the next rises. Decisions are the modal's; the deck only sequences them.
  */
-function Deck({ cards, done, tally, byId, imageOf, tagMap, comments, hasDesignMd, busy, onOut, onKeep, onKeepOne, onMerge, onApart, onWin, onBoth, foot }: {
-  cards: Card[]; done: number; tally: Tally;
+function Deck({ cards, done, tally, boardSize, noWhy, onSkipWhys, byId, imageOf, tagMap, comments, hasDesignMd, busy, onOut, onKeep, onKeepOne, onMerge, onApart, onWin, onBoth, onWhy, onLightOut, onLightKeep, onGapSearch, onGapOk, foot, archive }: {
+  cards: Card[]; done: number; tally: Tally; boardSize: number; noWhy: number; onSkipWhys: () => void;
   byId: Map<string, InspoItem>; imageOf: (i: InspoItem) => string | null; tagMap: TagMap; comments: CommentMap; hasDesignMd: (web: string) => boolean; busy: (ids: string[]) => boolean;
   onOut: (o: OffTone) => Promise<void>; onKeep: (o: OffTone) => Promise<void>;
   onKeepOne: (g: DupeGroup, id: string) => Promise<void>; onMerge: (g: DupeGroup, id: string) => Promise<void>; onApart: (g: DupeGroup) => Promise<void>;
   onWin: (d: Duel, id: string) => Promise<void>; onBoth: (d: Duel) => Promise<void>;
-  foot: React.ReactNode;
+  onWhy: (id: string, takes: Take[], note: string) => Promise<void>;
+  onLightOut: (l: Light) => Promise<void>; onLightKeep: (l: Light) => Promise<void>;
+  onGapSearch: (take: Take) => void; onGapOk: (take: Take) => Promise<void>;
+  foot: React.ReactNode; archive: React.ReactNode;
 }) {
   const { t } = useT();
   const leaving = useRef(false);
@@ -229,8 +244,11 @@ function Deck({ cards, done, tally, byId, imageOf, tagMap, comments, hasDesignMd
   const [choice, setChoice] = useState<string | null>(null);
   // The reference whose sheet is open over the top card
   const [peek, setPeek] = useState<InspoItem | null>(null);
+  // On a why card, what is ticked and written before saving
+  const [takes, setTakes] = useState<Take[]>([]);
+  const [whyNote, setWhyNote] = useState("");
   const top = cards[0];
-  useEffect(() => { setChoice(null); setPeek(null); }, [top?.key]);
+  useEffect(() => { setChoice(null); setPeek(null); setTakes([]); setWhyNote(""); }, [top?.key]);
   const info = (i: InspoItem) => (
     <button type="button" className="polish-card__info" aria-label={t.polish.sheet} title={t.polish.sheet} onClick={(e) => { e.stopPropagation(); setPeek(i); }}>{Icons.info}</button>
   );
@@ -242,16 +260,24 @@ function Deck({ cards, done, tally, byId, imageOf, tagMap, comments, hasDesignMd
   const stampNo = useRef<HTMLSpanElement | null>(null);
   const stampYes = useRef<HTMLSpanElement | null>(null);
 
-  // The card flies off first, the decision runs while it is off screen; if it fails the card comes back
+  // The card flies off first, the decision runs while it is off screen. If it fails, or if nothing
+  // changed and the same card is still on top, the card comes back: an invisible card on top of the
+  // deck would block everything
+  const topKey = useRef<string | undefined>(undefined);
+  topKey.current = top?.key;
   const answer = async (dir: "left" | "right", act: () => Promise<void>) => {
     if (leaving.current) return;
     leaving.current = true;
     const el = topEl.current;
+    const key = topKey.current;
     const sign = dir === "left" ? -1 : 1;
+    const back = () => { if (el && el.isConnected) gsap.to(el, { x: 0, y: 0, rotation: 0, opacity: 1, duration: 0.45, ease: "back.out(1.4)" }); };
     if (el) await gsap.to(el, { x: sign * (el.offsetWidth + 240), rotation: sign * 14, opacity: 0, duration: LEAVE_MS / 1000, ease: "power2.in" });
     try { await act(); }
-    catch (e) { if (el) gsap.to(el, { x: 0, y: 0, rotation: 0, opacity: 1, duration: 0.45, ease: "back.out(1.4)" }); throw e; }
+    catch { back(); return; }
     finally { leaving.current = false; }
+    // Give React a frame to swap the top card; if it is still this one, nothing happened
+    setTimeout(() => { if (topKey.current === key) back(); }, 200);
   };
 
   // What a swipe means on the top card: tone, left is out and right stays; duel, the side it goes to wins
@@ -259,6 +285,7 @@ function Deck({ cards, done, tally, byId, imageOf, tagMap, comments, hasDesignMd
     if (!card) return null;
     if (card.kind === "tone") return { left: () => onOut(card.o), right: () => onKeep(card.o) };
     if (card.kind === "duel") return { left: () => onWin(card.d, card.d.ids[0]), right: () => onWin(card.d, card.d.ids[1]) };
+    if (card.kind === "light") return { left: () => onLightOut(card.l), right: () => onLightKeep(card.l) };
     return null;
   };
 
@@ -285,6 +312,7 @@ function Deck({ cards, done, tally, byId, imageOf, tagMap, comments, hasDesignMd
   const onUp = (e: React.PointerEvent<HTMLElement>, card: Card) => {
     if (!drag.current || drag.current.id !== e.pointerId) return;
     const dx = drag.current.dx; drag.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* already released */ }
     const acts = swipeOf(card);
     if (acts && dx <= -SWIPE) { void answer("left", acts.left); return; }
     if (acts && dx >= SWIPE) { void answer("right", acts.right); return; }
@@ -311,25 +339,98 @@ function Deck({ cards, done, tally, byId, imageOf, tagMap, comments, hasDesignMd
         <div className="polish-run">
           <span className="polish-clean__icon" aria-hidden>{Icons.check}</span>
           <h2 className="display polish-h">{t.polish.clean}</h2>
-          <p className="polish-lead">{total ? t.polish.deckSummary(tally.out, tally.merged, tally.kept + tally.apart) : t.polish.cleanHint}</p>
+          <p className="polish-lead">{t.polish.boardNow(boardSize, noWhy)} {total ? t.polish.deckSummary(tally.out, tally.merged, tally.kept + tally.apart) : t.polish.cleanHint}</p>
           {foot}
         </div>
+        {archive}
       </>
     );
   }
   return (
     <>
       <div className="polish-deck__head">
-        <span className="polish-deck__kind">{top.kind === "tone" ? t.polish.toneTitle : top.kind === "duel" ? t.polish.duelTitle : t.polish.dupesTitle}</span>
-        <span className="polish-deck__n">{t.polish.deckOf(done + 1, total)}</span>
+        <span className="polish-deck__kind">
+          {top.kind === "why" ? t.polish.whyTitle : top.kind === "tone" ? t.polish.toneTitle : top.kind === "duel" ? t.polish.duelTitle : top.kind === "dupe" ? t.polish.dupesTitle : top.kind === "light" ? t.polish.lightTitle : t.polish.gapTitle}
+          <span className={`polish-deck__target${boardSize > BOARD_TARGET ? " is-over" : ""}`} title={t.polish.lightHint(boardSize, BOARD_TARGET)}>{t.polish.target(boardSize, BOARD_TARGET)}</span>
+        </span>
+        <span className="polish-deck__n">
+          {top.kind === "why" && <button type="button" className="polish-deck__skip" onClick={onSkipWhys}>{t.polish.whySkipAll(noWhy)}</button>}
+          {t.polish.deckOf(done + 1, total)}
+        </span>
         <span className="polish-deck__bar" aria-hidden><span style={{ width: `${(done / Math.max(total, 1)) * 100}%` }} /></span>
       </div>
       <div className="polish-deck">
         {cards.slice(0, 3).map((card, depth) => {
           const isTop = depth === 0;
-          const cardIds = card.kind === "tone" ? [card.o.id] : card.kind === "duel" ? card.d.ids : card.g.ids;
+          const cardIds = card.kind === "tone" ? [card.o.id] : card.kind === "duel" ? card.d.ids : card.kind === "dupe" ? card.g.ids : card.kind === "light" ? [card.l.id] : card.kind === "why" ? [card.id] : [];
           const cls = `polish-card polish-card--${card.kind} polish-card--d${depth}${isTop && busy(cardIds) ? " is-busy" : ""}`;
           const refTop = (el: HTMLElement | null) => { if (isTop) topEl.current = el; };
+          if (card.kind === "why") {
+            const i = byId.get(card.id);
+            if (!i) return null;
+            return (
+              <article key={card.key} ref={refTop} className={cls} aria-hidden={!isTop}>
+                <span className="polish-card__shot"><Thumb item={i} image={imageOf(i)} className="polish-card__media" />{isTop && info(i)}</span>
+                {sheet(isTop)}
+                <div className="polish-card__body">
+                  <span className="polish-card__name">{i.name}</span>
+                  <p className="polish-card__hint">{t.polish.whyHint}</p>
+                </div>
+                <div className="polish-chips" role="group" aria-label={t.polish.whyTitle}>
+                  {TAKES.map((k) => (
+                    <Button key={k} variant={takes.includes(k) ? "primary" : "ghost"} className="polish-chip" aria-pressed={takes.includes(k)} disabled={!isTop}
+                      onClick={() => setTakes((x) => (x.includes(k) ? x.filter((y) => y !== k) : [...x, k]))}>{t.polish.takes[k]}</Button>
+                  ))}
+                </div>
+                <input className="input polish-text polish-card__note" value={whyNote} maxLength={WHY_NOTE_MAX} placeholder={t.polish.whyNotePlaceholder} disabled={!isTop}
+                  onChange={(e) => setWhyNote(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (takes.length || whyNote.trim())) void answer("right", () => onWhy(card.id, takes, whyNote)); }} />
+                <div className="polish-card__actions">
+                  <Button variant="ghost" disabled={!isTop} onClick={() => void answer("left", () => onWhy(card.id, [], ""))}>{t.polish.whySkip}</Button>
+                  <Button variant="primary" disabled={!isTop || (!takes.length && !whyNote.trim())} onClick={() => void answer("right", () => onWhy(card.id, takes, whyNote))}>{Icons.check} {t.polish.whySave}</Button>
+                </div>
+              </article>
+            );
+          }
+          if (card.kind === "light") {
+            const i = byId.get(card.l.id);
+            if (!i) return null;
+            return (
+              <article key={card.key} ref={refTop} className={`${cls} polish-card--swipe`} aria-hidden={!isTop}
+                onPointerDown={isTop ? onDown : undefined} onPointerMove={isTop ? onMove : undefined}
+                onPointerUp={isTop ? (e) => onUp(e, card) : undefined} onPointerCancel={isTop ? (e) => onUp(e, card) : undefined}>
+                {isTop && <>
+                  <span ref={stampNo} className="polish-card__stamp polish-card__stamp--no" aria-hidden>{t.polish.lightOut}</span>
+                  <span ref={stampYes} className="polish-card__stamp polish-card__stamp--yes" aria-hidden>{t.polish.lightKeep}</span>
+                </>}
+                <span className="polish-card__shot"><Thumb item={i} image={imageOf(i)} className="polish-card__media" />{isTop && info(i)}</span>
+                {sheet(isTop)}
+                <div className="polish-card__body">
+                  <span className="polish-card__name">{i.name}</span>
+                  <p className="polish-card__reason">{card.l.reason}</p>
+                  <p className="polish-card__hint">{t.polish.lightHint(boardSize, BOARD_TARGET)}</p>
+                </div>
+                <div className="polish-card__actions">
+                  <Button variant="ghost" className="polish-card__no" disabled={!isTop} onClick={() => void answer("left", () => onLightOut(card.l))}>{Icons.x} {t.polish.lightOut}</Button>
+                  <Button variant="primary" className="polish-card__yes" disabled={!isTop} onClick={() => void answer("right", () => onLightKeep(card.l))}>{Icons.check} {t.polish.lightKeep}</Button>
+                </div>
+              </article>
+            );
+          }
+          if (card.kind === "gap") {
+            return (
+              <article key={card.key} ref={refTop} className={cls} aria-hidden={!isTop}>
+                <div className="polish-card__gap" aria-hidden><span className="polish-card__gapmark">{Icons.search}</span></div>
+                <div className="polish-card__body">
+                  <span className="polish-card__name">{t.polish.gapOf(t.polish.takes[card.take])}</span>
+                  <p className="polish-card__hint">{t.polish.gapHint}</p>
+                </div>
+                <div className="polish-card__actions">
+                  <Button variant="ghost" disabled={!isTop} onClick={() => void answer("left", () => onGapOk(card.take))}>{t.polish.gapOk}</Button>
+                  <Button variant="primary" disabled={!isTop} onClick={() => onGapSearch(card.take)}>{Icons.search} {t.polish.gapSearch}</Button>
+                </div>
+              </article>
+            );
+          }
           if (card.kind === "tone") {
             const i = byId.get(card.o.id);
             if (!i) return null;
@@ -442,7 +543,7 @@ function Counter({ value, sample, onFill }: { value: string; sample?: string; on
   );
 }
 
-export default function PolishModal({ project, board, library, tagMap, imageOf, comments, hasDesignMd, onDiscard, onClose }: Props) {
+export default function PolishModal({ project, board, library, tagMap, imageOf, comments, hasDesignMd, archived, onArchive, onSearch, onBrief, onClose }: Props) {
   const { t } = useT();
   const [state, setState] = useState<PolishState | null>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
@@ -475,6 +576,7 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
     setSaving(false);
     if (!r.ok) { setError(r.error); return null; }
     setState(r.data); setDirty(false);
+    onBrief?.(r.data.brief?.about ?? "");
     return r.data;
   }, [project.id, draft]);
 
@@ -503,28 +605,42 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
   // ─── Decisions ───────────────────────────────────────────────────────────
   const byId = useMemo(() => new Map(board.filter((i) => i.id).map((i) => [i.id!, i])), [board]);
   const boardIds = useMemo(() => new Set(byId.keys()), [byId]);
-  const pending = useMemo(() => (state ? pendingOf(state, boardIds) : { dupes: [], offTone: [], duels: [] }), [state, boardIds]);
+  const pending = useMemo(() => (state ? pendingOf(state, boardIds) : { dupes: [], offTone: [], duels: [], light: [] }), [state, boardIds]);
+  // Shows the error and rethrows: the deck needs to know, to bring the card back
   const withBusy = async (ids: string[], fn: () => Promise<void>) => {
     setBusyIds((s) => new Set([...s, ...ids]));
-    try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; }
     finally { setBusyIds((s) => { const n = new Set(s); ids.forEach((id) => n.delete(id)); return n; }); }
   };
-  const decide = async (d: { notDupes?: string[]; keptTone?: string[]; keptDuel?: string[] }) => {
+  const decide = async (d: { notDupes?: string[]; keptTone?: string[]; keptDuel?: string[]; keptLight?: string[] }) => {
     const r = await decidePolish(project.id, d).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) throw new Error(r.error);
     setState(r.data);
   };
-  const keepOne = (g: DupeGroup, keep: string) => withBusy(g.ids, async () => { await onDiscard(g.ids.filter((id) => id !== keep).map((id) => byId.get(id)!).filter(Boolean)); count("merged"); });
+  const toArchive = (ids: string[]) => onArchive(ids.map((id) => byId.get(id)!).filter(Boolean), true);
+  const keepOne = (g: DupeGroup, keep: string) => withBusy(g.ids, async () => { await toArchive(g.ids.filter((id) => id !== keep)); count("merged"); });
   const notDupes = (g: DupeGroup) => withBusy(g.ids, async () => { await decide({ notDupes: g.ids }); count("apart"); });
-  const takeOut = (o: OffTone) => withBusy([o.id], async () => { await onDiscard([byId.get(o.id)!].filter(Boolean)); count("out"); });
+  const takeOut = (o: OffTone) => withBusy([o.id], async () => { await toArchive([o.id]); count("out"); });
   const keepTone = (o: OffTone) => withBusy([o.id], async () => { await decide({ keptTone: [o.id] }); count("kept"); });
   const mergeOne = (g: DupeGroup, keep: string) => withBusy(g.ids, async () => {
     const r = await mergePolish(project.id, keep, g.ids.filter((id) => id !== keep)).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) throw new Error(r.error);
-    await onDiscard(g.ids.filter((id) => id !== keep).map((id) => byId.get(id)!).filter(Boolean));
+    await toArchive(g.ids.filter((id) => id !== keep));
     count("merged");
   });
-  const win = (d: Duel, keep: string) => withBusy(d.ids, async () => { await onDiscard(d.ids.filter((id) => id !== keep).map((id) => byId.get(id)!).filter(Boolean)); count("out"); });
+  const win = (d: Duel, keep: string) => withBusy(d.ids, async () => { await toArchive(d.ids.filter((id) => id !== keep)); count("out"); });
+  const lightOut = (l: Light) => withBusy([l.id], async () => { await toArchive([l.id]); count("out"); });
+  const lightKeep = (l: Light) => withBusy([l.id], async () => { await decide({ keptLight: [l.id] }); count("kept"); });
+  const why = (id: string, takes: Take[], note: string) => withBusy([id], async () => {
+    const r = await savePolishWhy(project.id, id, { takes, note }).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) throw new Error(r.error);
+    setState(r.data); count("why");
+  });
+  // Gaps left as they are, and the whys skipped, for this sitting
+  const [gapsOk, setGapsOk] = useState<Set<Take>>(() => new Set());
+  const [whySkipped, setWhySkipped] = useState(false);
+  const gapOk = async (take: Take) => { setGapsOk((x) => new Set([...x, take])); count("gaps"); };
+  const restore = (i: InspoItem) => withBusy([i.id!], () => onArchive([i], false));
   const both = (d: Duel) => withBusy(d.ids, async () => { await decide({ keptDuel: d.ids }); count("kept"); });
 
   // ─── Tone examples: a reference of the team's with that look, the board first; a bundled cover when they have none ─
@@ -541,15 +657,22 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
   const stale = !!(run0 && state?.brief && state.brief.updatedAt > run0.at);
   const newSince = run0 ? [...boardIds].filter((id) => !run0.itemIds.includes(id)).length : 0;
 
-  // The deck: one card per open question, tone first (a glance each), then the duplicates
+  // The deck: one card per open question. First the polishing (tone, a glance each; duels;
+  // duplicates; size while the board is over the target), then a why for each reference that
+  // survived (a dozen, not the whole board), and last the gaps those whys leave
+  const noWhy = useMemo(() => board.filter((i) => i.id && !state?.whys[i.id] && !whySkipped).map((i) => i.id!), [board, state, whySkipped]);
+  const gaps = useMemo(() => (state ? gapsOf(state.whys, boardIds).filter((g) => !gapsOk.has(g)) : []), [state, boardIds, gapsOk]);
   const cards = useMemo<Card[]>(() => [
     ...pending.offTone.map((o): Card => ({ kind: "tone", key: `t:${o.id}`, o })),
     ...pending.duels.map((d): Card => ({ kind: "duel", key: `v:${d.ids.join("|")}`, d })),
     ...pending.dupes.map((g): Card => ({ kind: "dupe", key: `d:${g.ids.join("|")}`, g })),
-  ], [pending]);
+    ...pending.light.map((l): Card => ({ kind: "light", key: `l:${l.id}`, l })),
+    ...noWhy.map((id): Card => ({ kind: "why", key: `w:${id}`, id })),
+    ...gaps.map((take): Card => ({ kind: "gap", key: `g:${take}`, take })),
+  ], [noWhy, pending, gaps]);
   // What this sitting decided, for the progress and the closing summary; a new run starts over
   const [tally, setTally] = useState<Tally>(EMPTY_TALLY);
-  useEffect(() => { setTally(EMPTY_TALLY); }, [run0?.at]);
+  useEffect(() => { setTally(EMPTY_TALLY); setWhySkipped(false); }, [run0?.at]);
   const count = (k: keyof Tally, n = 1) => setTally((x) => ({ ...x, [k]: x[k] + n }));
 
   return (
@@ -690,7 +813,7 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
                 <p className="polish-lead">{t.polish.secondsHint}</p>
                 <div className="polish-chips" role="group" aria-label={t.polish.secondsLabel}>
                   {t.polish.secondsOptions.map((o) => (
-                    <Button key={o} variant={draft.firstSeconds === o ? "default" : "ghost"} className="polish-chip" aria-pressed={draft.firstSeconds === o} onClick={() => patch({ firstSeconds: o })}>{o}</Button>
+                    <Button key={o} variant={draft.firstSeconds === o ? "primary" : "ghost"} className="polish-chip" aria-pressed={draft.firstSeconds === o} onClick={() => patch({ firstSeconds: o })}>{o}</Button>
                   ))}
                 </div>
                 <div className="field">
@@ -714,11 +837,31 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
                   </div>
                 ) : (
                   <Deck
-                    cards={cards} done={tally.out + tally.kept + tally.merged + tally.apart} tally={tally}
+                    cards={cards} done={tally.out + tally.kept + tally.merged + tally.apart + tally.why + tally.gaps} tally={tally} boardSize={board.length} noWhy={noWhy.length} onSkipWhys={() => setWhySkipped(true)}
                     byId={byId} imageOf={imageOf} tagMap={tagMap} comments={comments} hasDesignMd={hasDesignMd} busy={(ids) => ids.some((id) => busyIds.has(id))}
                     onOut={(o) => takeOut(o)} onKeep={(o) => keepTone(o)}
                     onKeepOne={(g, id) => keepOne(g, id)} onMerge={(g, id) => mergeOne(g, id)} onApart={(g) => notDupes(g)}
                     onWin={(d, id) => win(d, id)} onBoth={(d) => both(d)}
+                    onWhy={(id, takes, note) => why(id, takes, note)}
+                    onLightOut={(l) => lightOut(l)} onLightKeep={(l) => lightKeep(l)}
+                    onGapSearch={(take) => { onSearch(t.polish.takes[take]); onClose(); }} onGapOk={gapOk}
+                    archive={
+                      <details className="polish-archive">
+                        <summary className="polish-archive__sum">{t.polish.archive} <span className="polish-game__n">{archived.length}</span></summary>
+                        <p className="polish-card__hint">{t.polish.archiveHint}</p>
+                        {archived.length ? (
+                          <ul className="polish-archive__list">
+                            {archived.map((i) => (
+                              <li key={i.id} className={busyIds.has(i.id!) ? "is-busy" : ""}>
+                                <Thumb item={i} image={imageOf(i)} />
+                                <span className="polish-card__refname">{i.name}</span>
+                                <Button variant="ghost" size="sm" onClick={() => void restore(i)}>{t.polish.restore}</Button>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : <p className="polish-sheet__muted">{t.polish.archiveEmpty}</p>}
+                      </details>
+                    }
                     foot={
                       <div className="polish-again">
                         {newSince > 0 && <span className="polish-again__note">{t.polish.newSince(newSince)}</span>}

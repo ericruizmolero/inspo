@@ -38,6 +38,11 @@ const I = {
       <path d="M8 2c.6 3.4 2.6 5.4 6 6-3.4.6-5.4 2.6-6 6-.6-3.4-2.6-5.4-6-6 3.4-.6 5.4-2.6 6-6z" />
     </svg>
   ),
+  archive: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="3" width="12" height="3.5" rx="1" /><path d="M3 6.5v5A1.5 1.5 0 004.5 13h7a1.5 1.5 0 001.5-1.5v-5M6.5 9.5h3" />
+    </svg>
+  ),
   // Polish, and nothing else in the app: a solid shine, the one filled icon among strokes
   gem: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -292,6 +297,8 @@ export interface SidebarProps {
   links: ProjectLinks;
   /** Items in the current space: the type rows count these */
   spaceItems: InspoItem[];
+  /** Polish's archive per project: off the board, still the project's */
+  shelf: ProjectLinks;
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
@@ -328,12 +335,14 @@ function NameField({ initial = "", placeholder, onSubmit, onCancel }: {
 }
 
 /** One project in the sidebar: goes to it; its "…" (on hover) renames or deletes it. */
-function ProjectRow({ project, count, active, onClick, onRename, onDelete }: {
-  project: Project; count: number; active: boolean; onClick: () => void; onRename: () => void; onDelete: () => void;
+function ProjectRow({ project, count, active, archived, archiveActive, onClick, onArchive, onRename, onDelete }: {
+  project: Project; count: number; active: boolean; archived: number; archiveActive: boolean;
+  onClick: () => void; onArchive: () => void; onRename: () => void; onDelete: () => void;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
   return (
+    <>
     <SidebarMenuItem className="nav-item--project">
       <SidebarMenuButton isActive={active} onClick={onClick} className="nav-item" title={project.name}>
         <span className="nav-item__icon">{I.folder}</span>
@@ -354,6 +363,17 @@ function ProjectRow({ project, count, active, onClick, onRename, onDelete }: {
         </PopoverContent>
       </Popover>
     </SidebarMenuItem>
+    {/* The project's archive, only once Polish has put something in it; shown under its project while it is open */}
+    {archived > 0 && (active || archiveActive) && (
+      <SidebarMenuItem className="nav-item--sub">
+        <SidebarMenuButton isActive={archiveActive} onClick={onArchive} className="nav-item nav-item--quiet" title={t.projects.archiveHint}>
+          <span className="nav-item__icon">{I.archive}</span>
+          <span className="truncate">{t.projects.archive}</span>
+        </SidebarMenuButton>
+        <SidebarMenuBadge className="nav-item__count">{archived}</SidebarMenuBadge>
+      </SidebarMenuItem>
+    )}
+    </>
   );
 }
 
@@ -375,7 +395,7 @@ function PlanMeter({ quota }: { quota: QuotaView }) {
 /** Everything under the workspace: add, the whole library, the collections, the team, the directory and the plan.
  *  Shared by the docked column, the phone sheet and the island menu that hangs from the top bar pill. */
 export function SidebarNav({ quota, items, members = [], workspaceKind = "team", author, onAuthor, type, isAll, onType, onReset, onAdd, onDirectory, onPick,
-  space, onSpace, projects, links, spaceItems, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
+  space, onSpace, projects, links, shelf, spaceItems, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes; the island menu stays open on purpose) */
   onPick?: () => void;
 }) {
@@ -410,6 +430,11 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
     for (const i of items) for (const p of (i.id && links[i.id]) || []) c[p] = (c[p] ?? 0) + 1;
     return c;
   }, [items, links]);
+  const shelfCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const i of items) for (const p of (i.id && shelf[i.id]) || []) c[p] = (c[p] ?? 0) + 1;
+    return c;
+  }, [items, shelf]);
   // Inside a project the button says where the reference will be filed
   const addTo = projects.find((p) => p.id === space)?.name;
   const inboxCount = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)).length, [items, links]);
@@ -452,7 +477,9 @@ export function SidebarNav({ quota, items, members = [], workspaceKind = "team",
                   onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} onCancel={() => setNaming(null)} />
               ) : (
                 <ProjectRow key={p.id} project={p} count={projectCounts[p.id] ?? 0} active={space === p.id}
+                  archived={shelfCounts[p.id] ?? 0} archiveActive={space === `archive:${p.id}`}
                   onClick={pick(() => onSpace(space === p.id ? "all" : p.id))}
+                  onArchive={pick(() => onSpace(space === `archive:${p.id}` ? p.id : `archive:${p.id}`))}
                   onRename={() => setNaming(p.id)} onDelete={() => onDeleteProject(p)} />
               ))}
               {naming === "new" ? (

@@ -19,7 +19,7 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
 
   const ws = ctx.workspace;
   // Everything the library needs on open, in parallel and before painting
-  const [{ items, thumbnailMap, tagMap }, { projects, links }, members, admin, quota, comments, designMdIndex, open] = await Promise.all([
+  const [{ items, thumbnailMap, tagMap }, { projects, links, shelf }, members, admin, quota, comments, designMdIndex, open] = await Promise.all([
     loadWorkspaceData(ws.id),
     loadProjects(ws.id),
     listMembers(ws.id),
@@ -40,6 +40,7 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
       initialTagMap={tagMap}
       initialProjects={projects}
       initialProjectLinks={links}
+      initialProjectShelf={shelf}
       aiEnabled={!!process.env.TYPESAFE_API_KEY}
       user={ctx.user}
       workspace={ctx.workspace}

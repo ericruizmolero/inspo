@@ -1,0 +1,34 @@
+/* The import page: a tab of its own (the popup would close mid-import), same look as the popup, wider */
+body.page { width: auto; min-height: 100vh; background: var(--bg); }
+.app.import { max-width: 560px; margin: 0 auto; padding: 28px 20px 40px; gap: 22px; }
+.app[data-view="import"] .view[data-view="import"],
+.app[data-view="progress"] .view[data-view="progress"] { display: flex; }
+.import .view { gap: 18px; }
+
+.source { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 12px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--border); }
+.source__title { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
+.row .hint { flex: 1; min-width: 160px; }
+.btn[hidden] { display: none; }
+
+/* Bookmark folders: nested checkboxes, each with how many web pages it holds */
+.tree { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow: auto; padding: 4px 0; }
+.tree:empty { display: none; }
+.tree ul { list-style: none; margin: 0; padding: 0 0 0 20px; }
+.tree > ul { padding-left: 0; }
+.tree label { display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0 6px; border-radius: 6px; cursor: pointer; }
+.tree label:hover { background: var(--surface); }
+.tree input { margin: 0; accent-color: var(--text); }
+.tree .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree .count { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tree li.is-empty > label { color: var(--muted-2); }
+
+/* Progress: a thin bar (indeterminate while X is still being read) and the counts */
+.bar { height: 4px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.bar__fill { height: 100%; width: 0; border-radius: inherit; background: var(--text); transition: width 0.3s; }
+.bar.is-indeterminate .bar__fill { width: 30%; animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
+.counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; margin: 0; }
+.counts div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--border); }
+.counts dt { font-size: 11px; color: var(--muted); }
+.counts dd { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }

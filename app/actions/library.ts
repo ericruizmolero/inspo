@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
 import { addItem, deleteItem, setItemNote } from "@/lib/items";
-import { createProject, renameProject, deleteProject, fileItems, unfileItems } from "@/lib/projects";
+import { createProject, renameProject, deleteProject, fileItems, unfileItems, setArchived } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
@@ -46,6 +46,14 @@ export async function editProject(id: string, name: string) {
 
 export async function removeProject(id: string) {
   return withCtx(async (ctx) => { await deleteProject(ctx.workspace.id, String(id)); });
+}
+
+/** Archives items of a project (on: off the board, still the project's) or brings them back (off). */
+export async function setProjectArchived(projectId: string, itemIds: string[], on: boolean) {
+  return withCtx(async (ctx) => {
+    const ids = Array.isArray(itemIds) ? itemIds.map(String).slice(0, 500) : [];
+    await setArchived(ctx.workspace.id, String(projectId), ids, on);
+  });
 }
 
 /** Files items in a project (on) or takes them out (off). */

@@ -1,12 +1,11 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, setProjectArchived } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useRef, useCallback, memo, type RefObject } from "react";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, memo, type RefObject } from "react";
 import gsap from "gsap";
-import { Flip } from "gsap/Flip";
 import { flushSync } from "react-dom";
 import { InspoItem, FilterType, FilterAuthor, FilterDate, TagMap, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
@@ -108,7 +107,7 @@ const GAP_RATIO = 0.06;
 
 // Columns from the usable content width (window minus sidebar on desktop).
 // Computed synchronously so collapsing the sidebar and reflowing the cards
-// happen in the same render and GSAP Flip can animate it in one go.
+// happen in the same render and the curtain can animate it in one go.
 function columnsFor(winW: number, collapsed: boolean) {
   if (!winW) return 4;
   const desktop = winW >= DESKTOP_MIN;
@@ -144,6 +143,7 @@ export default function InspoClient({
   initialTagMap = {},
   initialProjects = [],
   initialProjectLinks = {},
+  initialProjectShelf = {},
   aiEnabled = false,
   user,
   workspace,
@@ -163,6 +163,8 @@ export default function InspoClient({
   initialTagMap?: TagMap;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
+  /** Archived by Polish: off the board, still the project's (not in the Inbox either) */
+  initialProjectShelf?: ProjectLinks;
   aiEnabled?: boolean;
   user: SessionUser;
   workspace: Workspace;
@@ -207,9 +209,12 @@ export default function InspoClient({
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
   const [projects, setProjects] = useState(initialProjects);
   const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
+  const [shelf, setShelf] = useState<ProjectLinks>(initialProjectShelf);
   const inParam = sp.get("in");
-  const space = inParam === "inbox" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : "all";
-  const currentProject = projects.find((p) => p.id === space) ?? null;
+  // "archive:<project id>" is the project's archive: what Polish took off its board
+  const archiveOf = inParam?.startsWith("archive:") && projects.some((p) => p.id === inParam.slice(8)) ? inParam.slice(8) : null;
+  const space = inParam === "inbox" || archiveOf || (inParam && projects.some((p) => p.id === inParam)) ? inParam! : "all";
+  const currentProject = projects.find((p) => p.id === (archiveOf ?? space)) ?? null;
   const setSpace = useCallback((v: string) => setParams({ in: v }), [setParams]);
   // Adding from inside a project files it there: read at save time, whatever the callback closed over
   const projectRef = useRef<string | null>(null);
@@ -218,9 +223,10 @@ export default function InspoClient({
 
   // The items in the current space (inbox, a project or everything), before any other filter
   const spaceItems = useMemo(() => space === "all" ? items
-    : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
+    : space === "inbox" ? items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length)))
+    : archiveOf ? items.filter((i) => !!i.id && !!shelf[i.id]?.includes(archiveOf))
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
-  [items, links, space]);
+  [items, links, shelf, space, archiveOf]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
 
   // ─── AI: tags and search ────────────────────────────────────────────────────
@@ -503,9 +509,26 @@ export default function InspoClient({
       return { ...prev, [id]: want ? [...cur, projectId] : cur };
     });
     flip(on);
+    // Filing an archived reference again brings it back to the board (the server does the same)
+    if (on) setShelf((prev) => (prev[id]?.includes(projectId) ? { ...prev, [id]: prev[id].filter((x) => x !== projectId) } : prev));
     const r = await setFiled(projectId, [id], on).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); }
   }, []);
+  /** Polish's archive: off the board but still the project's (on), or back on it (off) */
+  const setProjectArchive = useCallback(async (picked: InspoItem[], projectId: string, on: boolean) => {
+    const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+    const move = (from: ProjectLinks, to: ProjectLinks) => {
+      const f = { ...from }, t = { ...to };
+      for (const id of ids) { f[id] = (f[id] ?? []).filter((p) => p !== projectId); t[id] = [...(t[id] ?? []).filter((p) => p !== projectId), projectId]; }
+      return [f, t] as const;
+    };
+    const prevLinks = links, prevShelf = shelf;
+    const [a, b] = on ? move(links, shelf) : move(shelf, links);
+    if (on) { setLinks(a); setShelf(b); } else { setShelf(a); setLinks(b); }
+    const r = await setProjectArchived(projectId, ids, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setLinks(prevLinks); setShelf(prevShelf); projectFailed(new Error(r.error)); throw new Error(r.error); }
+  }, [links, shelf]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
     const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
@@ -824,7 +847,7 @@ export default function InspoClient({
   const triggerLabel = isMobile ? t.app.menu : collapsed ? t.app.showSidebar : t.app.hideSidebar;
   // Desktop, sidebar collapsed: the island pill sits over the topbar and says what the breadcrumb said
   const island = !isMobile && collapsed;
-  const spaceLabel = space === "inbox" ? t.projects.inbox : currentProject?.name;
+  const spaceLabel = space === "inbox" ? t.projects.inbox : archiveOf && currentProject ? t.projects.archiveOf(currentProject.name) : currentProject?.name;
   const typeLabel = type === "all" ? null : t.labels.type[type];
   const viewLabel = spaceLabel ? (typeLabel ? `${spaceLabel} · ${typeLabel}` : spaceLabel) : typeLabel ?? t.sidebar.all;
   // Everything under the workspace, shared by the docked column and the island menu
@@ -832,7 +855,7 @@ export default function InspoClient({
     quota, items, members, workspaceKind: workspace.kind, author, onAuthor: setAuthor, type,
     isAll: space === "all" && type === "all" && author === "all" && date === "all" && !query && sector === "all" && style === "all" && selTags.length === 0,
     onType: setType, onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
-    space, onSpace: setSpace, projects, links, spaceItems,
+    space, onSpace: setSpace, projects, links, shelf, spaceItems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
   const gridRef = useRef<HTMLElement>(null);
@@ -906,8 +929,9 @@ export default function InspoClient({
     for (const item of filtered) {
       let c = 0;
       for (let i = 1; i < numCols; i++) if (y[i] + count[i] * GAP_RATIO < y[c] + count[c] * GAP_RATIO - 0.001) c = i;
-      slots.push({ item, c, y: y[c], k: count[c] });
-      y[c] += ratiosRef.current[item.web] ?? DEFAULT_RATIO;
+      const h = ratiosRef.current[item.web] ?? DEFAULT_RATIO;
+      slots.push({ item, c, y: y[c], k: count[c], h });
+      y[c] += h;
       count[c]++;
     }
     // The tallest column decides the height, but which one is tallest depends on the column width in px,
@@ -918,31 +942,46 @@ export default function InspoClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, numCols, ratiosVersion]);
 
+  // Cards in flight from the last relayout: the next one lands them first
+  const flying = useRef<{ els: HTMLElement[]; anims: Animation[] } | null>(null);
   const relayout = () => {
     try { localStorage.setItem(RATIOS_KEY, JSON.stringify(ratiosRef.current)); } catch { /* no storage */ }
     if (entering.current) { pendingRelayout.current = true; return; }
     pendingRelayout.current = false;
-    gsap.registerPlugin(Flip);
-    // Only the cards on screen fly, and only with transforms: measuring all 125 took half a second in WebKit,
-    // and animating width and height relaid out the whole grid on every frame. That was the freeze.
-    Flip.killFlipsOf(".card-item", true);
+    // Only the cards on screen fly, and only with transforms. All the "before" boxes are read first, then the
+    // new layout is committed, then all the "after" boxes are read: one layout for the lot. (GSAP's Flip read
+    // and wrote card by card, a forced layout each: 150 ms for 15 cards, seconds for a whole board.)
+    if (flying.current) { for (const a of flying.current.anims) a.cancel(); for (const el of flying.current.els) el.style.transformOrigin = ""; flying.current = null; }
     const cards = Array.from(document.querySelectorAll<HTMLElement>(".card-item")).filter(nearViewport);
-    const state = Flip.getState(cards, { simple: true });
+    const before = cards.map((el) => el.getBoundingClientRect());
     flushSync(() => setRatiosVersion((v) => v + 1));
-    const clear = () => gsap.set(cards, { clearProps: "transform" });
-    Flip.from(state, {
-      targets: cards,
-      duration: 0.4,
-      ease: "power2.inOut",
-      scale: true,
-      onComplete: clear,
-      onInterrupt: clear,
+    const anims: Animation[] = [];
+    const els: HTMLElement[] = [];
+    const opts: KeyframeAnimationOptions = { duration: 400, easing: "cubic-bezier(0.45, 0, 0.55, 1)" };
+    const after = cards.map((el) => el.getBoundingClientRect());
+    cards.forEach((el, i) => {
+      const b = before[i], a = after[i];
+      if (!a.width || !a.height || !el.isConnected) return;
+      const dx = b.left - a.left, dy = b.top - a.top, sx = b.width / a.width, sy = b.height / a.height;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.002 && Math.abs(sy - 1) < 0.002) return;
+      el.style.transformOrigin = "0 0";
+      els.push(el);
+      anims.push(el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: "none" }], opts));
     });
+    const run = { els, anims };
+    flying.current = run;
+    Promise.all(anims.map((a) => a.finished)).then(() => {
+      if (flying.current !== run) return;
+      flying.current = null;
+      for (const el of els) el.style.transformOrigin = "";
+    }, () => { /* cancelled by the next relayout, which cleaned up */ });
   };
   const relayoutRef = useRef(relayout);
   relayoutRef.current = relayout;
 
-  // Measures each card when its size changes (image loaded, new thumbnail…)
+  // Measures each card when its size changes (image loaded, new thumbnail…). The grid hands it the cards it
+  // mounts between layouts too (scrolling brings new ones in), through cardObserver.
+  const cardObserver = useRef<ResizeObserver | null>(null);
   useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
@@ -964,7 +1003,8 @@ export default function InspoClient({
       timer = window.setTimeout(() => relayoutRef.current(), 200);
     });
     grid.querySelectorAll<HTMLElement>(".card-item").forEach((el) => ro.observe(el));
-    return () => { ro.disconnect(); window.clearTimeout(timer); };
+    cardObserver.current = ro;
+    return () => { cardObserver.current = null; ro.disconnect(); window.clearTimeout(timer); };
   }, [layout]);
 
   useEffect(() => {
@@ -1046,7 +1086,10 @@ export default function InspoClient({
           imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
           comments={commentMap}
           hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
-          onDiscard={async (picked) => { for (const i of picked) await toggleFiled(i, currentProject.id, false); }}
+          archived={items.filter((i) => i.id && shelf[i.id]?.includes(currentProject.id))}
+          onArchive={(picked, on) => setProjectArchive(picked, currentProject.id, on)}
+          onSearch={(q) => { setSpace("all"); setQuery(q); }}
+          onBrief={(about) => setProjects((prev) => prev.map((p) => (p.id === currentProject.id ? { ...p, intent: about || null } : p)))}
           onClose={() => setShowPolish(false)}
         />
       )}
@@ -1141,6 +1184,7 @@ export default function InspoClient({
               <BreadcrumbItem>
                 <BreadcrumbPage className="topbar__title">{viewLabel}</BreadcrumbPage>
                 <span className="topbar__count">{filtered.length}</span>
+                {currentProject?.intent && !archiveOf && <span className="topbar__intent" title={currentProject.intent}>{currentProject.intent}</span>}
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -1149,7 +1193,7 @@ export default function InspoClient({
           {/* The main search always looks like the AI search (spark + "Describe what you are after"), as the sidebar box did */}
           <SearchBox className="topbar__search" value={query} onChange={setQuery}
             ai aiLoading={aiLoading} shortcut />
-          {currentProject && (
+          {currentProject && !archiveOf && (
             <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
           )}
           <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
@@ -1246,7 +1290,7 @@ export default function InspoClient({
           </div>
         ) : (
           <Grid
-            gridRef={gridRef} layout={layout} tagMap={tagMap}
+            gridRef={gridRef} cardObserver={cardObserver} layout={layout} tagMap={tagMap}
             aiScores={ai ? aiScores : null} aiReasons={ai ? aiReasons : null}
             commentMap={commentMap} authorImages={authorImages} thumbMap={thumbMap} designMdJobs={designMdJobs} designMdIndex={designMdIndex}
             projects={projects} links={links}
@@ -1269,11 +1313,62 @@ interface GridActions {
 }
 
 /** The masonry. Memoised: it re-renders on new data (items, tags, comments, covers), not on shell state. */
-interface GridSlot { item: InspoItem; c: number; y: number; k: number }
+/** A card's column, its offset and height in column widths, and its index in the column */
+interface GridSlot { item: InspoItem; c: number; y: number; k: number; h: number }
 interface GridLayout { n: number; slots: GridSlot[]; height: string }
 
-const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, projects, links, actions }: {
+/** Cards the server renders before the window is known: enough to fill any first screen */
+const FIRST_CARDS = 48;
+/** Screens above and below the viewport that stay rendered, so a flick of the wheel never meets a hole */
+const OVERSCAN = 1;
+
+/** Only the cards near the viewport exist in the DOM. The layout knows each card's column, offset and
+ *  height in column widths; with the column's width in px that is its box, and a scroll just keeps the
+ *  ones within a screen of the viewport. A board of 300 or 3000 costs what a few screens cost.
+ *  Cards keep their key, so one that stays in view keeps its DOM node and images across layouts. */
+function useWindowed(gridRef: RefObject<HTMLElement | null>, layout: GridLayout): GridSlot[] {
+  const [shown, setShown] = useState<GridSlot[] | null>(null);
+  const sig = useRef("");
+  useLayoutEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    sig.current = "";
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const cs = getComputedStyle(el);
+      const pad = parseFloat(cs.getPropertyValue("--m-pad")) || 0;
+      const padTop = parseFloat(cs.getPropertyValue("--m-pad-top")) || 0;
+      const gap = parseFloat(cs.getPropertyValue("--m-gap")) || 0;
+      const col = (el.clientWidth - 2 * pad - (layout.n - 1) * gap) / layout.n;
+      const top = el.getBoundingClientRect().top, vh = window.innerHeight;
+      const lo = -top - vh * OVERSCAN, hi = -top + vh * (1 + OVERSCAN);
+      const next: GridSlot[] = [];
+      let key = "";
+      for (let i = 0; i < layout.slots.length; i++) {
+        const s = layout.slots[i];
+        const y0 = padTop + s.y * col + s.k * gap;
+        if (y0 > hi || y0 + s.h * col < lo) continue;
+        next.push(s); key += i + ",";
+      }
+      if (key === sig.current) return;
+      sig.current = key;
+      setShown(next);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    const ro = new ResizeObserver(schedule);
+    ro.observe(el);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule); ro.disconnect(); };
+  }, [gridRef, layout]);
+  return shown ?? layout.slots.slice(0, FIRST_CARDS);
+}
+
+const Grid = memo(function Grid({ gridRef, cardObserver, layout, tagMap, aiScores, aiReasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, projects, links, actions }: {
   gridRef: RefObject<HTMLElement | null>;
+  cardObserver: RefObject<ResizeObserver | null>;
   layout: GridLayout;
   tagMap: TagMap;
   aiScores: Record<string, number> | null | undefined;
@@ -1287,11 +1382,13 @@ const Grid = memo(function Grid({ gridRef, layout, tagMap, aiScores, aiReasons, 
   links: ProjectLinks;
   actions: RefObject<GridActions>;
 }) {
+  const shown = useWindowed(gridRef, layout);
   return (
     <div className="masonry-wrap">
       <section ref={gridRef} className="masonry" style={{ "--n": layout.n, height: layout.height } as React.CSSProperties}>
-        {layout.slots.map(({ item, c, y, k }) => (
-          <div key={item.web} className="card-item" data-flip-id={item.web} style={{ "--c": c, "--y": y.toFixed(4), "--k": k } as React.CSSProperties}>
+        {shown.map(({ item, c, y, k }) => (
+          <div key={item.web} className="card-item" data-flip-id={item.web} style={{ "--c": c, "--y": y.toFixed(4), "--k": k } as React.CSSProperties}
+            ref={(el) => { if (!el) return; cardObserver.current?.observe(el); return () => cardObserver.current?.unobserve(el); }}>
             <Card
               item={item}
               tags={tagMap[item.web]}

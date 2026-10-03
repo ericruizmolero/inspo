@@ -112,6 +112,12 @@ h1, p { margin: 0; }
 .input--note { height: auto; min-height: 58px; padding: 8px 12px; resize: none; font: inherit; font-size: 13px; line-height: 1.4; }
 .input--note[hidden] { display: none; }
 
+/* Import row: what is saved elsewhere, one tap away under Save */
+.import-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
+.import-row__label { flex-basis: 100%; font-size: 11px; color: var(--muted); }
+.btn--small { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 8px; gap: 6px; }
+.btn--small svg { flex-shrink: 0; }
+
 /* "I already have a key": quiet, folded away under the card */
 .paste { }
 .paste summary { list-style: none; font-size: 12px; color: var(--muted); cursor: pointer; width: fit-content; }

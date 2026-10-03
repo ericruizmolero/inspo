@@ -13,7 +13,7 @@ export interface InspoItem {
 }
 
 // ─── Projects ────────────────────────────────────────────────────────────────
-export interface Project { id: string; name: string }
+export interface Project { id: string; name: string; /** The one sentence the project opens with (Polish brief): what it is, in the team's words */ intent?: string | null }
 /** item id → ids of the projects it is filed in (none = Inbox) */
 export type ProjectLinks = Record<string, string[]>;
 

@@ -1,23 +1,238 @@
 {
-  "extDescription": { "message": "Guarda la web que estás viendo en tu librería de criterio.design con un clic." },
-  "actionTitle": { "message": "Guardar en criterio.design" },
-  "lead": { "message": "Guarda la web que estás viendo en tu librería." },
-  "connect": { "message": "Conectar con criterio.design" },
-  "haveKey": { "message": "Ya tengo una llave" },
-  "useKey": { "message": "Usar esta llave" },
-  "save": { "message": "Guardar" },
-  "noteHint": { "message": "¿Qué te ha llamado la atención? Un sonido, una transición, el menú… (opcional)" },
-  "saving": { "message": "Guardando…" },
-  "viewOn": { "message": "Ver en criterio.design" },
-  "disconnect": { "message": "Desconectar" },
-  "yourLibrary": { "message": "tu librería" },
-  "notWebsite": { "message": "Esta pestaña no es una web" },
-  "onlyHttp": { "message": "Solo se pueden guardar páginas http(s)." },
-  "alreadySaved": { "message": "Ya está guardada en $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
-  "alreadySavedBy": { "message": "Ya está guardada en $WS$ (por $WHO$).", "placeholders": { "ws": { "content": "$1", "example": "Studio" }, "who": { "content": "$2", "example": "Ana" } } },
-  "savedIn": { "message": "Guardada en $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
-  "keyInvalid": { "message": "La llave ya no vale. Vuelve a conectar." },
-  "keyBadFormat": { "message": "Esa llave no tiene buena pinta: empieza por crit_." },
-  "disconnected": { "message": "Desconectada. La llave ha quedado revocada." },
-  "errorStatus": { "message": "Error $STATUS$", "placeholders": { "status": { "content": "$1", "example": "500" } } }
+  "extDescription": {
+    "message": "Guarda la web que estás viendo en tu librería de criterio.design con un clic."
+  },
+  "actionTitle": {
+    "message": "Guardar en criterio.design"
+  },
+  "lead": {
+    "message": "Guarda la web que estás viendo en tu librería."
+  },
+  "connect": {
+    "message": "Conectar con criterio.design"
+  },
+  "haveKey": {
+    "message": "Ya tengo una llave"
+  },
+  "useKey": {
+    "message": "Usar esta llave"
+  },
+  "save": {
+    "message": "Guardar"
+  },
+  "noteHint": {
+    "message": "¿Qué te ha llamado la atención? Un sonido, una transición, el menú… (opcional)"
+  },
+  "saving": {
+    "message": "Guardando…"
+  },
+  "viewOn": {
+    "message": "Ver en criterio.design"
+  },
+  "disconnect": {
+    "message": "Desconectar"
+  },
+  "yourLibrary": {
+    "message": "tu librería"
+  },
+  "notWebsite": {
+    "message": "Esta pestaña no es una web"
+  },
+  "onlyHttp": {
+    "message": "Solo se pueden guardar páginas http(s)."
+  },
+  "alreadySaved": {
+    "message": "Ya está guardada en $WS$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "alreadySavedBy": {
+    "message": "Ya está guardada en $WS$ (por $WHO$).",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      },
+      "who": {
+        "content": "$2",
+        "example": "Ana"
+      }
+    }
+  },
+  "savedIn": {
+    "message": "Guardada en $WS$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "keyInvalid": {
+    "message": "La llave ya no vale. Vuelve a conectar."
+  },
+  "keyBadFormat": {
+    "message": "Esa llave no tiene buena pinta: empieza por crit_."
+  },
+  "disconnected": {
+    "message": "Desconectada. La llave ha quedado revocada."
+  },
+  "errorStatus": {
+    "message": "Error $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1",
+        "example": "500"
+      }
+    }
+  },
+  "importTitle": {
+    "message": "Importa tus marcadores"
+  },
+  "importLead": {
+    "message": "Trae a $WS$ lo que ya tenías guardado en otros sitios. Cada dirección se guarda como si la hubieras pegado: nombre, miniatura y etiquetas llegan solos.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "importConnectFirst": {
+    "message": "Conecta primero la extensión y vuelve aquí."
+  },
+  "browserTitle": {
+    "message": "De este navegador"
+  },
+  "browserLead": {
+    "message": "Elige las carpetas. Solo se importan páginas web; los nombres de las carpetas se quedan aquí."
+  },
+  "browserEmpty": {
+    "message": "No hay marcadores en este navegador."
+  },
+  "bookmarksRoot": {
+    "message": "Marcadores"
+  },
+  "selectedCount": {
+    "message": "$N$ webs seleccionadas",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "importBrowser": {
+    "message": "Importar la selección"
+  },
+  "xTitle": {
+    "message": "De X"
+  },
+  "xLead": {
+    "message": "Abre tus guardados de x.com en una pestaña nueva y los recorre; cada post que encuentra se guarda aquí. Deja esa pestaña abierta hasta que termine. Tienes que tener la sesión de X iniciada en este navegador."
+  },
+  "importX": {
+    "message": "Importar de X"
+  },
+  "xPermission": {
+    "message": "Chrome pide permiso para leer x.com; solo se usa mientras importa."
+  },
+  "xPermissionDenied": {
+    "message": "Sin permiso para leer x.com la extensión no puede ver tus guardados."
+  },
+  "xNotLoggedIn": {
+    "message": "No tienes la sesión de X iniciada en este navegador. Inicia sesión y vuelve a probar."
+  },
+  "xTabClosed": {
+    "message": "Se cerró la pestaña de X. Lo encontrado hasta ahora queda guardado."
+  },
+  "xInjectFailed": {
+    "message": "No se pudo leer la pestaña de X: $ERR$",
+    "placeholders": {
+      "err": {
+        "content": "$1",
+        "example": "…"
+      }
+    }
+  },
+  "progressBrowser": {
+    "message": "Importando marcadores…"
+  },
+  "progressX": {
+    "message": "Leyendo tus guardados de X…"
+  },
+  "found": {
+    "message": "encontrados"
+  },
+  "saved": {
+    "message": "guardados"
+  },
+  "already": {
+    "message": "ya estaban"
+  },
+  "skipped": {
+    "message": "no son webs"
+  },
+  "failed": {
+    "message": "fallidos"
+  },
+  "stop": {
+    "message": "Parar"
+  },
+  "doneSaved": {
+    "message": "Listo: $N$ referencias nuevas en $WS$. Miniaturas y etiquetas van llegando en los próximos minutos.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "48"
+      },
+      "ws": {
+        "content": "$2",
+        "example": "Studio"
+      }
+    }
+  },
+  "nothingNew": {
+    "message": "Nada nuevo: todo estaba ya en $WS$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "nothingFound": {
+    "message": "No se ha encontrado nada."
+  },
+  "tooMany": {
+    "message": "Como mucho $N$ de una vez: se importan las primeras $N$ y el resto en otra pasada.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "1000"
+      }
+    }
+  },
+  "openLibrary": {
+    "message": "Abrir la librería"
+  },
+  "importMore": {
+    "message": "Importar más"
+  },
+  "doneTitle": {
+    "message": "Importación terminada"
+  },
+  "importLabel": {
+    "message": "Importar"
+  },
+  "importXShort": {
+    "message": "Guardados de X"
+  },
+  "importBrowserShort": {
+    "message": "Marcadores de Chrome"
+  }
 }
