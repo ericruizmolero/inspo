@@ -13,6 +13,9 @@ const C = schema.inspoComment;
 const P = schema.project;
 const U = schema.user;
 
+/** What a line points at: an option tried on the sample (the choice to put back, and how it reads) or a reference */
+export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string };
+
 export interface AreaNote {
   id: string;
   /** "area": written about the area; "ref": said on one of its references (itemId) */
@@ -20,6 +23,7 @@ export interface AreaNote {
   itemId?: string;
   authorId: string | null; authorName: string; authorImage: string | null;
   body: string; createdAt: string;
+  about?: AreaAbout;
   /** Written by whoever asks: they can delete it */
   mine: boolean;
 }
@@ -27,6 +31,22 @@ export interface AreaNote {
 const BODY_MAX = 2000;
 /** Comments on the references that come into the thread: the latest ones */
 const REF_NOTES = 12;
+
+/** Only what the sample understands: short scalar values under known keys, and a short label */
+const CHOICE_KEYS = ["bg", "ink", "accent", "light", "radius", "easing", "durationMs", "headline", "subline"];
+function cleanAbout(v: unknown): AreaAbout | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  if (typeof o.itemId === "string" && o.itemId) return { itemId: o.itemId.slice(0, 40) };
+  if (!o.choice || typeof o.choice !== "object") return null;
+  const choice: Record<string, string | number | boolean> = {};
+  for (const [k, x] of Object.entries(o.choice as Record<string, unknown>)) {
+    if (!CHOICE_KEYS.includes(k)) continue;
+    if (typeof x === "string" && x) choice[k] = x.slice(0, 160); else if (typeof x === "number" && Number.isFinite(x) || typeof x === "boolean") choice[k] = x as number | boolean;
+  }
+  const label = String(o.label ?? "").trim().slice(0, 80);
+  return Object.keys(choice).length && label ? { choice, label } : null;
+}
 
 async function assertProject(organizationId: string, projectId: string) {
   const [p] = await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
@@ -43,7 +63,7 @@ export async function areaThread(organizationId: string, projectId: string, area
   const key = await assertArea(area);
   const ids = itemIds.slice(0, 60);
   const [own, onRefs] = await Promise.all([
-    db.select({ id: A.id, authorId: A.authorId, authorName: A.authorName, authorImage: U.image, body: A.body, createdAt: A.createdAt })
+    db.select({ id: A.id, authorId: A.authorId, authorName: A.authorName, authorImage: U.image, body: A.body, about: A.about, createdAt: A.createdAt })
       .from(A).leftJoin(U, eq(U.id, A.authorId))
       .where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId), eq(A.area, key))).orderBy(asc(A.createdAt)),
     ids.length
@@ -53,20 +73,21 @@ export async function areaThread(organizationId: string, projectId: string, area
       : Promise.resolve([]),
   ]);
   const notes: AreaNote[] = [
-    ...own.map((r) => ({ ...r, kind: "area" as const, mine: r.authorId === userId, authorImage: r.authorImage ?? null, createdAt: r.createdAt.toISOString() })),
+    ...own.map(({ about, ...r }) => ({ ...r, kind: "area" as const, mine: r.authorId === userId, authorImage: r.authorImage ?? null, createdAt: r.createdAt.toISOString(), ...(cleanAbout(about) ? { about: cleanAbout(about)! } : {}) })),
     ...onRefs.filter((r) => r.body.trim()).slice(-REF_NOTES).map((r) => ({ ...r, kind: "ref" as const, mine: false, authorImage: r.authorImage ?? null, createdAt: r.createdAt.toISOString() })),
   ];
   return notes.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
-export async function addAreaComment(organizationId: string, projectId: string, area: string, body: string, author: { id: string; name: string; image?: string | null }): Promise<AreaNote> {
+export async function addAreaComment(organizationId: string, projectId: string, area: string, body: string, author: { id: string; name: string; image?: string | null }, aboutIn?: unknown): Promise<AreaNote> {
   await assertProject(organizationId, projectId);
   const key = await assertArea(area);
   const text = String(body ?? "").trim().slice(0, BODY_MAX);
   if (!text) throw new HttpError(400, (await getErrors()).badBody);
-  const row = { id: newId(), projectId, organizationId, area: key, authorId: author.id, authorName: author.name, body: text, createdAt: new Date() };
+  const about = cleanAbout(aboutIn);
+  const row = { id: newId(), projectId, organizationId, area: key, authorId: author.id, authorName: author.name, body: text, about, createdAt: new Date() };
   await db.insert(A).values(row);
-  return { id: row.id, kind: "area", authorId: author.id, authorName: author.name, authorImage: author.image ?? null, body: text, createdAt: row.createdAt.toISOString(), mine: true };
+  return { id: row.id, kind: "area", authorId: author.id, authorName: author.name, authorImage: author.image ?? null, body: text, createdAt: row.createdAt.toISOString(), mine: true, ...(about ? { about } : {}) };
 }
 
 /** Only whoever wrote it removes it */

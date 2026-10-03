@@ -502,6 +502,8 @@ export const systemAreaComment = pgTable("system_area_comment", {
   /** Name at the time of writing (in case the user is gone) */
   authorName: text("author_name").notNull(),
   body: text("body").notNull(),
+  /** What the line is about: an option tried on the sample ({ choice, label }) or a reference ({ itemId }). Null: the area as a whole */
+  about: jsonb("about").$type<unknown>(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("system_area_comment_project_idx").on(t.projectId, t.area, t.createdAt),

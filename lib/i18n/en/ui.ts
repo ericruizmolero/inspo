@@ -1178,5 +1178,7 @@ export const ui = {
     send: "Send",
     on: (name: string): string => `on ${name}`,
     remove: "Delete",
+    about: "About",
+    tryIt: "Put it on the sample",
   },
 };

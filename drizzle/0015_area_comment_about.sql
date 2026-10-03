@@ -1,0 +1,1 @@
+ALTER TABLE "system_area_comment" ADD COLUMN "about" jsonb;

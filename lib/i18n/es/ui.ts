@@ -1176,5 +1176,7 @@ export const ui: typeof EnUi = {
     send: "Enviar",
     on: (name: string): string => `en ${name}`,
     remove: "Borrar",
+    about: "Sobre",
+    tryIt: "Ponerlo en la muestra",
   },
 };

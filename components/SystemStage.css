@@ -45,6 +45,13 @@
 .ath-note:hover .ath-note__x, .ath-note__x:focus-visible { opacity: 1; } .ath-note__x:hover { color: var(--text); }
 .ath-note__text { margin: 3px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; }
 .ath-form { display: flex; flex-direction: column; gap: 8px; }
+/* What a line points at: the option tried on the sample (a dot, touching it puts the sample back on it) or a reference */
+.ath-tag { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 24px; margin-top: 5px; padding: 0 9px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ath-tag i { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--muted); }
+.ath-tag:hover { color: var(--text); background: var(--surface-3); }
+.ath-tag.is-on { color: var(--text); background: var(--surface-3); } .ath-tag.is-on i { background: var(--success); }
+.ath-about { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.ath-about .ath-tag { margin-top: 0; }
 .ath-form textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 60px; padding: 9px 11px; border: 0; border-radius: 11px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 13.5px; line-height: 1.45; outline: none; }
 .ath-send { align-self: flex-end; height: 30px; padding: 0 13px; border: 0; border-radius: 9px; background: var(--text); color: var(--bg); font: inherit; font-size: 13px; cursor: pointer; }
 .ath-send:disabled { opacity: 0.4; cursor: default; }
