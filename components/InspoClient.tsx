@@ -1030,7 +1030,7 @@ export default function InspoClient({
   // moves the pointer away from it), read from the DOM so no card re-renders for it
   const hovered = useRef<{ id: string; at: number } | null>(null);
   useEffect(() => {
-    const over = (e: MouseEvent) => { const el = (e.target as HTMLElement | null)?.closest?.("[data-id].tile, [data-id].sysn-ref") as HTMLElement | null; if (el?.dataset.id) hovered.current = { id: el.dataset.id, at: Date.now() }; };
+    const over = (e: MouseEvent) => { const el = (e.target as HTMLElement | null)?.closest?.("[data-id].tile, [data-id].sysf-ref") as HTMLElement | null; if (el?.dataset.id) hovered.current = { id: el.dataset.id, at: Date.now() }; };
     document.addEventListener("mouseover", over);
     return () => document.removeEventListener("mouseover", over);
   }, []);
@@ -1056,7 +1056,7 @@ export default function InspoClient({
   }, [setQuery, setSpace, setProjectView]);
   const askAgent = useCallback(async (text: string) => {
     setAgent({ text, busy: true, done: [], pending: [] });
-    const picked = [...document.querySelectorAll<HTMLElement>(".sysn-ref.is-picked[data-id]")].map((el) => el.dataset.id!).filter(Boolean);
+    const picked = [...document.querySelectorAll<HTMLElement>(".sysf-ref.is-picked[data-id]")].map((el) => el.dataset.id!).filter(Boolean);
     const scope = {
       projectId: currentProject?.id ?? null, space, view: currentProject ? projectView : null, area: currentProject && projectView === "system" ? openArea : null,
       openItemId: panelItem?.id ?? null, hoverItemId: hovered.current && Date.now() - hovered.current.at < 12000 ? hovered.current.id : null, pickedIds: picked, recentIds: recentIds.current,

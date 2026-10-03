@@ -14,7 +14,7 @@ import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, und
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
-import { AreaTabs, RefStrip, Thumb, TypeTester } from "./SystemStage";
+import { AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -75,8 +75,8 @@ function bezierOf(easing: string): [number, number, number, number] {
 
 // ─── Specimens ───────────────────────────────────────────────────────────────
 
-function Palette({ vs }: { vs: RefVisual[] }) {
-  const colors = palette(vs);
+function Palette({ vs, max }: { vs: RefVisual[]; max?: number }) {
+  const colors = palette(vs, max);
   if (!colors.length) return null;
   return (
     <div className="sysv-palette">
@@ -238,7 +238,7 @@ interface TileProps {
   curating: boolean;
   /** On the stage the material (specimen, table) is shown beside the card, not inside it */
   stage?: boolean;
-  /** Picking references on the ring for this area: how many are chosen, and the controls */
+  /** Picking, among the area's references on its stage, the ones it should be decided from: how many are chosen, and the controls */
   picking: { active: boolean; count: number; start: () => void; stop: () => void; propose: () => Promise<AreaOption[]> } | null;
 }
 
@@ -388,63 +388,30 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
   );
 }
 
-// ─── Mini specimens for the nodes ─────────────────────────────────────────────
+// ─── The bento: what each area shows on its tile ───────────────────────────────
 
-function MiniSpecimen({ area, vs, sample }: { area: SystemAreaState; vs: RefVisual[]; sample: string }) {
-  switch (area.area) {
-    case "color": { const cs = palette(vs, 5); return cs.length ? <span className="sysn-mini sysn-mini--colors">{cs.map((c) => <i key={c.hex} style={{ background: c.hex }} />)}</span> : null; }
-    case "typography": { const f = families(vs); const d = f.find((x) => x.role === "display") ?? f[0]; return d ? <span className="sysn-mini sysn-mini--type" style={{ fontFamily: fontStack(d.family) }}>Aa</span> : null; }
-    case "layout": { const r = radii(vs)[0]; return <span className="sysn-mini sysn-mini--layout"><i style={{ borderRadius: r?.value ?? "4px" }} /><i style={{ borderRadius: r?.value ?? "4px" }} /><i style={{ borderRadius: r?.value ?? "4px" }} /></span>; }
-    case "motion": { const [x1, y1, x2, y2] = bezierOf(vs.find((v) => v.easing)?.easing ?? "ease"); return <svg className="sysn-mini sysn-mini--motion" viewBox="0 0 40 24" aria-hidden><path d={`M 2 22 C ${2 + x1 * 36} ${22 - y1 * 20}, ${2 + x2 * 36} ${22 - y2 * 20}, 38 2`} /></svg>; }
-    case "imagery": { const img = vs.map((v) => v.cover).find(Boolean); return img ? <span className="sysn-mini sysn-mini--img"><img src={img} alt="" loading="lazy" decoding="async" /></span> : null; }
-    case "logo": { const img = vs.map((v) => v.logo).find(Boolean); return img ? <span className="sysn-mini sysn-mini--img"><img src={img} alt="" loading="lazy" decoding="async" /></span> : null; }
-    case "iconography": { const ic = vs.flatMap((v) => v.icons).slice(0, 3); return ic.length ? <span className="sysn-mini sysn-mini--icons">{ic.map((svg, i) => <i key={i} dangerouslySetInnerHTML={{ __html: svg }} />)}</span> : null; }
-    case "voice": return area.decision ? <span className="sysn-mini sysn-mini--voice">“</span> : null;
-  }
-}
-
-// ─── Laying out the sea ─────────────────────────────────────────────────────────
-
-interface Pt { x: number; y: number }
-const TAU = Math.PI * 2;
-const polar = (c: Pt, rx: number, ry: number, a: number): Pt => ({ x: c.x + Math.cos(a) * rx, y: c.y + Math.sin(a) * ry });
-/** A soft connector: it leaves along the longer axis and arrives the same way, so links never cut across each other at odd angles */
-const link = (a: Pt, b: Pt) => {
-  const dx = b.x - a.x, dy = b.y - a.y;
-  return Math.abs(dx) > Math.abs(dy)
-    ? `M${a.x} ${a.y}C${a.x + dx / 2} ${a.y} ${b.x - dx / 2} ${b.y} ${b.x} ${b.y}`
-    : `M${a.x} ${a.y}C${a.x} ${a.y + dy / 2} ${b.x} ${b.y - dy / 2} ${b.x} ${b.y}`;
-};
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-const circularMean = (angles: number[]) => Math.atan2(angles.reduce((s, a) => s + Math.sin(a), 0), angles.reduce((s, a) => s + Math.cos(a), 0));
-/** Where a reference sits on its ring: between the areas it backs when they are neighbours; when they pull apart, by the one
- * with the fewest references seated so far, so its one visible link stays short and no area is left without company */
-const homeAngle = (angles: number[], seated: Map<number, number>) => {
-  const pull = Math.hypot(angles.reduce((s, a) => s + Math.sin(a), 0), angles.reduce((s, a) => s + Math.cos(a), 0)) / angles.length;
-  if (pull > 0.75) return circularMean(angles);
-  const a = angles.reduce((best, x) => ((seated.get(x) ?? 0) < (seated.get(best) ?? 0) ? x : best));
-  seated.set(a, (seated.get(a) ?? 0) + 1);
-  return a;
-};
-/** Pushes angles apart on the ring until each has `min` radians of room, keeping their order */
-function spread(angles: number[], min: number): number[] {
-  const idx = angles.map((a, i) => [((a % TAU) + TAU) % TAU, i] as const).sort((p, q) => p[0] - q[0]);
-  const out = idx.map(([a]) => a);
-  for (let pass = 0; pass < 12; pass++) {
-    for (let k = 0; k < out.length; k++) {
-      const n = (k + 1) % out.length;
-      let gap = out[n] - out[k]; if (n === 0) gap += TAU;
-      if (gap < min) { const push = (min - gap) / 2; out[k] -= push; out[n] += push; }
-    }
-  }
-  const res = new Array<number>(angles.length);
-  idx.forEach(([, i], k) => { res[i] = out[k]; });
-  return res;
+/** Typography on the bento: the project's name, its sentence and a line of body in the pairing chosen on
+ *  the area's sample, set in the references' real faces. Until those arrive, the families by name. */
+function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, curation }: {
+  projectId: string; name: string; intent: string; summary: string;
+  refs: InspoItem[]; visuals: RefVisual[]; fallback: RefVisual[]; curation: AreaCuration | null;
+}) {
+  const { rows } = useTypeRows(projectId, refs, visuals);
+  const pair = useTypePair(projectId, rows, curation);
+  if (!pair.title || !pair.body) return <TypeSpecimen vs={fallback} sample={name} />;
+  const fams = [...new Set([pair.title, pair.subtitle, pair.body].filter((x): x is NonNullable<typeof x> => !!x).map((x) => x.row.label))];
+  return (
+    <div className="sysb-type">
+      <div className="sysb-type__title" style={pairStyle(pair.title)}>{name}</div>
+      {(intent || summary) && <p className="sysb-type__sub" style={pairStyle(pair.subtitle)}>{intent || summary}</p>}
+      <div className="sysv-chips">{fams.map((f) => <span key={f} className="sysv-chip"><b>{f}</b></span>)}</div>
+    </div>
+  );
 }
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
-export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, matches }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange }: Props) {
   const { t } = useT();
   const setSystem = onSystem;
   const [visuals, setVisuals] = useState<RefVisual[]>([]);
@@ -455,7 +422,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [open, setOpenNow] = useState<SystemArea | null>(null);
-  // Opening an area clears the sea for its stage: the nodes fold into tabs (and back) as one movement where the browser can
+  // Opening an area clears the bento for its stage: the tiles fold into tabs (and back) as one movement where the browser can
   const setOpen = useCallback((next: SystemArea | null) => {
     const doc = document as Document & { startViewTransition?: (fn: () => void) => unknown };
     if (doc.startViewTransition && window.matchMedia("(min-width: 801px)").matches && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) doc.startViewTransition(() => flushSync(() => setOpenNow(next)));
@@ -469,27 +436,9 @@ export default function SystemView({ project, system, onSystem, board, library, 
   }, [open, setOpen]);
   useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
-  // Picking: the team chooses, on the ring, the references an area should be decided from
+  // Picking: the team chooses, among the area's references, the ones it should be decided from
   const [picking, setPicking] = useState<Set<string> | null>(null);
   useEffect(() => { setPicking(null); }, [open]);
-  const [hover, setHover] = useState<string | null>(null);  // an area key or an item id
-  // Moved by hand: where a node was left, as fractions of the sea so it survives a resize. Kept in this browser, per project
-  const layoutKey = `criterio:system-layout:${project.id}`;
-  const [moved, setMoved] = useState<Record<string, Pt>>({});
-  useEffect(() => { try { setMoved(JSON.parse(localStorage.getItem(layoutKey) ?? "{}") as Record<string, Pt>); } catch { setMoved({}); } }, [layoutKey]);
-  const keep = (m: Record<string, Pt>) => { setMoved(m); try { if (Object.keys(m).length) localStorage.setItem(layoutKey, JSON.stringify(m)); else localStorage.removeItem(layoutKey); } catch { /* private window: it lasts the visit */ } };
-  const drag = useRef<{ key: string; pointer: number; sx: number; sy: number; ox: number; oy: number; on: boolean } | null>(null);
-  const dragged = useRef(false);  // the click that ends a drag opens nothing
-  const [dragging, setDragging] = useState<string | null>(null);
-  const sea = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState({ w: 1200, h: 800 });
-  useEffect(() => {
-    const el = sea.current; if (!el) return;
-    // Hidden behind a stage the sea measures nothing: its last size stands until it is back
-    const ro = new ResizeObserver(([e]) => { if (e.contentRect.width) setSize({ w: e.contentRect.width, h: e.contentRect.height }); });
-    ro.observe(el); return () => ro.disconnect();
-  }, []);
-
   const run = useCallback(async () => {
     setRunning(true); setError("");
     try {
@@ -528,76 +477,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const visualsFor = (a: SystemAreaState): { vs: RefVisual[]; fromBoard: boolean } => {
     const own = a.evidence.map((e) => byItem.get(e.itemId)).filter((v): v is RefVisual => !!v);
     return own.length ? { vs: own, fromBoard: false } : { vs: visuals, fromBoard: true };
-  };
-
-  // Geometry: the project in the middle, the areas on an inner ring, the references on an outer ring,
-  // each near the areas it backs. Everything from numbers, so the lines and the nodes agree.
-  const geo = useMemo(() => {
-    // The top bar and the search dock take their room; the rings fit between them
-    const top = 96, bottom = size.h - 150;
-    const c: Pt = { x: size.w / 2, y: (top + bottom) / 2 };
-    const narrow = size.w < 900;
-    const put = (key: string, d: Pt): Pt => { const m = moved[key]; return m ? { x: m.x * size.w, y: m.y * size.h } : d; };
-    const r2 = { x: Math.min(size.w / 2 - 70, 760), y: Math.min((bottom - top) / 2 - 36, 430) };
-    const r1 = { x: Math.min(r2.x * 0.62, 470), y: Math.min(r2.y * 0.68, 290) };
-    // Eight slots on a rounded rectangle, so the cards never crowd at the sides the way an ellipse does
-    const SLOTS: [number, number][] = [[-0.5, -1], [0.5, -1], [1, -0.4], [1, 0.42], [0.5, 1], [-0.5, 1], [-1, 0.42], [-1, -0.4]];
-    const areaAngle = new Map<SystemArea, number>();
-    const areas = SYSTEM_AREAS.map((k, i) => {
-      const [sx, sy] = SLOTS[i];
-      areaAngle.set(k, Math.atan2(sy * r1.y, sx * r1.x));
-      return { key: k, ...put(`area:${k}`, { x: c.x + sx * r1.x, y: c.y + sy * r1.y }) };
-    });
-    const refs = board.filter((i) => i.id);
-    const backs = new Map<string, SystemArea[]>();
-    for (const a of sys.areas) for (const e of a.evidence) backs.set(e.itemId, [...(backs.get(e.itemId) ?? []), a.area]);
-    const seated = new Map<number, number>();
-    for (const bs of backs.values()) if (bs.length === 1) { const a = areaAngle.get(bs[0])!; seated.set(a, (seated.get(a) ?? 0) + 1); }
-    let want = refs.map((i, k) => { const bs = backs.get(i.id!) ?? []; return bs.length ? homeAngle(bs.map((b) => areaAngle.get(b)!), seated) : -Math.PI / 2 + ((k + 0.5) / Math.max(refs.length, 1)) * TAU + Math.PI / 8; });
-    want = spread(want, Math.min(TAU / Math.max(refs.length, 1), narrow ? 0.5 : 0.36));
-    const items = refs.map((i, k) => ({ item: i, ...put(i.id!, polar(c, r2.x, r2.y, want[k])), areas: backs.get(i.id!) ?? [], near: null as SystemArea | null }));
-    // The open area pulls its references out of the ring and fans them around itself, all at the same level
-    if (open) {
-      const node = areas.find((a) => a.key === open)!;
-      const mine = items.filter((it) => it.areas.includes(open) && !moved[it.item.id!]);  // one placed by hand stays where it was left
-      const n = mine.length;
-      if (n) {
-        const away = Math.atan2(node.y - c.y, node.x - c.x);  // fan on the side facing away from the centre
-        const span = Math.min(Math.PI * 1.1, 0.55 * n);
-        const rad = 120 + Math.min(n, 8) * 9;
-        mine.forEach((it, k) => {
-          const a = n === 1 ? away : away - span / 2 + (span * k) / (n - 1);
-          it.x = Math.min(size.w - 60, Math.max(60, node.x + Math.cos(a) * rad * 1.25));
-          it.y = Math.min(size.h - 70, Math.max(top, node.y + Math.sin(a) * rad));
-        });
-      }
-    }
-    // Each reference is tied to the nearest area it backs; its other links only show when asked for
-    for (const it of items) {
-      let best = Infinity;
-      for (const k of it.areas) { const a = areas.find((x) => x.key === k)!; const d = Math.hypot(a.x - it.x, a.y - it.y); if (d < best) { best = d; it.near = k; } }
-    }
-    return { c, areas, items, narrow };
-  }, [size, board, sys.areas, open, moved]);
-
-  // Any node can be dragged. A press that never travels is still a click
-  const dragOf = (key: string, at: Pt) => {
-    const to = (e: React.PointerEvent, d: NonNullable<typeof drag.current>) => ({ ...moved, [key]: { x: clamp(d.ox + e.clientX - d.sx, 60, size.w - 60) / size.w, y: clamp(d.oy + e.clientY - d.sy, 76, size.h - 50) / size.h } });
-    const end = (e: React.PointerEvent) => {
-      const d = drag.current; drag.current = null;
-      if (!d?.on) return;
-      dragged.current = true; setTimeout(() => { dragged.current = false; }, 0);
-      setDragging(null); keep(to(e, d));
-    };
-    return {
-      onPointerDown: (e: React.PointerEvent) => { if (e.button === 0) drag.current = { key, pointer: e.pointerId, sx: e.clientX, sy: e.clientY, ox: at.x, oy: at.y, on: false }; },
-      onPointerMove: (e: React.PointerEvent<HTMLElement>) => {
-        const d = drag.current; if (!d || d.key !== key || d.pointer !== e.pointerId) return;
-        if (!d.on) { if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 4) return; d.on = true; e.currentTarget.setPointerCapture(e.pointerId); setDragging(key); }
-        setMoved(to(e, d));
-      },
-      onPointerUp: end, onPointerCancel: end,
-    };
   };
 
   const withBusy = async (area: SystemArea, fn: () => Promise<{ ok: true; data: ProjectSystem } | { ok: false; error: string }>) => {
@@ -651,10 +530,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
   };
 
   const openArea = open ? sys.areas.find((a) => a.area === open) ?? null : null;
-  const lit = (areaKey: SystemArea, itemId: string) => hover === areaKey || hover === itemId || open === areaKey;
-  // At rest the sea is only the areas: an open area brings out its own references, and choosing among them brings out the whole board
-  const shown = picking ? geo.items : open ? geo.items.filter((it) => it.areas.includes(open)) : [];
-  const missed = (itemId: string) => !!matches && !matches.has(itemId);
   // A reference joins or leaves an area from its stage. One from the Inbox is filed in the project first
   const [pendingRefs, setPendingRefs] = useState<Set<string>>(() => new Set());
   const toggleRef = async (area: SystemArea, item: InspoItem, on: boolean) => {
@@ -696,87 +571,83 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   return (
     <div className={`sysv${openArea ? " is-stage" : ""}`} aria-busy={!system}>
-      <div className="sysv-sea" ref={sea}>
-        <svg className="sysn-lines" width={size.w} height={size.h} aria-hidden>
-          {shown.flatMap((it) => it.areas.map((k) => {
-            const on = lit(k, it.item.id!);
-            if (!on) return null;
-            const a = geo.areas.find((x) => x.key === k)!;
-            return <path key={`${it.item.id}-${k}`} d={link({ x: it.x, y: it.y - 8 }, a)} className={`sysn-line${on ? " is-lit" : ""}${!on && (hover || missed(it.item.id!)) ? " is-dim" : ""}`} />;
-          }))}
-        </svg>
-
-        {/* The centre stays quiet: the nodes are the system. Name, one line of state, three small actions;
-            the criterio paragraph unfolds only when asked for */}
-        <section className="sysn-core" style={{ left: geo.c.x, top: geo.c.y }}>
-          <h1 className="sysn-core__title">{project.name}</h1>
-          {filled > 0 ? (
-            <p className="sysn-core__state" title={t.system.polishHint}>
-              <svg className="sysn-core__ring" viewBox="0 0 14 14" width="14" height="14" aria-hidden>
-                <circle cx="7" cy="7" r="5.25" />
-                <circle cx="7" cy="7" r="5.25" pathLength={100} strokeDasharray={`${polishPct} 100`} transform="rotate(-90 7 7)" />
-              </svg>
-              <b>{t.system.polishPct(polishPct)}</b>
-              <span>{t.system.filled(filled, SYSTEM_AREAS.length)}</span>
-            </p>
-          ) : (
-            <p className="sysn-core__summary sysv-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>
-          )}
+      {/* The system at a glance: the project on top, one tile per area showing its material. A tile opens its stage */}
+      <div className="sysv-sea sysb">
+        <div className="sysb-inner">
+          <header className="sysb-head">
+            <div className="sysb-head__text">
+              <h1 className="sysb-title">{project.name}</h1>
+              {project.intent && <p className="sysb-intent">{project.intent}</p>}
+            </div>
+            <div className="sysb-head__side">
+              {filled > 0 ? (
+                <p className="sysn-core__state" title={t.system.polishHint}>
+                  <svg className="sysn-core__ring" viewBox="0 0 14 14" width="14" height="14" aria-hidden>
+                    <circle cx="7" cy="7" r="5.25" />
+                    <circle cx="7" cy="7" r="5.25" pathLength={100} strokeDasharray={`${polishPct} 100`} transform="rotate(-90 7 7)" />
+                  </svg>
+                  <b>{t.system.polishPct(polishPct)}</b>
+                  <span>{t.system.filled(filled, SYSTEM_AREAS.length)}</span>
+                </p>
+              ) : (
+                <p className="sysn-core__summary sysv-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>
+              )}
+              {/* One thing asks for attention at a time: reading the board is solid only while there is something unread */}
+              <div className="sysn-core__actions">
+                <Button variant={board.length && (unread || !filled) ? "primary" : "default"} size="sm" onClick={() => void run()} disabled={running || !board.length} title={sys.run ? t.system.rerun : t.system.run}>
+                  {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {!sys.run ? t.system.run : stale && stale.unread > 0 ? t.system.readNew(stale.unread) : stale?.wordsChanged ? t.system.readWords : t.system.rerun}</>}
+                </Button>
+                {filled > 0 && (
+                  <span className="sysn-core__file">
+                    <Button size="sm" onClick={() => void copy()} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>
+                    <Button size="sm" onClick={download} aria-label={t.system.download} title={t.system.download}>{Icons.arrow}</Button>
+                  </span>
+                )}
+                {!board.length && <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
+              </div>
+            </div>
+          </header>
           {error && <p className="sysv-error" role="alert">{error}</p>}
-          {/* One thing asks for attention at a time: reading the board is solid only while there is something unread */}
-          <div className="sysn-core__actions">
-            <Button variant={board.length && (unread || !filled) ? "primary" : "default"} size="sm" onClick={() => void run()} disabled={running || !board.length} title={sys.run ? t.system.rerun : t.system.run}>
-              {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {!sys.run ? t.system.run : stale && stale.unread > 0 ? t.system.readNew(stale.unread) : stale?.wordsChanged ? t.system.readWords : t.system.rerun}</>}
-            </Button>
-            {filled > 0 && (
-              <span className="sysn-core__file">
-                <Button size="sm" onClick={() => void copy()} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>
-                <Button size="sm" onClick={download} aria-label={t.system.download} title={t.system.download}>{Icons.arrow}</Button>
-              </span>
-            )}
-            {!board.length && <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
-          </div>
           {sys.summary && (
-            <details className="sysn-core__criterio">
+            <details className="sysn-core__criterio sysb-criterio">
               <summary>{t.system.criterio}{Icons.chevron}</summary>
               <p className="sysn-core__summary">{sys.summary}</p>
             </details>
           )}
-        </section>
 
-        {geo.areas.map((pos) => {
-          const a = sys.areas.find((x) => x.area === pos.key)!;
-          const level = confidenceOf(a);
-          const { vs } = visualsFor(a);
-          return (
-            <button key={pos.key} type="button" className={`sysn-node is-${level}${a.source === "team" ? " is-team" : ""}${open === pos.key ? " is-open" : ""}${running || busy.has(pos.key) ? " is-busy" : ""}${dragging === `area:${pos.key}` ? " is-dragging" : ""}`}
-              style={{ left: pos.x, top: pos.y, viewTransitionName: `sysa-${pos.key}` }} {...dragOf(`area:${pos.key}`, pos)} onClick={() => { if (!dragged.current) setOpen(open === pos.key ? null : pos.key); }}
-              onMouseEnter={() => setHover(pos.key)} onMouseLeave={() => setHover(null)} aria-pressed={open === pos.key}>
-              <span className="sysn-node__label">{areaIcon(pos.key, 13)}{labels[pos.key]}{a.evidence.length > 0 && <b className="sysn-node__n">{a.evidence.length}</b>}</span>
-              {a.decision && <MiniSpecimen area={a} vs={vs} sample={project.name} />}
-              <span className="sysn-node__line">{a.decision ? headlineOf(a.decision) : t.system.open}</span>
-              {a.decision && a.source !== "team" && <i className="sysv-meter"><b style={{ width: `${a.confidence}%` }} /></i>}
-            </button>
-          );
-        })}
-
-        {shown.map((it) => {
-          const id = it.item.id!;
-          const picked = picking?.has(id) ?? false;
-          const related = (open && it.areas.includes(open)) || hover === id || (!!hover && it.areas.includes(hover as SystemArea));
-          // While an area is open its references come forward and the rest step back; so does what a search didn't find
-          const cls = `sysn-ref${picking ? " is-pickable" : ""}${picked ? " is-picked" : ""}${!picking && (((hover || open) && !related) || (missed(id) && hover !== id)) ? " is-dim" : ""}${!picking && related && (open || hover === id) ? " is-lit" : ""}${dragging === id ? " is-dragging" : ""}`;
-          const toggle = () => setPicking((p) => { if (!p || dragged.current) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-          return (
-            <button key={id} type="button" className={cls} style={{ left: it.x, top: it.y }} title={it.item.name} aria-pressed={picking ? picked : undefined} data-id={id} {...dragOf(id, it)}
-              onClick={picking ? toggle : undefined} onMouseEnter={() => setHover(id)} onMouseLeave={() => setHover(null)}>
-              <Thumb item={it.item} image={imageOf(it.item)} />
-              <small>{it.item.name}</small>
-              {picking && <i className="sysn-ref__check">{picked && Icons.check}</i>}
-            </button>
-          );
-        })}
-        {Object.keys(moved).length > 0 && <Button size="sm" className="sysv-tidy" onClick={() => keep({})}>{t.system.tidy}</Button>}
+          <div className="sysb-grid">
+            {sys.areas.map((a) => {
+              const level = confidenceOf(a);
+              const { vs } = visualsFor(a);
+              const own = a.evidence.map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
+              const go = () => setOpen(a.area);
+              return (
+                <article key={a.area} role="button" tabIndex={0} aria-label={labels[a.area]}
+                  className={`sysb-tile sysb-tile--${a.area} is-${level}${a.source === "team" ? " is-team" : ""}${a.decision ? "" : " is-open"}${running || busy.has(a.area) ? " is-busy" : ""}`}
+                  style={{ gridArea: a.area, viewTransitionName: `sysa-${a.area}` }}
+                  onClick={go} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }}>
+                  <header className="sysb-tile__head">
+                    <span className="sysb-tile__label">{areaIcon(a.area, 14)}{labels[a.area]}</span>
+                    {/* A narrow tile has room for the number only */}
+                    {a.evidence.length > 0 && <span className="sysb-tile__n">{a.area === "imagery" || a.area === "logo" || a.area === "iconography" ? a.evidence.length : t.system.evidence(a.evidence.length)}</span>}
+                    <span className="sysb-tile__state">
+                      {a.source === "team" ? Icons.check : a.decision ? <i className="sysv-meter"><b style={{ width: `${a.confidence}%` }} /></i> : t.system.open}
+                    </span>
+                  </header>
+                  <div className="sysb-tile__specimen">
+                    {a.area === "typography"
+                      // With nothing filed under typography yet, the tile tries what the first of the board brings
+                      ? <BentoType projectId={project.id} name={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={own.length ? own : board.slice(0, 8)} visuals={visuals} fallback={vs} curation={a.curation} />
+                      : a.area === "color" ? <Palette vs={vs} max={8} />
+                      : specimenOf(a, vs, project.name)}
+                  </div>
+                  {/* Voice already shows its decision as the quote */}
+                  {a.decision && a.area !== "voice" && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
+                </article>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* An open area takes the screen: the nodes are its tabs, the canvas its stage, the decision beside it */}
@@ -797,9 +668,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   picking={picking ? { picked: picking, toggle: (id) => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; }) } : null} />
                 {a.area === "typography" ? (
                   // With nothing filed under typography yet, the tester tries what the whole board brings
-                  <TypeTester projectId={project.id} projectName={project.name} summary={sys.summary} refs={own.length ? own : board} visuals={visuals}
+                  <TypeTester projectId={project.id} projectName={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={own.length ? own : board} visuals={visuals}
                     curation={a.curation} curating={curatingArea === a.area} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
-                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict} />
+                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict}
+                    onUse={(decision) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why: a.why }))} />
                 ) : curatingArea === a.area ? (
                   <p className="sysv-muted"><span className="spinner spinner--sm" /> {t.system.curating}</p>
                 ) : a.curation ? (
@@ -813,7 +685,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
         );
       })()}
 
-      {/* Phones: the sea needs room, so the cards stack instead */}
+      {/* Phones: the bento needs room, so the cards stack instead */}
       <div className="sysv-stack">{sys.areas.map((a) => tileFor(a))}</div>
     </div>
   );

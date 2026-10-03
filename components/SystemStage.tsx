@@ -1,8 +1,9 @@
 "use client";
 // The stage of an area. Opening a node clears the sea: the eight nodes fold into a row of tabs and the
-// canvas becomes the place where that area is worked on. Typography gets a type tester, set in the real
-// faces of the references filed under it; every area gets its references as chips, to add from the
-// project or the Inbox and to take away.
+// canvas becomes the place where that area is worked on. First come the references the area draws from,
+// as cards to take away and a picker to bring more (from the project or from what no project has yet).
+// Typography then gets its sample (a title, a subtitle and a body, each in the face chosen for it) and a
+// type tester, both set in the real faces of those references.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { AreaCuration, SystemArea, SystemAreaState } from "@/types/system";
@@ -12,6 +13,7 @@ import { fontCandidateId } from "@/lib/candidates";
 import { familyBase, familyKey, genericOf, weightInName } from "@/lib/font-names";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
+import { Button } from "@/components/ui/button";
 import { areaIcon } from "./area-icons";
 import { cachedCardImage } from "./InspoCard";
 import "./SystemStage.css";
@@ -90,35 +92,46 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
     );
   };
   return (
-    <div className="sysf-refs" ref={box}>
-      {refs.length === 0 && <span className="sysf-refs__none">{t.system.stage.none(areaLabel)}</span>}
-      {refs.map((i) => {
-        const picked = picking?.picked.has(i.id!) ?? false;
-        return picking ? (
-          <button key={i.id} type="button" className={`sysf-chip is-pickable${picked ? " is-picked" : ""}`} aria-pressed={picked} onClick={() => picking.toggle(i.id!)}>
-            <Thumb item={i} image={imageOf(i)} /><span>{i.name}</span><i className="sysf-chip__x">{picked && Icons.check}</i>
-          </button>
-        ) : (
-          <span key={i.id} className={`sysf-chip${pending.has(i.id!) ? " is-busy" : ""}`} data-id={i.id}>
-            <Thumb item={i} image={imageOf(i)} /><span>{i.name}</span>
-            <button type="button" className="sysf-chip__x" aria-label={t.system.stage.remove(i.name)} title={t.system.stage.remove(i.name)} onClick={() => onToggle(i, false)}>{Icons.x}</button>
-          </span>
-        );
-      })}
-      {!picking && (
-        <button type="button" className={`sysf-add${adding ? " is-on" : ""}`} aria-expanded={adding} onClick={() => { setAdding((o) => !o); setQ(""); }}>{Icons.plus} {t.system.stage.add}</button>
-      )}
-      {adding && (
-        <div className="sysf-picker" role="dialog" aria-label={t.system.stage.add}>
-          <input className="sysf-picker__search" value={q} autoFocus placeholder={t.system.stage.search} onChange={(e) => setQ(e.target.value)} />
-          <div className="sysf-picker__scroll">
-            {fromBoard.length > 0 && <><p className="sysf-picker__title">{t.system.stage.inProject}</p><div className="sysf-picker__grid">{fromBoard.map(card)}</div></>}
-            {fromInbox.length > 0 && <><p className="sysf-picker__title">Inbox <small>{t.system.stage.inboxHint}</small></p><div className="sysf-picker__grid">{fromInbox.map(card)}</div></>}
-            {fromBoard.length + fromInbox.length === 0 && <p className="sysv-muted">{t.system.stage.nothing}</p>}
+    <section className="sysf-refs" ref={box}>
+      <header className="sysf-refs__head">
+        <h2 className="sysf-refs__title">{t.system.stage.refsOf(areaLabel)}{refs.length > 0 && <b>{refs.length}</b>}</h2>
+        {!picking && (
+          <button type="button" className={`sysf-add${adding ? " is-on" : ""}`} aria-expanded={adding} onClick={() => { setAdding((o) => !o); setQ(""); }}>{Icons.plus} {t.system.stage.add}</button>
+        )}
+        {adding && (
+          <div className="sysf-picker" role="dialog" aria-label={t.system.stage.add}>
+            <input className="sysf-picker__search" value={q} autoFocus placeholder={t.system.stage.search} onChange={(e) => setQ(e.target.value)} />
+            <div className="sysf-picker__scroll">
+              {fromBoard.length > 0 && <><p className="sysf-picker__title">{t.system.stage.inProject}</p><div className="sysf-picker__grid">{fromBoard.map(card)}</div></>}
+              {fromInbox.length > 0 && <><p className="sysf-picker__title">{t.projects.unfiled} <small>{t.system.stage.inboxHint}</small></p><div className="sysf-picker__grid">{fromInbox.map(card)}</div></>}
+              {fromBoard.length + fromInbox.length === 0 && <p className="sysv-muted">{t.system.stage.nothing}</p>}
+            </div>
           </div>
+        )}
+      </header>
+      {refs.length === 0 && <p className="sysf-refs__none">{t.system.stage.none(areaLabel)}</p>}
+      {refs.length > 0 && (
+        <div className="sysf-refs__row">
+          {refs.map((i) => {
+            const picked = picking?.picked.has(i.id!) ?? false;
+            // data-id: the agent reads the card under the pointer and the ones chosen ("this one", "these")
+            return picking ? (
+              <button key={i.id} type="button" className={`sysf-ref is-pickable${picked ? " is-picked" : ""}`} aria-pressed={picked} data-id={i.id} title={i.name} onClick={() => picking.toggle(i.id!)}>
+                <Thumb item={i} image={imageOf(i)} className="sysf-ref__img" />
+                <span className="sysf-ref__name">{i.name}</span>
+                <i className="sysf-ref__mark">{picked && Icons.check}</i>
+              </button>
+            ) : (
+              <article key={i.id} className={`sysf-ref${pending.has(i.id!) ? " is-busy" : ""}`} data-id={i.id} title={i.name}>
+                <Thumb item={i} image={imageOf(i)} className="sysf-ref__img" />
+                <span className="sysf-ref__name">{i.name}</span>
+                <button type="button" className="sysf-ref__x" aria-label={t.system.stage.remove(i.name)} title={t.system.stage.remove(i.name)} onClick={() => onToggle(i, false)}>{Icons.x}</button>
+              </article>
+            );
+          })}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -167,7 +180,7 @@ function useRefFaces(projectId: string, itemIds: string[]): Record<string, RefFa
 // ─── The type tester ─────────────────────────────────────────────────────────
 
 type Role = "display" | "body" | "ui" | "mono";
-interface TypeRow {
+export interface TypeRow {
   key: string;
   label: string;
   role: Role | null;
@@ -227,6 +240,54 @@ function typeRows(refs: InspoItem[], byItem: Map<string, RefVisual>, faces: Reco
   return { rows: [...rows.values()].sort((a, b) => (ROLE_RANK[a.role ?? ""] ?? 4) - (ROLE_RANK[b.role ?? ""] ?? 4)), silent };
 }
 
+/** The families a set of references brings, each set in the reference's own face once its files arrive */
+export function useTypeRows(projectId: string, refs: InspoItem[], visuals: RefVisual[]): { rows: TypeRow[]; silent: InspoItem[]; loading: boolean } {
+  const ids = useMemo(() => refs.map((i) => i.id!).filter(Boolean), [refs]);
+  const faces = useRefFaces(projectId, ids);
+  const byItem = useMemo(() => new Map(visuals.map((v) => [v.itemId, v])), [visuals]);
+  return { ...typeRows(refs, byItem, faces), loading: ids.some((id) => faces[id] === undefined) };
+}
+
+// ─── The pairing: which family sets the title, the subtitle and the body ──────
+// Chosen on the sample and kept with the project on this machine; until someone chooses, the families the
+// agent kept (a display one for the title, a body one for the rest).
+
+export type PairRole = "title" | "subtitle" | "body";
+const PAIR_ROLES: PairRole[] = ["title", "subtitle", "body"];
+type PairPick = { key: string; weight: number };
+const defaultWeight = (row: TypeRow) => row.prefer ?? (row.weights.includes(400) ? 400 : row.weights[0] ?? 400);
+const PAIR_EVENT = "criterio:type-pair";
+
+export function useTypePair(projectId: string, rows: TypeRow[], curation: AreaCuration | null) {
+  const store = `criterio:type-pair:${projectId}`;
+  const [saved, setSaved] = useState<Partial<Record<PairRole, PairPick>>>({});
+  useEffect(() => {
+    const read = () => { try { setSaved(JSON.parse(localStorage.getItem(store) ?? "{}") as Partial<Record<PairRole, PairPick>>); } catch { setSaved({}); } };
+    read();
+    window.addEventListener(PAIR_EVENT, read);
+    return () => window.removeEventListener(PAIR_EVENT, read);
+  }, [store]);
+  const kept = (row: TypeRow) => !!curation?.verdicts.find((v) => row.ids.includes(v.id))?.keep;
+  const first = (role: Role) => rows.find((r) => r.role === role && kept(r)) ?? rows.find((r) => r.role === role);
+  const title = first("display") ?? rows.find(kept) ?? rows[0];
+  const body = first("body") ?? rows.find((r) => r !== title && kept(r)) ?? rows.find((r) => r !== title) ?? title;
+  const base: Record<PairRole, TypeRow | undefined> = { title, subtitle: body, body };
+  const of = (role: PairRole) => {
+    const pick = saved[role];
+    const row = (pick && rows.find((r) => r.key === pick.key)) || base[role];
+    return row ? { row, weight: pick && pick.key === row.key ? pick.weight : defaultWeight(row) } : null;
+  };
+  const set = (role: PairRole, key: string, weight?: number) => {
+    const row = rows.find((r) => r.key === key);
+    if (!row) return;
+    const next = { ...saved, [role]: { key, weight: weight ?? defaultWeight(row) } };
+    setSaved(next);
+    try { localStorage.setItem(store, JSON.stringify(next)); window.dispatchEvent(new Event(PAIR_EVENT)); } catch { /* private mode: it lasts the visit */ }
+  };
+  return { title: of("title"), subtitle: of("subtitle"), body: of("body"), set };
+}
+export const pairStyle = (p: { row: TypeRow; weight: number } | null) => (p ? { fontFamily: p.row.css, fontWeight: p.weight } : undefined);
+
 type Mode = "headline" | "paragraph" | "alphabet";
 const SIZES: Record<Mode, number> = { headline: 64, paragraph: 20, alphabet: 40 };
 const ALPHABET = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ abcdefghijklmnñopqrstuvwxyz 0123456789 ¿?¡!&@€";
@@ -234,6 +295,8 @@ const ALPHABET = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ abcdefghijklmnñopqrstuvwxyz 0123
 interface TesterProps {
   projectId: string;
   projectName: string;
+  /** The sentence the project opens with: the sample's subtitle */
+  intent: string;
   /** The project's criterio in a paragraph, when it has one: the paragraph sample */
   summary: string;
   /** The references whose faces are tested, and what their sheets say */
@@ -246,9 +309,11 @@ interface TesterProps {
   imageOf: (item: InspoItem) => string | null;
   onFlip: (id: string, keep: boolean) => void;
   onReason: (id: string, keep: boolean, reason: string) => void;
+  /** The pairing on the sample becomes the area's decision, as the team's */
+  onUse: (decision: string) => void;
 }
 
-export function TypeTester({ projectId, projectName, summary, refs, visuals, curation, curating, busy, itemOf, imageOf, onFlip, onReason }: TesterProps) {
+export function TypeTester({ projectId, projectName, intent, summary, refs, visuals, curation, curating, busy, itemOf, imageOf, onFlip, onReason, onUse }: TesterProps) {
   const { t } = useT();
   const tt = t.system.type;
   const [mode, setMode] = useState<Mode>("headline");
@@ -262,18 +327,52 @@ export function TypeTester({ projectId, projectName, summary, refs, visuals, cur
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
-  const ids = useMemo(() => refs.map((i) => i.id!).filter(Boolean), [refs]);
-  const faces = useRefFaces(projectId, ids);
-  const byItem = useMemo(() => new Map(visuals.map((v) => [v.itemId, v])), [visuals]);
-  const { rows, silent } = typeRows(refs, byItem, faces);
-  const loading = ids.some((id) => faces[id] === undefined);
+  const { rows, silent, loading } = useTypeRows(projectId, refs, visuals);
+  const pair = useTypePair(projectId, rows, curation);
+  const [light, setLight] = useState(false);
 
   const sample = text.trim() || (mode === "headline" ? projectName : mode === "paragraph" ? summary || tt.paragraphSample : ALPHABET);
   const size = sizes[mode];
   const verdictOf = (row: TypeRow) => curation?.verdicts.find((v) => row.ids.includes(v.id));
 
+  const named = (p: { row: TypeRow; weight: number } | null) => (p ? `${p.row.label} ${p.weight}` : "");
   return (
     <section className="tt">
+      {/* The sample: the three voices of a page together, each in the family chosen for it */}
+      {pair.title && pair.subtitle && pair.body && (
+        <div className={`tt-comp${light ? " is-light" : ""}`}>
+          <div className="tt-comp__sheet">
+            <h2 className="tt-comp__title" style={pairStyle(pair.title)}>{text.trim() || projectName}</h2>
+            <p className="tt-comp__sub" style={pairStyle(pair.subtitle)}>{intent || tt.comp.subtitleSample}</p>
+            <p className="tt-comp__body" style={pairStyle(pair.body)}>{summary || tt.paragraphSample}</p>
+            <span className="tt-comp__cta" style={{ fontFamily: pair.body.row.css }}>{tt.comp.cta}</span>
+          </div>
+          <div className="tt-comp__roles">
+            {PAIR_ROLES.map((role) => {
+              const p = pair[role]!;
+              return (
+                <div key={role} className="tt-role">
+                  <label className="tt-role__name" htmlFor={`tt-role-${role}`}>{tt.comp.roles[role]}</label>
+                  <select id={`tt-role-${role}`} className="tt-role__select" value={p.row.key} onChange={(e) => pair.set(role, e.target.value)}>
+                    {rows.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
+                  </select>
+                  {p.row.weights.length > 1 && (
+                    <span className="tt-weights">
+                      {p.row.weights.map((w) => <button key={w} type="button" className={`tt-weight${w === p.weight ? " is-on" : ""}`} aria-pressed={w === p.weight} onClick={() => pair.set(role, p.row.key, w)}>{w}</button>)}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+            <div className="tt-comp__foot">
+              <button type="button" className="tt-comp__bg" aria-pressed={light} onClick={() => setLight((v) => !v)}>{light ? tt.comp.dark : tt.comp.light}</button>
+              <Button variant="primary" size="sm" disabled={busy} title={tt.comp.useHint} onClick={() => onUse(tt.comp.decision(named(pair.title), named(pair.subtitle), named(pair.body)))}>{Icons.check} {tt.comp.use}</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rows.length > 0 && <h3 className="tt-heading">{tt.comp.all}</h3>}
       <div className="tt-bar">
         <div className="tt-modes" role="tablist">
           {(["headline", "paragraph", "alphabet"] as Mode[]).map((m) => (
