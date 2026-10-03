@@ -14,7 +14,8 @@ import { loadSystem, loadSystemVisuals, decideSystemArea, releaseSystemArea, und
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
-import { AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
+import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
+import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -41,13 +42,6 @@ interface Props {
 
 // ─── Reading the material ────────────────────────────────────────────────────
 
-const luminance = (hex: string) => {
-  const m = hex.replace("#", "").slice(0, 6);
-  if (m.length < 6) return 0.5;
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(m.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
 function palette(vs: RefVisual[], max = 12) {
   const seen = new Set<string>();
   const all = vs.flatMap((v) => v.colors).filter((c) => { const k = c.hex.toLowerCase().slice(0, 7); if (seen.has(k)) return false; seen.add(k); return true; });
@@ -64,15 +58,6 @@ function radii(vs: RefVisual[]) {
   const seen = new Set<string>();
   return vs.flatMap((v) => v.radii).filter((r) => /\d/.test(r.value) && !seen.has(r.value) && seen.add(r.value)).slice(0, 6);
 }
-const BEZIER: Record<string, [number, number, number, number]> = {
-  ease: [0.25, 0.1, 0.25, 1], "ease-in": [0.42, 0, 1, 1], "ease-out": [0, 0, 0.58, 1], "ease-in-out": [0.42, 0, 0.58, 1], linear: [0, 0, 1, 1],
-};
-function bezierOf(easing: string): [number, number, number, number] {
-  const m = easing.match(/cubic-bezier\(([^)]+)\)/);
-  if (m) { const n = m[1].split(",").map((x) => parseFloat(x)); if (n.length === 4 && n.every((x) => Number.isFinite(x))) return n as [number, number, number, number]; }
-  return BEZIER[easing] ?? BEZIER.ease;
-}
-
 // ─── Specimens ───────────────────────────────────────────────────────────────
 
 function Palette({ vs, max }: { vs: RefVisual[]; max?: number }) {
@@ -129,7 +114,7 @@ function Motion({ vs }: { vs: RefVisual[] }) {
         <path d={d} className="sysv-motion__path" />
         <circle cx={X(x1)} cy={Y(y1)} r="3" className="sysv-motion__handle" /><circle cx={X(x2)} cy={Y(y2)} r="3" className="sysv-motion__handle" />
       </svg>
-      <div className="sysv-motion__track"><i style={{ animationTimingFunction: easing.startsWith("cubic") || easing in BEZIER ? easing : "ease", animationDuration: `${Math.max(300, Math.min(ms, 2000))}ms` }} /></div>
+      <div className="sysv-motion__track"><i style={{ animationTimingFunction: /^(cubic-bezier|ease|linear)/.test(easing) ? easing : "ease", animationDuration: `${Math.max(300, Math.min(ms, 2000))}ms` }} /></div>
       <small className="sysv-motion__label">{easing} · {ms} ms{hit ? "" : " (por defecto)"}</small>
     </div>
   );
@@ -388,13 +373,29 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
   );
 }
 
+/** Colour on the bento: once the team has put colours on the sample, those three first; the palette of the references after */
+function BentoColor({ vs, chosen, labels }: { vs: RefVisual[]; chosen: { bg?: string; ink?: string; accent?: string }; labels: Record<ColorRole, string> }) {
+  const picked = COLOR_ROLES.filter((r) => chosen[r]);
+  if (!chosen.bg) return <Palette vs={vs} max={8} />;
+  return (
+    <div className="sysb-colors">
+      <div className="sysb-colors__chosen">
+        {picked.map((r) => <span key={r} className="sysv-swatch" title={`${labels[r]} ${chosen[r]}`}><i style={{ background: chosen[r] }} /><small>{labels[r]} {chosen[r]}</small></span>)}
+      </div>
+      <Palette vs={vs} max={8} />
+    </div>
+  );
+}
+
 // ─── The bento: what each area shows on its tile ───────────────────────────────
 
-/** Typography on the bento: the project's name, its sentence and a line of body in the pairing chosen on
- *  the area's sample, set in the references' real faces. Until those arrive, the families by name. */
-function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, curation }: {
+/** Typography on the bento: the sample itself, small. The project's name and its sentence in the pairing
+ *  chosen on the area's stage, in the references' real faces, on the colours and the radius the other areas
+ *  have put on it. Until the faces arrive, the families by name. */
+function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, curation, choices, cta, more }: {
   projectId: string; name: string; intent: string; summary: string;
   refs: InspoItem[]; visuals: RefVisual[]; fallback: RefVisual[]; curation: AreaCuration | null;
+  choices: SampleChoices; cta: string; more: string;
 }) {
   const { rows } = useTypeRows(projectId, refs, visuals);
   const pair = useTypePair(projectId, rows, curation);
@@ -402,12 +403,15 @@ function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, 
   const fams = [...new Set([pair.title, pair.subtitle, pair.body].filter((x): x is NonNullable<typeof x> => !!x).map((x) => x.row.label))];
   return (
     <div className="sysb-type">
-      <div className="sysb-type__title" style={pairStyle(pair.title)}>{name}</div>
-      {(intent || summary) && <p className="sysb-type__sub" style={pairStyle(pair.subtitle)}>{intent || summary}</p>}
+      <Sample compact title={name} subtitle={intent || summary} body="" cta={cta} more={more} choices={choices}
+        faces={{ title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) }} />
       <div className="sysv-chips">{fams.map((f) => <span key={f} className="sysv-chip"><b>{f}</b></span>)}</div>
     </div>
   );
 }
+
+/** The areas whose result is seen on the sample (typography has it inside its tester) */
+const SAMPLE_AREAS = new Set<SystemArea>(["color", "layout", "motion", "voice"]);
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
@@ -436,6 +440,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
   }, [open, setOpen]);
   useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
+  // The sample every area paints: what has been tried on it, which colour role the next swatch fills, and its replay
+  const [choices, setChoice] = useSampleChoices(project.id);
+  const [colorRole, setColorRole] = useState<ColorRole>("bg");
+  const [replay, setReplay] = useState(0);
   // Picking: the team chooses, among the area's references, the ones it should be decided from
   const [picking, setPicking] = useState<Set<string> | null>(null);
   useEffect(() => { setPicking(null); }, [open]);
@@ -530,6 +538,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
   };
 
   const openArea = open ? sys.areas.find((a) => a.area === open) ?? null : null;
+  // The faces of the sample come from typography's references wherever it is shown; with none filed yet, from the first of the board
+  const typeArea = sys.areas.find((a) => a.area === "typography");
+  const typeOwn = (typeArea?.evidence ?? []).map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
+  const typeRefs = typeOwn.length ? typeOwn : board.slice(0, 8);
   // A reference joins or leaves an area from its stage. One from the Inbox is filed in the project first
   const [pendingRefs, setPendingRefs] = useState<Set<string>>(() => new Set());
   const toggleRef = async (area: SystemArea, item: InspoItem, on: boolean) => {
@@ -637,12 +649,16 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   <div className="sysb-tile__specimen">
                     {a.area === "typography"
                       // With nothing filed under typography yet, the tile tries what the first of the board brings
-                      ? <BentoType projectId={project.id} name={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={own.length ? own : board.slice(0, 8)} visuals={visuals} fallback={vs} curation={a.curation} />
-                      : a.area === "color" ? <Palette vs={vs} max={8} />
+                      ? <BentoType projectId={project.id} name={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={typeRefs} visuals={visuals} fallback={vs} curation={a.curation} choices={choices} cta={t.system.type.comp.cta} more={t.system.sample.more} />
+                      : a.area === "color" ? <BentoColor vs={vs} chosen={sampleColors(choices)} labels={t.system.sample.colorRoles} />
                       : specimenOf(a, vs, project.name)}
                   </div>
                   {/* Voice already shows its decision as the quote */}
-                  {a.decision && a.area !== "voice" && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
+                  <footer className="sysb-tile__foot">
+                    {a.decision && a.area !== "voice" && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
+                    {/* The references behind the area, in sight */}
+                    {own.length > 0 && a.area !== "layout" && a.area !== "imagery" && <span className="sysb-tile__refs">{own.slice(0, a.area === "typography" || a.area === "color" ? 6 : 4).map((it) => <Thumb key={it.id} item={it} image={imageOf(it)} />)}</span>}
+                  </footer>
                 </article>
               );
             })}
@@ -663,21 +679,42 @@ export default function SystemView({ project, system, onSystem, board, library, 
             <div className="sysf-body">
               <div className="sysf-main" key={a.area}>
                 {error && <p className="sysv-error" role="alert">{error}</p>}
-                <RefStrip areaLabel={labels[a.area]} refs={own} board={board} inbox={inbox} imageOf={imageOf} pending={pendingRefs}
+                {/* First what the area draws from: each reference with what it brings, to touch and try on the sample */}
+                <RefStrip areaLabel={labels[a.area]} refs={own} board={board} inbox={inbox} pending={pendingRefs}
+                  tall={a.area === "imagery"} imageOf={a.area === "imagery" ? (i) => byItem.get(i.id!)?.scroll ?? imageOf(i) : imageOf}
+                  material={(i) => (
+                    <RefMaterial area={a.area} v={byItem.get(i.id!)}
+                      onColor={(hex) => { setChoice({ [colorRole]: hex }); setColorRole(COLOR_ROLES[(COLOR_ROLES.indexOf(colorRole) + 1) % COLOR_ROLES.length]); }}
+                      onRadius={(radius) => setChoice({ radius })}
+                      onEasing={(easing, ms) => { setChoice({ easing, ...(ms ? { durationMs: ms } : {}) }); setReplay((n) => n + 1); }}
+                      onHeadline={(headline) => setChoice({ headline })} />
+                  )}
                   onToggle={(item, on) => void toggleRef(a.area, item, on)}
                   picking={picking ? { picked: picking, toggle: (id) => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; }) } : null} />
                 {a.area === "typography" ? (
                   // With nothing filed under typography yet, the tester tries what the whole board brings
                   <TypeTester projectId={project.id} projectName={project.name} intent={project.intent ?? ""} summary={sys.summary} refs={own.length ? own : board} visuals={visuals}
                     curation={a.curation} curating={curatingArea === a.area} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
-                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict}
+                    onFlip={(id, keep) => verdict(id, keep)} onReason={verdict} choices={choices} onChoice={setChoice}
                     onUse={(decision) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why: a.why }))} />
-                ) : curatingArea === a.area ? (
-                  <p className="sysv-muted"><span className="spinner spinner--sm" /> {t.system.curating}</p>
-                ) : a.curation ? (
-                  <AreaTable curation={a.curation} sample={project.name} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
-                    onFlip={(id, keep) => verdict(id, keep)} onReason={(id, reason) => verdict(id, a.curation!.verdicts.find((v) => v.id === id)?.keep ?? false, reason)} />
-                ) : specimen && <div className="sysv-tile__specimen sysf-specimen">{specimen}</div>}
+                ) : (
+                  <>
+                    {/* The result, seen: the same sample typography is tried on, painted with this area's choices */}
+                    {SAMPLE_AREAS.has(a.area) && (
+                      <AreaSample area={a.area} projectId={project.id} projectName={project.name} intent={project.intent ?? ""} summary={sys.summary}
+                        typeRefs={typeRefs} visuals={visuals} areaVisuals={vs} typeCuration={typeArea?.curation ?? null}
+                        choices={choices} onChoice={setChoice} colorRole={colorRole} onColorRole={setColorRole} replay={replay} onReplay={() => setReplay((n) => n + 1)}
+                        busy={busy.has(a.area)}
+                        onUse={a.area === "color" ? (decision) => void withBusy(a.area, () => decideSystemArea(project.id, a.area, { decision, why: a.why })) : undefined} />
+                    )}
+                    {curatingArea === a.area ? (
+                      <p className="sysv-muted"><span className="spinner spinner--sm" /> {t.system.curating}</p>
+                    ) : a.curation ? (
+                      <AreaTable curation={a.curation} sample={project.name} busy={busy.has(a.area)} itemOf={itemOf} imageOf={imageOf}
+                        onFlip={(id, keep) => verdict(id, keep)} onReason={(id, reason) => verdict(id, a.curation!.verdicts.find((v) => v.id === id)?.keep ?? false, reason)} />
+                    ) : !SAMPLE_AREAS.has(a.area) && specimen && <div className="sysv-tile__specimen sysf-specimen">{specimen}</div>}
+                  </>
+                )}
               </div>
               <aside className="sysf-aside" aria-label={labels[a.area]}>{tileFor(a, true)}</aside>
             </div>

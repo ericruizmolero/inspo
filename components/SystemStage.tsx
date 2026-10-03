@@ -4,7 +4,7 @@
 // as cards to take away and a picker to bring more (from the project or from what no project has yet).
 // Typography then gets its sample (a title, a subtitle and a body, each in the face chosen for it) and a
 // type tester, both set in the real faces of those references.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { AreaCuration, SystemArea, SystemAreaState } from "@/types/system";
 import type { RefVisual } from "@/lib/system";
@@ -16,6 +16,7 @@ import { Icons } from "./Sidebar";
 import { Button } from "@/components/ui/button";
 import { areaIcon } from "./area-icons";
 import { cachedCardImage } from "./InspoCard";
+import { Sample, SampleControls, type ColorRole, type SampleChoices } from "./SystemSample";
 import "./SystemStage.css";
 
 export function Thumb({ item, image, className = "" }: { item: InspoItem; image: string | null; className?: string }) {
@@ -61,11 +62,15 @@ interface StripProps {
   /** Ids being added or taken away right now */
   pending: Set<string>;
   onToggle: (item: InspoItem, on: boolean) => void;
-  /** Choosing which references decide the area: the chips become switches */
+  /** Choosing which references decide the area: the cards become switches */
   picking: { picked: Set<string>; toggle: (id: string) => void } | null;
+  /** What a reference brings to this area, under its name: its palette, its radii, its curve… */
+  material?: (item: InspoItem) => ReactNode;
+  /** The card shows the page down its length (imagery) */
+  tall?: boolean;
 }
 
-export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onToggle, picking }: StripProps) {
+export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onToggle, picking, material, tall }: StripProps) {
   const { t } = useT();
   const [adding, setAdding] = useState(false);
   const [q, setQ] = useState("");
@@ -111,7 +116,7 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
       </header>
       {refs.length === 0 && <p className="sysf-refs__none">{t.system.stage.none(areaLabel)}</p>}
       {refs.length > 0 && (
-        <div className="sysf-refs__row">
+        <div className={`sysf-refs__row${tall ? " sysf-refs__row--tall" : ""}`}>
           {refs.map((i) => {
             const picked = picking?.picked.has(i.id!) ?? false;
             // data-id: the agent reads the card under the pointer and the ones chosen ("this one", "these")
@@ -125,6 +130,7 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
               <article key={i.id} className={`sysf-ref${pending.has(i.id!) ? " is-busy" : ""}`} data-id={i.id} title={i.name}>
                 <Thumb item={i} image={imageOf(i)} className="sysf-ref__img" />
                 <span className="sysf-ref__name">{i.name}</span>
+                {material && <div className="sysf-ref__material">{material(i)}</div>}
                 <button type="button" className="sysf-ref__x" aria-label={t.system.stage.remove(i.name)} title={t.system.stage.remove(i.name)} onClick={() => onToggle(i, false)}>{Icons.x}</button>
               </article>
             );
@@ -311,9 +317,12 @@ interface TesterProps {
   onReason: (id: string, keep: boolean, reason: string) => void;
   /** The pairing on the sample becomes the area's decision, as the team's */
   onUse: (decision: string) => void;
+  /** What the other areas have put on the sample (its colours, its radius): typography is tried on the same piece */
+  choices: SampleChoices;
+  onChoice: (patch: Partial<SampleChoices>) => void;
 }
 
-export function TypeTester({ projectId, projectName, intent, summary, refs, visuals, curation, curating, busy, itemOf, imageOf, onFlip, onReason, onUse }: TesterProps) {
+export function TypeTester({ projectId, projectName, intent, summary, refs, visuals, curation, curating, busy, itemOf, imageOf, onFlip, onReason, onUse, choices, onChoice }: TesterProps) {
   const { t } = useT();
   const tt = t.system.type;
   const [mode, setMode] = useState<Mode>("headline");
@@ -329,7 +338,6 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
 
   const { rows, silent, loading } = useTypeRows(projectId, refs, visuals);
   const pair = useTypePair(projectId, rows, curation);
-  const [light, setLight] = useState(false);
 
   const sample = text.trim() || (mode === "headline" ? projectName : mode === "paragraph" ? summary || tt.paragraphSample : ALPHABET);
   const size = sizes[mode];
@@ -340,13 +348,9 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
     <section className="tt">
       {/* The sample: the three voices of a page together, each in the family chosen for it */}
       {pair.title && pair.subtitle && pair.body && (
-        <div className={`tt-comp${light ? " is-light" : ""}`}>
-          <div className="tt-comp__sheet">
-            <h2 className="tt-comp__title" style={pairStyle(pair.title)}>{text.trim() || projectName}</h2>
-            <p className="tt-comp__sub" style={pairStyle(pair.subtitle)}>{intent || tt.comp.subtitleSample}</p>
-            <p className="tt-comp__body" style={pairStyle(pair.body)}>{summary || tt.paragraphSample}</p>
-            <span className="tt-comp__cta" style={{ fontFamily: pair.body.row.css }}>{tt.comp.cta}</span>
-          </div>
+        <div className="tt-comp">
+          <Sample title={text.trim() || projectName} subtitle={intent || tt.comp.subtitleSample} body={summary || tt.paragraphSample} cta={tt.comp.cta} more={t.system.sample.more}
+            faces={{ title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) }} choices={choices} />
           <div className="tt-comp__roles">
             {PAIR_ROLES.map((role) => {
               const p = pair[role]!;
@@ -365,7 +369,7 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
               );
             })}
             <div className="tt-comp__foot">
-              <button type="button" className="tt-comp__bg" aria-pressed={light} onClick={() => setLight((v) => !v)}>{light ? tt.comp.dark : tt.comp.light}</button>
+              {!choices.bg ? <button type="button" className="tt-comp__bg" aria-pressed={!!choices.light} onClick={() => onChoice({ light: !choices.light })}>{choices.light ? tt.comp.dark : tt.comp.light}</button> : <span />}
               <Button variant="primary" size="sm" disabled={busy} title={tt.comp.useHint} onClick={() => onUse(tt.comp.decision(named(pair.title), named(pair.subtitle), named(pair.body)))}>{Icons.check} {tt.comp.use}</Button>
             </div>
           </div>
@@ -432,5 +436,33 @@ export function TypeTester({ projectId, projectName, intent, summary, refs, visu
       </ul>
       {silent.length > 0 && rows.length > 0 && <p className="tt-silent">{tt.silent(silent.map((i) => i.name).join(", "))}</p>}
     </section>
+  );
+}
+
+// ─── The sample on the other areas' stages ───────────────────────────────────
+// The same piece typography is tried on, in the faces chosen there, with this area's controls beside it.
+
+export function AreaSample({ area, projectId, projectName, intent, summary, typeRefs, visuals, areaVisuals, typeCuration, choices, onChoice, colorRole, onColorRole, replay, onReplay, busy, onUse }: {
+  area: SystemArea; projectId: string; projectName: string; intent: string; summary: string;
+  /** The references typography draws from (for the faces), and every reference's sheet */
+  typeRefs: InspoItem[]; visuals: RefVisual[];
+  /** The sheets of this area's own references: where its radii and curves come from */
+  areaVisuals: RefVisual[];
+  typeCuration: AreaCuration | null;
+  choices: SampleChoices; onChoice: (patch: Partial<SampleChoices>) => void;
+  colorRole: ColorRole; onColorRole: (role: ColorRole) => void;
+  replay: number; onReplay: () => void;
+  busy: boolean; onUse?: (decision: string) => void;
+}) {
+  const { t } = useT();
+  const tt = t.system.type;
+  const { rows } = useTypeRows(projectId, typeRefs, visuals);
+  const pair = useTypePair(projectId, rows, typeCuration);
+  return (
+    <div className="tt-comp">
+      <Sample title={projectName} subtitle={intent || tt.comp.subtitleSample} body={summary || tt.paragraphSample} cta={tt.comp.cta} more={t.system.sample.more}
+        faces={{ title: pairStyle(pair.title), subtitle: pairStyle(pair.subtitle), body: pairStyle(pair.body) }} choices={choices} replay={replay} />
+      <SampleControls area={area} choices={choices} onChoice={onChoice} colorRole={colorRole} onColorRole={onColorRole} visuals={areaVisuals} onReplay={onReplay} busy={busy} onUse={onUse} />
+    </div>
   );
 }
