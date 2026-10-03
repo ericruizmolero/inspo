@@ -36,6 +36,9 @@ import { Button } from "@/components/ui/button";
 import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useExtensionMissing } from "@/hooks/use-extension";
+import { sectionIcon } from "./section-icons";
+import Link from "next/link";
 import Logo from "@/components/Logo";
 import dynamic from "next/dynamic";
 
@@ -817,6 +820,7 @@ export default function InspoClient({
   // Desktop has no sidebar: the island in the top bar holds the projects and the workspace menu. A phone keeps
   // the sidebar as a sheet behind the menu button.
   const isMobile = useIsMobile();
+  const extMissing = useExtensionMissing();
 
   // ─── Search ─────────────────────────────────────────────────────────────────
   // Three layers, each shown as soon as it is there (lib/search-query.ts):
@@ -1332,6 +1336,15 @@ export default function InspoClient({
               </>
             )}
             {currentProject && <span className="topbar__actions-sep" aria-hidden />}
+            {/* A browser without the extension, or with it unconnected: the way to the guide, beside the other way of adding */}
+            {extMissing && (
+              <>
+                <Link href="/extension/install" className="btn btn--ghost topbar__polish topbar__ext" title={t.ext.nudge.hint}>
+                  {sectionIcon("extension")} {t.ext.nudge[extMissing]}
+                </Link>
+                <span className="topbar__actions-sep" aria-hidden />
+              </>
+            )}
             <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
           </div>
         </header>

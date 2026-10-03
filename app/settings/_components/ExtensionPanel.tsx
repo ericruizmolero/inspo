@@ -28,6 +28,8 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
     router.refresh();
   };
 
+  const hasMine = extKeys.some((k) => k.userId === me.id);
+
   return (
     <div className="page__body">
       {confirmDialog}
@@ -56,8 +58,10 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
             </ul>
           </CardContent>
         )}
-        <CardFooter>
-          <a className={buttonVariants({ variant: "primary", size: "sm" })} href="/extension/connect">{t.team.connectBrowser}</a>
+        <CardFooter className="gap-2">
+          {/* With no browser of theirs connected, the guide (it ends by connecting); after that, connecting another is the common case */}
+          <a className={buttonVariants({ variant: hasMine ? "default" : "primary", size: "sm" })} href="/extension/install">{t.settings.installExt}</a>
+          <a className={buttonVariants({ variant: hasMine ? "primary" : "default", size: "sm" })} href="/extension/connect">{t.team.connectBrowser}</a>
         </CardFooter>
       </Card>
     </div>

@@ -193,6 +193,14 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const useFrame = videoFile && !frameFailed;
   const useDesign = !useManual && !!designCover && !coverFailed;
 
+  // The strip that scrolls on hover is fetched once the cover has been up a moment, behind everything else:
+  // when the pointer arrives it comes from the cache and the scroll starts at once
+  useEffect(() => {
+    if (!designScroll || !useDesign || !cover.ready) return;
+    const timer = setTimeout(() => { const img = new Image(); img.fetchPriority = "low"; img.src = designScroll; }, 400);
+    return () => clearTimeout(timer);
+  }, [designScroll, useDesign, cover.ready]);
+
   // A new thumbnail or cover gets its own chance to load
   useEffect(() => { setManualFailed(false); }, [manualThumbnail]);
   useEffect(() => { setCoverFailed(false); }, [designCover]);
@@ -268,14 +276,18 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   useEffect(() => {
     const el = containerRef.current;
     if (!el || !onMeasure) return;
-    const onLoad = (e: Event) => {
-      const m = e.target;
+    const read = (m: EventTarget | null) => {
+      // Only the thumbnail gives the tile its shape: the strip that scrolls over it on hover is the whole page
+      if (m instanceof Element && m.closest(".tile__scroll")) return;
       const w = m instanceof HTMLImageElement ? m.naturalWidth : m instanceof HTMLVideoElement ? m.videoWidth : 0;
       const h = m instanceof HTMLImageElement ? m.naturalHeight : m instanceof HTMLVideoElement ? m.videoHeight : 0;
       if (!w || !h) return;
       const r = h / w;
       if (knownRatio === undefined || Math.abs(knownRatio - r) > 0.01) onMeasure(r);
     };
+    const onLoad = (e: Event) => read(e.target);
+    // A thumbnail already there (loaded before this listens, or kept with a shape the strip once gave it)
+    read(el.querySelector(":scope > img.tile__img"));
     el.addEventListener("load", onLoad, true);
     el.addEventListener("loadeddata", onLoad, true);
     return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
@@ -499,18 +511,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               </div>
             </div>
           )}
-
-          <div className="tile__overlay">
-            <div className="display tile__title">{item.name}</div>
-            {meta}
-            {commentCount > 0 && (
-              <span className="tile__replies">{IconComment}{t.card.replies(commentCount)}</span>
-            )}
-            {aiChips}
-            <span className="tile__cta">
-              {clickTarget === "md" ? (designMdReady ? t.card.openDesignMd : designMdLoading ? t.card.generatingDesignMd : t.card.generateDesignMd) : (commentCount > 0 ? t.card.seeComments : t.card.comment)}
-            </span>
-          </div>
 
           {/* Found by search without Jev's reading: why it is here, in the tags the words found */}
           {score === undefined && reason && (

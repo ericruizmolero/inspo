@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
     // Login showcase: reads the folder with readdir, which tracing doesn't see
     "/login": ["./public/showcase/*"],
     "/twitter-image": ["./app/fonts/*.ttf"],
+    // The extension zip is built at build time, but a regeneration at request time would read the folder again
+    "/extension/download": ["./extension/chrome/**/*"],
   },
 };
 

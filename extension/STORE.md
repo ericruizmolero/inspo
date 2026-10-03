@@ -53,7 +53,8 @@ para el alta ni para la ficha.
     user clicks the extension.
   - `storage`: keep the access key and workspace name the user chose.
   - `host_permissions` (criterio.design): call the criterio.design API to check and save
-    sites; the content script runs only on the page that hands the key to the extension.
+    sites; the content script runs only on criterio.design, to tell the app the extension is
+    installed and to receive the key.
 - **Remote code:** No.
 - **Uso de datos:** marcar "Website content" (la captura y el título) y "Web history" NO
   (no se guarda historial; solo la página que el usuario guarda a propósito). Los tres
@@ -63,6 +64,8 @@ para el alta ni para la ficha.
 ## Después de enviar
 
 - La revisión suele tardar de 1 a 3 días laborables. Llega un correo a tech@.
-- Mientras tanto, los socios usan el zip de la release de GitHub (modo desarrollador).
+- Mientras tanto, se instala a mano con la guía de https://criterio.design/extension/install
+  (zip + modo desarrollador).
 - Cuando esté aprobada, apuntar el enlace público en la issue #1 y en Ajustes → Extensión
-  del navegador (hoy el botón lleva a la página de conectar; podría llevar a instalarla).
+  del navegador, y cambiar los dos primeros pasos de la guía (`app/extension/install`) por el
+  botón de la tienda.

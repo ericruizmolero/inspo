@@ -8,11 +8,25 @@ The popup follows the browser language: English by default, Spanish when the bro
 Every text lives in `chrome/_locales/<lang>/messages.json` (Chrome's own i18n; `popup.js` reads them
 with `chrome.i18n.getMessage`). To add a language, copy `_locales/en` and translate the messages.
 
+## How people get it
+
+`criterio.design/extension/install` is the guide: download, load it in Chrome, connect, save the first
+site. While the extension is not in the Chrome Web Store it is installed by hand, from the zip the
+guide links to (`/extension/download`, built from `extension/chrome` at build time, without the
+localhost entries). Right after it is installed the extension opens the guide (or reloads it if it is
+already open), the page sees it and offers to connect. Settings → Browser extension links to the guide,
+and so does the library: `content.js` runs on every page of the app, and a browser where the extension
+is missing or has no key gets an "Install extension" button beside the + (`useExtensionMissing`).
+
+The guide also knows the installed version (`content.js` says it) and tells the person when the zip
+is newer. A hand-installed extension does not update itself: bump `version` in `manifest.json` with
+every change that should reach people, and they download it again.
+
 ## How it signs in
 
-It doesn't use the site's session cookie (Safari doesn't allow that reliably). Pressing
-"Connect to criterio.design" opens `criterio.design/extension/connect`: there you pick the workspace and
-a long key (`crit_…`) is created, which the extension stores in `chrome.storage.local`. Every
+It doesn't use the site's session cookie (Safari doesn't allow that reliably). The last step of the
+guide, or pressing "Connect to criterio.design" in the popup (which opens
+`criterio.design/extension/connect`), creates a long key (`crit_…`), which the extension stores in `chrome.storage.local`. Every
 call goes with `Authorization: Bearer crit_…` to the versioned routes under `/api/ext/v1/`:
 
 | Route | What it does |

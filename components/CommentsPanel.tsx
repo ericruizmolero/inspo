@@ -545,7 +545,9 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               <img src={image} alt="" loading="lazy" />
             </a>
           )}
-          {originals.length === 0 && threads.length === 0 && (
+          {originals.map((m, i) => renderMsg(m, !!originals[i - 1] && originals[i - 1].name === m.name && Math.abs(Date.parse(originals[i - 1].at) - Date.parse(m.at)) < 5 * 60000))}
+          {/* Nobody has answered yet: the invitation to, under the note the reference came with */}
+          {threads.length === 0 && (
             <div className="cm-empty">
               <div className="cm-empty__ghosts" aria-hidden>
                 {ghosts.map((g, i) => (
@@ -558,7 +560,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                   </div>
                 ))}
               </div>
-              <span className="display cm-empty__title">{t.comments.emptyTitle}</span>
+              <span className="display cm-empty__title">{originals.length ? t.comments.inviteTitle : t.comments.emptyTitle}</span>
               <span className="cm-empty__text">
                 {others.length === 0
                   ? t.comments.emptyAlone
@@ -571,7 +573,6 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               </div>
             </div>
           )}
-          {originals.map((m, i) => renderMsg(m, !!originals[i - 1] && originals[i - 1].name === m.name && Math.abs(Date.parse(originals[i - 1].at) - Date.parse(m.at)) < 5 * 60000))}
           {threads.map(({ head, replies }) => (
             // A post-it's thread wears the post-it's colour from its comment down to its last reply
             <div key={head.id} data-thread={head.id} className={`cm-thread${head.pin !== undefined ? " is-pinned" : ""}${focusId === head.id ? " is-focus" : ""}`}>
