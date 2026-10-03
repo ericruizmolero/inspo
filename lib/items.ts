@@ -151,6 +151,13 @@ export async function hasItem(organizationId: string, web: string): Promise<bool
 }
 
 /** Sets or clears the manual thumbnail. The file it replaces is deleted if nothing else uses it. */
+/** Moves the item to another day (YYYY-MM-DD): what an import learns about a post once it has read it */
+export async function setItemDate(organizationId: string, web: string, dateIso: string): Promise<boolean> {
+  const res = await db.update(T).set({ date: dateIso, updatedAt: new Date() })
+    .where(and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web))));
+  return (res.rowCount ?? 0) > 0;
+}
+
 export async function setThumbnail(organizationId: string, web: string, thumbnailUrl: string | null): Promise<boolean> {
   const where = and(eq(T.organizationId, organizationId), eq(T.webKey, webKeyOf(web)));
   const [old] = await db.select({ url: T.thumbnailUrl }).from(T).where(where).limit(1);
