@@ -1,0 +1,88 @@
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3123
+- Network:       http://192.168.1.63:3123
+- Environments: .env.local
+✓ Ready in 260ms
+- Experiments (use with caution):
+  · proxyClientMaxBodySize: "21mb"
+
+○ Compiling / ...
+[2m2026-10-03T09:50:43.233Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ GET /?in=library 200 in 6.5s (next.js: 4.2s, proxy.ts: 118ms, application-code: 2.2s)
+[2m2026-10-03T09:50:47.035Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ GET /login 200 in 1290ms (next.js: 1189ms, proxy.ts: 6ms, application-code: 95ms)
+[2m2026-10-03T09:50:47.809Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ GET /api/files/inspo/b8072ed679ec4e60a561fcad/thumbs/1790853233011-Captura_de_pantalla_2026-10-01_a_las_13.13.43.jpg 404 in 2.6s (next.js: 2.5s, proxy.ts: 21ms, application-code: 26ms)
+ POST /api/activity 200 in 693ms (next.js: 670ms, proxy.ts: 5ms, application-code: 19ms)
+ GET /api/library?ws=UFVszZN8P8KTllh2jiZbVlyvGcjIElP0 200 in 328ms (next.js: 299ms, proxy.ts: 3ms, application-code: 26ms)
+ GET /api/library?ws=a9595d5eb40c47dab0a17e89 200 in 335ms (next.js: 296ms, proxy.ts: 4ms, application-code: 34ms)
+ GET /api/dev-login?next=%2F%3Fin%3D14ee16211b024ad4a58b25ef 302 in 282ms (next.js: 256ms, proxy.ts: 1992µs, application-code: 24ms)
+ GET /?in=14ee16211b024ad4a58b25ef 200 in 111ms (next.js: 3ms, proxy.ts: 1633µs, application-code: 107ms)
+ POST /api/activity 200 in 18ms (next.js: 2ms, proxy.ts: 2ms, application-code: 14ms)
+ POST /?in=14ee16211b024ad4a58b25ef 200 in 118ms (next.js: 1805µs, proxy.ts: 2ms, application-code: 114ms)
+  └─ ƒ loadSystem("14ee16211b024ad4a58b25ef") in 49ms app/actions/system.ts
+ POST /?in=14ee16211b024ad4a58b25ef 200 in 30ms (next.js: 3ms, proxy.ts: 10ms, application-code: 18ms)
+  └─ ƒ loadSystemVisuals("14ee16211b024ad4a58b25ef") in 13ms app/actions/system.ts
+ POST /?in=14ee16211b024ad4a58b25ef 200 in 15ms (next.js: 1148µs, proxy.ts: 1270µs, application-code: 13ms)
+  └─ ƒ loadSystem("14ee16211b024ad4a58b25ef") in 9ms app/actions/system.ts
+ POST /?in=14ee16211b024ad4a58b25ef 200 in 19ms (next.js: 1154µs, proxy.ts: 1444µs, application-code: 16ms)
+  └─ ƒ loadSystemVisuals("14ee16211b024ad4a58b25ef") in 13ms app/actions/system.ts
+ GET /api/files/inspo/design-md/5efec028badfbab4-cover-1790085986506.jpg 200 in 19ms (next.js: 4ms, proxy.ts: 3ms, application-code: 12ms)
+[2m2026-10-03T09:50:56.807Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ POST /api/activity 200 in 10ms (next.js: 1238µs, proxy.ts: 1808µs, application-code: 7ms)
+ GET /api/dev-login?next=%2F%3Fin%3Dinbox 302 in 26ms (next.js: 7ms, proxy.ts: 1842µs, application-code: 17ms)
+ GET /?in=inbox 200 in 96ms (next.js: 1667µs, proxy.ts: 1479µs, application-code: 92ms)
+ POST /api/activity 200 in 11ms (next.js: 1169µs, proxy.ts: 1788µs, application-code: 8ms)
+ GET /api/files/inspo/design-md/474f8e57148dc1f0-cover-1790837725333.jpg 200 in 94ms (next.js: 13ms, proxy.ts: 7ms, application-code: 74ms)
+ GET /api/files/inspo/design-md/c652aa8e0fe52305-cover-1790261505830.jpg 200 in 91ms (next.js: 22ms, proxy.ts: 6ms, application-code: 63ms)
+ GET /api/files/inspo/design-md/18ddc4b68b6c714a-cover-1790072852582.jpg 200 in 90ms (next.js: 25ms, proxy.ts: 4ms, application-code: 61ms)
+ GET /api/files/inspo/design-md/aded2668a47da393-cover-1790322988076.jpg 200 in 92ms (next.js: 26ms, proxy.ts: 4ms, application-code: 62ms)
+ GET /api/files/inspo/design-md/104437000051505e-cover-1789948037921.jpg 200 in 92ms (next.js: 27ms, proxy.ts: 4ms, application-code: 61ms)
+ GET /api/files/inspo/design-md/94aad250f309689e-cover-1789979614500.jpg 200 in 93ms (next.js: 28ms, proxy.ts: 4ms, application-code: 61ms)
+[2m2026-10-03T09:51:01.107Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ GET /api/og?url=https%3A%2F%2Fwww.langchain.com%2Flanggraph 200 in 927ms (next.js: 224ms, proxy.ts: 4ms, application-code: 699ms)
+ GET /api/og?url=https%3A%2F%2Fhuyml.co 200 in 966ms (next.js: 229ms, proxy.ts: 5ms, application-code: 732ms)
+ GET /api/og?url=https%3A%2F%2Fwww.a1.gallery 200 in 627ms (next.js: 1115µs, proxy.ts: 1463µs, application-code: 624ms)
+ GET /api/og?url=https%3A%2F%2Frsquare.work 200 in 1594ms (next.js: 225ms, proxy.ts: 4ms, application-code: 1365ms)
+ GET /api/og?url=https%3A%2F%2Fwww.lightspark.com 200 in 1754ms (next.js: 227ms, proxy.ts: 4ms, application-code: 1523ms)
+ GET /api/og?url=https%3A%2F%2Fwww.off.site 204 in 1196ms (next.js: 1545µs, proxy.ts: 2ms, application-code: 1192ms)
+ GET /api/og?url=https%3A%2F%2Fbrand.ai 200 in 530ms (next.js: 3ms, proxy.ts: 5ms, application-code: 522ms)
+ GET /api/og?url=https%3A%2F%2Fwww.clusia.com%2Fabout 200 in 2.3s (next.js: 230ms, proxy.ts: 4ms, application-code: 2.0s)
+ GET /api/og?url=https%3A%2F%2Foutbid.lol 204 in 237ms (next.js: 4ms, proxy.ts: 5ms, application-code: 228ms)
+ GET /api/og?url=https%3A%2F%2Fstyles.refero.design 200 in 2.7s (next.js: 220ms, proxy.ts: 5ms, application-code: 2.4s)
+ GET /api/og?url=https%3A%2F%2Fminimal.gallery 200 in 1218ms (next.js: 4ms, proxy.ts: 2ms, application-code: 1212ms)
+ GET /api/og?url=https%3A%2F%2Fchubby.studio 200 in 843ms (next.js: 6ms, proxy.ts: 3ms, application-code: 835ms)
+ GET /api/og?url=https%3A%2F%2Fwww.glideapps.com 200 in 768ms (next.js: 2ms, proxy.ts: 1516µs, application-code: 764ms)
+Failed to set fetch cache https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy?url=https%3A%2F%2Fwww.trycomp.ai%2F%3Futm_source%3Doutbid Error: Failed to set Next.js data cache for https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy?url=https%3A%2F%2Fwww.trycomp.ai%2F%3Futm_source%3Doutbid, items over 2MB can not be cached (2664629 bytes)
+    at ignore-listed frames
+ GET /api/files/inspo/b8072ed679ec4e60a561fcad/thumbs/1790853233011-Captura_de_pantalla_2026-10-01_a_las_13.13.43.jpg 404 in 27ms (next.js: 13ms, proxy.ts: 2ms, application-code: 12ms)
+ GET /api/og?url=https%3A%2F%2Fvoltlites.com 200 in 407ms (next.js: 1485µs, proxy.ts: 1642µs, application-code: 404ms)
+ GET /api/files/inspo/design-md/5275170f8fb45e6a-cover-1790071470481.jpg 200 in 24ms (next.js: 4ms, proxy.ts: 2ms, application-code: 18ms)
+ GET /api/og?url=https%3A%2F%2Falright.studio 200 in 599ms (next.js: 3ms, proxy.ts: 11ms, application-code: 585ms)
+ GET /api/files/inspo/design-md/8bfc942875bb03c5-cover-1789978933536.jpg 200 in 29ms (next.js: 4ms, proxy.ts: 5ms, application-code: 19ms)
+ GET /api/og?url=https%3A%2F%2Fpongotodo.com 200 in 864ms (next.js: 981µs, proxy.ts: 1292µs, application-code: 861ms)
+ GET /api/og?url=https%3A%2F%2Fwww.trycomp.ai%2F%3Futm_source%3Doutbid 200 in 1471ms (next.js: 1165µs, proxy.ts: 1678µs, application-code: 1468ms)
+ GET /api/shot?url=https%3A%2F%2Fwww.off.site&v=2 200 in 317ms (next.js: 297ms, proxy.ts: 4ms, application-code: 16ms)
+ GET /api/shot?url=https%3A%2F%2Foutbid.lol&v=2 200 in 206ms (next.js: 191ms, proxy.ts: 1709µs, application-code: 14ms)
+ GET /api/og?url=https%3A%2F%2Fnor.ma%2Fes 200 in 727ms (next.js: 1324µs, proxy.ts: 1811µs, application-code: 723ms)
+[2m2026-10-03T09:51:04.457Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ POST /api/activity 200 in 21ms (next.js: 3ms, proxy.ts: 4ms, application-code: 14ms)
+ GET /api/og?url=https%3A%2F%2Fbenorth.studio%2Fes 200 in 2.3s (next.js: 1394µs, proxy.ts: 2ms, application-code: 2.3s)
+ GET /api/og?url=https%3A%2F%2Fwww.tmdn.org%2Ftmview%2F%23%2Ftmview 200 in 5.6s (next.js: 1365µs, proxy.ts: 3ms, application-code: 5.6s)
+ POST /api/activity 200 in 11ms (next.js: 1062µs, proxy.ts: 4ms, application-code: 6ms)
+ GET /api/files/inspo/b8072ed679ec4e60a561fcad/thumbs/1790853233011-Captura_de_pantalla_2026-10-01_a_las_13.13.43.jpg 404 in 20ms (next.js: 4ms, proxy.ts: 1878µs, application-code: 14ms)
+[2m2026-10-03T09:51:08.683Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ GET /api/files/inspo/b8072ed679ec4e60a561fcad/thumbs/1790853233011-Captura_de_pantalla_2026-10-01_a_las_13.13.43.jpg 404 in 20ms (next.js: 9ms, proxy.ts: 5ms, application-code: 6ms)
+[2m2026-10-03T09:51:11.636Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ GET /api/files/inspo/design-md/474f8e57148dc1f0-scroll-1790837725333.jpg 200 in 30ms (next.js: 12ms, proxy.ts: 5ms, application-code: 13ms)
+[2m2026-10-03T09:51:14.330Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ POST /api/activity 200 in 27ms (next.js: 4ms, proxy.ts: 11ms, application-code: 12ms)
+ POST /api/activity 200 in 25ms (next.js: 7ms, proxy.ts: 6ms, application-code: 11ms)
+ POST /api/activity 200 in 27ms (next.js: 7ms, proxy.ts: 6ms, application-code: 14ms)
+ POST /api/activity 200 in 40ms (next.js: 9ms, proxy.ts: 6ms, application-code: 25ms)
+ GET /api/files/inspo/design-md/aded2668a47da393-scroll-1790322988076.jpg 200 in 26ms (next.js: 8ms, proxy.ts: 4ms, application-code: 14ms)
+ POST /api/activity 200 in 13ms (next.js: 1779µs, proxy.ts: 2ms, application-code: 9ms)
+ POST /api/activity 200 in 14ms (next.js: 5ms, proxy.ts: 2ms, application-code: 7ms)
+[2m2026-10-03T09:51:18.469Z[0m [33mWARN[0m [1m[Better Auth]:[0m [better-auth] Base URL is not set. Set the baseURL option or BETTER_AUTH_URL env, or use a dynamic baseURL with allowedHosts for multi-host setups. Without it the origin is derived from the incoming request, and callbacks and redirects may not work correctly.
+ POST /api/activity 200 in 25ms (next.js: 5ms, proxy.ts: 6ms, application-code: 14ms)
+ POST /api/activity 200 in 25ms (next.js: 7ms, proxy.ts: 6ms, application-code: 12ms)

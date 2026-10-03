@@ -1,23 +1,238 @@
 {
-  "extDescription": { "message": "Save the site you are looking at to your criterio.design library in one click." },
-  "actionTitle": { "message": "Save to criterio.design" },
-  "lead": { "message": "Save the site you're looking at to your library." },
-  "connect": { "message": "Connect to criterio.design" },
-  "haveKey": { "message": "I already have a key" },
-  "useKey": { "message": "Use this key" },
-  "save": { "message": "Save" },
-  "noteHint": { "message": "What caught your eye? A sound, a transition, the nav… (optional)" },
-  "saving": { "message": "Saving…" },
-  "viewOn": { "message": "View on criterio.design" },
-  "disconnect": { "message": "Disconnect" },
-  "yourLibrary": { "message": "your library" },
-  "notWebsite": { "message": "This tab isn't a website" },
-  "onlyHttp": { "message": "Only http(s) pages can be saved." },
-  "alreadySaved": { "message": "Already saved in $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
-  "alreadySavedBy": { "message": "Already saved in $WS$ (by $WHO$).", "placeholders": { "ws": { "content": "$1", "example": "Studio" }, "who": { "content": "$2", "example": "Ana" } } },
-  "savedIn": { "message": "Saved in $WS$.", "placeholders": { "ws": { "content": "$1", "example": "Studio" } } },
-  "keyInvalid": { "message": "This key no longer works. Connect again." },
-  "keyBadFormat": { "message": "That doesn't look like a key: it starts with crit_." },
-  "disconnected": { "message": "Disconnected. The key has been revoked." },
-  "errorStatus": { "message": "Error $STATUS$", "placeholders": { "status": { "content": "$1", "example": "500" } } }
+  "extDescription": {
+    "message": "Save the site you are looking at to your criterio.design library in one click."
+  },
+  "actionTitle": {
+    "message": "Save to criterio.design"
+  },
+  "lead": {
+    "message": "Save the site you're looking at to your library."
+  },
+  "connect": {
+    "message": "Connect to criterio.design"
+  },
+  "haveKey": {
+    "message": "I already have a key"
+  },
+  "useKey": {
+    "message": "Use this key"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "noteHint": {
+    "message": "What caught your eye? A sound, a transition, the nav… (optional)"
+  },
+  "saving": {
+    "message": "Saving…"
+  },
+  "viewOn": {
+    "message": "View on criterio.design"
+  },
+  "disconnect": {
+    "message": "Disconnect"
+  },
+  "yourLibrary": {
+    "message": "your library"
+  },
+  "notWebsite": {
+    "message": "This tab isn't a website"
+  },
+  "onlyHttp": {
+    "message": "Only http(s) pages can be saved."
+  },
+  "alreadySaved": {
+    "message": "Already saved in $WS$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "alreadySavedBy": {
+    "message": "Already saved in $WS$ (by $WHO$).",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      },
+      "who": {
+        "content": "$2",
+        "example": "Ana"
+      }
+    }
+  },
+  "savedIn": {
+    "message": "Saved in $WS$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "keyInvalid": {
+    "message": "This key no longer works. Connect again."
+  },
+  "keyBadFormat": {
+    "message": "That doesn't look like a key: it starts with crit_."
+  },
+  "disconnected": {
+    "message": "Disconnected. The key has been revoked."
+  },
+  "errorStatus": {
+    "message": "Error $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1",
+        "example": "500"
+      }
+    }
+  },
+  "importTitle": {
+    "message": "Import your bookmarks"
+  },
+  "importLead": {
+    "message": "Bring what you already saved elsewhere into $WS$. Each address is saved as if you had pasted it: name, thumbnail and tags come on their own.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "importConnectFirst": {
+    "message": "Connect the extension first, then come back here."
+  },
+  "browserTitle": {
+    "message": "From this browser"
+  },
+  "browserLead": {
+    "message": "Pick the folders. Only web pages are imported; the folder names stay here."
+  },
+  "browserEmpty": {
+    "message": "No bookmarks in this browser."
+  },
+  "bookmarksRoot": {
+    "message": "Bookmarks"
+  },
+  "selectedCount": {
+    "message": "$N$ sites selected",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "importBrowser": {
+    "message": "Import selected"
+  },
+  "xTitle": {
+    "message": "From X"
+  },
+  "xLead": {
+    "message": "Opens your bookmarks on x.com in a new tab and scrolls through them; each post found is saved here. Keep that tab open until it finishes. You need to be signed in to X in this browser."
+  },
+  "importX": {
+    "message": "Import from X"
+  },
+  "xPermission": {
+    "message": "Chrome asks for permission to read x.com; it is only used while importing."
+  },
+  "xPermissionDenied": {
+    "message": "Without permission to read x.com the extension can't see your bookmarks."
+  },
+  "xNotLoggedIn": {
+    "message": "You're not signed in to X in this browser. Sign in and try again."
+  },
+  "xTabClosed": {
+    "message": "The X tab was closed. What was found so far has been saved."
+  },
+  "xInjectFailed": {
+    "message": "Couldn't read the X tab: $ERR$",
+    "placeholders": {
+      "err": {
+        "content": "$1",
+        "example": "…"
+      }
+    }
+  },
+  "progressBrowser": {
+    "message": "Importing bookmarks…"
+  },
+  "progressX": {
+    "message": "Reading your X bookmarks…"
+  },
+  "found": {
+    "message": "found"
+  },
+  "saved": {
+    "message": "saved"
+  },
+  "already": {
+    "message": "already here"
+  },
+  "skipped": {
+    "message": "not web pages"
+  },
+  "failed": {
+    "message": "failed"
+  },
+  "stop": {
+    "message": "Stop"
+  },
+  "doneSaved": {
+    "message": "Done: $N$ new references in $WS$. Thumbnails and tags arrive over the next minutes.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "48"
+      },
+      "ws": {
+        "content": "$2",
+        "example": "Studio"
+      }
+    }
+  },
+  "nothingNew": {
+    "message": "Nothing new: everything was already in $WS$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      }
+    }
+  },
+  "nothingFound": {
+    "message": "Nothing found."
+  },
+  "tooMany": {
+    "message": "Up to $N$ at a time: the first $N$ are imported, the rest on another run.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "1000"
+      }
+    }
+  },
+  "openLibrary": {
+    "message": "Open the library"
+  },
+  "importMore": {
+    "message": "Import more"
+  },
+  "doneTitle": {
+    "message": "Import finished"
+  },
+  "importLabel": {
+    "message": "Import"
+  },
+  "importXShort": {
+    "message": "Bookmarks on X"
+  },
+  "importBrowserShort": {
+    "message": "Chrome bookmarks"
+  }
 }

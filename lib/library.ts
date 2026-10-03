@@ -16,7 +16,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   // Both shared indexes (R2) are read while the database answers; they are cached, so the calls below reuse them
   const pages = getPageIndex();
   void getDesignMdIndex();
-  const [{ items, thumbnailMap, tagMap, tagJobs }, { projects, links }, systems, members, admin, quota, comments] = await Promise.all([
+  const [{ items, thumbnailMap, tagMap, tagJobs }, { projects, links, shelf }, systems, members, admin, quota, comments] = await Promise.all([
     loadWorkspaceData(ws.id),
     loadProjects(ws.id),
     loadSystems(ws.id),
@@ -38,6 +38,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     initialTagJobs: tagJobs,
     initialProjects: projects,
     initialProjectLinks: links,
+    initialProjectShelf: shelf,
     initialSystems: systems,
     members: members.map((m) => ({ name: m.name, image: m.image ?? null })),
     isAdmin: admin,

@@ -1,7 +1,7 @@
 // Projects: spaces inside a workspace to file references (schema.project / schema.projectItem).
 // Always scoped to a workspace; an item in no project is in the Inbox.
 import "server-only";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
@@ -19,15 +19,19 @@ async function cleanName(name: string): Promise<string> {
   return n;
 }
 
-/** The workspace's projects, oldest first, and which items are in each: two queries. */
-export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks }> {
+/**
+ * The workspace's projects, oldest first, and which items are in each: two queries. `links` is
+ * the board of each project; `shelf` what Polish archived (still the project's, off the board).
+ */
+export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks; shelf: ProjectLinks }> {
   const [projects, rows] = await Promise.all([
-    db.select({ id: P.id, name: P.name }).from(P).where(eq(P.organizationId, organizationId)).orderBy(asc(P.createdAt)),
-    db.select({ projectId: PI.projectId, itemId: PI.itemId }).from(PI).where(eq(PI.organizationId, organizationId)),
+    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'` }).from(P).where(eq(P.organizationId, organizationId)).orderBy(asc(P.createdAt)),
+    db.select({ projectId: PI.projectId, itemId: PI.itemId, archivedAt: PI.archivedAt }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};
-  for (const r of rows) (links[r.itemId] ??= []).push(r.projectId);
-  return { projects, links };
+  const shelf: ProjectLinks = {};
+  for (const r of rows) ((r.archivedAt ? shelf : links)[r.itemId] ??= []).push(r.projectId);
+  return { projects, links, shelf };
 }
 
 export async function createProject(organizationId: string, name: string, userId: string): Promise<Project> {
@@ -60,9 +64,17 @@ export async function fileItems(organizationId: string, projectId: string, itemI
     .where(and(eq(schema.inspoItem.organizationId, organizationId), inArray(schema.inspoItem.id, itemIds)));
   if (!own.length) return;
   const now = new Date();
+  // Filing an archived reference again puts it back on the board
   await db.insert(PI)
     .values(own.map((r) => ({ projectId, itemId: r.id, organizationId, addedBy: userId, createdAt: now })))
-    .onConflictDoNothing();
+    .onConflictDoUpdate({ target: [PI.projectId, PI.itemId], set: { archivedAt: null } });
+}
+
+/** Off the board but still the project's (on), or back on the board (off). Polish's archive. */
+export async function setArchived(organizationId: string, projectId: string, itemIds: string[], on: boolean): Promise<void> {
+  if (!itemIds.length) return;
+  await db.update(PI).set({ archivedAt: on ? new Date() : null })
+    .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
 }
 
 export async function unfileItems(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {

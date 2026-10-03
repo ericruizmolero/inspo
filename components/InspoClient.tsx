@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, editTags as editTagsAction } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -141,6 +141,7 @@ export default function InspoClient({
   initialTagJobs = {},
   initialProjects = [],
   initialProjectLinks = {},
+  initialProjectShelf = {},
   initialSystems = {},
   aiEnabled = false,
   user,
@@ -163,6 +164,8 @@ export default function InspoClient({
   initialTagJobs?: Record<string, TagStatus>;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
+  /** Archived by Polish: off the project's board, still the project's (not in the Inbox either) */
+  initialProjectShelf?: ProjectLinks;
   /** Each project's system, by project id (lib/system.ts) */
   initialSystems?: Record<string, ProjectSystem>;
   aiEnabled?: boolean;
@@ -214,6 +217,7 @@ export default function InspoClient({
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
   const [projects, setProjects] = useState(initialProjects);
   const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
+  const [shelf, setShelf] = useState<ProjectLinks>(initialProjectShelf);
   // The systems, alive: filing a reference into a project that has started its system re-reads the
   // board a moment later (one cheap model call), so the system never lags behind the board
   const [systems, setSystems] = useState(initialSystems);
@@ -261,7 +265,7 @@ export default function InspoClient({
 
   // The items in the current space (inbox, a project or everything), before any other filter
   const spaceItems = useMemo(() => space === "all" || space === "home" ? items
-    : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
+    : space === "inbox" ? items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length)))
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
   [items, links, space]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
@@ -537,10 +541,28 @@ export default function InspoClient({
       return { ...prev, [id]: want ? [...cur, projectId] : cur };
     });
     flip(on);
+    // Filing an archived reference again brings it back to the board (the server does the same)
+    if (on) setShelf((prev) => (prev[id]?.includes(projectId) ? { ...prev, [id]: prev[id].filter((x) => x !== projectId) } : prev));
     const r = await setFiled(projectId, [id], on).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); return; }
     refreshSystem(projectId);
   }, [refreshSystem]);
+  /** Polish's archive: off the board but still the project's (on), or back on it (off). The why stays with the row */
+  const setProjectArchive = useCallback(async (picked: InspoItem[], projectId: string, on: boolean) => {
+    const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
+    if (!ids.length) return;
+    const move = (from: ProjectLinks, to: ProjectLinks): [ProjectLinks, ProjectLinks] => {
+      const a = { ...from }, b = { ...to };
+      for (const id of ids) { a[id] = (a[id] ?? []).filter((x) => x !== projectId); b[id] = [...(b[id] ?? []).filter((x) => x !== projectId), projectId]; }
+      return [a, b];
+    };
+    const prevLinks = links, prevShelf = shelf;
+    const [a, b] = on ? move(links, shelf) : move(shelf, links);
+    if (on) { setLinks(a); setShelf(b); } else { setShelf(a); setLinks(b); }
+    const r = await setProjectArchived(projectId, ids, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setLinks(prevLinks); setShelf(prevShelf); projectFailed(new Error(r.error)); throw new Error(r.error); }
+    refreshSystem(projectId);
+  }, [links, shelf, refreshSystem]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
     const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
@@ -1187,7 +1209,10 @@ export default function InspoClient({
           imageOf={(i) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? null}
           comments={commentMap}
           hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
-          onDiscard={async (picked) => { for (const i of picked) await toggleFiled(i, currentProject.id, false); }}
+          archived={items.filter((i) => i.id && shelf[i.id]?.includes(currentProject.id))}
+          onArchive={(picked, on) => setProjectArchive(picked, currentProject.id, on)}
+          onSearch={(q) => { setSpace("all"); setQuery(q); }}
+          onBrief={(about) => setProjects((prev) => prev.map((p) => (p.id === currentProject.id ? { ...p, intent: about || null } : p)))}
           onClose={() => setShowPolish(false)}
         />
       )}

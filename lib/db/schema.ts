@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
-import type { PolishState } from "@/types/polish";
+import type { PolishState, Why } from "@/types/polish";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -192,6 +192,10 @@ export const projectItem = pgTable("project_item", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   addedBy: text("added_by").references(() => user.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  /** Set when the reference leaves the board but stays with the project (Polish: "lo que no pesa"); null on the board */
+  archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
+  /** What the team takes from this reference for this project: the "why" (types/polish.ts) */
+  why: jsonb("why").$type<Why>(),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.itemId] }),
   index("project_item_org_idx").on(t.organizationId),

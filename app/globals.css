@@ -600,6 +600,17 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__ws { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .topbar__title { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar__count { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* The project's intention line, next to its name when there is room */
+.topbar__intent { margin-left: 6px; font-size: 13px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 1199px) { .topbar__intent { display: none; } }
+/* On desktop the search sits at the bar's centre, so the breadcrumb (with the intent) stops before it */
+@media (min-width: 1200px) {
+  .topbar__view { max-width: calc(50% - 300px); }
+  .topbar__view [data-slot="breadcrumb-list"] { flex-wrap: nowrap; min-width: 0; }
+  .topbar__view [data-slot="breadcrumb-item"]:last-child { min-width: 0; }
+}
+/* A project's archive row, under its project */
+.nav-item--sub .nav-item { padding-left: 28px; }
 .topbar__logo, .topbar__add { display: none; }
 /* Polish: only inside a project (InspoClient). A ghost button at the search's height and radius, so
    it sits in the row without shouting; the gem is what makes it its own. Its label goes on small
@@ -812,6 +823,9 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
   box-shadow: 0 0 0 1px rgba(255,255,255,0.16); pointer-events: none; transition: opacity 0.2s;
 }
 .tile:hover .tile__play { opacity: 0; }
+/* A video or gif looping over its poster; the poster keeps the tile's shape and the loop fades in once it plays */
+.tile__loop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.tile__loop.is-playing { opacity: 1; }
 /* YouTube hands out a 4:3 frame with the 16:9 video letterboxed inside: crop the bands */
 .tile__img--frame { aspect-ratio: 16 / 9; object-fit: cover; }
 .tile__badge {
@@ -1383,8 +1397,13 @@ video.vp__media { object-fit: contain; }
 .polish-clean__icon { width: 44px; height: 44px; border-radius: 50%; background: var(--success); color: #fff; display: flex; align-items: center; justify-content: center; }
 .polish-clean__icon svg { width: 20px; height: 20px; }
 .polish-deck__head { width: 100%; max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: baseline; }
-.polish-deck__kind { font-size: 13px; font-weight: 500; color: var(--text); }
-.polish-deck__n { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.polish-deck__kind { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: var(--text); }
+/* The board's size against the comfortable dozen (Flujo de Criterio: a soft limit) */
+.polish-deck__target { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); font-size: 11px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+.polish-deck__target.is-over { color: var(--warning); }
+.polish-deck__n { display: flex; align-items: baseline; gap: 14px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.polish-deck__skip { font-size: 12px; color: var(--muted); text-decoration: underline dotted; text-underline-offset: 3px; }
+.polish-deck__skip:hover { color: var(--text); }
 .polish-deck__bar { grid-column: 1 / -1; height: 3px; border-radius: 2px; background: var(--surface-2); overflow: hidden; }
 .polish-deck__bar span { display: block; height: 100%; border-radius: 2px; background: var(--text); transition: width 0.3s; }
 .polish-deck { display: grid; width: 100%; max-width: 640px; margin: 0 auto; padding-top: 16px; }
@@ -1434,6 +1453,29 @@ video.vp__media { object-fit: contain; }
 .polish-card__tick svg { width: 12px; height: 12px; }
 .polish-card__ref.is-on .polish-card__tick { display: flex; }
 .polish-card__pair { display: flex; gap: 8px; }
+/* Gap card: no picture, a search mark where it would be */
+.polish-card__gap { aspect-ratio: 16 / 7; border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+.polish-card__gapmark { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--surface); color: var(--muted); }
+.polish-card__gapmark svg { width: 20px; height: 20px; }
+.polish-card .polish-chips { gap: 6px; }
+/* On the card (same surface as an input) the note field has to look like a field: darker well, hairline, caret */
+.polish-card__note { background: var(--bg); border-color: var(--border-strong); caret-color: var(--text); }
+.polish-card__note::placeholder { color: var(--muted); }
+.polish-card__note:hover { border-color: color-mix(in srgb, var(--text) 30%, transparent); }
+.polish-card__note:focus { border-color: var(--text); background: var(--bg); }
+.polish-card .polish-chip { height: 32px; padding: 0 12px; font-size: 13px; }
+/* The project's archive, folded under the deck */
+.polish-archive { width: 100%; max-width: 640px; margin: 8px auto 0; }
+.polish-archive__sum { cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-2); display: flex; align-items: baseline; gap: 6px; list-style: none; }
+.polish-archive__sum::-webkit-details-marker { display: none; }
+.polish-archive__sum::before { content: "\25B8"; font-size: 10px; color: var(--muted); }
+.polish-archive[open] .polish-archive__sum::before { content: "\25BE"; }
+.polish-archive > .polish-card__hint { margin: 6px 0 10px; }
+.polish-archive__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.polish-archive__list li { display: flex; align-items: center; gap: 12px; }
+.polish-archive__list li.is-busy { opacity: 0.5; pointer-events: none; }
+.polish-archive__list .polish-thumb { width: 64px; aspect-ratio: 4 / 3; border-radius: 6px; flex-shrink: 0; font-size: 14px; }
+.polish-archive__list .polish-card__refname { flex: 1; min-width: 0; }
 /* The "i" on every picture opens that reference's sheet over the card */
 .polish-card__shot { position: relative; display: block; min-width: 0; }
 .polish-card__info {
