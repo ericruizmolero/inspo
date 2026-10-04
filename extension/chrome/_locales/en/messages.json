@@ -1,6 +1,6 @@
 {
   "extDescription": {
-    "message": "Save the site you are looking at to your criterio.design library in one click."
+    "message": "Save the site you're looking at, or one image or video on it, to your criterio.design library."
   },
   "actionTitle": {
     "message": "Save to criterio.design"
@@ -234,5 +234,17 @@
   },
   "importBrowserShort": {
     "message": "Chrome bookmarks"
+  },
+  "menuSaveImage": {
+    "message": "Save image to criterio.design"
+  },
+  "menuSaveVideo": {
+    "message": "Save video to criterio.design"
+  },
+  "open": {
+    "message": "Open"
+  },
+  "rightClickHint": {
+    "message": "Right-click any image or video to save only that."
   }
 }

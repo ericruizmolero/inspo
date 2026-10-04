@@ -36,9 +36,27 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `GET /items/lookup?url=` | Is this site already saved? |
 | `POST /items` | Saves `{ url, title, screenshot }` |
 | `POST /items/batch` | Saves up to 25 `{ url, title }` at once (the import page) |
+| `POST /media` | Saves one image or video from the right-click menu |
 
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
+
+## Right-click: one image or video
+
+`background.js` adds "Save image to criterio.design" and "Save video to criterio.design" to the context
+menu (`contextMenus` permission). The click grants `activeTab`, so the service worker finds the element
+on the page by its address, cuts the piece of the visible tab it covers, and sends both to
+`POST /api/ext/v1/media` with the page address and the element's alt text.
+
+- **An image** is fetched by the server (with the page as `Referer`, since some sites refuse a bare
+  request) and stored in the workspace's media folder, the same as an image dropped into the app. When the
+  site still refuses, or the image is a `blob:`, the cut piece of the tab is stored instead.
+- **A video** with a file of its own (`.mp4`, `.webm`, `.mov`) is saved as a link to that file, which the
+  app plays, with the cut piece as its frame. A stream with no file (YouTube, X, a `blob:`) saves the page.
+
+Both land on the board of the project the person last added to, like the popup's saves. With no key, the
+click opens `/extension/connect`. The result shows as a small note at the bottom right of the page,
+injected in a shadow root so the page's styles don't reach it.
 
 ## Importing bookmarks
 

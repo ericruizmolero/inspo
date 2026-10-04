@@ -1,6 +1,6 @@
 {
   "extDescription": {
-    "message": "Guarda la web que estás viendo en tu librería de criterio.design con un clic."
+    "message": "Guarda la web que estás viendo, o una imagen o un vídeo de ella, en tu librería de criterio.design."
   },
   "actionTitle": {
     "message": "Guardar en criterio.design"
@@ -234,5 +234,17 @@
   },
   "importBrowserShort": {
     "message": "Marcadores de Chrome"
+  },
+  "menuSaveImage": {
+    "message": "Guardar imagen en criterio.design"
+  },
+  "menuSaveVideo": {
+    "message": "Guardar vídeo en criterio.design"
+  },
+  "open": {
+    "message": "Abrir"
+  },
+  "rightClickHint": {
+    "message": "Clic derecho en una imagen o un vídeo para guardar solo eso."
   }
 }
