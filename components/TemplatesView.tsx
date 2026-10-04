@@ -44,11 +44,15 @@ function HoverVideo({ src }: { src: string }) {
   return <video ref={ref} className="tpl-page__video" src={src} muted loop playsInline preload="metadata" aria-hidden />;
 }
 
-function Result({ id, url, video, still = false }: { id: string; url: string; video?: string; still?: boolean }) {
+/** A built-in template ships the first screen of its result with the app (public/templates/<folder>.jpg): it is
+ *  there at once, while the capture of the page (slow the first time anyone asks for it) arrives */
+const posterOf = (tpl: TemplateCard) => (tpl.template.builtin ? `/templates/${tpl.template.builtin}.jpg` : undefined);
+
+function Result({ id, url, video, poster, still = false }: { id: string; url: string; video?: string; poster?: string; still?: boolean }) {
   const kind = mediaKindOf(url);
   const hover = video ? videoEmbedOf(video) : null;
   const hoverSrc = hover && (hover.loops || hover.provider === "file") ? hover.src : null;
-  if (kind !== "image" && kind !== "video") return <ResultPage id={id} url={url} still={still} hoverSrc={hoverSrc} />;
+  if (kind !== "image" && kind !== "video") return <ResultPage id={id} url={url} still={still} hoverSrc={hoverSrc} poster={poster} />;
   const v = kind === "video" ? videoEmbedOf(url) : null;
   const view = (
     <div className="tpl-page__view">
@@ -60,7 +64,7 @@ function Result({ id, url, video, still = false }: { id: string; url: string; vi
   return still ? <div className="tpl-page">{view}</div> : <a className="tpl-page" href={url} target="_blank" rel="noreferrer">{view}</a>;
 }
 
-function ResultPage({ id, url, still, hoverSrc }: { id: string; url: string; still: boolean; hoverSrc: string | null }) {
+function ResultPage({ id, url, still, hoverSrc, poster }: { id: string; url: string; still: boolean; hoverSrc: string | null; poster?: string }) {
   const [page, setPage] = useState<Page | null | "failed">(null);
   const [dist, setDist] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -69,7 +73,9 @@ function ResultPage({ id, url, still, hoverSrc }: { id: string; url: string; sti
     fetch(`/api/templates/${id}/page`).then((r) => (r.ok ? r.json() : null)).then((p: Page | null) => { if (alive) setPage(p ?? "failed"); }, () => { if (alive) setPage("failed"); });
     return () => { alive = false; };
   }, [id]);
-  if (page === "failed") return null;
+  // Without a capture the picture that came with the app stays; with neither, there is nothing to show
+  if (page === "failed" && !poster) return null;
+  const shot = page === "failed" ? null : page;
   const onFull = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget, box = boxRef.current;
     if (box) setDist(Math.max(0, (img.naturalHeight / img.naturalWidth) * box.clientWidth - box.clientHeight));
@@ -77,11 +83,11 @@ function ResultPage({ id, url, still, hoverSrc }: { id: string; url: string; sti
   const Box = still ? "div" : "a";
   return (
     <Box className={`tpl-page${hoverSrc ? " has-video" : ""}`} {...(still ? {} : { href: url, target: "_blank", rel: "noreferrer" })}>
-      <div ref={boxRef} className="tpl-page__view" style={page?.color ? { background: page.color } : undefined}>
-        {!page && <div className="shimmer" />}
-        {page && <img className="tpl-page__top" src={page.topUrl} alt={host(url)} />}
-        {page && (
-          <img className="tpl-page__full" src={page.shotUrl} alt="" aria-hidden fetchPriority="low" onLoad={onFull}
+      <div ref={boxRef} className="tpl-page__view" style={shot?.color ? { background: shot.color } : undefined}>
+        {!shot && !poster && <div className="shimmer" />}
+        {(shot || poster) && <img className="tpl-page__top" src={shot?.topUrl ?? poster} alt={host(url)} />}
+        {shot && (
+          <img className="tpl-page__full" src={shot.shotUrl} alt="" aria-hidden fetchPriority="low" onLoad={onFull}
             style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${Math.max(4, Math.round(dist / 170))}s` } as React.CSSProperties} />
         )}
         {/* With a recording of the result, the hover plays it instead of scrolling the page */}
@@ -95,7 +101,7 @@ function ResultPage({ id, url, still, hoverSrc }: { id: string; url: string; sti
 function TemplateCardView({ tpl, onOpen }: { tpl: TemplateCard; onOpen: () => void }) {
   return (
     <button type="button" className="tplc" onClick={onOpen}>
-      {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} still /> : <div className="tpl-page"><div className="tpl-page__view tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
+      {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} still /> : <div className="tpl-page"><div className="tpl-page__view tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
       <span className="tplc__name">{tpl.name}</span>
       {(tpl.template.from || tpl.template.to) && (
         <span className="tplc__path">
@@ -146,7 +152,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
         projectId={tpl.id} projectName={tpl.name} hasRecipe={tpl.recipeSize > 0} />
 
       {/* What it ended as, below the file: the thumbnail alone */}
-      {tpl.template.to && <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} />}
+      {tpl.template.to && <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} />}
 
       <div className="tpl-files">
         {!tpl.template.builtin && <button type="button" className="tpl-btn tpl-btn--quiet" onClick={() => { if (window.confirm(s.deleteAsk(tpl.name))) void onDelete(tpl); }}>{s.delete}</button>}
