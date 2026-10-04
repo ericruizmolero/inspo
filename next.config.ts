@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/shot": CHROMIUM_BIN,
     "/api/design-md": CHROMIUM_BIN,
+    // A template's result page is captured the first time anyone asks for it
+    "/api/templates/*/page": CHROMIUM_BIN,
     // Share card: reads the TTF fonts with readFile, which tracing doesn't see
     "/opengraph-image": ["./app/fonts/*.ttf"],
     // Login showcase: reads the folder with readdir, which tracing doesn't see
