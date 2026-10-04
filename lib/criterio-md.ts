@@ -10,6 +10,7 @@
 // The file is built in blocks (the head, the paragraph, one block per area, the references) so the app can show
 // it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
+import { skillSections } from "@/lib/md-skills";
 
 /** A reference as the file tells it: what it is, who brought it and what the team said about it */
 export interface RefInfo {
@@ -44,6 +45,10 @@ export interface CriterioMdInput {
   talk?: Record<string, TalkLine[]>;
   /** Where the app lives, to make its own paths (uploaded images) whole links */
   origin?: string;
+  /** The skills the team switched on (lib/md-skills.ts): each adds a section on how to build part of the system */
+  skills?: readonly string[];
+  /** The language the skills' sections are written in */
+  locale?: string;
   strings: {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
     project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post", string>; what: string; savedBy: string; said: string; pinned: string;
@@ -74,7 +79,7 @@ export type CriterioBlock =
 const one = (s: string) => s.replace(/\s+/g, " ").trim();
 const quote = (s: string, max = 280) => { const t = one(s); return `\u00ab${t.length > max ? `${t.slice(0, max - 1).replace(/\s+\S*$/, "")}\u2026` : t}\u00bb`; };
 
-export function criterioBlocks({ project, system, items, labels, strings, client, about, board = [], talk = {}, origin = "" }: CriterioMdInput): CriterioBlock[] {
+export function criterioBlocks({ project, system, items, labels, strings, client, about, board = [], talk = {}, origin = "", skills = [], locale }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
   const abs = (u: string) => (u.startsWith("/") ? `${origin}${u}` : u);
   // Each reference of the project has a code, so an area can cite it and the reader finds it at the end
@@ -121,6 +126,8 @@ export function criterioBlocks({ project, system, items, labels, strings, client
     const byHand = doc[`meta:${key}`];
     blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand });
   }
+  // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
+  for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s });
   // Every reference once, with what it is, what was said of it and what it brings to each area
   if (board.length) {
     const lines: string[] = [strings.refsIntro, ""];
