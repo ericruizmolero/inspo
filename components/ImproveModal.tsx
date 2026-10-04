@@ -1,7 +1,7 @@
 "use client";
 // "Improve with AI": before the model works, the team says what it wants from the pass (put order, sharpen the
-// writing, read the references again), in which areas, and anything else in its own words. Under that, what to
-// expect from it. The choice travels with the run (SystemFocus, lib/system.ts): what is left out stays as it was.
+// writing, read the references again), in which areas (any of the eight), and anything else in its own words. Under
+// that, what to expect from it. The choice travels with the run (SystemFocus, lib/system.ts): what is left out stays as it was.
 import { useState } from "react";
 import { IMPROVE_AIMS, IMPROVE_NOTE_MAX, SYSTEM_AREAS, type ImproveAim, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -18,14 +18,13 @@ export default function ImproveModal({ system, onRun, onClose }: {
 }) {
   const { t } = useT();
   const m = t.system.improveModal;
-  // What a person decided is not the model's to change: those areas are shown, and locked
-  const team = new Set(system.areas.filter((a) => a.source === "team").map((a) => a.area));
-  const open = SYSTEM_AREAS.filter((a) => !team.has(a));
+  // Every area can be improved, the ones the team decided too: there the decision stands and its telling gets better
+  const team = system.areas.filter((a) => a.source === "team").length;
   const [aims, setAims] = useState<Set<ImproveAim>>(() => new Set(IMPROVE_AIMS));
-  const [areas, setAreas] = useState<Set<SystemArea>>(() => new Set(open));
+  const [areas, setAreas] = useState<Set<SystemArea>>(() => new Set(SYSTEM_AREAS));
   const [note, setNote] = useState("");
   const toggle = <T,>(set: Set<T>, v: T) => { const next = new Set(set); if (!next.delete(v)) next.add(v); return next; };
-  const all = areas.size === open.length;
+  const all = areas.size === SYSTEM_AREAS.length;
   const ready = areas.size > 0 && (aims.size > 0 || note.trim().length > 0);
 
   return (
@@ -58,9 +57,9 @@ export default function ImproveModal({ system, onRun, onClose }: {
           <section className="imp__group">
             <h3 className="imp__label">{m.areasLabel}</h3>
             <div className="pills" role="group" aria-label={m.areasLabel}>
-              <button type="button" aria-pressed={all} className={`pill${all ? " is-on" : ""}`} disabled={!open.length} onClick={() => setAreas(all ? new Set() : new Set(open))}>{m.allAreas}</button>
+              <button type="button" aria-pressed={all} className={`pill${all ? " is-on" : ""}`} onClick={() => setAreas(all ? new Set() : new Set(SYSTEM_AREAS))}>{m.allAreas}</button>
               {SYSTEM_AREAS.map((a) => (
-                <button key={a} type="button" aria-pressed={areas.has(a)} disabled={team.has(a)} title={team.has(a) ? m.teamArea : undefined}
+                <button key={a} type="button" aria-pressed={areas.has(a)}
                   className={`pill imp__area${areas.has(a) ? " is-on" : ""}`} onClick={() => setAreas((s) => toggle(s, a))}>
                   {areaIcon(a, 13)}{t.system.areas[a]}
                 </button>
@@ -77,7 +76,7 @@ export default function ImproveModal({ system, onRun, onClose }: {
             <h3 className="imp__label">{m.expectLabel}</h3>
             <ul>
               <li>{m.expect.time}</li>
-              <li>{team.size ? m.expect.team(team.size) : m.expect.noTeam}</li>
+              {team > 0 && <li>{m.expect.team}</li>}
               <li>{m.expect.empty}</li>
               <li>{m.expect.undo}</li>
             </ul>
