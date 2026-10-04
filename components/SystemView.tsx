@@ -15,6 +15,7 @@ import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
 import AreaThread from "./AreaThread";
+import { AreaFaces, RecentChanges, VoiceBand, useSystemActivity } from "./SystemBento";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
 import SystemMarkdown from "./SystemMarkdown";
@@ -759,6 +760,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
     );
   };
 
+  // The bento's band and its latest changes: read again whenever an area moves
+  const activity = useSystemActivity(project.id, sys.areas.map((a) => a.updatedAt ?? "").join("|"));
+  const voiceArea = sys.areas.find((a) => a.area === "voice");
+
   return (
     <div className={`sysv${openArea ? " is-stage" : ""}`} aria-busy={!system}>
       {/* The system at a glance: the project on top, one tile per area showing its material. A tile opens its stage */}
@@ -812,15 +817,17 @@ export default function SystemView({ project, system, onSystem, board, library, 
                 if (next.never !== cur.never.trim()) await withBusy(area, () => setSystemNever(project.id, area, next.never));
               }} />
           )}
-          {view === "bento" && sys.summary && (
-            <details className="sysn-core__criterio sysb-criterio">
-              <summary>{t.system.criterio}{Icons.chevron}</summary>
-              <p className="sysn-core__summary">{sys.summary}</p>
-            </details>
+          {/* How it talks, with the latest changes beside it; under them, how it looks */}
+          {view === "bento" && (
+            <div className="sysb-top">
+              <VoiceBand summary={sys.summary} voice={voiceArea} onOpen={() => setOpen("voice")} className={running || busy.has("voice") ? " is-busy" : ""} />
+              <RecentChanges activity={activity} labels={labels} onOpen={setOpen} />
+            </div>
           )}
+          {view === "bento" && <p className="sysb-rule">{t.bento.looks}</p>}
 
-          {view === "bento" && <div className="sysb-grid">
-            {sys.areas.map((a) => {
+          {view === "bento" && <div className="sysb-grid sysb-grid--visual">
+            {sys.areas.filter((a) => a.area !== "voice").map((a) => {
               const level = confidenceOf(a);
               const { vs } = visualsFor(a);
               const own = a.evidence.map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
@@ -847,7 +854,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   </div>
                   {/* Voice already shows its decision as the quote */}
                   <footer className="sysb-tile__foot">
-                    {a.decision && a.area !== "voice" && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
+                    {a.decision && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
+                    <AreaFaces talk={activity?.talk[a.area]} />
                     {/* The references behind the area, in sight */}
                     {own.length > 0 && a.area !== "layout" && a.area !== "imagery" && <span className="sysb-tile__refs">{own.slice(0, a.area === "typography" || a.area === "color" ? 6 : 4).map((it) => <Thumb key={it.id} item={it} image={imageOf(it)} />)}</span>}
                   </footer>

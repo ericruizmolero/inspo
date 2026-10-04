@@ -1190,4 +1190,18 @@ export const ui: typeof EnUi = {
     about: "Sobre",
     tryIt: "Ponerlo en la muestra",
   },
+  bento: {
+    says: "C\u00f3mo habla",
+    looks: "C\u00f3mo se ve",
+    voice: "La voz",
+    voiceEmpty: "La voz est\u00e1 sin decidir.",
+    never: "No decimos",
+    neverEmpty: "Nada todav\u00eda. Se a\u00f1ade en Voz y tono, en lo que nunca.",
+    changes: "\u00daltimos cambios",
+    changesEmpty: "Aqu\u00ed se ve qui\u00e9n decide y qui\u00e9n comenta cada \u00e1rea.",
+    agent: "El agente",
+    read: (n: number): string => (n === 1 ? "ley\u00f3 el tabl\u00f3n y propuso 1 \u00e1rea" : `ley\u00f3 el tabl\u00f3n y propuso ${n} \u00e1reas`),
+    decided: (area: string): string => `decidi\u00f3 ${area}:`,
+    talk: (n: number): string => (n === 1 ? "1 comentario" : `${n} comentarios`),
+  },
 };

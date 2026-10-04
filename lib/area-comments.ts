@@ -2,7 +2,7 @@
 // about the area itself (system_area_comment), and what they said on the references the area draws from
 // (inspo_comment on those items), so the thread shows why the decision is what it is and who is behind it.
 import "server-only";
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
@@ -93,4 +93,64 @@ export async function addAreaComment(organizationId: string, projectId: string, 
 /** Only whoever wrote it removes it */
 export async function deleteAreaComment(organizationId: string, id: string, userId: string): Promise<void> {
   await db.delete(A).where(and(eq(A.organizationId, organizationId), eq(A.id, String(id)), eq(A.authorId, userId)));
+}
+
+// ─── What has been happening in a project's system ───────────────────────────────────────────────
+// The bento's "latest changes": decisions people wrote or confirmed, what the agent proposed when it read the
+// board (one line per reading, however many areas it touched), and what the team said about each area.
+
+export interface ActivityLine {
+  id: string;
+  /** "decision": a person wrote or confirmed it; "reading": the agent read the board; "comment": a line of the conversation */
+  kind: "decision" | "reading" | "comment";
+  /** The area it is about; for a reading, the first of the areas it touched */
+  area: SystemArea;
+  /** A reading: how many areas it touched */
+  areas?: number;
+  authorName: string; authorImage: string | null;
+  text: string; at: string;
+}
+export interface SystemActivity {
+  lines: ActivityLine[];
+  /** Per area: how many lines its conversation has and who is in it (at most three) */
+  talk: Record<string, { count: number; people: { name: string; image: string | null }[] }>;
+}
+
+const ACTIVITY_LINES = 6;
+
+export async function systemActivity(organizationId: string, projectId: string): Promise<SystemActivity> {
+  await assertProject(organizationId, projectId);
+  const R = schema.systemAreaRevision;
+  const [revs, notes] = await Promise.all([
+    db.select({ id: R.id, area: R.area, decision: R.decision, source: R.source, authorName: R.authorName, authorImage: U.image, createdAt: R.createdAt })
+      .from(R).leftJoin(U, eq(U.id, R.authorId))
+      .where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(desc(R.createdAt)).limit(60),
+    db.select({ id: A.id, area: A.area, authorName: A.authorName, authorImage: U.image, body: A.body, createdAt: A.createdAt })
+      .from(A).leftJoin(U, eq(U.id, A.authorId))
+      .where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId))).orderBy(desc(A.createdAt)),
+  ]);
+  const lines: ActivityLine[] = [];
+  // The agent writes every area it touches at the same instant: that is one reading, not eight changes
+  const readings = new Map<string, ActivityLine>();
+  for (const r of revs) {
+    const at = r.createdAt.toISOString();
+    if (r.source === "team") {
+      lines.push({ id: r.id, kind: "decision", area: r.area as SystemArea, authorName: r.authorName, authorImage: r.authorImage ?? null, text: r.decision, at });
+    } else {
+      const seen = readings.get(at);
+      if (seen) seen.areas = (seen.areas ?? 1) + 1;
+      else { const line: ActivityLine = { id: r.id, kind: "reading", area: r.area as SystemArea, areas: 1, authorName: "", authorImage: null, text: "", at }; readings.set(at, line); lines.push(line); }
+    }
+  }
+  const talk: SystemActivity["talk"] = {};
+  for (const n of notes) {
+    lines.push({ id: n.id, kind: "comment", area: n.area as SystemArea, authorName: n.authorName, authorImage: n.authorImage ?? null, text: n.body, at: n.createdAt.toISOString() });
+    const t = (talk[n.area] ??= { count: 0, people: [] });
+    t.count++;
+    if (t.people.length < 3 && !t.people.some((p) => p.name === n.authorName)) t.people.push({ name: n.authorName, image: n.authorImage ?? null });
+  }
+  lines.sort((a, b) => b.at.localeCompare(a.at));
+  // Only the agent's last reading: the ones before it said the same of an older board, and would bury the people
+  const lastReading = lines.find((l) => l.kind === "reading");
+  return { lines: lines.filter((l) => l.kind !== "reading" || l === lastReading).slice(0, ACTIVITY_LINES), talk };
 }

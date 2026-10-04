@@ -1192,4 +1192,18 @@ export const ui = {
     about: "About",
     tryIt: "Put it on the sample",
   },
+  bento: {
+    says: "How it talks",
+    looks: "How it looks",
+    voice: "The voice",
+    voiceEmpty: "The voice is not decided yet.",
+    never: "We never say",
+    neverEmpty: "Nothing yet. It is added in Voice and tone, under what it never does.",
+    changes: "Latest changes",
+    changesEmpty: "Who decides and who comments on each area shows here.",
+    agent: "The agent",
+    read: (n: number): string => (n === 1 ? "read the board and proposed 1 area" : `read the board and proposed ${n} areas`),
+    decided: (area: string): string => `decided ${area}:`,
+    talk: (n: number): string => (n === 1 ? "1 comment" : `${n} comments`),
+  },
 };

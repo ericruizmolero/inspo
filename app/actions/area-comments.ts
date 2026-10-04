@@ -1,7 +1,7 @@
 "use server";
 // The team's thread on one area of a project's system (lib/area-comments.ts).
 import { withCtx } from "@/lib/workspace";
-import { addAreaComment, areaThread, deleteAreaComment } from "@/lib/area-comments";
+import { addAreaComment, areaThread, deleteAreaComment, systemActivity } from "@/lib/area-comments";
 
 export async function loadAreaThread(projectId: string, area: string, itemIds: string[]) {
   return withCtx(async (ctx) => areaThread(ctx.workspace.id, String(projectId), String(area), Array.isArray(itemIds) ? itemIds.map(String) : [], ctx.user.id));
@@ -13,4 +13,9 @@ export async function postAreaComment(projectId: string, area: string, body: str
 
 export async function removeAreaComment(id: string) {
   return withCtx(async (ctx) => deleteAreaComment(ctx.workspace.id, String(id), ctx.user.id));
+}
+
+/** The latest changes of a project's system and who is talking in each area (the bento) */
+export async function loadSystemActivity(projectId: string) {
+  return withCtx(async (ctx) => systemActivity(ctx.workspace.id, String(projectId)));
 }
