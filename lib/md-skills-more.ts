@@ -6,7 +6,7 @@ import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system"
 type Lang = "en" | "es";
 
 /** In the order the file has them: the areas' order, then the ones that cross them */
-export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "microcopy", "a11y", "tailwind"] as const;
+export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "microcopy", "no-ai-slop", "a11y", "tailwind"] as const;
 export type MoreSkill = (typeof MORE_SKILLS)[number];
 
 interface SkillText {
@@ -388,6 +388,53 @@ const SKILLS: Record<MoreSkill, SkillDef> = {
         "Para buscadores y al compartir: un `<title>` de hasta 60 caracteres (qué es y después la marca), una descripción de 140 a 160 que suene a la voz y el mismo cuidado en el título para compartir.",
         "La lista de nunca del área vale en todas partes: también en textos alternativos, correos, avisos legales y páginas de error.",
         "El consentimiento y lo legal, en palabras llanas, y la opción que no le cuesta nada a quien lee, tan a mano como la otra.",
+      ],
+    },
+  },
+  "no-ai-slop": {
+    area: "voice",
+    en: {
+      heading: "Build it: writing without AI slop",
+      lead: "How to write every word of the project, in the Voice and tone above, without the patterns that make a text read as generated.",
+      setup: "Adapted from Peter Yang's `no-ai-slop` skill (MIT). An agent that takes skills can install the original, which also edits and audits drafts: `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`. It holds for the site's copy and for anything written about the project.",
+      defaults: ["Know who reads it and what they should do next before writing a line.", "Short sentences with a verb that acts; one idea in each.", "A fact, a name or a number wherever an adjective was going to go."],
+      rules: [
+        "Keep the voice the area describes: fix what sounds generated and leave what sounds like the brand, rough edges included. Never invent a claim, a figure or a quote to fill a gap: ask.",
+        "The portability test: a sentence that could move unchanged to another company is filler. Replace it with a fact, a number, a name or what happens next, or cut it.",
+        "Say the thing itself. No \"It is not X, it is Y\" and no \"Not an X. Not a Y. A Z.\": state the Y, or the Z.",
+        "Start with the point. No opener that clears the throat or promises an insight (\"Here's the thing\", \"What nobody tells you\", \"Let's dive in\").",
+        "No reveal after a colon (\"The best part: it learns\"). A colon is for a list, a label or a quote.",
+        "Facts instead of importance: no \"marks a pivotal moment\", \"plays a vital role\" or \"stands as a testament\", and no clause in \"-ing\" at the end that pretends to explain (\"…, highlighting our commitment to quality\").",
+        "Do not tell the reader what to notice or think (\"The key point is\", \"As you can see\", \"It is worth noting\"). Show it, and trust them.",
+        "Name the source or cut the claim: no \"experts agree\" and no \"studies show\".",
+        "Plain verbs in the active voice: \"is\", \"has\", \"tracks\", not \"serves as\" or \"has the ability to\". One word for one thing: do not rotate synonyms for style.",
+        "No last line that tries to sound deep, and no closing paragraph that repeats the piece. End on the last concrete point or on the next step.",
+        "Rhythm: no stacked fragments (\"That's it. That's the whole thing.\"), no question answered by itself, no list of three by reflex.",
+        "Format follows the content: no emoji in headings, no bold scattered through a sentence, no bullets where two sentences read better. No em dashes in short copy.",
+        "Words to cut: delve, foster, leverage, utilize, empower, streamline, robust, cutting-edge, seamless, game changer, paradigm shift, transformative, elevate, unlock, supercharge, harness, ever-evolving, tapestry, realm.",
+        "Phrases that only delay the point: it's worth noting, at the end of the day, when it comes to, at its core, in today's world, the reality is, in order to, going forward.",
+      ],
+    },
+    es: {
+      heading: "Construirlo: escribir sin relleno de IA",
+      lead: "Cómo escribir cada palabra del proyecto, con la Voz y tono de arriba, sin los tics que hacen que un texto suene generado.",
+      setup: "Adaptada de la skill `no-ai-slop` de Peter Yang (MIT). Un agente que acepte skills puede instalar la original, que además edita y audita borradores: `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`. Vale para el copy de la web y para todo lo que se escriba sobre el proyecto.",
+      defaults: ["Antes de escribir una línea, saber quién lee y qué debería hacer después.", "Frases cortas con un verbo que actúa; una idea en cada una.", "Un hecho, un nombre o una cifra allí donde iba a ir un adjetivo."],
+      rules: [
+        "Se conserva la voz que describe el área: se arregla lo que suena generado y se deja lo que suena a la marca, con sus aristas. Nunca se inventa un dato, una cifra ni una cita para rellenar un hueco: se pregunta.",
+        "La prueba de la mudanza: una frase que podría irse tal cual a otra empresa es relleno. Se cambia por un hecho, una cifra, un nombre o lo que pasa después, o se quita.",
+        "Se dice la cosa. Nada de «No es X, es Y» ni de «No es un X. No es un Y. Es un Z.»: se afirma Y, o Z.",
+        "Se empieza por lo que se quiere decir. Sin arranques que carraspean o prometen una revelación («La cuestión es que», «Lo que nadie te cuenta», «Vamos a verlo»).",
+        "Sin revelaciones tras dos puntos («Lo mejor: aprende solo»). Los dos puntos son para una lista, una etiqueta o una cita.",
+        "Hechos en vez de importancia: sin «marca un antes y un después», «juega un papel clave» ni «es un referente», y sin gerundio final que finge explicar («…, reforzando nuestro compromiso con la calidad»).",
+        "No se le dice a quien lee en qué fijarse ni qué pensar («La clave es», «Como puedes ver», «Cabe destacar»). Se muestra, y se confía en él.",
+        "Se nombra la fuente o se quita la afirmación: sin «los expertos coinciden» ni «los estudios demuestran».",
+        "Verbos llanos y en activa: «es», «tiene», «lleva», no «actúa como» ni «tiene la capacidad de». Una palabra para cada cosa: no se rotan sinónimos por estilo.",
+        "Sin última frase que quiera sonar profunda y sin párrafo final que repita el texto. Se termina en lo último concreto o en el siguiente paso.",
+        "Ritmo: sin fragmentos apilados («Eso es. Eso es todo.»), sin pregunta que se contesta sola, sin tríos por reflejo.",
+        "El formato sigue al contenido: sin emojis en los títulos, sin negritas sueltas en mitad de la frase, sin viñetas donde dos frases se leen mejor. Sin rayas en textos cortos.",
+        "Palabras que se quitan: potenciar, impulsar, optimizar, empoderar, revolucionar, transformador, innovador, disruptivo, de vanguardia, robusto, integral, holístico, sinergia, cambio de paradigma, llevar al siguiente nivel, sumergirse en, desbloquear.",
+        "Frases que solo retrasan lo que se quiere decir: cabe destacar, es importante señalar, al fin y al cabo, a la hora de, en el mundo actual, la realidad es que, en definitiva, sin lugar a dudas.",
       ],
     },
   },
