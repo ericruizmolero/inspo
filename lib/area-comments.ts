@@ -17,7 +17,12 @@ const U = schema.user;
 export interface AreaProposal { decision: string; why: string; never: string; state: "open" | "accepted" | "rejected"; resolvedBy?: string }
 /** What a line points at: an option tried on the sample (the choice to put back, and how it reads), a reference,
  *  or the change it proposes */
-export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal };
+export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal }
+  /** A pin: the line of criterio.md the comment was left on, as it read then */
+  | { pin: { quote: string } };
+
+/** The parts of criterio.md a comment can sit on: an area, or one of the parts that are not one */
+const PARTS: readonly string[] = [...SYSTEM_AREAS, "head", "project", "summary", "refs"];
 
 export interface AreaNote {
   id: string;
@@ -47,6 +52,10 @@ function cleanAbout(v: unknown): AreaAbout | null {
     const state = p.state === "accepted" || p.state === "rejected" ? p.state : "open";
     return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}) } };
   }
+  if (o.pin && typeof o.pin === "object") {
+    const quote = String((o.pin as Record<string, unknown>).quote ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
+    return quote ? { pin: { quote } } : null;
+  }
   if (typeof o.itemId === "string" && o.itemId) return { itemId: o.itemId.slice(0, 40) };
   if (!o.choice || typeof o.choice !== "object") return null;
   const choice: Record<string, string | number | boolean> = {};
@@ -65,6 +74,10 @@ async function assertProject(organizationId: string, projectId: string) {
 const assertArea = async (area: string): Promise<SystemArea> => {
   if (!(SYSTEM_AREAS as readonly string[]).includes(area)) throw new HttpError(400, (await getErrors()).badBody);
   return area as SystemArea;
+};
+const assertPart = async (part: string): Promise<string> => {
+  if (!PARTS.includes(part)) throw new HttpError(400, (await getErrors()).badBody);
+  return part;
 };
 
 /** The thread of an area, oldest first: its own comments and what was said on `itemIds` (its references) */
@@ -91,10 +104,11 @@ export async function areaThread(organizationId: string, projectId: string, area
 
 export async function addAreaComment(organizationId: string, projectId: string, area: string, body: string, author: { id: string; name: string; image?: string | null }, aboutIn?: unknown): Promise<AreaNote> {
   await assertProject(organizationId, projectId);
-  const key = await assertArea(area);
+  const about = cleanAbout(aboutIn);
+  // A pin can sit on any part of the file; the rest of the conversation is an area's
+  const key = about && "pin" in about ? await assertPart(area) : await assertArea(area);
   const text = String(body ?? "").trim().slice(0, BODY_MAX);
   if (!text) throw new HttpError(400, (await getErrors()).badBody);
-  const about = cleanAbout(aboutIn);
   const row = { id: newId(), projectId, organizationId, area: key, authorId: author.id, authorName: author.name, body: text, about, createdAt: new Date() };
   await db.insert(A).values(row);
   return { id: row.id, kind: "area", authorId: author.id, authorName: author.name, authorImage: author.image ?? null, body: text, createdAt: row.createdAt.toISOString(), mine: true, ...(about ? { about } : {}) };
@@ -126,7 +140,7 @@ export interface SystemActivity {
   talk: Record<string, { count: number; people: { name: string; image: string | null }[] }>;
   /** Per area: its conversation, oldest first, as criterio.md tells it (lib/criterio-md.ts TalkLine), with the
    *  changes proposed in it */
-  notes: Record<string, { id: string; who: string; image: string | null; at: string; mine: boolean; text: string; label?: string; itemId?: string; proposal?: AreaProposal }[]>;
+  notes: Record<string, { id: string; who: string; image: string | null; at: string; mine: boolean; text: string; label?: string; itemId?: string; proposal?: AreaProposal; /** A pin: the line it sits on */ pin?: string }[]>;
 }
 
 const ACTIVITY_LINES = 6;
@@ -161,7 +175,7 @@ export async function systemActivity(organizationId: string, projectId: string, 
     const about = cleanAbout(n.about);
     (said[n.area] ??= []).unshift({
       id: n.id, who: n.authorName, image: n.authorImage ?? null, at: n.createdAt.toISOString(), mine: !!userId && n.authorId === userId, text: n.body,
-      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
+      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "pin" in about ? { pin: about.pin.quote, label: `\u00ab${about.pin.quote.length > 60 ? `${about.pin.quote.slice(0, 59)}\u2026` : about.pin.quote}\u00bb` } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
     });
     lines.push({ id: n.id, kind: "comment", area: n.area as SystemArea, authorName: n.authorName, authorImage: n.authorImage ?? null, text: n.body, at: n.createdAt.toISOString() });
     const t = (talk[n.area] ??= { count: 0, people: [] });

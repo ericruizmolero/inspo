@@ -1242,5 +1242,9 @@ export const ui: typeof EnUi = {
     talk: (n: number): string => (n === 1 ? "1 comentario del equipo" : `${n} comentarios del equipo`),
     talkStart: "Comentar esta \u00e1rea",
     proposal: "Propuesta",
+    comment: "Comentar aqu\u00ed",
+    pin: "Dejar el pin",
+    pinPlaceholder: "Qu\u00e9 piensas de esta l\u00ednea\u2026",
+    hint: "Pulsa cualquier l\u00ednea para cambiarla o dejar un comentario.",
   },
 };

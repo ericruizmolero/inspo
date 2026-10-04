@@ -120,6 +120,13 @@
       "when": 1791109079480,
       "tag": "0016_project_started",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791110779056,
+      "tag": "0017_area_comment_parts",
+      "breakpoints": true
     }
   ]
 }

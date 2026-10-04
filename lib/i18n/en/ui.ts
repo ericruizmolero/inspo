@@ -1244,5 +1244,9 @@ export const ui = {
     talk: (n: number): string => (n === 1 ? "1 comment from the team" : `${n} comments from the team`),
     talkStart: "Comment on this area",
     proposal: "Proposal",
+    comment: "Comment here",
+    pin: "Leave the pin",
+    pinPlaceholder: "What you think of this line\u2026",
+    hint: "Press any line to change it or leave a comment.",
   },
 };

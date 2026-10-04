@@ -99,6 +99,7 @@ export default function AreaThread({ projectId, area, refs }: {
                   <p className="ath-note__meta">
                     <b>{n.authorName}</b>
                     {ref && <span className="ath-note__ref">{s.on(ref.name)}</span>}
+                    {n.about && "pin" in n.about && <span className="ath-note__ref">{s.on(`\u00ab${n.about.pin.quote.length > 48 ? `${n.about.pin.quote.slice(0, 47)}\u2026` : n.about.pin.quote}\u00bb`)}</span>}
                     <span>{timeAgo(n.createdAt, locale, t)}</span>
                     {n.mine && <button type="button" className="ath-note__x" onClick={() => void remove(n.id)}>{s.remove}</button>}
                   </p>

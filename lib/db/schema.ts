@@ -494,7 +494,11 @@ export const systemArea = pgTable("system_area", {
   check("system_area_confidence_check", sql`${t.confidence} between 0 and 100`),
 ]);
 
-/** The team talking about one area of a project's system: what they think of the decision, what they would try */
+/** The parts of criterio.md that are not an area (its head, what the project is, the paragraph, the references): a pin can sit on them too */
+export const DOC_PART_KEYS = ["head", "project", "summary", "refs"] as const;
+
+/** The team talking about one area of a project's system: what they think of the decision, what they would try.
+ *  `area` is the area, or the part of criterio.md a pin was left on (DOC_PART_KEYS) */
 export const systemAreaComment = pgTable("system_area_comment", {
   id: text("id").primaryKey(),
   projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
@@ -510,7 +514,7 @@ export const systemAreaComment = pgTable("system_area_comment", {
 }, (t) => [
   index("system_area_comment_project_idx").on(t.projectId, t.area, t.createdAt),
   index("system_area_comment_org_idx").on(t.organizationId),
-  oneOf("system_area_comment_area_check", t.area, SYSTEM_AREA_KEYS),
+  oneOf("system_area_comment_area_check", t.area, [...SYSTEM_AREA_KEYS, ...DOC_PART_KEYS]),
 ]);
 
 export const systemAreaRevision = pgTable("system_area_revision", {

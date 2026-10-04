@@ -12,7 +12,7 @@ import type { InspoItem } from "@/types/inspo";
 import { DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
 import type { SystemActivity } from "@/lib/area-comments";
-import { answerAreaProposal, postAreaComment } from "@/app/actions/area-comments";
+import { answerAreaProposal, postAreaComment, removeAreaComment } from "@/app/actions/area-comments";
 import { decideSystemArea } from "@/app/actions/system";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown, { parseAreaText, rawAreaText, WHY_MAX } from "./SystemMarkdown";
@@ -110,6 +110,16 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     setWorking(false);
     if (r.ok) onSystem(r.data); else setError(r.error);
   };
+  // The pins the team left on the file's lines, by the part they sit on
+  const pins = useMemo(() => Object.fromEntries(Object.entries(activity?.notes ?? {}).map(([part, notes]) => [part, notes.filter((n) => n.pin).map((n) => ({ id: n.id, who: n.who, image: n.image, at: n.at, mine: n.mine, text: n.text, quote: n.pin! }))])), [activity]);
+  const pin = async (part: string, quote: string, body: string): Promise<boolean> => {
+    setError("");
+    const r = await postAreaComment(projectId, part, body, { pin: { quote } });
+    if (!r.ok) { setError(r.error); return false; }
+    onTalk();
+    return true;
+  };
+  const unpin = async (id: string) => { const r = await removeAreaComment(id); if (r.ok) onTalk(); else setError(r.error); };
   const toggleTalk = (area: SystemArea) => setTalking((prev) => { const n = new Set(prev); if (n.has(area)) n.delete(area); else n.add(area); return n; });
 
   const tools = (
@@ -185,8 +195,13 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       <div className="sdoc-page sdoc-page--md">
         {tools}
         {error && <p className="sysv-error" role="alert">{error}</p>}
-        <SystemMarkdown blocks={blocks} busy={busy} onSave={onSave} onOpen={onOpen} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
-          onPropose={proposeArea} tools={(b) => confirmOf(b, "mdv-tool mdv-tool--solid")} after={(b) => <>{proposalsOf(b)}{talkOf(b)}</>} />
+        <SystemMarkdown blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
+          onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>}
+          actions={(b) => [
+            ...(b.decision && system.areas.find((x) => x.area === b.area)?.source !== "team" ? [{ label: s.confirm, run: () => void confirm(b) }] : []),
+            { label: t.system.mdView.openArea, run: () => onOpen(b.area) },
+          ]}
+          pins={pins} onPin={pin} onUnpin={unpin} />
       </div>
     </div>
   );
@@ -226,7 +241,6 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
                 </span>
                 {!on && confirmOf(b, "sdoc-btn sdoc-btn--solid")}
                 <span className="sdoc-area__tools">
-                  {!on && <button type="button" className="sdoc-btn" onClick={() => start(b)}>{b.decision ? t.system.edit : t.system.write}</button>}
                   <button type="button" className="sdoc-btn" onClick={() => onOpen(b.area)}>{t.system.mdView.openArea}</button>
                 </span>
               </header>
