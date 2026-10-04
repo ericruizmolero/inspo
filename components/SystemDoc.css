@@ -244,3 +244,8 @@
 .mdv--doc .mdv-refhead { position: relative; margin-top: 34px; padding-top: 176px; }
 .mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: 12px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
 @media (max-width: 600px) { .mdv--doc .mdv-ref { padding-left: 100px !important; } .mdv--doc .mdv-ref::before { width: 68px; height: 46px; } .mdv--doc .mdv-said--pic { padding-left: 116px !important; } .mdv--doc .mdv-said--pic::before { left: 100px; } }
+
+/* A skill switched on, in the parts list: its mark instead of a dot, its name on one line */
+.sdoc-toc button.is-skill { color: var(--text); }
+.sdoc-toc__spark { flex-shrink: 0; display: inline-flex; width: 13px; margin-left: -3px; color: var(--muted); } .sdoc-toc__spark svg { width: 13px; height: 13px; }
+.sdoc-toc__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

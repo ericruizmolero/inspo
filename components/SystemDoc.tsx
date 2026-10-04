@@ -58,6 +58,10 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const areaBlocks = blocks.filter((b): b is AreaBlock => b.kind === "area");
   const project = blocks.find((b) => b.kind === "section" && b.id === "project");
   const summary = blocks.find((b) => b.kind === "summary");
+  // A skill's short name, as its menu says it (the section's own heading is a whole sentence)
+  const skillName = (id: string) => (t.system as unknown as { skillsList?: Record<string, { name?: string }> }).skillsList?.[id]?.name ?? id.toUpperCase();
+  // The sections the skills add (lib/md-skills.ts), in the order the file has them
+  const skillBlocks = blocks.filter((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id.startsWith("skill:"));
   const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 
   const proposeArea = async (area: SystemArea, p: { decision: string; why: string; never: string }, why: string): Promise<boolean> => {
@@ -143,6 +147,13 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
           </button>
         );
       })}
+      {/* A skill switched on is a part of the file too: it shows here the moment it is on */}
+      {skillBlocks.length > 0 && <span className="sdoc-toc__gap" aria-hidden />}
+      {skillBlocks.map((b) => (
+        <button key={b.id} type="button" className="is-skill" onClick={() => go(`sdoc-${b.id}`)} title={b.heading}>
+          <span className="sdoc-toc__spark" aria-hidden>{Icons.spark}</span><span className="sdoc-toc__name">{skillName(b.id.slice(6))}</span>
+        </button>
+      ))}
       <span className="sdoc-toc__gap" aria-hidden />
       {boardIds.length > 0 && <button type="button" onClick={() => go("sdoc-refs")}>{md.refs}<em>{boardIds.length}</em></button>}
     </nav>
