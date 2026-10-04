@@ -71,7 +71,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
       <span className="island__new-title">{t.projects.newProject}</span>
       <input autoFocus value={name} maxLength={60} disabled={busy} placeholder={t.projects.namePlaceholder} aria-label={t.projects.namePlaceholder}
         onChange={(e) => setName(e.target.value)} />
-      <textarea rows={3} value={about} maxLength={500} disabled={busy} placeholder={t.projects.aboutPlaceholder} aria-label={t.projects.aboutPlaceholder}
+      <textarea rows={3} value={about} disabled={busy} placeholder={t.projects.aboutPlaceholder} aria-label={t.projects.aboutPlaceholder}
         onChange={(e) => setAbout(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit(); } }} />
       <div className="island__new-foot">

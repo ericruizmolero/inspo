@@ -299,7 +299,6 @@ export const ui: typeof EnUi = {
     secondsLabel: "\u00bfQu\u00e9 tiene que entender quien entre en los primeros cinco segundos?",
     secondsHint: "Una frase. Es lo que el modelo usa para decidir qu\u00e9 referencia ayuda y cu\u00e1l distrae.",
     secondsPlaceholder: "Qu\u00e9 es esto, para qui\u00e9n es y por qu\u00e9 merece una segunda mirada.",
-    counter: (n: number, max: number): string => `${n} / ${max}`,
     back: "Atr\u00e1s",
     continue: "Continuar",
     saveAndPolish: "Guardar y pulir",

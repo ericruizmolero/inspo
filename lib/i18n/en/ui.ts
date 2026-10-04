@@ -301,7 +301,6 @@ export const ui = {
     secondsLabel: "What must a visitor understand in the first five seconds?",
     secondsHint: "One sentence. It is what the model uses to decide which reference helps and which distracts.",
     secondsPlaceholder: "What this is, who it is for, and why it deserves a second look.",
-    counter: (n: number, max: number): string => `${n} / ${max}`,
     back: "Back",
     continue: "Continue",
     saveAndPolish: "Save and polish",

@@ -85,7 +85,9 @@ export const EMPTY_POLISH: PolishState = { brief: null, decisions: { notDupes: [
 
 export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
-export const BRIEF_TEXT_MAX = 500;
+/** Not a limit anyone writing a brief meets: the screens show none. A ceiling on what the server keeps and sends to
+ *  the models, so a whole file pasted by mistake is not stored and billed on every reading. */
+export const BRIEF_TEXT_MAX = 20_000;
 export const WHY_NOTE_MAX = 200;
 
 /** Which of the six things nobody takes from any reference on the board: a gap to fill */
