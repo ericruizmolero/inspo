@@ -394,7 +394,7 @@ const SKILLS: Record<MoreSkill, SkillDef> = {
   "no-ai-slop": {
     area: "voice",
     en: {
-      heading: "Build it: writing without AI slop",
+      heading: "Build it: avoiding AI slop",
       lead: "How to write every word of the project, in the Voice and tone above, without the patterns that make a text read as generated.",
       setup: "Adapted from Peter Yang's `no-ai-slop` skill (MIT). An agent that takes skills can install the original, which also edits and audits drafts: `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`. It holds for the site's copy and for anything written about the project.",
       defaults: ["Know who reads it and what they should do next before writing a line.", "Short sentences with a verb that acts; one idea in each.", "A fact, a name or a number wherever an adjective was going to go."],
@@ -416,7 +416,7 @@ const SKILLS: Record<MoreSkill, SkillDef> = {
       ],
     },
     es: {
-      heading: "Construirlo: escribir sin relleno de IA",
+      heading: "Construirlo: evitar el AI slop",
       lead: "Cómo escribir cada palabra del proyecto, con la Voz y tono de arriba, sin los tics que hacen que un texto suene generado.",
       setup: "Adaptada de la skill `no-ai-slop` de Peter Yang (MIT). Un agente que acepte skills puede instalar la original, que además edita y audita borradores: `npx skills add petergyang/no-ai-slop --skill no-ai-slop --global --yes`. Vale para el copy de la web y para todo lo que se escriba sobre el proyecto.",
       defaults: ["Antes de escribir una línea, saber quién lee y qué debería hacer después.", "Frases cortas con un verbo que actúa; una idea en cada una.", "Un hecho, un nombre o una cifra allí donde iba a ir un adjetivo."],

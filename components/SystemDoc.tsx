@@ -62,7 +62,15 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const skillName = (id: string) => (t.system as unknown as { skillsList?: Record<string, { name?: string }> }).skillsList?.[id]?.name ?? id.toUpperCase();
   // The sections the skills add (lib/md-skills.ts), in the order the file has them
   const skillBlocks = blocks.filter((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id.startsWith("skill:"));
-  const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  // To a part of the file. What is above it can still grow while the page travels (pictures arriving in the
+  // document look), so once it has had time to arrive it lands again, on where the part really is
+  const go = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const want = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    for (const ms of [700, 1500]) setTimeout(() => { if (Math.abs(el.getBoundingClientRect().top - want) > 6) el.scrollIntoView({ behavior: "auto", block: "start" }); }, ms);
+  };
 
   const proposeArea = async (area: SystemArea, p: { decision: string; why: string; never: string }, why: string): Promise<boolean> => {
     if (working || !p.decision) return false;
