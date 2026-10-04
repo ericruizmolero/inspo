@@ -406,6 +406,7 @@ export const ui: typeof EnUi = {
       notePlaceholder: "Por ejemplo: m\u00e1s sobrio, menos adjetivos, el color a\u00fan no est\u00e1 cerrado",
       expectLabel: "Qu\u00e9 puedes esperar",
       expect: {
+        words: "Lee las notas y los comentarios del equipo sobre cada referencia, los interpreta y saca conclusiones de ellos.",
         time: "Tarda como mucho minuto y medio y cuesta una fracci\u00f3n de c\u00e9ntimo.",
         team: "En las \u00e1reas que decidi\u00f3 el equipo la decisi\u00f3n se mantiene: la IA mejora c\u00f3mo est\u00e1 contada, no cambia el rumbo.",
         empty: "Un \u00e1rea de la que el tabl\u00f3n no dice nada sigue vac\u00eda: la IA no inventa.",
@@ -642,6 +643,7 @@ export const ui: typeof EnUi = {
       savedBy: "Guardada por",
       said: "Lo que dijo el equipo",
       pinned: "sobre un punto de la p\u00e1gina",
+      attached: "imagen adjunta",
       brings: "Aporta a",
       noArea: "Ning\u00fan \u00e1rea todav\u00eda: el sistema a\u00fan no la ha le\u00eddo",
       tags: "Etiquetas",

@@ -27,7 +27,7 @@ export interface RefInfo {
   /** Its style, sector and traits, as words */
   tags?: string[];
   /** What the team said about it, oldest first: the note it was saved with, then its thread */
-  said?: { who: string; text: string; pin?: boolean }[];
+  said?: { who: string; text: string; pin?: boolean; /** The pictures attached to the comment: what its words point at */ images?: string[] }[];
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
 export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected" } }
@@ -54,7 +54,7 @@ export interface CriterioMdInput {
   locale?: string;
   strings: {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
-    project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; pinned: string;
+    project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string; pinned: string;
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
     proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
   };
@@ -101,6 +101,11 @@ const quote = (s: string, max = 280) => { const t = one(s); return `\u00ab${t.le
 export function criterioBlocks({ project, system, items, labels, strings, client, about, board = [], talk = {}, origin = "", skills = [], locale }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
   const abs = (u: string) => (u.startsWith("/") ? `${origin}${u}` : u);
+  // What someone said, and the pictures they attached to say it: the words often point at them ("these 3D…")
+  const told = (w: NonNullable<RefInfo["said"]>[number], max: number) => {
+    const pics = (w.images ?? []).map((u, i, all) => `[${strings.attached}${all.length > 1 ? ` ${i + 1}` : ""}](${abs(u)})`);
+    return [w.text ? quote(w.text, max) : "", ...pics].filter(Boolean).join(" ");
+  };
   // Each reference of the project has a code, so an area can cite it and the reader finds it at the end
   const code = new Map(board.map((id, i) => [id, `R${i + 1}`]));
   const cite = (id: string) => {
@@ -128,7 +133,7 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       if (it.by) head.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
       if (it.said?.length) {
         head.push(`- **${strings.said}:**`);
-        for (const w of it.said) head.push(`  - ${w.who}: ${quote(w.text, 600)}`);
+        for (const w of it.said) head.push(`  - ${w.who}: ${told(w, 600)}`);
       }
       if (it.by || it.said?.length) head.push("");
       parts.push({ itemId: id, head, body: lowerHeadings(it.text ?? it.what ?? "") });
@@ -152,7 +157,7 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       for (const e of a.evidence) {
         meta.push(`  - ${cite(e.itemId)}${e.take ? `. ${strings.take}: ${e.take}` : ""}`);
         // The words behind it, next to what it brings: why the team saved it
-        for (const w of (items[e.itemId]?.said ?? []).slice(0, 3)) meta.push(`    - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${quote(w.text, 220)}`);
+        for (const w of (items[e.itemId]?.said ?? []).slice(0, 3)) meta.push(`    - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${told(w, 220)}`);
       }
     }
     const lines = talk[key] ?? [];
@@ -187,7 +192,7 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       if (it.by) lines.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
       if (it.said?.length) {
         lines.push(`- **${strings.said}:**`);
-        for (const w of it.said) lines.push(`  - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${quote(w.text, 600)}`);
+        for (const w of it.said) lines.push(`  - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${told(w, 600)}`);
       }
       const brings = system.areas.flatMap((a) => a.evidence.filter((e) => e.itemId === id).map((e) => ({ area: a.area, take: e.take })));
       if (brings.length) {

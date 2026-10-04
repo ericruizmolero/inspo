@@ -74,7 +74,11 @@ function human(text: string, pics?: Record<string, string>, underPic = false): {
   const code = refCode(text);
   const pic = code ? pics?.[code] : undefined;
   if (pic) return { cls: text.startsWith("###") ? " mdv-refhead" : " mdv-ref", pic: `url("${pic.replace(/"/g, "%22")}")` };
-  if (isSaid(text)) return { cls: underPic ? " mdv-said mdv-said--pic" : " mdv-said" };
+  if (isSaid(text)) {
+    // Said with a picture attached: the document shows it under the words
+    const shot = text.match(/\]\((\S+?\/comments\/[^)\s]+)\)/)?.[1];
+    return { cls: `${underPic ? " mdv-said mdv-said--pic" : " mdv-said"}${shot ? " mdv-said--img" : ""}`, ...(shot ? { pic: `url("${shot.replace(/"/g, "%22")}")` } : {}) };
+  }
   return { cls: "" };
 }
 const isSaid = (text: string) => /^\s+- [^:\u00ab]{1,40}: \u00ab/.test(text);
