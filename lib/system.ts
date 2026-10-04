@@ -256,11 +256,13 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
   const board = rows.slice(0, MAX_BOARD);
   const ids = board.map(({ row }) => row.id);
   const threads = ids.length
-    ? await db.select({ itemId: C.itemId, author: C.authorName, body: C.body }).from(C)
+    ? await db.select({ itemId: C.itemId, author: C.authorName, body: C.body, attachments: C.attachments }).from(C)
         .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, ids))).orderBy(C.createdAt)
     : [];
   const byItem = new Map<string, string[]>();
-  for (const c of threads) byItem.set(c.itemId, [...(byItem.get(c.itemId) ?? []), `${c.author}: ${c.body.trim().slice(0, 300)}`]);
+  // The model reads no pictures here: a comment made with a screenshot says so, so its words ("these 3D…") are
+  // read as pointing at something on the reference and not as a line on their own
+  for (const c of threads) byItem.set(c.itemId, [...(byItem.get(c.itemId) ?? []), `${c.author}: ${c.body.trim().slice(0, 300)}${c.attachments?.length ? " (said with a screenshot attached, pointing at that part of the reference)" : ""}`]);
 
   // DESIGN.md sheets and "why it's here", only the ones that exist; never generated here
   const index = await getDesignMdIndex();

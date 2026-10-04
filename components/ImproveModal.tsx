@@ -75,6 +75,7 @@ export default function ImproveModal({ system, onRun, onClose }: {
           <section className="imp__expect">
             <h3 className="imp__label">{m.expectLabel}</h3>
             <ul>
+              <li>{m.expect.words}</li>
               <li>{m.expect.time}</li>
               {team > 0 && <li>{m.expect.team}</li>}
               <li>{m.expect.empty}</li>

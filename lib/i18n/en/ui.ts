@@ -408,6 +408,7 @@ export const ui = {
       notePlaceholder: "For example: more sober, fewer adjectives, colour is not settled yet",
       expectLabel: "What to expect",
       expect: {
+        words: "It reads the team's notes and comments on each reference, interprets them and draws conclusions from them.",
         time: "It takes a minute and a half at most and costs a fraction of a cent.",
         team: "In the areas the team decided, the decision stands: the AI improves how it is told, not where it goes.",
         empty: "An area the board says nothing about stays empty: the AI does not make things up.",
@@ -644,6 +645,7 @@ export const ui = {
       savedBy: "Saved by",
       said: "What the team said",
       pinned: "on a point of the page",
+      attached: "attached image",
       brings: "Brings to",
       noArea: "No area yet: the system has not read it",
       tags: "Tags",

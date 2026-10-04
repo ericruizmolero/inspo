@@ -239,6 +239,8 @@
 .mdv--doc .mdv-said::before { top: 0.3em; width: 2px; height: calc(100% - 0.6em); border-radius: 1px; background: var(--border-strong); }
 /* Under a reference of an area, the words left on it line up with its text */
 .mdv--doc .mdv-said--pic { padding-left: 158px !important; }
+/* Said with a picture attached: the picture, under the words */
+.mdv--doc .mdv-said--img::after { content: ""; display: block; width: min(320px, 100%); aspect-ratio: 16 / 9; margin: 8px 0 4px; border-radius: 9px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
 .mdv--doc .mdv-said--pic::before { left: 142px; }
 /* A reference's own entry opens with its picture */
 .mdv--doc .mdv-refhead { position: relative; margin-top: 34px; padding-top: 176px; }

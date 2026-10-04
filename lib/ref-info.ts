@@ -20,7 +20,9 @@ export function refInfoOf(item: InspoItem, tags: InspoTags | undefined, comments
   const said = [
     ...(item.note.trim() ? [{ who: item.addedBy, text: item.note.trim() }] : []),
     // Replies stay in the thread: the file carries what was said about the reference itself
-    ...(comments ?? []).filter((c) => c.body.trim() && !c.parentId).map((c) => ({ who: c.authorName, text: c.body.trim(), ...(c.anchor ? { pin: true } : {}) })),
+    // A comment made with a picture keeps it: the words alone would not say what they point at
+    ...(comments ?? []).filter((c) => (c.body.trim() || c.attachments?.length) && !c.parentId)
+      .map((c) => ({ who: c.authorName, text: c.body.trim(), ...(c.anchor ? { pin: true } : {}), ...(c.attachments?.length ? { images: c.attachments.map((a) => a.url) } : {}) })),
   ];
   return {
     name: item.name, web: item.web, kind: mediaKindOf(item.web), by: item.addedBy, date: dayOf(item.date),
