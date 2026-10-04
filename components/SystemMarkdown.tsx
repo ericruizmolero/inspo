@@ -44,15 +44,29 @@ function shortUrl(url: string): string {
 }
 
 /** A line of the file, coloured the way an editor would: bold, links and emphasis keep their marks */
+// The marks of Markdown (**, ##, >, -, [](…)) are their own spans: the file's look shows them, the document's
+// hides them (components/SystemDoc.css .mdv--doc .mdv-mark) and sets what they mean. The text has them either way.
+const Mark = ({ children }: { children: ReactNode }) => <span className="mdv-mark">{children}</span>;
 function inline(line: string): ReactNode[] {
   return line.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|`[^`]+`)/g).filter(Boolean).map((part, i) => {
-    if (/^\*\*[^*]+\*\*$/.test(part)) return <b key={i} className="mdv-b">{part}</b>;
+    if (/^\*\*[^*]+\*\*$/.test(part)) return <b key={i} className="mdv-b"><Mark>**</Mark>{part.slice(2, -2)}<Mark>**</Mark></b>;
     if (/^`[^`]+`$/.test(part)) return <span key={i} className="mdv-code">{part}</span>;
     const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (link) return <span key={i}>[<a className="mdv-link" href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>]<span className="mdv-url" title={link[2]}>({shortUrl(link[2])})</span></span>;
+    if (link) return <span key={i}><Mark>[</Mark><a className="mdv-link" href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a><Mark>]</Mark><span className="mdv-mark mdv-url" title={link[2]}>({shortUrl(link[2])})</span></span>;
     return <span key={i}>{part}</span>;
   });
 }
+/** What kind of line it is, and its mark */
+function lineKind(text: string): { cls: string; mark: string; rest: string; depth?: number; tail?: string } {
+  const h = text.match(/^(#{1,6}) /);
+  if (h) return { cls: ` mdv-h mdv-h${h[1].length}`, mark: h[0], rest: text.slice(h[0].length) };
+  if (text.startsWith("> ")) return { cls: " mdv-q", mark: "> ", rest: text.slice(2) };
+  if (/^_.+_$/.test(text)) return { cls: " mdv-em", mark: "_", rest: text.slice(1, -1), tail: "_" };
+  const li = text.match(/^(\s*)- /);
+  if (li) return { cls: " mdv-li", mark: li[0], rest: text.slice(li[0].length), depth: li[1].length / 2 };
+  return { cls: "", mark: "", rest: text };
+}
+
 /** What a line of the file is quoted as when a pin is left on it */
 export const quoteOf = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 160);
 
@@ -78,15 +92,14 @@ function Line({ text, onPress, pins, repliesOf, openId, onOpen }: {
   onOpen?: (pin: DocPin, el: HTMLElement) => void;
 }) {
   if (!text) return <div className="mdv-line">&nbsp;</div>;
+  const k = lineKind(text);
   // A list line that wraps keeps its indent: the second row starts under the first's words, not at the margin
-  const bullet = text.match(/^(\s*)- /);
-  const hang = bullet ? `${bullet[1].length + 2}ch` : undefined;
-  const kind = /^#{1,6} /.test(text) ? " mdv-h" : text.startsWith("> ") ? " mdv-q" : /^_.*_$/.test(text) ? " mdv-em" : "";
+  const hang = k.depth !== undefined ? `${k.mark.length}ch` : undefined;
   return (
-    <div className={`mdv-line${kind}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
-      style={hang ? { paddingLeft: hang, textIndent: `-${hang}` } : undefined}
+    <div className={`mdv-line${k.cls}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
+      style={hang ? { paddingLeft: hang, textIndent: `-${hang}`, "--d": k.depth } as React.CSSProperties : undefined}
       onClick={onPress ? (e) => { if ((e.target as HTMLElement).closest("a, .mdv-pin")) return; const r = e.currentTarget.getBoundingClientRect(); onPress(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), { x: e.clientX, y: e.clientY }); } : undefined}>
-      {kind ? text : inline(text)}
+      {k.mark && <Mark>{k.mark}</Mark>}{k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em") ? k.rest : inline(k.rest)}{k.tail && <Mark>{k.tail}</Mark>}
       {onOpen && pins?.map((n) => <PinMark key={n.id} pin={n} replies={repliesOf?.(n.id) ?? 0} active={openId === n.id} style={{ left: `${n.x * 100}%` }} onOpen={onOpen} />)}
     </div>
   );
@@ -96,15 +109,16 @@ const escHtml = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").re
 /** The file's text as it is typed in: a row per line, with the colours and the hanging lists of the file. The
  *  text itself is whole (a long address is only cut on screen), so what is read back is the file */
 function mdHtml(raw: string): string {
+  const mark = (m: string) => `<span class="mdv-mark">${escHtml(m)}</span>`;
   return raw.split("\n").map((line) => {
     if (!line) return `<div class="mdv-eline"><br></div>`;
-    const bullet = line.match(/^(\s*)- /);
-    const hang = bullet ? ` style="padding-left:${bullet[1].length + 2}ch;text-indent:-${bullet[1].length + 2}ch"` : "";
-    const kind = /^#{1,6} /.test(line) ? " mdv-h" : line.startsWith("> ") ? " mdv-q" : /^_.*_$/.test(line) ? " mdv-em" : "";
-    const body = kind ? escHtml(line) : escHtml(line)
-      .replace(/\*\*[^*\n]+\*\*/g, (m) => `<b class="mdv-b">${m}</b>`)
-      .replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (_m, name: string, url: string) => `[<span class="mdv-link">${name}</span>]<span class="mdv-url${url.length > 56 ? " mdv-url--cut" : ""}">(${url})</span>`);
-    return `<div class="mdv-eline${kind}"${hang}>${body}</div>`;
+    const k = lineKind(line);
+    const hang = k.depth !== undefined ? ` style="padding-left:${k.mark.length}ch;text-indent:-${k.mark.length}ch;--d:${k.depth}"` : "";
+    const plain = k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em");
+    const body = plain ? escHtml(k.rest) : escHtml(k.rest)
+      .replace(/\*\*([^*\n]+)\*\*/g, (_m, x: string) => `<b class="mdv-b">${mark("**")}${x}${mark("**")}</b>`)
+      .replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (_m, name: string, url: string) => `${mark("[")}<span class="mdv-link">${name}</span>${mark("]")}<span class="mdv-mark mdv-url${url.length > 56 ? " mdv-url--cut" : ""}">(${url})</span>`);
+    return `<div class="mdv-eline${k.cls}"${hang}>${k.mark ? mark(k.mark) : ""}${body}${k.tail ? mark(k.tail) : ""}</div>`;
   }).join("");
 }
 /** The text of a part typed in place, read back from its rows */
@@ -112,10 +126,11 @@ const readText = (el: HTMLElement) => el.innerText.replace(/\u00a0/g, " ").repla
 
 /**
  * A part of the file that is written in place, like a document: pressing it puts the caret where it was pressed
- * and typing changes the text. Nothing is written until it is saved; while it differs, a bar under it offers
- * to save it, to leave it as a proposal for the team, or to drop the change.
+ * and typing changes the text. It saves itself: a moment after the typing stops, and when the part is left.
+ * While proposing (the tool in the bar), an area's change is not written: leaving the part leaves it as a
+ * proposal for the team, and the text goes back to what it said.
  */
-function Editable({ raw, placeholder, disabled, over, onSave, onPropose, onReset }: {
+function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset }: {
   raw: string; placeholder: string; disabled?: boolean;
   /** The part was rewritten by hand over what the app writes: goes back to it */
   onReset?: () => Promise<void>;
@@ -123,50 +138,84 @@ function Editable({ raw, placeholder, disabled, over, onSave, onPropose, onReset
   over?: (text: string) => string;
   onSave: (text: string) => Promise<void>;
   onPropose?: (text: string, reason: string) => Promise<boolean>;
+  proposing?: boolean;
 }) {
   const { t } = useT();
   const ref = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(raw);
-  const [reason, setReason] = useState("");
+  const [focused, setFocused] = useState(false);
+  const [state, setState] = useState<"" | "saving" | "saved" | "proposed">("");
   const [working, setWorking] = useState(false);
-  const dirty = text.replace(/\n{3,}/g, "\n\n").trimEnd() !== raw.replace(/\n{3,}/g, "\n\n").trimEnd();
-  // What is shown follows the file, except while someone is typing a change into it
-  useLayoutEffect(() => { const el = ref.current; if (el) { el.innerHTML = mdHtml(raw); setText(raw); } }, [raw]);
-  const read = () => { if (ref.current) setText(readText(ref.current)); };
-  const drop = () => { const el = ref.current; if (el) el.innerHTML = mdHtml(raw); setText(raw); setReason(""); el?.blur(); };
+  // What the file holds, as far as this part knows; and whether a save is on its way (one at a time, the last text wins)
+  const sent = useRef(raw);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const busy = useRef(false);
+  const again = useRef(false);
+  const same = (a: string, b: string) => a.replace(/\n{3,}/g, "\n\n").trimEnd() === b.replace(/\n{3,}/g, "\n\n").trimEnd();
+  // What is shown follows the file, except while someone is typing here: redrawing it would move their caret
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || document.activeElement === el) return;
+    el.innerHTML = mdHtml(raw); setText(raw); sent.current = raw;
+  }, [raw]);
+  useEffect(() => { if (state !== "saved" && state !== "proposed") return; const id = setTimeout(() => setState(""), 1600); return () => clearTimeout(id); }, [state]);
+  useEffect(() => () => clearTimeout(timer.current), []);
   const tooLong = over?.(text) ?? "";
-  const save = async () => { if (!dirty || working || tooLong) return; setWorking(true); try { await onSave(text.trim()); } finally { setWorking(false); } };
-  const propose = async () => {
-    if (!dirty || working || tooLong || !onPropose || !text.trim()) return;
-    setWorking(true);
-    try { if (await onPropose(text.trim(), reason.trim())) drop(); } finally { setWorking(false); }
+  const flush = async (now: string, leaving: boolean): Promise<void> => {
+    if (same(now, sent.current) || (over?.(now) ?? "")) return;
+    // Emptied on the way to writing something else: an empty part is only saved when it is left that way
+    if (!now.trim() && !leaving) return;
+    if (busy.current) { again.current = true; return; }
+    busy.current = true; setState("saving");
+    try { await onSave(now.trim()); sent.current = now; setState("saved"); }
+    catch { setState(""); }
+    finally {
+      busy.current = false;
+      const el = ref.current;
+      if (again.current && el) { again.current = false; void flush(readText(el), document.activeElement !== el); }
+    }
+  };
+  const typed = () => {
+    const el = ref.current;
+    if (!el) return;
+    const now = readText(el);
+    setText(now);
+    clearTimeout(timer.current);
+    if (!(proposing && onPropose)) timer.current = setTimeout(() => void flush(now, false), 900);
+  };
+  const leave = async () => {
+    setFocused(false);
+    clearTimeout(timer.current);
+    const el = ref.current;
+    if (!el) return;
+    const now = readText(el);
+    if (proposing && onPropose) {
+      // Not written: left for the team to say yes or no, and the part says again what it said
+      if (!same(now, raw) && now.trim() && !(over?.(now) ?? "") && await onPropose(now.trim(), "")) setState("proposed");
+      el.innerHTML = mdHtml(raw); setText(raw);
+      return;
+    }
+    await flush(now, true);
   };
   return (
     <>
-      <div ref={ref} className={`mdv-live${dirty ? " is-dirty" : ""}`} role="textbox" aria-multiline spellCheck={false} data-placeholder={placeholder}
-        contentEditable={disabled || working ? false : "plaintext-only"} suppressContentEditableWarning
-        onInput={read}
+      <div ref={ref} className="mdv-live" role="textbox" aria-multiline spellCheck={false} data-placeholder={placeholder}
+        // A save in flight does not take the part away from whoever is typing in it
+        contentEditable={(disabled && !focused) || working ? false : "plaintext-only"} suppressContentEditableWarning
+        onInput={typed} onFocus={() => setFocused(true)} onBlur={() => void leave()}
         onKeyDown={(e) => {
-          if (e.key === "Escape") { e.stopPropagation(); drop(); }
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void save(); }
+          if (e.key === "Escape") { e.stopPropagation(); e.currentTarget.blur(); }
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); clearTimeout(timer.current); void flush(readText(e.currentTarget), false); }
         }} />
-      {dirty && (
-        <div className="mdv-savebar">
-          <Button variant="primary" size="sm" disabled={working || !!tooLong} onClick={() => void save()} title={t.doc.saveHint}>{t.system.save}</Button>
-          {onPropose && <Button size="sm" disabled={working || !!tooLong || !text.trim()} onClick={() => void propose()} title={t.doc.proposeHint}>{t.doc.propose}</Button>}
-          <Button variant="ghost" size="sm" onClick={drop}>{t.doc.discard}</Button>
-          {onPropose && <input className="mdv-reason" value={reason} maxLength={300} placeholder={t.doc.reason} aria-label={t.doc.reason} onChange={(e) => setReason(e.target.value)} />}
-          <small className={tooLong ? "is-over" : ""}>{tooLong || t.system.mdView.editHint}</small>
-        </div>
-      )}
-      {!dirty && onReset && <p className="mdv-byhand">{t.doc.byHand} <button type="button" disabled={working} onClick={() => { setWorking(true); void onReset().finally(() => setWorking(false)); }}>{t.doc.restore}</button></p>}
+      {(tooLong || state) && <p className={`mdv-state${tooLong ? " is-over" : ""}`} role="status">{tooLong || (state === "saving" ? t.doc.saving : state === "proposed" ? t.doc.proposed : t.doc.saved)}</p>}
+      {!focused && onReset && <p className="mdv-byhand">{t.doc.byHand} <button type="button" disabled={working} onClick={() => { setWorking(true); void onReset().finally(() => setWorking(false)); }}>{t.doc.restore}</button></p>}
     </>
   );
 }
 
 function Written({ raw, placeholder, edit, pins, repliesOf, openId, onOpen }: {
   raw: string; placeholder: string;
-  edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean };
+  edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean; proposing?: boolean };
   pins: DocPin[]; repliesOf: (id: string) => number; openId: string | null; onOpen: (pin: DocPin, el: HTMLElement) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -214,7 +263,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false }: {
+export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false, look = "md" }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -230,6 +279,8 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
   tools?: (block: AreaBlock) => ReactNode;
   /** Writes what the project is (the brief), typed in place */
   onAbout?: (text: string) => Promise<void>;
+  /** How the file is set: as the Markdown it is, or as a document (the same text and tools, its marks hidden) */
+  look?: "md" | "doc";
   /** Writes the project's paragraph */
   onSummary?: (text: string) => Promise<void>;
   /** Writes over a part the app writes ("head", "refs", "meta:<area>"); null goes back to what the app writes */
@@ -247,6 +298,8 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
   // Two ways of pressing the file. Writing (the default): the text is typed in place. Commenting (the tool in
   // the bar, or C): pressing a spot leaves a pin there, as on a design file. A pin opens its thread beside it
   const [commenting, setCommenting] = useState(false);
+  // Proposing (the other tool): what is typed in an area is left as a proposal instead of written
+  const [proposing, setProposing] = useState(false);
   // The thread in sight: an existing pin's, or the one being started at a spot
   const [pop, setPop] = useState<{ left: number; top: number; rootId?: string; draft?: { part: string; quote: string; x: number } } | null>(null);
   const [pinText, setPinText] = useState("");
@@ -310,7 +363,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
     if (commenting || readOnly) return lines(part, raw ? raw.split("\n") : [placeholder], whole, false);
     const quotes = new Set(raw.split("\n").map(quoteOf).filter(Boolean));
     const here = (pins?.[part] ?? []).filter((n) => !n.to && quotes.has(n.quote));
-    return <Written raw={raw} placeholder={placeholder} edit={edit} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin} />;
+    return <Written raw={raw} placeholder={placeholder} edit={{ ...edit, proposing: proposing && !!edit.onPropose }} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin} />;
   };
   const areaOver = (b: AreaBlock) => (text: string) => {
     const p = parse(text, b.whyLabel, b.neverLabel);
@@ -352,11 +405,12 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
   );
 
   return (
-    <section className="mdv" aria-label="criterio.md">
+    <section className={`mdv${look === "doc" ? " mdv--doc" : ""}`} aria-label="criterio.md">
       <header className="mdv-bar">
         {tabs}
-        <span className="mdv-bar__hint">{readOnly ? s.readOnlyHint : onPin ? (commenting ? t.doc.hintComment : t.doc.hint) : s.hint}</span>
+        <span className="mdv-bar__hint">{readOnly ? s.readOnlyHint : onPin ? (commenting ? t.doc.hintComment : proposing ? t.doc.hintPropose : t.doc.hint) : s.hint}</span>
         <span className="mdv-bar__tools">
+          {onPropose && !readOnly && <button type="button" className={`mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} title={t.doc.proposeToolHint} onClick={() => setProposing((x) => !x)}>{t.doc.proposeTool}</button>}
           {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : s.copy}</button>
           <button type="button" className="mdv-btn" onClick={onDownload} title={t.system.download}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>

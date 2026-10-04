@@ -193,3 +193,38 @@
 .mdv-byhand { margin: 6px 0 0; font-family: var(--font); font-size: 12px; color: var(--md-dim); opacity: 0; transition: opacity 0.15s; }
 .mdv-block:hover .mdv-byhand, .mdv-block:focus-within .mdv-byhand { opacity: 1; }
 .mdv-byhand button { padding: 0; border: 0; background: none; color: var(--md-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* The file saves itself: a quiet word under the part while it does, and when it has. A save in flight does not dim the block */
+.sdoc .mdv-block.is-busy { opacity: 1; }
+.mdv-state { margin: 4px 0 0; font-family: var(--font); font-size: 12px; color: var(--md-dim); text-align: right; }
+.mdv-state.is-over { color: #ff8f85; }
+.mdv-btn--propose.is-on { background: var(--md-strong); color: var(--md-bg); }
+.mdv-btn--propose.is-on:hover { background: var(--md-strong); color: var(--md-bg); opacity: 0.92; }
+
+/* ─── The document look: the same file and the same tools, set for reading. Markdown's marks are hidden (they
+   stay in the text: font-size 0, so what is typed and read back is still the file) and what they mean is set:
+   headings by size, the note as a quote, lists with their dot, links by name ─── */
+.mdv--doc { --md-bg: transparent; --md-ink: var(--text-2); --md-strong: var(--text); --md-dim: var(--muted); --md-head: var(--text); --md-quote: var(--text-2); --md-code: var(--text); --md-line: var(--border); background: none; box-shadow: none; }
+.sdoc .mdv--doc .mdv-bar { padding: 0; box-shadow: none; }
+.sdoc .mdv--doc .mdv-doc { padding: 22px 0 36px; font-family: var(--font); font-size: 15.5px; line-height: 1.65; color: var(--text-2); }
+.mdv--doc .mdv-mark { font-size: 0; }
+.mdv--doc .mdv-line, .mdv--doc .mdv-eline { min-height: 1.65em; }
+.mdv--doc .mdv-h { font-family: var(--font-display, var(--font)); color: var(--text); font-weight: 600; letter-spacing: -0.015em; }
+.sdoc .mdv--doc .mdv-h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; }
+.sdoc .mdv--doc .mdv-h2 { font-size: 22px; line-height: 1.25; }
+.sdoc .mdv--doc .mdv-h3 { font-size: 16.5px; line-height: 1.35; font-family: var(--font); letter-spacing: 0; margin-top: 6px; }
+.mdv--doc .mdv-q { padding-left: 14px; box-shadow: inset 2px 0 0 var(--border-strong); color: var(--text-2); }
+.mdv--doc .mdv-em { color: var(--muted); font-style: normal; }
+.mdv--doc .mdv-b { color: var(--text); font-weight: 600; }
+.mdv--doc .mdv-li { position: relative; padding-left: calc(20px + var(--d, 0) * 20px) !important; text-indent: 0 !important; }
+.mdv--doc .mdv-li::before { content: ""; position: absolute; left: calc(7px + var(--d, 0) * 20px); top: 0.72em; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); }
+.mdv--doc .mdv-link { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.mdv--doc .mdv-live { caret-color: var(--text); }
+.mdv--doc .mdv-state, .mdv--doc .mdv-byhand { color: var(--muted); }
+.mdv--doc .mdv-btn { background: var(--surface-2); color: var(--text-2); } .mdv--doc .mdv-btn:hover { background: var(--surface-3); color: var(--text); }
+.mdv--doc .mdv-btn--comment.is-on { background: var(--postit, #fde68a); color: #2a2205; }
+.mdv--doc .mdv-btn--propose.is-on { background: var(--text); color: var(--bg); }
+.mdv--doc .mdv-file.is-on { background: var(--surface-2); color: var(--text); } .mdv--doc .mdv-file { color: var(--muted); }
+.mdv--doc .mdv-tool--solid { background: var(--text); color: var(--bg); }
+.mdv--doc .mdv-pin { box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+.mdv--doc .mdv-block--area { margin-top: 22px; }
