@@ -1,7 +1,7 @@
 // Projects: spaces inside a workspace to file references (schema.project / schema.projectItem).
 // Always scoped to a workspace; an item in no project is in the Inbox.
 import "server-only";
-import { and, asc, eq, inArray, sql, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
@@ -58,6 +58,18 @@ export async function renameProject(organizationId: string, id: string, name: st
 export async function deleteProject(organizationId: string, id: string): Promise<void> {
   await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, id)));
   await dropSpace(organizationId, id);
+}
+
+/** Where a reference saved from outside the app lands (the extension): the project this person filed something in
+ *  last, or else the workspace's first project. Null when the workspace has no project yet. */
+export async function activeProjectFor(organizationId: string, userId: string): Promise<string | null> {
+  const [last] = await db.select({ id: PI.projectId }).from(PI).innerJoin(P, eq(P.id, PI.projectId))
+    .where(and(eq(PI.organizationId, organizationId), eq(PI.addedBy, userId), isNull(P.template)))
+    .orderBy(desc(PI.createdAt)).limit(1);
+  if (last) return last.id;
+  const [first] = await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)))
+    .orderBy(asc(P.createdAt)).limit(1);
+  return first?.id ?? null;
 }
 
 /** Files items in a project. Both have to belong to the workspace; already filed is not an error. */

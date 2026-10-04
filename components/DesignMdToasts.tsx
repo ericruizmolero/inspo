@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { DesignSpec } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { useT } from "./I18nProvider";
+import { readableDomain } from "@/lib/url";
 import { Button } from "@/components/ui/button";
 
 export interface DesignMdEntry {
@@ -46,7 +47,7 @@ function progressFor(startedAt: number): number {
   return Math.min(0.94, (Date.now() - startedAt) / TYPICAL_MS);
 }
 function hostOf(url: string): string {
-  try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return url; }
+  try { return readableDomain(new URL(url).hostname.replace(/^www\./, "")); } catch { return url; }
 }
 
 const IcStop = (

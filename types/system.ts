@@ -91,7 +91,15 @@ export interface ProjectSystem {
 }
 
 /** The parts of criterio.md that can be rewritten by hand over what the app writes */
-export const DOC_PARTS = ["head", "refs", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
+// "skills": the skills switched on for criterio.md, comma separated (lib/md-skills.ts)
+/** What a pass of the model asked for by hand can be told to do (the "Improve with AI" dialog) */
+export const IMPROVE_AIMS = ["order", "copy", "refs"] as const;
+export type ImproveAim = (typeof IMPROVE_AIMS)[number];
+export const IMPROVE_NOTE_MAX = 400;
+/** The scope of a pass asked for by hand: what to work on, in which areas, and anything the team adds in words */
+export interface SystemFocus { aims: ImproveAim[]; areas: SystemArea[]; note?: string }
+
+export const DOC_PARTS = ["head", "refs", "skills", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
 export const DOC_PART_MAX = 60_000;
 
 /** A decision a person writes can run to a few paragraphs (it is typed in the file, with line breaks) */
@@ -135,6 +143,8 @@ export interface ProjectTemplate {
   to: string;
   /** What it is, in a sentence */
   about: string;
+  /** A recording of the result (a Screen Studio share, a video file): its thumbnail plays it on hover */
+  video?: string;
 }
 export const RECIPE_MAX = 200_000;
 

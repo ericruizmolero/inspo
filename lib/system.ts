@@ -22,7 +22,7 @@ import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
 import { recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, DOC_PARTS, DOC_PART_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
+import { DECISION_MAX, DOC_PARTS, DOC_PART_MAX, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
 
@@ -206,8 +206,8 @@ export async function setAreaNever(organizationId: string, projectId: string, ar
 }
 
 /** Copies a project's system into another: every area (decision, why, never), the paragraph. As "team" when the copy
- *  is a template (its decisions are the work's), as "model" proposals when a project starts from one (the
- *  team confirms them in its own project). No references travel: they belong to the project they came from. */
+ *  is a template or a project started from one (its decisions are the work's, runs leave them alone), as "model"
+ *  when they are proposals the next run may change. No references travel here: the board is copied apart. */
 export async function copySystem(organizationId: string, fromProjectId: string, toProjectId: string, as: "team" | "model", author: { id: string; name: string }): Promise<void> {
   const from = await getSystem(organizationId, fromProjectId);
   const now = new Date();
@@ -282,7 +282,11 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
       code: `r${i + 1}`,
       itemId: row.id,
       words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
-      ref: {
+      // A pasted text is the project's content: the model gets its title and first lines, nothing to read a look from
+      ref: mediaKindOf(row.web) === "text" ? {
+        id: `r${i + 1}`, kind: "text", name: base.name, curator_notes: base.curator_notes, excerpt: base.page,
+        team_comments: comments.length ? comments : undefined,
+      } : {
         id: `r${i + 1}`, kind: mediaKindOf(row.web), ...base,
         team_comments: comments.length ? comments : undefined,
         team_pointed_at: pointed.length ? pointed : undefined,
@@ -325,6 +329,7 @@ Rules:
 - "why" is the criterio behind the decision: why this and not the rest, in one or two sentences (max 40 words), rooted in the brief and the team's words. Empty when the area is empty.
 - confidence is 0-100: how many references agree, how concrete and how explicit the evidence is. One passing mention is 25-40; two or three references that agree with concrete values is 60-80; the team saying it in so many words plus measured values is 85+.
 - evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
+- A reference of kind "text" is the project's own CONTENT, pasted by the team (a list of services, a piece of copy), given here as its title and first lines. It is material to place, not a look: only voice may cite it, for the tone and vocabulary of the real copy, and no other area is decided from it. Never summarise, rewrite or quote it in a decision: the file carries it whole.
 - A reference marked "filed_by_team" under an area was put there by a person from the board: it is a directive. Decide that area from those references first, and keep them in its evidence.
 - You receive the SYSTEM AS IT STANDS. Areas marked "team" were decided by a person: they are facts about the project, keep every other area coherent with them and return them unchanged (same text). Areas marked "model" are your previous proposals: keep what the board still supports, change what new evidence changes, do not rephrase for the sake of it.
 - The summary is the project's criterio in one paragraph (max 90 words): what it is, who it speaks to, the few decisions that define its look. Written so that an agent that reads only this paragraph would already design in the right direction. Empty string if the board is empty.
@@ -346,6 +351,24 @@ const OutSchema = z.object({
   })),
 });
 
+/** What each aim of a pass asked for by hand tells the model */
+const AIMS: Record<ImproveAim, string> = {
+  order: "Put order in the system: each idea in the area it belongs to, nothing said twice across areas, no area contradicting another or the summary.",
+  copy: "Sharpen the writing of decisions, whys and takes: tighter, more concrete, the same meaning. For this pass this overrides \"do not rephrase\".",
+  refs: "Read the references again from scratch: evidence and takes re-derived from what each reference actually shows and what the team said about it, not carried over from the previous pass.",
+};
+/** The team's scope for this pass, as the last block of the prompt; nothing when the pass is the plain one */
+function focusForModel(focus: SystemFocus | undefined): string | null {
+  if (!focus) return null;
+  const note = (focus.note ?? "").trim().replace(/\s+/g, " ").slice(0, IMPROVE_NOTE_MAX);
+  const lines = [
+    focus.areas.length < SYSTEM_AREAS.length ? `Work ONLY on these areas: ${focus.areas.join(", ")}. Return every other area exactly as it stands.` : "",
+    ...focus.aims.map((a) => AIMS[a]),
+    note ? `In the team's own words, to follow as an instruction for this pass only: ${JSON.stringify(note)}` : "",
+  ].filter(Boolean);
+  return lines.length ? `THIS PASS was asked for by the team, who said what they want from it:\n${lines.map((l) => `- ${l}`).join("\n")}` : null;
+}
+
 // One run per project at a time: two tabs must not pay twice for the same board
 const inflight = new Map<string, Promise<ProjectSystem>>();
 
@@ -353,7 +376,7 @@ const inflight = new Map<string, Promise<ProjectSystem>>();
  * Reads the board and writes the system: the model's proposal for every area the team has not
  * decided, the summary and the run. Always costs (little): the client asks when the run is stale.
  */
-export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; locale?: Locale }): Promise<ProjectSystem> {
+export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; locale?: Locale; focus?: SystemFocus }): Promise<ProjectSystem> {
   const key = `${input.organizationId}|${input.projectId}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -364,7 +387,8 @@ export function runSystem(input: { organizationId: string; projectId: string; us
 
     const codes = new Map(refs.map((r) => [r.code, r.itemId]));
     const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
-    const standing = current.areas.map((a) => ({
+    const textIds = new Set(refs.filter((r) => r.ref.kind === "text").map((r) => r.itemId));
+const standing = current.areas.map((a) => ({
       area: a.area,
       status: a.source ?? "empty",
       decision: a.decision || undefined,
@@ -377,7 +401,8 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
       `System as it stands (JSON): ${JSON.stringify(standing)}`,
       `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
-    ].join("\n\n");
+      focusForModel(input.focus),
+    ].filter(Boolean).join("\n\n");
 
     let res: Awaited<ReturnType<typeof llm>>;
     try {
@@ -407,6 +432,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
     const byArea = new Map(out.areas.map((a) => [a.area, a]));
     for (const cur of current.areas) {
       if (cur.source === "team") continue;  // the team's word stands
+      if (input.focus && !input.focus.areas.includes(cur.area)) continue;  // out of this pass's scope: as it was
       const got = byArea.get(cur.area);
       const decision = (got?.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
       // Back to item ids; an invented code or a repeated reference is dropped
@@ -417,6 +443,8 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       for (const e of got?.evidence ?? []) {
         const itemId = codes.get(e.ref);
         if (!itemId) continue;
+        // The project's content backs no area but voice, whatever the model made of it
+        if (cur.area !== "voice" && textIds.has(itemId)) continue;
         if (seen.has(itemId)) { const p = evidence.find((x) => x.itemId === itemId); if (p && !p.take) p.take = e.take.trim().slice(0, 200); continue; }
         seen.add(itemId);
         evidence.push({ itemId, take: e.take.trim().slice(0, 200) });

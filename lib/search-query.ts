@@ -85,6 +85,7 @@ const MEDIA_WORDS: Record<MediaKind, string[]> = {
   image: ["images", "imagenes", "photos", "fotos", "pictures", "gifs"],
   video: ["videos", "youtube", "vimeo"],
   post: ["posts", "tweets", "x posts"],
+  text: ["texts", "textos", "copy", "content", "contenido"],
 };
 const terms = (list: Term[], kind: FilterKind, sel: (k: string) => string, labelsEn: Record<string, string>, labelsEs: Record<string, string>, group: Term2["group"]): Term2[] =>
   list.map((t) => ({ filter: { kind, value: sel(t.key) }, words: [...new Set([t.key, labelsEn[t.key], labelsEs[t.key]].filter(Boolean).map(norm))], group }));

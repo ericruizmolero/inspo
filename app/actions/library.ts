@@ -13,6 +13,7 @@ import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
 import { createProject, renameProject, deleteProject, fileItems, unfileItems, setArchived, startProject } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
+import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
 import { nameFor } from "@/lib/item-name";
@@ -125,6 +126,7 @@ export async function removeInspo(id: string) {
     await deleteItem(ctx.workspace.id, id);
     // An uploaded image goes with its card: nothing else points at that file
     if (row) await deleteMediaFile(ctx.workspace.id, row.web);
+    if (row) await deleteTextFile(ctx.workspace.id, row.web);
   });
 }
 

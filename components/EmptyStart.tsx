@@ -84,6 +84,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
   const groupTitle = (key: string) => t.directory.groups[key as keyof typeof t.directory.groups].title;
 
   return (
+    <div className={s.scroll}>
     <section className={s.wrap}>
       <div className={s.head} data-flip>
         <h1 className={s.title}>{t.start.title}</h1>
@@ -145,5 +146,6 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
         </button>
       </div>
     </section>
+    </div>
   );
 }

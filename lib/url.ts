@@ -2,8 +2,18 @@
 
 const VIDEO_HOSTS = /(^|\.)(youtube\.com|youtu\.be|vimeo\.com|loom\.com)$/i;
 const VIDEO_FILE = /\.(mp4|webm|mov|m4v)$/i;
+/** A Screen Studio share: "https://screen.studio/share/pzm9qyYv" → "pzm9qyYv" */
+export function screenStudioId(web: string): string | null {
+  try {
+    const u = new URL(web);
+    if (u.hostname.replace(/^www\./, "") !== "screen.studio") return null;
+    return u.pathname.match(/^\/share\/([\w-]{4,40})\/?$/)?.[1] ?? null;
+  } catch { return null; }
+}
 // Uploaded images are stored files (lib/storage.ts): /api/files/inspo/<workspace>/media/<name>
 const MEDIA_FILE = /^\/api\/files\/inspo\/[^/]+\/media\//;
+// A pasted text is a stored file too (lib/text-refs.ts): /api/files/inspo/<workspace>/text/<name>.md
+const TEXT_FILE = /^\/api\/files\/inspo\/[^/]+\/text\//;
 const POST_HOST = /^(www\.|mobile\.)?(x|twitter)\.com$/i;
 
 /** Accepts "linear.app", "www.x.com/y" or a full URL. Returns the URL with scheme, or null if invalid. */
@@ -24,9 +34,45 @@ export function normalizeWebUrl(raw: string): string | null {
   }
 }
 
-/** "https://www.linear.app/features" → "linear.app" */
+/** One label of a domain out of punycode (RFC 3492): "xabierjareoabogados-43b" → "xabierjareñoabogados" */
+function punyDecode(input: string): string {
+  const out: number[] = [];
+  const basic = Math.max(input.lastIndexOf("-"), 0);
+  for (let j = 0; j < basic; j++) out.push(input.charCodeAt(j));
+  let n = 128, i = 0, bias = 72;
+  for (let at = basic > 0 ? basic + 1 : 0; at < input.length;) {
+    const start = i;
+    for (let w = 1, k = 36; ; k += 36) {
+      const c = input.charCodeAt(at++);
+      const digit = c >= 48 && c <= 57 ? c - 22 : c >= 65 && c <= 90 ? c - 65 : c >= 97 && c <= 122 ? c - 97 : 36;
+      if (digit >= 36) throw new Error("not punycode");
+      i += digit * w;
+      const t = k <= bias ? 1 : k >= bias + 26 ? 26 : k - bias;
+      if (digit < t) break;
+      w *= 36 - t;
+    }
+    const len = out.length + 1;
+    let delta = start === 0 ? Math.floor((i - start) / 700) : (i - start) >> 1;
+    delta += Math.floor(delta / len);
+    let k = 0;
+    for (; delta > 455; k += 36) delta = Math.floor(delta / 35);
+    bias = k + Math.floor((36 * delta) / (delta + 38));
+    n += Math.floor(i / len);
+    i %= len;
+    out.splice(i++, 0, n);
+  }
+  return String.fromCodePoint(...out);
+}
+
+/** An address as people write it: a domain with accents or an ñ travels as punycode ("xn--…"), and is shown with
+ *  its own letters. For what is read, never for what is fetched or compared. */
+export function readableDomain(text: string): string {
+  return text.replace(/\bxn--([a-z0-9-]+)/gi, (all, label: string) => { try { return punyDecode(label.toLowerCase()); } catch { return all; } });
+}
+
+/** "https://www.linear.app/features" → "linear.app", as people write it */
 export function hostOf(url: string): string {
-  try { return new URL(url).hostname.replace(/^www\./i, ""); } catch { return url; }
+  try { return readableDomain(new URL(url).hostname.replace(/^www\./i, "")); } catch { return url; }
 }
 
 /** Fallback name from the domain: "linear.app" → "Linear", "studio-x.co.uk" → "Studio X" */
@@ -49,17 +95,18 @@ export function typeFromUrl(url: string): "inspiration" | "videos" {
 
 // ─── Media: uploaded images and video links ──────────────────────────────────
 // An item is still one address (`web`): a site, a video link, or the file of an
-// uploaded image. What it is comes from the address itself, so no column says it.
+// uploaded image or of a pasted text. What it is comes from the address itself, so no column says it.
 
-export type MediaKind = "web" | "image" | "video" | "post";
+export type MediaKind = "web" | "image" | "video" | "post" | "text";
 
-/** "blob:" is the optimistic card of an image still uploading. */
+/** "blob:" is the optimistic card of an image still uploading; "text:" the one of a text still being saved. */
 export function mediaKindOf(web: string): MediaKind {
+  if (web.startsWith("text:") || TEXT_FILE.test(web)) return "text";
   if (web.startsWith("blob:") || MEDIA_FILE.test(web)) return "image";
   try {
     const u = new URL(web);
     if (postOf(web)) return "post";
-    if (VIDEO_HOSTS.test(u.hostname) || VIDEO_FILE.test(u.pathname)) return "video";
+    if (VIDEO_HOSTS.test(u.hostname) || VIDEO_FILE.test(u.pathname) || screenStudioId(web)) return "video";
   } catch { /* not a URL */ }
   return "web";
 }
@@ -83,11 +130,13 @@ export function postThumbKind(thumb: string | undefined): "video" | "gif" | null
 export const isGif = (web: string) => /\.gif$/i.test(web.split("?")[0]);
 
 export interface VideoEmbed {
-  provider: "youtube" | "vimeo" | "loom" | "file";
+  provider: "youtube" | "vimeo" | "loom" | "file" | "screenstudio";
   /** What plays: the player's iframe, or the file itself */
   src: string;
   /** A frame to show before playing, when the provider gives one without asking it */
   poster?: string;
+  /** A short screen recording: its card loops it, muted, in place of a still frame */
+  loops?: boolean;
 }
 
 /** How to play a video link inside the app; null if it is not one we know how to play. */
@@ -119,6 +168,9 @@ export function videoEmbedOf(web: string): VideoEmbed | null {
     return id ? { provider: "loom", src: `https://www.loom.com/embed/${id}` } : null;
   }
   if (VIDEO_FILE.test(u.pathname)) return { provider: "file", src: web };
+  // Screen Studio's own files expire: these are our copies, made the first time they are asked for
+  const ss = screenStudioId(web);
+  if (ss) return { provider: "screenstudio", src: `/api/screen-studio/${ss}/video.mp4`, poster: `/api/screen-studio/${ss}/poster.jpg`, loops: true };
   return null;
 }
 

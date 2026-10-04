@@ -2,8 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { DesignMdState, DesignMdEntry } from "./DesignMdToasts";
-import type { InspoItem, InspoTags, TagStatus } from "@/types/inspo";
-import { FACETS, cleanTag, viewOf } from "@/lib/taxonomy";
+import type { InspoItem } from "@/types/inspo";
 import { BRIEF_KEYS, noDashes, type DesignSpec, type DesignBrief } from "@/types/design";
 import type { RevisionMeta } from "@/lib/design-revise";
 import { fmtDate, timeAgo } from "@/lib/i18n/format";
@@ -12,6 +11,7 @@ import type { Dict } from "@/lib/i18n/en";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { readableDomain } from "@/lib/url";
 
 
 type ReviseFn = (section: string, comment: string) => Promise<{ summary: string; warning: string | null; unchanged?: boolean }>;
@@ -25,9 +25,6 @@ const IcDoc = (
 );
 const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
-);
-const IcPlus = (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden><path d="M6 2v8M2 6h8" /></svg>
 );
 const IcComment = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" /></svg>
@@ -269,7 +266,7 @@ function SpecPanel({ spec, entry, url, date, onRevise }: { spec: DesignSpec; ent
   const { locale, t } = useT();
   const [promptCopied, copyPrompt] = useCopy();
   const bg = pageBg(spec);
-  const host = url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const host = readableDomain(url.replace(/^https?:\/\//, "").replace(/\/$/, ""));
 
   return (
     <div className="dm-spec">
@@ -315,115 +312,8 @@ if (typeof window !== "undefined") {
   window.addEventListener("pointerdown", (e) => { lastPress = { x: e.clientX, y: e.clientY, at: Date.now() }; }, { capture: true, passive: true });
 }
 
-/** A facet's hue: each kind of tag the AI reads keeps its colour, pale, so the kinds read apart at a glance */
-const FACET_HUE = { kind: 210, sections: 160, elements: 28, type: 268, layout: 330, traits: 190, keywords: 90 } as const;
-type FacetKey = keyof typeof FACET_HUE;
-/** The tags shown before "Show all" */
-const TAGS_SHOWN = 14;
-
-/** Everything the reference is tagged with, in one quiet strip under the page: its colours as dots, the tags
- *  somebody added (the post-it's yellow, the only ones with a ×), what the AI read (each facet its hue) and,
- *  last, the field to add one. A tag filters the library. While the job runs, or after it failed, it says so. */
-function TagsCard({ tags, job, onTag, onEdit, onRetry }: {
-  tags?: InspoTags; job?: TagStatus; onTag?: (sel: string) => void;
-  onEdit?: (change: { add?: string; remove?: string }) => void; onRetry?: () => void;
-}) {
-  const { t } = useT();
-  const [all, setAll] = useState(false);
-  const [draft, setDraft] = useState("");
-  const add = () => { const tag = cleanTag(draft); if (tag) onEdit?.({ add: tag }); setDraft(""); };
-  const v = tags ? viewOf(tags) : null;
-  const added = tags?.user?.added ?? [];
-  const mine = new Set(added);
-  const colors = (tags?.colors ?? []).filter((c) => !v || v.palette.includes(c.family));
-  const label = (field: string, k: string) => {
-    const maps: Record<string, Record<string, string>> = { sections: t.taxonomy.section, elements: t.taxonomy.element, type: t.taxonomy.type, layout: t.taxonomy.layout };
-    return maps[field]?.[k] ?? k;
-  };
-  // Each chip filters by its selector; the kind (sector, style) only describes, so it is not a button
-  const chips: { facet: FacetKey; sel?: string; label: string }[] = !tags || !v ? [] : [
-    ...v.credits.map((k) => ({ facet: "kind" as const, sel: `a:${k}`, label: t.panel.byCredit(k) })),
-    ...(tags.sector ? [{ facet: "kind" as const, label: t.taxonomy.sector[tags.sector as keyof typeof t.taxonomy.sector] ?? tags.sector }] : []),
-    ...(tags.style ? [{ facet: "kind" as const, label: t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style }] : []),
-    ...FACETS.filter((f) => f.field !== "palette").flatMap((f) => v[f.field].map((k) => ({ facet: f.field as FacetKey, sel: `${f.prefix}:${k}`, label: label(f.field, k) }))),
-    ...v.traits.map((k) => ({ facet: "traits" as const, sel: k, label: t.taxonomy.tag[k as keyof typeof t.taxonomy.tag] ?? k })),
-    // The AI's own keywords; the ones somebody added come first, in yellow
-    ...v.keywords.filter((k) => !mine.has(k)).map((k) => ({ facet: "keywords" as const, sel: `k:${k}`, label: k })),
-  ];
-  const shown = all ? chips : chips.slice(0, TAGS_SHOWN);
-  const gathering = job === "pending" || job === "running" || (!tags && job !== "failed");
-  return (
-    <section className="ip-card ip-card--tags" aria-label={t.panel.tags}>
-      <h3 className="ip-card__title">
-        {t.panel.tags}
-        {(chips.length > 0 || added.length > 0 || colors.length > 0) && <span className="ip-card__aside">{t.panel.toFilter}</span>}
-      </h3>
-      <div className="ip-tags">
-        {colors.length > 0 && (
-          <span className="ip-tags__colours">
-            {colors.map((c) => {
-              const name = t.taxonomy.color[c.family as keyof typeof t.taxonomy.color] ?? c.family;
-              return <button key={c.family} type="button" className="ip-tags__colour" style={{ background: c.hex }} onClick={() => onTag?.(`c:${c.family}`)} title={`${name} · ${c.hex}`} aria-label={`${name} ${c.hex}`} />;
-            })}
-          </span>
-        )}
-        {added.map((k) => (
-          <span key={k} className="ip-yours__tag">
-            <button type="button" className="ip-yours__label" onClick={() => onTag?.(`k:${k}`)}>{k}</button>
-            {onEdit && <button type="button" className="ip-yours__x" aria-label={t.panel.removeTag(k)} onClick={() => onEdit({ remove: `k:${k}` })}>{IcX}</button>}
-          </span>
-        ))}
-        {shown.map((c) => {
-          const hue = { "--h": FACET_HUE[c.facet] } as React.CSSProperties;
-          return c.sel
-            ? <button key={c.sel} type="button" className="ip-tag" style={hue} title={t.panel.facets[c.facet]} onClick={() => onTag?.(c.sel!)}>{c.label}</button>
-            : <span key={`${c.facet}:${c.label}`} className="ip-tag is-static" style={hue} title={t.panel.facets[c.facet]}>{c.label}</span>;
-        })}
-        {chips.length > TAGS_SHOWN && (
-          <button type="button" className="ip-tags__more" aria-expanded={all} title={all ? undefined : t.panel.showAll} onClick={() => setAll((a) => !a)}>
-            {all ? t.panel.showLess : `+${chips.length - TAGS_SHOWN}`}
-          </button>
-        )}
-        {onEdit && (
-          <label className="ip-yours__add">
-            {IcPlus}
-            <input
-              value={draft} placeholder={t.panel.addTag} aria-label={t.panel.addTag} maxLength={40}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") { e.preventDefault(); add(); }
-                // Escape empties the field first; it reaches the panel (close) only when the field is empty
-                if (e.key === "Escape" && draft) { e.preventDefault(); e.stopPropagation(); setDraft(""); }
-              }}
-              onBlur={add}
-            />
-          </label>
-        )}
-      </div>
-      {gathering
-        ? <p className="ip-card__note" role="status">{t.panel.tagsGathering}</p>
-        : !tags && (
-          <p className="ip-card__note">
-            {t.panel.tagsFailed}
-            {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>{t.common.retry}</Button>}
-          </p>
-        )}
-    </section>
-  );
-}
-
-export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRetryTags, state, canDesignMd, page, thread, onClose, onGenerate, onRegenerate, onRevised, libraryName }: {
+export default function ItemPanel({ item, state, canDesignMd, page, thread, onClose, onGenerate, onRegenerate, onRevised, libraryName }: {
   item: InspoItem;
-  /** The item's AI tags, once it has them */
-  tags?: InspoTags;
-  /** Filters the library by one tag (a trait key or a prefixed facet) */
-  onTag?: (sel: string) => void;
-  /** Its tagging job while it isn't done */
-  tagJob?: TagStatus;
-  /** Adds a tag by hand or removes one (a selector) */
-  onEditTags?: (change: { add?: string; remove?: string }) => void;
-  /** Gathers the tags again after a failure */
-  onRetryTags?: () => void;
   /** This site's DESIGN.md job: loading, ready (with the entry) or failed */
   state: DesignMdState | undefined;
   /** A site that can have a DESIGN.md (not an image, a video or a post) */
@@ -527,7 +417,8 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
   };
 
   const date = entry ? fmtDate(entry.generatedAt, locale, { day: "2-digit", month: "short", year: "numeric" }) : "";
-  const host = url.replace(/^https?:\/\//, "").split("/")[0];
+  const rawHost = url.replace(/^https?:\/\//, "").split("/")[0];
+  const host = readableDomain(rawHost);
   const [iconOk, setIconOk] = useState(true);
   const isSite = canDesignMd;
   // Another reference in the same panel: it stays put (no slide in again) and starts on its page
@@ -553,7 +444,7 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
         <header className="ip-bar">
           <div className="dm-bar__id">
             <span className="dm-bar__icon" aria-hidden>
-              {iconOk && isSite && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
+              {iconOk && isSite && <img src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(rawHost)}&sz=64`} alt="" onError={() => setIconOk(false)} />}
               {(!iconOk || !isSite) && <span>{(spec?.brand ?? item.name).slice(0, 1).toUpperCase()}</span>}
             </span>
             <div className="dm-bar__title">
@@ -600,11 +491,10 @@ export default function ItemPanel({ item, tags, tagJob, onTag, onEditTags, onRet
         </header>
 
         {view === "page" ? (
-          // The board: the page with its tags underneath on the left, the conversation down the right
+          // The board: the reference itself takes the room, the conversation is a column down its right
           <div className="ip-bento">
             <section className="ip-card ip-card--page" aria-label={t.panel.tabPage}>{page}</section>
             <section className="ip-card ip-card--talk">{thread}</section>
-            <TagsCard tags={tags} job={tagJob} onTag={onTag} onEdit={onEditTags} onRetry={onRetryTags} />
           </div>
         ) : (
           <div className="ip-body">

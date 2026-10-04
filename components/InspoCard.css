@@ -1,0 +1,6 @@
+/* The card's bottom actions (.tile__go, globals.css) never leave their card: on a narrow one "Comment" is its
+   icon alone (a count stays); narrower still, filing drops its label too (globals.css, 240px) */
+@container (max-width: 300px) {
+  .tile__go-label--word { display: none; }
+  .tile__go-btn:has(> .tile__go-label--word) { width: 32px; padding: 0; justify-content: center; }
+}

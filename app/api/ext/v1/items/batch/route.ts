@@ -5,6 +5,7 @@
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, setThumbnail, setItemDate } from "@/lib/items";
+import { activeProjectFor, fileItems } from "@/lib/projects";
 import { nameFor } from "@/lib/item-name";
 import { ensurePost, postThumb, postDay } from "@/lib/posts";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
@@ -81,6 +82,13 @@ export async function POST(req: NextRequest) {
       return { url: raw, status: "error" };
     }
   });
+
+  // Nothing lives outside a project: what came in goes to the one this person was working in
+  const ids = added.map((i) => i.id).filter((x): x is string => !!x);
+  if (ids.length) {
+    const projectId = await activeProjectFor(ctx.workspace.id, ctx.user.id).catch(() => null);
+    if (projectId) await fileItems(ctx.workspace.id, projectId, ids, ctx.user.id).catch((e) => console.error(`ext batch (${source}): not filed`, e));
+  }
 
   // Posts on X get their copies and picture; then the AI tags, as when a URL is pasted in the app
   if (added.length && (taggerEnabled() || added.some((i) => mediaKindOf(i.web) === "post"))) {

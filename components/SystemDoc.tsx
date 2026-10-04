@@ -41,6 +41,10 @@ interface Props {
   onOpen: (area: SystemArea) => void;
   /** Writes what the project is (the brief), typed in the file */
   onAbout?: (text: string) => Promise<void>;
+  /** Writes the words of a text reference, typed in the file's Content */
+  onText?: (itemId: string, text: string) => Promise<void>;
+  /** Gives a text reference another title, typed over its heading */
+  onTextTitle?: (itemId: string, title: string) => Promise<void>;
   onOpenItem?: (item: InspoItem) => void;
   onCopy: () => void; onDownload: () => void; copied: boolean;
   projectId: string; projectName: string; hasRecipe: boolean;
@@ -48,7 +52,7 @@ interface Props {
   fileTools?: React.ReactNode;
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onOpenItem, onCopy, onDownload, copied, projectId, projectName, hasRecipe, fileTools }: Props) {
+export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, projectId, projectName, hasRecipe, fileTools }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -197,6 +201,8 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
         {error && <p className="sysv-error" role="alert">{error}</p>}
         <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
+          onText={onText && (async (id, text) => { try { await onText(id, text); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
+          onTextTitle={onTextTitle && (async (id, title) => { try { await onTextTitle(id, title); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           onPart={async (part, text) => { const r = await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           pins={pins} onPin={pin} onUnpin={unpin} />

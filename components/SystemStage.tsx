@@ -4,7 +4,7 @@
 // as cards to take away and a picker to bring more (from the project or from what no project has yet).
 // Typography then gets its sample (a title, a subtitle and a body, each in the face chosen for it) and a
 // type tester, both set in the real faces of those references.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { AreaCuration, SystemArea, SystemAreaState } from "@/types/system";
 import type { RefVisual } from "@/lib/system";
@@ -16,14 +16,44 @@ import { Icons } from "./Sidebar";
 import { Button } from "@/components/ui/button";
 import { areaIcon } from "./area-icons";
 import { cachedCardImage } from "./InspoCard";
+import LoopVideo from "./LoopVideo";
+import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import { Sample, SampleControls, variantsFor, type ColorRole, type SampleChoices } from "./SystemSample";
 import "./SystemStage.css";
 
 export function Thumb({ item, image, className = "" }: { item: InspoItem; image: string | null; className?: string }) {
   const [at, setAt] = useState(0);
-  const srcs = [image, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
+  const embed = mediaKindOf(item.web) === "video" ? videoEmbedOf(item.web) : null;
+  const srcs = [image, embed?.poster, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
   const src = srcs[at];
-  return <span className={`sysv-thumb${className ? ` ${className}` : ""}`} aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
+  // A screen recording loops over its frame here too
+  return (
+    <span className={`sysv-thumb${className ? ` ${className}` : ""}`} aria-hidden style={embed?.loops ? { position: "relative" } : undefined}>
+      {src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}
+      {embed?.loops && <LoopVideo src={embed.src} />}
+    </span>
+  );
+}
+
+/** A scroller whose edges fade where there is more to see: the side it can still move towards melts away */
+export function useEdgeFade<T extends HTMLElement>(axis: "x" | "y") {
+  const el = useRef<T | null>(null);
+  const check = useCallback(() => {
+    const e = el.current;
+    if (!e) return;
+    const [pos, size, view] = axis === "y" ? [e.scrollTop, e.scrollHeight, e.clientHeight] : [e.scrollLeft, e.scrollWidth, e.clientWidth];
+    e.classList.toggle("is-before", pos > 2);
+    e.classList.toggle("is-after", pos + view < size - 2);
+  }, [axis]);
+  useEffect(() => {
+    const e = el.current;
+    if (!e) return;
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(e); Array.from(e.children).forEach((c) => ro.observe(c));
+    return () => ro.disconnect();
+  });
+  return { ref: el, onScroll: check, className: `edge-fade edge-fade--${axis}` };
 }
 
 // ─── The nodes, as tabs ──────────────────────────────────────────────────────
@@ -72,9 +102,11 @@ interface StripProps {
   quiet?: boolean;
   /** The references that are ideal for this area, from the project or the rest of the library: the picker offers them first */
   ideal?: InspoItem[];
+  /** Opens a reference's card (its panel) */
+  onOpen?: (item: InspoItem) => void;
 }
 
-export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onToggle, picking, material, tall, quiet, ideal = [] }: StripProps) {
+export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onToggle, picking, material, tall, quiet, ideal = [], onOpen }: StripProps) {
   const { t } = useT();
   const [adding, setAdding] = useState(false);
   const [q, setQ] = useState("");
@@ -93,6 +125,7 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
   const idealIds = new Set(fromIdeal.map((i) => i.id));
   const fromBoard = board.filter((i) => i.id && !idealIds.has(i.id) && match(i));
   const fromInbox = inbox.filter((i) => i.id && !idealIds.has(i.id) && match(i)).slice(0, 60);
+  const fade = useEdgeFade<HTMLDivElement>("x");
   const card = (i: InspoItem) => {
     const on = inArea.has(i.id);
     return (
@@ -124,7 +157,7 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
       </header>
       {refs.length === 0 && !quiet && <p className="sysf-refs__none">{t.system.stage.none(areaLabel)}</p>}
       {refs.length > 0 && (
-        <div className={`sysf-refs__row${tall ? " sysf-refs__row--tall" : ""}`}>
+        <div ref={fade.ref} onScroll={fade.onScroll} className={`sysf-refs__row ${fade.className}${tall ? " sysf-refs__row--tall" : ""}`}>
           {refs.map((i) => {
             const picked = picking?.picked.has(i.id!) ?? false;
             // data-id: the agent reads the card under the pointer and the ones chosen ("this one", "these")
@@ -136,8 +169,14 @@ export function RefStrip({ areaLabel, refs, board, inbox, imageOf, pending, onTo
               </button>
             ) : (
               <article key={i.id} className={`sysf-ref${pending.has(i.id!) ? " is-busy" : ""}`} data-id={i.id} title={i.name}>
-                <Thumb item={i} image={imageOf(i)} className="sysf-ref__img" />
-                <span className="sysf-ref__name">{i.name}</span>
+                {onOpen ? (
+                  <button type="button" className="sysf-ref__open" onClick={() => onOpen(i)}>
+                    <Thumb item={i} image={imageOf(i)} className="sysf-ref__img" />
+                    <span className="sysf-ref__name">{i.name}</span>
+                  </button>
+                ) : (
+                  <><Thumb item={i} image={imageOf(i)} className="sysf-ref__img" /><span className="sysf-ref__name">{i.name}</span></>
+                )}
                 {material && <div className="sysf-ref__material">{material(i)}</div>}
                 <button type="button" className="sysf-ref__x" aria-label={t.system.stage.remove(i.name)} title={t.system.stage.remove(i.name)} onClick={() => onToggle(i, false)}>{Icons.x}</button>
               </article>
@@ -486,7 +525,7 @@ export function AreaSample({ area, projectId, projectName, intent, summary, type
       <div className="smp-trio__row">
         {variants.map((v) => (
           <div key={v.label} className="smp-trio__cell">
-            <Sample compact title={projectName} subtitle={intent || tt.comp.subtitleSample} body="" cta={tt.comp.cta} more={t.system.sample.more}
+            <Sample title={projectName} subtitle={intent || tt.comp.subtitleSample} body="" cta={tt.comp.cta} more={t.system.sample.more}
               faces={faces} choices={{ ...choices, ...v.patch, ...(v.patch.bg && !choices.ink ? {} : {}) }} replay={replay} />
             <button type="button" className="smp-trio__pick" onClick={() => { onChoice(v.patch); setTrio(false); onReplay(); }}>{Icons.check} <span>{v.label}</span></button>
           </div>

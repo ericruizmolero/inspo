@@ -295,7 +295,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false, look = "md", pictures }: {
+export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -321,6 +321,10 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
   onSummary?: (text: string) => Promise<void>;
   /** Writes over a part the app writes ("head", "refs", "meta:<area>"); null goes back to what the app writes */
   onPart?: (part: string, text: string | null) => Promise<void>;
+  /** Writes the words of a text reference (the Content section), typed in place: the reference itself changes */
+  onText?: (itemId: string, text: string) => Promise<void>;
+  /** Gives a text reference another title, typed over its heading in Content (its code stays the app's) */
+  onTextTitle?: (itemId: string, title: string) => Promise<void>;
   /** What the team is doing with an area, under its block: the proposals waiting and its conversation */
   after?: (block: AreaBlock) => ReactNode;
   /** The pins the team left, by the part of the file they sit on (an area, or head, project, summary, refs) */
@@ -473,7 +477,26 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
             const whole = [`## ${b.heading}`, ...b.lines];
             // What the project is: the team's own words. The references: written by the app, and over it by hand
             // A skill's section is written from the system (lib/md-skills.ts): it follows the areas, it is not typed over
-            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id.startsWith("skill:") ? null : over(b.id, b.edited);
+            // The content is the texts the team pasted, whole (lib/criterio-md.ts): each one's words are typed in place
+            // and saved to the reference itself; who saved it and what was said of it stay the app's
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id.startsWith("skill:") || b.id === "content" ? null : over(b.id, b.edited);
+            if (b.texts && onText) return (
+              <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
+                {lines(b.id, [`## ${b.heading}`, ""], whole)}
+                {lines(b.id, b.texts.intro, whole, false)}
+                {b.texts.items.map((x, i) => (
+                  <div key={x.itemId || i}>
+                    {/* Its heading is its title: typed over, the reference is renamed (the code before it is put back) */}
+                    {x.itemId && onTextTitle
+                      ? <>{written(b.id, x.head[0], "", whole, { onSave: async (text) => { const title = text.split("\n")[0].replace(/^#{1,6}\s*/, "").replace(/^R\d+\s*·\s*/, "").trim(); if (title) await onTextTitle(x.itemId, title); } })}{lines(b.id, x.head.slice(1), whole, false)}</>
+                      : lines(b.id, x.head, whole, false)}
+                    {/* An emptied text is not saved: a reference is removed from its card, not by clearing it */}
+                    {x.itemId ? written(b.id, x.body.join("\n"), "", whole, { onSave: async (text) => { if (text.trim()) await onText(x.itemId, text); } }) : lines(b.id, x.body, whole, false)}
+                    <Line text="" />
+                  </div>
+                ))}
+              </div>
+            );
             return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
                 {lines(b.id, [`## ${b.heading}`, ""], whole)}

@@ -2,17 +2,22 @@
 // The library's templates: whole systems to start a project from. Each one says what it turned into what (a
 // client's site and its redesign), shows its eight areas with what they decided and what they never do, and
 // carries the recipe of the work. Using one starts a project with that system as proposals and the recipe.
+// The library shows them as cards, each with what the work ended as; a card opens its criterio.md.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Project } from "@/types/inspo";
-import { SYSTEM_AREAS, type SystemArea, type TemplateCard } from "@/types/system";
-import { loadRecipe, loadTemplates, removeTemplate, startFromTemplate } from "@/app/actions/templates";
+import { type SystemArea, type TemplateCard } from "@/types/system";
+import { loadTemplates, removeTemplate, startFromTemplate } from "@/app/actions/templates";
 import { criterioBlocks, blocksToMd } from "@/lib/criterio-md";
+import SystemMarkdown from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
-import { areaIcon } from "./area-icons";
+import LoopVideo from "./LoopVideo";
+import { mediaKindOf, readableDomain, videoEmbedOf } from "@/lib/url";
 import "./SystemStage.css";
+import "./Templates.css";
 
-const host = (u: string) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+const NONE = new Set<SystemArea>();
+const host = (u: string) => readableDomain(u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""));
 function download(name: string, text: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
@@ -21,9 +26,41 @@ function download(name: string, text: string) {
 
 type Page = { topUrl: string; shotUrl: string; shotH: number; color?: string };
 
-/** The published result in a browser window, as the DESIGN.md sheet shows a site: its first screen, and on
- *  hover the whole page scrolling, eased at each end. Captured with Chromium the first time it is asked for. */
-function ResultPage({ id, url }: { id: string; url: string }) {
+/** What the work ended as, as its thumbnail alone: an image or a video as they are (a video loops), a site as
+ *  its first screen, and on hover the whole page scrolling, eased at each end (captured with Chromium the
+ *  first time it is asked for) */
+/** A recording of the result laid over its thumbnail: it plays, looping, while the pointer is on the thumbnail */
+function HoverVideo({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current, host = v?.closest(".tplc, .tpl-page");
+    if (!v || !host) return;
+    v.muted = true;
+    const on = () => { v.currentTime = 0; void v.play().catch(() => {}); };
+    const off = () => v.pause();
+    host.addEventListener("pointerenter", on); host.addEventListener("pointerleave", off);
+    return () => { host.removeEventListener("pointerenter", on); host.removeEventListener("pointerleave", off); };
+  }, []);
+  return <video ref={ref} className="tpl-page__video" src={src} muted loop playsInline preload="metadata" aria-hidden />;
+}
+
+function Result({ id, url, video, still = false }: { id: string; url: string; video?: string; still?: boolean }) {
+  const kind = mediaKindOf(url);
+  const hover = video ? videoEmbedOf(video) : null;
+  const hoverSrc = hover && (hover.loops || hover.provider === "file") ? hover.src : null;
+  if (kind !== "image" && kind !== "video") return <ResultPage id={id} url={url} still={still} hoverSrc={hoverSrc} />;
+  const v = kind === "video" ? videoEmbedOf(url) : null;
+  const view = (
+    <div className="tpl-page__view">
+      {kind === "image" ? <img className="tpl-page__top" src={url} alt="" /> : v?.poster && <img className="tpl-page__top" src={v.poster} alt="" />}
+      {v && (v.loops || v.provider === "file") && <LoopVideo src={v.src} />}
+    </div>
+  );
+  // On a card the whole card opens the template: the thumbnail is only a picture there
+  return still ? <div className="tpl-page">{view}</div> : <a className="tpl-page" href={url} target="_blank" rel="noreferrer">{view}</a>;
+}
+
+function ResultPage({ id, url, still, hoverSrc }: { id: string; url: string; still: boolean; hoverSrc: string | null }) {
   const [page, setPage] = useState<Page | null | "failed">(null);
   const [dist, setDist] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -37,13 +74,9 @@ function ResultPage({ id, url }: { id: string; url: string }) {
     const img = e.currentTarget, box = boxRef.current;
     if (box) setDist(Math.max(0, (img.naturalHeight / img.naturalWidth) * box.clientWidth - box.clientHeight));
   };
+  const Box = still ? "div" : "a";
   return (
-    <a className="tpl-page" href={url} target="_blank" rel="noreferrer">
-      <span className="pn-bar is-dark tpl-page__bar">
-        <span className="dm-frame__lights" aria-hidden><i /><i /><i /></span>
-        <span className="pn-bar__url"><span>{host(url)}</span></span>
-        <span />
-      </span>
+    <Box className={`tpl-page${hoverSrc ? " has-video" : ""}`} {...(still ? {} : { href: url, target: "_blank", rel: "noreferrer" })}>
       <div ref={boxRef} className="tpl-page__view" style={page?.color ? { background: page.color } : undefined}>
         {!page && <div className="shimmer" />}
         {page && <img className="tpl-page__top" src={page.topUrl} alt={host(url)} />}
@@ -51,8 +84,28 @@ function ResultPage({ id, url }: { id: string; url: string }) {
           <img className="tpl-page__full" src={page.shotUrl} alt="" aria-hidden fetchPriority="low" onLoad={onFull}
             style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${Math.max(4, Math.round(dist / 170))}s` } as React.CSSProperties} />
         )}
+        {/* With a recording of the result, the hover plays it instead of scrolling the page */}
+        {hoverSrc && <HoverVideo src={hoverSrc} />}
       </div>
-    </a>
+    </Box>
+  );
+}
+
+/** A template in the library: what it ended as, its name, what it turned into what, and what it was */
+function TemplateCardView({ tpl, onOpen }: { tpl: TemplateCard; onOpen: () => void }) {
+  return (
+    <button type="button" className="tplc" onClick={onOpen}>
+      {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} still /> : <div className="tpl-page"><div className="tpl-page__view tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
+      <span className="tplc__name">{tpl.name}</span>
+      {(tpl.template.from || tpl.template.to) && (
+        <span className="tplc__path">
+          {tpl.template.from && host(tpl.template.from)}
+          {tpl.template.from && tpl.template.to && <span aria-hidden>{Icons.arrow}</span>}
+          {tpl.template.to && host(tpl.template.to)}
+        </span>
+      )}
+      {tpl.template.about && <span className="tplc__about">{tpl.template.about}</span>}
+    </button>
   );
 }
 
@@ -60,22 +113,14 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
   const { t } = useT();
   const s = t.templates;
   const labels = t.system.areas as Record<SystemArea, string>;
-  const [naming, setNaming] = useState(false);
-  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState<"criterio" | "recipe" | null>(null);
-  const [recipe, setRecipe] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const md = useMemo(() => blocksToMd(criterioBlocks({ project: tpl.name, system: tpl.system, items: {}, labels, strings: t.system.md, client: tpl.template.from ? { name: host(tpl.template.from), web: tpl.template.from } : null })), [tpl, labels, t]);
-  const showRecipe = async () => {
-    setFile(file === "recipe" ? null : "recipe");
-    if (recipe === null) { const r = await loadRecipe(tpl.id); if (r.ok) setRecipe(r.data); }
-  };
-  const text = file === "recipe" ? recipe ?? "" : md;
-  const copy = async () => { try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* the download still works */ } };
-  const decided = tpl.system.areas.filter((a) => a.decision).length;
-  const nevers = tpl.system.areas.reduce((n, a) => n + (a.never ? a.never.split("\n").filter(Boolean).length : 0), 0);
-  const use = async () => { if (!name.trim() || busy) return; setBusy(true); try { await onUse(tpl, name.trim()); } finally { setBusy(false); } };
+  // The template is read as a project's system is: its criterio.md as a document, only here nothing is written
+  const blocks = useMemo(() => criterioBlocks({ project: tpl.name, system: tpl.system, items: {}, labels, strings: t.system.md, client: tpl.template.from ? { name: host(tpl.template.from), web: tpl.template.from } : null }), [tpl, labels, t]);
+  const md = useMemo(() => blocksToMd(blocks), [blocks]);
+  const copy = async () => { try { await navigator.clipboard.writeText(md); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* the download still works */ } };
+  // It clones at once under the template's own name: the project can be renamed afterwards
+  const use = async () => { if (busy) return; setBusy(true); try { await onUse(tpl, tpl.name); } finally { setBusy(false); } };
 
   return (
     <article className="tpl">
@@ -92,57 +137,40 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
           {tpl.template.about && <p className="tpl-about">{tpl.template.about}</p>}
         </div>
         <div className="tpl-head__actions">
-          {naming ? (
-            <form className="tpl-use" onSubmit={(e) => { e.preventDefault(); void use(); }}>
-              <input autoFocus value={name} maxLength={60} placeholder={s.namePlaceholder} aria-label={s.namePlaceholder} disabled={busy} onChange={(e) => setName(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setNaming(false); } }} />
-              <button type="submit" className="tpl-btn tpl-btn--primary" disabled={busy || !name.trim()}>{busy ? <span className="spinner spinner--sm" /> : Icons.check} {s.start}</button>
-            </form>
-          ) : (
-            <button type="button" className="tpl-btn tpl-btn--primary" onClick={() => setNaming(true)}>{Icons.plus} {s.use}</button>
-          )}
+          <button type="button" className="tpl-btn tpl-btn--primary" disabled={busy} onClick={() => void use()} title={s.useHint}>{busy ? <span className="spinner spinner--sm" /> : Icons.plus} {s.use}</button>
         </div>
       </header>
 
-      {tpl.template.to && <ResultPage id={tpl.id} url={tpl.template.to} />}
+      <SystemMarkdown readOnly blocks={blocks} busy={NONE} onCopy={() => void copy()} copied={copied}
+        onDownload={() => download(`${tpl.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`, md)}
+        projectId={tpl.id} projectName={tpl.name} hasRecipe={tpl.recipeSize > 0} />
 
-      <p className="tpl-meta">{s.meta(decided, SYSTEM_AREAS.length, nevers)}{tpl.recipeSize > 0 && ` · ${s.withRecipe}`}</p>
-      <ul className="tpl-areas">
-        {tpl.system.areas.map((a) => (
-          <li key={a.area} className={a.decision ? "" : "is-open"}>
-            <span className="tpl-areas__label">{areaIcon(a.area, 13)}{labels[a.area]}</span>
-            <span className="tpl-areas__line">{a.decision ? a.decision.split(/(?<=[.:;])\s/)[0] : t.system.open}</span>
-          </li>
-        ))}
-      </ul>
+      {/* What it ended as, below the file: the thumbnail alone */}
+      {tpl.template.to && <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} />}
 
       <div className="tpl-files">
-        <button type="button" className={`tpl-btn${file === "criterio" ? " is-on" : ""}`} aria-pressed={file === "criterio"} onClick={() => setFile(file === "criterio" ? null : "criterio")}>criterio.md</button>
-        {tpl.recipeSize > 0 && <button type="button" className={`tpl-btn${file === "recipe" ? " is-on" : ""}`} aria-pressed={file === "recipe"} onClick={() => void showRecipe()}>receta.md</button>}
         <button type="button" className="tpl-btn tpl-btn--quiet" onClick={() => { if (window.confirm(s.deleteAsk(tpl.name))) void onDelete(tpl); }}>{s.delete}</button>
       </div>
-      {file && (
-        <section className="mdv tpl-file" aria-label={file === "recipe" ? "receta.md" : "criterio.md"}>
-          <header className="mdv-bar">
-            <span className="mdv-bar__name">{file === "recipe" ? "receta.md" : "criterio.md"}</span>
-            <span className="mdv-bar__hint">{file === "recipe" ? s.recipeHint : s.criterioHint}</span>
-            <span className="mdv-bar__tools">
-              <button type="button" className="mdv-btn" onClick={() => void copy()}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : t.system.mdView.copy}</button>
-              <button type="button" className="mdv-btn" onClick={() => download(`${tpl.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-${file === "recipe" ? "receta" : "criterio"}.md`, text)}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
-            </span>
-          </header>
-          {file === "recipe" && recipe === null ? <p className="mdv-doc"><span className="spinner spinner--sm" /></p> : <pre className="mdv-doc tpl-pre">{text}</pre>}
-        </section>
-      )}
     </article>
   );
 }
 
-export default function TemplatesView({ onStarted }: { onStarted: (project: Project) => void }) {
+export default function TemplatesView({ onStarted }: { onStarted: (project: Project & { boardIds?: string[] }) => void }) {
   const { t } = useT();
   const s = t.templates;
   const [list, setList] = useState<TemplateCard[] | null>(null);
   const [error, setError] = useState("");
+  // The template open, or the library
+  const [openId, setOpenId] = useState<string | null>(null);
+  const open = list?.find((x) => x.id === openId) ?? null;
+  const scroller = useRef<HTMLDivElement>(null);
+  const go = (id: string | null) => { setOpenId(id); scroller.current?.scrollTo({ top: 0 }); };
+  useEffect(() => {
+    if (!open) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape" && !(e.target as HTMLElement).closest("input, textarea")) go(null); };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [open]);
   useEffect(() => {
     let alive = true;
     loadTemplates().then((r) => { if (!alive) return; if (r.ok) setList(r.data); else setError(r.error); });
@@ -155,19 +183,29 @@ export default function TemplatesView({ onStarted }: { onStarted: (project: Proj
   };
   const del = async (tpl: TemplateCard) => {
     const r = await removeTemplate(tpl.id);
-    if (r.ok) setList((l) => (l ?? []).filter((x) => x.id !== tpl.id)); else setError(r.error);
+    if (r.ok) { setList((l) => (l ?? []).filter((x) => x.id !== tpl.id)); go(null); } else setError(r.error);
   };
   return (
-    <div className="tpls">
+    <div className="tpls" ref={scroller}>
       <div className="tpls-inner">
-        <header className="tpls-head">
-          <h1 className="tpls-title">{s.title}</h1>
-          <p className="tpls-lead">{s.lead}</p>
-        </header>
-        {error && <p className="sysv-error" role="alert">{error}</p>}
-        {list === null && !error && <p className="sysv-muted"><span className="spinner spinner--sm" /></p>}
-        {list?.length === 0 && <p className="tpls-empty">{s.empty}</p>}
-        {list?.map((tpl) => <Template key={tpl.id} tpl={tpl} onUse={use} onDelete={del} />)}
+        {open ? (
+          <>
+            <button type="button" className="tpls-back" onClick={() => go(null)}><span aria-hidden>{Icons.arrow}</span>{s.title}</button>
+            {error && <p className="sysv-error" role="alert">{error}</p>}
+            <Template tpl={open} onUse={use} onDelete={del} />
+          </>
+        ) : (
+          <>
+            <header className="tpls-head">
+              <h1 className="tpls-title">{s.title}</h1>
+              <p className="tpls-lead">{s.lead}</p>
+            </header>
+            {error && <p className="sysv-error" role="alert">{error}</p>}
+            {list === null && !error && <p className="sysv-muted"><span className="spinner spinner--sm" /></p>}
+            {list?.length === 0 && <p className="tpls-empty">{s.empty}</p>}
+            {!!list?.length && <div className="tplc-grid">{list.map((tpl) => <TemplateCardView key={tpl.id} tpl={tpl} onOpen={() => go(tpl.id)} />)}</div>}
+          </>
+        )}
       </div>
     </div>
   );

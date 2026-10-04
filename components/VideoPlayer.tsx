@@ -13,10 +13,10 @@ export default function VideoPlayer({ web, title }: { web: string; title: string
   const video = videoEmbedOf(web);
   if (!video) return null;
 
-  if (video.provider === "file") {
+  if (video.provider === "file" || video.provider === "screenstudio") {
     return (
       <div className="vp">
-        <video className="vp__media" src={web} controls playsInline preload="metadata" />
+        <video className="vp__media" src={video.src} poster={video.poster} controls playsInline preload="metadata" />
       </div>
     );
   }

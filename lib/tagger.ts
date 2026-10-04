@@ -11,6 +11,7 @@ import { llm, llmEnabled } from "./llm";
 import { fetchSiteText, videoTitleWithin, type SiteText } from "./extract";
 import { getStoredPost, ensurePost, postThumb } from "./posts";
 import { readMediaFile } from "./media";
+import { textTags } from "./text-refs";
 import { getDesignScreenshot } from "./design-store";
 import { getPageIndex } from "./page-shots";
 import { captureNewPage, getStoredShot } from "./screenshot";
@@ -250,6 +251,8 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, model
 
 /** Tags one item. Throws when the model fails, so the item stays pending and is tried again. */
 export async function tagItem(item: InspoItem, usage: UsageCtx, model = TAG_MODEL): Promise<InspoTags> {
+  // A pasted text has no look: its first lines stand in for tags, with no model call
+  if (mediaKindOf(item.web) === "text") return textTags(item.web);
   const copy = await tagsElsewhere(usage.organizationId, item.web);
   if (copy) return copy;
   const r = await tagWith(item, await inputsOf(item.web), model);

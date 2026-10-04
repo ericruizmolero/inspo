@@ -9,7 +9,7 @@ import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT, messageOf } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
-import { mediaKindOf } from "@/lib/url";
+import { mediaKindOf, readableDomain } from "@/lib/url";
 import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
 
@@ -414,7 +414,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   // An uploaded image is not a site: its link opens the file itself, which is also the picture on top
   const kind = mediaKindOf(item.web);
   const href = kind === "image" && image ? image : item.web;
-  const domain = kind === "image" ? t.card.openImage : (() => { try { return new URL(item.web).hostname.replace(/^www\./, ""); } catch { return ""; } })();
+  const domain = kind === "image" ? t.card.openImage : (() => { try { return readableDomain(new URL(item.web).hostname.replace(/^www\./, "")); } catch { return ""; } })();
   const count = comments.length;
 
   const renderMsg = (m: Msg, grouped: boolean) => (
@@ -444,7 +444,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 onFocus={(e) => { const l = e.currentTarget.value.length; e.currentTarget.setSelectionRange(l, l); }}
                 onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
                 onKeyDown={(e) => {
-                  if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); saveEdit(); }
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); saveEdit(); }
                   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
                 }}
               />
@@ -567,7 +567,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                   : t.comments.emptyWithOthers(listNames(others, t.comments.and), others.length > 1)}
               </span>
               <div className="cm-empty__prompts">
-                {t.comments.prompts.map((p) => (
+                {(kind === "web" ? t.comments.prompts : t.comments.promptsMedia).map((p) => (
                   <button key={p} type="button" className="chip" onClick={() => { setDraft(p + " "); textareaRef.current?.focus(); }}>{p}</button>
                 ))}
               </div>
@@ -625,7 +625,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               value={draft}
               placeholder={count === 0 && !item.note ? t.comments.firstComment : t.comments.addComment}
               onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); submit(); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }}
             />
             {pending.length > 0 && (
               <div className="cm-files">

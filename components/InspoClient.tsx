@@ -1,8 +1,8 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
-import { setProjectClient } from "@/app/actions/polish";
+import { setProjectClient, savePolishBrief } from "@/app/actions/polish";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
@@ -13,18 +13,23 @@ import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, q
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
-import InspoCard, { cachedCardImage } from "./InspoCard";
+import InspoCard, { captionFor } from "./InspoCard";
+import Discover from "./Discover";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
 import { refInfoOf } from "@/lib/ref-info";
+import { restoreTextHeadings } from "@/lib/criterio-md";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
+import TextPage from "./TextPage";
+import { addText, saveText, renameText } from "@/app/actions/text";
+import { useTextBodies } from "@/hooks/use-text-bodies";
 import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
 import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
-import DesignMdToasts, { isDarkSite, type DesignMdState } from "./DesignMdToasts";
+import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "@/lib/agent";
 import ProjectChooser from "./ProjectChooser";
@@ -55,9 +60,7 @@ const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 // A video's or a post's own view, in the reference sheet's page card; only loaded when one opens
 const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
-const PolishModal = dynamic(() => import("./PolishModal"), { ssr: false });
 const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
-const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
@@ -116,13 +119,16 @@ const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
 const RATIOS_KEY = "inspo:ratios";
 /** The zoom (columns away from the usual number, see components/Grid.tsx), kept for the next visit */
-// ":2": the default moved one step out (DEFAULT_ZOOM -1); a zoom kept under the old key meant something else
-const ZOOM_KEY = "inspo:board-zoom:2";
+// ":3": everyone opens again at the default (one step out, 83% on a usual screen); a zoom kept before is dropped
+const ZOOM_KEY = "inspo:board-zoom:3";
 /** What floats over the board: the bars on top, the search dock at the bottom */
 const TOP_DESKTOP = 64;
 const TOP_MOBILE = 64;
 /** The search dock at the bottom, with the results line over it */
 const BOTTOM = 112;
+/** The same edge where there is no dock (the library, the inbox) */
+const BOTTOM_BARE = 24;
+const NO_FILTERS: Filter[] = [];
 
 function useWindowWidth() {
   const [w, setW] = useState(0);
@@ -246,17 +252,24 @@ export default function InspoClient({
   const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
-  const space = inParam === "inbox" || inParam === "templates" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
-  // Inside a project the system comes first; the board is a mode (?view=board)
-  // A project still gathering opens on its board: until the team says it has its references (GatherBar), the
-  // board is its first screen; after that, the system. ?view= says the other one
+  const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
+  // Inside a project the system comes first and the board is a mode (?view=board). A project with nothing in
+  // it and nothing decided opens on the board instead, which is then its starting point (ProjectStart)
+  // ...and so does one still gathering: until the team says it has its references (GatherBar), the board is the
+  // project's first screen; after that, the system
+  const projectBlank = !!currentProject && !currentSystem?.areas.some((a) => a.decision) && !items.some((i) => i.id && links[i.id]?.includes(currentProject.id));
   const gatheringRefs = !!currentProject && !currentProject.started;
-  const defaultView: "system" | "board" = gatheringRefs ? "board" : "system";
+  const defaultView: "system" | "board" = projectBlank || gatheringRefs ? "board" : "system";
   const viewParam = sp.get("view");
   const projectView: "system" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "system" ? viewParam : defaultView;
   const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
-  const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
+  // The search lives on a project's board and nowhere else: off it there is no box, and what was typed or
+  // chipped there waits in the URL without narrowing anything
+  const searchHere = !!currentProject && projectView === "board";
+  const searchHereRef = useRef(searchHere);
+  searchHereRef.current = searchHere;
   // Which areas of the current project's system each reference backs (for the card's "to the system")
   const backsByItem = useMemo(() => {
     const m = new Map<string, SystemArea[]>();
@@ -264,16 +277,47 @@ export default function InspoClient({
     return m;
   }, [currentSystem]);
   const backsOf = useCallback((id: string) => backsByItem.get(id) ?? EMPTY_AREAS, [backsByItem]);
+  // The same in every project: which areas each reference backs, project by project (the folder button's areas)
+  const areasByItem = useMemo(() => {
+    const m = new Map<string, Record<string, SystemArea[]>>();
+    for (const [pid, sys] of Object.entries(systems)) for (const a of sys?.areas ?? []) for (const e of a.evidence) {
+      const rec = m.get(e.itemId) ?? {};
+      rec[pid] = [...(rec[pid] ?? []), a.area];
+      m.set(e.itemId, rec);
+    }
+    return m;
+  }, [systems]);
   const systemFilled = currentSystem ? currentSystem.areas.filter((a) => a.decision).length : 0;
   const systemStale = useMemo(() => {
     if (!currentProject || !currentSystem?.run) return 0;
     const boardIds = items.filter((i) => i.id && links[i.id]?.includes(currentProject.id)).map((i) => i.id!);
     return staleness(currentSystem, boardIds).unread;
   }, [currentProject, currentSystem, items, links]);
-  const setSpace = useCallback((v: string) => setParams({ in: v === "all" ? "library" : v === "home" ? "" : v }), [setParams]);
+  // An asked-for system view stays with the project it was asked in: the next one opens on its own default
+  const setSpace = useCallback((v: string) => setParams({
+    in: v === "all" ? "library" : v === "home" ? "" : v,
+    ...(new URLSearchParams(window.location.search).get("view") === "system" ? { view: "" } : {}),
+  }), [setParams]);
   // Adding from inside a project files it there: read at save time, whatever the callback closed over
   const projectRef = useRef<string | null>(null);
   projectRef.current = currentProject?.id ?? null;
+  // Where a new reference lands: nothing lives outside a project. The project open in the tabs; from the library or
+  // Discover, the last one opened (kept on this machine, per workspace); failing that, the first project
+  const lastProjectKey = `criterio:last-project:${workspace.id}`;
+  useEffect(() => { if (currentProject) try { localStorage.setItem(lastProjectKey, currentProject.id); } catch { /* it lasts the visit */ } }, [currentProject, lastProjectKey]);
+  const saveTarget = () => {
+    if (currentProject) return currentProject.id;
+    let last: string | null = null;
+    try { last = localStorage.getItem(lastProjectKey); } catch { /* private mode */ }
+    return projects.find((p) => p.id === last)?.id ?? projects[0]?.id;
+  };
+  const saveTargetRef = useRef(saveTarget);
+  saveTargetRef.current = saveTarget;
+  // There is no library to land on: the bare address (or an old ?in=library) opens the last project worked in.
+  // With no project yet, the first screen stays (the chooser, or the empty start)
+  useEffect(() => {
+    if ((space === "home" || space === "all") && projects.length) setParams({ in: saveTarget() ?? "" }, true);
+  }, [space, inParam, projects.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [confirm, confirmDialog] = useConfirm();
 
   // What no project has taken (nor archived): the library's second view
@@ -322,23 +366,7 @@ export default function InspoClient({
   }, [watching]);
   const gathering = useMemo(() => items.filter((i) => tagJobs[i.web] === "pending" || tagJobs[i.web] === "running").length, [items, tagJobs]);
 
-  // Gathers an item's tags again (after a failure, or for a fresh look)
-  const retryTags = useCallback(async (web: string) => {
-    watch(web);
-    const res = await fetch("/api/tags", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }) }).catch(() => null);
-    if (!res?.ok) setTagJobs((prev) => ({ ...prev, [web]: "failed" }));
-  }, [watch]);
-
-  // Adds or removes one tag by hand; the edits are the workspace's and outlive a new tagging
-  const editTags = useCallback(async (item: InspoItem, change: { add?: string; remove?: string }) => {
-    if (!item.id) return;
-    const r = await editTagsAction(item.id, change);
-    if (!r.ok) { setAddError({ title: t.app.saveFailed, detail: r.error }); return; }
-    setTagMap((prev) => (prev[item.web] ? { ...prev, [item.web]: { ...prev[item.web], user: r.data } } : prev));
-  }, [t]);
-
   const [showAdd, setShowAdd] = useState(false);
-  const [showPolish, setShowPolish] = useState(false);
   // Organising the Inbox: the model's proposal per reference sits on its card until the team accepts, changes or dismisses it
   const [triage, setTriage] = useState<Record<string, TriageProposal> | null>(null);
   const [triageRunning, setTriageRunning] = useState(false);
@@ -389,7 +417,8 @@ export default function InspoClient({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
-  const [showDirectory, setShowDirectory] = useState(false);
+  // The directory is Discover's resources: every "open the directory" lands there
+  const openDirectory = useCallback(() => setSpace("discover"), [setSpace]);
 
   // ─── Add by URL only ─────────────────────────────────────────────────────────
   // The card appears instantly with the domain; the server gets the real name
@@ -413,6 +442,15 @@ export default function InspoClient({
     } catch { /* stays a typographic card */ }
   }, []);
   const runDesignMdRef = useRef<(item: InspoItem, opts?: RunDesignMdOpts) => void>(() => {});
+  // Saved from the dialog under some areas of the project's system: each one counts it at once
+  const fileUnderAreas = async (projectId: string, item: InspoItem, areas: SystemArea[] | undefined) => {
+    if (!item.id || !areas?.length) return;
+    for (const area of areas) {
+      const r = await assignSystemArea(projectId, area, item.id, true).catch((e) => ({ ok: false as const, error: String(e) }));
+      if (!r.ok) { projectFailed(new Error(r.error)); return; }
+      setSystem(projectId, r.data);
+    }
+  };
   const addByUrl = useCallback(async (input: NewInspoInput): Promise<InspoItem | null> => {
     const d = new Date();
     const temp: InspoItem = {
@@ -422,12 +460,13 @@ export default function InspoClient({
     };
     setItems((prev) => [temp, ...prev]);
     try {
-      const projectId = projectRef.current ?? undefined;
+      const projectId = saveTargetRef.current() ?? undefined;
       const r = await addInspo({ web: input.web, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
+      if (projectId) void fileUnderAreas(projectId, item, input.areas);
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Full experience from the start: tags and DESIGN.md without asking.
       // A post on X is imported first (its picture is what the tags look at).
@@ -457,12 +496,13 @@ export default function InspoClient({
     setItems((prev) => [temp, ...prev]);
     try {
       const url = await uploadMedia(input.file);
-      const projectId = projectRef.current ?? undefined;
+      const projectId = saveTargetRef.current() ?? undefined;
       const r = await addImage({ url, fileName: input.file.name, type: input.type, note: input.note, projectId });
       if (!r.ok) throw new Error(r.error);
       const item = r.data;
       if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
       if (projectId) refreshSystem(projectId);
+      if (projectId) void fileUnderAreas(projectId, item, input.areas);
       setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       watch(item.web);
@@ -477,13 +517,41 @@ export default function InspoClient({
     }
   }, [user, watch, workspace.id, t]);
 
+  // ─── Add a text ──────────────────────────────────────────────────────────────
+  // The project's content, pasted: the same optimistic card, a poster with its title until it is saved
+  const addByText = useCallback(async (input: NewInspoInput & { text: { title: string; body: string } }): Promise<InspoItem | null> => {
+    const d = new Date();
+    const temp: InspoItem = {
+      name: input.text.title, web: `text:${d.getTime()}`, type: input.type, note: input.note,
+      date: `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`,
+      addedBy: user.name || user.email,
+    };
+    setItems((prev) => [temp, ...prev]);
+    try {
+      const projectId = saveTargetRef.current() ?? undefined;
+      const r = await addText({ title: input.text.title, text: input.text.body, note: input.note, projectId });
+      if (!r.ok) throw new Error(r.error);
+      const item = r.data;
+      if (projectId && item.id) setLinks((prev) => ({ ...prev, [item.id!]: [projectId] }));
+      if (projectId) refreshSystem(projectId);
+      setItems((prev) => prev.map((i) => (i === temp ? item : i)));
+      // Its "tags" (its first lines) are already written: one look brings them to the card
+      watch(item.web);
+      return item;
+    } catch (e) {
+      setItems((prev) => prev.filter((i) => i !== temp));
+      setAddError({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
+      return null;
+    }
+  }, [user, watch, refreshSystem, t]);
+
   // A guest who pasted a URL on the start canvas comes back from login with ?add=<url>:
   // it saves itself and its DESIGN.md opens, as if pasted from inside.
   // The param is removed with the Next router, not history.replaceState: the router
   // keeps its own URL and, on a workspace switch (router.refresh + remount), it
   // restored it with ?add= and the site got added to the second workspace too.
   // Just in case, the handled URL is noted in sessionStorage and not repeated in the tab.
-  // And if it comes back with ?directory=1 (pressed "sign in" from the guest directory), the directory opens.
+  // And if it comes back with ?directory=1 (pressed "sign in" from the guest directory), Discover opens on its resources.
   const router = useRouter();
   const autoAdded = useRef(false);
   useEffect(() => {
@@ -495,8 +563,8 @@ export default function InspoClient({
     autoAdded.current = true;
     params.delete("add");
     params.delete("directory");
+    if (wantsDirectory) params.set("in", "discover");
     router.replace(window.location.pathname + (params.size ? `?${params}` : ""), { scroll: false });
-    if (wantsDirectory) setShowDirectory(true);
     if (!web) return;
     const DONE_KEY = "inspo:auto-added";
     let done = "";
@@ -562,22 +630,6 @@ export default function InspoClient({
     if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); return; }
     refreshSystem(projectId);
   }, [refreshSystem]);
-  /** Polish's archive: off the board but still the project's (on), or back on it (off). The why stays with the row */
-  const setProjectArchive = useCallback(async (picked: InspoItem[], projectId: string, on: boolean) => {
-    const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
-    if (!ids.length) return;
-    const move = (from: ProjectLinks, to: ProjectLinks): [ProjectLinks, ProjectLinks] => {
-      const a = { ...from }, b = { ...to };
-      for (const id of ids) { a[id] = (a[id] ?? []).filter((x) => x !== projectId); b[id] = [...(b[id] ?? []).filter((x) => x !== projectId), projectId]; }
-      return [a, b];
-    };
-    const prevLinks = links, prevShelf = shelf;
-    const [a, b] = on ? move(links, shelf) : move(shelf, links);
-    if (on) { setLinks(a); setShelf(b); } else { setShelf(a); setLinks(b); }
-    const r = await setProjectArchived(projectId, ids, on).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { setLinks(prevLinks); setShelf(prevShelf); projectFailed(new Error(r.error)); throw new Error(r.error); }
-    refreshSystem(projectId);
-  }, [links, shelf, refreshSystem]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
     const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
@@ -837,17 +889,18 @@ export default function InspoClient({
   // 2. /api/search/semantic, a fraction of a second later: nearness in meaning, any language;
   // 3. /api/search, for descriptive queries: Jev reads the nearest 20 and reorders them.
   // The box answers every key at once; the ranking and the new layout follow when the browser has room
-  const searched = useDeferredValue(query);
+  const searched = useDeferredValue(searchHere ? query : "");
   const words = useMemo(() => queryWords(searched), [searched]);
   const text = searched.trim();
   const index = useMemo(() => textIndex(items, tagMap, commentMap), [items, tagMap, commentMap]);
   const vocab = useMemo(() => vocabulary(items, tagMap, memberNames), [items, tagMap, memberNames]);
   // The space, through the chips
+  const chips = searchHere ? filters : NO_FILTERS;
   const base = useMemo(() => {
-    if (!filters.length) return spaceItems;
-    const test = filterTest(filters);
+    if (!chips.length) return spaceItems;
+    const test = filterTest(chips);
     return spaceItems.filter((i) => test(i, tagMap[i.web]));
-  }, [spaceItems, tagMap, filters]);
+  }, [spaceItems, tagMap, chips]);
   const local = useMemo(() => localScores(base.map((i) => i.web), index, words), [base, index, words]);
 
   const [semantic, setSemantic] = useState<{ q: string; scores: Record<string, number> } | null>(null);
@@ -922,13 +975,11 @@ export default function InspoClient({
   const swatches = useMemo(() => Object.fromEntries(COLORS.map((c) => [c.key, c.description])), []);
 
   // Everything under the workspace, for the sidebar (the docked column and the phone sheet)
-  const filtering = filters.length > 0 || words.length > 0;
-  // In the system the search doesn't take references away: the ones it found stay lit
-  const matchIds = useMemo(() => (filtering ? new Set(filtered.map((i) => i.id).filter((x): x is string => !!x)) : null), [filtering, filtered]);
+  const filtering = chips.length > 0 || words.length > 0;
   const navProps = {
     quota, items,
     isAll: space === "all" && !filtering,
-    onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: () => setShowDirectory(true),
+    onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: openDirectory,
     space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
   };
@@ -988,10 +1039,32 @@ export default function InspoClient({
   );
 
   // A reference as criterio.md tells it: what the AI read of it, who saved it and what the team said
-  const refInfo = useCallback((i: InspoItem) => refInfoOf(i, tagMap[i.web], i.id ? commentMap[i.id] : undefined, t), [tagMap, commentMap, t]);
+  // The words of the text references, read once: the document carries them whole, and the panel shows them
+  const [textBodies, setTextBody] = useTextBodies(items);
+  // A text written again, from its panel or from the document: its words, and the first lines its card shows
+  const saveTextBody = useCallback(async (item: InspoItem, text: string) => {
+    if (!item.id) return;
+    const r = await saveText(item.id, text);
+    if (!r.ok) throw new Error(r.error);
+    setTextBody(item.id, r.data.text);
+    setTagMap((prev) => ({ ...prev, [item.web]: r.data.tags }));
+  }, [setTextBody]);
+  const renameTextItem = useCallback(async (item: InspoItem, title: string) => {
+    if (!item.id) return;
+    const r = await renameText(item.id, title);
+    if (!r.ok) throw new Error(r.error);
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, name: r.data.name } : i)));
+    setPanelItem((cur) => (cur && cur.id === item.id ? { ...cur, name: r.data.name } : cur));
+  }, []);
+  const refInfo = useCallback((i: InspoItem) => {
+    const text = i.id ? textBodies[i.id] : undefined;
+    return { ...refInfoOf(i, tagMap[i.web], i.id ? commentMap[i.id] : undefined, t), ...(text ? { text } : {}) };
+  }, [tagMap, commentMap, t, textBodies]);
   // A small picture of any reference, wherever one is shown outside the board: the thumbnail someone gave it, the
   // DESIGN.md cover, or the stored copy of its page (so a reference without a DESIGN.md is not a blank)
   const smallImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null, [thumbMap, designMdIndex, pageShots]);
+  // The same choice a card makes on the board, at the smallest stored size: a project's cover is its board from afar
+  const miniImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? pageShots[i.web]?.thumbUrl ?? designMdIndex[i.web]?.coverUrl ?? null, [thumbMap, designMdIndex, pageShots]);
   // The zoom: one step out of 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
   // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
   const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
@@ -1014,13 +1087,13 @@ export default function InspoClient({
     top: desktop ? TOP_DESKTOP : TOP_MOBILE,
     left: 0,
     right: 0,
-    bottom: BOTTOM,
-  }), [desktop]);
+    bottom: searchHere ? BOTTOM : BOTTOM_BARE,
+  }), [desktop, searchHere]);
   // The board starts from the top again when the space or the search changes, not when a slower layer reorders
-  const fitKey = `${space}|${filters.map(filterKey).join(",")}|${filtering ? text : ""}`;
+  const fitKey = `${space}|${chips.map(filterKey).join(",")}|${filtering ? text : ""}`;
 
   // Presence: which area the person is in right now (read by the /admin panel)
-  const area = panelItem ? "design-md" : showDirectory ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
+  const area = panelItem ? "design-md" : space === "discover" ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
   useActivity(area, workspace.id);
 
   runDesignMdRef.current = runDesignMd;
@@ -1034,13 +1107,22 @@ export default function InspoClient({
     if (!r.ok) { projectFailed(new Error(r.error)); return; }
     setSystem(projectId, r.data);
   }, [setSystem]);
-  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure, acceptProposal: (p) => void acceptTriage([p]), patchProposal: patchTriage };
+  // From the library: under an area of any project, filed in that project first if it was not
+  const toggleAreaIn = useCallback(async (item: InspoItem, projectId: string, area: SystemArea, on: boolean) => {
+    if (!item.id) return;
+    if (on && !links[item.id]?.includes(projectId)) await toggleFiled(item, projectId, true);
+    const r = await assignSystemArea(projectId, area, item.id, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+    setSystem(projectId, r.data);
+  }, [setSystem, toggleFiled, links]);
+  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, toggleAreaIn, measure, acceptProposal: (p) => void acceptTriage([p]), patchProposal: patchTriage };
 
   // ─── The agent: every action, asked for in words from the search box ──────────
   // The request goes with where the person is (project, view, open reference, what is on screen); the
   // server plans and runs what is safe, and what it changed comes back as a patch the state applies.
   // Deleting comes back pending and waits for a yes here.
   const [agent, setAgent] = useState<{ text: string; busy: boolean; say?: string; done: AgentDone[]; pending: AgentAction[]; error?: string } | null>(null);
+  const agentSpeaks = !!agent && (agent.busy || !!agent.say || !!agent.error || agent.done.length > 0);
   // The thread: the last exchanges go with each request, so "and put it in color too" means something
   const agentLog = useRef<AgentTurn[]>([]);
   const recentIds = useRef<string[]>([]);
@@ -1062,7 +1144,7 @@ export default function InspoClient({
       const h = hovered.current;
       const under = document.querySelectorAll(":hover");
       const still = h && [...under].some((n) => (n as HTMLElement).dataset?.id === h.id);
-      if (h && still) setAgentTarget(h.id);
+      if (h && still && searchHereRef.current) setAgentTarget(h.id);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -1097,7 +1179,7 @@ export default function InspoClient({
       if (!d.ok) continue;
       if (d.kind === "search" && d.text) setQuery(d.text);
       if (d.kind === "go" && d.go) {
-        if (d.go.space) setSpace(d.go.space === "library" ? "all" : d.go.space);
+        if (d.go.space) setSpace(d.go.space === "library" ? (saveTarget() ?? "home") : d.go.space);
         if (d.go.view) setProjectView(d.go.view);
         if (d.go.area) { setProjectView("system"); setFocusArea((f) => ({ area: d.go!.area!, n: (f?.n ?? 0) + 1 })); }
       }
@@ -1185,19 +1267,18 @@ export default function InspoClient({
     const kind = mediaKindOf(panelItem.web);
     // A video or a post is its own page: it fills the page card, with no post-its
     if (kind === "video") return <div className="ip-media"><VideoPlayer web={panelItem.web} title={panelItem.name} /></div>;
+    if (kind === "text") return <TextPage key={panelItem.id} title={panelItem.name} body={panelItem.id ? textBodies[panelItem.id] : undefined} onSave={(text) => saveTextBody(panelItem, text)} onRename={(title) => renameTextItem(panelItem, title)} />;
     if (kind === "post") return <div className="ip-media"><PostView web={panelItem.web} onThumb={(thumb: string) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))} /></div>;
     const job = designMdJobs[panelItem.web];
     const src = kind === "image"
       ? thumbMap[panelItem.web] ?? panelItem.web
       : job?.entry?.screenshotUrl ?? pageShots[panelItem.web]?.shotUrl ?? thumbMap[panelItem.web] ?? `/api/shot?url=${encodeURIComponent(panelItem.web)}&v=2`;
-    const host = (() => { try { return new URL(panelItem.web).hostname.replace(/^www\./, ""); } catch { return panelItem.name; } })();
     return (
       <PageNotes
         key={panelItem.web}
         src={src}
         alt={panelItem.name}
-        host={kind === "image" ? panelItem.name : host}
-        dark={isDarkSite(job?.entry)}
+        fit={kind === "image"}
         notes={panelNotes}
         user={user}
         canManage={canManage}
@@ -1218,11 +1299,6 @@ export default function InspoClient({
       {panelItem && (
         <ItemPanel
           item={panelItem}
-          tags={tagMap[panelItem.web]}
-          tagJob={tagJobs[panelItem.web]}
-          onRetryTags={() => retryTags(panelItem.web)}
-          onEditTags={(change) => editTags(panelItem, change)}
-          onTag={(sel) => { if (!filters.some((f) => f.kind === "tag" && f.value === sel)) toggleFilter({ kind: "tag", value: sel }); closePanel(); }}
           state={designMdJobs[panelItem.web]}
           canDesignMd={canAutoDesignMd(panelItem.web)}
           page={panelItem.id ? panelPage : null}
@@ -1254,22 +1330,6 @@ export default function InspoClient({
           libraryName={workspace.name}
         />
       )}
-      {showPolish && currentProject && (
-        <PolishModal
-          project={currentProject}
-          board={spaceItems}
-          library={items}
-          tagMap={tagMap}
-          imageOf={smallImageOf}
-          comments={commentMap}
-          hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
-          archived={items.filter((i) => i.id && shelf[i.id]?.includes(currentProject.id))}
-          onArchive={(picked, on) => setProjectArchive(picked, currentProject.id, on)}
-          onSearch={(q) => { setSpace("all"); setQuery(q); }}
-          onBrief={(about) => setProjects((prev) => prev.map((p) => (p.id === currentProject.id ? { ...p, intent: about || null } : p)))}
-          onClose={() => setShowPolish(false)}
-        />
-      )}
       <DesignMdToasts
         jobs={designMdJobs}
         openUrl={panelItem?.web ?? null}
@@ -1286,13 +1346,6 @@ export default function InspoClient({
           </div>
         </div>
       )}
-      {showDirectory && (
-        <DirectoryModal
-          onClose={() => setShowDirectory(false)}
-          onAdd={(web) => { if (!isDuplicate(web)) addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
-          isAdded={isDuplicate}
-        />
-      )}
       {paletteUsed && <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
@@ -1303,17 +1356,21 @@ export default function InspoClient({
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
         onAddUrl={(web) => {
-          // Already saved: show it on the board instead of saving it twice
-          if (isDuplicate(web)) { setQuery(nameFromHost(web)); return; }
+          // Already saved: show it instead of saving it twice (found on the board; opened where there is no search)
+          if (isDuplicate(web)) {
+            const saved = items.find((i) => webKeyOf(i.web) === webKeyOf(web));
+            if (searchHere || !saved) setQuery(nameFromHost(web)); else openItem(saved);
+            return;
+          }
           addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
         onAdd={() => setShowAdd(true)}
-        onDirectory={() => setShowDirectory(true)}
+        onDirectory={openDirectory}
       />}
       {showAdd && (
         <AddInspoModal
           onClose={() => setShowAdd(false)}
-          onSubmit={(input) => { if (input.file) addByUpload({ ...input, file: input.file }); else addByUrl(input); }}
+          onSubmit={(input) => { if (input.file) addByUpload({ ...input, file: input.file }); else if (input.text) addByText({ ...input, text: input.text }); else addByUrl(input); }}
           isDuplicate={isDuplicate}
           project={currentProject?.name}
         />
@@ -1329,30 +1386,16 @@ export default function InspoClient({
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
             items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
-            members={members} onPerson={(name) => { if (space === "home") setSpace("all"); toggleFilter({ kind: "person", value: name }); }}
-            onDirectory={() => setShowDirectory(true)} quota={quota} />
+            members={members} onPerson={(name) => {
+              // What someone saved is looked at inside a project: the open one, or the one being worked in
+              if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }
+              else if (projectView === "system") setProjectView("board");
+              toggleFilter({ kind: "person", value: name });
+            }}
+            onDirectory={openDirectory} quota={quota} />
           <Logo size={28} className="topbar__logo" />
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
-            {/* The library is one place: everything, or only what no project has taken yet */}
-            {(space === "all" || space === "inbox" || space === "templates") && (
-              <>
-                <span className="topbar__modes" role="tablist" aria-label={t.sidebar.library}>
-                  <button type="button" role="tab" className={`topbar__mode${space === "all" ? " is-on" : ""}`} aria-selected={space === "all"} onClick={() => setSpace("all")}>
-                    {Icons.all} {t.sidebar.all} <span className="topbar__fill">{items.length}</span>
-                  </button>
-                  {projects.length > 0 && (
-                    <button type="button" role="tab" className={`topbar__mode${space === "inbox" ? " is-on" : ""}`} aria-selected={space === "inbox"} title={t.projects.inboxHint} onClick={() => setSpace("inbox")}>
-                      {Icons.inbox} {t.projects.unfiled} <span className="topbar__fill">{unfiledCount}</span>
-                    </button>
-                  )}
-                  <button type="button" role="tab" className={`topbar__mode${space === "templates" ? " is-on" : ""}`} aria-selected={space === "templates"} title={t.templates.lead} onClick={() => setSpace("templates")}>
-                    {Icons.compass} {t.templates.title}
-                  </button>
-                </span>
-                <span className="topbar__actions-sep" aria-hidden />
-              </>
-            )}
             {space === "inbox" && spaceItems.length > 0 && projects.length > 0 && (
               <>
                 {triage ? (
@@ -1381,7 +1424,6 @@ export default function InspoClient({
                     {Icons.all} {t.system.modeBoard}
                   </button>
                 </span>
-                <Button variant="ghost" className="topbar__polish" onClick={() => setShowPolish(true)}>{Icons.gem} {t.polish.button}</Button>
               </>
             )}
             {currentProject && <span className="topbar__actions-sep" aria-hidden />}
@@ -1398,17 +1440,24 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "templates" ? (
-          <TemplatesView onStarted={(p) => { setProjects((prev) => [...prev, p]); setSpace(p.id); void loadSystem(p.id).then((r) => { if (r.ok) setSystem(p.id, r.data.system); }); }} />
+        {space === "discover" || space === "templates" ? (
+          // Discover: the directory of places to look, and the templates (whole systems to start a project from)
+          <Discover section={space === "templates" ? "templates" : "sites"} onSection={(s) => setSpace(s === "templates" ? "templates" : "discover")}
+            templates={<TemplatesView onStarted={({ boardIds = [], ...p }) => {
+              setProjects((prev) => [...prev, p]);
+              // The template's references come filed in the new project
+              if (boardIds.length) setLinks((prev) => { const next = { ...prev }; for (const id of boardIds) next[id] = [...(next[id] ?? []).filter((x) => x !== p.id), p.id]; return next; });
+              setSpace(p.id); void loadSystem(p.id).then((r) => { if (r.ok) setSystem(p.id, r.data.system); }); }} />} />
         ) : space === "home" ? (
           <ProjectChooser
             projects={projects}
             systems={systems}
             items={items}
             links={links}
+            ratioOf={ratioOf}
+            imageOf={miniImageOf}
             onPick={(id) => setSpace(id)}
             onCreate={createProject}
-            onLibrary={() => setSpace("all")}
           />
         ) : items.length === 0 ? (
           <EmptyStart
@@ -1418,7 +1467,7 @@ export default function InspoClient({
               if (item) runDesignMd(item, { openWhenReady: true });
             }}
             isDuplicate={isDuplicate}
-            onDirectory={() => setShowDirectory(true)}
+            onDirectory={openDirectory}
           />
         ) : currentProject && projectView === "system" ? (
           <SystemView
@@ -1434,8 +1483,12 @@ export default function InspoClient({
             onOpenBoard={() => setProjectView("board")}
             focusArea={focusArea}
             onOpenChange={setOpenArea}
+            onOpenItem={(item) => openItem(item)}
+            noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
             refInfo={refInfo}
-            matches={matchIds}
+            // The file shows a text's headings one step down: saved, they go back to the level they had
+            onText={(id, text) => { const item = items.find((i) => i.id === id); return item ? saveTextBody(item, restoreTextHeadings(text, textBodies[id] ?? "")) : Promise.resolve(); }}
+            onTextTitle={(id, title) => { const item = items.find((i) => i.id === id); return item ? renameTextItem(item, title) : Promise.resolve(); }}
             onClient={async (itemId) => {
               const id = currentProject.id;
               const r = await setProjectClient(id, itemId).catch((e) => ({ ok: false as const, error: String(e) }));
@@ -1458,6 +1511,14 @@ export default function InspoClient({
               if (saved) await toggleFiled(saved, currentProject.id, true);
               else await addByUrl({ web, type: typeFromUrl(web), note: "" });
             }}
+            onDescribe={async (about) => {
+              const id = currentProject.id;
+              const r = await savePolishBrief(id, { about }).catch((e) => ({ ok: false as const, error: String(e) }));
+              if (!r.ok) throw new Error(r.error);
+              const saved = r.data.brief?.about ?? "";
+              setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, intent: saved || null } : p)));
+            }}
+            onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}
             onFile={(picked) => fileMany(picked, currentProject.id)}
           />
         ) : spaceItems.length === 0 && space === "inbox" ? (
@@ -1495,6 +1556,7 @@ export default function InspoClient({
                   projects={projects}
                   projectIds={item.id ? links[item.id] : undefined}
                   backs={currentProject && item.id ? backsOf(item.id) : undefined}
+                  areasIn={item.id ? areasByItem.get(item.id) : undefined}
                   proposal={triage && item.id ? triage[item.id] ?? null : undefined}
                   actions={gridActions}
                 />
@@ -1509,37 +1571,40 @@ export default function InspoClient({
             )}
           </>
         )}
-        {/* The one way to find anything, at the bottom like a conversation: people, dates, kinds, every tag,
-            and what it means. Solid and bright in both themes, so it is the first thing the eye finds. */}
-        {items.length > 0 && (
+        {/* The way to find anything on a project's board, at the bottom like a conversation: people, dates, kinds,
+            every tag, and what it means. Solid and bright in both themes, so it is the first thing the eye finds.
+            Off the board only what the agent is still saying stays. */}
+        {items.length > 0 && (searchHere || agentSpeaks) && (
           <div className="dock">
             {filtering && (
               <p className="dock__status" role="status" aria-live="polite">
                 {t.search.results(filtered.length)}{jevBusy && <span className="dock__status-more"> · {t.search.reading}</span>}
               </p>
             )}
-            {filtering && currentProject && projectView === "system" && filtered.length > 0 && (
-              <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={smallImageOf} onOpen={openItem} />
-            )}
-            {/* A project still gathering: what the board is for, and the step to the system */}
-            {currentProject && gatheringRefs && projectView === "board" && spaceItems.length > 0 && !filtering && !agent && (
+            {/* On a project's board, always: what the board is for, and the step to the system (the first time it also
+                marks the project as started, so it opens on its system from then on) */}
+            {searchHere && spaceItems.length > 0 && !filtering && !agent && (
               <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
                 onStart={async () => {
                   const id = currentProject.id;
-                  const r = await markProjectStarted(id).catch((e) => ({ ok: false as const, error: String(e) }));
-                  if (!r.ok) { projectFailed(new Error(r.error)); return; }
-                  setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, started: true } : p)));
+                  if (!currentProject.started) {
+                    const r = await markProjectStarted(id).catch((e) => ({ ok: false as const, error: String(e) }));
+                    if (!r.ok) { projectFailed(new Error(r.error)); return; }
+                    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, started: true } : p)));
+                  }
                   setParams({ view: "system" });
                 }} />
             )}
-            {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
+            {agent && agentSpeaks && (
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
             )}
             {/* The card handed to the agent wears a ring wherever it is shown */}
             {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--dock-ink, #f2f2ef) !important; outline-offset: 3px; }`}</style>}
-            <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
-              vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
-              target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
+            {searchHere && (
+              <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
+                vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
+                target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
+            )}
           </div>
         )}
       </SidebarInset>
@@ -1550,30 +1615,6 @@ export default function InspoClient({
 const EMPTY_AREAS: SystemArea[] = [];
 
 /** What the agent said and did, above the box; the pending steps wait here for a yes */
-/** What a search found, in the system view: there the references sit around the areas, some of them off
- *  screen, so the results come to the dock as a row to open from */
-const DOCK_RESULTS = 24;
-function DockResults({ label, items, imageOf, onOpen }: { label: string; items: InspoItem[]; imageOf: (item: InspoItem) => string | null; onOpen: (item: InspoItem) => void }) {
-  return (
-    <ul className="dock__results" aria-label={label}>
-      {items.map((it) => (
-        <li key={it.id ?? it.web}>
-          <button type="button" className="dock__result" title={it.name} onClick={() => onOpen(it)}>
-            <DockResultThumb item={it} image={imageOf(it)} />
-            <span className="dock__result-name">{it.name}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-function DockResultThumb({ item, image }: { item: InspoItem; image: string | null }) {
-  const [at, setAt] = useState(0);
-  const srcs = [image, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
-  const src = srcs[at];
-  return <span className="dock__result-thumb" aria-hidden>{src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : item.name.slice(0, 1).toUpperCase()}</span>;
-}
-
 function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAsk }: {
   agent: { text: string; busy: boolean; say?: string; done: (AgentDone & { undone?: boolean })[]; pending: AgentAction[]; error?: string };
   projects: Project[];
@@ -1680,16 +1721,19 @@ interface GridActions {
   toggleFiled: (item: InspoItem, projectId: string, on: boolean) => void;
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
   toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
+  toggleAreaIn: (item: InspoItem, projectId: string, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
   acceptProposal: (p: TriageProposal) => void;
   patchProposal: (itemId: string, patch: Partial<TriageProposal> | null) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, proposal, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, areasIn, proposal, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
+  /** In every project: the areas it backs there */
+  areasIn?: Record<string, SystemArea[]>;
   /** While organising the Inbox: the model's proposal for this reference (null = none for it) */
   proposal?: TriageProposal | null;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
@@ -1700,23 +1744,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   // The handlers are read when used, never kept from this render: the card re-renders only with its own data
   const act = () => actions.current;
   const onMeasure = useCallback((r: number) => actions.current.measure(item.web, r), [actions, item.web]);
-  // Under the tile: the note of whoever saved it; with no note, the first reply with text.
-  // `people` are everyone in the thread (saver first, then each new voice), at most three circles;
-  // `more` counts the replies not already on the line (a lone comment shown as the line is not "1 reply").
-  const caption = useMemo(() => {
-    const firstComment = comments?.find((c) => c.body.trim());
-    const root = item.note.trim()
-      ? { name: item.addedBy, image: authorImage ?? null, body: item.note.trim() }
-      : firstComment ? { name: firstComment.authorName, image: firstComment.authorImage, body: firstComment.body.trim() } : null;
-    if (!root) return null;
-    const people = [{ name: root.name, image: root.image }];
-    for (const c of comments ?? []) {
-      if (people.length >= 3) break;
-      if (!people.some((p) => p.name === c.authorName)) people.push({ name: c.authorName, image: c.authorImage });
-    }
-    const more = (comments?.length ?? 0) - (item.note.trim() ? 0 : 1);
-    return { ...root, people, more: Math.max(0, more) };
-  }, [item.note, item.addedBy, authorImage, comments]);
+  const caption = useMemo(() => captionFor(item, comments, authorImage), [item, authorImage, comments]);
   // The page's top, at the size it is seen: a site someone gave a thumbnail keeps that thumbnail
   const showsPage = !manualThumbnail && !!shot;
   const key = level === "thumb" ? "thumbUrl" : level === "tile" ? "tileUrl" : "topUrl";
@@ -1758,6 +1786,8 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       onCreateProject={(name) => act().createAndFile(item, name)}
       backs={backs}
       onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
+      areasIn={areasIn}
+      onToggleAreaIn={item.id ? (projectId, area, on) => act().toggleAreaIn(item, projectId, area, on) : undefined}
       proposal={proposal === undefined ? undefined : proposal ? {
         ...proposal,
         projects: projects,

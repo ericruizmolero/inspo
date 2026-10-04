@@ -4,6 +4,7 @@
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, rowToItem, setThumbnail } from "@/lib/items";
+import { activeProjectFor, fileItems } from "@/lib/projects";
 import { uploadThumbnail } from "@/lib/thumbnails";
 import { nameFor } from "@/lib/item-name";
 import { ensurePost, postThumb } from "@/lib/posts";
@@ -46,6 +47,9 @@ export async function POST(req: NextRequest) {
       name, web, type: typeFromUrl(web), note: typeof body.note === "string" ? body.note.slice(0, 500) : "",
       author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
     });
+    // Nothing lives outside a project: it goes to the one this person was working in
+    const projectId = await activeProjectFor(ctx.workspace.id, ctx.user.id).catch(() => null);
+    if (projectId && item.id) await fileItems(ctx.workspace.id, projectId, [item.id], ctx.user.id).catch((e) => console.error("ext: not filed", e));
 
     // The tab screenshot serves as the thumbnail from the first second
     const shot = fileFromDataUrl(body.screenshot);
