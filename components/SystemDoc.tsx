@@ -3,7 +3,7 @@
 // press away, set as a document: the same text either way (components/SystemMarkdown.tsx), typed in place and
 // saved as it is typed, with the pins the team leaves on it. Here: the parts to jump between, the proposals
 // waiting under each area (anyone says yes or no).
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
@@ -44,9 +44,11 @@ interface Props {
   onOpenItem?: (item: InspoItem) => void;
   onCopy: () => void; onDownload: () => void; copied: boolean;
   projectId: string; projectName: string; hasRecipe: boolean;
+  /** More controls over the file, in its bar before Copy */
+  fileTools?: React.ReactNode;
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onOpenItem, onCopy, onDownload, copied, projectId, projectName, hasRecipe }: Props) {
+export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onOpenItem, onCopy, onDownload, copied, projectId, projectName, hasRecipe, fileTools }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -75,12 +77,37 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     if (!r.ok) { setError(r.error); return; }
     onSystem(r.data); onTalk();
   };
-  // Each reference's picture, by its code: the document shows it where the reference is named
-  const pictures = useMemo(() => Object.fromEntries(boardIds.flatMap((id, i) => {
+  // Each reference's picture, by its code: the document shows it where the reference is named. A site with no
+  // stored picture shows the one it declares (og:image) or, without one, its first screen, once it is known to
+  // load; one with neither stays as text
+  const [declared, setDeclared] = useState<Record<string, string>>({});
+  const stored = useMemo(() => Object.fromEntries(boardIds.flatMap((id, i) => {
     const it = itemOf(id);
     const pic = it ? imageOf(it) ?? (refInfo?.(it).kind === "image" ? it.web : null) : null;
     return pic ? [[`R${i + 1}`, pic]] : [];
   })), [boardIds, itemOf, imageOf, refInfo]);
+  useEffect(() => {
+    let alive = true;
+    // One capture at a time: each one is a browser on the server
+    let captures: Promise<void> = Promise.resolve();
+    const load = (src: string) => new Promise<boolean>((done) => { const img = new Image(); img.onload = () => done(img.naturalWidth > 1); img.onerror = () => done(false); img.src = src; });
+    const found = (code: string, src: string) => { if (alive) setDeclared((d) => (d[code] ? d : { ...d, [code]: src })); };
+    boardIds.forEach((id, i) => {
+      const code = `R${i + 1}`;
+      const it = itemOf(id);
+      if (!it || stored[code] || declared[code] || /^(blob:|\/)/.test(it.web)) return;
+      const og = `/api/og?url=${encodeURIComponent(it.web)}`;
+      const shot = `/api/shot?url=${encodeURIComponent(it.web)}&v=2`;
+      void load(og).then((ok) => {
+        if (ok) { found(code, og); return; }
+        // No picture of its own: its first screen, captured once and kept (as the board's card does)
+        captures = captures.then(async () => { if (alive && await load(shot)) found(code, shot); });
+      });
+    });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- asked once per reference; `declared` only grows
+  }, [boardIds, stored]);
+  const pictures = useMemo(() => ({ ...declared, ...stored }), [declared, stored]);
   // The pins the team left on the file's lines, by the part they sit on
   const pins = useMemo(() => Object.fromEntries(Object.entries(activity?.notes ?? {}).map(([part, notes]) => [part, notes.filter((n) => n.pin).map((n) => ({ id: n.id, who: n.who, image: n.image, at: n.at, mine: n.mine, text: n.text, quote: n.pin!.quote, x: n.pin!.x, to: n.pin!.to }))])), [activity]);
   const pin = async (part: string, quote: string, body: string, at: { x: number; to?: string }): Promise<boolean> => {
@@ -149,7 +176,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       <div className="sdoc-page sdoc-page--md">
         {tools}
         {error && <p className="sysv-error" role="alert">{error}</p>}
-        <SystemMarkdown look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
+        <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           onPart={async (part, text) => { const r = await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}

@@ -70,12 +70,23 @@ function lineKind(text: string): { cls: string; mark: string; rest: string; dept
 /** A line that names a reference (an area's "- **R3** …", or the reference's own "### R3 · …"): its code */
 const refCode = (text: string) => text.match(/^\s*- \*\*(R\d+)\*\* /)?.[1] ?? text.match(/^### (R\d+) ·/)?.[1];
 /** What the document look adds to a line: the reference's picture, and the lines that are someone's words */
-function human(text: string, pics?: Record<string, string>): { cls: string; pic?: string } {
+function human(text: string, pics?: Record<string, string>, underPic = false): { cls: string; pic?: string } {
   const code = refCode(text);
   const pic = code ? pics?.[code] : undefined;
   if (pic) return { cls: text.startsWith("###") ? " mdv-refhead" : " mdv-ref", pic: `url("${pic.replace(/"/g, "%22")}")` };
-  if (/^\s+- [^:\u00ab]{1,40}: \u00ab/.test(text)) return { cls: " mdv-said" };
+  if (isSaid(text)) return { cls: underPic ? " mdv-said mdv-said--pic" : " mdv-said" };
   return { cls: "" };
+}
+const isSaid = (text: string) => /^\s+- [^:\u00ab]{1,40}: \u00ab/.test(text);
+/** Whether line `i` is something said about a reference that shows its picture (the lines above it, up to the reference) */
+function underPicture(texts: string[], i: number, pics?: Record<string, string>): boolean {
+  if (!pics || !isSaid(texts[i])) return false;
+  for (let j = i - 1; j >= 0; j--) {
+    const code = refCode(texts[j]);
+    if (code) return !texts[j].startsWith("###") && !!pics[code];
+    if (!isSaid(texts[j])) return false;
+  }
+  return false;
 }
 
 /** What a line of the file is quoted as when a pin is left on it */
@@ -92,8 +103,10 @@ function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies
   );
 }
 
-function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics }: {
+function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic }: {
   text: string;
+  /** Said about a reference that shows its picture: it lines up under that reference's text */
+  underPic?: boolean;
   /** The references' pictures by code (R1…), for the document look */
   pics?: Record<string, string>;
   /** Pressing the line while commenting: how far across it (0 to 1) and where on screen */
@@ -108,7 +121,7 @@ function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics }: {
   const k = lineKind(text);
   // A list line that wraps keeps its indent: the second row starts under the first's words, not at the margin
   const hang = k.depth !== undefined ? `${k.mark.length}ch` : undefined;
-  const hu = human(text, pics);
+  const hu = human(text, pics, underPic);
   const style = { ...(hang ? { paddingLeft: hang, textIndent: `-${hang}`, "--d": k.depth } : {}), ...(hu.pic ? { "--pic": hu.pic } : {}) } as React.CSSProperties;
   return (
     <div className={`mdv-line${k.cls}${hu.cls}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
@@ -125,10 +138,11 @@ const escHtml = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").re
  *  text itself is whole (a long address is only cut on screen), so what is read back is the file */
 function mdHtml(raw: string, pics?: Record<string, string>): string {
   const mark = (m: string) => `<span class="mdv-mark">${escHtml(m)}</span>`;
-  return raw.split("\n").map((line) => {
+  const all = raw.split("\n");
+  return all.map((line, i) => {
     if (!line) return `<div class="mdv-eline"><br></div>`;
     const k = lineKind(line);
-    const hu = human(line, pics);
+    const hu = human(line, pics, underPicture(all, i, pics));
     const css = `${k.depth !== undefined ? `padding-left:${k.mark.length}ch;text-indent:-${k.mark.length}ch;--d:${k.depth};` : ""}${hu.pic ? `--pic:${hu.pic}` : ""}`;
     const hang = css ? ` style="${css.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}"` : "";
     const plain = k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em");
@@ -281,7 +295,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false, look = "md", pictures }: {
+export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false, look = "md", pictures }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -289,6 +303,8 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
   /** A template: the file is read, copied and downloaded, never written (it is cloned into a project to work on it) */
   readOnly?: boolean;
   onCopy: () => void; onDownload: () => void; copied: boolean;
+  /** More controls over the file, before Copy (the skills it carries) */
+  fileTools?: ReactNode;
   /** The recipe beside the file: how the work is done, kept with the project */
   projectId: string; projectName: string; hasRecipe: boolean;
   /** Leaves the block's new text as a proposal for the team instead of writing it; resolves true when it was left */
@@ -374,7 +390,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
     return texts.map((text, i) => {
       const q = quoteOf(text);
       const here = text ? mine.filter((n) => n.quote === q || (i === first && !quotes.has(n.quote))) : [];
-      return <Line key={i} text={text} pics={pictures} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
+      return <Line key={i} text={text} pics={pictures} underPic={underPicture(texts, i, pictures)} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
         onPress={text && onPin && commenting && !readOnly ? startPin(part, q) : undefined} />;
     });
   };
@@ -432,6 +448,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
         <span className="mdv-bar__tools">
           {onPropose && !readOnly && <button type="button" className={`mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} title={t.doc.proposeToolHint} onClick={() => setProposing((x) => !x)}>{t.doc.proposeTool}</button>}
           {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
+          {fileTools}
           <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : s.copy}</button>
           <button type="button" className="mdv-btn" onClick={onDownload} title={t.system.download}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
         </span>
@@ -455,7 +472,8 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
           if (b.kind === "section") {
             const whole = [`## ${b.heading}`, ...b.lines];
             // What the project is: the team's own words. The references: written by the app, and over it by hand
-            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : over(b.id, b.edited);
+            // A skill's section is written from the system (lib/md-skills.ts): it follows the areas, it is not typed over
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id.startsWith("skill:") ? null : over(b.id, b.edited);
             return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
                 {lines(b.id, [`## ${b.heading}`, ""], whole)}

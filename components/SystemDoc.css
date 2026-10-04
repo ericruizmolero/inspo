@@ -134,12 +134,13 @@
 
 /* ─── The page's head, now that the file is the page: the project's name centred with air under the bars; what
    the file's own bar already does (copy, download) and the polish percentage are not repeated here ─── */
-.sysb-inner:has(.sdoc) .sysb-head { position: relative; justify-content: center; margin: 34px 0 22px; text-align: center; }
-.sysb-inner:has(.sdoc) .sysb-head__text { display: flex; flex-direction: column; align-items: center; }
+/* The title sits over the file's column: left, past the index, as the page below it */
+.sysb-inner:has(.sdoc) .sysb-head { position: relative; align-items: center; justify-content: space-between; width: 100%; max-width: 1080px; margin: 34px auto 22px; padding-left: 228px; text-align: left; }
+.sysb-inner:has(.sdoc) .sysb-head__text { display: flex; flex-direction: column; align-items: flex-start; }
 .sysb-inner:has(.sdoc) .sysb-title { font-size: clamp(30px, 3.4vw, 46px); }
-.sysb-inner:has(.sdoc) .sysb-head__side { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+.sysb-inner:has(.sdoc) .sysb-head__side { position: static; transform: none; }
 .sysb-inner:has(.sdoc) .sysn-core__state, .sysb-inner:has(.sdoc) .sysn-core__file { display: none; }
-@media (max-width: 900px) { .sysb-inner:has(.sdoc) .sysb-head__side { position: static; transform: none; } .sysb-inner:has(.sdoc) .sysb-head { flex-direction: column; align-items: center; } }
+@media (max-width: 900px) { .sysb-inner:has(.sdoc) .sysb-head { padding-left: 0; flex-direction: column; align-items: flex-start; } }
 
 /* ─── Working on the file. Writing is the default: the parts people write (what the project is, an area's
    decision, why and never) are typed in place, the caret where the text was pressed. Commenting is a tool:
@@ -237,9 +238,9 @@
 .mdv--doc .mdv-said { color: var(--text-2); }
 .mdv--doc .mdv-said::before { top: 0.3em; width: 2px; height: calc(100% - 0.6em); border-radius: 1px; background: var(--border-strong); }
 /* Under a reference of an area, the words left on it line up with its text */
-.mdv--doc .mdv-said[style*="--d:2"], .mdv--doc .mdv-said[style*="--d: 2"] { padding-left: 158px !important; }
-.mdv--doc .mdv-said[style*="--d:2"]::before, .mdv--doc .mdv-said[style*="--d: 2"]::before { left: 142px; }
+.mdv--doc .mdv-said--pic { padding-left: 158px !important; }
+.mdv--doc .mdv-said--pic::before { left: 142px; }
 /* A reference's own entry opens with its picture */
 .mdv--doc .mdv-refhead { position: relative; margin-top: 34px; padding-top: 176px; }
 .mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: 12px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
-@media (max-width: 600px) { .mdv--doc .mdv-ref { padding-left: 100px !important; } .mdv--doc .mdv-ref::before { width: 68px; height: 46px; } .mdv--doc .mdv-said[style*="--d:2"], .mdv--doc .mdv-said[style*="--d: 2"] { padding-left: 116px !important; } .mdv--doc .mdv-said[style*="--d:2"]::before, .mdv--doc .mdv-said[style*="--d: 2"]::before { left: 100px; } }
+@media (max-width: 600px) { .mdv--doc .mdv-ref { padding-left: 100px !important; } .mdv--doc .mdv-ref::before { width: 68px; height: 46px; } .mdv--doc .mdv-said--pic { padding-left: 116px !important; } .mdv--doc .mdv-said--pic::before { left: 100px; } }
