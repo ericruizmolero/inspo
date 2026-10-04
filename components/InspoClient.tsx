@@ -19,8 +19,8 @@ import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
 import { refInfoOf } from "@/lib/ref-info";
 import { restoreTextHeadings } from "@/lib/criterio-md";
-import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
-import { uploadMedia } from "@/lib/media-client";
+import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage, normalizeWebUrl } from "@/lib/url";
+import { uploadMedia, mediaFileFrom } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
 import TextPage from "./TextPage";
 import { addText, saveText, renameText } from "@/app/actions/text";
@@ -367,6 +367,9 @@ export default function InspoClient({
   const gathering = useMemo(() => items.filter((i) => tagJobs[i.web] === "pending" || tagJobs[i.web] === "running").length, [items, tagJobs]);
 
   const [showAdd, setShowAdd] = useState(false);
+  // What was pasted or dropped on the board: the add dialog opens with it in place
+  const [addInitial, setAddInitial] = useState<{ file?: File; web?: string; text?: string } | undefined>();
+  const [boardDrag, setBoardDrag] = useState(false);
   // Organising the Inbox: the model's proposal per reference sits on its card until the team accepts, changes or dismisses it
   const [triage, setTriage] = useState<Record<string, TriageProposal> | null>(null);
   const [triageRunning, setTriageRunning] = useState(false);
@@ -417,6 +420,51 @@ export default function InspoClient({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+  // ⌘V or a file dropped anywhere on the board: no need to open the dialog first.
+  // It opens with the image, the link or the text already in it, waiting for what caught your eye.
+  // Whatever handled the paste or the drop on its own (a field, the comments, the project start) has prevented it.
+  useEffect(() => {
+    const free = (e: Event) => {
+      if (e.defaultPrevented) return false;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return false;
+      return !document.querySelector(".modal-backdrop, .cp");
+    };
+    const open = (initial: { file?: File; web?: string; text?: string }) => { setAddInitial(initial); setShowAdd(true); };
+    const onPaste = (e: ClipboardEvent) => {
+      if (!free(e)) return;
+      const file = mediaFileFrom(e.clipboardData);
+      if (file) { e.preventDefault(); open({ file }); return; }
+      const pasted = (e.clipboardData?.getData("text/plain") ?? "").trim();
+      // A link, or several lines (a text to keep); a stray word stays out
+      if (!/\s/.test(pasted) && normalizeWebUrl(pasted)) { e.preventDefault(); open({ web: pasted }); }
+      else if (/\n/.test(pasted)) { e.preventDefault(); open({ text: pasted }); }
+    };
+    const hasFiles = (e: DragEvent) => Array.from(e.dataTransfer?.types ?? []).includes("Files");
+    const onDragOver = (e: DragEvent) => {
+      if (!hasFiles(e) || !free(e)) { setBoardDrag(false); return; }
+      e.preventDefault(); setBoardDrag(true);
+    };
+    const onDragLeave = (e: DragEvent) => { if (!e.relatedTarget) setBoardDrag(false); };
+    const onDrop = (e: DragEvent) => {
+      setBoardDrag(false);
+      if (!hasFiles(e) || !free(e)) return;
+      e.preventDefault();
+      const file = mediaFileFrom(e.dataTransfer);
+      if (file) open({ file });
+      else setAddError({ title: t.errors.imagesOnly, detail: "" });
+    };
+    document.addEventListener("paste", onPaste);
+    document.addEventListener("dragover", onDragOver);
+    document.addEventListener("dragleave", onDragLeave);
+    document.addEventListener("drop", onDrop);
+    return () => {
+      document.removeEventListener("paste", onPaste);
+      document.removeEventListener("dragover", onDragOver);
+      document.removeEventListener("dragleave", onDragLeave);
+      document.removeEventListener("drop", onDrop);
+    };
+  }, [t]);
   // The directory is Discover's resources: every "open the directory" lands there
   const openDirectory = useCallback(() => setSpace("discover"), [setSpace]);
 
@@ -1367,9 +1415,11 @@ export default function InspoClient({
         onAdd={() => setShowAdd(true)}
         onDirectory={openDirectory}
       />}
+      {boardDrag && <div className="board-drop" aria-hidden><span className="display">{t.add.dropHere}</span></div>}
       {showAdd && (
         <AddInspoModal
-          onClose={() => setShowAdd(false)}
+          onClose={() => { setShowAdd(false); setAddInitial(undefined); }}
+          initial={addInitial}
           onSubmit={(input) => { if (input.file) addByUpload({ ...input, file: input.file }); else if (input.text) addByText({ ...input, text: input.text }); else addByUrl(input); }}
           isDuplicate={isDuplicate}
           project={currentProject?.name}

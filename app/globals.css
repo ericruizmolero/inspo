@@ -1219,7 +1219,7 @@ video.vp__media { object-fit: contain; }
   display: flex; align-items: center; justify-content: center;
   padding: 20px;
   background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
-  animation: fade-in 0.15s;
+  transition: opacity 200ms var(--ease-out);
 }
 .modal {
   width: 100%; max-width: 480px;
@@ -1228,13 +1228,22 @@ video.vp__media { object-fit: contain; }
   border-radius: var(--radius-l);
   box-shadow: var(--shadow-modal);
   overflow: hidden;
-  animation: pop-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Transitions, not keyframes: a dialog closed while it opens turns back from where it is */
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
   display: flex; flex-direction: column;
   max-height: calc(100dvh - 40px);
 }
+.modal-backdrop[data-starting-style], .modal-backdrop[data-ending-style] { opacity: 0; }
+.modal[data-starting-style], .modal[data-ending-style] { opacity: 0; transform: translateY(8px) scale(0.97); }
+/* Leaving is quicker than arriving: the decision is already made */
+.modal-backdrop[data-ending-style], .modal[data-ending-style] { transition-duration: 150ms; }
+@media (prefers-reduced-motion: reduce) {
+  .modal[data-starting-style], .modal[data-ending-style] { transform: none; }
+}
 .modal--sm { max-width: 320px; }
 /* Command palette (Cmd+K): shadcn Command on cmdk, in the app's Dialog */
-.modal.cmdk-dialog { max-width: 560px; align-self: flex-start; margin-top: 12vh; overflow: hidden; }
+.modal.cmdk-dialog { max-width: 560px; align-self: flex-start; margin-top: 12vh; overflow: hidden; transition: none; }
+.modal-backdrop:has(.cmdk-dialog) { transition: none; }
 .cmdk { display: flex; flex-direction: column; max-height: min(460px, 70vh); }
 .cmdk-input { display: flex; align-items: center; gap: 10px; padding: 0 16px; height: 52px; border-bottom: 1px solid var(--border); }
 .cmdk-input__icon { display: flex; color: var(--muted); }
@@ -1531,6 +1540,11 @@ video.vp__media { object-fit: contain; }
   position: relative; display: flex; justify-content: center;
   border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
 }
+.add__preview {
+  transition: opacity 240ms var(--ease-out) 60ms, transform 240ms var(--ease-out) 60ms;
+  @starting-style { opacity: 0; transform: scale(0.96); }
+}
+@media (prefers-reduced-motion: reduce) { .add__preview { @starting-style { transform: none; } } }
 .add__preview img { display: block; max-width: 100%; max-height: min(320px, 45dvh); object-fit: contain; }
 .add__remove {
   position: absolute; top: 8px; right: 8px; display: flex; align-items: center; justify-content: center;
@@ -1542,6 +1556,13 @@ video.vp__media { object-fit: contain; }
   position: absolute; inset: 8px; z-index: 3; display: flex; align-items: center; justify-content: center;
   border: 1.5px dashed var(--text); border-radius: var(--radius-m);
   background: color-mix(in srgb, var(--panel) 92%, transparent); font-size: 18px; color: var(--text);
+  pointer-events: none; animation: fade-in 0.12s;
+}
+/* A file dragged over the board: the whole screen takes it, and the add dialog opens with it */
+.board-drop {
+  position: fixed; inset: 8px; z-index: 60; display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed var(--text); border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--bg) 88%, transparent); font-size: 18px; color: var(--text);
   pointer-events: none; animation: fade-in 0.12s;
 }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

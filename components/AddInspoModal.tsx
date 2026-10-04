@@ -34,6 +34,8 @@ interface AddInspoModalProps {
   isDuplicate?: (web: string) => boolean;
   /** Name of the project it will be filed in, when opened from inside one */
   project?: string;
+  /** What was pasted or dropped on the board: the dialog opens with it in place, waiting for the note */
+  initial?: { file?: File; web?: string; text?: string };
 }
 
 const IconText = (
@@ -46,23 +48,27 @@ const IconImage = (
 
 /** Only the link (or the image) is needed: name, screenshot, tags and collection are inferred.
  *  An image can be chosen, dropped anywhere on the dialog or pasted with ⌘V. */
-export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project }: AddInspoModalProps) {
+export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project, initial }: AddInspoModalProps) {
   const { t } = useT();
-  const [raw, setRaw] = useState("");
+  // Closing plays the dialog out first; whoever opened it unmounts it once it is gone
+  const [open, setOpen] = useState(true);
+  const close = () => setOpen(false);
+  const [raw, setRaw] = useState(initial?.web ?? "");
   const [note, setNote] = useState("");
   // Saved into a project, it can go straight under one or several areas of its system
   const [areas, setAreas] = useState<SystemArea[]>([]);
   const toggleArea = (a: SystemArea) => setAreas((cur) => (cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a]));
   const [error, setError] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<File | null>(initial?.file ?? null);
   const [preview, setPreview] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const urlRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   // A text instead of a link: null until it is asked for (or a paragraph is pasted where the link goes)
-  const [text, setText] = useState<string | null>(null);
+  const [text, setText] = useState<string | null>(initial?.text ?? null);
   const [title, setTitle] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
+  const noteRef = useRef<HTMLInputElement>(null);
   const writing = text !== null;
   const startText = (body = "") => { setText(body); setRaw(""); setError(""); setTimeout(() => titleRef.current?.focus(), 0); };
   const clearText = () => { setText(null); setTitle(""); setTimeout(() => urlRef.current?.focus(), 0); };
@@ -107,22 +113,22 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (file) { onSubmit({ web: "", file, type: finalType, note: note.trim(), areas }); onClose(); return; }
+    if (file) { onSubmit({ web: "", file, type: finalType, note: note.trim(), areas }); close(); return; }
     if (writing) {
       if (!title.trim() || !text.trim()) return;
       onSubmit({ web: "", text: { title: title.trim(), body: text }, type: "inspiration", note: note.trim() });
-      onClose();
+      close();
       return;
     }
     if (!web) { setError(t.add.notUrl); return; }
     if (isDuplicate?.(web)) { setError(t.add.alreadyInLibrary); return; }
     onSubmit({ web, type: finalType, note: note.trim(), areas });
-    onClose();
+    close();
   };
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent initialFocus={urlRef}>
+    <Dialog open={open} onOpenChange={setOpen} onOpenChangeComplete={(o) => { if (!o) onClose(); }}>
+      <DialogContent initialFocus={initial?.text ? titleRef : initial ? noteRef : urlRef}>
         <div className="modal__header">
           <DialogTitle>{project ? t.add.titleIn(project) : t.add.title}</DialogTitle>
           <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
@@ -174,7 +180,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project 
 
           <div className="field">
             <Input
-              
+              ref={noteRef}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={writing ? t.add.textNote : t.add.whatYouLiked}
@@ -194,7 +200,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project 
           {error && <p className="modal__error">{error}</p>}
 
           <div className="modal__footer">
-            <Button variant="ghost" type="button" onClick={onClose}>{t.common.cancel}</Button>
+            <Button variant="ghost" type="button" onClick={close}>{t.common.cancel}</Button>
             <Button variant="primary" type="submit" disabled={writing ? !title.trim() || !text.trim() : !raw.trim() && !file}>{t.common.save}</Button>
           </div>
         </form>
