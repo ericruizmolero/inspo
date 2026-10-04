@@ -8,6 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
 import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, CommentAnchor, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
+import type { LibraryData } from "@/lib/library";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
 import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, type Filter } from "@/lib/search-query";
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
@@ -114,6 +115,8 @@ const canAutoDesignMd = hasOwnPage;
  *  past that it keeps "gathering" until the page is opened again */
 const TAG_POLL_MS = 4000;
 const TAG_WATCH_MS = 5 * 60 * 1000;
+/** While the board is seen, it asks every 15 s whether its workspace changed somewhere else */
+const NEW_POLL_MS = 15_000;
 
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
@@ -150,6 +153,7 @@ const JEV_TOP = 20;
 
 export default function InspoClient({
   items: initialItems,
+  stamp,
   initialThumbnailMap = {},
   initialTagMap = {},
   initialTagJobs = {},
@@ -169,6 +173,8 @@ export default function InspoClient({
   initialPageShots = {},
 }: {
   items: InspoItem[];
+  /** What the library looked like when the server read it (lib/library.ts libraryStamp) */
+  stamp: string;
   initialQuota?: QuotaView | null;
   initialComments?: CommentMap;
   initialDesignMdIndex?: DesignIndex;
@@ -365,6 +371,55 @@ export default function InspoClient({
     return () => clearTimeout(id);
   }, [watching]);
   const gathering = useMemo(() => items.filter((i) => tagJobs[i.web] === "pending" || tagJobs[i.web] === "running").length, [items, tagJobs]);
+
+  // ─── Changed somewhere else ─────────────────────────────────────────────────
+  // The extension, another tab or a teammate: what they add, delete, edit or file shows up here without a
+  // reload. The board asks when it comes back into view and every 15 s while it is seen; a hidden tab asks
+  // nothing. Nothing changed: a few bytes. Something did: the whole library, taken in where it stands.
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const stampRef = useRef(stamp);
+  useEffect(() => {
+    let busy = false, last = 0;
+    const look = async () => {
+      if (busy || document.visibilityState !== "visible" || Date.now() - last < 2000) return;
+      // A save of this tab is on its way: its card swaps in on its own, so the next look waits for it
+      if (itemsRef.current.some((i) => !i.id)) return;
+      busy = true; last = Date.now();
+      try {
+        const res = await fetch(`/api/library/changes?ws=${encodeURIComponent(workspace.id)}&stamp=${encodeURIComponent(stampRef.current)}`);
+        if (!res.ok) return;
+        const d = (await res.json()) as Partial<LibraryData> & { stamp: string };
+        stampRef.current = d.stamp;
+        // Same stamp, or a save of this tab started while the answer was on its way
+        if (!d.items || itemsRef.current.some((i) => !i.id)) return;
+        const known = new Set(itemsRef.current.map((i) => i.id));
+        setItems(d.items);
+        setProjects(d.initialProjects ?? []);
+        setLinks(d.initialProjectLinks ?? {});
+        setShelf(d.initialProjectShelf ?? {});
+        // Merged: what this tab fetched on its own (a post's picture, a capture) stays until the server has it too
+        setThumbMap((prev) => ({ ...prev, ...d.initialThumbnailMap }));
+        setTagMap((prev) => ({ ...prev, ...d.initialTagMap }));
+        setPageShots((prev) => ({ ...prev, ...d.initialPageShots }));
+        setTagJobs(d.initialTagJobs ?? {});
+        // A new card whose tags are still on their way fills in as soon as they arrive, not on the next look
+        for (const i of d.items) {
+          const job = d.initialTagJobs?.[i.web];
+          if (!known.has(i.id) && (job === "pending" || job === "running")) watch(i.web);
+        }
+      } catch { /* the next look catches up */ }
+      finally { busy = false; }
+    };
+    const id = setInterval(look, NEW_POLL_MS);
+    document.addEventListener("visibilitychange", look);
+    window.addEventListener("focus", look);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", look);
+      window.removeEventListener("focus", look);
+    };
+  }, [workspace.id, watch]);
 
   const [showAdd, setShowAdd] = useState(false);
   // What was pasted or dropped on the board: the add dialog opens with it in place

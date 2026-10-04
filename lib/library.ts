@@ -1,6 +1,8 @@
 // Everything the library needs to show one workspace, in one call. Used by the library layout on a
 // page load, and by /api/library so the client can have the other workspaces ready before a switch.
 import "server-only";
+import { sql } from "drizzle-orm";
+import { db } from "./db";
 import { listMembers } from "./workspace";
 import { loadWorkspaceData } from "./items";
 import { loadProjects } from "./projects";
@@ -15,6 +17,8 @@ import { getPageIndex, pageShotsFor, signCanvasCopies } from "./page-shots";
 import type { SessionUser, Workspace } from "./workspace-core";
 
 export async function loadLibrary(user: SessionUser, ws: Workspace) {
+  // Taken before reading: whatever changes while this loads makes the next look differ, and loads again
+  const stamp = await libraryStamp(ws.id);
   // Both shared indexes (R2) are read while the database answers; they are cached, so the calls below reuse them
   const pages = getPageIndex();
   void getDesignMdIndex();
@@ -44,6 +48,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   const pageShots = await signCanvasCopies(await pageShotsFor(ws.id, designMdIndex, await pages, webs));
   return {
     workspace: ws,
+    stamp,
     items,
     initialThumbnailMap: thumbnailMap,
     initialTagMap: tagMap,
@@ -62,3 +67,15 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
 }
 
 export type LibraryData = Awaited<ReturnType<typeof loadLibrary>>;
+
+/** What the board shows, in one short string: how many items, links and projects, and the last time any of them
+ *  changed. An add, a delete, an edit, tags arriving, a filing or a new project all change it. One query on
+ *  the workspace's indexes: the open board asks for it every 15 s (/api/library/changes). */
+export async function libraryStamp(organizationId: string): Promise<string> {
+  const { rows } = await db.execute<{ stamp: string }>(sql`select concat_ws('|',
+    (select concat_ws(':', count(*), max(updated_at)) from inspo_item where organization_id = ${organizationId}),
+    (select concat_ws(':', count(*), count(archived_at), max(created_at), max(archived_at)) from project_item where organization_id = ${organizationId}),
+    (select concat_ws(':', count(*), max(updated_at)) from project where organization_id = ${organizationId} and template is null)
+  ) as stamp`);
+  return rows[0]?.stamp ?? "";
+}
