@@ -3,12 +3,12 @@
 // An image is copied into the workspace's media folder, the same as one dropped into the app; if its
 // site refuses to hand it over, the piece of the tab stands in for it. A video stays a link to its
 // file, which the app plays, with the piece of the tab as its frame; a video with no file of its own
-// (a stream, a blob:) saves the page instead. Either way it lands on the board of the project this
-// person was working in.
+// (a stream, a blob:) saves the page instead. Either way it lands on the board picked in the popup,
+// under the areas ticked there.
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, rowToItem, setThumbnail } from "@/lib/items";
-import { activeProjectFor, fileItems } from "@/lib/projects";
+import { fileFromExt, cleanAreas } from "@/lib/ext-file";
 import { uploadThumbnail } from "@/lib/thumbnails";
 import { newMediaKey, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/lib/media";
 import { putFile } from "@/lib/storage";
@@ -58,22 +58,21 @@ async function fetchImage(src: string, page: string | undefined): Promise<{ body
   }
 }
 
-/** Files the new item on the board this person was working on, and tags it once answered */
-async function settle(ctx: ExtCtx, item: InspoItem) {
-  const projectId = await activeProjectFor(ctx.workspace.id, ctx.user.id).catch(() => null);
-  if (projectId && item.id) await fileItems(ctx.workspace.id, projectId, [item.id], ctx.user.id).catch((e) => console.error("ext media: not filed", e));
+/** Files the new item on the board picked in the popup (with its areas), and tags it once answered */
+async function settle(ctx: ExtCtx, item: InspoItem, projectId: unknown, areas: unknown) {
+  await fileFromExt(ctx, item.id, projectId, cleanAreas(areas));
   if (taggerEnabled() && item.id) after(() => startTagJob(ctx.workspace.id, item.id!, ctx.user.id));
 }
 
 const clip = (s: unknown, n: number) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, n).trim() : "");
 
-// POST { kind: "image" | "video", src?, page?, title?, alt?, frame?, note? } → { ok, item, existed }
+// POST { kind: "image" | "video", src?, page?, title?, alt?, frame?, note?, projectId?, areas? } → { ok, item, existed }
 export async function POST(req: NextRequest) {
   const ctx = await requireExtCtx(req);
   if (ctx instanceof Response) return ctx;
   const errors = await getErrors();
   const body = (await req.json().catch(() => ({}))) as {
-    kind?: string; src?: string; page?: string; title?: string; alt?: string; frame?: string; note?: string;
+    kind?: string; src?: string; page?: string; title?: string; alt?: string; frame?: string; note?: string; projectId?: string; areas?: string[];
   };
   const page = normalizeWebUrl(body.page ?? "") ?? undefined;
   const note = clip(body.note, 500);
@@ -92,7 +91,7 @@ export async function POST(req: NextRequest) {
         name: clip(body.alt, 48) || clip(body.title, 48) || host || "Image",
         web: url, thumbnailUrl: url, type: "inspiration", note, author, createdBy: ctx.user.id,
       });
-      await settle(ctx, item);
+      await settle(ctx, item, body.projectId, body.areas);
       return Response.json({ ok: true, existed: false, item });
     }
 
@@ -113,7 +112,7 @@ export async function POST(req: NextRequest) {
           await setThumbnail(ctx.workspace.id, web, thumb);
         } catch (e) { console.error("ext media: frame not saved", e instanceof Error ? e.message : e); }
       }
-      await settle(ctx, item);
+      await settle(ctx, item, body.projectId, body.areas);
       return Response.json({ ok: true, existed: false, item });
     }
 

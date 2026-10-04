@@ -241,10 +241,46 @@
   "menuSaveVideo": {
     "message": "Save video to criterio.design"
   },
-  "open": {
-    "message": "Open"
-  },
   "rightClickHint": {
     "message": "Right-click any image or video to save only that."
+  },
+  "savedShort": {
+    "message": "Saved"
+  },
+  "projectLabel": {
+    "message": "Project"
+  },
+  "areasLabel": {
+    "message": "Areas of the system"
+  },
+  "kindImage": {
+    "message": "Image"
+  },
+  "kindVideo": {
+    "message": "Video"
+  },
+  "area_typography": {
+    "message": "Typography"
+  },
+  "area_color": {
+    "message": "Color"
+  },
+  "area_layout": {
+    "message": "Layout"
+  },
+  "area_motion": {
+    "message": "Motion & interaction"
+  },
+  "area_iconography": {
+    "message": "Iconography"
+  },
+  "area_logo": {
+    "message": "Logo"
+  },
+  "area_imagery": {
+    "message": "Imagery"
+  },
+  "area_voice": {
+    "message": "Voice and tone"
   }
 }

@@ -34,9 +34,10 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `GET /me` | Checks the key; returns the person and workspace |
 | `DELETE /me` | The extension revokes its own key when it disconnects |
 | `GET /items/lookup?url=` | Is this site already saved? |
-| `POST /items` | Saves `{ url, title, screenshot }` |
+| `POST /items` | Saves `{ url, title, screenshot, note, projectId, areas }` |
 | `POST /items/batch` | Saves up to 25 `{ url, title }` at once (the import page) |
 | `POST /media` | Saves one image or video from the right-click menu |
+| `GET /projects` | The projects to save to, and the one picked first |
 
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
@@ -45,8 +46,9 @@ workspace. The database only stores the key's SHA-256.
 
 `background.js` adds "Save image to criterio.design" and "Save video to criterio.design" to the context
 menu (`contextMenus` permission). The click grants `activeTab`, so the service worker finds the element
-on the page by its address, cuts the piece of the visible tab it covers, and sends both to
-`POST /api/ext/v1/media` with the page address and the element's alt text.
+on the page by its address, cuts the piece of the visible tab it covers, keeps both in
+`chrome.storage.session` and opens the popup (`chrome.action.openPopup`; where Chrome refuses, the same
+page in a small window). The popup reads it once and shows the image or video instead of the tab.
 
 - **An image** is fetched by the server (with the page as `Referer`, since some sites refuse a bare
   request) and stored in the workspace's media folder, the same as an image dropped into the app. When the
@@ -54,9 +56,12 @@ on the page by its address, cuts the piece of the visible tab it covers, and sen
 - **A video** with a file of its own (`.mp4`, `.webm`, `.mov`) is saved as a link to that file, which the
   app plays, with the cut piece as its frame. A stream with no file (YouTube, X, a `blob:`) saves the page.
 
-Both land on the board of the project the person last added to, like the popup's saves. With no key, the
-click opens `/extension/connect`. The result shows as a small note at the bottom right of the page,
-injected in a shadow root so the page's styles don't reach it.
+## The form
+
+A site and a right-clicked image or video get the same form as the board's add dialog: what caught the
+eye, the project (`GET /projects` lists them and says which one this person last added to, picked
+first) and the areas of its system. `lib/ext-file.ts` files the item there and hangs it under each area
+ticked. After saving, the button turns into "Saved" with a check, and the form folds away.
 
 ## Importing bookmarks
 

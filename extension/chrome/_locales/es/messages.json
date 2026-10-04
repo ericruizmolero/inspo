@@ -241,10 +241,46 @@
   "menuSaveVideo": {
     "message": "Guardar vídeo en criterio.design"
   },
-  "open": {
-    "message": "Abrir"
-  },
   "rightClickHint": {
     "message": "Clic derecho en una imagen o un vídeo para guardar solo eso."
+  },
+  "savedShort": {
+    "message": "Guardado"
+  },
+  "projectLabel": {
+    "message": "Proyecto"
+  },
+  "areasLabel": {
+    "message": "Áreas del sistema"
+  },
+  "kindImage": {
+    "message": "Imagen"
+  },
+  "kindVideo": {
+    "message": "Vídeo"
+  },
+  "area_typography": {
+    "message": "Tipografía"
+  },
+  "area_color": {
+    "message": "Color"
+  },
+  "area_layout": {
+    "message": "Layout"
+  },
+  "area_motion": {
+    "message": "Motion e interacción"
+  },
+  "area_iconography": {
+    "message": "Iconografía"
+  },
+  "area_logo": {
+    "message": "Logo"
+  },
+  "area_imagery": {
+    "message": "Imagen"
+  },
+  "area_voice": {
+    "message": "Voz y tono"
   }
 }
