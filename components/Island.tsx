@@ -173,7 +173,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: projects.filter((p) => keep.has(p.id)), hidden: order.filter((p) => !keep.has(p.id)) };
   }, [projects, order, fit]);
 
-  // No library tab: everything lives in a project. Discover holds the directory and the templates
+  // No library tab: Discover holds the directory and the templates, and the Inbox what is in no project yet
   const inDiscover = space === "discover" || space === "templates";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
@@ -266,6 +266,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
         <a href={hrefOf("templates")} className={`island__tab${inDiscover ? " is-on" : ""}`} aria-current={inDiscover ? "page" : undefined} data-fixed onClick={go("templates")}>
           <span className="island__label">{t.sidebar.discover}</span>
         </a>
+        {/* What is in no project yet: always a tab away, so nothing saved is ever out of reach */}
+        {tab("inbox", t.projects.inbox, counts.inbox, true)}
         {shown.map((p) => naming === p.id ? (
           <NameTab key={p.id} initial={p.name} onCancel={() => setNaming(null)}
             onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} />

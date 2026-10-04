@@ -34,6 +34,9 @@ const nextConfig: NextConfig = {
     "/twitter-image": ["./app/fonts/*.ttf"],
     // The extension zip is built at build time, but a regeneration at request time would read the folder again
     "/extension/download": ["./extension/chrome/**/*"],
+    // Built-in templates: their folders are read with readFile the first time a workspace lists its templates
+    // (lib/template-seed.ts), from the server action on the home page
+    "/": ["./docs/templates/**/*"],
   },
 };
 

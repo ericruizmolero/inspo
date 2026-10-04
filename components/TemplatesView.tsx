@@ -149,7 +149,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
       {tpl.template.to && <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} />}
 
       <div className="tpl-files">
-        <button type="button" className="tpl-btn tpl-btn--quiet" onClick={() => { if (window.confirm(s.deleteAsk(tpl.name))) void onDelete(tpl); }}>{s.delete}</button>
+        {!tpl.template.builtin && <button type="button" className="tpl-btn tpl-btn--quiet" onClick={() => { if (window.confirm(s.deleteAsk(tpl.name))) void onDelete(tpl); }}>{s.delete}</button>}
       </div>
     </article>
   );

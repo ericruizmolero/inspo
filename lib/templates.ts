@@ -3,12 +3,13 @@
 // the work it came from (how a client's site became its redesign, round by round). Using one starts a new
 // project with that system as decided as the template has it, its board, and the recipe beside it.
 import "server-only";
-import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { boardStamp, copySystem, getSystem } from "./system";
 import { saveBrief } from "./polish";
+import { ensureBuiltinTemplates } from "./template-seed";
 import type { Project } from "@/types/inspo";
 import { RECIPE_MAX, type ProjectTemplate, type TemplateCard } from "@/types/system";
 
@@ -16,7 +17,7 @@ const P = schema.project;
 type Author = { id: string; name: string };
 
 const cleanUrl = (u: unknown) => { const s = String(u ?? "").trim().slice(0, 300); return /^https?:\/\//i.test(s) ? s : s ? `https://${s}` : ""; };
-const cleanTemplate = (t: Partial<ProjectTemplate>): ProjectTemplate => ({ from: cleanUrl(t.from), to: cleanUrl(t.to), about: String(t.about ?? "").trim().slice(0, 400), ...(t.video ? { video: cleanUrl(t.video) } : {}) });
+const cleanTemplate = (t: Partial<ProjectTemplate>): ProjectTemplate => ({ from: cleanUrl(t.from), to: cleanUrl(t.to), about: String(t.about ?? "").trim().slice(0, 400), ...(t.video ? { video: cleanUrl(t.video) } : {}), ...(t.builtin ? { builtin: String(t.builtin) } : {}) });
 const NAME_MAX = 60;
 const cleanName = async (name: unknown) => { const n = String(name ?? "").trim().replace(/\s+/g, " ").slice(0, NAME_MAX); if (!n) throw new HttpError(400, (await getErrors()).badBody); return n; };
 
@@ -34,6 +35,8 @@ async function freeName(organizationId: string, name: string): Promise<string> {
 }
 
 export async function listTemplates(organizationId: string): Promise<TemplateCard[]> {
+  // The built-in ones (docs/templates) are every workspace's: loaded here the first time, a few seconds once
+  await ensureBuiltinTemplates(organizationId);
   const rows = await db.select({ id: P.id, name: P.name, template: P.template, recipe: P.recipe, createdAt: P.createdAt }).from(P)
     // In the order they came: the first template stays first, a new one goes after the ones already there
     .where(and(eq(P.organizationId, organizationId), isNotNull(P.template))).orderBy(asc(P.createdAt));
@@ -102,9 +105,9 @@ export async function setRecipe(organizationId: string, projectId: string, recip
   if (!res.rowCount) throw new HttpError(404, (await getErrors()).projectNotFound);
 }
 
-/** A template stops being one: deleted, with its system (cascade) */
+/** A template stops being one: deleted, with its system (cascade). Not a built-in one: it would come back by itself */
 export async function deleteTemplate(organizationId: string, templateId: string): Promise<void> {
-  await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, templateId), isNotNull(P.template)));
+  await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, templateId), isNotNull(P.template), sql`${P.template}->>'builtin' is null`));
 }
 
 /**

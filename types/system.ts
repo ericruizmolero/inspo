@@ -145,6 +145,8 @@ export interface ProjectTemplate {
   about: string;
   /** A recording of the result (a Screen Studio share, a video file): its thumbnail plays it on hover */
   video?: string;
+  /** A built-in template (its folder under docs/templates): every workspace has it, and it is not the workspace's to delete */
+  builtin?: string;
 }
 export const RECIPE_MAX = 200_000;
 
