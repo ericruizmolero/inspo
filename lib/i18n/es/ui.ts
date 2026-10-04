@@ -390,7 +390,7 @@ export const ui: typeof EnUi = {
   system: {
     button: "Sistema",
     improve: "Mejorar con IA",
-    improveHint: "Elige qu\u00e9 quieres mejorar antes de que la IA se ponga. Lo que el equipo ya decidi\u00f3 no lo toca.",
+    improveHint: "Elige qu\u00e9 quieres mejorar antes de que la IA se ponga.",
     improveModal: {
       lead: "Dile a la IA qu\u00e9 quieres de esta pasada. Lo que no marques se queda como est\u00e1.",
       aimsLabel: "Qu\u00e9 quieres mejorar",
@@ -401,15 +401,13 @@ export const ui: typeof EnUi = {
       },
       areasLabel: "En qu\u00e9 \u00e1reas",
       allAreas: "Todas",
-      teamArea: "Decidida por el equipo: la IA no la toca",
       noteLabel: "Algo que deba tener en cuenta",
       optional: "opcional",
       notePlaceholder: "Por ejemplo: m\u00e1s sobrio, menos adjetivos, el color a\u00fan no est\u00e1 cerrado",
       expectLabel: "Qu\u00e9 puedes esperar",
       expect: {
         time: "Tarda como mucho minuto y medio y cuesta una fracci\u00f3n de c\u00e9ntimo.",
-        team: (n: number): string => (n === 1 ? "El \u00e1rea que decidi\u00f3 el equipo se queda como est\u00e1." : `Las ${n} \u00e1reas que decidi\u00f3 el equipo se quedan como est\u00e1n.`),
-        noTeam: "Lo que el equipo decida a mano, la IA no lo vuelve a tocar.",
+        team: "En las \u00e1reas que decidi\u00f3 el equipo la decisi\u00f3n se mantiene: la IA mejora c\u00f3mo est\u00e1 contada, no cambia el rumbo.",
         empty: "Un \u00e1rea de la que el tabl\u00f3n no dice nada sigue vac\u00eda: la IA no inventa.",
         undo: "Cada \u00e1rea guarda su historial: si un cambio no te convence, lo deshaces.",
       },

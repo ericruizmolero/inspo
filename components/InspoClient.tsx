@@ -1396,21 +1396,6 @@ export default function InspoClient({
           <Logo size={28} className="topbar__logo" />
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
-            {space === "inbox" && spaceItems.length > 0 && projects.length > 0 && (
-              <>
-                {triage ? (
-                  <>
-                    <Button variant="primary" size="sm" className="topbar__polish" onClick={() => void acceptTriage(Object.values(triage))} disabled={!Object.values(triage).some((p) => p.projectId)}>{Icons.check} {t.triage.acceptAll(Object.values(triage).filter((p) => p.projectId).length)}</Button>
-                    <Button variant="ghost" size="sm" className="topbar__polish" onClick={() => setTriage(null)}>{t.triage.exit}</Button>
-                  </>
-                ) : (
-                  <Button variant="ghost" className="topbar__polish" disabled={triageRunning} onClick={() => void runTriage(spaceItems.map((i) => i.id).filter((x): x is string => !!x))} title={t.triage.hint(spaceItems.length)}>
-                    {triageRunning ? <span className="spinner spinner--sm" /> : Icons.spark} {triageRunning ? t.triage.reading : t.triage.button}
-                  </Button>
-                )}
-                <span className="topbar__actions-sep" aria-hidden />
-              </>
-            )}
             {currentProject && (
               <>
                 <span className="topbar__modes" role="tablist" aria-label={t.system.button}>

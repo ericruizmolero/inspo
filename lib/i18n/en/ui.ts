@@ -392,7 +392,7 @@ export const ui = {
   system: {
     button: "System",
     improve: "Improve with AI",
-    improveHint: "Choose what to improve before the AI starts. What the team already decided stays untouched.",
+    improveHint: "Choose what to improve before the AI starts.",
     improveModal: {
       lead: "Tell the AI what you want from this pass. What you leave unmarked stays as it is.",
       aimsLabel: "What to improve",
@@ -403,15 +403,13 @@ export const ui = {
       },
       areasLabel: "In which areas",
       allAreas: "All",
-      teamArea: "Decided by the team: the AI leaves it alone",
       noteLabel: "Anything it should keep in mind",
       optional: "optional",
       notePlaceholder: "For example: more sober, fewer adjectives, colour is not settled yet",
       expectLabel: "What to expect",
       expect: {
         time: "It takes a minute and a half at most and costs a fraction of a cent.",
-        team: (n: number): string => (n === 1 ? "The area the team decided stays as it is." : `The ${n} areas the team decided stay as they are.`),
-        noTeam: "Whatever the team decides by hand, the AI does not touch again.",
+        team: "In the areas the team decided, the decision stands: the AI improves how it is told, not where it goes.",
         empty: "An area the board says nothing about stays empty: the AI does not make things up.",
         undo: "Every area keeps its history: if a change does not convince you, undo it.",
       },

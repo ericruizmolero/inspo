@@ -358,11 +358,14 @@ const AIMS: Record<ImproveAim, string> = {
   refs: "Read the references again from scratch: evidence and takes re-derived from what each reference actually shows and what the team said about it, not carried over from the previous pass.",
 };
 /** The team's scope for this pass, as the last block of the prompt; nothing when the pass is the plain one */
-function focusForModel(focus: SystemFocus | undefined): string | null {
+function focusForModel(focus: SystemFocus | undefined, teamAreas: SystemArea[] = []): string | null {
   if (!focus) return null;
+  // Areas the team decided and now asks to improve: its decision stands, how it is told is what gets better
+  const own = focus.areas.filter((a) => teamAreas.includes(a));
   const note = (focus.note ?? "").trim().replace(/\s+/g, " ").slice(0, IMPROVE_NOTE_MAX);
   const lines = [
     focus.areas.length < SYSTEM_AREAS.length ? `Work ONLY on these areas: ${focus.areas.join(", ")}. Return every other area exactly as it stands.` : "",
+    own.length ? `The team asks you to improve areas it decided itself: ${own.join(", ")}. For this pass they are NOT returned unchanged. Keep what each one decides: its direction and every concrete value (families, weights, colours, sizes, numbers, verbatim quotes), and keep its length (they may run well over 60 words, with their own line breaks: do not shorten or summarise them). Improve how it is written, its why and the evidence behind it. Never empty one of them.` : "",
     ...focus.aims.map((a) => AIMS[a]),
     note ? `In the team's own words, to follow as an instruction for this pass only: ${JSON.stringify(note)}` : "",
   ].filter(Boolean);
@@ -401,7 +404,7 @@ const standing = current.areas.map((a) => ({
       `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
       `System as it stands (JSON): ${JSON.stringify(standing)}`,
       `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
-      focusForModel(input.focus),
+      focusForModel(input.focus, current.areas.filter((a) => a.source === "team").map((a) => a.area)),
     ].filter(Boolean).join("\n\n");
 
     let res: Awaited<ReturnType<typeof llm>>;
@@ -431,10 +434,14 @@ const standing = current.areas.map((a) => ({
 
     const byArea = new Map(out.areas.map((a) => [a.area, a]));
     for (const cur of current.areas) {
-      if (cur.source === "team") continue;  // the team's word stands
       if (input.focus && !input.focus.areas.includes(cur.area)) continue;  // out of this pass's scope: as it was
+      // The team's word stands, unless the team itself asked for this area to be improved ("Improve with AI")
+      const own = cur.source === "team";
+      if (own && !input.focus) continue;
       const got = byArea.get(cur.area);
-      const decision = (got?.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+      // A decision of the team keeps its paragraphs; a proposal is one run of text
+      const decision = own ? cleanDecision(got?.decision) : (got?.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+      if (own && !decision) continue;  // never emptied by a pass
       // Back to item ids; an invented code or a repeated reference is dropped
       // What a person filed under the area stays, whatever the model made of it
       const pinned = cur.evidence.filter((e) => e.pinned && codes.has(codeOf.get(e.itemId) ?? ""));
@@ -449,7 +456,10 @@ const standing = current.areas.map((a) => ({
         seen.add(itemId);
         evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
       }
-      const next: AreaWrite = decision
+      // An improved decision of the team is still the team's: same author, same standing, better told
+      const next: AreaWrite = own
+        ? { area: cur.area, decision, confidence: cur.confidence, evidence, source: "team", decidedBy: cur.decidedBy, why: got?.why || cur.why }
+        : decision
         ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null, why: got?.why ?? "" }
         : { area: cur.area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null, why: "" };
       const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence) && (next.why ?? "") === cur.why;
