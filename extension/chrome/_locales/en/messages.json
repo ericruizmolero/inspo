@@ -282,5 +282,8 @@
   },
   "area_voice": {
     "message": "Voice and tone"
+  },
+  "videoPageSaved": {
+    "message": "This video plays in pieces, so there was no file to copy: the page and a frame were saved."
   }
 }

@@ -225,9 +225,11 @@ async function save() {
   const form = { note: $("tab-note").value.trim(), projectId: $("dest").hidden ? undefined : $("project-select").value || undefined, areas: [...picked] };
   try {
     const r = media
-      ? await api("/media", { method: "POST", body: JSON.stringify({ kind: media.kind, src: media.src, page: media.page, title: media.title, alt: media.alt, frame: media.frame, ...form }) })
+      ? await api("/media", { method: "POST", body: JSON.stringify({ kind: media.kind, src: media.src, page: media.page, link: media.link, title: media.title, alt: media.alt, frame: media.frame, ...form }) })
       : await api("/items", { method: "POST", body: JSON.stringify({ url: tab.url, title: tab.title, screenshot: shot || (await capture()), ...form }) });
     if (r.existed) { already(r.item); return; }
+    // A video with no file to copy: say what was kept instead of the video itself
+    if (r.saved === "page") note($("tab-msg"), t("videoPageSaved"), null);
     done(r.item, t("savedShort"));
   } catch (e) {
     note($("tab-msg"), e.message, "error");

@@ -282,5 +282,8 @@
   },
   "area_voice": {
     "message": "Voz y tono"
+  },
+  "videoPageSaved": {
+    "message": "Este vídeo se reproduce a trozos y no había un fichero que copiar: se ha guardado la página y un fotograma."
   }
 }

@@ -4,7 +4,7 @@ import { ownsThumbnail } from "@/lib/items";
 import { blobPrefix } from "@/lib/thumbnails";
 import { commentPrefix } from "@/lib/comment-files";
 import { DESIGN_MD_PREFIX, whyShotPrefix } from "@/lib/design-store";
-import { mediaPrefix } from "@/lib/media";
+import { mediaPrefix, videoPrefix } from "@/lib/media";
 import { textPrefix } from "@/lib/text-refs";
 import { POSTS_PREFIX } from "@/lib/posts";
 import { PAGES_PREFIX } from "@/lib/page-shots";
@@ -12,7 +12,7 @@ import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
 import { openFile, fileUrl, signedFileUrl } from "@/lib/storage";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
-// The active workspace reads its thumbnails, uploaded images, comment screenshots and "why" captures;
+// The active workspace reads its thumbnails, uploaded images, copied videos, comment screenshots and "why" captures;
 // DESIGN.md images, saved posts from X and Screen Studio videos are public content, shared by everyone signed in.
 // With R2 the answer is a redirect to a signed R2 URL: the bytes, ranges included, come from R2,
 // so a 60 MB video never runs through a function. On disk (development) the file is streamed here.
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const key = parts.join("/");
 
   const ws = session.workspace.id;
-  const allowed = [blobPrefix(ws), mediaPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
+  const allowed = [blobPrefix(ws), mediaPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
     // A thumbnail stored under another prefix but set on one of this workspace's items
     || (await ownsThumbnail(ws, fileUrl(key)));
   if (!allowed) return new Response("forbidden", { status: 403 });

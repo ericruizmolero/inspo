@@ -124,7 +124,7 @@ export async function removeInspo(id: string) {
     const [row] = await db.select({ web: schema.inspoItem.web }).from(schema.inspoItem)
       .where(and(eq(schema.inspoItem.organizationId, ctx.workspace.id), eq(schema.inspoItem.id, String(id)))).limit(1);
     await deleteItem(ctx.workspace.id, id);
-    // An uploaded image goes with its card: nothing else points at that file
+    // An uploaded image or a copied video goes with its card: nothing else points at that file
     if (row) await deleteMediaFile(ctx.workspace.id, row.web);
     if (row) await deleteTextFile(ctx.workspace.id, row.web);
   });

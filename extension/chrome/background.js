@@ -57,7 +57,7 @@ async function pickMedia(kind, info, tab) {
   // The cut only lines up with the tab when the element is in the page itself, not in a frame inside it
   const frame = spot && frameId === 0 ? await cut(tab.windowId, spot) : undefined;
   await chrome.storage.session.set({
-    pending: { kind, src: info.srcUrl, page: info.frameUrl || info.pageUrl || tab.url, title: tab.title, favicon: tab.favIconUrl, alt: spot?.alt || "", frame, at: Date.now() },
+    pending: { kind, src: spot?.file || info.srcUrl, link: spot?.link || "", page: info.frameUrl || info.pageUrl || tab.url, title: tab.title, favicon: tab.favIconUrl, alt: spot?.alt || "", frame, at: Date.now() },
   });
   // The popup itself, anchored to the toolbar icon. Where Chrome won't open it from here, the same page in a small window
   try { await chrome.action.openPopup({ windowId: tab.windowId }); }
@@ -82,8 +82,21 @@ async function locate(tabId, frameId, src, kind) {
           if (w > 0 && h > 0 && w * h > bestArea) { bestArea = w * h; best = { el, x, y, w, h }; }
         }
         if (!best) return null;
-        const alt = best.el.getAttribute("alt") || best.el.getAttribute("title") || best.el.getAttribute("aria-label") || "";
-        return { x: best.x, y: best.y, w: best.w, h: best.h, vw: innerWidth, alt };
+        const el = best.el;
+        const alt = el.getAttribute("alt") || el.getAttribute("title") || el.getAttribute("aria-label") || "";
+        if (kind !== "video") return { x: best.x, y: best.y, w: best.w, h: best.h, vw: innerWidth, alt };
+        // A video played from a blob: has no address to copy. Its real file, when the page loaded one
+        // whole: a <source> of its own, or the biggest video file in what the page has fetched
+        const isFile = (u) => /^https?:/.test(u) && /\.(mp4|m4v|webm|mov)(\?|#|$)/i.test(u);
+        let file = [el.currentSrc, el.src, ...[...el.querySelectorAll("source")].map((x) => x.src)].find(isFile) || "";
+        if (!file && !/^https?:/.test(el.currentSrc || src)) {
+          const loaded = performance.getEntriesByType("resource").filter((r) => isFile(r.name) && !/[?&](range|bytestart)=/i.test(r.name));
+          file = loaded.sort((a, b) => (b.encodedBodySize || b.transferSize || 0) - (a.encodedBodySize || a.transferSize || 0))[0]?.name || "";
+        }
+        // The post it sits in (on X, the link that holds the post's time), else the closest link to a video page
+        const box = el.closest("article, [data-testid='tweet']");
+        const link = box?.querySelector("a[href*='/status/'] time")?.closest("a")?.href || el.closest("a[href]")?.href || "";
+        return { x: best.x, y: best.y, w: best.w, h: best.h, vw: innerWidth, alt, file, link };
       },
     });
     return r?.result ?? null;

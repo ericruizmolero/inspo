@@ -53,8 +53,12 @@ page in a small window). The popup reads it once and shows the image or video in
 - **An image** is fetched by the server (with the page as `Referer`, since some sites refuse a bare
   request) and stored in the workspace's media folder, the same as an image dropped into the app. When the
   site still refuses, or the image is a `blob:`, the cut piece of the tab is stored instead.
-- **A video** with a file of its own (`.mp4`, `.webm`, `.mov`) is saved as a link to that file, which the
-  app plays, with the cut piece as its frame. A stream with no file (YouTube, X, a `blob:`) saves the page.
+- **A video** is copied whole into the workspace's video folder (`inspo/<workspace>/video/`, up to
+  100 MB), so it plays from criterio whatever its site does with the link later, with the cut piece as its
+  frame. When the page plays it from a `blob:` (a stream in pieces), the extension looks for the real file
+  first: a `<source>` of its own, or the biggest video file the page fetched. With no file to copy, it
+  saves the post or video page the video belongs to (a post on X has its video copied on import; YouTube,
+  Vimeo and Loom play embedded), and only when there is none, the page and its frame. The popup says so.
 
 ## The form
 
