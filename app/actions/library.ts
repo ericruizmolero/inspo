@@ -11,7 +11,7 @@ import { addItem, deleteItem, setItemNote, editUserTags } from "@/lib/items";
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
-import { createProject, renameProject, deleteProject, fileItems, unfileItems, setArchived } from "@/lib/projects";
+import { createProject, renameProject, deleteProject, fileItems, unfileItems, setArchived, startProject } from "@/lib/projects";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
@@ -63,6 +63,11 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
 // Projects: any member can create, rename and delete them. Deleting one never deletes references.
 export async function newProject(name: string) {
   return withCtx(async (ctx) => createProject(ctx.workspace.id, name, ctx.user.id));
+}
+
+/** "I have my references": the project stops opening on its board and opens on its system */
+export async function markProjectStarted(id: string) {
+  return withCtx(async (ctx) => startProject(ctx.workspace.id, String(id)));
 }
 
 export async function editProject(id: string, name: string) {

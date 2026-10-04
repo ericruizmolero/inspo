@@ -47,11 +47,12 @@ export async function useTemplate(organizationId: string, templateId: string, na
   const now = new Date();
   const id = newId();
   const n = await cleanName(name);
-  await db.insert(P).values({ id, organizationId, name: n, createdBy: author.id, recipe: tpl.recipe, createdAt: now, updatedAt: now });
+  // It starts with a system to confirm, not with a board to fill: it opens on the system
+  await db.insert(P).values({ id, organizationId, name: n, createdBy: author.id, recipe: tpl.recipe, startedAt: now, createdAt: now, updatedAt: now });
   await copySystem(organizationId, templateId, id, "model", author);
   const about = cleanTemplate((tpl.template ?? {}) as Partial<ProjectTemplate>).about;
   if (about) await saveBrief(organizationId, id, { about }, author.id);
-  return { id, name: n, intent: about || null, hasRecipe: tpl.recipe.length > 0 };
+  return { id, name: n, intent: about || null, hasRecipe: tpl.recipe.length > 0, started: true };
 }
 
 export async function getRecipe(organizationId: string, projectId: string): Promise<string> {

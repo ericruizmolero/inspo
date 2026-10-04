@@ -1203,4 +1203,11 @@ export const ui: typeof EnUi = {
     decided: (area: string): string => `decidi\u00f3 ${area}:`,
     talk: (n: number): string => (n === 1 ? "1 comentario" : `${n} comentarios`),
   },
+  gather: {
+    title: "Primero, el tabl\u00f3n",
+    count: (n: number): string => (n === 1 ? "1 referencia" : `${n} referencias`),
+    lead: "Sube lo que te inspira: webs, im\u00e1genes, v\u00eddeos.",
+    add: "A\u00f1adir",
+    ready: "Ya tengo las referencias",
+  },
 };

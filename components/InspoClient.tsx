@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, setProjectArchived, editTags as editTagsAction } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { setProjectClient } from "@/app/actions/polish";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -15,6 +15,7 @@ import Island from "./Island";
 import SearchBar from "./SearchBar";
 import InspoCard, { cachedCardImage } from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
+import GatherBar from "./GatherBar";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
@@ -247,8 +248,13 @@ export default function InspoClient({
   const space = inParam === "inbox" || inParam === "templates" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   // Inside a project the system comes first; the board is a mode (?view=board)
-  const projectView: "system" | "board" = currentProject && sp.get("view") !== "board" ? "system" : "board";
-  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === "board" ? "board" : "" }), [setParams]);
+  // A project still gathering opens on its board: until the team says it has its references (GatherBar), the
+  // board is its first screen; after that, the system. ?view= says the other one
+  const gatheringRefs = !!currentProject && !currentProject.started;
+  const defaultView: "system" | "board" = gatheringRefs ? "board" : "system";
+  const viewParam = sp.get("view");
+  const projectView: "system" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "system" ? viewParam : defaultView;
+  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
   // Which areas of the current project's system each reference backs (for the card's "to the system")
   const backsByItem = useMemo(() => {
@@ -1510,6 +1516,17 @@ export default function InspoClient({
             )}
             {filtering && currentProject && projectView === "system" && filtered.length > 0 && (
               <DockResults label={t.search.results(filtered.length)} items={filtered.slice(0, DOCK_RESULTS)} imageOf={smallImageOf} onOpen={openItem} />
+            )}
+            {/* A project still gathering: what the board is for, and the step to the system */}
+            {currentProject && gatheringRefs && projectView === "board" && spaceItems.length > 0 && !filtering && !agent && (
+              <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
+                onStart={async () => {
+                  const id = currentProject.id;
+                  const r = await markProjectStarted(id).catch((e) => ({ ok: false as const, error: String(e) }));
+                  if (!r.ok) { projectFailed(new Error(r.error)); return; }
+                  setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, started: true } : p)));
+                  setParams({ view: "system" });
+                }} />
             )}
             {agent && (agent.busy || agent.say || agent.error || agent.done.length > 0) && (
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />

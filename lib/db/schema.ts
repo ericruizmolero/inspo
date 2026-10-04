@@ -182,6 +182,8 @@ export const project = pgTable("project", {
   template: jsonb("template").$type<unknown>(),
   /** The recipe: how the work was done, as a Markdown document an agent can follow (the process of a template) */
   recipe: text("recipe").notNull().default(""),
+  /** When the team said it had its references: until then the project opens on its board, gathering; after, on its system */
+  startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [

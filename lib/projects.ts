@@ -25,7 +25,7 @@ async function cleanName(name: string): Promise<string> {
  */
 export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks; shelf: ProjectLinks }> {
   const [projects, rows] = await Promise.all([
-    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'`, clientItemId: sql<string | null>`${P.polish}->'brief'->>'clientItemId'`, hasRecipe: sql<boolean>`${P.recipe} <> ''` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
+    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'`, clientItemId: sql<string | null>`${P.polish}->'brief'->>'clientItemId'`, hasRecipe: sql<boolean>`${P.recipe} <> ''`, started: sql<boolean>`${P.startedAt} is not null` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
     db.select({ projectId: PI.projectId, itemId: PI.itemId, archivedAt: PI.archivedAt }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};
@@ -39,6 +39,11 @@ export async function createProject(organizationId: string, name: string, userId
   const row = { id: newId(), organizationId, name: await cleanName(name), createdBy: userId, createdAt: now, updatedAt: now };
   await db.insert(P).values(row);
   return { id: row.id, name: row.name };
+}
+
+/** The team has its references: from now on the project opens on its system */
+export async function startProject(organizationId: string, id: string): Promise<void> {
+  await db.update(P).set({ startedAt: new Date() }).where(and(eq(P.organizationId, organizationId), eq(P.id, id), isNull(P.startedAt)));
 }
 
 export async function renameProject(organizationId: string, id: string, name: string): Promise<Project> {

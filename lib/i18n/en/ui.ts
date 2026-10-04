@@ -1205,4 +1205,11 @@ export const ui = {
     decided: (area: string): string => `decided ${area}:`,
     talk: (n: number): string => (n === 1 ? "1 comment" : `${n} comments`),
   },
+  gather: {
+    title: "First, the board",
+    count: (n: number): string => (n === 1 ? "1 reference" : `${n} references`),
+    lead: "Bring in what inspires you: sites, images, videos.",
+    add: "Add",
+    ready: "I have my references",
+  },
 };
