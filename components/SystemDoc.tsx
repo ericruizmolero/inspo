@@ -2,14 +2,14 @@
 // The system's result: criterio.md, with the team working on it. The file is shown as the Markdown it is or, one
 // press away, set as a document: the same text either way (components/SystemMarkdown.tsx), typed in place and
 // saved as it is typed, with the pins the team leaves on it. Here: the parts to jump between, the proposals
-// waiting under each area (anyone says yes or no), and confirming what the agent proposed.
+// waiting under each area (anyone says yes or no).
 import { useMemo, useState } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
 import type { SystemActivity } from "@/lib/area-comments";
 import { answerAreaProposal, postAreaComment, removeAreaComment } from "@/app/actions/area-comments";
-import { decideSystemArea, saveDocPart, saveSystemSummary } from "@/app/actions/system";
+import { saveDocPart, saveSystemSummary } from "@/app/actions/system";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown from "./SystemMarkdown";
 import { Avatar } from "./CommentsPanel";
@@ -75,13 +75,6 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     if (!r.ok) { setError(r.error); return; }
     onSystem(r.data); onTalk();
   };
-  const confirm = async (b: AreaBlock) => {
-    if (working) return;
-    setWorking(true); setError("");
-    const r = await decideSystemArea(projectId, b.area, { decision: b.decision, why: b.why });
-    setWorking(false);
-    if (r.ok) onSystem(r.data); else setError(r.error);
-  };
   // The pins the team left on the file's lines, by the part they sit on
   const pins = useMemo(() => Object.fromEntries(Object.entries(activity?.notes ?? {}).map(([part, notes]) => [part, notes.filter((n) => n.pin).map((n) => ({ id: n.id, who: n.who, image: n.image, at: n.at, mine: n.mine, text: n.text, quote: n.pin!.quote, x: n.pin!.x, to: n.pin!.to }))])), [activity]);
   const pin = async (part: string, quote: string, body: string, at: { x: number; to?: string }): Promise<boolean> => {
@@ -141,9 +134,6 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       {n.text && n.text !== n.proposal!.decision && <p className="sdoc-proposal__reason">{n.text}</p>}
     </div>
   ));
-  const confirmOf = (b: AreaBlock, className: string) => b.decision && system.areas.find((x) => x.area === b.area)?.source !== "team"
-    ? <button type="button" className={className} disabled={working} onClick={() => void confirm(b)} title={s.confirmHint}>{Icons.check} {s.confirm}</button> : null;
-
   // The file, with the team's tools on each area: as the Markdown it is, or set as a document. The same text, the
   // same writing in place and the same pins either way
   return (
@@ -156,7 +146,6 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           onPart={async (part, text) => { const r = await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
-          tools={(b) => confirmOf(b, "mdv-tool mdv-tool--solid")}
           pins={pins} onPin={pin} onUnpin={unpin} />
       </div>
     </div>
