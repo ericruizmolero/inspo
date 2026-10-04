@@ -1,0 +1,14 @@
+/* criterio.md's skills (components/SkillsMenu.tsx): a switch per tool, each one a section of the file */
+.sys-skills__trigger { gap: 6px; }
+.sys-skills__n { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 10px; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
+.sys-skills { width: 300px; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.sys-skills__hint { margin: 0; padding: 8px 10px 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+.sys-skills__row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
+.sys-skills__row:hover { background: var(--surface-2); }
+.sys-skills__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sys-skills__name { font-size: 13px; font-weight: 500; }
+.sys-skills__what { font-size: 12px; line-height: 1.4; color: var(--muted); }
+.sys-skills__switch { flex-shrink: 0; width: 28px; height: 16px; border-radius: 8px; background: var(--surface-3); position: relative; transition: background 0.15s; }
+.sys-skills__switch span { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-2); transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s; }
+.sys-skills__row.is-on .sys-skills__switch { background: var(--text); }
+.sys-skills__row.is-on .sys-skills__switch span { transform: translateX(12px); background: var(--bg); }

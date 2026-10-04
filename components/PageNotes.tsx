@@ -1,6 +1,6 @@
 "use client";
 
-// The whole page, with the team's pinned comments stuck on it like post-its. A click anywhere on the page
+// The reference itself (a page's capture, or an image), with the team's pinned comments stuck on it like post-its. A click anywhere on the page
 // opens a blank one at that spot; it pins with ↵. Each keeps its place as a fraction of the page, plus the
 // page height it was pinned on, so a new capture of a longer page doesn't move it. A post-it is a comment
 // like any other: it carries the number it has in the comments column, shows its latest replies and takes
@@ -16,9 +16,6 @@ import { timeAgo } from "@/lib/i18n/format";
 const IcX = (
   <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
 );
-const IcLock = (
-  <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor"><path d="M2 4V3a2.5 2.5 0 015 0v1h.5a1 1 0 011 1v3.5a1 1 0 01-1 1h-6a1 1 0 01-1-1V5a1 1 0 011-1H2zm1 0h3V3a1.5 1.5 0 00-3 0v1z" /></svg>
-);
 
 /** A small, stable tilt per note: paper never sits perfectly square */
 function tiltOf(id: string) {
@@ -30,16 +27,18 @@ function tiltOf(id: string) {
 /** Page height in 1440px-wide pixels: the unit a pin remembers */
 const at1440 = (img: HTMLImageElement) => Math.round((img.naturalHeight * 1440) / (img.naturalWidth || 1440));
 
+/** An image taller than this (in 1440px-wide pixels) is read like a page, by scrolling; shorter, it is shown whole */
+const FIT_MAX_H = 3200;
+
 /** Replies shown on the paper; the rest wait in the comments column */
 const SHOWN_REPLIES = 3;
 
-export default function PageNotes({ src, alt, host, dark, notes, user, canManage, onPin, onDelete, pins = {}, replies = {}, focusId, onFocus, onReply }: {
+export default function PageNotes({ src, alt, fit, notes, user, canManage, onPin, onDelete, pins = {}, replies = {}, focusId, onFocus, onReply }: {
   /** The page image, or null when there is no capture yet */
   src: string | null;
   alt: string;
-  host: string;
-  /** The site is dark: the window bar follows */
-  dark?: boolean;
+  /** An image: shown whole and centred, at the size the card allows, instead of across its width */
+  fit?: boolean;
   /** Only the comments pinned on the page; all of them, with their replies, are in the comments column */
   notes: InspoComment[];
   user: SessionUser;
@@ -126,7 +125,7 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
   // When the draft closes (pinned or dropped), the keyboard goes back to "Pin a note"
   const closeDraft = () => {
     setDraft(null);
-    requestAnimationFrame(() => pageRef.current?.closest(".pn")?.querySelector<HTMLElement>("[data-pin-note]")?.focus());
+    requestAnimationFrame(() => pageRef.current?.closest(".pn-wrap")?.querySelector<HTMLElement>("[data-pin-note]")?.focus());
   };
 
   // When a post-it's reply field closes, the keyboard goes back to its Reply link
@@ -151,21 +150,19 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
   const sorted = useMemo(() => [...notes].sort((a, b) => (a.anchor!.y - b.anchor!.y)), [notes]);
 
   return (
-    <div className="pn">
-      <div className={`pn-bar${dark ? " is-dark" : ""}`}>
-        <span className="dm-frame__lights" aria-hidden><i /><i /><i /></span>
-        <span className="pn-bar__url">{IcLock}<span>{host}</span></span>
-        <span className="pn-bar__end">
-          {src && !failed && !!pageH && !hidden && !draft && (
-            <button type="button" className="pn-bar__toggle" data-pin-note onClick={pinInView}>{t.panel.addNote}</button>
-          )}
-          {notes.length > 0 && (
-            <button type="button" className="pn-bar__toggle" onClick={() => setHidden((h) => !h)} aria-pressed={hidden}>
-              <i className="pn-bar__dot" aria-hidden />{hidden ? t.panel.showNotes : t.panel.hideNotes}<span className="pn-bar__count">{notes.length}</span>
-            </button>
-          )}
-        </span>
+    <div className="pn-wrap">
+      {/* No window around it: the reference is what is looked at. What can be done to it floats in a corner */}
+      <div className="pn-tools">
+        {src && !failed && !!pageH && !hidden && !draft && (
+          <button type="button" className="pn-tools__btn" data-pin-note onClick={pinInView}>{t.panel.addNote}</button>
+        )}
+        {notes.length > 0 && (
+          <button type="button" className="pn-tools__btn" onClick={() => setHidden((h) => !h)} aria-pressed={hidden}>
+            <i className="pn-tools__dot" aria-hidden />{hidden ? t.panel.showNotes : t.panel.hideNotes}<span className="pn-tools__count">{notes.length}</span>
+          </button>
+        )}
       </div>
+      <div className={`pn${fit && !(pageH && pageH > FIT_MAX_H) ? " is-fit" : ""}`}>
 
       {src && !failed ? (
         <div ref={pageRef} className={`pn-page${pageH && !hidden ? " is-pinnable" : ""}${hidden ? " is-hidden-notes" : ""}`} onClick={onPageClick}>
@@ -289,6 +286,7 @@ export default function PageNotes({ src, alt, host, dark, notes, user, canManage
       )}
 
       {src && !failed && !!pageH && !hidden && !draft && <div className="pn-hint" aria-hidden>{t.panel.pinHint}</div>}
+      </div>
     </div>
   );
 }

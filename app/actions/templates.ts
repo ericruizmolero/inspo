@@ -1,15 +1,10 @@
 "use server";
-// Templates: list them, keep a project's system as one, start a project from one, the recipe of a project.
+// Templates: list them, start a project from one, the recipe of a project.
 import { withCtx } from "@/lib/workspace";
-import { deleteTemplate, getRecipe, listTemplates, saveAsTemplate, setRecipe, useTemplate } from "@/lib/templates";
-import type { ProjectTemplate } from "@/types/system";
+import { deleteTemplate, getRecipe, listTemplates, setRecipe, useTemplate } from "@/lib/templates";
 
 export async function loadTemplates() {
   return withCtx(async (ctx) => listTemplates(ctx.workspace.id));
-}
-
-export async function keepAsTemplate(projectId: string, input: { name: string } & Partial<ProjectTemplate>) {
-  return withCtx(async (ctx) => saveAsTemplate(ctx.workspace.id, String(projectId), input, { id: ctx.user.id, name: ctx.user.name }));
 }
 
 export async function startFromTemplate(templateId: string, name: string) {

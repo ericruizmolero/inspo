@@ -1,9 +1,11 @@
 /* Initial state of a workspace with no inspos: a starting point with
    the resource directory at hand, instead of "Nothing here". */
+/* The content area is one fixed screen: each view scrolls inside itself */
+.scroll { position: absolute; inset: 0; overflow-y: auto; }
 .wrap {
   display: flex; flex-direction: column; align-items: center;
   width: 100%; max-width: 920px; margin: 0 auto;
-  padding: clamp(40px, 9vh, 96px) 24px 64px; box-sizing: border-box;
+  padding: clamp(112px, 17vh, 184px) 24px 64px; box-sizing: border-box;
 }
 .head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; max-width: 520px; }
 .title { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); }

@@ -3,6 +3,7 @@
   "template": {
     "from": "https://multiversecomputing.com",
     "to": "https://multiversecomputing.treseiscero.app",
+    "video": "https://screen.studio/share/A3lpf57w",
     "about": "Rediseño a ciegas de la home de una empresa de deep tech para presentar al cliente: su copy y su marca, con un nivel de diseño y de detalle que hoy no tiene. Cinco días y 31 entregas con IA."
   },
   "summary": "Home de una empresa de compresión de modelos de IA, en un solo tema oscuro. Schibsted Grotesk para todo el texto y JetBrains Mono, la de su propia web, para cifras y etiquetas. Un rojo que marca una sola cosa por escena. Ritmo por fondos alternos y hairlines, dos radios y ninguno más. Ilustraciones isométricas dibujadas por código, con material y sin juguete. Y un movimiento que llega y se para: gravedad sin rebotes, nada en bucle, hover solo donde hay acción.",
@@ -82,5 +83,141 @@
         "Un producto «coming soon» en un sitio y «early access» en otro"
       ]
     }
-  }
+  },
+  "board": [
+    {
+      "web": "https://multiversecomputing.com",
+      "name": "Multiverse Computing",
+      "areas": [
+        "voice",
+        "logo",
+        "typography"
+      ],
+      "note": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
+      "source": "original"
+    },
+    {
+      "web": "https://multiversecomputing.treseiscero.app",
+      "name": "Multiverse · rediseño",
+      "areas": [
+        "layout",
+        "color",
+        "motion"
+      ],
+      "note": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
+      "source": "original"
+    },
+    {
+      "file": "board/hero-resultado.png",
+      "name": "Hero del rediseño",
+      "areas": [
+        "typography",
+        "color"
+      ],
+      "note": "El hero terminado: titular en Schibsted, cifras en JetBrains Mono y el rojo solo en lo que actúa.",
+      "source": "original"
+    },
+    {
+      "file": "board/cliente-prensa-quasar.jpg",
+      "name": "Quasar 438B, nota de prensa",
+      "areas": [
+        "logo"
+      ],
+      "note": "Pieza del propio cliente con el isotipo de bandas: de aquí sale la variante de 9 bandas que va impresa en cada ilustración.",
+      "source": "original"
+    },
+    {
+      "file": "board/retrato-pintado.jpg",
+      "name": "Retrato pintado del equipo",
+      "areas": [
+        "imagery"
+      ],
+      "note": "Retrato pintado en los rojos de la marca, sin contorno y con el borde deshecho. Salió de la referencia del retrato de Adriano Olivetti.",
+      "source": "original"
+    },
+    {
+      "file": "board/cliente-mockup-foundry.jpg",
+      "name": "Mockup de Foundry del cliente",
+      "areas": [
+        "imagery"
+      ],
+      "note": "Lo que el cliente tenía: portátil sobre fondo verde, fuera de paleta. Es lo que no se repite; las imágenes pasan a ilustración propia.",
+      "source": "original"
+    },
+    {
+      "web": "https://mistral.ai",
+      "name": "Mistral AI",
+      "areas": [
+        "layout",
+        "imagery"
+      ],
+      "note": "Andoni pasó tres capturas de su sección de bloques: rejilla de celdas unidas y cantos rectos, como una hoja.",
+      "source": "original"
+    },
+    {
+      "web": "https://fonts.google.com/specimen/Schibsted+Grotesk",
+      "name": "Schibsted Grotesk",
+      "areas": [
+        "typography"
+      ],
+      "note": "La fuente de todo el texto, en 400, 500 y 600 con itálica 400. Titulares en caja baja.",
+      "source": "original"
+    },
+    {
+      "web": "https://www.jetbrains.com/lp/mono/",
+      "name": "JetBrains Mono",
+      "areas": [
+        "typography"
+      ],
+      "note": "La mono de la web del propio cliente: para cifras, kickers, etiquetas y specs, con tabular-nums.",
+      "source": "original"
+    },
+    {
+      "web": "https://linear.app",
+      "name": "Linear",
+      "areas": [
+        "color",
+        "layout"
+      ],
+      "note": "Un solo tema oscuro hecho de grises fríos escalonados y hairlines: el mismo ritmo de fondos alternos.",
+      "source": "analysis"
+    },
+    {
+      "web": "https://www.sandboxaq.com",
+      "name": "SandboxAQ",
+      "areas": [
+        "voice",
+        "layout"
+      ],
+      "note": "Deep tech de IA y cuántica contada con cifras y sin épica, el registro que pide el copy.",
+      "source": "analysis"
+    },
+    {
+      "web": "https://www.quantinuum.com",
+      "name": "Quantinuum",
+      "areas": [
+        "voice"
+      ],
+      "note": "Copy técnico de cuántica que se lee: frases de posicionamiento cortas, una idea por bloque.",
+      "source": "analysis"
+    },
+    {
+      "web": "https://gsap.com/docs/v3/Eases/",
+      "name": "GSAP Eases",
+      "areas": [
+        "motion"
+      ],
+      "note": "El visor de curvas: power2.in para lo que cae con gravedad, y lo de debajo que cede 3,2px y vuelve.",
+      "source": "analysis"
+    },
+    {
+      "web": "https://www.ibm.com/design/language/iconography/ui-icons/",
+      "name": "IBM Design Language · iconos",
+      "areas": [
+        "iconography"
+      ],
+      "note": "Iconos con reglas propias de trazo y retícula. Aquí ni eso: cada producto lleva su símbolo real recortado de su logotipo.",
+      "source": "analysis"
+    }
+  ]
 }

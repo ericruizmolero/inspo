@@ -945,15 +945,19 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .tile__action--confirm:disabled { opacity: 0.8; cursor: default; }
 @container (max-width: 240px) { .tile__confirm-text { display: none; } .tile__actions.is-confirm { padding-left: 3px; } }
 .tile__action--md {
-  padding: 0 11px;
-  font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  padding: 0 11px; gap: 6px;
+  font-size: 11.5px; font-weight: 500; white-space: nowrap;
 }
 .tile__action--md.is-ready { background: #fff; color: #0d0d0d; }
 .tile__action--md.is-ready:hover { background: #e9e9e9; }
 .tile__action .spinner { width: 12px; height: 12px; border-width: 1.5px; }
 .tile__dot { width: 5px; height: 5px; border-radius: 50%; background: #2fb35a; }
 
-.tile__action--link { text-decoration: none; }
+.tile__action--link { text-decoration: none; padding: 0 7px; gap: 0; font-size: 11.5px; font-weight: 500; white-space: nowrap; transition: background 0.15s, color 0.15s, gap 0.2s var(--ease-out), padding 0.2s var(--ease-out); }
+/* "See URL" is only an icon until the pointer is on it: then the words slide out beside it */
+.tile__action-reveal { display: inline-block; max-width: 0; overflow: hidden; opacity: 0; transition: max-width 0.22s var(--ease-out), opacity 0.15s; }
+.tile__action--link:hover, .tile__action--link:focus-visible { gap: 5px; padding: 0 10px 0 11px; }
+.tile__action--link:hover .tile__action-reveal, .tile__action--link:focus-visible .tile__action-reveal { max-width: 80px; opacity: 1; }
 .tile__action--cm.has-count { padding: 0 9px 0 8px; gap: 5px; }
 .tile__action-count { font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600; }
 /* The folder: filed cards show in how many projects, like the thread shows its replies */
@@ -2623,72 +2627,27 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 
 .ip-bento {
   flex: 1; min-height: 0; display: grid; gap: 10px; padding: 10px;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  grid-template-areas: "page talk" "tags talk";
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 420px);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "page talk";
 }
 .ip-card {
   min-width: 0; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
   padding: 14px 16px; border-radius: 10px; background: var(--panel); box-shadow: 0 0 0 1px var(--border);
 }
 .ip-card--page { grid-area: page; padding: 0; }
-.ip-card--tags { grid-area: tags; max-height: 232px; overflow-y: auto; overscroll-behavior: contain; }
 .ip-card--talk { grid-area: talk; padding: 0; }
 .ip-card__title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 600; color: var(--text); }
 .ip-card__aside { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--muted); }
 .ip-card__note { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted); }
 .ip-media { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
 
-/* The tags, one strip under the page: the colours as dots, then the tags people added, what the AI read
-   and the field to add one. Any of them filters the library */
-.ip-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.ip-tags__colours { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; }
-.ip-tags__colour {
-  width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
-  box-shadow: inset 0 0 0 1px var(--border-strong); transition: transform 150ms var(--ease-out);
-}
-@media (hover: hover) and (pointer: fine) { .ip-tags__colour:hover { transform: scale(1.15); } }
-.ip-tags__more {
-  height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-2);
-  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
-}
-@media (hover: hover) and (pointer: fine) { .ip-tags__more:hover { background: var(--surface-2); color: var(--text); } }
-
-/* The ones people added wear the post-it's yellow, because a person put them there. Only these have a × */
-.ip-yours__add {
-  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 9px; border-radius: 8px; cursor: text;
-  background: var(--surface-2); color: var(--text);
-}
-.ip-yours__add svg { flex-shrink: 0; color: var(--muted); }
-.ip-yours__add input { width: 112px; padding: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; font-size: 12px; }
-.ip-yours__add input::placeholder { color: var(--muted); }
-.ip-yours__add:focus-within { box-shadow: inset 0 0 0 1.5px var(--text); }
-.ip-yours__tag { display: inline-flex; align-items: center; height: 28px; border-radius: 8px; background: var(--postit); color: var(--postit-ink); --focus-ring: var(--postit-ink); }
-.ip-yours__label { height: 100%; padding: 0 4px 0 9px; border: 0; background: none; color: inherit; font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
-.ip-yours__x { display: grid; place-items: center; width: 24px; height: 100%; padding: 0 4px 0 0; border: 0; background: none; color: inherit; opacity: 0.7; cursor: pointer; }
-.ip-yours__x:hover { opacity: 1; }
-
-/* What the AI read: each facet keeps a pale hue of its own, so the kinds read apart without a label */
-.ip-tag {
-  height: 28px; padding: 0 9px; border: 0; border-radius: 8px; white-space: nowrap; cursor: pointer;
-  background: hsl(var(--h) 60% 95%); color: hsl(var(--h) 45% 26%); font: inherit; font-size: 12px; font-weight: 500;
-  display: inline-flex; align-items: center; transition: background-color 150ms ease;
-}
-.ip-tag.is-static { cursor: default; }
-:root:not([data-theme="light"]) .ip-tag { background: hsl(var(--h) 25% 17%); color: hsl(var(--h) 55% 82%); }
-@media (hover: hover) and (pointer: fine) {
-  .ip-tag:not(.is-static):hover { background: hsl(var(--h) 60% 90%); }
-  :root:not([data-theme="light"]) .ip-tag:not(.is-static):hover { background: hsl(var(--h) 25% 23%); }
-}
-
-/* The conversation is the larger half of the board: what people said comes before the page they said it
-   about. A touch more room and a measure that doesn't run the width of the column */
-.ip-card--talk .cm-panel__head { padding-left: 24px; }
-.ip-card--talk .cm-list { padding: 18px 24px; gap: 16px; }
-.ip-card--talk .cm-msg__body { max-width: 68ch; font-size: 14px; line-height: 1.55; }
-.ip-card--talk .cm-msg.is-original .cm-msg__body { font-size: 15px; text-wrap: pretty; }
-.ip-card--talk .cm-composer { padding: 14px 24px 18px; }
-.ip-card--talk .cm-composer__input { min-height: 64px; font-size: 14px; line-height: 1.5; }
+/* The conversation is a column beside the reference: narrow enough to leave it the room, wide enough to read */
+.ip-card--talk .cm-list { padding: 16px 18px; gap: 16px; }
+.ip-card--talk .cm-msg__body { font-size: 14px; line-height: 1.55; }
+.ip-card--talk .cm-msg.is-original .cm-msg__body { text-wrap: pretty; }
+.ip-card--talk .cm-composer { padding: 12px 16px 14px; }
+.ip-card--talk .cm-composer__input { min-height: 44px; font-size: 14px; line-height: 1.5; }
 
 .ip-body { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); }
 .ip-scroll { flex: 1; min-height: 0; overflow-y: auto; }
@@ -2708,7 +2667,6 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   .ip-card { flex-shrink: 0; }
   .ip-card--page { height: 70svh; }
   .ip-card--talk { height: 70svh; }
-  .ip-card--tags { max-height: none; overflow: visible; }
 }
 @media (prefers-reduced-motion: reduce) {
   .ip { transition: opacity 200ms var(--ease-out); }
@@ -2719,6 +2677,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 :root { --postit: #fde68a; --postit-ink: #3d3206; --postit-wash: 4%; --postit-wash-on: 6%; }
 :root[data-theme="light"] { --postit-wash: 7%; --postit-wash-on: 15%; }
 .pn { position: relative; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; background: var(--bg); }
+/* A browser window's bar: the template's page wears it (TemplatesView) */
 .pn-bar {
   position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px;
   height: 40px; padding: 0 10px 0 14px;
@@ -2733,15 +2692,23 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 }
 .pn-bar.is-dark .pn-bar__url { background: rgba(255,255,255,0.08); }
 .pn-bar__url span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pn-bar__end { display: flex; justify-content: flex-end; min-width: 56px; }
-.pn-bar__toggle {
-  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 8px; border: 0; border-radius: 7px;
-  background: transparent; color: inherit; font: inherit; font-size: 11px; cursor: pointer;
+.pn-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+/* What can be done to the reference, floating in its corner */
+.pn-tools { position: absolute; top: 10px; right: 16px; z-index: 4; display: flex; gap: 6px; }
+.pn-tools__btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 0; border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent); color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 0 0 1px var(--border), var(--shadow-card);
+  transition: color 0.12s;
 }
-.pn-bar__toggle:hover { background: rgba(0,0,0,0.06); }
-.pn-bar.is-dark .pn-bar__toggle:hover { background: rgba(255,255,255,0.08); }
-.pn-bar__dot { width: 9px; height: 9px; border-radius: 2px; background: var(--postit); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
-.pn-bar__count { font-variant-numeric: tabular-nums; opacity: 0.7; }
+@media (hover: hover) { .pn-tools__btn:hover { color: var(--text); } }
+.pn-tools__dot { width: 9px; height: 9px; border-radius: 2px; background: var(--postit); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); }
+.pn-tools__count { font-variant-numeric: tabular-nums; opacity: 0.7; }
+/* An image is shown whole, centred in the card at the size it allows (the auto margins give way when it overflows) */
+.pn.is-fit { container-type: size; display: flex; flex-direction: column; }
+.pn.is-fit .pn-page { margin: auto; width: fit-content; min-height: 0; }
+.pn.is-fit .pn-page:has(.shimmer) { width: calc(100% - 40px); min-height: 240px; }
+.pn.is-fit .pn-page img { width: auto; max-width: calc(100cqw - 40px); max-height: calc(100cqh - 40px); border-radius: 6px; }
 .pn-page { position: relative; min-height: 240px; }
 .pn-page.is-pinnable { cursor: crosshair; }
 .pn-page img { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; user-select: none; -webkit-user-drag: none; }
@@ -2927,6 +2894,8 @@ button.postit__num { cursor: pointer; }
 .sysn-core__state { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sysn-core__state b { font-weight: 550; color: var(--text); }
 .sysn-core__ring { flex-shrink: 0; color: var(--text); } .sysn-core__ring circle { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; transition: stroke-dasharray 0.6s var(--ease-out); } .sysn-core__ring circle:first-child { opacity: 0.18; }
+/* All of it decided: the ring turns green, like the one on the project's tab */
+.sysn-core__ring.is-full { color: var(--success); }
 /* Soft, borderless buttons; the file is one chip in two halves: its name copies it, the arrow downloads it */
 .sysn-core__actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 2px; }
 .sysn-core__actions .btn { font-size: 12.5px; padding: 0 12px; } .sysn-core__actions .btn svg { width: 14px; height: 14px; }
@@ -3013,7 +2982,6 @@ button.postit__num { cursor: pointer; }
 .sysv-chips { display: flex; flex-wrap: wrap; gap: 4px; } .sysv-chip { font-size: 11px; color: var(--muted); padding: 2px 8px; border-radius: 999px; background: var(--surface-2); } .sysv-chip b { color: var(--text-2); font-weight: 500; }
 .sysv-radii { display: flex; flex-wrap: wrap; gap: 10px; } .sysv-radius { display: flex; flex-direction: column; align-items: center; gap: 3px; } .sysv-radius i { width: 40px; height: 40px; border: 1.5px solid var(--text); } .sysv-radius small { font-family: var(--font-mono); font-size: 9px; color: var(--muted); }
 .sysv-motion { display: flex; flex-direction: column; gap: 8px; } .sysv-motion__curve { width: 100%; max-width: 220px; height: auto; } .sysv-motion__diag { stroke: var(--border-strong); stroke-dasharray: 3 4; } .sysv-motion__path { fill: none; stroke: var(--text); stroke-width: 2; } .sysv-motion__handle { fill: var(--muted); }
-.sysv-motion__track { position: relative; height: 10px; } .sysv-motion__track i { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--text); animation-name: sysv-move; animation-iteration-count: infinite; animation-direction: alternate; }
 @keyframes sysv-move { from { left: 0; } to { left: calc(100% - 10px); } }
 .sysv-motion__label { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
 .sysv-mosaic { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; } .sysv-mosaic img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; border-radius: 8px; display: block; background: var(--surface-2); }
@@ -3053,22 +3021,39 @@ button.postit__num { cursor: pointer; }
 .tile__proposal-areas button { display: inline-flex; align-items: center; gap: 4px; padding-left: 6px; }
 .sysn-node__n { font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sysn-node.is-open .sysn-node__n { color: var(--text); }
-/* What are you making? The first screen inside a workspace */
-.chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: 120px 24px 120px; background: var(--bg);
+/* What are you making? The first screen inside a workspace: a title, one box, and the projects as pictures */
+.chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: clamp(96px, 18vh, 200px) 24px 120px; background: var(--bg);
   background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 7%, transparent) 1px, transparent 0); background-size: 24px 24px; }
-.chooser__inner { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 18px; align-items: flex-start; }
-.chooser__title { margin: 0; font-size: clamp(32px, 4vw, 48px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
-.chooser__lead { margin: 0; font-size: 15px; line-height: 1.55; color: var(--text-2); max-width: 540px; }
-.chooser__new { display: flex; gap: 8px; width: 100%; } .chooser__input { flex: 1; }
-.chooser__list { display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 18px; }
-.chooser__section { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.chooser__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-.chooser__card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-align: left; cursor: pointer; transition: border-color 0.15s, transform 0.15s var(--ease-out); }
-.chooser__card:hover { border-color: var(--text); transform: translateY(-1px); }
-.chooser__card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; }
-.chooser__card-name { font-size: 15px; font-weight: 500; } .chooser__card-meta { font-size: 11px; color: var(--muted); }
-.chooser__card-summary { font-size: 12px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.chooser__library { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 13px; cursor: pointer; } .chooser__library:hover { color: var(--text); }
+.chooser__inner { width: 100%; max-width: 880px; height: max-content; display: flex; flex-direction: column; align-items: center; }
+.chooser__title { margin: 0; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); text-align: center; }
+/* One raised box: the name, and under it (once there is a name) how it should feel */
+.chooser__box { position: relative; width: 100%; max-width: 600px; margin-top: 32px; border-radius: 20px; background: var(--surface); box-shadow: var(--shadow-card); transition: background 0.15s, box-shadow 0.15s; }
+.chooser__box:focus-within { background: var(--surface-2); box-shadow: var(--shadow-card), 0 0 0 1px var(--border-strong); }
+.chooser__name { display: block; width: 100%; height: 60px; padding: 0 64px 0 22px; border: 0; background: transparent; outline: none; color: var(--text); font: inherit; font-size: 17px; }
+.chooser__name::placeholder, .chooser__about::placeholder { color: var(--muted); }
+.chooser__more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s var(--ease-out); }
+.chooser__more.is-open { grid-template-rows: 1fr; }
+.chooser__more-inner { min-height: 0; overflow: hidden; visibility: hidden; opacity: 0; transition: opacity 0.2s, visibility 0s 0.3s; }
+.chooser__more.is-open .chooser__more-inner { visibility: visible; opacity: 1; transition: opacity 0.25s 0.05s, visibility 0s; }
+.chooser__about { display: block; width: 100%; padding: 0 22px 18px; border: 0; background: transparent; outline: none; resize: none; field-sizing: content; min-height: calc(1.5em + 18px); max-height: 30vh; box-sizing: border-box; color: var(--text-2); font: inherit; font-size: 14px; line-height: 1.5; }
+.chooser__send { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--text); color: var(--bg); cursor: pointer; transition: opacity 0.15s, transform 0.1s; }
+.chooser__send:active { transform: scale(0.96); }
+.chooser__send:disabled { opacity: 0.2; cursor: default; transform: none; }
+/* The projects: no frame, the pictures are the card */
+.chooser__grid { width: 100%; margin-top: clamp(56px, 9vh, 96px); display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 28px 16px; }
+.chooser__card { display: flex; flex-direction: column; align-items: stretch; gap: 4px; min-width: 0; padding: 0; border: 0; background: none; color: var(--text); text-align: left; cursor: pointer; }
+/* The cover is the board in small: cards placed by the component, in hundredths of the cover */
+.chooser__cover { position: relative; display: block; width: 100%; aspect-ratio: 16 / 10; margin-bottom: 8px; border-radius: 14px; overflow: hidden; background: var(--surface); color: var(--muted); font-size: 28px; font-weight: 500; transition: transform 0.25s var(--ease-out), box-shadow 0.25s; }
+.chooser__cover[data-n="0"] { display: grid; place-items: center; }
+.chooser__shot { position: absolute; border-radius: 4px; overflow: hidden; background: var(--surface-2); }
+.chooser__shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+@media (hover: hover) { .chooser__card:hover .chooser__cover { transform: translateY(-2px); box-shadow: var(--shadow-card); } }
+.chooser__card:focus-visible { outline: none; } .chooser__card:focus-visible .chooser__cover { box-shadow: 0 0 0 2px var(--text); }
+.chooser__card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 2px; }
+.chooser__card-name { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chooser__card-meta { padding: 0 2px; font-size: 12.5px; color: var(--muted); }
+@media (max-width: 560px) { .chooser { padding-left: 16px; padding-right: 16px; } .chooser__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .chooser__more, .chooser__more-inner, .chooser__cover, .chooser__send { transition: none; } }
 /* Organise the Inbox */
 .modal--triage { max-width: 960px; height: min(820px, 100dvh - 40px); display: flex; flex-direction: column; }
 .triage { gap: 22px; }
@@ -3088,7 +3073,6 @@ button.postit__num { cursor: pointer; }
 .triage__chip.is-on { background: var(--text); color: var(--bg); }
 .triage__select { height: 32px; font-size: 12px; }
 @media (max-width: 720px) { .triage__row { grid-template-columns: auto 1fr; } .triage__select { grid-column: 1 / -1; } }
-.chooser__new { flex-wrap: wrap; } .chooser__about { flex-basis: 100%; height: auto; min-height: 60px; padding: 10px 12px; font-size: 14px; line-height: 1.45; resize: vertical; } .chooser__go { margin-left: auto; }
 /* Organising the Inbox: the model's proposal sits on the card; one click files it */
 .tile__proposal { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 4; display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 8px; border-radius: 12px; background: rgba(12,12,11,0.88); backdrop-filter: blur(10px); color: #f2f2ef; box-shadow: 0 8px 24px -8px rgba(0,0,0,0.6); font-size: 12px; cursor: default; }
 .tile__proposal-row { display: flex; align-items: center; gap: 6px; }
@@ -3099,23 +3083,6 @@ button.postit__num { cursor: pointer; }
 .tile__proposal-why { margin: 0; color: #b6b6b1; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tile__proposal-areas { display: flex; flex-wrap: wrap; gap: 3px; }
 .tile__proposal-areas button { height: 20px; padding: 0 7px; border-radius: 999px; border: 1px solid rgba(255,255,250,0.14); background: transparent; color: #b6b6b1; font: inherit; font-size: 11px; cursor: pointer; }
-/* The results of a search in the system view: a row to open from, in the dock's glass */
-.dock__results {
-  width: 100%; box-sizing: border-box; margin: 0; padding: 10px; list-style: none; border-radius: 18px;
-  display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
-  background: var(--dock-surface); border: 1px solid var(--dock-line);
-  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur); box-shadow: var(--dock-shadow);
-  transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
-  @starting-style { opacity: 0; transform: translateY(6px); }
-}
-.dock__results::-webkit-scrollbar { display: none; }
-.dock__results li { flex: none; }
-.dock__result { display: flex; flex-direction: column; gap: 6px; width: 116px; padding: 0; border: 0; background: none; color: var(--dock-ink-2); font: inherit; font-size: 12px; line-height: 1.3; text-align: left; cursor: pointer; }
-.dock__result-thumb { display: grid; place-items: center; width: 116px; height: 74px; border-radius: 10px; overflow: hidden; background: var(--dock-fill); color: var(--dock-muted); font-size: 14px; transition: transform 0.2s var(--ease-out); }
-.dock__result-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.dock__result-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.dock__result:hover, .dock__result:focus-visible { color: var(--dock-ink); outline: none; }
-.dock__result:hover .dock__result-thumb, .dock__result:focus-visible .dock__result-thumb { transform: translateY(-2px); }
 .tile__proposal-areas button.is-on { background: #f2f2ef; color: #0e0e0d; border-color: #f2f2ef; }
 .tile--proposed .tile__score { display: none; }
 
@@ -3247,3 +3214,88 @@ button.postit__num { cursor: pointer; }
   background: var(--dock-ink); color: #111110; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
 }
 .island__new-go:disabled { opacity: 0.4; cursor: default; }
+
+/* The folder button in two steps (components/ProjectPicker.tsx): the project, then its areas */
+.pp--steps { width: 280px; }
+.pp-proj .ws__item-name { flex: 1; min-width: 0; }
+.pp-proj__areas { display: inline-flex; align-items: center; gap: 2px; color: var(--text-2); }
+.pp-proj__areas i { display: inline-flex; } .pp-proj__areas b { font-size: 11px; font-weight: 450; color: var(--muted); margin-left: 2px; }
+.pp-step__chev { display: inline-flex; color: var(--muted); transform: rotate(-90deg); } .pp-step__chev svg { width: 12px; height: 12px; }
+.pp-step__chev.is-back { transform: rotate(90deg); }
+.pp-step { display: flex; flex-direction: column; gap: 8px; padding: 2px; animation: pp-step-in 0.18s var(--ease-out); }
+@keyframes pp-step-in { from { opacity: 0; transform: translateX(10px); } }
+.pp-step__back { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: 13.5px; font-weight: 550; cursor: pointer; text-align: left; }
+.pp-step__back:hover { background: var(--surface-2); }
+.pp-step__title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pp-in { display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
+.pp-in__text { flex: 1; }
+.pp-in__switch { position: relative; width: 30px; height: 18px; border-radius: 999px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background 0.18s; }
+.pp-in__switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: transform 0.18s var(--ease-out); }
+.pp-in.is-on { color: var(--text); } .pp-in.is-on .pp-in__switch { background: var(--success); } .pp-in.is-on .pp-in__switch::after { transform: translateX(12px); background: #fff; }
+.pp-step__ask { margin: 4px 4px 0; font-size: 12px; color: var(--muted); }
+.pp-areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.pp-area { display: flex; align-items: center; gap: 8px; min-width: 0; height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12.5px; cursor: pointer; text-align: left; transition: background 0.15s, color 0.15s, transform 0.12s var(--ease-out); }
+.pp-area:hover { color: var(--text); background: color-mix(in srgb, var(--text) 12%, var(--surface-2)); }
+.pp-area:active { transform: scale(0.97); }
+.pp-area__icon { flex-shrink: 0; display: inline-flex; } .pp-area__icon svg { width: 15px; height: 15px; }
+.pp-area__name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pp-area.is-on { background: var(--text); color: var(--bg); }
+.pp-step__done { height: 34px; margin-top: 2px; border: 0; border-radius: 10px; background: var(--text); color: var(--bg); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+
+/* The card's main actions, bottom left and labelled (components/InspoCard.tsx): filing it, white, the one that
+   stands out; the areas of the system beside it inside a project; then the thread. The quieter ones stay up top */
+.tile__go {
+  position: absolute; left: 10px; bottom: 10px; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tile:hover .tile__go, .tile__go.is-visible, .tile__go:focus-within { opacity: 1; transform: none; }
+.tile__go-btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border: 0; border-radius: 999px;
+  font: inherit; font-size: 12.5px; font-weight: 500; white-space: nowrap; cursor: pointer;
+  color: #fff; background: rgba(10,10,10,0.62);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5);
+  transition: background 0.15s, color 0.15s, transform 0.12s var(--ease-out);
+}
+.tile__go-btn:hover { background: rgba(10,10,10,0.78); }
+.tile__go-btn:active { transform: scale(0.97); }
+.tile__go-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.tile__go-btn--file { background: #fff; color: #0d0d0d; box-shadow: 0 6px 20px -6px rgba(0,0,0,0.5); }
+.tile__go-btn--file:hover { background: #ececec; }
+.tile__go-btn--file.is-filed { background: #fff; }
+.tile__go-btn--icon { width: 32px; padding: 0; justify-content: center; }
+.tile__go-btn--icon .tile__action-count { display: none; }
+.tile__go-btn--icon.is-filed { color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.5), 0 6px 20px -6px rgba(0,0,0,0.5); }
+.tile__go-label { font-variant-numeric: tabular-nums; }
+@container (max-width: 240px) { .tile__go-btn--file .tile__go-label { display: none; } .tile__go-btn--file { width: 32px; padding: 0; justify-content: center; } }
+@media (hover: none) { .tile__go { display: none; } }
+
+/* ─── Light theme: the bars are light glass, not the dark one. On a light page a dark slab reads as a hole;
+   here the island, the actions pill, the search dock and the zoom pill are frosted white over the board,
+   dark ink, a hairline and a soft shadow that lifts them. The menus that hang from them are almost solid. ─── */
+:root[data-theme="light"] {
+  --dock-ink: #111110; --dock-ink-2: #45453f; --dock-muted: #77776f;
+  --dock-surface: rgba(255, 255, 255, 0.72);
+  --dock-surface-pop: rgba(255, 255, 255, 0.96);
+  --dock-hover: rgba(0, 0, 0, 0.045);
+  --dock-chip: rgba(0, 0, 0, 0.07);
+  --dock-fill: rgba(0, 0, 0, 0.06);
+  --dock-line: rgba(0, 0, 0, 0.08);
+  --dock-danger: #c23a30;
+  --dock-shadow: 0 10px 30px -12px rgba(30, 30, 20, 0.22), 0 1px 3px rgba(30, 30, 20, 0.08);
+  --dock-blur: blur(24px) saturate(1.6);
+}
+:root[data-theme="light"] :is(.island, .board-zoom, .shell:not(.shell--docked) .topbar__actions) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 1px var(--dock-line), var(--dock-shadow);
+}
+:root[data-theme="light"] .sb--dock .sb__field,
+:root[data-theme="light"] .sb--dock .sb__field:hover {
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 40px -14px rgba(30, 30, 20, 0.25), 0 1px 3px rgba(30, 30, 20, 0.08);
+}
+:root[data-theme="light"] .sb--dock:focus-within .sb__field {
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 40px -14px rgba(30, 30, 20, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.06);
+}

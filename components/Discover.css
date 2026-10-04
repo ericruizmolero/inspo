@@ -1,0 +1,33 @@
+/* ─── Discover (components/Discover.tsx): the directory as a list, group by group, with its shelves and kinds on top ─── */
+.disc-card__new { flex-shrink: 0; padding: 2px 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--bg); background: var(--text); }
+.disc__bar { position: absolute; left: 20px; right: 20px; top: 72px; z-index: 6; display: flex; align-items: center; gap: 12px; min-width: 0; pointer-events: none; }
+.disc__bar > * { pointer-events: auto; }
+.disc__shelves { flex-shrink: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.disc__shelves .tt-mode { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.disc__shelves .tt-mode b { font-weight: 450; color: var(--muted); }
+.disc__group svg { width: 11px; height: 11px; margin-left: 2px; }
+.disc__group { flex-shrink: 0; display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--text-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.disc__group:hover { color: var(--text); background: var(--surface-2); }
+.disc__group.is-on { background: var(--text); color: var(--bg); }
+/* Discover as a list: the directory group by group */
+.disc-list { position: absolute; inset: 0; overflow-y: auto; padding: 232px 28px 72px; background: var(--bg); }
+.disc-list__group { max-width: 1100px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
+.disc-list__head h2 { margin: 0; font-size: 17px; font-weight: 550; color: var(--text); }
+.disc-list__head p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+.disc-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.disc-rows li { border-bottom: 1px solid var(--border); }
+.disc-row { display: flex; align-items: baseline; gap: 12px; min-width: 0; padding: 11px 4px; color: var(--text-2); text-decoration: none; font-size: 13.5px; transition: background 0.15s, color 0.15s; }
+.disc-row:hover { background: var(--surface); color: var(--text); }
+.disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 550; color: var(--text); }
+.disc-row .disc-card__new { align-self: center; margin-left: -6px; }
+.disc-row__text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--muted); }
+.disc-row:hover .disc-row__text { color: var(--text-2); }
+.disc-row__host { flex-shrink: 0; font-size: 12.5px; color: var(--muted); }
+@media (max-width: 700px) { .disc-row { flex-wrap: wrap; gap: 4px 10px; } .disc-row__name { flex-basis: auto; } .disc-row__text { flex-basis: 100%; order: 3; white-space: normal; } }
+.disc-list__none { margin: 0 auto; max-width: 1320px; font-size: 13px; color: var(--muted); }
+
+/* Resources or templates: the first choice on the bar; with templates open their page sits below it */
+.disc__sections { flex-shrink: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.tpls:has(+ .disc__bar) { padding-top: 232px; }
+/* An open template is a page of its own: it starts right under the bar, without the air the lists keep on top */
+.tpls:has(.tpls-back), .tpls:has(.tpls-back):has(+ .disc__bar) { padding-top: 132px; }

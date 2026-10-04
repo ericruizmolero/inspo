@@ -7,7 +7,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import gsap from "gsap";
 import type { CommentMap, InspoItem, Project, TagMap } from "@/types/inspo";
 import { BRIEF_KEYS, type DesignSpec } from "@/types/design";
-import { AUDIENCES, BOARD_TARGET, BRIEF_TEXT_MAX, EMPTY_POLISH, TAKES, WHY_NOTE_MAX, gapsOf, pendingOf, type Audience, type Duel, type DupeGroup, type Light, type OffTone, type PolishBrief, type PolishState, type Take } from "@/types/polish";
+import { AUDIENCES, BOARD_TARGET, EMPTY_POLISH, TAKES, WHY_NOTE_MAX, gapsOf, pendingOf, type Audience, type Duel, type DupeGroup, type Light, type OffTone, type PolishBrief, type PolishState, type Take } from "@/types/polish";
 import { SECTORS, STYLES } from "@/lib/taxonomy";
 import { loadPolish, savePolishBrief, decidePolish, mergePolish, savePolishWhy } from "@/app/actions/polish";
 import { useT } from "./I18nProvider";
@@ -531,14 +531,12 @@ function Deck({ cards, done, tally, boardSize, noWhy, onSkipWhys, byId, imageOf,
   );
 }
 
-function Counter({ value, sample, onFill }: { value: string; sample?: string; onFill?: (text: string) => void }) {
-  const { t } = useT();
+/** Development only: fills the field with a sample. The brief's fields have no length limit to count against. */
+function Counter({ sample, onFill }: { value: string; sample?: string; onFill?: (text: string) => void }) {
+  if (!DEV_SAMPLES || !sample || !onFill) return null;
   return (
     <span className="polish-counter">
-      {DEV_SAMPLES && sample && onFill && (
-        <button type="button" className="polish-counter__fill" onClick={() => onFill(sample)}>Rellenar (dev)</button>
-      )}
-      {t.polish.counter(value.length, BRIEF_TEXT_MAX)}
+      <button type="button" className="polish-counter__fill" onClick={() => onFill(sample)}>Rellenar (dev)</button>
     </span>
   );
 }
@@ -714,7 +712,7 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
                 </div>
                 <div className="field">
                   <label className="field__label" htmlFor="polish-about">{t.polish.aboutLabel}</label>
-                  <textarea id="polish-about" className="input polish-text" rows={4} maxLength={BRIEF_TEXT_MAX} value={draft.about}
+                  <textarea id="polish-about" className="input polish-text" rows={4} value={draft.about}
                     placeholder={t.polish.aboutPlaceholder} onChange={(e) => patch({ about: e.target.value })} />
                   <Counter value={draft.about} sample={DEV_SAMPLES?.about} onFill={(about) => patch({ about })} />
                 </div>
@@ -734,7 +732,7 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
                 </div>
                 <div className="field">
                   <label className="field__label" htmlFor="polish-audience">{t.polish.audienceNoteLabel}</label>
-                  <textarea id="polish-audience" className="input polish-text" rows={3} maxLength={BRIEF_TEXT_MAX} value={draft.audienceNote}
+                  <textarea id="polish-audience" className="input polish-text" rows={3} value={draft.audienceNote}
                     placeholder={t.polish.audienceNotePlaceholder} onChange={(e) => patch({ audienceNote: e.target.value })} />
                   <Counter value={draft.audienceNote} sample={DEV_SAMPLES?.audienceNote} onFill={(audienceNote) => patch({ audienceNote })} />
                 </div>
@@ -800,7 +798,7 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
                 </div>
                 <div className="field">
                   <label className="field__label" htmlFor="polish-avoid">{t.polish.avoidNoteLabel}</label>
-                  <textarea id="polish-avoid" className="input polish-text" rows={3} maxLength={BRIEF_TEXT_MAX} value={draft.avoid}
+                  <textarea id="polish-avoid" className="input polish-text" rows={3} value={draft.avoid}
                     placeholder={t.polish.avoidNotePlaceholder} onChange={(e) => patch({ avoid: e.target.value })} />
                   <Counter value={draft.avoid} sample={DEV_SAMPLES?.avoid} onFill={(avoid) => patch({ avoid })} />
                 </div>
@@ -817,7 +815,7 @@ export default function PolishModal({ project, board, library, tagMap, imageOf, 
                   ))}
                 </div>
                 <div className="field">
-                  <textarea id="polish-seconds" className="input polish-text" rows={5} maxLength={BRIEF_TEXT_MAX} value={draft.firstSeconds}
+                  <textarea id="polish-seconds" className="input polish-text" rows={5} value={draft.firstSeconds}
                     aria-label={t.polish.secondsLabel} placeholder={t.polish.secondsPlaceholder} onChange={(e) => patch({ firstSeconds: e.target.value })} />
                   <Counter value={draft.firstSeconds} sample={DEV_SAMPLES?.firstSeconds} onFill={(firstSeconds) => patch({ firstSeconds })} />
                 </div>

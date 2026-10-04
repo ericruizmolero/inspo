@@ -1,0 +1,2 @@
+ALTER TABLE "system_area_comment" DROP CONSTRAINT "system_area_comment_area_check";--> statement-breakpoint
+ALTER TABLE "system_area_comment" ADD CONSTRAINT "system_area_comment_area_check" CHECK ("system_area_comment"."area" in ('typography', 'color', 'layout', 'motion', 'iconography', 'logo', 'imagery', 'voice', 'head', 'project', 'summary', 'refs'));

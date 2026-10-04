@@ -71,7 +71,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
       <span className="island__new-title">{t.projects.newProject}</span>
       <input autoFocus value={name} maxLength={60} disabled={busy} placeholder={t.projects.namePlaceholder} aria-label={t.projects.namePlaceholder}
         onChange={(e) => setName(e.target.value)} />
-      <textarea rows={3} value={about} maxLength={500} disabled={busy} placeholder={t.projects.aboutPlaceholder} aria-label={t.projects.aboutPlaceholder}
+      <textarea rows={3} value={about} disabled={busy} placeholder={t.projects.aboutPlaceholder} aria-label={t.projects.aboutPlaceholder}
         onChange={(e) => setAbout(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void submit(); } }} />
       <div className="island__new-foot">
@@ -173,8 +173,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: projects.filter((p) => keep.has(p.id)), hidden: order.filter((p) => !keep.has(p.id)) };
   }, [projects, order, fit]);
 
-  // The library is one tab: everything saved. What isn't in a project yet is a view of it (the right-hand pill)
-  const inLibrary = space === "all" || space === "inbox" || space === "templates";
+  // No library tab: everything lives in a project. Discover holds the directory and the templates
+  const inDiscover = space === "discover" || space === "templates";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
     if (!p) return;
@@ -262,8 +262,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
       <span className="island__sep" aria-hidden />
 
       <nav className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
-        <a href={hrefOf("all")} className={`island__tab${inLibrary ? " is-on" : ""}`} aria-current={inLibrary ? "page" : undefined} data-fixed onClick={go("all")}>
-          {label(t.sidebar.library, counts.all)}
+        {/* Discover opens on its templates; the places to look are one tab away */}
+        <a href={hrefOf("templates")} className={`island__tab${inDiscover ? " is-on" : ""}`} aria-current={inDiscover ? "page" : undefined} data-fixed onClick={go("templates")}>
+          <span className="island__label">{t.sidebar.discover}</span>
         </a>
         {shown.map((p) => naming === p.id ? (
           <NameTab key={p.id} initial={p.name} onCancel={() => setNaming(null)}

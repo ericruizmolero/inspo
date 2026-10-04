@@ -84,11 +84,28 @@ export interface ProjectSystem {
   /** Always the eight, in SYSTEM_AREAS order */
   areas: SystemAreaState[];
   run: SystemRun | null;
+  /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>") */
+  doc?: Record<string, string>;
   /** ISO; null when nothing was ever written */
   updatedAt: string | null;
 }
 
-export const DECISION_MAX = 600;
+/** The parts of criterio.md that can be rewritten by hand over what the app writes */
+// "skills": the skills switched on for criterio.md, comma separated (lib/md-skills.ts)
+/** What a pass of the model asked for by hand can be told to do (the "Improve with AI" dialog) */
+export const IMPROVE_AIMS = ["order", "copy", "refs"] as const;
+export type ImproveAim = (typeof IMPROVE_AIMS)[number];
+export const IMPROVE_NOTE_MAX = 400;
+/** The scope of a pass asked for by hand: what to work on, in which areas, and anything the team adds in words */
+export interface SystemFocus { aims: ImproveAim[]; areas: SystemArea[]; note?: string }
+
+export const DOC_PARTS = ["head", "refs", "skills", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
+export const DOC_PART_MAX = 60_000;
+
+/** A decision a person writes can run to a few paragraphs (it is typed in the file, with line breaks) */
+export const DECISION_MAX = 2000;
+/** A decision's text as it is kept: its own line breaks stay (a paragraph is a paragraph), the rest of the white space is tidied */
+export const cleanDecision = (v: unknown) => String(v ?? "").replace(/\r/g, "").replace(/[^\S\n]+/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, DECISION_MAX);
 /** The never list of an area, all its lines together */
 export const NEVER_MAX = 800;
 
@@ -126,6 +143,8 @@ export interface ProjectTemplate {
   to: string;
   /** What it is, in a sentence */
   about: string;
+  /** A recording of the result (a Screen Studio share, a video file): its thumbnail plays it on hover */
+  video?: string;
 }
 export const RECIPE_MAX = 200_000;
 

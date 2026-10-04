@@ -1,0 +1,51 @@
+/* The bento's two readings (components/SystemBento.tsx): how the project talks, in a band with the latest
+   changes beside it, and under them how it looks, the seven visual areas. Voice left the grid for the band. */
+.sysb-top { display: flex; gap: 12px; min-width: 0; align-items: stretch; }
+.sysb-says { flex: 1; min-width: 0; }
+.sysb-says__cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 6px 28px; }
+.sysb-says__col { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.sysb-says__k { font-size: 12px; color: var(--muted); }
+.sysb-says__col p, .sysb-says__col ul { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--text); }
+.sysb-says__col p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.sysb-says__col p.sysb-says__lead { color: var(--text-2); }
+.sysb-says__col p.is-quiet { color: var(--muted); }
+.sysb-says__col ul { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.sysb-says__col li { display: flex; gap: 8px; align-items: baseline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sysb-says__col li::before { content: ""; flex-shrink: 0; width: 8px; height: 1.5px; border-radius: 1px; background: var(--muted); transform: translateY(-4px); }
+
+.sysb-changes { flex: 0 0 min(380px, 32%); min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 14px 8px 8px; border-radius: 18px; background: var(--surface); }
+.sysb-changes > .sysb-tile__head { padding: 0 8px; }
+.sysb-changes__empty { margin: 0; padding: 0 8px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+.sysb-changes__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; flex: 1; min-height: 0; max-height: 96px; overflow-y: auto; }
+.sysb-change { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 30px; padding: 4px 8px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.sysb-change:hover, .sysb-change:focus-visible { background: var(--surface-2); color: var(--text); outline: none; }
+.sysb-change .cm-avatar { flex-shrink: 0; }
+.sysb-change__agent { flex-shrink: 0; display: grid; place-items: center; width: 18px; height: 18px; color: var(--muted); } .sysb-change__agent svg { width: 13px; height: 13px; }
+.sysb-change__text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sysb-change__text b { font-weight: 550; color: var(--text); }
+.sysb-change__text i { font-style: normal; color: var(--muted); }
+.sysb-change time { flex-shrink: 0; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* The rule over the tiles */
+.sysb-rule { margin: 2px 0 -4px; font-size: 12px; color: var(--muted); }
+
+/* Seven tiles: what Voice left goes to Logo and Iconography */
+.sysb-grid.sysb-grid--visual {
+  grid-template-areas:
+    "typography typography typography color  color  color"
+    "typography typography typography layout layout imagery"
+    "motion     motion     logo       logo   iconography iconography";
+}
+@media (max-width: 1180px) {
+  .sysb-grid.sysb-grid--visual { grid-template-areas: "typography typography color color" "typography typography layout imagery" "motion motion logo iconography"; }
+  .sysb-says__cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .sysb-says__col--never { display: none; }
+}
+/* Fitted to the screen while it is tall enough; a short window scrolls instead of crushing the tiles. 840px is
+   the header, the band and three rows at the least height their material can be read at (184px) */
+@media (min-width: 801px) { .sysb-inner.is-fit:has(.sysb-grid--visual) { height: max(100%, 840px); } }
+@media (max-width: 800px) { .sysb-top { flex-direction: column; } .sysb-changes { flex-basis: auto; } .sysb-says__cols { grid-template-columns: minmax(0, 1fr); } }
+
+/* Who is talking about an area, on its tile */
+.sysb-faces { display: inline-flex; align-items: center; flex-shrink: 0; }
+.sysb-faces .cm-avatar + .cm-avatar { margin-left: -5px; box-shadow: 0 0 0 2px var(--surface); }
+.sysb-faces b { margin-left: 5px; font-size: 11.5px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }

@@ -1,10 +1,13 @@
 "use client";
-// A project with nothing in it yet: the same prompt box as the first-run screen (a pasted URL is saved
-// and filed here), and under it the references already in the library, to pick and bring in at once.
+// A project with nothing in it yet: the same prompt box as the first-run screen (a pasted link, be it a
+// site, a video or a post, is saved and filed here; an image is chosen, dropped anywhere or pasted with ⌘V),
+// and under it the references already in the library, to pick and bring in at once. Under the name, the
+// project in a sentence: written here, it is the brief's intention (what the system reads the board against).
 // The Inbox comes first: filling a project is how the Inbox gets emptied.
 import { useMemo, useRef, useEffect, useState } from "react";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import { normalizeWebUrl } from "@/lib/url";
+import { normalizeWebUrl, readableDomain } from "@/lib/url";
+import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import { cachedCardImage } from "./InspoCard";
@@ -28,11 +31,15 @@ function Thumb({ item, image }: { item: InspoItem; image: string | null }) {
   );
 }
 
+const IconImage = (
+  <svg width="18" height="18" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
+);
+
 function hostOf(web: string): string {
-  try { return new URL(web).hostname.replace(/^www\./, ""); } catch { return web; }
+  try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return web; }
 }
 
-export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onFile }: {
+export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile }: {
   project: Project;
   /** The whole library, newest first */
   items: InspoItem[];
@@ -41,6 +48,10 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   imageOf: (item: InspoItem) => string | null;
   /** Saves (or, already saved, files) the URL in this project. Resolves when done. */
   onAddUrl: (web: string) => Promise<void>;
+  /** Uploads the images and files them in this project. Resolves when done. */
+  onUpload: (files: File[]) => Promise<void>;
+  /** Saves what the project is (the brief's sentence). Throws when it could not be saved. */
+  onDescribe: (about: string) => Promise<void>;
   onFile: (items: InspoItem[]) => Promise<void>;
 }) {
   const { t } = useT();
@@ -49,7 +60,12 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   const [busy, setBusy] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(() => new Set());
   const [shown, setShown] = useState(PAGE);
+  const [dragging, setDragging] = useState(false);
+  const [about, setAbout] = useState(project.intent ?? "");
+  const [described, setDescribed] = useState(false);
+  const [writing, setWriting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const inbox = useMemo(() => items.filter((i) => i.id && !links[i.id]?.length), [items, links]);
@@ -64,6 +80,33 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
     setBusy(true);
     try { await onAddUrl(web); setRaw(""); } finally { setBusy(false); }
   };
+  // Saved on leaving the field (Enter leaves it): nothing to press
+  const describe = async () => {
+    const next = about.trim();
+    if (next === (project.intent ?? "")) return;
+    try { await onDescribe(next); setError(""); setDescribed(true); setTimeout(() => setDescribed(false), 2000); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+  };
+  const upload = async (files: File[]) => {
+    if (busy || !files.length) return;
+    const images = files.filter(isMediaFile);
+    if (!images.length) { setError(t.errors.imagesOnly); return; }
+    setError(""); setBusy(true);
+    try { await onUpload(images); } finally { setBusy(false); if (fileRef.current) fileRef.current.value = ""; }
+  };
+  // ⌘V with an image on the clipboard uploads it (a pasted link still goes to the field)
+  const onPaste = (e: React.ClipboardEvent) => {
+    const f = mediaFileFrom(e.clipboardData);
+    if (f) { e.preventDefault(); void upload([f]); }
+  };
+  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes("Files");
+  const onDragOver = (e: React.DragEvent) => { if (hasFiles(e)) { e.preventDefault(); setDragging(true); } };
+  const onDragLeave = (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDragging(false); };
+  const onDrop = (e: React.DragEvent) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault(); setDragging(false);
+    void upload(Array.from(e.dataTransfer.files));
+  };
   const toggle = (id: string) => setPicked((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -77,17 +120,37 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   };
 
   return (
-    <section className={s.wrap}>
+    <>
+    <div className={s.scroll} onPaste={onPaste} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
+    <section className={`${s.wrap} ${p.wrap}`}>
       <div className={s.head}>
         <h1 className={s.title}>{project.name}</h1>
-        <p className={s.lead}>{t.projects.startLead}</p>
+        {/* Optional, and it says so: the box is somewhere to write, not a step to get past */}
+        <label className={p.describeBox}>
+          <textarea
+            className={p.describe}
+            rows={2}
+            value={about}
+            placeholder={t.projects.startDescribe}
+            aria-label={t.projects.startDescribeLabel(project.name)}
+            onChange={(e) => setAbout(e.target.value)}
+            onFocus={() => setWriting(true)}
+            onBlur={() => { setWriting(false); void describe(); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
+          />
+          <span className={p.describeFoot}>
+            <span role="status">{described ? t.projects.startDescribed : writing ? t.projects.startDescribeEnter : t.projects.startOptional}</span>
+          </span>
+        </label>
         <form className={s.prompt} onSubmit={submit}>
+          <button type="button" className={p.attach} disabled={busy} onClick={() => fileRef.current?.click()} aria-label={t.projects.startUpload} title={t.projects.startUpload}>{IconImage}</button>
+          <input ref={fileRef} type="file" accept={MEDIA_ACCEPT} multiple hidden onChange={(e) => void upload(Array.from(e.target.files ?? []))} />
           <input
             ref={inputRef}
-            className={s.promptInput}
+            className={`${s.promptInput} ${p.promptInput}`}
             value={raw}
             onChange={(e) => { setRaw(e.target.value); setError(""); }}
-            placeholder={t.start.pasteUrl}
+            placeholder={t.projects.startPaste}
             inputMode="url"
             autoComplete="off"
             spellCheck={false}
@@ -101,6 +164,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
           </button>
         </form>
         {error && <p id="project-url-error" className={s.error} role="alert">{error}</p>}
+        <p className={p.hint}>{t.projects.startLead}</p>
       </div>
 
       {library.length > 0 && (
@@ -153,5 +217,8 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         </div>
       )}
     </section>
+    </div>
+    {dragging && <div className={p.drop} aria-hidden><span className="display">{t.add.dropHere}</span></div>}
+    </>
   );
 }

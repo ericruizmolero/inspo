@@ -6,21 +6,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import type { InspoItem, Project } from "@/types/inspo";
-import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
+import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration, type SystemFocus } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
-import { blocksToMd, criterioBlocks } from "@/lib/criterio-md";
+import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
+import { savePolishBrief } from "@/app/actions/polish";
 import { fontStack } from "@/lib/font-names";
+import SkillsMenu from "./SkillsMenu";
+import ImproveModal from "./ImproveModal";
+import { saveDocPart } from "@/app/actions/system";
 import { loadSystem, loadSystemVisuals, decideSystemArea, setSystemNever, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
+import AreaThread from "./AreaThread";
+import { AreaFaces, RecentChanges, VoiceBand, useSystemActivity } from "./SystemBento";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
-import SystemMarkdown from "./SystemMarkdown";
-import { keepAsTemplate } from "@/app/actions/templates";
+import SystemDoc from "./SystemDoc";
 import AreaStarter, { useAreaIdeals } from "./SystemStarter";
+import SystemTray from "./SystemTray";
+import type { NoteCaption } from "./InspoCard";
 import { areaCandidates } from "@/lib/candidates";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Props {
   project: Project;
@@ -40,10 +48,18 @@ interface Props {
   /** Open this area from outside (the agent's "go to motion"); `n` makes the same area open again */
   focusArea?: { area: SystemArea; n: number } | null;
   onOpenChange?: (area: SystemArea | null) => void;
-  /** While the search box filters: the references it found. The rest step back */
-  matches?: Set<string> | null;
   /** A redesign: marks which reference is the client's current site (null clears it) */
   onClient?: (itemId: string | null) => Promise<void>;
+  /** Opens a reference's card in the panel */
+  onOpenItem?: (item: InspoItem) => void;
+  /** The line under a reference: its note or first comment, and who is in its thread */
+  noteOf?: (item: InspoItem) => NoteCaption | null;
+  /** A reference as criterio.md tells it: what it is, who saved it, what the team said (lib/ref-info.ts) */
+  refInfo?: (item: InspoItem) => RefInfo;
+  /** Writes the words of a text reference, typed in the file's Content */
+  onText?: (itemId: string, text: string) => Promise<void>;
+  /** Gives a text reference another title, typed over its heading */
+  onTextTitle?: (itemId: string, title: string) => Promise<void>;
 }
 
 // ─── Reading the material ────────────────────────────────────────────────────
@@ -66,7 +82,7 @@ function radii(vs: RefVisual[]) {
 }
 // ─── Specimens ───────────────────────────────────────────────────────────────
 
-function Palette({ vs, max }: { vs: RefVisual[]; max?: number }) {
+function Palette({ vs, max, bare }: { vs: RefVisual[]; max?: number; bare?: boolean }) {
   const colors = palette(vs, max);
   if (!colors.length) return null;
   return (
@@ -74,7 +90,7 @@ function Palette({ vs, max }: { vs: RefVisual[]; max?: number }) {
       {colors.map((c) => (
         <span key={c.hex} className="sysv-swatch" title={`${c.name} ${c.hex}`}>
           <i style={{ background: c.hex }} />
-          <small>{c.hex.slice(0, 7)}</small>
+          {!bare && <small>{c.hex.slice(0, 7)}</small>}
         </span>
       ))}
     </div>
@@ -120,7 +136,6 @@ function Motion({ vs }: { vs: RefVisual[] }) {
         <path d={d} className="sysv-motion__path" />
         <circle cx={X(x1)} cy={Y(y1)} r="3" className="sysv-motion__handle" /><circle cx={X(x2)} cy={Y(y2)} r="3" className="sysv-motion__handle" />
       </svg>
-      <div className="sysv-motion__track"><i style={{ animationTimingFunction: /^(cubic-bezier|ease|linear)/.test(easing) ? easing : "ease", animationDuration: `${Math.max(300, Math.min(ms, 2000))}ms` }} /></div>
       <small className="sysv-motion__label">{easing} · {ms} ms{hit ? "" : " (por defecto)"}</small>
     </div>
   );
@@ -405,19 +420,6 @@ function Tile({ area, label, visuals, fromBoard, sample, history, busy, running,
   );
 }
 
-/** Colour on the bento: once the team has put colours on the sample, those three first; the palette of the references after */
-function BentoColor({ vs, chosen, labels }: { vs: RefVisual[]; chosen: { bg?: string; ink?: string; accent?: string }; labels: Record<ColorRole, string> }) {
-  const picked = COLOR_ROLES.filter((r) => chosen[r]);
-  if (!chosen.bg) return <Palette vs={vs} max={8} />;
-  return (
-    <div className="sysb-colors">
-      <div className="sysb-colors__chosen">
-        {picked.map((r) => <span key={r} className="sysv-swatch" title={`${labels[r]} ${chosen[r]}`}><i style={{ background: chosen[r] }} /><small>{labels[r]} {chosen[r]}</small></span>)}
-      </div>
-      <Palette vs={vs} max={8} />
-    </div>
-  );
-}
 
 /** A system with no references behind it yet (a project started from a template) still shows its result: the
  *  colours, radii, curve and families its decisions name, read from their words, as if one reference carried them */
@@ -452,6 +454,20 @@ function useNamedFonts(families: string[]) {
 
 // ─── The bento: what each area shows on its tile ───────────────────────────────
 
+/** Colour on the bento: once the team has put colours on the sample, those three first; the palette of the references after */
+function BentoColor({ vs, chosen, labels }: { vs: RefVisual[]; chosen: { bg?: string; ink?: string; accent?: string }; labels: Record<ColorRole, string> }) {
+  const picked = COLOR_ROLES.filter((r) => chosen[r]);
+  if (!chosen.bg) return <Palette vs={vs} max={8} />;
+  return (
+    <div className="sysb-colors">
+      <div className="sysb-colors__chosen">
+        {picked.map((r) => <span key={r} className="sysv-swatch" title={`${labels[r]} ${chosen[r]}`}><i style={{ background: chosen[r] }} /><small>{labels[r]} {chosen[r]}</small></span>)}
+      </div>
+      <Palette vs={vs} max={8} />
+    </div>
+  );
+}
+
 /** Typography on the bento: the sample itself, small. The project's name and its sentence in the pairing
  *  chosen on the area's stage, in the references' real faces, on the colours and the radius the other areas
  *  have put on it. Until the faces arrive, the families by name. */
@@ -477,72 +493,39 @@ function BentoType({ projectId, name, intent, summary, refs, visuals, fallback, 
 const hasMaterial = (area: SystemArea, vs: RefVisual[]) =>
   area === "logo" ? vs.some((v) => v.logo) : area === "iconography" ? vs.some((v) => v.icons.length) : area === "imagery" ? vs.some((v) => v.cover || v.scroll) : true;
 
-/** A redesign: which reference is the client's current site. Its copy, typefaces, logo and figures rule the system */
-function ClientPicker({ client, board, imageOf, onPick }: { client: InspoItem | null; board: InspoItem[]; imageOf: (item: InspoItem) => string | null; onPick: (itemId: string | null) => Promise<void> }) {
+/** A redesign: the reference that is the client's current site, named under the project. Its copy, typefaces, logo and figures rule the system */
+function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (item: InspoItem) => string | null; onPick: (itemId: string | null) => Promise<void> }) {
   const { t } = useT();
   const s = t.system.client;
-  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const pick = async (id: string | null) => { setBusy(true); try { await onPick(id); setOpen(false); } finally { setBusy(false); } };
-  const webs = board.filter((i) => i.id && /^https?:/.test(i.web));
   return (
     <div className="sysb-client">
-      {client ? (
-        <span className="sysb-client__on" title={s.hint}>
-          <Thumb item={client} image={imageOf(client)} />
-          <span>{s.redesignOf} <b>{client.name}</b></span>
-          <button type="button" className="sysb-client__x" disabled={busy} aria-label={s.clear} title={s.clear} onClick={() => void pick(null)}>{Icons.x}</button>
-        </span>
-      ) : (
-        <button type="button" className="sysb-client__ask" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{s.ask}</button>
-      )}
-      {open && !client && (
-        <div className="sysb-client__pop" role="dialog" aria-label={s.ask}>
-          <p className="sysb-client__hint">{s.hint}</p>
-          <div className="sysb-client__list">
-            {webs.map((i) => (
-              <button key={i.id} type="button" className="sysb-client__item" disabled={busy} onClick={() => void pick(i.id!)}>
-                <Thumb item={i} image={imageOf(i)} /><span>{i.name}</span>
-              </button>
-            ))}
-            {!webs.length && <p className="sysv-muted">{s.none}</p>}
-          </div>
-        </div>
-      )}
+      <span className="sysb-client__on" title={s.hint}>
+        <Thumb item={client} image={imageOf(client)} />
+        <span>{s.redesignOf} <b>{client.name}</b></span>
+        <button type="button" className="sysb-client__x" disabled={busy} aria-label={s.clear} title={s.clear} onClick={() => { setBusy(true); void onPick(null).finally(() => setBusy(false)); }}>{Icons.x}</button>
+      </span>
     </div>
   );
 }
 
-/** The project's system, kept as a template in the library: a copy, with where the work started and where it ended */
-function KeepAsTemplate({ project, client }: { project: Project; client: InspoItem | null }) {
+/** Which of the board's sites is the client's */
+const IcDots = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden><circle cx="2.5" cy="7" r="1.25" /><circle cx="7" cy="7" r="1.25" /><circle cx="11.5" cy="7" r="1.25" /></svg>
+);
+
+/** What the header does not need in sight: reading the board again. One button, there only while it has that to offer */
+function MoreMenu({ rerun }: { rerun: { label: string; run: () => void } | null }) {
   const { t } = useT();
-  const s = t.templates;
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState(project.name);
-  const [from, setFrom] = useState(client?.web ?? "");
-  const [to, setTo] = useState("");
-  const [about, setAbout] = useState(project.intent ?? "");
-  const [state, setState] = useState<"idle" | "busy" | "done">("idle");
-  const save = async () => {
-    setState("busy");
-    const r = await keepAsTemplate(project.id, { name, from, to, about });
-    setState(r.ok ? "done" : "idle");
-    if (r.ok) setTimeout(() => { setOpen(false); setState("idle"); }, 1400);
-  };
+  if (!rerun) return null;
   return (
-    <span className="sysb-keep">
-      <Button size="sm" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{s.keep}</Button>
-      {open && (
-        <form className="sysb-client__pop sysb-keep__pop" onSubmit={(e) => { e.preventDefault(); void save(); }}>
-          <p className="sysb-client__hint">{s.keepHint}</p>
-          <label>{s.name}<input className="smp-input" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} /></label>
-          <label>{s.from}<input className="smp-input" value={from} placeholder="https://" onChange={(e) => setFrom(e.target.value)} /></label>
-          <label>{s.to}<input className="smp-input" value={to} placeholder="https://" onChange={(e) => setTo(e.target.value)} /></label>
-          <label>{s.about}<textarea className="smp-input" rows={2} value={about} maxLength={400} onChange={(e) => setAbout(e.target.value)} /></label>
-          <Button variant="primary" size="sm" type="submit" disabled={state !== "idle" || !name.trim()}>{state === "busy" ? <span className="spinner spinner--sm" /> : Icons.check} {state === "done" ? s.kept : s.keep}</Button>
-        </form>
-      )}
-    </span>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger className="btn btn--sm sysb-more" aria-label={t.system.more} title={t.system.more}>{IcDots}</PopoverTrigger>
+      <PopoverContent align="end" className="sysb-more__pop is-menu">
+        <button type="button" className="sysb-more__item" onClick={() => { setOpen(false); rerun.run(); }}>{rerun.label}</button>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -551,8 +534,8 @@ const SAMPLE_AREAS = new Set<SystemArea>(["color", "layout", "motion", "voice"])
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
-export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, onClient }: Props) {
-  const { t } = useT();
+export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, onClient, onOpenItem, noteOf, refInfo, onText, onTextTitle }: Props) {
+  const { t, locale } = useT();
   const setSystem = onSystem;
   const [visuals, setVisuals] = useState<RefVisual[]>([]);
   const [history, setHistory] = useState<Record<string, AreaRevision[]>>({});
@@ -592,10 +575,12 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // Picking: the team chooses, among the area's references, the ones it should be decided from
   const [picking, setPicking] = useState<Set<string> | null>(null);
   useEffect(() => { setPicking(null); }, [open]);
-  const run = useCallback(async () => {
+  // A pass asked for from "Improve with AI" carries what the team wants from it (ImproveModal); the plain one reads everything
+  const [improving, setImproving] = useState(false);
+  const run = useCallback(async (focus?: SystemFocus) => {
     setRunning(true); setError("");
     try {
-      const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: project.id }) });
+      const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId: project.id, focus }) });
       const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
       if (!res.ok || json.error) throw new Error(json.error || t.system.failed);
       setSystem(json);
@@ -691,18 +676,36 @@ export default function SystemView({ project, system, onSystem, board, library, 
     return json.options;
   }, [project.id, t]);
 
-  // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place
+  // The latest changes and each area's conversation (the bento's band, and the file): read again whenever an area moves
+  const [talkN, setTalkN] = useState(0);
+  // What the project is, as it was last written in the file (the brief), until the page loads it again
+  const [aboutNow, setAboutNow] = useState<string | null>(null);
+  const activity = useSystemActivity(project.id, `${sys.areas.map((a) => a.updatedAt ?? "").join("|")}|${talkN}`);
+  // Oldest first: a reference keeps its code (R1, R2…) when more arrive
+  const boardIds = useMemo(() => board.map((i) => i.id!).filter(Boolean).reverse(), [board]);
+  // The skills switched on for criterio.md, kept with the system so the whole team copies the same file
+  const skillsOn = useMemo(() => (sys.doc?.skills ?? "").split(",").filter(Boolean), [sys.doc?.skills]);
+  const toggleSkill = async (id: string) => {
+    const next = skillsOn.includes(id) ? skillsOn.filter((s) => s !== id) : [...skillsOn, id];
+    const r = await saveDocPart(project.id, "skills", next.length ? next.join(",") : null);
+    if (r.ok) setSystem(r.data); else setError(r.error);
+  };
+  // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place.
+  // It carries the whole project: what it is, each area with its references and what was said, and every reference once
   const blocks = useMemo(() => criterioBlocks({
     project: project.name, system: sys,
-    items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, { name: i.name, web: i.web }])),
+    items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
-  }), [sys, project.name, library, labels, t, clientItem]);
+    about: aboutNow ?? project.intent, board: boardIds, talk: activity?.notes,
+    origin: typeof window === "undefined" ? "" : window.location.origin,
+    skills: skillsOn, locale,
+  }), [sys, project.name, project.intent, aboutNow, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // The system, as the tiles a person reads or as the file an agent reads: the same thing, seen two ways. Kept on this machine
-  const [view, setViewNow] = useState<"bento" | "md">("bento");
-  useEffect(() => { try { if (localStorage.getItem("criterio:system-view") === "md") setViewNow("md"); } catch { /* private mode */ } }, []);
-  const setView = (v: "bento" | "md") => { setViewNow(v); try { localStorage.setItem("criterio:system-view", v); } catch { /* it lasts the visit */ } };
+  // The system's result is the document, criterio.md (components/SystemDoc.tsx). The bento is not shown any more
+  // (Eric, 2026-10-04); its code below waits for the cleanup
+  const view = "md" as "bento" | "md";
   const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* the download still works */ } };
   const download = () => {
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -710,7 +713,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
     a.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  const openArea = open ? sys.areas.find((a) => a.area === open) ?? null : null;
+  // The areas' stage is gone with the bento (Eric, 2026-10-04): an area asked for (by the agent, by a link) is its
+  // part of the file, scrolled to. The stage's code below waits for the cleanup
+  const openArea = null as SystemAreaState | null;
+  useEffect(() => { if (open) document.getElementById(`sdoc-${open}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [open]);
   // The faces of the sample come from typography's references wherever it is shown; with none filed yet, from the first of the board
   const typeArea = sys.areas.find((a) => a.area === "typography");
   const typeOwn = (typeArea?.evidence ?? []).map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
@@ -735,6 +741,26 @@ export default function SystemView({ project, system, onSystem, board, library, 
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setPendingRefs((s) => { const n = new Set(s); n.delete(id); return n; }); }
   };
+  // The tray of the bento: a reference picked up (dragged, or clicked) lands in the tile it is dropped on
+  const [carrying, setCarrying] = useState<InspoItem | null>(null);
+  const [over, setOver] = useState<SystemArea | null>(null);
+  const [landed, setLanded] = useState<{ area: SystemArea; n: number } | null>(null);
+  useEffect(() => {
+    if (!carrying) return;
+    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setCarrying(null); };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [carrying]);
+  const drop = (area: SystemArea, item: InspoItem | null | undefined) => {
+    setCarrying(null); setOver(null);
+    if (!item?.id) return;
+    const a = sys.areas.find((x) => x.area === area);
+    if (a?.evidence.some((e) => e.itemId === item.id)) return;
+    void toggleRef(area, item, true);
+    setLanded((l) => ({ area, n: (l?.n ?? 0) + 1 }));
+  };
+  useEffect(() => { if (!landed) return; const tm = setTimeout(() => setLanded(null), 1600); return () => clearTimeout(tm); }, [landed]);
+
   const tileFor = (a: SystemAreaState, stage = false) => {
     const { vs, fromBoard } = visualsFor(a);
     return (
@@ -758,39 +784,47 @@ export default function SystemView({ project, system, onSystem, board, library, 
     );
   };
 
+  const voiceArea = sys.areas.find((a) => a.area === "voice");
+  const voiceHas = !!carrying && !!voiceArea?.evidence.some((e) => e.itemId === carrying.id);
+
   return (
     <div className={`sysv${openArea ? " is-stage" : ""}`} aria-busy={!system}>
-      {/* The system at a glance: the project on top, one tile per area showing its material. A tile opens its stage */}
+      {/* The system at a glance: the project on top, one tile per area showing one thing, its material. The words,
+          the references and the numbers are a click away, on the area's stage */}
       <div className="sysv-sea sysb">
-        <div className="sysb-inner">
+        <div className={`sysb-inner${view === "bento" ? " is-fit" : ""}`}>
           <header className="sysb-head">
             <div className="sysb-head__text">
               <h1 className="sysb-title">{project.name}</h1>
               {project.intent && <p className="sysb-intent">{project.intent}</p>}
-              {onClient && <ClientPicker client={clientItem} board={board} imageOf={imageOf} onPick={onClient} />}
+              {onClient && clientItem && <ClientChip client={clientItem} imageOf={imageOf} onPick={onClient} />}
             </div>
             <div className="sysb-head__side">
-              <div className="tt-modes sysb-views" role="tablist" aria-label={t.system.views.label}>
-                <button type="button" role="tab" aria-selected={view === "bento"} className={`tt-mode${view === "bento" ? " is-on" : ""}`} onClick={() => setView("bento")}>{t.system.views.bento}</button>
-                <button type="button" role="tab" aria-selected={view === "md"} className={`tt-mode${view === "md" ? " is-on" : ""}`} onClick={() => setView("md")}>{t.system.views.markdown}</button>
-              </div>
               {filled > 0 ? (
-                <p className="sysn-core__state" title={t.system.polishHint}>
-                  <svg className="sysn-core__ring" viewBox="0 0 14 14" width="14" height="14" aria-hidden>
+                <p className="sysn-core__state" title={`${t.system.filled(filled, SYSTEM_AREAS.length)}. ${t.system.polishHint}`}>
+                  <svg className={`sysn-core__ring${polishPct === 100 ? " is-full" : ""}`} viewBox="0 0 14 14" width="14" height="14" aria-hidden>
                     <circle cx="7" cy="7" r="5.25" />
                     <circle cx="7" cy="7" r="5.25" pathLength={100} strokeDasharray={`${polishPct} 100`} transform="rotate(-90 7 7)" />
                   </svg>
                   <b>{t.system.polishPct(polishPct)}</b>
-                  <span>{t.system.filled(filled, SYSTEM_AREAS.length)}</span>
                 </p>
               ) : (
                 <p className="sysn-core__summary sysv-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>
               )}
-              {/* One thing asks for attention at a time: reading the board is solid only while there is something unread */}
+              {/* One thing asks for attention at a time: reading the board is in sight only while there is something
+                  unread; after that it waits in the menu with the rest */}
               <div className="sysn-core__actions">
-                <Button variant={board.length && (unread || !filled) ? "primary" : "default"} size="sm" onClick={() => void run()} disabled={running || !board.length} title={sys.run ? t.system.rerun : t.system.run}>
-                  {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {!sys.run ? t.system.run : stale && stale.unread > 0 ? t.system.readNew(stale.unread) : stale?.wordsChanged ? t.system.readWords : t.system.rerun}</>}
-                </Button>
+                {/* On the file, the references are already in it: the model's pass is what puts order in it, sharpens
+                    the copy and reads them better, so it is offered as that, and always. It asks first what to improve */}
+                {view === "md" && board.length > 0 ? (
+                  <Button variant="primary" size="sm" onClick={() => setImproving(true)} disabled={running} title={t.system.improveHint}>
+                    {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {t.system.improve}</>}
+                  </Button>
+                ) : board.length > 0 && (unread || !filled || running) && (
+                  <Button variant="primary" size="sm" onClick={() => void run()} disabled={running} title={sys.run ? t.system.rerun : t.system.run}>
+                    {running ? <><span className="spinner spinner--sm" /> {t.system.running}</> : <>{Icons.spark} {!sys.run ? t.system.run : stale && stale.unread > 0 ? t.system.readNew(stale.unread) : stale?.wordsChanged ? t.system.readWords : t.system.rerun}</>}
+                  </Button>
+                )}
                 {filled > 0 && (
                   <span className="sysn-core__file">
                     <Button size="sm" onClick={() => void copy()} title={t.system.exportHint}>{copied ? t.system.copied : t.system.export}</Button>
@@ -798,41 +832,55 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   </span>
                 )}
                 {!board.length && <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
-                {filled > 0 && <KeepAsTemplate project={project} client={clientItem} />}
+                <MoreMenu rerun={view !== "md" && board.length > 0 && filled > 0 && !unread && !running ? { label: t.system.rerun, run: () => void run() } : null} />
               </div>
             </div>
           </header>
           {error && <p className="sysv-error" role="alert">{error}</p>}
+          {improving && <ImproveModal system={sys} onRun={(focus) => void run(focus)} onClose={() => setImproving(false)} />}
           {view === "md" && (
-            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
+            <SystemDoc blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
+              onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
+              onAbout={async (text) => { const r = await savePolishBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
+              fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
+              busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
               onSave={async (area, next) => {
                 const cur = sys.areas.find((x) => x.area === area)!;
                 if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));
                 if (next.never !== cur.never.trim()) await withBusy(area, () => setSystemNever(project.id, area, next.never));
               }} />
           )}
-          {view === "bento" && sys.summary && (
-            <details className="sysn-core__criterio sysb-criterio">
-              <summary>{t.system.criterio}{Icons.chevron}</summary>
-              <p className="sysn-core__summary">{sys.summary}</p>
-            </details>
+          {/* How it talks, with the latest changes beside it; under them, how it looks */}
+          {view === "bento" && (
+            <div className="sysb-top">
+              <VoiceBand summary={sys.summary} voice={voiceArea} onOpen={() => setOpen("voice")}
+                className={`${running || busy.has("voice") ? " is-busy" : ""}${over === "voice" ? " is-over" : ""}${voiceHas ? " is-has" : ""}${landed?.area === "voice" ? " is-landed" : ""}`}>
+                {carrying && <span className="sysb-tile__drop" aria-hidden>{voiceHas ? t.system.start.added : t.system.tray.dropOn(labels.voice)}</span>}
+                {landed?.area === "voice" && !carrying && <span className="sysb-tile__drop is-done" aria-live="polite">{t.system.tray.landed(labels.voice)}</span>}
+              </VoiceBand>
+              <RecentChanges activity={activity} labels={labels} onOpen={setOpen} />
+            </div>
           )}
+          {view === "bento" && <p className="sysb-rule">{t.bento.looks}</p>}
 
-          {view === "bento" && <div className="sysb-grid">
-            {sys.areas.map((a) => {
+          {view === "bento" && <div className="sysb-body">
+          <div className={`sysb-grid sysb-grid--visual${carrying ? " is-carrying" : ""}`}>
+            {sys.areas.filter((a) => a.area !== "voice").map((a) => {
               const level = confidenceOf(a);
               const { vs } = visualsFor(a);
               const own = a.evidence.map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
               const go = () => setOpen(a.area);
+              const has = !!carrying && a.evidence.some((e) => e.itemId === carrying.id);
               return (
                 <article key={a.area} role="button" tabIndex={0} aria-label={labels[a.area]}
-                  className={`sysb-tile sysb-tile--${a.area} is-${level}${a.source === "team" ? " is-team" : ""}${a.decision ? "" : " is-open"}${running || busy.has(a.area) ? " is-busy" : ""}`}
+                  className={`sysb-tile sysb-tile--${a.area} is-${level}${a.source === "team" ? " is-team" : ""}${a.decision ? "" : " is-open"}${running || busy.has(a.area) ? " is-busy" : ""}${over === a.area ? " is-over" : ""}${has ? " is-has" : ""}${landed?.area === a.area ? " is-landed" : ""}`}
                   style={{ gridArea: a.area, viewTransitionName: `sysa-${a.area}` }}
-                  onClick={go} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }}>
+                  onClick={go} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }}
+                  data-area={a.area}>
+                  {carrying && <span className="sysb-tile__drop" aria-hidden>{has ? t.system.start.added : t.system.tray.dropOn(labels[a.area])}</span>}
+                  {landed?.area === a.area && !carrying && <span className="sysb-tile__drop is-done" aria-live="polite">{t.system.tray.landed(labels[a.area])}</span>}
                   <header className="sysb-tile__head">
-                    <span className="sysb-tile__label">{areaIcon(a.area, 14)}{labels[a.area]}</span>
-                    {/* A narrow tile has room for the number only */}
-                    {a.evidence.length > 0 && <span className="sysb-tile__n">{a.area === "imagery" || a.area === "logo" || a.area === "iconography" ? a.evidence.length : t.system.evidence(a.evidence.length)}</span>}
+                    <span className="sysb-tile__label">{areaIcon(a.area, 14)}{labels[a.area]}{own.length > 0 && <b>{own.length}</b>}</span>
                     <span className="sysb-tile__state">
                       {a.source === "team" ? Icons.check : a.decision ? <i className="sysv-meter"><b style={{ width: `${a.confidence}%` }} /></i> : t.system.open}
                     </span>
@@ -844,15 +892,19 @@ export default function SystemView({ project, system, onSystem, board, library, 
                       : a.area === "color" ? <BentoColor vs={vs} chosen={sampleColors(choices)} labels={t.system.sample.colorRoles} />
                       : specimenOf(a, vs, project.name)}
                   </div>
-                  {/* Voice already shows its decision as the quote */}
+                  {/* The decision in one line (voice already shows it as the quote), and the references behind it, small */}
                   <footer className="sysb-tile__foot">
-                    {a.decision && a.area !== "voice" && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
-                    {/* The references behind the area, in sight */}
-                    {own.length > 0 && a.area !== "layout" && a.area !== "imagery" && <span className="sysb-tile__refs">{own.slice(0, a.area === "typography" || a.area === "color" ? 6 : 4).map((it) => <Thumb key={it.id} item={it} image={imageOf(it)} />)}</span>}
+                    {a.decision && <p className="sysb-tile__line">{headlineOf(a.decision)}</p>}
+                    <AreaFaces talk={activity?.talk[a.area]} />
+                    {own.length > 0 && <span className="sysb-tile__refs">{own.slice(0, 3).map((it) => <Thumb key={it.id} item={it} image={imageOf(it)} />)}</span>}
                   </footer>
                 </article>
               );
             })}
+          </div>
+          {/* The references at hand, beside the bento so it keeps the whole screen */}
+          <SystemTray board={board} inbox={inbox} imageOf={imageOf} carrying={carrying} onCarry={setCarrying} onOver={setOver}
+            onDrop={(area, item) => drop(area, item)} onOpen={onOpenItem} noteOf={noteOf} pending={pendingRefs} />
           </div>}
         </div>
       </div>
@@ -882,7 +934,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                       onEasing={(easing, ms) => { setChoice({ easing, ...(ms ? { durationMs: ms } : {}) }); setReplay((n) => n + 1); }}
                       onHeadline={(headline) => setChoice({ headline })} />
                   )}
-                  onToggle={(item, on) => void toggleRef(a.area, item, on)}
+                  onToggle={(item, on) => void toggleRef(a.area, item, on)} onOpen={onOpenItem}
                   picking={picking ? { picked: picking, toggle: (id) => setPicking((p) => { if (!p) return p; const n = new Set(p); if (n.has(id)) n.delete(id); else n.add(id); return n; }) } : null} />
                 {!a.decision && (own.length === 0 || starting.has(a.area)) && (
                   <AreaStarter projectId={project.id} area={a.area} areaLabel={labels[a.area]} inArea={new Set(own.map((i) => i.id!))} itemOf={itemOf} imageOf={imageOf}
@@ -915,7 +967,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
                   </>
                 )}
               </div>
-              <aside className="sysf-aside" aria-label={labels[a.area]}>{tileFor(a, true)}</aside>
+              <aside className="sysf-aside" aria-label={labels[a.area]}>{tileFor(a, true)}<AreaThread projectId={project.id} area={a.area} refs={own} /></aside>
             </div>
           </div>
         );

@@ -2,7 +2,7 @@
 // The project's system: read it, confirm or write an area, hand an area back to the board.
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
-import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, applyTriage, setVerdict, setAreaNever } from "@/lib/system";
+import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, applyTriage, setVerdict, setAreaNever, setDocPart, setSummary } from "@/lib/system";
 import type { SystemArea } from "@/types/system";
 import type { SystemEvidence } from "@/types/system";
 
@@ -56,4 +56,14 @@ export async function applySystemTriage(picks: { itemId: string; projectId: stri
 /** On the table: a person keeps or discards a candidate, or rewrites its reason. */
 export async function setSystemVerdict(projectId: string, area: string, verdict: { id: string; keep: boolean; reason?: string }) {
   return withCtx(async (ctx) => setVerdict(ctx.workspace.id, String(projectId), String(area), { id: String(verdict.id), keep: !!verdict.keep, reason: verdict.reason }));
+}
+
+/** The project's paragraph, written by a person in the file. */
+export async function saveSystemSummary(projectId: string, summary: string) {
+  return withCtx(async (ctx) => setSummary(ctx.workspace.id, String(projectId), String(summary ?? "")));
+}
+
+/** A part of criterio.md rewritten by hand ("head", "refs", "meta:<area>"); null goes back to what the app writes. */
+export async function saveDocPart(projectId: string, part: string, text: string | null) {
+  return withCtx(async (ctx) => setDocPart(ctx.workspace.id, String(projectId), String(part), text === null ? null : String(text)));
 }

@@ -1,7 +1,7 @@
 "use client";
 // An empty area is not a dead end. When nothing is filed under an area and nothing is decided, the agent
-// looks at the board again for anything that speaks to it, looks through the rest of the library for
-// references worth bringing, and asks the one question that gets the area going, with its answers.
+// looks at the board again for anything that speaks to it, points to the places in the directory worth
+// opening for it, and asks the one question that gets the area going, with its answers.
 // Bringing a reference files it under the area; an answer writes the decision as the team's.
 import { useEffect, useState } from "react";
 import type { InspoItem } from "@/types/inspo";
@@ -10,6 +10,7 @@ import type { AreaStartAsk, AreaStartRefs } from "@/lib/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { Thumb } from "./SystemStage";
+import { areaSites, siteShot } from "@/lib/directory";
 
 // Two calls per project and area for the life of the page, asked side by side: the references (no model, they
 // come at once) and the question (a short model call). Opening the area again shows what was found
@@ -83,7 +84,16 @@ export default function AreaStarter({ projectId, area, areaLabel, inArea, itemOf
     );
   });
 
-  const board = refs ? cards(refs.board) : [], library = refs ? cards(refs.library) : [];
+  const board = refs ? cards(refs.board) : [];
+  // Beyond the board, the directory: the places worth opening for this area, each in a new tab
+  const sites = areaSites(area).map((site) => (
+    <a key={site.url} className="stt-card" href={site.url} target="_blank" rel="noopener noreferrer" title={site.name}>
+      <span className="sysv-thumb stt-card__img" aria-hidden><img src={siteShot(site.url)} alt="" loading="lazy" decoding="async" /></span>
+      <span className="stt-card__name">{site.name}</span>
+      <span className="stt-card__why">{t.directory.items[site.url]}</span>
+      <i className="stt-card__mark">{Icons.external}</i>
+    </a>
+  ));
   return (
     <div className="stt">
       {error && <p className="sysv-error" role="alert">{error} <button type="button" className="stt-again" onClick={again}>{s.again}</button></p>}
@@ -110,10 +120,10 @@ export default function AreaStarter({ projectId, area, areaLabel, inArea, itemOf
       {refs ? (
         <>
           {board.length > 0 && <section className="stt-group"><h3 className="stt-title">{s.inProject}</h3><div className="stt-cards">{board}</div></section>}
-          {library.length > 0 && <section className="stt-group"><h3 className="stt-title">{s.inLibrary}<small>{s.libraryHint}</small></h3><div className="stt-cards">{library}</div></section>}
-          {board.length + library.length === 0 && <p className="stt-say stt-say--loading">{s.nothing}</p>}
+          {board.length + sites.length === 0 && <p className="stt-say stt-say--loading">{s.nothing}</p>}
         </>
       ) : !error && <p className="stt-say stt-say--loading"><span className="spinner spinner--sm" /> {s.loading(areaLabel)}</p>}
+      {sites.length > 0 && <section className="stt-group"><h3 className="stt-title">{s.inLibrary}<small>{s.libraryHint}</small></h3><div className="stt-cards">{sites}</div></section>}
     </div>
   );
 }

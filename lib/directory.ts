@@ -3,9 +3,13 @@
 
 // The text (each group's title and help, each resource's description) lives in
 // lib/i18n/<locale>/directory.ts, keyed by group key and URL.
+import { readableDomain } from "@/lib/url";
+
 export interface DirectorySite {
   name: string;
   url: string;
+  /** The day it joined the directory (yyyy-mm-dd), for the ones that came after the first batch: Discover shows it as new */
+  added?: string;
 }
 
 export interface DirectoryGroup {
@@ -31,6 +35,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "sites",
     items: [
+      { name: "Umanmade", url: "https://umanmade.com", added: "2026-10-04" },
       { name: "Recent.design", url: "https://recent.design" },
       { name: "Goated UI", url: "https://goatedui.dev" },
       { name: "Landdding", url: "https://landdding.com" },
@@ -64,6 +69,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "saas",
     items: [
+      { name: "DesignforB2B", url: "https://designforb2b.com", added: "2026-10-04" },
       { name: "Saaspo", url: "https://saaspo.com" },
       { name: "SaaSFrame", url: "https://saasframe.io" },
       { name: "One Page Love", url: "https://onepagelove.com" },
@@ -89,11 +95,15 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "code",
     items: [
+      { name: "Reverse UI", url: "https://reverseui.com", added: "2026-10-04" },
+      { name: "Cult UI", url: "https://www.cult-ui.com", added: "2026-10-04" },
       { name: "Originkit", url: "https://www.originkit.dev" },
       { name: "Bencho", url: "https://bencho.dev" },
       { name: "ObsidianUI", url: "https://obsidianui.dev" },
       { name: "UI by Halaska", url: "https://ui.halaska.com" },
       { name: "21st.dev", url: "https://21st.dev" },
+      { name: "useLayouts", url: "https://uselayouts.com", added: "2026-10-04" },
+      { name: "Arc UI", url: "https://uiarc.dev", added: "2026-10-04" },
       { name: "Beautiful UI", url: "https://beautifului.dev" },
       { name: "vgpu", url: "https://vgpu.sh/examples/holographic-card" },
     ],
@@ -102,6 +112,7 @@ export const DIRECTORY: DirectoryGroup[] = [
     key: "motion",
     items: [
       { name: "60fps", url: "https://60fps.design" },
+      { name: "Detail", url: "https://detail.design", added: "2026-10-04" },
       { name: "Animos", url: "https://animos.app" },
       { name: "Motion in Design", url: "https://motionin.design" },
       { name: "Motionsites", url: "https://motionsites.ai" },
@@ -111,6 +122,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "resources",
     items: [
+      { name: "SearchSystem", url: "https://searchsystem.co", added: "2026-10-04" },
       { name: "Logo To Use", url: "https://logotouse.com" },
       { name: "Hano", url: "https://hano.so" },
       { name: "Gradientool", url: "https://gradientool.com" },
@@ -132,6 +144,8 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "graphics",
     items: [
+      { name: "Icon Museum", url: "https://icon.museum", added: "2026-10-04" },
+      { name: "Logggos", url: "https://logggos.club", added: "2026-10-04" },
       { name: "The Brand Identity", url: "https://the-brandidentity.com" },
       { name: "Visuelle", url: "https://visuelle.co.uk" },
       { name: "Visual Journal", url: "https://visualjournal.it" },
@@ -220,6 +234,14 @@ export function siteSlug(url: string): string {
   return siteHost(url).replace(/[^a-z0-9]+/gi, "-").toLowerCase();
 }
 
+/** Joined the directory in the last 30 days */
+export const NEW_DAYS = 30;
+export function isNewSite(site: DirectorySite, now = Date.now()): boolean {
+  return !!site.added && now - Date.parse(site.added) < NEW_DAYS * 86400000;
+}
+/** What Discover features: the galleries we open most (the sidebar's pick) */
+export const featuredUrls = (): string[] => SIDEBAR_PICK_URLS;
+
 // The handful worth a row in the sidebar, under "Directory": the galleries we open most.
 // Hand-picked and in this order (Recent.design first); one leaving the directory just disappears.
 const SIDEBAR_PICK_URLS = [
@@ -253,13 +275,30 @@ export function shuffleSidebarPicks(current: DirectorySite[], n = SIDEBAR_PICKS.
   return pool.slice(0, n);
 }
 
+// The places to look for each area of a project's system, picked by hand from the directory: what a designer would
+// open to get an empty area going. A URL leaving the directory just disappears from its area.
+const AREA_SITE_URLS: Record<string, string[]> = {
+  typography: ["https://www.typewolf.com", "https://fontsinuse.com", "https://www.monotype.com/font-pairing#/playground?fontPair1=Pepi%2FRudi&fontPair2=Schotis+Text", "https://klim.co.nz", "https://www.grillitype.com", "https://abcdinamo.com", "https://pangrampangram.com", "https://commercialtype.com", "https://claudetype.com", "https://ohnotype.co", "https://www.fontshare.com", "https://velvetyne.fr"],
+  color: ["https://gradientool.com", "https://backgrounds.supply", "https://dark.design", "https://savee.it", "https://www.cosmos.so", "https://www.are.na"],
+  layout: ["https://bentogrids.com", "https://gridddy.framer.website", "https://httpster.net", "https://the-responsive.com", "https://unsection.com", "https://supahero.io", "https://navbar.gallery", "https://footer.design", "https://curated.design", "https://recent.design", "https://www.seesaw.website", "https://minimal.gallery"],
+  motion: ["https://60fps.design", "https://motionsites.ai", "https://motionin.design", "https://landing.love", "https://loadmo.re", "https://designspells.com", "https://hoverstat.es", "https://www.originkit.dev", "https://obsidianui.dev", "https://animos.app"],
+  iconography: ["https://goatedui.dev", "https://svgl.app", "https://www.toools.design", "https://designspells.com", "https://refero.design", "https://mobbin.com"],
+  logo: ["https://logotouse.com", "https://rebrand.gallery", "https://the-brandidentity.com", "https://symbl.space", "https://svgl.app", "https://visuelle.co.uk", "https://visualjournal.it"],
+  imagery: ["https://hano.so", "https://ditherland.leobecker.com", "https://light-stroke-rail.vercel.app", "https://backgrounds.supply", "https://www.playgrnd.tools", "https://savee.it", "https://www.cosmos.so", "https://aessestudio.tumblr.com"],
+  voice: ["https://the-brandidentity.com", "https://cta.gallery", "https://404s.design", "https://supahero.io", "https://saaspo.com", "https://curated.supply"],
+};
+/** The directory's places to look for one area of the system, in the order they are worth opening */
+export function areaSites(area: string): DirectorySite[] {
+  return (AREA_SITE_URLS[area] ?? []).map((u) => ALL_SITES.find((r) => r.url === u)).filter((r): r is DirectorySite => !!r);
+}
+
 export function siteShot(url: string): string {
   return `/directory/${siteSlug(url)}.jpg`;
 }
 
 export function siteHost(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, "");
+    return readableDomain(new URL(url).hostname.replace(/^www\./, ""));
   } catch {
     return url;
   }

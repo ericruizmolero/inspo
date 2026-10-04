@@ -77,14 +77,18 @@ export function sampleColors(c: SampleChoices) {
 
 export interface SampleFaces { title?: CSSProperties; subtitle?: CSSProperties; body?: CSSProperties }
 
-export function Sample({ title, subtitle, body, cta, more, faces, choices, replay = 0, compact = false }: {
+export function Sample({ title, subtitle, body, cta, more, faces, choices, replay = 0, compact = false, plain = false }: {
   title: string; subtitle: string; body: string; cta: string; more: string;
   faces: SampleFaces; choices: SampleChoices;
   /** Each new number plays the arrival again, in the chosen curve */
   replay?: number;
-  /** On a tile: the title, the subtitle and the buttons, without the body and the cards */
+  /** The title, the subtitle and the buttons alone, without the page around them */
   compact?: boolean;
+  /** The words alone, without the buttons */
+  plain?: boolean;
 }) {
+  const { t } = useT();
+  const w = t.system.sample.web;
   const { bg, ink, accent, onAccent } = sampleColors(choices);
   const style = {
     ...(bg ? { "--smp-bg": bg } : {}), ...(ink ? { "--smp-ink": ink } : {}),
@@ -93,20 +97,58 @@ export function Sample({ title, subtitle, body, cta, more, faces, choices, repla
     "--smp-ease": choices.easing && isEasing(choices.easing) ? choices.easing : "cubic-bezier(0.23, 1, 0.32, 1)",
     "--smp-ms": `${Math.max(120, Math.min(choices.durationMs ?? 520, 2000))}ms`,
   } as CSSProperties;
-  return (
-    <div key={replay} className={`smp${replay ? " is-playing" : ""}${compact ? " smp--compact" : ""}`} style={style}>
-      <h2 className="smp__title" style={faces.title}>{choices.headline || title}</h2>
+  const headline = choices.headline || title;
+  if (compact) return (
+    <div key={replay} className={`smp smp--compact${replay ? " is-playing" : ""}`} style={style}>
+      <h2 className="smp__title" style={faces.title}>{headline}</h2>
       <p className="smp__sub" style={faces.subtitle}>{choices.subline || subtitle}</p>
-      {!compact && <p className="smp__body" style={faces.body}>{body}</p>}
-      <div className="smp__actions" style={{ fontFamily: faces.body?.fontFamily }}>
-        <span className="smp__cta">{cta}</span>
-        <span className="smp__more">{more}</span>
-      </div>
-      {!compact && (
-        <div className="smp__cards" aria-hidden>
-          {[0, 1, 2].map((i) => <span key={i} className="smp__card"><i /><b /><b /></span>)}
+      {!plain && (
+        <div className="smp__actions" style={{ fontFamily: faces.body?.fontFamily }}>
+          <span className="smp__cta">{cta}</span>
+          <span className="smp__more">{more}</span>
         </div>
       )}
+    </div>
+  );
+  // The whole system on one page, two sections every site has: the opening and what it offers.
+  // Typography sets every face, colour the grounds (the accent carries one card), layout the radius, motion how it all arrives
+  const ui = { fontFamily: faces.body?.fontFamily };
+  // Each piece takes its turn: --i orders the arrival
+  const at = (i: number) => ({ "--i": i } as CSSProperties);
+  return (
+    <div key={replay} className={`smp smp--web${replay ? " is-playing" : ""}`} style={style}>
+      <nav className="smpw-nav" style={{ ...ui, ...at(0) }} aria-hidden>
+        <b className="smpw-logo" style={faces.title}>{headline.split(/\s+/)[0]}</b>
+        <span className="smpw-links">{w.nav.map((l) => <span key={l}>{l}</span>)}</span>
+        <span className="smp__cta smpw-nav__cta">{cta}</span>
+      </nav>
+      <section className="smpw-hero">
+        <span className="smpw-eyebrow" style={{ ...ui, ...at(1) }}>{w.eyebrow}</span>
+        <h2 className="smp__title" style={{ ...faces.title, ...at(2) }}>{headline}</h2>
+        <p className="smp__sub" style={{ ...faces.subtitle, ...at(3) }}>{choices.subline || subtitle}</p>
+        {!plain && (
+          <div className="smp__actions" style={{ ...ui, ...at(4) }}>
+            <span className="smp__cta">{cta}</span>
+            <span className="smp__more">{more}</span>
+          </div>
+        )}
+      </section>
+      <section className="smpw-feat">
+        <div className="smpw-feat__head" style={at(5)}>
+          <h3 className="smpw-feat__title" style={faces.title}>{w.featuresTitle}</h3>
+          {body && <p className="smp__body" style={faces.body}>{body}</p>}
+        </div>
+        <div className="smpw-cards">
+          {w.features.map((f, i) => (
+            <article key={f.title} className={`smpw-card${i === 1 ? " is-accent" : ""}`} style={at(6 + i)}>
+              <i className="smpw-card__icon" aria-hidden />
+              <h4 style={faces.subtitle}>{f.title}</h4>
+              <p style={faces.body}>{f.text}</p>
+              <span className="smpw-card__link" style={ui}>{w.link} →</span>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

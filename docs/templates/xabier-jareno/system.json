@@ -1,0 +1,255 @@
+{
+  "name": "Landing de despacho · Xabier Jareño Abogados",
+  "template": {
+    "from": "",
+    "to": "https://xn--xabierjareoabogados-43b.com/",
+    "video": "https://screen.studio/share/bserDity",
+    "about": "Landing de una sola página para un despacho de abogados de Pamplona que quiere transmitir cercanía, seguridad y certeza: servicios, el espacio, los valores, el equipo y las reseñas de Google, con WhatsApp siempre a mano y su propia sesión fotográfica."
+  },
+  "summary": "Xabier Jareño Abogados es la nueva landing de un despacho de Pamplona que habla de tú a tú: cercanía, seguridad y certeza. Tinta sobre pergamino casi monocromo, serif ligera a gran tamaño en titulares y sans neutra en el cuerpo, filetes finos en vez de sombras y una sola foto cinematográfica del reportaje por bloque. Logo solo tipográfico, copy en primera persona y acceso a WhatsApp siempre a mano, con las reseñas de Google de cierre.",
+  "areas": {
+    "typography": {
+      "decision": "Titulares en serif ligera a gran tamaño, con mucho aire y peso ligero; cuerpo, nombres del equipo y botones en sans neutra. La jerarquía se construye por tamaño y por filetes finos, no por color ni sombras.",
+      "why": "Legora y sus parientes marcan el registro del despacho: una serif sobria y ligera en titulares que suena a criterio jurídico, con una sans neutra que mantiene el cuerpo legible y cercano.",
+      "never": []
+    },
+    "color": {
+      "decision": "Base de pergamino o crema con tinta oscura, casi monocromo. El botón negro es el único acento; los grises quedan solo para texto secundario y no hay degradados ni colores secundarios.",
+      "why": "La referencia principal pide tinta sobre pergamino y casi monocromo; el contraste se logra con tipografía y filetes, no con color, lo que sostiene la sobriedad que busca el despacho.",
+      "never": []
+    },
+    "layout": {
+      "decision": "Landing de una sola página: navbar con logo centrado, hero con subtítulo y CTA de WhatsApp, servicios, el espacio, los valores, el equipo, reseñas de Google (4,9 de 146 reseñas) y footer. Una sola foto cinematográfica por bloque, filetes finos en vez de sombras y botón flotante de WhatsApp siempre visible.",
+      "why": "El equipo fija las piezas (tabs de servicios, fichas de equipo, footer como cierre) y la referencia principal impone aire, filetes y una foto por bloque; el brief añade las reseñas y el globito de WhatsApp.",
+      "never": []
+    },
+    "motion": {
+      "decision": "Las fotos de la sesión pasan solas en el hero como slider cada pocos segundos; los servicios se presentan en tabs animados con imágenes del despacho detrás; el logo del footer se revela en sticky con GSAP y los elementos aparecen al hacer scroll con desenfoque y opacidad.",
+      "why": "El equipo describe el slider del hero, los tabs animados y el logo que se revela en sticky; el scroll blur de la referencia de Screen Studio concreta cómo aparecen los bloques sin sobrecargar.",
+      "never": []
+    },
+    "logo": {
+      "decision": "Logo solo tipográfico, sin símbolo ni imagotipo, compuesto en serif con el nombre exacto «Xabier Jareño abogados», respetando mayúsculas y minúsculas.",
+      "why": "El equipo pide literalmente un logo tipográfico como el de Legora y fija las mayúsculas y minúsculas del nombre; no hay base para un símbolo.",
+      "never": []
+    },
+    "imagery": {
+      "decision": "Usar solo la sesión fotográfica ya hecha del despacho, el espacio y el equipo, sin banco de imágenes. Una sola foto cinematográfica por bloque: slider en el hero, el espacio a pantalla partida con retrato de Xabier, nombre, cargo y firma, y las fichas de equipo con retrato.",
+      "why": "El despacho ya tiene reportaje y retratos profesionales; el equipo los señala para el hero, el espacio y el equipo, así que la imagen se resuelve con material propio y una foto por bloque.",
+      "never": []
+    },
+    "voice": {
+      "decision": "Copy cercano en primera persona, sin jerga jurídica, con las líneas de posicionamiento del despacho literalmente: «Cercanía, seguridad, certeza» y «Desde 2011». Frases cortas, de tú a tú, nombrando las áreas del Derecho y con la primera conversación como puerta de entrada.",
+      "why": "Los textos reales del despacho ya hablan de tú a tú y con rigor; el copy debe recoger ese tono y su vocabulario, incluidos servicios, equipo y footer, sin reescribir lo que ya funciona.",
+      "never": []
+    }
+  },
+  "board": [
+    {
+      "file": "board/seccion-retrato-firma.jpg",
+      "name": "Sección a pantalla partida con retrato y firma",
+      "areas": [
+        "layout",
+        "imagery"
+      ],
+      "note": "Componer el espacio a pantalla partida con retrato, nombre, cargo y firma.",
+      "takes": {
+        "layout": "Componer el espacio a pantalla partida con retrato, nombre, cargo y firma.",
+        "imagery": "Llevar el retrato de Xabier con nombre, cargo y firma junto al espacio."
+      }
+    },
+    {
+      "file": "board/footer-logo.jpg",
+      "name": "Footer con el logo a lo grande",
+      "areas": [
+        "typography",
+        "color",
+        "layout",
+        "motion"
+      ],
+      "note": "Me gusta este footer, además si podemos hacer con GSAP que se anime de tal forma que se devele el logo en sticky sería ideal.",
+      "takes": {
+        "typography": "Mantener el par serif en titulares y sans en el cuerpo.",
+        "color": "Mantener la base clara con un solo acento oscuro.",
+        "layout": "Tomar la estructura del footer como cierre de la landing.",
+        "motion": "Revelar el logo del footer en sticky con GSAP."
+      }
+    },
+    {
+      "file": "board/hero-logo-centrado.jpg",
+      "name": "Hero con navbar y logo centrado",
+      "areas": [
+        "layout",
+        "motion",
+        "imagery"
+      ],
+      "note": "Me gusta que la disposición del hero sea esta: navbar con logo centrado y contenido abajo en la pared de abajo con CTA y subtitle tal y como está",
+      "takes": {
+        "layout": "Colocar el navbar con logo centrado y el hero con subtítulo y CTA.",
+        "motion": "Pasar las fotos de la sesión como slider de fondo en el hero.",
+        "imagery": "Usar las fotos del despacho como slider de fondo en el hero."
+      }
+    },
+    {
+      "file": "board/servicios-tabs.jpg",
+      "name": "Servicios en tabs",
+      "areas": [
+        "layout",
+        "motion"
+      ],
+      "note": "Me gusta mucho la manera de presentar los servicios con este tipo de tabs bien animados.",
+      "takes": {
+        "layout": "Presentar los servicios en una zona de tabs con imágenes del despacho detrás.",
+        "motion": "Animar los tabs de servicios al cambiar de pestaña."
+      }
+    },
+    {
+      "file": "board/equipo-fichas.jpg",
+      "name": "Fichas del equipo",
+      "areas": [
+        "typography",
+        "layout",
+        "imagery"
+      ],
+      "note": "Para representar al equipo podemos hacer algo así bien sencillo.",
+      "takes": {
+        "typography": "Usar serif en titulares y nombres del equipo sobre fondo neutro.",
+        "layout": "Mostrar el equipo en fichas sencillas con retrato y datos breves.",
+        "imagery": "Usar fichas sencillas con retrato para presentar al equipo."
+      }
+    },
+    {
+      "web": "https://screen.studio/share/pzm9qyYv",
+      "name": "Aparición con blur y opacidad al hacer scroll",
+      "areas": [
+        "motion"
+      ],
+      "note": "Se puede crear este scroll blur + opacity effect para que salgan los elementos.",
+      "takes": {
+        "motion": "Aplicar scroll blur y opacidad suave a los elementos que aparecen."
+      }
+    },
+    {
+      "file": "board/logo-tipografico.jpg",
+      "name": "Logo tipográfico",
+      "areas": [
+        "logo"
+      ],
+      "note": "El diseño del logo quiero que sea tipográfico como el de Legora.",
+      "takes": {
+        "logo": "Componer el logo solo con tipografía, sin símbolo, al estilo de Legora."
+      }
+    },
+    {
+      "web": "https://legora.com",
+      "name": "Legora AI law",
+      "areas": [
+        "typography",
+        "color",
+        "layout",
+        "logo",
+        "imagery"
+      ],
+      "note": "Esta web me ha gustado porque es de un despacho de abogados que han escogido vídeo y fotos de manera muy muy acertada. Simplemente la dejo aquí para que sirva por si tenemos que hacer webs más corporate.",
+      "takes": {
+        "typography": "Adoptar la serif ligera a gran tamaño como registro único de titular.",
+        "color": "Adoptar tinta sobre pergamino casi monocromo, con el botón negro como único acento.",
+        "layout": "Poner una sola foto cinematográfica por bloque y filetes finos en vez de sombras.",
+        "logo": "Mantener el registro serif limpio y sobrio para la marca.",
+        "imagery": "Poner una sola foto cinematográfica por bloque."
+      }
+    },
+    {
+      "web": "https://press.stripe.com",
+      "name": "Stripe Press",
+      "areas": [
+        "typography",
+        "color"
+      ],
+      "note": "Pariente del estilo de Legora: serif finísima a gran tamaño sobre crema.",
+      "takes": {
+        "typography": "Copiar la serif finísima a gran tamaño sobre crema.",
+        "color": "Tomar la base crema con tinta oscura y filetes finos."
+      }
+    },
+    {
+      "web": "https://www.harvey.ai",
+      "name": "Harvey",
+      "areas": [
+        "typography"
+      ],
+      "note": "Pariente del estilo de Legora: legal-tech con serif editorial.",
+      "takes": {
+        "typography": "Tomar su serif editorial como referencia legal-tech para titulares."
+      }
+    },
+    {
+      "web": "https://xn--xabierjareoabogados-43b.com/fotos",
+      "name": "Sesión de fotos del despacho",
+      "areas": [
+        "imagery",
+        "voice"
+      ],
+      "note": "La sesión fotográfica del despacho: las 65 fotos del reportaje y los retratos de Xabier, Tamara y Andrea, con las que están ahora en la web (hero, slider, banda panorámica). Página interna, sin enlaces desde la web y con no-index.",
+      "takes": {
+        "imagery": "Tirar solo de las fotos del reportaje y los retratos del equipo ya hechos.",
+        "voice": "Tomar literalmente el posicionamiento «Cercanía, seguridad, certeza» y «Desde 2011»."
+      }
+    },
+    {
+      "text": "board/servicios.md",
+      "name": "Servicios",
+      "areas": [
+        "voice"
+      ],
+      "note": "El listado de servicios tal cual está publicado: las cinco áreas con todas sus materias.",
+      "takes": {
+        "voice": "Seguir el tono y el vocabulario del listado real de servicios."
+      }
+    },
+    {
+      "text": "board/el-espacio.md",
+      "name": "El espacio",
+      "areas": [
+        "voice"
+      ],
+      "note": "Seguir el tono pausado del copy de El espacio.",
+      "takes": {
+        "voice": "Seguir el tono pausado del copy de El espacio."
+      }
+    },
+    {
+      "text": "board/valores.md",
+      "name": "Valores",
+      "areas": [
+        "voice"
+      ],
+      "note": "Recoger el tú a tú y el rigor de los valores del despacho.",
+      "takes": {
+        "voice": "Recoger el tú a tú y el rigor de los valores del despacho."
+      }
+    },
+    {
+      "text": "board/el-equipo.md",
+      "name": "El equipo",
+      "areas": [
+        "voice"
+      ],
+      "note": "Mantener el registro del equipo: nombres, cargos y trayectoria.",
+      "takes": {
+        "voice": "Mantener el registro del equipo: nombres, cargos y trayectoria."
+      }
+    },
+    {
+      "text": "board/footer.md",
+      "name": "Footer",
+      "areas": [
+        "voice"
+      ],
+      "note": "Cerrar con la llamada del footer: «Cuéntanos qué te ha pasado».",
+      "takes": {
+        "voice": "Cerrar con la llamada del footer: «Cuéntanos qué te ha pasado»."
+      }
+    }
+  ]
+}

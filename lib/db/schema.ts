@@ -182,6 +182,8 @@ export const project = pgTable("project", {
   template: jsonb("template").$type<unknown>(),
   /** The recipe: how the work was done, as a Markdown document an agent can follow (the process of a template) */
   recipe: text("recipe").notNull().default(""),
+  /** When the team said it had its references: until then the project opens on its board, gathering; after, on its system */
+  startedAt: timestamp("started_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
@@ -459,6 +461,9 @@ export const projectSystem = pgTable("project_system", {
   summary: text("summary").notNull().default(""),
   /** The last model run: which references it read, with which prompt, when (types/system.ts SystemRun) */
   runJson: jsonb("run_json").$type<unknown>(),
+  /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>"): the file shows these
+   *  words instead of the ones the app would write, until someone goes back to them */
+  doc: jsonb("doc").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("project_system_org_idx").on(t.organizationId)]);
@@ -490,6 +495,29 @@ export const systemArea = pgTable("system_area", {
   oneOf("system_area_area_check", t.area, SYSTEM_AREA_KEYS),
   check("system_area_source_check", sql`${t.source} is null or ${t.source} in ('model', 'team')`),
   check("system_area_confidence_check", sql`${t.confidence} between 0 and 100`),
+]);
+
+/** The parts of criterio.md that are not an area (its head, what the project is, the paragraph, the references): a pin can sit on them too */
+export const DOC_PART_KEYS = ["head", "project", "summary", "refs"] as const;
+
+/** The team talking about one area of a project's system: what they think of the decision, what they would try.
+ *  `area` is the area, or the part of criterio.md a pin was left on (DOC_PART_KEYS) */
+export const systemAreaComment = pgTable("system_area_comment", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  area: text("area").notNull(),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  /** Name at the time of writing (in case the user is gone) */
+  authorName: text("author_name").notNull(),
+  body: text("body").notNull(),
+  /** What the line is about: an option tried on the sample ({ choice, label }) or a reference ({ itemId }). Null: the area as a whole */
+  about: jsonb("about").$type<unknown>(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("system_area_comment_project_idx").on(t.projectId, t.area, t.createdAt),
+  index("system_area_comment_org_idx").on(t.organizationId),
+  oneOf("system_area_comment_area_check", t.area, [...SYSTEM_AREA_KEYS, ...DOC_PART_KEYS]),
 ]);
 
 export const systemAreaRevision = pgTable("system_area_revision", {

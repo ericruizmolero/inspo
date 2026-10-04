@@ -1,5 +1,41 @@
 /* Empty project: pick references from the library to bring in. Shares the first-run layout
    (EmptyStart.module.css); these are only the pieces it adds. */
+/* The search dock floats over the bottom of the screen: the last row ends above it */
+section.wrap { padding-bottom: 170px; }
+/* What the project is, under its name: a quiet sheet to write on, flat where the prompt box is raised */
+.describeBox {
+  display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; box-sizing: border-box;
+  padding: 16px 20px 12px; border-radius: 16px; background: var(--surface); text-align: left; cursor: text;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+@media (hover: hover) { .describeBox:hover { background: var(--surface-2); } }
+.describeBox:focus-within { background: var(--surface-2); box-shadow: 0 0 0 1px var(--border-strong); }
+.describe {
+  width: 100%; padding: 0; border: 0; background: transparent; resize: none; outline: none;
+  field-sizing: content; min-height: 3.2em; max-height: 40vh;
+  font: inherit; font-size: 15px; line-height: 1.6; color: var(--text); caret-color: var(--text);
+}
+.describe::placeholder { color: var(--muted); }
+.describeFoot { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.hint { max-width: 440px; margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+/* An image goes in from the same box: the button sits where the text would start */
+.attach {
+  position: absolute; left: 10px; display: grid; place-items: center;
+  width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent;
+  color: var(--muted); cursor: pointer; transition: color 0.12s, background 0.12s;
+}
+@media (hover: hover) { .attach:hover { color: var(--text); background: var(--surface-2); } }
+.attach:disabled { opacity: 0.4; cursor: default; }
+/* One class more than the shared rule, so it wins whatever order the two sheets load in */
+.attach ~ .promptInput { padding-left: 54px; }
+/* A file dragged over the screen: the whole of it takes the drop, whatever the scroll */
+.drop {
+  position: absolute; inset: 8px; z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px dashed var(--text); border-radius: var(--radius-m);
+  background: color-mix(in srgb, var(--bg) 88%, transparent); font-size: 18px; color: var(--text);
+  pointer-events: none; animation: fade-in 0.12s;
+}
 .label { font-size: 13px; color: var(--muted); }
 .none { font-size: 13px; color: var(--muted); padding: 24px 0; }
 .grid { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -25,7 +61,7 @@
 .host { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
 /* Floats over the bottom of the screen while there is a choice to confirm */
 .bar {
-  position: sticky; bottom: 20px; z-index: 5; margin-top: 24px;
+  position: sticky; bottom: 100px; z-index: 5; margin-top: 24px;
   display: flex; align-items: center; gap: 8px; max-width: 100%;
   padding: 8px 8px 8px 16px; border-radius: 14px;
   background: var(--surface-2); border: 1px solid var(--border-strong); box-shadow: var(--shadow-pop);
