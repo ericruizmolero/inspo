@@ -18,9 +18,12 @@ export function mediaFileFrom(dt: DataTransfer | null): File | null {
   return null;
 }
 
+/** What a function takes on Vercel is 4.5 MB, the form around the file included */
+const VIA_APP_MAX = 4 * 1024 * 1024;
+
 /** Uploads the file to this workspace's media folder and returns its path.
  *  First it asks for a signed URL and PUTs the file straight to R2 (app/api/media/route.ts);
- *  with files on disk there is none, and the file is posted to the app. */
+ *  with files on disk there is none, or when that PUT cannot be made, and the file is posted to the app. */
 export async function uploadMedia(file: File): Promise<string> {
   if (!isMediaFile(file)) throw new Error("imagesOnly");
   if (file.size > MAX_BYTES) throw new Error("mediaTooHeavy");
@@ -32,9 +35,16 @@ export async function uploadMedia(file: File): Promise<string> {
   const slot = await ask.json().catch(() => ({}));
   if (!ask.ok || !slot.url) throw new Error(slot.error ?? `Error ${ask.status}`);
   if (slot.put) {
-    const put = await fetch(slot.put as string, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-    if (!put.ok) throw new Error(`Error ${put.status}`);
-    return slot.url as string;
+    // Straight to the storage. If the browser cannot get there (the bucket's CORS rules, a blocked request: it shows
+    // as "Failed to fetch"), a file small enough for a function goes through the app instead of failing
+    try {
+      const put = await fetch(slot.put as string, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+      if (put.ok) return slot.url as string;
+      if (file.size > VIA_APP_MAX) throw new Error(`Error ${put.status}`);
+    } catch (e) {
+      if (file.size > VIA_APP_MAX) throw e;
+      console.warn("media: direct upload failed, sending it through the app", e instanceof Error ? e.message : e);
+    }
   }
   const fd = new FormData();
   fd.append("file", file);
