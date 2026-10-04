@@ -14,11 +14,13 @@ import { Button } from "@/components/ui/button";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
-const WHY_MAX = 400;
+export const WHY_MAX = 400;
 
 /** The part of an area's block a person writes: the decision, the why under its bold label, and the never list */
 const rawOf = (b: AreaBlock) => [b.decision, b.why ? `**${b.whyLabel}:** ${b.why}` : "", b.never ? neverMd(b) : ""].filter(Boolean).join("\n\n");
+export const rawAreaText = rawOf;
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+export function parseAreaText(text: string, whyLabel: string, neverLabel: string): { decision: string; why: string; never: string } { return parse(text, whyLabel, neverLabel); }
 function parse(text: string, whyLabel: string, neverLabel: string): { decision: string; why: string; never: string } {
   const n = new RegExp(`^\\*\\*${esc(neverLabel)}:\\*\\*[ \\t]*`, "m").exec(text);
   const before = n ? text.slice(0, n.index) : text;
@@ -28,13 +30,19 @@ function parse(text: string, whyLabel: string, neverLabel: string): { decision: 
   return { decision: before.slice(0, w.index).trim(), why: before.slice(w.index + w[0].length).trim(), never };
 }
 
+/** A long address, as the panel shows it: its host and its last part (the file copied or downloaded has it whole) */
+function shortUrl(url: string): string {
+  if (url.length <= 56) return url;
+  try { const u = new URL(url); const last = u.pathname.split("/").filter(Boolean).pop() ?? ""; return `${u.host}/\u2026/${last.length > 28 ? `\u2026${last.slice(-24)}` : last}`; } catch { return `${url.slice(0, 40)}\u2026`; }
+}
+
 /** A line of the file, coloured the way an editor would: bold, links and emphasis keep their marks */
 function inline(line: string): ReactNode[] {
   return line.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\)|`[^`]+`)/g).filter(Boolean).map((part, i) => {
     if (/^\*\*[^*]+\*\*$/.test(part)) return <b key={i} className="mdv-b">{part}</b>;
     if (/^`[^`]+`$/.test(part)) return <span key={i} className="mdv-code">{part}</span>;
     const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (link) return <span key={i}>[<a className="mdv-link" href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>]<span className="mdv-url">({link[2]})</span></span>;
+    if (link) return <span key={i}>[<a className="mdv-link" href={link[2]} target="_blank" rel="noreferrer">{link[1]}</a>]<span className="mdv-url" title={link[2]}>({shortUrl(link[2])})</span></span>;
     return <span key={i}>{part}</span>;
   });
 }
@@ -43,10 +51,13 @@ function Line({ text }: { text: string }) {
   if (/^#{1,6} /.test(text)) return <div className="mdv-line mdv-h">{text}</div>;
   if (text.startsWith("> ")) return <div className="mdv-line mdv-q">{text}</div>;
   if (/^_.*_$/.test(text)) return <div className="mdv-line mdv-em">{text}</div>;
-  return <div className="mdv-line">{inline(text)}</div>;
+  // A list line that wraps keeps its indent: the second row starts under the first's words, not at the margin
+  const bullet = text.match(/^(\s*)- /);
+  const hang = bullet ? `${bullet[1].length + 2}ch` : undefined;
+  return <div className="mdv-line" style={hang ? { paddingLeft: hang, textIndent: `-${hang}` } : undefined}>{inline(text)}</div>;
 }
 
-export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, onDownload, copied, projectId, projectName, hasRecipe }: {
+export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -56,13 +67,25 @@ export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, o
   onCopy: () => void; onDownload: () => void; copied: boolean;
   /** The recipe beside the file: how the work is done, kept with the project */
   projectId: string; projectName: string; hasRecipe: boolean;
+  /** Leaves the block's new text as a proposal for the team instead of writing it; resolves true when it was left */
+  onPropose?: (area: SystemArea, next: { decision: string; why: string; never: string }, reason: string) => Promise<boolean>;
+  /** More of an area's tools, beside its heading (confirming what the agent proposed) */
+  tools?: (block: AreaBlock) => ReactNode;
+  /** What the team is doing with an area, under its block: the proposals waiting and its conversation */
+  after?: (block: AreaBlock) => ReactNode;
 }) {
   const { t } = useT();
   const s = t.system.mdView;
   const [editing, setEditing] = useState<SystemArea | null>(null);
   const [draft, setDraft] = useState("");
+  const [reason, setReason] = useState("");
   // While editing, the never label is always there: a rule typed under it lands in the list, never in the why
-  const start = (b: AreaBlock) => { setDraft(b.never ? rawOf(b) : `${rawOf(b)}${rawOf(b) ? "\n\n" : ""}**${b.neverLabel}:**\n- `); setEditing(b.area); };
+  const start = (b: AreaBlock) => { setDraft(b.never ? rawOf(b) : `${rawOf(b)}${rawOf(b) ? "\n\n" : ""}**${b.neverLabel}:**\n- `); setReason(""); setEditing(b.area); };
+  const propose = async (b: AreaBlock) => {
+    const p = parsed(b);
+    if (!onPropose || tooLong(b) || !p.decision) return;
+    if (await onPropose(b.area, p, reason.trim())) setEditing(null);
+  };
   const parsed = (b: AreaBlock) => parse(draft, b.whyLabel, b.neverLabel);
   const tooLong = (b: AreaBlock) => { const p = parsed(b); return p.decision.length > DECISION_MAX || p.why.length > WHY_MAX || p.never.length > NEVER_MAX; };
   const save = async (b: AreaBlock) => {
@@ -119,25 +142,26 @@ export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, o
       </header>
       <div className="mdv-doc">
         {blocks.map((b) => {
-          if (b.kind === "head") return <div key="head" className="mdv-block">{b.lines.flatMap((line, i) => [<Line key={`l${i}`} text={line} />, <Line key={`s${i}`} text="" />])}</div>;
+          if (b.kind === "head") return <div key="head" id="sdoc-head" className="mdv-block">{b.lines.flatMap((line, i) => [<Line key={`l${i}`} text={line} />, <Line key={`s${i}`} text="" />])}</div>;
           if (b.kind === "summary") return (
-            <div key="summary" className="mdv-block">
+            <div key="summary" id="sdoc-summary" className="mdv-block">
               <Line text={`## ${b.heading}`} /><Line text="" /><Line text={b.text} /><Line text="" />
             </div>
           );
           // Written whole by the app: what the project is, and the references one by one
           if (b.kind === "section") return (
-            <div key={b.id} className="mdv-block">
+            <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
               <Line text={`## ${b.heading}`} /><Line text="" />{b.lines.map((line, i) => <Line key={i} text={line} />)}<Line text="" />
             </div>
           );
           const on = editing === b.area;
           const p = on ? parsed(b) : null;
           return (
-            <div key={b.area} className={`mdv-block mdv-block--area${on ? " is-editing" : ""}${busy.has(b.area) ? " is-busy" : ""}`} aria-busy={busy.has(b.area)}>
+            <div key={b.area} id={`sdoc-${b.area}`} className={`mdv-block mdv-block--area${on ? " is-editing" : ""}${busy.has(b.area) ? " is-busy" : ""}`} aria-busy={busy.has(b.area)}>
               <div className="mdv-line mdv-h mdv-h--area">
                 <span>{`## ${b.heading}`}</span>
                 <span className="mdv-tools">
+                  {!on && areaTools?.(b)}
                   {!on && <button type="button" className="mdv-tool" onClick={() => start(b)}>{b.decision ? t.system.edit : t.system.write}</button>}
                   <button type="button" className="mdv-tool" onClick={() => onOpen(b.area)}>{s.openArea}</button>
                 </span>
@@ -151,8 +175,10 @@ export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, o
                       if (e.key === "Escape") { e.stopPropagation(); setEditing(null); }
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void save(b); }
                     }} />
+                  {onPropose && <input className="mdv-reason" value={reason} maxLength={300} placeholder={t.doc.reason} aria-label={t.doc.reason} onChange={(e) => setReason(e.target.value)} />}
                   <div className="mdv-edit__row">
-                    <Button variant="primary" size="sm" disabled={busy.has(b.area) || tooLong(b)} onClick={() => void save(b)}>{t.system.save}</Button>
+                    <Button variant="primary" size="sm" disabled={busy.has(b.area) || tooLong(b)} onClick={() => void save(b)} title={t.doc.saveHint}>{t.system.save}</Button>
+                    {onPropose && <Button size="sm" disabled={busy.has(b.area) || tooLong(b) || !p!.decision || (p!.decision === b.decision.trim() && p!.why === b.why.trim() && p!.never === b.never.trim())} onClick={() => void propose(b)} title={t.doc.proposeHint}>{t.doc.propose}</Button>}
                     <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>{t.system.cancel}</Button>
                     <small className={tooLong(b) ? "is-over" : ""}>{p!.decision.length}/{DECISION_MAX}{p!.why ? ` · ${b.whyLabel.toLowerCase()} ${p!.why.length}/${WHY_MAX}` : ""}{p!.never ? ` · ${b.neverLabel.toLowerCase()} ${p!.never.length}/${NEVER_MAX}` : ""} · {s.editHint}</small>
                   </div>
@@ -167,6 +193,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, o
                 </div>
               )}
               {!on && b.meta.length > 0 && <><Line text="" />{b.meta.map((line, i) => <Line key={i} text={line} />)}</>}
+              {after && <div className="mdv-team">{after(b)}</div>}
               <Line text="" />
             </div>
           );

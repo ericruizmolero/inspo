@@ -486,3 +486,7 @@
 /* Keep as template: a small form under the button */
 .sysb-keep { display: flex; flex-direction: column; gap: 10px; }
 .sysb-keep label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted); }
+/* A proposal, as a line of an area's conversation */
+.ath-proposal { margin: 4px 0 0; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font-size: 13px; line-height: 1.5; color: var(--text); }
+.ath-proposal b { font-weight: 550; color: var(--text-2); margin-right: 4px; }
+.ath-proposal.is-rejected { color: var(--muted); }

@@ -1,0 +1,133 @@
+/* criterio.md as a document (components/SystemDoc.tsx): the file's parts down the left, the page beside them.
+   Set for reading: one column, the app's own type, weight and colour for hierarchy, room between the parts
+   instead of lines. */
+.sdoc { display: flex; align-items: flex-start; gap: 40px; width: 100%; max-width: 1080px; margin: 8px auto 0; }
+/* The page says what the project is: the line under the title would say it twice */
+.sysb-inner:has(.sdoc) .sysb-intent { display: none; }
+
+.sdoc-toc { position: sticky; top: 0; flex: 0 0 188px; display: flex; flex-direction: column; gap: 1px; padding-top: 4px; }
+.sdoc-toc button { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.sdoc-toc button:hover { background: var(--surface); color: var(--text); }
+.sdoc-toc__gap { height: 10px; }
+/* Where an area stands: decided by the team, proposed, or open */
+.sdoc-toc button i { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.sdoc-toc button.is-team i { background: var(--success); }
+.sdoc-toc button.is-open i { background: none; box-shadow: inset 0 0 0 1.5px var(--muted); }
+.sdoc-toc button.is-open { color: var(--muted); }
+.sdoc-toc button b { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--warning); color: #1a1405; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; }
+.sdoc-toc button em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.sdoc-page { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 44px; padding-bottom: 40px; }
+.sdoc-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.sdoc-page > .sdoc-tools { margin-bottom: -20px; }
+.sdoc-tools__file { display: inline-flex; gap: 6px; }
+.sdoc-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.sdoc-btn svg { width: 13px; height: 13px; }
+.sdoc-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.sdoc-btn:disabled { opacity: 0.45; cursor: default; }
+.sdoc-btn--fill { background: var(--surface-2); color: var(--text); } .sdoc-btn--fill:hover:not(:disabled) { background: var(--surface-3); }
+.sdoc-btn--solid { background: var(--text); color: var(--bg); font-weight: 550; } .sdoc-btn--solid:hover:not(:disabled) { background: var(--text); color: var(--bg); opacity: 0.9; }
+.sdoc-btn__down { display: inline-flex; transform: rotate(90deg); }
+
+/* A part jumped to lands under the bars that float over the page */
+.sdoc-part { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 92px; }
+.sdoc-part h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-family: var(--font-display, var(--font)); font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; color: var(--text); }
+.sdoc-part h2 em, .sdoc-refs h3 em { font-family: var(--font); font-style: normal; font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sdoc-part p { margin: 0; font-size: 15px; line-height: 1.62; color: var(--text-2); text-wrap: pretty; }
+.sdoc-part p.sdoc-lead { font-size: 16.5px; line-height: 1.55; color: var(--text); }
+.sdoc-part p.sdoc-muted, .sdoc-muted { font-size: 13px; color: var(--muted); }
+
+.sdoc-area.is-busy { opacity: 0.6; }
+.sdoc-area__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sdoc-state { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); }
+.sdoc-state svg { width: 13px; height: 13px; } .sdoc-state.is-team { color: var(--success); }
+.sdoc-area__tools { margin-left: auto; display: inline-flex; gap: 2px; }
+.sdoc-area__tools .sdoc-btn { color: var(--muted); }
+
+/* The words a person writes: pressed to change them */
+.sdoc-text { display: flex; flex-direction: column; gap: 10px; margin: 0 -12px; padding: 8px 12px; border-radius: 12px; cursor: text; transition: background 0.15s; }
+.sdoc-text:hover, .sdoc-text:focus-visible { background: var(--surface); outline: none; }
+.sdoc-part p.sdoc-decision { font-size: 16px; line-height: 1.6; color: var(--text); }
+.sdoc-part p.sdoc-open { color: var(--muted); }
+.sdoc-why b, .sdoc-never > b { font-weight: 550; color: var(--text); margin-right: 4px; }
+.sdoc-never { font-size: 15px; line-height: 1.6; color: var(--text-2); }
+.sdoc-never ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.sdoc-never li { display: flex; gap: 10px; align-items: baseline; }
+.sdoc-never li::before { content: ""; flex-shrink: 0; width: 9px; height: 1.5px; border-radius: 1px; background: var(--muted); transform: translateY(-4px); }
+
+.sdoc-edit { display: flex; flex-direction: column; gap: 8px; }
+.sdoc-input, .sdoc-reason { width: 100%; box-sizing: border-box; border: 0; border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; outline: none; }
+.sdoc-input { padding: 12px 14px; font-size: 15px; line-height: 1.6; resize: vertical; box-shadow: inset 0 0 0 1px var(--border-strong); }
+.sdoc-reason { height: 36px; padding: 0 14px; font-size: 13.5px; }
+.sdoc-edit__row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sdoc-edit__row small { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; } .sdoc-edit__row small.is-over { color: var(--danger, #ff6b61); }
+
+/* A proposal: what someone would write instead, waiting for the team */
+.sdoc-proposal { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--warning) 9%, var(--surface)); }
+.sdoc-proposal header { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
+.sdoc-proposal header b { font-weight: 550; color: var(--text); }
+.sdoc-proposal time { font-size: 12px; color: var(--muted); }
+.sdoc-proposal__tools { margin-left: auto; display: inline-flex; gap: 4px; }
+.sdoc-part p.sdoc-proposal__reason { font-size: 13.5px; color: var(--muted); }
+
+/* The references behind an area: the picture, its code, what it brings and what was said of it */
+.sdoc-refs { display: flex; flex-direction: column; gap: 4px; }
+.sdoc-refs h3 { display: flex; align-items: baseline; gap: 7px; margin: 4px 0 2px; font-size: 13px; font-weight: 550; color: var(--text); }
+.sdoc-ref { display: flex; gap: 14px; margin: 0 -12px; padding: 8px 12px; border-radius: 12px; }
+.sdoc-ref:hover { background: var(--surface); }
+.sdoc-ref__pic, .sdoc-entry__pic { flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--surface-2); color: var(--muted); font: inherit; cursor: pointer; }
+.sdoc-ref__pic { width: 84px; height: 56px; }
+.sdoc-ref__pic img, .sdoc-entry__pic img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.sdoc-ref__body, .sdoc-entry__body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.sdoc-part p.sdoc-ref__name { display: flex; align-items: baseline; gap: 7px; font-size: 14px; line-height: 1.4; color: var(--text); }
+.sdoc-ref__name b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-2); }
+.sdoc-ref__name span { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sdoc-ref__name em { font-style: normal; font-size: 12.5px; color: var(--muted); }
+.sdoc-ref__name a { display: inline-flex; color: var(--muted); } .sdoc-ref__name a:hover { color: var(--text); } .sdoc-ref__name a svg { width: 13px; height: 13px; }
+.sdoc-part p.sdoc-ref__take { font-size: 14px; line-height: 1.5; color: var(--text); }
+.sdoc-part p.sdoc-ref__said { font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
+.sdoc-ref__said b { font-weight: 550; color: var(--text); margin-right: 3px; }
+
+.sdoc-talk { display: flex; flex-direction: column; gap: 10px; }
+.sdoc-talk__toggle { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; height: 30px; margin-left: -10px; padding: 0 10px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; }
+.sdoc-talk__toggle:hover { background: var(--surface); color: var(--text); }
+.sdoc-talk__toggle i { display: inline-flex; color: var(--muted); transition: transform 0.2s var(--ease-out); } .sdoc-talk__toggle i svg { width: 12px; height: 12px; }
+.sdoc-talk__toggle[aria-expanded="true"] i { transform: rotate(180deg); }
+.sdoc-talk__faces { display: inline-flex; } .sdoc-talk__faces .cm-avatar + .cm-avatar { margin-left: -5px; box-shadow: 0 0 0 2px var(--bg); }
+.sdoc-talk .ath { max-width: 560px; }
+
+/* Every reference once */
+.sdoc-entries { display: flex; flex-direction: column; gap: 22px; margin-top: 6px; }
+.sdoc-entry { display: flex; gap: 18px; }
+.sdoc-entry__pic { width: 168px; height: 112px; border-radius: 10px; }
+.sdoc-part p.sdoc-entry__what { font-size: 14px; line-height: 1.55; }
+.sdoc-brings { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.sdoc-brings li { display: flex; gap: 8px; align-items: baseline; }
+.sdoc-brings button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer; transform: translateY(-1px); }
+.sdoc-brings button:hover { background: var(--surface-3); color: var(--text); }
+.sdoc-part p.sdoc-tags { font-size: 12.5px; color: var(--muted); }
+
+@media (max-width: 900px) { .sdoc { flex-direction: column; gap: 16px; } .sdoc-toc { position: static; flex: none; flex-direction: row; flex-wrap: wrap; } .sdoc-toc__gap { display: none; } }
+@media (max-width: 600px) { .sdoc-entry { flex-direction: column; gap: 10px; } .sdoc-entry__pic { width: 100%; height: 160px; } }
+
+/* ─── The file itself, first: the Markdown panel (components/SystemMarkdown.tsx) beside the same parts list, set
+   with more air than a code block, and with the team's tools on each area ─── */
+.sdoc-page--md { gap: 12px; }
+.sdoc-page--md > .sdoc-tools { margin-bottom: 0; }
+.sdoc .mdv { max-width: none; }
+.sdoc .mdv-doc { padding: 26px 30px 36px; font-size: 13.5px; line-height: 1.75; }
+.sdoc .mdv-line { min-height: 1.75em; }
+.sdoc .mdv-h { font-size: 15px; }
+.sdoc #sdoc-head .mdv-h { font-size: 17px; }
+.sdoc .mdv-block { scroll-margin-top: 92px; }
+.sdoc .mdv-block--area { margin-top: 10px; }
+.sdoc .mdv-tools { opacity: 1; }
+.mdv-tool--solid { display: inline-flex; align-items: center; gap: 5px; background: var(--md-strong); color: var(--md-bg); font-weight: 550; }
+.mdv-tool--solid:hover { background: var(--md-strong); color: var(--md-bg); opacity: 0.9; } .mdv-tool--solid svg { width: 12px; height: 12px; }
+.mdv-reason { width: 100%; box-sizing: border-box; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--md-strong); font: inherit; font-size: 13px; outline: none; }
+.mdv-reason::placeholder { color: var(--md-dim); }
+/* What the team is doing with the area, under its block: the app's own voice, not the file's */
+.mdv-team { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 14px; font-family: var(--font); }
+.mdv-team:empty { display: none; }
+.sdoc-proposal p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text); }
+.sdoc-proposal p.sdoc-why { color: var(--text-2); }

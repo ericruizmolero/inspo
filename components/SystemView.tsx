@@ -18,7 +18,7 @@ import AreaThread from "./AreaThread";
 import { AreaFaces, RecentChanges, VoiceBand, useSystemActivity } from "./SystemBento";
 import { AreaSample, AreaTabs, RefStrip, Thumb, TypeTester, pairStyle, useTypePair, useTypeRows } from "./SystemStage";
 import { COLOR_ROLES, RefMaterial, Sample, bezierOf, luminance, sampleColors, useSampleChoices, type ColorRole, type SampleChoices } from "./SystemSample";
-import SystemMarkdown from "./SystemMarkdown";
+import SystemDoc from "./SystemDoc";
 import { keepAsTemplate } from "@/app/actions/templates";
 import AreaStarter, { useAreaIdeals } from "./SystemStarter";
 import { areaCandidates } from "@/lib/candidates";
@@ -696,7 +696,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
   }, [project.id, t]);
 
   // The latest changes and each area's conversation (the bento's band, and the file): read again whenever an area moves
-  const activity = useSystemActivity(project.id, sys.areas.map((a) => a.updatedAt ?? "").join("|"));
+  const [talkN, setTalkN] = useState(0);
+  const activity = useSystemActivity(project.id, `${sys.areas.map((a) => a.updatedAt ?? "").join("|")}|${talkN}`);
+  // Oldest first: a reference keeps its code (R1, R2…) when more arrive
+  const boardIds = useMemo(() => board.map((i) => i.id!).filter(Boolean).reverse(), [board]);
   // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place.
   // It carries the whole project: what it is, each area with its references and what was said, and every reference once
   const blocks = useMemo(() => criterioBlocks({
@@ -704,15 +707,14 @@ export default function SystemView({ project, system, onSystem, board, library, 
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
-    // Oldest first: a reference keeps its code (R1, R2…) when more arrive
-    about: project.intent, board: board.map((i) => i.id!).filter(Boolean).reverse(), talk: activity?.notes,
+    about: project.intent, board: boardIds, talk: activity?.notes,
     origin: typeof window === "undefined" ? "" : window.location.origin,
-  }), [sys, project.name, project.intent, library, board, labels, t, clientItem, refInfo, activity]);
+  }), [sys, project.name, project.intent, library, boardIds, labels, t, clientItem, refInfo, activity]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // The system, as the tiles a person reads or as the file an agent reads: the same thing, seen two ways. Kept on this machine
-  const [view, setViewNow] = useState<"bento" | "md">("bento");
-  useEffect(() => { try { if (localStorage.getItem("criterio:system-view") === "md") setViewNow("md"); } catch { /* private mode */ } }, []);
-  const setView = (v: "bento" | "md") => { setViewNow(v); try { localStorage.setItem("criterio:system-view", v); } catch { /* it lasts the visit */ } };
+  // The system's result is the document, criterio.md (components/SystemDoc.tsx). The bento is not shown any more
+  // (Eric, 2026-10-04); its code below waits for the cleanup
+  const view = "md" as "bento" | "md";
   const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* the download still works */ } };
   const download = () => {
     const blob = new Blob([markdown], { type: "text/markdown" });
@@ -782,10 +784,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
               {onClient && <ClientPicker client={clientItem} board={board} imageOf={imageOf} onPick={onClient} />}
             </div>
             <div className="sysb-head__side">
-              <div className="tt-modes sysb-views" role="tablist" aria-label={t.system.views.label}>
-                <button type="button" role="tab" aria-selected={view === "bento"} className={`tt-mode${view === "bento" ? " is-on" : ""}`} onClick={() => setView("bento")}>{t.system.views.bento}</button>
-                <button type="button" role="tab" aria-selected={view === "md"} className={`tt-mode${view === "md" ? " is-on" : ""}`} onClick={() => setView("md")}>{t.system.views.markdown}</button>
-              </div>
               {filled > 0 ? (
                 <p className="sysn-core__state" title={t.system.polishHint}>
                   <svg className="sysn-core__ring" viewBox="0 0 14 14" width="14" height="14" aria-hidden>
@@ -816,7 +814,9 @@ export default function SystemView({ project, system, onSystem, board, library, 
           </header>
           {error && <p className="sysv-error" role="alert">{error}</p>}
           {view === "md" && (
-            <SystemMarkdown blocks={blocks} busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
+            <SystemDoc blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
+              onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
+              busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
               onSave={async (area, next) => {
                 const cur = sys.areas.find((x) => x.area === area)!;
                 if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));

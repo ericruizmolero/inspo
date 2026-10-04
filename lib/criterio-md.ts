@@ -26,7 +26,7 @@ export interface RefInfo {
   said?: { who: string; text: string; pin?: boolean }[];
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
-export interface TalkLine { who: string; text: string; label?: string; itemId?: string }
+export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected" } }
 
 export interface CriterioMdInput {
   project: string;
@@ -48,6 +48,7 @@ export interface CriterioMdInput {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
     project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post", string>; what: string; savedBy: string; said: string; pinned: string;
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
+    proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
   };
 }
 
@@ -106,7 +107,10 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       meta.push(`- **${strings.talk} (${lines.length}):**`);
       for (const l of lines) {
         const on = l.label ?? (l.itemId && items[l.itemId] ? `${code.get(l.itemId) ?? ""} ${items[l.itemId].name}`.trim() : "");
-        meta.push(`  - ${l.who}${on ? `, ${strings.on(on)}` : ""}: ${quote(l.text)}`);
+        if (l.proposal) {
+          meta.push(`  - ${l.who} ${strings.proposes} (${strings.states[l.proposal.state]}): ${quote(l.proposal.decision, 600)}`);
+          if (l.text && l.text !== l.proposal.decision) meta.push(`    - ${quote(l.text)}`);
+        } else meta.push(`  - ${l.who}${on ? `, ${strings.on(on)}` : ""}: ${quote(l.text)}`);
       }
     }
     blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta });

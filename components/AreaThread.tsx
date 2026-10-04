@@ -107,7 +107,10 @@ export default function AreaThread({ projectId, area, refs }: {
                       <i aria-hidden />{opt.label}
                     </button>
                   )}
-                  <p className="ath-note__text">{n.body}</p>
+                  {n.about && "proposal" in n.about && (
+                    <p className={`ath-proposal is-${n.about.proposal.state}`}><b>{t.doc.proposal} ({t.system.md.states[n.about.proposal.state]})</b> {n.about.proposal.decision}</p>
+                  )}
+                  {!(n.about && "proposal" in n.about && n.body === n.about.proposal.decision) && <p className="ath-note__text">{n.body}</p>}
                 </div>
               </li>
             );

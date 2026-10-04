@@ -6,15 +6,18 @@ import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
+import { DECISION_MAX, NEVER_MAX, SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 
 const A = schema.systemAreaComment;
 const C = schema.inspoComment;
 const P = schema.project;
 const U = schema.user;
 
-/** What a line points at: an option tried on the sample (the choice to put back, and how it reads) or a reference */
-export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string };
+/** A change someone proposes to an area instead of making it: the text it would have, waiting for the team's yes or no */
+export interface AreaProposal { decision: string; why: string; never: string; state: "open" | "accepted" | "rejected"; resolvedBy?: string }
+/** What a line points at: an option tried on the sample (the choice to put back, and how it reads), a reference,
+ *  or the change it proposes */
+export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal };
 
 export interface AreaNote {
   id: string;
@@ -37,6 +40,13 @@ const CHOICE_KEYS = ["bg", "ink", "accent", "light", "radius", "easing", "durati
 function cleanAbout(v: unknown): AreaAbout | null {
   if (!v || typeof v !== "object") return null;
   const o = v as Record<string, unknown>;
+  if (o.proposal && typeof o.proposal === "object") {
+    const p = o.proposal as Record<string, unknown>;
+    const decision = String(p.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+    if (!decision) return null;
+    const state = p.state === "accepted" || p.state === "rejected" ? p.state : "open";
+    return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}) } };
+  }
   if (typeof o.itemId === "string" && o.itemId) return { itemId: o.itemId.slice(0, 40) };
   if (!o.choice || typeof o.choice !== "object") return null;
   const choice: Record<string, string | number | boolean> = {};
@@ -114,20 +124,21 @@ export interface SystemActivity {
   lines: ActivityLine[];
   /** Per area: how many lines its conversation has and who is in it (at most three) */
   talk: Record<string, { count: number; people: { name: string; image: string | null }[] }>;
-  /** Per area: its conversation, oldest first, as criterio.md tells it (lib/criterio-md.ts TalkLine) */
-  notes: Record<string, { who: string; text: string; label?: string; itemId?: string }[]>;
+  /** Per area: its conversation, oldest first, as criterio.md tells it (lib/criterio-md.ts TalkLine), with the
+   *  changes proposed in it */
+  notes: Record<string, { id: string; who: string; image: string | null; at: string; mine: boolean; text: string; label?: string; itemId?: string; proposal?: AreaProposal }[]>;
 }
 
 const ACTIVITY_LINES = 6;
 
-export async function systemActivity(organizationId: string, projectId: string): Promise<SystemActivity> {
+export async function systemActivity(organizationId: string, projectId: string, userId?: string): Promise<SystemActivity> {
   await assertProject(organizationId, projectId);
   const R = schema.systemAreaRevision;
   const [revs, notes] = await Promise.all([
     db.select({ id: R.id, area: R.area, decision: R.decision, source: R.source, authorName: R.authorName, authorImage: U.image, createdAt: R.createdAt })
       .from(R).leftJoin(U, eq(U.id, R.authorId))
       .where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(desc(R.createdAt)).limit(60),
-    db.select({ id: A.id, area: A.area, authorName: A.authorName, authorImage: U.image, body: A.body, about: A.about, createdAt: A.createdAt })
+    db.select({ id: A.id, area: A.area, authorId: A.authorId, authorName: A.authorName, authorImage: U.image, body: A.body, about: A.about, createdAt: A.createdAt })
       .from(A).leftJoin(U, eq(U.id, A.authorId))
       .where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId))).orderBy(desc(A.createdAt)),
   ]);
@@ -148,7 +159,10 @@ export async function systemActivity(organizationId: string, projectId: string):
   const said: SystemActivity["notes"] = {};
   for (const n of notes) {
     const about = cleanAbout(n.about);
-    (said[n.area] ??= []).unshift({ who: n.authorName, text: n.body, ...(about && "label" in about ? { label: about.label } : about ? { itemId: about.itemId } : {}) });
+    (said[n.area] ??= []).unshift({
+      id: n.id, who: n.authorName, image: n.authorImage ?? null, at: n.createdAt.toISOString(), mine: !!userId && n.authorId === userId, text: n.body,
+      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
+    });
     lines.push({ id: n.id, kind: "comment", area: n.area as SystemArea, authorName: n.authorName, authorImage: n.authorImage ?? null, text: n.body, at: n.createdAt.toISOString() });
     const t = (talk[n.area] ??= { count: 0, people: [] });
     t.count++;
@@ -158,4 +172,23 @@ export async function systemActivity(organizationId: string, projectId: string):
   // Only the agent's last reading: the ones before it said the same of an older board, and would bury the people
   const lastReading = lines.find((l) => l.kind === "reading");
   return { lines: lines.filter((l) => l.kind !== "reading" || l === lastReading).slice(0, ACTIVITY_LINES), talk, notes: said };
+}
+
+// ─── Proposals ───────────────────────────────────────────────────────────────────────────────────
+// A proposal is a line of an area's conversation that carries the text the area would have. Anyone in the
+// workspace says yes (the area takes it, as a decision of the team) or no; either way the line stays, with
+// who answered.
+
+export async function resolveProposal(organizationId: string, id: string, accept: boolean, user: { id: string; name: string }): Promise<ProjectSystem> {
+  const [row] = await db.select().from(A).where(and(eq(A.organizationId, organizationId), eq(A.id, String(id)))).limit(1);
+  const about = cleanAbout(row?.about);
+  if (!row || !about || !("proposal" in about) || about.proposal.state !== "open") throw new HttpError(400, (await getErrors()).badBody);
+  const { decideArea, setAreaNever, getSystem } = await import("./system");
+  if (accept) {
+    await decideArea(organizationId, row.projectId, row.area, { decision: about.proposal.decision, why: about.proposal.why }, user);
+    const current = (await getSystem(organizationId, row.projectId)).areas.find((a) => a.area === row.area);
+    if (about.proposal.never !== (current?.never ?? "")) await setAreaNever(organizationId, row.projectId, row.area, about.proposal.never);
+  }
+  await db.update(A).set({ about: { proposal: { ...about.proposal, state: accept ? "accepted" : "rejected", resolvedBy: user.name } } }).where(eq(A.id, row.id));
+  return getSystem(organizationId, row.projectId);
 }
