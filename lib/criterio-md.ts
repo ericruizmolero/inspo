@@ -2,25 +2,61 @@
 // (download, copy, the Markdown view) and server (the check script). Headings are the reader's language;
 // the body is whatever language the decisions were written in.
 //
-// The file is built in blocks (the head, the paragraph, one block per area) so the app can show it as it
-// is and let a block be edited: the system stays the one source, the file is its other face.
+// It holds everything the team gathered, in order: what the project is, the eight areas (each with its
+// decision, its why, what it never does, the references behind it with what the team said of each, and the
+// area's conversation), and at the end every reference once: what it is, who saved it, what was said and
+// what it brings to which area. An area cites a reference by its code (R1, R2…).
+//
+// The file is built in blocks (the head, the paragraph, one block per area, the references) so the app can show
+// it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
+
+/** A reference as the file tells it: what it is, who brought it and what the team said about it */
+export interface RefInfo {
+  name: string; web: string;
+  kind?: "web" | "image" | "video" | "post";
+  by?: string;
+  /** The day it was saved, YYYY-MM-DD */
+  date?: string;
+  /** What it is, as the AI read it: the page in a line, or the picture described */
+  what?: string;
+  /** Its style, sector and traits, as words */
+  tags?: string[];
+  /** What the team said about it, oldest first: the note it was saved with, then its thread */
+  said?: { who: string; text: string; pin?: boolean }[];
+}
+/** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
+export interface TalkLine { who: string; text: string; label?: string; itemId?: string }
 
 export interface CriterioMdInput {
   project: string;
   system: ProjectSystem;
-  /** The workspace's references by id, for the names and URLs behind each decision */
-  items: Record<string, { name: string; web: string }>;
+  /** The workspace's references by id: at least the name and URL behind each decision */
+  items: Record<string, RefInfo>;
   labels: Record<SystemArea, string>;
   /** A redesign: the client's current site, whose copy, typefaces, logo and figures rule */
   client?: { name: string; web: string } | null;
-  strings: { intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string };
+  /** What the project is, in the team's words (the brief) */
+  about?: string | null;
+  /** The project's references in the order they were saved: each gets a code (R1, R2…) and its own entry at the end of the file */
+  board?: string[];
+  /** The team's conversation about each area, oldest first */
+  talk?: Record<string, TalkLine[]>;
+  /** Where the app lives, to make its own paths (uploaded images) whole links */
+  origin?: string;
+  strings: {
+    intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
+    project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post", string>; what: string; savedBy: string; said: string; pinned: string;
+    brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
+  };
 }
 
 export type CriterioBlock =
   /** The title, the note to the reader and the date, as lines of the file */
   | { kind: "head"; lines: string[] }
   | { kind: "summary"; heading: string; text: string }
+  /** A part the app writes whole: what the project is, and the references one by one */
+  | { kind: "section"; id: string; heading: string; lines: string[] }
   | {
     kind: "area"; area: SystemArea; heading: string;
     /** Empty when the area is open */
@@ -28,30 +64,77 @@ export type CriterioBlock =
     /** What the area must never do, one rule per line */
     never: string;
     whyLabel: string; neverLabel: string; openText: string;
-    /** The status and the references behind the decision, as lines of the file */
+    /** The status, the references behind the decision with what the team said of each, and the area's conversation, as lines of the file */
     meta: string[];
   };
 
-export function criterioBlocks({ project, system, items, labels, strings, client }: CriterioMdInput): CriterioBlock[] {
+const one = (s: string) => s.replace(/\s+/g, " ").trim();
+const quote = (s: string, max = 280) => { const t = one(s); return `\u00ab${t.length > max ? `${t.slice(0, max - 1).replace(/\s+\S*$/, "")}\u2026` : t}\u00bb`; };
+
+export function criterioBlocks({ project, system, items, labels, strings, client, about, board = [], talk = {}, origin = "" }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
-  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`, ...(client ? [`**${strings.client}:** [${client.name}](${client.web})`] : [])] }];
+  const abs = (u: string) => (u.startsWith("/") ? `${origin}${u}` : u);
+  // Each reference of the project has a code, so an area can cite it and the reader finds it at the end
+  const code = new Map(board.map((id, i) => [id, `R${i + 1}`]));
+  const cite = (id: string) => {
+    const it = items[id];
+    if (!it) return id;
+    const kind = it.kind && it.kind !== "web" ? ` (${strings.kinds[it.kind].toLowerCase()})` : "";
+    return `${code.has(id) ? `**${code.get(id)}** ` : ""}[${it.name}](${abs(it.web)})${kind}`;
+  };
+  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`, ...(client ? [`**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])] }];
+  if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: strings.project, lines: [about.trim()] });
   if (system.summary) blocks.push({ kind: "summary", heading: strings.summary, text: system.summary });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
     const base = { kind: "area" as const, area: key, heading: labels[key], whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
-    if (!a || !a.decision) { blocks.push({ ...base, decision: "", why: "", meta: [] }); continue; }
-    const level = confidenceOf(a);
-    const status = a.source === "team" ? strings.decided : strings.proposed;
-    const meta = [`- **${status}**${level === "low" ? ` · ${strings.confidence} ${a.confidence}/100` : ""}`];
-    if (a.evidence.length) {
-      meta.push(`- **${strings.evidence}:**`);
+    const meta: string[] = [];
+    if (a?.decision) {
+      const level = confidenceOf(a);
+      meta.push(`- **${a.source === "team" ? strings.decided : strings.proposed}**${level === "low" ? ` · ${strings.confidence} ${a.confidence}/100` : ""}`);
+    }
+    if (a?.evidence.length) {
+      meta.push(`- **${strings.evidence} (${a.evidence.length}):**`);
       for (const e of a.evidence) {
-        const it = items[e.itemId];
-        const name = it ? `[${it.name}](${it.web})` : e.itemId;
-        meta.push(`  - ${name}${e.take ? `. ${strings.take}: ${e.take}` : ""}`);
+        meta.push(`  - ${cite(e.itemId)}${e.take ? `. ${strings.take}: ${e.take}` : ""}`);
+        // The words behind it, next to what it brings: why the team saved it
+        for (const w of (items[e.itemId]?.said ?? []).slice(0, 3)) meta.push(`    - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${quote(w.text, 220)}`);
       }
     }
-    blocks.push({ ...base, decision: a.decision, why: a.why, meta });
+    const lines = talk[key] ?? [];
+    if (lines.length) {
+      meta.push(`- **${strings.talk} (${lines.length}):**`);
+      for (const l of lines) {
+        const on = l.label ?? (l.itemId && items[l.itemId] ? `${code.get(l.itemId) ?? ""} ${items[l.itemId].name}`.trim() : "");
+        meta.push(`  - ${l.who}${on ? `, ${strings.on(on)}` : ""}: ${quote(l.text)}`);
+      }
+    }
+    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta });
+  }
+  // Every reference once, with what it is, what was said of it and what it brings to each area
+  if (board.length) {
+    const lines: string[] = [strings.refsIntro, ""];
+    for (const id of board) {
+      const it = items[id];
+      if (!it) continue;
+      lines.push(`### ${code.get(id)} · ${it.name}`, "");
+      lines.push(`- **${strings.kinds[it.kind ?? "web"]}:** ${abs(it.web)}`);
+      if (it.what) lines.push(`- **${strings.what}:** ${one(it.what)}`);
+      if (it.by) lines.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
+      if (it.said?.length) {
+        lines.push(`- **${strings.said}:**`);
+        for (const w of it.said) lines.push(`  - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${quote(w.text, 600)}`);
+      }
+      const brings = system.areas.flatMap((a) => a.evidence.filter((e) => e.itemId === id).map((e) => ({ area: a.area, take: e.take })));
+      if (brings.length) {
+        lines.push(`- **${strings.brings}:**`);
+        for (const b of brings) lines.push(`  - ${labels[b.area]}${b.take ? `: ${b.take}` : ""}`);
+      } else lines.push(`- **${strings.brings}:** _${strings.noArea}_`);
+      if (it.tags?.length) lines.push(`- **${strings.tags}:** ${it.tags.join(", ")}`);
+      lines.push("");
+    }
+    while (lines[lines.length - 1] === "") lines.pop();
+    blocks.push({ kind: "section", id: "refs", heading: `${strings.refs} (${board.length})`, lines });
   }
   return blocks;
 }
@@ -66,15 +149,13 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
   for (const b of blocks) {
     if (b.kind === "head") { for (const line of b.lines) { p(line); p(); } continue; }
     if (b.kind === "summary") { p(`## ${b.heading}`); p(); p(b.text); p(); continue; }
+    if (b.kind === "section") { p(`## ${b.heading}`); p(); for (const line of b.lines) p(line); p(); continue; }
     p(`## ${b.heading}`);
     p();
-    if (!b.decision) { p(`_${b.openText}_`); p(); if (b.never) { p(neverMd(b)); p(); } continue; }
-    p(b.decision);
-    p();
-    if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); }
+    if (!b.decision) { p(`_${b.openText}_`); p(); }
+    else { p(b.decision); p(); if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); } }
     if (b.never) { p(neverMd(b)); p(); }
-    for (const line of b.meta) p(line);
-    p();
+    if (b.meta.length) { for (const line of b.meta) p(line); p(); }
   }
   return L.join("\n");
 }

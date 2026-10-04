@@ -8,7 +8,7 @@ import { flushSync } from "react-dom";
 import type { InspoItem, Project } from "@/types/inspo";
 import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
-import { blocksToMd, criterioBlocks } from "@/lib/criterio-md";
+import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
 import { fontStack } from "@/lib/font-names";
 import { loadSystem, loadSystemVisuals, decideSystemArea, setSystemNever, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -46,6 +46,8 @@ interface Props {
   matches?: Set<string> | null;
   /** A redesign: marks which reference is the client's current site (null clears it) */
   onClient?: (itemId: string | null) => Promise<void>;
+  /** A reference as criterio.md tells it: what it is, who saved it, what the team said (lib/ref-info.ts) */
+  refInfo?: (item: InspoItem) => RefInfo;
 }
 
 // ─── Reading the material ────────────────────────────────────────────────────
@@ -553,7 +555,7 @@ const SAMPLE_AREAS = new Set<SystemArea>(["color", "layout", "motion", "voice"])
 
 // ─── The view ────────────────────────────────────────────────────────────────
 
-export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, onClient }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, inbox, onFile, imageOf, onOpenBoard, focusArea, onOpenChange, onClient, refInfo }: Props) {
   const { t } = useT();
   const setSystem = onSystem;
   const [visuals, setVisuals] = useState<RefVisual[]>([]);
@@ -693,13 +695,19 @@ export default function SystemView({ project, system, onSystem, board, library, 
     return json.options;
   }, [project.id, t]);
 
-  // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place
+  // The latest changes and each area's conversation (the bento's band, and the file): read again whenever an area moves
+  const activity = useSystemActivity(project.id, sys.areas.map((a) => a.updatedAt ?? "").join("|"));
+  // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place.
+  // It carries the whole project: what it is, each area with its references and what was said, and every reference once
   const blocks = useMemo(() => criterioBlocks({
     project: project.name, system: sys,
-    items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, { name: i.name, web: i.web }])),
+    items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
-  }), [sys, project.name, library, labels, t, clientItem]);
+    // Oldest first: a reference keeps its code (R1, R2…) when more arrive
+    about: project.intent, board: board.map((i) => i.id!).filter(Boolean).reverse(), talk: activity?.notes,
+    origin: typeof window === "undefined" ? "" : window.location.origin,
+  }), [sys, project.name, project.intent, library, board, labels, t, clientItem, refInfo, activity]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // The system, as the tiles a person reads or as the file an agent reads: the same thing, seen two ways. Kept on this machine
   const [view, setViewNow] = useState<"bento" | "md">("bento");
@@ -760,8 +768,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
     );
   };
 
-  // The bento's band and its latest changes: read again whenever an area moves
-  const activity = useSystemActivity(project.id, sys.areas.map((a) => a.updatedAt ?? "").join("|"));
   const voiceArea = sys.areas.find((a) => a.area === "voice");
 
   return (

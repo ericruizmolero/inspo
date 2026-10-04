@@ -125,6 +125,12 @@ export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, o
               <Line text={`## ${b.heading}`} /><Line text="" /><Line text={b.text} /><Line text="" />
             </div>
           );
+          // Written whole by the app: what the project is, and the references one by one
+          if (b.kind === "section") return (
+            <div key={b.id} className="mdv-block">
+              <Line text={`## ${b.heading}`} /><Line text="" />{b.lines.map((line, i) => <Line key={i} text={line} />)}<Line text="" />
+            </div>
+          );
           const on = editing === b.area;
           const p = on ? parsed(b) : null;
           return (
@@ -160,7 +166,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onOpen, onCopy, o
                     : [`_${b.openText}_`, ...(b.never ? ["", ...neverMd(b).split("\n")] : [])].map((line, i) => <Line key={i} text={line} />)}
                 </div>
               )}
-              {!on && b.decision && <><Line text="" />{b.meta.map((line, i) => <Line key={i} text={line} />)}</>}
+              {!on && b.meta.length > 0 && <><Line text="" />{b.meta.map((line, i) => <Line key={i} text={line} />)}</>}
               <Line text="" />
             </div>
           );

@@ -16,6 +16,7 @@ import SearchBar from "./SearchBar";
 import InspoCard, { cachedCardImage } from "./InspoCard";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
+import { refInfoOf } from "@/lib/ref-info";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage } from "@/lib/url";
 import { uploadMedia } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
@@ -986,6 +987,8 @@ export default function InspoClient({
     [commentMap],
   );
 
+  // A reference as criterio.md tells it: what the AI read of it, who saved it and what the team said
+  const refInfo = useCallback((i: InspoItem) => refInfoOf(i, tagMap[i.web], i.id ? commentMap[i.id] : undefined, t), [tagMap, commentMap, t]);
   // A small picture of any reference, wherever one is shown outside the board: the thumbnail someone gave it, the
   // DESIGN.md cover, or the stored copy of its page (so a reference without a DESIGN.md is not a blank)
   const smallImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null, [thumbMap, designMdIndex, pageShots]);
@@ -1431,6 +1434,7 @@ export default function InspoClient({
             onOpenBoard={() => setProjectView("board")}
             focusArea={focusArea}
             onOpenChange={setOpenArea}
+            refInfo={refInfo}
             matches={matchIds}
             onClient={async (itemId) => {
               const id = currentProject.id;

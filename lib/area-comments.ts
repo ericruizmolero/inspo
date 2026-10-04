@@ -114,6 +114,8 @@ export interface SystemActivity {
   lines: ActivityLine[];
   /** Per area: how many lines its conversation has and who is in it (at most three) */
   talk: Record<string, { count: number; people: { name: string; image: string | null }[] }>;
+  /** Per area: its conversation, oldest first, as criterio.md tells it (lib/criterio-md.ts TalkLine) */
+  notes: Record<string, { who: string; text: string; label?: string; itemId?: string }[]>;
 }
 
 const ACTIVITY_LINES = 6;
@@ -125,7 +127,7 @@ export async function systemActivity(organizationId: string, projectId: string):
     db.select({ id: R.id, area: R.area, decision: R.decision, source: R.source, authorName: R.authorName, authorImage: U.image, createdAt: R.createdAt })
       .from(R).leftJoin(U, eq(U.id, R.authorId))
       .where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(desc(R.createdAt)).limit(60),
-    db.select({ id: A.id, area: A.area, authorName: A.authorName, authorImage: U.image, body: A.body, createdAt: A.createdAt })
+    db.select({ id: A.id, area: A.area, authorName: A.authorName, authorImage: U.image, body: A.body, about: A.about, createdAt: A.createdAt })
       .from(A).leftJoin(U, eq(U.id, A.authorId))
       .where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId))).orderBy(desc(A.createdAt)),
   ]);
@@ -143,7 +145,10 @@ export async function systemActivity(organizationId: string, projectId: string):
     }
   }
   const talk: SystemActivity["talk"] = {};
+  const said: SystemActivity["notes"] = {};
   for (const n of notes) {
+    const about = cleanAbout(n.about);
+    (said[n.area] ??= []).unshift({ who: n.authorName, text: n.body, ...(about && "label" in about ? { label: about.label } : about ? { itemId: about.itemId } : {}) });
     lines.push({ id: n.id, kind: "comment", area: n.area as SystemArea, authorName: n.authorName, authorImage: n.authorImage ?? null, text: n.body, at: n.createdAt.toISOString() });
     const t = (talk[n.area] ??= { count: 0, people: [] });
     t.count++;
@@ -152,5 +157,5 @@ export async function systemActivity(organizationId: string, projectId: string):
   lines.sort((a, b) => b.at.localeCompare(a.at));
   // Only the agent's last reading: the ones before it said the same of an older board, and would bury the people
   const lastReading = lines.find((l) => l.kind === "reading");
-  return { lines: lines.filter((l) => l.kind !== "reading" || l === lastReading).slice(0, ACTIVITY_LINES), talk };
+  return { lines: lines.filter((l) => l.kind !== "reading" || l === lastReading).slice(0, ACTIVITY_LINES), talk, notes: said };
 }
