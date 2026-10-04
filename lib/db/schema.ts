@@ -461,6 +461,9 @@ export const projectSystem = pgTable("project_system", {
   summary: text("summary").notNull().default(""),
   /** The last model run: which references it read, with which prompt, when (types/system.ts SystemRun) */
   runJson: jsonb("run_json").$type<unknown>(),
+  /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>"): the file shows these
+   *  words instead of the ones the app would write, until someone goes back to them */
+  doc: jsonb("doc").$type<Record<string, string>>(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("project_system_org_idx").on(t.organizationId)]);

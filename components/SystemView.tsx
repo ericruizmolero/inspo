@@ -9,6 +9,7 @@ import type { InspoItem, Project } from "@/types/inspo";
 import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
+import { savePolishBrief } from "@/app/actions/polish";
 import { fontStack } from "@/lib/font-names";
 import { loadSystem, loadSystemVisuals, decideSystemArea, setSystemNever, releaseSystemArea, undoSystemArea, setSystemVerdict, assignSystemArea } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
@@ -697,6 +698,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   // The latest changes and each area's conversation (the bento's band, and the file): read again whenever an area moves
   const [talkN, setTalkN] = useState(0);
+  // What the project is, as it was last written in the file (the brief), until the page loads it again
+  const [aboutNow, setAboutNow] = useState<string | null>(null);
   const activity = useSystemActivity(project.id, `${sys.areas.map((a) => a.updatedAt ?? "").join("|")}|${talkN}`);
   // Oldest first: a reference keeps its code (R1, R2…) when more arrive
   const boardIds = useMemo(() => board.map((i) => i.id!).filter(Boolean).reverse(), [board]);
@@ -707,9 +710,9 @@ export default function SystemView({ project, system, onSystem, board, library, 
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
-    about: project.intent, board: boardIds, talk: activity?.notes,
+    about: aboutNow ?? project.intent, board: boardIds, talk: activity?.notes,
     origin: typeof window === "undefined" ? "" : window.location.origin,
-  }), [sys, project.name, project.intent, library, boardIds, labels, t, clientItem, refInfo, activity]);
+  }), [sys, project.name, project.intent, aboutNow, library, boardIds, labels, t, clientItem, refInfo, activity]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // The system, as the tiles a person reads or as the file an agent reads: the same thing, seen two ways. Kept on this machine
   // The system's result is the document, criterio.md (components/SystemDoc.tsx). The bento is not shown any more
@@ -722,7 +725,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
     a.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  const openArea = open ? sys.areas.find((a) => a.area === open) ?? null : null;
+  // The areas' stage is gone with the bento (Eric, 2026-10-04): an area asked for (by the agent, by a link) is its
+  // part of the file, scrolled to. The stage's code below waits for the cleanup
+  const openArea = null as SystemAreaState | null;
+  useEffect(() => { if (open) document.getElementById(`sdoc-${open}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [open]);
   // The faces of the sample come from typography's references wherever it is shown; with none filed yet, from the first of the board
   const typeArea = sys.areas.find((a) => a.area === "typography");
   const typeOwn = (typeArea?.evidence ?? []).map((e) => itemOf(e.itemId)).filter((x): x is InspoItem => !!x);
@@ -816,6 +822,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           {view === "md" && (
             <SystemDoc blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
               onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
+              onAbout={async (text) => { const r = await savePolishBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }}
               busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
               onSave={async (area, next) => {
                 const cur = sys.areas.find((x) => x.area === area)!;

@@ -4,7 +4,7 @@
 // It is not a second copy. Each area's block is the area's decision and its why: pressing a block turns
 // it into the text itself, and saving writes the decision as the team's, exactly as the card or the agent
 // would. The file follows.
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SystemArea } from "@/types/system";
 import { DECISION_MAX, NEVER_MAX } from "@/types/system";
 import { neverMd, type CriterioBlock } from "@/lib/criterio-md";
@@ -16,6 +16,11 @@ import { timeAgo } from "@/lib/i18n/format";
 import { Avatar } from "./CommentsPanel";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
+const IconPin = (
+  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden>
+    <path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" />
+  </svg>
+);
 export const WHY_MAX = 400;
 
 /** The part of an area's block a person writes: the decision, the why under its bold label, and the never list */
@@ -51,150 +56,266 @@ function inline(line: string): ReactNode[] {
 /** What a line of the file is quoted as when a pin is left on it */
 export const quoteOf = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 160);
 
-function Line({ text, onPress, pins, active }: {
+/** A pin, where it was left: the face of who left it, in a comment's shape, with its answers counted */
+function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies: number; active?: boolean; style: React.CSSProperties; onOpen: (pin: DocPin, el: HTMLElement) => void }) {
+  return (
+    <button type="button" className={`mdv-pin${active ? " is-open" : ""}`} style={style} aria-label={pin.who}
+      onClick={(e) => { e.stopPropagation(); onOpen(pin, e.currentTarget); }}>
+      <Avatar name={pin.who} image={pin.image} size={22} />
+      {replies > 0 && <b>{replies + 1}</b>}
+    </button>
+  );
+}
+
+function Line({ text, onPress, pins, repliesOf, openId, onOpen }: {
   text: string;
-  /** Pressing the line: where, so the menu opens at the pointer */
-  onPress?: (at: { x: number; y: number }) => void;
+  /** Pressing the line while commenting: how far across it (0 to 1) and where on screen */
+  onPress?: (x: number, at: { x: number; y: number }) => void;
   /** The pins left on it */
   pins?: DocPin[];
-  active?: boolean;
+  repliesOf?: (id: string) => number;
+  openId?: string | null;
+  onOpen?: (pin: DocPin, el: HTMLElement) => void;
 }) {
   if (!text) return <div className="mdv-line">&nbsp;</div>;
   // A list line that wraps keeps its indent: the second row starts under the first's words, not at the margin
   const bullet = text.match(/^(\s*)- /);
   const hang = bullet ? `${bullet[1].length + 2}ch` : undefined;
   const kind = /^#{1,6} /.test(text) ? " mdv-h" : text.startsWith("> ") ? " mdv-q" : /^_.*_$/.test(text) ? " mdv-em" : "";
-  const press = onPress ? {
-    role: "button" as const, tabIndex: 0,
-    onClick: (e: React.MouseEvent) => { if ((e.target as HTMLElement).closest("a")) return; onPress({ x: e.clientX, y: e.clientY }); },
-    onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); const r = e.currentTarget.getBoundingClientRect(); onPress({ x: r.left + 24, y: r.bottom }); } },
-  } : {};
   return (
-    <div className={`mdv-line${kind}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}${active ? " is-active" : ""}`}
-      style={hang ? { paddingLeft: hang, textIndent: `-${hang}` } : undefined} {...press}>
+    <div className={`mdv-line${kind}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
+      style={hang ? { paddingLeft: hang, textIndent: `-${hang}` } : undefined}
+      onClick={onPress ? (e) => { if ((e.target as HTMLElement).closest("a, .mdv-pin")) return; const r = e.currentTarget.getBoundingClientRect(); onPress(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), { x: e.clientX, y: e.clientY }); } : undefined}>
       {kind ? text : inline(text)}
-      {!!pins?.length && (
-        <span className="mdv-pin" aria-label={String(pins.length)}>
-          {[...new Map(pins.map((n) => [n.who, n])).values()].slice(0, 2).map((n) => <Avatar key={n.who} name={n.who} image={n.image} size={16} />)}
-          <b>{pins.length}</b>
-        </span>
-      )}
+      {onOpen && pins?.map((n) => <PinMark key={n.id} pin={n} replies={repliesOf?.(n.id) ?? 0} active={openId === n.id} style={{ left: `${n.x * 100}%` }} onOpen={onOpen} />)}
     </div>
   );
 }
 
-/** A comment the team pinned to a line of the file */
-export interface DocPin { id: string; who: string; image: string | null; at: string; mine: boolean; text: string; quote: string }
+const escHtml = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/** The file's text as it is typed in: a row per line, with the colours and the hanging lists of the file. The
+ *  text itself is whole (a long address is only cut on screen), so what is read back is the file */
+function mdHtml(raw: string): string {
+  return raw.split("\n").map((line) => {
+    if (!line) return `<div class="mdv-eline"><br></div>`;
+    const bullet = line.match(/^(\s*)- /);
+    const hang = bullet ? ` style="padding-left:${bullet[1].length + 2}ch;text-indent:-${bullet[1].length + 2}ch"` : "";
+    const kind = /^#{1,6} /.test(line) ? " mdv-h" : line.startsWith("> ") ? " mdv-q" : /^_.*_$/.test(line) ? " mdv-em" : "";
+    const body = kind ? escHtml(line) : escHtml(line)
+      .replace(/\*\*[^*\n]+\*\*/g, (m) => `<b class="mdv-b">${m}</b>`)
+      .replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (_m, name: string, url: string) => `[<span class="mdv-link">${name}</span>]<span class="mdv-url${url.length > 56 ? " mdv-url--cut" : ""}">(${url})</span>`);
+    return `<div class="mdv-eline${kind}"${hang}>${body}</div>`;
+  }).join("");
+}
+/** The text of a part typed in place, read back from its rows */
+const readText = (el: HTMLElement) => el.innerText.replace(/\u00a0/g, " ").replace(/\n{3,}/g, "\n\n").replace(/\n+$/, "");
 
-export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, actions, after, pins, onPin, onUnpin }: {
+/**
+ * A part of the file that is written in place, like a document: pressing it puts the caret where it was pressed
+ * and typing changes the text. Nothing is written until it is saved; while it differs, a bar under it offers
+ * to save it, to leave it as a proposal for the team, or to drop the change.
+ */
+function Editable({ raw, placeholder, disabled, over, onSave, onPropose, onReset }: {
+  raw: string; placeholder: string; disabled?: boolean;
+  /** The part was rewritten by hand over what the app writes: goes back to it */
+  onReset?: () => Promise<void>;
+  /** What is too long in the text, as a short note; empty when it fits */
+  over?: (text: string) => string;
+  onSave: (text: string) => Promise<void>;
+  onPropose?: (text: string, reason: string) => Promise<boolean>;
+}) {
+  const { t } = useT();
+  const ref = useRef<HTMLDivElement>(null);
+  const [text, setText] = useState(raw);
+  const [reason, setReason] = useState("");
+  const [working, setWorking] = useState(false);
+  const dirty = text.replace(/\n{3,}/g, "\n\n").trimEnd() !== raw.replace(/\n{3,}/g, "\n\n").trimEnd();
+  // What is shown follows the file, except while someone is typing a change into it
+  useLayoutEffect(() => { const el = ref.current; if (el) { el.innerHTML = mdHtml(raw); setText(raw); } }, [raw]);
+  const read = () => { if (ref.current) setText(readText(ref.current)); };
+  const drop = () => { const el = ref.current; if (el) el.innerHTML = mdHtml(raw); setText(raw); setReason(""); el?.blur(); };
+  const tooLong = over?.(text) ?? "";
+  const save = async () => { if (!dirty || working || tooLong) return; setWorking(true); try { await onSave(text.trim()); } finally { setWorking(false); } };
+  const propose = async () => {
+    if (!dirty || working || tooLong || !onPropose || !text.trim()) return;
+    setWorking(true);
+    try { if (await onPropose(text.trim(), reason.trim())) drop(); } finally { setWorking(false); }
+  };
+  return (
+    <>
+      <div ref={ref} className={`mdv-live${dirty ? " is-dirty" : ""}`} role="textbox" aria-multiline spellCheck={false} data-placeholder={placeholder}
+        contentEditable={disabled || working ? false : "plaintext-only"} suppressContentEditableWarning
+        onInput={read}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") { e.stopPropagation(); drop(); }
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void save(); }
+        }} />
+      {dirty && (
+        <div className="mdv-savebar">
+          <Button variant="primary" size="sm" disabled={working || !!tooLong} onClick={() => void save()} title={t.doc.saveHint}>{t.system.save}</Button>
+          {onPropose && <Button size="sm" disabled={working || !!tooLong || !text.trim()} onClick={() => void propose()} title={t.doc.proposeHint}>{t.doc.propose}</Button>}
+          <Button variant="ghost" size="sm" onClick={drop}>{t.doc.discard}</Button>
+          {onPropose && <input className="mdv-reason" value={reason} maxLength={300} placeholder={t.doc.reason} aria-label={t.doc.reason} onChange={(e) => setReason(e.target.value)} />}
+          <small className={tooLong ? "is-over" : ""}>{tooLong || t.system.mdView.editHint}</small>
+        </div>
+      )}
+      {!dirty && onReset && <p className="mdv-byhand">{t.doc.byHand} <button type="button" disabled={working} onClick={() => { setWorking(true); void onReset().finally(() => setWorking(false)); }}>{t.doc.restore}</button></p>}
+    </>
+  );
+}
+
+function Written({ raw, placeholder, edit, pins, repliesOf, openId, onOpen }: {
+  raw: string; placeholder: string;
+  edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean };
+  pins: DocPin[]; repliesOf: (id: string) => number; openId: string | null; onOpen: (pin: DocPin, el: HTMLElement) => void;
+}) {
+  const host = useRef<HTMLDivElement>(null);
+  return (
+    <div className="mdv-written" ref={host}>
+      <Editable raw={raw} placeholder={placeholder} {...edit} />
+      <PinsOver host={host} raw={raw} pins={pins} repliesOf={repliesOf} openId={openId} onOpen={onOpen} />
+    </div>
+  );
+}
+
+/** A comment the team pinned to a spot of the file */
+export interface DocPin {
+  id: string; who: string; image: string | null; at: string; mine: boolean; text: string;
+  /** The line it was left on, as it read then, and how far across it (0 to 1) */
+  quote: string; x: number;
+  /** An answer: the pin it answers */
+  to?: string;
+}
+
+/** Where the lines a region's pins sit on start, inside a text typed in place: the pins are drawn over it there */
+function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
+  host: React.RefObject<HTMLDivElement | null>; raw: string; pins: DocPin[];
+  repliesOf: (id: string) => number; openId: string | null; onOpen: (pin: DocPin, el: HTMLElement) => void;
+}) {
+  const [tops, setTops] = useState<Record<string, number>>({});
+  useLayoutEffect(() => {
+    const el = host.current?.querySelector<HTMLElement>(".mdv-live");
+    if (!el || !pins.length) { setTops({}); return; }
+    const measure = () => {
+      const lines = raw.split("\n");
+      const out: Record<string, number> = {};
+      for (const pin of pins) {
+        const idx = lines.findIndex((l) => quoteOf(l) === pin.quote);
+        const row = idx < 0 ? null : el.children[idx] as HTMLElement | undefined;
+        if (row) out[pin.id] = row.offsetTop - el.offsetTop;
+      }
+      setTops(out);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [host, raw, pins]);
+  return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
+}
+
+export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
-  onSave: (area: SystemArea, next: { decision: string; why: string; never: string }) => Promise<void>;
+  onSave?: (area: SystemArea, next: { decision: string; why: string; never: string }) => Promise<void>;
+  /** A template: the file is read, copied and downloaded, never written (it is cloned into a project to work on it) */
+  readOnly?: boolean;
   onCopy: () => void; onDownload: () => void; copied: boolean;
   /** The recipe beside the file: how the work is done, kept with the project */
   projectId: string; projectName: string; hasRecipe: boolean;
   /** Leaves the block's new text as a proposal for the team instead of writing it; resolves true when it was left */
   onPropose?: (area: SystemArea, next: { decision: string; why: string; never: string }, reason: string) => Promise<boolean>;
-  /** What else can be done with an area, offered where it is pressed (confirm what the agent proposed, open its stage) */
-  actions?: (block: AreaBlock) => { label: string; run: () => void }[];
+  /** An area's tools, beside its heading (confirm what the agent proposed, open its stage) */
+  tools?: (block: AreaBlock) => ReactNode;
+  /** Writes what the project is (the brief), typed in place */
+  onAbout?: (text: string) => Promise<void>;
+  /** Writes the project's paragraph */
+  onSummary?: (text: string) => Promise<void>;
+  /** Writes over a part the app writes ("head", "refs", "meta:<area>"); null goes back to what the app writes */
+  onPart?: (part: string, text: string | null) => Promise<void>;
   /** What the team is doing with an area, under its block: the proposals waiting and its conversation */
   after?: (block: AreaBlock) => ReactNode;
   /** The pins the team left, by the part of the file they sit on (an area, or head, project, summary, refs) */
   pins?: Record<string, DocPin[]>;
-  /** Leaves a pin on a line; resolves true when it was left */
-  onPin?: (part: string, quote: string, body: string) => Promise<boolean>;
+  /** Leaves a pin at a spot of a line, or an answer to one (`to`); resolves true when it was left */
+  onPin?: (part: string, quote: string, body: string, at: { x: number; to?: string }) => Promise<boolean>;
   onUnpin?: (id: string) => Promise<void>;
 }) {
   const { t } = useT();
   const s = t.system.mdView;
-  const [editing, setEditing] = useState<SystemArea | null>(null);
-  const [draft, setDraft] = useState("");
-  const [reason, setReason] = useState("");
-  // Pressing a line opens a menu at the pointer: change the text (an area's own words), or pin a comment to that line
-  const [menu, setMenu] = useState<{ x: number; y: number; part: string; quote: string; block?: AreaBlock; editable: boolean } | null>(null);
-  const [pinAt, setPinAt] = useState<{ part: string; quote: string } | null>(null);
+  // Two ways of pressing the file. Writing (the default): the text is typed in place. Commenting (the tool in
+  // the bar, or C): pressing a spot leaves a pin there, as on a design file. A pin opens its thread beside it
+  const [commenting, setCommenting] = useState(false);
+  // The thread in sight: an existing pin's, or the one being started at a spot
+  const [pop, setPop] = useState<{ left: number; top: number; rootId?: string; draft?: { part: string; quote: string; x: number } } | null>(null);
   const [pinText, setPinText] = useState("");
   const [pinning, setPinning] = useState(false);
   const docRef = useRef<HTMLDivElement>(null);
   const { locale } = useT();
   useEffect(() => {
-    if (!menu) return;
-    const close = (e: Event) => { if (!(e.target as HTMLElement | null)?.closest?.(".mdv-menu")) setMenu(null); };
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(null); };
-    const id = setTimeout(() => { document.addEventListener("click", close); document.addEventListener("keydown", key); }, 0);
-    return () => { clearTimeout(id); document.removeEventListener("click", close); document.removeEventListener("keydown", key); };
-  }, [menu]);
-  const openPin = (part: string, quote: string) => { setMenu(null); setPinText(""); setPinAt({ part, quote }); };
-  const press = (part: string, text: string, block: AreaBlock | undefined, editable: boolean) => (at: { x: number; y: number }) => {
-    const quote = quoteOf(text);
-    // A line with pins opens them; one with nothing else to do with it goes straight to a new pin
-    if ((pins?.[part] ?? []).some((n) => n.quote === quote)) { openPin(part, quote); return; }
-    if (!editable && !block && onPin) { openPin(part, quote); return; }
+    if (!onPin) return;
+    const key = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.key === "Escape") { setCommenting(false); setPop(null); return; }
+      if (el?.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "c" || e.key === "C") setCommenting((c) => !c);
+    };
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [onPin]);
+  // Pressing anywhere else closes the thread
+  useEffect(() => {
+    if (!pop) return;
+    const close = (e: Event) => { if (!(e.target as HTMLElement | null)?.closest?.(".mdv-pop, .mdv-pin")) setPop(null); };
+    const id = setTimeout(() => document.addEventListener("mousedown", close), 0);
+    return () => { clearTimeout(id); document.removeEventListener("mousedown", close); };
+  }, [pop]);
+  const all = useMemo(() => Object.entries(pins ?? {}).flatMap(([part, list]) => list.map((n) => ({ ...n, part }))), [pins]);
+  const repliesOf = (id: string) => all.filter((n) => n.to === id).length;
+  /** Where the thread opens: under the spot, kept inside the page */
+  const place = (at: { x: number; y: number }) => {
     const box = docRef.current?.getBoundingClientRect();
-    setMenu({ x: at.x - (box?.left ?? 0), y: at.y - (box?.top ?? 0), part, quote, block, editable });
+    const width = box?.width ?? 800;
+    return { left: Math.max(8, Math.min(at.x - (box?.left ?? 0) - 18, width - 348)), top: at.y - (box?.top ?? 0) + 18 };
   };
+  const openPin = (pin: DocPin, el: HTMLElement) => { const r = el.getBoundingClientRect(); setPinText(""); setPop({ ...place({ x: r.left, y: r.bottom - 6 }), rootId: pin.id }); };
+  const startPin = (part: string, quote: string) => (x: number, at: { x: number; y: number }) => { setPinText(""); setPop({ ...place(at), draft: { part, quote, x } }); };
+  const root = pop?.rootId ? all.find((n) => n.id === pop.rootId) : undefined;
   const sendPin = async () => {
-    if (!pinAt || !onPin || pinning || !pinText.trim()) return;
+    if (!pop || !onPin || pinning || !pinText.trim()) return;
+    const target = pop.draft ?? (root ? { part: root.part, quote: root.quote, x: root.x, to: root.id } : null);
+    if (!target) return;
     setPinning(true);
-    const ok = await onPin(pinAt.part, pinAt.quote, pinText.trim());
+    const ok = await onPin(target.part, target.quote, pinText.trim(), { x: target.x, to: "to" in target ? target.to : undefined });
     setPinning(false);
-    if (ok) setPinText("");
+    if (ok) { setPinText(""); if (pop.draft) setPop(null); }
   };
-  /** The lines of a part, each pressable, with its pins and, under the open one, its thread */
-  const lines = (part: string, texts: string[], block?: AreaBlock, editable = false) => {
-    const mine = pins?.[part] ?? [];
-    const quotes = new Set(texts.map(quoteOf));
+  /** The lines of a part as the file shows them, each with the pins left on it. While commenting, pressing a line
+   *  leaves a pin at that spot. `whole`: every line of the part (it may be drawn in several goes); `head`: whether
+   *  these lines start it, where a pin whose line no longer reads the same is kept */
+  const lines = (part: string, texts: string[], whole: string[] = texts, head = true) => {
+    const mine = (pins?.[part] ?? []).filter((n) => !n.to);
+    const quotes = new Set(whole.map(quoteOf));
+    const first = head ? texts.findIndex(Boolean) : -1;
     return texts.map((text, i) => {
       const q = quoteOf(text);
-      // A pin whose line no longer reads the same stays with the part, on its first line
-      const here = text ? mine.filter((n) => n.quote === q || (i === 0 && !quotes.has(n.quote))) : [];
-      const open = !!text && pinAt?.part === part && (pinAt.quote === q || (i === 0 && !quotes.has(pinAt.quote)));
-      return (
-        <Fragment key={i}>
-          <Line text={text} pins={here} active={open} onPress={text && (onPin || editable) ? press(part, text, block, editable) : undefined} />
-          {open && (
-            <div className="mdv-thread" onClick={(e) => e.stopPropagation()}>
-              {here.map((n) => (
-                <div key={n.id} className="mdv-thread__note">
-                  <Avatar name={n.who} image={n.image} size={20} />
-                  <div>
-                    <p className="mdv-thread__meta"><b>{n.who}</b><span>{timeAgo(n.at, locale, t)}</span>{n.mine && onUnpin && <button type="button" onClick={() => void onUnpin(n.id)}>{t.areaThread.remove}</button>}</p>
-                    <p>{n.text}</p>
-                  </div>
-                </div>
-              ))}
-              <form className="mdv-thread__form" onSubmit={(e) => { e.preventDefault(); void sendPin(); }}>
-                <textarea autoFocus rows={2} value={pinText} placeholder={t.doc.pinPlaceholder} aria-label={t.doc.pinPlaceholder} disabled={pinning}
-                  onChange={(e) => setPinText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setPinAt(null); } if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void sendPin(); } }} />
-                <span>
-                  <Button variant="primary" size="sm" type="submit" disabled={pinning || !pinText.trim()}>{t.doc.pin}</Button>
-                  <Button variant="ghost" size="sm" type="button" onClick={() => setPinAt(null)}>{t.system.cancel}</Button>
-                </span>
-              </form>
-            </div>
-          )}
-        </Fragment>
-      );
+      const here = text ? mine.filter((n) => n.quote === q || (i === first && !quotes.has(n.quote))) : [];
+      return <Line key={i} text={text} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
+        onPress={text && onPin && commenting && !readOnly ? startPin(part, q) : undefined} />;
     });
   };
-  // While editing, the never label is always there: a rule typed under it lands in the list, never in the why
-  const start = (b: AreaBlock) => { setDraft(b.never ? rawOf(b) : `${rawOf(b)}${rawOf(b) ? "\n\n" : ""}**${b.neverLabel}:**\n- `); setReason(""); setEditing(b.area); };
-  const propose = async (b: AreaBlock) => {
-    const p = parsed(b);
-    if (!onPropose || tooLong(b) || !p.decision) return;
-    if (await onPropose(b.area, p, reason.trim())) setEditing(null);
+  /** A part written in place. While commenting it is shown as lines, to pin; while writing its pins sit over the text */
+  const written = (part: string, raw: string, placeholder: string, whole: string[], edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean }) => {
+    if (commenting || readOnly) return lines(part, raw ? raw.split("\n") : [placeholder], whole, false);
+    const quotes = new Set(raw.split("\n").map(quoteOf).filter(Boolean));
+    const here = (pins?.[part] ?? []).filter((n) => !n.to && quotes.has(n.quote));
+    return <Written raw={raw} placeholder={placeholder} edit={edit} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin} />;
   };
-  const parsed = (b: AreaBlock) => parse(draft, b.whyLabel, b.neverLabel);
-  const tooLong = (b: AreaBlock) => { const p = parsed(b); return p.decision.length > DECISION_MAX || p.why.length > WHY_MAX || p.never.length > NEVER_MAX; };
-  const save = async (b: AreaBlock) => {
-    const p = parsed(b);
-    if (p.decision.length > DECISION_MAX || p.why.length > WHY_MAX || p.never.length > NEVER_MAX) return;
-    if (p.decision !== b.decision.trim() || p.why !== b.why.trim() || p.never !== b.never.trim()) await onSave(b.area, p);
-    setEditing(null);
+  const areaOver = (b: AreaBlock) => (text: string) => {
+    const p = parse(text, b.whyLabel, b.neverLabel);
+    return p.decision.length > DECISION_MAX ? `${p.decision.length}/${DECISION_MAX}` : p.why.length > WHY_MAX ? `${b.whyLabel.toLowerCase()} ${p.why.length}/${WHY_MAX}` : p.never.length > NEVER_MAX ? `${b.neverLabel.toLowerCase()} ${p.never.length}/${NEVER_MAX}` : "";
   };
-  const rowsFor = (text: string) => Math.min(20, Math.max(4, text.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 88)), 0) + 1));
 
   const [file, setFile] = useState<"criterio" | "recipe">("criterio");
   const [recipe, setRecipe] = useState<string | null>(null);
@@ -212,7 +333,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
       <button type="button" role="tab" aria-selected={file === "criterio"} className={`mdv-file${file === "criterio" ? " is-on" : ""}`} onClick={() => setFile("criterio")}>criterio.md</button>
       {hasOne
         ? <button type="button" role="tab" aria-selected={file === "recipe"} className={`mdv-file${file === "recipe" ? " is-on" : ""}`} onClick={() => void openRecipe()}>receta.md</button>
-        : <label className="mdv-file mdv-file--add" title={s.recipeHint}>{Icons.plus} receta.md<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
+        : !readOnly && <label className="mdv-file mdv-file--add" title={s.recipeHint}>{Icons.plus} receta.md<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
     </span>
   );
   if (file === "recipe") return (
@@ -223,7 +344,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
         <span className="mdv-bar__tools">
           <button type="button" className="mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}>{recipeCopied ? Icons.check : Icons.all} {recipeCopied ? t.system.copied : s.copy}</button>
           <button type="button" className="mdv-btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([recipe ?? ""], { type: "text/markdown" })); a.download = `${projectName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-receta.md`; a.click(); URL.revokeObjectURL(a.href); }}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
-          <label className="mdv-btn" title={s.replaceRecipe}>{Icons.shuffle}<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>
+          {!readOnly && <label className="mdv-btn" title={s.replaceRecipe}>{Icons.shuffle}<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
         </span>
       </header>
       {recipe === null ? <div className="mdv-doc"><span className="spinner spinner--sm" /></div> : <div className="mdv-doc">{recipe.split("\n").map((line, i) => <Line key={i} text={line} />)}</div>}
@@ -234,54 +355,85 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
     <section className="mdv" aria-label="criterio.md">
       <header className="mdv-bar">
         {tabs}
-        <span className="mdv-bar__hint">{onPin ? t.doc.hint : s.hint}</span>
+        <span className="mdv-bar__hint">{readOnly ? s.readOnlyHint : onPin ? (commenting ? t.doc.hintComment : t.doc.hint) : s.hint}</span>
         <span className="mdv-bar__tools">
+          {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : s.copy}</button>
           <button type="button" className="mdv-btn" onClick={onDownload} title={t.system.download}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
         </span>
       </header>
-      <div className="mdv-doc" ref={docRef}>
+      <div ref={docRef} className={`mdv-doc${commenting ? " is-commenting" : ""}`}>
         {blocks.map((b) => {
-          if (b.kind === "head") return <div key="head" id="sdoc-head" className="mdv-block">{lines("head", b.lines.flatMap((line) => [line, ""]))}</div>;
-          if (b.kind === "summary") return <div key="summary" id="sdoc-summary" className="mdv-block">{lines("summary", [`## ${b.heading}`, "", b.text, ""])}</div>;
-          // Written whole by the app: what the project is, and the references one by one
-          if (b.kind === "section") return <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">{lines(b.id, [`## ${b.heading}`, "", ...b.lines, ""])}</div>;
-          const on = editing === b.area;
-          const p = on ? parsed(b) : null;
+          // Every part is typed in place. What the app writes (the head, an area's status and references, the list of
+          // references) can be written over; `over` says how a part written by hand is saved and how it goes back
+          const over = (part: string, edited?: boolean) => (onPart ? { onSave: (text: string) => onPart(part, text), onReset: edited ? () => onPart(part, null) : undefined } : null);
+          if (b.kind === "head") {
+            const edit = over("head", b.edited);
+            return <div key="head" id="sdoc-head" className="mdv-block">{edit ? written("head", b.lines.join("\n"), "", b.lines, edit) : lines("head", b.lines)}<Line text="" /></div>;
+          }
+          if (b.kind === "summary") return (
+            <div key="summary" id="sdoc-summary" className="mdv-block">
+              {lines("summary", [`## ${b.heading}`, ""], [`## ${b.heading}`, b.text])}
+              {onSummary ? written("summary", b.text, "", [`## ${b.heading}`, b.text], { onSave: onSummary }) : lines("summary", [b.text], [`## ${b.heading}`, b.text], false)}
+              <Line text="" />
+            </div>
+          );
+          if (b.kind === "section") {
+            const whole = [`## ${b.heading}`, ...b.lines];
+            // What the project is: the team's own words. The references: written by the app, and over it by hand
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : over(b.id, b.edited);
+            return (
+              <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
+                {lines(b.id, [`## ${b.heading}`, ""], whole)}
+                {edit ? written(b.id, b.lines.join("\n"), "", whole, edit) : lines(b.id, b.lines, whole, false)}
+                <Line text="" />
+              </div>
+            );
+          }
+          const whole = [`## ${b.heading}`, ...rawOf(b).split("\n"), ...b.meta];
+          const metaEdit = over(`meta:${b.area}`, b.metaEdited);
           return (
-            <div key={b.area} id={`sdoc-${b.area}`} className={`mdv-block mdv-block--area${on ? " is-editing" : ""}${busy.has(b.area) ? " is-busy" : ""}`} aria-busy={busy.has(b.area)}>
-              {lines(b.area, [`## ${b.heading}`, ""], b, true)}
-              {on ? (
-                <div className="mdv-edit">
-                  <textarea className="mdv-input" autoFocus spellCheck={false} rows={rowsFor(draft)} value={draft} placeholder={`${t.system.placeholder}\n\n**${b.whyLabel}:** ${t.system.whyPlaceholder}\n\n**${b.neverLabel}:**\n- ${t.system.neverPlaceholder}`}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") { e.stopPropagation(); setEditing(null); }
-                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); void save(b); }
-                    }} />
-                  {onPropose && <input className="mdv-reason" value={reason} maxLength={300} placeholder={t.doc.reason} aria-label={t.doc.reason} onChange={(e) => setReason(e.target.value)} />}
-                  <div className="mdv-edit__row">
-                    <Button variant="primary" size="sm" disabled={busy.has(b.area) || tooLong(b)} onClick={() => void save(b)} title={t.doc.saveHint}>{t.system.save}</Button>
-                    {onPropose && <Button size="sm" disabled={busy.has(b.area) || tooLong(b) || !p!.decision || (p!.decision === b.decision.trim() && p!.why === b.why.trim() && p!.never === b.never.trim())} onClick={() => void propose(b)} title={t.doc.proposeHint}>{t.doc.propose}</Button>}
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>{t.system.cancel}</Button>
-                    <small className={tooLong(b) ? "is-over" : ""}>{p!.decision.length}/{DECISION_MAX}{p!.why ? ` · ${b.whyLabel.toLowerCase()} ${p!.why.length}/${WHY_MAX}` : ""}{p!.never ? ` · ${b.neverLabel.toLowerCase()} ${p!.never.length}/${NEVER_MAX}` : ""} · {s.editHint}</small>
-                  </div>
-                </div>
-              ) : (
-                // The words a person wrote: pressed to change them or to pin a comment; the status and the references under them are the app's, pinned only
-                lines(b.area, b.decision ? rawOf(b).split("\n") : [`_${b.openText}_`, ...(b.never ? ["", ...neverMd(b).split("\n")] : [])], b, true)
-              )}
-              {!on && b.meta.length > 0 && lines(b.area, ["", ...b.meta], b, false)}
+            <div key={b.area} id={`sdoc-${b.area}`} className={`mdv-block mdv-block--area${busy.has(b.area) ? " is-busy" : ""}`} aria-busy={busy.has(b.area)}>
+              <div className="mdv-headrow">
+                {lines(b.area, [`## ${b.heading}`], whole)}
+                {areaTools && !readOnly && <span className="mdv-tools">{areaTools(b)}</span>}
+              </div>
+              <Line text="" />
+              {/* The words a person writes: the decision, its why and what it never does */}
+              {written(b.area, rawOf(b), `${t.system.md.open}. ${t.system.placeholder}`, whole, {
+                disabled: busy.has(b.area), over: areaOver(b),
+                onSave: async (text) => { await onSave?.(b.area, parse(text, b.whyLabel, b.neverLabel)); },
+                onPropose: onPropose ? (text, why) => onPropose(b.area, parse(text, b.whyLabel, b.neverLabel), why) : undefined,
+              })}
+              {/* Its status and its references: the app's, or what the team wrote over them */}
+              {b.meta.length > 0 && <><Line text="" />{metaEdit ? written(b.area, b.meta.join("\n"), "", whole, metaEdit) : lines(b.area, b.meta, whole, false)}</>}
               {after && <div className="mdv-team">{after(b)}</div>}
               <Line text="" />
             </div>
           );
         })}
-        {menu && (
-          <div className="mdv-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
-            {menu.editable && menu.block && <button type="button" role="menuitem" onClick={() => { const b = menu.block!; setMenu(null); start(b); }}>{menu.block.decision ? t.system.edit : t.system.write}</button>}
-            {onPin && <button type="button" role="menuitem" onClick={() => openPin(menu.part, menu.quote)}>{t.doc.comment}</button>}
-            {menu.block && actions?.(menu.block).map((a) => <button key={a.label} type="button" role="menuitem" onClick={() => { setMenu(null); a.run(); }}>{a.label}</button>)}
+        {/* A pin's thread, beside it: who said what and when, and room to answer. Or the comment being started */}
+        {pop && (root || pop.draft) && (
+          <div className="mdv-pop" style={{ left: pop.left, top: pop.top }} role="dialog">
+            {root && [root, ...all.filter((n) => n.to === root.id)].map((n) => (
+              <div key={n.id} className="mdv-pop__note">
+                <Avatar name={n.who} image={n.image} size={24} />
+                <div>
+                  <p className="mdv-pop__meta"><b>{n.who}</b><time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
+                    {n.mine && onUnpin && <button type="button" onClick={() => { if (n.id === root.id) setPop(null); void onUnpin(n.id); }}>{t.areaThread.remove}</button>}
+                  </p>
+                  <p>{n.text}</p>
+                </div>
+              </div>
+            ))}
+            {!readOnly && (
+              <form className="mdv-pop__form" onSubmit={(e) => { e.preventDefault(); void sendPin(); }}>
+                <textarea autoFocus rows={root ? 1 : 2} value={pinText} placeholder={root ? t.doc.replyPlaceholder : t.doc.pinPlaceholder} aria-label={root ? t.doc.replyPlaceholder : t.doc.pinPlaceholder} disabled={pinning}
+                  onChange={(e) => setPinText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendPin(); } }} />
+                <Button variant="primary" size="sm" type="submit" disabled={pinning || !pinText.trim()}>{root ? t.doc.reply : t.doc.pin}</Button>
+              </form>
+            )}
           </div>
         )}
       </div>

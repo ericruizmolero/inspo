@@ -2,11 +2,11 @@
 // about the area itself (system_area_comment), and what they said on the references the area draws from
 // (inspo_comment on those items), so the thread shows why the decision is what it is and who is behind it.
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { DECISION_MAX, NEVER_MAX, SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
+import { NEVER_MAX, SYSTEM_AREAS, cleanDecision, type ProjectSystem, type SystemArea } from "@/types/system";
 
 const A = schema.systemAreaComment;
 const C = schema.inspoComment;
@@ -18,8 +18,8 @@ export interface AreaProposal { decision: string; why: string; never: string; st
 /** What a line points at: an option tried on the sample (the choice to put back, and how it reads), a reference,
  *  or the change it proposes */
 export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal }
-  /** A pin: the line of criterio.md the comment was left on, as it read then */
-  | { pin: { quote: string } };
+  /** A pin: the line of criterio.md the comment was left on, as it read then, how far across it (0 to 1), and the pin it answers */
+  | { pin: { quote: string; x: number; to?: string } };
 
 /** The parts of criterio.md a comment can sit on: an area, or one of the parts that are not one */
 const PARTS: readonly string[] = [...SYSTEM_AREAS, "head", "project", "summary", "refs"];
@@ -47,14 +47,16 @@ function cleanAbout(v: unknown): AreaAbout | null {
   const o = v as Record<string, unknown>;
   if (o.proposal && typeof o.proposal === "object") {
     const p = o.proposal as Record<string, unknown>;
-    const decision = String(p.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+    const decision = cleanDecision(p.decision);
     if (!decision) return null;
     const state = p.state === "accepted" || p.state === "rejected" ? p.state : "open";
     return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}) } };
   }
   if (o.pin && typeof o.pin === "object") {
     const quote = String((o.pin as Record<string, unknown>).quote ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
-    return quote ? { pin: { quote } } : null;
+    const pin = o.pin as Record<string, unknown>;
+    const x = typeof pin.x === "number" && Number.isFinite(pin.x) ? Math.max(0, Math.min(1, pin.x)) : 0.98;
+    return quote ? { pin: { quote, x, ...(typeof pin.to === "string" && pin.to ? { to: pin.to.slice(0, 40) } : {}) } } : null;
   }
   if (typeof o.itemId === "string" && o.itemId) return { itemId: o.itemId.slice(0, 40) };
   if (!o.choice || typeof o.choice !== "object") return null;
@@ -116,7 +118,9 @@ export async function addAreaComment(organizationId: string, projectId: string, 
 
 /** Only whoever wrote it removes it */
 export async function deleteAreaComment(organizationId: string, id: string, userId: string): Promise<void> {
-  await db.delete(A).where(and(eq(A.organizationId, organizationId), eq(A.id, String(id)), eq(A.authorId, userId)));
+  const gone = await db.delete(A).where(and(eq(A.organizationId, organizationId), eq(A.id, String(id)), eq(A.authorId, userId))).returning({ id: A.id });
+  // A pin goes with its answers
+  if (gone.length) await db.delete(A).where(and(eq(A.organizationId, organizationId), sql`${A.about}->'pin'->>'to' = ${gone[0].id}`));
 }
 
 // ─── What has been happening in a project's system ───────────────────────────────────────────────
@@ -140,7 +144,7 @@ export interface SystemActivity {
   talk: Record<string, { count: number; people: { name: string; image: string | null }[] }>;
   /** Per area: its conversation, oldest first, as criterio.md tells it (lib/criterio-md.ts TalkLine), with the
    *  changes proposed in it */
-  notes: Record<string, { id: string; who: string; image: string | null; at: string; mine: boolean; text: string; label?: string; itemId?: string; proposal?: AreaProposal; /** A pin: the line it sits on */ pin?: string }[]>;
+  notes: Record<string, { id: string; who: string; image: string | null; at: string; mine: boolean; text: string; label?: string; itemId?: string; proposal?: AreaProposal; /** A pin: the line it sits on, where on it, and the pin it answers */ pin?: { quote: string; x: number; to?: string } }[]>;
 }
 
 const ACTIVITY_LINES = 6;
@@ -175,7 +179,7 @@ export async function systemActivity(organizationId: string, projectId: string, 
     const about = cleanAbout(n.about);
     (said[n.area] ??= []).unshift({
       id: n.id, who: n.authorName, image: n.authorImage ?? null, at: n.createdAt.toISOString(), mine: !!userId && n.authorId === userId, text: n.body,
-      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "pin" in about ? { pin: about.pin.quote, label: `\u00ab${about.pin.quote.length > 60 ? `${about.pin.quote.slice(0, 59)}\u2026` : about.pin.quote}\u00bb` } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
+      ...(!about ? {} : "proposal" in about ? { proposal: about.proposal } : "pin" in about ? { pin: about.pin, label: `\u00ab${about.pin.quote.length > 60 ? `${about.pin.quote.slice(0, 59)}\u2026` : about.pin.quote}\u00bb` } : "label" in about ? { label: about.label } : { itemId: about.itemId }),
     });
     lines.push({ id: n.id, kind: "comment", area: n.area as SystemArea, authorName: n.authorName, authorImage: n.authorImage ?? null, text: n.body, at: n.createdAt.toISOString() });
     const t = (talk[n.area] ??= { count: 0, people: [] });

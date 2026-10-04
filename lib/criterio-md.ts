@@ -53,11 +53,11 @@ export interface CriterioMdInput {
 }
 
 export type CriterioBlock =
-  /** The title, the note to the reader and the date, as lines of the file */
-  | { kind: "head"; lines: string[] }
+  /** The title, the note to the reader and the date, as lines of the file. `edited`: the team rewrote it by hand */
+  | { kind: "head"; lines: string[]; edited?: boolean }
   | { kind: "summary"; heading: string; text: string }
   /** A part the app writes whole: what the project is, and the references one by one */
-  | { kind: "section"; id: string; heading: string; lines: string[] }
+  | { kind: "section"; id: string; heading: string; lines: string[]; edited?: boolean }
   | {
     kind: "area"; area: SystemArea; heading: string;
     /** Empty when the area is open */
@@ -67,6 +67,8 @@ export type CriterioBlock =
     whyLabel: string; neverLabel: string; openText: string;
     /** The status, the references behind the decision with what the team said of each, and the area's conversation, as lines of the file */
     meta: string[];
+    /** The team rewrote the status and references by hand */
+    metaEdited?: boolean;
   };
 
 const one = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -83,7 +85,10 @@ export function criterioBlocks({ project, system, items, labels, strings, client
     const kind = it.kind && it.kind !== "web" ? ` (${strings.kinds[it.kind].toLowerCase()})` : "";
     return `${code.has(id) ? `**${code.get(id)}** ` : ""}[${it.name}](${abs(it.web)})${kind}`;
   };
-  const blocks: CriterioBlock[] = [{ kind: "head", lines: [`# ${project}: criterio.md`, `> ${strings.intro}`, `**criterio.design** · ${date}`, ...(client ? [`**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])] }];
+  // What the team rewrote by hand stands instead of what the app would write (types/system.ts DOC_PARTS)
+  const doc = system.doc ?? {};
+  const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
+  const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: strings.project, lines: [about.trim()] });
   if (system.summary) blocks.push({ kind: "summary", heading: strings.summary, text: system.summary });
   for (const key of SYSTEM_AREAS) {
@@ -113,7 +118,8 @@ export function criterioBlocks({ project, system, items, labels, strings, client
         } else meta.push(`  - ${l.who}${on ? `, ${strings.on(on)}` : ""}: ${quote(l.text)}`);
       }
     }
-    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta });
+    const byHand = doc[`meta:${key}`];
+    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand });
   }
   // Every reference once, with what it is, what was said of it and what it brings to each area
   if (board.length) {
@@ -138,7 +144,7 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       lines.push("");
     }
     while (lines[lines.length - 1] === "") lines.pop();
-    blocks.push({ kind: "section", id: "refs", heading: `${strings.refs} (${board.length})`, lines });
+    blocks.push({ kind: "section", id: "refs", heading: `${strings.refs} (${board.length})`, lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
   }
   return blocks;
 }
@@ -151,7 +157,7 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
   const L: string[] = [];
   const p = (s = "") => L.push(s);
   for (const b of blocks) {
-    if (b.kind === "head") { for (const line of b.lines) { p(line); p(); } continue; }
+    if (b.kind === "head") { for (const line of b.lines) p(line); p(); continue; }
     if (b.kind === "summary") { p(`## ${b.heading}`); p(); p(b.text); p(); continue; }
     if (b.kind === "section") { p(`## ${b.heading}`); p(); for (const line of b.lines) p(line); p(); continue; }
     p(`## ${b.heading}`);

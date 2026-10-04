@@ -22,7 +22,7 @@ import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
 import { recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, NEVER_MAX, SYSTEM_AREAS, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
+import { DECISION_MAX, DOC_PARTS, DOC_PART_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
 
@@ -82,8 +82,37 @@ export async function getSystem(organizationId: string, projectId: string): Prom
     summary: head?.summary ?? "",
     areas,
     run: (head?.runJson as SystemRun | null) ?? null,
+    doc: head?.doc ?? {},
     updatedAt: latest?.toISOString() ?? null,
   };
+}
+
+// ─── The file, written by hand ───────────────────────────────────────────────────────────────────
+// criterio.md is the system's other face, and the team writes on it. The areas' own words are decisions;
+// the paragraph is the paragraph; the rest (the head, an area's status and references, the list of
+// references) the app writes, and a person can write over it: that part then says what they wrote.
+
+/** The project's paragraph, written by a person. The next reading of the board writes it again. */
+export async function setSummary(organizationId: string, projectId: string, summary: string): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  await db.update(S).set({ summary: String(summary ?? "").trim().slice(0, 4000), updatedAt: now }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
+  return getSystem(organizationId, projectId);
+}
+
+/** A part of the file rewritten by hand; null (or the empty text) goes back to what the app writes */
+export async function setDocPart(organizationId: string, projectId: string, part: string, text: string | null): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  if (!DOC_PARTS.includes(part)) throw new HttpError(400, (await getErrors()).badBody);
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  const [head] = await db.select({ doc: S.doc }).from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId))).limit(1);
+  const doc = { ...(head?.doc ?? {}) };
+  const clean = text === null ? "" : String(text).replace(/\r/g, "").trimEnd().slice(0, DOC_PART_MAX);
+  if (clean.trim()) doc[part] = clean; else delete doc[part];
+  await db.update(S).set({ doc, updatedAt: now }).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId)));
+  return getSystem(organizationId, projectId);
 }
 
 /** The systems of every project in the workspace, for the sidebar (how full each one is). */
@@ -96,7 +125,7 @@ export async function loadSystems(organizationId: string): Promise<Record<string
   ]);
   const out: Record<string, ProjectSystem> = {};
   for (const id of ids) out[id] = emptySystem(id);
-  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
+  for (const h of heads) { out[h.projectId].summary = h.summary; out[h.projectId].run = (h.runJson as SystemRun | null) ?? null; out[h.projectId].doc = h.doc ?? {}; out[h.projectId].updatedAt = h.updatedAt.toISOString(); }
   for (const r of rows) {
     const sys = out[r.projectId];
     const i = SYSTEM_AREAS.indexOf(r.area as SystemArea);
@@ -142,7 +171,7 @@ const cleanArea = async (area: string): Promise<SystemArea> => {
 export async function decideArea(organizationId: string, projectId: string, areaKey: string, input: { decision: string; confidence?: number; evidence?: SystemEvidence[]; why?: string }, author: { id: string; name: string }): Promise<ProjectSystem> {
   await projectRow(organizationId, projectId);
   const area = await cleanArea(areaKey);
-  const decision = String(input.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
+  const decision = cleanDecision(input.decision);
   const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
   const now = new Date();
   await ensureHead(organizationId, projectId, now);

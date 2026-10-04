@@ -84,11 +84,20 @@ export interface ProjectSystem {
   /** Always the eight, in SYSTEM_AREAS order */
   areas: SystemAreaState[];
   run: SystemRun | null;
+  /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>") */
+  doc?: Record<string, string>;
   /** ISO; null when nothing was ever written */
   updatedAt: string | null;
 }
 
-export const DECISION_MAX = 600;
+/** The parts of criterio.md that can be rewritten by hand over what the app writes */
+export const DOC_PARTS = ["head", "refs", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
+export const DOC_PART_MAX = 60_000;
+
+/** A decision a person writes can run to a few paragraphs (it is typed in the file, with line breaks) */
+export const DECISION_MAX = 2000;
+/** A decision's text as it is kept: its own line breaks stay (a paragraph is a paragraph), the rest of the white space is tidied */
+export const cleanDecision = (v: unknown) => String(v ?? "").replace(/\r/g, "").replace(/[^\S\n]+/g, " ").replace(/ ?\n ?/g, "\n").replace(/\n{3,}/g, "\n\n").trim().slice(0, DECISION_MAX);
 /** The never list of an area, all its lines together */
 export const NEVER_MAX = 800;
 
