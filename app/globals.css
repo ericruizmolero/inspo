@@ -3247,3 +3247,31 @@ button.postit__num { cursor: pointer; }
   background: var(--dock-ink); color: #111110; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
 }
 .island__new-go:disabled { opacity: 0.4; cursor: default; }
+
+/* ─── Light theme: the bars are light glass, not the dark one. On a light page a dark slab reads as a hole;
+   here the island, the actions pill, the search dock and the zoom pill are frosted white over the board,
+   dark ink, a hairline and a soft shadow that lifts them. The menus that hang from them are almost solid. ─── */
+:root[data-theme="light"] {
+  --dock-ink: #111110; --dock-ink-2: #45453f; --dock-muted: #77776f;
+  --dock-surface: rgba(255, 255, 255, 0.72);
+  --dock-surface-pop: rgba(255, 255, 255, 0.96);
+  --dock-hover: rgba(0, 0, 0, 0.045);
+  --dock-chip: rgba(0, 0, 0, 0.07);
+  --dock-fill: rgba(0, 0, 0, 0.06);
+  --dock-line: rgba(0, 0, 0, 0.08);
+  --dock-danger: #c23a30;
+  --dock-shadow: 0 10px 30px -12px rgba(30, 30, 20, 0.22), 0 1px 3px rgba(30, 30, 20, 0.08);
+  --dock-blur: blur(24px) saturate(1.6);
+}
+:root[data-theme="light"] :is(.island, .board-zoom, .shell:not(.shell--docked) .topbar__actions) {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 1px var(--dock-line), var(--dock-shadow);
+}
+:root[data-theme="light"] .sb--dock .sb__field,
+:root[data-theme="light"] .sb--dock .sb__field:hover {
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 40px -14px rgba(30, 30, 20, 0.25), 0 1px 3px rgba(30, 30, 20, 0.08);
+}
+:root[data-theme="light"] .sb--dock:focus-within .sb__field {
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 40px -14px rgba(30, 30, 20, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
