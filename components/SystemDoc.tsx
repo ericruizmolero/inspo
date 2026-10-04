@@ -75,6 +75,12 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     if (!r.ok) { setError(r.error); return; }
     onSystem(r.data); onTalk();
   };
+  // Each reference's picture, by its code: the document shows it where the reference is named
+  const pictures = useMemo(() => Object.fromEntries(boardIds.flatMap((id, i) => {
+    const it = itemOf(id);
+    const pic = it ? imageOf(it) ?? (refInfo?.(it).kind === "image" ? it.web : null) : null;
+    return pic ? [[`R${i + 1}`, pic]] : [];
+  })), [boardIds, itemOf, imageOf, refInfo]);
   // The pins the team left on the file's lines, by the part they sit on
   const pins = useMemo(() => Object.fromEntries(Object.entries(activity?.notes ?? {}).map(([part, notes]) => [part, notes.filter((n) => n.pin).map((n) => ({ id: n.id, who: n.who, image: n.image, at: n.at, mine: n.mine, text: n.text, quote: n.pin!.quote, x: n.pin!.x, to: n.pin!.to }))])), [activity]);
   const pin = async (part: string, quote: string, body: string, at: { x: number; to?: string }): Promise<boolean> => {
@@ -94,7 +100,8 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     </header>
   );
 
-  // The file's parts, to jump between: each area says where it stands
+  // The file's parts, to jump between: each area says where it stands. One reference under it is enough for
+  // the green dot, however many there are
   const toc = (
     <nav className="sdoc-toc" aria-label="criterio.md">
       {project && <button type="button" onClick={() => go("sdoc-project")}>{md.project}</button>}
@@ -104,7 +111,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
         const a = system.areas.find((x) => x.area === b.area);
         const open = (activity?.notes[b.area] ?? []).filter((n) => n.proposal?.state === "open").length;
         return (
-          <button key={b.area} type="button" onClick={() => go(`sdoc-${b.area}`)} className={!b.decision ? "is-open" : a?.source === "team" ? "is-team" : ""}>
+          <button key={b.area} type="button" onClick={() => go(`sdoc-${b.area}`)} className={a?.evidence.length ? "is-backed" : !b.decision ? "is-open" : a?.source === "team" ? "is-team" : ""}>
             <i aria-hidden />{b.heading}{open > 0 && <b title={s.pending(open)}>{open}</b>}
           </button>
         );
@@ -142,7 +149,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       <div className="sdoc-page sdoc-page--md">
         {tools}
         {error && <p className="sysv-error" role="alert">{error}</p>}
-        <SystemMarkdown look={mode} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
+        <SystemMarkdown look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           onPart={async (part, text) => { const r = await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}

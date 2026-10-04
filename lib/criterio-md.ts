@@ -128,7 +128,9 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       const it = items[id];
       if (!it) continue;
       lines.push(`### ${code.get(id)} · ${it.name}`, "");
-      lines.push(`- **${strings.kinds[it.kind ?? "web"]}:** ${abs(it.web)}`);
+      const kind = it.kind ?? "web";
+      const where = kind === "image" ? strings.kinds.image.toLowerCase() : abs(it.web).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "").slice(0, 60);
+      lines.push(`- **${strings.kinds[kind]}:** [${where}](${abs(it.web)})`);
       if (it.what) lines.push(`- **${strings.what}:** ${one(it.what)}`);
       if (it.by) lines.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
       if (it.said?.length) {

@@ -67,6 +67,17 @@ function lineKind(text: string): { cls: string; mark: string; rest: string; dept
   return { cls: "", mark: "", rest: text };
 }
 
+/** A line that names a reference (an area's "- **R3** …", or the reference's own "### R3 · …"): its code */
+const refCode = (text: string) => text.match(/^\s*- \*\*(R\d+)\*\* /)?.[1] ?? text.match(/^### (R\d+) ·/)?.[1];
+/** What the document look adds to a line: the reference's picture, and the lines that are someone's words */
+function human(text: string, pics?: Record<string, string>): { cls: string; pic?: string } {
+  const code = refCode(text);
+  const pic = code ? pics?.[code] : undefined;
+  if (pic) return { cls: text.startsWith("###") ? " mdv-refhead" : " mdv-ref", pic: `url("${pic.replace(/"/g, "%22")}")` };
+  if (/^\s+- [^:\u00ab]{1,40}: \u00ab/.test(text)) return { cls: " mdv-said" };
+  return { cls: "" };
+}
+
 /** What a line of the file is quoted as when a pin is left on it */
 export const quoteOf = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 160);
 
@@ -81,8 +92,10 @@ function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies
   );
 }
 
-function Line({ text, onPress, pins, repliesOf, openId, onOpen }: {
+function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics }: {
   text: string;
+  /** The references' pictures by code (R1…), for the document look */
+  pics?: Record<string, string>;
   /** Pressing the line while commenting: how far across it (0 to 1) and where on screen */
   onPress?: (x: number, at: { x: number; y: number }) => void;
   /** The pins left on it */
@@ -95,9 +108,11 @@ function Line({ text, onPress, pins, repliesOf, openId, onOpen }: {
   const k = lineKind(text);
   // A list line that wraps keeps its indent: the second row starts under the first's words, not at the margin
   const hang = k.depth !== undefined ? `${k.mark.length}ch` : undefined;
+  const hu = human(text, pics);
+  const style = { ...(hang ? { paddingLeft: hang, textIndent: `-${hang}`, "--d": k.depth } : {}), ...(hu.pic ? { "--pic": hu.pic } : {}) } as React.CSSProperties;
   return (
-    <div className={`mdv-line${k.cls}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
-      style={hang ? { paddingLeft: hang, textIndent: `-${hang}`, "--d": k.depth } as React.CSSProperties : undefined}
+    <div className={`mdv-line${k.cls}${hu.cls}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
+      style={hang || hu.pic ? style : undefined}
       onClick={onPress ? (e) => { if ((e.target as HTMLElement).closest("a, .mdv-pin")) return; const r = e.currentTarget.getBoundingClientRect(); onPress(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), { x: e.clientX, y: e.clientY }); } : undefined}>
       {k.mark && <Mark>{k.mark}</Mark>}{k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em") ? k.rest : inline(k.rest)}{k.tail && <Mark>{k.tail}</Mark>}
       {onOpen && pins?.map((n) => <PinMark key={n.id} pin={n} replies={repliesOf?.(n.id) ?? 0} active={openId === n.id} style={{ left: `${n.x * 100}%` }} onOpen={onOpen} />)}
@@ -108,17 +123,19 @@ function Line({ text, onPress, pins, repliesOf, openId, onOpen }: {
 const escHtml = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 /** The file's text as it is typed in: a row per line, with the colours and the hanging lists of the file. The
  *  text itself is whole (a long address is only cut on screen), so what is read back is the file */
-function mdHtml(raw: string): string {
+function mdHtml(raw: string, pics?: Record<string, string>): string {
   const mark = (m: string) => `<span class="mdv-mark">${escHtml(m)}</span>`;
   return raw.split("\n").map((line) => {
     if (!line) return `<div class="mdv-eline"><br></div>`;
     const k = lineKind(line);
-    const hang = k.depth !== undefined ? ` style="padding-left:${k.mark.length}ch;text-indent:-${k.mark.length}ch;--d:${k.depth}"` : "";
+    const hu = human(line, pics);
+    const css = `${k.depth !== undefined ? `padding-left:${k.mark.length}ch;text-indent:-${k.mark.length}ch;--d:${k.depth};` : ""}${hu.pic ? `--pic:${hu.pic}` : ""}`;
+    const hang = css ? ` style="${css.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}"` : "";
     const plain = k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em");
     const body = plain ? escHtml(k.rest) : escHtml(k.rest)
       .replace(/\*\*([^*\n]+)\*\*/g, (_m, x: string) => `<b class="mdv-b">${mark("**")}${x}${mark("**")}</b>`)
       .replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (_m, name: string, url: string) => `${mark("[")}<span class="mdv-link">${name}</span>${mark("]")}<span class="mdv-mark mdv-url${url.length > 56 ? " mdv-url--cut" : ""}">(${url})</span>`);
-    return `<div class="mdv-eline${k.cls}"${hang}>${k.mark ? mark(k.mark) : ""}${body}${k.tail ? mark(k.tail) : ""}</div>`;
+    return `<div class="mdv-eline${k.cls}${hu.cls}"${hang}>${k.mark ? mark(k.mark) : ""}${body}${k.tail ? mark(k.tail) : ""}</div>`;
   }).join("");
 }
 /** The text of a part typed in place, read back from its rows */
@@ -130,8 +147,9 @@ const readText = (el: HTMLElement) => el.innerText.replace(/\u00a0/g, " ").repla
  * While proposing (the tool in the bar), an area's change is not written: leaving the part leaves it as a
  * proposal for the team, and the text goes back to what it said.
  */
-function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset }: {
+function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset, pics }: {
   raw: string; placeholder: string; disabled?: boolean;
+  pics?: Record<string, string>;
   /** The part was rewritten by hand over what the app writes: goes back to it */
   onReset?: () => Promise<void>;
   /** What is too long in the text, as a short note; empty when it fits */
@@ -156,8 +174,8 @@ function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposi
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || document.activeElement === el) return;
-    el.innerHTML = mdHtml(raw); setText(raw); sent.current = raw;
-  }, [raw]);
+    el.innerHTML = mdHtml(raw, pics); setText(raw); sent.current = raw;
+  }, [raw, pics]);
   useEffect(() => { if (state !== "saved" && state !== "proposed") return; const id = setTimeout(() => setState(""), 1600); return () => clearTimeout(id); }, [state]);
   useEffect(() => () => clearTimeout(timer.current), []);
   const tooLong = over?.(text) ?? "";
@@ -192,7 +210,7 @@ function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposi
     if (proposing && onPropose) {
       // Not written: left for the team to say yes or no, and the part says again what it said
       if (!same(now, raw) && now.trim() && !(over?.(now) ?? "") && await onPropose(now.trim(), "")) setState("proposed");
-      el.innerHTML = mdHtml(raw); setText(raw);
+      el.innerHTML = mdHtml(raw, pics); setText(raw);
       return;
     }
     await flush(now, true);
@@ -213,15 +231,15 @@ function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposi
   );
 }
 
-function Written({ raw, placeholder, edit, pins, repliesOf, openId, onOpen }: {
-  raw: string; placeholder: string;
+function Written({ raw, placeholder, edit, pins, repliesOf, openId, onOpen, pics }: {
+  raw: string; placeholder: string; pics?: Record<string, string>;
   edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean; proposing?: boolean };
   pins: DocPin[]; repliesOf: (id: string) => number; openId: string | null; onOpen: (pin: DocPin, el: HTMLElement) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   return (
     <div className="mdv-written" ref={host}>
-      <Editable raw={raw} placeholder={placeholder} {...edit} />
+      <Editable raw={raw} placeholder={placeholder} pics={pics} {...edit} />
       <PinsOver host={host} raw={raw} pins={pins} repliesOf={repliesOf} openId={openId} onOpen={onOpen} />
     </div>
   );
@@ -263,7 +281,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false, look = "md" }: {
+export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, readOnly = false, look = "md", pictures }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -281,6 +299,8 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
   onAbout?: (text: string) => Promise<void>;
   /** How the file is set: as the Markdown it is, or as a document (the same text and tools, its marks hidden) */
   look?: "md" | "doc";
+  /** The references' pictures by their code (R1, R2…): the document look shows each beside where it is named */
+  pictures?: Record<string, string>;
   /** Writes the project's paragraph */
   onSummary?: (text: string) => Promise<void>;
   /** Writes over a part the app writes ("head", "refs", "meta:<area>"); null goes back to what the app writes */
@@ -354,7 +374,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
     return texts.map((text, i) => {
       const q = quoteOf(text);
       const here = text ? mine.filter((n) => n.quote === q || (i === first && !quotes.has(n.quote))) : [];
-      return <Line key={i} text={text} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
+      return <Line key={i} text={text} pics={pictures} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
         onPress={text && onPin && commenting && !readOnly ? startPin(part, q) : undefined} />;
     });
   };
@@ -363,7 +383,7 @@ export default function SystemMarkdown({ blocks, busy, onSave, onCopy, onDownloa
     if (commenting || readOnly) return lines(part, raw ? raw.split("\n") : [placeholder], whole, false);
     const quotes = new Set(raw.split("\n").map(quoteOf).filter(Boolean));
     const here = (pins?.[part] ?? []).filter((n) => !n.to && quotes.has(n.quote));
-    return <Written raw={raw} placeholder={placeholder} edit={{ ...edit, proposing: proposing && !!edit.onPropose }} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin} />;
+    return <Written raw={raw} placeholder={placeholder} edit={{ ...edit, proposing: proposing && !!edit.onPropose }} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin} pics={pictures} />;
   };
   const areaOver = (b: AreaBlock) => (text: string) => {
     const p = parse(text, b.whyLabel, b.neverLabel);

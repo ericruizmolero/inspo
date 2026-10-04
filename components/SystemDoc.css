@@ -11,7 +11,7 @@
 .sdoc-toc__gap { height: 10px; }
 /* Where an area stands: decided by the team, proposed, or open */
 .sdoc-toc button i { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
-.sdoc-toc button.is-team i { background: var(--success); }
+.sdoc-toc button.is-team i, .sdoc-toc button.is-backed i { background: var(--success); }
 .sdoc-toc button.is-open i { background: none; box-shadow: inset 0 0 0 1.5px var(--muted); }
 .sdoc-toc button.is-open { color: var(--muted); }
 .sdoc-toc button b { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--warning); color: #1a1405; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; }
@@ -228,3 +228,18 @@
 .mdv--doc .mdv-tool--solid { background: var(--text); color: var(--bg); }
 .mdv--doc .mdv-pin { box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
 .mdv--doc .mdv-block--area { margin-top: 22px; }
+
+/* ─── The document shows what it talks about. Where a reference is named its picture sits beside the line (drawn
+   by the row itself, from --pic: nothing is added to the text), and what someone said reads as their words ─── */
+.sdoc .mdv--doc #sdoc-head .mdv-h1 { font-size: 24px; }
+.mdv--doc .mdv-ref { padding-left: 142px !important; min-height: 76px; margin-top: 14px; }
+.mdv--doc .mdv-ref::before { left: 20px; top: 3px; width: 108px; height: 72px; border-radius: 9px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
+.mdv--doc .mdv-said { color: var(--text-2); }
+.mdv--doc .mdv-said::before { top: 0.3em; width: 2px; height: calc(100% - 0.6em); border-radius: 1px; background: var(--border-strong); }
+/* Under a reference of an area, the words left on it line up with its text */
+.mdv--doc .mdv-said[style*="--d:2"], .mdv--doc .mdv-said[style*="--d: 2"] { padding-left: 158px !important; }
+.mdv--doc .mdv-said[style*="--d:2"]::before, .mdv--doc .mdv-said[style*="--d: 2"]::before { left: 142px; }
+/* A reference's own entry opens with its picture */
+.mdv--doc .mdv-refhead { position: relative; margin-top: 34px; padding-top: 176px; }
+.mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: 12px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
+@media (max-width: 600px) { .mdv--doc .mdv-ref { padding-left: 100px !important; } .mdv--doc .mdv-ref::before { width: 68px; height: 46px; } .mdv--doc .mdv-said[style*="--d:2"], .mdv--doc .mdv-said[style*="--d: 2"] { padding-left: 116px !important; } .mdv--doc .mdv-said[style*="--d:2"]::before, .mdv--doc .mdv-said[style*="--d: 2"]::before { left: 100px; } }
