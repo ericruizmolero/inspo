@@ -1428,11 +1428,10 @@ export default function InspoClient({
         {space === "discover" || space === "templates" ? (
           // Discover: the directory of places to look, and the templates (whole systems to start a project from)
           <Discover section={space === "templates" ? "templates" : "sites"} onSection={(s) => setSpace(s === "templates" ? "templates" : "discover")}
-            templates={<TemplatesView onStarted={({ boardIds = [], ...p }) => {
-              setProjects((prev) => [...prev, p]);
-              // The template's references come filed in the new project
-              if (boardIds.length) setLinks((prev) => { const next = { ...prev }; for (const id of boardIds) next[id] = [...(next[id] ?? []).filter((x) => x !== p.id), p.id]; return next; });
-              setSpace(p.id); void loadSystem(p.id).then((r) => { if (r.ok) setSystem(p.id, r.data.system); }); }} />} />
+            templates={<TemplatesView onStarted={(p) => {
+              // The template's references are not in this page's library until a project holds them, so the page is
+              // read again on the new project: its board comes with them, their pictures and their tags
+              window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />} />
         ) : space === "home" ? (
           <ProjectChooser
             projects={projects}
