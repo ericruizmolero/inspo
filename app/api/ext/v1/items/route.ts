@@ -4,7 +4,7 @@
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
 import { addItem, findByWeb, rowToItem, setThumbnail } from "@/lib/items";
-import { activeProjectFor, fileItems } from "@/lib/projects";
+import { fileFromExt, cleanAreas } from "@/lib/ext-file";
 import { uploadThumbnail } from "@/lib/thumbnails";
 import { nameFor } from "@/lib/item-name";
 import { ensurePost, postThumb } from "@/lib/posts";
@@ -28,11 +28,11 @@ function fileFromDataUrl(dataUrl: string | undefined): File | null {
   return new File([buf], `extension.${ext}`, { type: m[1] });
 }
 
-// POST { url, title?, screenshot?, note? } → { ok, item, existed }
+// POST { url, title?, screenshot?, note?, projectId?, areas? } → { ok, item, existed }
 export async function POST(req: NextRequest) {
   const ctx = await requireExtCtx(req);
   if (ctx instanceof Response) return ctx;
-  const body = (await req.json().catch(() => ({}))) as { url?: string; title?: string; screenshot?: string; note?: string };
+  const body = (await req.json().catch(() => ({}))) as { url?: string; title?: string; screenshot?: string; note?: string; projectId?: string; areas?: string[] };
   const web = normalizeWebUrl(body.url ?? "");
   if (!web) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
 
@@ -47,9 +47,8 @@ export async function POST(req: NextRequest) {
       name, web, type: typeFromUrl(web), note: typeof body.note === "string" ? body.note.slice(0, 500) : "",
       author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
     });
-    // Nothing lives outside a project: it goes to the one this person was working in
-    const projectId = await activeProjectFor(ctx.workspace.id, ctx.user.id).catch(() => null);
-    if (projectId && item.id) await fileItems(ctx.workspace.id, projectId, [item.id], ctx.user.id).catch((e) => console.error("ext: not filed", e));
+    // Nothing lives outside a project: the one picked in the popup, or the one this person was working in
+    await fileFromExt(ctx, item.id, body.projectId, cleanAreas(body.areas));
 
     // The tab screenshot serves as the thumbnail from the first second
     const shot = fileFromDataUrl(body.screenshot);

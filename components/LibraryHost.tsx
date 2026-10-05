@@ -86,6 +86,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
       <InspoClient
         key={`${shown.workspace.id}:${round}`}
         items={shown.items}
+        stamp={shown.stamp}
         initialThumbnailMap={shown.initialThumbnailMap}
         initialTagMap={shown.initialTagMap}
         initialTagJobs={shown.initialTagJobs}

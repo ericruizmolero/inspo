@@ -34,11 +34,38 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `GET /me` | Checks the key; returns the person and workspace |
 | `DELETE /me` | The extension revokes its own key when it disconnects |
 | `GET /items/lookup?url=` | Is this site already saved? |
-| `POST /items` | Saves `{ url, title, screenshot }` |
+| `POST /items` | Saves `{ url, title, screenshot, note, projectId, areas }` |
 | `POST /items/batch` | Saves up to 25 `{ url, title }` at once (the import page) |
+| `POST /media` | Saves one image or video from the right-click menu |
+| `GET /projects` | The projects to save to, and the one picked first |
 
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
+
+## Right-click: one image or video
+
+`background.js` adds "Save image to criterio.design" and "Save video to criterio.design" to the context
+menu (`contextMenus` permission). The click grants `activeTab`, so the service worker finds the element
+on the page by its address, cuts the piece of the visible tab it covers, keeps both in
+`chrome.storage.session` and opens the popup (`chrome.action.openPopup`; where Chrome refuses, the same
+page in a small window). The popup reads it once and shows the image or video instead of the tab.
+
+- **An image** is fetched by the server (with the page as `Referer`, since some sites refuse a bare
+  request) and stored in the workspace's media folder, the same as an image dropped into the app. When the
+  site still refuses, or the image is a `blob:`, the cut piece of the tab is stored instead.
+- **A video** is copied whole into the workspace's video folder (`inspo/<workspace>/video/`, up to
+  100 MB), so it plays from criterio whatever its site does with the link later, with the cut piece as its
+  frame. When the page plays it from a `blob:` (a stream in pieces), the extension looks for the real file
+  first: a `<source>` of its own, or the biggest video file the page fetched. With no file to copy, it
+  saves the post or video page the video belongs to (a post on X has its video copied on import; YouTube,
+  Vimeo and Loom play embedded), and only when there is none, the page and its frame. The popup says so.
+
+## The form
+
+A site and a right-clicked image or video get the same form as the board's add dialog: what caught the
+eye, the project (`GET /projects` lists them and says which one this person last added to, picked
+first) and the areas of its system. `lib/ext-file.ts` files the item there and hangs it under each area
+ticked. After saving, the button turns into "Saved" with a check, and the form folds away.
 
 ## Importing bookmarks
 

@@ -12,6 +12,8 @@ export function screenStudioId(web: string): string | null {
 }
 // Uploaded images are stored files (lib/storage.ts): /api/files/inspo/<workspace>/media/<name>
 const MEDIA_FILE = /^\/api\/files\/inspo\/[^/]+\/media\//;
+// A video saved from the extension is a stored copy: /api/files/inspo/<workspace>/video/<name>.mp4
+const VIDEO_STORED = /^\/api\/files\/inspo\/[^/]+\/video\//;
 // A pasted text is a stored file too (lib/text-refs.ts): /api/files/inspo/<workspace>/text/<name>.md
 const TEXT_FILE = /^\/api\/files\/inspo\/[^/]+\/text\//;
 const POST_HOST = /^(www\.|mobile\.)?(x|twitter)\.com$/i;
@@ -102,6 +104,7 @@ export type MediaKind = "web" | "image" | "video" | "post" | "text";
 /** "blob:" is the optimistic card of an image still uploading; "text:" the one of a text still being saved. */
 export function mediaKindOf(web: string): MediaKind {
   if (web.startsWith("text:") || TEXT_FILE.test(web)) return "text";
+  if (VIDEO_STORED.test(web)) return "video";
   if (web.startsWith("blob:") || MEDIA_FILE.test(web)) return "image";
   try {
     const u = new URL(web);
@@ -141,6 +144,7 @@ export interface VideoEmbed {
 
 /** How to play a video link inside the app; null if it is not one we know how to play. */
 export function videoEmbedOf(web: string): VideoEmbed | null {
+  if (VIDEO_STORED.test(web)) return { provider: "file", src: web };
   let u: URL;
   try { u = new URL(web); } catch { return null; }
   const host = u.hostname.replace(/^(www|m)\./i, "").toLowerCase();

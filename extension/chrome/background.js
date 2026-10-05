@@ -30,3 +30,95 @@ chrome.runtime.onInstalled.addListener(async ({ reason }) => {
   await chrome.tabs.update(open.id, { active: true });
   await chrome.windows.update(open.windowId, { focused: true });
 });
+
+// ─── Right-click: save one image or video ────────────────────────────────────
+// The menu sits on images and videos. A click finds the element on the page and cuts the piece of the
+// tab it covers (activeTab allows the capture, as when the popup opens), keeps both in session storage
+// and opens the popup, which shows the media with the same form as a site: the note, the project, the
+// areas of its system. The popup sends it to POST /api/ext/v1/media.
+
+const t = (key, subs) => chrome.i18n.getMessage(key, subs) || key;
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({ id: "save-image", title: t("menuSaveImage"), contexts: ["image"] });
+    chrome.contextMenus.create({ id: "save-video", title: t("menuSaveVideo"), contexts: ["video"] });
+  });
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  const kind = info.menuItemId === "save-image" ? "image" : info.menuItemId === "save-video" ? "video" : null;
+  if (kind && tab?.id != null) pickMedia(kind, info, tab).catch((e) => console.error("criterio: right-click", e));
+});
+
+async function pickMedia(kind, info, tab) {
+  const frameId = info.frameId ?? 0;
+  const spot = await locate(tab.id, frameId, info.srcUrl, kind);
+  // The cut only lines up with the tab when the element is in the page itself, not in a frame inside it
+  const frame = spot && frameId === 0 ? await cut(tab.windowId, spot) : undefined;
+  await chrome.storage.session.set({
+    pending: { kind, src: spot?.file || info.srcUrl, link: spot?.link || "", page: info.frameUrl || info.pageUrl || tab.url, title: tab.title, favicon: tab.favIconUrl, alt: spot?.alt || "", frame, at: Date.now() },
+  });
+  // The popup itself, anchored to the toolbar icon. Where Chrome won't open it from here, the same page in a small window
+  try { await chrome.action.openPopup({ windowId: tab.windowId }); }
+  catch { await chrome.windows.create({ url: chrome.runtime.getURL("popup.html?window=1"), type: "popup", width: 368, height: 680, focused: true }); }
+}
+
+/** Where the right-clicked element sits in the tab, and its alt text. null if it can't be found. */
+async function locate(tabId, frameId, src, kind) {
+  try {
+    const [r] = await chrome.scripting.executeScript({
+      target: { tabId, frameIds: [frameId] },
+      args: [src || "", kind],
+      func: (src, kind) => {
+        const same = (el) => el.currentSrc === src || el.src === src
+          || (kind === "video" && [...el.querySelectorAll("source")].some((s) => s.src === src));
+        let best = null, bestArea = 0;
+        for (const el of document.querySelectorAll(kind === "video" ? "video" : "img")) {
+          if (!same(el)) continue;
+          const b = el.getBoundingClientRect();
+          const x = Math.max(0, b.left), y = Math.max(0, b.top);
+          const w = Math.min(innerWidth, b.right) - x, h = Math.min(innerHeight, b.bottom) - y;
+          if (w > 0 && h > 0 && w * h > bestArea) { bestArea = w * h; best = { el, x, y, w, h }; }
+        }
+        if (!best) return null;
+        const el = best.el;
+        const alt = el.getAttribute("alt") || el.getAttribute("title") || el.getAttribute("aria-label") || "";
+        if (kind !== "video") return { x: best.x, y: best.y, w: best.w, h: best.h, vw: innerWidth, alt };
+        // A video played from a blob: has no address to copy. Its real file, when the page loaded one
+        // whole: a <source> of its own, or the biggest video file in what the page has fetched
+        const isFile = (u) => /^https?:/.test(u) && /\.(mp4|m4v|webm|mov)(\?|#|$)/i.test(u);
+        let file = [el.currentSrc, el.src, ...[...el.querySelectorAll("source")].map((x) => x.src)].find(isFile) || "";
+        if (!file && !/^https?:/.test(el.currentSrc || src)) {
+          const loaded = performance.getEntriesByType("resource").filter((r) => isFile(r.name) && !/[?&](range|bytestart)=/i.test(r.name));
+          file = loaded.sort((a, b) => (b.encodedBodySize || b.transferSize || 0) - (a.encodedBodySize || a.transferSize || 0))[0]?.name || "";
+        }
+        // The post it sits in (on X, the link that holds the post's time), else the closest link to a video page
+        const box = el.closest("article, [data-testid='tweet']");
+        const link = box?.querySelector("a[href*='/status/'] time")?.closest("a")?.href || el.closest("a[href]")?.href || "";
+        return { x: best.x, y: best.y, w: best.w, h: best.h, vw: innerWidth, alt, file, link };
+      },
+    });
+    return r?.result ?? null;
+  } catch { return null; } // a page the extension may not touch
+}
+
+/** The piece of the visible tab the element covers, as a JPEG data URL */
+async function cut(windowId, spot) {
+  try {
+    const shot = await chrome.tabs.captureVisibleTab(windowId, { format: "png" });
+    const bmp = await createImageBitmap(await (await fetch(shot)).blob());
+    const k = bmp.width / spot.vw; // device pixels per CSS pixel, zoom included
+    const sx = Math.round(spot.x * k), sy = Math.round(spot.y * k);
+    const sw = Math.min(bmp.width - sx, Math.round(spot.w * k)), sh = Math.min(bmp.height - sy, Math.round(spot.h * k));
+    if (sw < 24 || sh < 24) return undefined;
+    const fit = Math.min(1, 2000 / Math.max(sw, sh));
+    const c = new OffscreenCanvas(Math.round(sw * fit), Math.round(sh * fit));
+    c.getContext("2d").drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    const blob = await c.convertToBlob({ type: "image/jpeg", quality: 0.86 });
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return `data:image/jpeg;base64,${btoa(bin)}`;
+  } catch { return undefined; } // protected pages: the server fetches the image on its own
+}

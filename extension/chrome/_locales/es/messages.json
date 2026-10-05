@@ -1,6 +1,6 @@
 {
   "extDescription": {
-    "message": "Guarda la web que estás viendo en tu librería de criterio.design con un clic."
+    "message": "Guarda la web que estás viendo, o una imagen o un vídeo de ella, en tu librería de criterio.design."
   },
   "actionTitle": {
     "message": "Guardar en criterio.design"
@@ -234,5 +234,56 @@
   },
   "importBrowserShort": {
     "message": "Marcadores de Chrome"
+  },
+  "menuSaveImage": {
+    "message": "Guardar imagen en criterio.design"
+  },
+  "menuSaveVideo": {
+    "message": "Guardar vídeo en criterio.design"
+  },
+  "rightClickHint": {
+    "message": "Clic derecho en una imagen o un vídeo para guardar solo eso."
+  },
+  "savedShort": {
+    "message": "Guardado"
+  },
+  "projectLabel": {
+    "message": "Proyecto"
+  },
+  "areasLabel": {
+    "message": "Áreas del sistema"
+  },
+  "kindImage": {
+    "message": "Imagen"
+  },
+  "kindVideo": {
+    "message": "Vídeo"
+  },
+  "area_typography": {
+    "message": "Tipografía"
+  },
+  "area_color": {
+    "message": "Color"
+  },
+  "area_layout": {
+    "message": "Layout"
+  },
+  "area_motion": {
+    "message": "Motion e interacción"
+  },
+  "area_iconography": {
+    "message": "Iconografía"
+  },
+  "area_logo": {
+    "message": "Logo"
+  },
+  "area_imagery": {
+    "message": "Imagen"
+  },
+  "area_voice": {
+    "message": "Voz y tono"
+  },
+  "videoPageSaved": {
+    "message": "Este vídeo se reproduce a trozos y no había un fichero que copiar: se ha guardado la página y un fotograma."
   }
 }
