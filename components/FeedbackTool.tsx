@@ -20,11 +20,30 @@
 // invitation) it works the same and notes stay in localStorage, but sending asks to sign
 // in first: /api/feedback requires a session.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Agentation, loadAnnotations, type Annotation } from "agentation";
+import type { Annotation } from "agentation";
 import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
 import { useT } from "./I18nProvider";
-import { clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, isFeedbackModeOn as isModeOn } from "./feedback-mode";
+import { FEEDBACK_LOAD_EVENT, clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, flushPendingEnter, isFeedbackModeOn as isModeOn } from "./feedback-mode";
+
+// Agentation is most of this tool's weight and only does anything in feedback mode: it loads the
+// first time someone asks for it (the pill, the sidebar entry, the palette, Cmd+Shift+F) or when
+// this route already has notes. Hovering the pill fetches it ahead.
+const loadAgentation = () => import("agentation");
+const Agentation = dynamic(() => loadAgentation().then((m) => m.Agentation), { ssr: false });
+
+// Agentation's own loadAnnotations, read here so the notes count needs no Agentation: one key
+// per route, notes older than 7 days dropped
+const NOTES_PREFIX = "feedback-annotations-";
+const NOTES_DAYS = 7;
+function loadAnnotations(pathname: string): Annotation[] {
+  try {
+    const data = JSON.parse(localStorage.getItem(NOTES_PREFIX + pathname) ?? "[]") as Annotation[];
+    const cutoff = Date.now() - NOTES_DAYS * 24 * 60 * 60 * 1000;
+    return data.filter((a) => !a.timestamp || a.timestamp > cutoff);
+  } catch { return []; }
+}
 
 const ENDPOINT = "/api/feedback";
 type SendState = "idle" | "sending" | "sent" | "error";
@@ -80,6 +99,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
   const [notes, setNotes] = useState<Map<string, Annotation>>(() => new Map());
   const [state, setState] = useState<SendState>("idle");
   const [active, setActive] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const stateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useState(prepareAgentation);
 
@@ -138,15 +158,29 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
 
   // Agentation keeps its notes per route in localStorage: they come back when the page changes
   useEffect(() => {
-    setNotes(new Map(loadAnnotations(pathname).map((a) => [a.id, a])));
+    const saved = loadAnnotations(pathname);
+    setNotes(new Map(saved.map((a) => [a.id, a])));
     setState("idle");
+    if (saved.length) setLoaded(true);
   }, [pathname]);
+
+  // Loading on request. Before Agentation is there its Cmd+Shift+F is not either: the first one is caught here.
+  useEffect(() => {
+    if (loaded) return;
+    const load = () => setLoaded(true);
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "f" || e.key === "F")) { e.preventDefault(); enterMode(); }
+    };
+    window.addEventListener(FEEDBACK_LOAD_EVENT, load);
+    document.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener(FEEDBACK_LOAD_EVENT, load); document.removeEventListener("keydown", onKey); };
+  }, [loaded]);
 
   // Feedback mode on or off, read from the hidden bar: the toggle's title goes while active.
   // Esc and Cmd+Shift+F are handled by Agentation and land here too.
   useEffect(() => {
     let inner: MutationObserver | null = null;
-    const sync = () => setActive(isModeOn());
+    const sync = () => { flushPendingEnter(); setActive(isModeOn()); };
     const watch = (root: Element) => {
       inner = new MutationObserver(sync);
       inner.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
@@ -238,13 +272,13 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
 
   return (
     <>
-      <Agentation
+      {loaded && <Agentation
         copyToClipboard
         onAnnotationAdd={(a) => track("annotation.add", a)}
         onAnnotationUpdate={(a) => track("annotation.update", a)}
         onAnnotationDelete={forget}
         onAnnotationsClear={() => setNotes(new Map())}
-      />
+      />}
       {/* data-feedback-toolbar: Agentation ignores clicks and hovers inside it, so our own
           buttons cannot be annotated while feedback mode is on */}
       {active ? (
@@ -289,7 +323,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
           title={t.feedback.dragHint}
         >
           {count > 0 && sendButton}
-          <button type="button" className="fb-pill" onClick={enterMode} title={count > 0 ? undefined : t.feedback.entryHint}>
+          <button type="button" className="fb-pill" onClick={enterMode} onPointerEnter={() => void loadAgentation()} onFocus={() => void loadAgentation()} title={count > 0 ? undefined : t.feedback.entryHint}>
             <IconBubble />
             <span>{count > 0 ? t.feedback.resume : t.feedback.open}</span>
             {count > 0 && <span className="fb-count">{count}</span>}
