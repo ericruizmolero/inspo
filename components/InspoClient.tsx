@@ -278,16 +278,11 @@ export default function InspoClient({
   const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
-  // Inside a project the system comes first and the board is a mode (?view=board). A project with nothing in
-  // it and nothing decided opens on the board instead, which is then its starting point (ProjectStart)
-  // ...and so does one still gathering: until the team says it has its references (GatherBar), the board is the
-  // project's first screen; after that, the system
-  const projectBlank = !!currentProject && !currentSystem?.areas.some((a) => a.decision) && !items.some((i) => i.id && links[i.id]?.includes(currentProject.id));
-  const gatheringRefs = !!currentProject && !currentProject.started;
-  const defaultView: "system" | "board" = projectBlank || gatheringRefs ? "board" : "system";
+  // Inside a project the board comes first and the system is a mode (?view=system)
+  const defaultView = "board" as const;
   const viewParam = sp.get("view");
   const projectView: "system" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "system" ? viewParam : defaultView;
-  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
+  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams]);
   // The search lives on a project's board and nowhere else: off it there is no box, and what was typed or
   // chipped there waits in the URL without narrowing anything
   const searchHere = !!currentProject && projectView === "board";
@@ -1619,14 +1614,14 @@ export default function InspoClient({
             {currentProject && (
               <>
                 <span className="topbar__modes" role="tablist" aria-label={t.system.button}>
+                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => setProjectView("board")}>
+                    {Icons.all} {t.system.modeBoard}
+                  </button>
                   <button type="button" role="tab" className={`topbar__mode topbar__system${projectView === "system" ? " is-on" : ""}`} aria-selected={projectView === "system"}
                     title={systemStale ? t.system.stale(systemStale) : undefined} onClick={() => setProjectView("system")}>
                     {Icons.compass} {t.system.modeSystem}
                     <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
                     {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
-                  </button>
-                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => setProjectView("board")}>
-                    {Icons.all} {t.system.modeBoard}
                   </button>
                 </span>
               </>
