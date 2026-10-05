@@ -15,12 +15,11 @@ import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
 import InspoCard, { captionFor } from "./InspoCard";
-import Discover from "./Discover";
-import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
+import type { NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
 import SelectBar from "./SelectBar";
 import { refInfoOf } from "@/lib/ref-info";
-import { restoreTextHeadings } from "@/lib/criterio-md";
+import { restoreTextHeadings } from "@/lib/text-headings";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage, normalizeWebUrl } from "@/lib/url";
 import { uploadMedia, mediaFileFrom } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
@@ -37,7 +36,7 @@ import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "
 import ProjectChooser from "./ProjectChooser";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
-import TemplatesView, { preloadTemplates } from "./TemplatesView";
+import { preloadTemplates } from "./templates-cache";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -62,6 +61,11 @@ const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
+// Discover and its templates only show in their own space (still server-rendered when a link lands there),
+// the add dialog only once opened
+const Discover = dynamic(() => import("./Discover"));
+const TemplatesView = dynamic(() => import("./TemplatesView"));
+const AddInspoModal = dynamic(() => import("./AddInspoModal"), { ssr: false });
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
 async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<File> {
