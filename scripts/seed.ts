@@ -30,7 +30,7 @@ async function tables() {
     schema.user, schema.organization, schema.session, schema.account, schema.verification,
     schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designRevision, schema.designWhy,
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
-    schema.canvasPosition, schema.projectSystem, schema.systemArea, schema.systemAreaRevision,
+    schema.canvasPosition, schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
   ];
   // A table added to the schema but not to this list would vanish from every dump without a word
   const all = (Object.values(schema) as unknown[]).filter((v): v is PgTable => v instanceof PgTable);
@@ -45,8 +45,14 @@ async function dump(from?: string) {
   const pool = from ? new Pool({ connectionString: from }) : app.pool;
   const db = from ? drizzle(pool, { schema: app.schema }) : app.db;
   const out: Dump = { at: new Date().toISOString(), tables: {} };
-  for (const { table, name } of await tables()) {
-    out.tables[name] = await db.select().from(table);
+  for (const { table, name, cols } of await tables()) {
+    // The local schema can be ahead of the source (a migration not deployed yet): read only the columns the
+    // source has, and the load leaves the new ones to their defaults
+    const have = new Set((await pool.query("select column_name from information_schema.columns where table_schema = 'public' and table_name = $1", [name])).rows.map((r) => r.column_name as string));
+    const shared = Object.fromEntries(Object.entries(cols).filter(([, c]) => have.has(c.name)));
+    const skipped = Object.values(cols).filter((c) => !have.has(c.name)).map((c) => c.name);
+    if (skipped.length) console.log(`${name}: not in the source yet, left to defaults: ${skipped.join(", ")}`);
+    out.tables[name] = await db.select(shared).from(table);
     console.log(`${name.padEnd(18)} ${String(out.tables[name].length).padStart(6)}`);
   }
   await fs.mkdir(path.dirname(FILE), { recursive: true });
