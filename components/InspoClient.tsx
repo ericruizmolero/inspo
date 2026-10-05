@@ -20,6 +20,7 @@ import GatherBar from "./GatherBar";
 import SelectBar from "./SelectBar";
 import { refInfoOf } from "@/lib/ref-info";
 import { restoreTextHeadings } from "@/lib/text-headings";
+import { keepSame } from "@/lib/keep-same";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage, normalizeWebUrl } from "@/lib/url";
 import { uploadMedia, mediaFileFrom } from "@/lib/media-client";
 import PageNotes from "./PageNotes";
@@ -216,15 +217,31 @@ export default function InspoClient({
     const url = window.location.pathname + (p.size ? `?${p}` : "");
     if (replace) window.history.replaceState(null, "", url); else window.history.pushState(null, "", url);
   }, []);
-  const setQuery = useCallback((v: string) => { setQueryState(v); setParams({ q: v }, true); }, [setParams]);
+  // ?q= is written once typing pauses: each write is a second render through useSearchParams, and Safari
+  // refuses more than 100 history calls in 10 s. Anything else that writes the URL takes the pending words first.
+  const qPending = useRef<{ timer: ReturnType<typeof setTimeout>; v: string } | null>(null);
+  const flushQuery = useCallback(() => {
+    const pending = qPending.current;
+    if (!pending) return;
+    clearTimeout(pending.timer);
+    qPending.current = null;
+    setParams({ q: pending.v }, true);
+  }, [setParams]);
+  const setQuery = useCallback((v: string) => {
+    setQueryState(v);
+    if (qPending.current) clearTimeout(qPending.current.timer);
+    qPending.current = { v, timer: setTimeout(flushQuery, 300) };
+  }, [flushQuery]);
+  useEffect(() => () => { if (qPending.current) clearTimeout(qPending.current.timer); }, []);
   // Each chip change is a history entry; the old filter params go once they are chips
   const setFilters = useCallback((next: Filter[]) => {
+    flushQuery();
     const p = new URLSearchParams(window.location.search);
     p.delete("f");
     for (const k of LEGACY_PARAMS) p.delete(k);
     for (const f of next) p.append("f", filterKey(f));
     window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
-  }, []);
+  }, [flushQuery]);
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
   /** Adds a chip, or takes it away when it is already there (a tag clicked in the panel, a person in the sidebar) */
@@ -327,7 +344,9 @@ export default function InspoClient({
   const [confirm, confirmDialog] = useConfirm();
 
   // What no project has taken (nor archived): the library's second view
-  const unfiledCount = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)).length, [items, links]);
+  // What no project holds: the system's inbox, kept as one array so the system view's memos hold across renders
+  const unfiled = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)), [items, links]);
+  const unfiledCount = unfiled.length;
   // The items in the current space (inbox, a project or everything), before any other filter
   const spaceItems = useMemo(() => space === "all" || space === "home" ? items
     : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
@@ -355,11 +374,11 @@ export default function InspoClient({
         const res = await fetch(`/api/tags?${webs.map((w) => `web=${encodeURIComponent(w)}`).join("&")}`);
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as { jobs: Record<string, TagStatus>; tags: TagMap };
-        setTagMap((prev) => ({ ...prev, ...data.tags }));
+        setTagMap((prev) => keepSame(prev, { ...prev, ...data.tags }));
         setTagJobs((prev) => {
           const next = { ...prev };
           for (const w of webs) { if (data.jobs[w]) next[w] = data.jobs[w]; else delete next[w]; }
-          return next;
+          return keepSame(prev, next);
         });
         setWatching((prev) => {
           const next = { ...prev };
@@ -394,14 +413,16 @@ export default function InspoClient({
         // Same stamp, or a save of this tab started while the answer was on its way
         if (!d.items || itemsRef.current.some((i) => !i.id)) return;
         const known = new Set(itemsRef.current.map((i) => i.id));
-        setItems(d.items);
-        setProjects(d.initialProjects ?? []);
-        setLinks(d.initialProjectLinks ?? {});
+        // keepSame (lib/keep-same.ts): only what changed is new, so only its cards render again
+        const fresh = d.items;
+        setItems((prev) => keepSame(prev, fresh));
+        setProjects((prev) => keepSame(prev, d.initialProjects ?? []));
+        setLinks((prev) => keepSame(prev, d.initialProjectLinks ?? {}));
         // Merged: what this tab fetched on its own (a post's picture, a capture) stays until the server has it too
-        setThumbMap((prev) => ({ ...prev, ...d.initialThumbnailMap }));
-        setTagMap((prev) => ({ ...prev, ...d.initialTagMap }));
-        setPageShots((prev) => ({ ...prev, ...d.initialPageShots }));
-        setTagJobs(d.initialTagJobs ?? {});
+        setThumbMap((prev) => keepSame(prev, { ...prev, ...d.initialThumbnailMap }));
+        setTagMap((prev) => keepSame(prev, { ...prev, ...d.initialTagMap }));
+        setPageShots((prev) => keepSame(prev, { ...prev, ...d.initialPageShots }));
+        setTagJobs((prev) => keepSame(prev, d.initialTagJobs ?? {}));
         // A new card whose tags are still on their way fills in as soon as they arrive, not on the next look
         for (const i of d.items) {
           const job = d.initialTagJobs?.[i.web];
@@ -725,7 +746,8 @@ export default function InspoClient({
   const loadComments = useCallback(async () => {
     try {
       const res = await fetch("/api/comments");
-      if (res.ok) setCommentMap(await res.json());
+      // keepSame: a thread nobody wrote in keeps its array, so its card and the system view stay put
+      if (res.ok) { const next = (await res.json()) as CommentMap; setCommentMap((prev) => keepSame(prev, next)); }
     } catch { /* offline: retried on the next cycle */ }
   }, []);
   // The panel: one reference open on the right, the board still live on the left
@@ -938,6 +960,7 @@ export default function InspoClient({
   // Back to everything: the whole library, no chips, no words
   const resetFilters = useCallback(() => {
     setQueryState("");
+    if (qPending.current) { clearTimeout(qPending.current.timer); qPending.current = null; }
     const p = new URLSearchParams(window.location.search);
     for (const k of ["f", "q", "in", ...LEGACY_PARAMS]) p.delete(k);
     window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
@@ -1446,6 +1469,32 @@ export default function InspoClient({
     );
   })();
 
+  // Stable while nothing a card shows changes, so Grid (memo) skips the renders a keystroke or a panel causes
+  const renderCard = useCallback((item: InspoItem, level: ShotLevel) => (
+    <Card
+      item={item}
+      level={level}
+      ratio={ratioOf(item)}
+      tags={tagMap[item.web]}
+      tagJob={tagJobs[item.web]}
+      score={jevScores?.[item.web]}
+      reason={reasons?.[item.web]}
+      comments={item.id ? commentMap[item.id] : undefined}
+      authorImage={authorImages[item.addedBy]}
+      manualThumbnail={thumbMap[item.web]}
+      designMdLoading={designMdJobs[item.web]?.status === "loading"}
+      designMd={designMdIndex[item.web]}
+      shot={pageShots[item.web]}
+      projects={projects}
+      projectIds={item.id ? links[item.id] : undefined}
+      backs={currentProject && item.id ? backsOf(item.id) : undefined}
+      areasIn={item.id ? areasByItem.get(item.id) : undefined}
+      selected={!!item.id && selected.has(item.id)}
+      selecting={selected.size > 0}
+      actions={gridActions}
+    />
+  ), [ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, designMdJobs, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected]);
+
   return (
     <SidebarProvider defaultOpen={false} className="shell">
       {confirmDialog}
@@ -1616,7 +1665,7 @@ export default function InspoClient({
             onSystem={(sys) => setSystem(currentProject.id, sys)}
             board={spaceItems}
             library={items}
-            inbox={items.filter((i) => !(i.id && links[i.id]?.length))}
+            inbox={unfiled}
             onFile={(item) => toggleFiled(item, currentProject.id, true)}
             imageOf={smallImageOf}
             onOpenBoard={() => setProjectView("board")}
@@ -1677,30 +1726,7 @@ export default function InspoClient({
               fitKey={fitKey}
               focusKey={panelItem ? keyOf(panelItem) : null}
               handleRef={gridRef}
-              renderCard={(item, level) => (
-                <Card
-                  item={item}
-                  level={level}
-                  ratio={ratioOf(item)}
-                  tags={tagMap[item.web]}
-                  tagJob={tagJobs[item.web]}
-                  score={jevScores?.[item.web]}
-                  reason={reasons?.[item.web]}
-                  comments={item.id ? commentMap[item.id] : undefined}
-                  authorImage={authorImages[item.addedBy]}
-                  manualThumbnail={thumbMap[item.web]}
-                  designMdLoading={designMdJobs[item.web]?.status === "loading"}
-                  designMd={designMdIndex[item.web]}
-                  shot={pageShots[item.web]}
-                  projects={projects}
-                  projectIds={item.id ? links[item.id] : undefined}
-                  backs={currentProject && item.id ? backsOf(item.id) : undefined}
-                  areasIn={item.id ? areasByItem.get(item.id) : undefined}
-                  selected={!!item.id && selected.has(item.id)}
-                  selecting={selected.size > 0}
-                  actions={gridActions}
-                />
-              )}
+              renderCard={renderCard}
             />
             {filtered.length === 0 && (
               <div className="empty empty--over">
