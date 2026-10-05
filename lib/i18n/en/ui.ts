@@ -755,6 +755,8 @@ export const ui = {
     removeTag: (tag: string): string => `Remove ${tag}`,
     tabPage: "Page",
     notes: "Notes",
+    previous: "Previous reference",
+    next: "Next reference",
     pinHint: "Click the page to pin a note",
     notePlaceholder: "What caught your eye here?",
     pin: "Pin",

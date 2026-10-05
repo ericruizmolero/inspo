@@ -2406,6 +2406,21 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-out);
 }
 @starting-style { .ip { transform: scale(0.96); opacity: 0; } }
+/* Before and after on the board: a step either side of the sheet, which makes room for them */
+.ip-layer.has-nav .ip { left: 64px; right: 64px; }
+.ip-nav {
+  position: absolute; top: calc(50% - 10px); transform: translateY(-50%); pointer-events: auto;
+  width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 999px;
+  background: var(--surface); color: var(--text); box-shadow: 0 0 0 1px var(--border-strong); cursor: pointer;
+  transition: background 0.15s, opacity 0.15s, transform 0.12s var(--ease-out);
+}
+.ip-nav.is-prev { left: max(12px, calc((100vw - 1520px) / 2 - 52px)); }
+.ip-nav.is-next { right: max(12px, calc((100vw - 1520px) / 2 - 52px)); }
+.ip-nav.is-next svg { transform: rotate(180deg); }
+.ip-nav:hover:not(:disabled) { background: var(--surface-2); }
+.ip-nav:active:not(:disabled) { transform: translateY(-50%) scale(0.94); }
+.ip-nav:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.ip-nav:disabled { opacity: 0.3; cursor: default; }
 .ip-bar {
   display: flex; align-items: center; gap: 12px; flex-shrink: 0;
   height: 60px; padding: 0 12px 0 8px; border-bottom: 1px solid var(--border); background: var(--panel);
@@ -2450,7 +2465,8 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 /* A phone: the whole screen, the cards one under the other */
 @media (max-width: 800px) {
   .ip-layer { z-index: 60; }
-  .ip { inset: 0; max-width: none; border-radius: 0; }
+  .ip, .ip-layer.has-nav .ip { inset: 0; max-width: none; border-radius: 0; }
+  .ip-nav { display: none; }
   .ip-bar { height: auto; flex-wrap: wrap; padding: 8px; }
   .ip-bar__tabs { order: 3; width: 100%; overflow-x: auto; }
   .ip-bar__actions { display: none; }

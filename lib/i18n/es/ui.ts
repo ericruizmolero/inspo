@@ -753,6 +753,8 @@ export const ui: typeof EnUi = {
     removeTag: (tag: string) => `Quitar ${tag}`,
     tabPage: "P\u00e1gina",
     notes: "Notas",
+    previous: "Referencia anterior",
+    next: "Referencia siguiente",
     pinHint: "Haz clic en la p\u00e1gina para fijar una nota",
     notePlaceholder: "\u00bfQu\u00e9 te ha llamado la atenci\u00f3n aqu\u00ed?",
     pin: "Fijar",

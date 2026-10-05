@@ -26,6 +26,9 @@ const IcDoc = (
 const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
 );
+const IcChevron = (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 3 4.5 7l4 4" /></svg>
+);
 const IcComment = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" /></svg>
 );
@@ -312,7 +315,7 @@ if (typeof window !== "undefined") {
   window.addEventListener("pointerdown", (e) => { lastPress = { x: e.clientX, y: e.clientY, at: Date.now() }; }, { capture: true, passive: true });
 }
 
-export default function ItemPanel({ item, state, canDesignMd, page, thread, onClose, onGenerate, onRegenerate, onRevised, libraryName }: {
+export default function ItemPanel({ item, state, canDesignMd, page, thread, onClose, onPrev, onNext, onGenerate, onRegenerate, onRevised, libraryName }: {
   item: InspoItem;
   /** This site's DESIGN.md job: loading, ready (with the entry) or failed */
   state: DesignMdState | undefined;
@@ -323,6 +326,9 @@ export default function ItemPanel({ item, state, canDesignMd, page, thread, onCl
   /** The conversation: the note, the comments and their replies */
   thread: ReactNode;
   onClose: () => void;
+  /** The reference before and after this one on the board; absent at either end, or when it isn't on the board */
+  onPrev?: () => void;
+  onNext?: () => void;
   onGenerate: () => void;
   onRegenerate: () => void;
   onRevised: (patch: Partial<DesignMdEntry>) => void;
@@ -379,6 +385,26 @@ export default function ItemPanel({ item, state, canDesignMd, page, thread, onCl
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  // The arrows walk the board in its order, unless a field, a lightbox or another dialog has them
+  const stepRef = useRef({ onPrev, onNext });
+  stepRef.current = { onPrev, onNext };
+  const navigable = !!(onPrev || onNext);
+  useEffect(() => {
+    if (!navigable) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== "ArrowLeft" && e.key !== "ArrowRight") || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el?.closest("input, textarea, select, [contenteditable]:not([contenteditable=false]), [role=slider], [role=tablist]")) return;
+      if (document.querySelector(".cm-lightbox, [role=dialog][data-open], .modal-backdrop")) return;
+      const go = e.key === "ArrowLeft" ? stepRef.current.onPrev : stepRef.current.onNext;
+      if (!go) return;
+      e.preventDefault();
+      go();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [navigable]);
 
   const download = () => {
     if (!entry) return;
@@ -438,8 +464,14 @@ export default function ItemPanel({ item, state, canDesignMd, page, thread, onCl
   );
 
   return (
-    <div className="ip-layer">
+    <div className={`ip-layer${navigable ? " has-nav" : ""}`}>
       <div ref={dimRef} className="ip-dim" onClick={leave} aria-hidden />
+      {navigable && (
+        <>
+          <button type="button" className="ip-nav is-prev" onClick={onPrev} disabled={!onPrev} aria-label={t.panel.previous}>{IcChevron}</button>
+          <button type="button" className="ip-nav is-next" onClick={onNext} disabled={!onNext} aria-label={t.panel.next}>{IcChevron}</button>
+        </>
+      )}
       <aside ref={asideRef} className="ip" role="dialog" aria-modal="true" aria-label={item.name}>
         <header className="ip-bar">
           <div className="dm-bar__id">

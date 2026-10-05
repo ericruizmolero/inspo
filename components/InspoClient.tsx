@@ -1089,6 +1089,10 @@ export default function InspoClient({
     () => (filtering ? filtered : [...spaceItems].sort((a, b) => parseDate(b.date) - parseDate(a.date))),
     [filtering, filtered, spaceItems],
   );
+  // The references either side of the open one, in the board's order (a search walks its results)
+  const panelAt = panelItem ? boardItems.findIndex((i) => keyOf(i) === keyOf(panelItem)) : -1;
+  const panelPrev = panelAt > 0 ? boardItems[panelAt - 1] : null;
+  const panelNext = panelAt >= 0 && panelAt < boardItems.length - 1 ? boardItems[panelAt + 1] : null;
 
   // Height/width of what each card shows: the page height from the index, else measured once and kept
   const [ratios, setRatios] = useState<Record<string, number>>({});
@@ -1538,6 +1542,8 @@ export default function InspoClient({
             />
           ) : null}
           onClose={closePanel}
+          onPrev={panelPrev ? () => showPanel(panelPrev) : undefined}
+          onNext={panelNext ? () => showPanel(panelNext) : undefined}
           onGenerate={() => runDesignMd(panelItem)}
           onRegenerate={() => regenerateDesignMd(panelItem)}
           onRevised={(patch) => patchJob(panelItem.web, { entry: { ...designMdJobs[panelItem.web]?.entry!, ...patch } })}
