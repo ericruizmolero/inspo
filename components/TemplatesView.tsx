@@ -46,7 +46,7 @@ function HoverVideo({ src }: { src: string }) {
 }
 
 /** A built-in template ships the first screen of its result with the app (public/templates/<folder>.jpg): it is
- *  there at once, while the capture of the page (slow the first time anyone asks for it) arrives */
+ *  there at once, and it stays as the thumbnail (chosen by hand) once the capture of the page arrives */
 
 function Result({ id, url, video, poster, still = false }: { id: string; url: string; video?: string; poster?: string; still?: boolean }) {
   const kind = mediaKindOf(url);
@@ -85,7 +85,7 @@ function ResultPage({ id, url, still, hoverSrc, poster }: { id: string; url: str
     <Box className={`tpl-page${hoverSrc ? " has-video" : ""}`} {...(still ? {} : { href: url, target: "_blank", rel: "noreferrer" })}>
       <div ref={boxRef} className="tpl-page__view" style={shot?.color ? { background: shot.color } : undefined}>
         {!shot && !poster && <div className="shimmer" />}
-        {(shot || poster) && <img className="tpl-page__top" src={shot?.topUrl ?? poster} alt={host(url)} />}
+        {(shot || poster) && <img className="tpl-page__top" src={poster ?? shot?.topUrl} alt={host(url)} />}
         {shot && (
           <img className="tpl-page__full" src={shot.shotUrl} alt="" aria-hidden fetchPriority="low" onLoad={onFull}
             style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${Math.max(4, Math.round(dist / 170))}s` } as React.CSSProperties} />
