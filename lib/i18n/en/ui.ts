@@ -266,6 +266,8 @@ export const ui = {
     archiveOf: (name: string): string => `${name} · Archive`,
     newProject: "New project",
     more: (n: number): string => `${n} more`,
+    home: "Home",
+    closeTab: (name: string): string => `Close the tab of \u201c${name}\u201d`,
     others: "Other projects",
     namePlaceholder: "Project name",
     options: (name: string): string => `Options for ${name}`,

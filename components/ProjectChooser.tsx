@@ -10,7 +10,7 @@ import { FillRing, Icons } from "./Sidebar";
 import { cachedCardImage } from "./InspoCard";
 import { keyOf } from "@/lib/board";
 import { parseDate } from "@/lib/search-query";
-import { mediaKindOf } from "@/lib/url";
+import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 
 // The cover is the project's board in small: the same order and the same columns rule (components/Grid.tsx),
 // cut at the cover's height. Measures are hundredths of the cover's width; the cover is 16:10.
@@ -23,7 +23,10 @@ const NONE: InspoItem[] = [];
 
 function Shot({ item, image }: { item: InspoItem; image: string | null }) {
   const [at, setAt] = useState(0);
-  const srcs = [image, mediaKindOf(item.web) === "image" ? item.web : null, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
+  const kind = mediaKindOf(item.web);
+  // A video shows its frame (a Screen Studio share's poster, a YouTube still); only a site has a page to ask og for
+  const srcs = [image, kind === "image" ? item.web : null, kind === "video" ? videoEmbedOf(item.web)?.poster : null, cachedCardImage(item.web),
+    kind === "web" || kind === "post" ? `/api/og?url=${encodeURIComponent(item.web)}` : null].filter((x): x is string => !!x);
   const src = srcs[at];
   // Without a picture it stays a blank card, as on the board while one loads
   return src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : null;
@@ -34,7 +37,9 @@ function Cover({ name, items, ratioOf, imageOf }: { name: string; items: InspoIt
   const slots = useMemo(() => {
     const bottoms = new Array<number>(COLS).fill(PAD);
     const out: { item: InspoItem; x: number; y: number; h: number }[] = [];
+    // A pasted text is the project's words, not a look: the cover shows what the project looks like
     for (const item of items) {
+      if (mediaKindOf(item.web) === "text") continue;
       let c = 0;
       for (let i = 1; i < COLS; i++) if (bottoms[i] < bottoms[c] - 0.01) c = i;
       // The shortest column already ends below the cover: nothing else would be seen

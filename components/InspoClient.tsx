@@ -252,6 +252,7 @@ export default function InspoClient({
   const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
+  // ?in=home is the chooser asked for (the island's house); the bare address lands on the last project (below)
   const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
@@ -295,7 +296,7 @@ export default function InspoClient({
   }, [currentProject, currentSystem, items, links]);
   // An asked-for system view stays with the project it was asked in: the next one opens on its own default
   const setSpace = useCallback((v: string) => setParams({
-    in: v === "all" ? "library" : v === "home" ? "" : v,
+    in: v === "all" ? "library" : v,
     ...(new URLSearchParams(window.location.search).get("view") === "system" ? { view: "" } : {}),
   }), [setParams]);
   // Adding from inside a project files it there: read at save time, whatever the callback closed over
@@ -316,7 +317,7 @@ export default function InspoClient({
   // There is no library to land on: the bare address (or an old ?in=library) opens the last project worked in.
   // With no project yet, the first screen stays (the chooser, or the empty start)
   useEffect(() => {
-    if ((space === "home" || space === "all") && projects.length) setParams({ in: saveTarget() ?? "" }, true);
+    if (inParam !== "home" && (space === "home" || space === "all") && projects.length) setParams({ in: saveTarget() ?? "" }, true);
   }, [space, inParam, projects.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [confirm, confirmDialog] = useConfirm();
 

@@ -264,6 +264,8 @@ export const ui: typeof EnUi = {
     archiveOf: (name: string): string => `${name} · Archivo`,
     newProject: "Nuevo proyecto",
     more: (n: number): string => `${n} más`,
+    home: "Inicio",
+    closeTab: (name: string): string => `Cerrar la pesta\u00f1a de \u00ab${name}\u00bb`,
     others: "Otros proyectos",
     namePlaceholder: "Nombre del proyecto",
     options: (name: string): string => `Opciones de ${name}`,
