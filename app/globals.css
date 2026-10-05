@@ -412,7 +412,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* On the others it takes no room: it shows over the end of the tab, on a fade of the tab's own colour */
 .island__tab--closable { position: relative; }
 .island__tab--closable .island__tab-main { padding-right: 12px; }
-.island__tab--closable .island__tab-x { position: absolute; right: 4px; top: 50%; margin: -11px 0 0; background: var(--dock-hover); box-shadow: -10px 0 8px -2px var(--dock-hover); }
+.island__tab--closable .island__tab-x { position: absolute; right: 7px; top: 50%; margin: -11px 0 0; }
+/* The × takes the place of the ring (how much of the system is decided) while the pointer is over the tab; a tab
+   with no ring keeps that place free, so the × never sits on the count */
+.island__tab--closable:hover .island__ring { visibility: hidden; }
+.island__tab--closable .island__tab-main:not(:has(.island__ring)) { padding-right: 30px; }
 .island__tab--field { width: auto; cursor: text; background: var(--dock-surface); color: var(--dock-ink); box-shadow: inset 0 0 0 1px var(--dock-muted); outline: none; }
 .island__tab--field::placeholder { color: var(--dock-muted); }
 @media (hover: hover) and (pointer: fine) {
