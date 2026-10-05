@@ -49,6 +49,10 @@ export const OWN_NAME: Record<OutputLanguage, string> = {
  * `fields` names what is written in that language (e.g. `every "reason"`); the rest of the JSON stays as specified.
  */
 export function languageRule(lang: OutputLanguage, fields: string): string {
+  const name = LANGUAGE_NAME[lang];
   return `LANGUAGE
-Write ${fields} in ${LANGUAGE_NAME[lang]}, natural and direct, whatever language the input is in. This includes text you carry over from earlier proposals: if it is in another language, translate it and change nothing else. Font names, hex and CSS values, ids, enum values and verbatim quotes stay exactly as given.`;
+Write ${fields} in ${name}, natural and direct, whatever language the input is in.
+- Every ordinary word is in ${name}, including words you take from the input ("cream", "full-bleed", "paper white"): translate them. Never mix two languages in one sentence.
+- Only these keep their original form: font names, brand and product names, hex and CSS values, ids, enum values, and quotes of the team's or a site's copy, marked as quotes.
+- Text you carry over from earlier proposals is translated too, with nothing else changed.`;
 }

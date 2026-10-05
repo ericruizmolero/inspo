@@ -36,7 +36,7 @@ const R = schema.systemAreaRevision;
 
 export const SYSTEM_MODEL = process.env.SYSTEM_MODEL || process.env.DESIGN_MD_MODEL || "deepseek/deepseek-v4.1-flash";
 /** Bumps when the prompt or the output shape changes, so an old run reads as stale */
-const PROMPT_VERSION = 1;
+const PROMPT_VERSION = 2;
 /** References read per run; beyond this the board is cut, not refused */
 const MAX_BOARD = 120;
 /** Thread comments sent per reference: the latest ones, each cut to 300 characters */
@@ -319,23 +319,57 @@ function briefForModel(b: PolishBrief | null | undefined) {
 
 // ─── The run ─────────────────────────────────────────────────────────────────
 
-const SYSTEM = `A design team keeps a board of references for one project: websites, images and posts they saved, each with the note of whoever saved it, the team's comments, what the team pointed at on it, and (for websites) a brief measured from the live page. From this board you build the PROJECT'S SYSTEM: what the project has decided about its own design, in eight areas: typography, color, layout, motion (and interaction: hovers, buttons, what answers the pointer), iconography, logo, imagery, voice (tone of the copy).
+// Blocks every system prompt shares, so the five calls describe the areas, the client's site and
+// a good decision in the same words.
 
-The system is alive and starts empty. Your job is to fill only what the board supports, and to say how far it supports it.
+const AREAS = `THE EIGHT AREAS
+- typography: families, sizes, weights.
+- color: the palette and how it is used.
+- layout: grid, spacing, radii, density.
+- motion: motion and interaction. How things move and how they answer the pointer: hovers, buttons, what is clicked, what only hovers.
+- iconography: the icon set, its stroke and style.
+- logo: the project's own mark (wordmark, symbol, monogram), how it sits and in what colour.
+- imagery: photos, illustration, captures, and how they are framed.
+- voice: how the copy sounds.`;
 
-Rules:
-- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), typefaces (as its stylesheets name them), logo and figures are the source of truth: carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.
-- The team's words come first. A note, a comment or a thing they pointed at says WHY a reference is here: that is the decision's root. The measured brief says WHAT the reference does: use it to make the decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
-- A decision is an instruction an agent can execute for THIS project, in 1 to 3 sentences (max 60 words): concrete values when the evidence has them, the principle when it does not. Write what the project will do, not what the references do ("Headlines in a high-contrast serif at 400, body in a geist-like grotesque", not "r1 uses a serif").
+const BOARD = `THE BOARD
+References the team saved for this project: websites, images, posts. Each comes with a short id (r1, r2…), the note of whoever saved it, the team's comments, what the team pointed at on it, and, for websites, values measured from the live page.
+- The team's words say WHY a reference is here: that is where a decision starts. The measured values say WHAT it does: use them to make a decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
+- Ids: use them exactly as given, never invent one.`;
+
+const CLIENT_SITE = `- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), its typefaces (as its stylesheets name them), its logo and its figures are the source of truth. Carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.`;
+
+const DECISION = `- A decision is an instruction an agent can execute for THIS project: 1 to 3 sentences, at most 60 words. Concrete values when the evidence has them, the principle when it does not. Write what the project will do, not what the references do ("Headlines in a high-contrast serif at 400", not "r1 uses a serif").`;
+
+const EVIDENCE = (words: number) => `- Evidence names the references behind a decision by id, each with a "take": what to take from it for this area, as one instruction of at most ${words} words. Only references that speak to that area. A photo or an illustration has no values: its take names the treatment to copy.`;
+
+const CONFIDENCE = `- confidence, 0 to 100: how many references agree, and how concrete and explicit the evidence is. One passing mention is 25 to 40. Two or three references that agree, with concrete values, is 60 to 80. The team saying it in so many words, plus measured values, is 85 or more.`;
+
+const STYLE = `- Never write ids (r1, p2) or candidate codes in the text: name the reference or the value instead.
+- No markdown, no dashes as punctuation. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
+
+const SYSTEM = `You build a project's SYSTEM from its board of references: what the project has decided about its own design, area by area. The system is alive and starts empty. Fill only what the board supports, and say how far it supports it.
+
+${AREAS}
+
+${BOARD}
+- A reference of kind "text" is the project's own CONTENT, pasted by the team (a list of services, a piece of copy), given as its title and first lines. It is material to place, not a look: only voice may cite it, for the tone and vocabulary of the real copy. Never decide another area from it, and never summarise, rewrite or quote it in a decision.
+- A reference marked "filed_by_team" under an area was put there by a person: it is a directive. Decide that area from those references first, and keep them in its evidence.
+
+THE SYSTEM AS IT STANDS
+- Areas marked "team" were decided by a person. They are facts about the project: keep every other area coherent with them, and return them unchanged.
+- Areas marked "model" are your earlier proposals. Keep what the board still supports and change what new evidence changes. Do not rephrase for the sake of it; translating into the language below is not rephrasing, so do it.
+
+RULES
+${CLIENT_SITE}
+${DECISION}
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
-- "why" is the criterio behind the decision: why this and not the rest, in one or two sentences (max 40 words), rooted in the brief and the team's words. Empty when the area is empty.
-- confidence is 0-100: how many references agree, how concrete and how explicit the evidence is. One passing mention is 25-40; two or three references that agree with concrete values is 60-80; the team saying it in so many words plus measured values is 85+.
-- evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
-- A reference of kind "text" is the project's own CONTENT, pasted by the team (a list of services, a piece of copy), given here as its title and first lines. It is material to place, not a look: only voice may cite it, for the tone and vocabulary of the real copy, and no other area is decided from it. Never summarise, rewrite or quote it in a decision: the file carries it whole.
-- A reference marked "filed_by_team" under an area was put there by a person from the board: it is a directive. Decide that area from those references first, and keep them in its evidence.
-- You receive the SYSTEM AS IT STANDS. Areas marked "team" were decided by a person: they are facts about the project, keep every other area coherent with them and return them unchanged (same text). Areas marked "model" are your previous proposals: keep what the board still supports, change what new evidence changes, do not rephrase for the sake of it (translating into the language below is not rephrasing: do it).
-- The summary is the project's criterio in one paragraph (max 90 words): what it is, who it speaks to, the few decisions that define its look. Written so that an agent that reads only this paragraph would already design in the right direction. Empty string if the board is empty.
-- No markdown, no dashes as punctuation, no counts of references in the text. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
+- "why" is the criterio behind the decision: why this and not the rest, in 1 or 2 sentences (at most 40 words), rooted in the brief and the team's words. Empty when the area is empty.
+${CONFIDENCE}
+${EVIDENCE(20)}
+- The summary is the project's criterio in one paragraph (at most 90 words): what it is, who it speaks to, the few decisions that define its look. An agent that reads only this paragraph should already design in the right direction. Empty string if the board is empty.
+- Never count references in the text.
+${STYLE}`;
 
 /** What the team reads on screen, in the workspace's language */
 const languageOf = (lang: OutputLanguage | undefined) => languageRule(lang ?? DEFAULT_OUTPUT_LANGUAGE, "every decision, why, take, reason, question, option and summary");
@@ -475,17 +509,21 @@ const standing = current.areas.map((a) => ({
 
 // ─── Polish an area: the directions the board allows, for the team to pick ──────────────────────
 
-const OPTIONS_SYSTEM = `A design team keeps a board of references for one project (websites, images, posts), each with the note of whoever saved it, the team's comments, what they pointed at and, for websites, a brief measured from the live page. The project has a SYSTEM with eight areas (typography, color, layout, motion, iconography, logo, imagery, voice; motion covers interaction too: hovers, buttons, what answers the pointer). One area is weakly decided or empty, and the team wants to settle it.
+const OPTIONS_SYSTEM = `One area of a project's SYSTEM is weakly decided or empty, and the team wants to settle it. Lay out the 2 or 3 DIRECTIONS the board actually allows for that area, so the team can pick one.
 
-Your job: lay out the 2 or 3 DIRECTIONS the board actually allows for that area, so the team can pick one. Each direction is a decision written for this project, as an instruction an agent can execute (1 to 3 sentences, max 60 words), backed by the references that point that way.
+${AREAS}
 
-Rules:
-- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), typefaces (as its stylesheets name them), logo and figures are the source of truth: carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.
-- Directions come from the board, not from taste. Two references that pull different ways make two directions; if the board only supports one direction, return that one alone (and a second only if the team's words make another plausible).
-- Directions must differ in substance (a serif headline vs a grotesque headline; a monochrome palette vs one accent; dense bento vs airy single column), not in wording.
-- Each direction has a "why": one sentence of at most 24 words, for the team, saying what the project would feel like if it goes this way. No verdict, no advice.
-- "evidence" lists the references behind that direction by id, each with a "take" of at most 20 words: what to take from it for this area. Only references that speak to the area. Ids are short codes: use them exactly as given, never invent one.
-- Order the directions from best supported to least. No markdown, no dashes as punctuation.`;
+${BOARD}
+
+RULES
+${CLIENT_SITE}
+- Directions come from the board, not from taste. Two references that pull different ways make two directions. If the board supports only one, return it alone, plus a second only if the team's words make another plausible.
+- Directions differ in substance (a serif headline vs a grotesque one; a monochrome palette vs one accent; dense bento vs an airy single column), never only in wording.
+${DECISION}
+- "why": one sentence of at most 24 words saying what the project would feel like if it goes this way. No verdict, no advice.
+${EVIDENCE(20)}
+- Order the directions from best supported to least.
+${STYLE}`;
 
 const OptionsSchema = z.object({
   options: z.array(z.object({
@@ -550,18 +588,20 @@ export async function proposeOptions(input: { organizationId: string; projectId:
 // answers it could have. Nothing is written: adding a reference goes through assignEvidence, picking an
 // answer through decideArea.
 
-const START_AREAS = `What each area is about. typography: families, sizes, weights. color: palette and how it is used. layout: grid, spacing, radii, density. motion: motion and interaction, how things move and how they answer the pointer (hovers, buttons, what is clicked, what only hovers). iconography: the icon set, its stroke and style. logo: the project's own mark (wordmark, symbol, monogram), how it sits and in what colour. imagery: photos, illustration, captures, how they are framed. voice: how the copy sounds.`;
+const START_ASK_SYSTEM = `One area of a project's SYSTEM is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.
 
-const START_ASK_SYSTEM = `A design team is building the SYSTEM of one project: eight areas (typography, color, layout, motion, iconography, logo, imagery, voice; motion covers interaction too: hovers, buttons, what answers the pointer), each with a decision. One area is EMPTY. Ask the team the one question that gets it going, and give the answers it could have.
+${AREAS}
 
-${START_AREAS}
-
-Return:
-- "say": one sentence of at most 24 words telling the team, plainly, what their own notes and comments already say about this area. If they say nothing, say so. No advice here.
+RETURN
+- "say": one sentence of at most 24 words telling the team what their own notes and comments already say about this area. If they say nothing, say so. No advice here.
 - "question": the one question a designer would ask the team about this area, at most 14 words.
-- "options": 3 or 4 answers that differ in substance. Each has a "label" of at most 5 words, the "decision" it would write (an instruction for this project that an agent can execute, 1 or 2 sentences, at most 45 words, consistent with the areas already decided: use their typeface names and colours when it helps) and a "why" of at most 20 words saying what the project would feel like.
+- "options": 3 or 4 answers that differ in substance. Each has:
+  - "label": at most 5 words.
+  - "decision": the instruction it would write for this project, 1 or 2 sentences, at most 45 words. Stay consistent with the areas already decided: use their typeface names and colours when it helps.
+  - "why": at most 20 words on what the project would feel like.
 
-Rules: no markdown. No dashes as punctuation. Never mention ids or codes.`;
+RULES
+${STYLE}`;
 
 const StartAskSchema = z.object({
   say: z.string(),
@@ -815,16 +855,21 @@ export async function dropEvidence(organizationId: string, projectId: string, it
 
 export interface TriageProposal { itemId: string; projectId: string | null; areas: SystemArea[]; reason: string }
 
-const TRIAGE_SYSTEM = `A design team keeps a library of references (websites, images, posts, videos), each with the note of whoever saved it and a summary of what it shows. They have PROJECTS, each with a brief and a system of eight areas: typography, color, layout, motion (and interaction: hovers, buttons, what answers the pointer), iconography, logo, imagery, voice (tone of the copy). A pile of references is still unfiled.
+const TRIAGE_SYSTEM = `A pile of references in the team's library is still unfiled. For each one, say which project it serves and which areas of that project's system it speaks to. The team reviews your list before anything moves.
 
-Your job: for each unfiled reference, say which project it serves and which areas of that project's system it speaks to.
+${AREAS}
 
-Rules:
+WHAT YOU GET
+- The PROJECTS, each with its brief and its system.
+- The unfiled references, each with a short id, the note of whoever saved it, a summary of what it shows and how it looks.
+
+RULES
 - Read the saver's note first: it says why the reference is here. Then the summary and the look.
-- Only file a reference under a project when it clearly serves that project's brief or system; otherwise project null. Guessing files noise the team has to undo.
-- areas: only the ones the reference actually speaks to (a palette, a typeface, a layout pattern, a motion or an interaction (hovers, buttons), an icon style, a logo, a kind of imagery, a tone of copy). Usually one or two. Empty is fine when nothing concrete stands out.
-- reason: one sentence of at most 16 words, for the team, saying what to take from it. No praise.
-- Ids are short codes: use them exactly as given and never invent one.`;
+- File a reference under a project only when it clearly serves that project's brief or system. Otherwise project null: a wrong guess is noise the team has to undo.
+- areas: only the ones the reference actually speaks to (a palette, a typeface, a layout pattern, a motion or an interaction, an icon style, a logo, a kind of imagery, a tone of copy). Usually one or two. Empty is fine when nothing concrete stands out.
+- reason: one sentence of at most 16 words saying what to take from it. No praise.
+- Ids: use them exactly as given in the "id" and "project" fields, never invent one.
+${STYLE}`;
 
 const TriageSchema = z.object({
   items: z.array(z.object({ id: z.string(), project: z.string().nullable(), areas: z.array(z.enum(SYSTEM_AREAS)), reason: z.string() })),
@@ -886,15 +931,22 @@ export async function applyTriage(organizationId: string, picks: { itemId: strin
 // of copy). The agent keeps or discards each with a reason, drafts the decision and the criterio behind
 // it, and writes it all as the area's proposal. The team flips what it wants and confirms.
 
-const CURATE_SYSTEM = `A design team keeps a board of references for one project and is deciding one AREA of the project's design system (typography, color, layout, motion and interaction, iconography, logo, imagery or voice). The board offers CANDIDATES for that area: the typefaces found across the references, their palettes, their easings, their captures, their lines of copy. Each candidate says which references it comes from, and each reference comes with the team's note and comments (why they saved it).
+const CURATE_SYSTEM = `The team is deciding one AREA of a project's system. The board offers CANDIDATES for it: the typefaces found across the references, their palettes, their easings, their captures, their lines of copy. Decide the area from the candidates the way a senior designer who knows the brief would.
 
-Your job, as the team's agent: decide the area from the candidates, the way a senior designer who knows the brief would.
-- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), typefaces (as its stylesheets name them), logo and figures are the source of truth: carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.
-- For every candidate, "keep" true or false and a "reason" of at most 16 words, for the team: what it brings to this project, or why it goes. Judge against the brief and the team's words first, then against coherence (one or two families, one palette logic, one easing). Keeping everything is not deciding; keeping nothing is only right when nothing fits.
-- "decision": the area's decision as an instruction an agent can execute (1 to 3 sentences, max 60 words), built from what you kept, with the concrete values the candidates carry.
-- "why": the criterio, in one or two sentences (max 40 words): why this and not the rest, rooted in the brief and what the team said. This is the part the team will read twice.
-- "confidence" 0-100 as in the system: how far the board and the brief back the decision.
-- Ids are short codes: use them exactly as given, never invent one. No markdown, no dashes as punctuation.`;
+${AREAS}
+
+WHAT YOU GET
+The project's brief, the area, and the candidates. Each candidate has an id and the references it comes from, each with the team's note and comments: why they saved it.
+
+RULES
+${CLIENT_SITE}
+- Every candidate gets "keep" (true or false) and a "reason" of at most 16 words: what it brings to this project, or why it goes.
+- Judge against the brief and the team's words first, then against coherence: one or two families, one palette logic, one easing. Keeping everything is not deciding. Keeping nothing is right only when nothing fits.
+${DECISION} Build it from what you kept, with the concrete values the candidates carry.
+- "why": the criterio, in 1 or 2 sentences (at most 40 words): why this and not the rest, rooted in the brief and what the team said. The team reads this part twice.
+${CONFIDENCE}
+- Ids: use them exactly as given in "id", never invent one.
+${STYLE}`;
 
 const CurateSchema = z.object({
   verdicts: z.array(z.object({ id: z.string(), keep: z.boolean(), reason: z.string() })),
