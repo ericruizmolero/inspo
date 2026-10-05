@@ -1,5 +1,5 @@
 "use client";
-import { MD_SKILLS } from "@/lib/md-skills";
+import { MD_SKILLS } from "@/lib/md-skill-ids";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import "./SkillsMenu.css";

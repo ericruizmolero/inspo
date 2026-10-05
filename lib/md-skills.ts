@@ -11,8 +11,8 @@ import { MORE_SKILLS, moreSkillSection, type MoreSkill } from "./md-skills-more"
 
 /** Every skill, in the order the file has them: the areas' order (typography, colour, layout, motion, iconography,
  *  logo, imagery, voice), then the ones that cross them. GSAP is written here; the rest in lib/md-skills-more.ts */
-export const MD_SKILLS = ["fonts", "color-tokens", "grid", "gsap", "transitions", "icons", "logo-svg", "images", "microcopy", "no-ai-slop", "a11y", "tailwind"] as const;
-export type MdSkill = (typeof MD_SKILLS)[number];
+import { MD_SKILLS } from "./md-skill-ids";
+export { MD_SKILLS, type MdSkill } from "./md-skill-ids";
 
 type Lang = "en" | "es";
 
