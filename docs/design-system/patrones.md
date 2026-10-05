@@ -30,7 +30,7 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 
 ## Edición
 
-- Texto editable en el sitio, sin botón Editar ni recuadro; autoguardado.
+- Texto editable en el sitio, sin botón Editar ni recuadro; autoguardado. En criterio.md lo es todo, títulos incluidos. → [decisión](decisiones/2026-10-05-todo-el-md-editable.md)
 - Comentar es una herramienta aparte (tecla C) que deja pines tipo Figma con respuestas, en el documento. No hay anotaciones posicionales sobre las páginas de referencia.
 
 ## Confirmaciones y vacíos

@@ -1275,6 +1275,7 @@ export const ui: typeof EnUi = {
     hintComment: "Pulsa la l\u00ednea donde quieres dejar el comentario. Esc para salir.",
     discard: "Descartar",
     byHand: "Escrito a mano: ya no sigue lo que escribe la app.",
+    noRefs: "Sin referencias. Escribe - **R3** para traer la R3 a esta área.",
     restore: "Volver al texto de la app",
   },
   brand: {
