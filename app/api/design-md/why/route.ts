@@ -9,7 +9,7 @@ import { latestRevision } from "@/lib/design-revise";
 import { getOrBuildWhy, type Voice } from "@/lib/design-why";
 import { probeSite } from "@/lib/design-probe";
 import { recordUsage } from "@/lib/usage";
-import { getErrors, getLocale } from "@/lib/i18n";
+import { getErrors } from "@/lib/i18n";
 import type { DesignWhy } from "@/types/design";
 
 export const maxDuration = 120;
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     const t0 = Date.now();
     const { why, built, stale } = await getOrBuildWhy({
       organizationId: ctx.workspace.id, url, voices, specStamp, spec,
-      screenshot: () => getDesignScreenshot(url), locale: await getLocale(),
+      screenshot: () => getDesignScreenshot(url), language: ctx.workspace.outputLanguage,
       background: (job) => after(() => job),
       // The browser goes to look at what the notes point at: captures the sections, hovers, listens
       probe: async () => {

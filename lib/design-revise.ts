@@ -6,7 +6,7 @@ import { desc, and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./workspace-core";
 import { DesignSpecSchema, renderDesignMd, stripDashes, type DesignSpec } from "@/types/design";
-import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { DEFAULT_OUTPUT_LANGUAGE, languageName, type OutputLanguage } from "./output-language";
 import { llm } from "./llm";
 
 // Revising is rewriting a finished spec with a bounded change: Sonnet handles it well in a third of Opus's time.
@@ -106,12 +106,7 @@ const ReviseOutput = z.object({
 
 // The summary and warning are read on screen, so they come out in the viewer's
 // language. The spec itself doesn't: that's #27 (the DESIGN.md is always generated in English).
-const LANGUAGE: Record<Locale, string> = {
-  en: "Write \"summary\" and \"warning\" in English",
-  es: "Write \"summary\" and \"warning\" in Castilian Spanish (Spanish from Spain)",
-};
-
-const systemFor = (locale: Locale) => `You maintain the DESIGN.md of a website for a design team. You receive the current structured spec and a comment from a team member who disagrees with one part. Your job is to apply that change with judgment and return the complete corrected spec.
+const systemFor = (language: OutputLanguage) => `You maintain the DESIGN.md of a website for a design team. You receive the current structured spec and a comment from a team member who disagrees with one part. Your job is to apply that change with judgment and return the complete corrected spec.
 
 Rules:
 - Apply what the person asks for. They know the brand; their judgment overrides what was generated automatically.
@@ -122,15 +117,15 @@ Rules:
 - If the comment asks for no change (it's a test, a question or says nothing concrete), return "changed": false, "patch" "{}" and explain in "summary" what you'd need to be able to apply it.
 - "patch" is a string with a JSON object. It carries only the top-level keys that change, but each one complete: if you touch a color, the whole "colors" array with all colors; if you touch a rule, the whole "dos" or "donts". Don't include keys that don't change.
 - The spec text is in English (#27), even if the current spec or the comment is in Spanish. The one exception is "es", the tagline and the brief in Castilian Spanish: if you change the tagline or the brief, return "es" updated too.
-- ${LANGUAGE[locale]}: the person reads those two on screen.
+- Write "summary" and "warning" in ${languageName(language)}: the person reads those two on screen.
 - Respect the schema constraints: between 4 and 12 colors, 6-9 scale steps, 5-7 rules of each kind.`;
 
 export async function reviseDesignSpec(input: {
-  spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null; locale?: Locale;
+  spec: DesignSpec; url: string; section: string; comment: string; screenshot?: Buffer | null; language?: OutputLanguage;
 }): Promise<{ changed: boolean; spec: DesignSpec; summary: string; warning: string | null; model: string; provider: string | null; requestId: string | null; costUsd: number | null; usage: { input: number; output: number; cacheRead: number } }> {
   const res = await llm({
     model: MODEL,
-    system: systemFor(input.locale ?? DEFAULT_LOCALE),
+    system: systemFor(input.language ?? DEFAULT_OUTPUT_LANGUAGE),
     image: input.screenshot,
     text: `URL: ${input.url}\nSection the comment refers to: ${SECTIONS[input.section] ?? input.section}\n\nThe person's comment:\n"""\n${input.comment}\n"""\n\nCurrent spec (JSON):\n${JSON.stringify(input.spec)}`,
     schema: ReviseOutput,

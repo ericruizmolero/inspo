@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfirm } from "@/components/useConfirm";
+import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 
 export default function WorkspacePanel({ workspace, canManage }: { workspace: Workspace; canManage: boolean }) {
   const { t } = useT();
@@ -114,6 +115,19 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
               </div>
             )}
             <input ref={logoRef} type="file" accept="image/*" hidden onChange={onLogoFile} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.settings.outputLanguage}</CardTitle>
+          <CardDescription>{t.settings.outputLanguageHint}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="setting-line">
+            <span>{t.settings.language}</span>
+            <OutputLanguageSwitch workspaceId={workspace.id} value={workspace.outputLanguage} disabled={!canManage} onError={setError} />
           </div>
         </CardContent>
       </Card>

@@ -11,7 +11,7 @@ import { llm } from "./llm";
 import { DesignWhySchema, type DesignSpec, type DesignWhy } from "@/types/design";
 import type { ProbeReport } from "./design-probe";
 import { voiceText } from "./comment-context";
-import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 
 // Vision + judgment over a finished spec. Haiku padded every answer with prose; Sonnet keeps to values (a few cents).
 export const DESIGN_WHY_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -39,9 +39,9 @@ Rules:
 - For each highlight, list in "shots" the ids of the captures that show exactly that thing: all of them when several do (a note about mockups gets every mockup captured), in the best order first. Captures can be images (i…, s…), a video of the browser hovering the elements (v…) or a sound the page played while hovering (a…). A capture is worth more than any description: prefer pointing at it over describing what it shows. A video or a sound of the very interaction the note describes makes that highlight "measured".
 - A note that says nothing concrete ("cool", "check this", a greeting) produces no highlight. If nothing is concrete, return an empty list and an empty gist.`;
 
-export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
+export function stampFor(voices: Voice[], specStamp: string, language: OutputLanguage = DEFAULT_OUTPUT_LANGUAGE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body, v.place ?? "", (v.replies ?? []).map((r) => [r.author, r.body])]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 12 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body, v.place ?? "", (v.replies ?? []).map((r) => [r.author, r.body])]), s: specStamp, m: DESIGN_WHY_MODEL, l: language, ver: 12 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {
@@ -63,16 +63,11 @@ export interface BuildResult {
   usage: { input: number; output: number; cacheRead: number };
 }
 
-const LANGUAGE: Record<Locale, string> = {
-  en: "Write \"where\" and \"note\" in English.",
-  es: "Write \"where\" and \"note\" in Castilian Spanish (Spanish from Spain).",
-};
-
-export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; locale?: Locale; signal?: AbortSignal }): Promise<BuildResult> {
+export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; language?: OutputLanguage; signal?: AbortSignal }): Promise<BuildResult> {
   const voices = input.voices.map((v, i) => `${i + 1}. [${v.kind === "note" ? "note of whoever saved it" : "comment"}] (${v.at.slice(0, 10)}) ${voiceText(v)}`).join("\n");
   const res = await llm({
     model: DESIGN_WHY_MODEL,
-    system: `${SYSTEM}\n\nLanguage: ${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,
+    system: `${SYSTEM}\n\n${languageRule(input.language ?? DEFAULT_OUTPUT_LANGUAGE, '"where" and "note"')}`,
     image: input.screenshot,
     text: `URL: ${input.url}\n\nWhat the team said, in order:\n${voices}\n\n${input.probe ? `PROBE REPORT (observed by a headless browser):\n${JSON.stringify({ summary: input.probe.summary, audio: input.probe.audio, cursor: input.probe.cursor, scroll: input.probe.scroll, targets: input.probe.targets, captures: input.probe.captures.map((c) => ({ id: c.id, kind: c.kind, hint: c.hint, text: c.text, y: c.box.y, h: c.box.h, ...(c.ms ? { seconds: Math.round(c.ms / 100) / 10 } : {}) })) })}\n\n` : ""}The DESIGN.md spec (JSON):\n${JSON.stringify(input.spec)}`,
     schema: DesignWhySchema,
@@ -106,14 +101,14 @@ export type WhyResult = { why: DesignWhy; built: BuildResult | null; stale: bool
  */
 export function getOrBuildWhy(input: {
   organizationId: string; url: string; voices: Voice[]; specStamp: string; spec: DesignSpec;
-  screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; locale?: Locale;
+  screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; language?: OutputLanguage;
   /** Keeps a promise alive after the response (Next's `after`): enables stale-while-rebuild */
   background?: (job: Promise<unknown>) => void;
 }): Promise<WhyResult> {
   const key = `${input.organizationId}|${input.url}`;
   const running = inflight.get(key);
   if (running) return running;
-  const stamp = stampFor(input.voices, input.specStamp, input.locale);
+  const stamp = stampFor(input.voices, input.specStamp, input.language);
   const job = (async (): Promise<{ why: DesignWhy; built: BuildResult | null; stale: false }> => {
     const cached = await getWhy(input.organizationId, input.url);
     if (cached && cached.stamp === stamp) return { why: cached.why, built: null, stale: false };
@@ -122,7 +117,7 @@ export function getOrBuildWhy(input: {
     let probeFailed = false;
     const probe = input.probe ? input.probe().catch((e) => { probeFailed = true; console.error("design-why probe failed:", input.url, e instanceof Error ? e.message : e); return null; }) : Promise.resolve(null);
     const [screenshot, probed] = await Promise.all([input.screenshot(), probe]);
-    const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, locale: input.locale });
+    const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, language: input.language });
     await saveWhy(input.organizationId, input.url, probeFailed ? `${stamp}~retry` : stamp, built.why);
     return { why: built.why, built, stale: false };
   })().finally(() => { inflight.delete(key); });

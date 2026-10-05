@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { PolishState, Why } from "@/types/polish";
+import { OUTPUT_LANGUAGES } from "../output-language";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -78,9 +79,12 @@ export const organization = pgTable("organization", {
   kind: text("kind").notNull().default("team"),
   /** SaaS plan (lib/plans.ts), changed by hand with scripts/set-plan.ts */
   plan: text("plan").notNull().default("solo"),
+  /** The language the model writes in for this workspace (lib/output-language.ts). Not the interface language. */
+  outputLanguage: text("output_language").notNull().default("en"),
 }, (t) => [
   oneOf("organization_kind_check", t.kind, ["personal", "team"]),
   oneOf("organization_plan_check", t.plan, ["solo", "studio", "agency"]),
+  oneOf("organization_output_language_check", t.outputLanguage, OUTPUT_LANGUAGES),
 ]);
 
 export const member = pgTable("member", {

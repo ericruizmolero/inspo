@@ -4,7 +4,7 @@ import { HttpError } from "@/lib/workspace-core";
 import { ask, confirm, type AgentScope } from "@/lib/agent";
 import { llmEnabled } from "@/lib/llm";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
-import { getErrors, getLocale } from "@/lib/i18n";
+import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 300;
 
@@ -18,13 +18,14 @@ export async function POST(req: NextRequest) {
   if (blocked) return blocked;
   const body = (await req.json().catch(() => ({}))) as { text?: string; scope?: AgentScope; run?: unknown };
   const usage = { organizationId: ctx.workspace.id, userId: ctx.user.id };
-  const locale = await getLocale();
+  // The model writes in the team's language, whatever the person's interface is in
+  const language = ctx.workspace.outputLanguage;
   try {
-    if (Array.isArray(body.run)) return Response.json(await confirm(ctx, body.run, usage, locale));
+    if (Array.isArray(body.run)) return Response.json(await confirm(ctx, body.run, usage, language));
     const text = String(body.text ?? "").trim();
     if (!text) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
     const scope = body.scope && typeof body.scope === "object" ? body.scope : {};
-    return Response.json(await ask(ctx, { text, scope, usage, locale }));
+    return Response.json(await ask(ctx, { text, scope, usage, language }));
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
     const msg = e instanceof Error ? e.message : String(e);

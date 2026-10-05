@@ -10,7 +10,7 @@ import { z } from "zod";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
 import { summarize } from "./jev";
 import { embedEnabled, nearest, queryVector } from "./embed";
@@ -333,14 +333,12 @@ Rules:
 - evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
 - A reference of kind "text" is the project's own CONTENT, pasted by the team (a list of services, a piece of copy), given here as its title and first lines. It is material to place, not a look: only voice may cite it, for the tone and vocabulary of the real copy, and no other area is decided from it. Never summarise, rewrite or quote it in a decision: the file carries it whole.
 - A reference marked "filed_by_team" under an area was put there by a person from the board: it is a directive. Decide that area from those references first, and keep them in its evidence.
-- You receive the SYSTEM AS IT STANDS. Areas marked "team" were decided by a person: they are facts about the project, keep every other area coherent with them and return them unchanged (same text). Areas marked "model" are your previous proposals: keep what the board still supports, change what new evidence changes, do not rephrase for the sake of it.
+- You receive the SYSTEM AS IT STANDS. Areas marked "team" were decided by a person: they are facts about the project, keep every other area coherent with them and return them unchanged (same text). Areas marked "model" are your previous proposals: keep what the board still supports, change what new evidence changes, do not rephrase for the sake of it (translating into the language below is not rephrasing: do it).
 - The summary is the project's criterio in one paragraph (max 90 words): what it is, who it speaks to, the few decisions that define its look. Written so that an agent that reads only this paragraph would already design in the right direction. Empty string if the board is empty.
 - No markdown, no dashes as punctuation, no counts of references in the text. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
 
-const LANGUAGE: Record<Locale, string> = {
-  en: "Write decisions, takes and the summary in English.",
-  es: "Write decisions, takes and the summary in Castilian Spanish (Spain), natural and direct.",
-};
+/** What the team reads on screen, in the workspace's language */
+const languageOf = (lang: OutputLanguage | undefined) => languageRule(lang ?? DEFAULT_OUTPUT_LANGUAGE, "every decision, why, take, reason, question, option and summary");
 
 const OutSchema = z.object({
   summary: z.string(),
@@ -381,7 +379,7 @@ const inflight = new Map<string, Promise<ProjectSystem>>();
  * Reads the board and writes the system: the model's proposal for every area the team has not
  * decided, the summary and the run. Always costs (little): the client asks when the run is stale.
  */
-export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; locale?: Locale; focus?: SystemFocus }): Promise<ProjectSystem> {
+export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus }): Promise<ProjectSystem> {
   const key = `${input.organizationId}|${input.projectId}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -413,7 +411,7 @@ const standing = current.areas.map((a) => ({
     try {
       res = await llm({
         model: SYSTEM_MODEL,
-        system: `${SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,
+        system: `${SYSTEM}\n\n${languageOf(input.language)}`,
         text,
         schema: OutSchema,
         // Reasoning counts against the budget: room for it, the answer itself is short
@@ -500,7 +498,7 @@ const OptionsSchema = z.object({
 export interface AreaOption { decision: string; why: string; evidence: SystemEvidence[] }
 
 /** The directions the board allows for one area. Nothing is written: the team picks and that picks writes. */
-export async function proposeOptions(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale; onlyItemIds?: string[] }): Promise<AreaOption[]> {
+export async function proposeOptions(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; language?: OutputLanguage; onlyItemIds?: string[] }): Promise<AreaOption[]> {
   const area = await cleanArea(input.area);
   const project = await projectRow(input.organizationId, input.projectId);
   const [{ refs: all }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
@@ -524,7 +522,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: SYSTEM_MODEL, system: `${OPTIONS_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: OptionsSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
+    res = await llm({ model: SYSTEM_MODEL, system: `${OPTIONS_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: OptionsSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
@@ -578,12 +576,12 @@ export interface AreaStartAsk { say: string; question: string; options: { label:
 // goes to a quick model that does not stop to reason (the system's own takes 15 to 45 s for the same few lines)
 const START_MODEL = process.env.START_MODEL || "anthropic/claude-haiku-4.5";
 
-type StartInput = { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale };
-const startLanguage = (locale?: Locale) => `${LANGUAGE[locale ?? DEFAULT_LOCALE]} Every sentence you write, in that language.`;
+type StartInput = { organizationId: string; projectId: string; area: string; usage: UsageCtx; language?: OutputLanguage };
+const startLanguage = (language?: OutputLanguage) => `${languageOf(language)} Every sentence you write, in that language.`;
 async function startCall<S extends z.ZodTypeAny>(input: StartInput, part: string, system: string, text: string, schema: S): Promise<z.infer<S>> {
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: START_MODEL, system: `${system}\n\n${startLanguage(input.locale)}`, text, schema, maxTokens: 3000 });
+    res = await llm({ model: START_MODEL, system: `${system}\n\n${startLanguage(input.language)}`, text, schema, maxTokens: 3000 });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
@@ -627,7 +625,7 @@ function sentenceWith(text: string, words: RegExp): string | null {
 /** The references that are ideal for an area: on the board, and in the rest of the library. No model thinks here:
  *  it is a base read from what each reference already carries (the words of whoever saved it, its tags, what its
  *  page is and looks like) plus closeness in meaning when the library has its vectors. Any area, empty or not. */
-export async function startAreaRefs(input: Omit<StartInput, "usage" | "locale">): Promise<AreaStartRefs> {
+export async function startAreaRefs(input: Omit<StartInput, "usage" | "language">): Promise<AreaStartRefs> {
   const area = await cleanArea(input.area);
   const search = AREA_SEARCH[area];
   const [boardRows, rows, visuals] = await Promise.all([
@@ -834,7 +832,7 @@ const TriageSchema = z.object({
 
 const TRIAGE_BATCH = 60;
 
-export async function triageInbox(input: { organizationId: string; itemIds?: string[]; usage: UsageCtx; locale?: Locale }): Promise<TriageProposal[]> {
+export async function triageInbox(input: { organizationId: string; itemIds?: string[]; usage: UsageCtx; language?: OutputLanguage }): Promise<TriageProposal[]> {
   const org = input.organizationId;
   // The unfiled references (or the ones asked for), and what the projects are about
   const filed = new Set((await db.select({ itemId: PI.itemId }).from(PI).where(eq(PI.organizationId, org))).map((r) => r.itemId));
@@ -854,7 +852,7 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
     const codes = new Map(batch.map(({ row }, i) => [`r${i + 1}`, row.id]));
     const refs = batch.map(({ row }, i) => ({ id: `r${i + 1}`, kind: mediaKindOf(row.web), ...summarize(rowToItem(row), row.tagsJson ?? undefined) }));
     const text = `Projects (JSON): ${JSON.stringify(projectsText)}\n\nUnfiled references (JSON): ${JSON.stringify(refs)}`;
-    const res = await llm({ model: SYSTEM_MODEL, system: `${TRIAGE_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: TriageSchema, maxTokens: 16000, effort: "low" });
+    const res = await llm({ model: SYSTEM_MODEL, system: `${TRIAGE_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: TriageSchema, maxTokens: 16000, effort: "low" });
     void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `inbox triage ${batch.length}` });
     const parsed = TriageSchema.parse(JSON.parse(res.text));
     const out: TriageProposal[] = [];
@@ -905,7 +903,7 @@ const CurateSchema = z.object({
   confidence: z.number().int().min(0).max(100),
 });
 
-export async function curateArea(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; locale?: Locale; keep?: Record<string, boolean> }): Promise<ProjectSystem> {
+export async function curateArea(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; language?: OutputLanguage; keep?: Record<string, boolean> }): Promise<ProjectSystem> {
   const area = await cleanArea(input.area);
   const project = await projectRow(input.organizationId, input.projectId);
   const [visuals, { refs }, current] = await Promise.all([boardVisuals(input.organizationId, input.projectId), loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
@@ -924,7 +922,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: SYSTEM_MODEL, system: `${CURATE_SYSTEM}\n\n${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`, text, schema: CurateSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
+    res = await llm({ model: SYSTEM_MODEL, system: `${CURATE_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: CurateSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);

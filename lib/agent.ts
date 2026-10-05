@@ -10,7 +10,7 @@ import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import type { Ctx } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
 import { recordUsage, type UsageCtx } from "./usage";
 import { addItem, deleteItem, rowToItem, setItemNote, editUserTags } from "./items";
@@ -195,11 +195,6 @@ How to read the request:
 
 "say": one or two sentences to the person, in their language, plain and direct: what you did or will do, or the answer. No markdown, no dashes as punctuation. Never list ids, and never name the catalogue's kinds (say "I add them", not "add_url").`;
 
-const LANGUAGE: Record<Locale, string> = {
-  en: "The person writes in English or Spanish; answer in English.",
-  es: "Answer in Castilian Spanish (Spain), natural and direct, tú form.",
-};
-
 interface Codes { items: Map<string, string>; projects: Map<string, string> }
 
 async function context(ctx: Ctx, scope: AgentScope) {
@@ -279,7 +274,7 @@ const resolveIn = (codes: Codes, action: AgentAction): AgentAction | null => {
 };
 const isRealItemId = (codes: Codes, c: string) => [...codes.items.values()].includes(c);
 
-export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageCtx, locale: Locale): Promise<{ done: AgentDone[]; patch: AgentPatch }> {
+export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageCtx, language: OutputLanguage): Promise<{ done: AgentDone[]; patch: AgentPatch }> {
   const org = ctx.workspace.id;
   const author = { id: ctx.user.id, name: ctx.user.name || ctx.user.email };
   const done: AgentDone[] = [];
@@ -328,10 +323,10 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;
         case "release": await releaseArea(org, a.project, a.area, author); line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;
         case "undo": await revertArea(org, a.project, a.area, author); line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;
-        case "read_board": await runSystem({ organizationId: org, projectId: a.project, usage, locale }); line.project = names.get(a.project); systemsTouched = true; break;
-        case "curate": await curateArea({ organizationId: org, projectId: a.project, area: a.area, usage, locale }); line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;
+        case "read_board": await runSystem({ organizationId: org, projectId: a.project, usage, language }); line.project = names.get(a.project); systemsTouched = true; break;
+        case "curate": await curateArea({ organizationId: org, projectId: a.project, area: a.area, usage, language }); line.project = names.get(a.project); line.area = a.area; systemsTouched = true; break;
         case "organize": {
-          const proposals = await triageInbox({ organizationId: org, itemIds: a.items ?? undefined, usage, locale });
+          const proposals = await triageInbox({ organizationId: org, itemIds: a.items ?? undefined, usage, language });
           const picks = proposals.filter((p): p is typeof p & { projectId: string } => !!p.projectId);
           const r = await applyTriage(org, picks, author);
           line.n = r.filed; line.items = picks.map((p) => p.itemId); projectsTouched = true; systemsTouched = true;
@@ -386,8 +381,8 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
 }
 
 /** Plans from the request and runs what is safe. Dangerous actions come back resolved, as `pending`. */
-export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; usage: UsageCtx; locale?: Locale }): Promise<AgentReply> {
-  const locale = input.locale ?? DEFAULT_LOCALE;
+export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; usage: UsageCtx; language?: OutputLanguage }): Promise<AgentReply> {
+  const language = input.language ?? DEFAULT_OUTPUT_LANGUAGE;
   const text = input.text.trim().slice(0, 1000);
   const c = await context(ctx, input.scope);
   const history = (Array.isArray(input.scope.history) ? input.scope.history : []).slice(-6)
@@ -402,7 +397,7 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: SYSTEM_MODEL, system: `${PLAN_SYSTEM}\n\n${LANGUAGE[locale]}`, text: body, schema: PlanSchema, maxTokens: 6000, effort: "low" });
+    res = await llm({ model: SYSTEM_MODEL, system: `${PLAN_SYSTEM}\n\n${languageRule(language, '"say", the "add" of a "never" action, and every decision and why you write')}`, text: body, schema: PlanSchema, maxTokens: 6000, effort: "low" });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
@@ -412,13 +407,13 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
   const resolved = plan.actions.map((a) => resolveIn(c.codes, a)).filter((a): a is AgentAction => !!a).slice(0, 20);
   const now = resolved.filter((a) => !DANGEROUS.has(a.kind));
   const pending = resolved.filter((a) => DANGEROUS.has(a.kind));
-  const { done, patch } = await runActions(ctx, now, input.usage, locale);
+  const { done, patch } = await runActions(ctx, now, input.usage, language);
   console.log(`agent ${ctx.workspace.id}: "${text.slice(0, 60)}" → ${resolved.map((a) => a.kind).join(",") || "nothing"}, ${res.usage.input}+${res.usage.output} tokens, ${res.costUsd ?? "?"} USD`);
   return { say: plan.say.trim(), done, pending, patch, costUsd: res.costUsd };
 }
 
 /** The person said yes to the pending actions: real ids, run as they are. */
-export async function confirm(ctx: Ctx, actions: unknown, usage: UsageCtx, locale: Locale): Promise<{ done: AgentDone[]; patch: AgentPatch }> {
+export async function confirm(ctx: Ctx, actions: unknown, usage: UsageCtx, language: OutputLanguage): Promise<{ done: AgentDone[]; patch: AgentPatch }> {
   const parsed = z.array(ActionSchema).max(20).parse(actions);
   // Only what belongs to this workspace runs: ids are checked against it
   const org = ctx.workspace.id;
@@ -430,5 +425,5 @@ export async function confirm(ctx: Ctx, actions: unknown, usage: UsageCtx, local
     if ("project" in a && typeof a.project === "string" && !projectIds.has(a.project)) return false;
     return true;
   });
-  return runActions(ctx, ok, usage, locale);
+  return runActions(ctx, ok, usage, language);
 }

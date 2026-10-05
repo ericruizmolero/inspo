@@ -1,12 +1,13 @@
 // Runs the project's system over a real project in the LOCAL database and prints it.
 // Costs one model call (a fraction of a cent). Not a test framework: look at the output.
-//   npm run check:system -- <project name or id> [es|en]
+//   npm run check:system -- <project name or id> [output language: es, en, fr…]
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { eq, ilike, or } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
 import { runSystem } from "../lib/system";
+import { toOutputLanguage } from "../lib/output-language";
 import { renderCriterioMd } from "../lib/criterio-md";
 import { ui as en } from "../lib/i18n/en/ui";
 import { ui as es } from "../lib/i18n/es/ui";
@@ -19,7 +20,7 @@ async function main() {
   const [p] = await db.select().from(schema.project).where(or(eq(schema.project.id, what), ilike(schema.project.name, what))).limit(1);
   if (!p) throw new Error(`No project "${what}"`);
   const t0 = Date.now();
-  const system = await runSystem({ organizationId: p.organizationId, projectId: p.id, usage: { organizationId: p.organizationId }, locale: locale as "es" | "en" });
+  const system = await runSystem({ organizationId: p.organizationId, projectId: p.id, usage: { organizationId: p.organizationId }, language: toOutputLanguage(locale) });
   console.log(`\n${p.name}: ${Date.now() - t0} ms\n`);
   const items = await db.select({ id: schema.inspoItem.id, name: schema.inspoItem.name, web: schema.inspoItem.web }).from(schema.inspoItem).where(eq(schema.inspoItem.organizationId, p.organizationId));
   const dict = locale === "es" ? es : en;

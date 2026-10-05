@@ -17,7 +17,7 @@ export default async function AccountPage() {
     <>
       <ActivityPing area="settings" organizationId={ctx.workspace.id} />
       <SettingsHeading title={t.settings.sections.account} lead={t.settings.leads.account} />
-      <AccountPanel user={ctx.user} personalId={personal?.id ?? null} />
+      <AccountPanel user={ctx.user} personal={personal ?? null} />
     </>
   );
 }
