@@ -14,7 +14,7 @@ import { getErrors } from "./i18n";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
 import { recordUsage, type UsageCtx } from "./usage";
-import { addItem, deleteItem, rowToItem, setItemNote, editUserTags } from "./items";
+import { addItem, deleteItems, rowToItem, setItemNote, editUserTags } from "./items";
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, fileItems, unfileItems } from "./projects";
@@ -335,7 +335,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           break;
         case "assign":
           if (a.on) await fileItems(org, a.project, a.items, author.id);
-          for (const id of a.items) await assignEvidence(org, a.project, a.area, id, a.on, author);
+          await assignEvidence(org, a.project, a.area, a.items, a.on, author);
           line.n = a.items.length; line.items = a.items; line.project = names.get(a.project); line.area = a.area; line.on = a.on; projectsTouched = true; systemsTouched = true;
           line.undo = [{ kind: "assign", items: a.items, project: a.project, area: a.area, on: !a.on }];
           break;
@@ -398,7 +398,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           line.name = await itemName(a.item); line.text = a.add ?? a.remove ?? ""; line.items = [a.item]; break;
         }
         case "delete_items":
-          for (const id of a.items) await deleteItem(org, id);
+          await deleteItems(org, a.items);
           (patch.removed ??= []).push(...a.items); line.n = a.items.length; projectsTouched = true; systemsTouched = true; break;
       }
     } catch (e) {

@@ -818,22 +818,29 @@ export async function revertArea(organizationId: string, projectId: string, area
 // The team says where a piece belongs (this clip is Motion, this capture is Imagery). The node counts
 // it at once; the next run decides the area from what was filed.
 
-export async function assignEvidence(organizationId: string, projectId: string, areaKey: string, itemId: string, on: boolean, author: { id: string; name: string }): Promise<ProjectSystem> {
+export async function assignEvidence(organizationId: string, projectId: string, areaKey: string, itemId: string | string[], on: boolean, author: { id: string; name: string }): Promise<ProjectSystem> {
   await projectRow(organizationId, projectId);
   const area = await cleanArea(areaKey);
-  const [mine] = await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, itemId))).limit(1);
-  if (!mine) throw new HttpError(404, (await getErrors()).itemNotInWorkspace);
+  const ids = [...new Set(Array.isArray(itemId) ? itemId : [itemId])];
+  const mine = await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
+  if (mine.length !== ids.length) throw new HttpError(404, (await getErrors()).itemNotInWorkspace);
+  if (ids.length) await fileEvidence(organizationId, projectId, area, ids, on);
+  void author;
+  return getSystem(organizationId, projectId);
+}
+
+/** Files (or unfiles) several references under one area in one write. The caller has checked project, area and items. */
+async function fileEvidence(organizationId: string, projectId: string, area: SystemArea, itemIds: string[], on: boolean): Promise<void> {
+  const ids = new Set(itemIds);
   const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
-  const rest = current.evidence.filter((e) => e.itemId !== itemId);
-  const kept = current.evidence.find((e) => e.itemId === itemId);
-  const evidence: SystemEvidence[] = on ? [...rest, { itemId, take: kept?.take ?? "", pinned: true }] : rest;
+  const rest = current.evidence.filter((e) => !ids.has(e.itemId));
+  const kept = new Map(current.evidence.map((e) => [e.itemId, e]));
+  const evidence: SystemEvidence[] = on ? [...rest, ...[...ids].map((itemId) => ({ itemId, take: kept.get(itemId)?.take ?? "", pinned: true }))] : rest;
   const now = new Date();
   await ensureHead(organizationId, projectId, now);
   // Filing is not deciding: the decision and its source stay as they were, only the evidence moves
   await db.insert(A).values({ projectId, organizationId, area, decision: current.decision, confidence: current.confidence, evidence, source: current.source, decidedBy: current.decidedBy, why: current.why, curationJson: current.curation, updatedAt: now })
     .onConflictDoUpdate({ target: [A.projectId, A.area], set: { evidence, updatedAt: now } });
-  void author;
-  return getSystem(organizationId, projectId);
 }
 
 /** References that left the project leave its system too: their evidence goes from every area, in one pass. */
@@ -921,7 +928,17 @@ export async function applyTriage(organizationId: string, picks: { itemId: strin
   for (const [projectId, list] of byProject) {
     await fileItems(organizationId, projectId, list.map((x) => x.itemId), author.id);
     filed += list.length;
-    for (const x of list) for (const area of x.areas) if (AREA_SET.has(area)) await assignEvidence(organizationId, projectId, area, x.itemId, true, author);
+    // One write per area, not one per reference and area: two hundred bookmarks were thousands of queries
+    const byArea = new Map<SystemArea, string[]>();
+    for (const x of list) for (const area of x.areas) if (AREA_SET.has(area)) byArea.set(area, [...(byArea.get(area) ?? []), x.itemId]);
+    if (!byArea.size) continue;
+    await projectRow(organizationId, projectId);
+    const ids = [...new Set([...byArea.values()].flat())];
+    const mine = new Set((await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)))).map((r) => r.id));
+    for (const [area, itemIds] of byArea) {
+      const ok = itemIds.filter((id) => mine.has(id));
+      if (ok.length) await fileEvidence(organizationId, projectId, area, ok, true);
+    }
   }
   return { filed, systems: await loadSystems(organizationId) };
 }
