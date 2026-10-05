@@ -18,6 +18,7 @@ import InspoCard, { captionFor } from "./InspoCard";
 import Discover from "./Discover";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
+import SelectBar from "./SelectBar";
 import { refInfoOf } from "@/lib/ref-info";
 import { restoreTextHeadings } from "@/lib/criterio-md";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage, normalizeWebUrl } from "@/lib/url";
@@ -1167,15 +1168,103 @@ export default function InspoClient({
     if (!r.ok) { projectFailed(new Error(r.error)); return; }
     setSystem(projectId, r.data);
   }, [setSystem]);
-  // From the library: under an area of any project, filed in that project first if it was not
-  const toggleAreaIn = useCallback(async (item: InspoItem, projectId: string, area: SystemArea, on: boolean) => {
-    if (!item.id) return;
-    if (on && !links[item.id]?.includes(projectId)) await toggleFiled(item, projectId, true);
-    const r = await assignSystemArea(projectId, area, item.id, on).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { projectFailed(new Error(r.error)); return; }
-    setSystem(projectId, r.data);
-  }, [setSystem, toggleFiled, links]);
-  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, toggleAreaIn, measure };
+  // ─── Selection: several references at once (SelectBar) ──────────────────────
+  // ⌘/⇧-click or the circle on a card picks it; while anything is picked, a click picks. ⇧ picks the run from
+  // the last pick, in the board's order. Esc or Done lets go; changing space does too.
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const lastPick = useRef<string | null>(null);
+  const selectItem = useCallback((item: InspoItem, range: boolean) => {
+    const id = item.id;
+    if (!id) return;
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const from = range && lastPick.current ? boardItems.findIndex((i) => i.id === lastPick.current) : -1;
+      const to = boardItems.findIndex((i) => i.id === id);
+      if (from >= 0 && to >= 0) {
+        for (const i of boardItems.slice(Math.min(from, to), Math.max(from, to) + 1)) if (i.id) next.add(i.id);
+      } else if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+    lastPick.current = id;
+  }, [boardItems]);
+  // The bar stays a moment after the selection empties, to leave the way it came, with the last count on it
+  const [bar, setBar] = useState<{ count: number } | null>(null);
+  if (selected.size > 0 && bar?.count !== selected.size) setBar({ count: selected.size });
+  const clearSelection = useCallback(() => { setSelected(new Set()); lastPick.current = null; }, []);
+  useEffect(() => { clearSelection(); }, [space, projectView, clearSelection]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
+      if (document.querySelector(".modal-backdrop, .cp, [data-slot='popover-content']")) return; // something open on top
+      if (e.key === "Escape" && selected.size) { e.preventDefault(); clearSelection(); }
+      // ⌘A: the whole board, once something is picked (before that the page keeps its own ⌘A)
+      if (e.key.toLowerCase() === "a" && (e.metaKey || e.ctrlKey) && selected.size) {
+        e.preventDefault();
+        setSelected(new Set(boardItems.map((i) => i.id).filter((x): x is string => !!x)));
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [selected, boardItems, clearSelection]);
+  // Which projects all of the selection is in, and which only part of it
+  const selectionIn = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const id of selected) for (const p of links[id] ?? []) count.set(p, (count.get(p) ?? 0) + 1);
+    const all: string[] = [], some: string[] = [];
+    for (const [p, n] of count) (n === selected.size ? all : some).push(p);
+    return { all, some };
+  }, [selected, links]);
+  /** The selection in or out of a project, in one request; back as it was if the server says no */
+  const fileSelection = useCallback(async (projectId: string, on: boolean) => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    const prevLinks = links;
+    setLinks((prev) => {
+      const next = { ...prev };
+      for (const id of ids) { const cur = (next[id] ?? []).filter((x) => x !== projectId); next[id] = on ? [...cur, projectId] : cur; }
+      return next;
+    });
+    const r = await setFiled(projectId, ids, on).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); return false; }
+    refreshSystem(projectId);
+    return true;
+  }, [selected, links, refreshSystem]);
+  // Moving: into the other project and out of this one, on screen at once; the board here lets go of them
+  const moveSelection = useCallback(async (projectId: string) => {
+    const from = currentProject?.id;
+    if (!from) return void fileSelection(projectId, true);
+    const ids = [...selected];
+    if (!ids.length) return;
+    const prevLinks = links;
+    setLinks((prev) => {
+      const next = { ...prev };
+      for (const id of ids) next[id] = [...(next[id] ?? []).filter((x) => x !== projectId && x !== from), projectId];
+      return next;
+    });
+    clearSelection();
+    const fail = (e: unknown) => ({ ok: false as const, error: String(e) });
+    const into = await setFiled(projectId, ids, true).catch(fail);
+    const out = into.ok ? await setFiled(from, ids, false).catch(fail) : into;
+    if (!into.ok) setLinks(prevLinks);
+    // In the new one but still here: the screen says so
+    else if (!out.ok) setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...(next[id] ?? []).filter((x) => x !== from), from]; return next; });
+    if (!out.ok) projectFailed(new Error(out.error));
+    refreshSystem(projectId); refreshSystem(from);
+  }, [currentProject, selected, links, fileSelection, clearSelection, refreshSystem]);
+  const removeSelection = useCallback(async () => {
+    if (!currentProject) return;
+    if (await fileSelection(currentProject.id, false)) clearSelection();
+  }, [currentProject, fileSelection, clearSelection]);
+  const createForSelection = useCallback(async (name: string) => {
+    const p = await createProject(name);
+    if (!p) return;
+    if (currentProject) await moveSelection(p.id);
+    else await fileSelection(p.id, true);
+  }, [createProject, currentProject, moveSelection, fileSelection]);
+
+  gridActions.current = { select: selectItem, openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, measure };
 
   // ─── The agent: every action, asked for in words from the search box ──────────
   // The request goes with where the person is (project, view, open reference, what is on screen); the
@@ -1603,6 +1692,8 @@ export default function InspoClient({
                   projectIds={item.id ? links[item.id] : undefined}
                   backs={currentProject && item.id ? backsOf(item.id) : undefined}
                   areasIn={item.id ? areasByItem.get(item.id) : undefined}
+                  selected={!!item.id && selected.has(item.id)}
+                  selecting={selected.size > 0}
                   actions={gridActions}
                 />
               )}
@@ -1619,7 +1710,12 @@ export default function InspoClient({
         {/* The way to find anything on a project's board, at the bottom like a conversation: people, dates, kinds,
             every tag, and what it means. Solid and bright in both themes, so it is the first thing the eye finds.
             Off the board only what the agent is still saying stays. */}
-        {items.length > 0 && (searchHere || agentSpeaks) && (
+        {bar && (
+          <SelectBar count={bar.count} closing={selected.size === 0} onClosed={() => setBar(null)} projects={projects} filed={selectionIn.all} partly={selectionIn.some} current={currentProject}
+            onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
+            onRemove={() => void removeSelection()} onDone={clearSelection} />
+        )}
+        {items.length > 0 && (searchHere || agentSpeaks) && selected.size === 0 && (
           <div className="dock">
             {filtering && (
               <p className="dock__status" role="status" aria-live="polite">
@@ -1759,6 +1855,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
 }
 
 interface GridActions {
+  select: (item: InspoItem, range: boolean) => void;
   openItem: (item: InspoItem, opts?: { generate?: boolean }) => void;
   deleteItem: (item: InspoItem) => Promise<void>;
   handleThumbnailUpload: (web: string, file: File) => void;
@@ -1766,12 +1863,11 @@ interface GridActions {
   toggleFiled: (item: InspoItem, projectId: string, on: boolean) => void;
   createAndFile: (item: InspoItem, name: string) => Promise<void>;
   toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
-  toggleAreaIn: (item: InspoItem, projectId: string, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, areasIn, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, areasIn, selected, selecting, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
@@ -1780,6 +1876,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
+  selected: boolean; selecting: boolean;
   actions: RefObject<GridActions>;
 }) {
   // The handlers are read when used, never kept from this render: the card re-renders only with its own data
@@ -1828,7 +1925,9 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       backs={backs}
       onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
       areasIn={areasIn}
-      onToggleAreaIn={item.id ? (projectId, area, on) => act().toggleAreaIn(item, projectId, area, on) : undefined}
+      selected={selected}
+      selecting={selecting}
+      onSelect={item.id ? (range) => act().select(item, range) : undefined}
       board={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );

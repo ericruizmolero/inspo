@@ -825,7 +825,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
   background: var(--surface);
   cursor: pointer;
   container-type: inline-size;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), outline-color 150ms ease;
 }
 .tile:hover { transform: translateY(-2px); }
 /* Hairline on the image edge: pure white on dark, pure black on light, so white screenshots keep their shape */
@@ -2975,31 +2975,8 @@ button.postit__num { cursor: pointer; }
 .island__new-go:disabled { opacity: 0.4; cursor: default; }
 
 /* The folder button in two steps (components/ProjectPicker.tsx): the project, then its areas */
-.pp--steps { width: 280px; }
-.pp-proj .ws__item-name { flex: 1; min-width: 0; }
 .pp-proj__areas { display: inline-flex; align-items: center; gap: 2px; color: var(--text-2); }
 .pp-proj__areas i { display: inline-flex; } .pp-proj__areas b { font-size: 11px; font-weight: 450; color: var(--muted); margin-left: 2px; }
-.pp-step__chev { display: inline-flex; color: var(--muted); transform: rotate(-90deg); } .pp-step__chev svg { width: 12px; height: 12px; }
-.pp-step__chev.is-back { transform: rotate(90deg); }
-.pp-step { display: flex; flex-direction: column; gap: 8px; padding: 2px; animation: pp-step-in 0.18s var(--ease-out); }
-@keyframes pp-step-in { from { opacity: 0; transform: translateX(10px); } }
-.pp-step__back { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; font-size: 13.5px; font-weight: 550; cursor: pointer; text-align: left; }
-.pp-step__back:hover { background: var(--surface-2); }
-.pp-step__title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.pp-in { display: flex; align-items: center; gap: 9px; height: 38px; padding: 0 10px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
-.pp-in__text { flex: 1; }
-.pp-in__switch { position: relative; width: 30px; height: 18px; border-radius: 999px; background: color-mix(in srgb, var(--text) 18%, transparent); transition: background 0.18s; }
-.pp-in__switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--text); transition: transform 0.18s var(--ease-out); }
-.pp-in.is-on { color: var(--text); } .pp-in.is-on .pp-in__switch { background: var(--success); } .pp-in.is-on .pp-in__switch::after { transform: translateX(12px); background: #fff; }
-.pp-step__ask { margin: 4px 4px 0; font-size: 12px; color: var(--muted); }
-.pp-areas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
-.pp-area { display: flex; align-items: center; gap: 8px; min-width: 0; height: 40px; padding: 0 10px; border: 0; border-radius: 10px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12.5px; cursor: pointer; text-align: left; transition: background 0.15s, color 0.15s, transform 0.12s var(--ease-out); }
-.pp-area:hover { color: var(--text); background: color-mix(in srgb, var(--text) 12%, var(--surface-2)); }
-.pp-area:active { transform: scale(0.97); }
-.pp-area__icon { flex-shrink: 0; display: inline-flex; } .pp-area__icon svg { width: 15px; height: 15px; }
-.pp-area__name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.pp-area.is-on { background: var(--text); color: var(--bg); }
-.pp-step__done { height: 34px; margin-top: 2px; border: 0; border-radius: 10px; background: var(--text); color: var(--bg); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
 
 /* The card's main actions, bottom left and labelled (components/InspoCard.tsx): filing it, white, the one that
    stands out; the areas of the system beside it inside a project; then the thread. The quieter ones stay up top */
@@ -3057,4 +3034,80 @@ button.postit__num { cursor: pointer; }
 :root[data-theme="light"] .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 16px 40px -14px rgba(30, 30, 20, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Project picker, one tap per project (like Cosmos): search on top, rows that toggle, a check circle when in */
+.pp--pick { width: 288px; padding: 0; overflow: hidden; }
+.pp-search { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--border); }
+.pp-search__icon { display: inline-flex; color: var(--muted); }
+.pp-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: 13.5px; }
+.pp-search input::placeholder { color: var(--muted); }
+.pp--pick .pp__none { padding: 12px 14px; }
+.pp--pick .pp__list { max-height: 300px; padding: 6px; gap: 2px; }
+.pp-row { display: flex; align-items: center; border-radius: 10px; transition: background 0.12s; }
+.pp-row:hover { background: var(--surface-2); }
+.pp-row__toggle { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 40px; padding: 0 8px 0 10px; border: 0; border-radius: 10px; background: none; color: var(--text-2); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.pp-row.is-on .pp-row__toggle { color: var(--text); font-weight: 500; }
+.pp-row__toggle:active .pp-row__check { transform: scale(0.88); }
+.pp-row__folder { display: inline-flex; color: var(--muted); }
+.pp-row.is-on .pp-row__folder { color: var(--text); }
+.pp-row__name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pp-row__check { flex-shrink: 0; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border-strong); color: var(--bg); transition: background 0.15s, border-color 0.15s, transform 0.12s var(--ease-out); }
+.pp-row__check svg { width: 12px; height: 12px; }
+.pp-row.is-on .pp-row__check { background: var(--text); border-color: var(--text); }
+.pp-new { width: calc(100% - 12px); margin: 6px; color: var(--text); }
+.pp-new:hover { background: var(--surface-2); }
+.pp--pick > .ws__divider { margin: 0; }
+.pp-row.is-some .pp-row__check { border-color: var(--text); }
+.pp-row__dash { width: 8px; height: 1.5px; border-radius: 1px; background: var(--text); }
+
+/* Selecting several cards (SelectBar): a circle top left on hover, filled once picked; picked cards wear a ring */
+.tile__select {
+  position: absolute; top: 10px; left: 10px; z-index: 3; display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+  border: 0; border-radius: 50%; cursor: pointer; color: transparent;
+  background: rgba(10,10,10,0.38); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.25);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  opacity: 0; transform: scale(0.9); transition: opacity 0.18s, transform 0.18s var(--ease-out), background 0.15s, color 0.15s;
+}
+.tile__select svg { width: 14px; height: 14px; }
+.tile.is-selecting .tile__select, .tile__select:focus-visible { opacity: 1; transform: none; }
+/* Touch fires a hover on tap: the circle only rises under a real pointer (on touch it shows while picking) */
+@media (hover: hover) and (pointer: fine) { .tile:hover .tile__select { opacity: 1; transform: none; } }
+.tile__select:hover { color: rgba(255,255,255,0.7); }
+.tile.is-selected .tile__select { background: #fff; color: #111110; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.tile__select:active { transform: scale(0.9); }
+.tile.is-selecting:hover { transform: none; }
+.tile.is-selecting .tile__actions, .tile.is-selecting .tile__go { display: none; }
+
+/* Motion for the project picker and multi-select. Same rules as .island-pop: grow from the trigger, fold back a
+   touch quicker; transitions everywhere, so a second click mid-way retargets. Typing and keys (filter, Esc, ⌘A)
+   stay instant. */
+.pp--pick {
+  transform-origin: var(--transform-origin);
+  transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+}
+.pp--pick[data-ending-style] { transition-duration: 150ms; }
+.pp--pick[data-starting-style], .pp--pick[data-ending-style] { opacity: 0; transform: scale(0.95); }
+/* The check lands in its circle: feedback that the tap was heard */
+.pp-row__check svg, .pp-row__dash, .tile__select svg {
+  transition: opacity 150ms var(--ease-out), transform 150ms var(--ease-out);
+  @starting-style { opacity: 0; transform: scale(0.6); }
+}
+.pp-row__toggle:active .pp-row__check { transition-duration: 100ms; }
+/* A picked card: the ring fades in (colour only, nothing moves); a click while picking presses the card */
+.tile { outline: 3px solid transparent; outline-offset: 3px; }
+.tile.is-selected { outline-color: var(--text); }
+.tile.is-selecting { transition: transform 160ms var(--ease-out), outline-color 150ms ease; }
+.tile.is-selecting:active { transform: scale(0.985); }
+.tile__select svg { opacity: 0; transform: scale(0.6); }
+.tile__select:hover svg, .tile.is-selected .tile__select svg { opacity: 1; transform: none; }
+/* The bar leaves the way it came, down and out */
+.selbar.is-closing { opacity: 0; transform: translate(-50%, 8px); transition-duration: 150ms; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .pp--pick { transition-property: opacity; }
+  .pp--pick[data-starting-style], .pp--pick[data-ending-style] { transform: none; }
+  .pp-row__check svg, .pp-row__dash, .tile__select svg { transition-property: opacity; @starting-style { transform: none; } }
+  .tile__select svg { transform: none; }
+  .tile.is-selecting:active { transform: none; }
+  .selbar.is-closing { transform: translateX(-50%); }
 }

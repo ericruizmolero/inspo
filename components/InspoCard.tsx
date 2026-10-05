@@ -94,10 +94,14 @@ interface InspoCardProps {
   onCreateProject?: (name: string) => Promise<void>;
   /** Inside a project: the areas of its system this piece backs, and the toggle to file it under one */
   backs?: SystemArea[];
-  /** The areas it backs in each project's system, and filing it under one from the folder button */
+  /** The areas it backs in each project's system, shown on the folder button's rows */
   areasIn?: Record<string, SystemArea[]>;
-  onToggleAreaIn?: (projectId: string, area: SystemArea, on: boolean) => void;
   onToggleArea?: (area: SystemArea, on: boolean) => void;
+  /** Picked for a bulk action (SelectBar). While anything is picked, a click picks instead of opening */
+  selected?: boolean;
+  selecting?: boolean;
+  /** Pick or unpick it; range: ⇧ was held, so everything from the last pick to here */
+  onSelect?: (range: boolean) => void;
   /** On the board: the page's top as the cover, sized before it loads, with the post-its as dots */
   board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
@@ -170,7 +174,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, onToggleAreaIn, board }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -419,7 +423,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
     <ProjectPicker
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
-      areasIn={areasIn} onToggleArea={onToggleAreaIn}
+      areasIn={areasIn}
       className={`${className}${filedCount ? " is-filed" : ""}`}
       label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
     >
@@ -430,9 +434,13 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   return (
     <div>
       <article
-        className={`tile${board ? " tile--board" : ""}`}
+        className={`tile${board ? " tile--board" : ""}${selecting ? " is-selecting" : ""}${selected ? " is-selected" : ""}`}
         data-id={item.id}
-        onClick={() => { if (suppressClick.current) return; openInside(); }}
+        onClick={(e) => {
+          if (suppressClick.current) return;
+          if (onSelect && (selecting || e.metaKey || e.ctrlKey || e.shiftKey)) { onSelect(e.shiftKey); return; }
+          openInside();
+        }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
@@ -491,6 +499,12 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             />
           )}
 
+          {onSelect && (
+            <button type="button" className="tile__select" aria-pressed={selected} aria-label={t.select.select}
+              onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey); }} onMouseDown={(e) => e.stopPropagation()}>
+              {Icons.check}
+            </button>
+          )}
           {board?.pins && isLoaded && board.pins.length > 0 && (
             <span className="tile__pins" aria-hidden>
               {board.pins.map((p, i) => <i key={i} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} />)}
