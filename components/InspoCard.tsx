@@ -186,6 +186,12 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const isSite = kind === "web";
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
+  // Any other recording of ours plays under the pointer, muted, over its frame or thumbnail.
+  // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
+  const hoverSrc = loopSrc ? null
+    : video?.provider === "file" || video?.loops ? video.src
+    : postKind ? uploadedThumb!.replace(/poster-(video|gif)\.\w+$/, "$1.mp4")
+    : null;
   const plays = kind === "video" || postKind === "video";
   const gifChip = (kind === "image" && isGif(item.web)) || postKind === "gif";
   const [source, setSource] = useState<ImgSource>(() => kind === "text" || isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
@@ -498,6 +504,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onError={() => setFrameFailed(true)}
             />
           )}
+          {hoverSrc && hovering && <LoopVideo src={hoverSrc} className="tile__img tile__loop" />}
 
           {onSelect && (
             <button type="button" className="tile__select" aria-pressed={selected} aria-label={t.select.select}

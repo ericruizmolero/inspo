@@ -1132,7 +1132,8 @@ export default function InspoClient({
 
   // A card with nothing written under it takes no room for a line: the next card sits right below
   const hasNote = useCallback(
-    (item: InspoItem) => !!item.note.trim() || !!(item.id && commentMap[item.id]?.some((c) => c.body.trim())),
+    // A text's card is its own page and draws no line under it, whatever its thread says
+    (item: InspoItem) => mediaKindOf(item.web) !== "text" && (!!item.note.trim() || !!(item.id && commentMap[item.id]?.some((c) => c.body.trim()))),
     [commentMap],
   );
 
