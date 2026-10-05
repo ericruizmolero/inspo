@@ -4,6 +4,8 @@
 .tplc .tpl-page { margin-bottom: 6px; transition: transform 0.25s var(--ease-out), box-shadow 0.25s; }
 @media (hover: hover) { .tplc:hover .tpl-page { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.14), 0 18px 40px rgba(0,0,0,0.3); } }
 .tplc:focus-visible { outline: none; } .tplc:focus-visible .tpl-page { box-shadow: 0 0 0 2px var(--text); }
+/* While the list loads: the card's shape, not a button */
+.tplc--loading { cursor: default; pointer-events: none; }
 .tplc__blank { display: grid; place-items: center; font-size: 34px; font-weight: 600; color: var(--muted); background: var(--surface); }
 .tplc__name { font-size: 15px; font-weight: 550; line-height: 1.3; color: var(--text); }
 .tplc__path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-2); }

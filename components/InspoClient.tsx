@@ -36,7 +36,7 @@ import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "
 import ProjectChooser from "./ProjectChooser";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
-import TemplatesView from "./TemplatesView";
+import TemplatesView, { preloadTemplates } from "./TemplatesView";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -882,11 +882,12 @@ export default function InspoClient({
   const [paletteUsed, setPaletteUsed] = useState(false);
   if (paletteOpen && !paletteUsed) setPaletteUsed(true);
   useEffect(() => {
-    const preload = () => { void loadItemPanel(); void loadCommentsPanel(); };
+    // The templates too: Discover opens with its cards already read, not waiting for the server
+    const preload = () => { void loadItemPanel(); void loadCommentsPanel(); void preloadTemplates(workspace.id); };
     if (typeof window.requestIdleCallback !== "function") { const id = setTimeout(preload, 2000); return () => clearTimeout(id); }
     const id = window.requestIdleCallback(preload, { timeout: 4000 });
     return () => window.cancelIdleCallback(id);
-  }, []);
+  }, [workspace.id]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setPaletteOpen((o) => !o); }
@@ -1489,7 +1490,7 @@ export default function InspoClient({
         {space === "discover" || space === "templates" ? (
           // Discover: the directory of places to look, and the templates (whole systems to start a project from)
           <Discover section={space === "templates" ? "templates" : "sites"} onSection={(s) => setSpace(s === "templates" ? "templates" : "discover")}
-            templates={<TemplatesView onStarted={(p) => {
+            templates={<TemplatesView key={workspace.id} workspaceId={workspace.id} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
               window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />} />
