@@ -42,6 +42,7 @@ export const ui = {
     logoHint: "A square image works best. It is shown at 28 pixels.",
     outputLanguage: "Model language",
     outputLanguageHint: "What the model writes for this team comes out in this language: decisions, reasons, summaries. The interface keeps each person's own language.",
+    outputLanguageAdmins: "Only the team's owner and admins can change it.",
     outputLanguagePersonalHint: "What the model writes in your personal space comes out in this language. Each team picks its own.",
     personalSpace: "Personal space",
     personalSpaceHint: "This space is only yours. It takes your name and photo from Account.",

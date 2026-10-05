@@ -40,6 +40,7 @@ export const ui: typeof EnUi = {
     logoHint: "Mejor una imagen cuadrada. Se ve a 28 píxeles.",
     outputLanguage: "Idioma del modelo",
     outputLanguageHint: "Lo que escribe el modelo para este equipo sale en este idioma: decisiones, razones, resúmenes. La interfaz sigue en el idioma de cada persona.",
+    outputLanguageAdmins: "Solo lo cambian el propietario y los admins del equipo.",
     outputLanguagePersonalHint: "Lo que escribe el modelo en tu espacio personal sale en este idioma. Cada equipo elige el suyo.",
     personalSpace: "Espacio personal",
     personalSpaceHint: "Este espacio es solo tuyo. Toma tu nombre y tu foto de Cuenta.",

@@ -129,6 +129,8 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
             <span>{t.settings.language}</span>
             <OutputLanguageSwitch workspaceId={workspace.id} value={workspace.outputLanguage} disabled={!canManage} onError={setError} />
           </div>
+          {/* A switch that does nothing needs a reason: members can see the language, not change it */}
+          {!canManage && <p className="card-note">{t.settings.outputLanguageAdmins}</p>}
         </CardContent>
       </Card>
 
