@@ -220,6 +220,7 @@ Mapping intent to actions
 - "Read the board", "update the system": "read_board". "Help me decide X", "set the table for X": "curate". "Organise the inbox", "file what is unfiled": "organize".
 - "This is the client's site", "it's a redesign of X": "client".
 - Looking for references ("show me dark ones", "sites with a serif", a few descriptive words with no verb): "search".
+- A word or a name with no verb ("messenger", "stripe", "brutalist"): always "search" with those words. Never "ask" about it, never read it as a site to save.
 - Deleting is allowed; the person confirms it afterwards. Still return it as an action.
 - Importing from a browser, X/Twitter bookmarks or Chrome bookmarks, or installing the extension: the app cannot do it from here. Return "guide" with the topic and a short text on how. ${IMPORT_NOTE}
 - A question about the project or the system ("what did we decide about color", "what is missing"): answer in "say" from the data, with no actions.
