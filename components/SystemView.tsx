@@ -29,9 +29,10 @@ import { mediaKindOf } from "@/lib/url";
 import "./SystemView.css";
 
 type View = "presentation" | "markdown";
-const VIEW_KEY = "criterio.system.view";
+// v2: criterio.md became the default, so an older remembered choice does not hide it
+const VIEW_KEY = "criterio.system.view.v2";
 function useView(): [View, (v: View) => void] {
-  const [view, setView] = useState<View>("presentation");
+  const [view, setView] = useState<View>("markdown");
   useEffect(() => { try { const v = localStorage.getItem(VIEW_KEY); if (v === "markdown" || v === "presentation") setView(v); } catch { /* the default stands */ } }, []);
   return [view, (v) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* only this visit */ } }];
 }
@@ -210,7 +211,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   const views = (
     <div className="spage-views" role="tablist" aria-label={t.brand.guidelines}>
-      {(["presentation", "markdown"] as const).map((v) => (
+      {(["markdown", "presentation"] as const).map((v) => (
         <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "is-on" : ""} onClick={() => setView(v)}>{t.brand.views[v]}</button>
       ))}
     </div>

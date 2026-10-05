@@ -56,7 +56,8 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
-  const [mode, setMode] = useState<"doc" | "md">("md");
+  // The file opens set as a document; its raw Markdown is one tab away
+  const [mode, setMode] = useState<"doc" | "md">("doc");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const areaBlocks = blocks.filter((b): b is AreaBlock => b.kind === "area");
@@ -137,8 +138,8 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const tools = (
     <header className="sdoc-tools">
       <div className="tt-modes" role="tablist" aria-label="criterio.md">
-        <button type="button" role="tab" aria-selected={mode === "md"} className={`tt-mode${mode === "md" ? " is-on" : ""}`} onClick={() => setMode("md")}>{s.markdown}</button>
         <button type="button" role="tab" aria-selected={mode === "doc"} className={`tt-mode${mode === "doc" ? " is-on" : ""}`} onClick={() => setMode("doc")}>{s.document}</button>
+        <button type="button" role="tab" aria-selected={mode === "md"} className={`tt-mode${mode === "md" ? " is-on" : ""}`} onClick={() => setMode("md")}>{s.markdown}</button>
       </div>
     </header>
   );
