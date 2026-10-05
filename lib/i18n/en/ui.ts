@@ -266,6 +266,7 @@ export const ui = {
     archiveOf: (name: string): string => `${name} · Archive`,
     newProject: "New project",
     more: (n: number): string => `${n} more`,
+    seeAll: (n: number): string => `See all ${n} projects`,
     others: "Other projects",
     namePlaceholder: "Project name",
     options: (name: string): string => `Options for ${name}`,
