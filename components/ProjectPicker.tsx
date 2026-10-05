@@ -1,10 +1,10 @@
 "use client";
 // "Add to project" from a card: a checklist of the workspace's projects (a reference can be in several)
-// and, at the bottom, a field that creates a project and files the card in it in one go. Each project opens
-// onto the eight areas of its system: one tap files the reference in the project and under that area at once.
-import { useEffect, useState, type ReactNode } from "react";
+// and, on top, one field that finds a project or creates it and files the card in it in one go. A tap on a row
+// files or unfiles it.
+import { useRef, useState, type ReactNode } from "react";
 import type { Project } from "@/types/inspo";
-import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
+import type { SystemArea } from "@/types/system";
 import { areaIcon } from "./area-icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
@@ -16,44 +16,49 @@ export const IconFolder = (
   </svg>
 );
 
-export default function ProjectPicker({ projects, filed, onToggle, onCreate, onOpenChange, className, label, children, areasIn, onToggleArea }: {
+export default function ProjectPicker({ projects, filed, partly = [], onToggle, onCreate, onOpenChange, className, label, children, areasIn, side, closeOnPick }: {
   projects: Project[];
-  /** Ids of the projects this reference is already in */
+  /** Ids of the projects this reference is already in (with several selected: the ones all of them are in) */
   filed: string[];
+  /** With several selected: the projects only some of them are in */
+  partly?: string[];
   onToggle: (projectId: string, on: boolean) => void;
   onCreate: (name: string) => Promise<void>;
   onOpenChange?: (open: boolean) => void;
   className: string;
   label: string;
   children: ReactNode;
-  /** The areas this reference backs in each project's system */
+  /** The areas this reference backs in each project's system, shown as their icons */
   areasIn?: Record<string, SystemArea[]>;
-  /** Files it under an area of a project (in the project too, if it was not) */
-  onToggleArea?: (projectId: string, area: SystemArea, on: boolean) => void;
+  /** Above the trigger, for a bar at the bottom of the screen */
+  side?: "top" | "bottom";
+  /** One pick and it closes (moving a selection somewhere) */
+  closeOnPick?: boolean;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
+  // One field: it narrows the list, and a name nobody has yet becomes a new project
+  const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
-  // Two steps, like a phone's menu: first the project, then what it is for there (the areas of its system)
-  const [inside, setInside] = useState<string | null>(null);
-  const [made, setMade] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
   const labels = t.system.areas as Record<SystemArea, string>;
-  const change = (o: boolean) => { setOpen(o); if (!o) { setName(""); setInside(null); } onOpenChange?.(o); };
-  // A project just created opens straight onto its areas
-  useEffect(() => {
-    if (!made) return;
-    const p = projects.find((x) => x.name === made);
-    if (p) { setInside(p.id); setMade(null); }
-  }, [made, projects]);
+  const change = (o: boolean) => { setOpen(o); if (!o) setQuery(""); onOpenChange?.(o); };
 
+  const q = query.trim();
+  const needle = q.toLowerCase();
+  const shown = needle ? projects.filter((p) => p.name.toLowerCase().includes(needle)) : projects;
+  const exact = projects.find((p) => p.name.toLowerCase() === needle);
   const create = async () => {
-    const n = name.trim();
-    if (!n || busy) return;
+    if (!q || busy) return;
     setBusy(true);
-    try { await onCreate(n); setName(""); if (onToggleArea) setMade(n); } finally { setBusy(false); }
+    try { await onCreate(q); setQuery(""); if (closeOnPick) change(false); } finally { setBusy(false); }
   };
-  const project = inside ? projects.find((p) => p.id === inside) : undefined;
+  const pick = (id: string, on: boolean) => { onToggle(id, on); if (closeOnPick) change(false); };
+  // Enter on a name that exists files it there; on a new one, makes it
+  const submit = () => {
+    if (exact) pick(exact.id, !filed.includes(exact.id));
+    else if (q) create();
+  };
 
   return (
     <Popover open={open} onOpenChange={change}>
@@ -61,74 +66,47 @@ export default function ProjectPicker({ projects, filed, onToggle, onCreate, onO
         {children}
       </PopoverTrigger>
       {/* Clicks inside the portal still bubble through React to the card: stopped here */}
-      <PopoverContent align="end" className={`pp${onToggleArea ? " pp--steps" : ""}`} onClick={(e) => e.stopPropagation()}>
-        {project && onToggleArea ? (() => {
-          const on = filed.includes(project.id);
-          const areas = areasIn?.[project.id] ?? [];
-          return (
-            <div className="pp-step" key={project.id}>
-              <button type="button" className="pp-step__back" onClick={() => setInside(null)}>
-                <span className="pp-step__chev is-back" aria-hidden>{Icons.chevron}</span>
-                <span className="pp-step__title">{project.name}</span>
-              </button>
-              <button type="button" className={`pp-in${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => onToggle(project.id, !on)}>
-                <span className="pp__icon" aria-hidden>{IconFolder}</span>
-                <span className="pp-in__text">{on ? t.projects.inProject : t.projects.addToProject}</span>
-                <i className="pp-in__switch" aria-hidden />
-              </button>
-              <p className="pp-step__ask">{t.projects.whatFor}</p>
-              <div className="pp-areas">
-                {SYSTEM_AREAS.map((k) => {
-                  const has = areas.includes(k);
-                  return (
-                    <button key={k} type="button" className={`pp-area${has ? " is-on" : ""}`} aria-pressed={has} onClick={() => onToggleArea(project.id, k, !has)}>
-                      <span className="pp-area__icon">{has ? Icons.check : areaIcon(k, 15)}</span>
-                      <span className="pp-area__name">{labels[k]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <button type="button" className="pp-step__done" onClick={() => change(false)}>{t.projects.done}</button>
-            </div>
-          );
-        })() : (
+      <PopoverContent align="end" side={side} className="pp pp--pick" onClick={(e) => e.stopPropagation()}
+        initialFocus={(type) => (type === "touch" ? true : input.current)}>
+        <form className="pp-search" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+          <span className="pp-search__icon" aria-hidden>{busy ? <span className="spinner spinner--sm" /> : Icons.search}</span>
+          <input
+            ref={input}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.projects.findOrCreate}
+            aria-label={t.projects.findOrCreate}
+            maxLength={60}
+            disabled={busy}
+          />
+        </form>
+        {projects.length === 0 && !q && <div className="pp__none">{t.projects.none}</div>}
+        {shown.length > 0 && (
+          <div className="pp__list">
+            {shown.map((p) => {
+              const on = filed.includes(p.id);
+              const some = !on && partly.includes(p.id);
+              const areas = areasIn?.[p.id] ?? [];
+              return (
+                <div key={p.id} className={`pp-row${on ? " is-on" : ""}${some ? " is-some" : ""}`}>
+                  <button type="button" className="pp-row__toggle" aria-pressed={some ? "mixed" : on} onClick={() => pick(p.id, !on)}>
+                    <span className="pp-row__folder" aria-hidden>{IconFolder}</span>
+                    <span className="pp-row__name">{p.name}</span>
+                    {areas.length > 0 && <span className="pp-proj__areas" aria-label={areas.map((k) => labels[k]).join(", ")}>{areas.slice(0, 3).map((k) => <i key={k}>{areaIcon(k, 11)}</i>)}{areas.length > 3 && <b>+{areas.length - 3}</b>}</span>}
+                    <span className="pp-row__check" aria-hidden>{on ? Icons.check : some && <i className="pp-row__dash" />}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {q && !exact && (
           <>
-            <div className="ws__section">{t.projects.fileIn}</div>
-            {projects.length === 0 && <div className="pp__none">{t.projects.none}</div>}
-            <div className="pp__list">
-              {projects.map((p) => {
-                const on = filed.includes(p.id);
-                const areas = areasIn?.[p.id] ?? [];
-                return onToggleArea ? (
-                  // The row says where it already is (the areas, as their icons) and leads inside
-                  <button key={p.id} type="button" className={`ws__item pp-proj${on ? " is-active" : ""}`} onClick={() => setInside(p.id)}>
-                    <span className="pp__icon" aria-hidden>{on ? Icons.check : IconFolder}</span>
-                    <span className="ws__item-name">{p.name}</span>
-                    {areas.length > 0 && <span className="pp-proj__areas" aria-label={areas.map((k) => labels[k]).join(", ")}>{areas.slice(0, 4).map((k) => <i key={k}>{areaIcon(k, 11)}</i>)}{areas.length > 4 && <b>+{areas.length - 4}</b>}</span>}
-                    <span className="pp-step__chev" aria-hidden>{Icons.chevron}</span>
-                  </button>
-                ) : (
-                  <button key={p.id} type="button" className={`ws__item${on ? " is-active" : ""}`} aria-pressed={on} onClick={() => onToggle(p.id, !on)}>
-                    <span className="pp__icon" aria-hidden>{IconFolder}</span>
-                    <span className="ws__item-name">{p.name}</span>
-                    {on && <span className="ws__item-check">{Icons.check}</span>}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="ws__divider" />
-            <form className="pp__new" onSubmit={(e) => { e.preventDefault(); create(); }}>
-              <span className="ws__plus" aria-hidden>{busy ? <span className="spinner spinner--sm" /> : Icons.plus}</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t.projects.newProject}
-                aria-label={t.projects.namePlaceholder}
-                maxLength={60}
-                disabled={busy}
-              />
-              {name.trim() && <button type="submit" className="pp__create" disabled={busy}>{t.projects.create(name.trim())}</button>}
-            </form>
+            {shown.length > 0 && <div className="ws__divider" />}
+            <button type="button" className="pp-row__toggle pp-new" onClick={create} disabled={busy}>
+              <span className="ws__plus" aria-hidden>{Icons.plus}</span>
+              <span className="pp-row__name">{t.projects.create(q)}</span>
+            </button>
           </>
         )}
       </PopoverContent>

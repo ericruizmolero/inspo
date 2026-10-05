@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { DEFAULT_PLAN, isPlanKey, type PlanKey } from "./plans";
 import type { Locale } from "./i18n/locale";
+import { toOutputLanguage, type OutputLanguage } from "./output-language";
 
 export type WorkspaceKind = "personal" | "team";
 export type Role = "owner" | "admin" | "member";
@@ -18,6 +19,8 @@ export interface Workspace {
   logo: string | null;
   /** SaaS plan (organization.plan) */
   plan: PlanKey;
+  /** The language the model writes in for this workspace (organization.output_language) */
+  outputLanguage: OutputLanguage;
 }
 
 export interface SessionUser { id: string; name: string; email: string; image?: string | null; language: Locale }
@@ -52,7 +55,7 @@ export function slugify(s: string): string {
 }
 
 /** Creates the user's personal workspace if they don't have one yet. Returns its id. */
-export async function ensurePersonalWorkspace(userId: string, name: string, email: string): Promise<string> {
+export async function ensurePersonalWorkspace(userId: string, name: string, email: string, language?: string): Promise<string> {
   const rows = await db
     .select({ id: schema.organization.id })
     .from(schema.member)
@@ -69,6 +72,7 @@ export async function ensurePersonalWorkspace(userId: string, name: string, emai
     slug: `p-${userId.slice(0, 8)}-${newId().slice(0, 6)}`,
     createdAt: now,
     kind: "personal",
+    outputLanguage: toOutputLanguage(language),
   });
   await db.insert(schema.member).values({ id: newId(), organizationId: id, userId, role: "owner", createdAt: now });
   return id;
@@ -78,13 +82,13 @@ export async function listWorkspaces(userId: string): Promise<Workspace[]> {
   const rows = await db
     .select({
       id: schema.organization.id, name: schema.organization.name, slug: schema.organization.slug, logo: schema.organization.logo,
-      kind: schema.organization.kind, plan: schema.organization.plan, role: schema.member.role, createdAt: schema.organization.createdAt,
+      kind: schema.organization.kind, plan: schema.organization.plan, outputLanguage: schema.organization.outputLanguage, role: schema.member.role, createdAt: schema.organization.createdAt,
     })
     .from(schema.member)
     .innerJoin(schema.organization, eq(schema.member.organizationId, schema.organization.id))
     .where(eq(schema.member.userId, userId));
   return rows
-    .map((r) => ({ id: r.id, name: r.name, slug: r.slug, logo: r.logo ?? null, kind: r.kind as WorkspaceKind, plan: planKey(r.plan), role: (r.role.split(",")[0] as Role) ?? "member", createdAt: r.createdAt }))
+    .map((r) => ({ id: r.id, name: r.name, slug: r.slug, logo: r.logo ?? null, kind: r.kind as WorkspaceKind, plan: planKey(r.plan), outputLanguage: toOutputLanguage(r.outputLanguage), role: (r.role.split(",")[0] as Role) ?? "member", createdAt: r.createdAt }))
     .sort((a, b) => (a.kind === b.kind ? +a.createdAt - +b.createdAt : a.kind === "personal" ? -1 : 1))
     .map(({ createdAt: _c, ...w }) => w);
 }

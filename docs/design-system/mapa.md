@@ -44,6 +44,7 @@ Se da acceso con `npm run admin -- <correo>`.
 | --- | --- |
 | `/login` | Acceso con collage fijo; con sesión, salta a `next` |
 | `/invite/[id]` | Aceptar una invitación (pasa el proxy, pero la página pide sesión) |
+| `/s/[token]` | La marca de un proyecto compartida por enlace, de solo lectura, con criterio.md para copiar o descargar. El token es la prueba; no se indexa |
 | `/extension/privacy` | Privacidad de la extensión, enlazada desde la Chrome Web Store |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
 

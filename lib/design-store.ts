@@ -6,6 +6,7 @@ import { createHash } from "crypto";
 import { makeCanvasCopies, colorOfStored } from "./page-shots";
 
 import type { DesignSpec } from "@/types/design";
+import { svgIsSafe } from "./brand-files";
 
 export interface DesignMdEntry {
   url: string;
@@ -17,6 +18,7 @@ export interface DesignMdEntry {
   coverUrl?: string;          // 720x450, grid cover
   scrollUrl?: string;         // 720px wide, strip for the grid hover
   logoUrl?: string;           // png of the logo as it sits on the page, at 2x (missing when none was found)
+  logoSvgUrl?: string;        // the logo as its own svg, colours baked in, when the page draws it as one
   shotH?: number;             // height of screenshotUrl in px (1440 wide): the canvas sizes the card before it loads
   topUrl?: string;            // the top of the page (cut at twice its width) at 1440, 720 and 288px: the canvas
   tileUrl?: string;
@@ -26,7 +28,7 @@ export interface DesignMdEntry {
   fontFiles?: { family: string; formats: string[] }[]; // the file format each @font-face family is served in
 }
 
-export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer; logo?: Buffer | null }
+export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer; logo?: Buffer | null; logoSvg?: string | null }
 
 export interface DesignMdIndexEntry {
   generatedAt: string; model: string; coverUrl?: string; scrollUrl?: string;
@@ -54,8 +56,8 @@ export function keyFor(url: string): string {
 
 const entryKey = (key: string) => `${DESIGN_MD_PREFIX}${key}.json`;
 
-async function saveImage(key: string, suffix: string, data: Buffer, ext: "jpg" | "png" = "jpg"): Promise<string> {
-  return putFile(`${DESIGN_MD_PREFIX}${key}${suffix}-${Date.now()}.${ext}`, data, ext === "png" ? "image/png" : "image/jpeg");
+async function saveImage(key: string, suffix: string, data: Buffer, ext: "jpg" | "png" | "svg" = "jpg"): Promise<string> {
+  return putFile(`${DESIGN_MD_PREFIX}${key}${suffix}-${Date.now()}.${ext}`, data, ext === "png" ? "image/png" : ext === "svg" ? "image/svg+xml" : "image/jpeg");
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -109,7 +111,7 @@ async function canvasShots(key: string, fullShot: Buffer): Promise<Pick<DesignMd
   catch (e) { console.warn("design-store canvas shots:", e); return {}; }
 }
 
-const imagesOf = (e: DesignMdEntry | null) => e ? [e.screenshotUrl, e.coverUrl, e.scrollUrl, e.logoUrl, e.topUrl, e.tileUrl, e.thumbUrl] : [];
+const imagesOf = (e: DesignMdEntry | null) => e ? [e.screenshotUrl, e.coverUrl, e.scrollUrl, e.logoUrl, e.logoSvgUrl, e.topUrl, e.tileUrl, e.thumbUrl] : [];
 
 /** Deletes the design images `before` had that `after` no longer points at */
 async function dropReplaced(before: DesignMdEntry | null, after: DesignMdEntry) {
@@ -131,6 +133,8 @@ export async function saveDesignMd(entry: DesignMdEntry, images?: DesignImages):
     ]);
     Object.assign(entry, { screenshotUrl, coverUrl, scrollUrl, shotH: undefined, topUrl: undefined, tileUrl: undefined, thumbUrl: undefined, color: undefined }, shots);
     entry.logoUrl = images.logo ? await saveImage(key, "-logo", images.logo, "png") : undefined;
+    // Kept only when it is a plain drawing: it is shown to people outside the team through a brand's share
+    entry.logoSvgUrl = images.logoSvg && svgIsSafe(images.logoSvg) ? await saveImage(key, "-logo", Buffer.from(images.logoSvg), "svg") : undefined;
   }
   await putJson(entryKey(key), entry);
 

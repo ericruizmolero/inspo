@@ -2,7 +2,6 @@
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import gsap from "gsap";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
@@ -15,7 +14,7 @@ import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import "./ProjectChooser.css";
 
 /** The empty box's placeholder, taking turns between what a project can be: word by word, each one rises a little
- *  and leaves upwards (GSAP, a short stagger). Drawn over the input (a native placeholder cannot animate); with reduced
+ *  and leaves upwards (WAAPI, a short stagger). Drawn over the input (a native placeholder cannot animate); with reduced
  *  motion it stays on the first */
 const EXAMPLE_HOLD = 2.6;
 function Examples({ list }: { list: readonly string[] }) {
@@ -29,13 +28,21 @@ function Examples({ list }: { list: readonly string[] }) {
   useLayoutEffect(() => {
     const box = ref.current;
     if (!box || list.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const chars = box.querySelectorAll(".chooser__char");
-    const tl = gsap.timeline();
+    const chars = Array.from(box.querySelectorAll<HTMLElement>(".chooser__char"));
+    const runs: Animation[] = [];
     // The first one is there when the screen opens; the next ones come in
-    if (shown.current) tl.from(chars, { yPercent: 40, opacity: 0, duration: 0.55, ease: "power3.out", stagger: 0.035 });
-    tl.to(chars, { yPercent: -40, opacity: 0, duration: 0.35, ease: "power2.in", stagger: 0.02 }, `+=${EXAMPLE_HOLD}`)
-      .call(() => { shown.current = true; setI(next); });
-    return () => { tl.kill(); };
+    const entering = shown.current ? 550 + (chars.length - 1) * 35 : 0;
+    if (shown.current) chars.forEach((c, k) => runs.push(c.animate(
+      [{ transform: "translateY(40%)", opacity: 0 }, { transform: "none", opacity: 1 }],
+      { duration: 550, delay: k * 35, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "backwards" })));
+    const timer = window.setTimeout(() => {
+      const out = chars.map((c, k) => c.animate(
+        [{ transform: "none", opacity: 1 }, { transform: "translateY(-40%)", opacity: 0 }],
+        { duration: 350, delay: k * 20, easing: "cubic-bezier(0.55, 0, 1, 0.45)", fill: "forwards" }));
+      runs.push(...out);
+      out[out.length - 1]?.finished.then(() => { shown.current = true; setI(next); }, () => { /* cancelled: a new list or the box filled */ });
+    }, entering + EXAMPLE_HOLD * 1000);
+    return () => { window.clearTimeout(timer); runs.forEach((a) => a.cancel()); };
   }, [i, list]);
   return (
     <span ref={ref} className="chooser__example" aria-hidden>

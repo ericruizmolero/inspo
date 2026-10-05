@@ -5,11 +5,10 @@
 // skills for agents, a list of their own.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import gsap from "gsap";
 import { DIRECTORY, SKILLS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icons } from "./Sidebar";
-import { directory as enDirectory } from "@/lib/i18n/en/directory";
+import type { directory as enDirectory } from "@/lib/i18n/en/directory";
 import { useT } from "./I18nProvider";
 import DiscoverSkills from "./DiscoverSkills";
 import "./Discover.css";
@@ -93,57 +92,80 @@ export default function Discover({ section = "sites", onSection, templates }: {
 
 /** The list: the directory group by group, in its own order, each with what it is for; one line per site */
 // The peek: a small picture of the site's hero that follows the pointer over the list. One for the whole list; the
-// rows only change its picture. Mouse only (a touch opens the site straight away); with reduced motion it stays put
-// beside the pointer and only fades
+// rows only change its picture. It trails the pointer (eased each frame), grows in and fades out with WAAPI. Mouse
+// only (a touch opens the site straight away); with reduced motion it sits beside the pointer and only fades
 const PEEK_W = 216;
 const PEEK_H = 135;
 const PEEK_GAP = 20;
 const PEEK_EDGE = 12;
-type Follow = (value: number, start?: number) => void;
+/** Share of the distance to the pointer covered per 60 Hz frame */
+const PEEK_TRAIL = 0.16;
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+const EASE_IN = "cubic-bezier(0.55, 0, 1, 0.45)";
+const still = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function usePeek() {
   const box = useRef<HTMLDivElement>(null);
   const img = useRef<HTMLImageElement>(null);
-  const follow = useRef<{ x: Follow; y: Follow } | null>(null);
+  const pos = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
+  const frame = useRef(0);
+  const fade = useRef<Animation | null>(null);
   const shown = useRef(false);
   const [mounted, setMounted] = useState(false);
   useLayoutEffect(() => setMounted(true), []);
-  useLayoutEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.set(el, { autoAlpha: 0, scale: still ? 1 : 0.85 });
-    const d = still ? 0 : 0.55;
-    follow.current = { x: gsap.quickTo(el, "x", { duration: d, ease: "power3" }), y: gsap.quickTo(el, "y", { duration: d, ease: "power3" }) };
-    return () => { gsap.killTweensOf(el); follow.current = null; };
-  }, [mounted]);
+  useLayoutEffect(() => () => cancelAnimationFrame(frame.current), []);
 
+  const paint = () => { const p = pos.current; if (box.current) box.current.style.translate = `${p.x}px ${p.y}px`; };
+  const trail = () => {
+    let last = performance.now();
+    const step = (now: number) => {
+      const p = pos.current;
+      const k = 1 - Math.pow(1 - PEEK_TRAIL, (now - last) / 16.67);
+      last = now;
+      p.x += (p.tx - p.x) * k; p.y += (p.ty - p.y) * k;
+      if (Math.abs(p.tx - p.x) < 0.3 && Math.abs(p.ty - p.y) < 0.3) { p.x = p.tx; p.y = p.ty; frame.current = 0; }
+      else frame.current = requestAnimationFrame(step);
+      paint();
+    };
+    frame.current = requestAnimationFrame(step);
+  };
   // Beside the pointer, on its left near the right edge, and never out of the window
   const place = (e: React.PointerEvent, jump = false) => {
-    const f = follow.current;
-    if (!f) return;
-    const x = e.clientX + PEEK_GAP + PEEK_W > window.innerWidth - PEEK_EDGE ? e.clientX - PEEK_GAP - PEEK_W : e.clientX + PEEK_GAP;
-    const y = Math.min(Math.max(e.clientY - PEEK_H / 2, PEEK_EDGE), window.innerHeight - PEEK_H - PEEK_EDGE);
-    if (jump) { f.x(x, x); f.y(y, y); } else { f.x(x); f.y(y); }
+    const p = pos.current;
+    p.tx = e.clientX + PEEK_GAP + PEEK_W > window.innerWidth - PEEK_EDGE ? e.clientX - PEEK_GAP - PEEK_W : e.clientX + PEEK_GAP;
+    p.ty = Math.min(Math.max(e.clientY - PEEK_H / 2, PEEK_EDGE), window.innerHeight - PEEK_H - PEEK_EDGE);
+    if (jump || still()) { cancelAnimationFrame(frame.current); frame.current = 0; p.x = p.tx; p.y = p.ty; paint(); }
+    else if (!frame.current) trail();
+  };
+  // From wherever the last one left it, so a quick in-and-out never jumps
+  const fadeTo = (on: boolean) => {
+    const el = box.current;
+    if (!el) return;
+    const now = getComputedStyle(el);
+    const from = { opacity: now.opacity, transform: now.transform === "none" ? "scale(1)" : now.transform };
+    fade.current?.cancel();
+    const small = still() ? "scale(1)" : "scale(0.85)";
+    fade.current = el.animate([from, on ? { opacity: 1, transform: "scale(1)" } : { opacity: 0, transform: small }],
+      { duration: on ? 400 : 200, easing: on ? EASE_OUT : EASE_IN, fill: "forwards" });
   };
   const hide = () => {
-    if (!shown.current || !box.current) return;
+    if (!shown.current) return;
     shown.current = false;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    gsap.to(box.current, { autoAlpha: 0, scale: still ? 1 : 0.85, duration: 0.2, ease: "power2.in", overwrite: "auto" });
+    fadeTo(false);
   };
   const show = (e: React.PointerEvent, url: string) => {
-    const el = box.current, pic = img.current;
-    if (e.pointerType !== "mouse" || !el || !pic) return;
+    const pic = img.current;
+    if (e.pointerType !== "mouse" || !pic) return;
     const src = siteShot(url);
     if (pic.getAttribute("src") !== src) {
       pic.src = src;
       // A new picture settles in from a touch closer
-      if (shown.current && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) gsap.fromTo(pic, { scale: 1.08 }, { scale: 1, duration: 0.5, ease: "power3.out", overwrite: true });
+      if (shown.current && !still()) pic.animate([{ transform: "scale(1.08)" }, { transform: "scale(1)" }], { duration: 500, easing: EASE_OUT });
     }
-    if (!shown.current) place(e, true);
+    if (shown.current) return;
+    place(e, true);
     shown.current = true;
-    gsap.to(el, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "power3.out", overwrite: "auto" });
+    fadeTo(true);
   };
   // The pictures of a group load as soon as the pointer comes into it, so the next row's is already there
   const warm = (urls: string[]) => { for (const u of urls) new Image().src = siteShot(u); };

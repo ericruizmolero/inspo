@@ -11,6 +11,7 @@ import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail"
 import { isLocale, DEFAULT_LOCALE, localeFromCookieHeader, localeForNewUser, type Locale } from "./i18n/locale";
 import { getErrors } from "./i18n";
 import { planOf, DEFAULT_PLAN } from "./plans";
+import { toOutputLanguage, DEFAULT_OUTPUT_LANGUAGE } from "./output-language";
 import { collectItemFiles, dropUnusedFiles, type ItemFiles } from "./item-files";
 import { eq } from "drizzle-orm";
 
@@ -159,6 +160,9 @@ export const auth = betterAuth({
           additionalFields: {
             kind: { type: "string", required: false, input: false, defaultValue: "team" },
             plan: { type: "string", required: false, input: false, defaultValue: DEFAULT_PLAN },
+            // The language the model writes in: the creator's on creation (beforeCreateOrganization),
+            // then setOutputLanguage (app/actions/workspace.ts)
+            outputLanguage: { type: "string", required: false, input: false, defaultValue: DEFAULT_OUTPUT_LANGUAGE },
           },
         },
       },
@@ -183,6 +187,10 @@ export const auth = betterAuth({
         }
       },
       organizationHooks: {
+        // A new team writes in its creator's language until someone changes it
+        async beforeCreateOrganization({ organization: org, user }) {
+          return { data: { ...org, outputLanguage: toOutputLanguage((user as { language?: unknown }).language) } };
+        },
         // The database cascade removes every row of the workspace, but not its files in storage:
         // their URLs are read before the delete and the files dropped after it
         async beforeDeleteOrganization({ organization: org }) {

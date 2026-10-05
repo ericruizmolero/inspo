@@ -2,9 +2,6 @@
    Set for reading: one column, the app's own type, weight and colour for hierarchy, room between the parts
    instead of lines. */
 .sdoc { display: flex; align-items: flex-start; gap: 40px; width: 100%; max-width: 1080px; margin: 8px auto 0; }
-/* The page says what the project is: the line under the title would say it twice */
-.sysb-inner:has(.sdoc) .sysb-intent { display: none; }
-
 .sdoc-toc { position: sticky; top: 0; flex: 0 0 188px; display: flex; flex-direction: column; gap: 1px; padding-top: 4px; }
 .sdoc-toc button { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .sdoc-toc button:hover { background: var(--surface); color: var(--text); }
@@ -131,16 +128,6 @@
 .mdv-team:empty { display: none; }
 .sdoc-proposal p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text); }
 .sdoc-proposal p.sdoc-why { color: var(--text-2); }
-
-/* ─── The page's head, now that the file is the page: the project's name centred with air under the bars; what
-   the file's own bar already does (copy, download) and the polish percentage are not repeated here ─── */
-/* The title sits over the file's column: left, past the index, as the page below it */
-.sysb-inner:has(.sdoc) .sysb-head { position: relative; align-items: center; justify-content: space-between; width: 100%; max-width: 1080px; margin: 34px auto 22px; padding-left: 228px; text-align: left; }
-.sysb-inner:has(.sdoc) .sysb-head__text { display: flex; flex-direction: column; align-items: flex-start; }
-.sysb-inner:has(.sdoc) .sysb-title { font-size: clamp(30px, 3.4vw, 46px); }
-.sysb-inner:has(.sdoc) .sysb-head__side { position: static; transform: none; }
-.sysb-inner:has(.sdoc) .sysn-core__state, .sysb-inner:has(.sdoc) .sysn-core__file { display: none; }
-@media (max-width: 900px) { .sysb-inner:has(.sdoc) .sysb-head { padding-left: 0; flex-direction: column; align-items: flex-start; } }
 
 /* ─── Working on the file. Writing is the default: the parts people write (what the project is, an area's
    decision, why and never) are typed in place, the caret where the text was pressed. Commenting is a tool:

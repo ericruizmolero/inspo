@@ -1,11 +1,12 @@
 // Runs the "why it's here" builder against a site that already has a local DESIGN.md,
 // with the voices from the local database. Not a test: prints what the model returns.
-//   npx tsx --conditions=react-server --env-file=.env.local scripts/check-why.ts <url> [org] [--voice "text"] [--probe-only]
+//   npx tsx --conditions=react-server --env-file=.env.local scripts/check-why.ts <url> [org] [--voice "text"] [--lang fr] [--probe-only]
 import { promises as fs } from "fs";
 import path from "path";
 import { buildWhy, type Voice } from "../lib/design-why";
 import { probeSite, listCandidates } from "../lib/design-probe";
 import { keyFor } from "../lib/design-store";
+import { toOutputLanguage } from "../lib/output-language";
 import { db, schema } from "../lib/db";
 import { and, asc, eq } from "drizzle-orm";
 
@@ -15,6 +16,7 @@ const url = args[0];
 const org = (args[1] && !args[1].startsWith("--")) ? args[1] : "1699aa83b7bc47cdb5b4d94c";
 const manual = args.includes("--voice") ? args[args.indexOf("--voice") + 1] : null;
 const probeOnly = args.includes("--probe-only");
+const language = toOutputLanguage(args.includes("--lang") ? args[args.indexOf("--lang") + 1] : "es");
 if (args.includes("--candidates")) { for (const c of await listCandidates(url)) if (c.role === "landmark" || c.box.x < 300) console.log(JSON.stringify(c)); return; }
 if (!url) throw new Error("url?");
 
@@ -42,7 +44,7 @@ const key = keyFor(url);
 const entry = JSON.parse(await fs.readFile(path.join("public/design-md", `${key}.json`), "utf-8"));
 const screenshot = await fs.readFile(path.join("public/design-md", `${key}.jpg`)).catch(() => null);
 const t0 = Date.now();
-const r = await buildWhy({ spec: entry.spec, url, voices, screenshot, probe, shotUrls, locale: "es" });
+const r = await buildWhy({ spec: entry.spec, url, voices, screenshot, probe, shotUrls, language });
 console.log(`${r.model} ${Date.now() - t0}ms cost ${r.costUsd}`);
 console.log(JSON.stringify(r.why, null, 2));
 }

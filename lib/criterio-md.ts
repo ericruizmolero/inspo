@@ -12,6 +12,8 @@
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
 import { skillSections } from "@/lib/md-skills";
 import { readableDomain } from "@/lib/url";
+import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
+import type { BrandSpec } from "@/types/brand";
 
 /** A reference as the file tells it: what it is, who brought it and what the team said about it */
 export interface RefInfo {
@@ -52,11 +54,19 @@ export interface CriterioMdInput {
   skills?: readonly string[];
   /** The language the skills' sections are written in */
   locale?: string;
+  /** The brand as values: each area gets its tables, and the file ends with the tokens */
+  brand?: BrandSpec | null;
+  /** "clean": the file for someone outside the team (a client, through a share link): no conversation, no names, no
+   *  pictures attached to comments, and none of the parts the team rewrote by hand. "full" (the default): everything */
+  mode?: "full" | "clean";
+  /** A stored file's whole address (a logo), as this reader can open it */
+  fileHref?: (key: string) => string;
   strings: {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
     project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string; pinned: string;
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
     proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
+    brand: BrandMdStrings;
   };
 }
 
@@ -82,24 +92,23 @@ export type CriterioBlock =
     meta: string[];
     /** The team rewrote the status and references by hand */
     metaEdited?: boolean;
+    /** The brand's values for this area (a palette, a scale, the curves), as lines. Written by the presentation, read only here */
+    tokens?: string[];
   };
 
 const one = (s: string) => s.replace(/\s+/g, " ").trim();
 
 /** A text's own headings go below its entry's (### R4 · …), so the file keeps its outline */
 const lowerHeadings = (text: string) => text.split("\n").map((l) => l.replace(/^#{1,3}(?=\s)/, "####"));
-/** The other way, for a text typed over in the file: a heading that is still there goes back to the level it
- *  had in the text as it was kept; one written new stays as typed */
-export function restoreTextHeadings(edited: string, original: string): string {
-  const level = new Map<string, string>();
-  for (const l of original.split("\n")) { const m = l.match(/^(#{1,3})\s+(.*)$/); if (m && !level.has(one(m[2]))) level.set(one(m[2]), m[1]); }
-  if (!level.size) return edited;
-  return edited.split("\n").map((l) => { const m = l.match(/^####\s+(.*)$/); const was = m && level.get(one(m[1])); return was ? `${was} ${m![1]}` : l; }).join("\n");
-}
+// The other way, for a text typed over in the file: lib/text-headings.ts (the board needs it without this whole module)
 const quote = (s: string, max = 280) => { const t = one(s); return `\u00ab${t.length > max ? `${t.slice(0, max - 1).replace(/\s+\S*$/, "")}\u2026` : t}\u00bb`; };
 
-export function criterioBlocks({ project, system, items, labels, strings, client, about, board = [], talk = {}, origin = "", skills = [], locale }: CriterioMdInput): CriterioBlock[] {
+export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
+  // Clean: what each reference is stays; who saved it and what the team said of it do not
+  const clean = mode === "clean";
+  const items = clean ? Object.fromEntries(Object.entries(allItems).map(([id, it]) => [id, { ...it, by: undefined, date: undefined, said: undefined }])) as Record<string, RefInfo> : allItems;
+  const talk = clean ? {} : allTalk;
   const abs = (u: string) => (u.startsWith("/") ? `${origin}${u}` : u);
   // What someone said, and the pictures they attached to say it: the words often point at them ("these 3D…")
   const told = (w: NonNullable<RefInfo["said"]>[number], max: number) => {
@@ -117,9 +126,11 @@ export function criterioBlocks({ project, system, items, labels, strings, client
     return `${code.has(id) ? `**${code.get(id)}** ` : ""}[${it.name}](${abs(it.web)})${kind}`;
   };
   // What the team rewrote by hand stands instead of what the app would write (types/system.ts DOC_PARTS)
-  const doc = system.doc ?? {};
+  const doc: Record<string, string> = clean ? {} : system.doc ?? {};
   // Every heading can be typed over too ("title:<block id>"); emptied, the app's comes back
   const title = (id: string, fallback: string) => doc[`title:${id}`] || fallback;
+  // A section the app writes whole (a skill's, the brand's), typed over by hand: it stays as the team left it until they bring the app's back
+  const byHandOr = (id: string, lines: string[]) => ({ lines: doc[id] ? doc[id].split("\n") : lines, edited: !!doc[id] });
   const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
@@ -149,6 +160,10 @@ export function criterioBlocks({ project, system, items, labels, strings, client
     blocks.push({ kind: "section", id: "content", heading: title("content", strings.content), lines, texts: { intro, items: parts.map((p) => ({ ...p, itemId: items[p.itemId].text === undefined ? "" : p.itemId })) } });
   }
   if (system.summary) blocks.push({ kind: "summary", heading: title("summary", strings.summary), text: system.summary });
+  // The brand in its own words: its statement and what it is, as the presentation opens with them
+  const introLines = brand ? brandIntroLines(brand) : [];
+  if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
+  const href = (key: string) => (fileHref ? fileHref(key) : `${origin}/api/files/${key}`);
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
     const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
@@ -177,11 +192,15 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       }
     }
     const byHand = doc[`meta:${key}`];
-    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand });
+    const tokens = brand ? brandTokenLines(key, brand, strings.brand, { href, cite: (id) => cite(id) }) : [];
+    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}) });
   }
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
   // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
   for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
+  // The values as variables, ready to paste into a project
+  const css = brand ? brandCssLines(brand, project) : [];
+  if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
   // Every reference once, with what it is, what was said of it and what it brings to each area
   // (a text is already whole under Content)
   const refs = board.filter((id) => items[id]?.kind !== "text");
@@ -282,6 +301,7 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
     if (!b.decision) { p(`_${b.openText}_`); p(); }
     else { p(b.decision); p(); if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); } }
     if (b.never) { p(neverMd(b)); p(); }
+    if (b.tokens?.length) { for (const line of b.tokens) p(line); p(); }
     if (b.meta.length) { for (const line of b.meta) p(line); p(); }
   }
   return L.join("\n");

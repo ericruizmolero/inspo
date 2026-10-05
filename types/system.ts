@@ -1,3 +1,4 @@
+import type { BrandSpec } from "./brand";
 // The project's system: what the project has decided about its design, area by area, alive from
 // the first reference. The board feeds it (a model proposes), the team confirms or writes over it,
 // and agents read it as criterio.md. Shared by client and server.
@@ -86,6 +87,8 @@ export interface ProjectSystem {
   run: SystemRun | null;
   /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>") */
   doc?: Record<string, string>;
+  /** The brand as values (types/brand.ts). Only the project's own reading carries it; the sidebar's list does not */
+  brand?: BrandSpec | null;
   /** ISO; null when nothing was ever written */
   updatedAt: string | null;
 }
@@ -101,8 +104,9 @@ export interface SystemFocus { aims: ImproveAim[]; areas: SystemArea[]; note?: s
 
 export const DOC_PARTS = ["head", "refs", "skills", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
 /** Those, and one reference's entry under References ("ref:<item id>"), rewritten from the reference's panel; a heading
- *  ("title:<block id>"), a skill's section ("skill:<id>"), the Content intro and a text's who-said-what ("texthead:<item id>") */
-export const isDocPart = (part: string) => DOC_PARTS.includes(part) || part === "content-intro" || /^(ref|texthead|skill):[\w-]{1,64}$/.test(part) || /^title:[\w:-]{1,72}$/.test(part);
+ *  ("title:<block id>"), a skill's or the brand's section ("skill:<id>", "brand-…"), the Content intro and a text's
+ *  who-said-what ("texthead:<item id>") */
+export const isDocPart = (part: string) => DOC_PARTS.includes(part) || part === "content-intro" || /^(ref|texthead|skill):[\w-]{1,64}$/.test(part) || /^brand-[\w-]{1,32}$/.test(part) || /^title:[\w:-]{1,72}$/.test(part);
 export const DOC_PART_MAX = 60_000;
 
 /** A decision a person writes can run to a few paragraphs (it is typed in the file, with line breaks) */

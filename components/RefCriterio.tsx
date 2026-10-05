@@ -10,7 +10,7 @@ import { saveDocPart } from "@/app/actions/system";
 import { Editable, Line } from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
-import "./SystemStage.css";
+import "./SystemMarkdown.css";
 import "./SystemDoc.css";
 import "./RefCriterio.css";
 

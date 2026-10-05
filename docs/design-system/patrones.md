@@ -9,17 +9,16 @@ Cómo resolvemos problemas que se repiten. Cada patrón enlaza la decisión que 
 | Hover, pulsar, entradas cortas | CSS con las curvas de los tokens | `.btn:active { scale(0.96) }`, `pop-in` |
 | Muchas piezas que cambian de sitio | Transición CSS de `transform` sobre posiciones calculadas | Tarjetas del tablero (`Grid.tsx`) |
 | Una pieza que nace de un punto | WAAPI (`el.animate`) | La ficha crece desde donde se pulsó (`ItemPanel.tsx`) |
-| Cascadas de palabras, gestos | GSAP | Placeholder rotativo de `ProjectChooser` |
 | Cambio de vista completo | View Transitions | Abrir un área en `SystemView` (≥801 px) |
 
-Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay que medir, medir todo antes de animar; nada de GSAP Flip sobre muchos elementos (1,5 s de congelación con 286 tarjetas); respetar `prefers-reduced-motion` (se deja solo el fundido). Si se usa `clearProps` de GSAP, nunca `"all"`. → [cortina](decisiones/2026-09-24-cortina-sidebar-waapi.md), [tablero](decisiones/2026-10-01-masonry-ventanada-sin-flip.md)
+Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay que medir, medir todo antes de animar; nada de GSAP Flip sobre muchos elementos (1,5 s de congelación con 286 tarjetas); respetar `prefers-reduced-motion` (se deja solo el fundido). GSAP ya no está en el proyecto. → [cortina](decisiones/2026-09-24-cortina-sidebar-waapi.md), [tablero](decisiones/2026-10-01-masonry-ventanada-sin-flip.md)
 
 ## Listas largas
 
 - **El layout son números**: columna y desplazamiento salen del ratio de cada tarjeta (índice o medida previa); ninguna tarjeta se mide para colocarse.
 - **Ventanado**: solo se montan las tarjetas a ±1 pantalla del viewport; un tablero de 3000 cuesta lo que unas pocas pantallas.
 - **Tres copias de cada captura** (288, 720 y 1440 px): cada tarjeta pide la que su ancho en pantalla necesita.
-- Componentes de lista memoizados con handlers por ref para no re-renderizar 100+ tarjetas.
+- El React Compiler memoiza; que un sondeo, el teclado o un panel no re-rendericen el tablero entero (Alberto, 05-10).
 
 ## Zoom del tablero
 

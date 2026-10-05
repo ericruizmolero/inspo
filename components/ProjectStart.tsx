@@ -39,7 +39,7 @@ function hostOf(web: string): string {
   try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return web; }
 }
 
-export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile }: {
+export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand }: {
   project: Project;
   /** The whole library, newest first */
   items: InspoItem[];
@@ -53,6 +53,8 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
   /** Saves what the project is (the brief's sentence). Throws when it could not be saved. */
   onDescribe: (about: string) => Promise<void>;
   onFile: (items: InspoItem[]) => Promise<void>;
+  /** The project has a brand already (a site, files, a guide): opens the system to bring it in */
+  onBringBrand?: () => void;
 }) {
   const { t } = useT();
   const [raw, setRaw] = useState("");
@@ -165,6 +167,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         </form>
         {error && <p id="project-url-error" className={s.error} role="alert">{error}</p>}
         <p className={p.hint}>{t.projects.startLead}</p>
+        {onBringBrand && <p className={p.hint}><button type="button" className={p.bring} onClick={onBringBrand}>{t.projects.startBrand}</button></p>}
       </div>
 
       {library.length > 0 && (

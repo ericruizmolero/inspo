@@ -9,7 +9,7 @@
 // Zooming changes how many columns there are: out to see more at once, in to look closer. 100% is the usual
 // number for the screen, cards about as wide as a page drawn at a quarter.
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
 import { useT } from "./I18nProvider";
@@ -85,7 +85,7 @@ function layoutBoard(items: InspoItem[], ratioOf: (item: InspoItem) => number, c
   return { slots, byKey, height: Math.max(padTop, ...bottoms) - GAP, col };
 }
 
-export default function Grid({ items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
   /** The cards to lay out: the whole space, or the search's results in the order they rank */
   items: InspoItem[];
   /** Height/width of what each card shows, known before it loads (the page's height from the index, or a measurement) */
@@ -290,4 +290,4 @@ export default function Grid({ items, ratioOf, hasNote, insets, zoom, onZoom, fi
       </div>
     </>
   );
-}
+});

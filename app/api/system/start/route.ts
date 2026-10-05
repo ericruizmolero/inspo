@@ -4,7 +4,7 @@ import { HttpError } from "@/lib/workspace-core";
 import { startAreaAsk, startAreaRefs } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
-import { getErrors, getLocale } from "@/lib/i18n";
+import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 60;
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!projectId || !area) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
 
   try {
-    const input = { organizationId: ctx.workspace.id, projectId, area, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, locale: await getLocale() };
+    const input = { organizationId: ctx.workspace.id, projectId, area, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, language: ctx.workspace.outputLanguage };
     // The references need no model; the question does
     if (body.part !== "ask") return Response.json(await startAreaRefs(input));
     if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });

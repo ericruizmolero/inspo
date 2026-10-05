@@ -11,7 +11,7 @@ import { llm } from "./llm";
 import { DesignWhySchema, type DesignSpec, type DesignWhy } from "@/types/design";
 import type { ProbeReport } from "./design-probe";
 import { voiceText } from "./comment-context";
-import { DEFAULT_LOCALE, type Locale } from "./i18n/locale";
+import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 
 // Vision + judgment over a finished spec. Haiku padded every answer with prose; Sonnet keeps to values (a few cents).
 export const DESIGN_WHY_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -24,24 +24,38 @@ export interface Voice {
   replies?: { author: string; body: string }[];
 }
 
-const SYSTEM = `A design team keeps a library of reference websites. For each site they have a DESIGN.md: a structured spec measured from the live page (colors, type, spacing, components, motion). What the spec cannot know is WHY the team saved the site. That is in the words of whoever saved it (the note) and in the comments of the thread.
+const SYSTEM = `You connect what a design team said about a saved website with what was measured on it.
 
-Your job: connect those words with the spec. For each distinct concrete thing a person points at, say where it is on the page, which measured values are behind it (as short chips), and the one decision an agent must get right to reproduce it. The reader is a designer who already sees the spec next to this: give values, not descriptions.
+WHAT YOU GET
+- The team's words, in order: the note of whoever saved the site, then the comments of its thread. They say WHY the site is in the library.
+- The site's DESIGN.md: a spec measured from the live page (colors, type, spacing, components, motion), and a screenshot.
+- Sometimes a PROBE REPORT: a headless browser visited the page, hovered the elements the notes point at, counted audio events, checked the cursor, watched the scroll, and captured the sections the notes point at ("captures", each with an id and the section's text).
 
-Rules:
-- Be honest above all. Only use the spec, the token values in it and the screenshot. If a person mentions something that cannot be observed from styles or a still image (a sound, a hover behaviour, a scroll effect, a feeling, page speed), mark it "unverifiable", leave "evidence" empty and say in "reproduce" what would be needed to verify it. Never invent a value, an element or a behaviour to complete an answer.
-- "measured" only when you can cite concrete values from the spec (token names, hex, px, ms, easing, font, weight). "seen" when the screenshot shows it but the spec has no numbers for it.
-- One highlight per distinct thing. When a comment repeats or reinforces an earlier point, merge it into that highlight (keep the first quote, name the author who said it first). Do not add things nobody mentioned.
-- A general remark ("the site as a whole", "everything", "nice") is not a highlight: when a sentence mixes a general remark with a concrete one, keep only the concrete part, and never split one sentence into two highlights.
-- Quotes stay verbatim and in the person's language. "note" is read on screen by the team: write it in the language given below. Values are values (hex, px, ms, token names) in any language.
-- Short and dense. "values" exist only for measured things, and only the values that ARE what the person pointed at (that button's color, that menu's transition, that title's font), as chips of 1-4 words from the spec. Photos, mockups, illustrations, renders and layouts have no values: never decorate them with radii, gaps or counts from elsewhere in the spec. "note" is one instruction of at most 22 words for the designer who will reproduce this: the concrete treatment to take (placement, scale, spacing, tone, timing). It never restates the quote, never praises, never mentions the spec or what is missing. Only when it adds something the capture does not show by itself; otherwise empty.
-- You may also receive a PROBE REPORT: a headless browser visited the page, hovered the elements the notes point at, counted audio events, checked the cursor, watched the scroll and CAPTURED the sections the notes point at (the "captures" list, each with an id and the section's text). Hover and audio observations count as "measured": cite them ("color #111 → #e0afa8 on hover, 200ms", "2 audio events while hovering"). When the probe looked and found nothing (no audio event, no hover change, no matching element), say so plainly in the note and keep the status "unverifiable": absence in the probe is not proof of absence on a real visit.
-- For each highlight, list in "shots" the ids of the captures that show exactly that thing: all of them when several do (a note about mockups gets every mockup captured), in the best order first. Captures can be images (i…, s…), a video of the browser hovering the elements (v…) or a sound the page played while hovering (a…). A capture is worth more than any description: prefer pointing at it over describing what it shows. A video or a sound of the very interaction the note describes makes that highlight "measured".
-- A note that says nothing concrete ("cool", "check this", a greeting) produces no highlight. If nothing is concrete, return an empty list and an empty gist.`;
+TASK
+For each distinct concrete thing a person points at, return one highlight: their words, the measured values behind it, and the one thing a designer must get right to reproduce it. The reader already sees the spec next to this: give values, not descriptions.
 
-export function stampFor(voices: Voice[], specStamp: string, locale: Locale = DEFAULT_LOCALE): string {
+HONESTY
+- Use only the spec, its token values, the screenshot and the probe report. Never invent a value, an element or a behaviour to complete an answer.
+- status "measured": you can cite concrete values (token names, hex, px, ms, easing, font, weight), or the probe observed it ("color #111 → #e0afa8 on hover, 200ms", "2 audio events while hovering"). A video or a sound of the very interaction the note describes also makes it "measured".
+- status "seen": the screenshot or a capture shows it, but there are no numbers for it.
+- status "unverifiable": it cannot be observed from styles or a still image (a sound, a hover, a scroll effect, a feeling, page speed) and the probe did not capture it. Leave "values" empty, and say in "note" what would be needed to verify it.
+- When the probe looked and found nothing (no audio event, no hover change, no matching element), say so plainly in "note" and keep the status "unverifiable": absence in the probe is not proof of absence on a real visit.
+
+WHAT COUNTS AS A HIGHLIGHT
+- One highlight per distinct thing, in the order they said it. A comment that repeats or reinforces an earlier point merges into that highlight: keep the first quote and the author who said it first.
+- A general remark ("the site as a whole", "everything", "nice") is not a highlight. When a sentence mixes a general remark with a concrete one, keep only the concrete part. Never split one sentence into two highlights.
+- A note with nothing concrete ("cool", "check this", a greeting) gives no highlight. Nothing concrete at all: an empty list.
+- Never add things nobody mentioned.
+
+FIELDS
+- "quote": the person's words, verbatim and in their own language.
+- "values": only for measured things, and only the values that ARE what the person pointed at (that button's color, that menu's transition, that title's font), as chips of 1 to 4 words copied from the spec as it writes them (its token names, numbers and units, in English), never translated and never a description ("left aligned" is not a value). Photos, mockups, illustrations, renders and layouts have no values: never decorate them with radii, gaps or counts from elsewhere in the spec.
+- "note": one instruction of at most 22 words for the designer who will reproduce this: the concrete treatment to take (placement, scale, spacing, tone, timing). It never restates the quote, never praises, never mentions the spec or what is missing. Empty when the capture and the values already say it all.
+- "shots": the ids of the captures that show exactly that thing, best first, all of them when several do (a note about mockups gets every mockup captured). Captures are images (i…, s…), videos of the browser hovering (v…) or sounds the page played while hovering (a…). Pointing at a capture beats describing it.`;
+
+export function stampFor(voices: Voice[], specStamp: string, language: OutputLanguage = DEFAULT_OUTPUT_LANGUAGE): string {
   // The version bumps when the output shape or the prompt changes, so cached answers are rebuilt
-  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body, v.place ?? "", (v.replies ?? []).map((r) => [r.author, r.body])]), s: specStamp, m: DESIGN_WHY_MODEL, l: locale, ver: 12 })).digest("hex").slice(0, 20);
+  return createHash("sha1").update(JSON.stringify({ v: voices.map((v) => [v.author, v.body, v.place ?? "", (v.replies ?? []).map((r) => [r.author, r.body])]), s: specStamp, m: DESIGN_WHY_MODEL, l: language, ver: 13 })).digest("hex").slice(0, 20);
 }
 
 export async function getWhy(organizationId: string, url: string): Promise<{ stamp: string; why: DesignWhy } | null> {
@@ -63,16 +77,11 @@ export interface BuildResult {
   usage: { input: number; output: number; cacheRead: number };
 }
 
-const LANGUAGE: Record<Locale, string> = {
-  en: "Write \"where\" and \"note\" in English.",
-  es: "Write \"where\" and \"note\" in Castilian Spanish (Spanish from Spain).",
-};
-
-export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; locale?: Locale; signal?: AbortSignal }): Promise<BuildResult> {
+export async function buildWhy(input: { spec: DesignSpec; url: string; voices: Voice[]; screenshot?: Buffer | null; probe?: ProbeReport | null; shotUrls?: Record<string, string>; language?: OutputLanguage; signal?: AbortSignal }): Promise<BuildResult> {
   const voices = input.voices.map((v, i) => `${i + 1}. [${v.kind === "note" ? "note of whoever saved it" : "comment"}] (${v.at.slice(0, 10)}) ${voiceText(v)}`).join("\n");
   const res = await llm({
     model: DESIGN_WHY_MODEL,
-    system: `${SYSTEM}\n\nLanguage: ${LANGUAGE[input.locale ?? DEFAULT_LOCALE]}`,
+    system: `${SYSTEM}\n\n${languageRule(input.language ?? DEFAULT_OUTPUT_LANGUAGE, 'every "note"')}\n- "values" are not text: they stay exactly as the spec writes them. "quote" stays in the person's own words.`,
     image: input.screenshot,
     text: `URL: ${input.url}\n\nWhat the team said, in order:\n${voices}\n\n${input.probe ? `PROBE REPORT (observed by a headless browser):\n${JSON.stringify({ summary: input.probe.summary, audio: input.probe.audio, cursor: input.probe.cursor, scroll: input.probe.scroll, targets: input.probe.targets, captures: input.probe.captures.map((c) => ({ id: c.id, kind: c.kind, hint: c.hint, text: c.text, y: c.box.y, h: c.box.h, ...(c.ms ? { seconds: Math.round(c.ms / 100) / 10 } : {}) })) })}\n\n` : ""}The DESIGN.md spec (JSON):\n${JSON.stringify(input.spec)}`,
     schema: DesignWhySchema,
@@ -106,14 +115,14 @@ export type WhyResult = { why: DesignWhy; built: BuildResult | null; stale: bool
  */
 export function getOrBuildWhy(input: {
   organizationId: string; url: string; voices: Voice[]; specStamp: string; spec: DesignSpec;
-  screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; locale?: Locale;
+  screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; language?: OutputLanguage;
   /** Keeps a promise alive after the response (Next's `after`): enables stale-while-rebuild */
   background?: (job: Promise<unknown>) => void;
 }): Promise<WhyResult> {
   const key = `${input.organizationId}|${input.url}`;
   const running = inflight.get(key);
   if (running) return running;
-  const stamp = stampFor(input.voices, input.specStamp, input.locale);
+  const stamp = stampFor(input.voices, input.specStamp, input.language);
   const job = (async (): Promise<{ why: DesignWhy; built: BuildResult | null; stale: false }> => {
     const cached = await getWhy(input.organizationId, input.url);
     if (cached && cached.stamp === stamp) return { why: cached.why, built: null, stale: false };
@@ -122,7 +131,7 @@ export function getOrBuildWhy(input: {
     let probeFailed = false;
     const probe = input.probe ? input.probe().catch((e) => { probeFailed = true; console.error("design-why probe failed:", input.url, e instanceof Error ? e.message : e); return null; }) : Promise.resolve(null);
     const [screenshot, probed] = await Promise.all([input.screenshot(), probe]);
-    const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, locale: input.locale });
+    const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, language: input.language });
     await saveWhy(input.organizationId, input.url, probeFailed ? `${stamp}~retry` : stamp, built.why);
     return { why: built.why, built, stale: false };
   })().finally(() => { inflight.delete(key); });

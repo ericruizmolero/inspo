@@ -39,7 +39,7 @@ const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
   // A single query in the normal case; the personal one is only created (and re-read) the first time
   let workspaces = await listWorkspaces(user.id);
   if (!workspaces.some((w) => w.kind === "personal")) {
-    await ensurePersonalWorkspace(user.id, user.name, user.email);
+    await ensurePersonalWorkspace(user.id, user.name, user.email, user.language);
     workspaces = await listWorkspaces(user.id);
   }
 

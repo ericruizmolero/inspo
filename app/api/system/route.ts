@@ -4,7 +4,7 @@ import { HttpError } from "@/lib/workspace-core";
 import { runSystem } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
-import { getErrors, getLocale } from "@/lib/i18n";
+import { getErrors } from "@/lib/i18n";
 import { IMPROVE_AIMS, IMPROVE_NOTE_MAX, SYSTEM_AREAS, type SystemFocus } from "@/types/system";
 
 export const maxDuration = 90;
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (!projectId) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
 
   try {
-    const system = await runSystem({ organizationId: ctx.workspace.id, projectId, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, locale: await getLocale(), focus: focusOf(body.focus) });
+    const system = await runSystem({ organizationId: ctx.workspace.id, projectId, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, language: ctx.workspace.outputLanguage, focus: focusOf(body.focus) });
     return Response.json(system);
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });

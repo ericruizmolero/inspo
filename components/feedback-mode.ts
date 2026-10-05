@@ -14,8 +14,24 @@ const toolbar = () => document.querySelector<HTMLElement>(TOOLBAR);
 
 export const isFeedbackModeOn = () => { const t = toolbar(); return !!t && !t.querySelector(TOGGLE); };
 
+/** Agentation loads on first use (FeedbackTool): asking before it is there loads it, and the mode starts once its bar shows */
+export const FEEDBACK_LOAD_EVENT = "feedback:load";
+let pendingEnter = false;
+
 export function enterFeedbackMode() {
-  toolbar()?.querySelector<HTMLElement>(TOGGLE)?.click();
+  const toggle = toolbar()?.querySelector<HTMLElement>(TOGGLE);
+  if (toggle) { toggle.click(); return; }
+  pendingEnter = true;
+  window.dispatchEvent(new Event(FEEDBACK_LOAD_EVENT));
+}
+
+/** Starts the mode asked for before Agentation had loaded, once its toggle is in the page */
+export function flushPendingEnter() {
+  if (!pendingEnter) return;
+  const toggle = toolbar()?.querySelector<HTMLElement>(TOGGLE);
+  if (!toggle) return;
+  pendingEnter = false;
+  toggle.click();
 }
 
 export function exitFeedbackMode() {

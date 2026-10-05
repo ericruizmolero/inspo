@@ -6,14 +6,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Project } from "@/types/inspo";
 import { type SystemArea, type TemplateCard } from "@/types/system";
-import { loadTemplates, removeTemplate, startFromTemplate } from "@/app/actions/templates";
+import { removeTemplate, startFromTemplate } from "@/app/actions/templates";
 import { criterioBlocks, blocksToMd } from "@/lib/criterio-md";
 import SystemMarkdown from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import LoopVideo from "./LoopVideo";
 import { mediaKindOf, readableDomain, videoEmbedOf } from "@/lib/url";
-import "./SystemStage.css";
+import { posterOf, preloadTemplates, remember, remembered, seen } from "./templates-cache";
+import "./SystemMarkdown.css";
 import "./Templates.css";
 
 const NONE = new Set<SystemArea>();
@@ -46,7 +47,6 @@ function HoverVideo({ src }: { src: string }) {
 
 /** A built-in template ships the first screen of its result with the app (public/templates/<folder>.jpg): it is
  *  there at once, and it stays as the thumbnail (chosen by hand) once the capture of the page arrives */
-const posterOf = (tpl: TemplateCard) => (tpl.template.builtin ? `/templates/${tpl.template.builtin}.jpg` : undefined);
 
 function Result({ id, url, video, poster, still = false }: { id: string; url: string; video?: string; poster?: string; still?: boolean }) {
   const kind = mediaKindOf(url);
@@ -127,36 +127,6 @@ function TemplateCardSkeleton() {
   );
 }
 
-// The last list seen, per workspace: coming back to the templates shows them at once while they are read again.
-// It is also kept in the browser, so the first visit after a reload does not wait for the server either
-const seen = new Map<string, TemplateCard[]>();
-const storeKey = (workspaceId: string) => `criterio:templates:${workspaceId}`;
-function remembered(workspaceId: string): TemplateCard[] | null {
-  const hit = seen.get(workspaceId);
-  if (hit) return hit;
-  try { const raw = localStorage.getItem(storeKey(workspaceId)); if (raw) { const list = JSON.parse(raw) as TemplateCard[]; seen.set(workspaceId, list); return list; } } catch { /* read from the server */ }
-  return null;
-}
-function remember(workspaceId: string, list: TemplateCard[]) {
-  seen.set(workspaceId, list);
-  try { localStorage.setItem(storeKey(workspaceId), JSON.stringify(list)); } catch { /* the memory one is enough */ }
-}
-const reading = new Map<string, ReturnType<typeof loadTemplates>>();
-/** Reads the templates once at a time per workspace; the app calls it while idle so Discover opens with them there */
-export function preloadTemplates(workspaceId: string) {
-  const running = reading.get(workspaceId);
-  if (running) return running;
-  const job = loadTemplates().then((r) => {
-    if (r.ok) {
-      remember(workspaceId, r.data);
-      // Their pictures too: a card's first screen is there when the card is
-      for (const tpl of r.data) { const src = posterOf(tpl); if (src) new Image().src = src; }
-    }
-    return r;
-  }).finally(() => reading.delete(workspaceId));
-  reading.set(workspaceId, job);
-  return job;
-}
 
 function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: TemplateCard, name: string) => Promise<void>; onDelete: (tpl: TemplateCard) => Promise<void> }) {
   const { t } = useT();

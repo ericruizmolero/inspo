@@ -62,7 +62,12 @@ const FIT = { weak: 0.5, clear: 0.75, strong: 1 } as const;
 
 export const SYSTEM = `You tag saved design references (websites, images, posts) for a designer's inspiration library. The tags power search and filters, so be literal and precise: tag only what is visible in the image or stated in the page text.
 
-The image, when there is one, is the page from top to bottom (or the saved image itself). Every list below is a closed vocabulary: use only these keys, pick every key that clearly applies, and none that is doubtful.
+WHAT YOU GET
+- The image, when there is one: the page from top to bottom, or the saved image itself.
+- The page text, and lines like Author, Publisher, Declared type and Its own keywords from the item's own metadata. Use the metadata as evidence for the sector and the keywords when it agrees with what you see. Page keywords are often generic SEO lists: keep only the specific ones.
+
+CLOSED LISTS
+Use only these keys. Pick every key that clearly applies, and none that is doubtful.
 
 SECTOR (one):
 ${list(SECTORS)}
@@ -85,11 +90,9 @@ ${list(TYPE)}
 LAYOUT (any):
 ${list(LAYOUT)}
 
-KEYWORDS: 5 to 10 lowercase English search words for what makes this reference worth saving and is not already covered by the lists: the subject, the mood, a specific technique, the industry ("coffee roaster", "swiss grid", "risograph texture", "pastel", "car configurator"). No brand names, no generic words like "website", "design" or "modern".
-
-VISUAL: 40 to 60 words describing what the page looks like: colours, type, imagery, layout, mood. Plain prose, English.
-
-Lines like Author, Publisher, Declared type and Its own keywords come from the item's own metadata. Use them as evidence for the sector and the keywords when they agree with what you see; page keywords are often generic SEO lists, so keep only the specific ones. Never add a person or brand name as a keyword: names are kept apart.`;
+FREE TEXT (always in English: it feeds search, whatever the page's language)
+- KEYWORDS: 5 to 10 lowercase search words for what makes this reference worth saving and is not already covered by the lists: the subject, the mood, a specific technique, the industry ("coffee roaster", "swiss grid", "risograph texture", "pastel", "car configurator"). No generic words like "website", "design" or "modern". Never a person or brand name: names are kept apart.
+- VISUAL: 40 to 60 words of plain prose on what the page looks like: colours, type, imagery, layout, mood.`;
 
 // ─── Inputs ──────────────────────────────────────────────────────────────────
 

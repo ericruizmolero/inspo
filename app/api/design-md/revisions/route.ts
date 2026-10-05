@@ -6,7 +6,7 @@ import { findByWeb } from "@/lib/items";
 import { getDesignMd } from "@/lib/design-store";
 import { renderDesignMd, type DesignSpec } from "@/types/design";
 import { SECTIONS, addRevision, getRevisionSpec, latestRevision, listRevisions, reviseDesignSpec } from "@/lib/design-revise";
-import { getErrors, getLocale, getT, fmtDate } from "@/lib/i18n";
+import { getErrors, getT, fmtDate } from "@/lib/i18n";
 
 export const maxDuration = 120;
 
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: (await getErrors()).noModelKey }, { status: 500 });
 
     const t0 = Date.now();
-    const out = await reviseDesignSpec({ spec: current, url, section, comment, locale: await getLocale() });
+    const out = await reviseDesignSpec({ spec: current, url, section, comment, language: ctx.workspace.outputLanguage });
     console.log(`design-md revise ${url} [${section}] by ${author.authorName}: ${Date.now() - t0}ms, ${out.model}, changed=${out.changed}`);
     void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "revise", model: out.model, inputTokens: out.usage.input, outputTokens: out.usage.output, cacheReadTokens: out.usage.cacheRead, costUsd: out.costUsd, provider: out.provider, requestId: out.requestId, ref: url });
 

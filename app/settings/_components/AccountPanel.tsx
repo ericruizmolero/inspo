@@ -4,10 +4,11 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
-import type { SessionUser } from "@/lib/workspace-core";
+import type { SessionUser, Workspace } from "@/lib/workspace-core";
 import { UserAvatar } from "@/components/WorkspaceMenu";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
+import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-export default function AccountPanel({ user, personalId }: { user: SessionUser; personalId: string | null }) {
+export default function AccountPanel({ user, personal }: { user: SessionUser; personal: Workspace | null }) {
+  const personalId = personal?.id ?? null;
   const { t } = useT();
   const router = useRouter();
   const photoRef = useRef<HTMLInputElement>(null);
@@ -115,6 +117,21 @@ export default function AccountPanel({ user, personalId }: { user: SessionUser; 
           <div className="setting-line"><span>{t.settings.language}</span><LangSwitch /></div>
         </CardContent>
       </Card>
+
+      {personal && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.settings.outputLanguage}</CardTitle>
+            <CardDescription>{t.settings.outputLanguagePersonalHint}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="setting-line">
+              <span>{t.settings.language}</span>
+              <OutputLanguageSwitch workspaceId={personal.id} value={personal.outputLanguage} onError={setError} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

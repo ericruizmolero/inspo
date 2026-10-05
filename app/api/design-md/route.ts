@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
   const promise = (async () => {
     try {
       const t0 = Date.now();
-      const { tokens, screenshot, fullShot, cover, scroll, logo, icons, fontFiles } = await extractDesign(url, ctrl.signal);
+      const { tokens, screenshot, fullShot, cover, scroll, logo, logoSvg, icons, fontFiles } = await extractDesign(url, ctrl.signal);
       const t1 = Date.now();
       const { spec, markdown, model, usage, costUsd, provider, requestId } = await generateDesignMd(tokens, screenshot, ctrl.signal);
       const t2 = Date.now();
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
       const entry = await saveDesignMd(
         { url, markdown, spec, generatedAt: new Date().toISOString(), model, icons, fontFiles },
-        { fullShot, cover, scroll, logo }
+        { fullShot, cover, scroll, logo, logoSvg }
       );
 
       console.log(`design-md ${url}: extract ${t1 - t0}ms, ${model} ${t2 - t1}ms, tokens in/out ${usage.input}/${usage.output}`);

@@ -1,6 +1,7 @@
 // AI usage log per workspace. The cost is what OpenRouter returns on each
 // call, Jev included (#28). Only if it's missing is it estimated, and the row says so.
 import "server-only";
+import { after } from "next/server";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
@@ -29,8 +30,18 @@ export interface UsageInput {
   ref?: string | null;
 }
 
-/** Saves a usage row. Never throws: losing a row beats breaking the call. */
-export async function recordUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Promise<void> {
+/**
+ * Saves a usage row. Never throws: losing a row beats breaking the call.
+ * Callers don't wait for it (`void recordUsage(...)`), so inside a request the write is handed to after():
+ * on Vercel the function can be frozen once the response is out, and the row would be lost.
+ */
+export function recordUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Promise<void> {
+  const write = writeUsage(ctx, u);
+  try { after(() => write); } catch { /* outside a request (scripts): the promise runs on its own */ }
+  return write;
+}
+
+async function writeUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Promise<void> {
   if (!ctx) return;
   const input = u.inputTokens ?? 0, output = u.outputTokens ?? 0, cacheRead = u.cacheReadTokens ?? 0, units = u.units ?? 0;
   const real = typeof u.costUsd === "number";

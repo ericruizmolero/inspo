@@ -4,7 +4,7 @@ import { HttpError } from "@/lib/workspace-core";
 import { curateArea } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
-import { getErrors, getLocale } from "@/lib/i18n";
+import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 60;
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (!projectId || !area) return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
   try {
     const keep = body.keep && typeof body.keep === "object" ? Object.fromEntries(Object.entries(body.keep).map(([k, v]) => [String(k), !!v])) : undefined;
-    const system = await curateArea({ organizationId: ctx.workspace.id, projectId, area, keep, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, locale: await getLocale() });
+    const system = await curateArea({ organizationId: ctx.workspace.id, projectId, area, keep, usage: { organizationId: ctx.workspace.id, userId: ctx.user.id }, language: ctx.workspace.outputLanguage });
     return Response.json(system);
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });

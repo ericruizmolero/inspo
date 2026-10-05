@@ -34,12 +34,17 @@ export type ProbePlan = z.infer<typeof PlanSchema> & { model: string; costUsd: n
 
 const PLAN_SYSTEM = `A design team wrote notes about why they saved a website. A headless browser has the page open and will do what you plan: capture the sections the notes point at, hover elements, listen for sound, check the cursor, watch the scroll.
 
-You receive the notes, a full-page screenshot (top to bottom), the list of the page's SECTIONS with their vertical position and a text snippet, and the list of its large IMAGES with their position. For each distinct thing the notes mention, say which sections and images show it and what the browser should do there. Locate visually: match what the person describes with what the screenshot shows at that height.
+WHAT YOU GET
+The notes, a full-page screenshot (top to bottom), the page's SECTIONS with their vertical position and a text snippet, and its large IMAGES with their position.
 
-Rules:
+TASK
+For each distinct thing the notes mention, say which sections and images show it and what the browser should do there. Locate visually: match what the person describes with what the screenshot shows at that height.
+
+RULES
 - Only things the notes actually mention. A general remark ("the whole site", "nice") gets no target.
-- Purely visual things (an illustration, a portrait, a layout, a type treatment) get "capture" and their sections. Interactive things get hover/audio/scroll/cursor as well, plus the section where they live.
-- At most four targets, up to three sections and six images each. Prefer the specific section over the whole page, and the images themselves when the note is about images: if the page has many mockups and the note says "mockups", list them all.`;
+- Purely visual things (an illustration, a portrait, a layout, a type treatment) get "capture" and their sections. Interactive things also get hover, audio, scroll or cursor, plus the section where they live.
+- At most four targets, each with up to three sections and six images.
+- Prefer the specific section over the whole page, and the images themselves when the note is about images: if the page has many mockups and the note says "mockups", list them all.`;
 
 export interface PageSection { i: number; tag: string; y: number; h: number; text: string; imgs: number; cls: string }
 export interface PageImage { i: number; tag: string; x: number; y: number; w: number; h: number; alt: string }

@@ -79,9 +79,7 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   const options = useMemo(() => (focused && !closed ? suggest(text, vocab, filters) : []), [focused, closed, text, vocab, filters]);
   // New words, first suggestion: reset while rendering, not in an effect after the paint
   const [lastText, setLastText] = useState(text);
-  // Enter sends the words to the agent unless the person walked into the list with the arrows
-  const [walked, setWalked] = useState(false);
-  if (text !== lastText) { setLastText(text); setActive(0); setWalked(false); }
+  if (text !== lastText) { setLastText(text); setActive(0); }
 
   // "/" from anywhere focuses the box
   useEffect(() => {
@@ -110,10 +108,10 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
     if (options.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
       setActive((a) => (a + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length);
-      setWalked(true);
       return;
     }
-    if (options.length && ((e.key === "Enter" && (walked || !onAsk)) || (e.key === "Tab" && !e.shiftKey))) { e.preventDefault(); take(options[active]); return; }
+    // A tag that matches wins: the agent only gets the words no tag could take
+    if (options.length && (e.key === "Enter" || (e.key === "Tab" && !e.shiftKey))) { e.preventDefault(); take(options[active]); return; }
     if (e.key === "Enter" && onAsk && text.trim()) { e.preventDefault(); ask(); return; }
     if (e.key === "Backspace" && !text && filters.length && ref.current?.selectionStart === 0) { e.preventDefault(); onFilters(filters.slice(0, -1)); return; }
     if (e.key === "Backspace" && !text && !filters.length && target && onClearTarget) { e.preventDefault(); onClearTarget(); return; }

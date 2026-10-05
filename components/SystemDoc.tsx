@@ -59,6 +59,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
+  // The file opens as Markdown, the file an agent reads; the document look is one tab away
   const [mode, setMode] = useState<"doc" | "md">("md");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");

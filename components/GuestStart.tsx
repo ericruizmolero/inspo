@@ -4,10 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
-import DirectoryModal from "./DirectoryModal";
+import dynamic from "next/dynamic";
 import { useT } from "./I18nProvider";
 import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
+
+// Only once someone opens it
+const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
 
 /**
  * Signed-out home page: the same start canvas a new user sees, without the sidebar.

@@ -93,10 +93,14 @@ interface InspoCardProps {
   onCreateProject?: (name: string) => Promise<void>;
   /** Inside a project: the areas of its system this piece backs, and the toggle to file it under one */
   backs?: SystemArea[];
-  /** The areas it backs in each project's system, and filing it under one from the folder button */
+  /** The areas it backs in each project's system, shown on the folder button's rows */
   areasIn?: Record<string, SystemArea[]>;
-  onToggleAreaIn?: (projectId: string, area: SystemArea, on: boolean) => void;
   onToggleArea?: (area: SystemArea, on: boolean) => void;
+  /** Picked for a bulk action (SelectBar). While anything is picked, a click picks instead of opening */
+  selected?: boolean;
+  selecting?: boolean;
+  /** Pick or unpick it; range: ⇧ was held, so everything from the last pick to here */
+  onSelect?: (range: boolean) => void;
   /** On the board: the page's top as the cover, sized before it loads */
   board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
@@ -167,20 +171,23 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, onToggleAreaIn, board }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
   const video = kind === "video" ? videoEmbedOf(item.web) : null;
   const manualThumbnail = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
   const videoFile = video?.provider === "file" && !manualThumbnail;
+  // A screen recording loops on its card, over its frame, while the card is on screen
+  const loopSrc = video?.loops && !uploadedThumb ? video.src : null;
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
-  // A screen recording loops on its card, over its frame, while the card is on screen; so does a post's video or
-  // gif, from our copy beside its frame (lib/posts.ts: poster-video.jpg → video.mp4). A video too heavy to copy
-  // has none, and the frame stays with its play mark
-  const loopSrc = video?.loops && !uploadedThumb ? video.src
-    : postKind && uploadedThumb ? uploadedThumb.replace(/\/poster-(video|gif)\.\w+$/, "/$1.mp4") : null;
+  // Any other recording of ours plays under the pointer, muted, over its frame or thumbnail.
+  // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
+  const hoverSrc = loopSrc ? null
+    : video?.provider === "file" || video?.loops ? video.src
+    : postKind ? uploadedThumb!.replace(/poster-(video|gif)\.\w+$/, "$1.mp4")
+    : null;
   const plays = kind === "video" || postKind === "video";
   const gifChip = (kind === "image" && isGif(item.web)) || postKind === "gif";
   const [source, setSource] = useState<ImgSource>(() => kind === "text" || isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
@@ -375,7 +382,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
 
   // The external site only opens from its icon: a click on the card leads to our own views.
 
-
   const openHref = kind === "image" ? item.web : item.web;
   const openLabel = kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
 
@@ -416,7 +422,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
     <ProjectPicker
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
-      areasIn={areasIn} onToggleArea={onToggleAreaIn}
+      areasIn={areasIn}
       className={`${className}${filedCount ? " is-filed" : ""}`}
       label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
     >
@@ -427,9 +433,13 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   return (
     <div>
       <article
-        className={`tile${board ? " tile--board" : ""}`}
+        className={`tile${board ? " tile--board" : ""}${selecting ? " is-selecting" : ""}${selected ? " is-selected" : ""}`}
         data-id={item.id}
-        onClick={() => { if (suppressClick.current) return; onOpen(); }}
+        onClick={(e) => {
+          if (suppressClick.current) return;
+          if (onSelect && (selecting || e.metaKey || e.ctrlKey || e.shiftKey)) { onSelect(e.shiftKey); return; }
+          onOpen();
+        }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
       >
@@ -487,7 +497,14 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onError={() => setFrameFailed(true)}
             />
           )}
+          {hoverSrc && hovering && <LoopVideo src={hoverSrc} className="tile__img tile__loop" />}
 
+          {onSelect && (
+            <button type="button" className="tile__select" aria-pressed={selected} aria-label={t.select.select}
+              onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey); }} onMouseDown={(e) => e.stopPropagation()}>
+              {Icons.check}
+            </button>
+          )}
           {plays && !loopSrc && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
           {gifChip && isLoaded && score === undefined && <span className="tile__badge">{t.card.gif}</span>}
 

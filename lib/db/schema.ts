@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { PolishState, Why } from "@/types/polish";
+import { OUTPUT_LANGUAGES } from "../output-language";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -78,9 +79,12 @@ export const organization = pgTable("organization", {
   kind: text("kind").notNull().default("team"),
   /** SaaS plan (lib/plans.ts), changed by hand with scripts/set-plan.ts */
   plan: text("plan").notNull().default("solo"),
+  /** The language the model writes in for this workspace (lib/output-language.ts). Not the interface language. */
+  outputLanguage: text("output_language").notNull().default("en"),
 }, (t) => [
   oneOf("organization_kind_check", t.kind, ["personal", "team"]),
   oneOf("organization_plan_check", t.plan, ["solo", "studio", "agency"]),
+  oneOf("organization_output_language_check", t.outputLanguage, OUTPUT_LANGUAGES),
 ]);
 
 export const member = pgTable("member", {
@@ -349,7 +353,7 @@ export const aiUsage = pgTable("ai_usage", {
   // Monthly quota count (lib/quota.ts): one workspace, one action, since the 1st
   index("ai_usage_org_action_created_idx").on(t.organizationId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
-  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system"]),
+  oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system", "brand"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 
@@ -464,6 +468,9 @@ export const projectSystem = pgTable("project_system", {
   /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>"): the file shows these
    *  words instead of the ones the app would write, until someone goes back to them */
   doc: jsonb("doc").$type<Record<string, string>>(),
+  /** The brand as values (types/brand.ts BrandSpec): colours, faces and scale, curves, logo files, the voice's pairs.
+   *  The presentation draws it and criterio.md writes it as tables */
+  brand: jsonb("brand").$type<unknown>(),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("project_system_org_idx").on(t.organizationId)]);
@@ -540,4 +547,27 @@ export const systemAreaRevision = pgTable("system_area_revision", {
   index("system_area_revision_org_idx").on(t.organizationId),
   index("system_area_revision_author_idx").on(t.authorId),
   oneOf("system_area_revision_source_check", t.source, ["model", "team"]),
+]);
+
+/** A link that shows a project's brand to anyone who has it: the presentation, and criterio.md to copy. Unlisted, read
+ *  only, revoked by any member. `mode` says which file it hands out: the whole one, or a clean one without the team's
+ *  conversation and names */
+export const systemShare = pgTable("system_share", {
+  id: text("id").primaryKey(),
+  /** The secret in the address (/s/<token>): 16 random bytes, base64url */
+  token: text("token").notNull(),
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  mode: text("mode").notNull(),
+  /** Who it was made for, in the team's words ("For Andoni") */
+  label: text("label").notNull().default(""),
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+  lastViewedAt: timestamp("last_viewed_at", { withTimezone: true, mode: "date" }),
+}, (t) => [
+  uniqueIndex("system_share_token_idx").on(t.token),
+  index("system_share_project_idx").on(t.projectId),
+  index("system_share_org_idx").on(t.organizationId),
+  oneOf("system_share_mode_check", t.mode, ["clean", "full"]),
 ]);

@@ -18,12 +18,11 @@ Código que existe pero no se ve. No construir encima sin una decisión nueva.
 
 | Qué | Por qué sigue |
 | --- | --- |
-| Rama bento de `SystemView` (`view` fijado a `"md"`): `SystemBento`, `SystemTray`, `BentoColor`, `BentoType`, `.sysb-grid` y su CSS | El Sistema pasó a ser el fichero el 04-10; el escenario de área sí sigue vivo |
 | Prop `onOpen` de `SystemDoc` | Se pasa pero nunca se llama |
 | Variante `drawer` de `CommentsPanel` | Solo se usa `column` |
 | `ui/tooltip.tsx`, `ui/skeleton.tsx` y varios exports de `ui/sidebar` | Vinieron con shadcn; nadie los pinta |
 | Atajo "/" de `SearchBox` | Nadie pasa la prop `shortcut` |
-| CSS huérfano en `globals.css`: `.sysn-node`, `.sysn-ref`, `.sysv-tidy`, `.sysv-panel`, `.card-item` | Del mar de nodos y del masonry anterior |
+| CSS que quizá quedó huérfano en `globals.css` (`.sysn-*`, `.sysv-*`, `.card-item`) | Del mar de nodos y del masonry anterior; comprobar antes de borrar |
 | `lib/canvas.ts` y la tabla `canvas_position` | Del canvas infinito, sustituido por `Grid` |
 | `lib/design-md`, `/api/design-md`, rutas de "En vivo" | DESIGN.md retirado; las portadas antiguas aún pintan tarjetas |
 | Columna `anchor` de comentarios | De los post-its retirados |

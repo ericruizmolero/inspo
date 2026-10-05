@@ -65,4 +65,9 @@ export const errors = {
   workspaceAdminsCan: "Only workspace admins can do this",
   workspaceAdminsOnly: "Workspace admins only",
   workspaceNotYours: "That workspace is not yours",
+  shareGone: "This link was turned off, or it never existed",
+  brandFileType: "That file type cannot be used here. Logos: SVG, PNG, WebP or JPEG. Fonts: WOFF2, WOFF, OTF or TTF",
+  brandFileTooBig: "That file is too big (the limit is 20 MB)",
+  brandSvgUnsafe: "That SVG carries scripts or links to other files, so it cannot be used. Export it again as a plain SVG",
+  brandTextEmpty: "Paste the guide's text first",
 };

@@ -145,7 +145,7 @@ Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis re
 
 ### Inicio: ¿qué vas a hacer?
 `ProjectChooser` · `Cover` · `components/ProjectChooser.tsx` · `.chooser` · captura: inicio
-Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo. El placeholder rota ejemplos palabra a palabra con GSAP y respeta reduced-motion.
+Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion.
 
 ### Inbox vacío
 `InboxZero` · `components/InboxZero.tsx`
@@ -161,26 +161,51 @@ Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pesta�
 
 ### Descubrir: plantillas, recursos y skills
 `Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`
-Tres pestañas: Plantillas (`?in=templates`), Recursos (`?in=discover`) y Skills (`?in=skills`). Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, GSAP quickTo; solo ratón, con reduced-motion solo fundido), y plantillas: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir una enseña su criterio.md y deja crear un proyecto con ella.
+Tres pestañas: Plantillas (`?in=templates`), Recursos (`?in=discover`) y Skills (`?in=skills`). Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, seguimiento con requestAnimationFrame y entrada con WAAPI; solo ratón, con reduced-motion solo fundido), y plantillas: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir una enseña su criterio.md y deja crear un proyecto con ella.
 - Skills (`components/DiscoverSkills.tsx`, datos en `SKILLS` de `lib/directory.ts`) son tarjetas, no filas: avatar y usuario de GitHub del autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia. Las que también son skill de criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md)
 
 ### Vídeo en bucle
 `LoopVideo` · `components/LoopVideo.tsx`
 Grabación corta, muda y en bucle que solo se reproduce mientras está a la vista.
 
-## Sistema y criterio.md
+## Sistema y marca
 
 ### Vista Sistema
-`SystemView` · `components/SystemView.tsx` · `.sysv` · `.sysf`
-Cabecera del proyecto (nombre, intención, anillo, Mejorar con IA, Exportar, Descargar, "…") y el documento. Abrir un área lleva a su escenario con View Transitions (≥801 px); Esc lo cierra. En móvil, una pila de fichas.
-- La rama bento sigue en el fichero pero no se pinta (ver Mantenimiento).
+`SystemView` · `components/SystemView.tsx` · `.spage`
+La página del proyecto con dos vistas: **Presentación** (la marca como guía visual, la que abre por defecto) y **Markdown** (el criterio.md por bloques). Cabecera con "Mejorar con IA", "Rellenar la marca" y compartir. La vista elegida se recuerda en el navegador.
+
+### Presentación de marca
+`BrandPresentation` · `components/brand/BrandPresentation.tsx` · `components/brand/brand.css`
+La marca como manual: índice a la izquierda y una sección por pantalla, cada una con su número, título grande en la tipografía display de la propia marca y una entradilla. Secciones: introducción, logo, color, tipografía, imagen, movimiento, voz, aplicaciones y recursos (`components/brand/sections/`).
+- En la app cada valor se edita donde está; en un enlace compartido es de solo lectura y las secciones vacías no salen.
+- Lo que el equipo edita a mano se queda fijo en las pasadas siguientes del modelo hasta que se devuelve.
+
+### Texto editable de marca
+`Editable` · `components/brand/edit/Editable.tsx`
+Texto que se escribe donde está, con el tamaño y la fuente con que se muestra: un titular se edita como titular. Enter guarda una línea, Esc devuelve lo que había, salir guarda.
+
+### Hueco de fichero
+`FileSlot` · `components/brand/edit/FileSlot.tsx`
+Donde va un fichero (logo, fuente, imagen): se suelta o se elige; enseña el fichero y deja cambiarlo o quitarlo.
+
+### Maquetas de aplicación
+`Mockups` · `components/brand/mockups/Mockups.tsx` · `.mk`
+La marca aplicada en los sitios donde vivirá, dibujada en vivo con sus propios valores: cambias un color o el símbolo y todas las maquetas lo siguen. Cada maqueta cabe entera en su casilla; el cromo de las plataformas son formas planas y el texto solo va sobre una foto con velo o sobre el color de la marca.
+
+### Importar una marca
+`BrandImport` · `components/brand/BrandImport.tsx`
+Traer una marca que ya existe de tres formas: su web (se mide y se lee), sus ficheros (logos, fuentes, fotos, un PDF de guía) o el texto de sus guías. Lo que entra es un punto de partida; los ficheros se reparten por su nombre ("mark", "white"…).
+
+### Compartir la marca
+`ShareDialog` · `SharePage` · `components/brand/` · `app/s/[token]/`
+Un enlace de solo lectura con la presentación y el criterio.md para copiar o descargar, más un zip con logos, iconos y tokens. Cada enlace lleva el fichero completo o uno limpio, sin nombres ni comentarios del equipo, para gente de fuera. Sin sesión: el token es la prueba; no se indexa y no manda referer.
 
 ### Documento criterio.md
 `SystemDoc` · `components/SystemDoc.tsx` · `.sdoc` · captura: documento
-El fichero con conmutador Markdown / Documento e índice lateral con un punto de estado por área (respaldada, abierta, del equipo), las propuestas y las skills. Las propuestas se aceptan, rechazan o retiran bajo su área.
+La vista Markdown: el fichero con índice lateral y un punto de estado por área (respaldada, abierta, del equipo), las propuestas y las skills. Las propuestas se aceptan, rechazan o retiran bajo su área.
 
 ### Visor y editor Markdown
-`SystemMarkdown` · `Editable` · `components/SystemMarkdown.tsx` · `.mdv`
+`SystemMarkdown` · `components/SystemMarkdown.tsx` · `components/SystemMarkdown.css` · `.mdv`
 El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
 - Tecla C: modo comentar con pines en el punto exacto; Enter envía el pin.
 - Barra: Skills, Abrir en IA, Copiar y Descargar.
@@ -197,31 +222,15 @@ Popover "Abrir en": el primer clic copia el mensaje con el fichero, el segundo a
 `ImproveModal` · `components/ImproveModal.tsx` · `.imp`
 Antes de la pasada del modelo se elige el objetivo (ordenar, afinar la escritura, releer referencias), las áreas y un texto libre. Pregunta antes de gastar.
 
-### Escenario de área
-`AreaTabs` · `RefStrip` · `TypeTester` · `AreaSample` · `components/SystemStage.tsx` · `.sysf`
-Pestañas de áreas, chips de referencias con selector, probador tipográfico con las fuentes reales de las referencias y la muestra pintada con el área. `Thumb` (miniatura) se reutiliza en seis componentes.
-
-### Muestra del sistema
-`Sample` · `SampleControls` · `components/SystemSample.tsx` · `.smp`
-Una mini página (título, subtítulo, cuerpo, dos botones, tres tarjetas) que cada área pinta, con controles de color, radio y curva.
-
-### Arranque de área
-`AreaStarter` · `components/SystemStarter.tsx` · `.stt`
-El área vacía: referencias ideales del tablero, sitios del directorio para esa área y una pregunta cuyas respuestas escriben la decisión.
-
-### Conversación de área
-`AreaThread` · `components/AreaThread.tsx` · `.ath`
-El hilo del equipo sobre un área; una línea puede señalar una referencia o la opción probada en la muestra. Enter envía, Shift+Enter salta línea.
-
-### Bento y bandeja
-`SystemBento` · `SystemTray` · `components/SystemBento.tsx` · sin uso
-Banda de voz, cambios recientes, caras por área y dos ruedas para arrastrar referencias. Solo existen en la rama bento de `SystemView`, que no se pinta. `useSystemActivity` sí está vivo.
+### Miniatura de referencia
+`Thumb` · `components/Thumb.tsx`
+Una referencia en pequeño: su imagen (guardada, póster del vídeo, la de la tarjeta, og:image) o su inicial si no carga. Una grabación de pantalla hace bucle sobre su fotograma.
 
 ## Ficha de referencia
 
 ### Ficha de referencia
 `ItemPanel` · `components/ItemPanel.tsx` · `.ip` · captura: ficha
-Hoja sobre el lienzo: favicon, nombre, migas, pestañas Página / Criterio y cerrar; la página a la izquierda y la conversación a la derecha.
+Hoja sobre el lienzo: favicon, nombre, migas, pestañas Página / Criterio y cerrar; la página a la izquierda y la conversación a la derecha. Las flechas ← → (y los botones a los lados) recorren el tablero en su orden.
 - Crece desde el punto del clic (WAAPI, `--ease-out`); al cerrar, 0.96 con fundido de 150 ms. Con reduced-motion, solo fundido. Esc cierra.
 - z 30 en escritorio, 60 en móvil.
 
