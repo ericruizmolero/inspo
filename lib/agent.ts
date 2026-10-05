@@ -4,6 +4,7 @@
 // nothing to undo runs at once; deleting waits for a confirmation. What the app cannot do on its own
 // (importing from a browser) comes back as a guide: how to do it and where.
 import "server-only";
+import { after } from "next/server";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -382,7 +383,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
           const item = await addItem(org, { name: await nameFor(web), web, type: typeFromUrl(web), author: author.name, createdBy: author.id });
           if (a.project && item.id) { await fileItems(org, a.project, [item.id], author.id); line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
-          if (item.id && taggerEnabled()) void startTagJob(org, item.id, author.id).catch(() => null);
+          if (item.id && taggerEnabled()) { const id = item.id; after(() => startTagJob(org, id, author.id).catch(() => null)); }
           (patch.added ??= []).push(item); line.name = item.name; if (item.id) line.items = [item.id]; break;
         }
         case "note": {
