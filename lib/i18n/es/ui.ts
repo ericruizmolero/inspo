@@ -264,7 +264,6 @@ export const ui: typeof EnUi = {
     archiveOf: (name: string): string => `${name} · Archivo`,
     newProject: "Nuevo proyecto",
     more: (n: number): string => `${n} más`,
-    seeAll: (n: number): string => `Ver los ${n} proyectos`,
     others: "Otros proyectos",
     namePlaceholder: "Nombre del proyecto",
     options: (name: string): string => `Opciones de ${name}`,

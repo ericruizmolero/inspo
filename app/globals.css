@@ -416,8 +416,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* "N more": the other projects, with who filed into each last and when */
 .island__others { width: 280px; }
 .island__other { align-items: center; }
-/* Under the projects that did not fit: the way to all of them, as pictures */
-.island__all { margin-top: 4px; border-top: 1px solid var(--dock-line); border-radius: 0 0 8px 8px; color: var(--dock-muted); }
 .island__other-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .island__other-text .ws__item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .island__other-meta { font-size: 12px; color: var(--muted); }

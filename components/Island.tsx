@@ -186,7 +186,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const day = (at: number) => new Date(at).toLocaleDateString(locale, { day: "numeric", month: "short" });
   // Each tab is a link to its space: a plain click switches in place (the search stays), a modified click
   // opens the space the way the browser opens any link
-  const hrefOf = (id: string) => (id === "home" ? "/" : id === "all" ? "/?in=library" : `/?in=${encodeURIComponent(id)}`);
+  const hrefOf = (id: string) => (id === "all" ? "/?in=library" : `/?in=${encodeURIComponent(id)}`);
   const go = (id: string) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
@@ -262,10 +262,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
       <span className="island__sep" aria-hidden />
 
       <nav className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
-        {/* Every project, as pictures, and where a new one starts: always the first tab, the way back from anywhere */}
-        <a href={hrefOf("home")} className={`island__tab${space === "home" ? " is-on" : ""}`} aria-current={space === "home" ? "page" : undefined} data-fixed onClick={go("home")}>
-          <span className="island__label">{t.projects.title}</span>
-        </a>
         {/* Discover opens on its templates; the places to look are one tab away */}
         <a href={hrefOf("templates")} className={`island__tab${inDiscover ? " is-on" : ""}`} aria-current={inDiscover ? "page" : undefined} data-fixed onClick={go("templates")}>
           <span className="island__label">{t.sidebar.discover}</span>
@@ -313,9 +309,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
                   </button>
                 ))}
               </div>
-              <button type="button" className="ws__item island__all" onClick={() => { setMoreOpen(false); onSpace("home"); }}>
-                <span className="ws__item-name">{t.projects.seeAll(projects.length)}</span>
-              </button>
             </PopoverContent>
           </Popover>
         )}
