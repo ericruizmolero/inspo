@@ -36,8 +36,8 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   const { projects } = filed;
   const real = new Set(projects.map((p) => p.id));
   const mine = (m: ProjectLinks): ProjectLinks => Object.fromEntries(Object.entries(m).map(([id, ps]) => [id, ps.filter((p) => real.has(p))] as const).filter(([, ps]) => ps.length));
-  const links = mine(filed.links), shelf = mine(filed.shelf);
-  const items = all.items.filter((i) => !(i.addedBy === TEMPLATE_AUTHOR && i.id && !links[i.id] && !shelf[i.id]));
+  const links = mine(filed.links);
+  const items = all.items.filter((i) => !(i.addedBy === TEMPLATE_AUTHOR && i.id && !links[i.id]));
   const shown = new Set(items.map((i) => i.web));
   const only = <T,>(m: Record<string, T>): Record<string, T> => Object.fromEntries(Object.entries(m).filter(([web]) => shown.has(web)));
   const thumbnailMap = only(all.thumbnailMap), tagMap = only(all.tagMap), tagJobs = only(all.tagJobs);
@@ -55,7 +55,6 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     initialTagJobs: tagJobs,
     initialProjects: projects,
     initialProjectLinks: links,
-    initialProjectShelf: shelf,
     initialSystems: systems,
     members: members.map((m) => ({ name: m.name, image: m.image ?? null })),
     isAdmin: admin,

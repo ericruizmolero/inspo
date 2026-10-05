@@ -9,7 +9,7 @@ import type { InspoItem, Project } from "@/types/inspo";
 import { SYSTEM_AREAS, confidenceOf, emptySystem, staleness, DECISION_MAX, NEVER_MAX, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type AreaCandidate, type AreaCuration, type SystemFocus } from "@/types/system";
 import type { AreaOption, AreaRevision, RefVisual } from "@/lib/system";
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
-import { savePolishBrief } from "@/app/actions/polish";
+import { saveProjectBrief } from "@/app/actions/brief";
 import { fontStack } from "@/lib/font-names";
 import SkillsMenu from "./SkillsMenu";
 import ImproveModal from "./ImproveModal";
@@ -841,7 +841,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           {view === "md" && (
             <SystemDoc blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
               onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
-              onAbout={async (text) => { const r = await savePolishBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
+              onAbout={async (text) => { const r = await saveProjectBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
               fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
               busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
               onSave={async (area, next) => {

@@ -8,7 +8,7 @@
 // first; "N more" lists the rest.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { savePolishBrief } from "@/app/actions/polish";
+import { saveProjectBrief } from "@/app/actions/brief";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
@@ -179,7 +179,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     const p = await onCreateProject(name);
     if (!p) return;
     // The sentence is the project's brief from the first minute, as on the first screen
-    if (about) await savePolishBrief(p.id, { about }).catch(() => null);
+    if (about) await saveProjectBrief(p.id, { about }).catch(() => null);
     onSpace(p.id);
   };
 
