@@ -6,7 +6,7 @@
 // The Inbox comes first: filling a project is how the Inbox gets emptied.
 import { useMemo, useRef, useEffect, useState } from "react";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import { normalizeWebUrl, readableDomain } from "@/lib/url";
+import { normalizeWebUrl, readableDomain, mediaKindOf, isGif, type MediaKind } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
@@ -18,6 +18,16 @@ import p from "./ProjectStart.module.css";
 const PAGE = 12;
 
 function Thumb({ item, image }: { item: InspoItem; image: string | null }) {
+  // A text has no picture: it is a page of its first lines (its title is already under it)
+  if (mediaKindOf(item.web) === "text") return (
+    <span className={`${s.thumb} ${p.thumb} ${p.page}`} aria-hidden>
+      {item.note ? <span className={p.pageBody}>{item.note}</span> : item.name.slice(0, 1).toUpperCase()}
+    </span>
+  );
+  return <Picture item={item} image={image} />;
+}
+
+function Picture({ item, image }: { item: InspoItem; image: string | null }) {
   // What the grid already downloaded; otherwise the og:image (a 204 without one falls back to the initial)
   const [src, setSrc] = useState(() => image ?? cachedCardImage(item.web) ?? `/api/og?url=${encodeURIComponent(item.web)}`);
   const [failed, setFailed] = useState(false);
@@ -35,8 +45,12 @@ const IconImage = (
   <svg width="18" height="18" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
 );
 
-function hostOf(web: string): string {
-  try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return web; }
+/** Under the name: the site's domain, or what it is when it is a file of ours (never its /api/files path) */
+function sourceOf(web: string, kinds: Record<MediaKind, string>, gif: string): string {
+  const kind = mediaKindOf(web);
+  if (kind === "text") return kinds.text;
+  if (kind === "image") return isGif(web) ? gif : kinds.image;
+  try { return readableDomain(new URL(web).hostname.replace(/^www\./, "")); } catch { return kinds[kind]; }
 }
 
 export default function ProjectStart({ project, items, links, imageOf, onAddUrl, onUpload, onDescribe, onFile, onBringBrand }: {
@@ -194,7 +208,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
                     <Thumb item={item} image={imageOf(item)} />
                     <span className={p.check} aria-hidden>{on && Icons.check}</span>
                     <span className={p.name}>{item.name}</span>
-                    <span className={p.host}>{hostOf(item.web)}</span>
+                    <span className={p.host}>{sourceOf(item.web, t.system.md.kinds, t.card.gif)}</span>
                   </button>
                 );
               })}

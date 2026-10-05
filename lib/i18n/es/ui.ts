@@ -839,6 +839,8 @@ export const ui: typeof EnUi = {
       cited: "Dónde la cita el sistema",
       none: "Todavía no respalda ningún área.",
       see: "Ver en el sistema",
+      areas: "Aporta a",
+      areasFailed: "No se ha podido guardar. Prueba otra vez.",
       notFiled: "Aún no está en ningún proyecto: entra en un criterio.md cuando la lleves a uno.",
     },
     notes: "Notas",
