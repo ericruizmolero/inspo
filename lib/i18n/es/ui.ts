@@ -1238,6 +1238,7 @@ export const ui: typeof EnUi = {
     title: "Primero, el tabl\u00f3n",
     count: (n: number): string => (n === 1 ? "1 referencia" : `${n} referencias`),
     lead: "Sube lo que te inspira: webs, im\u00e1genes, v\u00eddeos.",
+    inboxLead: "Lo que a\u00fan no tiene proyecto. Desde cada tarjeta lo llevas a uno.",
     add: "A\u00f1adir",
     ready: "Ya tengo las referencias",
   },

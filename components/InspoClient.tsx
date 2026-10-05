@@ -283,9 +283,9 @@ export default function InspoClient({
   const viewParam = sp.get("view");
   const projectView: "system" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "system" ? viewParam : defaultView;
   const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams]);
-  // The search lives on a project's board and nowhere else: off it there is no box, and what was typed or
-  // chipped there waits in the URL without narrowing anything
-  const searchHere = !!currentProject && projectView === "board";
+  // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
+  // typed or chipped there waits in the URL without narrowing anything
+  const searchHere = (!!currentProject && projectView === "board") || space === "inbox";
   const searchHereRef = useRef(searchHere);
   searchHereRef.current = searchHere;
   // Which areas of the current project's system each reference backs (for the card's "to the system")
@@ -1771,7 +1771,7 @@ export default function InspoClient({
             onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
             onRemove={() => void removeSelection()} onDone={clearSelection} />
         )}
-        {items.length > 0 && (searchHere || agentSpeaks) && selected.size === 0 && (
+        {items.length > 0 && ((searchHere && (spaceItems.length > 0 || !!currentProject)) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">
             {filtering && (
               <p className="dock__status" role="status" aria-live="polite">
@@ -1780,7 +1780,11 @@ export default function InspoClient({
             )}
             {/* On a project's board, always: what the board is for, and the step to the system (the first time it also
                 marks the project as started, so it opens on its system from then on) */}
-            {searchHere && spaceItems.length > 0 && !filtering && !agent && (
+            {space === "inbox" && spaceItems.length > 0 && !filtering && !agent && (
+              <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
+                title={t.projects.inbox} lead={t.gather.inboxLead} />
+            )}
+            {searchHere && currentProject && spaceItems.length > 0 && !filtering && !agent && (
               <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
                 onStart={async () => {
                   const id = currentProject.id;
@@ -1797,7 +1801,7 @@ export default function InspoClient({
             )}
             {/* The card handed to the agent wears a ring wherever it is shown */}
             {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--dock-ink, #f2f2ef) !important; outline-offset: 3px; }`}</style>}
-            {searchHere && (
+            {searchHere && (spaceItems.length > 0 || currentProject) && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
                 vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />

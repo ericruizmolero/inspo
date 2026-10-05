@@ -1240,6 +1240,7 @@ export const ui = {
     title: "First, the board",
     count: (n: number): string => (n === 1 ? "1 reference" : `${n} references`),
     lead: "Bring in what inspires you: sites, images, videos.",
+    inboxLead: "What has no project yet. Each card takes it to one.",
     add: "Add",
     ready: "I have my references",
   },
