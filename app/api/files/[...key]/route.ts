@@ -10,6 +10,7 @@ import { POSTS_PREFIX } from "@/lib/posts";
 import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
 import { openFile, fileUrl, signedFileUrl } from "@/lib/storage";
+import { brandPrefix } from "@/lib/brand-files";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
 // The active workspace reads its thumbnails, uploaded images, copied videos, comment screenshots and "why" captures;
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const key = parts.join("/");
 
   const ws = session.workspace.id;
-  const allowed = [blobPrefix(ws), mediaPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
+  const allowed = [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
     // A thumbnail stored under another prefix but set on one of this workspace's items
     || (await ownsThumbnail(ws, fileUrl(key)));
   if (!allowed) return new Response("forbidden", { status: 403 });
@@ -46,6 +47,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
       "Cache-Control": "private, max-age=86400",
     };
     if (file.range) headers["Content-Range"] = file.range;
+    // An SVG opened on its own runs as a page: nothing in it may run
+    if (file.contentType === "image/svg+xml") headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
     return new Response(file.stream, { status: file.range ? 206 : 200, headers });
   } catch (e) {
     console.error("files route:", e);

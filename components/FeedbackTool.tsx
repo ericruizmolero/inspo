@@ -270,6 +270,8 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
     </button>
   );
 
+  // A share link is for people outside the team: no tool for the team's notes there
+  if (pathname.startsWith("/s/")) return null;
   return (
     <>
       {loaded && <Agentation

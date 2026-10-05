@@ -25,6 +25,8 @@ import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PARTS, DOC_PART_MAX, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
+import { readBrand } from "@/types/brand";
+import { projectGuides } from "./brand-guides";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -83,6 +85,7 @@ export async function getSystem(organizationId: string, projectId: string): Prom
     areas,
     run: (head?.runJson as SystemRun | null) ?? null,
     doc: head?.doc ?? {},
+    brand: readBrand(head?.brand),
     updatedAt: latest?.toISOString() ?? null,
   };
 }
@@ -211,8 +214,10 @@ export async function setAreaNever(organizationId: string, projectId: string, ar
 export async function copySystem(organizationId: string, fromProjectId: string, toProjectId: string, as: "team" | "model", author: { id: string; name: string }): Promise<void> {
   const from = await getSystem(organizationId, fromProjectId);
   const now = new Date();
-  await db.insert(S).values({ projectId: toProjectId, organizationId, summary: from.summary, runJson: null, createdAt: now, updatedAt: now })
-    .onConflictDoUpdate({ target: S.projectId, set: { summary: from.summary, updatedAt: now } });
+  // The brand's values travel whole; as "model" they are proposals the next run may change
+  const brand = from.brand ? { ...from.brand, meta: as === "team" ? from.brand.meta : {}, run: null } : null;
+  await db.insert(S).values({ projectId: toProjectId, organizationId, summary: from.summary, runJson: null, brand, createdAt: now, updatedAt: now })
+    .onConflictDoUpdate({ target: S.projectId, set: { summary: from.summary, brand, updatedAt: now } });
   for (const a of from.areas) {
     if (!a.decision && !a.never) continue;
     const source = a.decision ? as : null;
@@ -419,8 +424,8 @@ export function runSystem(input: { organizationId: string; projectId: string; us
   if (running) return running;
   const job = (async () => {
     const project = await projectRow(input.organizationId, input.projectId);
-    const [{ refs, stamp }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
-    if (!refs.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
+    const [{ refs, stamp }, current, guides] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId), projectGuides(input.organizationId, input.projectId)]);
+    if (!refs.length && !guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
 
     const codes = new Map(refs.map((r) => [r.code, r.itemId]));
     const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
@@ -438,6 +443,7 @@ const standing = current.areas.map((a) => ({
       `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
       `System as it stands (JSON): ${JSON.stringify(standing)}`,
       `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
+      guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
       focusForModel(input.focus, current.areas.filter((a) => a.source === "team").map((a) => a.area)),
     ].filter(Boolean).join("\n\n");
 

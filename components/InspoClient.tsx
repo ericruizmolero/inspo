@@ -1701,6 +1701,13 @@ export default function InspoClient({
               if (!r.ok) { projectFailed(new Error(r.error)); return; }
               setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, clientItemId: itemId } : p)));
             }}
+            onAddSite={async (web) => {
+              // Already in the library: filed here instead of saved twice
+              const key = webKeyOf(web);
+              const saved = items.find((i) => webKeyOf(i.web) === key);
+              if (saved) { await toggleFiled(saved, currentProject.id, true); return saved; }
+              return addByUrl({ web, type: typeFromUrl(web), note: "" });
+            }}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
@@ -1726,6 +1733,7 @@ export default function InspoClient({
             }}
             onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}
             onFile={(picked) => fileMany(picked, currentProject.id)}
+            onBringBrand={() => setParams({ view: "system", bring: "site" })}
           />
         ) : spaceItems.length === 0 && space === "inbox" ? (
           <div className="empty">

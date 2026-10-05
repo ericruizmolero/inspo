@@ -1,3 +1,4 @@
+import type { BrandSpec } from "./brand";
 // The project's system: what the project has decided about its design, area by area, alive from
 // the first reference. The board feeds it (a model proposes), the team confirms or writes over it,
 // and agents read it as criterio.md. Shared by client and server.
@@ -86,6 +87,8 @@ export interface ProjectSystem {
   run: SystemRun | null;
   /** The parts of criterio.md the team rewrote by hand, by part ("head", "refs", "meta:<area>") */
   doc?: Record<string, string>;
+  /** The brand as values (types/brand.ts). Only the project's own reading carries it; the sidebar's list does not */
+  brand?: BrandSpec | null;
   /** ISO; null when nothing was ever written */
   updatedAt: string | null;
 }

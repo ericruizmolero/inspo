@@ -1,0 +1,147 @@
+/* ─── The stage of an area (components/SystemStage.tsx): the nodes as a row of tabs, the canvas as the
+   place where the area is worked on, the decision beside it. Global on purpose: it shares the system's
+   tokens and the table's pieces (app/globals.css). ─── */
+
+/* The eight nodes, folded: small, quiet, out of the way of the work */
+/* A node shrinks into its tab and grows back out of it */
+::view-transition-group(*) { animation-duration: 0.32s; animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.2s; }
+
+/* Beside the stage: the decision, then the team talking about it */
+/* What a line points at: the option tried on the sample (a dot, touching it puts the sample back on it) or a reference */
+
+/* The references of the area: a chip each, a cross to take one away, a plus to bring more */
+/* What the area draws from, first and large enough to read: a card each, a cross on hover to take it away */
+/* The picker: the project's board and the Inbox, one click on a card adds it or takes it away */
+
+/* ─── The type tester: one row per family, set in the reference's own face ─── */
+.tt-modes { display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--surface); flex-shrink: 0; }
+.tt-mode { height: 28px; padding: 0 11px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 12.5px; cursor: pointer; }
+.tt-mode:hover { color: var(--text); } .tt-mode.is-on { background: var(--surface-3); color: var(--text); }
+.tt-row__refs .sysv-thumb { width: 30px; height: 20px; border-radius: 5px; border-color: var(--bg); }
+
+
+/* ─── The system as a bento (components/SystemView.tsx): the project on top, a tile per area showing its
+   material. Typography and colour carry the most, so they get the most room. ─── */
+.sysb-grid {
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: minmax(188px, auto); gap: 12px;
+  grid-template-areas:
+    "typography typography typography color  color  color"
+    "typography typography typography layout layout imagery"
+    "voice      voice      motion     motion logo   iconography";
+}
+/* The tray: the references at hand, beside the bento, in two wheels turning opposite ways (components/SystemTray.tsx) */
+/* Folded: a rail at the right edge, the tray's name read upwards */
+/* The room a wheel keeps on its left for the gesture lies over the bento: only the references take the pointer */
+/* The gesture that tells a reference can go to the bento: it leans out towards it and goes back */
+@keyframes syst-beckon {
+  0% { transform: none; }
+  30%, 55% { transform: translateX(-46px) translateY(-4px) rotate(-4deg) scale(1.04); }
+  100% { transform: none; }
+}
+/* While a reference is carried every tile is a place to drop it */
+@keyframes syst-in { from { opacity: 0; } }
+/* Each area's material, at the size of its tile */
+
+/* ─── The sample: a title, a subtitle and a body together, each in the family chosen for it ─── */
+/* The picker sits over the sample: solid enough that nothing behind it competes with the names */
+
+/* ─── The sample (components/SystemSample.tsx): one small page every area paints. Its own tokens, so the
+   colours tried on it never leak into the app around it. ─── */
+/* Motion: the page arrives, piece by piece, in the chosen curve */
+@keyframes smp-in { from { opacity: 0; transform: translateY(22px); } }
+/* On the bento's tile: the title and the sentence, on the colours chosen */
+
+/* The controls beside the sample */
+
+/* What a reference brings to the area, on its card: larger cards, and its material under its name */
+
+/* The bento: the references behind each area in sight, and the colours chosen on the sample */
+
+/* The references in one row that scrolls sideways, so the result under them stays in sight */
+/* The bento, tightened to fit a laptop screen */
+
+/* ─── criterio.md in sight (components/SystemMarkdown.tsx): the raw file in a code panel, coloured the way
+   an editor colours Markdown. Dark in both themes, like any code block. A block is pressed to edit it. ─── */
+.mdv-bar { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px 0 20px; box-shadow: inset 0 -1px 0 var(--md-line); font-size: 12.5px; }
+.mdv-bar__hint { color: var(--md-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.mdv-bar__tools { margin-left: auto; display: inline-flex; gap: 6px; flex-shrink: 0; }
+.mdv-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--md-ink); font: inherit; font-size: 12.5px; cursor: pointer; box-shadow: inset 0 0 0 1px var(--md-line); }
+.mdv-btn:hover { background: rgba(255,255,255,0.1); color: var(--md-strong); } .mdv-btn svg { width: 13px; height: 13px; }
+.mdv-btn__down { display: inline-flex; transform: rotate(90deg); }
+.mdv-doc { padding: 18px 20px 26px; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; line-height: 1.65; }
+.mdv-line { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.65em; }
+.mdv-h { color: var(--md-head); font-weight: 600; }
+.mdv-q { color: var(--md-quote); }
+.mdv-em { color: var(--md-dim); font-style: italic; }
+.mdv-b { color: var(--md-strong); font-weight: 600; }
+.mdv-code { color: var(--md-code); }
+.mdv-link { color: var(--md-code); text-decoration: none; } .mdv-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.mdv-url { color: var(--md-dim); }
+.mdv-block { transition: opacity 0.2s; } .mdv-block.is-busy { opacity: 0.5; }
+.mdv-tools { margin-left: auto; display: inline-flex; gap: 2px; opacity: 0; transition: opacity 0.15s; font-family: var(--font); }
+.mdv-block--area:hover .mdv-tools, .mdv-block--area:focus-within .mdv-tools, .mdv-block--area.is-editing .mdv-tools { opacity: 1; }
+@media (hover: none) { .mdv-tools { opacity: 1; } }
+.mdv-edit__row .btn--ghost { color: var(--md-ink); }
+
+/* ─── Starting an empty area (components/SystemStarter.tsx): what the agent found on the board, what it
+   would bring from the library, and the question that gets the area going ─── */
+
+/* What an area never does: under the decision, quiet, a rule a line */
+
+/* A redesign: the client's site, under the project's name */
+/* The header's menu: what is not needed in sight. A short list; keeping a template and marking the client's site open in its place */
+
+/* The agent asks instead of guessing: the question and the answers, each one an order */
+.dock__agent-ask { display: flex; flex-direction: column; gap: 8px; }
+.dock__agent-ask p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--dock-ink); font-weight: 500; }
+.dock__agent-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.dock__agent-option { height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--dock-fill); color: var(--dock-ink); font: inherit; font-size: 13px; cursor: pointer; }
+.dock__agent-option:hover { background: var(--dock-chip); } .dock__agent-option:disabled { opacity: 0.5; cursor: default; }
+
+/* Three variants side by side: a matter of degree is chosen by seeing them together */
+
+/* ─── Templates (components/TemplatesView.tsx): whole systems in the library ─── */
+.tpls { position: absolute; inset: 0; overflow-y: auto; padding: 232px 28px 72px; background: var(--bg); }
+.tpls-inner { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.tpls-title { margin: 0; font-family: var(--font-display, var(--font)); font-size: clamp(26px, 2.6vw, 36px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
+.tpls-lead { margin: 8px 0 0; max-width: 62ch; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.tpls-empty { margin: 0; font-size: 14px; color: var(--muted); }
+.tpl { display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; border-radius: 18px; background: var(--surface); }
+.tpl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; }
+.tpl-head__text { min-width: 0; flex: 1 1 360px; }
+.tpl-name { margin: 0; font-size: 20px; line-height: 1.2; letter-spacing: -0.01em; color: var(--text); }
+.tpl-path { margin: 6px 0 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.tpl-path a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; } .tpl-path a:hover { color: var(--text); }
+.tpl-path span { display: inline-flex; color: var(--muted); } .tpl-path svg { width: 13px; height: 13px; }
+.tpl-about { margin: 8px 0 0; max-width: 70ch; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
+/* The published result in a browser window: its first screen (16:10), and on hover the whole page scrolls
+   under the bar, easing in and out at each end (the board's card does the same, app/globals.css .tile__scroll) */
+.tpl-page { display: block; overflow: hidden; border-radius: 12px; background: #1c1c1e; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08); text-decoration: none; }
+.tpl-page__view { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
+.tpl-page__top { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.tpl-page__full { position: absolute; inset: 0 0 auto; width: 100%; height: auto; opacity: 0; transition: opacity 0.15s; pointer-events: none; }
+.tpl-page:hover .tpl-page__full { opacity: 1; animation: dm-scroll cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .tpl-page:hover .tpl-page__full { animation: none; } }
+.tpl-files { display: flex; gap: 6px; flex-wrap: wrap; }
+.tpl-btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 9px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; }
+.tpl-btn svg { width: 13px; height: 13px; } .tpl-btn:hover, .tpl-btn.is-on { color: var(--text); background: var(--surface-3); }
+.tpl-btn--primary { background: var(--text); color: var(--bg); } .tpl-btn--primary:hover { background: var(--text); color: var(--bg); opacity: 0.9; } .tpl-btn:disabled { opacity: 0.5; cursor: default; }
+.tpl-btn--quiet { margin-left: auto; background: transparent; color: var(--muted); }
+/* criterio.md and receta.md as two files on the same panel */
+.mdv-files { display: inline-flex; gap: 2px; flex-shrink: 0; }
+.mdv-file { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--md-dim); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.mdv-file svg { width: 12px; height: 12px; }
+.mdv-file:hover { color: var(--md-ink); background: rgba(255,255,255,0.06); } .mdv-file.is-on { color: var(--md-strong); background: rgba(255,255,255,0.1); }
+.mdv-file--add { font-weight: 400; }
+
+/* The bento fits the screen: the eight tiles share what the header leaves, the tray beside them (on a desktop;
+   phones stack the tiles and scroll) */
+
+/* The soft edge of a scroller: the side with more to see melts away */
+
+/* ─── The sample as a page (components/SystemSample.tsx): the opening and what it offers, painted with the
+   whole system at once. Sized by its own width (cqi), so the same page works on a stage and in a trio cell ─── */
+/* Motion on the page: each piece in its turn (--i), in the chosen curve and duration */
+/* Phones: the tray sits above the tiles, so folded it is a bar across, not a rail */
+/* A proposal, as a line of an area's conversation */

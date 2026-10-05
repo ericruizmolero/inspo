@@ -75,3 +75,7 @@ section.wrap { padding-bottom: 170px; }
   .barAction { max-width: 140px; }
 }
 @media (prefers-reduced-motion: reduce) { .pick, .check { transition: none; } }
+
+/* A brand that already exists: a quiet way in, under the hint */
+.bring { padding: 0; border: 0; background: none; color: var(--text-2); font: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong); cursor: pointer; }
+.bring:hover { color: var(--text); text-decoration-color: currentColor; }

@@ -65,4 +65,9 @@ export const errors: typeof EnErrors = {
   workspaceAdminsCan: "Solo los administradores del workspace pueden hacer esto",
   workspaceAdminsOnly: "Solo administradores del workspace",
   workspaceNotYours: "Ese workspace no es tuyo",
+  shareGone: "Este enlace se desactivó, o nunca existió",
+  brandFileType: "Ese tipo de archivo no sirve aquí. Logos: SVG, PNG, WebP o JPEG. Fuentes: WOFF2, WOFF, OTF o TTF",
+  brandFileTooBig: "Ese archivo pesa demasiado (el límite son 20 MB)",
+  brandSvgUnsafe: "Ese SVG lleva scripts o enlaces a otros archivos, así que no se puede usar. Expórtalo otra vez como SVG simple",
+  brandTextEmpty: "Pega primero el texto de la guía",
 };

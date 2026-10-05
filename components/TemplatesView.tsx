@@ -14,7 +14,7 @@ import { Icons } from "./Sidebar";
 import LoopVideo from "./LoopVideo";
 import { mediaKindOf, readableDomain, videoEmbedOf } from "@/lib/url";
 import { posterOf, preloadTemplates, remember, remembered, seen } from "./templates-cache";
-import "./SystemStage.css";
+import "./SystemMarkdown.css";
 import "./Templates.css";
 
 const NONE = new Set<SystemArea>();

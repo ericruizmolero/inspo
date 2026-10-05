@@ -87,6 +87,7 @@ export interface ExtractResult {
   scroll: Buffer;     // jpeg 720px wide, up to 2250px (strip that scrolls on hover, ~100KB)
   logo: Buffer | null; // png of the logo as it sits on the page, at 2x
   icons: string[];     // up to 8 of the page's icons as standalone svg markup, colours baked in
+  logoSvg: string | null; // the logo as its own svg, its colours baked in, when the page draws it as one
   fontFiles: FontFile[]; // the file format each @font-face family is served in
 }
 
@@ -320,6 +321,35 @@ const COLLECT = `(() => {
     };
   }
 
+  // The logo as its own svg, when the page draws it as one: its own colours baked in (a logo's colour is the brand's),
+  // classes, styles and handlers out, so it draws the same anywhere and nothing in it runs
+  let logoSvg = null;
+  if (logoEl) {
+    const svgs = logoEl.tagName.toLowerCase() === "svg" ? [logoEl] : [...logoEl.querySelectorAll("svg")];
+    const s = svgs.length === 1 && !(logoEl.tagName.toLowerCase() !== "svg" && logoEl.querySelector("img")) ? svgs[0] : null;
+    const sr = s ? s.getBoundingClientRect() : null;
+    if (s && sr && sr.width >= 12 && sr.height >= 8 && !s.querySelector("image, foreignObject, script, use")) {
+      const c = s.cloneNode(true);
+      const from = [s, ...s.querySelectorAll("*")], to = [c, ...c.querySelectorAll("*")];
+      from.forEach((el, i) => {
+        const d = to[i];
+        for (const a of [...d.attributes]) if (/^on/i.test(a.name) || a.name === "class" || a.name === "style") d.removeAttribute(a.name);
+        if (!/^(path|circle|rect|line|polyline|polygon|ellipse|text)$/i.test(el.tagName)) return;
+        const pcs = getComputedStyle(el);
+        d.setAttribute("fill", pcs.fill);
+        d.setAttribute("stroke", pcs.stroke);
+        if (pcs.stroke !== "none") d.setAttribute("stroke-width", pcs.strokeWidth);
+        if (pcs.opacity !== "1") d.setAttribute("opacity", pcs.opacity);
+      });
+      c.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      if (!c.getAttribute("viewBox")) c.setAttribute("viewBox", "0 0 " + (parseFloat(s.getAttribute("width")) || Math.round(sr.width)) + " " + (parseFloat(s.getAttribute("height")) || Math.round(sr.height)));
+      c.setAttribute("width", String(Math.round(sr.width)));
+      c.setAttribute("height", String(Math.round(sr.height)));
+      const out = new XMLSerializer().serializeToString(c);
+      if (out.length <= 60000) logoSvg = out;
+    }
+  }
+
   // Icons: small svgs outside the logo (outline or filled, stroke weight) and icon fonts.
   // Up to 8 distinct shapes are kept as standalone markup, classes, styles and handlers out, so they
   // draw inside an <img> (where nothing in them can run). All in the page's ink: an icon's own colour
@@ -416,7 +446,7 @@ const COLLECT = `(() => {
     stats: { elementsScanned: scanned, imagesCount: document.images.length, hasVideo: !!document.querySelector("video") },
     stack, logo,
     icons: { count: icount, outline, filled, strokeWidths: top(sw, 4), sizes: top(isz, 4), libraries: iconLibs },
-    copy, media, iconSvgs,
+    copy, media, iconSvgs, logoSvg,
   };
 })()`;
 
@@ -495,7 +525,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     })()`);
     await new Promise((r) => setTimeout(r, 600));
 
-    const raw = (await page.evaluate(COLLECT)) as Omit<DesignTokens, "url" | "finalUrl" | "viewport"> & { pageHeight: number; iconSvgs: string[] };
+    const raw = (await page.evaluate(COLLECT)) as Omit<DesignTokens, "url" | "finalUrl" | "viewport"> & { pageHeight: number; iconSvgs: string[]; logoSvg: string | null };
     const screenshot = Buffer.from(await page.screenshot({ type: "jpeg", quality: 70, fullPage: false }));
     const fullHeight = Math.min(raw.pageHeight, 6000);
     const fullShot = Buffer.from(await page.screenshot({
@@ -528,7 +558,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
       captureBeyondViewport: true,
     }));
 
-    const { pageHeight, iconSvgs, ...rest } = raw;
+    const { pageHeight, iconSvgs, logoSvg, ...rest } = raw;
     const tokens: DesignTokens = oklchToHex({
       url,
       finalUrl: page.url(),
@@ -537,7 +567,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     });
     signal?.throwIfAborted();
     const fontFiles = fontFormats(await fontFaceRules(page));
-    return { tokens, screenshot, fullShot, cover, scroll, logo, icons: oklchToHex(iconSvgs), fontFiles };
+    return { tokens, screenshot, fullShot, cover, scroll, logo, icons: oklchToHex(iconSvgs), logoSvg: logoSvg ? oklchToHex(logoSvg) : null, fontFiles };
   } finally {
     signal?.removeEventListener("abort", onAbort);
     await browser.close().catch(() => {});

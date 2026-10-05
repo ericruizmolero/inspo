@@ -7,6 +7,7 @@ import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
 import type { Project, ProjectLinks } from "@/types/inspo";
 import { dropSpace, dropFromSpace } from "./canvas";
+import { deleteProjectBrandFiles, projectBrandPrefix } from "./brand-files";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -58,6 +59,11 @@ export async function renameProject(organizationId: string, id: string, name: st
 export async function deleteProject(organizationId: string, id: string): Promise<void> {
   await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, id)));
   await dropSpace(organizationId, id);
+  // The brand's files go too, unless a project started from this one (a template) still shows them
+  const prefix = projectBrandPrefix(organizationId, id);
+  const [still] = await db.select({ id: schema.projectSystem.projectId }).from(schema.projectSystem)
+    .where(and(eq(schema.projectSystem.organizationId, organizationId), sql`${schema.projectSystem.brand}::text like ${`%${prefix}%`}`)).limit(1);
+  if (!still) await deleteProjectBrandFiles(organizationId, id);
 }
 
 /** Where a reference saved from outside the app lands (the extension): the project this person filed something in

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
 import { Avatar } from "./CommentsPanel";
+import "./SystemMarkdown.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
 const IconPin = (
@@ -483,7 +484,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
             // A skill's section is written from the system (lib/md-skills.ts): it follows the areas, it is not typed over
             // The content is the texts the team pasted, whole (lib/criterio-md.ts): each one's words are typed in place
             // and saved to the reference itself; who saved it and what was said of it stay the app's
-            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id.startsWith("skill:") || b.id === "content" ? null : over(b.id, b.edited);
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id.startsWith("skill:") || b.id.startsWith("brand-") || b.id === "content" ? null : over(b.id, b.edited);
             if (b.texts && onText) return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
                 {lines(b.id, [`## ${b.heading}`, ""], whole)}
@@ -509,7 +510,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
               </div>
             );
           }
-          const whole = [`## ${b.heading}`, ...rawOf(b).split("\n"), ...b.meta];
+          const whole = [`## ${b.heading}`, ...rawOf(b).split("\n"), ...(b.tokens ?? []), ...b.meta];
           const metaEdit = over(`meta:${b.area}`, b.metaEdited);
           return (
             <div key={b.area} id={`sdoc-${b.area}`} className={`mdv-block mdv-block--area${busy.has(b.area) ? " is-busy" : ""}`} aria-busy={busy.has(b.area)}>
@@ -524,6 +525,8 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
                 onSave: async (text) => { await onSave?.(b.area, parse(text, b.whyLabel, b.neverLabel)); },
                 onPropose: onPropose ? (text, why) => onPropose(b.area, parse(text, b.whyLabel, b.neverLabel), why) : undefined,
               })}
+              {/* The brand's values for the area: the presentation writes them, the file only reads them */}
+              {b.tokens?.length ? <><Line text="" />{lines(b.area, b.tokens, whole, false)}</> : null}
               {/* Its status and its references: the app's, or what the team wrote over them */}
               {b.meta.length > 0 && <><Line text="" />{metaEdit ? written(b.area, b.meta.join("\n"), "", whole, metaEdit) : lines(b.area, b.meta, whole, false)}</>}
               {after && <div className="mdv-team">{after(b)}</div>}
