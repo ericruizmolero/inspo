@@ -126,19 +126,26 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     return `${code.has(id) ? `**${code.get(id)}** ` : ""}[${it.name}](${abs(it.web)})${kind}`;
   };
   // What the team rewrote by hand stands instead of what the app would write (types/system.ts DOC_PARTS)
-  const doc = clean ? {} : system.doc ?? {};
+  const doc: Record<string, string> = clean ? {} : system.doc ?? {};
+  // Every heading can be typed over too ("title:<block id>"); emptied, the app's comes back
+  const title = (id: string, fallback: string) => doc[`title:${id}`] || fallback;
+  // A section the app writes whole (a skill's, the brand's), typed over by hand: it stays as the team left it until they bring the app's back
+  const byHandOr = (id: string, lines: string[]) => ({ lines: doc[id] ? doc[id].split("\n") : lines, edited: !!doc[id] });
   const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
-  if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: strings.project, lines: [about.trim()] });
+  if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
   // The project's content: each text the team pasted, whole and as given, under its title. It is material to
   // place, not a reference to read a look from, so it sits with what the project is and not in the appendix
   const texts = board.filter((id) => items[id]?.kind === "text");
   if (texts.length) {
-    const intro = [`> ${strings.contentIntro}`, ""];
+    const intro = doc["content-intro"] ? [...doc["content-intro"].split("\n"), ""] : [`> ${strings.contentIntro}`, ""];
     const parts: { itemId: string; head: string[]; body: string[] }[] = [];
     for (const id of texts) {
       const it = items[id];
       const head = [`### ${code.get(id)} · ${it.name}`, ""];
+      // Who saved it and what was said of it, or what the team wrote over that
+      const byHand = doc[`texthead:${id}`];
+      if (byHand) { head.push(...byHand.split("\n"), ""); parts.push({ itemId: id, head, body: lowerHeadings(it.text ?? it.what ?? "") }); continue; }
       if (it.by) head.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
       if (it.said?.length) {
         head.push(`- **${strings.said}:**`);
@@ -150,16 +157,16 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const lines = [...intro, ...parts.flatMap((p) => [...p.head, ...p.body, ""])];
     while (lines[lines.length - 1] === "") lines.pop();
     // Only the texts whose words are in hand can be typed over: one still loading shows its first lines
-    blocks.push({ kind: "section", id: "content", heading: strings.content, lines, texts: { intro, items: parts.map((p) => ({ ...p, itemId: items[p.itemId].text === undefined ? "" : p.itemId })) } });
+    blocks.push({ kind: "section", id: "content", heading: title("content", strings.content), lines, texts: { intro, items: parts.map((p) => ({ ...p, itemId: items[p.itemId].text === undefined ? "" : p.itemId })) } });
   }
-  if (system.summary) blocks.push({ kind: "summary", heading: strings.summary, text: system.summary });
+  if (system.summary) blocks.push({ kind: "summary", heading: title("summary", strings.summary), text: system.summary });
   // The brand in its own words: its statement and what it is, as the presentation opens with them
   const introLines = brand ? brandIntroLines(brand) : [];
-  if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: strings.brand.intro, lines: introLines });
+  if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
   const href = (key: string) => (fileHref ? fileHref(key) : `${origin}/api/files/${key}`);
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
-    const base = { kind: "area" as const, area: key, heading: labels[key], whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
+    const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
     const meta: string[] = [];
     if (a?.decision) {
       const level = confidenceOf(a);
@@ -189,10 +196,11 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}) });
   }
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
-  for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s });
+  // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
+  for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
   // The values as variables, ready to paste into a project
   const css = brand ? brandCssLines(brand, project) : [];
-  if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: strings.brand.tokens, lines: [`> ${strings.brand.tokensIntro}`, "", ...css] });
+  if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
   // Every reference once, with what it is, what was said of it and what it brings to each area
   // (a text is already whole under Content)
   const refs = board.filter((id) => items[id]?.kind !== "text");
@@ -220,9 +228,25 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
       lines.push("");
     }
     while (lines[lines.length - 1] === "") lines.pop();
-    blocks.push({ kind: "section", id: "refs", heading: `${strings.refs} (${refs.length})`, lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
+    blocks.push({ kind: "section", id: "refs", heading: title("refs", `${strings.refs} (${refs.length})`), lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
   }
   return blocks;
+}
+
+/** An area's status and references as the team rewrote them in the file, read back: whether it says decided or
+ *  proposed, and every reference it cites by code ("- **R3** …. Take: …"), in order, with its take. The words said
+ *  under a reference and the conversation are a record, not read back */
+export function readAreaMeta(text: string, strings: { decided: string; proposed: string; take: string }): { status: "decided" | "proposed" | null; refs: { code: string; take: string }[] } {
+  const lines = text.split("\n");
+  const status = lines.some((l) => l.includes(`**${strings.decided}**`)) ? "decided" : lines.some((l) => l.includes(`**${strings.proposed}**`)) ? "proposed" : null;
+  const refs: { code: string; take: string }[] = [];
+  for (const l of lines) {
+    const m = l.match(/^\s*[-*]\s+\*\*(R\d+)\*\*(.*)$/);
+    if (!m || refs.some((r) => r.code === m[1])) continue;
+    const at = m[2].indexOf(`${strings.take}:`);
+    refs.push({ code: m[1], take: at < 0 ? "" : m[2].slice(at + strings.take.length + 1).trim() });
+  }
+  return { status, refs };
 }
 
 /** An area's never list: one rule a line under its bold label */

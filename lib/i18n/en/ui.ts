@@ -1277,6 +1277,7 @@ export const ui = {
     hintComment: "Press the line you want to comment on. Esc to leave.",
     discard: "Discard",
     byHand: "Written by hand: it no longer follows what the app writes.",
+    noRefs: "No references. Type - **R3** to bring R3 into this area.",
     restore: "Go back to the app\u2019s text",
   },
   brand: {

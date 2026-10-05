@@ -145,7 +145,7 @@
 .mdv-savebar .btn--ghost { color: var(--md-ink); }
 /* An area's heading with its quiet tools */
 .mdv-headrow { display: flex; align-items: center; gap: 12px; }
-.mdv-headrow > .mdv-line { flex: 1; min-width: 0; }
+.mdv-headrow > .mdv-line, .mdv-headrow > .mdv-written { flex: 1; min-width: 0; }
 .sdoc .mdv-headrow .mdv-tools { opacity: 0; transition: opacity 0.15s; }
 .sdoc .mdv-block--area:hover .mdv-tools, .sdoc .mdv-block--area:focus-within .mdv-tools { opacity: 1; }
 @media (hover: none) { .sdoc .mdv-headrow .mdv-tools { opacity: 1; } }

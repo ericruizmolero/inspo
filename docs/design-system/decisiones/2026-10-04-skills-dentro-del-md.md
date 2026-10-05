@@ -8,4 +8,4 @@ kind: producto
 
 **Por qué.** Quien copie el MD se lleva también la skill; el MD basta por sí solo.
 
-**Cómo aplicarlo.** Catálogo en `lib/md-skills.ts` y `lib/md-skills-more.ts`. Las secciones `skill:*` no se editan a mano.
+**Cómo aplicarlo.** Catálogo en `lib/md-skills.ts` y `lib/md-skills-more.ts`. Las secciones `skill:*` se pueden reescribir a mano desde el 2026-10-05 ([decisión](2026-10-05-todo-el-md-editable.md)).
