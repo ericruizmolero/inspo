@@ -87,8 +87,8 @@ async function main() {
   }
   console.log(`items: +${added}, ${skipped} already existed`);
 
-  const thumbs = (await readLegacyBlobMap<Record<string, string>>("inspo/thumbnail-map"))
-    ?? (await readJson<Record<string, string>>(path.join("public", "thumbs", "_map.json"))) ?? {};
+  // public/thumbs/_map.json was the other source; that folder is gone (scripts/clear-public-thumbs.ts)
+  const thumbs = (await readLegacyBlobMap<Record<string, string>>("inspo/thumbnail-map")) ?? {};
   let t = 0;
   for (const [web, url] of Object.entries(thumbs)) if (await setThumbnail(team.id, web, url)) t++;
   console.log(`thumbnails: ${t}/${Object.keys(thumbs).length}`);
