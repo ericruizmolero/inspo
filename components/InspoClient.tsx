@@ -69,7 +69,7 @@ const TemplatesView = dynamic(() => import("./TemplatesView"));
 const AddInspoModal = dynamic(() => import("./AddInspoModal"), { ssr: false });
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
-async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<File> {
+async function compressImage(file: File, maxPx = 1400, quality = 0.85, type: "image/jpeg" | "image/webp" = "image/jpeg"): Promise<File> {
   return new Promise((resolve) => {
     const img = new Image();
     const objectUrl = URL.createObjectURL(file);
@@ -83,8 +83,8 @@ async function compressImage(file: File, maxPx = 1400, quality = 0.85): Promise<
       canvas.height = h;
       canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
       canvas.toBlob(
-        (blob) => resolve(new File([blob!], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" })),
-        "image/jpeg", quality
+        (blob) => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, type === "image/webp" ? ".webp" : ".jpg"), { type }) : file),
+        type, quality
       );
     };
     img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
@@ -593,6 +593,7 @@ export default function InspoClient({
       setThumbMap((prev) => ({ ...prev, [item.web]: item.web }));
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       watch(item.web);
+      void cardCopy(item.web, input.file);
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
@@ -794,6 +795,20 @@ export default function InspoClient({
       const { url } = await res.json();
       setThumbMap((prev) => ({ ...prev, [webUrl]: url }));
     }
+  };
+
+  // An uploaded image is kept whole for the panel, but a card is at most a few hundred px wide: a 20 MB photo
+  // was downloaded and decoded at full size for it. The card gets a 1400 px WebP copy (WebP keeps transparency),
+  // when that is clearly lighter. A gif stays as it is, so it still moves.
+  const cardCopy = async (webUrl: string, file: File) => {
+    if (!file.type.startsWith("image/") || file.type === "image/gif") return;
+    const copy = await compressImage(file, 1400, 0.85, "image/webp");
+    if (copy === file || copy.size > file.size * 0.7) return;
+    const fd = new FormData();
+    fd.append("file", copy);
+    fd.append("webUrl", webUrl);
+    const res = await fetch("/api/thumbnail", { method: "POST", body: fd }).catch(() => null);
+    if (res?.ok) { const { url } = await res.json(); setThumbMap((prev) => ({ ...prev, [webUrl]: url })); }
   };
 
   const handleThumbnailRemove = async (webUrl: string) => {
@@ -1446,8 +1461,9 @@ export default function InspoClient({
     if (kind === "text") return <TextPage key={panelItem.id} title={panelItem.name} body={panelItem.id ? textBodies[panelItem.id] : undefined} onSave={(text) => saveTextBody(panelItem, text)} onRename={(title) => renameTextItem(panelItem, title)} />;
     if (kind === "post") return <div className="ip-media"><PostView web={panelItem.web} onThumb={(thumb: string) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))} /></div>;
     const job = designMdJobs[panelItem.web];
+    // An image shows whole in the panel: its card copy (cardCopy) is for the board
     const src = kind === "image"
-      ? thumbMap[panelItem.web] ?? panelItem.web
+      ? panelItem.web
       : job?.entry?.screenshotUrl ?? pageShots[panelItem.web]?.shotUrl ?? thumbMap[panelItem.web] ?? `/api/shot?url=${encodeURIComponent(panelItem.web)}&v=2`;
     return (
       <PageNotes
