@@ -5,3 +5,7 @@
 Before any Next.js work, find and read the relevant doc in `node_modules/next/dist/docs/`. Your training data is outdated — the docs are the source of truth.
 
 <!-- END:nextjs-agent-rules -->
+
+# Design system: read it, and write down what gets decided
+
+The team's design system lives in `docs/design-system/` (shown at `/library`). Before designing UI or writing CSS, read `docs/design-system/principios.md` and `fundamentos.md`; before creating a component, check `componentes.md`. When the team approves, rejects or corrects a design or development choice, record it with the `registrar-decision` skill in the same piece of work.

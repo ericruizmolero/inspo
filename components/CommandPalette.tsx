@@ -98,6 +98,11 @@ export default function CommandPalette({ open, onOpenChange, items, hasDesignMd,
               <span className="cmdk-item__icon">{sectionIcon("overview")}</span>{t.admin.title}
             </CommandItem>
           )}
+          {isAdmin && (
+            <CommandItem value={`design system library ${t.designLibrary.title}`} onSelect={run(() => router.push("/library"))}>
+              <span className="cmdk-item__icon">{sectionIcon("foundations")}</span>{t.designLibrary.title}
+            </CommandItem>
+          )}
         </CommandGroup>
       </CommandList>
     </CommandDialog>

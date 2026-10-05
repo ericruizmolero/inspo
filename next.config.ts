@@ -42,6 +42,9 @@ const nextConfig: NextConfig = {
     // Built-in templates: their folders are read with readFile the first time a workspace lists its templates
     // (lib/template-seed.ts), from the server action on the home page
     "/": ["./docs/templates/**/*"],
+    // The team's design system: its Markdown is read with readFile/readdir (lib/design-system.ts)
+    "/library/*": ["./docs/design-system/**/*"],
+    "/library/capturas/*": ["./docs/design-system/capturas/*"],
   },
 };
 
