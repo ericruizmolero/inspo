@@ -9,6 +9,7 @@ Cómo resolvemos problemas que se repiten. Cada patrón enlaza la decisión que 
 | Hover, pulsar, entradas cortas | CSS con las curvas de los tokens | `.btn:active { scale(0.96) }`, `pop-in` |
 | Muchas piezas que cambian de sitio | Transición CSS de `transform` sobre posiciones calculadas | Tarjetas del tablero (`Grid.tsx`) |
 | Una pieza que nace de un punto | WAAPI (`el.animate`) | La ficha crece desde donde se pulsó (`ItemPanel.tsx`) |
+| Algo que sigue al puntero | `requestAnimationFrame` con suavizado y WAAPI para entrar y salir | La miniatura de Descubrir (`Discover.tsx`) → [decisión](decisiones/2026-10-05-miniatura-descubrir-sin-gsap.md) |
 | Cambio de vista completo | View Transitions | Abrir un área en `SystemView` (≥801 px) |
 
 Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay que medir, medir todo antes de animar; nada de GSAP Flip sobre muchos elementos (1,5 s de congelación con 286 tarjetas); respetar `prefers-reduced-motion` (se deja solo el fundido). GSAP ya no está en el proyecto. → [cortina](decisiones/2026-09-24-cortina-sidebar-waapi.md), [tablero](decisiones/2026-10-01-masonry-ventanada-sin-flip.md)
