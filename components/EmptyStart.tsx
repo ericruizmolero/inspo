@@ -6,7 +6,7 @@ import { DIRECTORY, DIRECTORY_TOTAL, siteShot } from "@/lib/directory";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import s from "./EmptyStart.module.css";
-import { AddToLibrary } from "./DirectoryModal";
+import AddToLibrary from "./AddToLibrary";
 
 // Always 9 sites (3×3 grid): the most used and the most popular right now, picked by hand
 // with a screenshot that looks perfect. If one leaves the directory, the first site of each

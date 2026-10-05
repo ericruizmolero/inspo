@@ -5,18 +5,20 @@ import Link from "next/link";
 import { DIRECTORY, DIRECTORY_TOTAL, siteShot, type DirectorySite } from "@/lib/directory";
 import { Icons, SearchBox } from "./Sidebar";
 import { useT } from "./I18nProvider";
-import en from "@/lib/i18n/en";
-import es from "@/lib/i18n/es";
+import AddToLibrary from "./AddToLibrary";
+// Only the directory text of each language, not the whole dictionaries
+import { directory as en } from "@/lib/i18n/en/directory";
+import { directory as es } from "@/lib/i18n/es/directory";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
-type GroupKey = keyof typeof en.directory.groups;
+type GroupKey = keyof typeof en.groups;
 
 // Search looks at both languages: the word in someone's head may be
 // "tipografía" even while they use the app in English.
-const text = (url: string) => `${en.directory.items[url] ?? ""} ${es.directory.items[url] ?? ""}`;
+const text = (url: string) => `${en.items[url] ?? ""} ${es.items[url] ?? ""}`;
 const titles = (key: string) =>
-  `${en.directory.groups[key as GroupKey]?.title ?? ""} ${es.directory.groups[key as GroupKey]?.title ?? ""}`;
+  `${en.groups[key as GroupKey]?.title ?? ""} ${es.groups[key as GroupKey]?.title ?? ""}`;
 
 interface DirectoryModalProps {
   onClose: () => void;
@@ -77,19 +79,6 @@ function RecThumb({ name, url }: { name: string; url: string }) {
         <img src={siteShot(url)} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
       )}
     </span>
-  );
-}
-
-/** Saves a directory site into the library. Once it is there, it says so and stays still. */
-export function AddToLibrary({ url, name, onAdd, added, className = "" }: {
-  url: string; name: string; onAdd: (url: string) => void; added: boolean; className?: string;
-}) {
-  const { t } = useT();
-  return (
-    <button type="button" className={`dir-add${added ? " is-added" : ""} ${className}`} disabled={added}
-      onClick={() => onAdd(url)} aria-label={added ? t.directory.addedLabel(name) : t.directory.addLabel(name)}>
-      {added ? Icons.check : Icons.plus}<span>{added ? t.directory.added : t.directory.add}</span>
-    </button>
   );
 }
 

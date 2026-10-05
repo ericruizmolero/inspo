@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { DIRECTORY, featuredUrls, isNewSite, siteHost, type DirectorySite } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icons } from "./Sidebar";
-import { directory as enDirectory } from "@/lib/i18n/en/directory";
+import type { directory as enDirectory } from "@/lib/i18n/en/directory";
 import { useT } from "./I18nProvider";
 import "./Discover.css";
 
