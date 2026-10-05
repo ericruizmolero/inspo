@@ -75,9 +75,8 @@ interface InspoCardProps {
   manualThumbnail?: string;
   onUpload: (file: File) => Promise<void>;
   onRemoveThumbnail: () => Promise<void>;
-  onDesignMd: () => void;
-  designMdLoading?: boolean;
-  designMdReady?: boolean;
+  /** Opens the reference in its panel (the page with its post-its, and its thread) */
+  onOpen: () => void;
   designCover?: string;   // 720x450 cover generated with the DESIGN.md (on the board: the page)
   /** The same picture through the app, tried once if designCover fails (a signed link that expired) */
   designCoverFallback?: string;
@@ -102,12 +101,10 @@ interface InspoCardProps {
   selecting?: boolean;
   /** Pick or unpick it; range: ⇧ was held, so everything from the last pick to here */
   onSelect?: (range: boolean) => void;
-  /** On the board: the page's top as the cover, sized before it loads, with the post-its as dots */
+  /** On the board: the page's top as the cover, sized before it loads */
   board?: {
     /** Height/width of the media, when known (the layout already reserved it) */
     ratio?: number;
-    /** Where the post-its sit, as fractions of the page */
-    pins?: { x: number; y: number }[];
     /** The media loaded and its height/width was unknown or changed */
     onMeasure?: (ratio: number) => void;
     /** The page's own colour, painted until its image arrives */
@@ -174,7 +171,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onDesignMd, designMdLoading, designMdReady, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -183,7 +180,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const videoFile = video?.provider === "file" && !manualThumbnail;
   // A screen recording loops on its card, over its frame, while the card is on screen
   const loopSrc = video?.loops && !uploadedThumb ? video.src : null;
-  const isSite = kind === "web";
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
   // Any other recording of ours plays under the pointer, muted, over its frame or thumbnail.
@@ -385,9 +381,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   };
 
   // The external site only opens from its icon: a click on the card leads to our own views.
-  // With a DESIGN.md done the sheet opens; otherwise the comment thread (which links to the site).
-  const clickTarget: "md" | "comments" = designMdReady || !onComments ? "md" : "comments";
-  const openInside = () => { if (clickTarget === "md") onDesignMd(); else onComments!(); };
 
   const openHref = kind === "image" ? item.web : item.web;
   const openLabel = kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
@@ -445,7 +438,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
         onClick={(e) => {
           if (suppressClick.current) return;
           if (onSelect && (selecting || e.metaKey || e.ctrlKey || e.shiftKey)) { onSelect(e.shiftKey); return; }
-          openInside();
+          onOpen();
         }}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
@@ -511,11 +504,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey); }} onMouseDown={(e) => e.stopPropagation()}>
               {Icons.check}
             </button>
-          )}
-          {board?.pins && isLoaded && board.pins.length > 0 && (
-            <span className="tile__pins" aria-hidden>
-              {board.pins.map((p, i) => <i key={i} style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }} />)}
-            </span>
           )}
           {plays && !loopSrc && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
           {gifChip && isLoaded && score === undefined && <span className="tile__badge">{t.card.gif}</span>}
@@ -586,7 +574,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           )}
 
           <div
-            className={`tile__actions${uploading || designMdLoading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
+            className={`tile__actions${uploading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
@@ -602,14 +590,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               </Fragment>
             ) : (
               <Fragment key="actions">
-            {/* Up here, the quieter ones: the sheet, the site, and the rest behind ··· */}
-            {isSite && <button
-              className={`tile__action tile__action--md${designMdReady ? " is-ready" : ""}`}
-              data-tip={designMdLoading ? t.card.generatingDesignMd : designMdReady ? t.card.seeDesignMd : t.card.generateWithAi}
-              onClick={(e) => { e.stopPropagation(); onDesignMd(); }}
-            >
-              {designMdLoading ? <span className="spinner" /> : designMdReady ? <>{t.card.seeSheet}<i className="tile__dot" /></> : t.card.seeSheet}
-            </button>}
+            {/* Up here, the quieter ones: the site, and the rest behind ··· */}
             {/* A text has no page of its own to open: it is read in its panel */}
             {kind !== "text" && <a className="tile__action tile__action--link" href={openHref} target="_blank" rel="noopener noreferrer"
               aria-label={openLabel} title={openLabel} onClick={(e) => e.stopPropagation()}>
@@ -701,7 +682,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
         )}
         {picker("tile__caption-md tile__caption-pj")}
         {areaPicker("tile__caption-md tile__caption-pj")}
-        {isSite && <button className={`tile__caption-md${designMdReady ? " is-ready" : ""}`} onClick={onDesignMd}>{designMdLoading ? <span className="spinner" /> : designMdReady ? <>MD<i className="tile__dot" /></> : "MD"}</button>}
         <a className="tile__caption-md tile__caption-link" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (
           <Fragment key="confirm">

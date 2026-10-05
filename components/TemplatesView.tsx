@@ -160,7 +160,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
         </div>
       </header>
 
-      <SystemMarkdown readOnly blocks={blocks} busy={NONE} onCopy={() => void copy()} copied={copied}
+      <SystemMarkdown readOnly blocks={blocks} busy={NONE} onCopy={() => void copy()} copied={copied} markdown={md}
         onDownload={() => download(`${tpl.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`, md)}
         projectId={tpl.id} projectName={tpl.name} hasRecipe={tpl.recipeSize > 0} />
 

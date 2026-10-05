@@ -6,7 +6,7 @@ import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system"
 type Lang = "en" | "es";
 
 /** In the order the file has them: the areas' order, then the ones that cross them */
-export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "microcopy", "no-ai-slop", "a11y", "tailwind"] as const;
+export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "iso-figure", "microcopy", "no-ai-slop", "a11y", "tailwind"] as const;
 export type MoreSkill = (typeof MORE_SKILLS)[number];
 
 interface SkillText {
@@ -351,6 +351,47 @@ const SKILLS: Record<MoreSkill, SkillDef> = {
         "Mientras carga, su propio color dominante o un desenfoque de ella, nunca una caja gris ni un spinner.",
         "El texto sobre una foto va sobre un velo que garantiza su contraste y nunca forma parte del fichero de imagen.",
         "El vídeo va en silencio, con `playsinline`, `poster` y una forma de pausarlo; con movimiento reducido no arranca.",
+      ],
+    },
+  },
+  "iso-figure": {
+    area: "imagery",
+    en: {
+      heading: "Build it: an interactive isometric figure",
+      lead: "How to draw an object of the project as an isometric hairline figure in one HTML file, with parts that work when pressed (after MrBongoC's iso-figure skill).",
+      setup: "Plain SVG, no libraries: about 15 lines of projection turn each face of a box into an SVG `matrix()`, so flat rects, text and paths land on the right plane. Copy this kernel as it is, then build the scene:\n\n```js\nconst C = Math.cos(Math.PI/6), S = Math.sin(Math.PI/6), OX = 465, OY = 300;\nconst P = (x,y,z) => [(x-y)*C + OX, (x+y)*S - z + OY];\nconst D = (x,y,z) => [(x-y)*C, (x+y)*S - z];\nconst plane = (O,U,V) => { const o=P(...O), u=D(...U), v=D(...V);\n  return `matrix(${u[0]} ${u[1]} ${v[0]} ${v[1]} ${o[0]} ${o[1]})`; };\nconst TOP   = (x,y,z) => plane([x,y,z],[1,0,0],[0,1,0]);\nconst FRONT = (x,y,z) => plane([x,y,z],[1,0,0],[0,0,-1]);\nconst SIDE  = (x,y,z) => plane([x,y,z],[0,-1,0],[0,0,-1]);\nconst rect = (t,w,h,r=0,cls='face') =>\n  `<g transform=\"${t}\"><rect class=\"${cls}\" width=\"${w}\" height=\"${h}\" rx=\"${r}\"/></g>`;\nconst box = (x,y,z,w,d,h,r=0) =>\n  rect(SIDE(x+w,y+d,z+h), d,h,Math.min(r,h/4)) +\n  rect(FRONT(x,y+d,z+h), w,h,Math.min(r,h/4)) +\n  rect(TOP(x,y,z+h), w,d,r,'face top');\n```",
+      defaults: ["Two greys for the lines (structure and detail) and one `--live` colour for whatever is on: the lit screen, the pressed key.", "A dark and a light set of custom properties; the drawing works in both.", "Radii of 2 to 14 units on the boxes."],
+      rules: [
+        "Name the output first: what pressing a part produces (typed text, a number, a note, a light). A figure you can only watch is decoration; pick another object.",
+        "Axes: +x runs down-right, +y down-left, +z up. The front of the object (screen, display) goes on a FRONT face; what the hand reaches for (keys, buttons) sits at larger `y`.",
+        "Break the object into 3 to 8 boxes and write their `(x, y, z, w, d, h)` as a table before drawing. Detail (vents, bezels, labels) is drawn flat inside a group with the face's transform, never as hand-typed skewed polygons.",
+        "Paint back to front, the only depth sorting: smaller `x + y` first, lower `z` first; grids row by row with growing `y`. Faces need an opaque fill.",
+        "Every line `vector-effect: non-scaling-stroke` at 1px, or the matrix skews the hairline. Texture comes from repetition (slits, key grids, ribs), never from shading, gradients or shadows.",
+        "Each pressable part is its own `<g class=\"press\">` with its box and its label. Pressed: `translateY(4px)` in about 60ms and its stroke goes to `--live`; nothing moves with `prefers-reduced-motion`.",
+        "One `state` object and one `render()`; pointer and keyboard call the same functions. Typed text shows only its tail, clipped to the glass, with `&` and `<` escaped.",
+        "Frame it by numbers: project the extreme corners with `P` and set `OX`, `OY` and the `viewBox` for 8 to 15% of margin on every side.",
+        "The plate: four monospace captions at the corners, `Fig N`, the object's name, the instruction and a live readout in lowercase (`on · 9 chars · key t`) that changes on every press.",
+        "On the object, the project's own mark or an invented glyph, never another company's logo or a real product's silhouette.",
+        "One file that runs from disk: no external scripts. The svg has `role=\"img\"`, `tabindex=\"0\"` and an `aria-label` saying what it is and how to use it.",
+      ],
+    },
+    es: {
+      heading: "Construirlo: una figura isométrica interactiva",
+      lead: "Cómo dibujar un objeto del proyecto como figura isométrica de línea fina en un solo HTML, con partes que funcionan al pulsarlas (a partir de la skill iso-figure de MrBongoC).",
+      setup: "SVG plano, sin librerías: unas 15 líneas de proyección convierten cada cara de una caja en un `matrix()` de SVG, así que rectángulos, textos y trazados planos caen en el plano correcto. Copia este núcleo tal cual y luego monta la escena:\n\n```js\nconst C = Math.cos(Math.PI/6), S = Math.sin(Math.PI/6), OX = 465, OY = 300;\nconst P = (x,y,z) => [(x-y)*C + OX, (x+y)*S - z + OY];\nconst D = (x,y,z) => [(x-y)*C, (x+y)*S - z];\nconst plane = (O,U,V) => { const o=P(...O), u=D(...U), v=D(...V);\n  return `matrix(${u[0]} ${u[1]} ${v[0]} ${v[1]} ${o[0]} ${o[1]})`; };\nconst TOP   = (x,y,z) => plane([x,y,z],[1,0,0],[0,1,0]);\nconst FRONT = (x,y,z) => plane([x,y,z],[1,0,0],[0,0,-1]);\nconst SIDE  = (x,y,z) => plane([x,y,z],[0,-1,0],[0,0,-1]);\nconst rect = (t,w,h,r=0,cls='face') =>\n  `<g transform=\"${t}\"><rect class=\"${cls}\" width=\"${w}\" height=\"${h}\" rx=\"${r}\"/></g>`;\nconst box = (x,y,z,w,d,h,r=0) =>\n  rect(SIDE(x+w,y+d,z+h), d,h,Math.min(r,h/4)) +\n  rect(FRONT(x,y+d,z+h), w,h,Math.min(r,h/4)) +\n  rect(TOP(x,y,z+h), w,d,r,'face top');\n```",
+      defaults: ["Dos grises para las líneas (estructura y detalle) y un color `--live` para lo que está encendido: la pantalla iluminada, la tecla pulsada.", "Un juego de custom properties oscuro y otro claro; el dibujo funciona en los dos.", "Radios de 2 a 14 unidades en las cajas."],
+      rules: [
+        "Primero, qué produce: qué sale al pulsar una parte (texto tecleado, un número, una nota, una luz). Una figura que solo se mira es decoración; elige otro objeto.",
+        "Ejes: +x baja a la derecha, +y baja a la izquierda, +z sube. El frente del objeto (pantalla, display) va en una cara FRONT; lo que toca la mano (teclas, botones) queda a mayor `y`.",
+        "Descompón el objeto en 3 a 8 cajas y apunta sus `(x, y, z, w, d, h)` en una tabla antes de dibujar. El detalle (rejillas, biseles, etiquetas) se dibuja plano dentro de un grupo con la transformación de la cara, nunca con polígonos sesgados a mano.",
+        "Se pinta de atrás adelante, la única ordenación de profundidad: primero menor `x + y`, primero menor `z`; las cuadrículas fila a fila con `y` creciente. Las caras necesitan relleno opaco.",
+        "Toda línea con `vector-effect: non-scaling-stroke` a 1px, o la matriz deforma el trazo fino. La textura sale de la repetición (ranuras, rejillas de teclas, nervios), nunca de sombreados, degradados ni sombras.",
+        "Cada parte pulsable es su propio `<g class=\"press\">` con su caja y su etiqueta. Al pulsar: `translateY(4px)` en unos 60ms y su trazo pasa a `--live`; con `prefers-reduced-motion` no se mueve nada.",
+        "Un objeto `state` y un `render()`; puntero y teclado llaman a las mismas funciones. El texto tecleado muestra solo su final, recortado al cristal, con `&` y `<` escapados.",
+        "Encuadre con números: proyecta las esquinas extremas con `P` y ajusta `OX`, `OY` y el `viewBox` para dejar de 8 a 15% de margen por cada lado.",
+        "La lámina: cuatro rótulos monoespaciados en las esquinas, `Fig N`, el nombre del objeto, la instrucción y una lectura en vivo en minúsculas (`on · 9 chars · key t`) que cambia con cada pulsación.",
+        "Sobre el objeto, la marca del propio proyecto o un glifo inventado, nunca el logo de otra empresa ni la silueta de un producto real.",
+        "Un solo fichero que funciona abierto desde el disco: sin scripts externos. El svg lleva `role=\"img\"`, `tabindex=\"0\"` y un `aria-label` que dice qué es y cómo se usa.",
       ],
     },
   },

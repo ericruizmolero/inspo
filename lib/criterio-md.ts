@@ -210,6 +210,9 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
       const it = items[id];
       if (!it) continue;
       lines.push(`### ${code.get(id)} · ${it.name}`, "");
+      // Rewritten by hand from the reference's panel: its heading (its code) stays the app's
+      const byHand = doc[`ref:${id}`];
+      if (byHand) { lines.push(...byHand.split("\n"), ""); continue; }
       const kind = it.kind ?? "web";
       const where = kind === "image" ? strings.kinds.image.toLowerCase() : readableDomain(abs(it.web).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
       lines.push(`- **${strings.kinds[kind]}:** [${where}](${abs(it.web)})`);
@@ -231,6 +234,39 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     blocks.push({ kind: "section", id: "refs", heading: title("refs", `${strings.refs} (${refs.length})`), lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
   }
   return blocks;
+}
+
+/** What one reference is in the file: its entry under References (the lines under its "### R3 · …" heading)
+ *  and the areas that cite it, each with the lines that do */
+export function refSlice(blocks: CriterioBlock[], code: string): { heading: string; entry: string[]; cited: { area: SystemArea; heading: string; lines: string[] }[] } | null {
+  const refs = blocks.find((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id === "refs");
+  const at = refs?.lines.findIndex((l) => l.startsWith(`### ${code} \u00b7`)) ?? -1;
+  if (!refs || at < 0) return null;
+  let end = refs.lines.findIndex((l, i) => i > at && l.startsWith("### "));
+  if (end < 0) end = refs.lines.length;
+  const entry = refs.lines.slice(at + 1, end);
+  while (entry[0] === "") entry.shift();
+  while (entry[entry.length - 1] === "") entry.pop();
+  // An area's citation is its "- **R3** …" line and the words said under it (indented deeper)
+  const cited = blocks.filter((b): b is Extract<CriterioBlock, { kind: "area" }> => b.kind === "area").flatMap((b) => {
+    const out: string[] = [];
+    b.meta.forEach((l, i) => {
+      if (!l.startsWith(`  - **${code}** `)) return;
+      out.push(l);
+      for (let j = i + 1; j < b.meta.length && b.meta[j].startsWith("    "); j++) out.push(b.meta[j]);
+    });
+    return out.length ? [{ area: b.area, heading: b.heading, lines: out }] : [];
+  });
+  return { heading: refs.lines[at], entry, cited };
+}
+
+/** The References section with one entry's lines swapped (the section was rewritten whole by hand) */
+export function withRefEntry(lines: string[], code: string, entry: string[]): string[] {
+  const at = lines.findIndex((l) => l.startsWith(`### ${code} \u00b7`));
+  if (at < 0) return lines;
+  let end = lines.findIndex((l, i) => i > at && l.startsWith("### "));
+  if (end < 0) end = lines.length;
+  return [...lines.slice(0, at + 1), "", ...entry, ...(end < lines.length ? [""] : []), ...lines.slice(end)];
 }
 
 /** An area's status and references as the team rewrote them in the file, read back: whether it says decided or

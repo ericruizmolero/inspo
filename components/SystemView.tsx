@@ -54,6 +54,8 @@ interface Props {
   onOpenBoard: () => void;
   /** Open this area from outside (the agent's "go to motion"); `n` makes the same area open again */
   focusArea?: { area: SystemArea; n: number } | null;
+  /** A reference's entry to bring into sight under References (its code, R3), asked for from its panel */
+  focusRef?: { code: string; n: number } | null;
   onOpenChange?: (area: SystemArea | null) => void;
   /** A redesign: marks which reference is the client's current site (null clears it) */
   onClient?: (itemId: string | null) => Promise<void>;
@@ -85,7 +87,7 @@ function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (
   );
 }
 
-export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite }: Props) {
   const { t, locale } = useT();
   const setSystem = onSystem;
   const [running, setRunning] = useState(false);
@@ -94,6 +96,20 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [copied, setCopied] = useState(false);
   const [open, setOpen] = useState<SystemArea | null>(null);
   useEffect(() => { if (focusArea) setOpen(focusArea.area); }, [focusArea]);
+  // A reference's entry asked for from its panel: its heading line in sight, lit a moment. What is above it can
+  // still grow while the file loads (the conversation, the pictures), so it lands again once that has had time
+  useEffect(() => {
+    if (!focusRef) return;
+    const find = () => Array.from(document.querySelectorAll<HTMLElement>("#sdoc-refs .mdv-line, #sdoc-refs .mdv-eline"))
+      .find((el) => el.textContent?.startsWith(`### ${focusRef.code} \u00b7`));
+    const ids = [60, 700, 1500].map((ms, i) => setTimeout(() => {
+      const el = find();
+      if (!el) return;
+      el.scrollIntoView({ behavior: i ? "auto" : "smooth", block: "center" });
+      if (!i) { el.classList.remove("is-flash"); void el.offsetWidth; el.classList.add("is-flash"); }
+    }, ms));
+    return () => ids.forEach(clearTimeout);
+  }, [focusRef]);
   useEffect(() => { onOpenChange?.(open); }, [open, onOpenChange]);
   // An area asked for (by the agent, by a link) is its part of the file, scrolled to
   useEffect(() => { if (open) document.getElementById(`sdoc-${open}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); }, [open]);
@@ -258,7 +274,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
             onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
             onAbout={async (text) => { const r = await saveProjectBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
-            busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
+            busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
             onSave={async (area, next) => {
               const cur = sys.areas.find((x) => x.area === area)!;
               if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));

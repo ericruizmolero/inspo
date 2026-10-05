@@ -18,9 +18,9 @@ import {
 const SETTINGS = ["account", "feedback", "workspace", "members", "plan", "extension"] as const;
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
 
-export default function CommandPalette({ open, onOpenChange, items, hasDesignMd, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onDirectory }: {
+export default function CommandPalette({ open, onOpenChange, items, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onDirectory }: {
   open: boolean; onOpenChange: (open: boolean) => void;
-  items: InspoItem[]; hasDesignMd: (web: string) => boolean;
+  items: InspoItem[];
   workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   onOpenItem: (item: InspoItem) => void; onAddUrl: (web: string) => void; onAdd: () => void; onDirectory: () => void;
 }) {
@@ -61,16 +61,15 @@ export default function CommandPalette({ open, onOpenChange, items, hasDesignMd,
         {items.length > 0 && (
           <CommandGroup heading={t.palette.inspirations}>
             {items.map((it) => {
-              // An image or a video opens its thread here, never a raw file or the provider in a new tab
-              const inside = hasDesignMd(it.web) || mediaKindOf(it.web) !== "web";
+              // Every reference opens here, in its panel: the page with its post-its and its thread
               const isImage = mediaKindOf(it.web) === "image";
               return (
                 <CommandItem key={it.id ?? it.web} value={`${it.name} ${it.web}`}
-                  onSelect={run(() => inside ? onOpenItem(it) : window.open(it.web, "_blank", "noopener"))}>
+                  onSelect={run(() => onOpenItem(it))}>
                   <img className="cmdk-item__favicon" alt="" style={isImage ? { objectFit: "cover" } : undefined}
                     src={isImage ? it.web : `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host(it.web))}&sz=32`} />
                   <span className="cmdk-item__label">{it.name}</span>
-                  <CommandShortcut>{hasDesignMd(it.web) ? "DESIGN.md" : inside ? t.card.comments : t.palette.openSite}</CommandShortcut>
+                  <CommandShortcut>{t.card.comments}</CommandShortcut>
                 </CommandItem>
               );
             })}

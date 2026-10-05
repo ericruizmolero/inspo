@@ -48,12 +48,14 @@ interface Props {
   onTextTitle?: (itemId: string, title: string) => Promise<void>;
   onOpenItem?: (item: InspoItem) => void;
   onCopy: () => void; onDownload: () => void; copied: boolean;
+  /** The file as it is copied, to open it in an AI chat */
+  markdown?: string;
   projectId: string; projectName: string; hasRecipe: boolean;
   /** More controls over the file, in its bar before Copy */
   fileTools?: React.ReactNode;
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, projectId, projectName, hasRecipe, fileTools }: Props) {
+export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -214,7 +216,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       <div className="sdoc-page sdoc-page--md">
         {tools}
         {error && <p className="sysv-error" role="alert">{error}</p>}
-        <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
+        <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} markdown={markdown} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onText={onText && (async (id, text) => { try { await onText(id, text); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onTextTitle={onTextTitle && (async (id, title) => { try { await onTextTitle(id, title); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}

@@ -52,12 +52,6 @@ interface CommentsPanelProps {
   designMd?: { status: "none" | "loading" | "ready"; onGenerate: () => void; onOpen: () => void };
   /** Answers a comment. Without it, threads are read-only */
   onReply?: (parentId: string, body: string) => Promise<void>;
-  /** Each pinned comment's number, the one on its post-it */
-  pins?: Record<string, number>;
-  /** The comment to bring into view (its post-it was opened on the page) */
-  focusId?: string | null;
-  /** Shows a pinned comment's post-it on the page */
-  onFocus?: (id: string) => void;
 }
 
 const IcX = (
@@ -144,8 +138,6 @@ interface Msg {
   deletable?: boolean;
   /** Original note or sub-note this person may rewrite */
   editable?: boolean;
-  /** A pinned comment's number (its post-it on the page) */
-  pin?: number;
 }
 
 /** A comment and the replies under it */
@@ -210,7 +202,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onEditNote, onClose, showMedia = true, variant = "drawer", designMd, onPostThumb, onReply, pins = {}, focusId, onFocus }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onEditNote, onClose, showMedia = true, variant = "drawer", designMd, onPostThumb, onReply }: CommentsPanelProps) {
   const { locale, t } = useT();
   const column = variant === "column";
   const [draft, setDraft] = useState("");
@@ -317,7 +309,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     }
     const toMsg = (c: InspoComment): Msg => {
       const own = c.authorId === user.id;
-      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage, pin: pins[c.id] };
+      return { id: c.id, name: c.authorName, image: c.authorImage, body: c.body, attachments: c.attachments ?? [], at: c.createdAt, mine: own, deletable: own || canManage };
     };
     const ids = new Set(comments.map((c) => c.id));
     const threads: Thread[] = [];
@@ -330,7 +322,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     }
     for (const c of comments) if (c.parentId && ids.has(c.parentId)) byId.get(c.parentId)?.replies.push(toMsg(c));
     return { originals, threads };
-  }, [item, comments, user, canManage, memberImages, onEditNote, pins]);
+  }, [item, comments, user, canManage, memberImages, onEditNote]);
   const total = originals.length + threads.reduce((n, th) => n + 1 + th.replies.length, 0);
 
   // On open or when a new message arrives, scroll to the end of the list
@@ -338,14 +330,6 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [total, item.id]);
-
-  // A post-it opened on the page brings its thread into view
-  useEffect(() => {
-    if (!focusId) return;
-    const el = listRef.current?.querySelector<HTMLElement>(`[data-thread="${CSS.escape(focusId)}"]`);
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el?.scrollIntoView({ block: "nearest", behavior: still ? "auto" : "smooth" });
-  }, [focusId]);
 
   // When the reply field closes, the keyboard goes back to its thread's Reply button, not to the top of the page
   const closeReply = (id: string) => {
@@ -424,11 +408,6 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           <Avatar name={m.name} image={m.image} />
           <span className="cm-msg__name">{m.name}{m.mine && <span className="cm-msg__you">{t.comments.you}</span>}</span>
           {m.original && <span className="cm-msg__tag">{m.id === "sub" ? t.comments.subComment : t.comments.originalNote}</span>}
-          {m.pin !== undefined && (
-            <button type="button" className="cm-pin" onClick={() => onFocus?.(m.id)} disabled={!onFocus} aria-label={t.comments.showOnPage(m.pin)} title={t.comments.showOnPage(m.pin)}>
-              <span className="cm-pin__n">{m.pin}</span>{t.comments.postIt}
-            </button>
-          )}
           <span className="cm-msg__time" title={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
         </div>
       )}
@@ -575,7 +554,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           )}
           {threads.map(({ head, replies }) => (
             // A post-it's thread wears the post-it's colour from its comment down to its last reply
-            <div key={head.id} data-thread={head.id} className={`cm-thread${head.pin !== undefined ? " is-pinned" : ""}${focusId === head.id ? " is-focus" : ""}`}>
+            <div key={head.id} data-thread={head.id} className="cm-thread">
               {renderMsg(head, false)}
               {replies.length > 0 && <div className="cm-replies">{replies.map((r, i) => renderMsg(r, !!replies[i - 1] && replies[i - 1].name === r.name && Math.abs(Date.parse(replies[i - 1].at) - Date.parse(r.at)) < 5 * 60000))}</div>}
               {onReply && (replying?.id === head.id ? (

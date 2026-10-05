@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
 import { Avatar } from "./CommentsPanel";
+import OpenInAI from "./OpenInAI";
 import "./SystemMarkdown.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
@@ -108,7 +109,7 @@ function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies
   );
 }
 
-function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic }: {
+export function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic }: {
   text: string;
   /** Said about a reference that shows its picture: it lines up under that reference's text */
   underPic?: boolean;
@@ -166,7 +167,7 @@ const readText = (el: HTMLElement) => el.innerText.replace(/\u00a0/g, " ").repla
  * While proposing (the tool in the bar), an area's change is not written: leaving the part leaves it as a
  * proposal for the team, and the text goes back to what it said.
  */
-function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset, pics, onLeave }: {
+export function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset, pics, onLeave }: {
   raw: string; placeholder: string; disabled?: boolean;
   /** Saved only when the person leaves it (or presses ⌘↵): a part read back into the board, not to be read half typed */
   onLeave?: boolean;
@@ -302,7 +303,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures }: {
+export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures, markdown }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -310,6 +311,8 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
   /** A template: the file is read, copied and downloaded, never written (it is cloned into a project to work on it) */
   readOnly?: boolean;
   onCopy: () => void; onDownload: () => void; copied: boolean;
+  /** The file as it is copied: with it, the bar offers to open it in an AI chat */
+  markdown?: string;
   /** More controls over the file, before Copy (the skills it carries) */
   fileTools?: ReactNode;
   /** The recipe beside the file: how the work is done, kept with the project */
@@ -461,6 +464,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           {fileTools}
           <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : s.copy}</button>
+          {markdown && <OpenInAI markdown={markdown} projectName={projectName} />}
           <button type="button" className="mdv-btn" onClick={onDownload} title={t.system.download}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
         </span>
       </header>

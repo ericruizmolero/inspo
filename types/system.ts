@@ -103,9 +103,10 @@ export const IMPROVE_NOTE_MAX = 400;
 export interface SystemFocus { aims: ImproveAim[]; areas: SystemArea[]; note?: string }
 
 export const DOC_PARTS = ["head", "refs", "skills", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
-/** Those, and a heading ("title:<block id>"), a skill's or the brand's section ("skill:<id>", "brand-…"), the Content
- *  intro and a text's who-said-what ("texthead:<item id>") */
-export const isDocPart = (part: string) => DOC_PARTS.includes(part) || part === "content-intro" || /^(texthead|skill):[\w-]{1,64}$/.test(part) || /^brand-[\w-]{1,32}$/.test(part) || /^title:[\w:-]{1,72}$/.test(part);
+/** Those, and one reference's entry under References ("ref:<item id>"), rewritten from the reference's panel; a heading
+ *  ("title:<block id>"), a skill's or the brand's section ("skill:<id>", "brand-…"), the Content intro and a text's
+ *  who-said-what ("texthead:<item id>") */
+export const isDocPart = (part: string) => DOC_PARTS.includes(part) || part === "content-intro" || /^(ref|texthead|skill):[\w-]{1,64}$/.test(part) || /^brand-[\w-]{1,32}$/.test(part) || /^title:[\w:-]{1,72}$/.test(part);
 export const DOC_PART_MAX = 60_000;
 
 /** A decision a person writes can run to a few paragraphs (it is typed in the file, with line breaks) */

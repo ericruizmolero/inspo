@@ -53,7 +53,7 @@ Diálogo de Base UI. Tamaños `sm` y `lg`; el título lleva `.display.modal__tit
 
 ### Popover
 `Popover` · `components/ui/popover.tsx` · `.pp` · `.pp--menu`
-Menú flotante de Base UI (posicionador en z 55). Las filas usan `.ws__item`. Es la base de los selectores de proyecto y área, del menú de skills y de los menús "…".
+Menú flotante de Base UI (posicionador en z 55). Las filas usan `.ws__item`. Es la base de los selectores de proyecto y área, del menú de skills, de "Abrir en IA" y de los menús "…".
 
 ### Barra lateral
 `AppSidebar` · `components/Sidebar.tsx` · `.app-sidebar` · `.nav-item`
@@ -145,7 +145,11 @@ Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis re
 
 ### Inicio: ¿qué vas a hacer?
 `ProjectChooser` · `Cover` · `components/ProjectChooser.tsx` · `.chooser` · captura: inicio
-Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo.
+Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion.
+
+### Inbox vacío
+`InboxZero` · `components/InboxZero.tsx`
+Trabajo hecho: un mensaje, los proyectos como portadas (los más llenos primero) y la misma caja para pegar URL o imagen.
 
 ### Proyecto vacío
 `ProjectStart` · `components/ProjectStart.tsx`
@@ -155,9 +159,10 @@ Caja para pegar enlace o imagen, la frase de intención editable y la biblioteca
 `EmptyStart` · `components/EmptyStart.tsx`
 Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pestañas, cada uno con "Añadir".
 
-### Descubrir y plantillas
-`Discover` · `TemplatesView` · `components/Discover.tsx` · `.disc` · `.tplc`
-Recursos agrupados (Todo, Nuevos, Más abiertos) y plantillas: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir una enseña su criterio.md y deja crear un proyecto con ella.
+### Descubrir: plantillas, recursos y skills
+`Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`
+Tres pestañas: Plantillas (`?in=templates`), Recursos (`?in=discover`) y Skills (`?in=skills`). Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, seguimiento con requestAnimationFrame y entrada con WAAPI; solo ratón, con reduced-motion solo fundido), y plantillas: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir una enseña su criterio.md y deja crear un proyecto con ella.
+- Skills (`components/DiscoverSkills.tsx`, datos en `SKILLS` de `lib/directory.ts`) son tarjetas, no filas: avatar y usuario de GitHub del autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia. Las que también son skill de criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md)
 
 ### Vídeo en bucle
 `LoopVideo` · `components/LoopVideo.tsx`
@@ -203,11 +208,15 @@ La vista Markdown: el fichero con índice lateral y un punto de estado por área
 `SystemMarkdown` · `components/SystemMarkdown.tsx` · `components/SystemMarkdown.css` · `.mdv`
 El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
 - Tecla C: modo comentar con pines en el punto exacto; Enter envía el pin.
-- Barra: Skills, Copiar y Descargar.
+- Barra: Skills, Abrir en IA, Copiar y Descargar.
 
 ### Menú de skills
 `SkillsMenu` · `components/SkillsMenu.tsx` · `.sys-skills`
 Interruptores (`role=switch`); cada skill añade una sección al criterio.md.
+
+### Abrir en IA
+`OpenInAI` · `components/OpenInAI.tsx`
+Popover "Abrir en": el primer clic copia el mensaje con el fichero, el segundo abre el chat.
 
 ### Mejorar con IA
 `ImproveModal` · `components/ImproveModal.tsx` · `.imp`
@@ -221,9 +230,13 @@ Una referencia en pequeño: su imagen (guardada, póster del vídeo, la de la ta
 
 ### Ficha de referencia
 `ItemPanel` · `components/ItemPanel.tsx` · `.ip` · captura: ficha
-Hoja sobre el lienzo: favicon, nombre, migas y cerrar; la página a la izquierda y la conversación a la derecha. En producción aún lleva las pestañas de DESIGN.md (ficha, Markdown, historial), que la rama `sistema` retira.
+Hoja sobre el lienzo: favicon, nombre, migas, pestañas Página / Criterio y cerrar; la página a la izquierda y la conversación a la derecha. Las flechas ← → (y los botones a los lados) recorren el tablero en su orden.
 - Crece desde el punto del clic (WAAPI, `--ease-out`); al cerrar, 0.96 con fundido de 150 ms. Con reduced-motion, solo fundido. Esc cierra.
 - z 30 en escritorio, 60 en móvil.
+
+### Vista de página
+`PageView` · `components/PageView.tsx` · `.pn`
+La captura completa para leer con scroll, o la imagen centrada. Brillo mientras carga.
 
 ### Vista de post de X
 `PostView` · `components/PostView.tsx` · `.pv`
@@ -241,6 +254,10 @@ Póster que solo carga el iframe del proveedor al pulsarlo.
 `CommentsPanel` · `components/CommentsPanel.tsx` · `.cm`
 La nota original y los hilos, con respuestas a un nivel. Capturas pegadas con ⌘V, arrastradas o con el clip; lightbox con ← → y Esc. Enter envía, Shift+Enter salta línea.
 - La variante `drawer` no se usa.
+
+### Criterio de la referencia
+`RefCriterio` · `components/RefCriterio.tsx` · `.rfc`
+La entrada de la referencia dentro del criterio.md del proyecto, editable, y las áreas que la citan; cada encabezado lleva a ese punto del Sistema.
 
 ## Ajustes y admin
 
