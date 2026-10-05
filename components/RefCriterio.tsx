@@ -1,12 +1,14 @@
 "use client";
 // One reference's part of criterio.md, in its panel: its entry under References, typed in place as in the system's
 // file (it is the same text: saved here, the file changes; changed there, it shows here), and the areas that cite
-// it. Each part's heading leads to where it is in the system.
-import { useMemo } from "react";
+// it. Each part's heading leads to where it is in the system. Above the file, the eight areas: the team picks which
+// ones it brings to, and the file follows.
+import { useMemo, useState } from "react";
 import type { InspoItem, Project } from "@/types/inspo";
-import type { ProjectSystem, SystemArea } from "@/types/system";
+import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import { criterioBlocks, refSlice, withRefEntry, type CriterioBlock, type RefInfo } from "@/lib/criterio-md";
-import { saveDocPart } from "@/app/actions/system";
+import { assignSystemArea, saveDocPart } from "@/app/actions/system";
+import { areaIcon } from "./area-icons";
 import { Editable, Line } from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
@@ -41,6 +43,9 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
     origin: typeof window === "undefined" ? "" : window.location.origin,
   }) : []), [project, system, library, refInfo, labels, t, boardIds]);
   const slice = useMemo(() => (code && code !== "R0" ? refSlice(blocks, code) : null), [blocks, code]);
+  // The area being switched, so a second press waits for the first
+  const [busy, setBusy] = useState<SystemArea | null>(null);
+  const [failed, setFailed] = useState(false);
 
   if (!project || !system || !slice || !item.id) return <div className="ip-state"><span>{c.notFiled}</span></div>;
   const id = item.id;
@@ -55,6 +60,14 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
     ? save("refs", withRefEntry(refs.lines, code, text.split("\n")).join("\n"))
     : save(`ref:${id}`, text));
   const byHand = !system.doc?.refs && !!system.doc?.[`ref:${id}`];
+  const backs = new Set(system.areas.filter((a) => a.evidence.some((e) => e.itemId === id)).map((a) => a.area));
+  const toggle = async (area: SystemArea) => {
+    if (busy) return;
+    setBusy(area); setFailed(false);
+    const r = await assignSystemArea(project.id, area, id, !backs.has(area)).catch((e) => ({ ok: false as const, error: String(e) }));
+    setBusy(null);
+    if (r.ok) onSystem(project.id, r.data); else setFailed(true);
+  };
   const head = (label: string, spot: SystemSpot) => (
     <button type="button" className="rfc-head" onClick={() => onGo(project.id, spot)} title={c.see}>
       <span>{label}</span><span className="rfc-see">{c.see} <i aria-hidden>{Icons.arrow}</i></span>
@@ -64,6 +77,18 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
   return (
     <div className="rfc">
       <p className="rfc-lead">{c.lead(project.name)}</p>
+      <div className="rfc-areas" role="group" aria-label={c.areas}>
+        <span className="rfc-areas__label">{c.areas}</span>
+        {SYSTEM_AREAS.map((k) => {
+          const on = backs.has(k) !== (busy === k);
+          return (
+            <button key={k} type="button" className={`rfc-area${on ? " is-on" : ""}`} aria-pressed={on} disabled={!!busy} onClick={() => toggle(k)}>
+              <span className="rfc-area__icon" aria-hidden>{areaIcon(k)}</span>{labels[k]}
+            </button>
+          );
+        })}
+        {failed && <span className="rfc-areas__error" role="alert">{c.areasFailed}</span>}
+      </div>
       <section className="mdv rfc-file" aria-label="criterio.md">
         <div className="mdv-doc">
           {head(c.entry, { code })}

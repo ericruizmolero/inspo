@@ -841,6 +841,8 @@ export const ui = {
       cited: "Where the system cites it",
       none: "It backs no area yet.",
       see: "See in the system",
+      areas: "Brings to",
+      areasFailed: "It could not be saved. Try again.",
       notFiled: "It is in no project yet: it joins a criterio.md once it is taken to one.",
     },
     notes: "Notes",

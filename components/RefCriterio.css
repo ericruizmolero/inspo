@@ -19,3 +19,17 @@
 .mdv-line.is-flash, .mdv-eline.is-flash { animation: rfc-flash 1.8s var(--ease-out); border-radius: 4px; }
 @keyframes rfc-flash { 0%, 40% { background: color-mix(in srgb, var(--md-head) 22%, transparent); } 100% { background: transparent; } }
 @media (prefers-reduced-motion: reduce) { .rfc-see { transition: none; } .mdv-line.is-flash, .mdv-eline.is-flash { animation: none; outline: 2px solid var(--md-head); } }
+/* The eight areas, above the file: pressed = the reference brings to it (filled, no outline) */
+.rfc-areas { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rfc-areas__label { margin-right: 4px; font-size: 12.5px; font-weight: 550; color: var(--muted); }
+.rfc-area {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 0; border-radius: 999px;
+  background: var(--surface); color: var(--muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.rfc-area:hover { background: var(--surface-2); color: var(--text); }
+.rfc-area.is-on { background: var(--text); color: var(--bg); }
+.rfc-area:disabled { cursor: progress; }
+.rfc-area__icon { display: inline-flex; } .rfc-area__icon svg { width: 14px; height: 14px; }
+.rfc-areas__error { font-size: 12.5px; color: var(--danger); }
+@media (prefers-reduced-motion: reduce) { .rfc-area { transition: none; } }
