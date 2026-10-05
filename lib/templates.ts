@@ -8,7 +8,7 @@ import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { boardStamp, copySystem, getSystem } from "./system";
-import { saveBrief } from "./polish";
+import { saveBrief } from "./brief";
 import { ensureBuiltinTemplates } from "./template-seed";
 import type { Project } from "@/types/inspo";
 import { RECIPE_MAX, type ProjectTemplate, type TemplateCard } from "@/types/system";

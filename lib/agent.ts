@@ -17,7 +17,7 @@ import { addItem, deleteItem, rowToItem, setItemNote, editUserTags } from "./ite
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, fileItems, unfileItems } from "./projects";
-import { saveBrief, setClientBrand } from "./polish";
+import { saveBrief, setClientBrand } from "./brief";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
 import { taggerEnabled } from "./tagger";

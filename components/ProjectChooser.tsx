@@ -2,7 +2,7 @@
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
 import { useMemo, useState } from "react";
-import { savePolishBrief } from "@/app/actions/polish";
+import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { useT } from "./I18nProvider";
@@ -86,7 +86,7 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       const p = await onCreate(n);
       if (!p) return;
       // The sentence is the project's brief from the first minute: the first reading of the board follows it
-      if (about.trim()) await savePolishBrief(p.id, { about: about.trim() }).catch(() => null);
+      if (about.trim()) await saveProjectBrief(p.id, { about: about.trim() }).catch(() => null);
       onPick(p.id);
     } finally { setBusy(false); }
   };

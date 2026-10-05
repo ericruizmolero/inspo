@@ -2,7 +2,7 @@
 
 import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
-import { setProjectClient, savePolishBrief } from "@/app/actions/polish";
+import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
@@ -33,8 +33,6 @@ import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "@/lib/agent";
 import ProjectChooser from "./ProjectChooser";
-import type { TriageProposal } from "@/lib/system";
-import { applySystemTriage } from "@/app/actions/system";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import TemplatesView from "./TemplatesView";
@@ -155,7 +153,6 @@ export default function InspoClient({
   initialTagJobs = {},
   initialProjects = [],
   initialProjectLinks = {},
-  initialProjectShelf = {},
   initialSystems = {},
   aiEnabled = false,
   user,
@@ -178,8 +175,6 @@ export default function InspoClient({
   initialTagJobs?: Record<string, TagStatus>;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
-  /** Archived by Polish: off the project's board, still the project's (not in the Inbox either) */
-  initialProjectShelf?: ProjectLinks;
   /** Each project's system, by project id (lib/system.ts) */
   initialSystems?: Record<string, ProjectSystem>;
   aiEnabled?: boolean;
@@ -231,7 +226,6 @@ export default function InspoClient({
   // ?in=inbox (not filed anywhere) or ?in=<project id>; no param = everything. Filters apply inside the space.
   const [projects, setProjects] = useState(initialProjects);
   const [links, setLinks] = useState<ProjectLinks>(initialProjectLinks);
-  const [shelf, setShelf] = useState<ProjectLinks>(initialProjectShelf);
   // The systems, alive: filing a reference into a project that has started its system re-reads the
   // board a moment later (one cheap model call), so the system never lags behind the board
   const [systems, setSystems] = useState(initialSystems);
@@ -321,10 +315,10 @@ export default function InspoClient({
   const [confirm, confirmDialog] = useConfirm();
 
   // What no project has taken (nor archived): the library's second view
-  const unfiledCount = useMemo(() => items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length))).length, [items, links, shelf]);
+  const unfiledCount = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)).length, [items, links]);
   // The items in the current space (inbox, a project or everything), before any other filter
   const spaceItems = useMemo(() => space === "all" || space === "home" ? items
-    : space === "inbox" ? items.filter((i) => !(i.id && (links[i.id]?.length || shelf[i.id]?.length)))
+    : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
   [items, links, space]);
   const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
@@ -367,43 +361,7 @@ export default function InspoClient({
   const gathering = useMemo(() => items.filter((i) => tagJobs[i.web] === "pending" || tagJobs[i.web] === "running").length, [items, tagJobs]);
 
   const [showAdd, setShowAdd] = useState(false);
-  // Organising the Inbox: the model's proposal per reference sits on its card until the team accepts, changes or dismisses it
-  const [triage, setTriage] = useState<Record<string, TriageProposal> | null>(null);
-  const [triageRunning, setTriageRunning] = useState(false);
   const gridRef = useRef<GridHandle | null>(null);
-  const runTriage = useCallback(async (ids: string[]) => {
-    setTriageRunning(true);
-    try {
-      const res = await fetch("/api/system/triage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemIds: ids }) });
-      const json = await res.json().catch(() => ({})) as { proposals?: TriageProposal[]; error?: string };
-      if (!res.ok || json.error || !json.proposals) throw new Error(json.error || t.triage.failed);
-      setTriage(Object.fromEntries(json.proposals.map((p) => [p.itemId, p])));
-      // Bring the first proposal into view
-      const first = json.proposals.find((p) => p.projectId) ?? json.proposals[0];
-      if (first) setTimeout(() => gridRef.current?.focus(first.itemId), 50);
-    } catch (e) { setAddError({ title: t.triage.failed, detail: e instanceof Error ? e.message : String(e) }); }
-    finally { setTriageRunning(false); }
-  }, [t]);
-  const patchTriage = useCallback((itemId: string, patch: Partial<TriageProposal> | null) => setTriage((m) => {
-    if (!m) return m; const n = { ...m };
-    if (patch === null) delete n[itemId]; else n[itemId] = { ...n[itemId], ...patch };
-    return n;
-  }), []);
-  const acceptTriage = useCallback(async (picks: TriageProposal[]) => {
-    const valid = picks.filter((p): p is TriageProposal & { projectId: string } => !!p.projectId);
-    if (!valid.length) return;
-    const r = await applySystemTriage(valid.map((p) => ({ itemId: p.itemId, projectId: p.projectId, areas: p.areas }))).catch((e) => ({ ok: false as const, error: String(e) }));
-    if (!r.ok) { setAddError({ title: t.triage.failed, detail: r.error }); return; }
-    setLinks((prev) => { const next = { ...prev }; for (const p of valid) next[p.itemId] = [...(next[p.itemId] ?? []).filter((x) => x !== p.projectId), p.projectId]; return next; });
-    setSystems(r.data.systems);
-    setTriage((m) => {
-      if (!m) return m; const n = { ...m }; for (const p of valid) delete n[p.itemId];
-      // On to the next proposal
-      const next = Object.values(n).find((p) => p.projectId);
-      if (next && valid.length === 1) setTimeout(() => gridRef.current?.focus(next.itemId), 50);
-      return Object.keys(n).length ? n : null;
-    });
-  }, [t]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "n" && e.key !== "N") return;
@@ -624,8 +582,6 @@ export default function InspoClient({
       return { ...prev, [id]: want ? [...cur, projectId] : cur };
     });
     flip(on);
-    // Filing an archived reference again brings it back to the board (the server does the same)
-    if (on) setShelf((prev) => (prev[id]?.includes(projectId) ? { ...prev, [id]: prev[id].filter((x) => x !== projectId) } : prev));
     const r = await setFiled(projectId, [id], on).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); return; }
     refreshSystem(projectId);
@@ -1115,7 +1071,7 @@ export default function InspoClient({
     if (!r.ok) { projectFailed(new Error(r.error)); return; }
     setSystem(projectId, r.data);
   }, [setSystem, toggleFiled, links]);
-  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, toggleAreaIn, measure, acceptProposal: (p) => void acceptTriage([p]), patchProposal: patchTriage };
+  gridActions.current = { openItem, deleteItem, handleThumbnailUpload, handleThumbnailRemove, toggleFiled, createAndFile, toggleArea, toggleAreaIn, measure };
 
   // ─── The agent: every action, asked for in words from the search box ──────────
   // The request goes with where the person is (project, view, open reference, what is on screen); the
@@ -1497,7 +1453,7 @@ export default function InspoClient({
             }}
             onDescribe={async (about) => {
               const id = currentProject.id;
-              const r = await savePolishBrief(id, { about }).catch((e) => ({ ok: false as const, error: String(e) }));
+              const r = await saveProjectBrief(id, { about }).catch((e) => ({ ok: false as const, error: String(e) }));
               if (!r.ok) throw new Error(r.error);
               const saved = r.data.brief?.about ?? "";
               setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, intent: saved || null } : p)));
@@ -1541,7 +1497,6 @@ export default function InspoClient({
                   projectIds={item.id ? links[item.id] : undefined}
                   backs={currentProject && item.id ? backsOf(item.id) : undefined}
                   areasIn={item.id ? areasByItem.get(item.id) : undefined}
-                  proposal={triage && item.id ? triage[item.id] ?? null : undefined}
                   actions={gridActions}
                 />
               )}
@@ -1707,19 +1662,15 @@ interface GridActions {
   toggleArea: (item: InspoItem, area: SystemArea, on: boolean) => void;
   toggleAreaIn: (item: InspoItem, projectId: string, area: SystemArea, on: boolean) => void;
   measure: (web: string, ratio: number) => void;
-  acceptProposal: (p: TriageProposal) => void;
-  patchProposal: (itemId: string, patch: Partial<TriageProposal> | null) => void;
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, areasIn, proposal, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, areasIn, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
   /** In every project: the areas it backs there */
   areasIn?: Record<string, SystemArea[]>;
-  /** While organising the Inbox: the model's proposal for this reference (null = none for it) */
-  proposal?: TriageProposal | null;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
@@ -1772,14 +1723,6 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
       areasIn={areasIn}
       onToggleAreaIn={item.id ? (projectId, area, on) => act().toggleAreaIn(item, projectId, area, on) : undefined}
-      proposal={proposal === undefined ? undefined : proposal ? {
-        ...proposal,
-        projects: projects,
-        onAccept: () => act().acceptProposal(proposal),
-        onDismiss: () => act().patchProposal(proposal.itemId, null),
-        onProject: (projectId) => act().patchProposal(proposal.itemId, { projectId }),
-        onArea: (area, on) => act().patchProposal(proposal.itemId, { areas: on ? [...proposal.areas, area] : proposal.areas.filter((a) => a !== area) }),
-      } : null}
       board={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
