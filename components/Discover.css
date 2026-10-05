@@ -20,10 +20,15 @@
 .disc-row:hover { background: var(--surface); color: var(--text); }
 .disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 550; color: var(--text); }
 .disc-row .disc-card__new { align-self: center; margin-left: -6px; }
+/* A skill criterio.md carries too: said quietly, beside the name */
+.disc-row__skill { flex-shrink: 0; align-self: center; margin-left: -6px; padding: 2px 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--text-2); background: var(--surface-2); }
 .disc-row__text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--muted); }
 .disc-row:hover .disc-row__text { color: var(--text-2); }
 .disc-row__host { flex-shrink: 0; font-size: 12.5px; color: var(--muted); }
 @media (max-width: 700px) { .disc-row { flex-wrap: wrap; gap: 4px 10px; } .disc-row__name { flex-basis: auto; } .disc-row__text { flex-basis: 100%; order: 3; white-space: normal; } }
+/* The hero of the site under the pointer: fixed to the window and moved by GSAP (x, y, scale), never catches the pointer */
+.disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-s); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-pop); pointer-events: none; visibility: hidden; opacity: 0; will-change: transform, opacity; }
+.disc-peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .disc-list__none { margin: 0 auto; max-width: 1320px; font-size: 13px; color: var(--muted); }
 
 /* Resources or templates: the first choice on the bar; with templates open their page sits below it */
@@ -31,3 +36,27 @@
 .tpls:has(+ .disc__bar) { padding-top: 232px; }
 /* An open template is a page of its own: it starts right under the bar, without the air the lists keep on top */
 .tpls:has(.tpls-back), .tpls:has(.tpls-back):has(+ .disc__bar) { padding-top: 132px; }
+
+/* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command ─── */
+.disc-skills__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+.disc-skills__catalog { flex-shrink: 0; font-size: 13px; color: var(--text-2); text-decoration: none; }
+.disc-skills__catalog:hover { color: var(--text); }
+.disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 8px 0 0; padding: 0; list-style: none; }
+.disc-skill { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border-radius: var(--radius-l); background: var(--panel); transition: background 0.15s var(--ease-out); }
+@media (hover: hover) { .disc-skill:hover { background: var(--surface); } }
+.disc-skill:has(.disc-skill__name:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.disc-skill__by { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12.5px; color: var(--muted); }
+.disc-skill__by > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disc-skill__by .disc-row__skill { margin-left: auto; }
+.disc-skill__avatar { position: relative; flex-shrink: 0; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; overflow: hidden; font-size: 11px; font-weight: 600; color: var(--text-2); background: var(--surface-2); }
+.disc-skill__avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.disc-skill__name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); text-decoration: none; outline: none; }
+.disc-skill__name::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.disc-skill__what { flex: 1; margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.disc-skill__install { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; min-width: 0; height: 32px; margin-top: 4px; padding: 0 6px 0 10px; border: 0; border-radius: var(--radius-s); background: var(--bg); color: var(--muted); font: inherit; text-align: left; cursor: pointer; transition: color 0.15s, transform 0.1s var(--ease-out); }
+.disc-skill__install:active { transform: scale(0.98); }
+.disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: 11px; }
+.disc-skill__install span { flex-shrink: 0; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-2); background: var(--surface-2); }
+.disc-skill__install:hover { color: var(--text-2); } .disc-skill__install:hover span { color: var(--text); }
+.disc-skill__install.is-copied span { color: var(--bg); background: var(--text); }
+@media (max-width: 560px) { .disc-skills__head { flex-direction: column; align-items: flex-start; } }

@@ -12,3 +12,4 @@
 .sys-skills__switch span { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--text-2); transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s; }
 .sys-skills__row.is-on .sys-skills__switch { background: var(--text); }
 .sys-skills__row.is-on .sys-skills__switch span { transform: translateX(12px); background: var(--bg); }
+a.sys-skills__row { text-decoration: none; box-sizing: border-box; background: var(--surface-2); }

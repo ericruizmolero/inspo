@@ -213,7 +213,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   }, [openTabs, fitOrder, fit]);
 
   // No library tab: Discover holds the directory and the templates, and the Inbox what is in no project yet
-  const inDiscover = space === "discover" || space === "templates";
+  const inDiscover = space === "discover" || space === "templates" || space === "skills";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
     if (!p) return;

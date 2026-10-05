@@ -45,7 +45,7 @@ function HoverVideo({ src }: { src: string }) {
 }
 
 /** A built-in template ships the first screen of its result with the app (public/templates/<folder>.jpg): it is
- *  there at once, while the capture of the page (slow the first time anyone asks for it) arrives */
+ *  there at once, and it stays as the thumbnail (chosen by hand) once the capture of the page arrives */
 const posterOf = (tpl: TemplateCard) => (tpl.template.builtin ? `/templates/${tpl.template.builtin}.jpg` : undefined);
 
 function Result({ id, url, video, poster, still = false }: { id: string; url: string; video?: string; poster?: string; still?: boolean }) {
@@ -85,7 +85,7 @@ function ResultPage({ id, url, still, hoverSrc, poster }: { id: string; url: str
     <Box className={`tpl-page${hoverSrc ? " has-video" : ""}`} {...(still ? {} : { href: url, target: "_blank", rel: "noreferrer" })}>
       <div ref={boxRef} className="tpl-page__view" style={shot?.color ? { background: shot.color } : undefined}>
         {!shot && !poster && <div className="shimmer" />}
-        {(shot || poster) && <img className="tpl-page__top" src={shot?.topUrl ?? poster} alt={host(url)} />}
+        {(shot || poster) && <img className="tpl-page__top" src={poster ?? shot?.topUrl} alt={host(url)} />}
         {shot && (
           <img className="tpl-page__full" src={shot.shotUrl} alt="" aria-hidden fetchPriority="low" onLoad={onFull}
             style={{ "--dm-scroll": `-${dist}px`, animationDuration: `${Math.max(4, Math.round(dist / 170))}s` } as React.CSSProperties} />
@@ -113,6 +113,49 @@ function TemplateCardView({ tpl, onOpen }: { tpl: TemplateCard; onOpen: () => vo
       {tpl.template.about && <span className="tplc__about">{tpl.template.about}</span>}
     </button>
   );
+}
+
+/** A card while the list loads: the same shape as the real one, so nothing jumps when it arrives */
+function TemplateCardSkeleton() {
+  return (
+    <div className="tplc tplc--loading" aria-hidden>
+      <div className="tpl-page"><div className="tpl-page__view"><div className="shimmer" /></div></div>
+      <span className="sk" style={{ width: "62%", height: 16, marginTop: 2 }} />
+      <span className="sk" style={{ width: "44%", height: 12 }} />
+      <span className="sk" style={{ width: "88%", height: 12 }} />
+    </div>
+  );
+}
+
+// The last list seen, per workspace: coming back to the templates shows them at once while they are read again.
+// It is also kept in the browser, so the first visit after a reload does not wait for the server either
+const seen = new Map<string, TemplateCard[]>();
+const storeKey = (workspaceId: string) => `criterio:templates:${workspaceId}`;
+function remembered(workspaceId: string): TemplateCard[] | null {
+  const hit = seen.get(workspaceId);
+  if (hit) return hit;
+  try { const raw = localStorage.getItem(storeKey(workspaceId)); if (raw) { const list = JSON.parse(raw) as TemplateCard[]; seen.set(workspaceId, list); return list; } } catch { /* read from the server */ }
+  return null;
+}
+function remember(workspaceId: string, list: TemplateCard[]) {
+  seen.set(workspaceId, list);
+  try { localStorage.setItem(storeKey(workspaceId), JSON.stringify(list)); } catch { /* the memory one is enough */ }
+}
+const reading = new Map<string, ReturnType<typeof loadTemplates>>();
+/** Reads the templates once at a time per workspace; the app calls it while idle so Discover opens with them there */
+export function preloadTemplates(workspaceId: string) {
+  const running = reading.get(workspaceId);
+  if (running) return running;
+  const job = loadTemplates().then((r) => {
+    if (r.ok) {
+      remember(workspaceId, r.data);
+      // Their pictures too: a card's first screen is there when the card is
+      for (const tpl of r.data) { const src = posterOf(tpl); if (src) new Image().src = src; }
+    }
+    return r;
+  }).finally(() => reading.delete(workspaceId));
+  reading.set(workspaceId, job);
+  return job;
 }
 
 function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: TemplateCard, name: string) => Promise<void>; onDelete: (tpl: TemplateCard) => Promise<void> }) {
@@ -147,7 +190,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
         </div>
       </header>
 
-      <SystemMarkdown readOnly blocks={blocks} busy={NONE} onCopy={() => void copy()} copied={copied}
+      <SystemMarkdown readOnly blocks={blocks} busy={NONE} onCopy={() => void copy()} copied={copied} markdown={md}
         onDownload={() => download(`${tpl.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`, md)}
         projectId={tpl.id} projectName={tpl.name} hasRecipe={tpl.recipeSize > 0} />
 
@@ -161,10 +204,10 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
   );
 }
 
-export default function TemplatesView({ onStarted }: { onStarted: (project: Project & { boardIds?: string[] }) => void }) {
+export default function TemplatesView({ workspaceId, onStarted }: { workspaceId: string; onStarted: (project: Project & { boardIds?: string[] }) => void }) {
   const { t } = useT();
   const s = t.templates;
-  const [list, setList] = useState<TemplateCard[] | null>(null);
+  const [list, setList] = useState<TemplateCard[] | null>(() => seen.get(workspaceId) ?? null);
   const [error, setError] = useState("");
   // The template open, or the library
   const [openId, setOpenId] = useState<string | null>(null);
@@ -179,9 +222,12 @@ export default function TemplatesView({ onStarted }: { onStarted: (project: Proj
   }, [open]);
   useEffect(() => {
     let alive = true;
-    loadTemplates().then((r) => { if (!alive) return; if (r.ok) setList(r.data); else setError(r.error); });
+    // What this browser kept shows at once (after hydration: the server never has it), then the fresh list
+    const kept = remembered(workspaceId);
+    if (kept) setList(kept);
+    preloadTemplates(workspaceId).then((r) => { if (!alive) return; if (r.ok) setList(r.data); else if (!seen.has(workspaceId)) setError(r.error); });
     return () => { alive = false; };
-  }, []);
+  }, [workspaceId]);
   const use = async (tpl: TemplateCard, name: string) => {
     const r = await startFromTemplate(tpl.id, name);
     if (!r.ok) { setError(r.error); return; }
@@ -189,7 +235,7 @@ export default function TemplatesView({ onStarted }: { onStarted: (project: Proj
   };
   const del = async (tpl: TemplateCard) => {
     const r = await removeTemplate(tpl.id);
-    if (r.ok) { setList((l) => (l ?? []).filter((x) => x.id !== tpl.id)); go(null); } else setError(r.error);
+    if (r.ok) { setList((l) => { const next = (l ?? []).filter((x) => x.id !== tpl.id); remember(workspaceId, next); return next; }); go(null); } else setError(r.error);
   };
   return (
     <div className="tpls" ref={scroller}>
@@ -207,7 +253,7 @@ export default function TemplatesView({ onStarted }: { onStarted: (project: Proj
               <p className="tpls-lead">{s.lead}</p>
             </header>
             {error && <p className="sysv-error" role="alert">{error}</p>}
-            {list === null && !error && <p className="sysv-muted"><span className="spinner spinner--sm" /></p>}
+            {list === null && !error && <div className="tplc-grid" aria-busy="true"><TemplateCardSkeleton /><TemplateCardSkeleton /></div>}
             {list?.length === 0 && <p className="tpls-empty">{s.empty}</p>}
             {!!list?.length && <div className="tplc-grid">{list.map((tpl) => <TemplateCardView key={tpl.id} tpl={tpl} onOpen={() => go(tpl.id)} />)}</div>}
           </>

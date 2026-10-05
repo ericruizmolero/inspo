@@ -158,7 +158,7 @@
 .mdv-savebar .btn--ghost { color: var(--md-ink); }
 /* An area's heading with its quiet tools */
 .mdv-headrow { display: flex; align-items: center; gap: 12px; }
-.mdv-headrow > .mdv-line { flex: 1; min-width: 0; }
+.mdv-headrow > .mdv-line, .mdv-headrow > .mdv-written { flex: 1; min-width: 0; }
 .sdoc .mdv-headrow .mdv-tools { opacity: 0; transition: opacity 0.15s; }
 .sdoc .mdv-block--area:hover .mdv-tools, .sdoc .mdv-block--area:focus-within .mdv-tools { opacity: 1; }
 @media (hover: none) { .sdoc .mdv-headrow .mdv-tools { opacity: 1; } }
@@ -233,19 +233,24 @@
 /* ─── The document shows what it talks about. Where a reference is named its picture sits beside the line (drawn
    by the row itself, from --pic: nothing is added to the text), and what someone said reads as their words ─── */
 .sdoc .mdv--doc #sdoc-head .mdv-h1 { font-size: 24px; }
-.mdv--doc .mdv-ref { padding-left: 142px !important; min-height: 76px; margin-top: 14px; }
-.mdv--doc .mdv-ref::before { left: 20px; top: 3px; width: 108px; height: 72px; border-radius: 9px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
+/* A reference reads like a citation: its picture on the left, and its line and what was said about it in one column
+   beside it. Only a reference nobody spoke about keeps the picture's height; with words under it, they fill it */
+.mdv--doc .mdv-ref { padding-left: 116px !important; margin-top: 22px; }
+.mdv--doc .mdv-ref:not(:has(+ .mdv-said--pic)) { min-height: 64px; }
+.mdv--doc .mdv-ref::before { left: 20px; top: 4px; width: 84px; height: 56px; border-radius: 8px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 9%, transparent), 0 6px 16px -10px rgba(0,0,0,0.5); }
 .mdv--doc .mdv-said { color: var(--text-2); }
+.mdv--doc .mdv-said--pic { font-size: 14px; line-height: 1.55; color: var(--muted); margin-top: 4px; }
 .mdv--doc .mdv-said::before { top: 0.3em; width: 2px; height: calc(100% - 0.6em); border-radius: 1px; background: var(--border-strong); }
 /* Under a reference of an area, the words left on it line up with its text */
-.mdv--doc .mdv-said--pic { padding-left: 158px !important; }
 /* Said with a picture attached: the picture, under the words */
 .mdv--doc .mdv-said--img::after { content: ""; display: block; width: min(320px, 100%); aspect-ratio: 16 / 9; margin: 8px 0 4px; border-radius: 9px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
-.mdv--doc .mdv-said--pic::before { left: 142px; }
+.mdv--doc .mdv-said--pic { padding-left: 130px !important; }
+.mdv--doc .mdv-said--pic:not(:has(+ .mdv-said--pic)) { margin-bottom: 14px; }
+.mdv--doc .mdv-said--pic::before { left: 116px; }
 /* A reference's own entry opens with its picture */
 .mdv--doc .mdv-refhead { position: relative; margin-top: 34px; padding-top: 176px; }
 .mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: 12px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
-@media (max-width: 600px) { .mdv--doc .mdv-ref { padding-left: 100px !important; } .mdv--doc .mdv-ref::before { width: 68px; height: 46px; } .mdv--doc .mdv-said--pic { padding-left: 116px !important; } .mdv--doc .mdv-said--pic::before { left: 100px; } }
+@media (max-width: 600px) { .mdv--doc .mdv-ref { padding-left: 88px !important; } .mdv--doc .mdv-ref::before { width: 56px; height: 40px; } .mdv--doc .mdv-ref:not(:has(+ .mdv-said--pic)) { min-height: 46px; } .mdv--doc .mdv-said--pic { padding-left: 102px !important; } .mdv--doc .mdv-said--pic::before { left: 88px; } }
 
 /* A skill switched on, in the parts list: its mark instead of a dot, its name on one line */
 .sdoc-toc button.is-skill { color: var(--text); }

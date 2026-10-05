@@ -9,7 +9,8 @@ import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
 import type { SystemActivity } from "@/lib/area-comments";
 import { answerAreaProposal, postAreaComment, removeAreaComment } from "@/app/actions/area-comments";
-import { saveDocPart, saveSystemSummary } from "@/app/actions/system";
+import { decideSystemArea, releaseSystemArea, saveDocPart, setSystemEvidence, saveSystemSummary } from "@/app/actions/system";
+import { readAreaMeta } from "@/lib/criterio-md";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown from "./SystemMarkdown";
 import { Avatar } from "./CommentsPanel";
@@ -47,12 +48,14 @@ interface Props {
   onTextTitle?: (itemId: string, title: string) => Promise<void>;
   onOpenItem?: (item: InspoItem) => void;
   onCopy: () => void; onDownload: () => void; copied: boolean;
+  /** The file as it is copied, to open it in an AI chat */
+  markdown?: string;
   projectId: string; projectName: string; hasRecipe: boolean;
   /** More controls over the file, in its bar before Copy */
   fileTools?: React.ReactNode;
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, projectId, projectName, hasRecipe, fileTools }: Props) {
+export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
@@ -191,6 +194,19 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       {n.text && n.text !== n.proposal!.decision && <p className="sdoc-proposal__reason">{n.text}</p>}
     </div>
   ));
+  // An area's status and references typed over in the file go back to the board: the references it cites (by code)
+  // are the area's, with their takes, and "decided" or "proposed" confirms or hands it back. What the app writes there
+  // is written again from that, so the part never stays frozen by hand
+  const saveMeta = async (area: string, text: string) => {
+    const read = readAreaMeta(text, t.system.md);
+    const refs = read.refs.map((r) => ({ itemId: boardIds[Number(r.code.slice(1)) - 1], take: r.take })).filter((r) => r.itemId);
+    let r = await setSystemEvidence(projectId, area, refs);
+    const now = r.ok ? r.data.areas.find((a) => a.area === area) : undefined;
+    if (r.ok && now?.decision && read.status === "decided" && now.source === "model") r = await decideSystemArea(projectId, area, { decision: now.decision });
+    else if (r.ok && read.status === "proposed" && now?.source === "team") r = await releaseSystemArea(projectId, area);
+    if (r.ok && r.data.doc?.[`meta:${area}`]) r = await saveDocPart(projectId, `meta:${area}`, null);
+    return r;
+  };
   // The file, with the team's tools on each area: as the Markdown it is, or set as a document. The same text, the
   // same writing in place and the same pins either way
   return (
@@ -199,12 +215,12 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       <div className="sdoc-page sdoc-page--md">
         {tools}
         {error && <p className="sysv-error" role="alert">{error}</p>}
-        <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
+        <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} markdown={markdown} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onText={onText && (async (id, text) => { try { await onText(id, text); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onTextTitle={onTextTitle && (async (id, title) => { try { await onTextTitle(id, title); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onSummary={async (text) => { const r = await saveSystemSummary(projectId, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
-          onPart={async (part, text) => { const r = await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
+          onPart={async (part, text) => { const r = part.startsWith("meta:") && text !== null ? await saveMeta(part.slice(5), text) : await saveDocPart(projectId, part, text); if (r.ok) onSystem(r.data); else setError(r.error); }}
           pins={pins} onPin={pin} onUnpin={unpin} />
       </div>
     </div>

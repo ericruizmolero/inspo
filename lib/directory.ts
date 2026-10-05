@@ -1,5 +1,6 @@
 // Directory of sites to look for inspiration. Shown from the sidebar
-// ("Looking for inspiration?"). No duplicates: each domain appears only once.
+// ("Looking for inspiration?"). No duplicates: each domain appears only once. The skills for agents are a list of
+// their own (SKILLS, below), where several can live on the same catalog.
 
 // The text (each group's title and help, each resource's description) lives in
 // lib/i18n/<locale>/directory.ts, keyed by group key and URL.
@@ -10,6 +11,10 @@ export interface DirectorySite {
   url: string;
   /** The day it joined the directory (yyyy-mm-dd), for the ones that came after the first batch: Discover shows it as new */
   added?: string;
+  /** A skill criterio.md can carry too (an id of MD_SKILLS in lib/md-skills.ts): Discover says so on its row */
+  skill?: string;
+  /** A skill for agents: the command that installs it (its GitHub owner is its author) */
+  install?: string;
 }
 
 export interface DirectoryGroup {
@@ -35,6 +40,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "sites",
     items: [
+      { name: "Landing Gallery", url: "https://landing.gallery", added: "2026-10-05" },
       { name: "Umanmade", url: "https://umanmade.com", added: "2026-10-04" },
       { name: "Recent.design", url: "https://recent.design" },
       { name: "Goated UI", url: "https://goatedui.dev" },
@@ -69,6 +75,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "saas",
     items: [
+      { name: "SaaS Landing Page", url: "https://saaslandingpage.com", added: "2026-10-05" },
       { name: "DesignforB2B", url: "https://designforb2b.com", added: "2026-10-04" },
       { name: "Saaspo", url: "https://saaspo.com" },
       { name: "SaaSFrame", url: "https://saasframe.io" },
@@ -113,6 +120,7 @@ export const DIRECTORY: DirectoryGroup[] = [
     items: [
       { name: "60fps", url: "https://60fps.design" },
       { name: "Detail", url: "https://detail.design", added: "2026-10-04" },
+      { name: "Scrolltide", url: "https://scrolltide.co", added: "2026-10-05" },
       { name: "Animos", url: "https://animos.app" },
       { name: "Motion in Design", url: "https://motionin.design" },
       { name: "Motionsites", url: "https://motionsites.ai" },
@@ -122,6 +130,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "resources",
     items: [
+      { name: "Design Bookmark", url: "https://designbookmark.com", added: "2026-10-05" },
       { name: "SearchSystem", url: "https://searchsystem.co", added: "2026-10-04" },
       { name: "Logo To Use", url: "https://logotouse.com" },
       { name: "Hano", url: "https://hano.so" },
@@ -144,6 +153,9 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "graphics",
     items: [
+      { name: "Deck Gallery", url: "https://deck.gallery", added: "2026-10-05" },
+      { name: "Logo System", url: "https://logosystem.co", added: "2026-10-05" },
+      { name: "Brand Guidelines", url: "https://brandguidelines.net", added: "2026-10-05" },
       { name: "Icon Museum", url: "https://icon.museum", added: "2026-10-04" },
       { name: "Logggos", url: "https://logggos.club", added: "2026-10-04" },
       { name: "The Brand Identity", url: "https://the-brandidentity.com" },
@@ -176,6 +188,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "development",
     items: [
+      { name: "Superdesign", url: "https://superdesign.dev", added: "2026-10-05" },
       { name: "Ship Studio", url: "https://www.ship.studio" },
       { name: "Aura", url: "https://www.aura.build" },
       { name: "Agentation", url: "https://agentation.com" },
@@ -224,6 +237,23 @@ export const DIRECTORY: DirectoryGroup[] = [
       { name: "Are.na", url: "https://www.are.na" },
     ],
   },
+];
+
+/** Discover › Skills: one entry per skill, with the command that installs it. The one without a command is the catalog
+ *  they come from. Their text lives with the directory's, under the group key "skills" */
+export const SKILLS: DirectorySite[] = [
+  { name: "UI Skills", url: "https://ui-skills.com", added: "2026-10-05" },
+  { name: "frontend-design", url: "https://ui-skills.com/skills/anthropics/frontend-design", added: "2026-10-05", install: "npx skills add https://github.com/anthropics/skills --skill frontend-design" },
+  { name: "emil-design-eng", url: "https://ui-skills.com/skills/emilkowalski/emil-design-eng", added: "2026-10-05", install: "npx skills add https://github.com/emilkowalski/skills --skill emil-design-eng" },
+  { name: "apple-design", url: "https://ui-skills.com/skills/emilkowalski/apple-design", added: "2026-10-05", install: "npx skills add https://github.com/emilkowalski/skills --skill apple-design" },
+  { name: "interaction-design", url: "https://ui-skills.com/skills/wshobson/interaction-design", added: "2026-10-05", install: "npx skills add https://github.com/wshobson/agents --skill interaction-design" },
+  { name: "beautiful-shadows", url: "https://ui-skills.com/skills/mengto/beautiful-shadows", added: "2026-10-05", install: "npx skills add https://github.com/MengTo/Skills --skill beautiful-shadows" },
+  { name: "adapt", url: "https://ui-skills.com/skills/pbakaus/adapt", added: "2026-10-05", install: "npx skills add https://github.com/pbakaus/impeccable --skill adapt" },
+  { name: "shadcn", url: "https://ui-skills.com/skills/shadcn-ui/shadcn", added: "2026-10-05", install: "npx skills add https://github.com/shadcn-ui/ui --skill shadcn" },
+  { name: "accessibility", url: "https://ui-skills.com/skills/addyosmani/accessibility", added: "2026-10-05", install: "npx skills add https://github.com/addyosmani/web-quality-skills --skill accessibility", skill: "a11y" },
+  { name: "design-review", url: "https://ui-skills.com/skills/superfuture/design-review", added: "2026-10-05", install: "npx skills add https://github.com/Superfuture/design-review --skill design-review" },
+  { name: "better-interface", url: "https://ui-skills.com/skills/jakubkrehel/better-interface", added: "2026-10-05", install: "npx skills add https://github.com/jakubkrehel/skills --skill better-interface" },
+  { name: "iso-figure", url: "https://github.com/MrBongoC/ai-iso-skill", added: "2026-10-05", skill: "iso-figure", install: "npx skills add https://github.com/MrBongoC/ai-iso-skill --skill iso-figure" },
 ];
 
 export const DIRECTORY_TOTAL = DIRECTORY.reduce((n, g) => n + g.items.length, 0);
@@ -281,9 +311,9 @@ const AREA_SITE_URLS: Record<string, string[]> = {
   typography: ["https://www.typewolf.com", "https://fontsinuse.com", "https://www.monotype.com/font-pairing#/playground?fontPair1=Pepi%2FRudi&fontPair2=Schotis+Text", "https://klim.co.nz", "https://www.grillitype.com", "https://abcdinamo.com", "https://pangrampangram.com", "https://commercialtype.com", "https://claudetype.com", "https://ohnotype.co", "https://www.fontshare.com", "https://velvetyne.fr"],
   color: ["https://gradientool.com", "https://backgrounds.supply", "https://dark.design", "https://savee.it", "https://www.cosmos.so", "https://www.are.na"],
   layout: ["https://bentogrids.com", "https://gridddy.framer.website", "https://httpster.net", "https://the-responsive.com", "https://unsection.com", "https://supahero.io", "https://navbar.gallery", "https://footer.design", "https://curated.design", "https://recent.design", "https://www.seesaw.website", "https://minimal.gallery"],
-  motion: ["https://60fps.design", "https://motionsites.ai", "https://motionin.design", "https://landing.love", "https://loadmo.re", "https://designspells.com", "https://hoverstat.es", "https://www.originkit.dev", "https://obsidianui.dev", "https://animos.app"],
+  motion: ["https://60fps.design", "https://motionsites.ai", "https://scrolltide.co", "https://motionin.design", "https://landing.love", "https://loadmo.re", "https://designspells.com", "https://hoverstat.es", "https://www.originkit.dev", "https://obsidianui.dev", "https://animos.app"],
   iconography: ["https://goatedui.dev", "https://svgl.app", "https://www.toools.design", "https://designspells.com", "https://refero.design", "https://mobbin.com"],
-  logo: ["https://logotouse.com", "https://rebrand.gallery", "https://the-brandidentity.com", "https://symbl.space", "https://svgl.app", "https://visuelle.co.uk", "https://visualjournal.it"],
+  logo: ["https://logotouse.com", "https://logosystem.co", "https://brandguidelines.net", "https://rebrand.gallery", "https://the-brandidentity.com", "https://symbl.space", "https://svgl.app", "https://visuelle.co.uk", "https://visualjournal.it"],
   imagery: ["https://hano.so", "https://ditherland.leobecker.com", "https://light-stroke-rail.vercel.app", "https://backgrounds.supply", "https://www.playgrnd.tools", "https://savee.it", "https://www.cosmos.so", "https://aessestudio.tumblr.com"],
   voice: ["https://the-brandidentity.com", "https://cta.gallery", "https://404s.design", "https://supahero.io", "https://saaspo.com", "https://curated.supply"],
 };

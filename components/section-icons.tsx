@@ -13,6 +13,18 @@ const PATHS: Record<string, ReactNode> = {
   people: <><circle cx="6" cy="6" r="2.2" /><path d="M2 13c.5-2 2-3.2 4-3.2s3.5 1.2 4 3.2" /><path d="M10.5 3.9a2.2 2.2 0 010 4.2M12 9.9c1 .5 1.7 1.6 2 3.1" /></>,
   feedback: <path d="M3 3.5h10a1 1 0 011 1v6a1 1 0 01-1 1H7l-3 2.5v-2.5H3a1 1 0 01-1-1v-6a1 1 0 011-1z" />,
   access: <><rect x="3" y="7" width="10" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></>,
+  // Design system: a spark of taste, a swatch, a part, a repeat, a bracket, a dated page
+  principles: <path d="M8 2.5v3M8 10.5v3M2.5 8h3M10.5 8h3M4.2 4.2l1.8 1.8M10 10l1.8 1.8M11.8 4.2L10 6M6 10l-1.8 1.8" />,
+  foundations: <><rect x="2.5" y="2.5" width="5" height="5" rx="1.2" /><rect x="8.5" y="2.5" width="5" height="5" rx="1.2" /><rect x="2.5" y="8.5" width="5" height="5" rx="1.2" /><circle cx="11" cy="11" r="2.5" /></>,
+  components: <><rect x="2.5" y="5" width="11" height="6" rx="3" /><circle cx="10.5" cy="8" r="1.5" /></>,
+  patterns: <><path d="M2.5 5.5h4v4h-4zM9.5 6.5h4v4h-4z" /><path d="M6.5 7.5h3" /></>,
+  keyboard: <><rect x="1.8" y="4" width="12.4" height="8" rx="2" /><path d="M4.5 6.8h.01M7 6.8h.01M9.5 6.8h.01M12 6.8h-.5M5 9.5h6" /></>,
+  layout: <><rect x="2.5" y="2.5" width="11" height="11" rx="2.5" /><path d="M2.5 6.5h11M6.5 6.5v7" /></>,
+  language: <><circle cx="8" cy="8" r="5.5" /><path d="M2.5 8h11M8 2.5c1.6 1.6 2.3 3.4 2.3 5.5S9.6 11.9 8 13.5C6.4 11.9 5.7 10.1 5.7 8S6.4 4.1 8 2.5z" /></>,
+  page: <><path d="M4 2.5h5l3 3v8H4z" /><path d="M9 2.5v3h3" /></>,
+  check: <><circle cx="8" cy="8" r="5.5" /><path d="M5.6 8.2l1.7 1.7 3.2-3.5" /></>,
+  code: <path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5" />,
+  decisions: <><rect x="3" y="2.5" width="10" height="11" rx="2" /><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" /></>,
 };
 
 export function sectionIcon(name: string) {

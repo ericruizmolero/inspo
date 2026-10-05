@@ -39,6 +39,9 @@ export function UserAvatar({ name, image, small, className = "" }: { name: strin
 }
 
 const I = {
+  swatches: (
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="2.5" width="5" height="5" rx="1.2" /><rect x="8.5" y="2.5" width="5" height="5" rx="1.2" /><rect x="2.5" y="8.5" width="5" height="5" rx="1.2" /><circle cx="11" cy="11" r="2.5" /></svg>
+  ),
   gear: (
     <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="2.2" /><path d="M8 1.8v1.6M8 12.6v1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M1.8 8h1.6M12.6 8h1.6M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1" /></svg>
   ),
@@ -143,6 +146,12 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
             <Link className="ws__item" href="/admin" onClick={() => setOpen(false)}>
               <span className="ws__plus ws__plus--solid" aria-hidden>{I.activity}</span>
               <span className="ws__item-name">{t.ws.appActivity}</span>
+            </Link>
+          )}
+          {isAdmin && (
+            <Link className="ws__item" href="/library" onClick={() => setOpen(false)}>
+              <span className="ws__plus ws__plus--solid" aria-hidden>{I.swatches}</span>
+              <span className="ws__item-name">{t.ws.designSystem}</span>
             </Link>
           )}
           <button className="ws__item ws__item--muted" onClick={logout}>

@@ -1,7 +1,8 @@
 "use client";
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import gsap from "gsap";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
@@ -11,6 +12,37 @@ import { cachedCardImage } from "./InspoCard";
 import { keyOf } from "@/lib/board";
 import { parseDate } from "@/lib/search-query";
 import { mediaKindOf, videoEmbedOf } from "@/lib/url";
+import "./ProjectChooser.css";
+
+/** The empty box's placeholder, taking turns between what a project can be: word by word, each one rises a little
+ *  and leaves upwards (GSAP, a short stagger). Drawn over the input (a native placeholder cannot animate); with reduced
+ *  motion it stays on the first */
+const EXAMPLE_HOLD = 2.6;
+function Examples({ list }: { list: readonly string[] }) {
+  const [i, setI] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  // Always in a random order: the next one is any but the one showing. The server draws the list's first; the
+  // browser picks another before the first paint, so no two visits start the same
+  const next = (n: number) => (n + 1 + Math.floor(Math.random() * (list.length - 1))) % list.length;
+  useLayoutEffect(() => { if (list.length > 1) setI(Math.floor(Math.random() * list.length)); }, [list]);
+  const shown = useRef(false);
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box || list.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const chars = box.querySelectorAll(".chooser__char");
+    const tl = gsap.timeline();
+    // The first one is there when the screen opens; the next ones come in
+    if (shown.current) tl.from(chars, { yPercent: 40, opacity: 0, duration: 0.55, ease: "power3.out", stagger: 0.035 });
+    tl.to(chars, { yPercent: -40, opacity: 0, duration: 0.35, ease: "power2.in", stagger: 0.02 }, `+=${EXAMPLE_HOLD}`)
+      .call(() => { shown.current = true; setI(next); });
+    return () => { tl.kill(); };
+  }, [i, list]);
+  return (
+    <span ref={ref} className="chooser__example" aria-hidden>
+      {list[i].split(" ").map((w, k) => <span key={`${i}-${k}`} className="chooser__char">{k ? `\u00a0${w}` : w}</span>)}
+    </span>
+  );
+}
 
 // The cover is the project's board in small: the same order and the same columns rule (components/Grid.tsx),
 // cut at the cover's height. Measures are hundredths of the cover's width; the cover is 16:10.
@@ -33,7 +65,7 @@ function Shot({ item, image }: { item: InspoItem; image: string | null }) {
 }
 
 /** A project told by its board, seen from afar. Without references, its initial. */
-function Cover({ name, items, ratioOf, imageOf }: { name: string; items: InspoItem[]; ratioOf: (item: InspoItem) => number; imageOf: (item: InspoItem) => string | null }) {
+export function Cover({ name, items, ratioOf, imageOf }: { name: string; items: InspoItem[]; ratioOf: (item: InspoItem) => number; imageOf: (item: InspoItem) => string | null }) {
   const slots = useMemo(() => {
     const bottoms = new Array<number>(COLS).fill(PAD);
     const out: { item: InspoItem; x: number; y: number; h: number }[] = [];
@@ -101,7 +133,8 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
       <div className="chooser__inner">
         <h1 className="chooser__title">{projects.length ? t.chooser.titleSome : t.chooser.titleNone}</h1>
         <form className="chooser__box" onSubmit={(e) => { e.preventDefault(); void create(); }}>
-          <input className="chooser__name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.chooser.placeholder} maxLength={60} disabled={busy} autoFocus autoComplete="off" aria-label={t.chooser.placeholder} />
+          <input className="chooser__name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} disabled={busy} autoFocus autoComplete="off" aria-label={t.chooser.placeholder} />
+          {!name && <Examples list={t.chooser.examples} />}
           {/* The second line only shows once there is a name: until then the box is one question */}
           <div className={`chooser__more${named ? " is-open" : ""}`}>
             <div className="chooser__more-inner">

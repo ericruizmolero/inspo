@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
 import { Avatar } from "./CommentsPanel";
+import OpenInAI from "./OpenInAI";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
 const IconPin = (
@@ -107,7 +108,7 @@ function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies
   );
 }
 
-function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic }: {
+export function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic }: {
   text: string;
   /** Said about a reference that shows its picture: it lines up under that reference's text */
   underPic?: boolean;
@@ -165,8 +166,10 @@ const readText = (el: HTMLElement) => el.innerText.replace(/\u00a0/g, " ").repla
  * While proposing (the tool in the bar), an area's change is not written: leaving the part leaves it as a
  * proposal for the team, and the text goes back to what it said.
  */
-function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset, pics }: {
+export function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposing, onReset, pics, onLeave }: {
   raw: string; placeholder: string; disabled?: boolean;
+  /** Saved only when the person leaves it (or presses ⌘↵): a part read back into the board, not to be read half typed */
+  onLeave?: boolean;
   pics?: Record<string, string>;
   /** The part was rewritten by hand over what the app writes: goes back to it */
   onReset?: () => Promise<void>;
@@ -217,7 +220,7 @@ function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposi
     const now = readText(el);
     setText(now);
     clearTimeout(timer.current);
-    if (!(proposing && onPropose)) timer.current = setTimeout(() => void flush(now, false), 900);
+    if (!(proposing && onPropose) && !onLeave) timer.current = setTimeout(() => void flush(now, false), 900);
   };
   const leave = async () => {
     setFocused(false);
@@ -251,7 +254,7 @@ function Editable({ raw, placeholder, disabled, over, onSave, onPropose, proposi
 
 function Written({ raw, placeholder, edit, pins, repliesOf, openId, onOpen, pics }: {
   raw: string; placeholder: string; pics?: Record<string, string>;
-  edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean; proposing?: boolean };
+  edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean; proposing?: boolean; onLeave?: boolean };
   pins: DocPin[]; repliesOf: (id: string) => number; openId: string | null; onOpen: (pin: DocPin, el: HTMLElement) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -299,7 +302,7 @@ function PinsOver({ host, raw, pins, repliesOf, openId, onOpen }: {
   return <>{pins.map((n) => tops[n.id] === undefined ? null : <PinMark key={n.id} pin={n} replies={repliesOf(n.id)} active={openId === n.id} style={{ left: `${n.x * 100}%`, top: tops[n.id] }} onOpen={onOpen} />)}</>;
 }
 
-export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures }: {
+export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy, onDownload, copied, projectId, projectName, hasRecipe, onPropose, tools: areaTools, after, pins, onPin, onUnpin, onAbout, onSummary, onPart, onText, onTextTitle, readOnly = false, look = "md", pictures, markdown }: {
   blocks: CriterioBlock[];
   busy: Set<SystemArea>;
   /** Writes the block as the area's decision (an empty decision opens the area again) */
@@ -307,6 +310,8 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
   /** A template: the file is read, copied and downloaded, never written (it is cloned into a project to work on it) */
   readOnly?: boolean;
   onCopy: () => void; onDownload: () => void; copied: boolean;
+  /** The file as it is copied: with it, the bar offers to open it in an AI chat */
+  markdown?: string;
   /** More controls over the file, before Copy (the skills it carries) */
   fileTools?: ReactNode;
   /** The recipe beside the file: how the work is done, kept with the project */
@@ -403,7 +408,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
     });
   };
   /** A part written in place. While commenting it is shown as lines, to pin; while writing its pins sit over the text */
-  const written = (part: string, raw: string, placeholder: string, whole: string[], edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean }) => {
+  const written = (part: string, raw: string, placeholder: string, whole: string[], edit: { over?: (text: string) => string; onSave: (text: string) => Promise<void>; onPropose?: (text: string, reason: string) => Promise<boolean>; onReset?: () => Promise<void>; disabled?: boolean; onLeave?: boolean }) => {
     if (commenting || readOnly) return lines(part, raw ? raw.split("\n") : [placeholder], whole, false);
     const quotes = new Set(raw.split("\n").map(quoteOf).filter(Boolean));
     const here = (pins?.[part] ?? []).filter((n) => !n.to && quotes.has(n.quote));
@@ -458,6 +463,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           {fileTools}
           <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : s.copy}</button>
+          {markdown && <OpenInAI markdown={markdown} projectName={projectName} />}
           <button type="button" className="mdv-btn" onClick={onDownload} title={t.system.download}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
         </span>
       </header>
@@ -466,13 +472,17 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           // Every part is typed in place. What the app writes (the head, an area's status and references, the list of
           // references) can be written over; `over` says how a part written by hand is saved and how it goes back
           const over = (part: string, edited?: boolean) => (onPart ? { onSave: (text: string) => onPart(part, text), onReset: edited ? () => onPart(part, null) : undefined } : null);
+          // A heading is typed over like the rest: only its words are kept, and emptied it goes back to the app's
+          const title = (id: string, heading: string, whole: string[]) => onPart
+            ? written(id, `## ${heading}`, "", whole, { onSave: (text) => onPart(`title:${id}`, text.split("\n")[0].replace(/^#{1,6}\s*/, "").trim()) })
+            : lines(id, [`## ${heading}`], whole);
           if (b.kind === "head") {
             const edit = over("head", b.edited);
             return <div key="head" id="sdoc-head" className="mdv-block">{edit ? written("head", b.lines.join("\n"), "", b.lines, edit) : lines("head", b.lines)}<Line text="" /></div>;
           }
           if (b.kind === "summary") return (
             <div key="summary" id="sdoc-summary" className="mdv-block">
-              {lines("summary", [`## ${b.heading}`, ""], [`## ${b.heading}`, b.text])}
+              {title("summary", b.heading, [`## ${b.heading}`, b.text])}<Line text="" />
               {onSummary ? written("summary", b.text, "", [`## ${b.heading}`, b.text], { onSave: onSummary }) : lines("summary", [b.text], [`## ${b.heading}`, b.text], false)}
               <Line text="" />
             </div>
@@ -480,19 +490,19 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           if (b.kind === "section") {
             const whole = [`## ${b.heading}`, ...b.lines];
             // What the project is: the team's own words. The references: written by the app, and over it by hand
-            // A skill's section is written from the system (lib/md-skills.ts): it follows the areas, it is not typed over
+            // A skill's section is written from the system (lib/md-skills.ts); typed over, it stays as the team left it
             // The content is the texts the team pasted, whole (lib/criterio-md.ts): each one's words are typed in place
             // and saved to the reference itself; who saved it and what was said of it stay the app's
-            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id.startsWith("skill:") || b.id === "content" ? null : over(b.id, b.edited);
+            const edit = b.id === "project" ? (onAbout ? { onSave: onAbout } : null) : b.id === "content" ? null : over(b.id, b.edited);
             if (b.texts && onText) return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
-                {lines(b.id, [`## ${b.heading}`, ""], whole)}
-                {lines(b.id, b.texts.intro, whole, false)}
+                {title(b.id, b.heading, whole)}<Line text="" />
+                {onPart ? <>{written(b.id, b.texts.intro.join("\n").trimEnd(), "", whole, { onSave: (text) => onPart("content-intro", text) })}<Line text="" /></> : lines(b.id, b.texts.intro, whole, false)}
                 {b.texts.items.map((x, i) => (
                   <div key={x.itemId || i}>
                     {/* Its heading is its title: typed over, the reference is renamed (the code before it is put back) */}
                     {x.itemId && onTextTitle
-                      ? <>{written(b.id, x.head[0], "", whole, { onSave: async (text) => { const title = text.split("\n")[0].replace(/^#{1,6}\s*/, "").replace(/^R\d+\s*·\s*/, "").trim(); if (title) await onTextTitle(x.itemId, title); } })}{lines(b.id, x.head.slice(1), whole, false)}</>
+                      ? <>{written(b.id, x.head[0], "", whole, { onSave: async (text) => { const title = text.split("\n")[0].replace(/^#{1,6}\s*/, "").replace(/^R\d+\s*·\s*/, "").trim(); if (title) await onTextTitle(x.itemId, title); } })}{x.head.slice(1).some(Boolean) && onPart ? <><Line text="" />{written(b.id, x.head.slice(1).join("\n").trim(), "", whole, { onSave: (text) => onPart(`texthead:${x.itemId}`, text) })}<Line text="" /></> : lines(b.id, x.head.slice(1), whole, false)}</>
                       : lines(b.id, x.head, whole, false)}
                     {/* An emptied text is not saved: a reference is removed from its card, not by clearing it */}
                     {x.itemId ? written(b.id, x.body.join("\n"), "", whole, { onSave: async (text) => { if (text.trim()) await onText(x.itemId, text); } }) : lines(b.id, x.body, whole, false)}
@@ -503,7 +513,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
             );
             return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
-                {lines(b.id, [`## ${b.heading}`, ""], whole)}
+                {title(b.id, b.heading, whole)}<Line text="" />
                 {edit ? written(b.id, b.lines.join("\n"), "", whole, edit) : lines(b.id, b.lines, whole, false)}
                 <Line text="" />
               </div>
@@ -514,7 +524,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
           return (
             <div key={b.area} id={`sdoc-${b.area}`} className={`mdv-block mdv-block--area${busy.has(b.area) ? " is-busy" : ""}`} aria-busy={busy.has(b.area)}>
               <div className="mdv-headrow">
-                {lines(b.area, [`## ${b.heading}`], whole)}
+                {title(b.area, b.heading, whole)}
                 {areaTools && !readOnly && <span className="mdv-tools">{areaTools(b)}</span>}
               </div>
               <Line text="" />
@@ -525,7 +535,8 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
                 onPropose: onPropose ? (text, why) => onPropose(b.area, parse(text, b.whyLabel, b.neverLabel), why) : undefined,
               })}
               {/* Its status and its references: the app's, or what the team wrote over them */}
-              {b.meta.length > 0 && <><Line text="" />{metaEdit ? written(b.area, b.meta.join("\n"), "", whole, metaEdit) : lines(b.area, b.meta, whole, false)}</>}
+              {/* With nothing yet, an empty line to type the first reference into */}
+              {(b.meta.length > 0 || (metaEdit && !readOnly && !commenting)) && <><Line text="" />{metaEdit ? written(b.area, b.meta.join("\n"), t.doc.noRefs, whole, { ...metaEdit, onLeave: true }) : lines(b.area, b.meta, whole, false)}</>}
               {after && <div className="mdv-team">{after(b)}</div>}
               <Line text="" />
             </div>

@@ -18,11 +18,13 @@ import InspoCard, { captionFor } from "./InspoCard";
 import Discover from "./Discover";
 import AddInspoModal, { type NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
+import InboxZero from "./InboxZero";
 import { refInfoOf } from "@/lib/ref-info";
 import { restoreTextHeadings } from "@/lib/criterio-md";
 import { webKeyOf, nameFromHost, typeFromUrl, mediaKindOf, nameFromFile, hasOwnPage, normalizeWebUrl } from "@/lib/url";
 import { uploadMedia, mediaFileFrom } from "@/lib/media-client";
-import PageNotes from "./PageNotes";
+import PageView from "./PageView";
+import type { SystemSpot } from "./RefCriterio";
 import TextPage from "./TextPage";
 import { addText, saveText, renameText } from "@/app/actions/text";
 import { useTextBodies } from "@/hooks/use-text-bodies";
@@ -30,13 +32,12 @@ import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
 import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
-import DesignMdToasts, { type DesignMdState } from "./DesignMdToasts";
 import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "@/lib/agent";
 import ProjectChooser from "./ProjectChooser";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
-import TemplatesView from "./TemplatesView";
+import TemplatesView, { preloadTemplates } from "./TemplatesView";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
@@ -60,6 +61,7 @@ const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
+const RefCriterio = dynamic(() => import("./RefCriterio"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 
 // Compress + resize image client-side before upload (avoids 413 on Vercel)
@@ -97,17 +99,6 @@ function parseDate(s: string): number {
   const ts = Date.parse(s);
   return isNaN(ts) ? 0 : ts;
 }
-
-// Saving a new site kicks off the full experience (screenshot, tags and
-// DESIGN.md). Videos and social posts have no design system to extract.
-interface RunDesignMdOpts {
-  force?: boolean;         // regenerate even if it exists (costs money, admins only)
-  quiet?: boolean;         // cache expected: the toast only shows if it takes a while
-  openWhenReady?: boolean; // open the sheet on its own when done
-}
-
-// A DESIGN.md reads a site: an uploaded image, a video or a social post has none
-const canAutoDesignMd = hasOwnPage;
 
 /** A new item's job is asked about every 4 s, for up to 5 minutes (a whole-page capture can take one);
  *  past that it keeps "gathering" until the page is opened again */
@@ -253,7 +244,7 @@ export default function InspoClient({
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
   // ?in=home is the chooser asked for (the island's house); the bare address lands on the last project (below)
-  const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
   // Inside a project the system comes first and the board is a mode (?view=board). A project with nothing in
@@ -266,9 +257,9 @@ export default function InspoClient({
   const viewParam = sp.get("view");
   const projectView: "system" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "system" ? viewParam : defaultView;
   const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
-  // The search lives on a project's board and nowhere else: off it there is no box, and what was typed or
-  // chipped there waits in the URL without narrowing anything
-  const searchHere = !!currentProject && projectView === "board";
+  // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
+  // typed or chipped there waits in the URL without narrowing anything
+  const searchHere = (!!currentProject && projectView === "board") || space === "inbox";
   const searchHereRef = useRef(searchHere);
   searchHereRef.current = searchHere;
   // Which areas of the current project's system each reference backs (for the card's "to the system")
@@ -308,6 +299,8 @@ export default function InspoClient({
   useEffect(() => { if (currentProject) try { localStorage.setItem(lastProjectKey, currentProject.id); } catch { /* it lasts the visit */ } }, [currentProject, lastProjectKey]);
   const saveTarget = () => {
     if (currentProject) return currentProject.id;
+    // Added from the Inbox, it stays there: no project yet is what the Inbox is for
+    if (space === "inbox") return undefined;
     let last: string | null = null;
     try { last = localStorage.getItem(lastProjectKey); } catch { /* private mode */ }
     return projects.find((p) => p.id === last)?.id ?? projects[0]?.id;
@@ -502,7 +495,6 @@ export default function InspoClient({
       if (data?.thumb) setThumbMap((prev) => (prev[web] ? prev : { ...prev, [web]: data.thumb }));
     } catch { /* stays a typographic card */ }
   }, []);
-  const runDesignMdRef = useRef<(item: InspoItem, opts?: RunDesignMdOpts) => void>(() => {});
   // Saved from the dialog under some areas of the project's system: each one counts it at once
   const fileUnderAreas = async (projectId: string, item: InspoItem, areas: SystemArea[] | undefined) => {
     if (!item.id || !areas?.length) return;
@@ -534,7 +526,6 @@ export default function InspoClient({
       // Its tags are already being gathered on the server: the card shows it until they arrive
       if (mediaKindOf(item.web) === "post") importPost(item.web);
       watch(item.web);
-      if (canAutoDesignMd(item.web)) runDesignMdRef.current(item);
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
@@ -632,9 +623,7 @@ export default function InspoClient({
     try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* no storage */ }
     if (done === web || !/^https?:\/\//.test(web) || isDuplicate(web)) return;
     try { sessionStorage.setItem(DONE_KEY, web); } catch { /* no storage */ }
-    addByUrl({ web, type: typeFromUrl(web), note: "" }).then((item) => {
-      if (item) runDesignMdRef.current(item, { openWhenReady: true });
-    });
+    void addByUrl({ web, type: typeFromUrl(web), note: "" });
     // mount only: the address bar URL doesn't change later
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -751,9 +740,8 @@ export default function InspoClient({
     const r = await removeComment(id).catch(() => null);
     if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id && c.parentId !== id) }));
   };
-  const [designMdJobs, setDesignMdJobs] = useState<Record<string, DesignMdState>>({});
-  // Index of DESIGN.md already generated: server + those finished this session
-  const [designMdIndex, setDesignMdIndex] = useState<DesignIndex>(initialDesignMdIndex);
+  // The DESIGN.md made before they stopped being made: their covers still draw the cards
+  const [designMdIndex] = useState<DesignIndex>(initialDesignMdIndex);
   const [pageShots, setPageShots] = useState<Record<string, PageShot>>(initialPageShots);
 
   // Any workspace member can change thumbnails; the server checks the session.
@@ -775,14 +763,8 @@ export default function InspoClient({
   };
 
 
-  // ─── The panel and the DESIGN.md ────────────────────────────────────────────
-  // The panel opens at once for any reference: the page and its post-its first. The DESIGN.md is fetched
-  // quietly when it exists; generating one (it costs) waits for a click, and runs in the bottom-right
-  // toast, so closing the panel never stops it.
-  const patchJob = (url: string, patch: Partial<DesignMdState>) =>
-    setDesignMdJobs((prev) => ({ ...prev, [url]: { ...prev[url], ...patch } }));
-  const dropJob = (url: string) =>
-    setDesignMdJobs((prev) => { const next = { ...prev }; delete next[url]; return next; });
+  // ─── The panel ──────────────────────────────────────────────────────────────
+  // The panel opens at once for any reference: the page with its post-its, and its thread.
 
   // Each open reference has its own URL (/i/<id>): it can be shared, and Back closes it.
   // The URL changes with history.pushState, which Next syncs with usePathname without a navigation.
@@ -802,78 +784,10 @@ export default function InspoClient({
     window.history.replaceState(null, "", `/${window.location.search}`);
     setPanelItem(null);
   };
-  const designMdCtrls = useRef(new Map<string, AbortController>());
   const panelItemRef = useRef<InspoItem | null>(null);
 
-  // One in-flight request per URL: stop = abort the fetch (the server closes Chromium
-  // and cuts Claude off when the last client leaves) and also send DELETE just in case.
-  const runDesignMd = async (item: InspoItem, opts: RunDesignMdOpts = {}) => {
-    const url = item.web;
-    designMdCtrls.current.get(url)?.abort();
-    const ctrl = new AbortController();
-    designMdCtrls.current.set(url, ctrl);
-    setDesignMdJobs((prev) => ({
-      ...prev,
-      [url]: { status: "loading", name: item.name, startedAt: Date.now(), seen: false, quiet: opts.quiet, openWhenReady: opts.openWhenReady },
-    }));
-    try {
-      const res = await fetch(`/api/design-md?url=${encodeURIComponent(url)}${opts.force ? "&force=1" : ""}`, { signal: ctrl.signal });
-      const body = await res.json().catch(() => ({}));
-      if (ctrl.signal.aborted) return false;
-      if (!res.ok) throw new Error(body.error ?? `Error ${res.status}`);
-      // Seen already when it was asked for from the open panel: no "Done" toast for what is on screen
-      patchJob(url, { status: "ready", entry: body, error: undefined, ...(panelItemRef.current?.web === url ? { seen: true } : {}) });
-      setDesignMdIndex((prev) => ({ ...prev, [url]: {
-        coverUrl: body.coverUrl, scrollUrl: body.scrollUrl, shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH,
-      } }));
-      // A new DESIGN.md brings the page's capture: the board draws it from now on
-      if (body.topUrl && body.tileUrl && body.thumbUrl && body.screenshotUrl && body.shotH) {
-        setPageShots((prev) => ({ ...prev, [url]: { shotUrl: body.screenshotUrl, topUrl: body.topUrl, tileUrl: body.tileUrl, thumbUrl: body.thumbUrl, shotH: body.shotH, color: body.color } }));
-      }
-      if (!body.cached) loadQuota();
-      // Open on its own only if no other reference is in front; if there is, the "Done" toast stays
-      if (opts.openWhenReady && !panelItemRef.current) showPanel(item);
-      return true;
-    } catch (e) {
-      if (ctrl.signal.aborted) return false; // stopped by the user: the job is already gone
-      patchJob(url, { status: "error", error: e instanceof Error ? e.message : String(e) });
-      return false;
-    } finally {
-      if (designMdCtrls.current.get(url) === ctrl) designMdCtrls.current.delete(url);
-    }
-  };
-
-  const cancelDesignMd = (url: string) => {
-    const ctrl = designMdCtrls.current.get(url);
-    if (!ctrl) return;
-    ctrl.abort();
-    designMdCtrls.current.delete(url);
-    dropJob(url);
-    fetch(`/api/design-md?url=${encodeURIComponent(url)}`, { method: "DELETE", keepalive: true }).catch(() => {});
-  };
-
-  /** Opens a reference in the panel. Its DESIGN.md loads quietly when one exists; `generate` makes one. */
-  const openItem = (item: InspoItem, { generate = false } = {}) => {
-    showPanel(item);
-    if (!canAutoDesignMd(item.web)) return;
-    const job = designMdJobs[item.web];
-    if (job?.status === "ready" || job?.status === "loading") return;
-    if (item.web in designMdIndex) runDesignMd(item, { quiet: true });
-    else if (generate) runDesignMd(item);
-  };
-
-  const openItemByUrl = (url: string) => {
-    const item = items.find((i) => i.web === url);
-    if (item) openItem(item);
-  };
-  const retryDesignMdByUrl = (url: string) => {
-    const item = items.find((i) => i.web === url);
-    if (item) runDesignMd(item, { openWhenReady: true });
-  };
-
-  // Regenerating costs money: the server only allows it for workspace admins.
-  // The panel stays open and shows the work in its DESIGN.md tabs.
-  const regenerateDesignMd = (item: InspoItem) => { runDesignMd(item, { force: true }); };
+  /** Opens a reference in the panel */
+  const openItem = (item: InspoItem) => showPanel(item);
   panelItemRef.current = panelItem;
 
   // Cmd+K (Ctrl+K) opens the command palette from anywhere in the library
@@ -882,11 +796,12 @@ export default function InspoClient({
   const [paletteUsed, setPaletteUsed] = useState(false);
   if (paletteOpen && !paletteUsed) setPaletteUsed(true);
   useEffect(() => {
-    const preload = () => { void loadItemPanel(); void loadCommentsPanel(); };
+    // The templates too: Discover opens with its cards already read, not waiting for the server
+    const preload = () => { void loadItemPanel(); void loadCommentsPanel(); void preloadTemplates(workspace.id); };
     if (typeof window.requestIdleCallback !== "function") { const id = setTimeout(preload, 2000); return () => clearTimeout(id); }
     const id = window.requestIdleCallback(preload, { timeout: 4000 });
     return () => window.cancelIdleCallback(id);
-  }, []);
+  }, [workspace.id]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); setPaletteOpen((o) => !o); }
@@ -915,14 +830,6 @@ export default function InspoClient({
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
   }, [pathname]);
-
-  // Whatever shows in the panel counts as seen
-  useEffect(() => {
-    const url = panelItem?.web;
-    if (!url) return;
-    const job = designMdJobs[url];
-    if (job && job.status !== "loading" && !job.seen) patchJob(url, { seen: true });
-  }, [panelItem, designMdJobs]);
 
   // "Who": only workspace members who added something. Legacy sheet labels
   // ("Both" = no known author) aren't offered as a filter; those sites stay under "all".
@@ -1155,7 +1062,6 @@ export default function InspoClient({
   const area = panelItem ? "design-md" : space === "discover" ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
   useActivity(area, workspace.id);
 
-  runDesignMdRef.current = runDesignMd;
   // The cards' handlers, behind one stable ref: a card only re-renders when its own data changes
   const gridActions = useRef<GridActions>(null!);
   // From a card inside a project: this piece belongs to an area of the system. The node counts it at once
@@ -1226,6 +1132,7 @@ export default function InspoClient({
   }, [agentTargetItem, currentProject, projects, links, t]);
   const [openArea, setOpenArea] = useState<SystemArea | null>(null);
   const [focusArea, setFocusArea] = useState<{ area: SystemArea; n: number } | null>(null);
+  const [focusRef, setFocusRef] = useState<{ code: string; n: number } | null>(null);
   const applyAgentPatch = useCallback((patch: AgentPatch) => {
     if (patch.projects) setProjects(patch.projects);
     if (patch.links) setLinks(patch.links);
@@ -1300,57 +1207,42 @@ export default function InspoClient({
     }
   }, [agent, applyAgentPatch]);
 
-  // The open reference: its comments. The pinned ones are also post-its on its page, numbered in the order
-  // they were pinned; the column holds all of them with their replies
-  const panelThread = panelItem?.id ? commentMap[panelItem.id] : undefined;
-  const panelComments = panelThread ?? [];
-  // The same objects while the comments don't change, so the post-its don't re-render on every key typed
-  const { panelNotes, pins, repliesOf } = useMemo(() => {
-    const all = panelThread ?? [];
-    const notes = all.filter((c) => c.anchor && !c.parentId);
-    const pins: Record<string, number> = {};
-    [...notes].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).forEach((c, i) => { pins[c.id] = i + 1; });
-    // The map keeps the comments' own order: oldest first
-    const repliesOf: Record<string, InspoComment[]> = {};
-    for (const c of all) if (c.parentId) (repliesOf[c.parentId] ??= []).push(c);
-    return { panelNotes: notes, pins, repliesOf };
-  }, [panelThread]);
-  // A comment picked on one side shows on the other: the post-it on the page, the thread in the column.
-  // `n` changes on every pick, so picking the same one again still asks the column to open.
-  const [commentFocus, setCommentFocus] = useState<{ id: string; n: number } | null>(null);
-  const focusComment = useCallback((id: string) => setCommentFocus({ id, n: Date.now() }), []);
-  useEffect(() => { setCommentFocus(null); }, [panelItem?.id]);
+  // The open reference: its thread, every comment with its replies (the post-its once pinned on the page among them)
+  const panelComments = (panelItem?.id ? commentMap[panelItem.id] : undefined) ?? [];
   const canManage = workspace.role === "owner" || workspace.role === "admin";
   const panelPage = (() => {
     if (!panelItem) return null;
     const kind = mediaKindOf(panelItem.web);
-    // A video or a post is its own page: it fills the page card, with no post-its
+    // A video or a post is its own page: it fills the page card
     if (kind === "video") return <div className="ip-media"><VideoPlayer web={panelItem.web} title={panelItem.name} /></div>;
     if (kind === "text") return <TextPage key={panelItem.id} title={panelItem.name} body={panelItem.id ? textBodies[panelItem.id] : undefined} onSave={(text) => saveTextBody(panelItem, text)} onRename={(title) => renameTextItem(panelItem, title)} />;
     if (kind === "post") return <div className="ip-media"><PostView web={panelItem.web} onThumb={(thumb: string) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))} /></div>;
-    const job = designMdJobs[panelItem.web];
     const src = kind === "image"
       ? thumbMap[panelItem.web] ?? panelItem.web
-      : job?.entry?.screenshotUrl ?? pageShots[panelItem.web]?.shotUrl ?? thumbMap[panelItem.web] ?? `/api/shot?url=${encodeURIComponent(panelItem.web)}&v=2`;
+      : pageShots[panelItem.web]?.shotUrl ?? thumbMap[panelItem.web] ?? `/api/shot?url=${encodeURIComponent(panelItem.web)}&v=2`;
     return (
-      <PageNotes
-        key={panelItem.web}
-        src={src}
-        alt={panelItem.name}
-        fit={kind === "image"}
-        notes={panelNotes}
-        user={user}
-        canManage={canManage}
-        onPin={(body, anchor) => postComment(panelItem.id!, body, [], anchor)}
-        onDelete={(id) => deleteComment(panelItem.id!, id)}
-        pins={pins}
-        replies={repliesOf}
-        focusId={commentFocus?.id ?? null}
-        onFocus={focusComment}
-        onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
-      />
+      <PageView key={panelItem.web} src={src} alt={panelItem.name} fit={kind === "image"} />
     );
   })();
+
+  // What the open reference writes in criterio.md: in the project open, or else the first one it is in. A text is
+  // the file's Content, typed in its own page; one in no project is in no file yet
+  const panelProject = panelItem?.id && mediaKindOf(panelItem.web) !== "text"
+    ? (currentProject && links[panelItem.id]?.includes(currentProject.id) ? currentProject : projects.find((p) => links[panelItem.id!]?.includes(p.id))) ?? null
+    : null;
+  const panelBoardIds = useMemo(() => panelProject ? items.filter((i) => i.id && links[i.id]?.includes(panelProject.id)).map((i) => i.id!).reverse() : [],
+    [panelProject, items, links]);
+  // To a part of the system from the panel: the panel's own entry in the history becomes the system's, so Back
+  // goes to where the panel was opened from
+  const goToSystem = (projectId: string, spot: SystemSpot) => {
+    const p = new URLSearchParams(window.location.search);
+    p.set("in", projectId); p.set("view", "system");
+    window.history.replaceState(null, "", `/?${p}`);
+    pushedRef.current = false;
+    setPanelItem(null);
+    if ("area" in spot) setFocusArea((f) => ({ area: spot.area, n: (f?.n ?? 0) + 1 }));
+    else setFocusRef((f) => ({ code: spot.code, n: (f?.n ?? 0) + 1 }));
+  };
 
   return (
     <SidebarProvider defaultOpen={false} className="shell">
@@ -1358,9 +1250,12 @@ export default function InspoClient({
       {panelItem && (
         <ItemPanel
           item={panelItem}
-          state={designMdJobs[panelItem.web]}
-          canDesignMd={canAutoDesignMd(panelItem.web)}
+          isSite={hasOwnPage(panelItem.web)}
           page={panelItem.id ? panelPage : null}
+          criterio={panelItem.id && panelProject && systems[panelProject.id] ? (
+            <RefCriterio item={panelItem} project={panelProject} system={systems[panelProject.id]} library={items} boardIds={panelBoardIds}
+              refInfo={refInfo} onSystem={setSystem} onGo={goToSystem} />
+          ) : undefined}
           thread={panelItem.id ? (
             <CommentsPanel
               variant="column"
@@ -1377,26 +1272,12 @@ export default function InspoClient({
               onPostThumb={(thumb) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))}
               onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
               onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
-              pins={pins}
-              focusId={commentFocus?.id ?? null}
-              onFocus={panelPage ? focusComment : undefined}
             />
           ) : null}
           onClose={closePanel}
-          onGenerate={() => runDesignMd(panelItem)}
-          onRegenerate={() => regenerateDesignMd(panelItem)}
-          onRevised={(patch) => patchJob(panelItem.web, { entry: { ...designMdJobs[panelItem.web]?.entry!, ...patch } })}
           libraryName={workspace.name}
         />
       )}
-      <DesignMdToasts
-        jobs={designMdJobs}
-        openUrl={panelItem?.web ?? null}
-        onOpen={openItemByUrl}
-        onDismiss={(url) => patchJob(url, { seen: true })}
-        onCancel={cancelDesignMd}
-        onRetry={retryDesignMdByUrl}
-      />
       {addError && (
         <div className="toasts toasts--top" role="alert">
           <div className="toast toast--error" onClick={() => setAddError(null)}>
@@ -1409,7 +1290,6 @@ export default function InspoClient({
         open={paletteOpen}
         onOpenChange={setPaletteOpen}
         items={items}
-        hasDesignMd={(web) => web in designMdIndex || designMdJobs[web]?.status === "ready"}
         workspace={workspace}
         workspaces={workspaces}
         isAdmin={isAdmin}
@@ -1486,10 +1366,10 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "discover" || space === "templates" ? (
-          // Discover: the directory of places to look, and the templates (whole systems to start a project from)
-          <Discover section={space === "templates" ? "templates" : "sites"} onSection={(s) => setSpace(s === "templates" ? "templates" : "discover")}
-            templates={<TemplatesView onStarted={(p) => {
+        {space === "discover" || space === "templates" || space === "skills" ? (
+          // Discover: the templates (whole systems to start a project from), the directory of places to look, and the skills for agents
+          <Discover section={space === "templates" ? "templates" : space === "skills" ? "skills" : "sites"} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
+            templates={<TemplatesView key={workspace.id} workspaceId={workspace.id} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
               window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />} />
@@ -1506,11 +1386,7 @@ export default function InspoClient({
           />
         ) : items.length === 0 ? (
           <EmptyStart
-            onAddUrl={async (web) => {
-              // First inspo: saved and its DESIGN.md opened directly, so the app shows what it does
-              const item = await addByUrl({ web, type: typeFromUrl(web), note: "" });
-              if (item) runDesignMd(item, { openWhenReady: true });
-            }}
+            onAddUrl={async (web) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
             isDuplicate={isDuplicate}
             onDirectory={openDirectory}
           />
@@ -1527,6 +1403,7 @@ export default function InspoClient({
             imageOf={smallImageOf}
             onOpenBoard={() => setProjectView("board")}
             focusArea={focusArea}
+            focusRef={focusRef}
             onOpenChange={setOpenArea}
             onOpenItem={(item) => openItem(item)}
             noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
@@ -1567,10 +1444,17 @@ export default function InspoClient({
             onFile={(picked) => fileMany(picked, currentProject.id)}
           />
         ) : spaceItems.length === 0 && space === "inbox" ? (
-          <div className="empty">
-            <span className="display">{t.projects.inboxEmptyTitle}</span>
-            <span>{t.projects.inboxEmptyHint}</span>
-          </div>
+          <InboxZero
+            projects={projects}
+            items={items}
+            links={links}
+            ratioOf={ratioOf}
+            imageOf={miniImageOf}
+            isDuplicate={isDuplicate}
+            onAddUrl={async (web) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
+            onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}
+            onPick={setSpace}
+          />
         ) : (
           <>
             <Grid
@@ -1595,7 +1479,6 @@ export default function InspoClient({
                   comments={item.id ? commentMap[item.id] : undefined}
                   authorImage={authorImages[item.addedBy]}
                   manualThumbnail={thumbMap[item.web]}
-                  designMdLoading={designMdJobs[item.web]?.status === "loading"}
                   designMd={designMdIndex[item.web]}
                   shot={pageShots[item.web]}
                   projects={projects}
@@ -1618,7 +1501,7 @@ export default function InspoClient({
         {/* The way to find anything on a project's board, at the bottom like a conversation: people, dates, kinds,
             every tag, and what it means. Solid and bright in both themes, so it is the first thing the eye finds.
             Off the board only what the agent is still saying stays. */}
-        {items.length > 0 && (searchHere || agentSpeaks) && (
+        {items.length > 0 && ((searchHere && (spaceItems.length > 0 || !!currentProject)) || agentSpeaks) && (
           <div className="dock">
             {filtering && (
               <p className="dock__status" role="status" aria-live="polite">
@@ -1627,7 +1510,11 @@ export default function InspoClient({
             )}
             {/* On a project's board, always: what the board is for, and the step to the system (the first time it also
                 marks the project as started, so it opens on its system from then on) */}
-            {searchHere && spaceItems.length > 0 && !filtering && !agent && (
+            {space === "inbox" && spaceItems.length > 0 && !filtering && !agent && (
+              <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
+                title={t.projects.inbox} lead={t.gather.inboxLead} />
+            )}
+            {searchHere && currentProject && spaceItems.length > 0 && !filtering && !agent && (
               <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
                 onStart={async () => {
                   const id = currentProject.id;
@@ -1644,7 +1531,7 @@ export default function InspoClient({
             )}
             {/* The card handed to the agent wears a ring wherever it is shown */}
             {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--dock-ink, #f2f2ef) !important; outline-offset: 3px; }`}</style>}
-            {searchHere && (
+            {searchHere && (spaceItems.length > 0 || currentProject) && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
                 vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
@@ -1758,7 +1645,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
 }
 
 interface GridActions {
-  openItem: (item: InspoItem, opts?: { generate?: boolean }) => void;
+  openItem: (item: InspoItem) => void;
   deleteItem: (item: InspoItem) => Promise<void>;
   handleThumbnailUpload: (web: string, file: File) => void;
   handleThumbnailRemove: (web: string) => void;
@@ -1770,14 +1657,14 @@ interface GridActions {
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMdLoading, designMd, shot, projects, projectIds, backs, areasIn, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMd, shot, projects, projectIds, backs, areasIn, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
   /** In every project: the areas it backs there */
   areasIn?: Record<string, SystemArea[]>;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
-  manualThumbnail: string | undefined; designMdLoading: boolean; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
+  manualThumbnail: string | undefined; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
   actions: RefObject<GridActions>;
 }) {
@@ -1791,12 +1678,6 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   const page = showsPage ? shot![key] : designMd?.coverUrl;
   // The same page at the other sizes: whichever is already decoded stands in while this one loads
   const alternates = useMemo(() => (shot ? [shot.tileUrl, shot.thumbUrl, shot.topUrl] : undefined), [shot]);
-  // The post-its on the part of the page the card shows, as dots where they sit
-  const pins = useMemo(() => {
-    if (!showsPage) return undefined;
-    const shown = Math.min(shot!.shotH, 1440 * ratio);
-    return (comments ?? []).filter((c) => c.anchor).map((c) => ({ x: c.anchor!.x, y: (c.anchor!.y * c.anchor!.h) / shown })).filter((p) => p.y <= 1);
-  }, [comments, showsPage, shot, ratio]);
   const open = () => act().openItem(item);
   // Always the whole card, at every zoom: its note and its thread are always there. Only the copy of the
   // page changes with the zoom (288, 720 or 1440px), swapped without a blank frame.
@@ -1814,9 +1695,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       manualThumbnail={manualThumbnail}
       onUpload={(file) => { act().handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
       onRemoveThumbnail={() => { act().handleThumbnailRemove(item.web); return Promise.resolve(); }}
-      onDesignMd={() => act().openItem(item, { generate: true })}
-      designMdLoading={designMdLoading}
-      designMdReady={designMd !== undefined}
+      onOpen={open}
       designCover={page}
       designCoverFallback={showsPage ? shot!.paths?.[key] : undefined}
       designScroll={designMd?.scrollUrl}
@@ -1828,7 +1707,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       onToggleArea={backs && item.id ? (area, on) => act().toggleArea(item, area, on) : undefined}
       areasIn={areasIn}
       onToggleAreaIn={item.id ? (projectId, area, on) => act().toggleAreaIn(item, projectId, area, on) : undefined}
-      board={{ ratio, pins, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
+      board={{ ratio, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
 });

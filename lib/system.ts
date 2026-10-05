@@ -22,7 +22,7 @@ import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
 import { recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, DOC_PARTS, DOC_PART_MAX, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
+import { DECISION_MAX, DOC_PART_MAX, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, isDocPart, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
 
@@ -104,7 +104,7 @@ export async function setSummary(organizationId: string, projectId: string, summ
 /** A part of the file rewritten by hand; null (or the empty text) goes back to what the app writes */
 export async function setDocPart(organizationId: string, projectId: string, part: string, text: string | null): Promise<ProjectSystem> {
   await projectRow(organizationId, projectId);
-  if (!DOC_PARTS.includes(part)) throw new HttpError(400, (await getErrors()).badBody);
+  if (!isDocPart(part)) throw new HttpError(400, (await getErrors()).badBody);
   const now = new Date();
   await ensureHead(organizationId, projectId, now);
   const [head] = await db.select({ doc: S.doc }).from(S).where(and(eq(S.organizationId, organizationId), eq(S.projectId, projectId))).limit(1);
@@ -328,6 +328,7 @@ Rules:
 - The team's words come first. A note, a comment or a thing they pointed at says WHY a reference is here: that is the decision's root. The measured brief says WHAT the reference does: use it to make the decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - A decision is an instruction an agent can execute for THIS project, in 1 to 3 sentences (max 60 words): concrete values when the evidence has them, the principle when it does not. Write what the project will do, not what the references do ("Headlines in a high-contrast serif at 400, body in a geist-like grotesque", not "r1 uses a serif").
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
+- Be faithful to what the team brought. The board speaks to an area only when: the team's words (a note, a comment, what they pointed at) are about it; a reference was filed under it ("filed_by_team"); or a reference is that area's own material (a type specimen or a foundry for typography, a palette for color, a logo for logo, an animation or a clip of an interaction for motion, an icon set for iconography, a photo or an illustration for imagery, pasted copy for voice). A website saved without words decides no area on its own: its measured brief only makes concrete an area something above already opened. Two saved websites are not eight decided areas.
 - "why" is the criterio behind the decision: why this and not the rest, in one or two sentences (max 40 words), rooted in the brief and the team's words. Empty when the area is empty.
 - confidence is 0-100: how many references agree, how concrete and how explicit the evidence is. One passing mention is 25-40; two or three references that agree with concrete values is 60-80; the team saying it in so many words plus measured values is 85+.
 - evidence lists the references behind the decision, by id, each with a "take": what to take from it for this area, as one instruction of at most 20 words. Only references that actually speak to that area. A photo or an illustration has no values: its take names the treatment to copy.
@@ -368,6 +369,8 @@ function focusForModel(focus: SystemFocus | undefined, teamAreas: SystemArea[] =
   const lines = [
     focus.areas.length < SYSTEM_AREAS.length ? `Work ONLY on these areas: ${focus.areas.join(", ")}. Return every other area exactly as it stands.` : "",
     own.length ? `The team asks you to improve areas it decided itself: ${own.join(", ")}. For this pass they are NOT returned unchanged. Keep what each one decides: its direction and every concrete value (families, weights, colours, sizes, numbers, verbatim quotes), and keep its length (they may run well over 60 words, with their own line breaks: do not shorten or summarise them). Improve how it is written, its why and the evidence behind it. Never empty one of them.` : "",
+    // Asked for by hand, the pass may go past what the team said: everything on the board is context to decide from
+    "In this pass you may fill the areas asked for from the whole context, past the rule of being faithful to what the team brought: the measured briefs, what each reference shows and the project brief. An area decided only from that context gets a low confidence (25 to 45).",
     ...focus.aims.map((a) => AIMS[a]),
     note ? `In the team's own words, to follow as an instruction for this pass only: ${JSON.stringify(note)}` : "",
   ].filter(Boolean);
@@ -795,6 +798,27 @@ export async function assignEvidence(organizationId: string, projectId: string, 
   await db.insert(A).values({ projectId, organizationId, area, decision: current.decision, confidence: current.confidence, evidence, source: current.source, decidedBy: current.decidedBy, why: current.why, curationJson: current.curation, updatedAt: now })
     .onConflictDoUpdate({ target: [A.projectId, A.area], set: { evidence, updatedAt: now } });
   void author;
+  return getSystem(organizationId, projectId);
+}
+
+/** The references behind an area as the team rewrote them in criterio.md: the ones left, each with its take, in
+ *  that order. One that was there keeps whether it was filed by hand; one written in is filed by hand. The decision
+ *  and its source stay as they were */
+export async function setAreaEvidence(organizationId: string, projectId: string, areaKey: string, refs: { itemId: string; take: string }[]): Promise<ProjectSystem> {
+  await projectRow(organizationId, projectId);
+  const area = await cleanArea(areaKey);
+  const ids = [...new Set(refs.map((r) => String(r?.itemId ?? "")).filter(Boolean))].slice(0, 40);
+  const mine = new Set((ids.length ? await db.select({ id: T.id }).from(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids))) : []).map((r) => r.id));
+  const current = (await getSystem(organizationId, projectId)).areas.find((a) => a.area === area)!;
+  const evidence: SystemEvidence[] = ids.filter((id) => mine.has(id)).map((id) => {
+    const was = current.evidence.find((e) => e.itemId === id);
+    const take = String(refs.find((r) => r.itemId === id)?.take ?? "").trim().slice(0, 200);
+    return was ? { ...was, take } : { itemId: id, take, pinned: true };
+  });
+  const now = new Date();
+  await ensureHead(organizationId, projectId, now);
+  await db.insert(A).values({ projectId, organizationId, area, decision: current.decision, confidence: current.confidence, evidence, source: current.source, decidedBy: current.decidedBy, why: current.why, curationJson: current.curation, updatedAt: now })
+    .onConflictDoUpdate({ target: [A.projectId, A.area], set: { evidence, updatedAt: now } });
   return getSystem(organizationId, projectId);
 }
 

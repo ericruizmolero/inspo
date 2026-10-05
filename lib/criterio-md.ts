@@ -118,18 +118,23 @@ export function criterioBlocks({ project, system, items, labels, strings, client
   };
   // What the team rewrote by hand stands instead of what the app would write (types/system.ts DOC_PARTS)
   const doc = system.doc ?? {};
+  // Every heading can be typed over too ("title:<block id>"); emptied, the app's comes back
+  const title = (id: string, fallback: string) => doc[`title:${id}`] || fallback;
   const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
-  if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: strings.project, lines: [about.trim()] });
+  if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
   // The project's content: each text the team pasted, whole and as given, under its title. It is material to
   // place, not a reference to read a look from, so it sits with what the project is and not in the appendix
   const texts = board.filter((id) => items[id]?.kind === "text");
   if (texts.length) {
-    const intro = [`> ${strings.contentIntro}`, ""];
+    const intro = doc["content-intro"] ? [...doc["content-intro"].split("\n"), ""] : [`> ${strings.contentIntro}`, ""];
     const parts: { itemId: string; head: string[]; body: string[] }[] = [];
     for (const id of texts) {
       const it = items[id];
       const head = [`### ${code.get(id)} · ${it.name}`, ""];
+      // Who saved it and what was said of it, or what the team wrote over that
+      const byHand = doc[`texthead:${id}`];
+      if (byHand) { head.push(...byHand.split("\n"), ""); parts.push({ itemId: id, head, body: lowerHeadings(it.text ?? it.what ?? "") }); continue; }
       if (it.by) head.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
       if (it.said?.length) {
         head.push(`- **${strings.said}:**`);
@@ -141,12 +146,12 @@ export function criterioBlocks({ project, system, items, labels, strings, client
     const lines = [...intro, ...parts.flatMap((p) => [...p.head, ...p.body, ""])];
     while (lines[lines.length - 1] === "") lines.pop();
     // Only the texts whose words are in hand can be typed over: one still loading shows its first lines
-    blocks.push({ kind: "section", id: "content", heading: strings.content, lines, texts: { intro, items: parts.map((p) => ({ ...p, itemId: items[p.itemId].text === undefined ? "" : p.itemId })) } });
+    blocks.push({ kind: "section", id: "content", heading: title("content", strings.content), lines, texts: { intro, items: parts.map((p) => ({ ...p, itemId: items[p.itemId].text === undefined ? "" : p.itemId })) } });
   }
-  if (system.summary) blocks.push({ kind: "summary", heading: strings.summary, text: system.summary });
+  if (system.summary) blocks.push({ kind: "summary", heading: title("summary", strings.summary), text: system.summary });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
-    const base = { kind: "area" as const, area: key, heading: labels[key], whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
+    const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
     const meta: string[] = [];
     if (a?.decision) {
       const level = confidenceOf(a);
@@ -175,7 +180,8 @@ export function criterioBlocks({ project, system, items, labels, strings, client
     blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand });
   }
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
-  for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s });
+  // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
+  for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
   // Every reference once, with what it is, what was said of it and what it brings to each area
   // (a text is already whole under Content)
   const refs = board.filter((id) => items[id]?.kind !== "text");
@@ -185,6 +191,9 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       const it = items[id];
       if (!it) continue;
       lines.push(`### ${code.get(id)} · ${it.name}`, "");
+      // Rewritten by hand from the reference's panel: its heading (its code) stays the app's
+      const byHand = doc[`ref:${id}`];
+      if (byHand) { lines.push(...byHand.split("\n"), ""); continue; }
       const kind = it.kind ?? "web";
       const where = kind === "image" ? strings.kinds.image.toLowerCase() : readableDomain(abs(it.web).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
       lines.push(`- **${strings.kinds[kind]}:** [${where}](${abs(it.web)})`);
@@ -203,9 +212,58 @@ export function criterioBlocks({ project, system, items, labels, strings, client
       lines.push("");
     }
     while (lines[lines.length - 1] === "") lines.pop();
-    blocks.push({ kind: "section", id: "refs", heading: `${strings.refs} (${refs.length})`, lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
+    blocks.push({ kind: "section", id: "refs", heading: title("refs", `${strings.refs} (${refs.length})`), lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
   }
   return blocks;
+}
+
+/** What one reference is in the file: its entry under References (the lines under its "### R3 · …" heading)
+ *  and the areas that cite it, each with the lines that do */
+export function refSlice(blocks: CriterioBlock[], code: string): { heading: string; entry: string[]; cited: { area: SystemArea; heading: string; lines: string[] }[] } | null {
+  const refs = blocks.find((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id === "refs");
+  const at = refs?.lines.findIndex((l) => l.startsWith(`### ${code} \u00b7`)) ?? -1;
+  if (!refs || at < 0) return null;
+  let end = refs.lines.findIndex((l, i) => i > at && l.startsWith("### "));
+  if (end < 0) end = refs.lines.length;
+  const entry = refs.lines.slice(at + 1, end);
+  while (entry[0] === "") entry.shift();
+  while (entry[entry.length - 1] === "") entry.pop();
+  // An area's citation is its "- **R3** …" line and the words said under it (indented deeper)
+  const cited = blocks.filter((b): b is Extract<CriterioBlock, { kind: "area" }> => b.kind === "area").flatMap((b) => {
+    const out: string[] = [];
+    b.meta.forEach((l, i) => {
+      if (!l.startsWith(`  - **${code}** `)) return;
+      out.push(l);
+      for (let j = i + 1; j < b.meta.length && b.meta[j].startsWith("    "); j++) out.push(b.meta[j]);
+    });
+    return out.length ? [{ area: b.area, heading: b.heading, lines: out }] : [];
+  });
+  return { heading: refs.lines[at], entry, cited };
+}
+
+/** The References section with one entry's lines swapped (the section was rewritten whole by hand) */
+export function withRefEntry(lines: string[], code: string, entry: string[]): string[] {
+  const at = lines.findIndex((l) => l.startsWith(`### ${code} \u00b7`));
+  if (at < 0) return lines;
+  let end = lines.findIndex((l, i) => i > at && l.startsWith("### "));
+  if (end < 0) end = lines.length;
+  return [...lines.slice(0, at + 1), "", ...entry, ...(end < lines.length ? [""] : []), ...lines.slice(end)];
+}
+
+/** An area's status and references as the team rewrote them in the file, read back: whether it says decided or
+ *  proposed, and every reference it cites by code ("- **R3** …. Take: …"), in order, with its take. The words said
+ *  under a reference and the conversation are a record, not read back */
+export function readAreaMeta(text: string, strings: { decided: string; proposed: string; take: string }): { status: "decided" | "proposed" | null; refs: { code: string; take: string }[] } {
+  const lines = text.split("\n");
+  const status = lines.some((l) => l.includes(`**${strings.decided}**`)) ? "decided" : lines.some((l) => l.includes(`**${strings.proposed}**`)) ? "proposed" : null;
+  const refs: { code: string; take: string }[] = [];
+  for (const l of lines) {
+    const m = l.match(/^\s*[-*]\s+\*\*(R\d+)\*\*(.*)$/);
+    if (!m || refs.some((r) => r.code === m[1])) continue;
+    const at = m[2].indexOf(`${strings.take}:`);
+    refs.push({ code: m[1], take: at < 0 ? "" : m[2].slice(at + strings.take.length + 1).trim() });
+  }
+  return { status, refs };
 }
 
 /** An area's never list: one rule a line under its bold label */
