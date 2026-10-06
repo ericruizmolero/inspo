@@ -274,6 +274,12 @@ $("btn-disconnect").addEventListener("click", () => disconnect(true));
 const openImport = (source) => async () => { await chrome.tabs.create({ url: chrome.runtime.getURL(`import.html?source=${source}`) }); window.close(); };
 $("btn-import-x").addEventListener("click", openImport("x"));
 $("btn-import-browser").addEventListener("click", openImport("browser"));
+// On Pinterest already: the board in this tab is the one the import page offers
+$("btn-import-pinterest").addEventListener("click", () => {
+  let on = false;
+  try { on = /(^|\.)pinterest\.[a-z.]+$/.test(new URL(tab?.url || "").hostname); } catch { /* not a page */ }
+  return openImport(on ? `pinterest&url=${encodeURIComponent(tab.url)}` : "pinterest")();
+});
 
 // If the key arrives while the popup is open (connect tab), it refreshes itself
 chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && changes.key) load(); });

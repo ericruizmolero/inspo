@@ -60,6 +60,9 @@ para el alta ni para la ficha.
   - `scripting` + optional `https://x.com/*`: when the user presses "Import from X", scroll
     through their own bookmarks page on x.com and read the addresses of the saved posts.
     Requested at that moment with `chrome.permissions.request`, never at install.
+  - optional `https://*.pinterest.com/*`: when the user presses "Import from Pinterest", open
+    the board they pasted in a background tab and read its pins (address, title, image) from
+    there, with the same `scripting` permission. Requested at that moment, never at install.
 - **Remote code:** No.
 - **Uso de datos:** marcar "Website content" (la captura y el título) y "Web history" NO
   (no se guarda historial; solo la página que el usuario guarda a propósito). Los tres

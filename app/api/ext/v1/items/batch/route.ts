@@ -1,12 +1,17 @@
-// Save many addresses at once: what the extension sends when it imports the browser's bookmarks
-// or the bookmarks saved on X. No screenshots arrive (nobody was looking at those pages): a site
-// gets its thumbnail the way a pasted URL does, a post on X gets its picture once imported.
+// Save many addresses at once: what the extension sends when it imports the browser's bookmarks,
+// the bookmarks saved on X or a board on Pinterest. No screenshots arrive (nobody was looking at
+// those pages): a site gets its thumbnail the way a pasted URL does, a post on X gets its picture
+// once imported. A pin comes with its image, which is copied and becomes the reference itself, as
+// an image saved with the right-click menu does.
 // The extension paces itself: one batch per request, the next when this one answers.
 import { NextRequest, after } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
-import { addItem, findByWeb, setThumbnail, setItemDate } from "@/lib/items";
+import { addItem, findByWeb, findByWebs, setThumbnail, setItemDate } from "@/lib/items";
 import { activeProjectFor, fileItems } from "@/lib/projects";
 import { nameFor } from "@/lib/item-name";
+import { importedMediaKey, importedMediaUrls, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/lib/media";
+import { putFile } from "@/lib/storage";
+import { fetchFile } from "@/lib/remote-file";
 import { ensurePost, postThumb, postDay } from "@/lib/posts";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
 import { taggerEnabled } from "@/lib/tagger";
@@ -23,6 +28,8 @@ const MAX_PER_BATCH = 25;
 const NAME_AT_ONCE = 5;
 /** Posts imported and items tagged at once, after the response */
 const FINISH_AT_ONCE = 3;
+/** Addresses of the same image tried in turn (the size wanted first, then what there is) */
+const MAX_IMAGE_TRIES = 3;
 
 type Status = "added" | "existed" | "invalid" | "error";
 interface Result { url: string; status: Status; id?: string }
@@ -43,13 +50,23 @@ function dateOf(date: unknown): string | undefined {
   return date > today || date < "2000-01-01" ? undefined : date;
 }
 
-// POST { items: [{ url, title?, date? }], source? } → { ok, results: [{ url, status, id? }] }
+const clip = (s: unknown, n: number) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, n).trim() : "");
+/** The addresses an item gives for its image, in the order to try them */
+const imagesOf = (image: unknown): string[] =>
+  (Array.isArray(image) ? image : [image]).filter((s): s is string => typeof s === "string" && /^https?:\/\//.test(s)).slice(0, MAX_IMAGE_TRIES);
+
+// POST { items: [{ url, title?, date?, image? }], source?, projectId? } → { ok, results: [{ url, status, id? }] }
+// `image` (an address, or a few to try in turn) makes the item that image, found on the page at `url`:
+// the file is copied into the workspace's media folder and the page only tells one image from another.
 // `date` (YYYY-MM-DD) is the day the address was saved or published, so an import lands each
 // reference on its own day on the board instead of piling them all on today.
+// `projectId` is the project picked on the import page: what is new goes there, and so does what the
+// workspace already had (a reference can be in several projects). Without it, only what is new is
+// filed, in the project this person was working in.
 export async function POST(req: NextRequest) {
   const ctx = await requireExtCtx(req);
   if (ctx instanceof Response) return ctx;
-  const body = (await req.json().catch(() => ({}))) as { items?: { url?: string; title?: string; date?: string }[]; source?: string };
+  const body = (await req.json().catch(() => ({}))) as { items?: { url?: string; title?: string; date?: string; image?: string | string[] }[]; source?: string; projectId?: string };
   if (!Array.isArray(body.items) || body.items.length > MAX_PER_BATCH) {
     return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
   }
@@ -67,10 +84,25 @@ export async function POST(req: NextRequest) {
     if (seen.has(web)) return { url: raw, status: "existed" };
     seen.add(web);
     try {
+      const dateIso = dateOf(it.date);
+      const images = imagesOf(it.image);
+      if (images.length) {
+        const had = await findByWebs(ctx.workspace.id, importedMediaUrls(ctx.workspace.id, web));
+        if (had) return { url: raw, status: "existed", id: had.id };
+        let file: Awaited<ReturnType<typeof fetchFile>> = null;
+        for (const src of images) { file = await fetchFile(src, web, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES); if (file) break; }
+        if (!file) return { url: raw, status: "error" };
+        const stored = await putFile(importedMediaKey(ctx.workspace.id, web, file.type), file.body, file.type);
+        const item = await addItem(ctx.workspace.id, {
+          name: clip(it.title, 48) || new URL(web).hostname.replace(/^www\./, ""),
+          web: stored, thumbnailUrl: stored, type: "inspiration", author, createdBy: ctx.user.id, dateIso,
+        });
+        added.push(item);
+        return { url: raw, status: "added", id: item.id };
+      }
       const existing = await findByWeb(ctx.workspace.id, web);
       if (existing) return { url: raw, status: "existed", id: existing.id };
       const name = await nameFor(web, typeof it.title === "string" ? it.title : undefined);
-      const dateIso = dateOf(it.date);
       const item = await addItem(ctx.workspace.id, { name, web, type: typeFromUrl(web), author, createdBy: ctx.user.id, dateIso });
       added.push(item);
       if (dateIso) dated.add(web);
@@ -83,9 +115,17 @@ export async function POST(req: NextRequest) {
     }
   });
 
-  // Nothing lives outside a project: what came in goes to the one this person was working in
+  // Nothing lives outside a project: what came in goes to the one picked on the import page (with what
+  // was here already), or to the one this person was working in when none was picked or it went away
   const ids = added.map((i) => i.id).filter((x): x is string => !!x);
-  if (ids.length) {
+  const picked = typeof body.projectId === "string" && body.projectId ? body.projectId : null;
+  const here = picked ? results.filter((r) => r.status === "existed" && r.id).map((r) => r.id as string) : [];
+  let filed = false;
+  if (picked && (ids.length || here.length)) {
+    filed = await fileItems(ctx.workspace.id, picked, [...ids, ...here], ctx.user.id).then(() => true)
+      .catch((e) => { console.error(`ext batch (${source}): not filed in the picked project`, e instanceof Error ? e.message : e); return false; });
+  }
+  if (!filed && ids.length) {
     const projectId = await activeProjectFor(ctx.workspace.id, ctx.user.id).catch(() => null);
     if (projectId) await fileItems(ctx.workspace.id, projectId, ids, ctx.user.id).catch((e) => console.error(`ext batch (${source}): not filed`, e));
   }

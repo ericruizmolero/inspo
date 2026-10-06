@@ -4,7 +4,9 @@
 // expires the link or refuses it: their path is the item's `web`, and a frame is its thumbnail.
 // Files: lib/storage.ts, under inspo/<workspace>/media/ and inspo/<workspace>/video/.
 import "server-only";
-import { putFile, deleteFiles, getFile, keyOf } from "./storage";
+import { createHash } from "node:crypto";
+import { putFile, deleteFiles, getFile, keyOf, fileUrl } from "./storage";
+import { webKeyOf } from "./url";
 
 export const MEDIA_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"]);
 /** Kept whole, not downscaled: a GIF would lose its animation */
@@ -29,6 +31,14 @@ export function ownsMediaFile(organizationId: string, url: string): boolean {
 /** A new, unused key in this workspace's media folder */
 export const newMediaKey = (organizationId: string, type: string) =>
   `${mediaPrefix(organizationId)}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${EXT[type] ?? "jpg"}`;
+
+/** The key of an image brought in from `page` (a pin on Pinterest): the same page always gives the same key,
+ *  so importing it again finds the reference it already made instead of copying the image twice */
+export const importedMediaKey = (organizationId: string, page: string, type: string) =>
+  `${mediaPrefix(organizationId)}from-${createHash("sha1").update(webKeyOf(page)).digest("hex").slice(0, 20)}.${EXT[type] ?? "jpg"}`;
+/** Every path an image imported from `page` may have been stored at, whatever its type turned out to be */
+export const importedMediaUrls = (organizationId: string, page: string) =>
+  Object.keys(EXT).map((type) => fileUrl(importedMediaKey(organizationId, page, type)));
 
 export async function uploadMediaFile(organizationId: string, file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
