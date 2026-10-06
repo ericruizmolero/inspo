@@ -1,14 +1,15 @@
 import { resolveShare } from "@/lib/share";
 import { loadShareView, shareMayServe } from "@/lib/share-view";
 import { getLocale } from "@/lib/i18n";
-import { openFile, signedFileUrl } from "@/lib/storage";
+import { openFile, signedFileUrl, isSafeKey } from "@/lib/storage";
 
 // GET → a stored file the link's page shows: the brand's own files, its references' pictures, the public captures.
 // Nothing else of the workspace: a key the view does not name is refused.
 export async function GET(req: Request, ctx: RouteContext<"/s/[token]/f/[...key]">) {
   const { token, key: parts } = await ctx.params;
-  if (parts.some((p) => !p || p === "." || p === "..")) return new Response("bad path", { status: 400 });
+  // Checked after the join: a segment can hold an encoded slash ("..%2F..")
   const key = parts.join("/");
+  if (!isSafeKey(key)) return new Response("bad path", { status: 400 });
   const share = await resolveShare(token);
   if (!share) return new Response("not found", { status: 404 });
   let ok = shareMayServe(share.organizationId, share.projectId, key);

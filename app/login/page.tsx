@@ -8,6 +8,7 @@ import { DEV_LOGIN_EMAIL, SOCIAL_PROVIDERS } from "@/lib/auth";
 import { getT, type Dict } from "@/lib/i18n";
 import { Fragment } from "react";
 import Logo from "@/components/Logo";
+import { isLocalPath } from "@/lib/url";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,7 +41,7 @@ function loginError(code: string | undefined, t: Dict): string | undefined {
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
   const { t } = await getT();
-  if (await getSession()) redirect(next && next.startsWith("/") ? next : "/");
+  if (await getSession()) redirect(isLocalPath(next) ? next : "/");
   // Someone arriving from an invitation needs to know what they are joining and with which email
   const fromInvitation = (next ?? "").startsWith("/invite/");
   // If they come from the start canvas with a URL (?next=/?add=…), the headline says so
