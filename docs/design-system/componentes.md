@@ -28,6 +28,7 @@ La marca en SVG; sustituye al nombre en la interfaz (el nombre va en el `alt`). 
 `Island` · `components/Island.tsx` · `.island` · captura: isla
 Barra flotante de escritorio con los proyectos como pestañas, a lo Figma: Inicio (la casa), Descubrir, Inbox, "N más", "+" para proyecto nuevo y, a la izquierda, el avatar del espacio que abre el menú de espacio.
 - Las pestañas abiertas se guardan por navegador y espacio; el ancho se mide con un `.island__measure` oculto.
+- El relleno de la pestaña activa y el del hover son las pastillas de `Liquid`, sin borde: la del hover fluye de una pestaña a otra y la activa aparece en el mismo clic. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
 - La pestaña activa lleva ⌄ (renombrar, borrar) y × (cerrar pestaña); el × ocupa el sitio del anillo de progreso.
 - Renombrar en el sitio: Enter guarda, Esc cancela. Proyecto nuevo: ⌘/Ctrl+Enter.
 - Se oculta a ≤800 px; en móvil navega la barra lateral. z 20 dentro de `.topbar`.
@@ -96,6 +97,10 @@ Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al eq
 `.sk` · `app/globals.css` · muestra: skeleton
 Brillo que recorre una superficie mientras carga (`shimmer`, 1.6 s). Lo que espera ocupa ya su forma final.
 
+### Relleno líquido de pestañas
+`Liquid` · `afterPaint` · `components/ui/liquid.tsx` · `.liquid` · `.liquid__pill`
+Envuelve un grupo de pestañas y pinta sus rellenos como dos pastillas: la del hover fluye de pestaña en pestaña siguiendo al puntero; la de la elegida no viaja, salta a la pestaña en el mismo clic, con el texto ya en su color. Lee la elegida del DOM (`aria-selected`, `aria-pressed` o `on`) y acepta `as` (`div`, `nav`, `span`). `afterPaint` lanza lo que abre el clic después de pintar ese fotograma, para las vistas pesadas. Colores por control con `--liquid-on`, `--liquid-hover`, `--liquid-ring`, `--liquid-ink` y `--liquid-ink-off`. Lo usan los controles segmentados, Tablón / Pulido / Sistema y la Isla. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
+
 ### Pastilla y control segmentado
 `.ds-pill` · `.ds-seg` · `components/design-library/DesignLibrary.css` · muestra: pastillas
 Etiqueta de estado sin borde (relleno al 16 % del color de estado) y grupo de opciones con la elegida en relleno. Hoy viven en esta librería; candidatas a subir a `globals.css` si se usan fuera.
@@ -104,7 +109,7 @@ Etiqueta de estado sin borde (relleno al 16 % del color de estado) y grupo de op
 
 ### Biblioteca
 `InspoClient` · `components/InspoClient.tsx` · `.shell` · `.topbar` · `.dock`
-La app: barra superior (Isla, logo, acciones), selector Sistema/Tablero, el "+" y, abajo, el dock con la barra de reunir, la respuesta del agente y el buscador. Según el espacio activo enruta a Descubrir, Inicio, Inbox, tablero o Sistema.
+La app: barra superior (Isla, logo, acciones), selector Tablón / Pulido / Sistema, el "+" y, abajo, el dock con la barra de reunir, la respuesta del agente y el buscador. Según el espacio activo enruta a Descubrir, Inicio, Inbox, tablero, Pulido o Sistema.
 - Atajos: ⌘K paleta, N añadir, "/" buscador (o sobre una tarjeta, entregarla al agente).
 
 ### Respuesta del agente
@@ -124,6 +129,7 @@ La miniatura en su forma real: web (og:image, captura o póster tipográfico), i
 - Nota con avatares, chips de etiquetas y estado "reuniendo".
 - Abajo: Archivar en proyecto, Al sistema y Comentarios. Al pasar el ratón, la página hace scroll dentro de la tarjeta.
 - Arriba a la derecha: Ver URL, los tres puntos (solo la miniatura) y la papelera. Borrar son dos clics seguidos sobre la papelera, que al primero pasa a decir "Borrar" en rojo en el mismo sitio; Esc, sacar el puntero o 6 s lo cancelan. → [decisión](decisiones/2026-10-06-borrar-tarjeta-con-dos-clics-en-la-papelera.md)
+- Arriba a la izquierda: el círculo de selección (al pasar el ratón o mientras se selecciona) y, tras una búsqueda, el porcentaje de encaje con su porqué. Cuando el círculo aparece, el porcentaje y el chip GIF se apartan 32 px a la derecha. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
 
 ### Barra de selección
 `SelectBar` · `components/SelectBar.tsx` · `.selbar`
@@ -149,10 +155,22 @@ Pegar enlace, subir, soltar o pegar con ⌘V una imagen, o pegar texto (varias l
 Caja fija abajo, con chips de filtro (persona, fecha, color, sección…) y sugerencias que se abren hacia arriba. Enter o ⌘Enter manda la orden al agente.
 - Muestra la tarjeta marcada con "/" como objetivo.
 - Esc en cascada: cierra la lista, vacía, quita chips, quita objetivo, suelta el foco.
+- A la derecha, mientras se busca, solo acciones: el botón del agente y la equis. El aviso "Etiquetando N referencias" (trabajo en segundo plano) solo sale con la caja vacía. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
 
 ### Barra de reunir referencias
 `GatherBar` · `components/GatherBar.tsx` · `.gather`
-Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis referencias", que marca el proyecto como empezado y lleva al Sistema.
+Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis referencias", que marca el proyecto como empezado y lleva siempre al Sistema (no pasa por Pulido, que es una pestaña aparte).
+
+### Pulido
+`PolishView` · `components/PolishView.tsx` · `components/PolishView.css` · `.polish`
+La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir del tablón, en un slider con forma de tornado 3D; la tarjeta de delante ocupa más sitio y es la que se decide. → [la fase](decisiones/2026-10-06-vuelve-pulido-como-fase-entre-tablon-y-sistema.md), [cómo se decide](decisiones/2026-10-06-en-pulido-la-tarjeta-decidida-vuela-a-su-pestana.md)
+- La matemática es la del "3D cards tornado" de Osmo Supply, en `requestAnimationFrame` y sin GSAP; sus parámetros son las constantes del principio del fichero. Ventaneado: solo se montan las tarjetas cercanas a la pantalla (unas 33 en un tablero de 134).
+- Es un slider manual, siempre: se mueve con la rueda, arrastrando o al decidir, y descansa sobre una tarjeta. Cada vez que se entra, la tarjeta de delante es otra, al azar entre las pendientes (`lastFront`). La de delante es una más del tornado, más grande (`FRONT_W` frente a `CARD_W`) y con las vecinas un poco apartadas (`SPREAD`); en reposo carga su captura grande. Clic en ella abre su ficha; clic en otra la trae delante.
+- Las respuestas (`.polish__bar`, cristal del dock, donde va el dock en el tablón): una pastilla con el nombre de la referencia y cuántas quedan, y una pieza en dos mitades del mismo peso (`.polish__choice`), **Olvidar** ("Vuelve al Inbox": sale del proyecto, no se borra) y **Conservar** ("Se queda en el tablón"), cada una con la flecha de su tecla. Deshacer aparece al lado cuando hay algo que deshacer. Atajos ← → y ⌘Z.
+- Decidida, la tarjeta sale del tornado (solo gira lo pendiente) y se ve adónde va: una copia (`Flyer`, `.polish__fly`) vuela a la pestaña Tablón si se conserva o a la pestaña Inbox de la Isla si se olvida, que da un bote al recibirla (`LANDING`, WAAPI), y las demás cierran el hueco. La olvidada sale del proyecto cuando aterriza, así el contador del Inbox sube justo entonces; deshacer mientras vuela no llega al servidor.
+- Las conservadas se recuerdan en el navegador por proyecto: al volver solo se pregunta por lo nuevo. Con todo decidido (`.polish__done`) el tablón que se ha quedado gira solo, lejos y desenfocado entero, y encima cae en su sitio lo hecho, escalonado: hasta cinco de las referencias que se quedan ordenándose en abanico (`.polish__fan`), "Todo está en orden", el aviso de que se podrá volver a pulir cuando entren más referencias, "Ir al sistema" (que marca el proyecto como empezado) y "Repasarlo otra vez".
+- Sonido (`.polish__sound`, en la esquina del zoom del tablón): música opcional, seis pistas en `public/polish/` (lista `TRACKS`), que no se descarga hasta encenderla, entra y sale con fundido y calla si la pestaña pasa a segundo plano. Encendida, la pastilla dice qué canción suena y ese nombre abre el menú para elegir otra (`.polish__sound-track`, `.polish__tracks`); al acabar una sigue la siguiente. → [decisión](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
+- La profundidad es una niebla del color de la página (`.polish__fog`) más un desenfoque que crece hacia el fondo, no un oscurecido: funciona igual en claro y en oscuro. Con reduced-motion no hay deslizamientos y las tarjetas solo se funden.
 
 ### Inicio: ¿qué vas a hacer?
 `ProjectChooser` · `Cover` · `components/ProjectChooser.tsx` · `.chooser` · captura: inicio
@@ -172,7 +190,7 @@ Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pesta�
 
 ### Descubrir: ejemplos, recursos y skills
 `Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`
-Tres pestañas: Ejemplos (`?in=templates`, antes Plantillas), Recursos (`?in=discover`) y Skills (`?in=skills`). Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, seguimiento con requestAnimationFrame y entrada con WAAPI; solo ratón, con reduced-motion solo fundido), y ejemplos: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir uno enseña su criterio.md y deja crear un proyecto con él. → [se llaman ejemplos](decisiones/2026-10-06-plantillas-se-llaman-ejemplos.md) Las tarjetas de ejemplo enseñan Clonar y Ver al pasar el ratón, con los botones del tablón (`.tile__go-btn`). → [decisión](decisiones/2026-10-06-tarjetas-de-ejemplo-con-clonar-y-ver-al-pasar.md)
+Tres pestañas: Ejemplos (`?in=templates`, antes Plantillas), Recursos (`?in=discover`) y Skills (`?in=skills`). Las tres comparten cabecera, en la columna del contenido y con el patrón de la página de proyecto: el nombre "Descubrir" y la entradilla de la sección (`.disc-head`) y, debajo, una fila (`.disc-bar`) con las pestañas a la izquierda y los controles de la sección a la derecha; la cabecera entera se va con la página al hacer scroll. → [decisión](decisiones/2026-10-06-la-cabecera-de-descubrir-va-en-la-columna-del-contenido.md) Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, seguimiento con requestAnimationFrame y entrada con WAAPI; solo ratón, con reduced-motion solo fundido), y ejemplos: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir uno enseña su criterio.md y deja crear un proyecto con él. → [se llaman ejemplos](decisiones/2026-10-06-plantillas-se-llaman-ejemplos.md) Las tarjetas de ejemplo enseñan Clonar y Ver al pasar el ratón, con los botones del tablón (`.tile__go-btn`). → [decisión](decisiones/2026-10-06-tarjetas-de-ejemplo-con-clonar-y-ver-al-pasar.md)
 - Skills (`components/DiscoverSkills.tsx`) son tarjetas, no filas, y todas son skills de agentes: avatar y autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia; toda la tarjeta abre su página. Una sola lista: primero las 13 de criterio.design (`MD_SKILLS` en `lib/md-skill-ids.ts`, nombre y descripción de `t.system.skillsList`, instaladas desde el repo público `criterio-skills` que escribe `scripts/build-skills.ts`) y después las de otros autores (`SKILLS` en `lib/directory.ts`); de estas, las que también están en criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md), [todas de agentes](decisiones/2026-10-06-todas-las-skills-son-de-agentes.md)
 
 ### Vídeo en bucle

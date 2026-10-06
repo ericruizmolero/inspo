@@ -8,6 +8,7 @@ import { sectionIcon } from "@/components/section-icons";
 import Logo from "@/components/Logo";
 import { SYSTEM_AREAS } from "@/types/system";
 import "./DesignLibrary.css";
+import { Liquid } from "@/components/ui/liquid";
 
 const COLORS: { group: string; tokens: string[] }[] = [
   { group: "Superficies", tokens: ["--bg", "--panel", "--surface", "--surface-2", "--surface-3"] },
@@ -70,10 +71,10 @@ function ThemeFlip() {
   }, []);
   const set = (v: "light" | "dark") => { document.documentElement.dataset.theme = v; setTheme(v); };
   return (
-    <div className="ds-seg" role="group">
+    <Liquid className="ds-seg" role="group">
       <button type="button" aria-pressed={theme === "light"} onClick={() => set("light")}>{t.designLibrary.themeLight}</button>
       <button type="button" aria-pressed={theme === "dark"} onClick={() => set("dark")}>{t.designLibrary.themeDark}</button>
-    </div>
+    </Liquid>
   );
 }
 
@@ -216,10 +217,10 @@ const SAMPLES: Record<string, () => ReactNode> = {
     </div>
   ),
   segmentado: () => (
-    <div className="ds-seg" role="group">
+    <Liquid className="ds-seg" role="group">
       <button type="button" aria-pressed="true">Todo</button>
       <button type="button" aria-pressed="false">Sin proyecto</button>
-    </div>
+    </Liquid>
   ),
   skeleton: () => (
     <div className="ds-row ds-row--col">

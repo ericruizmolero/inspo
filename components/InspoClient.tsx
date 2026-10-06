@@ -45,6 +45,7 @@ import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
+import { Liquid, afterPaint } from "@/components/ui/liquid";
 import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -63,6 +64,7 @@ const CommentsPanel = dynamic(loadCommentsPanel, { ssr: false });
 const VideoPlayer = dynamic(() => import("./VideoPlayer"), { ssr: false });
 const PostView = dynamic(() => import("./PostView"), { ssr: false });
 const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
+const PolishView = dynamic(() => import("./PolishView"), { ssr: false });
 const RefCriterio = dynamic(() => import("./RefCriterio"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
 // Discover and its templates only show in their own space (still server-rendered when a link lands there),
@@ -270,11 +272,11 @@ export default function InspoClient({
   const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
-  // Inside a project the board comes first and the system is a mode (?view=system)
+  // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes
   const defaultView = "board" as const;
   const viewParam = sp.get("view");
-  const projectView: "system" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "system" ? viewParam : defaultView;
-  const setProjectView = useCallback((v: "system" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
+  const projectView: "system" | "polish" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "polish" || viewParam === "system" ? viewParam : defaultView;
+  const setProjectView = useCallback((v: "system" | "polish" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
   // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
   // typed or chipped there waits in the URL without narrowing anything
   const searchHere = (!!currentProject && projectView === "board") || space === "inbox";
@@ -701,6 +703,17 @@ export default function InspoClient({
     if (!r.ok) { flip(!on); projectFailed(new Error(r.error)); return; }
     refreshSystem(projectId);
   }, [refreshSystem]);
+  // The step into the system, from the board's bar or at the end of polishing: the first time it also marks the project as started
+  const startSystem = useCallback(async () => {
+    if (!currentProject) return;
+    const id = currentProject.id;
+    if (!currentProject.started) {
+      const r = await markProjectStarted(id).catch((e) => ({ ok: false as const, error: String(e) }));
+      if (!r.ok) { projectFailed(new Error(r.error)); return; }
+      setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, started: true } : p)));
+    }
+    setParams({ view: "system" });
+  }, [currentProject, setParams]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
     const ids = picked.map((i) => i.id).filter((id): id is string => !!id);
@@ -1506,7 +1519,7 @@ export default function InspoClient({
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in
               if (!currentProject) { const to = saveTarget(); if (to) setParams({ in: to, view: "board" }); }
-              else if (projectView === "system") setProjectView("board");
+              else if (projectView !== "board") setProjectView("board");
               toggleFilter({ kind: "person", value: name });
             }}
             onDirectory={openDirectory} quota={quota} />
@@ -1515,17 +1528,21 @@ export default function InspoClient({
           <div className="topbar__actions">
             {currentProject && (
               <>
-                <span className="topbar__modes" role="tablist" aria-label={t.system.button}>
-                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => setProjectView("board")}>
+                {/* The fill is painted first (afterPaint): a view of the project is a heavy render */}
+                <Liquid as="span" className="topbar__modes" role="tablist" aria-label={t.system.button}>
+                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => afterPaint(() => setProjectView("board"))}>
                     {Icons.all} {t.system.modeBoard}
                   </button>
+                  <button type="button" role="tab" className={`topbar__mode${projectView === "polish" ? " is-on" : ""}`} aria-selected={projectView === "polish"} onClick={() => afterPaint(() => setProjectView("polish"))}>
+                    {Icons.gem} {t.polish.mode}
+                  </button>
                   <button type="button" role="tab" className={`topbar__mode topbar__system${projectView === "system" ? " is-on" : ""}`} aria-selected={projectView === "system"}
-                    title={systemStale ? t.system.stale(systemStale) : undefined} onClick={() => setProjectView("system")}>
+                    title={systemStale ? t.system.stale(systemStale) : undefined} onClick={() => afterPaint(() => setProjectView("system"))}>
                     {Icons.compass} {t.system.modeSystem}
                     <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
                     {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
                   </button>
-                </span>
+                </Liquid>
               </>
             )}
             {currentProject && <span className="topbar__actions-sep" aria-hidden />}
@@ -1539,7 +1556,7 @@ export default function InspoClient({
         {space === "discover" || space === "templates" || space === "skills" ? (
           // Discover: the templates (whole systems to start a project from), the directory of places to look, and the skills for agents
           <Discover section={space === "templates" ? "templates" : space === "skills" ? "skills" : "sites"} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
-            templates={<TemplatesView key={workspace.id} workspaceId={workspace.id} onStarted={(p) => {
+            templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
               window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />} />
@@ -1594,6 +1611,23 @@ export default function InspoClient({
               if (saved) { await toggleFiled(saved, currentProject.id, true); return saved; }
               return addByUrl({ web, type: typeFromUrl(web), note: "" });
             }}
+          />
+        ) : currentProject && projectView === "polish" ? (
+          // Between the board and the system: the board goes by card by card, and each one stays or goes back to the Inbox
+          <PolishView
+            key={currentProject.id}
+            project={currentProject}
+            items={boardItems}
+            imageOf={smallImageOf}
+            largeImageOf={(item) => thumbMap[item.web] ?? pageShots[item.web]?.topUrl ?? smallImageOf(item)}
+            ratioOf={ratioOf}
+            textOf={(item) => (item.id ? textBodies[item.id] : "") || item.note}
+            active={!panelItem && !showAdd}
+            onForget={(item) => toggleFiled(item, currentProject.id, false)}
+            onRestore={(item) => toggleFiled(item, currentProject.id, true)}
+            onOpenItem={(item) => openItem(item)}
+            onBoard={() => setProjectView("board")}
+            onSystem={startSystem}
           />
         ) : spaceItems.length === 0 && currentProject ? (
           // An empty project is a starting point: paste a site, or bring references from the library
@@ -1672,22 +1706,14 @@ export default function InspoClient({
               </p>
             )}
             {/* On a project's board, always: what the board is for, and the step to the system (the first time it also
-                marks the project as started, so it opens on its system from then on) */}
+                marks the project as started). Polishing the board is its own tab, never a stop on the way (Eric, 06-10) */}
             {space === "inbox" && spaceItems.length > 0 && !filtering && !agent && (
               <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
                 title={t.projects.inbox} lead={t.gather.inboxLead} />
             )}
             {searchHere && currentProject && spaceItems.length > 0 && !filtering && !agent && (
               <GatherBar count={spaceItems.length} thumbs={boardItems.slice(0, 3).map(smallImageOf)} onAdd={() => setShowAdd(true)}
-                onStart={async () => {
-                  const id = currentProject.id;
-                  if (!currentProject.started) {
-                    const r = await markProjectStarted(id).catch((e) => ({ ok: false as const, error: String(e) }));
-                    if (!r.ok) { projectFailed(new Error(r.error)); return; }
-                    setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, started: true } : p)));
-                  }
-                  setParams({ view: "system" });
-                }} />
+                onStart={startSystem} />
             )}
             {agent && agentSpeaks && (
               <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />

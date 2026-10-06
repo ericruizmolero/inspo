@@ -189,7 +189,12 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
   );
 }
 
-export default function TemplatesView({ workspaceId, onStarted }: { workspaceId: string; onStarted: (project: Project & { boardIds?: string[] }) => void }) {
+export default function TemplatesView({ workspaceId, head, onStarted }: {
+  workspaceId: string;
+  /** The head of the page over the cards (Discover's, with its sections); an open template has its own way back */
+  head: React.ReactNode;
+  onStarted: (project: Project & { boardIds?: string[] }) => void;
+}) {
   const { t } = useT();
   const s = t.templates;
   const [list, setList] = useState<TemplateCard[] | null>(() => seen.get(workspaceId) ?? null);
@@ -233,10 +238,7 @@ export default function TemplatesView({ workspaceId, onStarted }: { workspaceId:
           </>
         ) : (
           <>
-            <header className="tpls-head">
-              <h1 className="tpls-title">{s.title}</h1>
-              <p className="tpls-lead">{s.lead}</p>
-            </header>
+            {head}
             {error && <p className="sysv-error" role="alert">{error}</p>}
             {list === null && !error && <div className="tplc-grid" aria-busy="true"><TemplateCardSkeleton /><TemplateCardSkeleton /></div>}
             {list?.length === 0 && <p className="tpls-empty">{s.empty}</p>}

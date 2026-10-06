@@ -19,6 +19,7 @@ import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Liquid, afterPaint } from "@/components/ui/liquid";
 
 /** Open tabs shown at most, room allowing; the rest wait in "N more" */
 const MAX_TABS = 8;
@@ -229,7 +230,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const go = (id: string) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
-    onSpace(id);
+    // The tab's fill is painted first: opening a space is a heavy render, and the tab would not answer until it ended
+    afterPaint(() => onSpace(id));
   };
   const filledOf = (id: string) => systems[id]?.areas.filter((a) => a.decision).length ?? 0;
   const label = (name: string, n: number, id?: string) => <><span className="island__label">{name}</span> <span className="island__n">{n}</span>{id && filledOf(id) > 0 && <span className="island__ring"><FillRing filled={filledOf(id)} total={SYSTEM_AREAS.length} /></span>}</>;
@@ -305,7 +307,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
       />
       <span className="island__sep" aria-hidden />
 
-      <nav className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
+      <Liquid as="nav" on=":scope > .is-on" className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
         {/* Home: every project, as pictures, and where a new one starts */}
         <a href={hrefOf("home")} className={`island__tab island__tab--home${space === "home" ? " is-on" : ""}`} aria-current={space === "home" ? "page" : undefined}
           aria-label={t.projects.home} data-tip={t.projects.home} data-fixed onClick={go("home")}>{IcHome}</a>
@@ -374,7 +376,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <NewProject onCreate={createNew} onDone={() => setNaming(null)} />
           </PopoverContent>
         </Popover>
-      </nav>
+      </Liquid>
 
       {/* Every project tab and "N more" at their own width, out of sight, for the measure above */}
       <div className="island__measure" ref={sizesRef} aria-hidden>

@@ -1,0 +1,179 @@
+/* Polish (components/PolishView.tsx): what is still undecided on the board, turning as a tornado of cards, sharp at
+   the front and out of focus with depth. The card facing the screen takes more room and is the one being decided. */
+.polish { position: absolute; inset: 0; overflow: clip; background: var(--bg); -webkit-user-select: none; user-select: none; }
+
+/* ─── The tornado ─── */
+.polish__sky { position: absolute; inset: 0; cursor: grab; touch-action: none; transition: filter 900ms var(--ease-out); }
+.polish__sky.is-grabbing { cursor: grabbing; }
+/* The stage's font-size is the tornado's unit: every distance of the orbit is in em, so it scales as one piece */
+.polish__stage {
+  position: absolute; inset: 0; font-size: clamp(9px, min(1.2vw, 2.1vh), 22px);
+  perspective: 75em; transform-style: preserve-3d;
+}
+/* A card: placed by the loop (transform, filter, z-index), centred by `translate` so the two never fight. It is laid
+   out at the width it has facing the screen (FRONT_W) and drawn smaller on the orbit, so the one in front is sharp.
+   A little above the middle: the answers take the bottom */
+.polish__card { position: absolute; top: 46%; left: 50%; width: 30em; translate: -50% -50%; backface-visibility: visible; will-change: transform, filter; cursor: pointer; }
+.polish__sky.is-grabbing .polish__card { cursor: grabbing; }
+.polish__in {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 1.5em; background: var(--surface-2); box-shadow: var(--shadow-card);
+  animation: polish-in 480ms var(--ease-out) backwards;
+}
+@keyframes polish-in { from { opacity: 0; } }
+.polish__in img, .polish__fly img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; pointer-events: none; }
+/* The bigger copy of the cards nearest the front, over the small one once it loads */
+.polish__in .polish__hi { position: absolute; inset: 0; }
+.polish__initial { display: grid; place-items: center; width: 100%; height: 100%; font-size: 8em; font-weight: 600; color: var(--muted-2); }
+/* Depth: a card further round the orbit sinks into the page's own colour, so it works in both themes */
+.polish__fog { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; }
+/* Only when everything is decided does a veil of the page come over it, for the words */
+.polish__veil { position: absolute; inset: 0; pointer-events: none; background: var(--bg); opacity: 0; transition: opacity 600ms var(--ease-out); }
+.polish.is-done .polish__veil { opacity: 0.6; }
+
+/* A text reference: its title and first lines, in the card's own em */
+.polish__text { display: flex; flex-direction: column; gap: 0.7em; height: 100%; box-sizing: border-box; padding: 1.5em; background: var(--surface); font-size: 1.6em; }
+.polish__text b { font-size: 1.3em; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; color: var(--text); text-wrap: balance; }
+.polish__text p { flex: 1; min-height: 0; margin: 0; overflow: hidden; font-size: 0.8em; line-height: 1.5; color: var(--muted); white-space: pre-wrap; }
+
+/* A decided card on its way to its tab: a copy, over everything in the view */
+.polish__fly {
+  position: absolute; z-index: 7; overflow: hidden; border-radius: var(--radius-l); background: var(--surface-2); box-shadow: var(--shadow-pop);
+  pointer-events: none; will-change: transform, opacity;
+}
+.polish__fly .polish__text { font-size: 14px; }
+
+/* ─── The answers, where the dock sits on the board and in its glass ─── */
+.polish__bar {
+  position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 6; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: calc(100% - 32px);
+  animation: polish-up 420ms var(--ease-out) backwards;
+}
+@keyframes polish-up { from { opacity: 0; transform: translate(-50%, 8px); } }
+/* What is in front and how many are left, on its own piece of glass: the cards pass behind */
+.polish__now {
+  display: flex; align-items: baseline; justify-content: center; gap: 8px; max-width: min(520px, 100%); box-sizing: border-box; margin: 0; padding: 6px 14px;
+  border-radius: 999px; background: var(--dock-surface); color: var(--dock-ink); font-size: 13px; line-height: 1.4;
+  box-shadow: 0 0 0 1px var(--dock-line); -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+}
+.polish__now b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 550; }
+.polish__now span { flex-shrink: 0; color: var(--dock-muted); font-variant-numeric: tabular-nums; }
+/* One piece in two halves of the same weight: each says what it does and, under it, where the card goes */
+.polish__choice {
+  position: relative; display: flex; align-items: stretch; max-width: 100%; box-sizing: border-box; padding: 6px;
+  border-radius: 24px; background: var(--dock-surface); color: var(--dock-ink);
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  --focus-ring: var(--dock-ink);
+}
+.polish__btn {
+  display: flex; align-items: center; gap: 14px; min-width: 216px; height: 60px; padding: 0 24px 0 12px; border: 0; border-radius: 18px;
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  transition: background-color 150ms ease, transform 120ms var(--ease-out);
+}
+.polish__btn--keep { flex-direction: row-reverse; padding: 0 12px 0 24px; text-align: right; }
+.polish__btn:active { transform: scale(0.97); }
+.polish__btn-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; white-space: nowrap; }
+.polish__btn-text b { font-size: 15px; font-weight: 550; line-height: 1.3; }
+.polish__btn-text small { font-size: 12px; line-height: 1.3; color: var(--dock-muted); }
+/* The arrow is the key that does the same, and the side the card leaves by */
+.polish__key {
+  display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; border-radius: 12px;
+  background: var(--dock-chip); color: var(--dock-ink-2);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.polish__btn:not(.polish__btn--keep) .polish__key svg { transform: scaleX(-1); }
+.polish__sep { flex-shrink: 0; width: 1px; margin: 16px 6px; background: var(--dock-line); }
+.polish__undo {
+  position: absolute; left: calc(100% + 10px); top: 50%; display: grid; place-items: center; width: 44px; height: 44px; margin-top: -22px; padding: 0;
+  border: 0; border-radius: 14px; background: var(--dock-surface); color: var(--dock-ink-2); cursor: pointer;
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  transition: color 150ms ease, opacity 200ms var(--ease-out), transform 120ms var(--ease-out);
+}
+.polish__undo:active { transform: scale(0.96); }
+/* Nothing to take back: it is not there */
+.polish__undo:disabled { opacity: 0; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+  .polish__btn:hover { background: var(--dock-hover); }
+  .polish__btn:hover .polish__key { background: var(--dock-ink); color: var(--dock-surface); }
+  .polish__undo:hover { color: var(--dock-ink); }
+}
+
+/* The sound, in the corner the zoom has on the board and in its pill */
+.polish__sound {
+  position: absolute; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 12;
+  display: inline-flex; align-items: center; height: 44px; border-radius: 14px;
+  background: var(--dock-surface); color: var(--dock-muted); font-size: 13px; font-weight: 500;
+  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
+  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  --focus-ring: var(--dock-ink);
+}
+.polish__sound-toggle, .polish__sound-track {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 100%; border: 0; border-radius: inherit;
+  background: none; color: inherit; font: inherit; cursor: pointer;
+  transition: color 150ms ease, transform 120ms var(--ease-out);
+}
+.polish__sound-toggle { padding: 0 16px 0 12px; }
+.polish__sound.is-on .polish__sound-toggle { padding: 0 8px 0 12px; color: var(--dock-ink); }
+/* Playing: the pill names the track, and the name opens the list of them */
+.polish__sound-track { gap: 6px; padding: 0 12px 0 2px; color: var(--dock-ink); }
+.polish__sound-track svg { color: var(--dock-muted); transition: color 150ms ease; }
+.polish__sound-toggle:active, .polish__sound-track:active { transform: scale(0.96); }
+.polish__tracks { width: 208px; }
+@media (hover: hover) and (pointer: fine) {
+  .polish__sound-toggle:hover, .polish__sound-track:hover svg { color: var(--dock-ink); }
+}
+
+/* Everything decided. The board that stays keeps turning, far and out of focus, and over it what was done falls
+   into place: a few of the kept references tidy themselves into a fan, then the words, then the way on */
+.polish.is-done .polish__sky { filter: blur(14px) saturate(0.85); pointer-events: none; }
+.polish__done {
+  position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 24px 24px 64px; text-align: center; pointer-events: none;
+}
+.polish__done > * { pointer-events: auto; animation: polish-rise 700ms var(--ease-out) backwards; }
+.polish__done > :nth-child(2) { animation-delay: 420ms; }
+.polish__done > :nth-child(3) { animation-delay: 500ms; }
+.polish__done > :nth-child(4) { animation-delay: 580ms; }
+.polish__done > :nth-child(5) { animation-delay: 700ms; }
+@keyframes polish-rise { from { opacity: 0; transform: translateY(10px); } }
+.polish__fan { display: flex; justify-content: center; align-items: flex-end; height: 96px; margin-bottom: 32px; animation: none; }
+.polish__fan-card {
+  position: relative; width: 120px; height: 78px; margin: 0 -28px; overflow: hidden; border-radius: 12px; background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  transform: translateY(calc(var(--i) * var(--i) * 4px)) rotate(calc(var(--i) * 7deg));
+  animation: polish-fan 900ms var(--ease-out) backwards; animation-delay: calc(80ms + (var(--i) + 2) * 70ms);
+}
+.polish__fan-card img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.polish__fan-card .polish__initial { font-size: 24px; }
+/* A text among them: its title, as small as the card */
+.polish__fan-text { display: block; height: 100%; box-sizing: border-box; padding: 10px; overflow: hidden; background: var(--surface); color: var(--text); font-size: 11px; font-weight: 600; line-height: 1.2; text-align: left; }
+/* From loose and askew to its place in the fan */
+@keyframes polish-fan { from { opacity: 0; transform: translate(calc(var(--i) * 34px), 36px) rotate(calc(var(--i) * -16deg)) scale(0.72); } }
+.polish__done-title { margin: 0; font-size: 32px; color: var(--text); }
+.polish__done-line { margin: 0; font-size: 14px; color: var(--text-2); }
+.polish__done-next { max-width: 360px; color: var(--muted); text-wrap: balance; }
+.polish__done-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 20px; }
+.polish__done-actions svg { width: 14px; height: 14px; }
+.polish__empty-actions { display: inline-flex; gap: 8px; margin-top: 8px; }
+
+@media (max-width: 800px) {
+  /* The answers take the bottom: the sound goes up under the top bar, as an icon, and undo sits over their corner */
+  .polish__sound { top: 64px; bottom: auto; }
+  .polish__sound .polish__sound-toggle { width: 44px; padding: 0; }
+  .polish__sound .polish__sound-track { width: 36px; padding: 0 8px 0 0; }
+  .polish__sound span { display: none; }
+  .polish__bar { width: calc(100% - 32px); gap: 8px; }
+  .polish__choice { width: 100%; }
+  .polish__btn { flex: 1; min-width: 0; padding: 0 12px; gap: 10px; }
+  .polish__btn--keep { padding: 0 12px; }
+  .polish__undo { left: auto; right: 0; top: auto; bottom: calc(100% + 40px); margin: 0; }
+}
+/* No arrow keys on a touch screen: the words alone, centred */
+@media (hover: none) {
+  .polish__key { display: none; }
+  .polish__btn, .polish__btn--keep { justify-content: center; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .polish__in, .polish__bar, .polish__done > *, .polish__fan-card { animation: none; }
+}

@@ -5,6 +5,7 @@ import { useT } from "@/components/I18nProvider";
 import type { Block } from "@/lib/design-system";
 import DsMarkdown from "./DsMarkdown";
 import "./DesignLibrary.css";
+import { Liquid } from "@/components/ui/liquid";
 
 export interface DecisionView { slug: string; title: string; date: string; status: string; kind: string; supersedes?: string; blocks: Block[] }
 
@@ -17,14 +18,14 @@ export default function Decisions({ items }: { items: DecisionView[] }) {
   const fmt = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" });
   return (
     <div className="ds-specimen">
-      <div className="ds-seg" role="group">
+      <Liquid className="ds-seg" role="group">
         <button type="button" aria-pressed={!kind} onClick={() => setKind(null)}>{d.all} <span className="ds-count">{items.length}</span></button>
         {kinds.map((k) => (
           <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>
             {d.kinds[k] ?? k} <span className="ds-count">{items.filter((i) => i.kind === k).length}</span>
           </button>
         ))}
-      </div>
+      </Liquid>
       <ol className="ds-log">
         {shown.map((it) => (
           <li key={it.slug} id={it.slug} className={`ds-dec${it.status !== "vigente" ? " is-off" : ""}`}>
