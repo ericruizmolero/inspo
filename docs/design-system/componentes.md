@@ -209,7 +209,7 @@ Un enlace de solo lectura con la presentación y el criterio.md para copiar o de
 
 ### Conectores
 `Connectors` · `components/Connectors.tsx` · `.connectors__menu`
-Un botón en la barra superior (icono `Plug`) con las dos formas de entrar desde fuera, de la cuenta y no del proyecto: la extensión de Chrome (instalarla o conectarla) y Conectar MCP (icono `Cable`). Cada fila con su tic cuando está conectada; con las dos conectadas el botón se va. Sustituye al aviso "Instalar extensión". → [decisión](decisiones/2026-10-06-conectores-en-un-menu-de-la-barra.md)
+Un botón en la barra superior (icono `Plug`) con las dos formas de entrar desde fuera, de la cuenta y no del proyecto: la extensión de Chrome (instalarla o conectarla) y Conectar MCP (icono `Cable`). Cada fila con su tic cuando está conectada. El botón se queda siempre, también con las dos conectadas: es el único sitio donde ver las apps que tienen acceso y desconectar una. Sustituye al aviso "Instalar extensión". → [decisión](decisiones/2026-10-06-conectores-se-queda-siempre-en-la-barra.md)
 
 ### Conectar tu IA
 `ConnectDialog` · `components/ConnectDialog.tsx` · `components/ConnectDialog.css` · `.mcpc`
