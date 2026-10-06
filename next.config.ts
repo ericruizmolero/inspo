@@ -11,6 +11,22 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   // Development only: the bottom-left corner holds the zoom pill, so the indicator takes the free corner
   devIndicators: { position: "bottom-right" },
+  poweredByHeader: false,
+  // On every response. HSTS keeps browsers on HTTPS after the first visit (Vercel already redirects
+  // http). frame-ancestors 'self': nobody can frame a signed-in page to trick a click. No full CSP: the theme boot script is inline (app/layout.tsx).
+  async headers() {
+    return [{
+      source: "/:path*",
+      headers: [
+        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+      ],
+    }];
+  },
   // Settings moved under /settings (22/09/2026). Old links, bookmarks and emails keep working;
   // the query passes through.
   async redirects() {
