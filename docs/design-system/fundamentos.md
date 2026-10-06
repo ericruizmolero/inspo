@@ -58,6 +58,7 @@ Tokens `--dock-*` (en `globals.css`, bloque del dock): `--dock-ink`, `--dock-ink
 
 - Microinteracciones 0.1–0.15 s; pulsar = `transform: scale(0.96)`.
 - Keyframes disponibles: `fade-in`, `pop-in` (6 px + 0.985), `shimmer` (skeleton), `spin`.
+- Cambio de tema hecho a mano: fundido de la página entera en 600 ms con `--ease-in-out` (`switchTheme` en `lib/theme.ts`). → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
 ## Espaciado
 

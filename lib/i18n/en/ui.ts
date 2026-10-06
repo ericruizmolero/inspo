@@ -708,6 +708,7 @@ export const ui = {
     system: "System",
     light: "Light",
     dark: "Dark",
+    toggle: "Switch theme",
   },
   login: {
     pageTitle: "Sign in",

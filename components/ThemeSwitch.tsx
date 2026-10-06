@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { applyThemePref, readThemePref, resolveTheme, type ThemePref } from "@/lib/theme";
+import { switchTheme, readThemePref, resolveTheme, type ThemePref } from "@/lib/theme";
 import { useT } from "./I18nProvider";
 
 const OPTS: ThemePref[] = ["system", "light", "dark"];
@@ -22,7 +22,7 @@ export default function ThemeSwitch() {
     return () => mq.removeEventListener("change", onChange);
   }, [pref]);
 
-  const choose = (v: ThemePref) => { setPref(v); applyThemePref(v); };
+  const choose = (v: ThemePref) => { setPref(v); switchTheme(v); };
 
   return (
     <span className="theme-seg" role="radiogroup" aria-label={t.settings.theme}>

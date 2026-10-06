@@ -119,7 +119,7 @@
 .sdoc .mdv-tools { opacity: 1; }
 .mdv-tool--solid { display: inline-flex; align-items: center; gap: 5px; background: var(--md-strong); color: var(--md-bg); font-weight: 550; }
 .mdv-tool--solid:hover { background: var(--md-strong); color: var(--md-bg); opacity: 0.9; } .mdv-tool--solid svg { width: 12px; height: 12px; }
-.mdv-reason { width: 100%; box-sizing: border-box; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--md-strong); font: inherit; font-size: 13px; outline: none; }
+.mdv-reason { width: 100%; box-sizing: border-box; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--md-fill); color: var(--md-strong); font: inherit; font-size: 13px; outline: none; }
 .mdv-reason::placeholder { color: var(--md-dim); }
 /* What the team is doing with the area, under its block: the app's own voice, not the file's */
 .mdv-team { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 14px; font-family: var(--font); }
@@ -139,7 +139,7 @@
 .mdv-live[contenteditable="false"] { cursor: default; opacity: 0.7; }
 .mdv-savebar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; font-family: var(--font); }
 .mdv-savebar .mdv-reason { flex: 1 1 200px; width: auto; height: 30px; }
-.mdv-savebar small { font-size: 12px; color: var(--md-dim); font-variant-numeric: tabular-nums; } .mdv-savebar small.is-over { color: #ff8f85; }
+.mdv-savebar small { font-size: 12px; color: var(--md-dim); font-variant-numeric: tabular-nums; } .mdv-savebar small.is-over { color: var(--md-over); }
 .mdv-savebar .btn--ghost { color: var(--md-ink); }
 /* An area's heading with its quiet tools */
 .mdv-headrow { display: flex; align-items: center; gap: 12px; }
@@ -156,20 +156,20 @@
 .mdv-doc.is-commenting .mdv-line.is-pressable:hover { background: color-mix(in srgb, var(--postit, #fde68a) 9%, transparent); }
 /* A pin, on the spot it was left: the face of who left it in a comment's shape (its corner points at the spot),
    and how many lines its thread has. It sits over the text, as on a design file */
-.mdv-pin { position: absolute; top: 0; z-index: 2; transform: translate(-2px, -100%); display: inline-flex; align-items: center; padding: 2px; border: 0; border-radius: 999px 999px 999px 3px; background: #f4f4f1; text-indent: 0; font-family: var(--font); cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.5); transition: transform 0.15s var(--ease-out); }
+.mdv-pin { position: absolute; top: 0; z-index: 2; transform: translate(-2px, -100%); display: inline-flex; align-items: center; padding: 2px; border: 0; border-radius: 999px 999px 999px 3px; background: var(--md-pin); text-indent: 0; font-family: var(--font); cursor: pointer; box-shadow: var(--md-pin-shadow); transition: transform 0.15s var(--ease-out); }
 .mdv-pin:hover, .mdv-pin.is-open { transform: translate(-2px, -100%) scale(1.08); transform-origin: bottom left; }
-.mdv-pin.is-open { background: var(--postit, #fde68a); }
-.mdv-pin b { margin: 0 6px 0 5px; font-size: 11.5px; font-weight: 600; color: #1a1a18; font-variant-numeric: tabular-nums; }
+.mdv-pin.is-open { background: var(--postit, #fde68a); } .mdv-pin.is-open b { color: #2a2205; }
+.mdv-pin b { margin: 0 6px 0 5px; font-size: 11.5px; font-weight: 600; color: var(--md-pin-ink); font-variant-numeric: tabular-nums; }
 .mdv-line.has-pins { position: relative; }
 /* Its thread, beside it */
-.mdv-pop { position: absolute; z-index: 6; width: 340px; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 4px 16px 16px 16px; background: #1f2022; box-shadow: 0 0 0 1px rgba(255,255,255,0.09), 0 18px 44px -12px rgba(0,0,0,0.75); font-family: var(--font); text-indent: 0; }
+.mdv-pop { position: absolute; z-index: 6; width: 340px; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 4px 16px 16px 16px; background: var(--md-pop); box-shadow: var(--md-pop-shadow); font-family: var(--font); text-indent: 0; }
 .mdv-pop__note { display: flex; gap: 10px; } .mdv-pop__note .cm-avatar { flex-shrink: 0; }
-.mdv-pop__note p { margin: 0; font-size: 13.5px; line-height: 1.5; color: #e9e9e4; white-space: pre-wrap; overflow-wrap: anywhere; }
+.mdv-pop__note p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--md-pop-ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .mdv-pop__note p.mdv-pop__meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 1px; font-size: 12px; color: var(--md-dim); }
-.mdv-pop__meta b { font-size: 13px; font-weight: 550; color: #f4f4f1; }
-.mdv-pop__meta button { margin-left: auto; padding: 0; border: 0; background: none; color: var(--md-dim); font: inherit; cursor: pointer; opacity: 0; } .mdv-pop__note:hover .mdv-pop__meta button { opacity: 1; } .mdv-pop__meta button:hover { color: #f4f4f1; }
+.mdv-pop__meta b { font-size: 13px; font-weight: 550; color: var(--md-pop-strong); }
+.mdv-pop__meta button { margin-left: auto; padding: 0; border: 0; background: none; color: var(--md-dim); font: inherit; cursor: pointer; opacity: 0; } .mdv-pop__note:hover .mdv-pop__meta button { opacity: 1; } .mdv-pop__meta button:hover { color: var(--md-pop-strong); }
 .mdv-pop__form { display: flex; align-items: flex-end; gap: 8px; }
-.mdv-pop__form textarea { flex: 1; min-width: 0; box-sizing: border-box; resize: none; padding: 8px 10px; border: 0; border-radius: 10px; background: rgba(255,255,255,0.07); color: #f4f4f1; font: inherit; font-size: 13.5px; line-height: 1.45; outline: none; field-sizing: content; max-height: 140px; }
+.mdv-pop__form textarea { flex: 1; min-width: 0; box-sizing: border-box; resize: none; padding: 8px 10px; border: 0; border-radius: 10px; background: var(--md-pop-fill); color: var(--md-pop-strong); font: inherit; font-size: 13.5px; line-height: 1.45; outline: none; field-sizing: content; max-height: 140px; }
 
 /* Written in place, row by row: the rows keep the file's look (colours, hanging lists); a long address is whole in
    the text and only cut on screen */
@@ -183,7 +183,7 @@
 /* The file saves itself: a quiet word under the part while it does, and when it has. A save in flight does not dim the block */
 .sdoc .mdv-block.is-busy { opacity: 1; }
 .mdv-state { margin: 4px 0 0; font-family: var(--font); font-size: 12px; color: var(--md-dim); text-align: right; }
-.mdv-state.is-over { color: #ff8f85; }
+.mdv-state.is-over { color: var(--md-over); }
 .mdv-btn--propose.is-on { background: var(--md-strong); color: var(--md-bg); }
 .mdv-btn--propose.is-on:hover { background: var(--md-strong); color: var(--md-bg); opacity: 0.92; }
 
