@@ -113,6 +113,14 @@ export async function findByWeb(organizationId: string, web: string): Promise<Ro
   return r ?? null;
 }
 
+/** The first item saved at any of these addresses, or null */
+export async function findByWebs(organizationId: string, webs: string[]): Promise<Row | null> {
+  if (!webs.length) return null;
+  const [r] = await db.select(ROW).from(T)
+    .where(and(eq(T.organizationId, organizationId), inArray(T.webKey, webs.map(webKeyOf)))).limit(1);
+  return r ?? null;
+}
+
 export interface NewItem {
   name: string; web: string; type?: string; note?: string; subNote?: string;
   author: string; createdBy?: string | null; dateIso?: string;

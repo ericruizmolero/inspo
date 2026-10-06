@@ -35,7 +35,7 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `DELETE /me` | The extension revokes its own key when it disconnects |
 | `GET /items/lookup?url=` | Is this site already saved? |
 | `POST /items` | Saves `{ url, title, screenshot, note, projectId, areas }` |
-| `POST /items/batch` | Saves up to 25 `{ url, title }` at once (the import page) |
+| `POST /items/batch` | Saves up to 25 `{ url, title }` at once, into `projectId` (the import page); with `image`, the item is that image |
 | `POST /media` | Saves one image or video from the right-click menu |
 | `GET /projects` | The projects to save to, and the one picked first |
 
@@ -70,7 +70,7 @@ ticked. After saving, the button turns into "Saved" with a check, and the form f
 ## Importing bookmarks
 
 "Import bookmarks" in the popup's footer opens `import.html` in a tab of its own (the popup closes as
-soon as it loses focus, and an import takes minutes). Two sources:
+soon as it loses focus, and an import takes minutes). Three sources:
 
 - **This browser**: the bookmark folders (`bookmarks` permission), ticked by folder; only `http(s)`
   addresses go.
@@ -81,6 +81,24 @@ soon as it loses focus, and an import takes minutes). Two sources:
   new, when the import page says stop, or when that page is gone. If the person is not signed in to X
   it reports `logged-out`. There is no official API involved: if X changes its markup, this selector
   is what to fix.
+- **Pinterest**: the address of a board, pasted (or already written in, when the popup was opened on
+  Pinterest). Chrome asks for `https://*.pinterest.com/*` (optional, granted on the click), the page
+  opens the board in a tab behind it and injects `pinterest-collect.js`, which closes when it is done.
+  The collector does not scroll: it asks Pinterest for the board's pins as the board's own page does
+  (`/resource/BoardResource/get/`, `BoardFeedResource`, `BoardSectionsResource` and
+  `BoardSectionPinsResource`, 25 pins a page, with the `X-Pinterest-PWS-Handler` header Pinterest
+  wants), so it gets exactly what is on the board, sections included, and not the "more ideas" the
+  page shows under it. A public board needs no session; a secret one needs the person signed in to
+  Pinterest in that browser. Each pin goes on as `{ url: the pin, title, image: [...] }`: the image at
+  1200 px when the original is wider than 1600 (the board shows the file itself), the original
+  otherwise and always for a GIF. The server copies it into the workspace's media folder under a key
+  made from the pin's address (`importedMediaKey`), so importing the same board again saves nothing
+  twice. A video or a pin of several pages is saved as its cover. Up to 1000 pins a run, 10 a request.
+  These are not an official API: if Pinterest changes them, `call()` in the collector is what to fix.
+
+The page asks which project it all lands in (the same field as the popup's form, the one this person
+last added to picked first). What the workspace already had is filed in that project too, since a
+reference can be in several; "Open the project" at the end goes there.
 
 Either way the addresses go to `POST /items/batch` in batches of 25, one request at a time, and the
 page shows the counts (found, saved, already here, not web pages, failed). The server names, tags and
