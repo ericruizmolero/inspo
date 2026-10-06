@@ -229,7 +229,7 @@ La vista Markdown: el fichero con índice lateral y un punto de estado por área
 
 ### Visor y editor Markdown
 `SystemMarkdown` · `components/SystemMarkdown.tsx` · `components/SystemMarkdown.css` · `.mdv`
-El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
+El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. El panel sigue el tema: oscuro en oscuro, hoja blanca en claro, con sus colores en variables `--md-*`. → [decisión](decisiones/2026-10-06-el-markdown-sigue-el-tema.md) Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
 - Aspecto Documento: cada referencia citada es una fila con su captura (144×90) a la izquierda y, en una columna, su nombre, lo que se toma y lo que se dijo. → [decisión](decisiones/2026-10-06-referencias-del-documento-como-cita-con-captura.md)
 - Aspecto Documento: una tabla de Markdown se pinta como tabla (`.mdv-tr`, `.mdv-td`), con líneas entre filas y sin caja. → [decisión](decisiones/2026-10-06-tablas-del-documento-como-tabla.md)
 - Tecla C: modo comentar con pines en el punto exacto; Enter envía el pin.

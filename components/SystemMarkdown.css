@@ -62,25 +62,34 @@
 /* The bento, tightened to fit a laptop screen */
 
 /* ─── criterio.md in sight (components/SystemMarkdown.tsx): the raw file in a code panel, coloured the way
-   an editor colours Markdown. Dark in both themes, like any code block. A block is pressed to edit it. ─── */
+   an editor colours Markdown. It follows the theme: a dark panel in dark, a white sheet in light with the same
+   blue and green brought down to read on white (Eric, 06-10). Every colour of the panel is one of these
+   variables; the Document view redefines the main ones in .mdv--doc. A block is pressed to edit it. ─── */
 .mdv { --md-bg: #121314; --md-ink: #d9d9d4; --md-dim: #7d7d78; --md-head: #79b8ff; --md-quote: #7ee787; --md-code: #79b8ff; --md-strong: #f4f4f1; --md-line: rgba(255,255,255,0.07);
+  --md-fill: rgba(255,255,255,0.06); --md-fill-2: rgba(255,255,255,0.1); --md-edge: rgba(255,255,255,0.14); --md-over: #ff8f85;
+  --md-pin: #f4f4f1; --md-pin-ink: #1a1a18; --md-pin-shadow: 0 3px 10px rgba(0,0,0,0.5);
+  --md-pop: #1f2022; --md-pop-ink: #e9e9e4; --md-pop-strong: #f4f4f1; --md-pop-fill: rgba(255,255,255,0.07); --md-pop-shadow: 0 0 0 1px rgba(255,255,255,0.09), 0 18px 44px -12px rgba(0,0,0,0.75);
   max-width: 980px; display: flex; flex-direction: column; border-radius: 16px; background: var(--md-bg); color: var(--md-ink); box-shadow: inset 0 0 0 1px var(--md-line); overflow: hidden; }
+:root[data-theme="light"] .mdv:not(.mdv--doc) { --md-bg: var(--surface); --md-ink: var(--text-2); --md-dim: var(--muted-2); --md-head: #0550ae; --md-quote: #1a7f37; --md-code: #0550ae; --md-strong: var(--text); --md-line: color-mix(in srgb, var(--text) 9%, transparent);
+  --md-fill: color-mix(in srgb, var(--text) 5%, transparent); --md-fill-2: color-mix(in srgb, var(--text) 9%, transparent); --md-edge: color-mix(in srgb, var(--text) 18%, transparent); --md-over: var(--danger);
+  --md-pin: var(--text); --md-pin-ink: var(--surface); --md-pin-shadow: var(--shadow-card);
+  --md-pop: var(--surface); --md-pop-ink: var(--text-2); --md-pop-strong: var(--text); --md-pop-fill: color-mix(in srgb, var(--text) 5%, transparent); --md-pop-shadow: var(--shadow-pop); }
 .mdv-bar__name { font-weight: 600; color: var(--md-strong); }
 .mdv-h--area { display: flex; align-items: center; gap: 12px; }
 .mdv-tool { height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--md-dim); font: inherit; font-size: 12px; font-weight: 400; cursor: pointer; }
-.mdv-tool:hover { background: rgba(255,255,255,0.08); color: var(--md-strong); }
+.mdv-tool:hover { background: var(--md-fill-2); color: var(--md-strong); }
 .mdv-press { margin: 0 -8px; padding: 0 8px; border-radius: 8px; cursor: text; transition: background 0.15s; }
-.mdv-press:hover, .mdv-press:focus-visible { background: rgba(255,255,255,0.05); outline: none; }
+.mdv-press:hover, .mdv-press:focus-visible { background: var(--md-fill); outline: none; }
 .mdv-edit { display: flex; flex-direction: column; gap: 8px; margin: 0 -8px; font-family: var(--font); }
-.mdv-input { width: 100%; box-sizing: border-box; padding: 8px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--md-strong); font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; line-height: 1.65; outline: none; resize: vertical; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.14); }
+.mdv-input { width: 100%; box-sizing: border-box; padding: 8px; border: 0; border-radius: 8px; background: var(--md-fill); color: var(--md-strong); font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; line-height: 1.65; outline: none; resize: vertical; box-shadow: inset 0 0 0 1px var(--md-edge); }
 .mdv-input::placeholder { color: var(--md-dim); }
 .mdv-edit__row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 8px; }
-.mdv-edit__row small { margin-left: 6px; font-size: 12px; color: var(--md-dim); font-variant-numeric: tabular-nums; } .mdv-edit__row small.is-over { color: #ff8f85; }
+.mdv-edit__row small { margin-left: 6px; font-size: 12px; color: var(--md-dim); font-variant-numeric: tabular-nums; } .mdv-edit__row small.is-over { color: var(--md-over); }
 .mdv-bar { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px 0 20px; box-shadow: inset 0 -1px 0 var(--md-line); font-size: 12.5px; }
 .mdv-bar__hint { color: var(--md-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .mdv-bar__tools { margin-left: auto; display: inline-flex; gap: 6px; flex-shrink: 0; }
-.mdv-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--md-ink); font: inherit; font-size: 12.5px; cursor: pointer; }
-.mdv-btn:hover { background: rgba(255,255,255,0.1); color: var(--md-strong); } .mdv-btn svg { width: 13px; height: 13px; }
+.mdv-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--md-fill); color: var(--md-ink); font: inherit; font-size: 12.5px; cursor: pointer; }
+.mdv-btn:hover { background: var(--md-fill-2); color: var(--md-strong); } .mdv-btn svg { width: 13px; height: 13px; }
 .mdv-btn__down { display: inline-flex; transform: rotate(90deg); }
 /* Copy and the other ways the file leaves (components/FileMenu.tsx): one button in two halves */
 .mdv-split { display: inline-flex; gap: 1px; }
@@ -149,7 +158,7 @@
 .mdv-files { display: inline-flex; gap: 2px; flex-shrink: 0; }
 .mdv-file { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--md-dim); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .mdv-file svg { width: 12px; height: 12px; }
-.mdv-file:hover { color: var(--md-ink); background: rgba(255,255,255,0.06); } .mdv-file.is-on { color: var(--md-strong); background: rgba(255,255,255,0.1); }
+.mdv-file:hover { color: var(--md-ink); background: var(--md-fill); } .mdv-file.is-on { color: var(--md-strong); background: var(--md-fill-2); }
 .mdv-file--add { font-weight: 400; }
 
 /* The bento fits the screen: the eight tiles share what the header leaves, the tray beside them (on a desktop;
