@@ -13,6 +13,15 @@ import { listProjects, readCriterio } from "./pieces";
 /** The protocol versions this server speaks, newest first. A client asking for another one is offered the newest. */
 const VERSIONS = ["2025-11-25", "2025-06-18", "2025-03-26", "2024-11-05"];
 const SERVER = { name: "criterio", title: "Criterio", version: "1.0.0" };
+/** Who the server is, with its logo (icons and websiteUrl came with protocol 2025-11-25; older clients skip them) */
+const serverInfo = (origin: string) => ({
+  ...SERVER,
+  websiteUrl: origin,
+  icons: [
+    { src: `${origin}/icon-512.png`, mimeType: "image/png", sizes: ["512x512"] },
+    { src: `${origin}/apple-icon.png`, mimeType: "image/png", sizes: ["180x180"] },
+  ],
+});
 
 type Id = string | number | null;
 interface RpcRequest { jsonrpc?: string; id?: Id; method?: string; params?: Record<string, unknown> }
@@ -70,7 +79,7 @@ export async function handleRpc(msg: RpcRequest, ctx: McpCtx, origin: string): P
       return ok(id, {
         protocolVersion: VERSIONS.includes(asked) ? asked : VERSIONS[0],
         capabilities: { tools: { listChanged: false }, prompts: { listChanged: false }, resources: { listChanged: false, subscribe: false } },
-        serverInfo: SERVER,
+        serverInfo: serverInfo(origin),
         instructions: INSTRUCTIONS,
       });
     }

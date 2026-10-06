@@ -13,6 +13,9 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | ⌘B / Ctrl+B | Pliega o despliega la barra lateral |
 | ⌘/Ctrl + rueda, o pellizco | Zoom de columnas del tablero |
 | ⌘/Ctrl/Shift/Alt + clic en una pestaña | Lo que haría el navegador con un enlace |
+| ⌘/Ctrl o Shift + clic en una tarjeta | La selecciona; con Shift, el tramo desde la última elegida |
+| ⌘A / Ctrl+A con algo seleccionado | Selecciona todo el tablero a la vista (botón "Seleccionar todo" de la barra) |
+| Esc con algo seleccionado | Suelta la selección |
 
 ## Buscador
 
@@ -32,7 +35,8 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | ← → / Esc | Navegar y cerrar el lightbox |
 | Enter / Shift+Enter | Enviar o guardar / salto de línea |
 | ⌘V | Pegar una imagen en un comentario |
-| Esc en una tarjeta | Cancela el borrado en dos pasos (también se cancela solo a los 6 s) |
+| Doble clic en la papelera de una tarjeta | Borra la referencia (el primer clic pide el segundo) |
+| Esc en una tarjeta | Cancela el borrado a medias (también se cancela al sacar el puntero o solo a los 6 s) |
 
 ## Sistema y criterio.md
 
@@ -52,4 +56,4 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | ⌘/Ctrl+Enter en la Isla | Proyecto nuevo desde la frase |
 | Enter / Esc al renombrar | Guarda / cancela |
 | ⌘V en proyecto vacío o Inbox | Sube la imagen pegada |
-| Esc en una plantilla | La cierra |
+| Esc en un ejemplo | La cierra |

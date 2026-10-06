@@ -5,9 +5,9 @@
 // whatever the browser does next. The library pages give their actions the time for it (maxDuration).
 import { cookies } from "next/headers";
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
-import { addItem, deleteItem, setItemNote, editUserTags } from "@/lib/items";
+import { addItem, deleteItem, deleteItems, setItemNote, editUserTags } from "@/lib/items";
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
@@ -119,6 +119,20 @@ export async function removeInspo(id: string) {
     // An uploaded image or a copied video goes with its card: nothing else points at that file
     if (row) await deleteMediaFile(ctx.workspace.id, row.web);
     if (row) await deleteTextFile(ctx.workspace.id, row.web);
+  });
+}
+
+/** Several cards at once (the selection bar), in one request. Answers how many were there to remove. */
+export async function removeInspos(ids: string[]) {
+  return withCtx(async (ctx) => {
+    const list = [...new Set((Array.isArray(ids) ? ids : []).map(String))].slice(0, 5000);
+    if (!list.length) return 0;
+    const rows = await db.select({ web: schema.inspoItem.web }).from(schema.inspoItem)
+      .where(and(eq(schema.inspoItem.organizationId, ctx.workspace.id), inArray(schema.inspoItem.id, list)));
+    const n = await deleteItems(ctx.workspace.id, list);
+    // Uploaded images, copied videos and pasted texts go with their cards, as in removeInspo
+    await Promise.all(rows.flatMap((r) => [deleteMediaFile(ctx.workspace.id, r.web), deleteTextFile(ctx.workspace.id, r.web)]));
+    return n;
   });
 }
 

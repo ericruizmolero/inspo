@@ -3,7 +3,7 @@
 import type { TemplateCard } from "@/types/system";
 import { loadTemplates } from "@/app/actions/templates";
 
-export const posterOf = (tpl: TemplateCard) => (tpl.template.builtin ? `/templates/${tpl.template.builtin}.jpg` : undefined);
+export const posterOf = (tpl: TemplateCard) => tpl.template.poster ?? (tpl.template.builtin ? `/templates/${tpl.template.builtin}.jpg` : undefined);
 
 // The last list seen, per workspace: coming back to the templates shows them at once while they are read again.
 // It is also kept in the browser, so the first visit after a reload does not wait for the server either

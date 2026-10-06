@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled } from "@/app/actions/library";
 import { authClient } from "@/lib/auth-client";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -1139,6 +1139,7 @@ export default function InspoClient({
   if (selected.size > 0 && bar?.count !== selected.size) setBar({ count: selected.size });
   const clearSelection = useCallback(() => { setSelected(new Set()); lastPick.current = null; }, []);
   useEffect(() => { clearSelection(); }, [space, projectView, clearSelection]);
+  const selectAll = useCallback(() => setSelected(new Set(boardItems.map((i) => i.id).filter((x): x is string => !!x))), [boardItems]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -1146,14 +1147,11 @@ export default function InspoClient({
       if (document.querySelector(".modal-backdrop, .cp, [data-slot='popover-content']")) return; // something open on top
       if (e.key === "Escape" && selected.size) { e.preventDefault(); clearSelection(); }
       // ⌘A: the whole board, once something is picked (before that the page keeps its own ⌘A)
-      if (e.key.toLowerCase() === "a" && (e.metaKey || e.ctrlKey) && selected.size) {
-        e.preventDefault();
-        setSelected(new Set(boardItems.map((i) => i.id).filter((x): x is string => !!x)));
-      }
+      if (e.key.toLowerCase() === "a" && (e.metaKey || e.ctrlKey) && selected.size) { e.preventDefault(); selectAll(); }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [selected, boardItems, clearSelection]);
+  }, [selected, selectAll, clearSelection]);
   // Which projects all of the selection is in, and which only part of it
   const selectionIn = useMemo(() => {
     const count = new Map<string, number>();
@@ -1203,6 +1201,25 @@ export default function InspoClient({
     if (!currentProject) return;
     if (await fileSelection(currentProject.id, false)) clearSelection();
   }, [currentProject, fileSelection, clearSelection]);
+  // Deleting for good: asked first, gone from the screen at once, back in place if the server says no
+  const deleteSelection = useCallback(async () => {
+    const ids = new Set(selected);
+    if (!ids.size) return;
+    if (!(await confirm({ title: t.select.confirmDelete(ids.size), description: t.select.confirmDeleteHint(ids.size), action: t.common.delete, danger: true }))) return;
+    const gone = items.filter((i) => !!i.id && ids.has(i.id));
+    const touched = new Set(gone.flatMap((i) => links[i.id!] ?? []));
+    setItems((prev) => prev.filter((i) => !i.id || !ids.has(i.id)));
+    clearSelection();
+    const r = await removeInspos([...ids]).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!r.ok) {
+      setItems((prev) => [...gone.filter((g) => !prev.some((i) => i.id === g.id)), ...prev]);
+      setAddError({ title: t.app.removeFailed, detail: r.error });
+      return;
+    }
+    const webs = new Set(gone.map((i) => i.web));
+    setThumbMap((prev) => Object.fromEntries(Object.entries(prev).filter(([web]) => !webs.has(web))));
+    for (const p of touched) refreshSystem(p);
+  }, [selected, items, links, confirm, clearSelection, refreshSystem, t]);
   const createForSelection = useCallback(async (name: string) => {
     const p = await createProject(name);
     if (!p) return;
@@ -1641,9 +1658,9 @@ export default function InspoClient({
             every tag, and what it means. Solid and bright in both themes, so it is the first thing the eye finds.
             Off the board only what the agent is still saying stays. */}
         {bar && (
-          <SelectBar count={bar.count} closing={selected.size === 0} onClosed={() => setBar(null)} projects={projects} filed={selectionIn.all} partly={selectionIn.some} current={currentProject}
-            onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
-            onRemove={() => void removeSelection()} onDone={clearSelection} />
+          <SelectBar count={bar.count} total={boardItems.length} closing={selected.size === 0} onClosed={() => setBar(null)} projects={projects} filed={selectionIn.all} partly={selectionIn.some} current={currentProject}
+            onAll={selectAll} onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
+            onRemove={() => void removeSelection()} onDelete={() => void deleteSelection()} onDone={clearSelection} />
         )}
         {items.length > 0 && ((searchHere && (spaceItems.length > 0 || !!currentProject)) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">
