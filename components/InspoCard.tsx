@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags, Project, TagStatus, type InspoComment } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
+import { flyToInbox } from "./fly-to-inbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectPicker, { IconFolder } from "./ProjectPicker";
 import AreaPicker from "./AreaPicker";
@@ -86,6 +87,12 @@ interface InspoCardProps {
   caption?: NoteCaption | null;
   onComments?: () => void;
   onDelete?: () => Promise<void>; // remove the card from the workspace
+  /** On a project's board: takes the card out of that project. It stays in the workspace and, in no other
+   *  project, goes back to the Inbox, so the bin does this in one click and deleting is left to the Inbox */
+  onTakeOut?: () => void | Promise<void>;
+  /** The open workspace by name: off a project, what the bin says the card leaves (on one it says "the project":
+   *  a project's name does not fit over a card) */
+  spaceName: string;
   /** The workspace's projects and the ones this card is filed in (the folder button); none = no button */
   projects?: Project[];
   projectIds?: string[];
@@ -171,7 +178,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -297,7 +304,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, item.web]);
 
-  const domain = kind === "text" ? t.card.text : kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
+  // A copied picture or video says where it was found, when it knows
+  const domain = kind === "text" ? t.card.text : item.source ? getDomain(item.source) : kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
   // A text is its own poster: its title, and its first lines where a site's note would go
   const posterNote = kind === "text" ? tags?.summary || item.note : item.note;
   const isError = !useManual && !useDesign && !useFrame && source === "error";
@@ -362,6 +370,15 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Out of a project nothing is lost: no second click. The card is seen flying to the Inbox tab, as in Polish,
+    // and leaves the project when it lands; refused by the server, it is back in its place
+    if (onTakeOut) {
+      const tile = e.currentTarget.closest<HTMLElement>(".tile");
+      const wait = tile ? flyToInbox(tile) : 0;
+      if (tile && wait) tile.style.visibility = "hidden";
+      window.setTimeout(() => { void Promise.resolve(onTakeOut()).finally(() => { if (tile) tile.style.visibility = ""; }); }, wait);
+      return;
+    }
     if (!onDelete) return;
     if (!confirmDelete) { setConfirmDelete(true); return; }
     setConfirmDelete(false);
@@ -378,8 +395,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
 
   // The external site only opens from its icon: a click on the card leads to our own views.
 
-  const openHref = kind === "image" ? item.web : item.web;
-  const openLabel = kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
+  const openHref = item.source ?? item.web;
+  const openLabel = item.source ? t.card.openOriginal : kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
 
   const meta = (
     <div className="tile__meta">
@@ -601,10 +618,10 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             )}
             {/* The bin is last so that the red word grows leftwards and stays under the pointer.
                 A held Enter doesn't count as the second click. */}
-            {onDelete && (
-              <button type="button" className={`tile__action ${confirmDelete || deleting ? "tile__action--confirm" : "tile__action--danger"}`}
-                aria-label={confirmDelete ? t.card.confirmDelete : t.card.removeFromInspo}
-                data-tip={confirmDelete || deleting ? undefined : t.card.removeFromInspo}
+            {(onDelete || onTakeOut) && (
+              <button type="button" className={`tile__action ${onTakeOut ? "" : confirmDelete || deleting ? "tile__action--confirm" : "tile__action--danger"}`}
+                aria-label={confirmDelete ? t.card.confirmDelete : (onTakeOut ? t.card.removeFromProject : t.card.removeFrom(spaceName))}
+                data-tip={confirmDelete || deleting ? undefined : (onTakeOut ? t.card.removeFromProject : t.card.removeFrom(spaceName))}
                 onClick={handleDelete} onKeyDown={(e) => { if (e.repeat) e.preventDefault(); }} disabled={deleting}>
                 {deleting ? <span className="spinner" /> : confirmDelete ? t.common.delete : IconTrash}
               </button>
@@ -667,9 +684,9 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
         {picker("tile__caption-md tile__caption-pj")}
         {areaPicker("tile__caption-md tile__caption-pj")}
         <a className="tile__caption-md tile__caption-link" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel}>{IconExternal}</a>
-        {onDelete && (
+        {(onDelete || onTakeOut) && (
           <button className={`tile__caption-md tile__caption-del${confirmDelete || deleting ? " is-confirm" : ""}`} onClick={handleDelete} disabled={deleting}
-            aria-label={confirmDelete ? t.card.confirmDelete : t.card.removeFromInspo}>
+            aria-label={confirmDelete ? t.card.confirmDelete : (onTakeOut ? t.card.removeFromProject : t.card.removeFrom(spaceName))}>
             {deleting ? <span className="spinner" /> : confirmDelete ? t.common.delete : IconTrash}
           </button>
         )}

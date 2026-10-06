@@ -12,6 +12,8 @@ export interface InspoItem {
   subNote?: string;
   /** The AI client it was saved from over MCP ("Claude"), when it was not saved in criterio itself */
   via?: string;
+  /** The page it was found on, when `web` is our copy of an image or a video (a pin, a picture saved from a site) */
+  source?: string;
 }
 
 // ─── Projects ────────────────────────────────────────────────────────────────

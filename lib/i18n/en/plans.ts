@@ -6,7 +6,7 @@ export const plans = {
     features: [
       "Unlimited inspos",
       "Automatic tags",
-      "3 DESIGN.md a month",
+      "30 AI actions a month",
       "30 different AI searches a month",
       "A directory of 130+ sites",
     ],
@@ -16,7 +16,7 @@ export const plans = {
     features: [
       "Up to 5 people",
       "Unlimited inspos",
-      "25 DESIGN.md a month",
+      "500 AI actions a month",
       "Unlimited AI searches",
       "Comments and DESIGN.md revisions",
     ],
@@ -26,7 +26,7 @@ export const plans = {
     features: [
       "Up to 15 people",
       "Several workspaces",
-      "100 DESIGN.md a month",
+      "2,000 AI actions a month",
       "Unlimited AI searches",
       "Same-day email support",
     ],

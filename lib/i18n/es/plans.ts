@@ -6,7 +6,7 @@ export const plans: typeof EnPlans = {
     features: [
       "Inspos ilimitados",
       "Etiquetas automáticas",
-      "3 DESIGN.md al mes",
+      "30 acciones de IA al mes",
       "30 búsquedas IA distintas al mes",
       "Directorio de 130+ webs",
     ],
@@ -16,7 +16,7 @@ export const plans: typeof EnPlans = {
     features: [
       "Hasta 5 personas",
       "Inspos ilimitados",
-      "25 DESIGN.md al mes",
+      "500 acciones de IA al mes",
       "Búsquedas IA ilimitadas",
       "Comentarios y revisiones de DESIGN.md",
     ],
@@ -26,7 +26,7 @@ export const plans: typeof EnPlans = {
     features: [
       "Hasta 15 personas",
       "Varios workspaces",
-      "100 DESIGN.md al mes",
+      "2.000 acciones de IA al mes",
       "Búsquedas IA ilimitadas",
       "Soporte por correo el mismo día",
     ],

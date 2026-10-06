@@ -6,9 +6,9 @@
 // markers and the notes per route in localStorage. But its toolbar is made for people
 // who paste markdown into a coding agent: eight unlabeled icons (pause animations, layout
 // mode, copy, settings...). Someone who has never used it does not know what to press.
-// So the toolbar is hidden with CSS (globals.css, "Feedback (Agentation)") and driven
-// from here: a labeled "Give feedback" pill, a panel that says what to do in three steps,
-// and one "Send to the team" button.
+// So the toolbar is hidden (components/feedback-mode.ts, from inside its shadow root) and
+// driven from here: a labeled "Give feedback" pill, a panel that says what to do in three
+// steps, and one "Send to the team" button.
 //
 // Agentation exposes no API to start or stop feedback mode: components/feedback-mode.ts
 // clicks its hidden bar. Where the page has a sidebar, the way in is "Give feedback" at its
@@ -25,7 +25,7 @@ import { usePathname } from "next/navigation";
 import type { Annotation } from "agentation";
 import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
 import { useT } from "./I18nProvider";
-import { FEEDBACK_LOAD_EVENT, clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, flushPendingEnter, isFeedbackModeOn as isModeOn } from "./feedback-mode";
+import { FEEDBACK_LOAD_EVENT, agentationRoot, clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, flushPendingEnter, hideAgentationBar as hideBar, isFeedbackModeOn as isModeOn } from "./feedback-mode";
 
 // Agentation is most of this tool's weight and only does anything in feedback mode: it loads the
 // first time someone asks for it (the pill, the sidebar entry, the palette, Cmd+Shift+F) or when
@@ -176,22 +176,24 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
     return () => { window.removeEventListener(FEEDBACK_LOAD_EVENT, load); document.removeEventListener("keydown", onKey); };
   }, [loaded]);
 
-  // Feedback mode on or off, read from the hidden bar: the toggle's title goes while active.
+  // Feedback mode on or off, read from the hidden bar: its toggle says so in aria-expanded.
   // Esc and Cmd+Shift+F are handled by Agentation and land here too.
   useEffect(() => {
     let inner: MutationObserver | null = null;
     const sync = () => { flushPendingEnter(); setActive(isModeOn()); };
-    const watch = (root: Element) => {
+    const watch = (root: ShadowRoot) => {
+      hideBar(root);
       inner = new MutationObserver(sync);
-      inner.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["title"] });
+      inner.observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ["aria-expanded"] });
       sync();
     };
-    // Agentation mounts in a portal after hydration: wait for its root, then watch only that
+    // Agentation mounts in a portal after hydration and draws its bar in a shadow root: wait for it, then
+    // watch only that (what changes in there never reaches an observer of the document)
     const outer = new MutationObserver(() => {
-      const root = document.querySelector("[data-agentation-root]");
+      const root = agentationRoot();
       if (root) { outer.disconnect(); watch(root); }
     });
-    const root = document.querySelector("[data-agentation-root]");
+    const root = agentationRoot();
     if (root) watch(root);
     else outer.observe(document.body, { childList: true, subtree: true });
     return () => { outer.disconnect(); inner?.disconnect(); };

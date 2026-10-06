@@ -3,7 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
 import { startAreaAsk, startAreaRefs } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
-import { assertSeatsOk, quotaBlock } from "@/lib/quota";
+import { assertQuota, assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 60;
@@ -28,6 +28,8 @@ export async function POST(req: NextRequest) {
     // The references need no model; the question does
     if (body.part !== "ask") return Response.json(await startAreaRefs(input));
     if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
+    const spent = await quotaBlock(assertQuota(ctx.workspace, "ai"));
+    if (spent) return spent;
     return Response.json(await startAreaAsk(input));
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });

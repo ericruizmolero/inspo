@@ -6,6 +6,7 @@ import { plans } from "./plans";
 import { directory } from "./directory";
 import { mail } from "./mail";
 import { errors } from "./errors";
+import { legal } from "./legal";
 
 const es: Dict = {
   ...ui,
@@ -13,6 +14,7 @@ const es: Dict = {
   taxonomy,
   mail,
   errors,
+  legal,
   plans: { ...ui.plans, items: plans },
   directory: { ...ui.directory, ...directory },
 };

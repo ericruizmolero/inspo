@@ -11,7 +11,7 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | / | Lleva al buscador |
 | / con el ratón sobre una tarjeta | Se la entrega al agente como "esto" |
 | ⌘B / Ctrl+B | Pliega o despliega la barra lateral |
-| ⌘/Ctrl + rueda, o pellizco | Zoom de columnas del tablero |
+| ⌘/Ctrl + rueda, o pellizco | Zoom de columnas del tablero; en Pulido, tamaño del tornado |
 | ⌘/Ctrl/Shift/Alt + clic en una pestaña | Lo que haría el navegador con un enlace |
 | ⌘/Ctrl o Shift + clic en una tarjeta | La selecciona; con Shift, el tramo desde la última elegida |
 | ⌘A / Ctrl+A con algo seleccionado | Selecciona todo el tablero a la vista (botón "Seleccionar todo" de la barra) |

@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
   if (existing) return attach(existing, req);
 
   // Monthly plan quota: only real generations count (the cache is free)
-  const blocked = await quotaBlock(assertQuota(ctx.workspace, "design_md"));
+  const blocked = await quotaBlock(assertQuota(ctx.workspace, "ai"));
   if (blocked) return blocked;
 
   const ctrl = new AbortController();

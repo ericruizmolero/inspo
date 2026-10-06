@@ -1,8 +1,9 @@
 // Monthly quotas per plan, counted on ai_usage. Server only.
 import "server-only";
-import { and, eq, gt, gte, lt, or, sql } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNull, lt, notLike, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
+import { AUTO_REF, type UsageAction } from "./usage-core";
 import { HttpError, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
@@ -15,7 +16,8 @@ export interface QuotaStatus {
   priceEur: number;
   /** First day of next month, ISO */
   resetsAt: string;
-  designMd: QuotaLine;
+  /** AI actions: what people asked of the model this month */
+  ai: QuotaLine;
   searches: QuotaLine;
   members: QuotaLine;
   /** Sent, unaccepted invitations: they take a seat too */
@@ -36,11 +38,28 @@ function nextMonth(): Date {
 // Searches are counted per distinct query (ref = normalized text), not per
 // call: search fires while typing and one intent can produce several
 // partial calls. The real cost stays in ai_usage row by row.
-async function countAction(organizationId: string, action: string): Promise<number> {
+async function countAction(organizationId: string, action: "ai" | "jev_search"): Promise<number> {
+  if (action === "ai") return countAi(organizationId);
   const U = schema.aiUsage;
   const n = action === "jev_search" ? sql<number>`count(distinct lower(trim(${U.ref})))` : sql<number>`count(*)`;
   const [r] = await db.select({ n }).from(U)
     .where(and(eq(U.organizationId, organizationId), eq(U.action, action), gte(U.createdAt, monthStart())));
+  return Number(r?.n ?? 0);
+}
+
+/**
+ * The model calls that count as an AI action: the ones a person asks for (improve with AI, the agent,
+ * bringing a brand in). What runs by itself on saving (tags, embeddings, captions) is not here, and neither
+ * are the passes logged with an AUTO_REF ref: the board's own re-read after filing a reference and the brand
+ * pass chained to a system pass. One click on "Improve with AI" is one action.
+ */
+export const AI_ACTIONS: UsageAction[] = ["system", "brand", "polish", "design_md", "design_why", "revise", "explain"];
+
+async function countAi(organizationId: string): Promise<number> {
+  const U = schema.aiUsage;
+  const [r] = await db.select({ n: sql<number>`count(*)` }).from(U)
+    .where(and(eq(U.organizationId, organizationId), inArray(U.action, AI_ACTIONS), gte(U.createdAt, monthStart()),
+      or(isNull(U.ref), notLike(U.ref, `${AUTO_REF}%`))));
   return Number(r?.n ?? 0);
 }
 
@@ -66,12 +85,12 @@ export async function countPendingInvitations(organizationId: string, exceptEmai
 
 export async function quotaStatus(ws: Pick<Workspace, "id" | "plan">): Promise<QuotaStatus> {
   const plan: Plan = planOf(ws.plan);
-  const [designMd, searches, members, pendingInvites] = await Promise.all([
-    countAction(ws.id, "design_md"), countAction(ws.id, "jev_search"), countMembers(ws.id), countPendingInvitations(ws.id),
+  const [ai, searches, members, pendingInvites] = await Promise.all([
+    countAction(ws.id, "ai"), countAction(ws.id, "jev_search"), countMembers(ws.id), countPendingInvitations(ws.id),
   ]);
   return {
     plan: plan.key, planName: plan.name, priceEur: plan.priceEur, resetsAt: nextMonth().toISOString(),
-    designMd: { used: designMd, limit: plan.designMdPerMonth },
+    ai: { used: ai, limit: plan.aiActionsPerMonth },
     searches: { used: searches, limit: plan.searchesPerMonth },
     members: { used: members, limit: plan.members },
     pendingInvites,
@@ -112,10 +131,10 @@ export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise
 }
 
 /** Throws HttpError(402) if the workspace has used up that action's monthly quota. */
-export async function assertQuota(ws: Pick<Workspace, "id" | "plan">, action: "design_md" | "jev_search"): Promise<void> {
+export async function assertQuota(ws: Pick<Workspace, "id" | "plan">, action: "ai" | "jev_search"): Promise<void> {
   await assertSeatsOk(ws);
   const plan = planOf(ws.plan);
-  const limit = action === "design_md" ? plan.designMdPerMonth : plan.searchesPerMonth;
+  const limit = action === "ai" ? plan.aiActionsPerMonth : plan.searchesPerMonth;
   if (limit === null) return;
   const used = await countAction(ws.id, action);
   if (used >= limit) {

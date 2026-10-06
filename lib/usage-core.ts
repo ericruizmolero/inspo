@@ -7,6 +7,10 @@
 export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "jev_directory" | "explain" | "revise" | "design_why" | "polish" | "auto_tag" | "query_en" | "embed" | "system" | "brand";
 
 
+/** Prefix of `ref` on a model call nobody asked for by hand (the board's own re-read after filing a reference,
+ *  the brand pass chained to a system pass): logged with its cost, but not one of the plan's AI actions */
+export const AUTO_REF = "auto:";
+
 export interface UsageDay { date: string; usd: number; calls: number }
 
 /** App-wide AI usage over a period (/admin panel) */

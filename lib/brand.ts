@@ -11,7 +11,7 @@ import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { llm, LlmError } from "./llm";
-import { recordUsage, type UsageCtx } from "./usage";
+import { AUTO_REF, recordUsage, type UsageCtx } from "./usage";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { SYSTEM_MODEL, getSystem } from "./system";
 import { getDesignMd } from "./design-store";
@@ -118,7 +118,7 @@ STYLE
 
 const inflight = new Map<string, Promise<ProjectSystem>>();
 
-export function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[] }): Promise<ProjectSystem> {
+export function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[]; /** Chained to a system pass: it does not count as an AI action */ auto?: boolean }): Promise<ProjectSystem> {
   const key = `${input.organizationId}|${input.projectId}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -173,7 +173,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
-    void recordUsage(input.usage, { action: "brand", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${projectId}` });
+    void recordUsage(input.usage, { action: "brand", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${input.auto ? AUTO_REF : ""}project:${projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));
     const sections = await toSections(out, brand, client?.web ?? null, byCode);
     const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model } });

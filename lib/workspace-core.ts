@@ -23,6 +23,9 @@ export interface Workspace {
   outputLanguage: OutputLanguage;
 }
 
+/** Owners and admins manage a workspace: its settings, its people, and what others saved in it */
+export const canManage = (role: Role) => role === "owner" || role === "admin";
+
 export interface SessionUser { id: string; name: string; email: string; image?: string | null; language: Locale }
 
 export interface Ctx {

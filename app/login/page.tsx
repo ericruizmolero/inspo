@@ -9,6 +9,7 @@ import { getT, type Dict } from "@/lib/i18n";
 import { Fragment } from "react";
 import Logo from "@/components/Logo";
 import { isLocalPath } from "@/lib/url";
+import { legalShown } from "@/lib/legal";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -81,6 +82,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
         <footer className="auth__foot">
           <span>{t.login.firstTime}</span>
+          {legalShown() && (
+            <span>
+              {t.legal.accept[0]}<Link href="/terms">{t.legal.accept[1]}</Link>{t.legal.accept[2]}<Link href="/privacy">{t.legal.accept[3]}</Link>{t.legal.accept[4]}
+            </span>
+          )}
         </footer>
       </section>
 

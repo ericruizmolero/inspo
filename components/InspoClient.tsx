@@ -32,6 +32,8 @@ import TextPage from "./TextPage";
 import { addText, saveText, renameText } from "@/app/actions/text";
 import { useTextBodies } from "@/hooks/use-text-bodies";
 import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
+import SoundControl from "./SoundControl";
+import ZoomPill from "./ZoomPill";
 import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
@@ -259,7 +261,7 @@ export default function InspoClient({
     clearTimeout(systemTimers.current[projectId]);
     systemTimers.current[projectId] = setTimeout(async () => {
       try {
-        const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId }) });
+        const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, auto: true }) });
         const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
         if (res.ok && !json.error) setSystems((prev) => ({ ...prev, [projectId]: json }));
       } catch { /* the modal shows the board as unread; the next read catches up */ }
@@ -734,7 +736,7 @@ export default function InspoClient({
   }, [createProject, toggleFiled]);
 
   // ─── Plan and quotas ───────────────────────────────────────────────────────
-  // Arrives from the server with the page; re-read after spending quota (a new DESIGN.md)
+  // Arrives from the server with the page; re-read after a search that spent quota and whenever the island's menu opens
   const [quota, setQuota] = useState<QuotaView | null>(initialQuota);
   const loadQuota = useCallback(() => {
     fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
@@ -1426,9 +1428,14 @@ export default function InspoClient({
       areasIn={item.id ? areasByItem.get(item.id) : undefined}
       selected={!!item.id && selected.has(item.id)}
       selecting={selected.size > 0}
+      // A member deletes what they saved; the server (removeInspo) has the last word
+      deletable={canManage || item.addedBy === (user.name || user.email)}
+      // On a project's board the bin takes the card out of the project (back to the Inbox); off it, it deletes
+      spaceName={workspace.name}
+      takeOutOf={currentProject?.id}
       actions={gridActions}
     />
-  ), [ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected]);
+  ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user]);
 
   return (
     <SidebarProvider defaultOpen={false} className="shell">
@@ -1522,7 +1529,7 @@ export default function InspoClient({
               else if (projectView !== "board") setProjectView("board");
               toggleFilter({ kind: "person", value: name });
             }}
-            onDirectory={openDirectory} quota={quota} />
+            onDirectory={openDirectory} quota={quota} onMenuOpen={loadQuota} />
           <Logo size={28} className="topbar__logo" />
           {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
           <div className="topbar__actions">
@@ -1690,6 +1697,12 @@ export default function InspoClient({
             )}
           </>
         )}
+        {/* The music is in the corner of every view. The boards and Polish have it in their zoom's pill; the others
+            have nothing to zoom, and the pill is the music alone */}
+        {!(space !== "discover" && space !== "templates" && space !== "skills" && space !== "home" && items.length > 0
+          && !(currentProject && projectView === "system")
+          && ((currentProject && projectView === "polish") || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
+          && <ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill>}
         {/* The way to find anything on a project's board, at the bottom like a conversation: people, dates, kinds,
             every tag, and what it means. Solid and bright in both themes, so it is the first thing the eye finds.
             Off the board only what the agent is still saying stays. */}
@@ -1698,7 +1711,7 @@ export default function InspoClient({
             onAll={selectAll} onFile={(id, on) => void fileSelection(id, on)} onMove={(id) => void moveSelection(id)} onCreate={createForSelection}
             onRemove={() => void removeSelection()} onDelete={() => void deleteSelection()} onDone={clearSelection} />
         )}
-        {items.length > 0 && ((searchHere && (spaceItems.length > 0 || !!currentProject)) || agentSpeaks) && selected.size === 0 && (
+        {items.length > 0 && ((searchHere && spaceItems.length > 0) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">
             {filtering && (
               <p className="dock__status" role="status" aria-live="polite">
@@ -1720,7 +1733,9 @@ export default function InspoClient({
             )}
             {/* The card handed to the agent wears a ring wherever it is shown */}
             {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--dock-ink, #f2f2ef) !important; outline-offset: 3px; }`}</style>}
-            {searchHere && (spaceItems.length > 0 || currentProject) && (
+            {/* Only over a board with something on it: an empty project starts from its own box (ProjectStart), and a
+                search with nothing to look through reads as broken (Andoni, 06-10) */}
+            {searchHere && spaceItems.length > 0 && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
                 vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
@@ -1846,7 +1861,7 @@ interface GridActions {
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMd, shot, projects, projectIds, backs, areasIn, selected, selecting, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMd, shot, projects, projectIds, backs, areasIn, selected, selecting, deletable, spaceName, takeOutOf, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
@@ -1856,6 +1871,11 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   manualThumbnail: string | undefined; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   projects: Project[]; projectIds: string[] | undefined;
   selected: boolean; selecting: boolean;
+  /** Whether this person may delete the card: theirs, or they manage the workspace */
+  deletable: boolean;
+  spaceName: string;
+  /** The project whose board this is: the bin takes the card out of it instead of deleting */
+  takeOutOf: string | undefined;
   actions: RefObject<GridActions>;
 }) {
   // The handlers are read when used, never kept from this render: the card re-renders only with its own data
@@ -1881,7 +1901,9 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       commentCount={comments?.length ?? 0}
       caption={caption}
       onComments={item.id ? open : undefined}
-      onDelete={item.id ? () => act().deleteItem(item) : undefined}
+      onDelete={item.id && deletable ? () => act().deleteItem(item) : undefined}
+      onTakeOut={item.id && takeOutOf ? () => act().toggleFiled(item, takeOutOf, false) : undefined}
+      spaceName={spaceName}
       manualThumbnail={manualThumbnail}
       onUpload={(file) => { act().handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
       onRemoveThumbnail={() => { act().handleThumbnailRemove(item.web); return Promise.resolve(); }}

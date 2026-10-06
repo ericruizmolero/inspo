@@ -3,7 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
 import { curateArea } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
-import { assertSeatsOk, quotaBlock } from "@/lib/quota";
+import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 60;
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
+  const blocked = await quotaBlock(assertQuota(ctx.workspace, "ai"));
   if (blocked) return blocked;
   const body = (await req.json().catch(() => ({}))) as { projectId?: string; area?: string; keep?: Record<string, boolean> };
   const projectId = String(body.projectId ?? "").trim(); const area = String(body.area ?? "").trim();

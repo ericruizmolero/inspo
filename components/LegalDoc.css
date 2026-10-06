@@ -1,0 +1,11 @@
+/* The legal pages (/privacy, /terms), on top of .page and .legal (app/globals.css) */
+.legal section { display: flex; flex-direction: column; gap: 8px; }
+.legal section h2 { margin: 0; }
+.legal ul { margin: 0; padding-left: 16px; list-style: disc; display: flex; flex-direction: column; gap: 6px; }
+.legal li { font-size: 14px; line-height: 1.55; color: var(--text-2); text-wrap: pretty; }
+.legal li::marker { color: var(--muted-2); }
+.legal__date { margin: 0; font-size: 13px; color: var(--muted); }
+.legal__draft { margin: 0; align-self: flex-start; padding: 6px 10px; border-radius: var(--radius-s); background: color-mix(in srgb, var(--warning) 16%, transparent); font-size: 13px; color: var(--text); }
+.legal__links { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 12px; font-size: 13px; }
+.legal__links a { color: var(--muted); text-decoration: none; transition: color 0.15s var(--ease-out); }
+.legal__links a:hover { color: var(--text); }
