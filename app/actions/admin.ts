@@ -7,6 +7,7 @@ import { isAdmin, addAdmin, removeAdmin } from "@/lib/activity";
 import { deleteFeedbackNotes, resolveFeedbackNotes } from "@/lib/feedback";
 import { sendMail, adminAccessMail, localeForEmail } from "@/lib/mail";
 import { getErrors } from "@/lib/i18n";
+import { HttpError } from "@/lib/workspace-core";
 
 type Admin = NonNullable<Awaited<ReturnType<typeof getSession>>>;
 
@@ -17,14 +18,15 @@ async function asAdmin<T>(fn: (s: Admin) => Promise<T>): Promise<ActionResult<T>
   try {
     return { ok: true, data: await fn(s) };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    if (!(e instanceof HttpError)) console.error(e);
+    return { ok: false, error: e instanceof HttpError ? e.message : (await getErrors()).unexpected };
   }
 }
 
 /** Grants access and emails the new person, in their language (not the granter's). */
 export async function grantAccess(email: string) {
   return asAdmin(async (s) => {
-    if (!email?.trim()) throw new Error((await getErrors()).missingEmail);
+    if (!email?.trim()) throw new HttpError(400, (await getErrors()).missingEmail);
     const by = s.user.name || s.user.email;
     const r = await addAdmin(email, by);
     let mailed = false;
@@ -43,8 +45,8 @@ export async function grantAccess(email: string) {
 export async function revokeAccess(email: string) {
   return asAdmin(async (s) => {
     const e = email?.trim().toLowerCase();
-    if (!e) throw new Error((await getErrors()).missingEmail);
-    if (e === s.user.email.toLowerCase()) throw new Error((await getErrors()).cannotRemoveSelf);
+    if (!e) throw new HttpError(400, (await getErrors()).missingEmail);
+    if (e === s.user.email.toLowerCase()) throw new HttpError(400, (await getErrors()).cannotRemoveSelf);
     await removeAdmin(e);
   });
 }
@@ -53,7 +55,7 @@ export async function revokeAccess(email: string) {
 export async function deleteFeedback(ids: string[]) {
   return asAdmin(async () => {
     const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 500) : [];
-    if (!list.length) throw new Error((await getErrors()).nothingToDelete);
+    if (!list.length) throw new HttpError(400, (await getErrors()).nothingToDelete);
     return deleteFeedbackNotes(list);
   });
 }
@@ -62,7 +64,7 @@ export async function deleteFeedback(ids: string[]) {
 export async function resolveFeedback(ids: string[], resolved: boolean) {
   return asAdmin(async () => {
     const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 500) : [];
-    if (!list.length) throw new Error((await getErrors()).nothingToDelete);
+    if (!list.length) throw new HttpError(400, (await getErrors()).nothingToDelete);
     return resolveFeedbackNotes(list, !!resolved);
   });
 }

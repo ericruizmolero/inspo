@@ -5,6 +5,7 @@ import { getErrors } from "@/lib/i18n";
 import { MAX_BRAND_BYTES, brandTypeFor, isPurpose, newBrandKey } from "@/lib/brand-files";
 import { db, schema } from "@/lib/db";
 import { and, eq } from "drizzle-orm";
+import { HttpError } from "@/lib/workspace-core";
 
 // Uploads a file of a project's brand: a logo, a font, a picture, a file to hand out. Two ways in, as /api/media:
 // - JSON { projectId, purpose, name, size } → { key, type, put }: the browser PUTs the file to `put`, straight to R2.
@@ -39,6 +40,6 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("brand upload:", msg);
-    return Response.json({ error: msg }, { status: 500 });
+    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

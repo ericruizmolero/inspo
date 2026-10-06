@@ -4,6 +4,7 @@ import { loadWorkspaceData } from "@/lib/items";
 import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch } from "@/lib/jev";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
+import { HttpError } from "@/lib/workspace-core";
 
 export const maxDuration = 30;
 
@@ -39,6 +40,6 @@ export async function POST(req: NextRequest) {
     return Response.json({ scores });
   } catch (e) {
     console.error("search error:", e);
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

@@ -9,7 +9,7 @@ import { textPrefix } from "@/lib/text-refs";
 import { POSTS_PREFIX } from "@/lib/posts";
 import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
-import { openFile, fileUrl, signedFileUrl } from "@/lib/storage";
+import { openFile, fileUrl, signedFileUrl, isSafeKey } from "@/lib/storage";
 import { brandPrefix } from "@/lib/brand-files";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
@@ -21,8 +21,9 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const session = await requireCtx();
   if (isResponse(session)) return session;
   const { key: parts } = await ctx.params;
-  if (parts.some((p) => !p || p === "." || p === "..")) return new Response("bad path", { status: 400 });
+  // Checked after the join: a segment can hold an encoded slash ("..%2F..")
   const key = parts.join("/");
+  if (!isSafeKey(key)) return new Response("bad path", { status: 400 });
 
   const ws = session.workspace.id;
   const allowed = [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))

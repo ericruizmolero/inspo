@@ -11,6 +11,7 @@ import { probeSite } from "@/lib/design-probe";
 import { recordUsage } from "@/lib/usage";
 import { getErrors } from "@/lib/i18n";
 import type { DesignWhy } from "@/types/design";
+import { HttpError } from "@/lib/workspace-core";
 
 export const maxDuration = 120;
 
@@ -78,6 +79,6 @@ export async function GET(req: NextRequest) {
     if (req.signal.aborted) return new Response(null, { status: 499 });
     const msg = err instanceof Error ? err.message : String(err);
     console.error("design-why error:", url, msg);
-    return Response.json({ error: msg }, { status: 500 });
+    return Response.json({ error: err instanceof HttpError ? err.message : (await getErrors()).unexpected }, { status: err instanceof HttpError ? err.status : 500 });
   }
 }

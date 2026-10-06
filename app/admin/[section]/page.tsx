@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import ActivityPing from "@/components/ActivityPing";
 import SettingsHeading from "@/components/SettingsHeading";
 import { getSession } from "@/lib/workspace";
-import { activityOverview, listAdmins } from "@/lib/activity";
+import { activityOverview, listAdmins, isAdmin } from "@/lib/activity";
 import { usageOverview } from "@/lib/usage";
 import { feedbackOverview } from "@/lib/feedback";
 import { getT } from "@/lib/i18n";
@@ -27,6 +27,8 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
   if (!SECTIONS.includes(section)) notFound();
   const days = DAYS.includes(Number(dias)) ? Number(dias) : 30;
   const [s, { t }] = await Promise.all([getSession(), getT()]);
+  // Checked here too, not only in the layout: a client navigation can render this page without the layout
+  if (!s || !(await isAdmin(s.user.email))) notFound();
 
   // Each section loads only what it shows; the overview data also drives "updated at" and the minute refresh
   const [data, usage, feedback, admins] = await Promise.all([

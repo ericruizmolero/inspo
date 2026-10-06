@@ -7,6 +7,8 @@ import Decisions from "@/components/design-library/Decisions";
 import { FoundationsSpecimen } from "@/components/design-library/Specimens";
 import Catalog from "@/components/design-library/Catalog";
 import { sectionIcon } from "@/components/section-icons";
+import { getSession } from "@/lib/workspace";
+import { isAdmin } from "@/lib/activity";
 import { DS_GROUPS, DS_PAGES, pageTitles, parseCatalog, parseMd, readDecisions, readPage, type Block } from "@/lib/design-system";
 
 type Props = { params: Promise<{ section: string }> };
@@ -47,6 +49,9 @@ async function Blocks() {
 
 export default async function DesignLibrarySection({ params }: Props) {
   const { section } = await params;
+  // Checked here too, not only in the layout: a client navigation can render this page without the layout
+  const s = await getSession();
+  if (!s || !(await isAdmin(s.user.email))) notFound();
   const meta = DS_PAGES.find((p) => p.slug === section);
   if (!meta) notFound();
   const source = `docs/design-system/${meta.file}`;

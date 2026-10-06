@@ -65,7 +65,9 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: (await getErrors()).noModelKey }, { status: 500 });
   }
 
-  const existing = inflight.get(url);
+  // One job per workspace and URL: the job answers with this workspace's revisions and counts against its quota
+  const key = `${ctx.workspace.id}|${url}`;
+  const existing = inflight.get(key);
   if (existing) return attach(existing, req);
 
   // Monthly plan quota: only real generations count (the cache is free)
@@ -107,14 +109,14 @@ export async function GET(req: NextRequest) {
       }
       const msg = err instanceof Error ? err.message : String(err);
       console.error("design-md error:", url, msg);
-      return Response.json({ error: msg }, { status: 500 });
+      return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
     } finally {
-      inflight.delete(url);
+      inflight.delete(key);
     }
   })();
 
   const job: Job = { promise, ctrl, waiters: 0 };
-  inflight.set(url, job);
+  inflight.set(key, job);
   return attach(job, req);
 }
 
@@ -124,7 +126,7 @@ export async function DELETE(req: NextRequest) {
   if (isResponse(ctx)) return ctx;
   const url = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
-  const job = inflight.get(url);
+  const job = inflight.get(`${ctx.workspace.id}|${url}`);
   if (job) job.ctrl.abort();
   return Response.json({ stopped: !!job });
 }

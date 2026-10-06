@@ -11,6 +11,27 @@ export const brandPrefix = (organizationId: string) => `inspo/${organizationId}/
 export const projectBrandPrefix = (organizationId: string, projectId: string) => `${brandPrefix(organizationId)}${projectId}/`;
 export const MAX_BRAND_BYTES = 20 * 1024 * 1024;
 
+// DESIGN_MD_PREFIX (lib/design-store.ts, which imports this file): a logo seeded from a site's DESIGN.md
+// stays where it was captured, and that content is public to everyone signed in.
+const DESIGN_MD_FILES = "inspo/design-md/";
+
+/** May this workspace's brand point at this key? Only its own brand files, or a captured DESIGN.md logo.
+ *  Any other key would let a brand read someone else's file through its zip or its share link. */
+export const brandKeyAllowed = (organizationId: string, key: string) =>
+  key.startsWith(brandPrefix(organizationId)) || key.startsWith(DESIGN_MD_FILES);
+
+/** Every storage key inside a brand value (a section or the whole spec): any `key` that is a storage path */
+export function keysIn(value: unknown, out: string[] = []): string[] {
+  if (Array.isArray(value)) for (const v of value) keysIn(v, out);
+  else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) {
+      if (k === "key" && typeof v === "string" && v.startsWith("inspo/")) out.push(v);
+      else keysIn(v, out);
+    }
+  }
+  return out;
+}
+
 export type BrandPurpose = "logo" | "font" | "image" | "file";
 /** What each purpose takes, by extension: a font's type is often blank in the browser */
 const TYPES: Record<string, string> = {

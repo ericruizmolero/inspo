@@ -2,6 +2,7 @@ import type { DesignTokens } from "./design-extract";
 import { GeneratedSpecSchema, stripDashes, renderDesignMd, type DesignSpec } from "@/types/design";
 import { getErrors } from "./i18n";
 import { llm, LlmError } from "./llm";
+import { HttpError } from "./workspace-core";
 
 export const DESIGN_MD_MODEL = process.env.DESIGN_MD_MODEL || "deepseek/deepseek-v4.1-flash";
 
@@ -106,7 +107,7 @@ export async function generateDesignMd(
     });
   } catch (err) {
     if (signal?.aborted || !(err instanceof LlmError) || !err.finishReason) throw err;
-    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+    throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
 
   // U+2212 looks like a minus and breaks CSS when an agent pastes it

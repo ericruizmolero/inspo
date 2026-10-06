@@ -5,6 +5,7 @@ export const errors: typeof EnErrors = {
   incompleteAnswer: "El modelo devolvió una respuesta incompleta",
   adminsCanRegenerate: "Solo los administradores pueden regenerar",
   adminsOnly: "Solo administradores",
+  unexpected: "Algo ha fallado. Inténtalo de nuevo.",
   badBody: "Cuerpo no válido",
   badEmail: "Ese correo no parece válido",
   badIds: "Identificadores no válidos",

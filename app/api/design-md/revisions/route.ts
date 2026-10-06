@@ -7,6 +7,7 @@ import { getDesignMd } from "@/lib/design-store";
 import { renderDesignMd, type DesignSpec } from "@/types/design";
 import { SECTIONS, addRevision, getRevisionSpec, latestRevision, listRevisions, reviseDesignSpec } from "@/lib/design-revise";
 import { getErrors, getT, fmtDate } from "@/lib/i18n";
+import { HttpError } from "@/lib/workspace-core";
 
 export const maxDuration = 120;
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     return Response.json(await respond(ctx.workspace.id, url, out.spec, meta.id));
   } catch (e) {
     console.error("design-md revise error:", e);
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }
 

@@ -239,3 +239,6 @@ export function hasOwnPage(web: string): boolean {
     return !NOT_A_SITE.some((d) => host === d || host.endsWith(`.${d}`));
   } catch { return false; }
 }
+
+/** A ?next= that stays on this site: a path, never "//host" or "/\host" (browsers read both as another site) */
+export const isLocalPath = (next: string | null | undefined): next is string => !!next && /^\/(?![/\\])/.test(next);

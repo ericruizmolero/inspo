@@ -4,6 +4,7 @@
 import "server-only";
 import sharp from "sharp";
 import { getFile } from "./storage";
+import { brandKeyAllowed } from "./brand-files";
 import { zip, type ZipEntry } from "./zip";
 import { fileStem, fontLinks, tailwindTheme, tokensCss, tokensJson } from "./brand-export";
 import type { BrandFile, BrandSpec } from "@/types/brand";
@@ -23,10 +24,12 @@ async function icon(body: Buffer, size: number, ground: string): Promise<Buffer 
   } catch { return null; }
 }
 
-export async function brandZip(brand: BrandSpec, name: string, markdown: string): Promise<{ file: Buffer; fileName: string }> {
+export async function brandZip(organizationId: string, brand: BrandSpec, name: string, markdown: string): Promise<{ file: Buffer; fileName: string }> {
   const stem = fileStem(name);
   const entries: ZipEntry[] = [];
-  const read = async (f: BrandFile | null) => (f ? (await getFile(f.key).catch(() => null))?.body ?? null : null);
+  // Only the workspace's own files go in, whatever the stored brand says
+  const fetchKey = async (key: string) => (brandKeyAllowed(organizationId, key) ? (await getFile(key).catch(() => null))?.body ?? null : null);
+  const read = async (f: BrandFile | null) => (f ? fetchKey(f.key) : null);
   const logos: [string, BrandFile | null][] = [["logo-light", brand.logo.primary.light], ["logo-dark", brand.logo.primary.dark], ["mark-light", brand.logo.mark.light], ["mark-dark", brand.logo.mark.dark]];
   let iconSource: Buffer | null = null;
   for (const [slot, f] of logos) {
@@ -47,7 +50,7 @@ export async function brandZip(brand: BrandSpec, name: string, markdown: string)
   entries.push({ name: `tokens/${stem}-tailwind.css`, data: Buffer.from(tailwindTheme(brand, name)) });
   entries.push({ name: `${stem}-criterio.md`, data: Buffer.from(markdown) });
   if (brand.assets.includeFonts) for (const face of brand.typography.faces) for (const f of face.files ?? []) {
-    const body = (await getFile(f.key).catch(() => null))?.body;
+    const body = await fetchKey(f.key);
     if (body) entries.push({ name: `fonts/${fileStem(face.family)}-${f.weight}${f.style === "italic" ? "-italic" : ""}.${f.key.split(".").pop()}`, data: body });
   }
   for (const f of brand.assets.files) { const body = await read(f); if (body) entries.push({ name: `files/${f.name ?? `${stem}.${ext(f)}`}`, data: body }); }

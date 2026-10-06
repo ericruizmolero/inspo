@@ -463,7 +463,7 @@ const standing = current.areas.map((a) => ({
       });
     } catch (err) {
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
-      throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+      throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
     void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));
@@ -572,7 +572,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     res = await llm({ model: SYSTEM_MODEL, system: `${OPTIONS_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: OptionsSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
-    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+    throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
   void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId} ${area} options` });
   const out = OptionsSchema.parse(JSON.parse(res.text));
@@ -633,7 +633,7 @@ async function startCall<S extends z.ZodTypeAny>(input: StartInput, part: string
     res = await llm({ model: START_MODEL, system: `${system}\n\n${startLanguage(input.language)}`, text, schema, maxTokens: 3000 });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
-    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+    throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
   void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId}:start-${part}:${input.area}` });
   console.log(`[system] start ${part} ${input.area} for ${input.projectId}: ${res.usage.input} in, ${res.usage.output} out, ${(res.costUsd ?? 0).toFixed(4)} $`);
@@ -1024,7 +1024,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
     res = await llm({ model: SYSTEM_MODEL, system: `${CURATE_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: CurateSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
-    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+    throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
   void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId} ${area} curate` });
   const out = CurateSchema.parse(JSON.parse(res.text));

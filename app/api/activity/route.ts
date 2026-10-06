@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getSession } from "@/lib/workspace";
 import { touchSegment, type Heartbeat } from "@/lib/activity";
 import { getErrors } from "@/lib/i18n";
+import { isMember } from "@/lib/workspace-core";
 
 
 // POST { segmentId, visitId, area, path, organizationId? } → { ok: true }
@@ -19,7 +20,8 @@ export async function POST(req: NextRequest) {
       segmentId: body.segmentId, visitId: body.visitId,
       area: typeof body.area === "string" ? body.area : "library",
       path: typeof body.path === "string" ? body.path : "/",
-      organizationId: typeof body.organizationId === "string" ? body.organizationId : null,
+      // Only a workspace the person belongs to
+      organizationId: typeof body.organizationId === "string" && (await isMember(body.organizationId, s.user.id)) ? body.organizationId : null,
     }, req.headers.get("user-agent"));
     if (!r.ok) return Response.json({ error: r.error }, { status: r.status });
     return Response.json({ ok: true });

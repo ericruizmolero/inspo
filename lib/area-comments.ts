@@ -106,7 +106,9 @@ export async function areaThread(organizationId: string, projectId: string, area
 
 export async function addAreaComment(organizationId: string, projectId: string, area: string, body: string, author: { id: string; name: string; image?: string | null }, aboutIn?: unknown): Promise<AreaNote> {
   await assertProject(organizationId, projectId);
-  const about = cleanAbout(aboutIn);
+  const parsed = cleanAbout(aboutIn);
+  // A new proposal is always open: only resolving it (below) may mark it accepted or rejected, and by whom
+  const about = parsed && "proposal" in parsed ? { proposal: { ...parsed.proposal, state: "open" as const, resolvedBy: undefined } } : parsed;
   // A pin can sit on any part of the file; the rest of the conversation is an area's
   const key = about && "pin" in about ? await assertPart(area) : await assertArea(area);
   const text = String(body ?? "").trim().slice(0, BODY_MAX);

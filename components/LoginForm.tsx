@@ -6,6 +6,7 @@ import type { SocialProvider } from "@/lib/auth";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isLocalPath } from "@/lib/url";
 
 const IcArrow = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -71,7 +72,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
 
   // Return route after sign-in (relative, never /login or //other-domain)
   const backPath = () => {
-    const back = next && next.startsWith("/") && !next.startsWith("//") ? next : window.location.pathname + window.location.search;
+    const back = isLocalPath(next) ? next : window.location.pathname + window.location.search;
     return back.startsWith("/login") ? "/" : back;
   };
 
@@ -161,7 +162,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
           : <>{t.login.sendLink} {IcArrow}</>}
       </Button>
       {devEmail && (
-        <a className="auth__alt auth__dev" href={devLoginHref(next && next.startsWith("/") && !next.startsWith("//") ? next : "/")}>
+        <a className="auth__alt auth__dev" href={devLoginHref(isLocalPath(next) ? next : "/")}>
           {t.login.devLogin(devEmail)}
         </a>
       )}

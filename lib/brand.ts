@@ -171,7 +171,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       });
     } catch (err) {
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
-      throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+      throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
     void recordUsage(input.usage, { action: "brand", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));

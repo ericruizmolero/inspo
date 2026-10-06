@@ -77,6 +77,6 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     // The status comes from the error, not from the message: the text is translated
-    return Response.json({ error: msg }, { status: err instanceof HttpError ? err.status : 500 });
+    return Response.json({ error: err instanceof HttpError ? msg : (await getErrors()).unexpected }, { status: err instanceof HttpError ? err.status : 500 });
   }
 }

@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { resolveShare } from "@/lib/share";
 import { getBrand } from "@/lib/brand-store";
 import { pageFaces, verifyFontToken } from "@/lib/ref-fonts";
-import { isPublicHttpUrl, LIVE_UA } from "@/lib/live-html";
+import { isPublicHttpUrl, BROWSER_UA } from "@/lib/extract";
+import { safeFetch } from "@/lib/safe-fetch";
 
 const MAX_BYTES = 4 * 1024 * 1024;
 const FONT_EXT = /\.(woff2|woff|otf|ttf)$/i;
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/s/[token]/font">
   let upstream: Response;
   try {
     const u = new URL(url);
-    upstream = await fetch(url, { headers: { "User-Agent": LIVE_UA, Accept: "*/*", Referer: `${u.origin}/`, Origin: u.origin }, redirect: "follow", signal: AbortSignal.timeout(10000) });
+    upstream = await safeFetch(url, { headers: { "User-Agent": BROWSER_UA, Accept: "*/*", Referer: `${u.origin}/`, Origin: u.origin }, signal: AbortSignal.timeout(10000) });
   } catch { return new Response("unreachable", { status: 502 }); }
   if (!upstream.ok || Number(upstream.headers.get("content-length") ?? 0) > MAX_BYTES) { await upstream.body?.cancel(); return new Response("unavailable", { status: 502 }); }
   const body = await upstream.arrayBuffer();

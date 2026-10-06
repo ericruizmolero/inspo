@@ -9,12 +9,11 @@ import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromH
 // and the first action opens the sign-in dialog. Everything else needs a session.
 // /extension/privacy: the extension's privacy page, linked from the Chrome Web Store
 // /api/ext/: the browser extension gets in with its key (lib/ext-keys.ts), not a cookie
-// /api/live/a/: the live view's frame has an opaque origin and sends no cookies; a signed token in the path is its proof (lib/live-html.ts)
 // /api/cron/: the scheduler has no session; each route checks CRON_SECRET itself
 // /s/: a project's brand shared by link; the token in the path is the proof (lib/share.ts)
 // /mcp, /api/mcp/ and /.well-known/: the MCP connector and its OAuth endpoints; an AI client gets in with a bearer
 // token (lib/mcp/auth.ts), never a cookie. /mcp/authorize is not here: approving an app takes a session
-const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/live\/a\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/, /^\/s\//, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
+const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/, /^\/s\//, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;

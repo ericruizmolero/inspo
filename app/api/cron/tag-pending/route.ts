@@ -4,6 +4,7 @@ import { PER_WORKSPACE, RUN_BUDGET_MS, runNextJob, workspacesWithJobs } from "@/
 import { embedPending } from "@/lib/embed";
 import { assertSeatsOk } from "@/lib/quota";
 import type { PlanKey } from "@/lib/plans";
+import { cronAuthorized } from "@/lib/cron-auth";
 
 export const maxDuration = 300;
 
@@ -18,7 +19,7 @@ const WORKSPACES = 100;
 // workspace with 10,000 items to tag doesn't hold up one with 3, and stops taking jobs at the run's budget.
 // With nothing to do it costs one query.
 export async function GET(req: NextRequest) {
-  if (!process.env.CRON_SECRET || req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronAuthorized(req)) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
   if (!taggerEnabled()) return Response.json({ skipped: "OPENROUTER_API_KEY not configured" });

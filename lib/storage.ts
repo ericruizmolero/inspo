@@ -22,7 +22,12 @@ export const fileUrl = (key: string) => FILES_BASE + key;
 export function keyOf(url: string): string | null {
   if (!url.startsWith(FILES_BASE)) return null;
   const key = url.slice(FILES_BASE.length).split("?")[0];
-  return key && !key.split("/").includes("..") ? key : null;
+  return isSafeKey(key) ? key : null;
+}
+
+/** No empty, "." or ".." segment and no backslash, after any decoding the router did */
+export function isSafeKey(key: string): boolean {
+  return !!key && !key.includes("\\") && !key.split("/").some((p) => !p || p === "." || p === "..");
 }
 
 export interface StoredFile { body: Buffer; contentType: string; size: number }
@@ -117,6 +122,8 @@ function r2(): Driver {
           Bucket: bucket, Key: key,
           // Keys carry a timestamp: a changed file gets a new key, so a day of caching is safe
           ResponseCacheControl: "private, max-age=86400",
+          // An SVG opened on its own runs its scripts: a download instead. <img> still shows it.
+          ...(/\.svg$/i.test(key) ? { ResponseContentDisposition: "attachment" } : {}),
         }), { signingDate: new Date(from), expiresIn: 7200 });
         signed.set(key, url);
         url.catch(() => signed.delete(key));
@@ -151,7 +158,12 @@ function parseRange(range: string | undefined, size: number): [number, number] |
 }
 
 function disk(): Driver {
-  const file = (key: string) => path.join(ROOT, ...key.split("/"));
+  // A segment may carry an encoded slash (..%2F..): resolved, the path must still be under ROOT
+  const file = (key: string) => {
+    const full = path.resolve(ROOT, ...key.split("/"));
+    if (!full.startsWith(ROOT + path.sep)) throw new Error(`Key outside storage: ${key}`);
+    return full;
+  };
   const gone = (e: unknown) => (e as NodeJS.ErrnoException).code === "ENOENT";
   return {
     async put(key, body) {

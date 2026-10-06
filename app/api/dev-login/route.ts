@@ -5,13 +5,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth, DEV_LOGIN_EMAIL, takeDevLink } from "@/lib/auth";
 import { getErrors } from "@/lib/i18n";
+import { isLocalPath } from "@/lib/url";
 
 
 export async function GET(request: NextRequest) {
   if (!DEV_LOGIN_EMAIL) return NextResponse.json({ error: (await getErrors()).unavailable }, { status: 404 });
 
   const next = request.nextUrl.searchParams.get("next");
-  const callbackURL = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const callbackURL = isLocalPath(next) ? next : "/";
 
   // Goes through the HTTP handler (not auth.api) so Better Auth infers the baseURL from the request
   const origin = new URL(request.url).origin;

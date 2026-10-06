@@ -4,6 +4,7 @@
 import "server-only";
 import { pageMeta } from "./meta";
 import type { InspoMeta } from "@/types/inspo";
+import { safeFetch } from "./safe-fetch";
 
 // External proxy to read sites that block data center IPs. WEB_PROXY_URL="" turns it off.
 const DEFAULT_PROXY = "https://web-proxy-git-main-ericruizmoleros-projects.vercel.app/api/proxy";
@@ -24,6 +25,9 @@ export function isPublicHttpUrl(raw: string): boolean {
     return false;
   }
 }
+// A desktop Chrome user agent: some sites answer bots with an empty page or a block
+export const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+
 const TIMEOUT_MS = 8000;
 
 export interface SiteText {
@@ -126,7 +130,7 @@ async function fetchHtml(url: string, headers?: Record<string, string>): Promise
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
-    const res = await fetch(url, { signal: ctrl.signal, cache: "no-store", headers, redirect: "follow" });
+    const res = await safeFetch(url, { signal: ctrl.signal, cache: "no-store", headers });
     if (!res.ok) return null;
     const html = await res.text();
     return html && html.length >= 200 ? html : null;

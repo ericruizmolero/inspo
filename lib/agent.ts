@@ -433,7 +433,7 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
     res = await llm({ model: SYSTEM_MODEL, system: `${PLAN_SYSTEM}\n\n${languageRule(language, '"say", every decision, why, "never" rule, brief, question, label and guide text')}`, text: body, schema: PlanSchema, maxTokens: 6000, effort: "low" });
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
-    throw new Error(`${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
+    throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
   void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `agent ${c.refs.length} refs` });
   const plan = PlanSchema.parse(JSON.parse(res.text));

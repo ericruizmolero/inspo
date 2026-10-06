@@ -3,6 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { uploadMediaFile, newMediaKey, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/lib/media";
 import { uploadUrl, fileUrl } from "@/lib/storage";
 import { getErrors } from "@/lib/i18n";
+import { HttpError } from "@/lib/workspace-core";
 
 // Uploads an image that will be an inspo of its own. Two ways in (lib/media-client.ts):
 // - JSON { type, size } → { url, put }: the browser PUTs the file to `put`, straight to R2.
@@ -33,6 +34,6 @@ export async function POST(req: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("Error uploading an image inspo:", msg);
-    return Response.json({ error: msg }, { status: 500 });
+    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

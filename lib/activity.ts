@@ -10,6 +10,7 @@ import { db, schema } from "./db";
 import { daySlots, dayOf, tzOffsetSeconds, startOfTodayMs } from "./days";
 import { type AdminEntry, type ActivityArea, type ActivityDay, type ActivityLogin, type ActivityOverview, type ActivityUser } from "./activity-core";
 import { getErrors } from "./i18n";
+import { HttpError } from "./workspace-core";
 
 export * from "./activity-core";
 
@@ -49,7 +50,7 @@ export async function listAdmins(): Promise<AdminEntry[]> {
 /** Grants access to an email. Returns false if it already had it. */
 export async function addAdmin(email: string, addedBy: string): Promise<{ email: string; added: boolean }> {
   const e = normEmail(email);
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new Error((await getErrors()).badEmail);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) throw new HttpError(400, (await getErrors()).badEmail);
   if (fixedAdmins().includes(e)) return { email: e, added: false };
   const res = await db.insert(schema.appAdmin).values({ email: e, addedBy: addedBy.slice(0, 80), createdAt: new Date() }).onConflictDoNothing().returning({ email: schema.appAdmin.email });
   return { email: e, added: res.length > 0 };
@@ -58,7 +59,7 @@ export async function addAdmin(email: string, addedBy: string): Promise<{ email:
 /** Removes access. Fixed ones cannot be removed. */
 export async function removeAdmin(email: string): Promise<void> {
   const e = normEmail(email);
-  if (fixedAdmins().includes(e)) throw new Error((await getErrors()).fixedAccess);
+  if (fixedAdmins().includes(e)) throw new HttpError(400, (await getErrors()).fixedAccess);
   await db.delete(schema.appAdmin).where(eq(schema.appAdmin.email, e));
 }
 

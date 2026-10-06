@@ -2,6 +2,7 @@
 // Extension keys from the web (cookie session): /extension/connect creates, /settings revokes.
 import { withCtx, canManage, HttpError } from "@/lib/workspace";
 import { createExtKey, revokeExtKey } from "@/lib/ext-keys";
+import { isMember } from "@/lib/workspace-core";
 import { getErrors } from "@/lib/i18n";
 
 /** The plain key only comes out here, once. */
@@ -14,10 +15,11 @@ export async function createKey(organizationId: string, name: string) {
   });
 }
 
-/** Its owner always; a workspace admin, any key in the workspace. */
+/** Its owner always; a workspace admin, any key that opens the workspace (any member's key, wherever it was made).
+ *  The key stops working everywhere: that member makes a new one. */
 export async function revokeKey(id: string) {
   return withCtx(async (ctx) => {
-    const r = await revokeExtKey(id, (row) => row.userId === ctx.user.id || (row.organizationId === ctx.workspace.id && canManage(ctx.workspace.role)));
+    const r = await revokeExtKey(id, async (row) => row.userId === ctx.user.id || (canManage(ctx.workspace.role) && await isMember(ctx.workspace.id, row.userId)));
     if (r === "not_found") throw new HttpError(404, (await getErrors()).keyGone);
     if (r === "forbidden") throw new HttpError(403, (await getErrors()).ownerOrAdminRevoke);
   });

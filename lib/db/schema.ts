@@ -3,7 +3,7 @@
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, bigint, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { PolishState, Why } from "@/types/polish";
 import { OUTPUT_LANGUAGES } from "../output-language";
@@ -65,6 +65,16 @@ export const verification = pgTable("verification", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("verification_identifier_idx").on(t.identifier)]);
+
+// Better Auth's rate limit counters (rateLimit in lib/auth.ts). In the database because
+// each Vercel instance has its own memory: a limit kept there resets on every cold start.
+// key is ip|path; lastRequest is epoch milliseconds.
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
 
 // A workspace = a Better Auth organization. kind and plan are our columns, declared to
 // Better Auth as additionalFields (lib/auth.ts). metadata is Better Auth's and we leave it empty.

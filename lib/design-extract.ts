@@ -1,6 +1,8 @@
 import puppeteer, { type Browser, type Page } from "puppeteer-core";
 import { gatedLaunch } from "./browser-gate";
 import fs from "fs";
+import { guardPage } from "./safe-fetch";
+import { egressArgs } from "./egress-proxy";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -107,7 +109,7 @@ async function launchChromium(): Promise<Browser> {
     return puppeteer.launch({
       executablePath: local,
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required"],
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required", ...(await egressArgs())],
     });
   }
 
@@ -115,7 +117,7 @@ async function launchChromium(): Promise<Browser> {
   chromium.setGraphicsMode = false;
   return puppeteer.launch({
     executablePath: await chromium.executablePath(),
-    args: [...chromium.args, "--hide-scrollbars", "--autoplay-policy=no-user-gesture-required"],
+    args: [...chromium.args, "--hide-scrollbars", "--autoplay-policy=no-user-gesture-required", ...(await egressArgs())],
     headless: true,
     defaultViewport: { width: 1440, height: 900 },
   });
@@ -507,6 +509,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
   signal?.addEventListener("abort", onAbort, { once: true });
   try {
     const page = await browser.newPage();
+    await guardPage(page);
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await page.setUserAgent(UA);
     await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9,es;q=0.8" });
