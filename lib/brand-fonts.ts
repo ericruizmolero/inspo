@@ -5,6 +5,7 @@ import "server-only";
 import { pageFaces } from "./ref-fonts";
 import { familyBase, familyKey } from "./font-names";
 import type { FontSource } from "@/types/brand";
+import { safeFetch } from "./safe-fetch";
 
 export interface ResolvedFace { family: string; source: FontSource; slug?: string; siteWeb?: string; weights: number[] }
 
@@ -24,7 +25,7 @@ const ALL = [100, 200, 300, 400, 500, 600, 700, 800, 900];
 
 async function css(url: string): Promise<string | null> {
   try {
-    const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "text/css,*/*" }, signal: AbortSignal.timeout(6000) });
+    const res = await safeFetch(url, { headers: { "User-Agent": UA, Accept: "text/css,*/*" }, signal: AbortSignal.timeout(6000) });
     if (!res.ok) { await res.body?.cancel(); return null; }
     return await res.text();
   } catch { return null; }

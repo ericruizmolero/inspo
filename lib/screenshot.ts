@@ -5,6 +5,8 @@ import { webKeyOf } from "./url";
 import { getFile, fileExists, putFile } from "./storage";
 import { gatedLaunch } from "./browser-gate";
 import type { PageShot } from "@/types/inspo";
+import { guardPage } from "./safe-fetch";
+import { egressArgs } from "./egress-proxy";
 
 const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
@@ -64,7 +66,7 @@ async function launchBrowser(): Promise<Browser> {
   if (IS_SERVERLESS) {
     const chromium = (await import("@sparticuz/chromium")).default;
     return puppeteer.launch({
-      args: chromium.args,
+      args: [...chromium.args, ...(await egressArgs())],
       defaultViewport: VIEWPORT,
       executablePath: await serverlessExecutablePath(),
       headless: true,
@@ -78,7 +80,7 @@ async function launchBrowser(): Promise<Browser> {
         executablePath: candidate,
         defaultViewport: VIEWPORT,
         headless: true,
-        args: ["--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"],
+        args: ["--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars", ...(await egressArgs())],
       });
     } catch { /* try next */ }
   }
@@ -102,6 +104,7 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
     // Waits for a free slot in the shared gate (lib/browser-gate.ts)
     browser = await gatedLaunch(launchBrowser);
     const page = await browser.newPage();
+    await guardPage(page);
     await page.setUserAgent(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 InspoBot/1.0"
     );

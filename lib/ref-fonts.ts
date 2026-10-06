@@ -3,8 +3,9 @@
 // tester can set a specimen in the real face instead of a fallback. The files travel through
 // /api/system/font: a site's fonts rarely carry CORS headers, and ours is the origin that asks.
 import { createHmac, timingSafeEqual } from "crypto";
-import { isPublicHttpUrl, LIVE_UA } from "./live-html";
+import { isPublicHttpUrl, BROWSER_UA } from "./extract";
 import { familyBase, familyKey } from "./font-names";
+import { safeFetch } from "./safe-fetch";
 
 export interface RefFace {
   /** The family as the site names it ("__Inter_1a2b3c", "PP Neue Montreal") */
@@ -32,7 +33,10 @@ const NOT_TYPE = /icon|awesome|glyph|material symbols|material icons|swiper|slic
 // reference's CSS, so the route is not a proxy for anything else.
 
 function secret(): string {
-  return process.env.LIVE_SECRET || process.env.BETTER_AUTH_SECRET || "dev-live-secret";
+  const s = process.env.LIVE_SECRET || process.env.BETTER_AUTH_SECRET;
+  // A known fallback would let anyone sign a URL: production has no fallback
+  if (!s && process.env.NODE_ENV === "production") throw new Error("BETTER_AUTH_SECRET is not set");
+  return s || "dev-font-secret";
 }
 const sign = (url: string) => createHmac("sha256", secret()).update(`font|${url}`).digest("hex").slice(0, 24);
 export function fontPath(url: string): string {
@@ -48,9 +52,8 @@ export function verifyFontToken(token: string, url: string): boolean {
 async function fetchText(url: string, referer: string, max: number, timeoutMs: number, accept: string): Promise<{ text: string; url: string } | null> {
   if (!isPublicHttpUrl(url)) return null;
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": LIVE_UA, Accept: accept, "Accept-Language": "en-US,en;q=0.8", Referer: referer },
-      redirect: "follow",
+    const res = await safeFetch(url, {
+      headers: { "User-Agent": BROWSER_UA, Accept: accept, "Accept-Language": "en-US,en;q=0.8", Referer: referer },
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) { await res.body?.cancel(); return null; }

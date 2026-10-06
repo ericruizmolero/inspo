@@ -9,6 +9,7 @@ import { launch } from "./design-extract";
 import { llm } from "./llm";
 import type { Voice } from "./design-why";
 import { voiceText } from "./comment-context";
+import { guardPage } from "./safe-fetch";
 
 // Locating a section from a description needs eyes and judgment: the same model as the "why"
 export const PLAN_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -333,6 +334,7 @@ async function recordSweep(page: Page, elements: Candidate[]): Promise<{ frames:
 
 async function encodeWebm(browser: Browser, frames: Frame[], region: Region, audio: { data: Buffer; mime: string; at: number } | null): Promise<{ data: Buffer; ms: number } | null> {
   const page = await browser.newPage();
+  await guardPage(page);
   try {
     await page.goto("about:blank");
     const scale = Math.min(1, 960 / region.w);
@@ -385,6 +387,7 @@ export async function listCandidates(url: string): Promise<Candidate[]> {
   const browser = await launch();
   try {
     const page = await browser.newPage();
+    await guardPage(page);
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 }).catch(async () => { await page.waitForSelector("body", { timeout: 5000 }); });
     await settle(page, 1200);
@@ -400,6 +403,7 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
   signal?.addEventListener("abort", onAbort, { once: true });
   try {
     const page = await browser.newPage();
+    await guardPage(page);
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await page.setUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36 InspoBot/1.0");
     await page.evaluateOnNewDocument(AUDIO_HOOK);

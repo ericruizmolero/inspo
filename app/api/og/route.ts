@@ -1,5 +1,6 @@
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { isPublicHttpUrl, viaProxy } from "@/lib/extract";
+import { safeFetch } from "@/lib/safe-fetch";
 
 const TTL = 60 * 60 * 24 * 30; // 30 days
 const FETCH_TIMEOUT_MS = 6000;
@@ -21,10 +22,11 @@ function extractOgImage(html: string, baseUrl: string): string | null {
   return null;
 }
 
-function fetchWithTimeout(url: string, opts: RequestInit & { next?: { revalidate: number } }) {
+// No Next data cache here (safeFetch is undici's fetch): the browser keeps the answer for TTL (LONG_CACHE)
+function fetchWithTimeout(url: string) {
   const ctrl = new AbortController();
   const id = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-  return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(id));
+  return safeFetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(id));
 }
 
 // Private: the route requires a session, so no shared CDN should cache it
@@ -44,7 +46,7 @@ export async function GET(req: Request) {
   if (!url || !isPublicHttpUrl(url)) return new Response("bad url", { status: 400 });
 
   try {
-    const proxyRes = await fetchWithTimeout(viaProxy(url) ?? url, { next: { revalidate: TTL } });
+    const proxyRes = await fetchWithTimeout(viaProxy(url) ?? url);
     if (!proxyRes.ok) return none("proxy-error");
 
     const html = await proxyRes.text();
@@ -53,7 +55,7 @@ export async function GET(req: Request) {
     if (!imageUrl) return none("no-image", NO_CACHE);
     if (!isPublicHttpUrl(imageUrl)) return none("private-image", NO_CACHE);
 
-    const imgRes = await fetchWithTimeout(imageUrl, { next: { revalidate: TTL } });
+    const imgRes = await fetchWithTimeout(imageUrl);
     if (!imgRes.ok) return none("image-fetch-failed");
     const contentType = imgRes.headers.get("content-type") ?? "";
     if (!contentType.startsWith("image/")) return none("not-an-image", NO_CACHE);
