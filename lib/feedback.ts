@@ -9,6 +9,7 @@ import { listAdmins } from "./activity";
 import { feedbackMail, sendMail, localeForEmail } from "./mail";
 import { feedbackMarkdown, pathOf, type Annotation, type FeedbackBatch, type FeedbackEvent, type FeedbackNoteView, type FeedbackOverview } from "./feedback-core";
 import { getErrors } from "./i18n";
+import { HttpError } from "./workspace-core";
 
 export * from "./feedback-core";
 
@@ -57,13 +58,15 @@ async function upsert(author: FeedbackAuthor, organizationId: string | null, ann
 
 /** Handles a bar event. Returns how many emails went out (1 only on submit). */
 export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId: string | null, ev: FeedbackEvent): Promise<{ sent: number }> {
-  const url = String(ev.url ?? "").slice(0, 1000);
+  // Becomes the button in the email to the admins: a page link, never javascript: or anything else
+  const rawUrl = String(ev.url ?? "").slice(0, 1000);
+  const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : "";
   const viewport = "viewport" in ev && typeof ev.viewport === "string" ? ev.viewport.slice(0, 40) : null;
 
   switch (ev.event) {
     case "annotation.add":
     case "annotation.update":
-      if (!validAnnotation(ev.annotation)) throw new Error((await getErrors()).missingAnnotation);
+      if (!validAnnotation(ev.annotation)) throw new HttpError(400, (await getErrors()).missingAnnotation);
       await upsert(author, organizationId, [ev.annotation], url, viewport);
       return { sent: 0 };
     case "annotation.delete":
@@ -72,12 +75,12 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
       return { sent: 0 };
     case "submit": {
       const annotations = (Array.isArray(ev.annotations) ? ev.annotations : []).filter(validAnnotation);
-      if (!annotations.length) throw new Error((await getErrors()).noNotesToSend);
+      if (!annotations.length) throw new HttpError(400, (await getErrors()).noNotesToSend);
       await upsert(author, organizationId, annotations, url, viewport);
       const path = pathOf(url);
       const markdown = typeof ev.output === "string" && ev.output.trim() ? ev.output.trim().slice(0, 60000) : feedbackMarkdown(annotations.map(slim), path, viewport);
       const to = (await listAdmins()).map((a) => a.email);
-      if (!to.length) throw new Error((await getErrors()).nobodyToNotify);
+      if (!to.length) throw new HttpError(400, (await getErrors()).nobodyToNotify);
       // Goes to the partners; the language is that of the first on the list, who reads it
       const m = feedbackMail({ author, path, url, count: annotations.length, markdown, at: new Date() }, await localeForEmail(to[0]));
       await sendMail(to, m.subject, m.html, m.text, { replyTo: author.email });
@@ -85,7 +88,7 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
       return { sent: 1 };
     }
     default:
-      throw new Error((await getErrors()).unknownEvent);
+      throw new HttpError(400, (await getErrors()).unknownEvent);
   }
 }
 

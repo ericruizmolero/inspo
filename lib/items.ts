@@ -124,21 +124,23 @@ export interface NewItem {
 
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
   const web = input.web.trim().replace(/\/+$/, "");
+  if (!web || web.length > 2048) throw new HttpError(400, (await getErrors()).badBody);
   const existing = await findByWeb(organizationId, web);
   if (existing) throw new HttpError(409, (await getErrors()).urlAlreadyHere);
   const now = new Date();
   const row: typeof T.$inferInsert = {
     id: newId(),
     organizationId,
-    name: input.name.trim(),
+    // Cut here, whatever the caller sent: a server action body can be 1 MB, and these go into model prompts
+    name: input.name.trim().slice(0, 300),
     web,
     webKey: webKeyOf(web),
     date: input.dateIso ?? now.toISOString().slice(0, 10),
     type: normalizeType(input.type),
     author: input.author,
     createdBy: input.createdBy ?? null,
-    note: (input.note ?? "").trim(),
-    subNote: (input.subNote ?? "").trim() || null,
+    note: (input.note ?? "").trim().slice(0, 4000),
+    subNote: (input.subNote ?? "").trim().slice(0, 4000) || null,
     thumbnailUrl: input.thumbnailUrl ?? null,
     via: input.via?.trim().slice(0, 40) || null,
     createdAt: now,

@@ -14,6 +14,6 @@ export async function GET(_req: Request, ctx: RouteContext<"/s/[token]/download"
   if (!share) return new Response("not found", { status: 404 });
   const view = await loadShareView(share.organizationId, share.projectId, share.mode, await getLocale(), `/s/${token}`, await requestOrigin());
   if (!view) return new Response("not found", { status: 404 });
-  const { file, fileName } = await brandZip(await getBrand(share.organizationId, share.projectId), view.name, view.markdown);
+  const { file, fileName } = await brandZip(share.organizationId, await getBrand(share.organizationId, share.projectId), view.name, view.markdown);
   return new Response(new Uint8Array(file), { headers: { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="${fileName}"`, "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer" } });
 }

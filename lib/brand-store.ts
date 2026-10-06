@@ -10,6 +10,7 @@ import { getErrors } from "./i18n";
 import { BRAND_SECTIONS, SECTION_SCHEMAS, readBrand, type BrandSection, type BrandSections, type BrandSource, type BrandSpec, type BrandSrc } from "@/types/brand";
 import type { ProjectSystem } from "@/types/system";
 import { getSystem } from "./system";
+import { brandKeyAllowed, keysIn } from "./brand-files";
 
 const S = schema.projectSystem;
 const P = schema.project;
@@ -42,6 +43,7 @@ export async function saveBrandSection(organizationId: string, projectId: string
   if (!isSection(section)) throw new HttpError(400, errors.badBody);
   const parsed = SECTION_SCHEMAS[section].safeParse(value);
   if (!parsed.success) throw new HttpError(400, errors.badBody);
+  if (keysIn(parsed.data).some((k) => !brandKeyAllowed(organizationId, k))) throw new HttpError(400, errors.badBody);
   let conflict = false;
   await withBrand(organizationId, projectId, (brand) => {
     const at = brand.meta[section]?.at ?? null;
@@ -78,6 +80,7 @@ export async function writeBrandSections(organizationId: string, projectId: stri
       if (brand.meta[k]?.src === "team" && !opts.force?.includes(k)) continue;
       const parsed = SECTION_SCHEMAS[k].safeParse(v);
       if (!parsed.success) { console.warn("brand: section refused", k, parsed.error.issues.slice(0, 3)); continue; }
+      if (keysIn(parsed.data).some((key) => !brandKeyAllowed(organizationId, key))) { console.warn("brand: section refused, a file outside the workspace", k); continue; }
       (next as unknown as Record<string, unknown>)[k] = parsed.data;
       next.meta[k] = { src, by: null, at };
       written.push(k);

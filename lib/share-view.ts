@@ -17,7 +17,7 @@ import { dictOf, type Locale } from "./i18n";
 import { refInfoOf } from "./ref-info";
 import { blocksToMd, criterioBlocks, type CriterioBlock, type RefInfo } from "./criterio-md";
 import { mediaKindOf } from "./url";
-import { projectBrandPrefix } from "./brand-files";
+import { projectBrandPrefix, brandKeyAllowed, keysIn } from "./brand-files";
 import type { ShareMode } from "./share";
 import type { SystemArea } from "@/types/system";
 import type { BrandRef } from "@/components/brand/context";
@@ -77,9 +77,8 @@ export async function loadShareView(organizationId: string, projectId: string, m
   // The brand's own files
   const brand = system.brand;
   if (brand) {
-    const files = [brand.logo.primary.light, brand.logo.primary.dark, brand.logo.mark.light, brand.logo.mark.dark, brand.applications.heroFile, ...brand.imagery.files, ...brand.assets.files].filter((f): f is NonNullable<typeof f> => !!f);
-    for (const f of files) keys.add(f.key);
-    for (const face of brand.typography.faces) for (const f of face.files ?? []) keys.add(f.key);
+    // Only the workspace's own files, whatever the stored brand says (saved before this check existed, or by hand)
+    for (const key of keysIn(brand)) if (brandKeyAllowed(organizationId, key)) keys.add(key);
   }
 
   // criterio.md, as this link hands it out

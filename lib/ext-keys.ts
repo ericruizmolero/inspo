@@ -1,7 +1,7 @@
 // Browser extension access keys (ext_key table).
 // The full key is shown only once on creation; the database keeps only its
-// SHA-256. Each key grants access to ONE workspace on behalf of the person who created it, as long as
-// that person is still a member and the key isn't revoked.
+// SHA-256. A key acts for the person who created it, in every workspace they belong to (the extension
+// switches between them with X-Workspace), until it is revoked.
 import "server-only";
 import { createHash, randomBytes } from "crypto";
 import { and, eq, isNull } from "drizzle-orm";
@@ -9,6 +9,7 @@ import { db, schema } from "./db";
 import { isMember, listWorkspaces, newId, type SessionUser, type Workspace } from "./workspace-core";
 import { toLocale } from "./i18n/locale";
 import { getErrors } from "./i18n";
+import { HttpError } from "./workspace-core";
 
 const T = schema.extKey;
 export const KEY_PREFIX = "crit_";
@@ -24,7 +25,7 @@ export interface ExtKeyRow {
 
 /** Creates a key for (user, workspace). Returns the plain key: the only time it exists. */
 export async function createExtKey(userId: string, organizationId: string, name: string): Promise<{ key: string; row: ExtKeyRow }> {
-  if (!(await isMember(organizationId, userId))) throw new Error((await getErrors()).notAMember);
+  if (!(await isMember(organizationId, userId))) throw new HttpError(400, (await getErrors()).notAMember);
   const key = KEY_PREFIX + randomBytes(24).toString("base64url"); // crit_ + 32 characters
   const row = {
     id: newId(), hash: sha256(key), prefix: key.slice(0, KEY_PREFIX.length + 6),
@@ -36,21 +37,23 @@ export async function createExtKey(userId: string, organizationId: string, name:
   return { key, row: pub };
 }
 
-/** A workspace's active keys, with the creator's name (for the members settings). */
+/** Every active key that opens this workspace: the keys of its members, wherever each was created.
+ *  A key made in someone's personal workspace still opens the team, so the team's admins must see it. */
 export async function listExtKeys(organizationId: string) {
   return db
     .select({ id: T.id, prefix: T.prefix, name: T.name, userId: T.userId, userName: schema.user.name, createdAt: T.createdAt, lastUsedAt: T.lastUsedAt })
     .from(T)
     .innerJoin(schema.user, eq(T.userId, schema.user.id))
-    .where(and(eq(T.organizationId, organizationId), isNull(T.revokedAt)))
+    .innerJoin(schema.member, and(eq(schema.member.userId, T.userId), eq(schema.member.organizationId, organizationId)))
+    .where(isNull(T.revokedAt))
     .orderBy(T.createdAt);
 }
 
 /** Revokes a key. Its owner or a workspace admin can revoke it (the caller decides). */
-export async function revokeExtKey(id: string, allow: (row: { userId: string; organizationId: string }) => boolean): Promise<"ok" | "not_found" | "forbidden"> {
+export async function revokeExtKey(id: string, allow: (row: { userId: string; organizationId: string }) => boolean | Promise<boolean>): Promise<"ok" | "not_found" | "forbidden"> {
   const [row] = await db.select({ userId: T.userId, organizationId: T.organizationId, revokedAt: T.revokedAt }).from(T).where(eq(T.id, id)).limit(1);
   if (!row || row.revokedAt) return "not_found";
-  if (!allow(row)) return "forbidden";
+  if (!(await allow(row))) return "forbidden";
   await db.update(T).set({ revokedAt: new Date() }).where(eq(T.id, id));
   return "ok";
 }

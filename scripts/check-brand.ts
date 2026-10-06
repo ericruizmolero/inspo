@@ -59,7 +59,7 @@ async function main() {
     const brand = await getBrand(m.org, project.id);
     assert.match(tokensCss(brand, "Check"), /--color-ink: #101216;/);
     JSON.parse(tokensJson(brand));
-    const { file } = await brandZip({ ...brand, logo: { ...brand.logo, mark: { light: { key: k, type: "image/png" }, dark: null } } }, "Check", "# md");
+    const { file } = await brandZip(m.org, { ...brand, logo: { ...brand.logo, mark: { light: { key: k, type: "image/png" }, dark: null } } }, "Check", "# md");
     assert.match(file.toString("latin1"), /icons\/favicon-32\.png/);
     console.log("✓ tokens and zip");
 
