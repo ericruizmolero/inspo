@@ -2328,11 +2328,12 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 /* Zoomed far out a note is a few words a line: only the pages remain (Grid.tsx BARE_COL) */
 .board[data-bare] .tile__note, .board[data-bare] .tile__caption, .board[data-bare] .tile__actions { display: none; }
 
-/* Zoom: how many columns, said as a size (100% is the usual one). A white pill in the bottom-left corner,
-   the island's material. Its left edge is the island's, its middle is the search dock's middle
-   (20 + 56/2 = 26 + 44/2). A phone gets its columns from its width alone. */
+/* Zoom: how many columns, said as a size (100% is the usual one). A pill in the bottom-left corner, the
+   island's material, as far from the side as from the bottom (12 px, the island's left edge; Eric, 06-10).
+   Its middle is the theme button's across the board (12 + 44/2 = 16 + 36/2). A phone gets its columns from
+   its width alone. */
 .board-zoom {
-  position: absolute; left: 12px; bottom: calc(26px + env(safe-area-inset-bottom)); z-index: 12;
+  position: absolute; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 12;
   display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 5px;
   border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
@@ -2344,6 +2345,30 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 @media (hover: hover) and (pointer: fine) { .board-zoom button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
 .board-zoom button:active { transform: scale(0.96); }
 .board-zoom button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+
+/* Light or dark, one click (components/ThemeToggle.tsx): the icon is the theme the click leads to. A small glass
+   button tucked into the bottom-right corner, as far from the side as from the bottom (16 px, the top bar's
+   right edge; Eric, 06-10), on the zoom pill's middle. Quiet until the pointer comes near. A phone has it in
+   the sidebar instead. */
+.theme-toggle__moon, :root[data-theme="light"] .theme-toggle__sun { display: none; }
+:root[data-theme="light"] .theme-toggle__moon { display: block; }
+.theme-float {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12;
+  display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 12px;
+  background: var(--dock-surface); color: var(--dock-muted);
+  cursor: pointer; opacity: 0.7; --focus-ring: var(--dock-ink);
+  transition: opacity 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
+}
+.theme-float:active { transform: scale(0.96); }
+.theme-float:focus-visible { opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .theme-float:hover { opacity: 1; color: var(--dock-ink); } }
+/* Unsent feedback notes bring their dock to this corner: the button waits above it */
+body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-inset-bottom)); }
+@media (max-width: 800px) { .theme-float { display: none; } }
+/* A theme changed by hand crosses over as one picture, in 600 ms (switchTheme in lib/theme.ts) */
+:root[data-theme-switch]::view-transition-group(*), :root[data-theme-switch]::view-transition-old(*), :root[data-theme-switch]::view-transition-new(*) {
+  animation-duration: 600ms; animation-timing-function: var(--ease-in-out);
+}
 .board-zoom__btn { width: 34px; color: var(--dock-ink); }
 .board-zoom__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 @media (max-width: 800px) { .board-zoom { display: none; } }
@@ -2607,7 +2632,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 @media (max-width: 560px) { .chooser { padding-left: 16px; padding-right: 16px; } .chooser__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { .chooser__more, .chooser__more-inner, .chooser__cover, .chooser__send { transition: none; } }
 
-/* ─── Glass, not white: the island, the actions pill, the search dock and the zoom pill are dark glass,
+/* ─── Glass, not white: the island, the actions pill, the search dock, the zoom pill and the theme button are dark glass,
    almost transparent, with white ink and a hairline of light where the edge catches it ─── */
 :root {
   --dock-ink: #f2f2ef; --dock-ink-2: #cfcfca; --dock-muted: #9a9a94;
@@ -2620,14 +2645,14 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.2);
   --dock-blur: blur(20px) saturate(1.5);
 }
-.island, .island-pop.island-pop, .board-zoom, .sb--dock .sb__menu,
+.island, .island-pop.island-pop, .board-zoom, .theme-float, .sb--dock .sb__menu,
 .shell:not(.shell--docked) .topbar__actions {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
 .sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
-.island, .board-zoom, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
+.island, .board-zoom, .theme-float, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
 .island__tab.is-on { box-shadow: none; }
 /* The search dock's field reads white text too */
 .sb--dock .sb__field input, .sb--dock .sb__field .input { color: var(--dock-ink); }
@@ -2761,7 +2786,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   --dock-shadow: 0 10px 30px -12px rgba(30, 30, 20, 0.22), 0 1px 3px rgba(30, 30, 20, 0.08);
   --dock-blur: blur(24px) saturate(1.6);
 }
-:root[data-theme="light"] :is(.island, .board-zoom, .shell:not(.shell--docked) .topbar__actions) {
+:root[data-theme="light"] :is(.island, .board-zoom, .theme-float, .shell:not(.shell--docked) .topbar__actions) {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
 :root[data-theme="light"] .sb--dock .sb__field,

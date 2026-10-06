@@ -57,7 +57,7 @@ Menú flotante de Base UI (posicionador en z 55). Las filas usan `.ws__item`. Es
 
 ### Barra lateral
 `AppSidebar` · `components/Sidebar.tsx` · `.app-sidebar` · `.nav-item`
-Navegación sobre el sidebar de shadcn: añadir, Todo, Inbox, proyectos, directorio con 7 picks barajables, feedback y medidor del plan. **Solo se monta en móvil**; en escritorio navega la Isla. ⌘B / Ctrl+B la pliega.
+Navegación sobre el sidebar de shadcn: añadir, Todo, Inbox, proyectos, directorio con 7 picks barajables, feedback, cambiar tema y medidor del plan. **Solo se monta en móvil**; en escritorio navega la Isla. ⌘B / Ctrl+B la pliega.
 - Exporta piezas que se usan fuera: `Icons` (iconos de 16 px), `FillRing` (anillo de progreso del sistema, en Isla y selector de proyectos), `PlanMeter`, `SearchBox`.
 
 ### Anillo de progreso
@@ -79,6 +79,10 @@ Foto o inicial sobre un tono derivado del nombre. En tarjetas, documento, hilos 
 ### Selector de tema
 `ThemeSwitch` · `components/ThemeSwitch.tsx` · `.theme-seg` · muestra: segmentado
 Control segmentado Sistema / Claro / Oscuro. Aplica `data-theme` al momento, lo guarda en el navegador y sigue `prefers-color-scheme` en vivo. Solo en Ajustes › Cuenta.
+
+### Botón de tema
+`ThemeToggle` · `components/ThemeToggle.tsx` · `.theme-float` · `.theme-toggle`
+Un clic entre claro y oscuro. En escritorio, un botón de cristal de 36 px que flota en la esquina inferior derecha, a 16 px de cada pared y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
 ### Selector de idioma
 `LangSwitch` · `components/LangSwitch.tsx` · `.select`
@@ -110,7 +114,7 @@ Lo que el agente hizo, con deshacer; sus preguntas con opciones; y lo destructiv
 ### Tablero
 `Grid` · `components/Grid.tsx` · `.board` · captura: tablero
 Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y solo se montan las tarjetas cercanas a la pantalla.
-- Zoom por columnas: `.board-zoom` (− % +), pellizco o ⌘/Ctrl+rueda. Abre un paso más lejos que el 100 %.
+- Zoom por columnas: `.board-zoom` (− % +) en la esquina inferior izquierda, a 12 px de cada pared; pellizco o ⌘/Ctrl+rueda. Abre un paso más lejos que el 100 %.
 - Las tarjetas se deslizan a su nuevo sitio con una transición CSS de `transform`.
 - Cada tarjeta pide la copia de captura que necesita: 288, 720 o 1440 px.
 

@@ -706,6 +706,7 @@ export const ui: typeof EnUi = {
     system: "Sistema",
     light: "Claro",
     dark: "Oscuro",
+    toggle: "Cambiar tema",
   },
   login: {
     pageTitle: "Entrar",

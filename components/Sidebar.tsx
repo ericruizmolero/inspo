@@ -8,6 +8,7 @@ import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import FeedbackEntry from "./FeedbackEntry";
+import ThemeToggle from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -485,6 +486,7 @@ export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, o
 
       <SidebarFooter className="app-sidebar__footer">
         <FeedbackEntry onPick={onPick} />
+        <ThemeToggle row />
         {quota && <PlanMeter quota={quota} />}
       </SidebarFooter>
     </>

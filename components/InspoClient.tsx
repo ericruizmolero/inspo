@@ -13,6 +13,7 @@ import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
 import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, type Filter } from "@/lib/search-query";
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Connectors from "./Connectors";
+import ThemeToggle from "./ThemeToggle";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
 import InspoCard, { captionFor } from "./InspoCard";
@@ -1481,6 +1482,7 @@ export default function InspoClient({
         onDirectory={openDirectory}
       />}
       {boardDrag && <div className="board-drop" aria-hidden><span className="display">{t.add.dropHere}</span></div>}
+      <ThemeToggle />
       {showAdd && (
         <AddInspoModal
           onClose={() => { setShowAdd(false); setAddInitial(undefined); }}
