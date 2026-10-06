@@ -11,6 +11,7 @@ import { disconnectApp, loadConnections } from "@/app/actions/mcp";
 import { timeAgo } from "@/lib/i18n/format";
 import type { McpConnection } from "@/lib/mcp/oauth";
 import "./ConnectDialog.css";
+import { Liquid } from "@/components/ui/liquid";
 
 type Client = "claude" | "chatgpt" | "code" | "cursor";
 const CLIENTS: Client[] = ["claude", "chatgpt", "code", "cursor"];
@@ -52,9 +53,9 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
             <code>{url}</code>
             <button type="button" onClick={() => void copy("url", url)}>{copied === "url" ? s.copied : s.copy}</button>
           </div>
-          <div className="mcpc__tabs" role="tablist">
+          <Liquid className="mcpc__tabs" role="tablist">
             {CLIENTS.map((c) => <button key={c} type="button" role="tab" aria-selected={client === c} className={client === c ? "is-on" : ""} onClick={() => pick(c)}>{s.clients[c]}</button>)}
-          </div>
+          </Liquid>
           <ol className="mcpc__steps">
             <li>{steps[0]}{snippet && (
               <span className="mcpc__snippet">

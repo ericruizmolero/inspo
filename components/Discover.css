@@ -1,17 +1,32 @@
 /* ─── Discover (components/Discover.tsx): the directory as a list, group by group, with its shelves and kinds on top ─── */
 .disc-card__new { flex-shrink: 0; padding: 2px 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--bg); background: var(--text); }
-.disc__bar { position: absolute; left: 20px; right: 20px; top: 72px; z-index: 6; display: flex; align-items: center; gap: 12px; min-width: 0; pointer-events: none; }
-.disc__bar > * { pointer-events: auto; }
-.disc__shelves { flex-shrink: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+/* The head of the page, the same in the three sections and in their column, as a project's page has it (.spage-head):
+   the name and what the open section holds, then one row with the sections on the left and its controls on the right.
+   It all scrolls away with the page: over the content only the top bar floats */
+.disc-head { max-width: 1040px; margin: 0 auto; }
+.disc-title { margin: 0; font-family: var(--font-display, var(--font)); font-size: clamp(26px, 2.6vw, 36px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
+.disc-lead { margin: 8px 0 0; max-width: 62ch; font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.disc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; min-width: 0; max-width: 1040px; margin: 18px auto 28px; }
+.disc-bar__side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.disc-bar__link { font-size: 13px; color: var(--text-2); text-decoration: none; }
+.disc-bar__link:hover { color: var(--text); }
+/* The segmented control of the row: the sections and the shelves. Here and not with the templates' styles, so it is
+   dressed too when the page opens straight on the resources or the skills. The fill of the chosen one is Liquid's */
+.tt-modes { display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--surface); flex-shrink: 0; }
+.tt-mode { height: 28px; padding: 0 11px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 12.5px; cursor: pointer; }
+.tt-mode:hover { color: var(--text); } .tt-mode.is-on { color: var(--text); }
+/* Over the templates' cards the head and the row are two more pieces of their column, which keeps its own gaps */
+.tpls-inner > :is(.disc-head, .disc-bar) { width: 100%; margin: 0; }
 .disc__shelves .tt-mode { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
 .disc__shelves .tt-mode b { font-weight: 450; color: var(--muted); }
 .disc__group svg { width: 11px; height: 11px; margin-left: 2px; }
-.disc__group { flex-shrink: 0; display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--text-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s; }
+.disc__group { flex-shrink: 0; display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--surface); color: var(--text-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s; }
 .disc__group:hover { color: var(--text); background: var(--surface-2); }
 .disc__group.is-on { background: var(--text); color: var(--bg); }
 /* Discover as a list: the directory group by group */
-.disc-list { position: absolute; inset: 0; overflow-y: auto; padding: 232px 28px 72px; background: var(--bg); }
-.disc-list__group { max-width: 1100px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
+/* The gutter of the scrollbar is kept in every section (as .tpls keeps it), so the column never shifts between a short one and a long one */
+.disc-list { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }
+.disc-list__group { max-width: 1040px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
 .disc-list__head h2 { margin: 0; font-size: 17px; font-weight: 550; color: var(--text); }
 .disc-list__head p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 .disc-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
@@ -30,19 +45,11 @@
    (opacity, transform); never catches the pointer */
 .disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-s); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-pop); pointer-events: none; opacity: 0; transform: scale(0.85); will-change: translate, transform, opacity; }
 .disc-peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.disc-list__none { margin: 0 auto; max-width: 1320px; font-size: 13px; color: var(--muted); }
+.disc-list__none { margin: 0 auto; max-width: 1040px; font-size: 13px; color: var(--muted); }
 
-/* Resources or templates: the first choice on the bar; with templates open their page sits below it */
-.disc__sections { flex-shrink: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-.tpls:has(+ .disc__bar) { padding-top: 232px; }
-/* An open template is a page of its own: it starts right under the bar, without the air the lists keep on top */
-.tpls:has(.tpls-back), .tpls:has(.tpls-back):has(+ .disc__bar) { padding-top: 132px; }
 
 /* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command ─── */
-.disc-skills__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.disc-skills__catalog { flex-shrink: 0; font-size: 13px; color: var(--text-2); text-decoration: none; }
-.disc-skills__catalog:hover { color: var(--text); }
-.disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 8px 0 0; padding: 0; list-style: none; }
+.disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .disc-skill { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border-radius: var(--radius-l); background: var(--panel); transition: background 0.15s var(--ease-out); }
 @media (hover: hover) { .disc-skill:hover { background: var(--surface); } }
 .disc-skill:has(.disc-skill__name:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -60,4 +67,3 @@
 .disc-skill__install span { flex-shrink: 0; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-2); background: var(--surface-2); }
 .disc-skill__install:hover { color: var(--text-2); } .disc-skill__install:hover span { color: var(--text); }
 .disc-skill__install.is-copied span { color: var(--bg); background: var(--text); }
-@media (max-width: 560px) { .disc-skills__head { flex-direction: column; align-items: flex-start; } }

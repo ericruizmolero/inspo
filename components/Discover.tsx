@@ -2,7 +2,7 @@
 // Discover: the library of libraries as a list, group by group, in the directory's own order: one line per site,
 // its name, what it is and its domain; a click opens it. On top: everything, what just came in or what we open
 // most, and the kinds of resource in a menu. Beside it, the templates (whole systems to start a project from) and the
-// skills for agents, a list of their own.
+// skills for agents, a list of their own. The three share one head, in the column of the content.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DIRECTORY, SKILLS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
@@ -12,6 +12,7 @@ import type { directory as enDirectory } from "@/lib/i18n/en/directory";
 import { useT } from "./I18nProvider";
 import DiscoverSkills from "./DiscoverSkills";
 import "./Discover.css";
+import { Liquid, afterPaint } from "@/components/ui/liquid";
 
 interface Site extends DirectorySite { group: string }
 /** Everything, what came in lately (the last 30 days), or what we open most */
@@ -26,68 +27,71 @@ const inShelf = (s: Site, shelf: Shelf) => shelf === "all" || (shelf === "new" ?
 const matching = (group: string | null, shelf: Shelf = "all") => ALL.filter((s) => (!group || s.group === group) && inShelf(s, shelf));
 
 /** Discover: the places to look, and the templates, whole systems to start a project from */
-export default function Discover({ section = "sites", onSection, templates }: {
-  section?: Section;
-  onSection?: (s: Section) => void;
-  /** The templates' own view, rendered here when that section is chosen */
-  templates?: React.ReactNode;
+export default function Discover({ section, onSection, templates }: {
+  section: Section;
+  onSection: (s: Section) => void;
+  /** The templates' own view, rendered when that section is chosen, under the page's head */
+  templates: (head: React.ReactNode) => React.ReactNode;
 }) {
   const { t } = useT();
   const [group, setGroup] = useState<string | null>(null);
   const [shelf, setShelf] = useState<Shelf>("all");
   const [groupsOpen, setGroupsOpen] = useState(false);
   const groupTitle = (k: string) => t.directory.groups[k as GroupKey]?.title ?? k;
-  const sections = templates && onSection && (
-    <div className="tt-modes disc__sections" role="tablist" aria-label={t.discover.sections.label}>
-      {(["templates", "sites", "skills"] as const).map((k) => (
-        <button key={k} type="button" role="tab" aria-selected={section === k} className={`tt-mode${section === k ? " is-on" : ""}`} onClick={() => onSection(k)}>{t.discover.sections[k]}</button>
-      ))}
-    </div>
-  );
-  if (section === "templates" && templates) return (
+  // The head of the page, the same in the three sections and in their column, as a project's page has it: the name
+  // on top with what the open section holds, and below one row with the sections on the left and, on the right,
+  // what the open one is looked through with. It scrolls away with the page
+  const head = (lead: string, side?: React.ReactNode) => (
     <>
-      {templates}
-      <div className="disc__bar">{sections}</div>
-    </>
-  );
-  if (section === "skills") return (
-    <>
-      <DiscoverSkills sites={SKILLS} />
-      <div className="disc__bar">{sections}</div>
-    </>
-  );
-  return (
-    <>
-      <DiscoverList group={group} shelf={shelf} />
-      <div className="disc__bar">
-        {sections}
-        {/* What to look at first: everything, what just came in, what we open most. The kinds of resource wait in a menu */}
-        <div className="tt-modes disc__shelves" role="tablist" aria-label={t.discover.shelves}>
-          {(["all", "new", "featured"] as const).filter((k) => k !== "new" || FRESH.length > 0).map((k) => (
-            <button key={k} type="button" role="tab" aria-selected={shelf === k} className={`tt-mode${shelf === k ? " is-on" : ""}`} onClick={() => setShelf(k)}>
-              {t.discover.shelf[k]}{k === "new" && <b>{FRESH.length}</b>}
-            </button>
+      <header className="disc-head">
+        <h1 className="disc-title">{t.sidebar.discover}</h1>
+        <p className="disc-lead">{lead}</p>
+      </header>
+      <div className="disc-bar">
+        <Liquid className="tt-modes" role="tablist" aria-label={t.discover.sections.label}>
+          {(["templates", "sites", "skills"] as const).map((k) => (
+            <button key={k} type="button" role="tab" aria-selected={section === k} className={`tt-mode${section === k ? " is-on" : ""}`} onClick={() => afterPaint(() => onSection(k))}>{t.discover.sections[k]}</button>
           ))}
-        </div>
-        <Popover open={groupsOpen} onOpenChange={setGroupsOpen}>
-          <PopoverTrigger className={`disc__group${group ? " is-on" : ""}`}>
-            {group ? groupTitle(group) : t.discover.groups} {Icons.chevron}
-          </PopoverTrigger>
-          <PopoverContent align="start" className="pp pp--menu">
-            <button type="button" className={`ws__item${group === null ? " is-active" : ""}`} onClick={() => { setGroup(null); setGroupsOpen(false); }}>
-              <span className="ws__item-name">{t.discover.all}</span>{group === null && <span className="ws__item-check">{Icons.check}</span>}
-            </button>
-            {DIRECTORY.map((g) => (
-              <button key={g.key} type="button" className={`ws__item${group === g.key ? " is-active" : ""}`} title={t.directory.groups[g.key as GroupKey]?.hint}
-                onClick={() => { setGroup(g.key); setGroupsOpen(false); }}>
-                <span className="ws__item-name">{groupTitle(g.key)}</span>{group === g.key && <span className="ws__item-check">{Icons.check}</span>}
-              </button>
-            ))}
-          </PopoverContent>
-        </Popover>
+        </Liquid>
+        {side && <div className="disc-bar__side">{side}</div>}
       </div>
     </>
   );
+  if (section === "templates") return templates(head(t.templates.lead));
+  if (section === "skills") {
+    const catalog = SKILLS.find((s) => !s.install);
+    return <DiscoverSkills sites={SKILLS} head={head(t.directory.groups.skills.hint,
+      catalog && <a className="disc-bar__link" href={catalog.url} target="_blank" rel="noopener noreferrer">{t.discover.skills.catalog(catalog.name)} ↗</a>)} />;
+  }
+  // What to look at first: everything, what just came in, what we open most. The kinds of resource wait in a menu
+  const filters = (
+    <>
+      <Liquid className="tt-modes disc__shelves" role="tablist" aria-label={t.discover.shelves}>
+        {(["all", "new", "featured"] as const).filter((k) => k !== "new" || FRESH.length > 0).map((k) => (
+          <button key={k} type="button" role="tab" aria-selected={shelf === k} className={`tt-mode${shelf === k ? " is-on" : ""}`} onClick={() => setShelf(k)}>
+            {t.discover.shelf[k]}{k === "new" && <b>{FRESH.length}</b>}
+          </button>
+        ))}
+      </Liquid>
+      <Popover open={groupsOpen} onOpenChange={setGroupsOpen}>
+        <PopoverTrigger className={`disc__group${group ? " is-on" : ""}`}>
+          {group ? groupTitle(group) : t.discover.groups} {Icons.chevron}
+        </PopoverTrigger>
+        <PopoverContent align="end" className="pp pp--menu">
+          <button type="button" className={`ws__item${group === null ? " is-active" : ""}`} onClick={() => { setGroup(null); setGroupsOpen(false); }}>
+            <span className="ws__item-name">{t.discover.all}</span>{group === null && <span className="ws__item-check">{Icons.check}</span>}
+          </button>
+          {DIRECTORY.map((g) => (
+            <button key={g.key} type="button" className={`ws__item${group === g.key ? " is-active" : ""}`} title={t.directory.groups[g.key as GroupKey]?.hint}
+              onClick={() => { setGroup(g.key); setGroupsOpen(false); }}>
+              <span className="ws__item-name">{groupTitle(g.key)}</span>{group === g.key && <span className="ws__item-check">{Icons.check}</span>}
+            </button>
+          ))}
+        </PopoverContent>
+      </Popover>
+    </>
+  );
+  return <DiscoverList group={group} shelf={shelf} head={head(t.discover.lead, filters)} />;
 }
 
 /** The list: the directory group by group, in its own order, each with what it is for; one line per site */
@@ -180,7 +184,7 @@ function usePeek() {
   return { node, show, place, hide, warm };
 }
 
-function DiscoverList({ group, shelf }: { group: string | null; shelf: Shelf }) {
+function DiscoverList({ group, shelf, head }: { group: string | null; shelf: Shelf; head: React.ReactNode }) {
   const { t } = useT();
   const peek = usePeek();
   const groups = useMemo(() => {
@@ -190,6 +194,7 @@ function DiscoverList({ group, shelf }: { group: string | null; shelf: Shelf }) 
   return (
     <div className="disc-list" onScroll={peek.hide}>
       {peek.node}
+      {head}
       {groups.map((g) => {
         const text = t.directory.groups[g.key as keyof typeof t.directory.groups];
         return (

@@ -42,7 +42,7 @@ const ActionSchema = z.discriminatedUnion("kind", [
   // Not a command: a search of the library, run by the interface
   z.object({ kind: z.literal("search"), text: z.string() }),
   // Go somewhere: a project (or "inbox", "library", "home"), a view, an area
-  z.object({ kind: z.literal("go"), project: z.string().nullable(), view: z.enum(["system", "board"]).nullable(), area: Area.nullable() }),
+  z.object({ kind: z.literal("go"), project: z.string().nullable(), view: z.enum(["system", "polish", "board"]).nullable(), area: Area.nullable() }),
   z.object({ kind: z.literal("file"), items: z.array(z.string()), project: z.string(), on: z.boolean() }),
   z.object({ kind: z.literal("assign"), items: z.array(z.string()), project: z.string(), area: Area, on: z.boolean() }),
   // Writes the area as the team's: the person dictated it, runs leave it alone
@@ -91,7 +91,7 @@ export interface AgentScope {
   projectId?: string | null;
   /** "inbox" | "library" | "home" | a project id */
   space?: string | null;
-  view?: "system" | "board" | null;
+  view?: "system" | "polish" | "board" | null;
   /** The area open in the system, if any */
   area?: string | null;
   /** The reference open in the panel, if any */
@@ -133,7 +133,7 @@ export interface AgentDone {
   /** ask: the answers to pick from, each the order it would give */
   options?: { label: string; order: string }[];
   /** For the interface's own actions */
-  go?: { space: string | null; view: "system" | "board" | null; area: SystemArea | null };
+  go?: { space: string | null; view: "system" | "polish" | "board" | null; area: SystemArea | null };
 }
 
 /** What changed, so the interface catches up without reloading */
@@ -172,7 +172,7 @@ THE TOOL
 THE CATALOGUE (kind: what it does)
 Moving around
 - search: search the library by words. Never guess ids for a search.
-- go: open a project (or "inbox", "library", "home"), a view ("system" or "board"), an area.
+- go: open a project (or "inbox", "library", "home"), a view ("board", "polish" to go through the board card by card keeping or forgetting each, or "system"), an area.
 Filing
 - file: put references in a project (on: true) or take them out (on: false).
 - assign: hang references from an area of a project's system (on: true) or take them off it (on: false). It files them in the project too.

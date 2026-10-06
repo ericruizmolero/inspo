@@ -29,6 +29,7 @@ import ShareDialog from "./brand/ShareDialog";
 import { fileUrl } from "@/lib/files-path";
 import { mediaKindOf } from "@/lib/url";
 import "./SystemView.css";
+import { Liquid } from "@/components/ui/liquid";
 
 // Three ways to see the project, in one row of tabs: criterio.md as the Markdown it is, the same file set as a
 // document, and the brand as a presentation. The document look is not remembered: the file opens as Markdown,
@@ -232,11 +233,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
   };
 
   const views = (
-    <div className="spage-views" role="tablist" aria-label={project.name}>
+    <Liquid className="spage-views" role="tablist" aria-label={project.name}>
       {(["markdown", "doc", "presentation"] as const).map((v) => (
         <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "is-on" : ""} onClick={() => setView(v)}>{v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation}</button>
       ))}
-    </div>
+    </Liquid>
   );
   const actions = (
     <div className="spage-head__actions">

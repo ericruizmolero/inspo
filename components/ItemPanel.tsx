@@ -6,6 +6,7 @@ import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { readableDomain } from "@/lib/url";
+import { Liquid } from "@/components/ui/liquid";
 
 const IcX = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" /></svg>
@@ -144,11 +145,11 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
             </div>
           </div>
           {criterio && (
-            <div className="dm-tabs ip-bar__tabs" role="tablist">
+            <Liquid className="dm-tabs ip-bar__tabs" role="tablist">
               {([["page", t.panel.tabPage], ["criterio", t.panel.tabCriterio]] as const).map(([v, label]) => (
                 <button key={v} role="tab" aria-selected={view === v} className={`dm-tab${view === v ? " is-active" : ""}`} onClick={() => setView(v)}>{label}</button>
               ))}
-            </div>
+            </Liquid>
           )}
           <Button variant="icon" className="ip-bar__close" onClick={leave} aria-label={t.common.close}>{IcX}</Button>
         </header>

@@ -443,7 +443,7 @@
 .bimp__lead { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
 .bimp__tabs { display: inline-flex; align-self: flex-start; padding: 3px; border-radius: 10px; background: var(--surface); }
 .bimp__tabs button { height: 28px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
-.bimp__tabs button.is-on { background: var(--surface-3); color: var(--text); }
+.bimp__tabs button.is-on { color: var(--text); }
 .bimp__form { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .bimp__form > .btn { align-self: flex-start; }
 .bimp__hint { margin: 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }

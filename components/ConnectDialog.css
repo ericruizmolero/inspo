@@ -12,7 +12,7 @@
 .mcpc__addr button:hover, .mcpc__snippet button:hover, .mcpc__apps li button:hover { color: var(--text); }
 .mcpc__tabs { display: inline-flex; align-self: flex-start; padding: 3px; border-radius: 10px; background: var(--surface); }
 .mcpc__tabs button { height: 28px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
-.mcpc__tabs button.is-on { background: var(--surface-3, var(--surface-2)); color: var(--text); }
+.mcpc__tabs button.is-on { color: var(--text); }
 .mcpc__steps { list-style: decimal; margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
 .mcpc__steps li::marker { color: var(--muted); }
 .mcpc__snippet { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 6px; padding: 8px 12px; border-radius: var(--radius-s); background: var(--surface); }

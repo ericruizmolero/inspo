@@ -90,6 +90,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "sections",
     items: [
+      { name: "Details", url: "https://www.details.so", added: "2026-10-06" },
       { name: "Supahero", url: "https://supahero.io" },
       { name: "Navbar Gallery", url: "https://navbar.gallery" },
       { name: "Footer.design", url: "https://footer.design" },

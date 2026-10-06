@@ -6,6 +6,7 @@ import type { CatalogTab } from "@/lib/design-system";
 import DsMarkdown from "./DsMarkdown";
 import { Sample } from "./Specimens";
 import "./DesignLibrary.css";
+import { Liquid } from "@/components/ui/liquid";
 
 function Chip({ text }: { text: string }) {
   const [done, setDone] = useState(false);
@@ -24,13 +25,13 @@ export default function Catalog({ tabs }: { tabs: CatalogTab[] }) {
   const current = tabs.find((t) => t.id === tab) ?? tabs[0];
   return (
     <div className="ds-specimen">
-      <div className="ds-seg" role="tablist">
+      <Liquid className="ds-seg" role="tablist">
         {tabs.map((t) => (
           <button key={t.id} type="button" role="tab" aria-pressed={t.id === current.id} aria-selected={t.id === current.id} onClick={() => setTab(t.id)}>
             {t.name} <span className="ds-count">{t.items.length}</span>
           </button>
         ))}
-      </div>
+      </Liquid>
       <div className="ds-catalog">
         {current.items.map((it) => (
           <article key={it.id} id={it.id} className={`ds-comp${it.unused ? " is-off" : ""}`}>

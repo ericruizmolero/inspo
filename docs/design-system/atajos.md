@@ -38,6 +38,16 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | Doble clic en la papelera de una tarjeta | Borra la referencia (el primer clic pide el segundo) |
 | Esc en una tarjeta | Cancela el borrado a medias (también se cancela al sacar el puntero o solo a los 6 s) |
 
+## Pulido
+
+| Tecla | Qué hace |
+| --- | --- |
+| ← | Olvidar la tarjeta de delante (vuelve al Inbox) |
+| → | Conservarla (se queda en el tablón) |
+| Rueda o arrastrar | Pasar de una tarjeta a otra sin decidir |
+| Enter | Abrir la ficha de la tarjeta de delante |
+| ⌘Z / Ctrl+Z | Deshacer la última decisión |
+
 ## Sistema y criterio.md
 
 | Tecla | Qué hace |

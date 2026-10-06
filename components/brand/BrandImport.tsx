@@ -14,6 +14,7 @@ import { seedBrandFromClient } from "@/app/actions/brand";
 import { familyBase, familyKey, weightInName } from "@/lib/font-names";
 import { uploadBrandFile } from "./upload";
 import type { UploadPurpose } from "./context";
+import { Liquid } from "@/components/ui/liquid";
 
 type Tab = "site" | "files" | "text";
 type Step = { label: string; state: "wait" | "run" | "done" | "fail" };
@@ -124,9 +125,9 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
         </div>
         <div className="modal__body bimp__body">
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
-          <div className="bimp__tabs" role="tablist">
+          <Liquid className="bimp__tabs" role="tablist">
             {tabs.map((k) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? "is-on" : ""} disabled={busy} onClick={() => setTab(k)}>{s.tabs[k]}</button>)}
-          </div>
+          </Liquid>
           {steps.length > 0 ? (
             <ol className="bimp__steps" aria-live="polite">
               {steps.map((st, i) => <li key={i} className={`is-${st.state}`}>{st.state === "run" ? <span className="spinner spinner--sm" /> : st.state === "done" ? Icons.check : st.state === "fail" ? Icons.x : <i />}<span>{st.label}</span></li>)}
