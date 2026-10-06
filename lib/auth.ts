@@ -3,7 +3,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization, lastLoginMethod } from "better-auth/plugins";
-import { APIError } from "better-auth/api";
+import { APIError, createAuthMiddleware, getIP, isAPIError } from "better-auth/api";
 import { memberLimitMessage, memberRank } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
@@ -115,6 +115,24 @@ export const auth = betterAuth({
     // In development we trust any local port (the preview changes port)
     const dyn = !IS_PROD ? ["http://localhost:*", "http://127.0.0.1:*", originOf(request?.headers, request)].filter(Boolean) : [];
     return [...fixed, ...dyn];
+  },
+  // On in production only (Better Auth's default). Stored in Postgres (rateLimit in lib/db/schema.ts):
+  // in memory each Vercel instance would count on its own. The magic link plugin adds its own rule,
+  // 5 a minute per IP on /sign-in/magic-link and /magic-link/verify; the global max covers the rest.
+  rateLimit: { storage: "database", window: 60, max: 100 },
+  // Every failed sign-in leaves a line in the logs: a bad or used magic link, or a provider that
+  // came back with an error. Both end in a redirect with ?error= on it.
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      if (!/^\/(magic-link\/verify|callback\/)/.test(ctx.path)) return;
+      const r = ctx.context.returned;
+      const err = isAPIError(r) ? r : null;
+      const location = (err ? new Headers(err.headers).get("location") : null) ?? ctx.context.responseHeaders?.get("location") ?? null;
+      const reason = location && /[?&]error=/.test(location) ? new URL(location, "http://x").searchParams.get("error")
+        : err && err.statusCode >= 400 ? err.body?.code ?? String(err.status) : null;
+      if (!reason) return;
+      console.warn(JSON.stringify({ event: "login_failed", path: ctx.path, reason, ip: ctx.request ? getIP(ctx.request, ctx.context.options) : null }));
+    }),
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
