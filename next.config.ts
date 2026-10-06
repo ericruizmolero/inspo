@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
       { source: "/invitacion/:id", destination: "/invite/:id", permanent: true },
     ];
   },
+  // The page where a person lets an AI client into their account (the MCP connector's consent, lib/mcp/oauth.ts)
+  // is never shown inside another site's frame, where a click could be steered onto "Allow"
+  async headers() {
+    return [{ source: "/mcp/authorize", headers: [{ key: "X-Frame-Options", value: "DENY" }, { key: "Content-Security-Policy", value: "frame-ancestors 'none'" }] }];
+  },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
   experimental: {
     // proxy.ts runs before every route, and Next buffers the body for it up to this size (10 MB by

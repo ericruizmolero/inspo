@@ -12,7 +12,9 @@ import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromH
 // /api/live/a/: the live view's frame has an opaque origin and sends no cookies; a signed token in the path is its proof (lib/live-html.ts)
 // /api/cron/: the scheduler has no session; each route checks CRON_SECRET itself
 // /s/: a project's brand shared by link; the token in the path is the proof (lib/share.ts)
-const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/live\/a\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/, /^\/s\//];
+// /mcp, /api/mcp/ and /.well-known/: the MCP connector and its OAuth endpoints; an AI client gets in with a bearer
+// token (lib/mcp/auth.ts), never a cookie. /mcp/authorize is not here: approving an app takes a session
+const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/live\/a\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/, /^\/s\//, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;
@@ -31,8 +33,9 @@ function langToSet(request: NextRequest): string | null {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  // /api calls don't pick a locale: they inherit it from the cookie the browser already sends
-  const lang = pathname.startsWith("/api/") ? null : langToSet(request);
+  // /api calls don't pick a locale: they inherit it from the cookie the browser already sends.
+  // Nor does an AI client talking to the MCP connector, which keeps no cookies
+  const lang = pathname.startsWith("/api/") || pathname === "/mcp" || pathname.startsWith("/.well-known/") ? null : langToSet(request);
 
   // The cookie goes on the response no matter what, including the redirect to login
   const withLang = <T extends NextResponse>(res: T): T => {

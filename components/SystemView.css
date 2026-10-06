@@ -1,28 +1,32 @@
 /* The project's system (components/SystemView.tsx): the page scrolls under the app's bars; the project's name
-   on top, over the file's column, with what the page does beside it */
+   on top, over the file's column, and under it one row: the ways to see the project, and what the page does */
 .spage { position: absolute; inset: 0; overflow-y: auto; background: var(--bg); padding: 78px 28px 72px; }
 .spage-inner { max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-.spage-head { display: flex; align-items: center; justify-content: space-between; gap: 16px 28px; flex-wrap: wrap; width: 100%; max-width: 1080px; margin: 34px auto 22px; padding-left: 228px; }
+.spage-head { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 1080px; margin: 64px auto 0; padding-left: 228px; }
+.spage-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; }
 .spage-head__text { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .spage-title { margin: 0; font-family: var(--font-display, var(--font)); font-size: clamp(30px, 3.4vw, 46px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); }
 .spage-head__actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .spage-head__actions .btn { font-size: 12.5px; padding: 0 12px; } .spage-head__actions .btn svg { width: 14px; height: 14px; }
 .spage-head__actions .btn:not(.btn--primary) { color: var(--text-2); } .spage-head__actions .btn:not(.btn--primary):hover { color: var(--text); }
+.spage-head__actions .spage-more { width: 30px; padding: 0; justify-content: center; }
+.spage-more__menu { width: 232px; }
 .spage-muted { margin: 0; font-size: 12.5px; color: var(--muted); }
 .spage-client { display: inline-flex; align-items: center; gap: 8px; height: 34px; margin-top: 10px; padding: 0 4px; border-radius: 10px; background: var(--surface); font-size: 13px; color: var(--text-2); }
 .spage-client .sysv-thumb { width: 40px; height: 26px; margin: 0; border: 0; border-radius: 6px; } .spage-client .sysv-thumb img { object-position: top; }
 .spage-client b { font-weight: 600; color: var(--text); }
 .spage-client__x { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .spage-client__x svg { width: 12px; height: 12px; } .spage-client__x:hover { color: var(--text); background: var(--surface-2); }
-@media (max-width: 900px) { .spage-head { padding-left: 0; flex-direction: column; align-items: flex-start; } }
-@media (max-width: 800px) { .spage { padding: 70px 12px 90px; } }
-/* The two faces of the system: the presentation, on its own paper, and criterio.md */
-.spage.is-presentation .spage-head { max-width: 1180px; margin: 8px auto 0; padding-left: 228px; }
-@media (max-width: 900px) { .spage.is-presentation .spage-head { padding-left: 0; } }
-.spage-head__side { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin-left: auto; }
+@media (max-width: 900px) { .spage-head { padding-left: 0; } }
+@media (max-width: 800px) { .spage { padding: 70px 12px 90px; } .spage-head { margin-top: 32px; } }
+/* The project's tabs: criterio.md as Markdown, as a document, and the brand as a presentation */
+/* The brand drawn as a page, under the tabs, in the file's own column. In the app its index is the file's: the
+   brand's name and the count of sections stay for the shared page (app/s) */
+.spage-sheet { padding-top: 0; }
+.spage-sheet .brand-toc__brand, .spage-sheet .brand-toc__count { display: none; }
 .spage-views { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface); }
 .spage-views button { height: 28px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
 .spage-views button.is-on { background: var(--surface-3, var(--surface-2)); color: var(--text); }
+.spage-views button em { margin-left: 6px; font-style: normal; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .spage-notice { margin: 0 0 8px; font-size: 13px; color: var(--warning); }
-.spage.is-presentation .spage-inner { max-width: none; }
-.spage-sheet { padding-top: 18px; }
+

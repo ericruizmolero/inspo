@@ -32,7 +32,7 @@ export interface RefInfo {
   said?: { who: string; text: string; pin?: boolean; /** The pictures attached to the comment: what its words point at */ images?: string[] }[];
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
-export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected" } }
+export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected"; /** The AI client it came from over MCP, when it was not written in the app */ via?: string } }
 
 export interface CriterioMdInput {
   project: string;
@@ -110,6 +110,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const items = clean ? Object.fromEntries(Object.entries(allItems).map(([id, it]) => [id, { ...it, by: undefined, date: undefined, said: undefined }])) as Record<string, RefInfo> : allItems;
   const talk = clean ? {} : allTalk;
   const abs = (u: string) => (u.startsWith("/") ? `${origin}${u}` : u);
+  const href = (key: string) => (fileHref ? fileHref(key) : `${origin}/api/files/${key}`);
   // What someone said, and the pictures they attached to say it: the words often point at them ("these 3D…")
   const told = (w: NonNullable<RefInfo["said"]>[number], max: number) => {
     const pics = (w.images ?? []).map((u, i, all) => `[${strings.attached}${all.length > 1 ? ` ${i + 1}` : ""}](${abs(u)})`);
@@ -136,34 +137,37 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
   // The project's content: each text the team pasted, whole and as given, under its title. It is material to
   // place, not a reference to read a look from, so it sits with what the project is and not in the appendix
-  const texts = board.filter((id) => items[id]?.kind === "text");
-  if (texts.length) {
-    const intro = doc["content-intro"] ? [...doc["content-intro"].split("\n"), ""] : [`> ${strings.contentIntro}`, ""];
-    const parts: { itemId: string; head: string[]; body: string[] }[] = [];
-    for (const id of texts) {
-      const it = items[id];
-      const head = [`### ${code.get(id)} · ${it.name}`, ""];
-      // Who saved it and what was said of it, or what the team wrote over that
-      const byHand = doc[`texthead:${id}`];
-      if (byHand) { head.push(...byHand.split("\n"), ""); parts.push({ itemId: id, head, body: lowerHeadings(it.text ?? it.what ?? "") }); continue; }
-      if (it.by) head.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
+  type Part = { itemId: string; head: string[]; body: string[] };
+  /** A text whole: its heading, who brought it and what was said of it (or what the team wrote over that), then its words */
+  const textPart = (id: string, byLabel: string): Part => {
+    const it = items[id];
+    const head = [`### ${code.get(id)} · ${it.name}`, ""];
+    const byHand = doc[`texthead:${id}`];
+    if (byHand) head.push(...byHand.split("\n"), "");
+    else {
+      if (it.by) head.push(`- **${byLabel}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
       if (it.said?.length) {
         head.push(`- **${strings.said}:**`);
         for (const w of it.said) head.push(`  - ${w.who}: ${told(w, 600)}`);
       }
       if (it.by || it.said?.length) head.push("");
-      parts.push({ itemId: id, head, body: lowerHeadings(it.text ?? it.what ?? "") });
     }
+    return { itemId: id, head, body: lowerHeadings(it.text ?? it.what ?? "") };
+  };
+  // Only the texts whose words are in hand can be typed over: one still loading shows its first lines
+  const typed = (parts: Part[]) => parts.map((p) => ({ ...p, itemId: p.itemId && items[p.itemId].text === undefined ? "" : p.itemId }));
+  const texts = board.filter((id) => items[id]?.kind === "text");
+  if (texts.length) {
+    const intro = doc["content-intro"] ? [...doc["content-intro"].split("\n"), ""] : [`> ${strings.contentIntro}`, ""];
+    const parts = texts.map((id) => textPart(id, strings.savedBy));
     const lines = [...intro, ...parts.flatMap((p) => [...p.head, ...p.body, ""])];
     while (lines[lines.length - 1] === "") lines.pop();
-    // Only the texts whose words are in hand can be typed over: one still loading shows its first lines
-    blocks.push({ kind: "section", id: "content", heading: title("content", strings.content), lines, texts: { intro, items: parts.map((p) => ({ ...p, itemId: items[p.itemId].text === undefined ? "" : p.itemId })) } });
+    blocks.push({ kind: "section", id: "content", heading: title("content", strings.content), lines, texts: { intro, items: typed(parts) } });
   }
   if (system.summary) blocks.push({ kind: "summary", heading: title("summary", strings.summary), text: system.summary });
   // The brand in its own words: its statement and what it is, as the presentation opens with them
   const introLines = brand ? brandIntroLines(brand) : [];
   if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
-  const href = (key: string) => (fileHref ? fileHref(key) : `${origin}/api/files/${key}`);
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
     const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
@@ -186,7 +190,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
       for (const l of lines) {
         const on = l.label ?? (l.itemId && items[l.itemId] ? `${code.get(l.itemId) ?? ""} ${items[l.itemId].name}`.trim() : "");
         if (l.proposal) {
-          meta.push(`  - ${l.who} ${strings.proposes} (${strings.states[l.proposal.state]}): ${quote(l.proposal.decision, 600)}`);
+          meta.push(`  - ${l.who}${l.proposal.via ? ` (${l.proposal.via})` : ""} ${strings.proposes} (${strings.states[l.proposal.state]}): ${quote(l.proposal.decision, 600)}`);
           if (l.text && l.text !== l.proposal.decision) meta.push(`    - ${quote(l.text)}`);
         } else meta.push(`  - ${l.who}${on ? `, ${strings.on(on)}` : ""}: ${quote(l.text)}`);
       }
@@ -195,6 +199,30 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const tokens = brand ? brandTokenLines(key, brand, strings.brand, { href, cite: (id) => cite(id) }) : [];
     blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}) });
   }
+  /** One reference's entry: what it is, who brought it, what was said of it and what it brings to each area */
+  const refLines = (id: string, byLabel: string): string[] => {
+    const it = items[id];
+    // Rewritten by hand from the reference's panel: its heading (its code) stays the app's
+    const byHand = doc[`ref:${id}`];
+    if (byHand) return byHand.split("\n");
+    const out: string[] = [];
+    const kind = it.kind ?? "web";
+    const where = kind === "image" ? strings.kinds.image.toLowerCase() : readableDomain(abs(it.web).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
+    out.push(`- **${strings.kinds[kind]}:** [${where}](${abs(it.web)})`);
+    if (it.what) out.push(`- **${strings.what}:** ${one(it.what)}`);
+    if (it.by) out.push(`- **${byLabel}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
+    if (it.said?.length) {
+      out.push(`- **${strings.said}:**`);
+      for (const w of it.said) out.push(`  - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${told(w, 600)}`);
+    }
+    const brings = system.areas.flatMap((a) => a.evidence.filter((e) => e.itemId === id).map((e) => ({ area: a.area, take: e.take })));
+    if (brings.length) {
+      out.push(`- **${strings.brings}:**`);
+      for (const b of brings) out.push(`  - ${labels[b.area]}${b.take ? `: ${b.take}` : ""}`);
+    } else out.push(`- **${strings.brings}:** _${strings.noArea}_`);
+    if (it.tags?.length) out.push(`- **${strings.tags}:** ${it.tags.join(", ")}`);
+    return out;
+  };
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
   // Typed over by hand, a skill's section stays as the team left it until they bring the app's back
   for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
@@ -203,33 +231,10 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
   // Every reference once, with what it is, what was said of it and what it brings to each area
   // (a text is already whole under Content)
-  const refs = board.filter((id) => items[id]?.kind !== "text");
+  const refs = board.filter((id) => items[id] && items[id].kind !== "text");
   if (refs.length) {
     const lines: string[] = [strings.refsIntro, ""];
-    for (const id of refs) {
-      const it = items[id];
-      if (!it) continue;
-      lines.push(`### ${code.get(id)} · ${it.name}`, "");
-      // Rewritten by hand from the reference's panel: its heading (its code) stays the app's
-      const byHand = doc[`ref:${id}`];
-      if (byHand) { lines.push(...byHand.split("\n"), ""); continue; }
-      const kind = it.kind ?? "web";
-      const where = kind === "image" ? strings.kinds.image.toLowerCase() : readableDomain(abs(it.web).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
-      lines.push(`- **${strings.kinds[kind]}:** [${where}](${abs(it.web)})`);
-      if (it.what) lines.push(`- **${strings.what}:** ${one(it.what)}`);
-      if (it.by) lines.push(`- **${strings.savedBy}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
-      if (it.said?.length) {
-        lines.push(`- **${strings.said}:**`);
-        for (const w of it.said) lines.push(`  - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${told(w, 600)}`);
-      }
-      const brings = system.areas.flatMap((a) => a.evidence.filter((e) => e.itemId === id).map((e) => ({ area: a.area, take: e.take })));
-      if (brings.length) {
-        lines.push(`- **${strings.brings}:**`);
-        for (const b of brings) lines.push(`  - ${labels[b.area]}${b.take ? `: ${b.take}` : ""}`);
-      } else lines.push(`- **${strings.brings}:** _${strings.noArea}_`);
-      if (it.tags?.length) lines.push(`- **${strings.tags}:** ${it.tags.join(", ")}`);
-      lines.push("");
-    }
+    for (const id of refs) lines.push(`### ${code.get(id)} · ${items[id].name}`, "", ...refLines(id, strings.savedBy), "");
     while (lines[lines.length - 1] === "") lines.pop();
     blocks.push({ kind: "section", id: "refs", heading: title("refs", `${strings.refs} (${refs.length})`), lines: doc.refs ? doc.refs.split("\n") : lines, edited: !!doc.refs });
   }

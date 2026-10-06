@@ -1856,12 +1856,6 @@ video.vp__media { object-fit: contain; }
   .settings__logo { display: block; }
 }
 
-/* 404 and error: the mark, one line of why, one way out */
-.lost { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 16px 12vh; text-align: center; }
-.lost .logo { margin-bottom: 10px; }
-.lost__title { margin: 0; font-size: 32px; line-height: 1.05; text-wrap: balance; }
-.lost__body { margin: 0 0 10px; max-width: 36ch; color: var(--muted); font-size: 14px; line-height: 1.5; }
-.lost__actions { display: flex; gap: 8px; }
 .page__body { display: flex; flex-direction: column; gap: 20px; }
 .page__ok { font-size: 13px; color: var(--text-2); margin: 0; }
 /* Inside shadcn Cards: a quiet note, a small subsection heading, and a figure in the header action */
@@ -1915,6 +1909,8 @@ video.vp__media { object-fit: contain; }
 /* Project picker (the folder button on a card) and a project's "…" menu: the workspace menu rows in a small panel */
 .pp { width: 248px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-m); padding: 6px; box-shadow: var(--shadow-pop); display: flex; flex-direction: column; }
 .pp--menu { width: 180px; }
+/* The ways in from outside (components/Connectors.tsx): two rows whose names need the room */
+.connectors__menu { width: 220px; }
 .pp__list { display: flex; flex-direction: column; max-height: 260px; overflow-y: auto; }
 .pp__none { padding: 4px 8px 8px; font-size: 13px; color: var(--muted-2); }
 .pp__icon { display: flex; color: var(--muted); }
@@ -2589,8 +2585,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 /* The icon of an area goes before its name everywhere: it never shrinks and takes the ink of the label */
 .area-icon { flex-shrink: 0; }
 /* What are you making? The first screen inside a workspace: a title, one box, and the projects as pictures */
-.chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: clamp(96px, 18vh, 200px) 24px 120px; background: var(--bg);
-  background-image: radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--text) 7%, transparent) 1px, transparent 0); background-size: 24px 24px; }
+.chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: clamp(96px, 18vh, 200px) 24px 120px; background: var(--bg); }
 .chooser__inner { width: 100%; max-width: 880px; height: max-content; display: flex; flex-direction: column; align-items: center; }
 .chooser__title { margin: 0; font-size: clamp(30px, 3.4vw, 44px); line-height: 1.05; letter-spacing: -0.02em; color: var(--text); text-align: center; }
 /* One raised box: the name, and under it (once there is a name) how it should feel */

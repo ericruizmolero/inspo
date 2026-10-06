@@ -135,6 +135,9 @@ export const inspoItem = pgTable("inspo_item", {
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   note: text("note").notNull().default(""),
   subNote: text("sub_note"),
+  /** The app it was saved from when that was not criterio itself: the name of the AI client connected over MCP
+   *  (lib/mcp), "Claude". Null for everything saved in the app or by the extension */
+  via: text("via"),
   /** Path of the manual thumbnail (/api/files/…, lib/storage.ts) */
   thumbnailUrl: text("thumbnail_url"),
   /** Serialized InspoTags (AI tags) */
@@ -570,4 +573,57 @@ export const systemShare = pgTable("system_share", {
   index("system_share_project_idx").on(t.projectId),
   index("system_share_org_idx").on(t.organizationId),
   oneOf("system_share_mode_check", t.mode, ["clean", "full"]),
+]);
+
+// ─── MCP connector (lib/mcp) ─────────────────────────────────────────────────
+// criterio as a connector for AI clients (Claude, ChatGPT, Cursor): they sign in with OAuth 2.1, the
+// person approves once, and the client reads criterio.md and writes pieces back.
+
+/** An app registered to ask for access (RFC 7591, dynamic registration): anyone can register one, it opens
+ *  nothing until a person approves it */
+export const mcpClient = pgTable("mcp_client", {
+  /** The client_id handed out on registration */
+  id: text("id").primaryKey(),
+  /** What the app says it is called: shown to the person who approves it, never trusted */
+  name: text("name").notNull().default(""),
+  /** Where an approval may send the person back to: exact matches only (a loopback address, on any port) */
+  redirectUris: jsonb("redirect_uris").$type<string[]>().notNull(),
+  /** Hex SHA-256 of its secret; null for a public client, which proves itself with PKCE alone */
+  secretHash: text("secret_hash"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("mcp_client_created_idx").on(t.createdAt),
+]);
+
+/** One approval: a person let one app in. The row starts as a one-use code, becomes the access and refresh tokens
+ *  the code is exchanged for, and ends when it is revoked or its refresh token runs out. Only hashes are kept. */
+export const mcpGrant = pgTable("mcp_grant", {
+  id: text("id").primaryKey(),
+  clientId: text("client_id").notNull().references(() => mcpClient.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  codeExpiresAt: timestamp("code_expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  /** Set on exchange: a code seen twice revokes the grant */
+  codeUsedAt: timestamp("code_used_at", { withTimezone: true, mode: "date" }),
+  /** PKCE (S256): the challenge the code was asked with */
+  codeChallenge: text("code_challenge").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
+  accessHash: text("access_hash"),
+  accessExpiresAt: timestamp("access_expires_at", { withTimezone: true, mode: "date" }),
+  refreshHash: text("refresh_hash"),
+  refreshExpiresAt: timestamp("refresh_expires_at", { withTimezone: true, mode: "date" }),
+  /** The refresh token before the last rotation: seen again after a moment's grace, the grant is revoked */
+  prevRefreshHash: text("prev_refresh_hash"),
+  rotatedAt: timestamp("rotated_at", { withTimezone: true, mode: "date" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: "date" }),
+  /** null = active */
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+}, (t) => [
+  uniqueIndex("mcp_grant_code_idx").on(t.codeHash),
+  uniqueIndex("mcp_grant_access_idx").on(t.accessHash),
+  uniqueIndex("mcp_grant_refresh_idx").on(t.refreshHash),
+  index("mcp_grant_prev_refresh_idx").on(t.prevRefreshHash),
+  index("mcp_grant_user_idx").on(t.userId),
+  index("mcp_grant_client_idx").on(t.clientId),
 ]);

@@ -25,7 +25,7 @@ export function refInfoOf(item: InspoItem, tags: InspoTags | undefined, comments
       .map((c) => ({ who: c.authorName, text: c.body.trim(), ...(c.anchor ? { pin: true } : {}), ...(c.attachments?.length ? { images: c.attachments.map((a) => a.url) } : {}) })),
   ];
   return {
-    name: item.name, web: item.web, kind: mediaKindOf(item.web), by: item.addedBy, date: dayOf(item.date),
+    name: item.name, web: item.web, kind: mediaKindOf(item.web), by: item.via ? t.mcp.byVia(item.addedBy, item.via) : item.addedBy, date: dayOf(item.date),
     // A picture is what the AI saw in it; a site, what it says it is
     what: (mediaKindOf(item.web) === "web" ? tags?.summary || tags?.visual : tags?.visual || tags?.summary) || undefined,
     tags: [style, sector, ...traits].filter((x): x is string => !!x),

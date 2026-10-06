@@ -53,7 +53,7 @@ Diálogo de Base UI. Tamaños `sm` y `lg`; el título lleva `.display.modal__tit
 
 ### Popover
 `Popover` · `components/ui/popover.tsx` · `.pp` · `.pp--menu`
-Menú flotante de Base UI (posicionador en z 55). Las filas usan `.ws__item`. Es la base de los selectores de proyecto y área, del menú de skills, de "Abrir en IA" y de los menús "…".
+Menú flotante de Base UI (posicionador en z 55). Las filas usan `.ws__item`. Es la base de los selectores de proyecto y área, del menú de skills, del menú del fichero y de los menús "…".
 
 ### Barra lateral
 `AppSidebar` · `components/Sidebar.tsx` · `.app-sidebar` · `.nav-item`
@@ -162,7 +162,7 @@ Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pesta�
 ### Descubrir: plantillas, recursos y skills
 `Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`
 Tres pestañas: Plantillas (`?in=templates`), Recursos (`?in=discover`) y Skills (`?in=skills`). Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, seguimiento con requestAnimationFrame y entrada con WAAPI; solo ratón, con reduced-motion solo fundido), y plantillas: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir una enseña su criterio.md y deja crear un proyecto con ella.
-- Skills (`components/DiscoverSkills.tsx`, datos en `SKILLS` de `lib/directory.ts`) son tarjetas, no filas: avatar y usuario de GitHub del autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia. Las que también son skill de criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md)
+- Skills (`components/DiscoverSkills.tsx`) son tarjetas, no filas, y todas son skills de agentes: avatar y autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia; toda la tarjeta abre su página. Una sola lista: primero las 13 de criterio.design (`MD_SKILLS` en `lib/md-skill-ids.ts`, nombre y descripción de `t.system.skillsList`, instaladas desde el repo público `criterio-skills` que escribe `scripts/build-skills.ts`) y después las de otros autores (`SKILLS` en `lib/directory.ts`); de estas, las que también están en criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md), [todas de agentes](decisiones/2026-10-06-todas-las-skills-son-de-agentes.md)
 
 ### Vídeo en bucle
 `LoopVideo` · `components/LoopVideo.tsx`
@@ -172,11 +172,11 @@ Grabación corta, muda y en bucle que solo se reproduce mientras está a la vist
 
 ### Vista Sistema
 `SystemView` · `components/SystemView.tsx` · `.spage`
-La página del proyecto con dos vistas: **Presentación** (la marca como guía visual, la que abre por defecto) y **Markdown** (el criterio.md por bloques). Cabecera con "Mejorar con IA", "Rellenar la marca" y compartir. La vista elegida se recuerda en el navegador.
+La página del proyecto. Cabecera en dos líneas: el nombre arriba y, debajo, una sola fila (`.spage-bar`) con las pestañas a la izquierda y las acciones a la derecha, del ancho de la columna del fichero. Tres pestañas: **Markdown** (criterio.md tal cual, la que abre por defecto), **Documento** (el mismo fichero maquetado para leer) y **Presentación** (la marca como guía visual, `BrandPresentation`). → [vuelve la Presentación](decisiones/2026-10-06-vuelve-la-presentacion.md) A la derecha, "Mejorar con IA" como única acción primaria y un menú "…" con traer una marca que ya existe y compartir. Se recuerda en el navegador si se estaba en el fichero o en Resultados; el fichero siempre abre como Markdown. → [cabecera en dos líneas](decisiones/2026-10-06-cabecera-del-proyecto-en-dos-lineas.md) → [resultados en vez de presentación](decisiones/2026-10-05-resultados-en-vez-de-presentacion.md)
 
 ### Presentación de marca
 `BrandPresentation` · `components/brand/BrandPresentation.tsx` · `components/brand/brand.css`
-La marca como manual: índice a la izquierda y una sección por pantalla, cada una con su número, título grande en la tipografía display de la propia marca y una entradilla. Secciones: introducción, logo, color, tipografía, imagen, movimiento, voz, aplicaciones y recursos (`components/brand/sections/`).
+**Fuera de la vista Sistema desde el 05-10** (sigue en el enlace compartido). La marca como manual: índice a la izquierda y una sección por pantalla, cada una con su número, título grande en la tipografía display de la propia marca y una entradilla. Secciones: introducción, logo, color, tipografía, imagen, movimiento, voz, aplicaciones y recursos (`components/brand/sections/`).
 - En la app cada valor se edita donde está; en un enlace compartido es de solo lectura y las secciones vacías no salen.
 - Lo que el equipo edita a mano se queda fijo en las pasadas siguientes del modelo hasta que se devuelve.
 
@@ -200,6 +200,18 @@ Traer una marca que ya existe de tres formas: su web (se mide y se lee), sus fic
 `ShareDialog` · `SharePage` · `components/brand/` · `app/s/[token]/`
 Un enlace de solo lectura con la presentación y el criterio.md para copiar o descargar, más un zip con logos, iconos y tokens. Cada enlace lleva el fichero completo o uno limpio, sin nombres ni comentarios del equipo, para gente de fuera. Sin sesión: el token es la prueba; no se indexa y no manda referer.
 
+### Conectores
+`Connectors` · `components/Connectors.tsx` · `.connectors__menu`
+Un botón en la barra superior (icono `Plug`) con las dos formas de entrar desde fuera, de la cuenta y no del proyecto: la extensión de Chrome (instalarla o conectarla) y Conectar MCP (icono `Cable`). Cada fila con su tic cuando está conectada; con las dos conectadas el botón se va. Sustituye al aviso "Instalar extensión". → [decisión](decisiones/2026-10-06-conectores-en-un-menu-de-la-barra.md)
+
+### Conectar tu IA
+`ConnectDialog` · `components/ConnectDialog.tsx` · `components/ConnectDialog.css` · `.mcpc`
+Se abre desde la fila "Conectar MCP" del menú Conectores. Primero "Qué hace por ti": los cuatro usos (diseñar desde el criterio, traer lo que ya tienes, guardar lo de una conversación, revisar contra el criterio) y la regla de que nunca reescribe el fichero (Eric, 06-10: "igual hay que explicar qué podrá hacer por ti"). Luego la dirección del conector MCP (`/mcp`) con Copiar, un control segmentado con los pasos para Claude, ChatGPT, Claude Code (el comando) y Cursor (el JSON), y las aplicaciones conectadas con Desconectar. Nada más se teclea aquí: el cliente entra por OAuth. Recuerda el cliente elegido en el navegador. → [conector MCP](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md)
+
+### Permiso a una aplicación
+`AuthorizePanel` · `app/mcp/authorize/` · `.auth--solo`
+La página a la que un cliente de IA manda a la persona para entrar: con el mismo diseño que aceptar una invitación (logo, una frase grande con qué app pide, qué podrá hacer, a qué espacios llega, Permitir en primario y Cancelar), y "Entras como". Sin sesión, pasa por /login y vuelve con la misma petición. No se puede mostrar dentro de un frame de otra web.
+
 ### Documento criterio.md
 `SystemDoc` · `components/SystemDoc.tsx` · `.sdoc` · captura: documento
 La vista Markdown: el fichero con índice lateral y un punto de estado por área (respaldada, abierta, del equipo), las propuestas y las skills. Las propuestas se aceptan, rechazan o retiran bajo su área.
@@ -207,16 +219,19 @@ La vista Markdown: el fichero con índice lateral y un punto de estado por área
 ### Visor y editor Markdown
 `SystemMarkdown` · `components/SystemMarkdown.tsx` · `components/SystemMarkdown.css` · `.mdv`
 El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
+- Aspecto Documento: cada referencia citada es una fila con su captura (144×90) a la izquierda y, en una columna, su nombre, lo que se toma y lo que se dijo. → [decisión](decisiones/2026-10-06-referencias-del-documento-como-cita-con-captura.md)
+- Aspecto Documento: una tabla de Markdown se pinta como tabla (`.mdv-tr`, `.mdv-td`), con líneas entre filas y sin caja. → [decisión](decisiones/2026-10-06-tablas-del-documento-como-tabla.md)
 - Tecla C: modo comentar con pines en el punto exacto; Enter envía el pin.
-- Barra: Skills, Abrir en IA, Copiar y Descargar.
+- Proponer: al activarlo el cursor queda en la primera línea editable a la vista, sin mover el scroll; lo escrito en un área queda como propuesta al salir. No convive con Comentar.
+- Barra: Proponer, Comentar, Skills y Copiar. Copiar es un botón partido (`.mdv-split`): la mitad de la flecha abre el menú del fichero. Los botones de la barra no llevan contorno. → [decisión](decisiones/2026-10-06-barra-del-fichero-en-cuatro-piezas.md)
 
 ### Menú de skills
 `SkillsMenu` · `components/SkillsMenu.tsx` · `.sys-skills`
 Interruptores (`role=switch`); cada skill añade una sección al criterio.md.
 
-### Abrir en IA
-`OpenInAI` · `components/OpenInAI.tsx`
-Popover "Abrir en": el primer clic copia el mensaje con el fichero, el segundo abre el chat.
+### Menú del fichero
+`FileMenu` · `components/FileMenu.tsx`
+La flecha junto a Copiar: "Descargar .md" y "Abrir en un chat" (Claude, ChatGPT, Gemini). Abrir va en dos pasos: el primer clic copia el mensaje con el fichero, el segundo abre el chat.
 
 ### Mejorar con IA
 `ImproveModal` · `components/ImproveModal.tsx` · `.imp`
@@ -296,5 +311,10 @@ Aceptar la invitación a un equipo; si el correo no coincide, cierra sesión y v
 Pasos para instalar el zip en `chrome://extensions` y conectar la extensión a un espacio generando su clave.
 
 ### Error y 404
-`app/error.tsx` · `app/not-found.tsx` · `.lost`
-Logo, mensaje y un botón para volver.
+`Lost` · `components/Lost.tsx` · `Lost.css` · `.lost` · lo usan `app/not-found.tsx` y `app/error.tsx`
+La cabeza del logotipo flota en el sitio del cero de un "404" grande y tenue (`digits`); en un error va sola y torcida. Debajo, título, una línea de por qué y las salidas como hijos.
+- Un solo primario: volver a la librería en la 404, volver a intentarlo en el error (la librería pasa a `.btn` normal, sin borde).
+- Las cifras son decoración (`aria-hidden`, texto al 12 %); el título sigue siendo el `h1`.
+- Por encima de 96 px `Logo` usa `icon-512.png` para que la cabeza no se vea blanda.
+- `LostTheme` pone el tema al montar: una 404 o un error lanzados desde una página se pintan enteros en el navegador y el script de tema del `<head>` no llega a ejecutarse.
+- `app/global-error.tsx` (falla el layout raíz) sigue sin estilos a propósito.

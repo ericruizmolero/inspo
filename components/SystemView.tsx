@@ -1,6 +1,7 @@
 "use client";
 // The project's system: its criterio.md, the file an agent reads before designing, with the team's tools on each
 // area (components/SystemDoc.tsx). The model reads the board into it ("Improve with AI"); the team writes over it.
+// Beside it, the brand as a presentation (components/brand/BrandPresentation.tsx): the same values drawn.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
@@ -16,6 +17,7 @@ import { Thumb } from "./Thumb";
 import { useSystemActivity } from "./useSystemActivity";
 import type { NoteCaption } from "./InspoCard";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import BrandPresentation from "./brand/BrandPresentation";
 import { useBrandEditor } from "./brand/useBrandEditor";
 import { useBrandFonts } from "./brand/useBrandFonts";
@@ -28,13 +30,16 @@ import { fileUrl } from "@/lib/files-path";
 import { mediaKindOf } from "@/lib/url";
 import "./SystemView.css";
 
-type View = "presentation" | "markdown";
+// Three ways to see the project, in one row of tabs: criterio.md as the Markdown it is, the same file set as a
+// document, and the brand as a presentation. The document look is not remembered: the file opens as Markdown,
+// the file an agent reads
+type View = "markdown" | "doc" | "presentation";
 // v2: criterio.md became the default, so an older remembered choice does not hide it
 const VIEW_KEY = "criterio.system.view.v2";
 function useView(): [View, (v: View) => void] {
   const [view, setView] = useState<View>("markdown");
   useEffect(() => { try { const v = localStorage.getItem(VIEW_KEY); if (v === "markdown" || v === "presentation") setView(v); } catch { /* the default stands */ } }, []);
-  return [view, (v) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* only this visit */ } }];
+  return [view, (v) => { setView(v); try { localStorage.setItem(VIEW_KEY, v === "presentation" ? "presentation" : "markdown"); } catch { /* only this visit */ } }];
 }
 
 interface Props {
@@ -198,6 +203,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const b = p.get("bring");
@@ -206,10 +212,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
     p.delete("bring");
     window.history.replaceState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
   }, []);
-  // The brand as a presentation: its values edited where they stand, saved section by section
   const [view, setView] = useView();
   const [notice, setNotice] = useState("");
   useEffect(() => { if (!notice) return; const tm = setTimeout(() => setNotice(""), 6000); return () => clearTimeout(tm); }, [notice]);
+  // The brand as a presentation: its values edited where they stand, saved section by section
   const editor = useBrandEditor(project.id, sys, setSystem, setNotice, t.brand.moved);
   const fonts = useBrandFonts(editor.brand.typography.faces, fileUrl, async () => {
     const res = await fetch(`/api/system/brand/fonts?projectId=${encodeURIComponent(project.id)}`);
@@ -226,9 +232,9 @@ export default function SystemView({ project, system, onSystem, board, library, 
   };
 
   const views = (
-    <div className="spage-views" role="tablist" aria-label={t.brand.guidelines}>
-      {(["markdown", "presentation"] as const).map((v) => (
-        <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "is-on" : ""} onClick={() => setView(v)}>{t.brand.views[v]}</button>
+    <div className="spage-views" role="tablist" aria-label={project.name}>
+      {(["markdown", "doc", "presentation"] as const).map((v) => (
+        <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "is-on" : ""} onClick={() => setView(v)}>{v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation}</button>
       ))}
     </div>
   );
@@ -241,8 +247,14 @@ export default function SystemView({ project, system, onSystem, board, library, 
         </Button>
       ) : <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
       {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="sm" onClick={() => void fillBrand()} title={t.brand.fillHint}>{t.brand.fill}</Button>}
-      <Button size="sm" onClick={() => setBringing("site")} disabled={running} title={t.brand.import.title}>{t.brand.import.open}</Button>
-      <Button size="sm" onClick={() => setSharing(true)} title={t.brand.share.title}>{t.brand.share.open}</Button>
+      {/* What is asked for now and then stays out of the row: bringing in a brand that exists, the share links */}
+      <Popover open={moreOpen} onOpenChange={setMoreOpen}>
+        <PopoverTrigger className="btn btn--sm spage-more" aria-label={t.card.more} title={t.card.more}>{Icons.dots}</PopoverTrigger>
+        <PopoverContent align="end" className="pp pp--menu spage-more__menu">
+          <button type="button" className="ws__item" disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}><span className="ws__item-name">{t.brand.import.title}</span></button>
+          <button type="button" className="ws__item" onClick={() => { setMoreOpen(false); setSharing(true); }}><span className="ws__item-name">{t.brand.share.title}</span></button>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 
@@ -251,10 +263,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
       <div className="spage-inner">
         <header className="spage-head">
           <div className="spage-head__text">
-            {view === "markdown" && <h1 className="spage-title">{project.name}</h1>}
+            <h1 className="spage-title">{project.name}</h1>
             {onClient && clientItem && <ClientChip client={clientItem} imageOf={imageOf} onPick={onClient} />}
           </div>
-          <div className="spage-head__side">{views}{actions}</div>
+          <div className="spage-bar">{views}{actions}</div>
         </header>
         {error && <p className="sysv-error" role="alert">{error}</p>}
         {notice && <p className="spage-notice" role="status">{notice}</p>}
@@ -270,7 +282,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
               upload={(file, purpose) => uploadBrandFile(project.id, file, purpose)} zipHref={`/api/system/brand/assets?projectId=${encodeURIComponent(project.id)}`} />
           </div>
         ) : (
-          <SystemDoc blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
+          <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
             onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
             onAbout={async (text) => { const r = await saveProjectBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}

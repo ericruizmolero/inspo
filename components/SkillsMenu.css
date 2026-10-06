@@ -3,6 +3,8 @@
 .sys-skills__n { min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--text); color: var(--bg); font-size: 10px; line-height: 16px; text-align: center; font-variant-numeric: tabular-nums; }
 .sys-skills { width: 300px; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
 .sys-skills__hint { margin: 0; padding: 8px 10px 10px; font-size: 12px; line-height: 1.45; color: var(--muted); }
+/* A second group in the same menu (components/FileMenu.tsx): its name over the hint, set apart by room, not a line */
+.sys-skills__hint--section { padding-top: 12px; } .sys-skills__hint--section b { display: block; margin-bottom: 2px; font-weight: 550; color: var(--text-2); }
 .sys-skills__row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px; border: 0; border-radius: 8px; background: none; color: var(--text); text-align: left; cursor: pointer; }
 .sys-skills__row:hover { background: var(--surface-2); }
 .sys-skills__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }

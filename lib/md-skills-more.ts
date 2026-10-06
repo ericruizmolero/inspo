@@ -9,7 +9,7 @@ type Lang = "en" | "es";
 export const MORE_SKILLS = ["fonts", "color-tokens", "grid", "transitions", "icons", "logo-svg", "images", "iso-figure", "microcopy", "no-ai-slop", "a11y", "tailwind"] as const;
 export type MoreSkill = (typeof MORE_SKILLS)[number];
 
-interface SkillText {
+export interface SkillText {
   heading: string;
   /** What it builds, as "how to build … with …" ends */
   lead: string;
@@ -27,7 +27,7 @@ interface SkillDef {
   facts?: (system: ProjectSystem, lang: Lang) => string[];
 }
 
-const AREAS: Record<Lang, Record<SystemArea, string>> = {
+export const AREAS: Record<Lang, Record<SystemArea, string>> = {
   en: { typography: "Typography", color: "Colour", layout: "Layout", motion: "Motion", iconography: "Iconography", logo: "Logo", imagery: "Imagery", voice: "Voice and tone" },
   es: { typography: "Tipografía", color: "Color", layout: "Layout", motion: "Movimiento", iconography: "Iconografía", logo: "Logo", imagery: "Imagen", voice: "Voz y tono" },
 };
@@ -106,7 +106,8 @@ const themeFacts = (system: ProjectSystem, lang: Lang): string[] => {
 
 // ─── The skills ──────────────────────────────────────────────────────────────────────────────────
 
-const SKILLS: Record<MoreSkill, SkillDef> = {
+/** Each skill's area and craft, exported so the agent-skill files are built from the same text (lib/md-skills.ts skillCraft) */
+export const MORE_SKILL_DEFS: Record<MoreSkill, SkillDef> = {
   fonts: {
     area: "typography", facts: fontFacts,
     en: {
@@ -549,7 +550,7 @@ const SKILLS: Record<MoreSkill, SkillDef> = {
 
 /** The section one of these skills adds to criterio.md */
 export function moreSkillSection(id: MoreSkill, system: ProjectSystem, lang: Lang): { id: string; heading: string; lines: string[] } {
-  const def = SKILLS[id];
+  const def = MORE_SKILL_DEFS[id];
   const s = def[lang];
   const c = COMMON[lang];
   const area = def.area ? AREAS[lang][def.area] : null;

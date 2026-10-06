@@ -10,6 +10,8 @@ export interface InspoItem {
   type: "inspiration" | "videos" | "ideas" | "documentaries";
   note: string;
   subNote?: string;
+  /** The AI client it was saved from over MCP ("Claude"), when it was not saved in criterio itself */
+  via?: string;
 }
 
 // ─── Projects ────────────────────────────────────────────────────────────────

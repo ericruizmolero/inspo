@@ -389,7 +389,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     <div className="tile__meta">
       <span>{t.labels.type[item.type]}</span>
       {/* "Both" is the legacy sheet author: not a person, so it isn't shown */}
-      {item.addedBy !== "Both" && (<><span className="tile__meta-sep">·</span><span>{item.addedBy}</span></>)}
+      {item.addedBy !== "Both" && (<><span className="tile__meta-sep">·</span><span>{item.addedBy}{item.via ? ` ${t.mcp.via(item.via)}` : ""}</span></>)}
       {domain && (<><span className="tile__meta-sep">·</span><span>{domain}</span></>)}
     </div>
   );

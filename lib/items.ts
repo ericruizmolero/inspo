@@ -51,6 +51,7 @@ export function rowToItem(r: Row): InspoItem {
     type: normalizeType(r.type),
     note: r.note,
     subNote: r.subNote || undefined,
+    ...(r.via ? { via: r.via } : {}),
   };
 }
 
@@ -117,6 +118,8 @@ export interface NewItem {
   author: string; createdBy?: string | null; dateIso?: string;
   /** Uploaded images are their own thumbnail */
   thumbnailUrl?: string | null;
+  /** The AI client it was saved from over MCP ("Claude"); nothing for the app and the extension */
+  via?: string | null;
 }
 
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
@@ -137,6 +140,7 @@ export async function addItem(organizationId: string, input: NewItem): Promise<I
     note: (input.note ?? "").trim(),
     subNote: (input.subNote ?? "").trim() || null,
     thumbnailUrl: input.thumbnailUrl ?? null,
+    via: input.via?.trim().slice(0, 40) || null,
     createdAt: now,
     updatedAt: now,
   };
