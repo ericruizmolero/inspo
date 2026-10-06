@@ -12,7 +12,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=library` | Toda la biblioteca |
-| `/?in=discover`, `/?in=templates` | Descubrir: recursos y plantillas |
+| `/?in=discover`, `/?in=templates` | Descubrir: recursos y ejemplos |
 | `/?in=<proyecto>` | Un proyecto: tablero hasta "Ya tengo mis referencias", luego Sistema |
 | `&view=board` / `&view=system` | Fuerza tablero o Sistema dentro del proyecto |
 | `?add=<url>` | Abre "Añadir" con esa URL (viene del login de invitado) |

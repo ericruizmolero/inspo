@@ -940,25 +940,15 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .tile__action--md.is-ready[data-tip]::after { color: rgba(255,255,255,0.92); }
 .tile__action:active { background: rgba(255,255,255,0.2); }
 .tile__action--danger:hover { background: var(--danger); color: #fff; }
-/* Delete confirmation: the whole bar becomes the question, with the ring in red.
-   "Delete" is the only red button; the X or Esc cancel, and after 6 s it cancels itself. */
-.tile__actions.is-confirm {
-  padding-left: 12px; gap: 6px;
-  box-shadow: inset 0 0 0 1px rgba(229,100,90,0.55), 0 6px 20px -6px rgba(0,0,0,0.5);
-  animation: tile-confirm-in 0.22s ease-out;
-}
-/* Only the ring fades: nothing moves, so the button swap does not look like a jump */
-@keyframes tile-confirm-in { from { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 6px 20px -6px rgba(0,0,0,0.5); } }
-.tile__actions.is-confirm .tile__action { transition: none; }
-.tile__confirm-text { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.9); white-space: nowrap; margin-right: 2px; }
+/* Delete confirmation: the bin itself becomes the red word, in place (it is the last button, so it
+   grows leftwards under the pointer). A second click deletes; Esc, leaving the card or 6 s cancel. */
 .tile__action--confirm {
   padding: 0 12px; background: var(--danger); color: #fff;
-  font-size: 12px; font-weight: 500;
+  font-size: 12px; font-weight: 500; transition: none;
 }
 .tile__action--confirm:hover { background: #d4554b; color: #fff; }
 .tile__action--confirm:focus-visible { outline: 2px solid #fff; outline-offset: -3px; }
 .tile__action--confirm:disabled { opacity: 0.8; cursor: default; }
-@container (max-width: 240px) { .tile__confirm-text { display: none; } .tile__actions.is-confirm { padding-left: 3px; } }
 .tile__action--md {
   padding: 0 11px; gap: 6px;
   font-size: 11.5px; font-weight: 500; white-space: nowrap;

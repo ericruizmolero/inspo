@@ -16,15 +16,19 @@
 }
 .selbar__btn:hover, .selbar__btn[data-popup-open] { background: var(--dock-hover); color: var(--dock-ink); }
 .selbar__btn:active { transform: scale(0.97); }
+.selbar__btn--danger:hover { color: var(--dock-danger); }
 .selbar__done {
   height: 40px; padding: 0 20px; margin-left: 2px; border: 0; border-radius: 999px; background: var(--dock-ink); color: var(--dock-surface);
   font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; transition: transform 0.12s var(--ease-out);
 }
 .selbar__done:active { transform: scale(0.97); }
-@media (max-width: 520px) {
-  .selbar { padding-left: 14px; }
+/* With "Select all" and "Delete" the labels no longer fit under the app's mobile cut: icons only there */
+@media (max-width: 800px) {
   .selbar__btn span { display: none; }
   .selbar__btn { padding: 0 12px; }
+}
+@media (max-width: 520px) {
+  .selbar { padding-left: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .selbar { transition: opacity 180ms var(--ease-out); @starting-style { opacity: 0; transform: translateX(-50%); } }

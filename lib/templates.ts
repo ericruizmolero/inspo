@@ -10,6 +10,7 @@ import { getErrors } from "./i18n";
 import { boardStamp, copySystem, getSystem } from "./system";
 import { saveBrief } from "./brief";
 import { ensureBuiltinTemplates } from "./template-seed";
+import { keyOf } from "./storage";
 import type { Project } from "@/types/inspo";
 import { RECIPE_MAX, type ProjectTemplate, type TemplateCard } from "@/types/system";
 
@@ -17,7 +18,7 @@ const P = schema.project;
 type Author = { id: string; name: string };
 
 const cleanUrl = (u: unknown) => { const s = String(u ?? "").trim().slice(0, 300); return /^https?:\/\//i.test(s) ? s : s ? `https://${s}` : ""; };
-const cleanTemplate = (t: Partial<ProjectTemplate>): ProjectTemplate => ({ from: cleanUrl(t.from), to: cleanUrl(t.to), about: String(t.about ?? "").trim().slice(0, 400), ...(t.video ? { video: cleanUrl(t.video) } : {}), ...(t.builtin ? { builtin: String(t.builtin) } : {}) });
+const cleanTemplate = (t: Partial<ProjectTemplate>): ProjectTemplate => ({ from: cleanUrl(t.from), to: cleanUrl(t.to), about: String(t.about ?? "").trim().slice(0, 400), ...(t.video ? { video: cleanUrl(t.video) } : {}), ...(t.builtin ? { builtin: String(t.builtin) } : {}), ...(keyOf(String(t.poster ?? "")) ? { poster: String(t.poster) } : {}), ...(t.reverse ? { reverse: true } : {}) });
 const NAME_MAX = 60;
 const cleanName = async (name: unknown) => { const n = String(name ?? "").trim().replace(/\s+/g, " ").slice(0, NAME_MAX); if (!n) throw new HttpError(400, (await getErrors()).badBody); return n; };
 
