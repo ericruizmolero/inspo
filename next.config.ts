@@ -12,21 +12,6 @@ const nextConfig: NextConfig = {
   // Development only: the bottom-left corner holds the zoom pill, so the indicator takes the free corner
   devIndicators: { position: "bottom-right" },
   poweredByHeader: false,
-  // On every response. HSTS keeps browsers on HTTPS after the first visit (Vercel already redirects
-  // http). frame-ancestors 'self': nobody can frame a signed-in page to trick a click. No full CSP: the theme boot script is inline (app/layout.tsx).
-  async headers() {
-    return [{
-      source: "/:path*",
-      headers: [
-        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        { key: "X-Content-Type-Options", value: "nosniff" },
-        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-        { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
-        { key: "X-Frame-Options", value: "SAMEORIGIN" },
-        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
-      ],
-    }];
-  },
   // Settings moved under /settings (22/09/2026). Old links, bookmarks and emails keep working;
   // the query passes through.
   async redirects() {
@@ -37,10 +22,22 @@ const nextConfig: NextConfig = {
       { source: "/invitacion/:id", destination: "/invite/:id", permanent: true },
     ];
   },
+  // On every response. HSTS keeps browsers on HTTPS after the first visit (Vercel already redirects
+  // http). frame-ancestors 'self': nobody can frame a signed-in page to trick a click. No full CSP: the theme boot script is inline (app/layout.tsx).
   // The page where a person lets an AI client into their account (the MCP connector's consent, lib/mcp/oauth.ts)
-  // is never shown inside another site's frame, where a click could be steered onto "Allow"
+  // is never shown inside any frame, not even ours, where a click could be steered onto "Allow". Its rule is
+  // the only one that matches it: the catch-all leaves it out, so the two never send the same header twice.
   async headers() {
-    return [{ source: "/mcp/authorize", headers: [{ key: "X-Frame-Options", value: "DENY" }, { key: "Content-Security-Policy", value: "frame-ancestors 'none'" }] }];
+    const base = [
+      { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+    ];
+    return [
+      { source: "/((?!mcp/authorize).*)", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'self'" }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
+      { source: "/mcp/authorize", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'none'" }, { key: "X-Frame-Options", value: "DENY" }] },
+    ];
   },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],
   experimental: {
