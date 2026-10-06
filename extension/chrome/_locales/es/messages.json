@@ -166,7 +166,7 @@
     "message": "De Pinterest"
   },
   "pinLead": {
-    "message": "Pega la dirección de un tablero. Cada pin se guarda como imagen, secciones incluidas. Para un tablero secreto tienes que tener la sesión de Pinterest iniciada en este navegador."
+    "message": "Pega la dirección de uno de tus tableros. Cada pin se guarda como imagen, secciones incluidas. Para un tablero secreto tienes que tener la sesión de Pinterest iniciada en este navegador."
   },
   "pinUrlLabel": {
     "message": "Dirección del tablero"

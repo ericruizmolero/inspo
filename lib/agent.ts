@@ -8,16 +8,16 @@ import { after } from "next/server";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
-import { HttpError } from "./workspace-core";
+import { HttpError, canManage } from "./workspace-core";
 import type { Ctx } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
 import { recordUsage, type UsageCtx } from "./usage";
-import { addItem, deleteItems, rowToItem, setItemNote, editUserTags } from "./items";
+import { addItem, deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
-import { loadProjects, createProject, renameProject, deleteProject, fileItems, unfileItems } from "./projects";
+import { loadProjects, createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems } from "./projects";
 import { saveBrief, setClientBrand } from "./brief";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
@@ -376,7 +376,11 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           names.set(p.id, p.name); created = p.id; line.project = p.name; projectsTouched = true; break;
         }
         case "rename_project": { const p = await renameProject(org, a.project, a.name.trim().slice(0, 60)); line.project = p.name; line.text = names.get(a.project); projectsTouched = true; break; }
-        case "delete_project": line.project = names.get(a.project); await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
+        // The agent deletes what the person asking could delete by hand, and no more (app/actions/library.ts)
+        case "delete_project":
+          line.project = names.get(a.project);
+          if (!canManage(ctx.workspace.role) && !(await startedProject(org, a.project, author.id))) throw new HttpError(403, (await getErrors()).projectNotYours);
+          await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
         case "brief": await saveBrief(org, a.project, { about: a.about.trim() }, author.id); line.project = names.get(a.project); line.text = a.about; break;
         case "client": await setClientBrand(org, a.project, a.item, author.id); line.project = names.get(a.project); line.on = !!a.item; line.items = a.item ? [a.item] : []; projectsTouched = true; break;
         case "add_url": {
@@ -399,6 +403,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           line.name = await itemName(a.item); line.text = a.add ?? a.remove ?? ""; line.items = [a.item]; break;
         }
         case "delete_items":
+          if ((await deletableIds(org, a.items, ctx.user, canManage(ctx.workspace.role))).length < a.items.length) throw new HttpError(403, (await getErrors()).cardsNotYours);
           await deleteItems(org, a.items);
           (patch.removed ??= []).push(...a.items); line.n = a.items.length; projectsTouched = true; systemsTouched = true; break;
       }

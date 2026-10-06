@@ -20,7 +20,7 @@ import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
 import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
-import { recordUsage, type UsageCtx } from "./usage";
+import { AUTO_REF, recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
@@ -421,7 +421,7 @@ const inflight = new Map<string, Promise<ProjectSystem>>();
  * Reads the board and writes the system: the model's proposal for every area the team has not
  * decided, the summary and the run. Always costs (little): the client asks when the run is stale.
  */
-export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus }): Promise<ProjectSystem> {
+export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus; /** Nobody asked for this pass by hand: it does not count as an AI action */ auto?: boolean }): Promise<ProjectSystem> {
   const key = `${input.organizationId}|${input.projectId}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -465,7 +465,7 @@ const standing = current.areas.map((a) => ({
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
-    void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId}` });
+    void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${input.auto ? AUTO_REF : ""}project:${input.projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));
     console.log(`system ${input.projectId}: ${refs.length} refs → ${out.areas.filter((a) => a.decision.trim()).length} areas filled, ${res.usage.input}+${res.usage.output} tokens, ${res.ms} ms, ${res.costUsd ?? "?"} USD`);
 

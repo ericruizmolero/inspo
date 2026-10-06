@@ -28,7 +28,9 @@ Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay 
 
 ## Zoom del tablero
 
-Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `.board-zoom` `− % +` abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
+Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `ZoomPill` (`.zoom-pill`, `− % +`) abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
+
+Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada. → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
 
 ## Acciones: a mano o por el agente
 

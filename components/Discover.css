@@ -8,8 +8,6 @@
 .disc-lead { margin: 8px 0 0; max-width: 62ch; font-size: 14px; line-height: 1.5; color: var(--text-2); }
 .disc-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; min-width: 0; max-width: 1040px; margin: 18px auto 28px; }
 .disc-bar__side { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
-.disc-bar__link { font-size: 13px; color: var(--text-2); text-decoration: none; }
-.disc-bar__link:hover { color: var(--text); }
 /* The segmented control of the row: the sections and the shelves. Here and not with the templates' styles, so it is
    dressed too when the page opens straight on the resources or the skills. The fill of the chosen one is Liquid's */
 .tt-modes { display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--surface); flex-shrink: 0; }

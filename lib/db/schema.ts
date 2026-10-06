@@ -148,6 +148,9 @@ export const inspoItem = pgTable("inspo_item", {
   /** The app it was saved from when that was not criterio itself: the name of the AI client connected over MCP
    *  (lib/mcp), "Claude". Null for everything saved in the app or by the extension */
   via: text("via"),
+  /** The page an image or a video was found on, when its `web` is our copy of the file (a pin, a picture saved
+   *  from a site): where it came from, kept so the reference always names its origin */
+  source: text("source"),
   /** Path of the manual thumbnail (/api/files/…, lib/storage.ts) */
   thumbnailUrl: text("thumbnail_url"),
   /** Serialized InspoTags (AI tags) */

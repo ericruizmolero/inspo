@@ -57,7 +57,7 @@ const imagesOf = (image: unknown): string[] =>
 
 // POST { items: [{ url, title?, date?, image? }], source?, projectId? } → { ok, results: [{ url, status, id? }] }
 // `image` (an address, or a few to try in turn) makes the item that image, found on the page at `url`:
-// the file is copied into the workspace's media folder and the page only tells one image from another.
+// the file is copied into the workspace's media folder, and the page stays with the item as its source.
 // `date` (YYYY-MM-DD) is the day the address was saved or published, so an import lands each
 // reference on its own day on the board instead of piling them all on today.
 // `projectId` is the project picked on the import page: what is new goes there, and so does what the
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
         const stored = await putFile(importedMediaKey(ctx.workspace.id, web, file.type), file.body, file.type);
         const item = await addItem(ctx.workspace.id, {
           name: clip(it.title, 48) || new URL(web).hostname.replace(/^www\./, ""),
-          web: stored, thumbnailUrl: stored, type: "inspiration", author, createdBy: ctx.user.id, dateIso,
+          web: stored, thumbnailUrl: stored, source: web, type: "inspiration", author, createdBy: ctx.user.id, dateIso,
         });
         added.push(item);
         return { url: raw, status: "added", id: item.id };

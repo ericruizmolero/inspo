@@ -26,6 +26,8 @@ const MAX_TABS = 8;
 /** On a first visit, before anything was opened or closed here: the most recently active, this many */
 const FIRST_TABS = 5;
 const IcHome = <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden><path d="M2.5 7.2 8 2.75l5.5 4.45V13a.75.75 0 0 1-.75.75H9.75v-3.5h-3.5v3.5H3.25A.75.75 0 0 1 2.5 13z" /></svg>;
+/** Faces in the menu's team row, overlapping; past this, the last slot counts the rest */
+const MAX_FACES = 7;
 /** Gap between tabs, as in .island__tabs */
 const GAP = 2;
 /** A name past this many characters is cut by the tab's max-width: the tooltip keeps it whole */
@@ -88,7 +90,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace,
-  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -96,6 +98,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   /** The team, listed in the workspace menu; picking someone filters by what they saved */
   members?: { name: string; image: string | null }[];
   onPerson?: (name: string) => void;
+  /** The workspace menu just opened: the moment to re-read the plan's usage */
+  onMenuOpen?: () => void;
   /** "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
@@ -252,46 +256,25 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     <div className="island" ref={root} data-feedback-entry="">
       <WorkspaceMenu
         user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-        triggerClassName="island__ws" triggerLabel={t.ws.menuFor(workspace.name)}
+        triggerClassName="island__ws" triggerLabel={t.ws.menuFor(workspace.name)} onOpen={onMenuOpen}
         trigger={<>
           <WorkspaceFace workspace={workspace} user={user} small />
           <span className="island__chev" aria-hidden>{Icons.chevron}</span>
         </>}
         extras={<>
-          {/* The projects as folders and the team, one click from anywhere */}
-          <div className="ws__section">{t.projects.title}</div>
-          {projects.length > 0 && (
-            <div className="island__menu-list">
-              {projects.map((p) => (
-                <button key={p.id} type="button" className={`ws__item${space === p.id ? " is-active" : ""}`} onClick={() => onSpace(p.id)}>
-                  <span className="pp__icon" aria-hidden>{Icons.folder}</span>
-                  <span className="ws__item-name">{p.name}</span>
-                  <span className="island__n">{counts.byProject[p.id] ?? 0}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          {/* After the menu has closed: opening one popover on the click that closes another shuts it at once */}
-          <button type="button" className="ws__item ws__item--muted" onClick={() => setTimeout(() => setNaming("new"), 150)}>
-            <span className="ws__plus" aria-hidden>{Icons.plus}</span>
-            <span className="ws__item-name">{t.projects.newProject}</span>
-          </button>
-          <div className="ws__divider" />
-          <div className="ws__section">{t.team.title}</div>
-          {members.length > 0 && (
-            <div className="island__menu-list">
-              {members.map((m) => (
-                <button key={m.name} type="button" className="ws__item" title={t.ws.savedBy(m.name)} onClick={() => onPerson?.(m.name)}>
-                  <UserAvatar name={m.name} image={m.image} small />
-                  <span className="ws__item-name">{m.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-          <Link className="ws__item ws__item--muted" href="/settings/members">
-            <span className="ws__plus" aria-hidden>{Icons.plus}</span>
-            <span className="ws__item-name">{t.ws.manageTeam}</span>
-          </Link>
+          {/* The team in one row of faces: each one filters by who saved, and the row ends in the way to Members.
+              The projects are not listed here: the tabs beside this menu are the projects */}
+          <div className="island__team">
+            {(members.length > MAX_FACES ? members.slice(0, MAX_FACES - 1) : members).map((m) => (
+              <button key={m.name} type="button" className="island__face" title={t.ws.savedBy(m.name)} aria-label={t.ws.savedBy(m.name)} onClick={() => onPerson?.(m.name)}>
+                <UserAvatar name={m.name} image={m.image} small />
+              </button>
+            ))}
+            {members.length > MAX_FACES && (
+              <Link className="island__face island__face--more" href="/settings/members">+{members.length - MAX_FACES + 1}</Link>
+            )}
+            <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
+          </div>
           <div className="ws__divider" />
           <button type="button" className="ws__item" onClick={onDirectory}>
             <span className="ws__plus ws__plus--solid" aria-hidden>{Icons.compass}</span>
@@ -301,7 +284,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <span className="ws__plus ws__plus--solid" aria-hidden>{sectionIcon("feedback")}</span>
             <span className="ws__item-name">{t.feedback.open}</span>
           </button>
-          {quota && <div className="island__plan"><PlanMeter quota={quota} /></div>}
+          {quota && <div className="island__plan"><PlanMeter quota={quota} compact /></div>}
           <div className="ws__divider" />
         </>}
       />

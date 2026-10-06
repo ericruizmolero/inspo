@@ -16,7 +16,7 @@ import { keyOf } from "./storage";
 import { dictOf, type Locale } from "./i18n";
 import { refInfoOf } from "./ref-info";
 import { blocksToMd, criterioBlocks, type CriterioBlock, type RefInfo } from "./criterio-md";
-import { mediaKindOf } from "./url";
+import { mediaKindOf, staysInside } from "./url";
 import { projectBrandPrefix, brandKeyAllowed, keysIn } from "./brand-files";
 import type { ShareMode } from "./share";
 import type { SystemArea } from "@/types/system";
@@ -69,10 +69,14 @@ export async function loadShareView(organizationId: string, projectId: string, m
     keys.add(key);
     return at(key);
   };
+  // What came from X or Pinterest is named and linked, but a link never hands out our copy of it (lib/url.ts
+  // staysInside). The team's own copy (no base) reads it through the app's file route, as the board does.
+  const held = (i: { web: string; source?: string }) => base !== null && staysInside(i);
   const refs: Record<string, BrandRef> = {};
   for (const i of items) {
     const image = data.thumbnailMap[i.web] ?? designIndex[i.web]?.coverUrl ?? shots[i.web]?.tileUrl ?? (mediaKindOf(i.web) === "image" ? i.web : null);
-    refs[i.id!] = { id: i.id!, name: i.name, web: mediaKindOf(i.web) === "image" ? through(i.web) ?? i.web : i.web, image: through(image), kind: mediaKindOf(i.web) };
+    const web = held(i) ? i.source ?? i.web : mediaKindOf(i.web) === "image" ? through(i.web) ?? i.web : i.web;
+    refs[i.id!] = { id: i.id!, name: i.name, web, image: held(i) ? null : through(image), kind: mediaKindOf(i.web) };
   }
   // The brand's own files
   const brand = system.brand;
@@ -87,7 +91,8 @@ export async function loadShareView(organizationId: string, projectId: string, m
   const infos: Record<string, RefInfo> = Object.fromEntries(items.map((i) => {
     const info = refInfoOf(i, data.tagMap[i.web], comments[i.id!], t);
     if (mode === "full") for (const w of info.said ?? []) w.images = w.images?.map((u) => through(u) ?? u);
-    const web = mediaKindOf(i.web) === "image" ? `${origin}${through(i.web)}` : i.web;
+    // An image with no page to cite is cited by its file; one that has a page never needs the file
+    const web = mediaKindOf(i.web) === "image" && !i.source ? `${origin}${through(i.web)}` : i.web;
     return [i.id!, { ...info, web, ...(texts[i.id!] ? { text: texts[i.id!]! } : {}) }];
   }));
   const client = project.polish?.brief?.clientItemId ? items.find((i) => i.id === project.polish!.brief!.clientItemId) : null;

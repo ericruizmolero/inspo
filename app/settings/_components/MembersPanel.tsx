@@ -74,6 +74,14 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
     router.refresh();
   };
 
+  // Owner stays owner: the team's creator is not moved from here
+  const setMemberRole = async (m: Member, next: "member" | "admin") => {
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.updateMemberRole({ memberId: m.id, role: next, organizationId: workspace.id });
+    setBusy(false);
+    if (err) setError(err.message ?? t.team.roleFailed); else router.refresh();
+  };
+
   const removeMember = async (m: Member) => {
     if (!(await confirm({ title: t.team.removeConfirm(m.name), action: t.team.remove, danger: true }))) return;
     setBusy(true);
@@ -129,7 +137,15 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                     <span className="list__name">{m.name}{m.userId === me.id && <span className="list__you">{t.team.you}</span>}</span>
                     <span className="list__sub">{m.email}</span>
                   </span>
-                  <span className="list__role">{t.team.roles[m.role.split(",")[0] as keyof typeof t.team.roles] ?? m.role}</span>
+                  {canManage && m.userId !== me.id && !m.role.split(",").includes("owner") ? (
+                    <select className="input list__pick" aria-label={t.team.roleOf(m.name)} value={m.role.split(",").includes("admin") ? "admin" : "member"}
+                      onChange={(e) => setMemberRole(m, e.target.value as "member" | "admin")} disabled={busy}>
+                      <option value="member">{t.team.roles.member}</option>
+                      <option value="admin">{t.team.roles.admin}</option>
+                    </select>
+                  ) : (
+                    <span className="list__role">{t.team.roles[m.role.split(",")[0] as keyof typeof t.team.roles] ?? m.role}</span>
+                  )}
                   {canManage && m.userId !== me.id && (
                     <Button variant="ghost" size="sm" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
                   )}

@@ -36,7 +36,6 @@ export const directory = {
     "https://landing.gallery": "Landing pages collected one by one, to browse by section and style.",
     "https://saaslandingpage.com": "Hundreds of SaaS landing pages, sorted by section type.",
     "https://designbookmark.com": "A collection of design bookmarks: tools, galleries and resources in one place.",
-    "https://ui-skills.com": "The catalog: design skills for agents, curated and installed with one command.",
     "https://superdesign.dev": "An open source design agent that drafts UI and variations right inside your editor.",
     "https://deck.gallery": "Presentation decks from real brands and studios, to see how a pitch is laid out.",
     "https://logosystem.co": "Logo systems: marks with their variants, grids and uses, not just the logo alone.",

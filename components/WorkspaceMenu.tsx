@@ -58,7 +58,7 @@ const I = {
   ),
 };
 
-export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras }: {
+export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras, onOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
   /** What opens the menu, in place of the workspace card (the island's avatar); the menu then hangs from it */
   trigger?: ReactNode;
@@ -66,6 +66,8 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   triggerLabel?: string;
   /** Rows above Settings (the island puts the directory, feedback and the plan here); any click in them closes the menu */
   extras?: ReactNode;
+  /** Called each time the menu opens (the island re-reads the plan's usage, so the meter is never stale) */
+  onOpen?: () => void;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -96,7 +98,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
 
   return (
     <div className={trigger ? "ws ws--inline" : "ws"} ref={ref}>
-      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) instant?.prefetch(); }}>
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) { instant?.prefetch(); onOpen?.(); } }}>
       <PopoverTrigger className={triggerClassName ?? "ws__trigger"} aria-label={triggerLabel} onPointerEnter={() => instant?.prefetch()}>
         {trigger ?? (
           <>
@@ -113,8 +115,10 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
         )}
       </PopoverTrigger>
 
-      {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip */}
-      <PopoverContent className={trigger ? "ws__menu ws__menu--inline island-pop" : "ws__menu"} anchor={trigger ? undefined : ref}>
+      {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip.
+          It always hangs below: a menu too tall for the window scrolls inside instead of jumping to the side */}
+      <PopoverContent className={trigger ? "ws__menu ws__menu--inline island-pop" : "ws__menu"} anchor={trigger ? undefined : ref}
+        collisionAvoidance={{ side: "none", align: "shift", fallbackAxisSide: "none" }}>
           <div className="ws__section">{t.ws.workspaces}</div>
           {personal.map((w) => (
             <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>

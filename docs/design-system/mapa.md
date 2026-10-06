@@ -46,6 +46,7 @@ Se da acceso con `npm run admin -- <correo>`.
 | `/invite/[id]` | Aceptar una invitación (pasa el proxy, pero la página pide sesión) |
 | `/s/[token]` | La marca de un proyecto compartida por enlace, de solo lectura, con criterio.md para copiar o descargar. El token es la prueba; no se indexa |
 | `/extension/privacy` | Privacidad de la extensión, enlazada desde la Chrome Web Store |
+| `/privacy`, `/terms` | Política de privacidad y términos de uso. Borrador: 404 en producción hasta que `lib/legal.ts` tenga los datos de la sociedad |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
 
 ## Extensión

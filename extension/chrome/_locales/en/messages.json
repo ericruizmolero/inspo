@@ -166,7 +166,7 @@
     "message": "From Pinterest"
   },
   "pinLead": {
-    "message": "Paste the address of a board. Each of its pins is saved as an image, sections included. A secret board needs you signed in to Pinterest in this browser."
+    "message": "Paste the address of one of your boards. Each of its pins is saved as an image, sections included. A secret board needs you signed in to Pinterest in this browser."
   },
   "pinUrlLabel": {
     "message": "Board address"

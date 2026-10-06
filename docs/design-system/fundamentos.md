@@ -94,7 +94,7 @@ Regla: en lo nuevo, solo valores de esta tabla. Los impares (3, 5, 7, 9) que hay
 | --- | --- |
 | 0–3 | Decoración dentro de tarjetas (badges, botones inferiores, tooltips de tarjeta) |
 | 5–6 | Capas dentro de una vista (barras sticky, zonas de soltar, popover de pin) |
-| 12 | Control de zoom del tablero |
+| 12 | Pastilla de la esquina (zoom y música) y botón de tema |
 | 20 | Barra superior (`.topbar`, Isla) y barra de invitado |
 | 25 | Dock (buscador y agente) |
 | 30 | Sugerencias del buscador, ficha de referencia (escritorio), selector de referencias |

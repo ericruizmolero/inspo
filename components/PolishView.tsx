@@ -9,18 +9,21 @@
 // Inbox tab of the island, which takes it with a small bump. With nothing left to decide, the board that was kept
 // turns behind the step to the system.
 // Only the cards near the screen are mounted, so a board of hundreds costs the same as one of thirty. What was
-// kept is remembered in the browser, per project, so coming back only asks about what is new. Optional music
-// plays under it, one track after another (public/polish/*.mp3, listed in TRACKS).
+// kept is remembered in the browser, per project, so coming back only asks about what is new.
+// It zooms as the board does (the same pill in the same corner, a pinch or ctrl/⌘ + wheel): out to see more of the
+// tornado at once, in to look at the card closer. The zoom is the size of the tornado's em, so it scales as one piece.
+// The pill holds the app's optional music too (components/SoundControl.tsx), as everywhere else.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Undo2, Volume2, VolumeX } from "lucide-react";
+import { Undo2 } from "lucide-react";
 import type { InspoItem, Project } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
 import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cachedCardImage } from "./InspoCard";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
+import SoundControl from "./SoundControl";
+import ZoomPill from "./ZoomPill";
 import "./PolishView.css";
 
 // The tornado, in Osmo's own terms
@@ -31,8 +34,8 @@ const EDGE_SCALE = 0.5; // card heights it takes to shrink to nothing
 const ORBIT = 35; // radius of the orbit, in em
 const AUTO_SPEED = 0.00325; // cards per frame it turns at on its own
 const SCROLL_EASE = 0.1; // how fast it picks its own speed up again
-const BACK_FOG = 0.5; // how far the cards at the back sink into the page
-const BACK_BLUR = 0.5; // em of blur at the very back
+const BACK_FOG = 0.5; // how far the cards at the back sink into the page: nearly all the way
+const BACK_BLUR = 0.6; // em of blur at the very back
 const CARD_H = 15; // em: the nominal card the spacing is counted in (Osmo's is 22.5 tall; a board is mostly sites, 16:10)
 // Ours: the card facing the screen takes more room, and its neighbours step aside
 const CARD_W = 18; // em: a card's width on the orbit
@@ -40,8 +43,8 @@ const FRONT_W = 30; // em: its width facing the screen. Cards are laid out at th
 const FRONT_PUSH = 6; // em it comes towards the eye
 const FRONT_SCALE = 1 - FRONT_PUSH / 75; // what undoes the perspective's own enlargement (the stage's is 75em)
 const SPREAD = 0.5; // card steps its neighbours move away
-const SIDE_FOG = 0.1; // the others, a touch into the page
-const NEAR_BLUR = 0.07; // em of blur on the nearest of the others: only the card in front is in full focus
+const SIDE_FOG = 0.46; // the others, well into the page: with the blur, what says which card is being decided
+const NEAR_BLUR = 0.42; // em of blur on the nearest of the others: only the card in front is in focus, and the rest read as out of it at a glance
 // How it stops and goes
 const GLIDE_MS = 150; // time constant of the glide to a card
 const CLOSE_MS = 130; // and of the gap closing when a card leaves the board
@@ -51,6 +54,13 @@ const DRAG_SLOP = 6; // px before a press is a drag
 const SETTLE_MS = 140; // this long without a scroll, it rests on the nearest card
 const FLY_MS = 640;
 const LAND = 0.8; // the part of the flight after which the card is on its tab: the tab bumps, and a forgotten card is taken out of the project then, so the Inbox counts it as it arrives
+// The zoom: how big the tornado's em is drawn, 1 being its own size
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 1.5;
+const ZOOM_STOPS = [0.5, 0.65, 0.8, 1, 1.25, 1.5]; // where the buttons stop; a pinch stops anywhere
+const ZOOM_MS = 110; // time constant of the glide from one size to another
+const PINCH_GAIN = 0.01; // how much a pixel of pinch (or of ctrl + wheel) zooms
+const PINCH_MAX = 24; // and the most one event counts for: a mouse wheel's notch is a step, not a jump
 const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
 const EASE_FLY = "cubic-bezier(0.55, 0, 0.25, 1)";
 /** Where a decided card lands: the tab that stands for the place it goes to */
@@ -59,20 +69,7 @@ const LANDING = { inbox: '.island a[href*="in=inbox"]', board: '.topbar__modes [
 /** The card each project's view last opened on, so the next time it opens on another */
 const lastFront = new Map<string, string>();
 const KEPT_KEY = (projectId: string) => `inspo:polish-kept:${projectId}`;
-const SOUND_KEY = "inspo:polish-sound";
-const TRACK_KEY = "inspo:polish-track";
-// The music, all of it by HoliznaCC0 (CC0) and brought to the same loudness. A file in public/polish/ per track
-const TRACKS = [
-  { id: "laundry-on-the-wire", title: "Laundry On The Wire" },
-  { id: "first-snow", title: "First Snow" },
-  { id: "snow-drift", title: "Snow Drift" },
-  { id: "keeping-cool", title: "Keeping Cool" },
-  { id: "night-driving", title: "Night Driving" },
-  { id: "windows-down", title: "Windows Down" },
-];
-const SOUND_VOLUME = 0.5;
-const SOUND_FADE_MS = 700;
-const SOUND_SWAP_MS = 260; // the track that is leaving fades out this fast
+const ZOOM_KEY = "inspo:polish-zoom";
 
 const mod = (a: number, n: number) => ((a % n) + n) % n;
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
@@ -81,6 +78,15 @@ const smooth = (x: number) => x * x * (3 - 2 * x);
 /** The position nearest to `p` where the card at `index` of a board of `n` sits */
 const nearest = (index: number, p: number, n: number) => index + n * Math.round((p - index) / n);
 const stillMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const pctOf = (zoom: number) => Math.round(zoom * 100);
+/** The zoom kept from the last visit, the same for every project */
+function keptZoom(): number {
+  try {
+    const z = Number(localStorage.getItem(ZOOM_KEY));
+    if (z >= ZOOM_MIN && z <= ZOOM_MAX) return z;
+  } catch { /* no storage */ }
+  return 1;
+}
 
 interface CardNode { el: HTMLElement; fog: HTMLElement; key: string; k: number; off: number; rel: number; z: number; blur: number; shown: boolean }
 interface Engine {
@@ -95,6 +101,8 @@ interface Engine {
   /** How much room the card in front takes: 1 while there is something to decide, 0 once the board is done */
   lift: number; done: boolean;
   still: boolean; em: number; h: number; base: number;
+  /** The zoom on screen and the one it is gliding to; `em` is the stage's own em (`baseEm`) times the first */
+  zoom: number; zoomTo: number; baseEm: number;
   /** The position it last came to rest on: that card gets its bigger picture */
   rested: number | null;
   nodes: CardNode[];
@@ -126,7 +134,7 @@ function paint(e: Engine, dt: number) {
     const scale = edge * (rest + front * (FRONT_SCALE - rest));
     nd.el.style.transform = `translate3d(${(Math.sin(rad) * radius).toFixed(2)}px,${y.toFixed(2)}px,${((cos - 1) * radius).toFixed(2)}px) rotateY(${deg.toFixed(3)}deg) translateZ(${(front * FRONT_PUSH * e.em).toFixed(2)}px) scale(${scale.toFixed(4)})`;
     const back = (1 - cos) / 2;
-    nd.fog.style.opacity = Math.min(0.92, back * BACK_FOG + (1 - front) * SIDE_FOG).toFixed(3);
+    nd.fog.style.opacity = Math.min(0.9, back * BACK_FOG + (1 - front) * SIDE_FOG).toFixed(3);
     // Blur in half pixels: the card is only drawn again when it crosses a step
     // (with the board done the whole tornado is out of focus as one picture, in CSS: no card needs its own)
     const blur = e.done ? 0 : Math.round(((1 - front) * NEAR_BLUR + back * BACK_BLUR) * e.em * 2) / 2;
@@ -134,107 +142,6 @@ function paint(e: Engine, dt: number) {
     const zi = Math.round((cos + 1) * 500 + front * 100);
     if (zi !== nd.z) { nd.z = zi; nd.el.style.zIndex = String(zi); }
   }
-}
-
-/** The optional music: nothing is fetched until it is turned on; it fades in and out, and stops with the view.
- *  One track follows the other, and `pick` puts on the one chosen; the last one heard is where it starts again. */
-function useAmbience(): { on: boolean; toggle: () => void; track: number; pick: (index: number) => void } {
-  const [on, setOn] = useState(false);
-  const [track, setTrack] = useState(0);
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const ramp = useRef(0);
-  const wanted = useRef(false);
-  const at = useRef(0);
-  const turn = useRef(0); // goes up with every change of track: a play() asked for an earlier one answers to nobody
-
-  const fade = useCallback((to: number, ms: number, then?: () => void) => {
-    const el = audio.current;
-    if (!el) return;
-    cancelAnimationFrame(ramp.current);
-    const from = el.volume, t0 = performance.now();
-    const step = (t: number) => {
-      const x = Math.min(1, (t - t0) / ms);
-      el.volume = from + (to - from) * x;
-      if (x < 1) ramp.current = requestAnimationFrame(step);
-      else then?.();
-    };
-    ramp.current = requestAnimationFrame(step);
-  }, []);
-  const start = useCallback(() => {
-    const el = audio.current;
-    if (!el) return;
-    const mine = turn.current;
-    // An answer only counts for the audio and the track that are still the ones playing: a view mounted twice, or
-    // a tab hidden while it loads, leaves a play() cut short behind, and that one must not turn the button off
-    const current = () => audio.current === el && mine === turn.current;
-    el.play().then(
-      () => { if (current() && wanted.current) fade(SOUND_VOLUME, SOUND_FADE_MS); },
-      // Refused (no gesture yet on this page, or no file): the button goes back to off
-      (err: unknown) => {
-        if (!current() || (err as { name?: string } | null)?.name === "AbortError") return;
-        wanted.current = false;
-        setOn(false);
-      },
-    );
-  }, [fade]);
-  /** Puts another track on: the one playing fades out first, unless it has just ended by itself */
-  const go = useCallback((index: number, faded: boolean) => {
-    const i = mod(index, TRACKS.length);
-    at.current = i;
-    setTrack(i);
-    try { localStorage.setItem(TRACK_KEY, TRACKS[i].id); } catch { /* no storage */ }
-    const el = audio.current;
-    if (!el) return;
-    turn.current++;
-    const swap = () => {
-      el.src = `/polish/${TRACKS[i].id}.mp3`;
-      if (wanted.current) start();
-    };
-    if (faded && !el.paused) fade(0, SOUND_SWAP_MS, swap);
-    else swap();
-  }, [fade, start]);
-  const play = useCallback((want: boolean) => {
-    wanted.current = want;
-    if (!audio.current) {
-      if (!want) return;
-      const el = new Audio(`/polish/${TRACKS[at.current].id}.mp3`);
-      el.volume = 0;
-      el.addEventListener("ended", () => go(at.current + 1, false));
-      audio.current = el;
-    }
-    if (want) start();
-    else fade(0, SOUND_FADE_MS, () => audio.current?.pause());
-  }, [fade, go, start]);
-  const toggle = () => {
-    const next = !on;
-    setOn(next);
-    try { localStorage.setItem(SOUND_KEY, next ? "1" : "0"); } catch { /* no storage */ }
-    play(next);
-  };
-  const pick = (index: number) => { if (index !== at.current) go(index, true); };
-  useEffect(() => {
-    let kept = false;
-    try {
-      kept = localStorage.getItem(SOUND_KEY) === "1";
-      const last = TRACKS.findIndex((t) => t.id === localStorage.getItem(TRACK_KEY));
-      if (last > 0) { at.current = last; setTrack(last); }
-    } catch { /* no storage */ }
-    if (kept) { setOn(true); play(true); }
-    // A tab left in the background goes quiet
-    const onVisibility = () => {
-      const el = audio.current;
-      if (!el) return;
-      if (document.hidden) el.pause(); else if (wanted.current) void el.play().catch(() => {});
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      cancelAnimationFrame(ramp.current);
-      audio.current?.pause();
-      audio.current = null;
-    };
-  }, [play]);
-  return { on, toggle, track, pick };
 }
 
 /** The reference's picture, with the fallbacks a small thumbnail has (components/Thumb.tsx), or its initial */
@@ -318,10 +225,12 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const rootRef = useRef<HTMLElement>(null);
   const forgetRef = useRef<HTMLButtonElement>(null);
   const keepRef = useRef<HTMLButtonElement>(null);
-  const eng = useRef<Engine>({ p: 0, v: AUTO_SPEED, target: 0, dir: 1, dragging: false, scrolled: 0, lift: 1, done: false, still: false, em: 14, h: 800, base: 0, rested: null, nodes: [] });
+  const eng = useRef<Engine>({ p: 0, v: AUTO_SPEED, target: 0, dir: 1, dragging: false, scrolled: 0, lift: 1, done: false, still: false, em: 14, h: 800, base: 0, zoom: 1, zoomTo: 1, baseEm: 14, rested: null, nodes: [] });
   /** The position facing the screen, and how many cards are mounted either side of it */
   const [base, setBase] = useState(0);
   const [side, setSide] = useState(16);
+  /** The zoom asked for, in hundredths: what the pill says */
+  const [zoom, setZoom] = useState(keptZoom);
   /** The position the tornado is resting on, if it is: only that card loads its bigger picture, never one going by */
   const [rested, setRested] = useState<number | null>(null);
   const [kept, setKept] = useState<Set<string>>(() => new Set());
@@ -334,8 +243,6 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const [history, setHistory] = useState<Step[]>([]);
   const [forgot, setForgot] = useState(0);
   const [busy, setBusy] = useState(false);
-  const { on: sound, toggle: toggleSound, track, pick: pickTrack } = useAmbience();
-  const [tracksOpen, setTracksOpen] = useState(false);
   const flightId = useRef(0);
   const prevKeys = useRef<string[] | null>(null);
   /** After the tornado's cards change: the card to bring to the front (one taken back) */
@@ -434,21 +341,39 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   });
 
   // The size of things: the em the cards are drawn in, and how many fit either side of the screen
+  /** How many cards to mount: as many as fit at the smaller of the zoom on screen and the one it is gliding to */
+  const fit = useCallback(() => {
+    const e = eng.current, cardH = CARD_H * e.baseEm * Math.min(e.zoom, e.zoomTo);
+    setSide(Math.ceil((e.h / 2 + cardH * (EDGE_OFFSET + EDGE_SCALE)) / (cardH * Y_SPACING)) + 1);
+  }, []);
   useLayoutEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
+    const stage = stageRef.current, sky = stage?.parentElement;
+    if (!stage || !sky) return;
+    const e = eng.current;
+    e.zoom = e.zoomTo = keptZoom();
+    stage.style.setProperty("--polish-zoom", String(e.zoom));
     const measure = () => {
-      const e = eng.current;
-      e.em = parseFloat(getComputedStyle(stage).fontSize) || 14;
+      // The sky has the em before the zoom (CSS), the stage the one after
+      e.baseEm = parseFloat(getComputedStyle(sky).fontSize) || 14;
+      e.em = e.baseEm * e.zoom;
       e.h = stage.clientHeight || 800;
-      const cardH = CARD_H * e.em;
-      setSide(Math.ceil((e.h / 2 + cardH * (EDGE_OFFSET + EDGE_SCALE)) / (cardH * Y_SPACING)) + 1);
+      fit();
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(stage);
     return () => ro.disconnect();
-  }, []);
+  }, [fit]);
+  /** Sends the tornado to another size: the loop takes it there */
+  const zoomTo = useCallback((z: number) => {
+    const e = eng.current, next = clamp(z, ZOOM_MIN, ZOOM_MAX);
+    if (next === e.zoomTo) return;
+    e.zoomTo = next;
+    fit();
+    const kept = pctOf(next) / 100;
+    setZoom(kept);
+    try { localStorage.setItem(ZOOM_KEY, String(kept)); } catch { /* no storage */ }
+  }, [fit]);
 
   // The loop. It glides to the card it is sent to; a moment after the last
   // scroll it rests on the nearest one; and with everything decided it turns on its own
@@ -470,6 +395,14 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         e.v += (AUTO_SPEED * e.dir - e.v) * (1 - (1 - SCROLL_EASE) ** f);
         e.p += e.v * f;
       } else if (t - e.scrolled > SETTLE_MS) e.target = Math.round(e.p);
+      if (e.zoom !== e.zoomTo) {
+        const dz = e.zoomTo - e.zoom;
+        e.zoom = e.still || Math.abs(dz) < 0.002 ? e.zoomTo : e.zoom + dz * (1 - Math.exp(-dt / ZOOM_MS));
+        e.em = e.baseEm * e.zoom;
+        stageRef.current?.style.setProperty("--polish-zoom", e.zoom.toFixed(4));
+        // There: what no longer fits either side of the screen can go
+        if (e.zoom === e.zoomTo) fit();
+      }
       const lift = e.done ? 0 : 1;
       if (e.lift !== lift) e.lift = e.still || Math.abs(lift - e.lift) < 0.004 ? lift : e.lift + (lift - e.lift) * (1 - Math.exp(-dt / 220));
       const front = Math.round(e.p);
@@ -478,7 +411,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [fit]);
 
   // Leaving the view with a card still in the air: its decision is not lost
   const onForgetRef = useRef(onForget);
@@ -500,9 +433,14 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const root = rootRef.current;
     if (!root) return;
     const onWheel = (ev: WheelEvent) => {
-      if (ev.ctrlKey || ev.metaKey) return;
       ev.preventDefault();
       const e = eng.current;
+      // A pinch on the trackpad, or ctrl/⌘ + wheel, zooms the tornado instead of the page, as on the board:
+      // pinching in is further away
+      if (ev.ctrlKey || ev.metaKey) {
+        if (!e.done) zoomTo(e.zoomTo * Math.exp(-clamp(ev.deltaY * (ev.deltaMode === 1 ? 32 : 1), -PINCH_MAX, PINCH_MAX) * PINCH_GAIN));
+        return;
+      }
       const d = (Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY) * (ev.deltaMode === 1 ? 32 : 1);
       if (!d) return;
       e.dir = d > 0 ? 1 : -1;
@@ -511,7 +449,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     };
     root.addEventListener("wheel", onWheel, { passive: false });
     return () => root.removeEventListener("wheel", onWheel);
-  }, []);
+  }, [zoomTo]);
 
   // ─── Deciding ───────────────────────────────────────────────────────────────
   /** The card leaves the tornado at once; a copy of it, from where it stands, is what is seen flying to its tab */
@@ -731,28 +669,20 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         </div>
       )}
 
-      <div className={`polish__sound${sound ? " is-on" : ""}`}>
-        <button type="button" className="polish__sound-toggle" onClick={toggleSound} aria-pressed={sound} title={sound ? s.soundOff : s.soundOn}>
-          {sound ? <Volume2 size={16} strokeWidth={1.5} aria-hidden /> : <VolumeX size={16} strokeWidth={1.5} aria-hidden />}
-          {!sound && <span>{s.sound}</span>}
-        </button>
-        {sound && (
-          <Popover open={tracksOpen} onOpenChange={setTracksOpen}>
-            <PopoverTrigger className="polish__sound-track" title={s.soundPick} aria-label={s.soundPick}>
-              <span>{TRACKS[track].title}</span>
-              {Icons.chevron}
-            </PopoverTrigger>
-            <PopoverContent side="top" align="start" className="pp pp--menu polish__tracks">
-              {TRACKS.map((tr, i) => (
-                <button key={tr.id} type="button" className={`ws__item${i === track ? " is-active" : ""}`} onClick={() => { setTracksOpen(false); pickTrack(i); }}>
-                  <span className="ws__item-name">{tr.title}</span>
-                  {i === track && <span className="ws__item-check">{Icons.check}</span>}
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
-        )}
-      </div>
+      {/* The board's corner and its pill: the zoom where the board has it, and the music in the same piece */}
+      <ZoomPill
+        className="polish__corner"
+        zoom={current && !done && loaded ? {
+          pct: pctOf(zoom),
+          canOut: zoom > ZOOM_MIN,
+          canIn: zoom < ZOOM_MAX,
+          onOut: () => zoomTo([...ZOOM_STOPS].reverse().find((z) => z < zoom - 0.005) ?? ZOOM_MIN),
+          onIn: () => zoomTo(ZOOM_STOPS.find((z) => z > zoom + 0.005) ?? ZOOM_MAX),
+          onReset: () => zoomTo(1),
+        } : null}
+      >
+        <SoundControl />
+      </ZoomPill>
     </section>
   );
 }

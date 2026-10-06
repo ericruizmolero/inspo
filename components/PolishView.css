@@ -3,11 +3,12 @@
 .polish { position: absolute; inset: 0; overflow: clip; background: var(--bg); -webkit-user-select: none; user-select: none; }
 
 /* ─── The tornado ─── */
-.polish__sky { position: absolute; inset: 0; cursor: grab; touch-action: none; transition: filter 900ms var(--ease-out); }
+.polish__sky { position: absolute; inset: 0; font-size: clamp(9px, min(1.2vw, 2.1vh), 22px); cursor: grab; touch-action: none; transition: filter 900ms var(--ease-out); }
 .polish__sky.is-grabbing { cursor: grabbing; }
-/* The stage's font-size is the tornado's unit: every distance of the orbit is in em, so it scales as one piece */
+/* The stage's font-size is the tornado's unit: every distance of the orbit is in em, so it scales as one piece.
+   The sky has the size the screen gives it, and the zoom (set by the loop) multiplies it */
 .polish__stage {
-  position: absolute; inset: 0; font-size: clamp(9px, min(1.2vw, 2.1vh), 22px);
+  position: absolute; inset: 0; font-size: calc(1em * var(--polish-zoom, 1));
   perspective: 75em; transform-style: preserve-3d;
 }
 /* A card: placed by the loop (transform, filter, z-index), centred by `translate` so the two never fight. It is laid
@@ -99,30 +100,9 @@
   .polish__undo:hover { color: var(--dock-ink); }
 }
 
-/* The sound, in the corner the zoom has on the board and in its pill */
-.polish__sound {
-  position: absolute; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 12;
-  display: inline-flex; align-items: center; height: 44px; border-radius: 14px;
-  background: var(--dock-surface); color: var(--dock-muted); font-size: 13px; font-weight: 500;
-  box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
-  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
-  --focus-ring: var(--dock-ink);
-}
-.polish__sound-toggle, .polish__sound-track {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 100%; border: 0; border-radius: inherit;
-  background: none; color: inherit; font: inherit; cursor: pointer;
-  transition: color 150ms ease, transform 120ms var(--ease-out);
-}
-.polish__sound-toggle { padding: 0 16px 0 12px; }
-.polish__sound.is-on .polish__sound-toggle { padding: 0 8px 0 12px; color: var(--dock-ink); }
-/* Playing: the pill names the track, and the name opens the list of them */
-.polish__sound-track { gap: 6px; padding: 0 12px 0 2px; color: var(--dock-ink); }
-.polish__sound-track svg { color: var(--dock-muted); transition: color 150ms ease; }
-.polish__sound-toggle:active, .polish__sound-track:active { transform: scale(0.96); }
-.polish__tracks { width: 208px; }
-@media (hover: hover) and (pointer: fine) {
-  .polish__sound-toggle:hover, .polish__sound-track:hover svg { color: var(--dock-ink); }
-}
+/* The corner the zoom has on the board, and its pill (components/ZoomPill.tsx): the zoom in the same place, and the
+   music in the same piece */
+.polish__corner { position: absolute; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12; }
 
 /* Everything decided. The board that stays keeps turning, far and out of focus, and over it what was done falls
    into place: a few of the kept references tidy themselves into a fan, then the words, then the way on */
@@ -157,12 +137,13 @@
 .polish__done-actions svg { width: 14px; height: 14px; }
 .polish__empty-actions { display: inline-flex; gap: 8px; margin-top: 8px; }
 
+/* A window too narrow for the pill and the answers side by side: the answers go over it */
+@media (min-width: 801px) and (max-width: 860px) {
+  .polish__bar { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
 @media (max-width: 800px) {
-  /* The answers take the bottom: the sound goes up under the top bar, as an icon, and undo sits over their corner */
-  .polish__sound { top: 64px; bottom: auto; }
-  .polish__sound .polish__sound-toggle { width: 44px; padding: 0; }
-  .polish__sound .polish__sound-track { width: 36px; padding: 0 8px 0 0; }
-  .polish__sound span { display: none; }
+  /* The answers take the bottom: the sound goes up under the top bar (a phone has no zoom), and undo sits over their corner */
+  .polish__corner { top: 64px; bottom: auto; }
   .polish__bar { width: calc(100% - 32px); gap: 8px; }
   .polish__choice { width: 100%; }
   .polish__btn { flex: 1; min-width: 0; padding: 0 12px; gap: 10px; }

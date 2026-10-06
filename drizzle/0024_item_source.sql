@@ -1,0 +1,1 @@
+ALTER TABLE "inspo_item" ADD COLUMN "source" text;

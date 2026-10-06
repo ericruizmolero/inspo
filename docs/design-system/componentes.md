@@ -36,6 +36,8 @@ Barra flotante de escritorio con los proyectos como pestañas, a lo Figma: Inici
 ### Menú de espacio y avatares
 `WorkspaceMenu` · `WorkspaceAvatar` · `UserAvatar` · `components/WorkspaceMenu.tsx` · `.ws`
 Popover para cambiar de espacio (al instante dentro de la biblioteca), crear equipo y entrar en Ajustes, Actividad y Sistema de diseño (estos dos, solo socios).
+- Desde la Isla lleva además el equipo en una fila de caras solapadas (`.island__team`: cada cara filtra por quién guardó, las que no caben se cuentan en un "+N", "Gestionar" al final), el directorio, el feedback y el plan en una línea (`PlanMeter` con `compact`: "146/2.000 IA", las acciones de IA del mes, que se releen al abrir el menú). → [qué cuenta](decisiones/2026-10-06-el-plan-cuenta-acciones-de-ia.md) No lista proyectos: son las pestañas de la Isla.
+- Cuelga siempre debajo de lo que lo abre y nunca mide más que el hueco de la ventana (`--available-height`); si no cabe, hace scroll por dentro. → [decisión](decisiones/2026-10-06-el-menu-de-espacio-no-lista-proyectos-y-el-equipo-son-caras.md)
 - `WorkspaceAvatar` es cuadrado (logo o inicial); `UserAvatar` es redondo (foto o inicial).
 
 ### Paleta de comandos
@@ -50,7 +52,7 @@ Diálogo de Base UI. Tamaños `sm` y `lg`; el título lleva `.display.modal__tit
 
 ### Confirmación
 `useConfirm` · `components/useConfirm.tsx` · `AlertDialog`
-`confirm()` con promesa: `const [confirm, dialog] = useConfirm()`. Solo para lo que destruye o saca algo.
+`confirm()` con promesa: `const [confirm, dialog] = useConfirm()`. Solo para lo que destruye o saca algo. Con `typed`, la acción espera a que se escriba ese nombre: para lo que se lleva el trabajo de otras personas (eliminar un equipo). → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md)
 
 ### Popover
 `Popover` · `components/ui/popover.tsx` · `.pp` · `.pp--menu`
@@ -83,7 +85,7 @@ Control segmentado Sistema / Claro / Oscuro. Aplica `data-theme` al momento, lo 
 
 ### Botón de tema
 `ThemeToggle` · `components/ThemeToggle.tsx` · `.theme-float` · `.theme-toggle`
-Un clic entre claro y oscuro. En escritorio, un botón de cristal de 36 px que flota en la esquina inferior derecha, a 16 px de cada pared y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
+Un clic entre claro y oscuro. En escritorio, un botón de cristal de 36 px que flota en la esquina inferior derecha, a 16 px de cada pared (el mismo margen que la pastilla de la esquina izquierda) y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
 ### Selector de idioma
 `LangSwitch` · `components/LangSwitch.tsx` · `.select`
@@ -91,7 +93,7 @@ Cada idioma escrito en su propio nombre. Guarda cookie y cuenta, y vuelve a pint
 
 ### Herramienta de feedback
 `FeedbackTool` · `FeedbackEntry` · `components/FeedbackTool.tsx` · `.fb-dock`
-Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al equipo". El dock se arrastra y recuerda su sitio. z 100000, siempre encima. `FeedbackEntry` es su entrada al pie de las barras laterales.
+Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al equipo". El dock se arrastra y recuerda su sitio. z 100000, siempre encima. `FeedbackEntry` es su entrada al pie de las barras laterales. La barra de Agentation vive en un shadow root y se maneja desde `components/feedback-mode.ts`; su versión va fija. → [decisión](decisiones/2026-10-06-la-herramienta-de-feedback-va-con-version-fija.md)
 
 ### Esqueleto
 `.sk` · `app/globals.css` · muestra: skeleton
@@ -100,6 +102,15 @@ Brillo que recorre una superficie mientras carga (`shimmer`, 1.6 s). Lo que espe
 ### Relleno líquido de pestañas
 `Liquid` · `afterPaint` · `components/ui/liquid.tsx` · `.liquid` · `.liquid__pill`
 Envuelve un grupo de pestañas y pinta sus rellenos como dos pastillas: la del hover fluye de pestaña en pestaña siguiendo al puntero; la de la elegida no viaja, salta a la pestaña en el mismo clic, con el texto ya en su color. Lee la elegida del DOM (`aria-selected`, `aria-pressed` o `on`) y acepta `as` (`div`, `nav`, `span`). `afterPaint` lanza lo que abre el clic después de pintar ese fotograma, para las vistas pesadas. Colores por control con `--liquid-on`, `--liquid-hover`, `--liquid-ring`, `--liquid-ink` y `--liquid-ink-off`. Lo usan los controles segmentados, Tablón / Pulido / Sistema y la Isla. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
+
+### Pastilla de la esquina: zoom y música
+`ZoomPill` · `components/ZoomPill.tsx` · `.zoom-pill` · `SoundControl` · `components/SoundControl.tsx`
+La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el botón de tema en la esquina contraria), en toda la app con sesión iniciada, la casa incluida; antes de iniciar sesión (portada de invitado, login) no está (`.board-zoom` en los tablones y las demás vistas, `.polish__corner` en Pulido, `.shell-corner` en Ajustes, biblioteca de diseño y actividad). → [decisión](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
+- Zoom (− % +): columnas en los tablones, tamaño del tornado en Pulido; las demás vistas no tienen (`zoom={null}`) y la pastilla es el altavoz solo.
+- Música, tras una línea fina: el altavoz (`.zoom-pill__sound`) enciende y apaga con un clic; mientras suena, la flecha (`.zoom-pill__track`) abre las canciones por nombre (`.sound-tracks`, un menú `.island-pop` en el cristal de la pastilla) y gira con él: 200 ms al abrir, 150 al cerrar (Eric, 06-10: "que gire acompasado"). Seis pistas en `public/polish/` (lista `TRACKS`), que no se descargan hasta encenderla; entra y sale con fundido y al acabar una sigue la siguiente. → [las pistas](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
+- Siempre arranca apagada al abrir o recargar la página; solo se recuerda la última canción.
+- El audio es uno para toda la página y no se corta al cambiar de pantalla ni de pestaña del navegador (sigue sonando en segundo plano). Suena solo mientras uno de sus botones está en pantalla.
+- En móvil solo Pulido la tiene, arriba bajo la barra.
 
 ### Pastilla y control segmentado
 `.ds-pill` · `.ds-seg` · `components/design-library/DesignLibrary.css` · muestra: pastillas
@@ -119,7 +130,8 @@ Lo que el agente hizo, con deshacer; sus preguntas con opciones; y lo destructiv
 ### Tablero
 `Grid` · `components/Grid.tsx` · `.board` · captura: tablero
 Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y solo se montan las tarjetas cercanas a la pantalla.
-- Zoom por columnas: `.board-zoom` (− % +) en la esquina inferior izquierda, a 12 px de cada pared; pellizco o ⌘/Ctrl+rueda. Abre un paso más lejos que el 100 %.
+- Zoom por columnas: `ZoomPill` (`components/ZoomPill.tsx`, `.zoom-pill`: − % +), colocada por `.board-zoom` en la esquina inferior izquierda, a 16 px de cada pared; pellizco o ⌘/Ctrl+rueda. Abre un paso más lejos que el 100 %. Pulido usa la misma pastilla en la misma esquina.
+- La pastilla lleva también la música (`SoundControl`, ver Pastilla de la esquina), en cualquier tablón.
 - Las tarjetas se deslizan a su nuevo sitio con una transición CSS de `transform`.
 - Cada tarjeta pide la copia de captura que necesita: 288, 720 o 1440 px.
 
@@ -128,14 +140,14 @@ Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y so
 La miniatura en su forma real: web (og:image, captura o póster tipográfico), imagen, vídeo en bucle o texto.
 - Nota con avatares, chips de etiquetas y estado "reuniendo".
 - Abajo: Archivar en proyecto, Al sistema y Comentarios. Al pasar el ratón, la página hace scroll dentro de la tarjeta.
-- Arriba a la derecha: Ver URL, los tres puntos (solo la miniatura) y la papelera. Borrar son dos clics seguidos sobre la papelera, que al primero pasa a decir "Borrar" en rojo en el mismo sitio; Esc, sacar el puntero o 6 s lo cancelan. → [decisión](decisiones/2026-10-06-borrar-tarjeta-con-dos-clics-en-la-papelera.md)
+- Arriba a la derecha: Ver URL, los tres puntos (solo la miniatura) y la papelera, que dice de dónde quita la tarjeta. En el tablón de un proyecto dice "Quitar del proyecto", la saca con un clic y la tarjeta vuela a la pestaña Inbox de la Isla como en Pulido (`components/fly-to-inbox.ts`, `.tile-fly`); fuera, "Quitar de" y el nombre del espacio. → [decisión](decisiones/2026-10-06-en-un-proyecto-la-papelera-saca-la-tarjeta-al-inbox.md) Fuera de un proyecto borra: son dos clics seguidos sobre la papelera, que al primero pasa a decir "Borrar" en rojo en el mismo sitio; Esc, sacar el puntero o 6 s lo cancelan. → [decisión](decisiones/2026-10-06-borrar-tarjeta-con-dos-clics-en-la-papelera.md) La papelera solo se pinta para quien puede borrar la referencia: quien la guardó o quien gestiona el espacio (`deletable`). → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 - Arriba a la izquierda: el círculo de selección (al pasar el ratón o mientras se selecciona) y, tras una búsqueda, el porcentaje de encaje con su porqué. Cuando el círculo aparece, el porcentaje y el chip GIF se apartan 32 px a la derecha. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
 
 ### Barra de selección
 `SelectBar` · `components/SelectBar.tsx` · `.selbar`
 Varias referencias a la vez: ⌘ o ⇧-clic en una tarjeta (o su círculo) y la barra ocupa el sitio del dock, con su mismo cristal.
 - Cuenta, "Seleccionar todo" (lo que hay en el tablero a la vista; desaparece cuando ya está todo) y Listo.
-- En la librería y el Inbox: Añadir a proyecto y Borrar. Borrar pide confirmación con el número de referencias y se lleva también sus comentarios y ficheros.
+- En la librería y el Inbox: Añadir a proyecto y Borrar. Borrar pide confirmación con el número de referencias y se lleva también sus comentarios y ficheros. Si la selección lleva referencias de otra persona y quien borra no gestiona el espacio, no se borra a medias: se rechaza entera con un mensaje. → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 - Dentro de un proyecto: Mover y Quitar (vuelven al Inbox, no se borran).
 
 ### Selector de proyecto
@@ -153,6 +165,7 @@ Pegar enlace, subir, soltar o pegar con ⌘V una imagen, o pegar texto (varias l
 ### Buscador y barra del agente
 `SearchBar` · `components/SearchBar.tsx` · `.sb` · captura: dock
 Caja fija abajo, con chips de filtro (persona, fecha, color, sección…) y sugerencias que se abren hacia arriba. Enter o ⌘Enter manda la orden al agente.
+- Solo sale sobre un tablón con referencias: un proyecto vacío empieza por su propia caja (`ProjectStart`) y no lleva buscador. → [decisión](decisiones/2026-10-06-el-buscador-solo-sale-sobre-un-tablon-con-referencias.md)
 - Muestra la tarjeta marcada con "/" como objetivo.
 - Esc en cascada: cierra la lista, vacía, quita chips, quita objetivo, suelta el foco.
 - A la derecha, mientras se busca, solo acciones: el botón del agente y la equis. El aviso "Etiquetando N referencias" (trabajo en segundo plano) solo sale con la caja vacía. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
@@ -169,7 +182,9 @@ La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir
 - Las respuestas (`.polish__bar`, cristal del dock, donde va el dock en el tablón): una pastilla con el nombre de la referencia y cuántas quedan, y una pieza en dos mitades del mismo peso (`.polish__choice`), **Olvidar** ("Vuelve al Inbox": sale del proyecto, no se borra) y **Conservar** ("Se queda en el tablón"), cada una con la flecha de su tecla. Deshacer aparece al lado cuando hay algo que deshacer. Atajos ← → y ⌘Z.
 - Decidida, la tarjeta sale del tornado (solo gira lo pendiente) y se ve adónde va: una copia (`Flyer`, `.polish__fly`) vuela a la pestaña Tablón si se conserva o a la pestaña Inbox de la Isla si se olvida, que da un bote al recibirla (`LANDING`, WAAPI), y las demás cierran el hueco. La olvidada sale del proyecto cuando aterriza, así el contador del Inbox sube justo entonces; deshacer mientras vuela no llega al servidor.
 - Las conservadas se recuerdan en el navegador por proyecto: al volver solo se pregunta por lo nuevo. Con todo decidido (`.polish__done`) el tablón que se ha quedado gira solo, lejos y desenfocado entero, y encima cae en su sitio lo hecho, escalonado: hasta cinco de las referencias que se quedan ordenándose en abanico (`.polish__fan`), "Todo está en orden", el aviso de que se podrá volver a pulir cuando entren más referencias, "Ir al sistema" (que marca el proyecto como empezado) y "Repasarlo otra vez".
-- Sonido (`.polish__sound`, en la esquina del zoom del tablón): música opcional, seis pistas en `public/polish/` (lista `TRACKS`), que no se descarga hasta encenderla, entra y sale con fundido y calla si la pestaña pasa a segundo plano. Encendida, la pastilla dice qué canción suena y ese nombre abre el menú para elegir otra (`.polish__sound-track`, `.polish__tracks`); al acabar una sigue la siguiente. → [decisión](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
+- Zoom: la pastilla del tablón (`ZoomPill`, aquí con `.polish__corner`) en su misma esquina. Cambia el tamaño del em del tornado (`--polish-zoom`), del 50 % al 150 %: los botones paran en `ZOOM_STOPS`, el pellizco o ⌘/Ctrl+rueda es continuo y el % vuelve a 100. Se recuerda en el navegador. Con todo decidido, y en móvil, no hay zoom. → [decisión](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
+- La pastilla lleva también la música (`SoundControl`, ver Pastilla de la esquina), la misma que suena en el resto de la app.
+- Solo la tarjeta de delante está enfocada y a plena luz: las demás llevan un desenfoque marcado (`NEAR_BLUR`) y un velo fuerte del color de la página (`SIDE_FOG`), y los dos crecen hacia el fondo (`BACK_BLUR`, `BACK_FOG`) hasta que las de atrás casi no se ven (Eric, 06-10: "digo que se vean menos").
 - La profundidad es una niebla del color de la página (`.polish__fog`) más un desenfoque que crece hacia el fondo, no un oscurecido: funciona igual en claro y en oscuro. Con reduced-motion no hay deslizamientos y las tarjetas solo se funden.
 
 ### Inicio: ¿qué vas a hacer?
@@ -191,7 +206,7 @@ Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pesta�
 ### Descubrir: ejemplos, recursos y skills
 `Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`
 Tres pestañas: Ejemplos (`?in=templates`, antes Plantillas), Recursos (`?in=discover`) y Skills (`?in=skills`). Las tres comparten cabecera, en la columna del contenido y con el patrón de la página de proyecto: el nombre "Descubrir" y la entradilla de la sección (`.disc-head`) y, debajo, una fila (`.disc-bar`) con las pestañas a la izquierda y los controles de la sección a la derecha; la cabecera entera se va con la página al hacer scroll. → [decisión](decisiones/2026-10-06-la-cabecera-de-descubrir-va-en-la-columna-del-contenido.md) Recursos agrupados (Todo, Nuevos, Más abiertos), cada fila con una miniatura del hero de la web que sigue al ratón (`.disc-peek`, seguimiento con requestAnimationFrame y entrada con WAAPI; solo ratón, con reduced-motion solo fundido), y ejemplos: sistemas completos cuya miniatura hace scroll al pasar el ratón; abrir uno enseña su criterio.md y deja crear un proyecto con él. → [se llaman ejemplos](decisiones/2026-10-06-plantillas-se-llaman-ejemplos.md) Las tarjetas de ejemplo enseñan Clonar y Ver al pasar el ratón, con los botones del tablón (`.tile__go-btn`). → [decisión](decisiones/2026-10-06-tarjetas-de-ejemplo-con-clonar-y-ver-al-pasar.md)
-- Skills (`components/DiscoverSkills.tsx`) son tarjetas, no filas, y todas son skills de agentes: avatar y autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia; toda la tarjeta abre su página. Una sola lista: primero las 13 de criterio.design (`MD_SKILLS` en `lib/md-skill-ids.ts`, nombre y descripción de `t.system.skillsList`, instaladas desde el repo público `criterio-skills` que escribe `scripts/build-skills.ts`) y después las de otros autores (`SKILLS` en `lib/directory.ts`); de estas, las que también están en criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md), [todas de agentes](decisiones/2026-10-06-todas-las-skills-son-de-agentes.md)
+- Skills (`components/DiscoverSkills.tsx`) son tarjetas, no filas, y todas son skills de agentes: avatar y autor, nombre, qué hace y el comando `npx skills add …` en un botón que lo copia; toda la tarjeta abre su página. Agrupadas por tema (`SKILL_TOPICS` en `lib/directory.ts`, con el encabezado `.disc-list__head` de los recursos), con las pestañas Todo, Recién llegados y Destacados (`FEATURED_SKILLS`) y el menú "Temas" a la derecha de la barra, como en Recursos, y, dentro de cada tema, primero las 13 de criterio.design (`MD_SKILLS` en `lib/md-skill-ids.ts`, nombre y descripción de `t.system.skillsList`, instaladas desde el repo público `criterio-skills` que escribe `scripts/build-skills.ts`) y después las de otros autores (`SKILLS` en `lib/directory.ts`); de estas, las que también están en criterio.md llevan la pastilla "En criterio.md" (`.disc-row__skill`). → [skills en Descubrir](decisiones/2026-10-05-skills-pestana-propia.md), [todas de agentes](decisiones/2026-10-06-todas-las-skills-son-de-agentes.md), [por temas](decisiones/2026-10-06-las-skills-de-descubrir-van-por-temas.md)
 
 ### Vídeo en bucle
 `LoopVideo` · `components/LoopVideo.tsx`
@@ -315,7 +330,7 @@ Título `.display`, entradilla y un aparte opcional a la derecha (selector de pe
 
 ### Paneles de ajustes
 `AccountPanel` · `WorkspacePanel` · `MembersPanel` · `ExtensionPanel` · `UsageCard` · `app/settings/_components/`
-Cuenta (nombre, foto, tema, idioma), espacio, miembros e invitaciones, claves de la extensión y gasto de IA. Filas `.setting-row` sobre `Card`.
+Cuenta (nombre, foto, tema, idioma), espacio, miembros e invitaciones, claves de la extensión y gasto de IA. Filas `.setting-row` sobre `Card`. Espacio acaba en "Tus espacios": todos los de la persona en filas `.list__row`, con Salir o Eliminar en cada una. → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md) En Miembros, el rol de cada persona es un selector (`.list__pick`) para quien gestiona el equipo. → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 
 ### Panel de actividad
 `AdminPanel` · `AreaThumb` · `app/admin/AdminPanel.tsx` · `.ad-kpi`
@@ -329,7 +344,11 @@ Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a logi
 
 ### Acceso
 `LoginForm` · `components/LoginForm.tsx` · `.auth` · captura: login
-Enlace mágico, Google, Apple y X, recordando el último método. Al lado, el collage fijo de `public/showcase/`, curado a mano.
+Enlace mágico, Google, Apple y X, recordando el último método. Al lado, el collage fijo de `public/showcase/`, curado a mano. La página mide lo que la ventana (`.auth:not(.auth--solo)`, `100dvh`): el pie (`.auth__foot`), con la aceptación de Términos y Privacidad cuando `legalShown()`, se lee sin scroll; si la ventana es más baja que el formulario, hace scroll el panel. → [decisión](decisiones/2026-10-06-el-login-mide-la-ventana-y-su-pie-se-ve-sin-scroll.md)
+
+### Documento legal
+`LegalDoc` · `components/LegalDoc.tsx` · `.legal`
+Las páginas `/privacy` y `/terms`: públicas, con la cabecera de página (`.page__head`: logo, título `.display`, entradilla y fecha de actualización), secciones de texto llano desde `lib/i18n/{en,es}/legal.ts` y, al pie, los enlaces a los otros documentos legales (`.legal__links`), incluida la privacidad de la extensión. Los datos de la sociedad salen de `lib/legal.ts`; mientras falten es un borrador: 404 en producción y un aviso (`.legal__draft`) en desarrollo. → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
 
 ### Invitación
 `AcceptInvitation` · `SwitchAccount` · `app/invite/[id]/`

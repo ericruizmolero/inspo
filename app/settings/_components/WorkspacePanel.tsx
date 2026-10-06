@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
-import type { Workspace } from "@/lib/workspace-core";
-import { WorkspaceAvatar } from "@/components/WorkspaceMenu";
+import type { Workspace, SessionUser } from "@/lib/workspace-core";
+import { WorkspaceAvatar, WorkspaceFace } from "@/components/WorkspaceMenu";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useConfirm } from "@/components/useConfirm";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 
-export default function WorkspacePanel({ workspace, canManage }: { workspace: Workspace; canManage: boolean }) {
+export default function WorkspacePanel({ workspace, workspaces, me, canManage }: { workspace: Workspace; workspaces: Workspace[]; me: SessionUser; canManage: boolean }) {
   const { t } = useT();
   const [confirm, confirmDialog] = useConfirm();
   const router = useRouter();
@@ -37,6 +37,7 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
             <Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/settings/account">{t.settings.goToAccount}</Link>
           </CardFooter>
         </Card>
+        <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
     );
   }
@@ -68,18 +69,8 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
     catch (err) { setError(messageOf(err, t, t.ws.imageFailed)); }
   };
 
-  const leave = async () => {
-    if (!(await confirm({ title: t.team.leaveConfirm(workspace.name), description: t.settings.leaveHint, action: t.team.leaveTeam, danger: true }))) return;
-    setBusy(true); setError("");
-    const { error: err } = await authClient.organization.leave({ organizationId: workspace.id });
-    setBusy(false);
-    if (err) { setError(err.message ?? t.team.leaveFailed); return; }
-    router.push("/"); router.refresh();
-  };
-
   return (
     <div className="page__body">
-      {confirmDialog}
       {error && <p className="modal__error">{error}</p>}
 
       <Card>
@@ -134,17 +125,63 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
         </CardContent>
       </Card>
 
-      {workspace.role !== "owner" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.settings.leave}</CardTitle>
-            <CardDescription>{t.settings.leaveHint}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button variant="ghost" size="sm" className="is-danger" onClick={leave} disabled={busy}>{t.team.leaveTeam}</Button>
-          </CardFooter>
-        </Card>
-      )}
+      <Spaces workspace={workspace} workspaces={workspaces} me={me} />
     </div>
+  );
+}
+
+/** Every space the person is in, whichever is open: a team is left, or deleted by whoever created it. Each row
+ *  names its space, so nobody leaves the one that happens to be open meaning another. The personal one stays. */
+function Spaces({ workspace, workspaces, me }: { workspace: Workspace; workspaces: Workspace[]; me: SessionUser }) {
+  const { t } = useT();
+  const [confirm, confirmDialog] = useConfirm();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  // Out of the open space there is nothing left to show here: back to the library, which opens another
+  const after = (id: string) => { if (id === workspace.id) router.push("/"); router.refresh(); };
+  const leave = async (w: Workspace) => {
+    if (!(await confirm({ title: t.team.leaveConfirm(w.name), description: t.settings.leaveHint, action: t.team.leaveTeam, danger: true }))) return;
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.leave({ organizationId: w.id });
+    setBusy(false);
+    if (err) { setError(err.message ?? t.team.leaveFailed); return; }
+    after(w.id);
+  };
+  const remove = async (w: Workspace) => {
+    if (!(await confirm({ title: t.settings.deleteSpaceConfirm(w.name), description: t.settings.deleteSpaceHint, action: t.settings.deleteSpaceAction, danger: true, typed: w.name }))) return;
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.delete({ organizationId: w.id });
+    setBusy(false);
+    if (err) { setError(err.message ?? t.settings.deleteSpaceFailed); return; }
+    after(w.id);
+  };
+
+  return (
+    <Card>
+      {confirmDialog}
+      <CardHeader>
+        <CardTitle>{t.settings.spaces}</CardTitle>
+        <CardDescription>{t.settings.spacesHint}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {error && <p className="modal__error">{error}</p>}
+        <ul className="list">
+          {workspaces.map((w) => (
+            <li key={w.id} className="list__row">
+              <WorkspaceFace workspace={w} user={me} />
+              <span className="list__main">
+                <span className="list__name">{w.name}{w.id === workspace.id && <span className="list__you">{t.settings.spaceOpen}</span>}</span>
+                <span className="list__sub">{w.kind === "personal" ? t.ws.personal : t.team.roles[w.role]}</span>
+              </span>
+              {w.kind === "team" && (w.role === "owner"
+                ? <Button variant="ghost" size="sm" className="is-danger" onClick={() => remove(w)} disabled={busy}>{t.settings.deleteSpace}</Button>
+                : <Button variant="ghost" size="sm" onClick={() => leave(w)} disabled={busy}>{t.team.leaveTeam}</Button>)}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }

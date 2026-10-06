@@ -359,15 +359,15 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* What sits left of the board moves aside for the island with it, on the same curve: by transform, so
    nothing is laid out again while it slides */
 @media (min-width: 801px) {
-  .topbar__trigger, .board-zoom { transition: transform 280ms var(--ease-drawer); }
-  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .board-zoom) { transform: translateX(280px); }
+  .topbar__trigger, .board-zoom, .polish__corner { transition: transform 280ms var(--ease-drawer); }
+  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .board-zoom, .polish__corner) { transform: translateX(280px); }
 }
 /* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
-:root[data-instant] :is(.app-sidebar, .topbar__trigger, .board-zoom) { transition: none; }
+:root[data-instant] :is(.app-sidebar, .topbar__trigger, .board-zoom, .polish__corner) { transition: none; }
 @media (min-width: 801px) and (prefers-reduced-motion: reduce) {
   .app-sidebar { transition: opacity 200ms var(--ease-out); }
   [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: none; }
-  .topbar__trigger, .board-zoom { transition: none; }
+  .topbar__trigger, .board-zoom, .polish__corner { transition: none; }
 }
 /* Settings and the other sections keep the docked column: it takes its room and the page moves aside,
    the page scrolls, and the top bar is a band of its own over it */
@@ -391,7 +391,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    workspace is its avatar at the start; the selected tab is the search's chip, ringed so it reads without
    colour. Nothing moves on selection: people switch projects all day. Inner radius 9 = 14 - 5 (concentric).
    Focus on the white surfaces is the dock's ink: the app's ring is pale on dark and vanishes here. */
-.island, .board-zoom, .island-pop { --focus-ring: var(--dock-ink); }
+.island, .zoom-pill, .island-pop { --focus-ring: var(--dock-ink); }
 .island {
   position: relative; display: flex; align-items: center; min-width: 0; height: 44px; padding: 0 5px;
   border-radius: 14px; background: var(--dock-surface); color: var(--dock-ink);
@@ -455,7 +455,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* Every project tab at its own width, out of sight: Island.tsx reads it to decide how many fit */
 .island__measure { position: absolute; top: 0; left: 0; display: flex; gap: 2px; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
 /* The workspace menu's extras: the plan sits inside the menu with its own padding */
-.island__plan { padding: 4px 2px; }
+.island__plan { padding: 2px 0; }
 /* "N more": the other projects, with who filed into each last and when */
 .island__others { width: 280px; }
 .island__other { align-items: center; }
@@ -484,6 +484,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .island-pop .ws__plus { border-color: var(--dock-line); color: var(--dock-muted); }
 .island-pop .ws__item:hover .ws__plus { color: var(--dock-ink); }
 .island-pop .ws__divider { background: var(--dock-line); }
+.island-pop .sidebar__plan { padding: 8px 8px 10px; border-radius: 8px; }
 .island-pop .sidebar__plan:hover { background: var(--dock-hover); }
 .island-pop .sidebar__plan-head, .island-pop .sidebar__plan-note { color: var(--dock-muted); }
 .island-pop .sidebar__plan-note { font-size: 12px; }
@@ -820,7 +821,7 @@ html[data-theme="light"] .sb__swatch { box-shadow: inset 0 0 0 1px rgba(0,0,0,0.
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
   .dir-row__add, .dir-add, .chip, .btn-icon, .sb__field { transition: none; }
-  .chip:active, .btn-icon:active, .dir-add:active, .board-zoom button:active { transform: none; }
+  .chip:active, .btn-icon:active, .dir-add:active, .zoom-pill button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -1742,10 +1743,13 @@ video.vp__media { object-fit: contain; }
 /* ─── Auth / standalone pages ─────────────────────────────────────────────── */
 /* Login: form on the left, public library collage on the right */
 .auth { min-height: 100dvh; display: grid; grid-template-columns: minmax(380px, 44%) 1fr; }
+/* The page is the height of the window, never the collage's: the foot (and its legal links) is always in view.
+   A window shorter than the form scrolls the panel. */
+.auth:not(.auth--solo) { height: 100dvh; grid-template-rows: minmax(0, 1fr); }
 .auth__panel {
   display: flex; flex-direction: column; gap: 32px;
   padding: 28px 48px 24px;
-  min-height: 100dvh;
+  min-height: 0; overflow-y: auto;
 }
 .auth__top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .auth__brand { display: flex; align-items: center; gap: 10px; }
@@ -1788,7 +1792,9 @@ video.vp__media { object-fit: contain; }
 }
 .auth__alt { align-self: flex-start; background: none; border: 0; padding: 0; font-size: 13px; color: var(--text-2); text-decoration: underline; text-underline-offset: 3px; }
 .auth__alt:hover { color: var(--text); }
-.auth__foot { font-size: 12px; color: var(--muted); }
+.auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.auth__foot a { color: var(--text-2); text-decoration: none; }
+.auth__foot a:hover { color: var(--text); }
 
 .auth__visual {
   position: relative; overflow: hidden;
@@ -1824,6 +1830,8 @@ video.vp__media { object-fit: contain; }
 
 @media (max-width: 900px) {
   .auth { grid-template-columns: 1fr; }
+  .auth:not(.auth--solo) { height: auto; grid-template-rows: auto; }
+  .auth__panel { min-height: 100dvh; overflow-y: visible; }
   .auth__visual { display: none; }
   .auth__panel { padding: 20px 20px 24px; gap: 24px; }
   .auth__lead { font-size: 32px; }
@@ -1889,6 +1897,8 @@ video.vp__media { object-fit: contain; }
 .list__you { color: var(--muted); }
 .list__sub { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .list__role { font-size: 12px; color: var(--muted); }
+/* The role as something to change (members, for whoever manages the team): the size of the small button beside it */
+.list__row select.list__pick { flex: 0 0 auto; width: 120px; height: 30px; padding: 0 28px 0 10px; border-radius: 8px; font-size: 12px; background-position: right 10px center; }
 .invite { display: flex; gap: 8px; flex-wrap: wrap; }
 .invite .input { flex: 1; min-width: 180px; }
 .invite .invite__role { flex: 0 0 auto; width: 140px; min-width: 0; }
@@ -1906,7 +1916,9 @@ video.vp__media { object-fit: contain; }
 .ws__names { display: flex; flex-direction: column; min-width: 0; flex: 0 1 auto; }
 .ws__name { font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ws__kind { font-size: 11px; color: var(--muted); }
-.ws__menu { width: var(--anchor-width); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-m); padding: 6px; box-shadow: var(--shadow-pop); display: flex; flex-direction: column; }
+/* Never taller than the room under its trigger (Base UI's --available-height): past that, the menu scrolls inside */
+.ws__menu { width: var(--anchor-width); max-height: var(--available-height); overflow-y: auto; overscroll-behavior: contain; background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-m); padding: 6px; box-shadow: var(--shadow-pop); display: flex; flex-direction: column; }
+.ws__menu > * { flex-shrink: 0; }
 .ws__section { font-size: 11px; color: var(--muted); padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.04em; }
 .ws__item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; border: 0; background: transparent; color: var(--text-2); font-size: 13px; text-align: left; border-radius: var(--radius-s); cursor: pointer; text-decoration: none; }
 .ws__item:hover { background: var(--surface-2); color: var(--text); }
@@ -2145,8 +2157,8 @@ video.vp__media { object-fit: contain; }
 /* ─── Feedback (Agentation) ──────────────────────────────────────────────────
    Agentation's own bar is hidden: eight unlabeled icons made for pasting markdown into
    an agent. components/FeedbackTool.tsx clicks it programmatically and draws its own
-   pill and panel here, with the app's tokens. Its markers and note popup stay as they are. */
-[data-agentation-toolbar] { display: none !important; }
+   pill and panel here, with the app's tokens. Its markers and note popup stay as they are.
+   The bar sits in a shadow root, out of this file's reach: components/feedback-mode.ts hides it from inside. */
 
 /* Closed: the pill in the bottom-right corner, with the send button beside it if there are notes.
    The whole dock can be dragged anywhere (FeedbackTool sets right/bottom inline and remembers them);
@@ -2357,27 +2369,27 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .board[data-bare] .tile__note, .board[data-bare] .tile__caption, .board[data-bare] .tile__actions { display: none; }
 
 /* Zoom: how many columns, said as a size (100% is the usual one). A pill in the bottom-left corner, the
-   island's material, as far from the side as from the bottom (12 px, the island's left edge; Eric, 06-10).
-   Its middle is the theme button's across the board (12 + 44/2 = 16 + 36/2). A phone gets its columns from
-   its width alone. */
-.board-zoom {
-  position: absolute; left: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 12;
+   island's material, as far from the side as from the bottom: 16 px, the margin the theme button has in the
+   opposite corner (Eric, 06-10). A phone gets its columns from its width alone. */
+.board-zoom { position: absolute; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12; }
+/* The control itself (components/ZoomPill.tsx): Polish has it too, in the same corner, for the size of its tornado */
+.zoom-pill {
   display: flex; align-items: center; gap: 2px; height: 44px; padding: 0 5px;
   border-radius: 14px; background: var(--dock-surface); box-shadow: 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
-.board-zoom button {
+.zoom-pill button {
   display: inline-flex; align-items: center; justify-content: center; height: 34px; border: 0; border-radius: 9px;
   background: transparent; color: var(--dock-ink-2); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .board-zoom button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
-.board-zoom button:active { transform: scale(0.96); }
-.board-zoom button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) { .zoom-pill button:hover { background: var(--dock-hover); color: var(--dock-ink); } }
+.zoom-pill button:active { transform: scale(0.96); }
+.zoom-pill button:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
 
 /* Light or dark, one click (components/ThemeToggle.tsx): the icon is the theme the click leads to. A small glass
-   button tucked into the bottom-right corner, as far from the side as from the bottom (16 px, the top bar's
-   right edge; Eric, 06-10), on the zoom pill's middle. Quiet until the pointer comes near. A phone has it in
-   the sidebar instead. */
+   button tucked into the bottom-right corner, as far from its walls as the pill of the opposite corner is from
+   its own: 16 px, side and bottom (Eric, 06-10). Quiet until the pointer comes near. A phone has it in the
+   sidebar instead. */
 .theme-toggle__moon, :root[data-theme="light"] .theme-toggle__sun { display: none; }
 :root[data-theme="light"] .theme-toggle__moon { display: block; }
 .theme-float {
@@ -2397,9 +2409,25 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 :root[data-theme-switch]::view-transition-group(*), :root[data-theme-switch]::view-transition-old(*), :root[data-theme-switch]::view-transition-new(*) {
   animation-duration: 600ms; animation-timing-function: var(--ease-in-out);
 }
-.board-zoom__btn { width: 34px; color: var(--dock-ink); }
-.board-zoom__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
-@media (max-width: 800px) { .board-zoom { display: none; } }
+.zoom-pill__btn { width: 34px; color: var(--dock-ink); }
+.zoom-pill__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+/* The zoom's own three buttons, and the hairline before what shares the pill with them */
+.zoom-pill__zoom { display: contents; }
+.zoom-pill__sep { flex-shrink: 0; width: 1px; height: 16px; margin: 0 4px; background: var(--dock-line); }
+/* The music (components/SoundControl.tsx), in the pill of every screen once signed in. The speaker is the switch, lit
+   while it plays; then a chevron hangs from it, the list of tracks by name */
+.zoom-pill .zoom-pill__sound { width: 34px; padding: 0; color: var(--dock-muted); }
+.zoom-pill .zoom-pill__sound.is-on { color: var(--dock-ink); }
+.zoom-pill .zoom-pill__track { width: 20px; margin-left: -2px; padding: 0; color: var(--dock-muted); }
+/* The chevron turns with its menu (.island-pop: the pill's glass, 200 ms out of the chevron and 150 back into it) */
+.zoom-pill__track svg { transition: transform 150ms var(--ease-out); }
+.zoom-pill__track.is-open svg { transform: rotate(180deg); transition-duration: 200ms; }
+.sound-tracks.sound-tracks { width: 208px; }
+/* Where the page scrolls with the window (components/SectionShell.tsx) the pill rides its bottom edge: a line of no
+   height stuck there, and the pill in its corner as everywhere else */
+.shell-corner { position: sticky; bottom: 0; z-index: 12; height: 0; margin-top: auto; }
+@media (prefers-reduced-motion: reduce) { .zoom-pill__track svg { transition: none; } }
+@media (max-width: 800px) { .board-zoom, .zoom-pill__zoom { display: none; } }
 
 /* ─── The reference sheet (components/ItemPanel.tsx) ─────────────────────────
    A sheet over the canvas, which dims behind it. It sits under the island and the search dock (z 18, below
@@ -2676,14 +2704,14 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   --dock-shadow: 0 12px 32px -10px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.2);
   --dock-blur: blur(20px) saturate(1.5);
 }
-.island, .island-pop.island-pop, .board-zoom, .theme-float, .sb--dock .sb__menu,
+.island, .island-pop.island-pop, .zoom-pill, .theme-float, .sb--dock .sb__menu,
 .shell:not(.shell--docked) .topbar__actions {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
 .sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
 }
-.island, .board-zoom, .theme-float, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
+.island, .zoom-pill, .theme-float, .shell:not(.shell--docked) .topbar__actions { box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 0 1px var(--dock-line), var(--dock-shadow); }
 .island__tab.is-on { box-shadow: none; }
 /* The search dock's field reads white text too */
 .sb--dock .sb__field input, .sb--dock .sb__field .input { color: var(--dock-ink); }
@@ -2746,8 +2774,17 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   --dock-blur: blur(24px) saturate(1.3);
 }
 .island-pop.island-pop, .sb--dock .sb__menu, .dock__agent { background: var(--dock-surface-pop); }
-/* The workspace menu also lists the projects and the team: long lists scroll inside it */
-.island__menu-list { display: flex; flex-direction: column; max-height: 204px; overflow-y: auto; overscroll-behavior: contain; }
+/* The team in the workspace menu: one row of overlapping faces, each a button, and the way to Members at its end.
+   Each face wears a ring of the menu's own surface, so the overlap reads as a cut; the one under the pointer comes to the front */
+.island__team { display: flex; align-items: center; min-height: 34px; padding: 4px 4px 4px 8px; }
+.island__face { position: relative; display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0; border: 0; border-radius: 999px; background: var(--dock-surface-pop); box-shadow: 0 0 0 2px var(--dock-surface-pop); cursor: pointer; text-decoration: none; transition: transform 150ms var(--ease-out); }
+.island__face + .island__face { margin-left: -6px; }
+.island__face .ws__avatar { width: 24px; height: 24px; font-size: 11px; }
+.island__face:hover, .island__face:focus-visible { z-index: 1; transform: translateY(-2px); }
+.island__face--more { padding: 0 7px; background: linear-gradient(var(--dock-fill), var(--dock-fill)), var(--dock-surface-pop); color: var(--dock-ink-2); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.island__face--more:hover { color: var(--dock-ink); }
+.island__team-manage { margin-left: auto; padding: 5px 8px; border-radius: 8px; color: var(--dock-muted); font-size: 12px; font-weight: 500; text-decoration: none; }
+.island__team-manage:hover { background: var(--dock-hover); color: var(--dock-ink); }
 .island-pop .ws__item .island__n { margin-left: auto; font-size: 12px; }
 .island-pop .ws__avatar--user { border-radius: 50%; }
 /* A new project, from the +: a small form in the island's glass */
@@ -2817,7 +2854,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   --dock-shadow: 0 10px 30px -12px rgba(30, 30, 20, 0.22), 0 1px 3px rgba(30, 30, 20, 0.08);
   --dock-blur: blur(24px) saturate(1.6);
 }
-:root[data-theme="light"] :is(.island, .board-zoom, .theme-float, .shell:not(.shell--docked) .topbar__actions) {
+:root[data-theme="light"] :is(.island, .zoom-pill, .theme-float, .shell:not(.shell--docked) .topbar__actions) {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 0 0 1px var(--dock-line), var(--dock-shadow);
 }
 :root[data-theme="light"] .sb--dock .sb__field,
@@ -2854,6 +2891,13 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .pp--pick > .ws__divider { margin: 0; }
 .pp-row.is-some .pp-row__check { border-color: var(--text); }
 .pp-row__dash { width: 8px; height: 1.5px; border-radius: 1px; background: var(--text); }
+
+/* A card taken out of a project, on its way to the Inbox tab of the island (components/fly-to-inbox.ts): the
+   flying card of Polish, over the board and the bars */
+.tile-fly {
+  position: fixed; z-index: 30; overflow: hidden; background: var(--surface-2) center top / cover no-repeat;
+  box-shadow: var(--shadow-pop); pointer-events: none; will-change: transform, opacity;
+}
 
 /* Selecting several cards (SelectBar): a circle top left on hover, filled once picked; picked cards wear a ring */
 .tile__select {

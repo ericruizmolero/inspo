@@ -56,6 +56,12 @@ export async function renameProject(organizationId: string, id: string, name: st
 
 /** The references stay in the library (back in the Inbox if this was their only project).
  *  Its links go with it (ON DELETE CASCADE). */
+/** Whether this person started the project: a member may delete the ones they started, and no other */
+export async function startedProject(organizationId: string, id: string, userId: string): Promise<boolean> {
+  const [row] = await db.select({ createdBy: P.createdBy }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, id))).limit(1);
+  return !!row && row.createdBy === userId;
+}
+
 export async function deleteProject(organizationId: string, id: string): Promise<void> {
   await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, id)));
   await dropSpace(organizationId, id);

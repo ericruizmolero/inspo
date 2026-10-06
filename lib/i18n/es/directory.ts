@@ -35,7 +35,6 @@ export const directory: typeof EnDirectory = {
     "https://landing.gallery": "Landings recopiladas una a una, para recorrer por sección y estilo.",
     "https://saaslandingpage.com": "Cientos de landings de SaaS, ordenadas por tipo de sección.",
     "https://designbookmark.com": "Colección de marcadores de diseño: herramientas, galerías y recursos en un solo sitio.",
-    "https://ui-skills.com": "El catálogo: skills de diseño para agentes, curadas e instalables con un comando.",
     "https://superdesign.dev": "Agente de diseño open source que bocetea UI y variantes dentro de tu editor.",
     "https://deck.gallery": "Decks de presentación de marcas y estudios reales, para ver cómo se maqueta un pitch.",
     "https://logosystem.co": "Sistemas de logo: la marca con sus variantes, retículas y usos, no solo el logo suelto.",

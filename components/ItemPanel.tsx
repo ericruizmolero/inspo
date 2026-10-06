@@ -107,7 +107,9 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
       : [{ transform: "none", opacity: 1 }, { transform: "scale(0.96)", opacity: 0 }], timing).finished.then(onClose, onClose);
   };
 
-  const rawHost = url.replace(/^https?:\/\//, "").split("/")[0];
+  // A copied picture or video links to the page it was found on
+  const origin = item.source ?? url;
+  const rawHost = origin.replace(/^https?:\/\//, "").split("/")[0];
   const host = readableDomain(rawHost);
   const [iconOk, setIconOk] = useState(true);
   // Another reference in the same panel starts on its page
@@ -139,7 +141,7 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
                       <BreadcrumbSeparator />
                     </>
                   )}
-                  <BreadcrumbItem><a href={url} target="_blank" rel="noopener noreferrer">{isSite ? host : t.card.openImage}</a></BreadcrumbItem>
+                  <BreadcrumbItem><a href={origin} target="_blank" rel="noopener noreferrer">{isSite || item.source ? host : t.card.openImage}</a></BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
             </div>

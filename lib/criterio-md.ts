@@ -18,6 +18,8 @@ import type { BrandSpec } from "@/types/brand";
 /** A reference as the file tells it: what it is, who brought it and what the team said about it */
 export interface RefInfo {
   name: string; web: string;
+  /** The page a copied image or video was found on: the file cites it instead of our copy */
+  source?: string;
   kind?: "web" | "image" | "video" | "post" | "text";
   /** A text's own words, whole: the project's content, written into the file as it was given */
   text?: string;
@@ -124,7 +126,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     const kind = it.kind && it.kind !== "web" ? ` (${strings.kinds[it.kind].toLowerCase()})` : "";
     // A text has no address to follow: it is in this same file, under Content
     if (it.kind === "text") return `${code.has(id) ? `**${code.get(id)}** ` : ""}${it.name}${kind}`;
-    return `${code.has(id) ? `**${code.get(id)}** ` : ""}[${it.name}](${abs(it.web)})${kind}`;
+    return `${code.has(id) ? `**${code.get(id)}** ` : ""}[${it.name}](${abs(it.source ?? it.web)})${kind}`;
   };
   // What the team rewrote by hand stands instead of what the app would write (types/system.ts DOC_PARTS)
   const doc: Record<string, string> = clean ? {} : system.doc ?? {};
@@ -207,8 +209,9 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     if (byHand) return byHand.split("\n");
     const out: string[] = [];
     const kind = it.kind ?? "web";
-    const where = kind === "image" ? strings.kinds.image.toLowerCase() : readableDomain(abs(it.web).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
-    out.push(`- **${strings.kinds[kind]}:** [${where}](${abs(it.web)})`);
+    const at = it.source ?? it.web;
+    const where = kind === "image" && !it.source ? strings.kinds.image.toLowerCase() : readableDomain(abs(at).replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")).slice(0, 60);
+    out.push(`- **${strings.kinds[kind]}:** [${where}](${abs(at)})`);
     if (it.what) out.push(`- **${strings.what}:** ${one(it.what)}`);
     if (it.by) out.push(`- **${byLabel}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
     if (it.said?.length) {

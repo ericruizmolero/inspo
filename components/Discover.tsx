@@ -2,10 +2,11 @@
 // Discover: the library of libraries as a list, group by group, in the directory's own order: one line per site,
 // its name, what it is and its domain; a click opens it. On top: everything, what just came in or what we open
 // most, and the kinds of resource in a menu. Beside it, the templates (whole systems to start a project from) and the
-// skills for agents, a list of their own. The three share one head, in the column of the content.
+// skills for agents, a list of their own with its topics in the same menu. The three share one head, in the column
+// of the content.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DIRECTORY, SKILLS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
+import { DIRECTORY, SKILLS, SKILL_TOPICS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icons } from "./Sidebar";
 import type { directory as enDirectory } from "@/lib/i18n/en/directory";
@@ -23,6 +24,8 @@ type Section = "templates" | "sites" | "skills";
 const ALL: Site[] = DIRECTORY.flatMap((g) => g.items.map((s) => ({ ...s, group: g.key })));
 
 const FRESH = ALL.filter((s) => isNewSite(s));
+/** The skills that came in lately: as with the resources, the first batch (criterio.design's own) carries no date */
+const FRESH_SKILLS = SKILLS.filter((s) => s.install && isNewSite(s)).length;
 const inShelf = (s: Site, shelf: Shelf) => shelf === "all" || (shelf === "new" ? isNewSite(s) : featuredUrls().includes(s.url));
 const matching = (group: string | null, shelf: Shelf = "all") => ALL.filter((s) => (!group || s.group === group) && inShelf(s, shelf));
 
@@ -37,7 +40,29 @@ export default function Discover({ section, onSection, templates }: {
   const [group, setGroup] = useState<string | null>(null);
   const [shelf, setShelf] = useState<Shelf>("all");
   const [groupsOpen, setGroupsOpen] = useState(false);
+  const [topic, setTopic] = useState<SkillTopic | null>(null);
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  const [skillShelf, setSkillShelf] = useState<Shelf>("all");
   const groupTitle = (k: string) => t.directory.groups[k as GroupKey]?.title ?? k;
+  // One of a section's kinds, or all of them: the menu on the right of the bar, the same for resources and skills
+  const picker = <K extends string>(p: { open: boolean; onOpen: (o: boolean) => void; value: K | null; onPick: (k: K | null) => void; label: string; options: { key: K; title: string; hint?: string }[] }) => (
+    <Popover open={p.open} onOpenChange={p.onOpen}>
+      <PopoverTrigger className={`disc__group${p.value ? " is-on" : ""}`}>
+        {p.options.find((o) => o.key === p.value)?.title ?? p.label} {Icons.chevron}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="pp pp--menu">
+        <button type="button" className={`ws__item${p.value === null ? " is-active" : ""}`} onClick={() => { p.onPick(null); p.onOpen(false); }}>
+          <span className="ws__item-name">{t.discover.all}</span>{p.value === null && <span className="ws__item-check">{Icons.check}</span>}
+        </button>
+        {p.options.map((o) => (
+          <button key={o.key} type="button" className={`ws__item${p.value === o.key ? " is-active" : ""}`} title={o.hint}
+            onClick={() => { p.onPick(o.key); p.onOpen(false); }}>
+            <span className="ws__item-name">{o.title}</span>{p.value === o.key && <span className="ws__item-check">{Icons.check}</span>}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
   // The head of the page, the same in the three sections and in their column, as a project's page has it: the name
   // on top with what the open section holds, and below one row with the sections on the left and, on the right,
   // what the open one is looked through with. It scrolls away with the page
@@ -58,37 +83,31 @@ export default function Discover({ section, onSection, templates }: {
     </>
   );
   if (section === "templates") return templates(head(t.templates.lead));
+  // What to look at first: everything, what just came in, what we open most. The same three for resources and skills
+  const shelves = (value: Shelf, onPick: (s: Shelf) => void, fresh: number) => (
+    <Liquid className="tt-modes disc__shelves" role="tablist" aria-label={t.discover.shelves}>
+      {(["all", "new", "featured"] as const).filter((k) => k !== "new" || fresh > 0).map((k) => (
+        <button key={k} type="button" role="tab" aria-selected={value === k} className={`tt-mode${value === k ? " is-on" : ""}`} onClick={() => onPick(k)}>
+          {t.discover.shelf[k]}{k === "new" && <b>{fresh}</b>}
+        </button>
+      ))}
+    </Liquid>
+  );
   if (section === "skills") {
-    const catalog = SKILLS.find((s) => !s.install);
-    return <DiscoverSkills sites={SKILLS} head={head(t.directory.groups.skills.hint,
-      catalog && <a className="disc-bar__link" href={catalog.url} target="_blank" rel="noopener noreferrer">{t.discover.skills.catalog(catalog.name)} ↗</a>)} />;
+    return <DiscoverSkills sites={SKILLS} topic={topic} shelf={skillShelf} head={head(t.directory.groups.skills.hint, (
+      <>
+        {shelves(skillShelf, setSkillShelf, FRESH_SKILLS)}
+        {picker({ open: topicsOpen, onOpen: setTopicsOpen, value: topic, onPick: setTopic, label: t.discover.skills.topicsLabel,
+          options: SKILL_TOPICS.map((k) => ({ key: k, title: t.discover.skills.topics[k] })) })}
+      </>
+    ))} />;
   }
-  // What to look at first: everything, what just came in, what we open most. The kinds of resource wait in a menu
+  // The kinds of resource wait in a menu
   const filters = (
     <>
-      <Liquid className="tt-modes disc__shelves" role="tablist" aria-label={t.discover.shelves}>
-        {(["all", "new", "featured"] as const).filter((k) => k !== "new" || FRESH.length > 0).map((k) => (
-          <button key={k} type="button" role="tab" aria-selected={shelf === k} className={`tt-mode${shelf === k ? " is-on" : ""}`} onClick={() => setShelf(k)}>
-            {t.discover.shelf[k]}{k === "new" && <b>{FRESH.length}</b>}
-          </button>
-        ))}
-      </Liquid>
-      <Popover open={groupsOpen} onOpenChange={setGroupsOpen}>
-        <PopoverTrigger className={`disc__group${group ? " is-on" : ""}`}>
-          {group ? groupTitle(group) : t.discover.groups} {Icons.chevron}
-        </PopoverTrigger>
-        <PopoverContent align="end" className="pp pp--menu">
-          <button type="button" className={`ws__item${group === null ? " is-active" : ""}`} onClick={() => { setGroup(null); setGroupsOpen(false); }}>
-            <span className="ws__item-name">{t.discover.all}</span>{group === null && <span className="ws__item-check">{Icons.check}</span>}
-          </button>
-          {DIRECTORY.map((g) => (
-            <button key={g.key} type="button" className={`ws__item${group === g.key ? " is-active" : ""}`} title={t.directory.groups[g.key as GroupKey]?.hint}
-              onClick={() => { setGroup(g.key); setGroupsOpen(false); }}>
-              <span className="ws__item-name">{groupTitle(g.key)}</span>{group === g.key && <span className="ws__item-check">{Icons.check}</span>}
-            </button>
-          ))}
-        </PopoverContent>
-      </Popover>
+      {shelves(shelf, setShelf, FRESH.length)}
+      {picker({ open: groupsOpen, onOpen: setGroupsOpen, value: group, onPick: setGroup, label: t.discover.groups,
+        options: DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), hint: t.directory.groups[g.key as GroupKey]?.hint })) })}
     </>
   );
   return <DiscoverList group={group} shelf={shelf} head={head(t.discover.lead, filters)} />;

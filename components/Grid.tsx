@@ -13,6 +13,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
 import { useT } from "./I18nProvider";
+import SoundControl from "./SoundControl";
+import ZoomPill from "./ZoomPill";
 
 /** Which copy of the page a card draws, by how wide it is on screen (the stored copies: 288, 720 and 1440px) */
 export type ShotLevel = "thumb" | "tile" | "full";
@@ -279,15 +281,20 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
       </div>
 
       {/* Outside the scroller, so it stays in its corner while the board moves */}
-      <div className="board-zoom" role="group">
-        <button type="button" className="board-zoom__btn" aria-label={t.zoom.zoomOut} title={t.zoom.zoomOut} disabled={cols >= maxCols} onClick={() => stepRef.current(1)}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14" /></svg>
-        </button>
-        <button type="button" className="board-zoom__pct" aria-label={`${pct}% · ${t.zoom.columns(cols)} · ${t.zoom.reset}`} title={t.zoom.reset} onClick={() => onZoom(DEFAULT_ZOOM)}>{pct}%</button>
-        <button type="button" className="board-zoom__btn" aria-label={t.zoom.zoomIn} title={t.zoom.zoomIn} disabled={cols <= MIN_COLS} onClick={() => stepRef.current(-1)}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-        </button>
-      </div>
+      <ZoomPill
+        className="board-zoom"
+        zoom={{
+          pct,
+          label: t.zoom.columns(cols),
+          canOut: cols < maxCols,
+          canIn: cols > MIN_COLS,
+          onOut: () => stepRef.current(1),
+          onIn: () => stepRef.current(-1),
+          onReset: () => onZoom(DEFAULT_ZOOM),
+        }}
+      >
+        <SoundControl />
+      </ZoomPill>
     </>
   );
 });
