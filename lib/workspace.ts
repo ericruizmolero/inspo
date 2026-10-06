@@ -85,7 +85,7 @@ export async function withCtx<T>(fn: (ctx: Ctx) => Promise<T>, opts?: { manage?:
     return { ok: true, data: await fn(ctx) };
   } catch (e) {
     if (!(e instanceof HttpError)) console.error(e);
-    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    return { ok: false, error: e instanceof HttpError ? e.message : (await getErrors()).unexpected };
   }
 }
 

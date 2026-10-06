@@ -4,6 +4,7 @@ import { HttpError } from "@/lib/workspace-core";
 import { boardVisuals } from "@/lib/system";
 import { refFaces, type RefFace } from "@/lib/ref-fonts";
 import { mediaKindOf } from "@/lib/url";
+import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 30;
 
@@ -27,6 +28,6 @@ export async function GET(req: NextRequest) {
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
     console.error("fonts error:", projectId, e instanceof Error ? e.message : e);
-    return Response.json({ error: e instanceof Error ? e.message : String(e) }, { status: 500 });
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

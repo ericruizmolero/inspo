@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getSession } from "@/lib/workspace";
 import { handleFeedbackEvent, type FeedbackEvent } from "@/lib/feedback";
 import { getErrors } from "@/lib/i18n";
+import { HttpError } from "@/lib/workspace-core";
 
 
 const EVENTS = new Set(["annotation.add", "annotation.update", "annotation.delete", "submit"]);
@@ -22,6 +23,6 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: true, ...r });
   } catch (e) {
     console.warn("feedback: could not record", e instanceof Error ? e.message : e);
-    return Response.json({ error: e instanceof Error ? e.message : "Could not save the feedback" }, { status: 500 });
+    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

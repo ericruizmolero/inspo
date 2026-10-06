@@ -6,6 +6,7 @@ import { newId } from "./items";
 import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-files";
 import type { InspoComment, CommentMap, CommentAttachment, CommentAnchor } from "@/types/inspo";
 import { getErrors } from "./i18n";
+import { HttpError } from "./workspace-core";
 
 const C = schema.inspoComment;
 const U = schema.user;
@@ -75,15 +76,15 @@ export async function listItemComments(organizationId: string, itemId: string): 
 export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string; attachments?: unknown; anchor?: unknown; parentId?: unknown }): Promise<InspoComment> {
   const body = input.body.trim();
   const attachments = cleanAttachments(organizationId, input.attachments);
-  if (!body && !attachments.length) throw new Error((await getErrors()).emptyComment);
+  if (!body && !attachments.length) throw new HttpError(400, (await getErrors()).emptyComment);
   const [item] = await db.select({ id: schema.inspoItem.id }).from(schema.inspoItem)
     .where(and(eq(schema.inspoItem.id, input.itemId), eq(schema.inspoItem.organizationId, organizationId))).limit(1);
-  if (!item) throw new Error((await getErrors()).itemNotInWorkspace);
+  if (!item) throw new HttpError(400, (await getErrors()).itemNotInWorkspace);
   const parentId = typeof input.parentId === "string" && input.parentId ? input.parentId : null;
   if (parentId) {
     const [parent] = await db.select({ parentId: C.parentId }).from(C)
       .where(and(eq(C.id, parentId), eq(C.organizationId, organizationId), eq(C.itemId, input.itemId))).limit(1);
-    if (!parent || parent.parentId) throw new Error((await getErrors()).replyGone);
+    if (!parent || parent.parentId) throw new HttpError(400, (await getErrors()).replyGone);
   }
   const anchor = parentId ? null : cleanAnchor(input.anchor);
   const row = {

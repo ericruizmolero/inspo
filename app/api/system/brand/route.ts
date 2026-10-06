@@ -29,6 +29,6 @@ export async function POST(req: NextRequest) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
     const msg = e instanceof Error ? e.message : String(e);
     console.error("brand error:", projectId, msg);
-    return Response.json({ error: msg }, { status: 500 });
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

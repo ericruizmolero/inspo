@@ -5,6 +5,7 @@ export const errors = {
   incompleteAnswer: "The model returned an incomplete answer",
   adminsCanRegenerate: "Only admins can regenerate",
   adminsOnly: "Admins only",
+  unexpected: "Something went wrong. Try again.",
   badBody: "Invalid body",
   badEmail: "That email does not look valid",
   badIds: "Invalid identifiers",
