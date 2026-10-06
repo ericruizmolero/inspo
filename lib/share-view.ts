@@ -15,7 +15,7 @@ import { systemActivity } from "./area-comments";
 import { keyOf } from "./storage";
 import { dictOf, type Locale } from "./i18n";
 import { refInfoOf } from "./ref-info";
-import { blocksToMd, criterioBlocks, type RefInfo } from "./criterio-md";
+import { blocksToMd, criterioBlocks, type CriterioBlock, type RefInfo } from "./criterio-md";
 import { mediaKindOf } from "./url";
 import { projectBrandPrefix } from "./brand-files";
 import type { ShareMode } from "./share";
@@ -30,6 +30,8 @@ export interface ShareView {
   system: Awaited<ReturnType<typeof getSystem>>;
   refs: Record<string, BrandRef>;
   markdown: string;
+  /** The file in blocks (lib/criterio-md.ts), for a reader that wants one part of it (lib/mcp) */
+  blocks: CriterioBlock[];
   /** Every stored key the page may load, for the file route */
   keys: Set<string>;
 }
@@ -96,7 +98,7 @@ export async function loadShareView(organizationId: string, projectId: string, m
     board: boardIds, talk: activity?.notes ?? {}, origin, skills: (system.doc?.skills ?? "").split(",").filter(Boolean), locale,
     brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${at(key)}`; },
   });
-  return { name: project.name, system, refs, markdown: blocksToMd(blocks), keys };
+  return { name: project.name, system, refs, markdown: blocksToMd(blocks), blocks, keys };
 }
 
 /** Whether a key may be served through a link of this project, beyond the ones its view names */

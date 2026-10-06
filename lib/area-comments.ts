@@ -14,7 +14,7 @@ const P = schema.project;
 const U = schema.user;
 
 /** A change someone proposes to an area instead of making it: the text it would have, waiting for the team's yes or no */
-export interface AreaProposal { decision: string; why: string; never: string; state: "open" | "accepted" | "rejected"; resolvedBy?: string }
+export interface AreaProposal { decision: string; why: string; never: string; state: "open" | "accepted" | "rejected"; resolvedBy?: string; /** The AI client it was proposed from over MCP ("Claude"), when it was not written in the app */ via?: string }
 /** What a line points at: an option tried on the sample (the choice to put back, and how it reads), a reference,
  *  or the change it proposes */
 export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal }
@@ -50,7 +50,7 @@ function cleanAbout(v: unknown): AreaAbout | null {
     const decision = cleanDecision(p.decision);
     if (!decision) return null;
     const state = p.state === "accepted" || p.state === "rejected" ? p.state : "open";
-    return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}) } };
+    return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}), ...(typeof p.via === "string" && p.via.trim() ? { via: p.via.trim().slice(0, 40) } : {}) } };
   }
   if (o.pin && typeof o.pin === "object") {
     const quote = String((o.pin as Record<string, unknown>).quote ?? "").replace(/\s+/g, " ").trim().slice(0, 160);

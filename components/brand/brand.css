@@ -12,9 +12,10 @@
   display: grid;
   grid-template-columns: 188px minmax(0, 1fr);
   gap: 40px;
+  /* The same column as criterio.md's (components/SystemDoc.css .sdoc): index of 188, a 40 gap, 1080 in all */
   width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
+  max-width: 1080px;
+  margin: 8px auto 0;
   color: var(--text);
   font-family: var(--font);
 }

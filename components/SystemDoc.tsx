@@ -1,9 +1,9 @@
 "use client";
-// The system's result: criterio.md, with the team working on it. The file is shown as the Markdown it is or, one
-// press away, set as a document: the same text either way (components/SystemMarkdown.tsx), typed in place and
+// The system's result: criterio.md, with the team working on it. The file is shown as the Markdown it is or set
+// as a document (the page's tabs choose): the same text either way (components/SystemMarkdown.tsx), typed in place and
 // saved as it is typed, with the pins the team leaves on it. Here: the parts to jump between, the proposals
 // waiting under each area (anyone says yes or no).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { InspoItem } from "@/types/inspo";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { CriterioBlock, RefInfo } from "@/lib/criterio-md";
@@ -53,14 +53,14 @@ interface Props {
   projectId: string; projectName: string; hasRecipe: boolean;
   /** More controls over the file, in its bar before Copy */
   fileTools?: React.ReactNode;
+  /** The file as the Markdown it is, or set as a document: chosen in the page's tabs (components/SystemView.tsx) */
+  look: "md" | "doc";
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools }: Props) {
+export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
-  // The file opens as Markdown, the file an agent reads; the document look is one tab away
-  const [mode, setMode] = useState<"doc" | "md">("md");
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
   const areaBlocks = blocks.filter((b): b is AreaBlock => b.kind === "area");
@@ -70,14 +70,38 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const skillName = (id: string) => (t.system as unknown as { skillsList?: Record<string, { name?: string }> }).skillsList?.[id]?.name ?? id.toUpperCase();
   // The sections the skills add (lib/md-skills.ts), in the order the file has them
   const skillBlocks = blocks.filter((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id.startsWith("skill:"));
-  // To a part of the file. What is above it can still grow while the page travels (pictures arriving in the
-  // document look), so once it has had time to arrive it lands again, on where the part really is
+  // To a part of the file, at one pace whatever the distance. Where it lands is read again on every frame, and for
+  // a moment after landing: what is above the part can still grow while the page travels (pictures arriving in the
+  // document look), and the browser's own smooth scroll stopped short when it did, or when a trackpad's fling was
+  // still running. The wheel is held until that fling ends; a new scroll or a finger takes the page back
+  const endTravel = useRef(() => {});
+  useEffect(() => () => endTravel.current(), []);
   const go = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
-    const want = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
-    for (const ms of [700, 1500]) setTimeout(() => { if (Math.abs(el.getBoundingClientRect().top - want) > 6) el.scrollIntoView({ behavior: "auto", block: "start" }); }, ms);
+    let page = el.parentElement;
+    while (page && !(/auto|scroll/.test(getComputedStyle(page).overflowY) && page.scrollHeight > page.clientHeight + 1)) page = page.parentElement;
+    if (!page || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { el.scrollIntoView({ block: "start" }); return; }
+    endTravel.current();
+    const box = page;
+    const margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    const from = box.scrollTop, start = performance.now(), ms = 520, hold = 1500;
+    let frame = 0, wheeled = start;
+    const wheel = (e: WheelEvent) => {
+      const now = performance.now(), fresh = now - wheeled > 120;
+      wheeled = now;
+      if (now - start > ms && fresh) stop(); else e.preventDefault();
+    };
+    const stop = () => { cancelAnimationFrame(frame); box.removeEventListener("wheel", wheel); box.removeEventListener("touchstart", stop); };
+    const step = (now: number) => {
+      const k = Math.min(1, (now - start) / ms);
+      const to = Math.min(box.scrollHeight - box.clientHeight, box.scrollTop + el.getBoundingClientRect().top - box.getBoundingClientRect().top - margin);
+      box.scrollTop = from + (to - from) * (1 - Math.pow(1 - k, 4));
+      if (now - start < hold) frame = requestAnimationFrame(step); else stop();
+    };
+    box.addEventListener("wheel", wheel, { passive: false }); box.addEventListener("touchstart", stop, { passive: true });
+    endTravel.current = stop;
+    frame = requestAnimationFrame(step);
   };
 
   const proposeArea = async (area: SystemArea, p: { decision: string; why: string; never: string }, why: string): Promise<boolean> => {
@@ -138,14 +162,6 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     return true;
   };
   const unpin = async (id: string) => { const r = await removeAreaComment(id); if (r.ok) onTalk(); else setError(r.error); };
-  const tools = (
-    <header className="sdoc-tools">
-      <div className="tt-modes" role="tablist" aria-label="criterio.md">
-        <button type="button" role="tab" aria-selected={mode === "md"} className={`tt-mode${mode === "md" ? " is-on" : ""}`} onClick={() => setMode("md")}>{s.markdown}</button>
-        <button type="button" role="tab" aria-selected={mode === "doc"} className={`tt-mode${mode === "doc" ? " is-on" : ""}`} onClick={() => setMode("doc")}>{s.document}</button>
-      </div>
-    </header>
-  );
 
   // The file's parts, to jump between: each area says where it stands. One reference under it is enough for
   // the green dot, however many there are
@@ -180,7 +196,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     <div key={n.id} className="sdoc-proposal">
       <header>
         <Avatar name={n.who} image={n.image} size={20} />
-        <span><b>{n.who}</b> {s.proposes}</span>
+        <span><b>{n.who}</b> {n.proposal!.via ? t.mcp.proposesVia(n.proposal!.via) : s.proposes}</span>
         <time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
         <span className="sdoc-proposal__tools">
           <button type="button" className="sdoc-btn sdoc-btn--solid" disabled={working} onClick={() => void answer(n, true)}>{Icons.check} {s.accept}</button>
@@ -214,9 +230,8 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     <div className="sdoc">
       {toc}
       <div className="sdoc-page sdoc-page--md">
-        {tools}
         {error && <p className="sysv-error" role="alert">{error}</p>}
-        <SystemMarkdown fileTools={fileTools} look={mode} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} markdown={markdown} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
+        <SystemMarkdown fileTools={fileTools} look={look} pictures={pictures} blocks={blocks} busy={busy} onSave={onSave} onCopy={onCopy} onDownload={onDownload} copied={copied} markdown={markdown} projectId={projectId} projectName={projectName} hasRecipe={hasRecipe}
           onPropose={proposeArea} after={(b) => <>{proposalsOf(b)}</>} onAbout={onAbout}
           onText={onText && (async (id, text) => { try { await onText(id, text); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}
           onTextTitle={onTextTitle && (async (id, title) => { try { await onTextTitle(id, title); setError(""); } catch (e) { setError(e instanceof Error ? e.message : String(e)); throw e; } })}

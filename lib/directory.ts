@@ -254,6 +254,8 @@ export const SKILLS: DirectorySite[] = [
   { name: "design-review", url: "https://ui-skills.com/skills/superfuture/design-review", added: "2026-10-05", install: "npx skills add https://github.com/Superfuture/design-review --skill design-review" },
   { name: "better-interface", url: "https://ui-skills.com/skills/jakubkrehel/better-interface", added: "2026-10-05", install: "npx skills add https://github.com/jakubkrehel/skills --skill better-interface" },
   { name: "iso-figure", url: "https://github.com/MrBongoC/ai-iso-skill", added: "2026-10-05", skill: "iso-figure", install: "npx skills add https://github.com/MrBongoC/ai-iso-skill --skill iso-figure" },
+  { name: "gsap-skills", url: "https://github.com/greensock/gsap-skills", added: "2026-10-05", skill: "gsap", install: "npx skills add https://github.com/greensock/gsap-skills" },
+  { name: "no-ai-slop", url: "https://github.com/petergyang/no-ai-slop", added: "2026-10-05", skill: "no-ai-slop", install: "npx skills add https://github.com/petergyang/no-ai-slop --skill no-ai-slop" },
 ];
 
 export const DIRECTORY_TOTAL = DIRECTORY.reduce((n, g) => n + g.items.length, 0);

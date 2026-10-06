@@ -10,6 +10,7 @@ Cómo resolvemos problemas que se repiten. Cada patrón enlaza la decisión que 
 | Muchas piezas que cambian de sitio | Transición CSS de `transform` sobre posiciones calculadas | Tarjetas del tablero (`Grid.tsx`) |
 | Una pieza que nace de un punto | WAAPI (`el.animate`) | La ficha crece desde donde se pulsó (`ItemPanel.tsx`) |
 | Algo que sigue al puntero | `requestAnimationFrame` con suavizado y WAAPI para entrar y salir | La miniatura de Descubrir (`Discover.tsx`) → [decisión](decisiones/2026-10-05-miniatura-descubrir-sin-gsap.md) |
+| Llevar la página a una parte (índice) | `requestAnimationFrame` sobre el `scrollTop` del contenedor, releyendo el destino en cada frame | El índice de criterio.md (`go` en `SystemDoc.tsx`) → [decisión](decisiones/2026-10-06-indice-baja-con-scroll-propio.md) |
 | Cambio de vista completo | View Transitions | Abrir un área en `SystemView` (≥801 px) |
 
 Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay que medir, medir todo antes de animar; nada de GSAP Flip sobre muchos elementos (1,5 s de congelación con 286 tarjetas); respetar `prefers-reduced-motion` (se deja solo el fundido). GSAP ya no está en el proyecto. → [cortina](decisiones/2026-09-24-cortina-sidebar-waapi.md), [tablero](decisiones/2026-10-01-masonry-ventanada-sin-flip.md)
@@ -32,6 +33,8 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 ## Edición
 
 - Texto editable en el sitio, sin botón Editar ni recuadro; autoguardado. En criterio.md lo es todo, títulos incluidos. → [decisión](decisiones/2026-10-05-todo-el-md-editable.md)
+- Lo que se escribe en un proyecto es siempre una pieza del tablero (una referencia o la decisión de un área), nunca un documento suelto: así hay una sola fuente de verdad y el MD se deriva de ella. → [decisión](decisiones/2026-10-05-resultados-en-vez-de-presentacion.md)
+- Lo mismo para un cliente de IA conectado por MCP: lee el MD, escribe piezas, y una decisión suya es una propuesta que espera al equipo. Lo que viene de fuera dice de dónde viene ("Eric vía Claude"). → [decisión](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md)
 - Comentar es una herramienta aparte (tecla C) que deja pines tipo Figma con respuestas, en el documento. No hay anotaciones posicionales sobre las páginas de referencia.
 
 ## Confirmaciones y vacíos

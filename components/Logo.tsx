@@ -2,7 +2,7 @@
 export default function Logo({ size = 32, className = "" }: { size?: number; className?: string }) {
   return (
     <img
-      src="/logo.png"
+      src={size > 96 ? "/icon-512.png" : "/logo.png"}
       alt="criterio.design"
       width={size}
       height={size}

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
 import { Avatar } from "./CommentsPanel";
-import OpenInAI from "./OpenInAI";
+import FileMenu from "./FileMenu";
 import "./SystemMarkdown.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
@@ -95,6 +95,35 @@ function underPicture(texts: string[], i: number, pics?: Record<string, string>)
   return false;
 }
 
+/** A row of a Markdown table ("| a | b |"): the text between its pipes, spaces and all */
+const cellsOf = (text: string) => (/^\s*\|.*\|\s*$/.test(text) ? text.trim().slice(1, -1).split("|") : null);
+const isRule = (text: string) => /^\s*\|[\s:|-]*-[\s:|-]*\|\s*$/.test(text);
+/** A cell as it reads, without its marks: what its column's width is taken from */
+const plainCell = (cell: string) => cell.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/\*\*|`/g, "").trim();
+export interface TableRow { kind: "head" | "rule" | "row"; widths: number[] }
+/** Line `i` as a row of a table (rows under a head and its rule): which row it is, and each column's share of the
+ *  width, by its longest cell, so every row of the table is cut at the same places */
+export function tableRow(texts: string[], i: number): TableRow | null {
+  if (!cellsOf(texts[i] ?? "")) return null;
+  let a = i, b = i;
+  while (a > 0 && cellsOf(texts[a - 1])) a--;
+  while (b < texts.length - 1 && cellsOf(texts[b + 1])) b++;
+  if (b === a || !isRule(texts[a + 1])) return null;
+  const wide: number[] = [];
+  for (let j = a; j <= b; j++) if (!isRule(texts[j])) cellsOf(texts[j])!.forEach((c, n) => { wide[n] = Math.max(wide[n] ?? 0, Math.min(28, Math.max(4, plainCell(c).length)) + 3); });
+  const sum = wide.reduce((x, y) => x + y, 0) || 1;
+  return { kind: isRule(texts[i]) ? "rule" : i === a ? "head" : "row", widths: wide.map((w) => Math.floor((w / sum) * 10000) / 100) };
+}
+/** A table row cut at its pipes, every character kept: what opens each cell (the pipe and its spaces), the cell,
+ *  the spaces that close it, and the last pipe */
+function rowParts(text: string): { lead: string; cells: { open: string; text: string; close: string }[]; tail: string } {
+  const parts = text.split("|");
+  return {
+    lead: parts[0], tail: `|${parts[parts.length - 1]}`,
+    cells: parts.slice(1, -1).map((c) => { const m = c.match(/^(\s*)([\s\S]*?)(\s*)$/)!; return { open: `|${m[1]}`, text: m[2], close: m[3] }; }),
+  };
+}
+
 /** What a line of the file is quoted as when a pin is left on it */
 export const quoteOf = (text: string) => text.replace(/\s+/g, " ").trim().slice(0, 160);
 
@@ -109,8 +138,10 @@ function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies
   );
 }
 
-export function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic }: {
+export function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, underPic, table }: {
   text: string;
+  /** The line is a row of a table: the document look sets its cells side by side */
+  table?: TableRow | null;
   /** Said about a reference that shows its picture: it lines up under that reference's text */
   underPic?: boolean;
   /** The references' pictures by code (R1…), for the document look */
@@ -128,12 +159,15 @@ export function Line({ text, onPress, pins, repliesOf, openId, onOpen, pics, und
   // A list line that wraps keeps its indent: the second row starts under the first's words, not at the margin
   const hang = k.depth !== undefined ? `${k.mark.length}ch` : undefined;
   const hu = human(text, pics, underPic);
+  const row = table && table.kind !== "rule" ? rowParts(text) : null;
   const style = { ...(hang ? { paddingLeft: hang, textIndent: `-${hang}`, "--d": k.depth } : {}), ...(hu.pic ? { "--pic": hu.pic } : {}) } as React.CSSProperties;
   return (
-    <div className={`mdv-line${k.cls}${hu.cls}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
+    <div className={`mdv-line${k.cls}${hu.cls}${table ? ` mdv-tr${table.kind === "head" ? " mdv-th" : table.kind === "rule" ? " mdv-tsep" : ""}` : ""}${onPress ? " is-pressable" : ""}${pins?.length ? " has-pins" : ""}`}
       style={hang || hu.pic ? style : undefined}
       onClick={onPress ? (e) => { if ((e.target as HTMLElement).closest("a, .mdv-pin")) return; const r = e.currentTarget.getBoundingClientRect(); onPress(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)), { x: e.clientX, y: e.clientY }); } : undefined}>
-      {k.mark && <Mark>{k.mark}</Mark>}{k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em") ? k.rest : inline(k.rest)}{k.tail && <Mark>{k.tail}</Mark>}
+      {row
+        ? <>{row.lead}{row.cells.map((c, n) => <span key={n}><Mark>{c.open}</Mark><span className={`mdv-td${n ? "" : " mdv-td--first"}`} style={{ "--w": `${table!.widths[n] ?? 0}%` } as React.CSSProperties}>{inline(c.text)}</span>{c.close && <Mark>{c.close}</Mark>}</span>)}<Mark>{row.tail}</Mark></>
+        : <>{k.mark && <Mark>{k.mark}</Mark>}{k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em") ? k.rest : inline(k.rest)}{k.tail && <Mark>{k.tail}</Mark>}</>}
       {onOpen && pins?.map((n) => <PinMark key={n.id} pin={n} replies={repliesOf?.(n.id) ?? 0} active={openId === n.id} style={{ left: `${n.x * 100}%` }} onOpen={onOpen} />)}
     </div>
   );
@@ -144,6 +178,9 @@ const escHtml = (x: string) => x.replace(/&/g, "&amp;").replace(/</g, "&lt;").re
  *  text itself is whole (a long address is only cut on screen), so what is read back is the file */
 function mdHtml(raw: string, pics?: Record<string, string>): string {
   const mark = (m: string) => `<span class="mdv-mark">${escHtml(m)}</span>`;
+  const rich = (text: string) => escHtml(text)
+    .replace(/\*\*([^*\n]+)\*\*/g, (_m, x: string) => `<b class="mdv-b">${mark("**")}${x}${mark("**")}</b>`)
+    .replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (_m, name: string, url: string) => `${mark("[")}<span class="mdv-link">${name}</span>${mark("]")}<span class="mdv-mark mdv-url${url.length > 56 ? " mdv-url--cut" : ""}">(${url})</span>`);
   const all = raw.split("\n");
   return all.map((line, i) => {
     if (!line) return `<div class="mdv-eline"><br></div>`;
@@ -151,10 +188,14 @@ function mdHtml(raw: string, pics?: Record<string, string>): string {
     const hu = human(line, pics, underPicture(all, i, pics));
     const css = `${k.depth !== undefined ? `padding-left:${k.mark.length}ch;text-indent:-${k.mark.length}ch;--d:${k.depth};` : ""}${hu.pic ? `--pic:${hu.pic}` : ""}`;
     const hang = css ? ` style="${css.replace(/&/g, "&amp;").replace(/"/g, "&quot;")}"` : "";
+    const tb = tableRow(all, i);
+    if (tb?.kind === "rule") return `<div class="mdv-eline mdv-tr mdv-tsep">${escHtml(line)}</div>`;
+    if (tb) {
+      const row = rowParts(line);
+      return `<div class="mdv-eline mdv-tr${tb.kind === "head" ? " mdv-th" : ""}">${escHtml(row.lead)}${row.cells.map((c, n) => `${mark(c.open)}<span class="mdv-td${n ? "" : " mdv-td--first"}" style="--w:${tb.widths[n] ?? 0}%">${rich(c.text)}</span>${c.close ? mark(c.close) : ""}`).join("")}${mark(row.tail)}</div>`;
+    }
     const plain = k.cls.includes("mdv-h") || k.cls.includes("mdv-q") || k.cls.includes("mdv-em");
-    const body = plain ? escHtml(k.rest) : escHtml(k.rest)
-      .replace(/\*\*([^*\n]+)\*\*/g, (_m, x: string) => `<b class="mdv-b">${mark("**")}${x}${mark("**")}</b>`)
-      .replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (_m, name: string, url: string) => `${mark("[")}<span class="mdv-link">${name}</span>${mark("]")}<span class="mdv-mark mdv-url${url.length > 56 ? " mdv-url--cut" : ""}">(${url})</span>`);
+    const body = plain ? escHtml(k.rest) : rich(k.rest);
     return `<div class="mdv-eline${k.cls}${hu.cls}"${hang}>${k.mark ? mark(k.mark) : ""}${body}${k.tail ? mark(k.tail) : ""}</div>`;
   }).join("");
 }
@@ -311,7 +352,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
   /** A template: the file is read, copied and downloaded, never written (it is cloned into a project to work on it) */
   readOnly?: boolean;
   onCopy: () => void; onDownload: () => void; copied: boolean;
-  /** The file as it is copied: with it, the bar offers to open it in an AI chat */
+  /** The file as it is copied: with it, the menu beside Copy offers to open it in an AI chat */
   markdown?: string;
   /** More controls over the file, before Copy (the skills it carries) */
   fileTools?: ReactNode;
@@ -350,6 +391,16 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
   const [commenting, setCommenting] = useState(false);
   // Proposing (the other tool): what is typed in an area is left as a proposal instead of written
   const [proposing, setProposing] = useState(false);
+  // Switched on, the caret waits at the start of the first line in sight (under the island), so it is seen at once
+  // that the file is written on. The page stays where it is: nothing is scrolled to
+  useEffect(() => {
+    if (!proposing) return;
+    const parts = [...(docRef.current?.querySelectorAll<HTMLElement>('.mdv-live:not([contenteditable="false"])') ?? [])];
+    const el = parts.find((x) => { const top = x.getBoundingClientRect().top; return top >= 64 && top < window.innerHeight - 24; });
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    window.getSelection()?.collapse(el, 0);
+  }, [proposing]);
   // The thread in sight: an existing pin's, or the one being started at a spot
   const [pop, setPop] = useState<{ left: number; top: number; rootId?: string; draft?: { part: string; quote: string; x: number } } | null>(null);
   const [pinText, setPinText] = useState("");
@@ -362,7 +413,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
       const el = e.target as HTMLElement | null;
       if (e.key === "Escape") { setCommenting(false); setPop(null); return; }
       if (el?.closest("input, textarea, [contenteditable]") || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "c" || e.key === "C") setCommenting((c) => !c);
+      if (e.key === "c" || e.key === "C") { setCommenting((c) => !c); setProposing(false); }
     };
     document.addEventListener("keydown", key);
     return () => document.removeEventListener("keydown", key);
@@ -404,7 +455,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
     return texts.map((text, i) => {
       const q = quoteOf(text);
       const here = text ? mine.filter((n) => n.quote === q || (i === first && !quotes.has(n.quote))) : [];
-      return <Line key={i} text={text} pics={pictures} underPic={underPicture(texts, i, pictures)} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
+      return <Line key={i} text={text} table={tableRow(texts, i)} pics={pictures} underPic={underPicture(texts, i, pictures)} pins={here} repliesOf={repliesOf} openId={pop?.rootId ?? null} onOpen={openPin}
         onPress={text && onPin && commenting && !readOnly ? startPin(part, q) : undefined} />;
     });
   };
@@ -445,7 +496,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
         {tabs}
         <span className="mdv-bar__hint">{s.recipeHint}</span>
         <span className="mdv-bar__tools">
-          <button type="button" className="mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}>{recipeCopied ? Icons.check : Icons.all} {recipeCopied ? t.system.copied : s.copy}</button>
+          <button type="button" className="mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}>{recipeCopied ? Icons.check : Icons.copy} {recipeCopied ? t.system.copied : s.copy}</button>
           <button type="button" className="mdv-btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([recipe ?? ""], { type: "text/markdown" })); a.download = `${projectName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-receta.md`; a.click(); URL.revokeObjectURL(a.href); }}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
           {!readOnly && <label className="mdv-btn" title={s.replaceRecipe}>{Icons.shuffle}<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
         </span>
@@ -460,12 +511,13 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
         {tabs}
         <span className="mdv-bar__hint">{readOnly ? s.readOnlyHint : onPin ? (commenting ? t.doc.hintComment : proposing ? t.doc.hintPropose : t.doc.hint) : s.hint}</span>
         <span className="mdv-bar__tools">
-          {onPropose && !readOnly && <button type="button" className={`mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} title={t.doc.proposeToolHint} onClick={() => setProposing((x) => !x)}>{t.doc.proposeTool}</button>}
-          {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
+          {onPropose && !readOnly && <button type="button" className={`mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} title={t.doc.proposeToolHint} onClick={() => { setProposing((x) => !x); setCommenting(false); setPop(null); }}>{t.doc.proposeTool}</button>}
+          {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setProposing(false); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           {fileTools}
-          <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.all} {copied ? t.system.copied : s.copy}</button>
-          {markdown && <OpenInAI markdown={markdown} projectName={projectName} />}
-          <button type="button" className="mdv-btn" onClick={onDownload} title={t.system.download}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
+          <span className="mdv-split">
+            <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.copy} {copied ? t.system.copied : s.copy}</button>
+            <FileMenu markdown={markdown} projectName={projectName} onDownload={onDownload} />
+          </span>
         </span>
       </header>
       <div ref={docRef} className={`mdv-doc${commenting ? " is-commenting" : ""}`}>
@@ -498,7 +550,7 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
             if (b.texts && onText) return (
               <div key={b.id} id={`sdoc-${b.id}`} className="mdv-block">
                 {title(b.id, b.heading, whole)}<Line text="" />
-                {onPart ? <>{written(b.id, b.texts.intro.join("\n").trimEnd(), "", whole, { onSave: (text) => onPart("content-intro", text) })}<Line text="" /></> : lines(b.id, b.texts.intro, whole, false)}
+                {onPart ? <>{written(b.id, b.texts.intro.join("\n").trimEnd(), "", whole, { onSave: (text) => onPart(`${b.id}-intro`, text) })}<Line text="" /></> : lines(b.id, b.texts.intro, whole, false)}
                 {b.texts.items.map((x, i) => (
                   <div key={x.itemId || i}>
                     {/* Its heading is its title: typed over, the reference is renamed (the code before it is put back) */}

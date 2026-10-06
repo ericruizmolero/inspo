@@ -12,7 +12,7 @@ El gusto de Criterio en frases que se pueden aplicar. Cada una enlaza la decisi�
 6. **Nada de esqueuomorfismo.** Si se pide algo "como un post-it", se toma la idea (una nota que se lee) y se resuelve con las superficies y tokens de la app.
 7. **Iconos propios cuando el concepto es nuestro** (las 8 áreas): 16 px, trazo 1,5, misma mano. Lucide para lo genérico. Solo un icono relleno en toda la app es aceptable si es la excepción deliberada. → [iconos por área](decisiones/2026-10-03-iconos-propios-por-area.md)
 8. **Dos temas de primera**, claro y oscuro, desde los mismos tokens. Nunca `#fff` ni `rgba(255,255,255,…)` para UI. → [tema claro/oscuro](decisiones/2026-09-21-tema-claro-oscuro.md)
-9. **Minimalismo con botones "muy curaditos"**: menos elementos, cada uno pulido.
+9. **Minimalismo con botones "muy curaditos"**: menos elementos, cada uno pulido. Fondo liso `--bg` en todas las vistas: sin tramas ni texturas que no digan cómo se usa la vista. → [fondo liso](decisiones/2026-10-05-fondo-liso-sin-puntos.md)
 
 ## Movimiento y sensación
 

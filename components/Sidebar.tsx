@@ -117,6 +117,11 @@ const I = {
       <path d="M2.5 7.5l3 3 6-7" />
     </svg>
   ),
+  copy: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M3.6 10.4A1.5 1.5 0 012.5 9V4A1.5 1.5 0 014 2.5h5a1.5 1.5 0 011.4 1.1" />
+    </svg>
+  ),
   sliders: (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" />

@@ -148,6 +148,13 @@
       "when": 1791202551691,
       "tag": "0020_brand_share",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791233571052,
+      "tag": "0022_mcp_connector",
+      "breakpoints": true
     }
   ]
 }

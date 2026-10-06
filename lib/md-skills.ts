@@ -6,12 +6,12 @@
 //   - the project, read from the system: the area's decision and never list, the curves the team kept, the
 //     durations named. Two projects with the same skill on get different sections.
 // Shared by client (the Markdown view) and server (scripts). Plain data in, lines out: no model call.
-import type { ProjectSystem, SystemAreaState } from "@/types/system";
-import { MORE_SKILLS, moreSkillSection, type MoreSkill } from "./md-skills-more";
+import type { ProjectSystem, SystemArea, SystemAreaState } from "@/types/system";
+import { AREAS, MORE_SKILLS, MORE_SKILL_DEFS, moreSkillSection, type MoreSkill, type SkillText } from "./md-skills-more";
 
 /** Every skill, in the order the file has them: the areas' order (typography, colour, layout, motion, iconography,
  *  logo, imagery, voice), then the ones that cross them. GSAP is written here; the rest in lib/md-skills-more.ts */
-import { MD_SKILLS } from "./md-skill-ids";
+import { MD_SKILLS, type MdSkill } from "./md-skill-ids";
 export { MD_SKILLS, type MdSkill } from "./md-skill-ids";
 
 type Lang = "en" | "es";
@@ -59,7 +59,8 @@ function motionFacts(a: SystemAreaState | undefined) {
 const T = {
   en: {
     heading: "Build it: motion with GSAP",
-    lead: "Switched on in criterio.design. How to build the Motion area above with GSAP. The Motion area rules: where it and this section disagree, the area wins.",
+    lead: "How to build the Motion area above with GSAP.",
+    on: (what: string) => `Switched on in criterio.design. ${what} The Motion area rules: where it and this section disagree, the area wins.`,
     project: "This project",
     decision: "Motion, as decided",
     open: "The Motion area is still open. Use the defaults below and keep motion to feedback on what can be pressed until the team decides.",
@@ -94,7 +95,8 @@ const T = {
   },
   es: {
     heading: "Construirlo: movimiento con GSAP",
-    lead: "Activado en criterio.design. Cómo construir con GSAP el área de Movimiento de arriba. Manda el área: si esta sección y ella no coinciden, gana el área.",
+    lead: "Cómo construir con GSAP el área de Movimiento de arriba.",
+    on: (what: string) => `Activado en criterio.design. ${what} Manda el área: si esta sección y ella no coinciden, gana el área.`,
     project: "Este proyecto",
     decision: "El movimiento, tal como se ha decidido",
     open: "El área de Movimiento sigue abierta. Usa los valores por defecto de abajo y limita el movimiento a responder a lo que se puede pulsar hasta que el equipo decida.",
@@ -135,7 +137,7 @@ function gsapLines(system: ProjectSystem, lang: Lang): string[] {
   const s = T[lang];
   const a = system.areas.find((x) => x.area === "motion");
   const { curves, durations } = motionFacts(a);
-  const L: string[] = [`> ${s.lead}`, "", `### ${s.project}`, ""];
+  const L: string[] = [`> ${s.on(s.lead)}`, "", `### ${s.project}`, ""];
   if (a?.decision) L.push(`**${s.decision}:** ${a.decision.replace(/\s+/g, " ").trim()}`, "");
   else L.push(`_${s.open}_`, "");
   if (curves.length) {
@@ -157,6 +159,18 @@ function gsapLines(system: ProjectSystem, lang: Lang): string[] {
   if (!curves.length && !durations.length) L.push(`**${s.defaults}:**`, ...s.defaultsRows.map((r) => `- ${r}`), "");
   L.push(`### ${s.craft}`, "", s.setup, "", ...s.rules.map((r) => `- ${r}`));
   return L;
+}
+
+/** The craft half of a skill, the same for every project: what its SKILL.md teaches an agent (scripts/build-skills.ts)
+ *  and what its section in criterio.md repeats under the project's numbers. The area it builds names which part of
+ *  criterio.md the agent must read first; null when it crosses them all */
+export function skillCraft(id: MdSkill, lang: Lang): SkillText & { area: SystemArea | null; areaName: string | null } {
+  if (id === "gsap") {
+    const s = T[lang];
+    return { heading: s.heading, lead: s.lead, setup: s.setup, defaults: s.defaultsRows, rules: s.rules, area: "motion", areaName: AREAS[lang].motion };
+  }
+  const def = MORE_SKILL_DEFS[id as MoreSkill];
+  return { ...def[lang], area: def.area, areaName: def.area ? AREAS[lang][def.area] : null };
 }
 
 /** The sections the switched-on skills add to criterio.md, as blocks of the file */

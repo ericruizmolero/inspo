@@ -12,6 +12,7 @@ import type { LibraryData } from "@/lib/library";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
 import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, type Filter } from "@/lib/search-query";
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
+import Connectors from "./Connectors";
 import Island from "./Island";
 import SearchBar from "./SearchBar";
 import InspoCard, { captionFor } from "./InspoCard";
@@ -46,7 +47,6 @@ import { Button } from "@/components/ui/button";
 import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useExtensionMissing } from "@/hooks/use-extension";
 import { sectionIcon } from "./section-icons";
 import Link from "next/link";
 import Logo from "@/components/Logo";
@@ -885,7 +885,6 @@ export default function InspoClient({
   // Desktop has no sidebar: the island in the top bar holds the projects and the workspace menu. A phone keeps
   // the sidebar as a sheet behind the menu button.
   const isMobile = useIsMobile();
-  const extMissing = useExtensionMissing();
 
   // ─── Search ─────────────────────────────────────────────────────────────────
   // Three layers, each shown as soon as it is there (lib/search-query.ts):
@@ -1511,15 +1510,9 @@ export default function InspoClient({
               </>
             )}
             {currentProject && <span className="topbar__actions-sep" aria-hidden />}
-            {/* A browser without the extension, or with it unconnected: the way to the guide, beside the other way of adding */}
-            {extMissing && (
-              <>
-                <Link href="/extension/install" className="btn btn--ghost topbar__polish topbar__ext" title={t.ext.nudge.hint}>
-                  {sectionIcon("extension")} {t.ext.nudge[extMissing]}
-                </Link>
-                <span className="topbar__actions-sep" aria-hidden />
-              </>
-            )}
+            {/* The ways in from outside (the extension, an AI client over MCP), beside the other way of adding */}
+            <Connectors />
+            <span className="topbar__actions-sep" aria-hidden />
             <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
           </div>
         </header>
