@@ -18,6 +18,10 @@ export interface InspoItem {
 
 // ─── Projects ────────────────────────────────────────────────────────────────
 export interface Project { id: string; name: string; /** The one sentence the project opens with (Polish brief): what it is, in the team's words */ intent?: string | null; /** A redesign: the reference that is the client's current site */ clientItemId?: string | null; /** It carries a recipe (the process it was made with) */ hasRecipe?: boolean; /** The team said it has its references: it opens on its system. Until then it opens on its board, gathering */ started?: boolean }
+/** Polish as a team: what one person said about one reference of a project's board (lib/polish-votes.ts).
+ *  `closedAt` is set once a closed polish settled it; until then the vote is open */
+export type PolishChoice = "keep" | "forget";
+export interface PolishVote { projectId: string; itemId: string; userId: string; vote: PolishChoice; closedAt: string | null; closedBy: string | null }
 /** item id → ids of the projects it is filed in (none = Inbox) */
 export type ProjectLinks = Record<string, string[]>;
 

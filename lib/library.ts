@@ -12,6 +12,7 @@ import { loadSystems } from "./system";
 import { isAdmin } from "./activity";
 import { quotaStatus } from "./quota";
 import { listComments } from "./comments";
+import { listVotes } from "./polish-votes";
 import { designMdIndexFor, getDesignMdIndex } from "./design-store";
 import { getPageIndex, pageShotsFor, signCanvasCopies } from "./page-shots";
 import type { SessionUser, Workspace } from "./workspace-core";
@@ -22,7 +23,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   // Both shared indexes (R2) are read while the database answers; they are cached, so the calls below reuse them
   const pages = getPageIndex();
   void getDesignMdIndex();
-  const [all, filed, systems, members, admin, quota, comments] = await Promise.all([
+  const [all, filed, systems, members, admin, quota, comments, votes] = await Promise.all([
     loadWorkspaceData(ws.id),
     loadProjects(ws.id),
     loadSystems(ws.id),
@@ -30,6 +31,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     isAdmin(user.email),
     quotaStatus(ws),
     listComments(ws.id),
+    listVotes(ws.id),
   ]);
   // A template is not one of the workspace's projects, and what only a template holds is not in its library: the
   // references a built-in template brought show up when a project is cloned from it, and not before
@@ -56,7 +58,8 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     initialProjects: projects,
     initialProjectLinks: links,
     initialSystems: systems,
-    members: members.map((m) => ({ name: m.name, image: m.image ?? null })),
+    members: members.map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
+    initialPolishVotes: votes.filter((v) => real.has(v.projectId)),
     isAdmin: admin,
     initialQuota: quota,
     initialComments: comments,
@@ -74,7 +77,8 @@ export async function libraryStamp(organizationId: string): Promise<string> {
   const { rows } = await db.execute<{ stamp: string }>(sql`select concat_ws('|',
     (select concat_ws(':', count(*), max(updated_at)) from inspo_item where organization_id = ${organizationId}),
     (select concat_ws(':', count(*), count(archived_at), max(created_at), max(archived_at)) from project_item where organization_id = ${organizationId}),
-    (select concat_ws(':', count(*), max(updated_at)) from project where organization_id = ${organizationId} and template is null)
+    (select concat_ws(':', count(*), max(updated_at)) from project where organization_id = ${organizationId} and template is null),
+    (select concat_ws(':', count(*), max(updated_at)) from polish_vote where organization_id = ${organizationId})
   ) as stamp`);
   return rows[0]?.stamp ?? "";
 }

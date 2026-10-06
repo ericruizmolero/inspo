@@ -229,6 +229,26 @@ export const projectItem = pgTable("project_item", {
   index("project_item_added_by_idx").on(t.addedBy),
 ]);
 
+/** Polish as a team (components/PolishView.tsx): what one person said about one reference of a project's board,
+ *  keep or forget. Nothing leaves the board on a vote; it does when the polish is closed (lib/polish-votes.ts),
+ *  which stamps the votes it settled. A vote with no closed_at is still to be settled. */
+export const polishVote = pgTable("polish_vote", {
+  projectId: text("project_id").notNull().references(() => project.id, { onDelete: "cascade" }),
+  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  /** Repeated here so a whole workspace's votes load in one query */
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  vote: text("vote").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+  closedAt: timestamp("closed_at", { withTimezone: true, mode: "date" }),
+  /** Who closed the polish that settled it */
+  closedBy: text("closed_by").references(() => user.id, { onDelete: "set null" }),
+}, (t) => [
+  primaryKey({ columns: [t.projectId, t.itemId, t.userId] }),
+  index("polish_vote_org_idx").on(t.organizationId),
+  oneOf("polish_vote_vote_check", t.vote, ["keep", "forget"]),
+]);
+
 // ─── Canvas ──────────────────────────────────────────────────────────────────
 // Where each reference sits on a space's canvas, in canvas units (a tile is 360 wide).
 // The space is "all", "inbox" or a project id: plain text, so a project's rows are removed

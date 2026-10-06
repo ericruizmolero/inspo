@@ -4,22 +4,30 @@
 // project), and the card facing the screen is the one that can be decided: it takes more room than the rest.
 // It is a slider, by hand always: the scroll, a drag or a decision move it, and it rests on a card. Every time the
 // view opens a different card, picked at random, is the one in front.
-// Keep leaves the card on the board; Forget takes it out of the project and back to the Inbox (never deleted).
-// Either way the card leaves the tornado and is seen flying to where it goes: the Board tab of the top bar or the
-// Inbox tab of the island, which takes it with a small bump. With nothing left to decide, the board that was kept
-// turns behind the step to the system.
-// Only the cards near the screen are mounted, so a board of hundreds costs the same as one of thirty. What was
-// kept is remembered in the browser, per project, so coming back only asks about what is new.
+// Alone in the workspace, Keep leaves the card on the board and Forget takes it out of the project and back to
+// the Inbox (never deleted): the card leaves the tornado and is seen flying to where it goes, the Board tab of the
+// top bar or the Inbox tab of the island, which takes it with a small bump.
+// In a team it is a vote (lib/polish-votes.ts): each member says keep or forget, the card flies to the Polish tab
+// and nothing leaves the board. With the whole board voted the view says what the votes add up to, lets the doubts
+// (the references the team disagrees on) be gone through with everyone's vote in sight, and whoever manages the
+// workspace closes the polish: what everyone forgot goes back to the Inbox then. What the others voted is only
+// shown on a card this person has already voted.
+// With nothing left to decide, the board that was kept turns behind the step to the system.
+// Only the cards near the screen are mounted, so a board of hundreds costs the same as one of thirty. Votes are
+// kept on the server, per person, so coming back only asks about what is new.
 // It zooms as the board does (the same pill in the same corner, a pinch or ctrl/⌘ + wheel): out to see more of the
 // tornado at once, in to look at the card closer. The zoom is the size of the tornado's em, so it scales as one piece.
 // The pill holds the app's optional music too (components/SoundControl.tsx), as everywhere else.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Undo2 } from "lucide-react";
-import type { InspoItem, Project } from "@/types/inspo";
+import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo";
+import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
+import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
 import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import { Button } from "@/components/ui/button";
-import { cachedCardImage } from "./InspoCard";
+import { cachedCardImage, type NoteCaption } from "./InspoCard";
+import { Avatar } from "./CommentsPanel";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import SoundControl from "./SoundControl";
@@ -64,7 +72,9 @@ const PINCH_MAX = 24; // and the most one event counts for: a mouse wheel's notc
 const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
 const EASE_FLY = "cubic-bezier(0.55, 0, 0.25, 1)";
 /** Where a decided card lands: the tab that stands for the place it goes to */
-const LANDING = { inbox: '.island a[href*="in=inbox"]', board: '.topbar__modes [role="tab"]' } as const;
+const LANDING = { inbox: '.island a[href*="in=inbox"]', board: '.topbar__modes [role="tab"]', polish: '.topbar__modes [role="tab"]:nth-of-type(2)' } as const;
+/** The tab a card landed on takes it with a small bump */
+const bump = (tab: HTMLElement) => tab.animate([{ transform: "scale(1)" }, { transform: "scale(1.16)" }, { transform: "scale(1)" }], { duration: 380, easing: EASE_OUT });
 
 /** The card each project's view last opened on, so the next time it opens on another */
 const lastFront = new Map<string, string>();
@@ -163,7 +173,8 @@ function Picture({ item, image, large }: { item: InspoItem; image: string | null
 type Flight = { id: number; item: InspoItem; to: keyof typeof LANDING; x: number; y: number; w: number; h: number };
 
 /** A decided card on its way: a copy of it, from where it stood to the tab of the place it goes to (the board for
- *  one kept, the Inbox for one forgotten), which takes it with a small bump. The card itself has already left the tornado */
+ *  one kept, the Inbox for one forgotten, Polish itself for a vote), which takes it with a small bump. The card
+ *  itself has already left the tornado */
 function Flyer({ flight, image, text, onGone }: { flight: Flight; image: string | null; text: string; onGone: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -183,7 +194,7 @@ function Flyer({ flight, image, text, onGone }: { flight: Flight; image: string 
         { transform: landed, opacity: 1, offset: 0.9 },
         { transform: landed, opacity: 0 },
       ], { duration: FLY_MS, easing: EASE_FLY, fill: "forwards" });
-      if (to && tab) window.setTimeout(() => tab.animate([{ transform: "scale(1)" }, { transform: "scale(1.16)" }, { transform: "scale(1)" }], { duration: 380, easing: EASE_OUT }), FLY_MS * LAND);
+      if (to && tab) window.setTimeout(() => bump(tab), FLY_MS * LAND);
     }
     void anim.finished.then(onGone, onGone);
     // Once, when it mounts: it only exists to leave
@@ -196,9 +207,23 @@ function Flyer({ flight, image, text, onGone }: { flight: Flight; image: string 
   );
 }
 
-type Step = { kind: "keep" | "forget"; item: InspoItem };
+/** One answer, to take back: `prev` is this person's vote before it (a doubt voted again); `ruled` is a doubt
+ *  whoever closes decided, which is not a vote */
+type Step = { kind: PolishChoice; item: InspoItem; prev?: PolishChoice | null; ruled?: boolean };
 
-export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, active, onForget, onRestore, onOpenItem, onBoard, onSystem }: {
+/** What a post says, for the line under the card: who wrote it and its words, without its links */
+type Words = { author: string; avatar: string | null; text: string };
+const postWords = new Map<string, Words | null>();
+const NOTE_MAX = 280; // characters of a note that reach the page: two lines show, and a long one is read on its sheet
+const POST_WAIT = 300; // ms a post stays in front before its words are asked for: one going by asks for nothing
+const wordsOf = (text: string) => text.replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").trim();
+/** Until the post is read, what its name already says ("Wilson · Ferndesk has been live…", lib/posts.ts postName) */
+const wordsFromName = (name: string): Words | null => {
+  const at = name.indexOf(" · ");
+  return at > 0 ? { author: name.slice(0, at), avatar: null, text: name.slice(at + 3) } : null;
+};
+
+export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, active, votes, me, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
   project: Project;
   /** The project's board, in the board's order */
   items: InspoItem[];
@@ -209,18 +234,30 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   ratioOf: (item: InspoItem) => number;
   /** The first lines of a text reference */
   textOf: (item: InspoItem) => string;
+  /** What was said about it, as under its tile on the board: the note of whoever saved it, else the first comment */
+  noteOf: (item: InspoItem) => NoteCaption | null;
   /** False while a sheet is open over the view: the keys rest */
   active: boolean;
-  /** Out of the project, back to the Inbox */
-  onForget: (item: InspoItem) => void | Promise<void>;
+  /** The project's votes by reference, everyone's, open and settled */
+  votes: Map<string, PolishVote[]>;
+  /** This person, and the workspace's members: more than one and Polish is a vote */
+  me: string;
+  members: { id: string; name: string; image: string | null }[];
+  /** Whoever manages the workspace closes the polish and decides its doubts */
+  canClose: boolean;
+  /** This person's vote on these references, or none (taken back). Alone in the workspace a forgotten one leaves the board with it */
+  onVote: (items: InspoItem[], vote: PolishChoice | null) => void | Promise<void>;
+  /** Settles what was voted (`resolve`: the doubts decided). Resolves to how many left the board, null if it failed */
+  onClose: (resolve: Record<string, PolishChoice>) => Promise<number | null>;
   /** A forgotten reference, back on the board (undo) */
   onRestore: (item: InspoItem) => void | Promise<void>;
   onOpenItem: (item: InspoItem) => void;
   onBoard: () => void;
   onSystem: () => void | Promise<void>;
 }) {
-  const { t } = useT();
+  const { t, locale } = useT();
   const s = t.polish;
+  const team = members.length > 1;
   const stageRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLElement>(null);
   const forgetRef = useRef<HTMLButtonElement>(null);
@@ -233,8 +270,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const [zoom, setZoom] = useState(keptZoom);
   /** The position the tornado is resting on, if it is: only that card loads its bigger picture, never one going by */
   const [rested, setRested] = useState<number | null>(null);
-  const [kept, setKept] = useState<Set<string>>(() => new Set());
-  const [loaded, setLoaded] = useState(false);
+  /** In a team, with the board voted: going through the doubts, everyone's vote in sight */
+  const [mode, setMode] = useState<"vote" | "doubt">("vote");
+  /** The doubts whoever closes has decided, until the polish is closed */
+  const [ruled, setRuled] = useState<Record<string, PolishChoice>>({});
   /** The decided cards on their way to their tab, for as long as the flight takes */
   const [flights, setFlights] = useState<Flight[]>([]);
   /** Forgotten, and still in the air: already out of the tornado, not yet out of the project */
@@ -248,13 +287,61 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   /** After the tornado's cards change: the card to bring to the front (one taken back) */
   const focusKey = useRef<string | null>(null);
 
+  const myVote = (i: InspoItem) => (i.id ? votes.get(i.id)?.find((v) => v.userId === me)?.vote ?? null : null);
   const staying = leaving.size ? items.filter((i) => !leaving.has(keyOf(i))) : items;
-  const pending = staying.filter((i) => !kept.has(keyOf(i)));
-  const done = loaded && staying.length > 0 && pending.length === 0;
-  // What turns: the cards still to decide. With none left, the board that was kept
-  const list = done ? staying : pending;
+  const pending = staying.filter((i) => !myVote(i));
+  // A team's doubts: what the open votes disagree on, less what whoever closes has already decided
+  const doubts = team ? staying.filter((i) => !!i.id && outcomeOf(votes.get(i.id)) === "doubt" && !ruled[i.id]) : [];
+  const reviewing = mode === "doubt" && doubts.length > 0;
+  const done = staying.length > 0 && pending.length === 0 && !reviewing;
+  // What turns: the doubts while they are gone through, else the cards still to decide. With none left, the board that was kept
+  const list = reviewing ? doubts : done ? staying : pending;
   const ln = list.length;
   const current = ln ? list[mod(base, ln)] : null;
+  // The last doubt gone: back to what the votes add up to
+  useEffect(() => { if (mode === "doubt" && !doubts.length) setMode("vote"); }, [mode, doubts.length]);
+
+  // What the open votes add up to, for a team with its board voted: what stays, what leaves when the polish closes,
+  // what is in doubt, and who has still to vote
+  const tally = { open: 0, stay: 0, out: 0, doubt: 0 };
+  if (team) {
+    for (const i of staying) {
+      const raw = i.id ? outcomeOf(votes.get(i.id)) : null;
+      if (!raw) continue;
+      tally.open++;
+      const o = raw === "doubt" ? ruled[i.id!] ?? "doubt" : raw;
+      if (o === "keep") tally.stay++; else if (o === "forget") tally.out++; else tally.doubt++;
+    }
+  }
+  const voting = team && tally.open > 0;
+  const names = new Intl.ListFormat(locale, { style: "long", type: "conjunction" });
+  const finished = team ? finishedOf(staying.map((i) => i.id).filter((x): x is string => !!x), votes, members.map((m) => m.id)) : new Set<string>();
+  const waiting = members.filter((m) => !finished.has(m.id)).map((m) => m.name);
+  // Who closed it last, and when
+  let closed: PolishVote | null = null;
+  if (team) for (const list of votes.values()) for (const v of list) if (v.closedAt && v.closedBy && (!closed || v.closedAt > closed.closedAt!)) closed = v;
+  const closer = closed ? members.find((m) => m.id === closed!.closedBy)?.name : undefined;
+
+  // The words of the post in front, read once it has stayed there a moment and kept for the session
+  const [, setRead] = useState(0);
+  const post = current && !done && mediaKindOf(current.web) === "post" ? current.web : null;
+  useEffect(() => {
+    if (!post || postWords.has(post)) return;
+    const ctrl = new AbortController();
+    const timer = window.setTimeout(() => {
+      fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web: post }), signal: ctrl.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { postWords.set(post, d?.post ? { author: String(d.post.author ?? ""), avatar: d.post.avatar ? String(d.post.avatar) : null, text: wordsOf(String(d.post.text ?? "")) } : null); setRead((n) => n + 1); })
+        .catch(() => { /* its name says the start of it */ });
+    }, POST_WAIT);
+    return () => { window.clearTimeout(timer); ctrl.abort(); };
+  }, [post]);
+  const words = post && current ? postWords.get(post) ?? wordsFromName(current.name) : null;
+  // What the team said about it. A text reference's note is the text itself, already on the card
+  const note = current && !done && mediaKindOf(current.web) !== "text" ? noteOf(current) : null;
+  // What the team voted on the card in front. Only on a doubt gone through: there this person has already voted
+  const said = reviewing && current?.id ? openVotes(votes.get(current.id)) : [];
+  const voters = (choice: PolishChoice) => said.filter((v) => v.vote === choice).map((v) => members.find((m) => m.id === v.userId)).filter((m): m is NonNullable<typeof m> => !!m);
 
   const glideTo = (k: number) => {
     const e = eng.current;
@@ -263,24 +350,20 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   };
   /** The card a decision is about: the one it is stopping on, or the one facing the screen */
   const frontAt = () => Math.round(eng.current.target ?? eng.current.p);
-  const saveKept = (next: Set<string>) => {
-    setKept(next);
-    try { localStorage.setItem(KEPT_KEY(project.id), JSON.stringify([...next])); } catch { /* no storage */ }
-  };
   const press = (el: HTMLElement | null) => el?.animate([{ transform: "scale(0.96)" }, { transform: "scale(1)" }], { duration: 220, easing: EASE_OUT });
 
-  // What was kept last time, read before the first paint: only what is still undecided turns
+  // Before the first paint: only what is still undecided turns
   useLayoutEffect(() => {
+    // What this browser remembered as kept, from before votes were saved on the server: handed over as keep votes, once
     let stored: string[] = [];
-    try { const raw = JSON.parse(localStorage.getItem(KEPT_KEY(project.id)) ?? "[]"); if (Array.isArray(raw)) stored = raw.filter((x): x is string => typeof x === "string"); } catch { /* no storage */ }
-    const here = new Set(items.map(keyOf));
-    const was = new Set(stored.filter((k) => here.has(k)));
-    setKept(was);
-    setLoaded(true);
+    try { const raw = JSON.parse(localStorage.getItem(KEPT_KEY(project.id)) ?? "[]"); if (Array.isArray(raw)) stored = raw.filter((x): x is string => typeof x === "string"); localStorage.removeItem(KEPT_KEY(project.id)); } catch { /* no storage */ }
+    const was = new Set(stored);
+    const old = items.filter((i) => was.has(keyOf(i)) && !myVote(i));
+    if (old.length) void onVote(old, "keep");
     const e = eng.current;
     e.still = stillMotion();
     // A different card in front every time the view opens: one of the undecided, at random, never the last one's
-    const open = items.filter((i) => !was.has(keyOf(i))).map(keyOf);
+    const open = items.filter((i) => !myVote(i) && !was.has(keyOf(i))).map(keyOf);
     let at = Math.floor(Math.random() * open.length);
     if (open.length > 1 && open[at] === lastFront.get(project.id)) at = (at + 1) % open.length;
     if (open.length) lastFront.set(project.id, open[at]);
@@ -294,7 +377,6 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   // The tornado's cards changed (one decided and gone, one taken back, the board itself): the card facing the screen
   // stays there, or hands over to the next one still here, and the others close the gap from where they were drawn
   useLayoutEffect(() => {
-    if (!loaded) return;
     const e = eng.current, prev = prevKeys.current, keys = list.map(keyOf);
     if (prev && prev.length === keys.length && prev.every((k, i) => k === keys[i])) return;
     prevKeys.current = keys;
@@ -414,11 +496,11 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   }, [fit]);
 
   // Leaving the view with a card still in the air: its decision is not lost
-  const onForgetRef = useRef(onForget);
-  useEffect(() => { onForgetRef.current = onForget; });
+  const onVoteRef = useRef(onVote);
+  useEffect(() => { onVoteRef.current = onVote; });
   useEffect(() => {
     const waiting = outbox.current;
-    return () => { for (const { item, timer } of waiting.values()) { window.clearTimeout(timer); void onForgetRef.current(item); } waiting.clear(); };
+    return () => { for (const { item, timer } of waiting.values()) { window.clearTimeout(timer); void onVoteRef.current([item], "forget"); } waiting.clear(); };
   }, []);
 
   // With everything decided nothing holds it: it turns behind the words
@@ -459,29 +541,53 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const r = el.getBoundingClientRect(), o = root.getBoundingClientRect();
     setFlights((all) => [...all, { id: ++flightId.current, item, to, x: r.left - o.left, y: r.top - o.top, w: r.width, h: r.height }]);
   };
+  /** In a team: a vote, and the card goes to the Polish tab. On a doubt, whoever closes decides it; anyone else
+   *  can only vote again, and the card moves on when that settles nothing */
+  const vote = (choice: PolishChoice, at: number, item: InspoItem) => {
+    const id = item.id;
+    if (!id) return;
+    if (!reviewing) {
+      void onVote([item], choice);
+      send(at, item, "polish");
+      setHistory((h) => [...h, { kind: choice, item, prev: null }]);
+    } else if (canClose) {
+      setRuled((r) => ({ ...r, [id]: choice }));
+      send(at, item, "polish");
+      setHistory((h) => [...h, { kind: choice, item, ruled: true }]);
+    } else {
+      const prev = myVote(item);
+      if (prev !== choice) {
+        void onVote([item], choice);
+        setHistory((h) => [...h, { kind: choice, item, prev }]);
+      }
+      // Still a doubt (someone else said otherwise, or nothing changed): on to the next one
+      if (prev === choice || openVotes(votes.get(id)).some((v) => v.userId !== me && v.vote !== choice)) glideTo(at + 1);
+      else send(at, item, "polish");
+    }
+  };
   const keep = () => {
     if (!current || done) return;
     const at = frontAt(), item = list[mod(at, ln)];
-    send(at, item, "board");
-    const next = new Set(kept);
-    next.add(keyOf(item));
-    saveKept(next);
-    setHistory((h) => [...h, { kind: "keep", item }]);
     press(keepRef.current);
+    if (team) { vote("keep", at, item); return; }
+    send(at, item, "board");
+    void onVote([item], "keep");
+    setHistory((h) => [...h, { kind: "keep", item }]);
   };
   const forget = () => {
     if (!current || done) return;
     const at = frontAt(), item = list[mod(at, ln)];
+    press(forgetRef.current);
+    if (team) { vote("forget", at, item); return; }
     send(at, item, "inbox");
     setHistory((h) => [...h, { kind: "forget", item }]);
     setForgot((c) => c + 1);
-    press(forgetRef.current);
     // Out of the tornado now; out of the project when it lands on the Inbox tab, so the Inbox counts it as it arrives
     const key = keyOf(item);
     setLeaving((all) => new Set(all).add(key));
     const timer = window.setTimeout(() => {
       outbox.current.delete(key);
-      void Promise.resolve(onForget(item)).finally(() => landed(key));
+      void Promise.resolve(onVote([item], "forget")).finally(() => landed(key));
     }, eng.current.still ? 0 : FLY_MS * LAND);
     outbox.current.set(key, { item, timer });
   };
@@ -494,10 +600,14 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const key = keyOf(last.item);
     // It comes back to the tornado, and to the front
     focusKey.current = key;
-    if (last.kind === "keep") {
-      const next = new Set(kept);
-      next.delete(key);
-      saveKept(next);
+    if (last.ruled) {
+      setRuled((r) => { const next = { ...r }; delete next[key]; return next; });
+      setMode("doubt");
+    } else if (team) {
+      void onVote([last.item], last.prev ?? null);
+      if (last.prev) setMode("doubt");
+    } else if (last.kind === "keep") {
+      void onVote([last.item], null);
     } else {
       setForgot((c) => Math.max(0, c - 1));
       // Still in the air: it never left the project
@@ -506,9 +616,26 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       else void onRestore(last.item);
     }
   };
+  /** Everything this person voted here, taken back: the whole board turns again */
   const again = () => {
-    saveKept(new Set());
+    void onVote(staying.filter((i) => myVote(i)), null);
     setHistory([]);
+    setRuled({});
+    setMode("vote");
+  };
+  /** Whoever manages the workspace settles what was voted: what everyone forgot, and the doubts decided, leave for the Inbox */
+  const close = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const gone = await onClose(ruled);
+      if (gone === null) return;
+      setRuled({});
+      setHistory([]);
+      setForgot((c) => c + gone);
+      const tab = gone ? document.querySelector<HTMLElement>(LANDING.inbox) : null;
+      if (tab?.offsetParent) bump(tab);
+    } finally { setBusy(false); }
   };
   const open = () => { if (ln && !done) onOpenItem(list[mod(frontAt(), ln)]); };
   const toSystem = async () => {
@@ -616,23 +743,56 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         <Flyer key={f.id} flight={f} image={imageOf(f.item)} text={textOf(f.item)} onGone={() => setFlights((all) => all.filter((x) => x.id !== f.id))} />
       ))}
 
-      {current && !done && loaded && (
+      {current && !done && (
         <div className="polish__bar">
-          <p className="polish__now" role="status" aria-live="polite">
-            <b>{current.name}</b>
-            <span>{s.left(pending.length)}</span>
-          </p>
+          <div className={`polish__now${words?.author || note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">
+            {words?.author ? (
+              <p className="polish__say">
+                {/* X's own picture, asked for without a referrer as the post's sheet does */}
+                {words.avatar ? <span className="cm-avatar" style={{ width: 18, height: 18 }} aria-hidden><img src={words.avatar} alt="" referrerPolicy="no-referrer" /></span> : <Avatar name={words.author} size={18} />}
+                <span><b>{words.author}</b> {words.text}</span>
+              </p>
+            ) : <b className="polish__name">{current.name}</b>}
+            {note && (
+              <p className="polish__say polish__say--note">
+                {note.people.length > 1
+                  ? <span className="polish__faces" aria-hidden>{note.people.map((p) => <Avatar key={p.name} name={p.name} image={p.image} size={18} />)}</span>
+                  : <Avatar name={note.name} image={note.image} size={18} />}
+                <span><b>{note.name}</b> {note.body.length > NOTE_MAX ? `${note.body.slice(0, NOTE_MAX).trimEnd()}…` : note.body}</span>
+              </p>
+            )}
+            {said.length > 0 && (
+              <p className="polish__votes">
+                {(["keep", "forget"] as const).map((choice) => {
+                  const who = voters(choice);
+                  return who.length > 0 && (
+                    <span key={choice} className="polish__voted" title={names.format(who.map((m) => m.name))}>
+                      <span className="polish__faces" aria-hidden>{who.map((m) => <Avatar key={m.id} name={m.name} image={m.image} size={18} />)}</span>
+                      {choice === "keep" ? s.votedKeep(who.length) : s.votedForget(who.length)}
+                    </span>
+                  );
+                })}
+              </p>
+            )}
+          </div>
           <div className="polish__choice">
             <button ref={forgetRef} type="button" className="polish__btn" onClick={forget}>
               <i className="polish__key" aria-hidden>{Icons.arrow}</i>
-              <span className="polish__btn-text"><b>{s.forget}</b><small>{s.forgetSub}</small></span>
+              <span className="polish__btn-text"><b>{s.forget}</b><small>{!team ? s.forgetSub : reviewing && canClose ? s.ruleOut : s.voteOut}</small></span>
             </button>
             <span className="polish__sep" aria-hidden />
             <button ref={keepRef} type="button" className="polish__btn polish__btn--keep" onClick={keep}>
               <i className="polish__key" aria-hidden>{Icons.arrow}</i>
-              <span className="polish__btn-text"><b>{s.keep}</b><small>{s.keepSub}</small></span>
+              <span className="polish__btn-text"><b>{s.keep}</b><small>{!team ? s.keepSub : reviewing && canClose ? s.ruleStay : s.voteStay}</small></span>
             </button>
             <button type="button" className="polish__undo" onClick={undo} disabled={history.length === 0} aria-label={s.undo} title={s.undo}><Undo2 size={16} strokeWidth={1.5} aria-hidden /></button>
+            {/* A team is told what its answer is here: a vote, settled among everyone */}
+            {team && (
+              <p className="polish__team">
+                {reviewing ? (canClose ? s.doubtRule : s.doubtVote) : s.teamRule}
+                {reviewing && <button type="button" className="polish__back" onClick={() => setMode("vote")}>{s.back}</button>}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -647,11 +807,22 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
               </span>
             ))}
           </div>
-          <h2 className="display polish__done-title">{s.doneTitle}</h2>
-          <p className="polish__done-line">{s.doneStay(staying.length)}{forgot > 0 ? ` ${s.doneOut(forgot)}` : ""}</p>
-          <p className="polish__done-line polish__done-next">{s.doneNext}</p>
+          <h2 className="display polish__done-title">{voting ? s.votedTitle : s.doneTitle}</h2>
+          {voting ? (
+            <>
+              <p className="polish__done-line">{s.tally(tally.stay, tally.out, tally.doubt)}</p>
+              <p className="polish__done-line polish__done-next">{waiting.length ? s.waiting(names.format(waiting), waiting.length) : s.everyoneVoted} {canClose ? s.closeHint : s.closesWho}</p>
+            </>
+          ) : (
+            <>
+              <p className="polish__done-line">{s.doneStay(staying.length)}{forgot > 0 ? ` ${s.doneOut(forgot)}` : ""}</p>
+              <p className="polish__done-line polish__done-next">{closed && closer ? `${s.closedBy(closer, fmtDate(closed.closedAt!, locale))} ` : ""}{s.doneNext}</p>
+            </>
+          )}
           <div className="polish__done-actions">
-            <Button variant="primary" onClick={() => void toSystem()} disabled={busy}>{busy && <span className="spinner spinner--sm" />}{s.toSystem} {Icons.arrow}</Button>
+            {voting && tally.doubt > 0 && <Button variant="primary" onClick={() => setMode("doubt")}>{canClose ? s.settleDoubts(tally.doubt) : s.seeDoubts(tally.doubt)}</Button>}
+            {voting && canClose && <Button variant={tally.doubt > 0 ? undefined : "primary"} onClick={() => void close()} disabled={busy}>{busy && <span className="spinner spinner--sm" />}{s.close}</Button>}
+            <Button variant={voting && (canClose || tally.doubt > 0) ? undefined : "primary"} onClick={() => void toSystem()} disabled={busy}>{!voting && busy && <span className="spinner spinner--sm" />}{s.toSystem} {Icons.arrow}</Button>
             <Button onClick={again}>{s.again}</Button>
             {history.length > 0 && <Button onClick={undo}>{s.undo}</Button>}
           </div>
@@ -672,7 +843,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       {/* The board's corner and its pill: the zoom where the board has it, and the music in the same piece */}
       <ZoomPill
         className="polish__corner"
-        zoom={current && !done && loaded ? {
+        zoom={current && !done ? {
           pct: pctOf(zoom),
           canOut: zoom > ZOOM_MIN,
           canIn: zoom < ZOOM_MAX,

@@ -32,6 +32,8 @@ interface CommentsPanelProps {
   memberNames?: string[];
   /** Inspo thumbnail for context above the thread */
   image?: string | null;
+  /** Something to know about the reference before reading its thread (a closed polish forgot it), above the list */
+  notice?: React.ReactNode;
   onPost: (body: string, attachments: CommentAttachment[]) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   /** Rewrites the original note or sub-note. Without it, the note is read-only. */
@@ -202,7 +204,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, onPost, onDelete, onEditNote, onClose, showMedia = true, variant = "drawer", designMd, onPostThumb, onReply }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, variant = "drawer", designMd, onPostThumb, onReply }: CommentsPanelProps) {
   const { locale, t } = useT();
   const column = variant === "column";
   const [draft, setDraft] = useState("");
@@ -510,6 +512,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         )}
 
         <div ref={listRef} className="cm-list">
+          {notice}
           {!showMedia ? null : kind === "post" ? (
             <PostView web={item.web} onThumb={onPostThumb} />
           ) : kind === "video" ? (

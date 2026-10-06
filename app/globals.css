@@ -1014,6 +1014,9 @@ html[data-theme="light"] .tile::after { box-shadow: inset 0 0 0 1px rgb(0 0 0 / 
 .cm-panel__link:hover { color: var(--text); }
 .cm-panel__count { font-size: 11px; color: var(--muted-2); white-space: nowrap; }
 .cm-list { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px; display: flex; flex-direction: column; gap: 14px; }
+/* Above the thread: what happened to the reference somewhere else (a closed polish forgot it), and the way back */
+.cm-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 12px; border-radius: var(--radius-m); background: var(--surface-2); color: var(--text-2); font-size: 13px; line-height: 1.4; }
+.cm-notice .btn { flex-shrink: 0; }
 .cm-shot { display: block; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
 .cm-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .cm-shot:hover img { transform: scale(1.02); }
@@ -2622,7 +2625,15 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .sys-head__actions { justify-content: flex-start; }
 }
 /* System fill: a fraction on the topbar button, a dot when the board moved on, a ring per project in the sidebar */
+/* A tab's name and its number share a baseline: the number is smaller, and centred in the tab it would sit high */
+.topbar__label { display: inline-flex; align-items: baseline; gap: 5px; }
 .topbar__fill { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; margin-left: 2px; }
+/* The team on the Polish tab: everyone's face, and in full only those who have voted the whole board */
+.topbar__faces { display: inline-flex; margin-left: 2px; }
+.topbar__face { display: inline-flex; opacity: 0.32; filter: grayscale(1); transition: opacity 200ms ease, filter 200ms ease; }
+.topbar__face.is-done { opacity: 1; filter: none; }
+.topbar__face + .topbar__face { margin-left: -3px; }
+.topbar__face .cm-avatar { font-size: 7px; }
 .topbar__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--warning); margin-left: 2px; }
 .nav-item__count { display: inline-flex; align-items: center; gap: 5px; }
 .nav-item__ring { color: var(--muted); flex-shrink: 0; }

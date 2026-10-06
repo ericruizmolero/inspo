@@ -42,10 +42,10 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 
 | Tecla | Qué hace |
 | --- | --- |
-| ← | Olvidar la tarjeta de delante (vuelve al Inbox) |
-| → | Conservarla (se queda en el tablón) |
+| ← | Olvidar la tarjeta de delante (vuelve al Inbox); en un espacio de equipo, votar que salga |
+| → | Conservarla (se queda en el tablón); en equipo, votar que se quede |
 | Rueda o arrastrar | Pasar de una tarjeta a otra sin decidir |
-| Enter | Abrir la ficha de la tarjeta de delante |
+| Enter | Abrir la ficha de la tarjeta de delante (sola: ← → no pasan a otra) |
 | ⌘Z / Ctrl+Z | Deshacer la última decisión |
 
 ## Sistema y criterio.md

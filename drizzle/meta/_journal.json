@@ -169,6 +169,13 @@
       "when": 1791304355029,
       "tag": "0024_item_source",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791316444007,
+      "tag": "0025_polish_vote",
+      "breakpoints": true
     }
   ]
 }

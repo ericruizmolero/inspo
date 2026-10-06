@@ -12,6 +12,7 @@ import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
 import { createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
+import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
@@ -21,7 +22,7 @@ import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
-import type { CommentAttachment, CommentAnchor } from "@/types/inspo";
+import type { CommentAttachment, CommentAnchor, PolishChoice } from "@/types/inspo";
 
 /** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
  *  so a failure leaves it for the worker instead of keeping the old vector. */
@@ -92,6 +93,19 @@ export async function setFiled(projectId: string, itemIds: string[], on: boolean
     if (on) await fileItems(ctx.workspace.id, String(projectId), ids, ctx.user.id);
     else await unfileItems(ctx.workspace.id, String(projectId), ids);
   });
+}
+
+// Polish as a team (lib/polish-votes.ts): any member votes, whoever manages the workspace closes
+export async function votePolish(projectId: string, itemIds: string[], vote: PolishChoice | null) {
+  return withCtx(async (ctx) => castVotes(ctx.workspace.id, String(projectId), Array.isArray(itemIds) ? itemIds.map(String).slice(0, 2000) : [], ctx.user.id, vote));
+}
+
+export async function closeProjectPolish(projectId: string, resolve: Record<string, PolishChoice>) {
+  return withCtx(async (ctx) => closePolish(ctx.workspace.id, String(projectId), ctx.user.id, resolve && typeof resolve === "object" ? resolve : {}), { manage: true });
+}
+
+export async function restoreToBoard(projectId: string, itemId: string) {
+  return withCtx(async (ctx) => restoreForgotten(ctx.workspace.id, String(projectId), String(itemId), ctx.user.id));
 }
 
 /** An image (or GIF) as an inspo of its own. The file was uploaded first via /api/media;

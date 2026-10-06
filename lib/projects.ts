@@ -97,11 +97,17 @@ export async function fileItems(organizationId: string, projectId: string, itemI
   await db.insert(PI)
     .values(own.map((r) => ({ projectId, itemId: r.id, organizationId, addedBy: userId, createdAt: now })))
     .onConflictDoUpdate({ target: [PI.projectId, PI.itemId], set: { archivedAt: null } });
+  // Back on a board a closed polish had taken it off: who forgot it then no longer counts, it is voted again
+  const V = schema.polishVote;
+  await db.delete(V).where(and(eq(V.projectId, projectId), eq(V.vote, "forget"), sql`${V.closedAt} is not null`, inArray(V.itemId, own.map((r) => r.id))));
 }
 
 export async function unfileItems(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
   if (!itemIds.length) return;
   await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
   await dropFromSpace(organizationId, projectId, itemIds);
+  // Taken off by hand, not by the polish: what was voted about it there goes with it (lib/polish-votes.ts)
+  const V = schema.polishVote;
+  await db.delete(V).where(and(eq(V.organizationId, organizationId), eq(V.projectId, projectId), inArray(V.itemId, itemIds)));
 }
 
