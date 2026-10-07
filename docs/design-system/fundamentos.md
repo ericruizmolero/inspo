@@ -21,7 +21,7 @@ Dos temas: **Board** (oscuro, el suelo del producto) y **Paper** (claro). La pal
 | `--moss` / `--moss-light` / `--moss-dark` | `#4F6B3A` / `#7E9A5C` / `#24301C` | Bibliotecas, anillo al día, éxito |
 | `--ember` / `--ember-glow` | `#E8892B` / `#F6A848` | Lo único cálido de la vista: el primario, un punto; foco sobre cromo |
 | `--butter` | `#FBF1C7` | Sugerencias y consejos, nada más |
-| `--field` / `--field-ink` / `--field-border` / `--field-placeholder` | Board: `#0A0A09` / `--paper` / `#6E695F` / `#8A847A`; Paper: `#FFFFFF` / `--ink` / `--ink` / `#6E695F` | Campos, casillas, interruptores y pistas de progreso: un pozo hundido bajo el suelo. En Board, casi negro con texto papel y borde gris de 1,5 px; en Paper, blanco con una línea suave de 1 px (`#D9D1BF`, `--field-stroke`), no la tinta: "softer". Botones y chips mantienen la tinta. La ventana modal (`DialogWindow`) los lleva siempre en Paper |
+| `--field` / `--field-ink` / `--field-border` / `--field-placeholder` | Board: `#0A0A09` / `--paper` / `#6E695F` / `#8A847A`; Paper: `#FFFFFF` / `--ink` / `--ink` / `#6E695F` | Campos, casillas, interruptores y pistas de progreso: un pozo hundido bajo el suelo. En Board, casi negro con texto papel y borde gris de 1,5 px; en Paper, blanco con una línea suave de 1 px (`#D9D1BF`, `--field-stroke`), no la tinta: "softer". Botones y chips mantienen la tinta. → [campos en Board](decisiones/2026-10-07-los-campos-tienen-version-oscura.md) |
 | `--disabled` / `--disabled-text` / `--disabled-border` | `#E2DBCB` / `#6E695F` / `#B9B2A3` | Control desactivado |
 | `--danger-deep` | `#B3362C` | Relleno del `Button` danger (confirmar algo que destruye) |
 | `--chrome` / `--chrome-panel` / `--chrome-raised` | `#161616` / `#1C1C1C` / `#2A2A2A` (Paper: `--paper-light` / `--paper-light` / `--disabled`) | Cromo del producto; sigue al tema |
@@ -37,6 +37,7 @@ Roles que siguen al tema:
 | `--panel` (`--surface-raised`) | `--board-card` | `--paper-light` | Tarjetas y paneles |
 | `--surface` | `--chrome-panel` | `--paper-light` | Popovers, rellenos |
 | `--surface-2` | `--chrome-raised` | `--disabled` | Hover, relleno de estado |
+| `--glass-hover` / `--glass-on` | `rgba(255,255,255,.08)` / `.14` | `rgba(0,0,0,.045)` / `.07` | Pastillas de hover y activa de la Isla y del selector (con `--glass-blur` y `--glass-line`) |
 | `--surface-3` | `#34342F` | `--paper-pressed` | Scrollbar, relleno fuerte |
 | `--border` | `#2A2A2A` | `#D9D1BF` | Línea de tarjeta, decorativa |
 | `--border-strong` | `#3A3A35` | `--disabled-border` | Separadores fuertes |
@@ -50,11 +51,11 @@ Reglas:
 - Ember es el primario; lo que era primario no se baja. Butter solo para lo que sugiere la app.
 - Nunca colores sueltos para UI: tokens o `color-mix()` con tokens.
 - Los alias de shadcn (`--primary` = ember, `--card`, `--sidebar-*`…) apuntan a estos tokens.
-- Los `--dock-*` del cromo apuntan a `--chrome*`, que sigue al tema: sin cristal ni desenfoque.
+- Los `--dock-*` del cromo apuntan a `--chrome*`, que sigue al tema: sin cristal ni desenfoque en barras ni superficies; el cristal (`--glass-*`) es solo de las pastillas de hover y activa de la Isla y del selector. → [el cromo sigue al tema](decisiones/2026-10-07-el-cromo-sigue-al-tema.md), [cromo de arriba](decisiones/2026-10-07-el-cromo-de-arriba-vuelve-a-44-y-sus-pastillas-a-cristal.md)
 
 ## Tipografía
 
-Un solo sitio: el bloque "Type: the one place" de `app/globals.css`. Ocho pasos, cada uno con su tamaño, peso, interlineado y tracking:
+Un solo sitio: el bloque "Type: the one place" de `app/globals.css`. Ocho pasos, cada uno con su tamaño, peso, interlineado y tracking. → [decisión](decisiones/2026-10-07-la-tipografia-vive-en-un-solo-sitio.md)
 
 | Paso | Clase | Fuente | Tamaño / peso / interlineado | Elemento |
 | --- | --- | --- | --- | --- |
@@ -72,12 +73,12 @@ Reglas:
 - **La clase, solo si el aspecto debe ser otro que el nivel**: un título de diálogo es un `h2` con `.t-title-m`; una etiqueta no es un `h3`, es un `p.t-label`.
 - **El CSS de un componente no pone tamaño, peso, interlineado, tracking ni familia**: elige un paso. Los componentes del sistema (`components/criterio/criterio.css`) usan los tokens `--fs-*`, `--lh-*` y `--tr-*`.
 - Los `text-xs/sm/base/lg` de Tailwind (piezas de shadcn) apuntan a label, ui, ui y body.
-- La única excepción es el contenido de la marca del usuario en la presentación (`.brand-content`), que lleva su propia tipografía.
+- Dos excepciones: el contenido de la marca del usuario en la presentación (`.brand-content`), que lleva su propia tipografía, y las filas de menú (`.cr-menu-item`) a 14 px, entre el 15 de la interfaz y el 13 pequeño. → [decisión](decisiones/2026-10-07-los-menus-no-llevan-barra-moss.md)
 - **Mono**: `--font-mono`, solo datos literales (el fichero crudo, hex, código).
 
 ## Controles
 
-Una sola altura: **44**, la del `Button` m. Campos, selects y el `SegmentedControl` de papel (un pozo hundido con la opción elegida como tecla con bisel) miden 44 y se alinean con el botón que llevan al lado. Las barras de herramientas y los menús usan la talla s (34) de forma consistente. Un campo de solo lectura o desactivado se ve plano y apagado; el error va debajo del campo (`.cr-field-hint.is-error`).
+Una sola altura: **44**, la del `Button` m. Campos, selects y el `SegmentedControl` de papel (un pozo hundido con borde sutil y la opción elegida como tecla con bisel) miden 44 y se alinean con el botón que llevan al lado. Las barras de herramientas y los menús usan la talla s (34) de forma consistente, también el segmentado de papel (`size="s"`) cuando va en una fila de herramientas dentro de la página. → [decisión](decisiones/2026-10-07-el-segmentado-de-papel-tiene-talla-s-y-un-borde-sutil.md) Un campo de solo lectura o desactivado se ve plano y apagado; el error va debajo del campo (`.cr-field-hint.is-error`).
 
 ## Radios
 
@@ -87,6 +88,7 @@ Una sola altura: **44**, la del `Button` m. Campos, selects y el `SegmentedContr
 
 - `--stroke-control` 1,5 px de `--control-border` (tinta) en todo control.
 - `--bevel` (controles en relieve), `--bevel-dark` (controles en tinta), `--bevel-pressed` (pulsado), `--sunken` (campos, casillas, progreso; en Board una sombra negra al 60 %, en Paper tinta al 12 %).
+- Los menús (`.cr-menu`) no llevan bisel ni el trazo de 1,5: una línea de 1 px y su sombra. El bisel es de ventanas y botones. Sus filas van a 14 px, la única talla fuera de la escala. → [decisión](decisiones/2026-10-07-los-menus-no-llevan-barra-moss.md)
 - `--float`: solo la barra de comandos. Las tarjetas son planas (`--shadow-card: none`); `--shadow-pop` y `--shadow-modal` para menús y diálogos.
 
 ## Espaciado
@@ -95,7 +97,7 @@ Una sola altura: **44**, la del `Button` m. Campos, selects y el `SegmentedContr
 
 ## Iconos
 
-Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 sobre 24 px, los de área y sección con 1,5 sobre 16 px. No hay regla global que iguale el grosor: se probó el 07-10 (1,5 px en pantalla para todos) y se retiró el mismo día porque se veían mal ("so ugly").
+Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 sobre 24 px, los de área y sección con 1,5 sobre 16 px. No hay regla global que iguale el grosor: se probó el 07-10 (1,5 px en pantalla para todos) y se retiró el mismo día porque se veían mal ("so ugly"). → [decisión](decisiones/2026-10-07-cada-icono-conserva-su-trazo.md)
 
 ## Movimiento
 
@@ -106,6 +108,7 @@ Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 so
 | `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | Cajones y hojas |
 
 - Microinteracciones 0.1–0.15 s; pulsar un control con bisel = `--bevel-pressed` y `translateY(1px)` (se hunde, no encoge).
+- Tomar el foco en un campo: 350 ms con `--ease-out`. El anillo está siempre (transparente) y se funde su color, en `.input`, `.cr-input` y `.cr-prompt`. → [decisión](decisiones/2026-10-07-los-campos-toman-el-foco-en-350-ms.md)
 - Keyframes disponibles: `fade-in`, `pop-in` (6 px + 0.985), `shimmer` (skeleton), `spin`.
 - Cambio de tema hecho a mano: fundido de la página entera en 600 ms con `--ease-in-out` (`switchTheme` en `lib/theme.ts`). → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
@@ -115,9 +118,10 @@ Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 so
 | --- | --- |
 | `max-width: 800px` | **El corte de la app.** Móvil: la Isla se oculta y aparece el sidebar en hoja; `useIsMobile` corta en 801 |
 | `max-width: 560px`, `640px` | Ajustes de piezas en pantallas estrechas |
-| `max-width: 900px`, `1100px` | Columnas de páginas anchas (ajustes, sistema) |
+| `max-width: 900px`, `1100px` | Columnas de páginas anchas (ajustes, sistema); de 801 a 1100 el selector de vista va solo con iconos |
 | `prefers-reduced-motion` | Se usa en 23 sitios: quitar movimiento y dejar el fundido |
-| `hover: hover` / `hover: none` | Lo que solo aparece al pasar el ratón tiene alternativa táctil |
+| `hover: hover` / `hover: none` | Lo que solo aparece al pasar el ratón tiene alternativa táctil, en la misma caja y de una línea (pie de tarjeta, "…" del menú) |
+| `max-height: 500px` | Un teléfono tumbado: la ficha ocupa casi todo el alto |
 
 ## Capas (z-index)
 

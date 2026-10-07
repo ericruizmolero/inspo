@@ -3,18 +3,20 @@
 // for AI clients. A menu with the two, each ticked once it is connected. The button stays when both are: it is the
 // only place to see the apps let in and cut one off, and an AI client that drops the connector does not tell us,
 // so "connected" here can outlive the connection (Eric, 06-10).
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { Cable } from "lucide-react";
 import { Icon, MenuItem } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useT } from "./I18nProvider";
 import { sectionIcon } from "./section-icons";
 import ConnectDialog from "./ConnectDialog";
 import { canInstall, useExtension } from "@/hooks/use-extension";
 import { loadConnections } from "@/app/actions/mcp";
 
-export default function Connectors() {
+/** `row`: a row of the phone sheet (components/Sidebar.tsx) instead of the top bar button; the menu is the same */
+export default function Connectors({ row = false }: { row?: boolean }) {
   const { t } = useT();
   const s = t.mcp;
   const { info } = useExtension();
@@ -26,15 +28,23 @@ export default function Connectors() {
   const [connecting, setConnecting] = useState(false);
   useEffect(() => { if (!connecting) void loadConnections().then((r) => { if (r.ok) setApps(r.data.length); }); }, [connecting]);
   const mcpDone = (apps ?? 0) > 0;
+  const Wrap = row ? SidebarMenuItem : Fragment;
   return (
-    <>
+    <Wrap>
       <Popover open={open} onOpenChange={setOpen}>
-        {/* A segment of the view switcher's pill (the system's ViewSwitcher), its menu on chrome-panel */}
-        <PopoverTrigger className="cr-seg-item topbar__ext" data-tip={open ? undefined : s.openHint}>
-          <Icon name="plug" size={16} /> <span className="topbar__mode-label">{s.connectors}</span>
-        </PopoverTrigger>
+        {row ? (
+          <PopoverTrigger render={<SidebarMenuButton className="nav-item" title={s.openHint} />}>
+            <span className="nav-item__icon"><Icon name="plug" size={16} /></span>
+            <span>{s.connectors}</span>
+          </PopoverTrigger>
+        ) : (
+          /* A segment of the view switcher's pill (the system's ViewSwitcher), its menu on chrome-panel */
+          <PopoverTrigger className="cr-seg-item topbar__ext" data-tip={open ? undefined : s.openHint}>
+            <Icon name="plug" size={16} /> <span className="topbar__mode-label">{s.connectors}</span>
+          </PopoverTrigger>
+        )}
         {/* The system's Menu: a paper window; a way in that is already connected carries the check */}
-        <PopoverContent align="end" className="cr-menu connectors__menu">
+        <PopoverContent align={row ? "start" : "end"} className="cr-menu connectors__menu">
           {installable && (
             <Link href={info && !info.connected ? "/extension/connect" : "/extension/install"} role="menuitem" className={`cr-menu-item${info?.connected ? " is-checked" : ""}`} onClick={() => setOpen(false)}>
               {sectionIcon("extension")}
@@ -48,6 +58,6 @@ export default function Connectors() {
         </PopoverContent>
       </Popover>
       {connecting && <ConnectDialog onClose={() => setConnecting(false)} />}
-    </>
+    </Wrap>
   );
 }

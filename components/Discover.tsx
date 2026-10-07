@@ -48,8 +48,8 @@ export default function Discover({ section, onSection, templates }: {
   // trigger is a secondary Button; the popup the system's Menu, a check on the one chosen
   const picker = <K extends string>(p: { open: boolean; onOpen: (o: boolean) => void; value: K | null; onPick: (k: K | null) => void; label: string; options: { key: K; title: string; hint?: string }[] }) => (
     <Popover open={p.open} onOpenChange={p.onOpen}>
-      <PopoverTrigger className={`cr-btn cr-btn-secondary cr-btn-m disc__group${p.value ? " is-pressed" : ""}`}>
-        {p.options.find((o) => o.key === p.value)?.title ?? p.label} <Icon name="chevron-down" size={20} />
+      <PopoverTrigger className={`cr-btn cr-btn-secondary cr-btn-s disc__group${p.value ? " is-pressed" : ""}`}>
+        {p.options.find((o) => o.key === p.value)?.title ?? p.label} <Icon name="chevron-down" size={16} />
       </PopoverTrigger>
       <PopoverContent align="end" className="cr-menu disc__menu">
         <MenuItem checked={p.value === null} onClick={() => { p.onPick(null); p.onOpen(false); }}>{t.discover.all}</MenuItem>
@@ -62,7 +62,7 @@ export default function Discover({ section, onSection, templates }: {
   // The head of the page, the same in the three sections and in their column, as a project's page has it: the name
   // (the page's h1) on top with what the open section holds, and below one row with the sections on the left and, on
   // the right, what the open one is looked through with. It scrolls away with the page, so its tabs are the paper
-  // SegmentedControl, as a project's are
+  // SegmentedControl, as a project's are, in the toolbar size (s, 34) so the row does not outweigh the titles
   const SECTIONS = ["templates", "sites", "skills"] as const;
   const head = (lead: string, side?: React.ReactNode) => (
     <>
@@ -71,7 +71,7 @@ export default function Discover({ section, onSection, templates }: {
         <p className="t-body disc-lead">{lead}</p>
       </header>
       <div className="disc-bar">
-        <SegmentedControl tone="paper" label={t.discover.sections.label} active={SECTIONS.indexOf(section)} onChange={(i) => afterPaint(() => onSection(SECTIONS[i]))}
+        <SegmentedControl tone="paper" size="s" label={t.discover.sections.label} active={SECTIONS.indexOf(section)} onChange={(i) => afterPaint(() => onSection(SECTIONS[i]))}
           items={SECTIONS.map((k) => ({ label: t.discover.sections[k] }))} />
         {side && <div className="disc-bar__side">{side}</div>}
       </div>
@@ -82,7 +82,7 @@ export default function Discover({ section, onSection, templates }: {
   const shelves = (value: Shelf, onPick: (s: Shelf) => void, fresh: number) => {
     const keys = (["all", "new", "featured"] as const).filter((k) => k !== "new" || fresh > 0);
     return (
-      <SegmentedControl tone="paper" className="disc__shelves" label={t.discover.shelves} active={keys.indexOf(value)} onChange={(i) => onPick(keys[i])}
+      <SegmentedControl tone="paper" size="s" className="disc__shelves" label={t.discover.shelves} active={keys.indexOf(value)} onChange={(i) => onPick(keys[i])}
         items={keys.map((k) => ({ label: t.discover.shelf[k], count: k === "new" ? fresh : undefined }))} />
     );
   };
@@ -211,7 +211,7 @@ function DiscoverList({ group, shelf, head }: { group: string | null; shelf: She
         const text = t.directory.groups[g.key as keyof typeof t.directory.groups];
         return (
           <section key={g.key} className="disc-list__group">
-            <header className="disc-list__head"><h2>{text?.title ?? g.key}</h2>{text?.hint && <p>{text.hint}</p>}</header>
+            <header className="disc-list__head"><h2 className="t-title-m">{text?.title ?? g.key}</h2>{text?.hint && <p>{text.hint}</p>}</header>
             {/* A plain list: one line per site, its name and what it is in a sentence, the domain at the end */}
             <ul className="disc-rows" onPointerEnter={() => peek.warm(g.sites.map((s) => s.url))} onPointerLeave={peek.hide}>
               {g.sites.map((site) => (

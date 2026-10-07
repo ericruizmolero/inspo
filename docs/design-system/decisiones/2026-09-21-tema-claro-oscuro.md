@@ -11,3 +11,5 @@ kind: diseño
 **Por qué.** Que el sistema sea de tokens y se pueda exportar como guía de estilo; los dos temas salen gratis si nadie pinta colores a mano.
 
 **Cómo aplicarlo.** Nunca `#fff` ni `rgba(255,255,255,…)` para UI: tokens o `color-mix(... var(--text) ...)`. Excepciones deliberadas: tarjeta de recursos del sidebar y overlays sobre capturas, siempre oscuros.
+
+**Matiz** del 2026-10-07: con el sistema Criterio, también el cromo del producto sigue al tema (oscuro en Board, claro en Paper). → [el cromo sigue al tema](2026-10-07-el-cromo-sigue-al-tema.md)

@@ -1,6 +1,6 @@
 "use client";
 // The component catalogue at /library/componentes: one tab per context, one card per piece,
-// each with a live sample or a screenshot, its names as copyable chips, and what it does.
+// each with a live sample drawn with the app's real CSS, its names as copyable chips, and what it does.
 import { useState } from "react";
 import type { CatalogTab } from "@/lib/design-system";
 import DsMarkdown from "./DsMarkdown";
@@ -30,13 +30,8 @@ export default function Catalog({ tabs }: { tabs: CatalogTab[] }) {
       <div className="ds-catalog">
         {current.items.map((it) => (
           <article key={it.id} id={it.id} className={`cr-card cr-card-raised ds-comp${it.unused ? " is-off" : ""}`}>
-            {(it.sample || it.shot) && (
-              <div className={`ds-comp__stage${it.shot ? " ds-comp__stage--shot" : ""}`}>
-                {it.shot
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={`/library/capturas/${it.shot}`} alt={it.name} loading="lazy" />
-                  : <Sample name={it.sample!} />}
-              </div>
+            {it.sample && (
+              <div className="ds-comp__stage"><Sample name={it.sample} /></div>
             )}
             <div className="ds-comp__body">
               <header>

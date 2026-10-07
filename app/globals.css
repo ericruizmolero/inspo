@@ -225,6 +225,9 @@
 /* Paper theme. The layout script resolves the preference (system / light / dark) and sets data-theme
    on <html> before painting; here only the theme-aware roles are redefined. The chrome stays dark. */
 :root[data-theme="light"] {
+  --glass-hover: rgba(0, 0, 0, 0.045);
+  --glass-on: rgba(0, 0, 0, 0.07);
+  --glass-line: inset 0 1px 0 rgba(255, 255, 255, 0.5);
   --field: #FFFFFF;
   --field-ink: var(--ink);
   /* Paper: fields take the soft line of the chrome (Alberto, 2026-10-07: "softer"), 1px, not the ink */
@@ -471,11 +474,12 @@ p { text-wrap: pretty; }
   border-radius: var(--radius-md);
   color: var(--field-ink); font-size: var(--fs-ui);
   box-shadow: var(--sunken);
-  outline: none;
-  transition: box-shadow 0.15s;
+  /* The focus ring is always there, transparent, so taking focus fades it in over 350ms (Eric, 07-10) */
+  outline: 2px solid transparent; outline-offset: 2px;
+  transition: outline-color 350ms var(--ease-out), border-color 350ms var(--ease-out), background-color 350ms var(--ease-out), box-shadow 350ms var(--ease-out);
 }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
-.input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.input:focus-visible { outline-color: var(--focus); }
 textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height: var(--lh-body); }
 .input--lg { height: 48px; font-size: var(--fs-body); padding: 0 14px; }
 
@@ -588,7 +592,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .app-sidebar__brand { display: flex; align-items: center; padding: 4px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
 .app-sidebar__brand .ws__trigger { padding: 4px 8px 4px 4px; border-radius: 9px; }
 .app-sidebar__brand .ws__trigger:hover { background: var(--surface-2); }
-.app-sidebar__add-row { padding: 8px 12px 4px; }
 /* ─── The island (components/Island.tsx) ─────────────────────────────────────
    Desktop only. The design system's TabBar: a chrome pill at the top left, dark in both themes, with a
    1px chrome hairline and no glass. The logo tile opens the workspace menu; then Home, Discover, Inbox, the
@@ -596,31 +599,41 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    its ⌄ and ×. Tabs are 38 tall in a 5px inset, radius md (10) inside the bar's lg (14). Nothing moves on
    selection: people switch projects all day. Focus on chrome is the ember glow. */
 .island, .board-zoom, .zoom-pill, .island-pop, .topbar__switch, .topbar__trigger { --focus-ring: var(--ember-glow); }
+/* The top chrome (island and view switcher) sits one step under the system's control scale: 34px tabs and
+   14px type, the 44px bar it had before the system came in (Eric, 07-10: the 15px Archivo read too big) */
+.topbar { --fs-chrome: 14px; }
 .island {
-  position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 5px;
-  border: 1px solid var(--chrome-border); border-radius: 15px; /* concentric: 10px tabs + 5px padding */ background: var(--chrome); color: var(--chrome-text);
+  position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 4px;
+  border: 1px solid var(--chrome-border); border-radius: 14px; /* concentric: 10px tabs + 4px padding; 44 tall with the border */ background: var(--chrome); color: var(--chrome-text);
   font-family: var(--font-sans);
 }
 @media (max-width: 800px) { .island { display: none; } }
-/* The logo tile and its menu chevron (the system's .cr-tabbar-brand) */
+/* The workspace tile (its logo, or your photo in the personal one) and its menu chevron (the system's .cr-tabbar-brand) */
 .island__ws {
-  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; height: 38px; padding: 0 6px 0 4px;
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; height: 34px; padding: 0 6px 0 4px;
   border: 0; border-radius: var(--radius-md); background: none; color: var(--chrome-muted); cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease;
 }
-.island__logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--chrome-raised); overflow: hidden; }
-html .island__logo .logo { border-radius: 0; box-shadow: none; }
+.island__logo { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--chrome-raised); overflow: hidden; }
+.island__logo .cr-avatar.is-square { border-radius: 8px; }
 .island__chev { display: grid; place-items: center; }
 .island__tabs { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .island__tab {
-  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; height: 38px; padding: 0 12px;
+  display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; height: 34px; padding: 0 12px;
   border: 0; border-radius: var(--radius-md); background: none; color: var(--chrome-text);
-  font: inherit; font-size: var(--fs-ui); font-weight: 500; line-height: var(--lh-label); white-space: nowrap; text-decoration: none; cursor: pointer;
+  font: inherit; font-size: var(--fs-chrome); font-weight: 500; line-height: var(--lh-label); white-space: nowrap; text-decoration: none; cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease;
 }
 .island__tab.is-on { background: var(--chrome-raised); color: var(--chrome-ink); }
 /* Liquid's pills (components/ui/liquid.tsx) in the tab bar's own material: the chrome tokens, no ring */
-.island__tabs { --liquid-on: var(--chrome-raised); --liquid-hover: color-mix(in srgb, var(--chrome-raised) 60%, transparent); --liquid-ink: var(--chrome-ink); --liquid-ink-off: var(--chrome-text); }
+/* The icon buttons in the bar (home, new project, add) follow the tabs' 34 */
+.island .cr-iconbtn-m, .topbar__switch .cr-iconbtn-m { width: 34px; height: 34px; }
+.island__tabs, .topbar__switch .cr-seg { --liquid-on: var(--glass-on); --liquid-hover: var(--glass-hover); --liquid-ring: var(--glass-line); --liquid-ink: var(--chrome-ink); --liquid-ink-off: var(--chrome-text); }
+.island__tabs .liquid__pill, .topbar__switch .liquid__pill { -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+.island__tabs .liquid__pill--hover, .topbar__switch .liquid__pill--hover { box-shadow: var(--glass-line); }
+/* With the liquid pills running, the segment itself paints nothing: the pills do */
+.topbar__switch .cr-seg[data-liquid] > .cr-seg-item.is-active { background: none; }
+.topbar__switch .cr-seg[data-liquid] > .cr-seg-item:not(.is-active):hover { background: none; }
 .island__tabs[data-liquid] > .island__tab.is-on { background: none; box-shadow: none; }
 .island__tabs[data-liquid] > .island__tab:not(.is-on):not(.island__tab--field):hover { background: none; }
 .island__tabs.liquid > :is(button, a):active { transform: none; }
@@ -633,7 +646,7 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 .island__ring { margin-left: -2px; }
 /* The selected project: one tab, three targets (go to it; its ⌄ renames or deletes it; its × closes the tab) */
 .island__tab--split { gap: 0; padding: 0; }
-.island__tab-main { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 6px 0 12px; border: 0; border-radius: var(--radius-md) 0 0 var(--radius-md); background: none; color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
+.island__tab-main { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px 0 12px; border: 0; border-radius: var(--radius-md) 0 0 var(--radius-md); background: none; color: inherit; font: inherit; text-decoration: none; cursor: pointer; }
 .island__tab.is-on .island__tab-main { padding-right: 4px; }
 /* ⌄ and ×: the system's quiet IconButton, size xs (24 circles, .cr-iconbtn). Home is quiet m, + quiet s */
 .island__tab-more { margin-left: 2px; }
@@ -666,9 +679,6 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 .ws--inline { display: contents; }
 .ws__menu.cr-menu { width: var(--anchor-width); max-width: min(360px, 92vw); max-height: min(640px, calc(100dvh - 96px)); overflow-y: auto; overscroll-behavior: contain; }
 .ws__menu--inline.cr-menu { width: 280px; }
-/* It scrolls, so its moss bar sits flush at the top and stays there */
-.ws__menu.cr-menu { padding-top: 0; }
-.ws__menu .cr-menu-bar { position: sticky; top: 0; z-index: 1; margin-top: 0; }
 .ws__menu.cr-menu > *, .ws__extras > * { flex-shrink: 0; }
 .ws__extras { display: flex; flex-direction: column; }
 .ws__face { display: inline-flex; flex: none; }
@@ -694,68 +704,6 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 .nav-item__icon { display: flex; color: var(--muted); flex-shrink: 0; transition: color 0.15s; }
 .nav-item:hover .nav-item__icon, .nav-item[data-active] .nav-item__icon { color: var(--text); }
 .nav-item__count { color: var(--muted); font-weight: 400; }
-/* Directory picks: plain rows, no logo (too many favicons are dark on transparent). On hover the row
-   itself becomes a card: it takes the surface and a hairline, and grows in flow (grid rows, no overlay)
-   to show the site's screenshot, what it is and its kind and host under the name. The rows below slide
-   down. The whole card is one link (the <a> is the grid), so the picture and the text open the site too.
-   It reads as an accordion: one curve and one clock for everything (--pick-ease is the island's own
-   ease-in-out; fold, frame and body all take --pick-time), so the card forms as one piece and folds as one.
-   Which row is open is decided in the Sidebar (is-open, one at a time); :focus-within keeps the keyboard path. */
-.nav-item--pick-row { --pick-ease: cubic-bezier(0.65, 0, 0.35, 1); --pick-time: 0.4s; }
-.nav-item__pick {
-  display: grid; grid-template-rows: auto 0fr; border-radius: 8px;
-  color: var(--text-2); text-decoration: none; outline: none;
-  background: transparent; box-shadow: inset 0 0 0 1px transparent;
-  transition: grid-template-rows var(--pick-time) var(--pick-ease), background var(--pick-time) var(--pick-ease), box-shadow var(--pick-time) var(--pick-ease), color 0.15s;
-}
-.nav-item--pick-row.is-open .nav-item__pick, .nav-item--pick-row:focus-within .nav-item__pick {
-  grid-template-rows: auto 1fr; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); color: var(--text);
-}
-.nav-item__pick:focus-visible { box-shadow: inset 0 0 0 1px var(--border-strong); }
-/* The name row: same metrics as the other menu rows (32px, 8px inset, 14px) */
-.nav-item__pick-name { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; font-size: var(--fs-ui); min-width: 0; }
-/* Outward arrow, bare, flush right (same edge as the counts), shown only while the row is hovered */
-.nav-item__ext { margin-left: auto; display: flex; color: var(--muted); opacity: 0; transition: opacity 0.15s; }
-.nav-item--pick-row.is-open .nav-item__ext, .nav-item--pick-row:focus-within .nav-item__ext { opacity: 1; }
-/* The body sits under the name, pinned to the top of its track. It is not part of the motion: while
-   the row grows (and, moving down the list, slides up) the body is blank, and the screenshot and the
-   text appear in place only once the row has settled, with a short fade and no movement. No layer
-   over the picture, nothing sliding. When the row folds they are gone at once, so the fold never
-   shows them on the move either. All cards share one height (fixed shot ratio, fixed three-line
-   description, one meta line), which makes the hover handover between rows exact. */
-.nav-item__card { display: block; min-height: 0; overflow: hidden; }
-.nav-item__card-inner { display: flex; flex-direction: column; gap: 8px; padding: 2px 8px 9px; opacity: 0; transition: opacity 0.08s; }
-.nav-item--pick-row.is-open .nav-item__card-inner, .nav-item--pick-row:focus-within .nav-item__card-inner {
-  opacity: 1; transition: opacity 0.18s var(--pick-ease); transition-delay: var(--pick-time);
-}
-/* The shot lines up with the name's left edge; its corner sits inside the card's 8px one */
-.nav-item__card-shot { display: block; aspect-ratio: 16 / 10; border-radius: 4px; overflow: hidden; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
-.nav-item__card-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.nav-item__card-desc {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
-  height: calc(3 * var(--lh-small) * 1em); font-size: var(--fs-label); font-weight: 400; line-height: var(--lh-small); color: var(--muted); text-wrap: pretty;
-}
-/* Under the text, the kind of place it is (its directory group) and the host, both quiet */
-.nav-item__card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-width: 0; font-size: var(--fs-label); line-height: var(--lh-label); color: var(--muted-2); }
-.nav-item__card-kind, .nav-item__card-host { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav-item__card-host { flex-shrink: 0; max-width: 55%; margin-left: auto; }
-/* "Shuffle" deals the new rows in, one by one: each drops in from a few px up with a little blur,
-   45ms apart (the island's own language); only after a shuffle, the first paint stays still */
-.nav-item--pick-row.is-dealt {
-  animation: pick-deal 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  animation-delay: calc(var(--i, 0) * 45ms);
-}
-@keyframes pick-deal {
-  from { opacity: 0; transform: translateY(-6px); filter: blur(4px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
-}
-/* The shuffle icon flips once per press */
-.nav-item--shuffle .nav-item__icon.is-spun { animation: pick-flip 0.5s cubic-bezier(0.65, 0, 0.35, 1); }
-@keyframes pick-flip { to { transform: rotate(180deg); } }
-@media (prefers-reduced-motion: reduce) {
-  .nav-item--pick-row.is-dealt, .nav-item--shuffle .nav-item__icon.is-spun { animation: none; }
-  .nav-item__pick, .nav-item__card-inner { transition: none; }
-}
 /* The "invite" row is an affordance, not a destination: muted until hovered */
 .nav-item--quiet { color: var(--muted-2); }
 .nav-item--quiet:hover { color: var(--text); }
@@ -764,15 +712,19 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 /* A project's ⋯: the quiet IconButton, size xs, a 24 circle */
 .nav-item__more { width: 24px; height: 24px; border-radius: var(--radius-pill); color: var(--muted); }
 .nav-item__more:hover { color: var(--text); }
+/* Touch: there is no hover, so the "…" is always there and the count sits to its left instead of under it.
+   Both sit on the right, so a long name ends in an ellipsis before them */
+@media (hover: none) {
+  .nav-item--project .nav-item__count, .nav-item--project:focus-within .nav-item__count { right: 32px; opacity: 1; }
+  .nav-item--project .nav-item__more { opacity: 1; }
+  .nav-item--project > .nav-item { padding-right: 88px; }
+  .nav-item--project > .nav-item > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
 .nav-item--field { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .nav-item--field .nav-item__icon { color: var(--text); }
 .nav-item--field input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: var(--fs-ui); }
 .nav-item--field input::placeholder { color: var(--muted-2); }
 
-/* Refero: the one solid button in the sidebar, first thing under the workspace */
-.sidebar__add { justify-content: flex-start; }
-/* "Add to <project>": a long project name ends in an ellipsis instead of widening the button */
-.sidebar__add-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .content { position: relative; flex: 1; min-width: 0; height: 100svh; overflow: hidden; }
 
@@ -803,13 +755,13 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 /* The view switcher (the system's ViewSwitcher): a PillBar on the right, the island's twin. Board and System as a
    chrome SegmentedControl, a hairline, Connectors, a hairline, + */
 .topbar__actions { display: flex; align-items: center; flex-shrink: 0; margin-left: auto; }
-.topbar__switch.cr-pillbar { gap: 4px; }
-.topbar__switch .cr-seg-item { height: 38px; padding: 0 12px; font-weight: 500; }
+.topbar__switch.cr-pillbar { gap: 4px; padding: 4px; border-radius: 14px; }
+.topbar__switch .cr-seg-item { height: 34px; padding: 0 12px; font-size: var(--fs-chrome); font-weight: 500; }
 .topbar__switch .cr-seg-item:not(.is-active) { color: var(--chrome-text); }
 .topbar__switch .cr-seg-item:not(.is-active):hover { color: var(--chrome-ink); background: color-mix(in srgb, var(--chrome-raised) 60%, transparent); }
 .topbar__switch .cr-seg-count { font-weight: 400; font-variant-numeric: tabular-nums; }
 .topbar__switch .cr-seg-item.is-active .cr-seg-count { color: var(--chrome-text-muted); }
-.topbar__switch .cr-iconbtn { width: 38px; height: 38px; }
+.topbar__switch .cr-iconbtn { width: 34px; height: 34px; }
 .topbar__switch .cr-iconbtn:hover { color: var(--chrome-ink); }
 /* A hairline only between two things: none first, none twice (Connectors leaves once both ways are connected) */
 .topbar__switch > .cr-pillbar-sep:first-child, .topbar__switch .cr-pillbar-sep + .cr-pillbar-sep { display: none; }
@@ -818,11 +770,23 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
   .shell:not(.shell--docked) .topbar { height: 68px; }
   .shell:not(.shell--docked) .topbar__trigger { display: none; }
 }
-/* A phone: the labels go (still read aloud), the icons and the fill stay; Connectors has no room */
-@media (max-width: 800px) {
+/* A narrow desktop window (801 to 1100): the switcher keeps only its icons (and the fill), so the island's project
+   tabs keep their names instead of being pushed under it */
+@media (min-width: 801px) and (max-width: 1100px) {
   .topbar__switch .topbar__mode-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .topbar__switch .cr-seg-item { padding: 0 10px; }
+}
+/* A phone: the three names stay (an icon alone said nothing), smaller and tighter; only the live view shows its
+   fill, the logo gives them its room and Connectors lives in the sheet. The narrowest phones drop the fill too */
+@media (max-width: 800px) {
+  .topbar__switch .cr-seg-item { padding: 0 7px; font-size: 12px; gap: 4px; }
+  .topbar__switch .cr-seg-item:not(.is-active) :is(.topbar__fill, .cr-seg-count) { display: none; }
+  .topbar:has(.topbar__switch) .topbar__logo { display: none; }
   .topbar__switch .topbar__ext, .topbar__switch .topbar__ext + .cr-pillbar-sep { display: none; }
+  .topbar__add { flex-shrink: 0; }
+}
+@media (max-width: 360px) {
+  .topbar__switch :is(.topbar__fill, .cr-seg-count) { display: none; }
 }
 /* Shortcut inside a tooltip */
 .cr-tip .cr-key { margin-left: 6px; }
@@ -854,8 +818,10 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 .topbar .search.is-ai .input:focus { background: var(--surface); border-color: var(--border-strong); }
 .topbar .search.is-ai .search__icon { color: var(--muted-2); }
 .topbar .search.is-ai:focus-within .search__icon { color: var(--muted); }
-/* The "/" that focuses a search is the system's Key (a beveled keycap, components/criterio) */
-.search__kbd.cr-key { flex: none; }
+/* The "/" that focuses a search is the system's Key, but flat as it was before the system came in: no paper
+   fill nor bevel, only a muted glyph with a thin line, so it does not compete with the field (Eric, 07-10) */
+.search__kbd.cr-key { flex: none; background: none; color: var(--muted-2); border-color: var(--border); box-shadow: none; }
+.sb--dock .search__kbd.cr-key { color: var(--chrome-muted); border-color: var(--chrome-border); }
 
 /* ─── The search bar (components/SearchBar.tsx) ──────────────────────────────
    One field that grows with its chips. It lives in the command bar (.dock__bar): dark chrome in both themes,
@@ -865,7 +831,7 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
   display: flex; align-items: center; flex-wrap: nowrap; gap: 6px;
   min-height: 36px; padding: 3px 8px; border-radius: var(--radius-md); cursor: text;
   background: transparent; color: var(--chrome-text);
-  overflow-x: auto; scrollbar-width: none; transition: box-shadow 0.15s;
+  overflow-x: auto; scrollbar-width: none; transition: box-shadow 350ms var(--ease-out); /* the search takes focus like every field: 350ms */
 }
 .sb__field::-webkit-scrollbar { display: none; }
 /* The icon is the field's first item and stays put when the chips scroll under it */
@@ -1311,6 +1277,10 @@ video.vp__media { object-fit: contain; }
   /* Comments and the folder: the system's Button, size s (quiet, and the picker's own); open, the areas, remove
      and cancel: default IconButtons, size xs; the confirm step of a delete: the danger Button, size s */
   .tile__caption-pj, .tile__caption-ib, .tile__caption-del { flex-shrink: 0; align-self: center; font-variant-numeric: tabular-nums; }
+  /* On the board the caption is one fixed line (CSS .board .tile__caption): the title and the actions, nothing
+     stacked under them. Meta and tags are read in the sheet; the folder keeps its icon and the count alone */
+  .board .tile__caption :is(.tile__meta, .tile__tags, .tile__go-label) { display: none; }
+  .board .tile__caption > div { display: flex; align-items: center; }
 }
 
 /* ─── Modals ──────────────────────────────────────────────────────────────── */
@@ -1388,21 +1358,42 @@ video.vp__media { object-fit: contain; }
 .modal__footer { display: flex; justify-content: flex-end; gap: 8px; padding-top: 4px; }
 .modal__hint { font-size: var(--fs-small); color: var(--text-2); margin: 0; }
 .modal__error { font-size: var(--fs-small); color: var(--danger); margin: 0; }
-/* New inspo: a link, or an image dropped, pasted or chosen */
-.add { position: relative; display: flex; flex-direction: column; gap: 16px; }
-/* The other ways in (an image, a text): sunken wells, a copy of the field, since a file can be dropped on them */
-.add__pick {
-  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; box-sizing: border-box;
-  padding: 10px 14px; border: var(--field-stroke, 1.5px) solid var(--field-border); border-radius: var(--radius-md);
-  background: var(--field); color: var(--field-placeholder); box-shadow: var(--sunken);
-  font: inherit; font-size: var(--fs-ui); text-align: left; cursor: pointer;
-  transition: color 0.15s;
+/* New inspo: a link, or an image dropped, pasted or chosen. The flat modal (ink frame, bevel buttons: the retro nod),
+ * not the moss window, and inside the packed dashboard form (Eric, 07-10): fields a step lighter than the panel, no
+ * sunken black wells, 12 px between pieces, the other ways in as dashed boxes. One grey for every line and one for
+ * every quiet text, so nothing inside has a tone of its own */
+.add {
+  position: relative; display: flex; flex-direction: column; gap: var(--space-3);
+  --add-line: var(--border-strong); --add-quiet: var(--muted);
+  --field-ink: var(--text); --field-border: var(--add-line); --field-stroke: 1px;
+  --field-placeholder: var(--add-quiet); --sunken: none;
 }
-.add__pick:hover { color: var(--field-ink); }
+/* In Board the field is a step lighter than the panel, not the near-black well; in Paper it keeps the system's white */
+:root:not([data-theme="light"]) .add { --field: var(--surface-2); }
+/* Focus like the dashboard's: the border rises to the text colour, no ember ring when the dialog opens on the field (Eric, 07-10) */
+.add .input:focus-visible, .add .cr-textarea:focus-visible { outline: none; border-color: var(--text); }
+.add .modal__hint { font-size: var(--fs-label); color: var(--add-quiet); }
+.add .modal__footer { padding-top: var(--space-2); }
+/* The other ways in (an image, a text): a dashed box, transparent, so they read as options and not as more fields */
+.add__pick {
+  display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box;
+  padding: 11px 14px; border: 1px dashed var(--add-line); border-radius: var(--radius-md);
+  background: transparent; color: var(--add-quiet);
+  font: inherit; font-size: var(--fs-small); line-height: var(--lh-ui, 1.4); text-align: left; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.add__pick:hover { color: var(--text); border-color: var(--text); }
 .add__pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.add__pick u { text-underline-offset: 3px; color: var(--field-ink); }
+.add__pick u { text-underline-offset: 3px; color: var(--text); }
 .add__pick > .cr-icon { flex-shrink: 0; }
-.add__area.cr-chip { gap: 6px; font-weight: 500; }
+/* The areas: the dashboard's pills (28 high, 12 px, transparent) instead of the paper Chip; chosen inverts, like the system's Chip */
+.modal .add .add__area.cr-chip {
+  gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--add-line); background: transparent;
+  color: var(--add-quiet); font-size: var(--fs-label); font-weight: 500;
+}
+.modal .add .add__area.cr-chip:hover { color: var(--text); border-color: var(--text); }
+.modal .add .add__area.cr-chip.is-pressed { background: var(--text); border-color: var(--text); color: var(--bg); }
+.modal .add .pills { gap: 6px; }
 /* A window's footer holding Cancel and the action: both to the right */
 .modal-window__footer > .modal__footer { margin-left: auto; padding-top: 0; }
 .new-team { display: flex; flex-direction: column; gap: 16px; }
@@ -1703,6 +1694,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
 .auth__foot a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .auth__foot a:hover { color: var(--text); }
+/* A phone: the feedback button sits in that corner, so the two legal lines keep clear of it */
+@media (max-width: 800px) { .auth__foot { padding-right: 64px; } }
 
 /* The collage: board ground in both themes, the references on it as flat cards */
 .auth__visual {
@@ -2331,6 +2324,8 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   transition: transform 240ms var(--ease-out), opacity 200ms var(--ease-out);
 }
 @starting-style { .ip.cr-viewer { transform: scale(0.96); opacity: 0; } }
+/* A short window (a phone on its side): the sheet takes nearly all the height */
+@media (min-width: 801px) and (max-height: 500px) { .ip.cr-viewer { top: 8px; bottom: 8px; } }
 
 /* Header: the source on a square chrome avatar, the title and the breadcrumb, Page / criterio.md, close */
 .ip-bar.cr-viewer-head { flex-shrink: 0; min-height: 60px; padding: 12px 12px 12px 14px; border-bottom-color: var(--chrome-raised); }
@@ -2347,6 +2342,8 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .ip-bar__tabs { flex-shrink: 0; }
 .ip-bar__tabs .cr-seg-item { padding: 6px 12px; font-size: var(--fs-ui); font-weight: 500; }
 .ip-bar__close { flex-shrink: 0; }
+/* The jump to the conversation only exists on a phone, where the thread is under the page */
+.ip-bar__talk { display: none; }
 
 /* Body: the stage takes the room, the conversation is a column of 320 down its right */
 .ip-bento.cr-viewer-body { flex: 1; min-height: 0; }
@@ -2367,9 +2364,13 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .ip-bar.cr-viewer-head { flex-wrap: wrap; padding: 8px; gap: 10px; }
   .ip-bar__tabs { order: 3; width: 100%; overflow-x: auto; }
   .ip-bar__tabs .cr-seg-item { flex: 1; justify-content: center; }
-  .ip .ip-nav { display: none; }
+  /* Before and after stay, small and over the page (a swipe does the same, ItemPanel.tsx) */
+  .ip .ip-nav { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 32px; height: 32px; }
+  .ip .ip-nav.is-prev { left: 12px; }
+  .ip .ip-nav.is-next { right: 12px; }
+  .ip-bar__talk { display: inline-flex; }
   .ip-bento.cr-viewer-body { flex-direction: column; overflow-y: auto; }
-  .ip-stage.cr-viewer-stage { flex: none; height: 70svh; padding: 8px; }
+  .ip-stage.cr-viewer-stage { position: relative; flex: none; height: 70svh; padding: 8px; }
   .ip-card--talk.cr-viewer-aside { flex: none; width: auto; height: 70svh; border-left: 0; border-top: 1px solid var(--chrome-raised); }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2444,6 +2445,12 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   --dock-fill: var(--chrome-raised);
   --dock-line: var(--chrome-border);
   --dock-danger: #FF8A80;
+  /* The liquid glass of the top chrome's pills (hover and the live one): a translucent light over the chrome,
+     blurred, with a line of light on top. Back from before the system (Eric, 07-10); the bars themselves stay solid */
+  --glass-hover: rgba(255, 255, 255, 0.08);
+  --glass-on: rgba(255, 255, 255, 0.14);
+  --glass-line: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-blur: blur(20px) saturate(1.5);
   --dock-shadow: none;
   --dock-blur: none;
 }

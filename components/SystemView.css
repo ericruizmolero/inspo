@@ -19,7 +19,7 @@
 .spage-client .sysv-thumb { width: 32px; height: 20px; margin: 0; border: 0; border-radius: var(--radius-pill); } .spage-client .sysv-thumb img { object-position: top; }
 .spage-client b { font-weight: 600; }
 @media (max-width: 900px) { .spage-head { padding-left: 0; } }
-@media (max-width: 800px) { .spage { padding: 70px 16px 90px; } .spage-head { margin-top: 32px; } }
+@media (max-width: 800px) { .spage { padding: 70px 16px 90px; } .spage-head { margin-top: 12px; gap: 12px; } }
 /* The brand drawn as a page, under the tabs, in the file's own column. In the app its index is the file's: the
    brand's name and the count of sections stay for the shared page (app/s) */
 .spage-sheet { padding-top: 0; }

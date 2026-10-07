@@ -6,11 +6,11 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
-import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
 import { fmtCount } from "@/lib/i18n/format";
 import FeedbackEntry from "./FeedbackEntry";
 import ThemeToggle from "./ThemeToggle";
+import Connectors from "./Connectors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 // ─── Icons: the system's Icon where it has the glyph; the rest drawn in the same hand (16px, 1.5 stroke) ─
 const I = {
+  home: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden><path d="M2.5 7.2 8 2.75l5.5 4.45V13a.75.75 0 0 1-.75.75H9.75v-3.5h-3.5v3.5H3.25A.75.75 0 0 1 2.5 13z" /></svg>,
   info: (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
@@ -111,30 +112,6 @@ const I = {
     </svg>
   ),
 };
-
-/** The body of a directory pick's card, folded under the name until the row is hovered: the site's
- *  screenshot (public/directory), what the site is, and a meta line with the kind of place it is and
- *  its host. If the screenshot never loads, the slot stays (blank) so every card is the same height,
- *  which the fold-and-unfold handover relies on. The outer span is the grid track that folds; the
- *  padding lives inside so it folds to nothing. Spans, not divs: it all sits inside the row's <a>. */
-function PickCard({ url, desc, kind }: { url: string; desc: string; kind?: string }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <span className="nav-item__card" aria-hidden>
-      <span className="nav-item__card-inner">
-        <span className="nav-item__card-shot">
-          {!failed && <img src={siteShot(url)} alt="" decoding="async" onError={() => setFailed(true)} />}
-        </span>
-        <span className="nav-item__card-desc">{desc}</span>
-        <span className="nav-item__card-meta">
-          {kind && <span className="nav-item__card-kind">{kind}</span>}
-          <span className="nav-item__card-host">{siteHost(url)}</span>
-        </span>
-      </span>
-    </span>
-  );
-}
-
 
 export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading, shortcut }: {
   value: string; onChange: (v: string) => void; className?: string; autoFocus?: boolean;
@@ -327,54 +304,27 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head and b
 
 /** Everything under the workspace: add, the whole library, the projects, the directory and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
-export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, onPick,
+export function SidebarNav({ quota, items, onPick,
   space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;
 }) {
   const { t } = useT();
   const pick = (fn: () => void) => () => { onPick?.(); fn(); };
-  const groupTitle = (key?: string) => (key ? t.directory.groups[key as keyof typeof t.directory.groups]?.title : undefined);
-  // The hand-picked seven first; "Shuffle" swaps them for seven others from the directory.
-  // `round` is part of each row's key, so every shuffle remounts the rows and replays the stagger.
-  const [picks, setPicks] = useState<DirectorySite[]>(SIDEBAR_PICKS);
-  const [round, setRound] = useState(0);
-  // Which pick row shows its card (one at a time). Hover opens, after a short wait so a sweep down the
-  // list opens nothing on the way. The fold of the old row and the unfold of the new one run together,
-  // on the same clock, and the cards are all the same height, so moving DOWN the list the new row's
-  // title slides up exactly as much as its body grows: its card ends up under the pointer and the
-  // hover is not lost. The body only shows once the row has settled (see the CSS), so the screenshot
-  // is never seen moving.
-  const [open, setOpen] = useState<number | null>(null);
-  const intent = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelIntent = () => { if (intent.current) { clearTimeout(intent.current); intent.current = null; } };
-  const enterRow = (i: number) => {
-    cancelIntent();
-    intent.current = setTimeout(() => { intent.current = null; setOpen(i); }, 120);
-  };
-  const foldAll = () => { cancelIntent(); setOpen(null); };
-  useEffect(() => cancelIntent, []);
-  const shuffle = () => { foldAll(); setPicks((cur) => shuffleSidebarPicks(cur)); setRound((n) => n + 1); };
   // Projects: which one is being named in place ("new" = the row at the bottom), and each one's count
   const [naming, setNaming] = useState<string | null>(null);
   const counts = useSpaceCounts(items, links);
-  // Inside a project the button says where the reference will be filed
-  const addTo = projects.find((p) => p.id === space)?.name;
+  const inDiscover = space === "discover" || space === "templates" || space === "skills";
   return (
     <>
-      <div className="app-sidebar__add-row">
-        <Button variant="primary" block className="sidebar__add" onClick={pick(onAdd)}>
-          {I.plus} <span className="sidebar__add-label">{addTo ? t.sidebar.addTo(addTo) : t.sidebar.addReference}</span>
-        </Button>
-      </div>
-
       {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}
       <SidebarContent className="overflow-hidden">
         <FadeScroll>
+          {/* The island's first two tabs: home (every project, as pictures) and Discover (opens on its examples) */}
           <SidebarGroup>
             <SidebarMenu>
-              {/* Kinds, dates and every tag are searched now, from the box: "All" is the way back */}
-              <NavItem icon={I.all} label={t.sidebar.all} count={items.length} active={isAll} onClick={pick(onReset)} />
+              <NavItem icon={I.home} label={t.projects.home} active={space === "home"} onClick={pick(() => onSpace("home"))} />
+              <NavItem icon={I.compass} label={t.sidebar.discover} active={inDiscover} onClick={pick(() => onSpace("templates"))} />
             </SidebarMenu>
           </SidebarGroup>
 
@@ -384,13 +334,13 @@ export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, o
             <SidebarGroupLabel>{t.projects.title}</SidebarGroupLabel>
             <SidebarMenu>
               <NavItem icon={I.inbox} label={t.projects.inbox} count={counts.inbox} active={space === "inbox"} title={t.projects.inboxHint}
-                onClick={pick(() => onSpace(space === "inbox" ? "all" : "inbox"))} />
+                onClick={pick(() => onSpace("inbox"))} />
               {projects.map((p) => naming === p.id ? (
                 <NameField key={p.id} initial={p.name} placeholder={t.projects.namePlaceholder}
                   onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} onCancel={() => setNaming(null)} />
               ) : (
                 <ProjectRow key={p.id} project={p} count={counts.byProject[p.id] ?? 0} filled={systems[p.id]?.areas.filter((a) => a.decision).length ?? 0} active={space === p.id}
-                  onClick={pick(() => onSpace(space === p.id ? "all" : p.id))}
+                  onClick={pick(() => onSpace(p.id))}
                   onRename={() => setNaming(p.id)} onDelete={() => onDeleteProject(p)} />
               ))}
               {naming === "new" ? (
@@ -406,44 +356,12 @@ export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, o
               )}
             </SidebarMenu>
           </SidebarGroup>
-
-          <SidebarGroup>
-            <SidebarGroupLabel>{t.sidebar.discover}</SidebarGroupLabel>
-            <SidebarMenu onPointerLeave={foldAll}>
-              <NavItem icon={I.compass} label={t.sidebar.directory} count={DIRECTORY_TOTAL} active={false} onClick={pick(onDirectory)} onPointerEnter={foldAll} />
-              {/* The galleries we open most, straight from the sidebar: each row is an external link */}
-              {picks.map((r, i) => (
-                <SidebarMenuItem
-                  key={`${round}-${r.url}`}
-                  className={`nav-item--pick-row${round ? " is-dealt" : ""}${open === i ? " is-open" : ""}`}
-                  style={{ "--i": i } as React.CSSProperties}
-                  onPointerEnter={() => enterRow(i)}
-                >
-                  {/* One link for the whole card: the name row and, once open, the screenshot and the text under it */}
-                  <a className="nav-item__pick" href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => onPick?.()}>
-                    <span className="nav-item__pick-name">
-                      <span className="truncate">{r.name}</span>
-                      {/* Bare outward arrow, flush right where the counts sit, shown on hover */}
-                      <span className="nav-item__ext" aria-hidden>{I.external}</span>
-                    </span>
-                    <PickCard url={r.url} desc={t.directory.items[r.url]} kind={groupTitle(siteGroupKey(r.url))} />
-                  </a>
-                </SidebarMenuItem>
-              ))}
-              {/* Stays open: shuffling is browsing, not a choice (no onPick) */}
-              <SidebarMenuItem>
-                <SidebarMenuButton className="nav-item nav-item--quiet nav-item--shuffle" onClick={shuffle} title={t.sidebar.shuffleHint(picks.length)}>
-                  {/* The icon flips once per shuffle: keyed on the round so the animation restarts every time */}
-                  <span className={`nav-item__icon${round ? " is-spun" : ""}`} key={round}>{I.shuffle}</span>
-                  <span>{t.sidebar.shuffle}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
         </FadeScroll>
       </SidebarContent>
 
       <SidebarFooter className="app-sidebar__footer">
+        {/* The ways in from outside (an AI client over MCP), as on the island's right pill */}
+        <SidebarMenu><Connectors row /></SidebarMenu>
         <FeedbackEntry onPick={onPick} />
         <ThemeToggle row />
         {quota && <PlanMeter quota={quota} />}

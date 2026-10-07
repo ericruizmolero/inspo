@@ -30,7 +30,7 @@ export default function DiscoverSkills({ sites, topic, shelf, head }: { sites: D
       {head}
       {groups.map((g) => (
         <section key={g.topic} className="disc-list__group">
-          <header className="disc-list__head"><h2>{t.discover.skills.topics[g.topic]}</h2></header>
+          <header className="disc-list__head"><h2 className="t-title-m">{t.discover.skills.topics[g.topic]}</h2></header>
           <ul className="disc-skills">
             {g.skills.map((s) => <SkillCard key={s.url} skill={s} />)}
           </ul>
@@ -60,9 +60,10 @@ function SkillCard({ skill }: { skill: Skill }) {
         {skill.inMd && <span className="disc-skill__inmd" data-tip={t.discover.inCriterioHint}><Chip tone="moss">{t.discover.inCriterio}</Chip></span>}
       </div>
       {/* The name's link covers the whole card; the copy button sits above it */}
-      <a className="t-title-m disc-skill__name" href={skill.url} target="_blank" rel="noopener noreferrer">{skill.name}</a>
+      <a className="t-title-s disc-skill__name" href={skill.url} target="_blank" rel="noopener noreferrer">{skill.name}</a>
       <p className="disc-skill__what">{skill.what}</p>
-      <button type="button" className={`btn btn--sm disc-skill__install${copied ? " is-pressed" : ""}`} onClick={() => void copy()} aria-label={`${t.discover.skills.copy}: ${skill.install}`}>
+      {/* Not a paper Button: a sunken well with the command and a grey "Copy" key, no paper (nine paper blocks per screen read heavy; Eric, 07-10) */}
+      <button type="button" className={`disc-skill__install${copied ? " is-copied" : ""}`} onClick={() => void copy()} aria-label={`${t.discover.skills.copy}: ${skill.install}`}>
         <code>{skill.install}</code>
         <span>{copied ? t.discover.skills.copied : t.discover.skills.copy}</span>
       </button>

@@ -47,9 +47,10 @@
 .ds-ease__dot { position: absolute; left: 0; top: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--ember); border: var(--stroke-control) solid var(--control-border); }
 .ds-ease .ds-val { text-align: right; }
 
-/* Chrome: the product's bars, dark in both themes. It replaced the glass (retired with the Criterio system) */
-.ds-chrome-stage { display: grid; place-items: center; min-height: 200px; padding: 24px; border-radius: var(--radius-l); background: var(--board); border: 1px solid var(--border); }
-.ds-chrome { display: flex; flex-direction: column; gap: 4px; max-width: 320px; padding: 14px 16px; border-radius: var(--radius-l); background: var(--chrome); color: var(--paper); border: 1px solid var(--chrome-border); }
+/* Chrome: the product's bars. Solid, and they follow the theme (dark on Board, light on Paper); the glass was retired with the Criterio system */
+.ds-chrome-stage { display: grid; place-items: center; min-height: 200px; padding: 24px; border-radius: var(--radius-l); background: var(--bg); border: 1px solid var(--border); }
+.ds-chrome { display: flex; flex-direction: column; gap: 8px; max-width: 480px; padding: 14px 16px; border-radius: var(--radius-l); background: var(--chrome); color: var(--chrome-ink); border: 1px solid var(--chrome-border); }
+.ds-chrome--inline { display: inline-flex; flex-direction: row; align-items: center; max-width: none; padding: 6px; border-radius: var(--radius-md); }
 .ds-chrome__line { font-size: var(--fs-small); color: var(--chrome-text-muted); }
 .ds-chrome-stage--sm { min-height: 110px; width: 100%; padding: 16px; }
 
@@ -71,10 +72,6 @@
 .ds-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
 .ds-icon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 8px 12px; border-radius: var(--radius-md); background: var(--surface-raised); border: 1px solid var(--border); color: var(--text); }
 .ds-icon span { font-size: var(--fs-small); color: var(--text-muted); }
-.ds-state { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: var(--radius-md); background: var(--surface-raised); border: 1px solid var(--border); font-size: var(--fs-ui); font-weight: 500; color: var(--text); }
-.ds-state--open { color: var(--text-muted); }
-.ds-state__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); }
-.ds-state__meta { color: var(--text-muted); font-weight: 400; margin-left: 4px; }
 
 /* Markdown pages: body text at 17px, near 65 characters */
 .ds-md { display: flex; flex-direction: column; gap: 12px; max-width: 72ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-muted); padding-bottom: 48px; }
@@ -126,7 +123,7 @@
 .ds-toc__label { color: var(--text); margin-bottom: 6px; }
 .ds-toc a { font-size: var(--fs-small); color: var(--text-muted); text-decoration: none; padding: 3px 0; }
 .ds-toc a:hover { color: var(--text); }
-@media (max-width: 1000px) { .ds-page { grid-template-columns: 1fr; } .ds-toc { display: none; } }
+@media (max-width: 1000px) { .ds-page { grid-template-columns: minmax(0, 1fr); } .ds-toc { display: none; } }
 
 /* Home: one tile per block, flat raised cards */
 .ds-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 20px; }
@@ -145,8 +142,6 @@
 .ds-comp.is-off { opacity: 0.6; }
 .ds-comp:target { box-shadow: 0 0 0 2px var(--focus); }
 .ds-comp__stage { display: grid; place-items: center; min-height: 150px; padding: 24px; background: var(--bg); margin: 6px 6px 0; border-radius: 10px; }
-.ds-comp__stage--shot { padding: 0; overflow: hidden; }
-.ds-comp__stage--shot img { display: block; width: 100%; height: 220px; object-fit: cover; object-position: top left; }
 .ds-comp__body { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px 4px; }
 .ds-comp__body header { display: flex; align-items: center; gap: 8px; }
 .ds-comp__body .ds-md { font-size: var(--fs-ui); padding-bottom: 14px; gap: 8px; }
@@ -160,3 +155,10 @@
 .ds-space__row .ds-swatch__name { width: 84px; padding: 0; }
 .ds-space__bar { height: 12px; border-radius: 3px; background: var(--moss-light); flex: none; }
 :root[data-theme="light"] .ds-space__bar { background: var(--moss); }
+
+/* Samples of the system's bigger pieces, sized to sit in a catalogue card */
+.ds-row--wide { max-width: 640px; }
+.ds-sys__window { width: 100%; max-width: 640px; }
+.ds-sys__board { width: 220px; }
+.ds-sys__ref { width: 120px; }
+.ds-field--bare .cr-field-label { display: none; }

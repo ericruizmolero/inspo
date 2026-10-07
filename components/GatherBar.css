@@ -27,8 +27,10 @@
 .gather .cr-btn:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
 .gather__go .cr-icon:last-child { transition: transform 0.2s var(--ease-out); }
 .gather__go:hover:not(:disabled) .cr-icon:last-child { transform: translateX(2px); }
+/* A phone: one row, the title and the button; the lead and "Add" go (the bar's "+" adds), so the dock
+   covers a strip of the board instead of a quarter of the screen */
 @media (max-width: 640px) {
-  .gather { flex-wrap: wrap; } .gather__text { flex-basis: 60%; } .gather__lead { white-space: normal; }
-  .gather__add, .gather__go { flex: 1; justify-content: center; }
+  .gather { gap: 10px; padding: 8px 8px 8px 12px; }
+  .gather__thumbs, .gather__lead, .gather__add, .gather__title span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .gather__go .cr-icon:last-child { transition: none; } }

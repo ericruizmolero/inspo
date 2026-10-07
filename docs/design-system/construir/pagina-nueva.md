@@ -4,7 +4,7 @@
 
 | Familia | Cómo se ve | Ejemplos |
 | --- | --- | --- |
-| **App** | Isla arriba a la izquierda, dock de cristal, tablero o documento a pantalla completa | `/`, `/i/[id]`, proyecto |
+| **App** | Isla arriba a la izquierda, dock sobre el cromo, tablero o documento a pantalla completa | `/`, `/i/[id]`, proyecto |
 | **Sección** | `SectionShell`: sidebar shadcn con secciones, migas, contenido a 800 px (1040 con `wide`) | `/settings`, `/admin`, `/library` |
 | **Pública** | Sin sesión, carga instantánea, sin trabajo pesado | `/login`, `/invite/[id]`, `/extension/privacy` |
 
@@ -23,9 +23,9 @@
 ## Guardarraíles
 
 - Nada de colores fuera de los tokens, ni `#fff` para UI.
-- Nada de mono en títulos o etiquetas; nada de bordes para separar.
+- Nada de mono en títulos o etiquetas; nada de bordes para separar bloques: el borde de tinta es solo de los controles.
 - Ninguna familia tipográfica nueva.
-- Un solo botón primario por vista; nada de botones inventados fuera de `.btn`.
+- Un solo botón primario por vista; nada de botones inventados fuera de `Button` e `IconButton` del sistema (`components/criterio`).
 - Ningún texto escrito en el componente.
 - En páginas públicas, nada de IA, Blob ni análisis al renderizar.
 - Nada de tablas ni modales para organizar referencias: se hace sobre las tarjetas.

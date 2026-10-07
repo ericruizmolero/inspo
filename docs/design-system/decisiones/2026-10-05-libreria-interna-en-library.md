@@ -11,3 +11,5 @@ kind: desarrollo
 **Por qué.** "tiene que ser una librería que esté en criterio.design/library, que la podamos ver de forma visual también". Agentes y personas leen la misma fuente. Idioma: "en castellano bien".
 
 **Cómo aplicarlo.** Cada sí o no del equipo se registra con la skill `registrar-decision`. Una página nueva de la librería se añade a `DS_GROUPS` en `lib/design-system.ts`; una captura nueva va a `docs/design-system/capturas/` (servida solo a socios por `/library/capturas/[name]`).
+
+**Matiz** del 2026-10-07: las capturas del catálogo se retiraron; cada ficha del sistema lleva una muestra viva. → [muestras vivas](2026-10-07-la-libreria-pinta-muestras-vivas-sin-capturas.md)

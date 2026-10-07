@@ -10,8 +10,11 @@
 .disc-bar__side { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
 .disc-bar .cr-seg { flex-shrink: 0; max-width: 100%; }
 .disc-bar .cr-seg-item { white-space: nowrap; }
-/* Over the templates' cards the head and the row are two more pieces of their column, which keeps its own gaps */
+/* Over the templates' cards the head and the row are two more pieces of their column, which keeps its own gap: the
+   row's margins give back that gap so it sits at the same height as in the other two sections (Eric, 07-10: the bar
+   must not move when switching sections) */
 .tpls-inner > :is(.disc-head, .disc-bar) { width: 100%; margin: 0; }
+.tpls-inner > .disc-bar { margin: calc(var(--space-5) - var(--tpls-gap)) 0 calc(var(--space-6) - var(--tpls-gap)); }
 /* The kinds of resource, or the skills' topics: a secondary Button opens a Menu (.cr-menu); pressed while one is
    chosen or the menu is open. A long list scrolls inside */
 .disc__group { flex-shrink: 0; white-space: nowrap; }
@@ -23,6 +26,7 @@
 .disc-list { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }
 .disc-list__group { max-width: 1040px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
 /* A group's name is an h2 (title-l) */
+/* A group's name is an h2 for the outline but reads at title-m (20): at title-l it outweighed the rows (Eric, 07-10) */
 .disc-list__head h2 { color: var(--text); }
 .disc-list__head p { margin: 4px 0 0; font-size: var(--fs-small); color: var(--text-2); }
 .disc-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
@@ -59,6 +63,16 @@
 .disc-skill__name::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .disc-skill__what { flex: 1; margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 /* The install command: a secondary Button, size s (on a card), pressed once copied; the command is literal, so mono */
-.disc-skill__install { position: relative; z-index: 1; display: flex; justify-content: flex-start; min-width: 0; margin-top: 4px; text-align: left; }
-.disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-muted); }
-.disc-skill__install span { flex-shrink: 0; }
+/* The install line: halfway between the old flat strip and the system's paper Button. A sunken well in the card
+   (the field's ground and line, no bevel) holds the command in muted mono; "Copy" is a small raised key in the
+   card's own grey, no paper at all (Eric, 07-10: "el botón de copiar no tiene que ser blanco tampoco") */
+.disc-skill__install {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; min-width: 0; height: 34px; margin-top: 4px; padding: 0 4px 0 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--field); color: var(--muted);
+  font: inherit; text-align: left; cursor: pointer; transition: border-color 150ms ease, color 150ms ease;
+}
+.disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); }
+.disc-skill__install span { flex-shrink: 0; padding: 0 8px; height: 24px; line-height: 24px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: 500; transition: background-color 150ms ease, color 150ms ease; }
+@media (hover: hover) { .disc-skill__install:hover { border-color: var(--border-strong); color: var(--text-2); } .disc-skill__install:hover span { background: var(--surface-3); color: var(--text); } }
+.disc-skill__install:active span { background: var(--surface-3); color: var(--text); }
+.disc-skill__install.is-copied span { background: var(--moss); color: var(--on-moss); }

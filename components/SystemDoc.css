@@ -41,6 +41,18 @@
 @media (max-width: 900px) { .sdoc { flex-direction: column; gap: 16px; } .sdoc-toc { position: static; flex: none; flex-direction: row; flex-wrap: wrap; } .sdoc-toc__gap { display: none; } }
 /* A narrow page: the file's bar goes onto two rows (its tools under its tabs) instead of pushing the panel wider than the page */
 @media (max-width: 900px) { .sdoc-page { width: 100%; } .sdoc .mdv-bar { flex-wrap: wrap; gap: 8px 12px; padding-top: 8px; padding-bottom: 8px; } .sdoc .mdv-bar__hint { flex: 1; } .sdoc .mdv-bar__tools { margin-left: 0; flex-wrap: wrap; flex-shrink: 1; } }
+/* A phone: the index is one row that scrolls sideways and the bar one row that scrolls too, so the file starts on
+   the first screen instead of under three rows of chips and three of tools. The hint has no room there. */
+@media (max-width: 800px) {
+  .sdoc { gap: 10px; }
+  .sdoc-toc { width: 100%; min-width: 0; box-sizing: border-box; flex-wrap: nowrap; gap: 2px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .sdoc-toc::-webkit-scrollbar { display: none; }
+  .sdoc-toc button { flex-shrink: 0; min-height: 32px; white-space: nowrap; }
+  .sdoc .mdv-bar { flex-wrap: nowrap; gap: 8px; padding: 0 12px; overflow-x: auto; scrollbar-width: none; }
+  .sdoc .mdv-bar::-webkit-scrollbar { display: none; }
+  .sdoc .mdv-bar__hint { display: none; }
+  .sdoc .mdv-bar__tools { flex-wrap: nowrap; flex-shrink: 0; }
+}
 
 /* ─── The file itself, first: the Markdown panel (components/SystemMarkdown.tsx) beside the same parts list, set
    with more air than a code block, and with the team's tools on each area ─── */

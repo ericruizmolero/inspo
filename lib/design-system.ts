@@ -202,10 +202,8 @@ export interface CatalogItem {
   id: string;
   /** Technical name, file, CSS prefix…: copyable chips */
   chips: string[];
-  /** A live sample drawn by Specimens.tsx */
+  /** A live sample drawn by Specimens.tsx: every card of the system has one; no screenshots */
   sample?: string;
-  /** A screenshot in docs/design-system/capturas/, served by /library/capturas/[name] */
-  shot?: string;
   unused: boolean;
   blocks: Block[];
 }
@@ -213,7 +211,7 @@ export interface CatalogTab { name: string; id: string; items: CatalogItem[] }
 
 /**
  * Card format, right under its "### Name":
- *   `InspoCard` · `components/InspoCard.tsx` · muestra: botones · captura: tarjeta · sin uso
+ *   `InspoCard` · `components/InspoCard.tsx` · muestra: botones · sin uso
  * then free Markdown (description, a list of details).
  */
 export function parseCatalog(md: string): { intro: Block[]; tabs: CatalogTab[] } {
@@ -227,17 +225,16 @@ export function parseCatalog(md: string): { intro: Block[]; tabs: CatalogTab[] }
     const items = cards.map((c): CatalogItem => {
       const lines = c.split("\n");
       const name = lines.shift()!.trim();
-      let chips: string[] = [], sample: string | undefined, shot: string | undefined, unused = false;
-      if (lines[0]?.trim().startsWith("`") || /^(muestra|captura):/.test(lines[0]?.trim() ?? "")) {
+      let chips: string[] = [], sample: string | undefined, unused = false;
+      if (lines[0]?.trim().startsWith("`") || /^muestra:/.test(lines[0]?.trim() ?? "")) {
         for (const bit of lines.shift()!.split(" · ").map((x) => x.trim())) {
           if (bit.startsWith("muestra:")) sample = bit.slice(8).trim();
-          else if (bit.startsWith("captura:")) shot = bit.slice(8).trim();
           else if (bit === "sin uso") unused = true;
           else chips.push(bit.replace(/^`|`$/g, ""));
         }
       }
       chips = chips.filter(Boolean);
-      return { name, id: slugify(name), chips, sample, shot, unused, blocks: parseMd(lines.join("\n")) };
+      return { name, id: slugify(name), chips, sample, unused, blocks: parseMd(lines.join("\n")) };
     });
     return { name: head.trim(), id: slugify(head), items };
   });

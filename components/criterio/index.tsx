@@ -132,13 +132,15 @@ export type SegmentItem = { label: ReactNode; icon?: IconName | ReactNode; count
 
 /** Mutually exclusive views, one active. `chrome` on dark chrome, `paper` on paper grounds.
  *  app: `choice` makes it a radio group (a setting such as the theme) instead of tabs. */
-export function SegmentedControl({ items, active = 0, onChange, tone = "chrome", label = "View", choice, className }: {
-  items: SegmentItem[]; active?: number; onChange?: (i: number) => void; tone?: "chrome" | "paper"; label?: string; choice?: boolean; className?: string;
+export function SegmentedControl({ items, active = 0, onChange, tone = "chrome", size = "m", label = "View", choice, className }: {
+  items: SegmentItem[]; active?: number; onChange?: (i: number) => void; tone?: "chrome" | "paper";
+  /** paper only: m (44, beside a Button m) or s (34, in a toolbar inside the page, beside a Button s) */
+  size?: "m" | "s"; label?: string; choice?: boolean; className?: string;
 }) {
   return (
     // Through Liquid (components/ui/liquid.tsx): the hover flows from option to option and the chosen fill moves
     // in the click itself; the pills take the segment's colours (criterio.css, .cr-seg)
-    <Liquid className={cx("cr-seg", `cr-seg-${tone}`, className)} role={choice ? "radiogroup" : "tablist"} aria-label={label}
+    <Liquid className={cx("cr-seg", `cr-seg-${tone}`, size === "s" && "cr-seg-s", className)} role={choice ? "radiogroup" : "tablist"} aria-label={label}
       on={choice ? ':scope > [aria-checked="true"]' : undefined}>
       {items.map((it, i) => (
         <button key={i} type="button" role={choice ? "radio" : "tab"} {...(choice ? { "aria-checked": active === i } : { "aria-selected": active === i })} title={it.title}
@@ -605,7 +607,7 @@ export function MenuItem({ icon, children, checked, danger, className, ...rest }
     </button>
   );
 }
-/** A menu's small heading, or a moss title bar with `bar` */
+/** A menu's small heading. `bar` (a moss title bar) is kept for the library only: menus in the app do not use it (Eric, 07-10) */
 export function MenuLabel({ children, bar }: { children: ReactNode; bar?: boolean }) {
   return <div className={bar ? "cr-menu-bar" : "cr-menu-heading"}>{children}</div>;
 }

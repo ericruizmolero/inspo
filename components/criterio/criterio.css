@@ -21,6 +21,9 @@
 .cr-btn-secondary:active,.cr-btn-secondary.is-pressed{background:var(--paper-pressed,#D9CFBA)}
 .cr-btn:disabled{background:var(--disabled,#E2DBCB);color:var(--disabled-text,#6E695F);border-color:var(--disabled-border,#B9B2A3);box-shadow:none;cursor:not-allowed;transform:none}
 .cr-btn:focus-visible,.cr-window-close:focus-visible,.cr-tab:focus-visible,.cr-input:focus-visible,.cr-check input:focus-visible+.cr-check-box{outline:2px solid var(--focus,#1B1B18);outline-offset:2px}
+/* Fields take focus in 350ms (Eric, 07-10): the ring is there, transparent, so its colour can fade in; .cr-prompt does the same with its shadow */
+.cr-input{outline:2px solid transparent;outline-offset:2px;transition:outline-color 350ms var(--ease-out,cubic-bezier(0.23,1,0.32,1)),border-color 350ms var(--ease-out,cubic-bezier(0.23,1,0.32,1)),background-color 350ms var(--ease-out,cubic-bezier(0.23,1,0.32,1)),box-shadow 350ms var(--ease-out,cubic-bezier(0.23,1,0.32,1))}
+.cr-input:focus-visible{outline-color:var(--focus,#1B1B18)}
 
 .cr-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .cr-balloon{position:relative;box-sizing:border-box;width:320px;max-width:100%}
@@ -124,6 +127,7 @@
 
 /* ---- prompt ---- */
 .cr-prompt{display:flex;align-items:center;gap:12px;box-sizing:border-box;width:700px;max-width:100%;padding:10px 10px 10px 24px;background:var(--chrome-panel,#1C1C1C);border:1px solid var(--chrome-border,#2E2E2E);border-radius:var(--radius-xl,20px);font-family:var(--font-sans,"Archivo",sans-serif)}
+.cr-prompt{box-shadow:0 0 0 2px transparent;transition:box-shadow 350ms var(--ease-out,cubic-bezier(0.23,1,0.32,1)),border-color 350ms var(--ease-out,cubic-bezier(0.23,1,0.32,1))}
 .cr-prompt:focus-within{box-shadow:0 0 0 2px var(--ember-glow,#F6A848)}
 .cr-prompt input{flex:1 1 auto;min-width:0;height:48px;background:none;border:none;outline:none;color:var(--chrome-ink,#EDE6D6);font-family:inherit;font-size:var(--fs-body,17px)}
 .cr-prompt input::placeholder{color:var(--chrome-muted,#8A847A)}
@@ -396,11 +400,12 @@
 :root:not([data-theme="light"]) .cr-sep-v:not(.cr-menu .cr-sep-v){border-left-color:rgba(0,0,0,0.5);border-right-color:rgba(255,255,255,0.08)}
 
 /* Menu: a paper window (DialogWindow's ground) on any popover. Always paper and ink, in both themes */
-.cr-menu{box-sizing:border-box;min-width:200px;max-width:min(360px,92vw);padding:4px;display:flex;flex-direction:column;gap:0;background:var(--paper);border:var(--stroke-control) solid var(--control-border);border-radius:var(--radius-md,10px);box-shadow:var(--bevel),var(--shadow-popover);font-family:var(--font-sans);overflow:hidden;transform-origin:var(--transform-origin);transition:opacity 150ms var(--ease-out),transform 150ms var(--ease-out)}
+.cr-menu{box-sizing:border-box;min-width:200px;max-width:min(360px,92vw);padding:4px;display:flex;flex-direction:column;gap:0;background:var(--paper);border:1px solid var(--control-border);border-radius:var(--radius-md,10px);box-shadow:var(--shadow-popover);font-family:var(--font-sans);overflow:hidden;transform-origin:var(--transform-origin);transition:opacity 150ms var(--ease-out),transform 150ms var(--ease-out)}
 .cr-menu[data-starting-style],.cr-menu[data-ending-style]{opacity:0;transform:scale(.97)}
 .cr-menu-bar{display:flex;align-items:center;gap:8px;height:32px;margin:-4px -4px 4px;padding:0 10px;background:var(--moss);color:var(--on-moss);border-bottom:var(--stroke-control) solid var(--control-border);font:700 var(--fs-title-s)/var(--lh-title-s) var(--font-display)}
 .cr-menu-heading{padding:8px 10px 4px;font-size:var(--fs-label);font-weight:500;color:var(--text-2)}
-.cr-menu-item{display:flex;align-items:center;gap:10px;width:100%;min-height:32px;box-sizing:border-box;padding:6px 10px;border:0;border-radius:var(--radius-sm,6px);background:none;color:var(--text);font:inherit;font-size:var(--fs-ui);text-align:left;text-decoration:none;cursor:pointer}
+/* Menu rows: 14 px, the one size outside the 17/15/13/12 scale (Eric, 07-10: 15 was a bit big, 13 too small) */
+.cr-menu-item{display:flex;align-items:center;gap:10px;width:100%;min-height:32px;box-sizing:border-box;padding:6px 10px;border:0;border-radius:var(--radius-sm,6px);background:none;color:var(--text);font:inherit;font-size:14px;text-align:left;text-decoration:none;cursor:pointer}
 .cr-menu-item:hover,.cr-menu-item:focus-visible,.cr-menu-item[data-highlighted]{background:var(--surface-2);outline:none}
 .cr-menu-item:focus-visible{box-shadow:inset 0 0 0 2px var(--focus)}
 .cr-menu-item.is-checked{font-weight:600}
@@ -463,7 +468,8 @@
   background:#1E1E1C;border-color:#4A4A44;
 }
 :root:not([data-theme="light"]) .modal.modal--window{box-shadow:var(--bevel-dark),var(--shadow-modal)}
-:root:not([data-theme="light"]) .cr-menu{box-shadow:var(--bevel-dark),var(--shadow-pop)}
+/* Menus: a 1 px line and the shadow, no bevel (Eric, 07-10: the retro frame read too heavy on a menu) */
+:root:not([data-theme="light"]) .cr-menu{box-shadow:var(--shadow-pop)}
 :root:not([data-theme="light"]) .cr-window{box-shadow:var(--bevel-dark)}
 :root:not([data-theme="light"]) :is(.modal--window,.cr-window) .cr-window-bar{border-bottom-color:#000}
 :root:not([data-theme="light"]) :is(.modal--window .cr-window-heading,.modal--window .cr-window-text,.cr-window .cr-window-heading,.cr-window .cr-window-text){color:var(--paper)}
@@ -477,7 +483,9 @@
 :is(.cr-input,.input,.cr-textarea)[readonly]{background:var(--surface-2);color:var(--text-2);box-shadow:none;border-color:var(--border-strong)}
 :is(.cr-input,.input,.cr-textarea):disabled{background:var(--disabled);color:var(--disabled-text);border-color:var(--disabled-border);box-shadow:none;cursor:not-allowed}
 /* The paper SegmentedControl is a field too: a sunken well, 44 high, the picked option a raised beveled key */
-.cr-seg-paper{box-sizing:border-box;min-height:44px;padding:3px;gap:3px;background:var(--field);border:var(--field-stroke, 1.5px) solid var(--field-border);border-radius:var(--radius-md,10px);box-shadow:var(--sunken)}
+.cr-seg-paper{box-sizing:border-box;min-height:44px;padding:3px;gap:3px;background:var(--field);border:1px solid var(--border);border-radius:var(--radius-md,10px);box-shadow:var(--sunken)}
+.cr-seg-paper.cr-seg-s{min-height:34px;padding:2px;gap:2px}
+.cr-seg-paper.cr-seg-s .cr-seg-item{min-height:28px;padding:0 10px;border-radius:6px;font-size:var(--fs-small,13px)}
 .cr-seg-paper .cr-seg-item{min-height:35px;padding:0 12px;border-radius:7px;color:var(--field-placeholder);font-size:var(--fs-ui);font-weight:500}
 .cr-seg-paper .cr-seg-item:hover:not(.is-active){color:var(--field-ink)}
 .cr-seg-paper .cr-seg-item.is-active{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1px var(--control-border),var(--bevel)}

@@ -7,7 +7,7 @@ import { areaIcon } from "./area-icons";
 import { normalizeWebUrl, typeFromUrl } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
-import { Dialog, DialogWindow } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button, Chip, Icon, IconButton, TextArea } from "@/components/criterio";
 import "./TextRef.css";
@@ -121,15 +121,13 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
 
   return (
     <Dialog open={open} onOpenChange={setOpen} onOpenChangeComplete={(o) => { if (!o) onClose(); }}>
-      <DialogWindow initialFocus={initial?.text ? titleRef : initial ? noteRef : urlRef}
-        bar={t.add.bar} heading={project ? t.add.titleIn(project) : t.add.title} closeLabel={t.common.close}
-        footer={
-          <div className="modal__footer">
-            <Button onClick={close}>{t.common.cancel}</Button>
-            <Button variant="primary" type="submit" form="add-inspo" disabled={!canSave}>{t.common.save}</Button>
-          </div>
-        }>
-        <form id="add-inspo" onSubmit={handleSubmit} className={`add${dragging ? " is-dragging" : ""}`}
+      {/* The flat modal, not the moss window: a header with the title and the close, the form, the footer (Eric, 07-10) */}
+      <DialogContent initialFocus={initial?.text ? titleRef : initial ? noteRef : urlRef}>
+        <div className="modal__header">
+          <DialogTitle className="t-title-s">{project ? t.add.titleIn(project) : t.add.title}</DialogTitle>
+          <DialogClose render={<IconButton icon="close" variant="default" size="s" label={t.common.close} />} />
+        </div>
+        <form id="add-inspo" onSubmit={handleSubmit} className={`modal__body add${dragging ? " is-dragging" : ""}`}
           onPaste={onPaste} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
           {dragging && <div className="add__drop" aria-hidden><span className="t-title-l">{t.add.dropHere}</span></div>}
           {file && preview ? (
@@ -142,7 +140,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
             </div>
           ) : writing ? (
             <div className="field">
-              <Input size="lg" ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.add.textTitle} maxLength={80} autoComplete="off" />
+              <Input ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.add.textTitle} maxLength={80} autoComplete="off" />
               <TextArea className="add__text" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.add.textBody} aria-label={t.add.textBody} />
               <p className="modal__hint">{t.add.textHint}</p>
               <Button variant="quiet" size="s" className="add__text-back" onClick={clearText}>{t.add.removeText}</Button>
@@ -150,7 +148,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           ) : (
             <>
               <div className="field">
-                <Input size="lg"
+                <Input
                   ref={urlRef}
                   value={raw}
                   onChange={(e) => { setRaw(e.target.value); setError(""); }}
@@ -194,8 +192,13 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           )}
 
           {error && <p className="modal__error">{error}</p>}
+
+          <div className="modal__footer">
+            <Button onClick={close}>{t.common.cancel}</Button>
+            <Button variant="primary" type="submit" disabled={!canSave}>{t.common.save}</Button>
+          </div>
         </form>
-      </DialogWindow>
+      </DialogContent>
     </Dialog>
   );
 }

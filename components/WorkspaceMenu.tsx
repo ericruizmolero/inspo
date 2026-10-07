@@ -12,23 +12,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Avatar, MenuItem, MenuLabel, Separator, toneFor } from "@/components/criterio";
 
 /** The system's Avatar, out of the accessibility tree: the name always sits beside it */
-function Face({ name, src, square, small, className = "" }: { name: string; src?: string | null; square?: boolean; small?: boolean; className?: string }) {
+function Face({ name, src, square, small, size, className = "" }: { name: string; src?: string | null; square?: boolean; small?: boolean; size?: number; className?: string }) {
   return (
     <span className={`ws__face ${className}`} aria-hidden>
-      <Avatar initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} src={src} square={square} size={small ? 20 : 28} />
+      <Avatar initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} src={src} square={square} size={size ?? (small ? 20 : 28)} />
     </span>
   );
 }
 
-/** Workspace avatar: the system's Avatar, square; its logo if it has one, otherwise the name's initial */
-export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean }) {
-  return <Face name={workspace.name} src={workspace.logo} square small={small} />;
+/** Workspace avatar: the system's Avatar, square; its logo if it has one, otherwise the name's initial.
+ *  `size` (px) wins over `small` (20) and the default (28): the island's tile is 26 */
+export function WorkspaceAvatar({ workspace, small, size }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean; size?: number }) {
+  return <Face name={workspace.name} src={workspace.logo} square small={small} size={size} />;
 }
 
 /** A workspace as a place: always square. The personal one shows your photo when it has no logo */
-export function WorkspaceFace({ workspace, user, small }: { workspace: Pick<Workspace, "name" | "logo" | "kind">; user: Pick<SessionUser, "name" | "image">; small?: boolean }) {
-  if (workspace.kind !== "personal" || workspace.logo) return <WorkspaceAvatar workspace={workspace} small={small} />;
-  return <Face name={user.name} src={user.image} square small={small} />;
+export function WorkspaceFace({ workspace, user, small, size }: { workspace: Pick<Workspace, "name" | "logo" | "kind">; user: Pick<SessionUser, "name" | "image">; small?: boolean; size?: number }) {
+  if (workspace.kind !== "personal" || workspace.logo) return <WorkspaceAvatar workspace={workspace} small={small} size={size} />;
+  return <Face name={user.name} src={user.image} square small={small} size={size} />;
 }
 
 /** A person's avatar: the system's Avatar in the person's tone, photo if they have one, otherwise the initial.
@@ -109,10 +110,10 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
 
       {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip.
           It always hangs below: a menu too tall for the window scrolls inside instead of jumping to the side */}
-      {/* The system's Menu: a paper window in both themes, the moss bar on top, engraved lines between groups */}
+      {/* The system's Menu: a paper window in both themes, a quiet heading on top (no moss bar: Eric, 07-10), engraved lines between groups */}
       <PopoverContent className={trigger ? "cr-menu ws__menu ws__menu--inline" : "cr-menu ws__menu"} anchor={trigger ? undefined : ref}
         collisionAvoidance={{ side: "none", align: "shift", fallbackAxisSide: "none" }}>
-          <MenuLabel bar>{t.ws.workspaces}</MenuLabel>
+          <MenuLabel>{t.ws.workspaces}</MenuLabel>
           {personal.map((w) => (
             <MenuItem key={w.id} icon={<WorkspaceFace workspace={w} user={user} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
               {w.name} <span className="ws__item-kind">{t.ws.personal}</span>
