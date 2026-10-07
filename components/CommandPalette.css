@@ -1,0 +1,23 @@
+/* The command palette (⌘K, components/CommandPalette.tsx): a paper window in both themes, like every dialog (the
+   DialogWindow's ground: paper, the ink border, the bevel). The search is the system's TextField (a sunken white
+   field with its ink border); the results are the system's ListBox (rows in a sunken white well), the selected row
+   pressed into it. No blur behind it. */
+.modal-backdrop:has(.cmdk-dialog) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* The frame is the DialogWindow's (.modal--window: paper, ink border, bevel, and the theme roles in their Paper values) */
+.modal.modal--window.cmdk-dialog { font-family: var(--font-sans); }
+.cmdk-dialog .cmdk { padding: 12px; gap: 10px; }
+.cmdk-dialog .cmdk-input {
+  flex: none; height: 44px; gap: 10px; padding: 0 12px; border: var(--field-stroke, 1.5px) solid var(--field-border);
+  border-radius: var(--radius-md); background: var(--field); color: var(--field-ink); box-shadow: var(--sunken);
+}
+.cmdk-dialog .cmdk-input:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cmdk-dialog .cmdk-input__icon { color: var(--field-placeholder); }
+.cmdk-dialog .cmdk-input__field { color: var(--field-ink); font-size: var(--fs-ui); }
+.cmdk-dialog .cmdk-input__field::placeholder { color: var(--field-placeholder); opacity: 1; }
+.cmdk-dialog .cmdk-list.cr-listbox { flex: 1 1 auto; min-height: 0; padding: 4px; }
+.cmdk-dialog .cmdk-empty { color: var(--field-placeholder); }
+.cmdk-dialog .cmdk-group [cmdk-group-heading] { padding: 8px 10px 4px; font-size: var(--fs-label); font-weight: 500; color: var(--field-placeholder); }
+.cmdk-dialog .cmdk-item.cr-listbox-item { height: auto; min-height: 36px; padding: 6px 10px; border-radius: var(--radius-sm); font-size: var(--fs-ui); color: var(--field-ink); }
+.cmdk-dialog .cmdk-item__icon { color: var(--field-placeholder); }
+.cmdk-dialog .cmdk-item[data-selected="true"] .cmdk-item__icon { color: var(--field-ink); }
+.cmdk-dialog .cmdk-item__hint { color: var(--field-placeholder); font-size: var(--fs-label); }
