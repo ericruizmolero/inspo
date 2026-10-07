@@ -14,6 +14,7 @@ import { enterFeedbackMode } from "./feedback-mode";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
 } from "@/components/ui/command";
+import "./CommandPalette.css";
 
 const SETTINGS = ["account", "feedback", "workspace", "members", "plan", "extension"] as const;
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
@@ -43,19 +44,19 @@ export default function CommandPalette({ open, onOpenChange, items, workspace, w
   return (
     <CommandDialog title={t.palette.title} open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setSearch(""); }}>
       <CommandInput icon={<span className="cmdk-input__icon">{Icons.search}</span>} value={search} onValueChange={setSearch} placeholder={t.palette.placeholder} />
-      <CommandList>
+      <CommandList className="cr-listbox">
         <CommandEmpty>{t.palette.empty}</CommandEmpty>
 
         <CommandGroup heading={t.palette.actions}>
           {/* A pasted URL is saved in one step; forceMount keeps it visible whatever cmdk scores */}
           {url && (
-            <CommandItem value={`save ${url}`} forceMount onSelect={run(() => onAddUrl(url))}>
+            <CommandItem className="cr-listbox-item" value={`save ${url}`} forceMount onSelect={run(() => onAddUrl(url))}>
               <span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addUrl(host(url))}
             </CommandItem>
           )}
-          <CommandItem onSelect={run(onAdd)}><span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addInspo}</CommandItem>
-          <CommandItem onSelect={run(onDirectory)}><span className="cmdk-item__icon">{Icons.compass}</span>{t.palette.openDirectory}</CommandItem>
-          <CommandItem value={`feedback ${t.feedback.open}`} onSelect={run(enterFeedbackMode)}><span className="cmdk-item__icon">{sectionIcon("feedback")}</span>{t.feedback.open}</CommandItem>
+          <CommandItem className="cr-listbox-item" onSelect={run(onAdd)}><span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addInspo}</CommandItem>
+          <CommandItem className="cr-listbox-item" onSelect={run(onDirectory)}><span className="cmdk-item__icon">{Icons.compass}</span>{t.palette.openDirectory}</CommandItem>
+          <CommandItem className="cr-listbox-item" value={`feedback ${t.feedback.open}`} onSelect={run(enterFeedbackMode)}><span className="cmdk-item__icon">{sectionIcon("feedback")}</span>{t.feedback.open}</CommandItem>
         </CommandGroup>
 
         {items.length > 0 && (
@@ -64,7 +65,7 @@ export default function CommandPalette({ open, onOpenChange, items, workspace, w
               // Every reference opens here, in its panel: the page with its post-its and its thread
               const isImage = mediaKindOf(it.web) === "image";
               return (
-                <CommandItem key={it.id ?? it.web} value={`${it.name} ${it.web}`}
+                <CommandItem className="cr-listbox-item" key={it.id ?? it.web} value={`${it.name} ${it.web}`}
                   onSelect={run(() => onOpenItem(it))}>
                   <img className="cmdk-item__favicon" alt="" style={isImage ? { objectFit: "cover" } : undefined}
                     src={isImage ? it.web : `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host(it.web))}&sz=32`} />
@@ -79,7 +80,7 @@ export default function CommandPalette({ open, onOpenChange, items, workspace, w
         {workspaces.length > 1 && (
           <CommandGroup heading={t.palette.workspaces}>
             {workspaces.filter((w) => w.id !== workspace.id).map((w) => (
-              <CommandItem key={w.id} value={`workspace ${w.name}`} onSelect={run(() => switchTo(w.id))}>
+              <CommandItem className="cr-listbox-item" key={w.id} value={`workspace ${w.name}`} onSelect={run(() => switchTo(w.id))}>
                 <span className="cmdk-item__icon">{sectionIcon("workspace")}</span>{t.palette.switchTo(w.name)}
               </CommandItem>
             ))}
@@ -88,17 +89,17 @@ export default function CommandPalette({ open, onOpenChange, items, workspace, w
 
         <CommandGroup heading={t.palette.settings}>
           {SETTINGS.map((s) => (
-            <CommandItem key={s} value={`settings ${t.settings.sections[s]}`} onSelect={run(() => router.push(`/settings/${s}`))}>
+            <CommandItem className="cr-listbox-item" key={s} value={`settings ${t.settings.sections[s]}`} onSelect={run(() => router.push(`/settings/${s}`))}>
               <span className="cmdk-item__icon">{sectionIcon(s)}</span>{t.settings.sections[s]}
             </CommandItem>
           ))}
           {isAdmin && (
-            <CommandItem value={`activity ${t.admin.title}`} onSelect={run(() => router.push("/admin"))}>
+            <CommandItem className="cr-listbox-item" value={`activity ${t.admin.title}`} onSelect={run(() => router.push("/admin"))}>
               <span className="cmdk-item__icon">{sectionIcon("overview")}</span>{t.admin.title}
             </CommandItem>
           )}
           {isAdmin && (
-            <CommandItem value={`design system library ${t.designLibrary.title}`} onSelect={run(() => router.push("/library"))}>
+            <CommandItem className="cr-listbox-item" value={`design system library ${t.designLibrary.title}`} onSelect={run(() => router.push("/library"))}>
               <span className="cmdk-item__icon">{sectionIcon("foundations")}</span>{t.designLibrary.title}
             </CommandItem>
           )}

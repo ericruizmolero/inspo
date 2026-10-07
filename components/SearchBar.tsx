@@ -9,6 +9,7 @@ import { facetOf } from "@/lib/taxonomy";
 import { filterKey, suggest, type Filter, type Term2 } from "@/lib/search-query";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
+import { Busy, Button, Chip, IconButton, Key, MenuLabel } from "@/components/criterio";
 import type { Dict } from "@/lib/i18n/en";
 import "./AgentTarget.css";
 
@@ -127,24 +128,23 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
   const empty = !text && !filters.length;
   const open = options.length > 0;
   return (
-    <div className={`sb ${className}${open ? " is-open" : ""}`}>
+    <div className={`sb cr-on-chrome ${className}${open ? " is-open" : ""}`}>
       <div className="sb__field" onClick={() => ref.current?.focus()}>
-        <span className="sb__icon" aria-hidden>{busy ? <span className="spinner spinner--sm" /> : target ? Icons.spark : Icons.search}</span>
+        <span className="sb__icon" aria-hidden>{busy ? <Busy label={t.search.placeholderShort} /> : target ? Icons.spark : Icons.search}</span>
+        {/* What it understood, as the system's chrome Chips with their small x */}
         {target && (
-          <span className="sb__chip sb__chip--target" title={target.name}>
+          <Chip tone="chrome" className="sb__chip sb__chip--target" title={target.name} removeLabel={t.agent.dropTarget} onRemove={() => onClearTarget?.()}>
             {target.image ? <img className="sb__target-img" src={target.image} alt="" /> : <span className="sb__target-img sb__target-img--blank">{target.name.slice(0, 1).toUpperCase()}</span>}
             <span className="sb__chip-label"><small>{t.agent.thisOne}</small> {target.name}</span>
-            <button type="button" className="sb__chip-x" aria-label={t.agent.dropTarget} title={t.agent.dropTarget} onClick={(e) => { e.stopPropagation(); onClearTarget?.(); }}>{Icons.x}</button>
-          </span>
+          </Chip>
         )}
         {filters.map((f) => {
           const label = filterLabel(f, t);
           return (
-            <span key={filterKey(f)} className={`sb__chip sb__chip--${f.kind}`}>
+            <Chip key={filterKey(f)} tone="chrome" className={`sb__chip sb__chip--${f.kind}`} removeLabel={t.search.remove(label)} onRemove={() => drop(f)}>
               <ChipMark f={f} swatches={swatches} faces={faces} />
               <span className="sb__chip-label">{label}</span>
-              <button type="button" className="sb__chip-x" aria-label={t.search.remove(label)} onClick={(e) => { e.stopPropagation(); drop(f); }}>{Icons.x}</button>
-            </span>
+            </Chip>
           );
         })}
         <input
@@ -166,37 +166,39 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
         <span className="sb__right">
           {gathering ? <span className="sb__gathering" role="status">{Icons.spark} {t.sidebar.gathering(gathering)}</span> : null}
           {onAsk && text.trim() && (
-            <button type="button" className="sb__ask" disabled={asking} aria-label={t.agent.ask} title={t.agent.hint} onClick={(e) => { e.stopPropagation(); ask(); }}>
-              {asking ? <span className="spinner spinner--sm" /> : Icons.spark}<span className="sb__ask-label">{asking ? t.agent.thinking : t.agent.ask}</span>
-            </button>
+            <Button variant="quiet" size="s" className="sb__ask" disabled={asking} aria-label={t.agent.ask} data-tip={t.agent.hint} onClick={(e) => { e.stopPropagation(); ask(); }}>
+              {asking ? <Busy label={t.agent.thinking} /> : Icons.spark}<span className="sb__ask-label">{asking ? t.agent.thinking : t.agent.ask}</span>
+            </Button>
           )}
-          {empty ? <kbd className="search__kbd" aria-hidden>/</kbd> : (
-            <button type="button" className="sb__clear" aria-label={t.search.clear} onClick={(e) => { e.stopPropagation(); onText(""); onFilters([]); }}>{Icons.x}</button>
+          {empty ? <Key className="search__kbd">/</Key> : (
+            <IconButton icon="close" variant="quiet" size="s" className="sb__clear" label={t.search.clear} onClick={(e) => { e.stopPropagation(); onText(""); onFilters([]); }} />
           )}
         </span>
       </div>
       {/* With a reference handed over and nothing typed: what can be done with it, one click each */}
       {target && focused && !text.trim() && quick.length > 0 && onAsk && (
-        <div className="sb__menu sb__quick" role="group" aria-label={t.agent.quickTitle(target.name)}>
-          <span className="sb__quick-title">{t.agent.quickTitle(target.name)}</span>
+        <div className="cr-menu sb__menu sb__quick" role="group" aria-label={t.agent.quickTitle(target.name)}>
+          <MenuLabel>{t.agent.quickTitle(target.name)}</MenuLabel>
           <div className="sb__quick-list">
             {quick.map((q) => (
-              <button key={q.order} type="button" className="sb__quick-btn" disabled={asking} title={q.order}
+              <Button key={q.order} size="s" disabled={asking} data-tip={q.order}
                 // Before the field's blur, so the click lands
-                onMouseDown={(e) => { e.preventDefault(); onAsk(q.order); }}>{q.label}</button>
+                onMouseDown={(e) => { e.preventDefault(); onAsk(q.order); }}>{q.label}</Button>
             ))}
           </div>
         </div>
       )}
       {open && !(target && !text.trim()) && (
-        <ul id={listId} role="listbox" className="sb__menu" aria-label={t.search.suggestions}>
+        // The system's Menu (a paper window) holding a ListBox: the suggestions as rows in a sunken white well
+        <div className="cr-menu sb__menu">
+        <ul id={listId} role="listbox" className="cr-listbox sb__list" aria-label={t.search.suggestions}>
           {options.map((o, i) => (
             <li
               key={filterKey(o.term.filter)}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={i === active}
-              className={`sb__option${i === active ? " is-active" : ""}`}
+              className={`cr-listbox-item sb__option${i === active ? " is-active" : ""}`}
               // Before the field's blur, so the click lands
               onMouseDown={(e) => { e.preventDefault(); take(o); }}
               onMouseEnter={() => setActive(i)}
@@ -207,6 +209,7 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
             </li>
           ))}
         </ul>
+        </div>
       )}
     </div>
   );

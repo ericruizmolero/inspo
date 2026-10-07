@@ -4,12 +4,11 @@
 // (/mcp/authorize); nothing is typed here but the address.
 import { useEffect, useState } from "react";
 import { useT } from "./I18nProvider";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Icons } from "./Sidebar";
+import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
 import { disconnectApp, loadConnections } from "@/app/actions/mcp";
 import { timeAgo } from "@/lib/i18n/format";
 import type { McpConnection } from "@/lib/mcp/oauth";
+import { Busy, Button, Card, SegmentedControl } from "@/components/criterio";
 import "./ConnectDialog.css";
 
 type Client = "claude" | "chatgpt" | "code" | "cursor";
@@ -35,39 +34,37 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="mcpc">
-        <div className="modal__header">
-          <DialogTitle>{s.title}</DialogTitle>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
-        </div>
-        <div className="modal__body mcpc__body">
+      <DialogWindow className="mcpc" bar={s.open} heading={s.title} closeLabel={t.common.close}>
+        <div className="mcpc__body">
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
           <section className="mcpc__uses">
-            <h3>{s.uses.title}</h3>
+            <h3 className="t-label">{s.uses.title}</h3>
             <ul>{s.uses.items.map((u) => <li key={u}>{u}</li>)}</ul>
             <p>{s.uses.rule}</p>
           </section>
-          <div className="mcpc__addr">
-            <span>{s.address}</span>
-            <code>{url}</code>
-            <button type="button" onClick={() => void copy("url", url)}>{copied === "url" ? s.copied : s.copy}</button>
-          </div>
-          <div className="mcpc__tabs" role="tablist">
-            {CLIENTS.map((c) => <button key={c} type="button" role="tab" aria-selected={client === c} className={client === c ? "is-on" : ""} onClick={() => pick(c)}>{s.clients[c]}</button>)}
-          </div>
+          <Card className="mcpc__addr" eyebrow={s.address}>
+            <div className="mcpc__row">
+              <code>{url}</code>
+              <Button size="s" icon={copied === "url" ? "check" : undefined} onClick={() => void copy("url", url)}>{copied === "url" ? s.copied : s.copy}</Button>
+            </div>
+          </Card>
+          <SegmentedControl tone="paper" className="mcpc__tabs" label={s.title} active={CLIENTS.indexOf(client)} onChange={(i) => pick(CLIENTS[i])}
+            items={CLIENTS.map((c) => ({ label: s.clients[c] }))} />
           <ol className="mcpc__steps">
             <li>{steps[0]}{snippet && (
-              <span className="mcpc__snippet">
-                <code>{snippet}</code>
-                <button type="button" onClick={() => void copy("snippet", snippet)}>{copied === "snippet" ? s.copied : s.copy}</button>
-              </span>
+              <Card className="mcpc__snippet">
+                <div className="mcpc__row">
+                  <code>{snippet}</code>
+                  <Button size="s" icon={copied === "snippet" ? "check" : undefined} onClick={() => void copy("snippet", snippet)}>{copied === "snippet" ? s.copied : s.copy}</Button>
+                </div>
+              </Card>
             )}</li>
             <li>{steps[1]}</li>
           </ol>
           <p className="bimp__hint">{s.then}</p>
           <section className="mcpc__apps">
-            <h3>{s.connected}</h3>
-            {links === null ? <p className="bimp__hint"><span className="spinner spinner--sm" /></p> : links.length === 0 ? <p className="bimp__hint">{s.none}</p> : (
+            <h3 className="t-label">{s.connected}</h3>
+            {links === null ? <p className="bimp__hint"><Busy label={s.connected} /></p> : links.length === 0 ? <p className="bimp__hint">{s.none}</p> : (
               <ul>
                 {links.map((l) => (
                   <li key={l.id}>
@@ -75,7 +72,7 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
                       <b>{l.app || s.anApp}</b>
                       <small>{s.since(timeAgo(l.createdAt, locale, t))}, {l.lastUsedAt ? s.lastUsed(timeAgo(l.lastUsedAt, locale, t)) : s.neverUsed}</small>
                     </div>
-                    <button type="button" onClick={() => void drop(l)}>{s.disconnect}</button>
+                    <Button variant="quiet" size="s" className="mcpc__drop" onClick={() => void drop(l)}>{s.disconnect}</Button>
                   </li>
                 ))}
               </ul>
@@ -83,7 +80,7 @@ export default function ConnectDialog({ onClose }: { onClose: () => void }) {
           </section>
           {error && <p className="sysv-error" role="alert">{error}</p>}
         </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

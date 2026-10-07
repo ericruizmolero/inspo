@@ -4,6 +4,8 @@ import { useState } from "react";
 import { answerMcpAuth } from "@/app/actions/mcp";
 import { useT } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/criterio";
+import AuthWindow from "@/components/AuthWindow";
 
 /** The question itself: which app asks, what it will be able to do, and the two answers. The answer is checked
  *  again on the server (app/actions/mcp.ts) and comes back as the address to return to. */
@@ -29,21 +31,28 @@ export default function AuthorizePanel({ app, returnsTo, workspaces, youAre, que
 
   if (done) {
     return (
-      <div className="auth__sent" role="status">
-        <p className="auth__lead">{done === "deny" ? s.denied : stays ? s.doneStay(name) : s.done(name)}</p>
-      </div>
+      <AuthWindow title={s.pageTitle} live status={t.invite.signedInAs(youAre)}
+        heading={done === "deny" ? s.denied : stays ? s.doneStay(name) : s.done(name)} />
     );
   }
 
   return (
-    <div className="auth__sent">
-      <p className="auth__lead">{s.wants(name)}</p>
+    <AuthWindow
+      title={s.pageTitle}
+      heading={s.wants(name)}
+      status={t.invite.signedInAs(youAre)}
+      footer={<>
+        <Button onClick={() => void answer(false)} disabled={!!busy}>{s.deny}</Button>
+        <Button variant="primary" onClick={() => void answer(true)} disabled={!!busy}>{busy === "allow" ? s.allowing : s.allow}</Button>
+      </>}
+    >
       <p className="auth__hint">{s.can}</p>
-      <p className="auth__hint">{s.scope(workspaces.join(", "))}{!stays && <> {s.returnsTo(returnsTo)}</>}</p>
+      <div className="auth-window__scope">
+        <span>{s.scope}</span>
+        <span className="auth-window__chips">{workspaces.map((w) => <Chip key={w}>{w}</Chip>)}</span>
+      </div>
+      {!stays && <p className="auth__hint">{s.returnsTo(returnsTo)}</p>}
       {error && <p className="modal__error">{error}</p>}
-      <Button variant="primary" block onClick={() => void answer(true)} disabled={!!busy}>{busy === "allow" ? s.allowing : s.allow}</Button>
-      <Button block onClick={() => void answer(false)} disabled={!!busy}>{s.deny}</Button>
-      <p className="auth__hint">{t.invite.signedInAs(youAre)}</p>
-    </div>
+    </AuthWindow>
   );
 }

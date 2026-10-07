@@ -4,9 +4,8 @@
 // with the board and keep improving it; only what the team edits by hand stays fixed.
 import { useState } from "react";
 import { useT } from "../I18nProvider";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Icons } from "../Sidebar";
+import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
+import { Busy, Button, Icon, IconButton, SegmentedControl, TextArea } from "@/components/criterio";
 import type { InspoItem } from "@/types/inspo";
 import { brandId, type BrandFace, type BrandFile, type BrandSections, type BrandSpec } from "@/types/brand";
 import type { ProjectSystem } from "@/types/system";
@@ -117,46 +116,42 @@ export default function BrandImport({ projectId, brand, onClose, onAddSite, onCl
   const tabs: Tab[] = ["site", "files", "text"];
   return (
     <Dialog open onOpenChange={(o) => { if (!o && !busy) onClose(); }}>
-      <DialogContent className="bimp">
-        <div className="modal__header">
-          <DialogTitle>{s.title}</DialogTitle>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} disabled={busy} />}>{Icons.x}</DialogClose>
-        </div>
-        <div className="modal__body bimp__body">
+      <DialogWindow className="bimp" bar={s.open} heading={s.title} closeLabel={t.common.close}>
+        <div className="bimp__body">
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
-          <div className="bimp__tabs" role="tablist">
-            {tabs.map((k) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? "is-on" : ""} disabled={busy} onClick={() => setTab(k)}>{s.tabs[k]}</button>)}
-          </div>
+          {/* While it runs the tabs stay put: a press on another one waits for the steps to finish */}
+          <SegmentedControl tone="paper" className="bimp__tabs" label={s.title} active={tabs.indexOf(tab)}
+            onChange={(i) => { if (!busy) setTab(tabs[i]); }} items={tabs.map((k) => ({ label: s.tabs[k] }))} />
           {steps.length > 0 ? (
             <ol className="bimp__steps" aria-live="polite">
-              {steps.map((st, i) => <li key={i} className={`is-${st.state}`}>{st.state === "run" ? <span className="spinner spinner--sm" /> : st.state === "done" ? Icons.check : st.state === "fail" ? Icons.x : <i />}<span>{st.label}</span></li>)}
+              {steps.map((st, i) => <li key={i} className={`is-${st.state}`}>{st.state === "run" ? <Busy label={st.label} /> : st.state === "done" ? <Icon name="check" size={14} /> : st.state === "fail" ? <Icon name="close" size={14} /> : <i />}<span>{st.label}</span></li>)}
             </ol>
           ) : tab === "site" ? (
             <form className="bimp__form" onSubmit={(e) => { e.preventDefault(); if (url.trim()) void fromSite(); }}>
-              <input className="input" type="url" inputMode="url" placeholder="https://" value={url} onChange={(e) => setUrl(e.currentTarget.value)} autoFocus />
+              <input className="cr-input" type="url" inputMode="url" placeholder="https://" aria-label={s.tabs.site} value={url} onChange={(e) => setUrl(e.currentTarget.value)} autoFocus />
               <p className="bimp__hint">{s.siteHint}</p>
-              <Button variant="primary" size="sm" type="submit" disabled={!url.trim() || busy}>{s.bring}</Button>
+              <Button variant="primary" type="submit" disabled={!url.trim() || busy}>{s.bring}</Button>
             </form>
           ) : tab === "files" ? (
             <div className="bimp__form">
               <label className={`bimp__drop${files.length ? " has-files" : ""}`}
                 onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); setFiles((x) => [...x, ...Array.from(e.dataTransfer.files)].slice(0, 20)); }}>
                 <input type="file" multiple hidden accept=".svg,.png,.webp,.jpg,.jpeg,.woff2,.woff,.otf,.ttf,.pdf" onChange={(e) => { const list = Array.from(e.currentTarget.files ?? []); setFiles((x) => [...x, ...list].slice(0, 20)); e.currentTarget.value = ""; }} />
-                {files.length ? <ul>{files.map((f, i) => <li key={i}>{f.name}<button type="button" onClick={(e) => { e.preventDefault(); setFiles((x) => x.filter((_, j) => j !== i)); }} aria-label={t.brand.remove}>×</button></li>)}</ul> : <span>{s.drop}</span>}
+                {files.length ? <ul>{files.map((f, i) => <li key={i}>{f.name}<IconButton icon="close" variant="quiet" size="xs" onClick={(e) => { e.preventDefault(); setFiles((x) => x.filter((_, j) => j !== i)); }} label={t.brand.remove} /></li>)}</ul> : <span>{s.drop}</span>}
               </label>
               <p className="bimp__hint">{s.filesHint}</p>
-              <Button variant="primary" size="sm" disabled={!files.length || busy} onClick={() => void fromFiles()}>{s.upload(files.length)}</Button>
+              <Button variant="primary" disabled={!files.length || busy} onClick={() => void fromFiles()}>{s.upload(files.length)}</Button>
             </div>
           ) : (
             <form className="bimp__form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) void fromText(); }}>
-              <textarea className="input bimp__text" rows={10} value={text} maxLength={60000} placeholder={s.textPlaceholder} onChange={(e) => setText(e.currentTarget.value)} autoFocus />
+              <TextArea className="bimp__text" rows={10} value={text} maxLength={60000} placeholder={s.textPlaceholder} aria-label={s.tabs.text} onChange={(e) => setText(e.currentTarget.value)} autoFocus />
               <p className="bimp__hint">{s.textHint}</p>
-              <Button variant="primary" size="sm" type="submit" disabled={text.trim().length < 20 || busy}>{s.read}</Button>
+              <Button variant="primary" type="submit" disabled={text.trim().length < 20 || busy}>{s.read}</Button>
             </form>
           )}
           {error && <p className="sysv-error" role="alert">{error}</p>}
         </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

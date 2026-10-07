@@ -2,6 +2,7 @@
 // Where a file goes: drop it or pick it. Shows the file once it is there, with a way to replace or remove it.
 import { useRef, useState, type ReactNode } from "react";
 import { useT } from "../../I18nProvider";
+import { Busy } from "@/components/criterio";
 import { useBrand, type UploadPurpose } from "../context";
 import type { BrandFile } from "@/types/brand";
 
@@ -26,8 +27,8 @@ export function FileSlot({ purpose, accept, onFile, onClear, has, children, clas
       onDrop={(e) => { e.preventDefault(); setOver(false); void take(e.dataTransfer.files[0]); }}>
       {children}
       <div className="be-slot__bar">
-        <button type="button" onClick={() => input.current?.click()} disabled={busy}>{busy ? <span className="spinner spinner--sm" /> : has ? t.brand.logo.replace : (label ?? t.brand.logo.drop)}</button>
-        {has && onClear && <button type="button" onClick={onClear} disabled={busy}>{t.brand.remove}</button>}
+        <button type="button" className="btn btn--sm" onClick={() => input.current?.click()} disabled={busy}>{busy ? <Busy label={t.brand.logo.drop} /> : has ? t.brand.logo.replace : (label ?? t.brand.logo.drop)}</button>
+        {has && onClear && <button type="button" className="btn btn--sm" onClick={onClear} disabled={busy}>{t.brand.remove}</button>}
       </div>
       {error && <p className="be-slot__error" role="alert">{error}</p>}
       <input ref={input} type="file" accept={accept} hidden onChange={(e) => { void take(e.currentTarget.files?.[0]); e.currentTarget.value = ""; }} />

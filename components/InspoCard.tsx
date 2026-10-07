@@ -1,24 +1,19 @@
 "use client";
 
-import { hueFor, Avatar } from "./CommentsPanel";
+import { hueFor } from "./CommentsPanel";
 
 import { Fragment, useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags, Project, TagStatus, type InspoComment } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import ProjectPicker, { IconFolder } from "./ProjectPicker";
+import ProjectPicker from "./ProjectPicker";
 import AreaPicker from "./AreaPicker";
-import { areaIcon } from "./area-icons";
-import { Icons } from "./Sidebar";
-const IconCompass = (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"><circle cx="8" cy="8" r="6.2" /><path d="M10.6 5.4 9.2 9.2 5.4 10.6 6.8 6.8z" /></svg>
-);
 import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, readableDomain } from "@/lib/url";
 import LoopVideo from "./LoopVideo";
+import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, Separator, toneFor } from "@/components/criterio";
 import "./TextRef.css";
-import "./InspoCard.css";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
 import { useImageReady } from "@/hooks/use-image-ready";
@@ -119,21 +114,6 @@ const IconUpload = (
     <path d="M7 10V2M7 2L4 5M7 2l3 3" /><path d="M2 12h10" />
   </svg>
 );
-const IconComment = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-    <path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" />
-  </svg>
-);
-const IconTrash = (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" />
-  </svg>
-);
-const IconX = (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-    <path d="M2 2l8 8M10 2l-8 8" />
-  </svg>
-);
 const IconMore = (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden><circle cx="3.5" cy="8" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="12.5" cy="8" r="1.3" /></svg>
 );
@@ -141,9 +121,6 @@ const IconExternal = (
   <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M4 10l6-6M5 4h5v5" />
   </svg>
-);
-const IconPlay = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M4 2.5v9a.5.5 0 00.77.42l7-4.5a.5.5 0 000-.84l-7-4.5A.5.5 0 004 2.5z" /></svg>
 );
 const IconInfo = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -220,6 +197,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
+  // The video's scrub line: whichever loop plays moves it (LoopVideo writes its transform, no render)
+  const scrubRef = useRef<HTMLSpanElement>(null);
 
   const useManual = !!manualThumbnail && !manualFailed;
   const [frameLoaded, setFrameLoaded] = useState(false);
@@ -389,8 +368,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     <div className="tile__meta">
       <span>{t.labels.type[item.type]}</span>
       {/* "Both" is the legacy sheet author: not a person, so it isn't shown */}
-      {item.addedBy !== "Both" && (<><span className="tile__meta-sep">·</span><span>{item.addedBy}{item.via ? ` ${t.mcp.via(item.via)}` : ""}</span></>)}
-      {domain && (<><span className="tile__meta-sep">·</span><span>{domain}</span></>)}
+      {item.addedBy !== "Both" && (<><span className="tile__meta-sep" aria-hidden /><span>{item.addedBy}{item.via ? ` ${t.mcp.via(item.via)}` : ""}</span></>)}
+      {domain && (<><span className="tile__meta-sep" aria-hidden /><span>{domain}</span></>)}
     </div>
   );
 
@@ -403,30 +382,30 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const gathering = tagJob === "pending" || tagJob === "running";
   const aiChips = gathering ? (
     <div className="tile__tags" role="status">
-      <span className="tile__tag tile__tag--gathering">{t.card.gatheringTags}</span>
+      <span className="cr-chip cr-chip-paper tile__tag tile__tag--gathering">{t.card.gatheringTags}</span>
     </div>
   ) : tags && kind !== "text" && (
     <div className="tile__tags">
-      <span className="tile__tag tile__tag--style">{t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style}</span>
-      {activeTags.map((x) => <span key={x.key} className="tile__tag">{t.taxonomy.tag[x.key as keyof typeof t.taxonomy.tag] ?? x.key}</span>)}
+      <span className="cr-chip cr-chip-paper tile__tag tile__tag--style">{t.taxonomy.style[tags.style as keyof typeof t.taxonomy.style] ?? tags.style}</span>
+      {activeTags.map((x) => <span key={x.key} className="cr-chip cr-chip-paper tile__tag">{t.taxonomy.tag[x.key as keyof typeof t.taxonomy.tag] ?? x.key}</span>)}
     </div>
   );
 
   const filedCount = projectIds.length;
-  const areaPicker = (className: string, onOpenChange?: (o: boolean) => void) => onToggleArea && (
+  const areaPicker = (className: string, onOpenChange?: (o: boolean) => void, iconSize = 16) => onToggleArea && (
     <AreaPicker backs={backs} onToggle={onToggleArea} onOpenChange={onOpenChange}
-      className={`${className}${backs.length ? " is-filed" : ""}`} label={backs.length ? t.system.inSystem(backs.length) : t.system.toSystem}>
-      {IconCompass}{backs.length > 0 && <span className="tile__action-count">{backs.length}</span>}
+      className={`${className}${backs.length ? " is-active" : ""}`} label={backs.length ? t.system.inSystem(backs.length) : t.system.toSystem}>
+      <Icon name="compass" size={iconSize} />
     </AreaPicker>
   );
   const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
     <ProjectPicker
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
       areasIn={areasIn}
-      className={`${className}${filedCount ? " is-filed" : ""}`}
+      className={`${className} cr-btn ${filedCount ? "cr-btn-primary" : "cr-btn-secondary"} cr-btn-s`}
       label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
     >
-      {IconFolder}<span className="tile__go-label">{filedCount ? t.card.filed(filedCount) : t.card.file}</span>
+      <Icon name="folder" size={16} /><span className="tile__go-label">{filedCount ? t.card.filed(filedCount) : t.card.file}</span>
     </ProjectPicker>
   );
 
@@ -485,7 +464,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             </>
           )}
 
-          {loopSrc && <LoopVideo src={loopSrc} className="tile__img tile__loop" />}
+          {loopSrc && <LoopVideo src={loopSrc} className="tile__img tile__loop" progressRef={scrubRef} />}
 
           {useFrame && (
             // A video file: its first frame, still. It plays in the thread.
@@ -497,16 +476,20 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onError={() => setFrameFailed(true)}
             />
           )}
-          {hoverSrc && hovering && <LoopVideo src={hoverSrc} className="tile__img tile__loop" />}
+          {hoverSrc && hovering && <LoopVideo src={hoverSrc} className="tile__img tile__loop" progressRef={scrubRef} />}
 
           {onSelect && (
             <button type="button" className="tile__select" aria-pressed={selected} aria-label={t.select.select}
               onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey); }} onMouseDown={(e) => e.stopPropagation()}>
-              {Icons.check}
+              {/* The system's Checkbox box: a sunken field, ink border, an ink tick once picked */}
+              <span className="cr-check-box" aria-hidden>
+                <svg width={10} height={8} viewBox="0 0 10 8"><path d="M1 4L4 7L9 1" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+              </span>
             </button>
           )}
-          {plays && !loopSrc && isLoaded && <span className="tile__play" aria-hidden>{IconPlay}</span>}
-          {gifChip && isLoaded && score === undefined && <span className="tile__badge">{t.card.gif}</span>}
+          {plays && !loopSrc && isLoaded && <span className="tile__play" aria-hidden><Icon name="play" size={18} /></span>}
+          {plays && isLoaded && <span className="tile__scrub" aria-hidden><span ref={scrubRef} /></span>}
+          {gifChip && isLoaded && score === undefined && <Chip tone="chrome" className="tile__badge">{t.card.gif}</Chip>}
 
           {!useManual && !useDesign && !useFrame && imgSrc && (
             <img
@@ -528,24 +511,24 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             // A text is a page of words: its title and its first lines, running on under the card's edge (TextRef.css)
             <div className="tile__text">
               <span className="tile__text-kind">
-                <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" aria-hidden><path d="M2.5 3.5h9M2.5 7h9M2.5 10.5h5.5" /></svg>
+                <Icon name="text" size={14} />
                 {t.card.text}
               </span>
-              <span className="display tile__text-title">{item.name}</span>
+              <span className="t-title-m tile__text-title">{item.name}</span>
               {posterNote && <p className="tile__text-body">{posterNote}</p>}
             </div>
           )}
           {isError && kind !== "text" && (
             // No screenshot: a typographic poster. Subtle stable tint per domain and the initial as a watermark.
             <div className="tile__fallback" style={{ "--fb-hue": hueFor(domain || item.name) } as React.CSSProperties}>
-              <span className="display tile__fallback-mark" aria-hidden>{item.name.trim().slice(0, 1).toUpperCase()}</span>
+              <span className="t-display tile__fallback-mark" aria-hidden>{item.name.trim().slice(0, 1).toUpperCase()}</span>
               <div className="tile__fallback-top">
                 <span className="tile__fallback-domain">{domain}</span>
                 <span className="tile__fallback-type">{t.labels.type[item.type]}</span>
               </div>
               <div className="tile__fallback-body">
                 <i className="tile__fallback-rule" aria-hidden />
-                <span className="display tile__fallback-name">{item.name}</span>
+                <span className="t-title-m tile__fallback-name">{item.name}</span>
                 {item.note && <span className="tile__fallback-note">{item.note}</span>}
               </div>
             </div>
@@ -553,7 +536,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
 
           {/* Found by search without Jev's reading: why it is here, in the tags the words found */}
           {score === undefined && reason && (
-            <div className="tile__score"><span className="tile__score-pct tile__why">{reason}</span></div>
+            <div className="tile__score"><span className="cr-chip cr-chip-chrome tile__score-pct tile__why">{reason}</span></div>
           )}
           {score !== undefined && (
             <div
@@ -562,63 +545,67 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onMouseDown={(e) => e.stopPropagation()}
               onMouseLeave={() => setWhyOpen(false)}
             >
-              <span className="tile__score-pct">
+              <span className="cr-chip cr-chip-chrome tile__score-pct">
                 {Math.round(score * 100)}%
                 <span className="tile__score-i" aria-hidden>{IconInfo}</span>
               </span>
-              <span className="tile__score-why" role="tooltip">
-                <span className="tile__score-why-label">{t.card.matchLabel}</span>
-                <span className="tile__score-why-text">{reason ?? t.card.matchFallback}</span>
+              {/* Why it matched: the system's Balloon (butter, ink border, bevel), its tail pointing up at the chip */}
+              <span className="cr-balloon tile__score-why" role="tooltip">
+                <span className="cr-balloon-body">
+                  <span className="cr-balloon-title">{t.card.matchLabel}</span>
+                  <span className="cr-balloon-text">{reason ?? t.card.matchFallback}</span>
+                </span>
+                <span className="cr-balloon-tail" aria-hidden />
               </span>
             </div>
           )}
 
           <div
-            className={`tile__actions${uploading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
+            className={`tile__actions cr-on-chrome${uploading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
             {confirmDelete || deleting ? (
               <Fragment key="confirm">
                 <span className="tile__confirm-text">{deleting ? t.card.removing : t.card.confirmRemove}</span>
-                <button className="tile__action tile__action--confirm" onClick={handleDelete} disabled={deleting} autoFocus>
-                  {deleting ? <span className="spinner" /> : t.common.delete}
-                </button>
+                <Button variant="danger" size="s" className="tile__action--confirm" onClick={handleDelete} disabled={deleting} autoFocus>
+                  {deleting ? <Busy label={t.card.removing} /> : t.common.delete}
+                </Button>
                 {!deleting && (
-                  <button className="tile__action" data-tip={t.common.cancel} aria-label={t.common.cancel} onClick={cancelDelete}>{IconX}</button>
+                  <IconButton icon="close" variant="default" size="s" label={t.common.cancel} onClick={cancelDelete} />
                 )}
               </Fragment>
             ) : (
               <Fragment key="actions">
-            {/* Up here, the quieter ones: the site, and the rest behind ··· */}
+            {/* Up here, the quieter ones: the site, and the rest behind ···. Each is its own default IconButton,
+                size s: filled with the hairline, so it reads over any screenshot */}
             {/* A text has no page of its own to open: it is read in its panel */}
-            {kind !== "text" && <a className="tile__action tile__action--link" href={openHref} target="_blank" rel="noopener noreferrer"
-              aria-label={openLabel} title={openLabel} onClick={(e) => e.stopPropagation()}>
-              <span className="tile__action-reveal">{t.card.seeUrl}</span>{IconExternal}
+            {kind !== "text" && <a className="cr-iconbtn cr-iconbtn-default cr-iconbtn-s" href={openHref} target="_blank" rel="noopener noreferrer"
+              aria-label={openLabel} data-tip={openLabel} onClick={(e) => e.stopPropagation()}>
+              {IconExternal}
             </a>}
             {(kind !== "image" || onDelete) && (
               <Popover open={moreOpen} onOpenChange={(o) => { setMoreOpen(o); setPickerOpen(o); }}>
-                <PopoverTrigger className="tile__action" aria-label={t.card.more} data-tip={moreOpen ? undefined : t.card.more} onClick={(e) => e.stopPropagation()}>
-                  {uploading ? <span className="spinner" /> : IconMore}
+                <PopoverTrigger className="cr-iconbtn cr-iconbtn-default cr-iconbtn-s tile__more" aria-label={t.card.more} data-tip={moreOpen ? undefined : t.card.more} onClick={(e) => e.stopPropagation()}>
+                  {uploading ? <Busy label={t.card.more} /> : IconMore}
                 </PopoverTrigger>
-                <PopoverContent align="end" className="pp pp--menu" onClick={(e) => e.stopPropagation()}>
+                {/* The system's Menu: a paper window, its rows MenuItems, the delete set apart by an engraved line */}
+                <PopoverContent align="end" className="cr-menu" onClick={(e) => e.stopPropagation()}>
                   {kind !== "image" && kind !== "text" && (
-                    <button type="button" className="ws__item" onClick={(e) => { setMoreOpen(false); setPickerOpen(false); triggerUpload(e); }}>
-                      <span className="pp__icon" aria-hidden>{IconUpload}</span>
-                      <span className="ws__item-name">{uploadedThumb ? t.card.replaceThumb : t.card.uploadThumb}</span>
-                    </button>
+                    <MenuItem icon={IconUpload} onClick={(e) => { setMoreOpen(false); setPickerOpen(false); triggerUpload(e); }}>
+                      {uploadedThumb ? t.card.replaceThumb : t.card.uploadThumb}
+                    </MenuItem>
                   )}
                   {uploadedThumb && kind !== "image" && (
-                    <button type="button" className="ws__item" onClick={async (e) => { e.stopPropagation(); setMoreOpen(false); setPickerOpen(false); await onRemoveThumbnail(); }}>
-                      <span className="pp__icon" aria-hidden>{IconX}</span>
-                      <span className="ws__item-name">{t.card.removeThumb}</span>
-                    </button>
+                    <MenuItem icon="close" onClick={async (e) => { e.stopPropagation(); setMoreOpen(false); setPickerOpen(false); await onRemoveThumbnail(); }}>
+                      {t.card.removeThumb}
+                    </MenuItem>
                   )}
+                  {onDelete && kind !== "image" && (kind !== "text" || !!uploadedThumb) && <Separator />}
                   {onDelete && (
-                    <button type="button" className="ws__item ws__item--danger" onClick={(e) => { setMoreOpen(false); setPickerOpen(false); handleDelete(e); }}>
-                      <span className="pp__icon" aria-hidden>{IconTrash}</span>
-                      <span className="ws__item-name">{t.card.removeFromInspo}</span>
-                    </button>
+                    <MenuItem icon="trash" danger onClick={(e) => { setMoreOpen(false); setPickerOpen(false); handleDelete(e); }}>
+                      {t.card.removeFromInspo}
+                    </MenuItem>
                   )}
                 </PopoverContent>
               </Popover>
@@ -630,13 +617,14 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           {/* Down here, what is done most with a reference: file it (projects and areas) and talk about it */}
           {!(confirmDelete || deleting) && (onToggleProject || onComments) && (
             <div className={`tile__go${pickerOpen ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-              {picker("tile__go-btn tile__go-btn--file", setPickerOpen)}
-              {areaPicker("tile__go-btn tile__go-btn--icon", setPickerOpen)}
+              {/* The system's ProjectPicker row: the picker Button, then IconButtons size s on a card (l in the viewer) (strong for the
+                  one that matters most, the areas of the system; default for comments) */}
+              {picker("tile__go-pick", setPickerOpen)}
+              {areaPicker("cr-iconbtn cr-iconbtn-strong cr-iconbtn-s", setPickerOpen)}
               {onComments && (
-                <button type="button" className="tile__go-btn" aria-label={t.card.comments}
-                  onClick={(e) => { e.stopPropagation(); onComments(); }}>
-                  {IconComment}<span className={`tile__go-label${commentCount > 0 ? "" : " tile__go-label--word"}`}>{commentCount > 0 ? commentCount : t.card.comment}</span>
-                </button>
+                <IconButton icon="comment" variant="default" size="s"
+                  label={commentCount > 0 ? `${t.card.comments} (${commentCount})` : t.card.comments}
+                  onClick={(e) => { e.stopPropagation(); onComments(); }} />
               )}
             </div>
           )}
@@ -649,17 +637,16 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
       {/* The root of the thread, under the tile: why this site is here, in the words of whoever saved it.
           The typographic poster already carries the note, so it gets nothing. */}
       {!isError && onComments && (caption ? (
-        <button type="button" className="tile__note" onClick={onComments} title={t.card.seeComments}>
+        <button type="button" className="tile__note cr-comment" onClick={onComments} data-tip={t.card.seeComments}>
           {caption.people.length > 1 ? (
-            // Several people in the thread: their circles overlap, whoever saved it first
-            <span className="tile__note-stack" aria-hidden>
-              {caption.people.map((p) => <Avatar key={p.name} name={p.name} image={p.image} size={16} />)}
-            </span>
+            // Several people in the thread: the system's AvatarStack, whoever saved it first
+            <AvatarStack className="tile__note-stack" size={20}
+              people={caption.people.map((p) => ({ initials: p.name.slice(0, 1).toUpperCase(), name: p.name, tone: toneFor(p.name), src: p.image }))} />
           ) : (
-            <Avatar name={caption.name} image={caption.image} size={16} />
+            <Avatar initials={caption.name.slice(0, 1).toUpperCase()} name={caption.name} tone={toneFor(caption.name)} src={caption.image} size={20} />
           )}
-          <span className="tile__note-text"><b className="tile__note-who">{caption.name}</b> {caption.body}</span>
-          {caption.more > 0 && <span className="tile__note-count" aria-label={t.card.replies(caption.more)}>{IconComment}{caption.more}</span>}
+          <span className="tile__note-text cr-comment-text"><b className="tile__note-who">{caption.name}</b> {caption.body}</span>
+          {caption.more > 0 && <span className="tile__note-count" aria-label={t.card.replies(caption.more)}><Icon name="comment" size={12} />{caption.more}</span>}
         </button>
       ) : (
         <button type="button" className="tile__note is-empty" onClick={onComments}>
@@ -671,27 +658,29 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
       {/* Touch devices: caption under the tile since there is no hover */}
       <div className="tile__caption">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <span className="display tile__title">{item.name}</span>
+          <span className="tile__title">{item.name}</span>
           {meta}
           {aiChips}
         </div>
+        {/* Comments with their count: the system's Button, quiet s; the folder: the picker Button, s */}
         {onComments && (
-          <button className={`tile__caption-md${commentCount > 0 ? " is-ready" : ""}`} onClick={onComments} aria-label={t.card.comments}>
-            {IconComment}{commentCount > 0 && commentCount}
-          </button>
+          <Button variant="quiet" size="s" icon="comment" className="tile__caption-pj" onClick={onComments} aria-label={t.card.comments}>
+            {commentCount > 0 && commentCount}
+          </Button>
         )}
-        {picker("tile__caption-md tile__caption-pj")}
-        {areaPicker("tile__caption-md tile__caption-pj")}
-        <a className="tile__caption-md tile__caption-link" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel}>{IconExternal}</a>
+        {picker("tile__caption-pj")}
+        {/* The icon-only ones are the system's default IconButton, size xs */}
+        {areaPicker("cr-iconbtn cr-iconbtn-default cr-iconbtn-xs tile__caption-ib", undefined, 14)}
+        <a className="cr-iconbtn cr-iconbtn-default cr-iconbtn-xs tile__caption-ib" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel} data-tip={openLabel}>{IconExternal}</a>
         {onDelete && (confirmDelete || deleting ? (
           <Fragment key="confirm">
-            <button className="tile__caption-md tile__caption-del is-confirm" onClick={handleDelete} disabled={deleting} aria-label={t.card.confirmDelete}>
-              {deleting ? <span className="spinner" /> : t.common.delete}
-            </button>
-            {!deleting && <button className="tile__caption-md" onClick={cancelDelete} aria-label={t.common.cancel}>{IconX}</button>}
+            <Button variant="danger" size="s" className="tile__caption-del" onClick={handleDelete} disabled={deleting} aria-label={t.card.confirmDelete}>
+              {deleting ? <Busy label={t.card.removing} /> : t.common.delete}
+            </Button>
+            {!deleting && <IconButton icon="close" variant="default" size="xs" className="tile__caption-ib" onClick={cancelDelete} label={t.common.cancel} />}
           </Fragment>
         ) : (
-          <button key="trash" className="tile__caption-md tile__caption-del" onClick={handleDelete} aria-label={t.card.removeFromInspo}>{IconTrash}</button>
+          <IconButton key="trash" icon="trash" variant="default" size="xs" className="tile__caption-ib" onClick={handleDelete} label={t.card.removeFromInspo} />
         ))}
       </div>
     </div>

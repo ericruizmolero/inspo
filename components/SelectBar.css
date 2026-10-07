@@ -1,30 +1,28 @@
-/* The selection bar (components/SelectBar.tsx): the dock's material, where the dock was */
+/* The selection bar (components/SelectBar.tsx): the command bar's material, where the dock was. Chrome panel,
+   hairline, radius-xl and the float; the count as its title, the moves as quiet Buttons, Done the one secondary. */
 .selbar {
   position: absolute; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 26; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 4px; max-width: calc(100% - 32px); box-sizing: border-box; padding: 8px 8px 8px 20px;
-  border-radius: 999px; background: var(--dock-surface); color: var(--dock-ink); border: 1px solid var(--dock-line);
-  box-shadow: 0 18px 48px -12px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.12);
+  display: flex; align-items: center; gap: 4px; max-width: min(720px, calc(100% - 32px)); box-sizing: border-box; padding: 10px 10px 10px 20px;
+  border-radius: var(--radius-xl); background: var(--chrome-panel); color: var(--chrome-text); border: 1px solid var(--chrome-border);
+  box-shadow: var(--float); --focus-ring: var(--ember-glow);
   transition: opacity 180ms var(--ease-out), transform 180ms var(--ease-out);
   @starting-style { opacity: 0; transform: translate(-50%, 8px); }
 }
-.selbar__count { font-size: 15px; font-weight: 550; white-space: nowrap; font-variant-numeric: tabular-nums; padding-right: 8px; }
-.selbar__sep { width: 1px; height: 28px; margin: 0 6px; background: var(--dock-line); }
-.selbar__btn {
-  display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; border: 0; border-radius: 999px;
-  background: none; color: var(--dock-ink-2); font: inherit; font-size: 13.5px; font-weight: 500; white-space: nowrap; cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.12s var(--ease-out);
+/* The count is title-m (.t-title-m on the element) */
+.selbar__count {
+  color: var(--chrome-ink);
+  white-space: nowrap; font-variant-numeric: tabular-nums; padding-right: 8px;
 }
-.selbar__btn:hover, .selbar__btn[data-popup-open] { background: var(--dock-hover); color: var(--dock-ink); }
-.selbar__btn:active { transform: scale(0.97); }
-.selbar__done {
-  height: 40px; padding: 0 20px; margin-left: 2px; border: 0; border-radius: 999px; background: var(--dock-ink); color: var(--dock-surface);
-  font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; transition: transform 0.12s var(--ease-out);
-}
-.selbar__done:active { transform: scale(0.97); }
+/* Between the groups, the system's Separator, vertical (the engraved line) */
+.selbar__sep.cr-sep-v { height: 32px; margin: 0 6px; }
+/* The moves are quiet Buttons, size s (the bar is a toolbar; .cr-on-chrome hands them the chrome's --ib-* tokens);
+   Done the one secondary, size s. An open picker keeps its trigger lit */
+.selbar__btn[data-popup-open] { background: var(--ib-hover); }
+.selbar__done { margin-left: 2px; }
+.selbar .btn:focus-visible { outline-color: var(--ember-glow); }
 @media (max-width: 520px) {
   .selbar { padding-left: 14px; }
   .selbar__btn span { display: none; }
-  .selbar__btn { padding: 0 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .selbar { transition: opacity 180ms var(--ease-out); @starting-style { opacity: 0; transform: translateX(-50%); } }

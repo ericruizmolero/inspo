@@ -3,9 +3,9 @@
 // a clean one for people outside the team. Any member makes one, copies it again, or turns it off.
 import { useEffect, useState } from "react";
 import { useT } from "../I18nProvider";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Icons } from "../Sidebar";
+import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
+import { Busy, Button, Chip, SegmentedControl } from "@/components/criterio";
+import { ArrowUpRight } from "lucide-react";
 import { loadShares, makeShare, stopShare } from "@/app/actions/share";
 import { timeAgo } from "@/lib/i18n/format";
 import type { ShareLink } from "@/lib/share";
@@ -31,41 +31,36 @@ export default function ShareDialog({ projectId, onClose }: { projectId: string;
     if (r.data[0]) void copy(r.data[0]);
   };
   const stop = async (l: ShareLink) => { const r = await stopShare(projectId, l.id); if (r.ok) setLinks(r.data); else setError(r.error); };
+  const modes = ["clean", "full"] as const;
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="bshare">
-        <div className="modal__header">
-          <DialogTitle>{s.title}</DialogTitle>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
-        </div>
-        <div className="modal__body bshare__body">
+      <DialogWindow className="bshare" bar={s.open} heading={s.title} closeLabel={t.common.close}>
+        <div className="bshare__body">
           <DialogDescription className="bimp__lead">{s.lead}</DialogDescription>
-          <fieldset className="bshare__modes">
-            <legend>{s.mode}</legend>
-            {(["clean", "full"] as const).map((m) => (
-              <label key={m} className={mode === m ? "is-on" : ""}>
-                <input type="radio" name="share-mode" value={m} checked={mode === m} onChange={() => setMode(m)} />
-                <span><b>{s[m]}</b><small>{m === "clean" ? s.cleanHint : s.fullHint}</small></span>
-              </label>
-            ))}
-          </fieldset>
+          <div className="bshare__modes">
+            <span className="bshare__legend">{s.mode}</span>
+            <SegmentedControl tone="paper" choice label={s.mode} active={modes.indexOf(mode)} onChange={(i) => setMode(modes[i])}
+              items={modes.map((m) => ({ label: s[m] }))} />
+            <p className="bimp__hint">{mode === "clean" ? s.cleanHint : s.fullHint}</p>
+          </div>
           <form className="bshare__make" onSubmit={(e) => { e.preventDefault(); void make(); }}>
-            <input className="input" value={label} maxLength={80} placeholder={s.labelPlaceholder} aria-label={s.label} onChange={(e) => setLabel(e.currentTarget.value)} />
-            <Button variant="primary" size="sm" type="submit" disabled={busy}>{busy ? <span className="spinner spinner--sm" /> : s.make}</Button>
+            <input className="cr-input" value={label} maxLength={80} placeholder={s.labelPlaceholder} aria-label={s.label} onChange={(e) => setLabel(e.currentTarget.value)} />
+            <Button variant="primary" type="submit" disabled={busy}>{busy ? <Busy label={s.make} /> : s.make}</Button>
           </form>
-          {links === null ? <p className="bimp__hint"><span className="spinner spinner--sm" /></p> : links.length === 0 ? <p className="bimp__hint">{s.none}</p> : (
+          {links === null ? <p className="bimp__hint"><Busy /></p> : links.length === 0 ? <p className="bimp__hint">{s.none}</p> : (
             <ul className="bshare__list">
               {links.map((l) => (
                 <li key={l.id}>
                   <div>
-                    <b>{l.label || s.untitled}<em className={`bshare__mode is-${l.mode}`}>{s[l.mode]}</em></b>
-                    <small>{s.made(l.createdBy ?? "?", timeAgo(l.createdAt, locale, t))} · {l.lastViewedAt ? s.viewed(timeAgo(l.lastViewedAt, locale, t)) : s.never}</small>
+                    <b>{l.label || s.untitled}<Chip tone={l.mode === "full" ? "butter" : "paper"} className="bshare__mode">{s[l.mode]}</Chip></b>
+                    <small>{s.made(l.createdBy ?? "?", timeAgo(l.createdAt, locale, t))}, {l.lastViewedAt ? s.viewed(timeAgo(l.lastViewedAt, locale, t)) : s.never}</small>
                     <code>{urlOf(l).replace(/^https?:\/\//, "")}</code>
                   </div>
                   <span>
-                    <button type="button" onClick={() => void copy(l)}>{copied === l.id ? s.copied : s.copyLink}</button>
-                    <a href={urlOf(l)} target="_blank" rel="noreferrer" aria-label={s.title}>↗</a>
-                    <button type="button" className="is-danger" onClick={() => void stop(l)}>{s.revoke}</button>
+                    <Button size="s" onClick={() => void copy(l)}>{copied === l.id ? s.copied : s.copyLink}</Button>
+                    {/* The system's strong IconButton, size s, as a link */}
+                    <a className="cr-iconbtn cr-iconbtn-strong cr-iconbtn-s" href={urlOf(l)} target="_blank" rel="noreferrer" aria-label={s.title} data-tip={s.title}><ArrowUpRight size={16} aria-hidden /></a>
+                    <Button variant="quiet" size="s" onClick={() => void stop(l)}>{s.revoke}</Button>
                   </span>
                 </li>
               ))}
@@ -73,7 +68,7 @@ export default function ShareDialog({ projectId, onClose }: { projectId: string;
           )}
           {error && <p className="sysv-error" role="alert">{error}</p>}
         </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

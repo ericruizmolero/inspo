@@ -8,6 +8,8 @@ import { useSection } from "../BrandPresentation";
 import { colorCodes, inkOn } from "@/lib/brand-values";
 import { COLOR_GROUPS, HEX_RE, brandId, type BrandColor } from "@/types/brand";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import { IconButton, SegmentedControl } from "@/components/criterio";
 
 function Codes({ hex }: { hex: string }) {
   const c = colorCodes(hex);
@@ -44,18 +46,18 @@ function ColorForm({ color, isAccent, onChange, onRemove, onAccent, onMove, firs
             {COLOR_GROUPS.map((g) => <option key={g} value={g}>{s.groups[g]}</option>)}
           </select>
         </label>
-        <label><span>{s.size}</span>
-          <span className="bc-form__weights" role="radiogroup" aria-label={s.size}>
-            {[1, 2, 3, 4].map((w) => <button key={w} type="button" role="radio" aria-checked={color.weight === w} className={color.weight === w ? "is-on" : ""} onClick={() => onChange({ ...color, weight: w })}><i style={{ width: 4 + w * 3, height: 4 + w * 3 }} /></button>)}
-          </span>
-        </label>
+        <div className="bc-form__size"><span aria-hidden>{s.size}</span>
+          {/* How much of the brand it covers: a SegmentedControl as a choice (radios), each a square of its size */}
+          <SegmentedControl choice tone="paper" label={s.size} className="bc-form__weights" active={color.weight - 1} onChange={(i) => onChange({ ...color, weight: i + 1 })}
+            items={[1, 2, 3, 4].map((w) => ({ label: <><i aria-hidden style={{ width: 4 + w * 3, height: 4 + w * 3 }} /><span className="cr-visually-hidden">{w}</span></> }))} />
+        </div>
       </div>
       <div className="bc-form__foot">
-        <button type="button" className={`bc-form__accent${isAccent ? " is-on" : ""}`} onClick={onAccent} disabled={isAccent} title={s.isAccent}>{isAccent ? s.accent : s.makeAccent}</button>
+        <button type="button" className={`btn btn--quiet btn--sm bc-form__accent${isAccent ? " is-on" : ""}`} onClick={onAccent} disabled={isAccent} data-tip={s.isAccent}>{isAccent ? s.accent : s.makeAccent}</button>
         <span>
-          {!first && <button type="button" onClick={() => onMove(-1)} aria-label={t.brand.moveUp}>↑</button>}
-          {!last && <button type="button" onClick={() => onMove(1)} aria-label={t.brand.moveDown}>↓</button>}
-          <button type="button" className="bc-form__remove" onClick={onRemove}>{t.brand.remove}</button>
+          {!first && <IconButton icon={<ArrowUp size={14} aria-hidden />} variant="quiet" size="xs" onClick={() => onMove(-1)} label={t.brand.moveUp} />}
+          {!last && <IconButton icon={<ArrowDown size={14} aria-hidden />} variant="quiet" size="xs" onClick={() => onMove(1)} label={t.brand.moveDown} />}
+          <button type="button" className="btn btn--quiet btn--sm is-danger" onClick={onRemove}>{t.brand.remove}</button>
         </span>
       </div>
     </div>
@@ -73,7 +75,7 @@ function Tile({ c, i, list }: { c: BrandColor; i: number; list: BrandColor[] }) 
   const replace = (items: BrandColor[]) => set({ items });
   const inner = (
     <>
-      <span className="bc-name">{c.name}{isAccent && <i className="bc-dot" style={{ background: ink }} title={t.brand.color.isAccent} />}</span>
+      <span className="bc-name">{c.name}{isAccent && <i className="bc-dot" style={{ background: ink }} data-tip={t.brand.color.isAccent} aria-label={t.brand.color.isAccent} />}</span>
       {c.role && <span className="bc-role">{c.role}</span>}
       <Codes hex={c.hex} />
       {copied && <span className="bc-copied">{t.brand.color.copied}</span>}
@@ -82,7 +84,7 @@ function Tile({ c, i, list }: { c: BrandColor; i: number; list: BrandColor[] }) 
   const style = { background: c.hex, color: ink, ["--w" as string]: c.weight, ["--accent" as string]: accent };
   if (mode !== "edit") {
     return (
-      <button type="button" className={`bc-tile bc-tile--w${c.weight}`} style={style} title={t.brand.color.copy}
+      <button type="button" className={`bc-tile bc-tile--w${c.weight}`} style={style} data-tip={t.brand.color.copy}
         onClick={() => { void navigator.clipboard?.writeText(c.hex).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1200); }); }}>
         {inner}
       </button>

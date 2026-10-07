@@ -18,6 +18,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
       defaultOpen={await sidebarOpen()}
       title={t.settings.title}
       base="/settings"
+      crumbs={false}
       groups={[
         { items: [{ slug: "account", label: s.account, icon: "account" }, { slug: "feedback", label: s.feedback, icon: "feedback" }] },
         {

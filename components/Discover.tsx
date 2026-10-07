@@ -7,10 +7,10 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DIRECTORY, SKILLS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Icons } from "./Sidebar";
 import type { directory as enDirectory } from "@/lib/i18n/en/directory";
 import { useT } from "./I18nProvider";
 import DiscoverSkills from "./DiscoverSkills";
+import { Chip, Icon, MenuItem, PillBar, PillBarSep, SegmentedControl } from "@/components/criterio";
 import "./Discover.css";
 
 interface Site extends DirectorySite { group: string }
@@ -37,13 +37,15 @@ export default function Discover({ section = "sites", onSection, templates }: {
   const [shelf, setShelf] = useState<Shelf>("all");
   const [groupsOpen, setGroupsOpen] = useState(false);
   const groupTitle = (k: string) => t.directory.groups[k as GroupKey]?.title ?? k;
+  // The bar floats over the list, so it is product chrome: dark in both themes
+  const SECTIONS = ["templates", "sites", "skills"] as const;
   const sections = templates && onSection && (
-    <div className="tt-modes disc__sections" role="tablist" aria-label={t.discover.sections.label}>
-      {(["templates", "sites", "skills"] as const).map((k) => (
-        <button key={k} type="button" role="tab" aria-selected={section === k} className={`tt-mode${section === k ? " is-on" : ""}`} onClick={() => onSection(k)}>{t.discover.sections[k]}</button>
-      ))}
-    </div>
+    <PillBar className="disc__sections">
+      <SegmentedControl tone="chrome" label={t.discover.sections.label} active={SECTIONS.indexOf(section)} onChange={(i) => onSection(SECTIONS[i])}
+        items={SECTIONS.map((k) => ({ label: t.discover.sections[k] }))} />
+    </PillBar>
   );
+  const SHELVES = (["all", "new", "featured"] as const).filter((k) => k !== "new" || FRESH.length > 0);
   if (section === "templates" && templates) return (
     <>
       {templates}
@@ -62,29 +64,23 @@ export default function Discover({ section = "sites", onSection, templates }: {
       <div className="disc__bar">
         {sections}
         {/* What to look at first: everything, what just came in, what we open most. The kinds of resource wait in a menu */}
-        <div className="tt-modes disc__shelves" role="tablist" aria-label={t.discover.shelves}>
-          {(["all", "new", "featured"] as const).filter((k) => k !== "new" || FRESH.length > 0).map((k) => (
-            <button key={k} type="button" role="tab" aria-selected={shelf === k} className={`tt-mode${shelf === k ? " is-on" : ""}`} onClick={() => setShelf(k)}>
-              {t.discover.shelf[k]}{k === "new" && <b>{FRESH.length}</b>}
-            </button>
-          ))}
-        </div>
-        <Popover open={groupsOpen} onOpenChange={setGroupsOpen}>
-          <PopoverTrigger className={`disc__group${group ? " is-on" : ""}`}>
-            {group ? groupTitle(group) : t.discover.groups} {Icons.chevron}
+        <PillBar className="disc__shelves">
+          <SegmentedControl tone="chrome" label={t.discover.shelves} active={SHELVES.indexOf(shelf)} onChange={(i) => setShelf(SHELVES[i])}
+            items={SHELVES.map((k) => ({ label: t.discover.shelf[k], count: k === "new" ? FRESH.length : undefined }))} />
+          <PillBarSep />
+          <Popover open={groupsOpen} onOpenChange={setGroupsOpen}>
+          <PopoverTrigger className={`cr-seg-item disc__group${group ? " is-on" : ""}`}>
+            {group ? groupTitle(group) : t.discover.groups} <Icon name="chevron-down" size={16} />
           </PopoverTrigger>
-          <PopoverContent align="start" className="pp pp--menu">
-            <button type="button" className={`ws__item${group === null ? " is-active" : ""}`} onClick={() => { setGroup(null); setGroupsOpen(false); }}>
-              <span className="ws__item-name">{t.discover.all}</span>{group === null && <span className="ws__item-check">{Icons.check}</span>}
-            </button>
+          <PopoverContent align="start" className="cr-menu disc__menu">
+            <MenuItem checked={group === null} onClick={() => { setGroup(null); setGroupsOpen(false); }}>{t.discover.all}</MenuItem>
             {DIRECTORY.map((g) => (
-              <button key={g.key} type="button" className={`ws__item${group === g.key ? " is-active" : ""}`} title={t.directory.groups[g.key as GroupKey]?.hint}
-                onClick={() => { setGroup(g.key); setGroupsOpen(false); }}>
-                <span className="ws__item-name">{groupTitle(g.key)}</span>{group === g.key && <span className="ws__item-check">{Icons.check}</span>}
-              </button>
+              <MenuItem key={g.key} checked={group === g.key} data-tip={t.directory.groups[g.key as GroupKey]?.hint}
+                onClick={() => { setGroup(g.key); setGroupsOpen(false); }}>{groupTitle(g.key)}</MenuItem>
             ))}
           </PopoverContent>
-        </Popover>
+          </Popover>
+        </PillBar>
       </div>
     </>
   );
@@ -202,9 +198,9 @@ function DiscoverList({ group, shelf }: { group: string | null; shelf: Shelf }) 
                   <a className="disc-row" href={site.url} target="_blank" rel="noopener noreferrer"
                     onPointerEnter={(e) => peek.show(e, site.url)} onPointerMove={(e) => peek.place(e)}>
                     <b className="disc-row__name">{site.name}</b>
-                    {isNewSite(site) && <i className="disc-card__new">{t.discover.new}</i>}
+                    {isNewSite(site) && <Chip tone="paper" className="disc-row__new">{t.discover.new}</Chip>}
                     <span className="disc-row__text">{t.directory.items[site.url] ?? ""}</span>
-                    <span className="disc-row__host">{siteHost(site.url)} ↗</span>
+                    <span className="disc-row__host">{siteHost(site.url)}<Icon name="arrow-up-right" size={14} /></span>
                   </a>
                 </li>
               ))}

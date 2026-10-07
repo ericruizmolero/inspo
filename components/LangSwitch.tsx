@@ -1,9 +1,10 @@
 "use client";
-// Language select, next to ThemeSwitch. Saves the choice
-// (cookie, and on the account if signed in) and re-renders the server with the new locale.
+// Language, next to ThemeSwitch: the system's SegmentedControl in its paper tone, a radio group of the two
+// languages. Saves the choice (cookie, and on the account if signed in) and re-renders the server with the new locale.
 import { setLanguage } from "@/app/actions/library";
 import { useTransition } from "react";
 import { LOCALES, type Locale } from "@/lib/i18n/locale";
+import { SegmentedControl } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
 // Each language uses its own name
@@ -14,7 +15,7 @@ export default function LangSwitch() {
   const [pending, start] = useTransition();
 
   const choose = (v: Locale) => {
-    if (v === locale) return;
+    if (v === locale || pending) return;
     start(async () => {
       // The action writes the cookie and Next re-renders the page in the new locale
       await setLanguage(v);
@@ -22,19 +23,14 @@ export default function LangSwitch() {
   };
 
   return (
-    <span className="select">
-      <select
-        aria-label={t.settings.language}
-        aria-busy={pending}
-        disabled={pending}
-        value={locale}
-        onChange={(e) => choose(e.target.value as Locale)}
-      >
-        {LOCALES.map((l) => <option key={l} value={l}>{LABEL[l]}</option>)}
-      </select>
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M3 4.5l3 3 3-3" />
-      </svg>
-    </span>
+    <SegmentedControl
+      tone="paper"
+      choice
+      className="theme-seg"
+      label={t.settings.language}
+      active={LOCALES.indexOf(locale)}
+      onChange={(i) => choose(LOCALES[i])}
+      items={LOCALES.map((l) => ({ label: <span lang={l}>{LABEL[l]}</span> }))}
+    />
   );
 }

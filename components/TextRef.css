@@ -1,63 +1,54 @@
 /* A text saved as a reference (lib/text-refs.ts): how it is written in the add dialog and read in its panel */
 
-.add__text {
-  display: block; width: 100%; min-height: 180px; max-height: min(360px, 45dvh); resize: vertical;
-  padding: 12px 14px; border: 0; border-radius: var(--radius-m); outline: none;
-  background: var(--surface); color: var(--text);
-  font: inherit; font-size: 14px; line-height: 1.55;
-  box-shadow: inset 0 0 0 1px var(--border);
-  transition: box-shadow 0.15s;
-}
-.add__text::placeholder { color: var(--muted); }
-.add__text:focus-visible { box-shadow: inset 0 0 0 1px var(--border-strong), 0 0 0 3px color-mix(in srgb, var(--text) 8%, transparent); }
-.add__text-back {
-  align-self: flex-start; padding: 0; border: 0; background: none; cursor: pointer;
-  color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: 3px;
-}
-.add__text-back:hover { color: var(--text); }
+/* The words: the system's TextArea, tall enough for a paragraph or two */
+.add__text.cr-textarea { min-height: 180px; max-height: min(360px, 45dvh); resize: vertical; line-height: var(--lh-body); }
+.add__text-back { align-self: flex-start; }
 
 /* The panel's page: the words whole, set to be read */
 .ip-text { flex: 1; min-height: 0; overflow-y: auto; padding: clamp(24px, 5vw, 56px) clamp(20px, 5vw, 64px); }
 .ip-text__page { max-width: 68ch; margin: 0 auto; }
-.ip-text__kind { font-size: 12px; font-weight: 600; color: var(--muted); }
-.ip-text__title { margin: 6px 0 24px; font-size: clamp(26px, 3.2vw, 38px); line-height: 1.08; color: var(--text-strong); text-wrap: balance; }
-.ip-text__body { font-size: 15px; line-height: 1.65; color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
+.ip-text__kind { font-size: var(--fs-small); font-weight: 500; color: var(--text-2); }
+/* The title is an h2 (title-l) */
+.ip-text__title { margin: 6px 0 24px; color: var(--text-strong); text-wrap: balance; }
+.ip-text__body { font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
 /* Typed in place: no frame, the caret is the only sign; what was saved is said under it */
 .ip-text__title[contenteditable] { outline: none; cursor: text; caret-color: var(--text); }
 .ip-text__body[contenteditable] { min-height: 40vh; outline: none; cursor: text; caret-color: var(--text); }
 .ip-text__body[contenteditable]:focus { color: var(--text); }
-.ip-text__state { position: sticky; bottom: 0; margin: 12px 0 0; font-size: 12px; color: var(--muted); }
-.ip-text__state.is-error { color: var(--danger); }
-.ip-text__missing { font-size: 14px; color: var(--muted); }
+/* Saving and saved: a cell of the system's StatusBar, kept in sight at the bottom */
+.ip-text__state.cr-statusbar { position: sticky; bottom: 0; width: fit-content; max-width: 100%; margin: 12px 0 0; }
+.ip-text__state .cr-statusbar-cell.is-error { color: var(--danger); }
+.ip-text__missing { font-size: var(--fs-ui); color: var(--muted); }
 .ip-text__wait { display: grid; gap: 10px; }
 .ip-text__wait i { display: block; height: 12px; border-radius: 6px; background: var(--surface-2); animation: ip-text-wait 1.2s ease-in-out infinite alternate; }
 @keyframes ip-text-wait { from { opacity: 0.45; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ip-text__wait i { animation: none; } }
 
-/* The card of a text: a page of words on the app's own surface, square so its first lines have room.
-   Hierarchy by weight and colour alone: a quiet label, the title, then the words fading out under the edge */
+/* The card of a text: the system's NoteCard, square so its first lines have room. The "Text" label with its icon,
+   the title in display, then the words fading out under the edge. Flat: surface-raised with a hairline */
 .tile__text {
   position: relative; box-sizing: border-box; aspect-ratio: 1 / 1; overflow: hidden; container-type: inline-size;
   display: flex; flex-direction: column; gap: 8px;
-  padding: clamp(16px, 7cqw, 28px) clamp(16px, 7cqw, 28px) 0;
-  background: linear-gradient(180deg, var(--surface-2), var(--surface) 55%);
-  /* A hairline of light along the top edge, as the glass surfaces have */
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
+  padding: clamp(16px, 7cqw, 22px) clamp(16px, 8cqw, 22px) 0;
+  background: var(--surface-raised);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 .tile__media[style] > .tile__text { aspect-ratio: auto; height: 100%; }
 /* Under the pointer the card's actions come up along the bottom: the words clear out from under them */
 .tile__text::after {
   content: ""; position: absolute; inset: auto 0 0; height: 104px; pointer-events: none;
-  background: linear-gradient(transparent, var(--surface) 52%);
+  background: linear-gradient(transparent, var(--surface-raised) 52%);
   opacity: 0; transition: opacity 0.2s;
 }
 .tile:hover .tile__text::after, .tile:focus-within .tile__text::after { opacity: 1; }
 @media (hover: none) { .tile__text::after { display: none; } }
-.tile__text-kind { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
-.tile__text-title { margin-top: 2px; font-size: clamp(19px, 9cqw, 30px); line-height: 1.05; letter-spacing: -0.01em; color: var(--text-strong); text-wrap: balance; overflow-wrap: anywhere; }
+.tile__text-kind { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); color: var(--text-2); }
+/* The title is title-m (.t-title-m on the element) */
+.tile__text-title { margin-top: 2px; color: var(--text); text-wrap: balance; overflow-wrap: anywhere; }
 .tile__text-body {
   flex: 1; min-height: 0; margin: 0; overflow: hidden;
-  font-size: clamp(12px, 4.7cqw, 15px); line-height: 1.5; color: var(--text-2); text-wrap: pretty; overflow-wrap: anywhere;
+  font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); text-wrap: pretty; overflow-wrap: anywhere;
   /* The words go on below the card's edge: the last lines fade instead of being cut */
   -webkit-mask-image: linear-gradient(#000 calc(100% - 56px), transparent calc(100% - 8px));
   mask-image: linear-gradient(#000 calc(100% - 56px), transparent calc(100% - 8px));

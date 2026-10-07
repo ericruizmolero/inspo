@@ -8,6 +8,7 @@ import { AddButton, ItemTools, useSection } from "../BrandPresentation";
 import { Editable, EditableNumber } from "../edit/Editable";
 import { FACE_ROLES, brandId, type BrandFace, type ScaleStep } from "@/types/brand";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Busy, Chip, Icon } from "@/components/criterio";
 import { FileSlot } from "../edit/FileSlot";
 import { weightInName } from "@/lib/font-names";
 
@@ -30,7 +31,7 @@ function FindFace({ initial, onFound, label }: { initial: string; onFound: (f: P
   return (
     <form className="bt-find" onSubmit={(e) => { e.preventDefault(); void go(); }}>
       <label><span>{t.brand.type.family}</span><input className="input" value={family} onChange={(e) => setFamily(e.currentTarget.value)} maxLength={80} autoFocus /></label>
-      <button type="submit" className="be-btn" disabled={busy || !family.trim()}>{busy ? <><span className="spinner spinner--sm" /> {t.brand.type.finding}</> : label}</button>
+      <button type="submit" className="btn btn--sm" disabled={busy || !family.trim()}>{busy ? <><Busy label={t.brand.type.finding} /> {t.brand.type.finding}</> : label}</button>
     </form>
   );
 }
@@ -50,7 +51,7 @@ function Face({ face, i }: { face: BrandFace; i: number }) {
         <p className="bt-specimen" style={{ fontFamily: stack(face.id), fontWeight: heavy }}>{face.family}</p>
         <div className="bt-meta">
           {mode === "edit" ? (
-            <select className="bt-meta__role" value={face.role} onChange={(e) => put({ role: e.currentTarget.value as BrandFace["role"] })} aria-label={s.face}>
+            <select className="input bt-meta__role" value={face.role} onChange={(e) => put({ role: e.currentTarget.value as BrandFace["role"] })} aria-label={s.face}>
               {FACE_ROLES.map((r) => <option key={r} value={r}>{s.roles[r]}</option>)}
             </select>
           ) : <span>{s.roles[face.role]}</span>}
@@ -59,7 +60,7 @@ function Face({ face, i }: { face: BrandFace; i: number }) {
           {mode === "edit" && (
             <span className="bt-meta__tools">
               <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger className="be-link">{s.family}</PopoverTrigger>
+                <PopoverTrigger className="cr-btn cr-btn-quiet cr-btn-s">{s.family}</PopoverTrigger>
                 <PopoverContent className="be-pop" align="end"><FindFace initial={face.family} label={s.findFace} onFound={(f) => { put(f); setOpen(false); }} /></PopoverContent>
               </Popover>
               <ItemTools list={type.faces} index={i} onChange={(faces) => set({ faces, scale: type.scale.filter((x) => faces.some((f) => f.id === x.faceId)) })} />
@@ -80,15 +81,15 @@ function Face({ face, i }: { face: BrandFace; i: number }) {
         {mode === "edit" && (face.files?.length ?? 0) > 0 && <p className="brand-hint">{s.uploaded((face.files ?? []).map((x) => `${x.weight}${x.style === "italic" ? " italic" : ""}`).join(", "))}</p>}
         {mode === "edit" && (
           <div className="bt-weightpick" role="group" aria-label={s.weight}>
-            {WEIGHTS.map((w) => <button key={w} type="button" className={face.weights.includes(w) ? "is-on" : ""} aria-pressed={face.weights.includes(w)}
-              onClick={() => put({ weights: face.weights.includes(w) ? face.weights.filter((x) => x !== w) : [...face.weights, w].sort((a, b) => a - b) })}>{w}</button>)}
+            {WEIGHTS.map((w) => <Chip key={w} pressed={face.weights.includes(w)}
+              onClick={() => put({ weights: face.weights.includes(w) ? face.weights.filter((x) => x !== w) : [...face.weights, w].sort((a, b) => a - b) })}>{w}</Chip>)}
           </div>
         )}
       </div>
       <div className="bt-weights" style={{ ["--n" as string]: Math.min(weights.length, 4) }}>
         {weights.slice(-4).map((w) => (
           <div key={w} className="bt-weight">
-            <span>{s.weights[w] ?? w} · {w}</span>
+            <span>{s.weights[w] ? <>{s.weights[w]} <em>{w}</em></> : w}</span>
             <i style={{ fontFamily: stack(face.id), fontWeight: w }} aria-hidden>Aa</i>
           </div>
         ))}
@@ -107,12 +108,11 @@ function Step({ step, i, sample }: { step: ScaleStep; i: number; sample: string 
     <div className={`bt-step${step.px <= 20 ? " is-small" : ""}`}>
       <div className="bt-step__label">
         <Editable value={step.label} onCommit={(label) => label && put({ label })} placeholder={s.label} maxLength={30} />
-        <span> · </span>
         <EditableNumber value={step.px} min={6} max={400} label={s.size} suffix="px" onCommit={(px) => put({ px })} />
         {mode === "edit" && (
           <span className="bt-step__more">
-            <select value={step.faceId} onChange={(e) => put({ faceId: e.currentTarget.value })} aria-label={s.face}>{type.faces.map((f) => <option key={f.id} value={f.id}>{f.family}</option>)}</select>
-            <select value={step.weight} onChange={(e) => put({ weight: Number(e.currentTarget.value) })} aria-label={s.weight}>{WEIGHTS.map((w) => <option key={w} value={w}>{w}</option>)}</select>
+            <select className="input" value={step.faceId} onChange={(e) => put({ faceId: e.currentTarget.value })} aria-label={s.face}>{type.faces.map((f) => <option key={f.id} value={f.id}>{f.family}</option>)}</select>
+            <select className="input" value={step.weight} onChange={(e) => put({ weight: Number(e.currentTarget.value) })} aria-label={s.weight}>{WEIGHTS.map((w) => <option key={w} value={w}>{w}</option>)}</select>
             <EditableNumber value={step.lineHeight} min={0.6} max={3} step={0.05} label={s.lineHeight} onCommit={(lineHeight) => put({ lineHeight })} />
             <EditableNumber value={step.tracking} min={-0.2} max={0.5} step={0.005} label={s.tracking} suffix="em" onCommit={(tracking) => put({ tracking })} />
             <ItemTools list={type.scale} index={i} onChange={(scale) => set({ scale })} />
@@ -139,7 +139,7 @@ export default function TypeSection() {
       {type.faces.map((f, i) => <Face key={f.id} face={f} i={i} />)}
       {mode === "edit" && type.faces.length < 4 && (
         <Popover open={adding} onOpenChange={setAdding}>
-          <PopoverTrigger className="be-add">+ {s.addFace}</PopoverTrigger>
+          <PopoverTrigger className="btn btn--quiet be-add"><Icon name="plus" size={20} />{s.addFace}</PopoverTrigger>
           <PopoverContent className="be-pop" align="start">
             <FindFace initial="" label={s.findFace} onFound={(f) => { set({ faces: [...type.faces, { id: brandId(), role: type.faces.some((x) => x.role === "display") ? "text" : "display", note: "", ...f }] }); setAdding(false); }} />
           </PopoverContent>
@@ -147,7 +147,7 @@ export default function TypeSection() {
       )}
       {(type.scale.length > 0 || (mode === "edit" && type.faces.length > 0)) && (
         <div className="bt-scale">
-          <h3 className="brand-k">{s.scale}</h3>
+          <h3 className="t-label brand-k">{s.scale}</h3>
           {mode === "edit" && <Editable as="p" className="bt-sample" value={type.sample} onCommit={(v) => set({ sample: v })} placeholder={`${s.sample}: ${sample}`} maxLength={120} />}
           <div className="bt-scale__grid">
             <div className="bt-scale__big">{big.map((x) => <Step key={x.id} step={x} i={idx(x)} sample={sample} />)}</div>

@@ -14,7 +14,9 @@ import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, q
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Connectors from "./Connectors";
 import Island from "./Island";
+import { Button as CrButton, EmptyState, IconButton, PillBar, PillBarSep, SegmentedControl } from "@/components/criterio";
 import SearchBar from "./SearchBar";
+import { Busy, Icon, StatusBar, StatusCell } from "@/components/criterio";
 import InspoCard, { captionFor } from "./InspoCard";
 import type { NewInspoInput } from "./AddInspoModal";
 import GatherBar from "./GatherBar";
@@ -970,7 +972,7 @@ export default function InspoClient({
         ...v.keywords, ...v.credits,
       ] : [];
       const hit = labels.filter((l) => words.some((w) => norm(l).split(/\s+/).some((p) => p.startsWith(w)))).slice(0, 3);
-      out[it.web] = hit.length ? hit.join(" · ") : t.search.nearInMeaning;
+      out[it.web] = hit.length ? hit.join(", ") : t.search.nearInMeaning;
     }
     return out;
   }, [filtered, words, tagMap, t]);
@@ -1437,9 +1439,11 @@ export default function InspoClient({
       )}
       {addError && (
         <div className="toasts toasts--top" role="alert">
-          <div className="toast toast--error" onClick={() => setAddError(null)}>
-            <span className="toast__dot" />
+          {/* A small paper window (the TipWindow's ground, ink border and bevel): the red dot, what failed, and close */}
+          <div className="cr-window toast toast--error" onClick={() => setAddError(null)}>
+            <span className="toast__dot" aria-hidden />
             <span className="toast__text"><span className="toast__title">{addError.title}</span><span className="toast__sub">{addError.detail}</span></span>
+            <IconButton icon="close" variant="strong" size="xs" label={t.toast.dismiss} onClick={(e) => { e.stopPropagation(); setAddError(null); }} />
           </div>
         </div>
       )}
@@ -1463,7 +1467,7 @@ export default function InspoClient({
         onAdd={() => setShowAdd(true)}
         onDirectory={openDirectory}
       />}
-      {boardDrag && <div className="board-drop" aria-hidden><span className="display">{t.add.dropHere}</span></div>}
+      {boardDrag && <div className="board-drop" aria-hidden><span className="t-title-l">{t.add.dropHere}</span></div>}
       {showAdd && (
         <AddInspoModal
           onClose={() => { setShowAdd(false); setAddInitial(undefined); }}
@@ -1492,28 +1496,28 @@ export default function InspoClient({
             }}
             onDirectory={openDirectory} quota={quota} />
           <Logo size={28} className="topbar__logo" />
-          {/* On desktop one white pill, the island's twin on the right; on a phone the two buttons sit in the bar */}
+          {/* The system's ViewSwitcher, the island's twin on the right: Board and System, then the ways in and add.
+              On a phone the labels go and the icons stay */}
           <div className="topbar__actions">
-            {currentProject && (
-              <>
-                <span className="topbar__modes" role="tablist" aria-label={t.system.button}>
-                  <button type="button" role="tab" className={`topbar__mode${projectView === "board" ? " is-on" : ""}`} aria-selected={projectView === "board"} onClick={() => setProjectView("board")}>
-                    {Icons.all} {t.system.modeBoard}
-                  </button>
-                  <button type="button" role="tab" className={`topbar__mode topbar__system${projectView === "system" ? " is-on" : ""}`} aria-selected={projectView === "system"}
-                    title={systemStale ? t.system.stale(systemStale) : undefined} onClick={() => setProjectView("system")}>
-                    {Icons.compass} {t.system.modeSystem}
-                    <span className="topbar__fill">{t.system.fill(systemFilled, SYSTEM_AREAS.length)}</span>
-                    {systemStale > 0 && <i className="topbar__dot" aria-hidden />}
-                  </button>
-                </span>
-              </>
-            )}
-            {currentProject && <span className="topbar__actions-sep" aria-hidden />}
-            {/* The ways in from outside (the extension, an AI client over MCP), beside the other way of adding */}
-            <Connectors />
-            <span className="topbar__actions-sep" aria-hidden />
-            <Button variant="icon" className="topbar__add" onClick={() => setShowAdd(true)} aria-label={t.app.add}>{Icons.plus}</Button>
+            <PillBar className="topbar__switch">
+              {currentProject && (
+                <>
+                  <SegmentedControl label={t.system.button} active={projectView === "system" ? 1 : 0}
+                    onChange={(i) => setProjectView(i === 1 ? "system" : "board")}
+                    items={[
+                      { icon: "grid", label: <span className="topbar__mode-label">{t.system.modeBoard}</span> },
+                      { icon: "gauge", label: <span className="topbar__mode-label">{t.system.modeSystem}</span>,
+                        count: t.system.fill(systemFilled, SYSTEM_AREAS.length), dot: systemStale > 0,
+                        title: systemStale ? t.system.stale(systemStale) : undefined },
+                    ]} />
+                  <PillBarSep />
+                </>
+              )}
+              {/* The ways in from outside (the extension, an AI client over MCP), beside the other way of adding */}
+              <Connectors />
+              <PillBarSep />
+              <IconButton icon="plus" label={t.app.add} variant="quiet" className="topbar__add" onClick={() => setShowAdd(true)} />
+            </PillBar>
           </div>
         </header>
 
@@ -1605,6 +1609,7 @@ export default function InspoClient({
         ) : spaceItems.length === 0 && space === "inbox" ? (
           <InboxZero
             projects={projects}
+            systems={systems}
             items={items}
             links={links}
             ratioOf={ratioOf}
@@ -1629,11 +1634,10 @@ export default function InspoClient({
               renderCard={renderCard}
             />
             {filtered.length === 0 && (
-              <div className="empty empty--over">
-                <span className="display">{t.app.nothingHere}</span>
+              <EmptyState className="empty empty--over" title={t.app.nothingHere}>
                 <span>{searchBusy ? t.app.searchingShort : t.app.tryAnother}</span>
-                <Button variant="ghost" size="sm" onClick={resetFilters} style={{ marginTop: 8 }}>{t.app.seeEverything}</Button>
-              </div>
+                <CrButton className="empty__reset" onClick={resetFilters}>{t.app.seeEverything}</CrButton>
+              </EmptyState>
             )}
           </>
         )}
@@ -1647,11 +1651,22 @@ export default function InspoClient({
         )}
         {items.length > 0 && ((searchHere && (spaceItems.length > 0 || !!currentProject)) || agentSpeaks) && selected.size === 0 && (
           <div className="dock">
+            {/* What the search counts, over the bar: the system's StatusBar, a cell per fact */}
             {filtering && (
-              <p className="dock__status" role="status" aria-live="polite">
-                {t.search.results(filtered.length)}{jevBusy && <span className="dock__status-more"> · {t.search.reading}</span>}
-              </p>
+              <StatusBar className="dock__status">
+                <StatusCell>{t.search.results(filtered.length)}</StatusCell>
+                {jevBusy && <StatusCell><Busy label={t.search.reading} />{t.search.reading}</StatusCell>}
+              </StatusBar>
             )}
+            {/* The card handed to the agent wears a ring wherever it is shown */}
+            {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--text) !important; outline-offset: 3px; }`}</style>}
+            {/* What the agent said and did: a small paper window over the bar (the system's TipWindow) */}
+            {agent && agentSpeaks && (
+              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
+            )}
+            {/* The command bar: one chrome panel, what the board is for over the search */}
+            {((space === "inbox" && spaceItems.length > 0 && !filtering && !agent) || (searchHere && (spaceItems.length > 0 || !!currentProject))) && (
+            <div className="dock__bar">
             {/* On a project's board, always: what the board is for, and the step to the system (the first time it also
                 marks the project as started, so it opens on its system from then on) */}
             {space === "inbox" && spaceItems.length > 0 && !filtering && !agent && (
@@ -1670,15 +1685,12 @@ export default function InspoClient({
                   setParams({ view: "system" });
                 }} />
             )}
-            {agent && agentSpeaks && (
-              <AgentCard agent={agent} projects={projects} onConfirm={() => void confirmAgent()} onCancel={() => setAgent((a) => (a ? { ...a, pending: [] } : a))} onClose={() => setAgent(null)} onAsk={(order) => void askAgent(order)} onUndo={(i) => void undoAgent(i)} />
-            )}
-            {/* The card handed to the agent wears a ring wherever it is shown */}
-            {agentTargetItem && <style>{`[data-id="${agentTargetItem.id}"].tile, [data-id="${agentTargetItem.id}"].sysf-ref { outline: 2px solid var(--dock-ink, #f2f2ef) !important; outline-offset: 3px; }`}</style>}
             {searchHere && (spaceItems.length > 0 || currentProject) && (
               <SearchBar className="sb--dock" filters={filters} text={query} onFilters={setFilters} onText={setQuery}
                 vocab={vocab} busy={searchBusy} gathering={gathering} swatches={swatches} faces={authorImages} onAsk={(v) => void askAgent(v)} asking={!!agent?.busy}
                 target={agentTargetItem ? { name: agentTargetItem.name, image: smallImageOf(agentTargetItem) } : null} onClearTarget={() => setAgentTarget(null)} quick={agentQuick} />
+            )}
+            </div>
             )}
           </div>
         )}
@@ -1742,12 +1754,16 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
   const guides = agent.done.filter((d) => d.kind === "guide" && d.ok);
   const asks = agent.done.filter((d) => d.kind === "ask" && d.ok && d.options?.length);
   return (
-    <div className="dock__agent" role="status" aria-live="polite">
-      <div className="dock__agent-head">
-        <span className="dock__agent-q">{agent.text}</span>
-        <button type="button" className="dock__agent-x" aria-label={t.agent.dismiss} onClick={onClose}>{Icons.x}</button>
-      </div>
-      {agent.busy && !agent.say ? <p className="dock__agent-say"><span className="spinner spinner--sm" /> {t.agent.thinking}</p> : null}
+    // The system's TipWindow: a paper window with the moss bar ("Agent") and the strong close; the request, what it
+    // said, what it did and the steps that wait for a yes in its body
+    <section className="cr-window dock__agent" aria-label={t.agent.title}>
+      <header className="cr-window-bar">
+        <span className="cr-window-title"><Icon name="sparkle" size={16} />{t.agent.title}</span>
+        <IconButton icon="close" variant="strong" size="xs" className="dock__agent-x" label={t.agent.dismiss} onClick={onClose} />
+      </header>
+      <div className="cr-window-body dock__agent-body" role="status" aria-live="polite">
+      <p className="dock__agent-q">{agent.text}</p>
+      {agent.busy && !agent.say ? <p className="dock__agent-say"><Busy label={t.agent.thinking} /> {t.agent.thinking}</p> : null}
       {agent.error && <p className="dock__agent-say dock__agent-say--error">{t.agent.failed}: {agent.error}</p>}
       {agent.say && <p className="dock__agent-say">{agent.say}</p>}
       {agent.done.filter((d) => d.kind !== "guide" && d.kind !== "ask").length > 0 && (
@@ -1755,7 +1771,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
           {agent.done.map((d, i) => d.kind === "guide" || d.kind === "ask" ? null : (
             <li key={i} className={`${d.ok ? "" : "is-failed"}${d.undone ? " is-undone" : ""}`}>{d.ok ? Icons.check : Icons.x}
               <span>{d.ok ? line(d) : d.error}{d.ok && (d.kind === "decide" || d.kind === "organize") && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span>
-              {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
+              {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="btn btn--quiet btn--sm dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
             </li>
           ))}
         </ul>
@@ -1764,14 +1780,14 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
         <div key={`q${i}`} className="dock__agent-ask">
           <p>{q.text}</p>
           <div className="dock__agent-options">
-            {q.options!.map((o) => <button key={o.label} type="button" className="dock__agent-option" disabled={agent.busy} title={o.order} onClick={() => onAsk(o.order)}>{o.label}</button>)}
+            {q.options!.map((o) => <button key={o.label} type="button" className="btn btn--sm" disabled={agent.busy} data-tip={o.order} onClick={() => onAsk(o.order)}>{o.label}</button>)}
           </div>
         </div>
       ))}
       {guides.map((g, i) => (
         <div key={`g${i}`} className="dock__agent-guide">
           <p>{g.text}</p>
-          {g.topic && g.topic !== "other" && g.topic !== "export_md" && <a className="btn btn--sm btn--primary" href="/extension/connect" target="_blank" rel="noreferrer">{Icons.arrow} {t.agent.guides[g.topic]}</a>}
+          {g.topic && g.topic !== "other" && g.topic !== "export_md" && <a className="btn btn--sm btn--primary" href="/extension/connect" target="_blank" rel="noreferrer">{t.agent.guides[g.topic]} {Icons.arrow}</a>}
         </div>
       ))}
       {agent.pending.length > 0 && (
@@ -1779,12 +1795,13 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
           <span className="dock__agent-pending-title">{t.agent.pendingTitle(agent.pending.length)}</span>
           <ul>{agent.pending.map((a, i) => <li key={i}>{will(a)}</li>)}</ul>
           <div className="dock__agent-actions">
-            <Button variant="primary" size="sm" disabled={agent.busy} onClick={onConfirm}>{agent.busy ? <span className="spinner spinner--sm" /> : Icons.check} {t.agent.confirm}</Button>
-            <Button variant="ghost" size="sm" disabled={agent.busy} onClick={onCancel}>{t.agent.cancel}</Button>
+            <Button variant="primary" size="sm" disabled={agent.busy} onClick={onConfirm}>{agent.busy ? <Busy label={t.agent.thinking} /> : Icons.check} {t.agent.confirm}</Button>
+            <Button size="sm" disabled={agent.busy} onClick={onCancel}>{t.agent.cancel}</Button>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </section>
   );
 }
 

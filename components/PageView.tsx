@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useT } from "./I18nProvider";
+import { EmptyState } from "@/components/criterio";
 
 /** Page height in 1440px-wide pixels */
 const at1440 = (img: HTMLImageElement) => Math.round((img.naturalHeight * 1440) / (img.naturalWidth || 1440));
@@ -48,7 +49,7 @@ export default function PageView({ src, alt, fit }: {
             />
           </div>
         ) : (
-          <div className="pn-empty">{t.panel.noCapture}</div>
+          <EmptyState className="pn-empty" title={t.panel.noCapture} />
         )}
       </div>
     </div>

@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
 import dynamic from "next/dynamic";
 import { useT } from "./I18nProvider";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/criterio";
 import Logo from "@/components/Logo";
 
 // Only once someone opens it
@@ -28,7 +27,7 @@ export default function GuestStart() {
           <Logo />
           <span>savvia.studio</span>
         </span>
-        <Link href="/login" className={buttonVariants({ variant: "ghost", size: "sm" })}>{t.common.signIn}</Link>
+        <Button size="s" href="/login">{t.common.signIn}</Button>
       </header>
 
       <EmptyStart

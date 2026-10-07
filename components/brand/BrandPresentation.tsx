@@ -17,6 +17,8 @@ import VoiceSection from "./sections/VoiceSection";
 import ImagerySection from "./sections/ImagerySection";
 import ApplicationsSection from "./sections/ApplicationsSection";
 import AssetsSection from "./sections/AssetsSection";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import { Chip, Icon, IconButton } from "@/components/criterio";
 import "./brand.css";
 
 
@@ -35,9 +37,9 @@ export function ItemTools<T>({ list, index, onChange, className = "" }: { list: 
   const move = (d: -1 | 1) => { const n = [...list]; const j = index + d; if (j < 0 || j >= n.length) return; [n[index], n[j]] = [n[j], n[index]]; onChange(n); };
   return (
     <span className={`be-tools ${className}`}>
-      {index > 0 && <button type="button" onClick={() => move(-1)} aria-label={t.brand.moveUp} title={t.brand.moveUp}>↑</button>}
-      {index < list.length - 1 && <button type="button" onClick={() => move(1)} aria-label={t.brand.moveDown} title={t.brand.moveDown}>↓</button>}
-      <button type="button" onClick={() => onChange(list.filter((_, i) => i !== index))} aria-label={t.brand.remove} title={t.brand.remove}>×</button>
+      {index > 0 && <IconButton icon={<ArrowUp size={14} aria-hidden />} variant="strong" size="xs" onClick={() => move(-1)} label={t.brand.moveUp} />}
+      {index < list.length - 1 && <IconButton icon={<ArrowDown size={14} aria-hidden />} variant="strong" size="xs" onClick={() => move(1)} label={t.brand.moveDown} />}
+      <IconButton icon="close" variant="strong" size="xs" onClick={() => onChange(list.filter((_, i) => i !== index))} label={t.brand.remove} />
     </span>
   );
 }
@@ -46,7 +48,7 @@ export function ItemTools<T>({ list, index, onChange, className = "" }: { list: 
 export function AddButton({ label, onClick, className = "" }: { label: string; onClick: () => void; className?: string }) {
   const { mode } = useBrand();
   if (mode !== "edit") return null;
-  return <button type="button" className={`be-add ${className}`} onClick={onClick}><span aria-hidden>+</span> {label}</button>;
+  return <button type="button" className={`btn btn--quiet be-add ${className}`} onClick={onClick}><Icon name="plus" size={20} />{label}</button>;
 }
 
 /** A section: its rule (brand · section, n / total), its heading, its lede; who wrote it, in the app */
@@ -61,11 +63,11 @@ function Frame({ k, n, total, title, lede, onLede, children, wide }: {
   return (
     <section id={`brand-${k}`} className={`brand-sec brand-sec--${k}${wide ? " is-wide" : ""}`} data-section={k} aria-labelledby={`brand-${k}-h`}>
       <div className="brand-rule">
-        <span className="brand-rule__n">{pad(n)} / {pad(total)}<i aria-hidden>·</i>{label}</span>
+        <span className="brand-rule__n">{pad(n)} / {pad(total)}<i aria-hidden />{label}</span>
         <span className="brand-rule__right">
           {mode === "edit" && saving.has(k) && <em className="brand-saving">{t.brand.saving}</em>}
-          {mode === "edit" && src && <em className={`brand-src brand-src--${src}`}>{t.brand.src[src]}</em>}
-          {mode === "edit" && src === "team" && <button type="button" className="brand-handback" title={t.brand.handBackHint} onClick={() => release(k)}>{t.brand.handBack}</button>}
+          {mode === "edit" && src && <Chip tone={src === "team" ? "moss" : "paper"} className="brand-src">{t.brand.src[src]}</Chip>}
+          {mode === "edit" && src === "team" && <button type="button" className="cr-btn cr-btn-quiet cr-btn-s brand-handback" data-tip={t.brand.handBackHint} onClick={() => release(k)}>{t.brand.handBack}</button>}
         </span>
       </div>
       <h2 id={`brand-${k}-h`} className="brand-h">{title ?? label}</h2>

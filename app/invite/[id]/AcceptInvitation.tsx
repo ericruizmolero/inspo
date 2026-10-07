@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useT } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
+import { Avatar, toneFor } from "@/components/criterio";
+import AuthWindow from "@/components/AuthWindow";
 
-export default function AcceptInvitation({ id, teamName, inviterName, inviterEmail, youAre }: {
-  id: string; teamName: string; inviterName: string; inviterEmail: string; youAre: string;
+export default function AcceptInvitation({ id, teamName, inviterName, inviterEmail, inviterImage, youAre }: {
+  id: string; teamName: string; inviterName: string; inviterEmail: string; inviterImage?: string | null; youAre: string;
 }) {
   const { t } = useT();
   const router = useRouter();
@@ -29,22 +31,28 @@ export default function AcceptInvitation({ id, teamName, inviterName, inviterEma
 
   if (done) {
     return (
-      <div className="auth__sent" role="status">
-        <p className="auth__lead">{t.invite.joined(teamName)}</p>
+      <AuthWindow title={t.invite.pageTitle} live heading={t.invite.joined(teamName)} status={t.invite.signedInAs(youAre)}>
         <p className="auth__hint">{t.invite.opening}</p>
-      </div>
+      </AuthWindow>
     );
   }
 
   return (
-    <div className="auth__sent">
-      <p className="auth__lead">{t.invite.invitesYou(inviterName, teamName)}</p>
-      <p className="auth__hint">{inviterEmail} · {t.invite.sharedLibrary}</p>
+    <AuthWindow
+      title={t.invite.pageTitle}
+      heading={t.invite.invitesYou(inviterName, teamName)}
+      status={t.invite.signedInAs(youAre)}
+      footer={<Button variant="primary" onClick={accept} disabled={busy}>{busy ? t.invite.joining : t.invite.join}</Button>}
+    >
+      <div className="auth-window__from">
+        <Avatar initials={inviterName.slice(0, 1).toUpperCase()} name={inviterName} tone={toneFor(inviterName)} src={inviterImage} size={32} />
+        <span className="auth-window__who">
+          <span className="auth-window__name">{inviterName}</span>
+          <span className="auth-window__email">{inviterEmail}</span>
+        </span>
+      </div>
+      <p className="auth__hint">{t.invite.sharedLibrary}</p>
       {error && <p className="modal__error">{error}</p>}
-      <Button variant="primary" block onClick={accept} disabled={busy}>
-        {busy ? t.invite.joining : t.invite.join}
-      </Button>
-      <p className="auth__hint">{t.invite.signedInAs(youAre)}</p>
-    </div>
+    </AuthWindow>
   );
 }

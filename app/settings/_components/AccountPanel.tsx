@@ -5,16 +5,12 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
-import { UserAvatar } from "@/components/WorkspaceMenu";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
 
 export default function AccountPanel({ user, personal }: { user: SessionUser; personal: Workspace | null }) {
   const personalId = personal?.id ?? null;
@@ -23,7 +19,10 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
   const photoRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user.name);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  // Each error sits under the control it is about
+  const [nameError, setNameError] = useState("");
+  const [photoError, setPhotoError] = useState("");
+  const [outError, setOutError] = useState("");
   const [saved, setSaved] = useState(false);
 
   // The name goes on the user and on the personal workspace, which carries the same name
@@ -31,21 +30,21 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
     e.preventDefault();
     const value = name.trim();
     if (!value || value === user.name) return;
-    setBusy(true); setError(""); setSaved(false);
+    setBusy(true); setNameError(""); setSaved(false);
     const { error: err } = await authClient.updateUser({ name: value });
     if (!err && personalId) await authClient.organization.update({ organizationId: personalId, data: { name: value } });
     setBusy(false);
-    if (err) { setError(err.message ?? t.ws.renameFailed); return; }
+    if (err) { setNameError(err.message ?? t.ws.renameFailed); return; }
     setSaved(true);
     router.refresh();
   };
 
   // The photo is a 96px data URL on user.image (Better Auth), like the workspace logo
   const setPhoto = async (image: string | null) => {
-    setBusy(true); setError("");
+    setBusy(true); setPhotoError("");
     const { error: err } = await authClient.updateUser({ image });
     setBusy(false);
-    if (err) { setError(err.message ?? t.ws.photoFailed); return; }
+    if (err) { setPhotoError(err.message ?? t.ws.photoFailed); return; }
     router.refresh();
   };
   const onPhotoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +52,7 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
     e.target.value = "";
     if (!file) return;
     try { await setPhoto(await fileToSquareDataURL(file, 96)); }
-    catch (err) { setError(messageOf(err, t, t.ws.imageFailed)); }
+    catch (err) { setPhotoError(messageOf(err, t, t.ws.imageFailed)); }
   };
 
   const signOut = async () => {
@@ -64,84 +63,48 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
 
   return (
     <div className="page__body">
-      {error && <p className="modal__error">{error}</p>}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.profile}</CardTitle>
-          <CardDescription>{t.settings.profileHint}</CardDescription>
-        </CardHeader>
-        <CardContent className="card-stack">
-          <div className="setting-row">
-            <UserAvatar name={user.name} image={user.image} className="setting-row__avatar" />
-            <div className="setting-row__actions">
-              <Button size="sm" onClick={() => photoRef.current?.click()} disabled={busy}>
-                {user.image ? t.ws.changePhoto : t.ws.addPhoto}
-              </Button>
-              {user.image && <Button variant="ghost" size="sm" onClick={() => setPhoto(null)} disabled={busy}>{t.ws.removePhoto}</Button>}
-            </div>
+      <SettingsWindow title={t.settings.profile} description={t.settings.profileHint}>
+        <FieldRow label={t.settings.photo} error={photoError}>
+          <span className="setting-photo">
+            <Avatar initials={user.name.slice(0, 1).toUpperCase()} name={user.name} tone={toneFor(user.name)} src={user.image} size={44} />
+            <Button onClick={() => photoRef.current?.click()} disabled={busy}>
+              {user.image ? t.ws.changePhoto : t.ws.addPhoto}
+            </Button>
+            {user.image && <Button variant="quiet" onClick={() => setPhoto(null)} disabled={busy}>{t.ws.removePhoto}</Button>}
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPhotoFile} />
-          </div>
-          <Separator />
-          <form onSubmit={saveName} className="field">
-            <Label htmlFor="account-name" className="field__label">{t.settings.name}</Label>
-            <div className="invite">
-              <Input id="account-name" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
-                placeholder={t.ws.yourName} maxLength={60} required />
+          </span>
+        </FieldRow>
+        <form onSubmit={saveName}>
+          <FieldRow label={t.settings.name} htmlFor="account-name" error={nameError}
+            action={
               <Button variant="primary" type="submit" disabled={busy || !name.trim() || name.trim() === user.name}>
                 {saved ? t.settings.saved : t.settings.save}
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            }>
+            <input id="account-name" className="cr-input" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
+              placeholder={t.ws.yourName} maxLength={60} required aria-invalid={nameError ? true : undefined} />
+          </FieldRow>
+        </form>
+        <FieldRow label={t.settings.email} hint={t.settings.emailHint} htmlFor="account-email">
+          <input id="account-email" className="cr-input" value={user.email} readOnly />
+        </FieldRow>
+      </SettingsWindow>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.email}</CardTitle>
-          <CardDescription>{t.settings.emailHint}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Input value={user.email} readOnly aria-label={t.settings.email} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.appearance}</CardTitle>
-          <CardDescription>{t.settings.appearanceHint}</CardDescription>
-        </CardHeader>
-        <CardContent className="card-stack">
-          <div className="setting-line"><span>{t.settings.theme}</span><ThemeSwitch /></div>
-          <Separator />
-          <div className="setting-line"><span>{t.settings.language}</span><LangSwitch /></div>
-        </CardContent>
-      </Card>
+      <SettingsWindow title={t.settings.appearance} description={t.settings.appearanceHint}>
+        <FieldRow label={t.settings.theme}><ThemeSwitch /></FieldRow>
+        <FieldRow label={t.settings.language}><LangSwitch /></FieldRow>
+      </SettingsWindow>
 
       {personal && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.settings.outputLanguage}</CardTitle>
-            <CardDescription>{t.settings.outputLanguagePersonalHint}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="setting-line">
-              <span>{t.settings.language}</span>
-              <OutputLanguageSwitch workspaceId={personal.id} value={personal.outputLanguage} onError={setError} />
-            </div>
-          </CardContent>
-        </Card>
+        <SettingsWindow title={t.settings.outputLanguage} description={t.settings.outputLanguagePersonalHint}>
+          <FieldRow label={t.settings.language} error={outError}>
+            <OutputLanguageSwitch workspaceId={personal.id} value={personal.outputLanguage} onError={setOutError} />
+          </FieldRow>
+        </SettingsWindow>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.session}</CardTitle>
-          <CardDescription>{t.settings.sessionHint}</CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button variant="ghost" size="sm" onClick={signOut}>{t.ws.signOut}</Button>
-        </CardFooter>
-      </Card>
+      <SettingsWindow title={t.settings.session} note={t.settings.sessionHint}
+        actions={<Button onClick={signOut}>{t.ws.signOut}</Button>} />
     </div>
   );
 }

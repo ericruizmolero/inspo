@@ -1,52 +1,101 @@
 # Fundamentos (tokens)
 
-Fuente de verdad: `app/globals.css` (bloque `:root` y `:root[data-theme="light"]`) y `app/fonts.ts`. Si cambias un valor allí, cámbialo aquí en el mismo commit.
+Fuente de verdad: `app/globals.css` (bloque `:root` y `:root[data-theme="light"]`), `app/fonts.ts` y `components/criterio/criterio.css`. Si cambias un valor allí, cámbialo aquí en el mismo commit.
+
+## Origen
+
+Los valores salen del sistema de diseño Criterio (claude.ai/artifact/RM3rCVaxFN4rg8E6XofybK, `tokens.json`). → [decisión](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
 
 ## Color
 
-Un neutro cálido (un rastro de amarillo) compartido por los dos temas, para que el oscuro no sea más frío que el claro.
+Dos temas: **Board** (oscuro, el suelo del producto) y **Paper** (claro). La paleta de marca y el cromo son iguales en los dos.
 
-| Token | Oscuro | Claro | Uso |
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `--paper` | `#EDE6D6` | Papel de marca; botón secundario, suelo del tema claro |
+| `--paper-light` | `#F6F1E6` | Tarjetas y paneles sobre papel |
+| `--paper-pressed` | `#D9CFBA` | Secundario pulsado |
+| `--ink` | `#1B1B18` | Tinta: texto sobre papel, butter y ember; borde de todo control |
+| `--board` | `#0F0F0F` | Suelo negro del producto |
+| `--board-card` | `#1A1A1A` | Superficies sobre board (el `card` del sistema; `--card` es de shadcn) |
+| `--moss` / `--moss-light` / `--moss-dark` | `#4F6B3A` / `#7E9A5C` / `#24301C` | Bibliotecas, anillo al día, éxito |
+| `--ember` / `--ember-glow` | `#E8892B` / `#F6A848` | Lo único cálido de la vista: el primario, un punto; foco sobre cromo |
+| `--butter` | `#FBF1C7` | Sugerencias y consejos, nada más |
+| `--field` / `--field-ink` / `--field-border` / `--field-placeholder` | Board: `#0A0A09` / `--paper` / `#6E695F` / `#8A847A`; Paper: `#FFFFFF` / `--ink` / `--ink` / `#6E695F` | Campos, casillas, interruptores y pistas de progreso: un pozo hundido bajo el suelo. En Board, casi negro con texto papel y borde gris de 1,5 px; en Paper, blanco con una línea suave de 1 px (`#D9D1BF`, `--field-stroke`), no la tinta: "softer". Botones y chips mantienen la tinta. La ventana modal (`DialogWindow`) los lleva siempre en Paper |
+| `--disabled` / `--disabled-text` / `--disabled-border` | `#E2DBCB` / `#6E695F` / `#B9B2A3` | Control desactivado |
+| `--danger-deep` | `#B3362C` | Relleno del `Button` danger (confirmar algo que destruye) |
+| `--chrome` / `--chrome-panel` / `--chrome-raised` | `#161616` / `#1C1C1C` / `#2A2A2A` (Paper: `--paper-light` / `--paper-light` / `--disabled`) | Cromo del producto; sigue al tema |
+| `--chrome-border` | `#262626` (Paper: `#D9D1BF`) | Línea alrededor del cromo |
+| `--chrome-ink` | `--paper` (Paper: `--ink`) | Texto fuerte sobre el cromo |
+| `--chrome-text` / `--chrome-text-muted` / `--chrome-muted` | `#D8D0C0` / `#B8B1A3` / `#8A847A` (Paper: `#3D3B35` / `#5A5850` / `#6E695F`) | Texto sobre cromo |
+
+Roles que siguen al tema:
+
+| Token | Board | Paper | Uso |
 | --- | --- | --- | --- |
-| `--bg` | `#0e0e0d` | `#f3f3f0` | Fondo de página |
-| `--panel` | `#151514` | `#f9f9f7` | Paneles, tarjetas grandes |
-| `--surface` | `#1d1d1b` | `#ffffff` | Botón por defecto, popovers |
-| `--surface-2` | `#252523` | `#e8e8e4` | Hover, relleno de estado |
-| `--surface-3` | `#2f2f2c` | `#d9d9d4` | Scrollbar, relleno fuerte |
-| `--border` | `rgba(255,255,250,.07)` | `rgba(0,0,0,.12)` | Línea casi invisible (usar poco) |
-| `--border-strong` | `rgba(255,255,250,.14)` | `rgba(0,0,0,.24)` | Inputs |
-| `--text` | `#f2f2ef` | `#0e0e0d` | Texto principal, primario invertido |
-| `--text-2` | `#b6b6b1` | `#34342f` | Texto secundario |
-| `--muted` | `#8a8a84` | `#5d5d57` | Ayudas, iconos en reposo |
-| `--muted-2` | `#6a6a65` | `#76766f` | Lo más apagado |
-| `--text-strong` | `#fff` | `#000` | Hover del primario |
-| `--danger` / `--success` / `--warning` | `#e5645a` / `#5ac97a` / `#e5b45a` | `#c23a30` / `#267d3f` / `#94640c` | Estados |
+| `--bg` (`--surface-page`) | `--board` | `--paper` | Fondo de página |
+| `--panel` (`--surface-raised`) | `--board-card` | `--paper-light` | Tarjetas y paneles |
+| `--surface` | `--chrome-panel` | `--paper-light` | Popovers, rellenos |
+| `--surface-2` | `--chrome-raised` | `--disabled` | Hover, relleno de estado |
+| `--surface-3` | `#34342F` | `--paper-pressed` | Scrollbar, relleno fuerte |
+| `--border` | `#2A2A2A` | `#D9D1BF` | Línea de tarjeta, decorativa |
+| `--border-strong` | `#3A3A35` | `--disabled-border` | Separadores fuertes |
+| `--text` | `--paper` | `--ink` | Texto principal |
+| `--text-2` (`--text-muted`) | `#B8B1A3` | `#5A5850` | Texto secundario (9:1 y 5,6:1) |
+| `--muted` / `--muted-2` | `--chrome-muted` / `#6E695F` | `--disabled-text` / `--chrome-muted` | Ayudas, iconos en reposo |
+| `--focus` (`--focus-ring`) | `--ember-glow` | `--ink` | Anillo de foco |
+| `--danger` / `--success` / `--warning` | `#E5645A` / `--moss-light` / `--ember-glow` | `#B3362C` / `--moss` / `#94640C` | Estados |
 
 Reglas:
-- Nunca `#fff`, `#000` ni `rgba(255,255,255,…)` sueltos para UI: tokens o `color-mix(in srgb, var(--text) N%, transparent)`.
-- Excepciones a propósito: la tarjeta de recursos del sidebar y los overlays sobre capturas se quedan oscuros en los dos temas.
-- Los alias de shadcn (`--primary`, `--card`, `--sidebar-*`…) apuntan a estos tokens; no se les da valor propio.
-
-### Cristal (dock, islas, barras)
-
-Tokens `--dock-*` (en `globals.css`, bloque del dock): `--dock-ink`, `--dock-ink-2`, `--dock-muted`, `--dock-surface`, `--dock-surface-pop`, `--dock-hover`, `--dock-chip`, `--dock-fill`, `--dock-line`, `--dock-danger`, `--dock-shadow`, `--dock-blur`. Oscuro: superficie `rgba(18,18,17,.84)` + `blur(24px) saturate(1.3)`. Claro: `rgba(255,255,255,.72)` + `blur(24px) saturate(1.6)`. Cualquier superficie flotante nueva usa estos, no inventa otro cristal.
+- Ember es el primario; lo que era primario no se baja. Butter solo para lo que sugiere la app.
+- Nunca colores sueltos para UI: tokens o `color-mix()` con tokens.
+- Los alias de shadcn (`--primary` = ember, `--card`, `--sidebar-*`…) apuntan a estos tokens.
+- Los `--dock-*` del cromo apuntan a `--chrome*`, que sigue al tema: sin cristal ni desenfoque.
 
 ## Tipografía
 
-- **Familia única**: Inter variable con eje `opsz` (`app/fonts.ts`, variable `--font-inter`, expuesta como `--font`). El texto pequeño se abre y los títulos se cierran solos.
-- **Mono**: `--font-mono` (ui-monospace / SF Mono). Solo datos literales.
-- **Base**: `body` 14 px / 1.45, antialiased.
-- **Escala en uso** (por frecuencia en el CSS): 11 · 12 · 12.5 · 13 · 13.5 · 14 · 16 · 18 · 20 · 24 · 32 px. Lo normal en UI está entre 12 y 14. No introducir tamaños nuevos sin motivo.
-- **Pesos**: 400 cuerpo, 500 UI y botones, 550 etiquetas y títulos pequeños, 600 títulos. Clase `.display`: 600, tracking -0.025em, interlineado 1.1.
-- `h1–h3` y `.display` con `text-wrap: balance`; `p` con `text-wrap: pretty`.
+Un solo sitio: el bloque "Type: the one place" de `app/globals.css`. Ocho pasos, cada uno con su tamaño, peso, interlineado y tracking:
+
+| Paso | Clase | Fuente | Tamaño / peso / interlineado | Elemento |
+| --- | --- | --- | --- | --- |
+| display | `.t-display` | Bricolage | 40 (28 en móvil) / 800 / 1, −1 px | `h1` |
+| title-l | `.t-title-l` | Bricolage | 28 / 700 / 1,1 | `h2` |
+| title-m | `.t-title-m` | Bricolage | 20 / 700 / 1,15 | `h3` |
+| title-s | `.t-title-s` | Bricolage | 16 / 700 / 1,2 | `h4` a `h6` |
+| body | `.t-body` | Archivo | 17 / 400 / 1,5 | |
+| ui | `.t-ui` | Archivo | 15 / 500 / 1,4 | `body` |
+| small | `.t-small` | Archivo | 13 / 400 / 1,45 | |
+| label | `.t-label` | Archivo | 12 / 500 / 1,3 | |
+
+Reglas:
+- **El elemento da el nivel.** Un `h1` es igual en todas las vistas, y un `h2` también. Una página tiene un solo `h1`.
+- **La clase, solo si el aspecto debe ser otro que el nivel**: un título de diálogo es un `h2` con `.t-title-m`; una etiqueta no es un `h3`, es un `p.t-label`.
+- **El CSS de un componente no pone tamaño, peso, interlineado, tracking ni familia**: elige un paso. Los componentes del sistema (`components/criterio/criterio.css`) usan los tokens `--fs-*`, `--lh-*` y `--tr-*`.
+- Los `text-xs/sm/base/lg` de Tailwind (piezas de shadcn) apuntan a label, ui, ui y body.
+- La única excepción es el contenido de la marca del usuario en la presentación (`.brand-content`), que lleva su propia tipografía.
+- **Mono**: `--font-mono`, solo datos literales (el fichero crudo, hex, código).
+
+## Controles
+
+Una sola altura: **44**, la del `Button` m. Campos, selects y el `SegmentedControl` de papel (un pozo hundido con la opción elegida como tecla con bisel) miden 44 y se alinean con el botón que llevan al lado. Las barras de herramientas y los menús usan la talla s (34) de forma consistente. Un campo de solo lectura o desactivado se ve plano y apagado; el error va debajo del campo (`.cr-field-hint.is-error`).
 
 ## Radios
 
-`--radius-s` 8 px · `--radius-m` 12 px (el `--radius` de shadcn) · `--radius-l` 16 px. Botón 10 px, botón pequeño e icon-button 8 px.
+`--radius-sm` 6 (cerrar, pistas) · `--radius-md` 10 (botones, campos, pestañas) · `--radius-lg` 14 (tarjetas, globos, barra de pestañas) · `--radius-xl` 20 (paneles hero, barra de comandos) · `--radius-pill` (chips). Los viejos `--radius-s/m/l` apuntan a sm/md/lg.
 
-## Sombras
+## Bordes, bisel y sombras
 
-`--shadow-card` (tarjetas), `--shadow-pop` (popovers, menús), `--shadow-modal`, `--shadow-drawer`. En claro son mucho más suaves; nunca poner sombras con valores a mano.
+- `--stroke-control` 1,5 px de `--control-border` (tinta) en todo control.
+- `--bevel` (controles en relieve), `--bevel-dark` (controles en tinta), `--bevel-pressed` (pulsado), `--sunken` (campos, casillas, progreso; en Board una sombra negra al 60 %, en Paper tinta al 12 %).
+- `--float`: solo la barra de comandos. Las tarjetas son planas (`--shadow-card: none`); `--shadow-pop` y `--shadow-modal` para menús y diálogos.
+
+## Espaciado
+
+`--space-1` 4 · `--space-2` 8 · `--space-3` 12 · `--space-4` 16 · `--space-5` 24 · `--space-6` 32 · `--space-7` 48 · `--space-8` 72. Las tarjetas llevan `--space-4`; el hueco del tablero es 10 px. En lo nuevo, solo estos pasos.
+
+## Iconos
+
+Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 sobre 24 px, los de área y sección con 1,5 sobre 16 px. No hay regla global que iguale el grosor: se probó el 07-10 (1,5 px en pantalla para todos) y se retiró el mismo día porque se veían mal ("so ugly").
 
 ## Movimiento
 
@@ -56,26 +105,8 @@ Tokens `--dock-*` (en `globals.css`, bloque del dock): `--dock-ink`, `--dock-ink
 | `--ease-in-out` | `cubic-bezier(0.77, 0, 0.175, 1)` | Cambios de estado de ida y vuelta |
 | `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | Cajones y hojas |
 
-- Microinteracciones 0.1–0.15 s; pulsar = `transform: scale(0.96)`.
+- Microinteracciones 0.1–0.15 s; pulsar un control con bisel = `--bevel-pressed` y `translateY(1px)` (se hunde, no encoge).
 - Keyframes disponibles: `fade-in`, `pop-in` (6 px + 0.985), `shimmer` (skeleton), `spin`.
-
-## Espaciado
-
-No hay una escala cerrada: el CSS creció pieza a pieza. Lo que domina, y lo que hay que usar en lo nuevo:
-
-| Paso | px | Uso típico |
-| --- | --- | --- |
-| 1 | 2 | Separación entre filas de menú, ajustes ópticos |
-| 2 | 4 | Icono y texto muy juntos, chips |
-| 3 | 6 | Gap dentro de grupos (pastillas, avatares) |
-| 4 | 8 | Gap por defecto entre piezas hermanas |
-| 5 | 10 | Gap del tablero, padding de botón pequeño |
-| 6 | 12 | Padding de tarjetas y filas, márgenes del tablero |
-| 7 | 16 | Padding de paneles, separación entre grupos |
-| 8 | 20 / 24 | Separación entre secciones de una página |
-| 9 | 32+ | Aire de cabecera de página |
-
-Regla: en lo nuevo, solo valores de esta tabla. Los impares (3, 5, 7, 9) que hay en el código son ajustes ópticos heredados: no copiarlos.
 
 ## Puntos de corte
 
@@ -109,4 +140,4 @@ Regla: una pieza nueva entra en una de estas bandas; no inventar números interm
 
 ## Foco
 
-`:focus-visible` con contorno de 2 px en `--focus-ring` (el texto al 55 %), desplazado 2 px. Nunca el azul del navegador.
+`:focus-visible` con contorno de 2 px en `--focus` (tinta en Paper, `--ember-glow` en Board y sobre cromo), desplazado 2 px. Nunca el azul del navegador.

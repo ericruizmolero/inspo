@@ -8,13 +8,9 @@ import type { SystemArea } from "@/types/system";
 import { areaIcon } from "./area-icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
+import { Busy, Icon } from "@/components/criterio";
 
-export const IconFolder = (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-    <path d="M2 4.5A1.5 1.5 0 013.5 3h2.8l1.5 1.7h4.7A1.5 1.5 0 0114 6.2v5.3a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 11.5z" />
-  </svg>
-);
+export const IconFolder = <Icon name="folder" size={16} />;
 
 export default function ProjectPicker({ projects, filed, partly = [], onToggle, onCreate, onOpenChange, className, label, children, areasIn, side, closeOnPick }: {
   projects: Project[];
@@ -65,50 +61,56 @@ export default function ProjectPicker({ projects, filed, partly = [], onToggle, 
       <PopoverTrigger className={className} aria-label={label} data-tip={open ? undefined : label} onClick={(e) => e.stopPropagation()}>
         {children}
       </PopoverTrigger>
-      {/* Clicks inside the portal still bubble through React to the card: stopped here */}
-      <PopoverContent align="end" side={side} className="pp pp--pick" onClick={(e) => e.stopPropagation()}
+      {/* Clicks inside the portal still bubble through React to the card: stopped here. The panel is the
+          system's ProjectPicker: a search over a heavy ink rule, then the projects with a folder, the name on one
+          line and a checkbox; ticked ones turn ink and semibold */}
+      <PopoverContent align="start" side={side} className="pp pp--pick cr-picker" onClick={(e) => e.stopPropagation()}
         initialFocus={(type) => (type === "touch" ? true : input.current)}>
-        <form className="pp-search" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-          <span className="pp-search__icon" aria-hidden>{busy ? <span className="spinner spinner--sm" /> : Icons.search}</span>
+        <form className="cr-picker-search" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+          {busy ? <Busy label={t.projects.findOrCreate} /> : <Icon name="search" size={16} />}
           <input
             ref={input}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); change(false); } }}
             placeholder={t.projects.findOrCreate}
             aria-label={t.projects.findOrCreate}
             maxLength={60}
             disabled={busy}
           />
         </form>
-        {projects.length === 0 && !q && <div className="pp__none">{t.projects.none}</div>}
-        {shown.length > 0 && (
-          <div className="pp__list">
-            {shown.map((p) => {
-              const on = filed.includes(p.id);
-              const some = !on && partly.includes(p.id);
-              const areas = areasIn?.[p.id] ?? [];
-              return (
-                <div key={p.id} className={`pp-row${on ? " is-on" : ""}${some ? " is-some" : ""}`}>
-                  <button type="button" className="pp-row__toggle" aria-pressed={some ? "mixed" : on} onClick={() => pick(p.id, !on)}>
-                    <span className="pp-row__folder" aria-hidden>{IconFolder}</span>
-                    <span className="pp-row__name">{p.name}</span>
-                    {areas.length > 0 && <span className="pp-proj__areas" aria-label={areas.map((k) => labels[k]).join(", ")}>{areas.slice(0, 3).map((k) => <i key={k}>{areaIcon(k, 11)}</i>)}{areas.length > 3 && <b>+{areas.length - 3}</b>}</span>}
-                    <span className="pp-row__check" aria-hidden>{on ? Icons.check : some && <i className="pp-row__dash" />}</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        {q && !exact && (
-          <>
-            {shown.length > 0 && <div className="ws__divider" />}
-            <button type="button" className="pp-row__toggle pp-new" onClick={create} disabled={busy}>
-              <span className="ws__plus" aria-hidden>{Icons.plus}</span>
-              <span className="pp-row__name">{t.projects.create(q)}</span>
-            </button>
-          </>
-        )}
+        <ul className="cr-picker-list" role="group" aria-label={label}>
+          {shown.map((p) => {
+            const on = filed.includes(p.id);
+            const some = !on && partly.includes(p.id);
+            const areas = areasIn?.[p.id] ?? [];
+            return (
+              <li key={p.id}>
+                <button type="button" className={`cr-picker-item${on ? " is-checked" : ""}`} aria-pressed={some ? "mixed" : on} onClick={() => pick(p.id, !on)}>
+                  <Icon name="folder" size={16} />
+                  <span className="cr-picker-name" title={p.name}>{p.name}</span>
+                  {/* The quote mark: this reference already speaks in that project's criterio.md (the areas it backs) */}
+                  {areas.length > 0 && (
+                    <span className="cr-picker-note" title={areas.map((k) => labels[k]).join(", ")}>
+                      <Icon name="quote" size={16} /><span className="cr-visually-hidden">{areas.map((k) => labels[k]).join(", ")}</span>
+                    </span>
+                  )}
+                  <span className="cr-check-box" aria-hidden>
+                    {on ? <Icon name="check" size={14} strokeWidth={2.4} /> : some ? <i className="cr-picker-dash" /> : null}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {q && !exact && (
+            <li>
+              <button type="button" className="cr-picker-create" onClick={create} disabled={busy}>
+                <Icon name="plus" size={16} /><span>{t.projects.create(q)}</span>
+              </button>
+            </li>
+          )}
+          {projects.length === 0 && !q && <li className="cr-picker-empty">{t.projects.none}</li>}
+        </ul>
       </PopoverContent>
     </Popover>
   );

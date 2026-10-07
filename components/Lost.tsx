@@ -9,11 +9,11 @@ export default function Lost({ digits = false, title, body, children }: { digits
     <main className="lost">
       <LostTheme />
       <div className={`lost__hero${digits ? "" : " lost__hero--askew"}`}>
-        {digits && <span className="display lost__digit" aria-hidden>4</span>}
+        {digits && <span className="lost__digit" aria-hidden>4</span>}
         <Logo size={128} className="lost__head" />
-        {digits && <span className="display lost__digit" aria-hidden>4</span>}
+        {digits && <span className="lost__digit" aria-hidden>4</span>}
       </div>
-      <h1 className="display lost__title">{title}</h1>
+      <h1 className="lost__title">{title}</h1>
       <p className="lost__body">{body}</p>
       <div className="lost__actions">{children}</div>
     </main>

@@ -7,90 +7,55 @@
   width: 100%; max-width: 920px; margin: 0 auto;
   padding: clamp(112px, 17vh, 184px) 24px 64px; box-sizing: border-box;
 }
-.head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; max-width: 520px; }
-.title { font-family: var(--font-display); font-size: 32px; line-height: 1.1; letter-spacing: -0.02em; color: var(--text); }
-.lead { font-size: 15px; line-height: 1.5; color: var(--muted); }
-.lead strong { color: var(--text-2); font-weight: 500; }
-/* Refero: one prompt box, the send arrow inside it */
-.prompt {
-  position: relative; display: flex; align-items: center; width: 100%; max-width: 560px; margin-top: 16px;
-  border-radius: 16px; border: 1px solid var(--border-strong); background: var(--surface);
-  box-shadow: var(--shadow-card); transition: border-color 0.15s, box-shadow 0.15s;
-}
-.prompt:focus-within { border-color: var(--text-2); }
-.promptInput {
-  flex: 1; min-width: 0; height: 56px; padding: 0 60px 0 20px;
-  border: 0; background: transparent; outline: none;
-  color: var(--text); font-size: 15px;
-}
-.promptInput::placeholder { color: var(--muted); }
-.send {
-  position: absolute; right: 10px; display: grid; place-items: center;
-  width: 36px; height: 36px; border-radius: 50%; border: 0;
-  background: var(--text); color: var(--bg); cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-}
-.send:active { transform: scale(0.96); }
-.send:disabled { opacity: 0.25; cursor: default; transform: none; }
-.error { font-size: 13px; color: var(--danger); margin-top: 4px; }
+.head { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-3); max-width: 600px; width: 100%; }
+/* The system's hello: the page's h1 (display), centred */
+.title { color: var(--text); }
+.lead { max-width: 520px; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-2); }
+.lead strong { color: var(--text); font-weight: 600; }
+/* InboxZero: the work done, a moss circle with the tick */
+.done { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--moss); color: var(--on-moss); }
+/* The system's PromptInput: chrome, the send round and ember once there is text */
+.prompt.prompt { width: 100%; max-width: 600px; margin-top: var(--space-4); padding: 8px 8px 8px 22px; gap: var(--space-2); }
+.prompt input { font-size: var(--fs-body); }
+.prompt input:disabled { opacity: 1; }
+.error { font-size: var(--fs-small); color: var(--danger); margin-top: 4px; }
 
-.section { width: 100%; margin-top: 56px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
-/* Directory groups as soft tabs, one row that scrolls sideways */
-.tabs {
-  display: flex; gap: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: none;
-  padding: 3px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
-}
+.section { width: 100%; margin-top: 56px; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+/* Directory groups: the system's SegmentedControl on paper, one row that scrolls sideways */
+.tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: 2px; }
 .tabs::-webkit-scrollbar { display: none; }
-.tab {
-  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-  height: 30px; padding: 0 12px; border-radius: 9px; border: 0; background: transparent;
-  color: var(--muted); font-size: 13px; white-space: nowrap; cursor: pointer;
-  transition: color 0.12s, background 0.12s;
-}
-@media (hover: hover) { .tab:hover { color: var(--text); } }
+.tabs :global(.cr-seg-item) { flex-shrink: 0; white-space: nowrap; }
 /* Inside the scrolling row an outside ring would be clipped */
-.tab:focus-visible { outline-offset: -2px; }
-.tabOn { background: var(--surface-3); color: var(--text); }
-.tabCount { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.more {
-  display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
-  height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--border-strong);
-  background: transparent; color: var(--text-2); font-size: 13px; cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-@media (hover: hover) { .more:hover { background: var(--surface); color: var(--text); } }
+.tabs :global(.cr-seg-item:focus-visible) { outline-offset: -2px; }
+/* A secondary Button */
+.more { margin-top: var(--space-2); }
 
-.grid { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.tile {
-  display: flex; flex-direction: column;
-  border-radius: var(--radius-m); background: var(--surface); border: 1px solid var(--border);
-  transition: background 0.12s, border-color 0.12s;
-}
+.grid { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+/* The system's Card (raised): flat, a hairline, radius-lg; the link and the add button fill it edge to edge */
+.tile:global(.cr-card) { padding: 0; gap: 0; transition: border-color 0.12s; }
 .tileLink { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: inherit; }
+.tileLink:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .foot { display: flex; justify-content: flex-end; padding: 0 14px 14px; }
-.tile:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.tile:hover { border-color: var(--text-2); }
 .thumb {
-  width: 100%; aspect-ratio: 16 / 10; border-radius: 4px; overflow: hidden;
-  background: var(--surface-3); border: 1px solid var(--border);
-  display: grid; place-items: center; color: var(--muted); font-size: 18px; font-weight: 500;
+  width: 100%; aspect-ratio: 16 / 10; border-radius: 6px; overflow: hidden;
+  background: var(--surface-2);
+  display: grid; place-items: center; color: var(--text-2); font-family: var(--font-display); font-size: var(--fs-title-m); font-weight: 700;
 }
 .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; transition: transform 0.3s ease; }
 .tile:hover .thumb img { transform: scale(1.04); }
 .text { display: flex; flex-direction: column; gap: 3px; padding: 0 4px 4px; min-width: 0; }
-.group { font-size: 11px; color: var(--muted-2); letter-spacing: 0.02em; }
-.name { font-size: 14px; font-weight: 500; line-height: 1.35; display: flex; align-items: center; gap: 6px; }
-.name svg { opacity: 0; transform: translate(-2px, 2px); transition: opacity 0.15s, transform 0.15s; color: var(--muted); }
+.group { font-size: var(--fs-small); color: var(--text-2); }
+.name { font-size: var(--fs-ui); font-weight: 500; line-height: var(--lh-ui); display: flex; align-items: center; gap: 6px; }
+.name svg { opacity: 0; transform: translate(-2px, 2px); transition: opacity 0.15s, transform 0.15s; color: var(--text-2); }
 .tile:hover .name svg { opacity: 1; transform: none; }
-.desc { font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.desc { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 
 
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
   .grid { grid-template-columns: 1fr; }
-  .title { font-size: 26px; }
   .wrap { padding-left: 16px; padding-right: 16px; }
+  .prompt.prompt { padding-left: 18px; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .send, .tab { transition: none; }
-  .send:active { transform: none; }
-}
+

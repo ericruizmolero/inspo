@@ -4,10 +4,10 @@
 // nudge does once it has been followed (Eric, 06-10).
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Cable, Plug } from "lucide-react";
+import { Cable } from "lucide-react";
+import { Icon, MenuItem } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
 import { sectionIcon } from "./section-icons";
 import ConnectDialog from "./ConnectDialog";
 import { canInstall, useExtension } from "@/hooks/use-extension";
@@ -30,22 +30,22 @@ export default function Connectors() {
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger className="btn btn--ghost topbar__polish topbar__ext" title={s.openHint}>
-          <Plug size={16} strokeWidth={1.5} aria-hidden /> {s.connectors}
+        {/* A segment of the view switcher's pill (the system's ViewSwitcher), its menu on chrome-panel */}
+        <PopoverTrigger className="cr-seg-item topbar__ext" data-tip={open ? undefined : s.openHint}>
+          <Icon name="plug" size={16} /> <span className="topbar__mode-label">{s.connectors}</span>
         </PopoverTrigger>
-        <PopoverContent align="end" className="pp pp--menu connectors__menu">
+        {/* The system's Menu: a paper window; a way in that is already connected carries the check */}
+        <PopoverContent align="end" className="cr-menu connectors__menu">
           {installable && (
-            <Link href={info && !info.connected ? "/extension/connect" : "/extension/install"} className="ws__item" onClick={() => setOpen(false)}>
-              <span className="pp__icon" aria-hidden>{sectionIcon("extension")}</span>
-              <span className="ws__item-name">{s.extension}</span>
-              {info?.connected && <span className="ws__item-check" aria-label={s.connectedOne}>{Icons.check}</span>}
+            <Link href={info && !info.connected ? "/extension/connect" : "/extension/install"} role="menuitem" className={`cr-menu-item${info?.connected ? " is-checked" : ""}`} onClick={() => setOpen(false)}>
+              {sectionIcon("extension")}
+              <span className="cr-menu-label">{s.extension}{info?.connected && <span className="cr-visually-hidden">, {s.connectedOne}</span>}</span>
+              {info?.connected && <Icon name="check" size={16} className="cr-menu-check" />}
             </Link>
           )}
-          <button type="button" className="ws__item" onClick={() => { setOpen(false); setConnecting(true); }}>
-            <span className="pp__icon" aria-hidden><Cable size={16} strokeWidth={1.5} /></span>
-            <span className="ws__item-name">{s.open}</span>
-            {mcpDone && <span className="ws__item-check" aria-label={s.connectedOne}>{Icons.check}</span>}
-          </button>
+          <MenuItem icon={<Cable className="cr-icon" size={16} strokeWidth={2} aria-hidden />} checked={mcpDone} onClick={() => { setOpen(false); setConnecting(true); }}>
+            {s.open}{mcpDone && <span className="cr-visually-hidden">, {s.connectedOne}</span>}
+          </MenuItem>
         </PopoverContent>
       </Popover>
       {connecting && <ConnectDialog onClose={() => setConnecting(false)} />}

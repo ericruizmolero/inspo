@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-import { inter } from "./fonts";
+import { archivo, bricolage } from "./fonts";
 import "./globals.css";
 import { getSession } from "@/lib/workspace";
 import { getLocale, type Locale } from "@/lib/i18n";
 import { I18nProvider } from "@/components/I18nProvider";
 import FeedbackTool from "@/components/FeedbackTool";
+import { TipLayer } from "@/components/criterio";
 
 // Canonical public URL: the same as BETTER_AUTH_URL on Vercel (criterio.design since 22/09/2026).
 const SITE = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://criterio.design";
@@ -48,11 +49,11 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// Browser bar color based on the system theme (the same as --bg in each theme)
+// Browser bar color based on the system theme (the same as --bg in each theme: paper and board)
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f3f0" },
-    { media: "(prefers-color-scheme: dark)", color: "#0e0e0d" },
+    { media: "(prefers-color-scheme: light)", color: "#EDE6D6" },
+    { media: "(prefers-color-scheme: dark)", color: "#0F0F0F" },
   ],
 };
 
@@ -67,7 +68,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={inter.variable}
+      className={`${archivo.variable} ${bricolage.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -78,6 +79,8 @@ export default async function RootLayout({
         <I18nProvider locale={locale}>
           {children}
           <FeedbackTool canSend={!!session} />
+          {/* Tooltips: the system's butter balloon for every [data-tip] on the page */}
+          <TipLayer />
         </I18nProvider>
       </body>
     </html>

@@ -15,15 +15,14 @@ export async function generateMetadata(): Promise<Metadata> {
 // picks the workspace to save to, and a key is generated that the extension picks up on its own
 // (extension/chrome/content.js listens on this page). If it does not, the key can be copied.
 export default async function ConnectPage() {
-  const [ctx, { t }] = await Promise.all([getCtxOrLogin("/extension/connect"), getT()]);
+  const ctx = await getCtxOrLogin("/extension/connect");
   return (
-    <div className="page">
+    <div className="auth auth--solo">
       <ActivityPing area="extension" organizationId={ctx.workspace.id} />
-      <header className="page__head">
+      <div className="auth__card">
         <BackLink href="/settings/extension" />
-        <h1 className="display page__title">{t.ext.connect}</h1>
-      </header>
-      <ConnectPanel currentId={ctx.workspace.id} />
+        <ConnectPanel currentId={ctx.workspace.id} youAre={ctx.user.email} />
+      </div>
     </div>
   );
 }

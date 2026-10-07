@@ -4,11 +4,10 @@
 // that, what to expect from it. The choice travels with the run (SystemFocus, lib/system.ts): what is left out stays as it was.
 import { useState } from "react";
 import { IMPROVE_AIMS, IMPROVE_NOTE_MAX, SYSTEM_AREAS, type ImproveAim, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
+import { Button, Card, Chip, Switch, TextArea } from "@/components/criterio";
 import "./ImproveModal.css";
 
 export default function ImproveModal({ system, onRun, onClose }: {
@@ -27,53 +26,55 @@ export default function ImproveModal({ system, onRun, onClose }: {
   const all = areas.size === SYSTEM_AREAS.length;
   const ready = areas.size > 0 && (aims.size > 0 || note.trim().length > 0);
 
+  const run = () => {
+    if (!ready) return;
+    onRun({ aims: IMPROVE_AIMS.filter((a) => aims.has(a)), areas: SYSTEM_AREAS.filter((a) => areas.has(a)), note: note.trim() });
+    onClose();
+  };
+
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="imp">
-        <div className="modal__header">
-          <DialogTitle>{t.system.improve}</DialogTitle>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
-        </div>
-        <form className="modal__body imp__body" onSubmit={(e) => {
-          e.preventDefault();
-          if (!ready) return;
-          onRun({ aims: IMPROVE_AIMS.filter((a) => aims.has(a)), areas: SYSTEM_AREAS.filter((a) => areas.has(a)), note: note.trim() });
-          onClose();
-        }}>
+      <DialogWindow className="imp" bar={m.bar} heading={t.system.improve} closeLabel={t.common.close}
+        footer={
+          <div className="modal__footer">
+            <Button onClick={onClose}>{t.common.cancel}</Button>
+            <Button variant="primary" type="submit" form="improve-ai" icon="sparkle" disabled={!ready}>{m.run}</Button>
+          </div>
+        }>
+        <form id="improve-ai" className="imp__body" onSubmit={(e) => { e.preventDefault(); run(); }}>
           <DialogDescription className="imp__lead">{m.lead}</DialogDescription>
 
           <section className="imp__group">
-            <h3 className="imp__label">{m.aimsLabel}</h3>
+            <h3 className="t-label imp__label">{m.aimsLabel}</h3>
             <div className="imp__aims">
+              {/* The whole row toggles; the Switch inside it is the control the keyboard and screen readers reach */}
               {IMPROVE_AIMS.map((a) => (
-                <button key={a} type="button" role="switch" aria-checked={aims.has(a)} className={`imp-aim${aims.has(a) ? " is-on" : ""}`} onClick={() => setAims((s) => toggle(s, a))}>
+                <div key={a} className={`imp-aim${aims.has(a) ? " is-on" : ""}`} onClick={() => setAims((s) => toggle(s, a))}>
                   <span className="imp-aim__text"><b>{m.aims[a].name}</b><span>{m.aims[a].what}</span></span>
-                  <span className="imp-aim__switch" aria-hidden><span /></span>
-                </button>
+                  <Switch checked={aims.has(a)} label={m.aims[a].name} />
+                </div>
               ))}
             </div>
           </section>
 
           <section className="imp__group">
-            <h3 className="imp__label">{m.areasLabel}</h3>
+            <h3 className="t-label imp__label">{m.areasLabel}</h3>
             <div className="pills" role="group" aria-label={m.areasLabel}>
-              <button type="button" aria-pressed={all} className={`pill${all ? " is-on" : ""}`} onClick={() => setAreas(all ? new Set() : new Set(SYSTEM_AREAS))}>{m.allAreas}</button>
+              <Chip pressed={all} onClick={() => setAreas(all ? new Set() : new Set(SYSTEM_AREAS))}>{m.allAreas}</Chip>
               {SYSTEM_AREAS.map((a) => (
-                <button key={a} type="button" aria-pressed={areas.has(a)}
-                  className={`pill imp__area${areas.has(a) ? " is-on" : ""}`} onClick={() => setAreas((s) => toggle(s, a))}>
+                <Chip key={a} className="imp__area" pressed={areas.has(a)} onClick={() => setAreas((s) => toggle(s, a))}>
                   {areaIcon(a, 13)}{t.system.areas[a]}
-                </button>
+                </Chip>
               ))}
             </div>
           </section>
 
           <label className="imp__group">
-            <span className="imp__label">{m.noteLabel} <small>{m.optional}</small></span>
-            <textarea className="input" rows={2} maxLength={IMPROVE_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} placeholder={m.notePlaceholder} />
+            <span className="t-label imp__label">{m.noteLabel} <small>{m.optional}</small></span>
+            <TextArea rows={2} maxLength={IMPROVE_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} placeholder={m.notePlaceholder} />
           </label>
 
-          <section className="imp__expect">
-            <h3 className="imp__label">{m.expectLabel}</h3>
+          <Card as="section" tone="paper" className="imp__expect" eyebrow={m.expectLabel}>
             <ul>
               <li>{m.expect.words}</li>
               <li>{m.expect.time}</li>
@@ -81,14 +82,9 @@ export default function ImproveModal({ system, onRun, onClose }: {
               <li>{m.expect.empty}</li>
               <li>{m.expect.undo}</li>
             </ul>
-          </section>
-
-          <div className="modal__footer">
-            <Button variant="ghost" type="button" onClick={onClose}>{t.common.cancel}</Button>
-            <Button variant="primary" type="submit" disabled={!ready}>{Icons.spark} {m.run}</Button>
-          </div>
+          </Card>
         </form>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

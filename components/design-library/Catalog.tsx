@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { CatalogTab } from "@/lib/design-system";
 import DsMarkdown from "./DsMarkdown";
 import { Sample } from "./Specimens";
+import { Chip as SysChip, SegmentedControl } from "@/components/criterio";
 import "./DesignLibrary.css";
 
 function Chip({ text }: { text: string }) {
@@ -13,9 +14,9 @@ function Chip({ text }: { text: string }) {
     try { await navigator.clipboard.writeText(text); setDone(true); setTimeout(() => setDone(false), 1200); } catch {}
   };
   return (
-    <button type="button" className="ds-chip" onClick={copy} title="Copiar">
-      {done ? "Copiado" : text}
-    </button>
+    <span className="ds-code" data-tip="Copiar">
+      <SysChip onClick={copy}>{done ? "Copiado" : text}</SysChip>
+    </span>
   );
 }
 
@@ -24,16 +25,11 @@ export default function Catalog({ tabs }: { tabs: CatalogTab[] }) {
   const current = tabs.find((t) => t.id === tab) ?? tabs[0];
   return (
     <div className="ds-specimen">
-      <div className="ds-seg" role="tablist">
-        {tabs.map((t) => (
-          <button key={t.id} type="button" role="tab" aria-pressed={t.id === current.id} aria-selected={t.id === current.id} onClick={() => setTab(t.id)}>
-            {t.name} <span className="ds-count">{t.items.length}</span>
-          </button>
-        ))}
-      </div>
+      <SegmentedControl tone="paper" className="ds-seg" label="Contextos" active={tabs.indexOf(current)}
+        onChange={(i) => setTab(tabs[i].id)} items={tabs.map((t) => ({ label: t.name, count: t.items.length }))} />
       <div className="ds-catalog">
         {current.items.map((it) => (
-          <article key={it.id} id={it.id} className={`ds-comp${it.unused ? " is-off" : ""}`}>
+          <article key={it.id} id={it.id} className={`cr-card cr-card-raised ds-comp${it.unused ? " is-off" : ""}`}>
             {(it.sample || it.shot) && (
               <div className={`ds-comp__stage${it.shot ? " ds-comp__stage--shot" : ""}`}>
                 {it.shot
@@ -44,8 +40,8 @@ export default function Catalog({ tabs }: { tabs: CatalogTab[] }) {
             )}
             <div className="ds-comp__body">
               <header>
-                <h2>{it.name}</h2>
-                {it.unused && <span className="ds-pill ds-pill--retirada">Sin uso</span>}
+                <h2 className="t-title-m">{it.name}</h2>
+                {it.unused && <SysChip>Sin uso</SysChip>}
               </header>
               {it.chips.length > 0 && <div className="ds-chips">{it.chips.map((c) => <Chip key={c} text={c} />)}</div>}
               <DsMarkdown blocks={it.blocks} />

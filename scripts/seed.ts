@@ -31,6 +31,7 @@ async function tables() {
     schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designRevision, schema.designWhy,
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
     schema.canvasPosition, schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
+    schema.systemShare, schema.rateLimit, schema.mcpClient, schema.mcpGrant,
   ];
   // A table added to the schema but not to this list would vanish from every dump without a word
   const all = (Object.values(schema) as unknown[]).filter((v): v is PgTable => v instanceof PgTable);
@@ -50,6 +51,8 @@ async function dump(from?: string) {
     // source has, and the load leaves the new ones to their defaults
     const have = new Set((await pool.query("select column_name from information_schema.columns where table_schema = 'public' and table_name = $1", [name])).rows.map((r) => r.column_name as string));
     const shared = Object.fromEntries(Object.entries(cols).filter(([, c]) => have.has(c.name)));
+    // A table the source does not have yet (its migration is not deployed): nothing to copy
+    if (!have.size) { console.log(`${name}: not in the source yet, skipped`); out.tables[name] = []; continue; }
     const skipped = Object.values(cols).filter((c) => !have.has(c.name)).map((c) => c.name);
     if (skipped.length) console.log(`${name}: not in the source yet, left to defaults: ${skipped.join(", ")}`);
     out.tables[name] = await db.select(shared).from(table);

@@ -70,7 +70,7 @@ const MAX_GAP_MS = 90 * 1000;
 
 const ID_RE = /^[a-z0-9]{8,40}$/;
 
-/** "Chrome · macOS", "Safari · iOS (mobile)"… from the user agent */
+/** "Chrome, macOS", "Safari, iOS (mobile)"… from the user agent */
 export function deviceSummary(ua: string | null | undefined): string | null {
   if (!ua) return null;
   try {
@@ -79,7 +79,7 @@ export function deviceSummary(ua: string | null | undefined): string | null {
     if (!parts.length) return null;
     // Stored as is in the row, so it's in English: there's nowhere to translate it when rendering
     const kind = device.type === "mobile" ? " (mobile)" : device.type === "tablet" ? " (tablet)" : "";
-    return parts.join(" · ") + kind;
+    return parts.join(", ") + kind;
   } catch { return null; }
 }
 

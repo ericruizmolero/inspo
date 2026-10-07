@@ -12,6 +12,8 @@ import SystemMarkdown from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import LoopVideo from "./LoopVideo";
+import { useConfirm } from "./useConfirm";
+import { Busy, Icon } from "@/components/criterio";
 import { mediaKindOf, readableDomain, videoEmbedOf } from "@/lib/url";
 import { posterOf, preloadTemplates, remember, remembered, seen } from "./templates-cache";
 import "./SystemMarkdown.css";
@@ -101,8 +103,8 @@ function ResultPage({ id, url, still, hoverSrc, poster }: { id: string; url: str
 function TemplateCardView({ tpl, onOpen }: { tpl: TemplateCard; onOpen: () => void }) {
   return (
     <button type="button" className="tplc" onClick={onOpen}>
-      {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} still /> : <div className="tpl-page"><div className="tpl-page__view tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
-      <span className="tplc__name">{tpl.name}</span>
+      {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} still /> : <div className="tpl-page"><div className="tpl-page__view t-display tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
+      <span className="t-title-m tplc__name">{tpl.name}</span>
       {(tpl.template.from || tpl.template.to) && (
         <span className="tplc__path">
           {tpl.template.from && host(tpl.template.from)}
@@ -120,9 +122,9 @@ function TemplateCardSkeleton() {
   return (
     <div className="tplc tplc--loading" aria-hidden>
       <div className="tpl-page"><div className="tpl-page__view"><div className="shimmer" /></div></div>
-      <span className="sk" style={{ width: "62%", height: 16, marginTop: 2 }} />
-      <span className="sk" style={{ width: "44%", height: 12 }} />
-      <span className="sk" style={{ width: "88%", height: 12 }} />
+      <span className="sk tplc__sk tplc__sk--name" />
+      <span className="sk tplc__sk tplc__sk--path" />
+      <span className="sk tplc__sk tplc__sk--about" />
     </div>
   );
 }
@@ -134,6 +136,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
   const labels = t.system.areas as Record<SystemArea, string>;
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [confirm, confirmDialog] = useConfirm();
   // The template is read as a project's system is: its criterio.md as a document, only here nothing is written
   const blocks = useMemo(() => criterioBlocks({ project: tpl.name, system: tpl.system, items: {}, labels, strings: t.system.md, client: tpl.template.from ? { name: host(tpl.template.from), web: tpl.template.from } : null }), [tpl, labels, t]);
   const md = useMemo(() => blocksToMd(blocks), [blocks]);
@@ -156,7 +159,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
           {tpl.template.about && <p className="tpl-about">{tpl.template.about}</p>}
         </div>
         <div className="tpl-head__actions">
-          <button type="button" className="tpl-btn tpl-btn--primary" disabled={busy} onClick={() => void use()} title={s.useHint}>{busy ? <span className="spinner spinner--sm" /> : Icons.plus} {s.use}</button>
+          <button type="button" className="btn btn--primary" disabled={busy} onClick={() => void use()} data-tip={s.useHint}>{busy ? <Busy label={s.use} /> : <Icon name="plus" size={20} />} {s.use}</button>
         </div>
       </header>
 
@@ -168,8 +171,9 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
       {tpl.template.to && <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} />}
 
       <div className="tpl-files">
-        {!tpl.template.builtin && <button type="button" className="tpl-btn tpl-btn--quiet" onClick={() => { if (window.confirm(s.deleteAsk(tpl.name))) void onDelete(tpl); }}>{s.delete}</button>}
+        {!tpl.template.builtin && <button type="button" className="btn" onClick={async () => { if (await confirm({ title: s.deleteAsk(tpl.name), action: s.delete, danger: true })) void onDelete(tpl); }}>{s.delete}</button>}
       </div>
+      {confirmDialog}
     </article>
   );
 }
@@ -212,7 +216,7 @@ export default function TemplatesView({ workspaceId, onStarted }: { workspaceId:
       <div className="tpls-inner">
         {open ? (
           <>
-            <button type="button" className="tpls-back" onClick={() => go(null)}><span aria-hidden>{Icons.arrow}</span>{s.title}</button>
+            <button type="button" className="btn btn--quiet tpls-back" onClick={() => go(null)}><Icon name="chevron-left" size={20} />{s.title}</button>
             {error && <p className="sysv-error" role="alert">{error}</p>}
             <Template tpl={open} onUse={use} onDelete={del} />
           </>

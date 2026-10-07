@@ -1,7 +1,7 @@
 ---
 title: Superficies flotantes de cristal
 date: 2026-10-02
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Barras y paneles flotantes eran blanco sólido; luego se probó cristal blanco translúcido sobre el tema oscuro.
@@ -11,3 +11,5 @@ kind: diseño
 **Por qué.** El cristal blanco sobre oscuro "parece una especie de gris"; las planchas sólidas pesan demasiado.
 
 **Cómo aplicarlo.** Usar los tokens `--dock-*`; no inventar otro cristal.
+
+**Sustituida** el 2026-10-07 por [el sistema de diseño Criterio](2026-10-07-sistema-de-diseno-criterio.md).

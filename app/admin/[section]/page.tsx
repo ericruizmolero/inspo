@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import ActivityPing from "@/components/ActivityPing";
 import SettingsHeading from "@/components/SettingsHeading";
@@ -10,6 +9,7 @@ import { feedbackOverview } from "@/lib/feedback";
 import { getT } from "@/lib/i18n";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
 import UpdatedAt from "../UpdatedAt";
+import PeriodSwitch from "../PeriodSwitch";
 
 const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "access"];
 const DAYS = [7, 30, 90];
@@ -41,13 +41,7 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
   const lead = section === "overview" ? t.admin.headSub(days) : section === "access" ? t.admin.leads.access : t.admin.leads[section](days);
   const period = section !== "access" && (
     <>
-      <nav className="seg" aria-label={t.admin.period}>
-        {DAYS.map((d) => (
-          <Link key={d} href={`/admin/${section}?dias=${d}`} aria-current={d === days ? "page" : undefined} className={`seg__item${d === days ? " is-active" : ""}`}>
-            {t.admin.days(d)}
-          </Link>
-        ))}
-      </nav>
+      <PeriodSwitch section={section} days={days} options={DAYS} labels={DAYS.map((d) => t.admin.days(d))} label={t.admin.period} />
       <UpdatedAt iso={data.generatedAt} />
     </>
   );

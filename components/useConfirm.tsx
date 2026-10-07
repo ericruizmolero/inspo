@@ -19,12 +19,12 @@ export function useConfirm() {
 
   const dialog = (
     <AlertDialog open={!!ask} onOpenChange={(open) => { if (!open) answer(false); }}>
-      <AlertDialogContent>
+      <AlertDialogContent bar={ask?.action}>
         <AlertDialogTitle>{ask?.title}</AlertDialogTitle>
         {ask?.description && <AlertDialogDescription>{ask.description}</AlertDialogDescription>}
         <div className="modal__footer">
           <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
-          <AlertDialogAction className={ask?.danger ? "is-danger-solid" : undefined} onClick={() => answer(true)}>{ask?.action}</AlertDialogAction>
+          <AlertDialogAction variant={ask?.danger ? "danger" : "primary"} onClick={() => answer(true)}>{ask?.action}</AlertDialogAction>
         </div>
       </AlertDialogContent>
     </AlertDialog>

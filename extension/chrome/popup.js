@@ -165,7 +165,7 @@ async function showMedia() {
     showShot(src);
   }
   $("tab-title").textContent = media.alt || media.title || shortUrl(media.page);
-  $("tab-host").textContent = `${t(media.kind === "video" ? "kindVideo" : "kindImage")} · ${shortUrl(media.page)}`;
+  $("tab-host").textContent = `${t(media.kind === "video" ? "kindVideo" : "kindImage")}, ${shortUrl(media.page)}`;
   setFavicon(media.favicon);
   resetSave(false);
   $("form").hidden = false;

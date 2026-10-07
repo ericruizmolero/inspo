@@ -13,10 +13,10 @@ import { decideSystemArea, releaseSystemArea, saveDocPart, setSystemEvidence, sa
 import { readAreaMeta } from "@/lib/criterio-md";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown from "./SystemMarkdown";
-import { Avatar } from "./CommentsPanel";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
+import { Avatar, Chip, Icon, toneFor } from "@/components/criterio";
 import "./SystemDoc.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
@@ -175,7 +175,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
         const open = (activity?.notes[b.area] ?? []).filter((n) => n.proposal?.state === "open").length;
         return (
           <button key={b.area} type="button" onClick={() => go(`sdoc-${b.area}`)} className={a?.evidence.length ? "is-backed" : !b.decision ? "is-open" : a?.source === "team" ? "is-team" : ""}>
-            <i aria-hidden />{b.heading}{open > 0 && <b title={s.pending(open)}>{open}</b>}
+            <i aria-hidden />{b.heading}{open > 0 && <span className="sdoc-toc__count" data-tip={s.pending(open)}><Chip tone="ember">{open}</Chip></span>}
           </button>
         );
       })}
@@ -183,7 +183,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
       {skillBlocks.length > 0 && <span className="sdoc-toc__gap" aria-hidden />}
       {skillBlocks.map((b) => (
         <button key={b.id} type="button" className="is-skill" onClick={() => go(`sdoc-${b.id}`)} title={b.heading}>
-          <span className="sdoc-toc__spark" aria-hidden>{Icons.spark}</span><span className="sdoc-toc__name">{skillName(b.id.slice(6))}</span>
+          <span className="sdoc-toc__spark" aria-hidden><Icon name="sparkle" size={14} /></span><span className="sdoc-toc__name">{skillName(b.id.slice(6))}</span>
         </button>
       ))}
       <span className="sdoc-toc__gap" aria-hidden />
@@ -195,12 +195,12 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
   const proposalsOf = (b: AreaBlock) => notesOf(b.area).filter((n) => n.proposal?.state === "open").map((n) => (
     <div key={n.id} className="sdoc-proposal">
       <header>
-        <Avatar name={n.who} image={n.image} size={20} />
+        <Avatar initials={n.who.slice(0, 1).toUpperCase()} name={n.who} tone={toneFor(n.who)} src={n.image} size={20} />
         <span><b>{n.who}</b> {n.proposal!.via ? t.mcp.proposesVia(n.proposal!.via) : s.proposes}</span>
         <time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
         <span className="sdoc-proposal__tools">
-          <button type="button" className="sdoc-btn sdoc-btn--solid" disabled={working} onClick={() => void answer(n, true)}>{Icons.check} {s.accept}</button>
-          <button type="button" className="sdoc-btn" disabled={working} onClick={() => void answer(n, false)}>{n.mine ? s.withdraw : s.reject}</button>
+          <button type="button" className="btn btn--sm" disabled={working} onClick={() => void answer(n, true)}>{Icons.check} {s.accept}</button>
+          <button type="button" className="btn btn--sm" disabled={working} onClick={() => void answer(n, false)}>{n.mine ? s.withdraw : s.reject}</button>
         </span>
       </header>
       <p className="sdoc-decision">{n.proposal!.decision}</p>

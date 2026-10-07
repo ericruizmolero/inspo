@@ -12,7 +12,7 @@ function CommandDialog({ title, open, onOpenChange, children }: {
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="cmdk-dialog">
+      <DialogContent className="modal--window cmdk-dialog">
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <CommandPrimitive className="cmdk" loop>{children}</CommandPrimitive>
       </DialogContent>

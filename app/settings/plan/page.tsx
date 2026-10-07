@@ -9,18 +9,13 @@ import { quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT } from "@/lib/plans";
 import { getT, fmtDate, type Dict } from "@/lib/i18n";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Icon, Progress, SettingsWindow } from "@/components/criterio";
 
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
   return { title: t.settings.sections.plan };
 }
-
-const IcCheck = (
-  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6.5l2.5 2.5L10 3.5" /></svg>
-);
 
 function Line({ label, used, limit, t, seats }: { label: string; used: number; limit: number | null; t: Dict; seats?: boolean }) {
   const pct = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100));
@@ -29,10 +24,10 @@ function Line({ label, used, limit, t, seats }: { label: string; used: number; l
   return (
     <div className={`pl-quota${full ? " is-full" : ""}`}>
       <div className="pl-quota__head">
-        <span>{label}</span>
-        <span className="pl-quota__nums">{limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit)}</span>
+        <span className="t-ui">{label}</span>
+        <span className="pl-quota__nums t-small">{limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit)}</span>
       </div>
-      <div className="pl-quota__bar"><span style={{ width: `${limit === null ? 0 : pct}%` }} /></div>
+      {limit !== null && <Progress value={pct} segments={16} label={label} className="pl-quota__progress" />}
     </div>
   );
 }
@@ -42,6 +37,7 @@ export default async function PlanPage() {
   const ws = ctx.workspace;
   const [q, usage, members] = await Promise.all([quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id)]);
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
+  const overSeats = q.members.limit !== null && q.members.used > q.members.limit;
   const mailto = (plan: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(plan, ws.name))}`;
 
   return (
@@ -49,65 +45,57 @@ export default async function PlanPage() {
       <ActivityPing area="plans" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.plan} lead={t.settings.leads.plan} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{ws.name}</CardTitle>
-          <CardDescription>{t.plans.resets(q.planName, resets)}</CardDescription>
-        </CardHeader>
-        <CardContent className="pl-usage__grid">
-          <Line label={t.plans.designMdThisMonth} used={q.designMd.used} limit={q.designMd.limit} t={t} />
-          <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} />
-          <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
-        </CardContent>
-        {((q.members.limit !== null && q.members.used > q.members.limit) || q.pendingInvites > 0) && (
-          <CardFooter className="flex-col items-start gap-1">
-            {q.members.limit !== null && q.members.used > q.members.limit && (
-              <p className="card-note">
-                {t.plans.overSeatsBefore(q.members.used, q.planName, q.members.limit)}
-                <Link href="/settings/members">{t.plans.overSeatsLink}</Link>{t.plans.overSeatsAfter}
-              </p>
-            )}
-            {q.pendingInvites > 0 && <p className="card-note">{t.plans.pendingInvites(q.pendingInvites)}</p>}
-          </CardFooter>
-        )}
-      </Card>
+      <div className="page__body">
+        <SettingsWindow title={ws.name} description={t.plans.resets(q.planName, resets)}
+          note={(overSeats || q.pendingInvites > 0) ? (
+            <>
+              {overSeats && (
+                <span className="pl-over">
+                  {t.plans.overSeatsBefore(q.members.used, q.planName, q.members.limit!)}
+                  <Link href="/settings/members">{t.plans.overSeatsLink}</Link>{t.plans.overSeatsAfter}
+                </span>
+              )}
+              {overSeats && q.pendingInvites > 0 && " "}
+              {q.pendingInvites > 0 && t.plans.pendingInvites(q.pendingInvites)}
+            </>
+          ) : undefined}>
+          <div className="pl-usage__grid">
+            <Line label={t.plans.designMdThisMonth} used={q.designMd.used} limit={q.designMd.limit} t={t} />
+            <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} />
+            <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
+          </div>
+        </SettingsWindow>
 
-      <UsageCard usage={usage} images={Object.fromEntries(members.map((m) => [m.userId, m.image ?? null]))} />
+        <UsageCard usage={usage} images={Object.fromEntries(members.map((m) => [m.userId, m.image ?? null]))} />
 
-      <div className="pl-plans">
-        {PLANS.map((p) => {
-          const current = p.key === q.plan;
-          return (
-            <Card key={p.key} className={`pl-plan${current ? " is-current" : ""}`}>
-              <CardHeader>
-                <CardTitle className="display pl-plan__name">{p.name}</CardTitle>
-                {current && <CardAction><span className="pl-plan__badge">{t.plans.yourPlan}</span></CardAction>}
-                <CardDescription className="pl-plan__tagline">{t.plans.items[p.key].tagline}</CardDescription>
-              </CardHeader>
-              <CardContent className="pl-plan__body">
+        <div className="pl-plans">
+          {PLANS.map((p) => {
+            const current = p.key === q.plan;
+            return (
+              // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
+              <SettingsWindow key={p.key} title={p.name} className={`pl-plan${current ? " is-current" : ""}`}
+                note={current ? t.plans.current : undefined}
+                actions={current ? undefined : (
+                  <a className={buttonVariants({ variant: p.priceEur > 0 ? "primary" : "default" })} href={mailto(p.name)}>
+                    {p.priceEur > 0 ? t.plans.moveUp(p.name) : t.plans.moveDown(p.name)}
+                  </a>
+                )}>
+                <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
                 <div className="pl-plan__price">
                   {p.priceEur === 0
-                    ? <span className="display pl-plan__amount">{t.plans.free}</span>
-                    : <><span className="display pl-plan__amount">{p.priceEur} €</span><span className="pl-plan__per">{t.plans.perMonth}</span></>}
+                    ? <span className="t-title-l">{t.plans.free}</span>
+                    : <><span className="t-title-l">{p.priceEur} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
                 </div>
-                <Separator />
                 <ul className="pl-plan__features">
-                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick">{IcCheck}</span><span>{f}</span></li>)}
+                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} strokeWidth={2.5} /></span><span>{f}</span></li>)}
                 </ul>
-              </CardContent>
-              <CardFooter>
-                {current
-                  ? <span className={buttonVariants({ variant: "ghost", block: true })} aria-disabled>{t.plans.current}</span>
-                  : <a className={buttonVariants({ variant: p.priceEur > 0 ? "primary" : "ghost", block: true })} href={mailto(p.name)}>
-                      {p.priceEur > 0 ? t.plans.moveUp(p.name) : t.plans.moveDown(p.name)}
-                    </a>}
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
+              </SettingsWindow>
+            );
+          })}
+        </div>
 
-      <p className="pl-foot">{t.plans.foot}</p>
+        <p className="pl-foot t-small">{t.plans.foot}</p>
+      </div>
     </>
   );
 }

@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import type { SessionUser } from "@/lib/workspace-core";
 import { useT } from "@/components/I18nProvider";
 import { fmtDate } from "@/lib/i18n/format";
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useConfirm } from "@/components/useConfirm";
+import { Chip, SettingsWindow } from "@/components/criterio";
 
 interface ExtKey { id: string; prefix: string; name: string; userId: string; userName: string; createdAt: string; lastUsedAt: string | null }
 
@@ -33,37 +33,32 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
   return (
     <div className="page__body">
       {confirmDialog}
-      {error && <p className="modal__error">{error}</p>}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.browsers}</CardTitle>
-          <CardDescription>{t.settings.connectHint}</CardDescription>
-          {extKeys.length > 0 && <CardAction className="card-figure">{extKeys.length}</CardAction>}
-        </CardHeader>
+      <SettingsWindow title={t.settings.browsers} description={t.settings.connectHint}
+        note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : undefined}
+        actions={
+          <>
+            {/* With no browser of theirs connected, the guide (it ends by connecting); after that, connecting another is the common case */}
+            <a className={buttonVariants({ variant: hasMine ? "default" : "primary" })} href="/extension/install">{t.settings.installExt}</a>
+            <a className={buttonVariants({ variant: hasMine ? "primary" : "default" })} href="/extension/connect">{t.team.connectBrowser}</a>
+          </>
+        }>
         {extKeys.length > 0 && (
-          <CardContent>
-            <ul className="list">
-              {extKeys.map((k) => {
-                const mine = k.userId === me.id;
-                return (
-                  <li key={k.id} className="list__row">
-                    <span className="list__main">
-                      <span className="list__name">{k.name || t.team.browser}{mine && <span className="list__you">{t.team.yours}</span>}</span>
-                      <span className="list__sub">{k.prefix}… · {k.userName} · {k.lastUsedAt ? t.team.keyUsed(fmtDate(k.lastUsedAt, locale, { day: "numeric", month: "short", year: "numeric" })) : t.team.keyUnused}</span>
-                    </span>
-                    {(mine || canManage) && <Button variant="ghost" size="sm" onClick={() => revokeKey(k)} disabled={busy}>{t.team.revoke}</Button>}
-                  </li>
-                );
-              })}
-            </ul>
-          </CardContent>
+          <ul className="list">
+            {extKeys.map((k) => {
+              const mine = k.userId === me.id;
+              return (
+                <li key={k.id} className="list__row">
+                  <span className="list__main">
+                    <span className="list__name t-ui"><span className="list__text">{k.name || t.team.browser}</span>{mine && <Chip className="list__you t-label">{t.team.yours}</Chip>}</span>
+                    <span className="list__sub t-small"><span>{k.prefix}…</span><span>{k.userName}</span><span>{k.lastUsedAt ? t.team.keyUsed(fmtDate(k.lastUsedAt, locale, { day: "numeric", month: "short", year: "numeric" })) : t.team.keyUnused}</span></span>
+                  </span>
+                  {(mine || canManage) && <Button variant="quiet" size="sm" onClick={() => revokeKey(k)} disabled={busy}>{t.team.revoke}</Button>}
+                </li>
+              );
+            })}
+          </ul>
         )}
-        <CardFooter className="gap-2">
-          {/* With no browser of theirs connected, the guide (it ends by connecting); after that, connecting another is the common case */}
-          <a className={buttonVariants({ variant: hasMine ? "default" : "primary", size: "sm" })} href="/extension/install">{t.settings.installExt}</a>
-          <a className={buttonVariants({ variant: hasMine ? "primary" : "default", size: "sm" })} href="/extension/connect">{t.team.connectBrowser}</a>
-        </CardFooter>
-      </Card>
+      </SettingsWindow>
     </div>
   );
 }

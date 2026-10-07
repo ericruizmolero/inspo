@@ -9,6 +9,7 @@ import SwitchAccount from "./SwitchAccount";
 import { getT } from "@/lib/i18n";
 import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
+import AuthWindow from "@/components/AuthWindow";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,7 +27,7 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
   const [inv] = await db
     .select({
       id: schema.invitation.id, email: schema.invitation.email, status: schema.invitation.status, expiresAt: schema.invitation.expiresAt,
-      orgName: schema.organization.name, inviterName: schema.user.name, inviterEmail: schema.user.email,
+      orgName: schema.organization.name, inviterName: schema.user.name, inviterEmail: schema.user.email, inviterImage: schema.user.image,
     })
     .from(schema.invitation)
     .innerJoin(schema.organization, eq(schema.invitation.organizationId, schema.organization.id))
@@ -48,25 +49,31 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
           <Logo size={48} />
         </div>
         {problem ? (
-          <div className="auth__sent">
-            <p className="auth__lead">{t.invite.cannotAccept}</p>
+          <AuthWindow
+            title={t.invite.pageTitle}
+            heading={t.invite.cannotAccept}
+            status={t.invite.signedInAs(session.user.email)}
+            footer={<>
+              <Link href="/" className={buttonVariants()}>{t.invite.goToApp}</Link>
+              {/* A mismatched email was a dead end: now the account can be switched */}
+              {mismatch ? <SwitchAccount next={path} /> : null}
+            </>}
+          >
             <p className="auth__hint">{problem}</p>
-            {/* A mismatched email was a dead end: now the account can be switched */}
-            {mismatch ? <SwitchAccount next={path} /> : null}
             {inv && !mismatch ? (
               <p className="auth__hint">
                 {t.invite.askAnother(inv.inviterName || inv.inviterEmail)}{" "}
                 <a href={`mailto:${inv.inviterEmail}?subject=${encodeURIComponent(t.invite.mailSubject(inv.orgName))}`}>{inv.inviterEmail}</a>
               </p>
             ) : null}
-            <Link href="/" className={buttonVariants({ variant: "ghost", size: "sm" })}>{t.invite.goToApp}</Link>
-          </div>
+          </AuthWindow>
         ) : (
           <AcceptInvitation
             id={inv!.id}
             teamName={inv!.orgName}
             inviterName={inv!.inviterName || inv!.inviterEmail}
             inviterEmail={inv!.inviterEmail}
+            inviterImage={inv!.inviterImage}
             youAre={session.user.email}
           />
         )}

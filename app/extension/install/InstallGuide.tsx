@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useT } from "@/components/I18nProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { browserName, canInstall, isOlder, useExtension } from "@/hooks/use-extension";
+import { Button as CrButton, Card, StatusRing } from "@/components/criterio";
 
 // Web pages cannot link to chrome:// addresses, so it is shown to be copied. Arc, Edge and
 // Brave take the same address and send it to their own.
@@ -14,18 +15,12 @@ const ZIP = "/extension/download";
 // The key normally reaches the extension at once; past this, the key is shown to be pasted by hand
 const HANDOVER_MS = 4000;
 
-const Check = (
-  <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M2.5 6.5l2.5 2.5 4.5-5.5" />
-  </svg>
-);
-
 type StepState = "done" | "now" | "next";
 
 function Step({ n, state, title, doneLabel, children }: { n: number; state: StepState; title: string; doneLabel: string; children?: ReactNode }) {
   return (
     <li className={`steps__item is-${state}`} aria-current={state === "now" ? "step" : undefined}>
-      <span className="steps__mark" aria-hidden>{state === "done" ? Check : n}</span>
+      <span className="steps__mark" aria-hidden>{state === "done" ? <StatusRing tone="synced" label={doneLabel} /> : n}</span>
       <div className="steps__main">
         <h2 className="steps__title">{title}{state === "done" && <span className="sr-only"> ({doneLabel})</span>}</h2>
         {children}
@@ -78,13 +73,13 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
 
   return (
     <div className="page__body">
-      {!supported && <p className="steps__notice">{g.wrongBrowser}</p>}
+      {!supported && <Card tone="butter" className="steps__notice">{g.wrongBrowser}</Card>}
       {outdated && info?.version && (
-        <div className="steps__notice">
-          <strong>{g.update.title(latest)}</strong>
+        <Card tone="butter" className="steps__notice" title={g.update.title(latest)}>
           <p>{g.update.body(info.version)}</p>
+          {/* One ember per view: while the connect step still waits, its button is the primary one */}
           <a className={buttonVariants({ variant: "primary", size: "sm" })} href={ZIP} download>{g.download.action}</a>
-        </div>
+        </Card>
       )}
 
       <ol className="steps">
@@ -118,7 +113,7 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
                 <li>{g.load.unpacked}</li>
               </ol>
               <p className="steps__text">
-                {g.load.after} <button type="button" className="steps__link" onClick={() => window.location.reload()}>{g.load.reload}</button>
+                {g.load.after} <CrButton variant="quiet" size="s" className="steps__link" onClick={() => window.location.reload()}>{g.load.reload}</CrButton>
               </p>
             </>
           )}

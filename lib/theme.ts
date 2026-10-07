@@ -28,11 +28,24 @@ export function resolveTheme(pref: ThemePref): ResolvedTheme {
   return pref === "system" ? systemTheme() : pref;
 }
 
+/** Sets data-theme with every transition off for that frame, so the switch snaps instead of smearing
+ * (buttons, tabs and cards all transition their colors). */
+export function setTheme(theme: ResolvedTheme) {
+  const root = document.documentElement;
+  if (root.dataset.theme === theme) return;
+  const off = document.createElement("style");
+  off.textContent = "*,*::before,*::after{transition:none !important}";
+  document.head.appendChild(off);
+  root.dataset.theme = theme;
+  void getComputedStyle(root).opacity; // reflow with the transitions off
+  requestAnimationFrame(() => off.remove());
+}
+
 /** Saves the preference and applies the resolved theme to the document. */
 export function applyThemePref(pref: ThemePref) {
   try {
     if (pref === "system") localStorage.removeItem(THEME_KEY);
     else localStorage.setItem(THEME_KEY, pref);
   } catch {}
-  document.documentElement.dataset.theme = resolveTheme(pref);
+  setTheme(resolveTheme(pref));
 }

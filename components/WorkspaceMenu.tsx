@@ -9,52 +9,44 @@ import CreateTeamDialog from "./CreateTeamDialog";
 import { useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Avatar, MenuItem, MenuLabel, Separator, toneFor } from "@/components/criterio";
 
-/** Workspace avatar: its logo if it has one, otherwise the name's initial */
-export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean }) {
+/** The system's Avatar, out of the accessibility tree: the name always sits beside it */
+function Face({ name, src, square, small, className = "" }: { name: string; src?: string | null; square?: boolean; small?: boolean; className?: string }) {
   return (
-    <span className={`ws__avatar${small ? " ws__avatar--sm" : ""}`} aria-hidden>
-      {workspace.logo ? <img src={workspace.logo} alt="" /> : workspace.name.slice(0, 1).toUpperCase()}
+    <span className={`ws__face ${className}`} aria-hidden>
+      <Avatar initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} src={src} square={square} size={small ? 20 : 28} />
     </span>
   );
+}
+
+/** Workspace avatar: the system's Avatar, square; its logo if it has one, otherwise the name's initial */
+export function WorkspaceAvatar({ workspace, small }: { workspace: Pick<Workspace, "name" | "logo">; small?: boolean }) {
+  return <Face name={workspace.name} src={workspace.logo} square small={small} />;
 }
 
 /** A workspace as a place: always square. The personal one shows your photo when it has no logo */
 export function WorkspaceFace({ workspace, user, small }: { workspace: Pick<Workspace, "name" | "logo" | "kind">; user: Pick<SessionUser, "name" | "image">; small?: boolean }) {
   if (workspace.kind !== "personal" || workspace.logo) return <WorkspaceAvatar workspace={workspace} small={small} />;
-  return (
-    <span className={`ws__avatar${small ? " ws__avatar--sm" : ""}`} aria-hidden>
-      {user.image ? <img src={user.image} alt="" /> : user.name.slice(0, 1).toUpperCase()}
-    </span>
-  );
+  return <Face name={user.name} src={user.image} square small={small} />;
 }
 
-/** A person's avatar: photo if they have one, otherwise the initial. Round, to tell it apart from a workspace logo. */
+/** A person's avatar: the system's Avatar in the person's tone, photo if they have one, otherwise the initial.
+ *  Round, to tell it apart from a workspace logo. */
 export function UserAvatar({ name, image, small, className = "" }: { name: string; image?: string | null; small?: boolean; className?: string }) {
-  return (
-    <span className={`ws__avatar ws__avatar--user${small ? " ws__avatar--sm" : ""} ${className}`} aria-hidden>
-      {image ? <img src={image} alt="" /> : name.slice(0, 1).toUpperCase()}
-    </span>
-  );
+  return <Face name={name} src={image} small={small} className={className} />;
 }
 
+/** The menu's glyphs the system's Icon does not draw, on its 24 grid with its 2px stroke */
 const I = {
   swatches: (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2.5" y="2.5" width="5" height="5" rx="1.2" /><rect x="8.5" y="2.5" width="5" height="5" rx="1.2" /><rect x="2.5" y="8.5" width="5" height="5" rx="1.2" /><circle cx="11" cy="11" r="2.5" /></svg>
+    <svg className="cr-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><circle cx="16.5" cy="16.5" r="3.5" /></svg>
   ),
   gear: (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="2.2" /><path d="M8 1.8v1.6M8 12.6v1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M1.8 8h1.6M12.6 8h1.6M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1" /></svg>
+    <svg className="cr-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="3.2" /><path d="M12 3v2.4M12 18.6V21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M3 12h2.4M18.6 12H21M5.6 18.4l1.7-1.7M16.7 7.3l1.7-1.7" /></svg>
   ),
   activity: (
-    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1.8 8.5h2.6l2-5 3.2 9 2-4h2.6" /></svg>
-  ),
-  plus: (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 2v8M2 6h8" /></svg>
-  ),
-  check: (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2.5 6.5l2.5 2.5 4.5-5" />
-    </svg>
+    <svg className="cr-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 12.5h4l3-7.5 4.5 13.5 3-6H21" /></svg>
   ),
 };
 
@@ -103,7 +95,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
             {/* The personal workspace shows your photo, square like every workspace */}
             <WorkspaceFace workspace={workspace} user={user} />
             <span className="ws__names">
-              <span className="display ws__name">{workspace.name}</span>
+              <span className="t-title-s ws__name">{workspace.name}</span>
               {/* If the name already says "Equipo" or "Team", it isn't repeated below */}
               {(workspace.kind === "personal" || !/equipo|team/i.test(workspace.name)) && (
                 <span className="ws__kind">{workspace.kind === "personal" ? t.ws.personal : t.ws.team}</span>
@@ -114,49 +106,38 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
       </PopoverTrigger>
 
       {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip */}
-      <PopoverContent className={trigger ? "ws__menu ws__menu--inline island-pop" : "ws__menu"} anchor={trigger ? undefined : ref}>
-          <div className="ws__section">{t.ws.workspaces}</div>
+      {/* The system's Menu: a paper window in both themes, the moss bar on top, engraved lines between groups */}
+      <PopoverContent className={trigger ? "cr-menu ws__menu ws__menu--inline" : "cr-menu ws__menu"} anchor={trigger ? undefined : ref}>
+          <MenuLabel bar>{t.ws.workspaces}</MenuLabel>
           {personal.map((w) => (
-            <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>
-              <WorkspaceFace workspace={w} user={user} small />
-              <span className="ws__item-name">{w.name}</span>
-              <span className="ws__item-kind">{t.ws.personal}</span>
-              {w.id === workspace.id && <span className="ws__item-check">{I.check}</span>}
-            </button>
+            <MenuItem key={w.id} icon={<WorkspaceFace workspace={w} user={user} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
+              {w.name} <span className="ws__item-kind">{t.ws.personal}</span>
+            </MenuItem>
           ))}
           {teams.map((w) => (
-            <button key={w.id} className={`ws__item${w.id === workspace.id ? " is-active" : ""}`} onClick={() => switchTo(w.id)} disabled={busy}>
-              <WorkspaceAvatar workspace={w} small />
-              <span className="ws__item-name">{w.name}</span>
-              {w.id === workspace.id && <span className="ws__item-check">{I.check}</span>}
-            </button>
+            <MenuItem key={w.id} icon={<WorkspaceAvatar workspace={w} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
+              {w.name}
+            </MenuItem>
           ))}
-          <button className="ws__item ws__item--muted" onClick={() => { setOpen(false); setCreating(true); }}>
-            <span className="ws__plus" aria-hidden>{I.plus}</span>
-            <span className="ws__item-name">{t.ws.createTeam}</span>
-          </button>
+          <MenuItem icon="plus" className="is-muted" onClick={() => { setOpen(false); setCreating(true); }}>{t.ws.createTeam}</MenuItem>
 
-          <div className="ws__divider" />
+          <Separator />
           {extras && <div className="ws__extras" onClick={() => setOpen(false)}>{extras}</div>}
-          <Link className="ws__item" href="/settings" onClick={() => setOpen(false)}>
-            <span className="ws__plus ws__plus--solid" aria-hidden>{I.gear}</span>
-            <span className="ws__item-name">{t.ws.settings}</span>
+          <Link className="cr-menu-item" role="menuitem" href="/settings" onClick={() => setOpen(false)}>
+            {I.gear}<span className="cr-menu-label">{t.ws.settings}</span>
           </Link>
           {isAdmin && (
-            <Link className="ws__item" href="/admin" onClick={() => setOpen(false)}>
-              <span className="ws__plus ws__plus--solid" aria-hidden>{I.activity}</span>
-              <span className="ws__item-name">{t.ws.appActivity}</span>
+            <Link className="cr-menu-item" role="menuitem" href="/admin" onClick={() => setOpen(false)}>
+              {I.activity}<span className="cr-menu-label">{t.ws.appActivity}</span>
             </Link>
           )}
           {isAdmin && (
-            <Link className="ws__item" href="/library" onClick={() => setOpen(false)}>
-              <span className="ws__plus ws__plus--solid" aria-hidden>{I.swatches}</span>
-              <span className="ws__item-name">{t.ws.designSystem}</span>
+            <Link className="cr-menu-item" role="menuitem" href="/library" onClick={() => setOpen(false)}>
+              {I.swatches}<span className="cr-menu-label">{t.ws.designSystem}</span>
             </Link>
           )}
-          <button className="ws__item ws__item--muted" onClick={logout}>
-            <span className="ws__item-name">{t.ws.signOut}</span>
-          </button>
+          <Separator />
+          <MenuItem className="is-muted" onClick={logout}>{t.ws.signOut}</MenuItem>
       </PopoverContent>
       </Popover>
       <CreateTeamDialog open={creating} onOpenChange={setCreating} />

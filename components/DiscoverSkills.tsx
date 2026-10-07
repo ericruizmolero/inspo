@@ -7,6 +7,7 @@ import { useRef, useState } from "react";
 import type { DirectorySite } from "@/lib/directory";
 import { MD_SKILLS, skillInstall, skillPage } from "@/lib/md-skill-ids";
 import { useT } from "./I18nProvider";
+import { Avatar, Card, Chip, Icon, toneFor } from "@/components/criterio";
 
 /** The GitHub owner of the repo the command installs from: the skill's author */
 const ownerOf = (install: string) => install.match(/github\.com\/([^/\s]+)/)?.[1] ?? "";
@@ -27,7 +28,7 @@ export default function DiscoverSkills({ sites }: { sites: DirectorySite[] }) {
       <section className="disc-list__group">
         <header className="disc-list__head disc-skills__head">
           <div><h2>{group.title}</h2><p>{group.hint}</p></div>
-          {catalog && <a className="disc-skills__catalog" href={catalog.url} target="_blank" rel="noopener noreferrer">{t.discover.skills.catalog(catalog.name)} ↗</a>}
+          {catalog && <a className="disc-skills__catalog" href={catalog.url} target="_blank" rel="noopener noreferrer">{t.discover.skills.catalog(catalog.name)}<Icon name="arrow-up-right" size={14} /></a>}
         </header>
         <ul className="disc-skills">
           {[...own, ...others].map((s) => <SkillCard key={s.url} skill={s} />)}
@@ -48,20 +49,20 @@ function SkillCard({ skill }: { skill: Skill }) {
     timer.current = window.setTimeout(() => setCopied(false), 1600);
   };
   return (
-    <li className="disc-skill">
+    <Card as="li" className="disc-skill">
       <div className="disc-skill__by">
-        {/* A missing avatar leaves the initial underneath */}
-        <span className="disc-skill__avatar" aria-hidden>{skill.owner.slice(0, 1).toUpperCase()}<img src={skill.avatar} alt="" loading="lazy" onError={(e) => e.currentTarget.remove()} /></span>
+        {/* A missing avatar falls back to the initial (Avatar does it) */}
+        <Avatar initials={skill.owner.slice(0, 1).toUpperCase()} name={skill.owner} tone={toneFor(skill.owner)} src={skill.avatar} size={20} />
         <span>{skill.owner}</span>
-        {skill.inMd && <i className="disc-row__skill" title={t.discover.inCriterioHint}>{t.discover.inCriterio}</i>}
+        {skill.inMd && <span className="disc-skill__inmd" data-tip={t.discover.inCriterioHint}><Chip tone="moss">{t.discover.inCriterio}</Chip></span>}
       </div>
       {/* The name's link covers the whole card; the copy button sits above it */}
-      <a className="disc-skill__name" href={skill.url} target="_blank" rel="noopener noreferrer">{skill.name}</a>
+      <a className="t-title-m disc-skill__name" href={skill.url} target="_blank" rel="noopener noreferrer">{skill.name}</a>
       <p className="disc-skill__what">{skill.what}</p>
-      <button type="button" className={`disc-skill__install${copied ? " is-copied" : ""}`} onClick={() => void copy()} title={t.discover.skills.copy}>
+      <button type="button" className={`btn btn--sm disc-skill__install${copied ? " is-pressed" : ""}`} onClick={() => void copy()} aria-label={`${t.discover.skills.copy}: ${skill.install}`}>
         <code>{skill.install}</code>
         <span>{copied ? t.discover.skills.copied : t.discover.skills.copy}</span>
       </button>
-    </li>
+    </Card>
   );
 }

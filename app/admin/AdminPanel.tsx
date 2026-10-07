@@ -3,7 +3,6 @@
 import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback } from "@/app/actions/admin";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserAvatar } from "@/components/WorkspaceMenu";
 import AreaThumb from "./AreaThumb";
 import { type ActivityOverview, type ActivityDay, type AdminEntry } from "@/lib/activity-core";
 import { type UsageOverview } from "@/lib/usage-core";
@@ -13,11 +12,16 @@ import { fmtDate, fmtDateTime as fmtDT, fmtUsd as usd } from "@/lib/i18n/format"
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarStack, Busy, Chip, EmptyState, FieldRow, IconButton, Progress, SettingsWindow, StatusRing, toneFor } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 
 // ─── Formatting ─────────────────────────────────────────────────────────────
+
+/** A person as the system's Avatar: the photo when there is one, else the initial in their tone */
+const face = (name: string, image?: string | null, size = 24) => ({ initials: name.slice(0, 1).toUpperCase(), name, tone: toneFor(name), src: image, size });
+function Face({ name, image, size }: { name: string; image?: string | null; size?: number }) {
+  return <Avatar {...face(name, image, size)} />;
+}
 
 export function fmtDur(s: number): string {
   if (s < 60) return `${Math.round(s)} s`;
@@ -110,13 +114,13 @@ function Columns<T extends { date: string }>({ data, value, format, title, integ
 
   return (
     <div className="ad-chart" ref={ref}>
-      <span className="ad-chart__title">{title}</span>
+      <span className="ad-chart__title t-small">{title}</span>
       {width > 0 && (
         <svg width={width} height={H} role="img" aria-label={title}>
           {ticks.map((t) => (
             <g key={t}>
               <line x1={padL} x2={width - padR} y1={y(t)} y2={y(t)} className="ad-chart__grid" />
-              <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" className="ad-chart__tick">{format(t)}</text>
+              <text x={padL - 6} y={y(t) + 3.5} textAnchor="end" className="ad-chart__tick t-label">{format(t)}</text>
             </g>
           ))}
           {data.map((d, i) => {
@@ -130,7 +134,7 @@ function Columns<T extends { date: string }>({ data, value, format, title, integ
                 <rect x={padL + i * band} y={padT} width={band} height={innerH} fill="transparent" />
                 {path && <path d={path} className={`ad-chart__bar${hover === i ? " is-hover" : ""}`} />}
                 {(i % every === 0 || i === data.length - 1) && (i === data.length - 1 || i + every <= data.length - 1 || data.length <= 14) && (
-                  <text x={padL + i * band + band / 2} y={H - 6} textAnchor="middle" className="ad-chart__tick">{dayLabel(d.date)}</text>
+                  <text x={padL + i * band + band / 2} y={H - 6} textAnchor="middle" className="ad-chart__tick t-label">{dayLabel(d.date)}</text>
                 )}
               </g>
             );
@@ -138,9 +142,9 @@ function Columns<T extends { date: string }>({ data, value, format, title, integ
         </svg>
       )}
       {h && hover !== null && (
-        <div className="ad-tip" style={{ left: Math.min(Math.max(padL + hover * band + band / 2, 60), Math.max(60, width - 60)) }}>
-          <span className="ad-tip__label">{dayLabel(h.date)}</span>
-          <span className="ad-tip__value">{format(vals[hover])}</span>
+        <div className="cr-tip ad-tip" style={{ left: Math.min(Math.max(padL + hover * band + band / 2, 60), Math.max(60, width - 60)) }}>
+          <span className="ad-tip__label t-label">{dayLabel(h.date)}</span>
+          <span className="ad-tip__value t-small">{format(vals[hover])}</span>
         </div>
       )}
     </div>
@@ -185,39 +189,34 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   };
 
   return (
-    <Card>
+    <SettingsWindow title={t.admin.accessTitle}
+      note={msg ? <span role="status">{msg}</span> : t.admin.accessHint}>
       {confirmDialog}
-      <CardHeader>
-        <CardTitle>{t.admin.accessTitle}</CardTitle>
-        <CardDescription>{admins.length}</CardDescription>
-      </CardHeader>
-      <CardContent className="card-stack">
-        <ul className="list">
-          {admins.map((a) => (
-            <li key={a.email} className="list__row">
-              <UserAvatar name={a.name ?? a.email} small />
-              <span className="list__main">
-                <span className="list__name">{a.name ?? a.email}{a.email === me.toLowerCase() && <span className="list__you">{t.admin.you}</span>}</span>
-                <span className="list__sub">
-                  {a.name ? `${a.email} · ` : ""}
-                  {a.fixed ? t.admin.fixedAccess : `${a.name ? "" : t.admin.noAccountYet}${t.admin.addedBy(a.addedBy || "—")}${a.createdAt ? t.admin.addedOn(fmtDate(a.createdAt, locale, { day: "numeric", month: "short" })) : ""}`}
-                </span>
+      <ul className="list">
+        {admins.map((a) => (
+          <li key={a.email} className="list__row">
+            <Face name={a.name ?? a.email} size={32} />
+            <span className="list__main">
+              <span className="list__name t-ui"><span className="list__text">{a.name ?? a.email}</span>{a.email === me.toLowerCase() && <Chip className="list__you t-label">{t.admin.you}</Chip>}</span>
+              <span className="list__sub t-small">
+                {a.name && <span>{a.email}</span>}
+                <span>{a.fixed ? t.admin.fixedAccess : `${a.name ? "" : t.admin.noAccountYet}${a.addedBy ? t.admin.addedBy(a.addedBy) : ""}${a.createdAt ? t.admin.addedOn(fmtDate(a.createdAt, locale, { day: "numeric", month: "short" })) : ""}`}</span>
               </span>
-              {!a.fixed && a.email !== me.toLowerCase() && (
-                <Button variant="ghost" size="sm" onClick={() => remove(a)} disabled={busy}>{t.admin.remove}</Button>
-              )}
-            </li>
-          ))}
-        </ul>
-        <form onSubmit={add} className="invite">
-          <Input  type="email" placeholder={t.admin.partnerEmail} value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <Button variant="primary" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</Button>
-        </form>
-        {error && <p className="modal__error">{error}</p>}
-        {msg && <p className="page__ok">{msg}</p>}
-        <p className="card-note">{t.admin.accessHint}</p>
-      </CardContent>
-    </Card>
+            </span>
+            {!a.fixed && a.email !== me.toLowerCase() && (
+              <Button variant="quiet" size="sm" onClick={() => remove(a)} disabled={busy}>{t.admin.remove}</Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <form onSubmit={add}>
+        <FieldRow label={t.team.emailLabel} htmlFor="grant-email" error={error}
+          action={<Button variant="primary" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</Button>}>
+          <input id="grant-email" type="email" className="cr-input" placeholder={t.admin.partnerEmail} value={email}
+            onChange={(e) => setEmail(e.target.value)} required aria-invalid={error ? true : undefined} />
+        </FieldRow>
+      </form>
+    </SettingsWindow>
   );
 }
 
@@ -229,7 +228,7 @@ function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(batchMarkdown(batch)); setDone(true); setTimeout(() => setDone(false), 2000); } catch { /* no clipboard */ }
   };
-  return <Button variant="ghost" size="sm" onClick={copy}>{done ? t.common.copied : t.admin.copyForAgent}</Button>;
+  return <IconButton icon={done ? "check" : "copy"} variant="quiet" size="s" label={done ? t.common.copied : t.admin.copyForAgent} onClick={copy} />;
 }
 
 function FeedbackBatchView({ batch, now, onDelete, onResolve }: { batch: FeedbackBatch; now: number; onDelete: (b: FeedbackBatch) => Promise<void>; onResolve: (b: FeedbackBatch, resolved: boolean) => Promise<void> }) {
@@ -253,36 +252,44 @@ function FeedbackBatchView({ batch, now, onDelete, onResolve }: { batch: Feedbac
     <li className="fb">
       {confirmDialog}
       <div className="fb__head">
-        <UserAvatar name={batch.author.name} image={batch.author.image} small />
+        <Face name={batch.author.name} image={batch.author.image} size={32} />
         <span className="list__main">
-          <span className="list__name">
-            {batch.author.name}
-            <span className="fb__on">{t.admin.about}</span>
-            <a className="fb__path" href={batch.url} target="_blank" rel="noopener noreferrer" title={batch.url}>{batch.path}</a>
+          <span className="list__name t-ui">
+            <span className="list__text">
+              {batch.author.name}
+              <span className="fb__on">{t.admin.about}</span>
+              <a className="fb__path" href={batch.url} target="_blank" rel="noopener noreferrer" data-tip={batch.url}>{batch.path}</a>
+            </span>
           </span>
-          <span className="list__sub" title={fmtDT(when, locale)}>
-            {batch.sentAt ? t.admin.sentAgo(ago(batch.sentAt, now, locale, t)) : t.admin.notSentYet(ago(batch.updatedAt, now, locale, t))}
-            {batch.workspace ? ` · ${batch.workspace}` : ""}{batch.viewport ? ` · ${batch.viewport}` : ""}
-            {` · ${t.admin.notes(batch.notes.length)}`}
+          <span className="list__sub t-small" data-tip={fmtDT(when, locale)}>
+            <span>{batch.sentAt ? t.admin.sentAgo(ago(batch.sentAt, now, locale, t)) : t.admin.notSentYet(ago(batch.updatedAt, now, locale, t))}</span>
+            {batch.workspace && <span>{batch.workspace}</span>}{batch.viewport && <span>{batch.viewport}</span>}
+            <span>{t.admin.notes(batch.notes.length)}</span>
           </span>
         </span>
-        {!batch.sentAt && <span className="fb__tag">{t.admin.draft}</span>}
-        {batch.resolvedAt && <span className="fb__tag fb__tag--resolved" title={fmtDT(batch.resolvedAt, locale)}>{t.admin.resolved}</span>}
-        {batch.sentAt && <Button variant="ghost" size="sm" onClick={toggleResolved} disabled={busy}>{batch.resolvedAt ? t.admin.reopen : t.admin.resolve}</Button>}
-        <CopyMarkdown batch={batch} />
-        <Button variant="ghost" size="sm" onClick={remove} disabled={busy} aria-label={t.admin.deleteFeedback}>{busy ? <span className="spinner" /> : t.common.delete}</Button>
+        {!batch.sentAt && <Chip className="t-label" tone="butter">{t.admin.draft}</Chip>}
+        {batch.resolvedAt && <span data-tip={fmtDT(batch.resolvedAt, locale)}><Chip className="t-label" tone="moss">{t.admin.resolved}</Chip></span>}
+        <span className="fb__actions">
+          {batch.sentAt && (
+            <IconButton icon="check" variant="quiet" size="s" toggle active={!!batch.resolvedAt}
+              label={batch.resolvedAt ? t.admin.reopen : t.admin.resolve} onClick={toggleResolved} disabled={busy} />
+          )}
+          <CopyMarkdown batch={batch} />
+          <IconButton icon={busy ? <Busy label={t.common.delete} /> : "trash"} variant="quiet" size="s" className="fb__delete"
+            label={t.admin.deleteFeedback} onClick={remove} disabled={busy} />
+        </span>
       </div>
       <ol className="fb__notes">
         {notes.map((n) => (
           <li key={n.id} className="fb__note">
-            <span className="fb__el" title={n.elementPath}>{n.element}{n.sourceFile ? <span className="fb__src"> · {n.sourceFile}</span> : null}</span>
-            {n.selectedText && <q className="fb__quote">{n.selectedText}</q>}
+            <span className="fb__el t-small" data-tip={n.elementPath}>{n.element}{n.sourceFile ? <span className="fb__src t-label">{n.sourceFile}</span> : null}</span>
+            {n.selectedText && <q className="fb__quote t-small">{n.selectedText}</q>}
             <p className="fb__comment">{n.comment || <span className="fb__empty">{t.admin.noComment}</span>}</p>
           </li>
         ))}
       </ol>
       {batch.notes.length > 3 && (
-        <button className="fb__more" onClick={() => setOpen((v) => !v)}>{open ? t.admin.seeLess : t.admin.seeAllNotes(batch.notes.length)}</button>
+        <Button variant="quiet" size="sm" className="list__more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{open ? t.admin.seeLess : t.admin.seeAllNotes(batch.notes.length)}</Button>
       )}
     </li>
   );
@@ -313,31 +320,52 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
     router.refresh();
   };
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t.admin.feedbackTitle}</CardTitle>
-        {feedback.notes > 0 && <CardDescription>{t.admin.feedbackMeta(feedback.notes, feedback.sent, feedback.pending, feedback.people)}</CardDescription>}
-      </CardHeader>
-      <CardContent className="card-stack">
-        {all.length === 0 ? (
-          <p className="card-note">{t.admin.noFeedback(feedback.days)}</p>
-        ) : (
-          <ul className="fb-list">
-            {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} onDelete={onDelete} onResolve={onResolve} />)}
-          </ul>
-        )}
-        {error && <p className="modal__error">{error}</p>}
-        {all.length > 8 && (
-          <Button variant="ghost" size="sm" onClick={() => setShowAll((v) => !v)} style={{ alignSelf: "flex-start" }}>
-            {showAll ? t.admin.seeLess : t.admin.seeAll(all.length)}
-          </Button>
-        )}
-        {feedback.batches.length > 0 && (
-          <p className="card-note">{t.admin.feedbackHint}</p>
-        )}
-      </CardContent>
-    </Card>
+    <SettingsWindow title={t.admin.feedbackTitle} description={feedback.notes > 0 ? t.admin.feedbackMeta(feedback.notes, feedback.sent, feedback.pending, feedback.people) : undefined}
+      note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : feedback.batches.length > 0 ? t.admin.feedbackHint : undefined}>
+      {all.length === 0 ? (
+        <EmptyState title={t.admin.nothingYet}>{t.admin.noFeedback(feedback.days)}</EmptyState>
+      ) : (
+        <ul className="fb-list">
+          {batches.map((b) => <FeedbackBatchView key={b.key} batch={b} now={now} onDelete={onDelete} onResolve={onResolve} />)}
+        </ul>
+      )}
+      {all.length > 8 && (
+        <Button variant="quiet" size="sm" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+          {showAll ? t.admin.seeLess : t.admin.seeAll(all.length)}
+        </Button>
+      )}
+    </SettingsWindow>
   );
+}
+
+// ─── KPI strip and share bar ────────────────────────────────────────────────
+
+type Kpi = { label: React.ReactNode; value: React.ReactNode; note?: React.ReactNode };
+
+/** One KPI strip for Overview and Usage: cells divided by hairlines, edge to edge of the window's body */
+function Kpis({ cells }: { cells: Kpi[] }) {
+  return (
+    <div className="ad-kpis">
+      <dl className="ad-kpis__grid">
+        {cells.map((c, i) => (
+          <div key={i} className="ad-kpi">
+            <dt className="ad-kpi__label t-label">{c.label}</dt>
+            <dd className="ad-kpi__value t-title-l">{c.value}</dd>
+            {c.note != null && <dd className="ad-kpi__note t-small">{c.note}</dd>}
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+/** A share of the largest, drawn with the system's Progress (segmented ember blocks in the sunken field). At
+ *  least one block lights when there is anything. The figure next to it says the number, so it is hidden from
+ *  screen readers */
+function Bar({ share }: { share: number }) {
+  const segments = 24;
+  const value = share > 0 ? Math.max(share * 100, 100 / segments) : 0;
+  return <span className="ad-bar" aria-hidden><Progress value={value} segments={segments} label="" /></span>;
 }
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
@@ -354,6 +382,7 @@ export default function AdminPanel({ section, data, usage, feedback, admins, me 
   const router = useRouter();
   const now = new Date(data.generatedAt).getTime();
   const [showAll, setShowAll] = useState(false);
+  const [showAllLogins, setShowAllLogins] = useState(false);
   const maxArea = data.areas[0]?.seconds ?? 0;
   const maxAction = usage?.byAction[0]?.usd ?? 0;
 
@@ -367,265 +396,221 @@ export default function AdminPanel({ section, data, usage, feedback, admins, me 
   const online = data.users.filter((u) => u.online);
   const users = showAll ? data.users : data.users.slice(0, 25);
 
+  const areaName = (area: string) => t.labels.area[area as keyof typeof t.labels.area] ?? area;
+  const actionName = (action: string) => t.labels.action[action as keyof typeof t.labels.action] ?? action;
+  const logins = showAllLogins ? data.logins : data.logins.slice(0, 8);
+
   return (
     <div className="page__body">
       {section === "overview" && (
         <>
-        <section className="ad-kpis">
-          <div className="ad-kpi ad-kpi--hero">
-            <span className="ad-kpi__label"><span className={`ad-dot${k.online ? " is-on" : ""}`} aria-hidden />{t.admin.onlineNow}</span>
-            <span className="ad-kpi__value">{k.online}</span>
-            {online.length ? (
-              <span className="ad-online" title={online.map((u) => u.name).join(", ")}>
-                <span className="ad-online__avatars">
-                  {online.slice(0, 5).map((u) => <UserAvatar key={u.id} name={u.name} image={u.image} small />)}
+        <SettingsWindow title={t.admin.summary}>
+          <Kpis cells={[
+            {
+              label: <><StatusRing tone={k.online ? "synced" : "idle"} label={t.admin.onlineNow} />{t.admin.onlineNow}</>,
+              value: k.online,
+              note: online.length ? (
+                <span className="ad-online" data-tip={online.map((u) => u.name).join(", ")}>
+                  <AvatarStack people={online.slice(0, 5).map((u) => face(u.name, u.image))} size={24} />
+                  <span className="ad-online__names">{namesList(online.map((u) => u.name), t)}</span>
                 </span>
-                <span className="ad-online__names">{namesList(online.map((u) => u.name), t)}</span>
-              </span>
-            ) : (
-              <span className="ad-kpi__sub">{t.admin.onlineSub}</span>
-            )}
-          </div>
-          <div className="ad-kpi">
-            <span className="ad-kpi__label">{t.admin.activeToday}</span>
-            <span className="ad-kpi__value">{k.activeToday}</span>
-            <span className="ad-kpi__sub">{t.admin.activeSub(k.active7, k.active30)}</span>
-          </div>
-          <div className="ad-kpi">
-            <span className="ad-kpi__label">{t.admin.loggedIn}</span>
-            <span className="ad-kpi__value">{k.loggedIn}</span>
-            <span className="ad-kpi__sub">{t.admin.loggedInSub}</span>
-          </div>
-          <div className="ad-kpi">
-            <span className="ad-kpi__label">{t.admin.registered}</span>
-            <span className="ad-kpi__value">{k.totalUsers}</span>
-            <span className="ad-kpi__sub">{k.newUsers ? t.admin.newUsers(k.newUsers, data.days) : t.admin.noNewUsers(data.days)}</span>
-          </div>
-          <div className="ad-kpi">
-            <span className="ad-kpi__label">{t.admin.timeInApp}</span>
-            <span className="ad-kpi__value ad-kpi__value--text">{fmtDur(k.seconds)}</span>
-            <span className="ad-kpi__sub">{k.avgSeconds ? t.admin.avgPerActive(fmtDur(k.avgSeconds)) : t.admin.inDays(data.days)}</span>
-          </div>
-        </section>
-  
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.admin.perDay}</CardTitle>
-          </CardHeader>
-          <CardContent className="card-stack">
-            {data.kpis.seconds === 0 && data.daily.every((d) => d.users === 0) ? (
-              <p className="card-note">{t.admin.noActivity}</p>
-            ) : (
-              <div className="ad-charts">
-                <Columns data={data.daily} title={t.admin.activePeople} value={(d) => d.users} format={(v) => String(Math.round(v))} integer />
-                <Columns data={data.daily} title={t.admin.timeInApp} value={(d) => d.seconds} format={fmtAxisDur} unitOf={(m) => (m >= 3600 ? 3600 : m >= 60 ? 60 : 1)} />
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              ) : t.admin.onlineSub,
+            },
+            { label: t.admin.activeToday, value: k.activeToday, note: t.admin.activeSub(k.active7, k.active30) },
+            { label: t.admin.loggedIn, value: k.loggedIn, note: t.admin.loggedInSub },
+            { label: t.admin.registered, value: k.totalUsers, note: k.newUsers ? t.admin.newUsers(k.newUsers, data.days) : t.admin.noNewUsers(data.days) },
+            { label: t.admin.timeInApp, value: fmtDur(k.seconds), note: k.avgSeconds ? t.admin.avgPerActive(fmtDur(k.avgSeconds)) : t.admin.inDays(data.days) },
+          ]} />
+        </SettingsWindow>
+
+        <SettingsWindow title={t.admin.perDay}>
+          {data.kpis.seconds === 0 && data.daily.every((d) => d.users === 0) ? (
+            <EmptyState title={t.admin.nothingYet}>{t.admin.noActivity}</EmptyState>
+          ) : (
+            <div className="ad-charts">
+              <Columns data={data.daily} title={t.admin.activePeople} value={(d) => d.users} format={(v) => String(Math.round(v))} integer />
+              <Columns data={data.daily} title={t.admin.timeInApp} value={(d) => d.seconds} format={fmtAxisDur} unitOf={(m) => (m >= 3600 ? 3600 : m >= 60 ? 60 : 1)} />
+            </div>
+          )}
+        </SettingsWindow>
         </>
       )}
 
       {section === "usage" && usage && (
         <>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.admin.whereTime}</CardTitle>
-          </CardHeader>
-          <CardContent className="card-stack">
-            {data.areas.length === 0 ? (
-              <p className="card-note">{t.admin.noData}</p>
-            ) : (
-              <ul className="ad-areas">
-                {data.areas.map((a) => (
-                  <li key={a.area} className="ad-area">
-                    <AreaThumb area={a.area} label={t.labels.area[a.area as keyof typeof t.labels.area] ?? a.area} />
-                    <span className="ad-area__body">
-                      <span className="ad-area__head">
-                        <span className="ad-area__name">{t.labels.area[a.area as keyof typeof t.labels.area] ?? a.area}</span>
-                        <span className="ad-area__meta">{t.admin.peopleCount(a.users)}</span>
-                        <span className="ad-area__value">{fmtDur(a.seconds)}</span>
-                      </span>
-                      <span className="ad-area__bar"><span style={{ width: `${maxArea ? Math.max(1, (a.seconds / maxArea) * 100) : 0}%` }} /></span>
+        <SettingsWindow title={t.admin.whereTime}>
+          {data.areas.length === 0 ? (
+            <EmptyState title={t.admin.noData} />
+          ) : (
+            <ul className="list">
+              {data.areas.map((a) => (
+                <li key={a.area} className="list__row ad-area">
+                  <AreaThumb area={a.area} label={areaName(a.area)} />
+                  <span className="list__main">
+                    <span className="ad-area__head">
+                      <span className="list__name t-ui"><span className="list__text">{areaName(a.area)}</span></span>
+                      <span className="list__figure t-small">{fmtDur(a.seconds)}</span>
                     </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+                    <span className="ad-area__foot">
+                      <span className="list__sub t-small">{t.admin.peopleCount(a.users)}</span>
+                      <Bar share={maxArea ? a.seconds / maxArea : 0} />
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SettingsWindow>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.admin.aiUsage}</CardTitle>
-          </CardHeader>
-          <CardContent className="card-stack">
-            <div className="ad-usage-kpis">
-              <div className="ad-usage-kpi">
-                <span className="ad-kpi__label">{t.admin.estimatedCost}</span>
-                <span className="ad-kpi__value ad-usage-kpi__value">{fmtUsd(usage.totalUsd)}</span>
+        <SettingsWindow title={t.admin.aiUsage} note={t.admin.costNote}>
+          <Kpis cells={[
+            { label: t.admin.estimatedCost, value: fmtUsd(usage.totalUsd) },
+            { label: t.admin.perAiPerson, value: fmtUsd(usage.people ? usage.totalUsd / usage.people : 0), note: t.admin.peopleCount(usage.people) },
+            { label: t.admin.callsLabel, value: usage.calls, note: usage.calls ? t.admin.avgCall(fmtUsd(usage.totalUsd / usage.calls)) : t.admin.toClaudeAndJev },
+          ]} />
+          {usage.calls === 0 ? (
+            <EmptyState title={t.admin.nothingYet}>{t.admin.noCalls}</EmptyState>
+          ) : (
+            <>
+              <div className="ad-charts">
+                <Columns data={usage.daily} title={t.admin.costPerDay} value={(d) => d.usd} format={fmtAxisUsd} />
+                <Columns data={usage.daily} title={t.admin.callsPerDay} value={(d) => d.calls} format={(v) => String(Math.round(v))} integer />
               </div>
-              <div className="ad-usage-kpi">
-                <span className="ad-kpi__label">{t.admin.perAiPerson}</span>
-                <span className="ad-kpi__value ad-usage-kpi__value">{fmtUsd(usage.people ? usage.totalUsd / usage.people : 0)}</span>
-                <span className="ad-kpi__sub">{t.admin.peopleCount(usage.people)}</span>
+              <div className="ad-cols">
+                <section className="ad-sub">
+                  <h3 className="t-title-s">{t.admin.byAction}</h3>
+                  <ul className="list">
+                    {usage.byAction.map((a) => (
+                      <li key={a.action} className="list__row">
+                        <span className="list__main">
+                          <span className="ad-area__head">
+                            <span className="list__name t-ui"><span className="list__text">{actionName(a.action)}</span></span>
+                            <span className="list__figure t-small">{fmtUsd(a.usd)}</span>
+                          </span>
+                          <span className="ad-area__foot">
+                            <span className="list__sub t-small">{a.action.startsWith("jev_") && a.units ? t.admin.itemsInCalls(a.units, a.calls) : t.admin.calls(a.calls)}</span>
+                            <Bar share={maxAction ? a.usd / maxAction : 0} />
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+                <section className="ad-sub">
+                  <h3 className="t-title-s">{t.admin.byTeam}</h3>
+                  <ul className="list">
+                    {usage.byWorkspace.map((w) => (
+                      <li key={w.id} className="list__row">
+                        <span className="list__main">
+                          <span className="list__name t-ui"><span className="list__text">{w.name ?? t.admin.deletedWorkspace}</span></span>
+                          <span className="list__sub t-small">{w.kind === "personal" && <span>{t.admin.personalSpace}</span>}<span>{t.admin.calls(w.calls)}</span></span>
+                        </span>
+                        <span className="list__figure t-small">{fmtUsd(w.usd)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <h3 className="t-title-s ad-sub__next">{t.admin.byPerson}</h3>
+                  <ul className="list">
+                    {usage.byUser.map((u) => (
+                      <li key={u.userId ?? "sys"} className="list__row">
+                        <Face name={u.name ?? t.admin.system} image={u.image} size={32} />
+                        <span className="list__main">
+                          <span className="list__name t-ui"><span className="list__text">{u.name ?? t.admin.system}</span></span>
+                          <span className="list__sub t-small">{u.email && <span>{u.email}</span>}<span>{t.admin.calls(u.calls)}</span></span>
+                        </span>
+                        <span className="list__figure t-small">{fmtUsd(u.usd)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               </div>
-              <div className="ad-usage-kpi">
-                <span className="ad-kpi__label">{t.admin.callsLabel}</span>
-                <span className="ad-kpi__value ad-usage-kpi__value">{usage.calls}</span>
-                <span className="ad-kpi__sub">{usage.calls ? t.admin.avgCall(fmtUsd(usage.totalUsd / usage.calls)) : t.admin.toClaudeAndJev}</span>
-              </div>
-            </div>
-            {usage.calls === 0 ? (
-              <p className="card-note">{t.admin.noCalls}</p>
-            ) : (
-              <>
-                <div className="ad-charts">
-                  <Columns data={usage.daily} title={t.admin.costPerDay} value={(d) => d.usd} format={fmtAxisUsd} />
-                  <Columns data={usage.daily} title={t.admin.callsPerDay} value={(d) => d.calls} format={(v) => String(Math.round(v))} integer />
-                </div>
-                <div className="ad-cols ad-cols--inner">
-                  <div className="ad-sub">
-                    <span className="ad-sub__title">{t.admin.byAction}</span>
-                    <ul className="ad-areas">
-                      {usage.byAction.map((a) => (
-                        <li key={a.action} className="ad-area">
-                          <span className="ad-area__body">
-                            <span className="ad-area__head">
-                              <span className="ad-area__name">{t.labels.action[a.action as keyof typeof t.labels.action] ?? a.action}</span>
-                              <span className="ad-area__meta">{a.action.startsWith("jev_") && a.units ? t.admin.itemsInCalls(a.units, a.calls) : t.admin.calls(a.calls)}</span>
-                              <span className="ad-area__value">{fmtUsd(a.usd)}</span>
-                            </span>
-                            <span className="ad-area__bar"><span style={{ width: `${maxAction ? Math.max(1, (a.usd / maxAction) * 100) : 0}%` }} /></span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="ad-sub">
-                    <span className="ad-sub__title">{t.admin.byTeam}</span>
-                    <ul className="list">
-                      {usage.byWorkspace.map((w) => (
-                        <li key={w.id} className="list__row">
-                          <span className="list__main">
-                            <span className="list__name">{w.name ?? t.admin.deletedWorkspace}</span>
-                            <span className="list__sub">{w.kind === "personal" ? t.admin.personalSpace : ""}{t.admin.calls(w.calls)}</span>
-                          </span>
-                          <span className="list__role">{fmtUsd(w.usd)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <span className="ad-sub__title" style={{ marginTop: 8 }}>{t.admin.byPerson}</span>
-                    <ul className="list">
-                      {usage.byUser.map((u) => (
-                        <li key={u.userId ?? "sys"} className="list__row">
-                          <UserAvatar name={u.name ?? t.admin.system} image={u.image} small />
-                          <span className="list__main">
-                            <span className="list__name">{u.name ?? t.admin.system}</span>
-                            <span className="list__sub">{u.email ? `${u.email} · ` : ""}{t.admin.calls(u.calls)}</span>
-                          </span>
-                          <span className="list__role">{fmtUsd(u.usd)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </>
-            )}
-            <p className="card-note">{t.admin.costNote}</p>
-          </CardContent>
-        </Card>
+            </>
+          )}
+        </SettingsWindow>
         </>
       )}
 
       {section === "people" && (
         <>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.admin.people}</CardTitle>
-            <CardDescription>{t.admin.peopleMeta(data.users.length, data.days)}</CardDescription>
-          </CardHeader>
-          <CardContent className="card-stack">
-            <div className="ad-table-wrap">
-              <table className="ad-table">
-                <thead>
-                  <tr>
-                    <th>{t.admin.thPerson}</th>
-                    <th>{t.admin.thState}</th>
-                    <th>{t.admin.thLastSeen}</th>
-                    <th className="ad-num">{t.admin.thTime}</th>
-                    <th className="ad-num">{t.admin.thVisits}</th>
-                    <th>{t.admin.thWhere}</th>
-                    <th>{t.admin.thTeams}</th>
-                    <th>{t.admin.thDevice}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id}>
-                      <td>
-                        <span className="ad-person">
-                          <UserAvatar name={u.name} image={u.image} small />
-                          <span className="list__main">
-                            <span className="list__name">{u.name}</span>
-                            <span className="list__sub" title={u.email}>{u.email}</span>
-                          </span>
+        <SettingsWindow title={t.admin.people} figure={data.users.length} description={t.admin.peopleMeta(data.users.length, data.days)} note={t.admin.peopleHint}>
+          <div className="ad-table-wrap">
+            <table className="ad-table t-small">
+              <thead>
+                <tr>
+                  <th>{t.admin.thPerson}</th>
+                  <th>{t.admin.thState}</th>
+                  <th>{t.admin.thLastSeen}</th>
+                  <th className="ad-num">{t.admin.thTime}</th>
+                  <th className="ad-num">{t.admin.thVisits}</th>
+                  <th>{t.admin.thWhere}</th>
+                  <th>{t.admin.thTeams}</th>
+                  <th>{t.admin.thDevice}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <span className="ad-person">
+                        <Face name={u.name} image={u.image} size={32} />
+                        <span className="list__main">
+                          <span className="list__name t-ui"><span className="list__text">{u.name}</span></span>
+                          <span className="list__sub t-small" title={u.email}>{u.email}</span>
                         </span>
-                      </td>
-                      <td>
-                        {u.online ? (
-                          <span className="ad-state ad-state--on"><span className="ad-dot is-on" aria-hidden />{t.admin.stateOnline}</span>
-                        ) : u.openSessions > 0 ? (
-                          <span className="ad-state">{t.admin.stateSession}</span>
-                        ) : (
-                          <span className="ad-state ad-state--off">{t.admin.stateOff}</span>
-                        )}
-                      </td>
-                      <td title={u.lastSeenAt ? fmtDateTime(u.lastSeenAt) : u.lastLoginAt ? t.admin.loginAt(fmtDateTime(u.lastLoginAt)) : undefined}>
-                        {u.lastSeenAt ? ago(u.lastSeenAt, now, locale, t) : u.lastLoginAt ? t.admin.loginAgo(ago(u.lastLoginAt, now, locale, t)) : t.admin.never}
-                      </td>
-                      <td className="ad-num">{u.seconds ? fmtDur(u.seconds) : "—"}</td>
-                      <td className="ad-num">{u.visits || "—"}</td>
-                      <td>{u.topArea ? t.labels.area[u.topArea as keyof typeof t.labels.area] ?? u.topArea : "—"}</td>
-                      <td className="ad-cell-trunc" title={u.workspaces.join(", ")}>{u.workspaces.length ? u.workspaces.join(", ") : t.admin.personal}</td>
-                      <td className="ad-cell-trunc">{u.device ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {data.users.length > 25 && (
-              <Button variant="ghost" size="sm" onClick={() => setShowAll((v) => !v)} style={{ alignSelf: "flex-start" }}>
-                {showAll ? t.admin.seeLess : t.admin.seeAll(data.users.length)}
-              </Button>
-            )}
-            <p className="card-note">{t.admin.peopleHint}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.admin.lastLogins}</CardTitle>
-          </CardHeader>
-          <CardContent className="card-stack">
-            {data.logins.length === 0 ? (
-              <p className="card-note">{t.admin.noLogins}</p>
-            ) : (
-              <ul className="list">
-                {data.logins.map((l, i) => (
-                  <li key={`${l.userId}-${i}`} className="list__row">
-                    <UserAvatar name={l.name} image={l.image} small />
-                    <span className="list__main">
-                      <span className="list__name">{l.name}</span>
-                      <span className="list__sub">{fmtDateTime(l.at)}{l.device ? ` · ${l.device}` : ""}{l.alive ? "" : t.admin.expiredSession}</span>
-                    </span>
-                    <span className="list__role">{ago(l.at, now, locale, t)}</span>
-                  </li>
+                      </span>
+                    </td>
+                    <td>
+                      {u.online ? (
+                        <Chip className="t-label" tone="moss">{t.admin.stateOnline}</Chip>
+                      ) : u.openSessions > 0 ? (
+                        <Chip className="t-label" tone="butter">{t.admin.stateSession}</Chip>
+                      ) : (
+                        <span className="ad-muted">{t.admin.stateOff}</span>
+                      )}
+                    </td>
+                    <td data-tip={u.lastSeenAt ? fmtDateTime(u.lastSeenAt) : u.lastLoginAt ? t.admin.loginAt(fmtDateTime(u.lastLoginAt)) : undefined}>
+                      {u.lastSeenAt ? ago(u.lastSeenAt, now, locale, t) : u.lastLoginAt ? t.admin.loginAgo(ago(u.lastLoginAt, now, locale, t)) : t.admin.never}
+                    </td>
+                    <td className="ad-num">{u.seconds ? fmtDur(u.seconds) : ""}</td>
+                    <td className="ad-num">{u.visits || ""}</td>
+                    <td>{u.topArea ? areaName(u.topArea) : ""}</td>
+                    <td className="ad-cell-trunc" title={u.workspaces.join(", ")}>{u.workspaces.length ? u.workspaces.join(", ") : t.admin.personal}</td>
+                    <td className="ad-cell-trunc">{u.device ?? ""}</td>
+                  </tr>
                 ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+              </tbody>
+            </table>
+          </div>
+          {data.users.length > 25 && (
+            <Button variant="quiet" size="sm" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+              {showAll ? t.admin.seeLess : t.admin.seeAll(data.users.length)}
+            </Button>
+          )}
+        </SettingsWindow>
+
+        <SettingsWindow title={t.admin.lastLogins}>
+          {data.logins.length === 0 ? (
+            <EmptyState title={t.admin.noLogins} />
+          ) : (
+            <ul className="list">
+              {logins.map((l, i) => (
+                <li key={`${l.userId}-${i}`} className="list__row">
+                  <Face name={l.name} image={l.image} size={32} />
+                  <span className="list__main">
+                    <span className="list__name t-ui"><span className="list__text">{l.name}</span></span>
+                    <span className="list__sub t-small"><span>{fmtDateTime(l.at)}{l.alive ? "" : t.admin.expiredSession}</span>{l.device && <span>{l.device}</span>}</span>
+                  </span>
+                  <span className="list__figure t-small">{ago(l.at, now, locale, t)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {data.logins.length > 8 && (
+            <Button variant="quiet" size="sm" className="list__more" aria-expanded={showAllLogins} onClick={() => setShowAllLogins((v) => !v)}>
+              {showAllLogins ? t.admin.seeLess : t.admin.seeAll(data.logins.length)}
+            </Button>
+          )}
+        </SettingsWindow>
         </>
       )}
 

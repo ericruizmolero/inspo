@@ -64,7 +64,7 @@ export function EditableNumber({ value, onCommit, min, max, step = 1, label, suf
   if (mode !== "edit") return <span className={className}>{value}{suffix}</span>;
   return (
     <span className={`be-num ${className}`}>
-      <input type="number" inputMode="decimal" aria-label={label} title={label} defaultValue={value} key={value} min={min} max={max} step={step}
+      <input type="number" inputMode="decimal" aria-label={label} data-tip={label} defaultValue={value} key={value} min={min} max={max} step={step}
         onBlur={(e) => { const n = Number(e.currentTarget.value); if (Number.isFinite(n) && n !== value) onCommit(Math.min(max, Math.max(min, n))); else e.currentTarget.value = String(value); }}
         onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") { e.currentTarget.value = String(value); e.currentTarget.blur(); } }} />
       {suffix && <i>{suffix}</i>}

@@ -9,6 +9,7 @@ import { readAuthRequest } from "@/lib/mcp/oauth";
 import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import AuthorizePanel from "./AuthorizePanel";
+import AuthWindow from "@/components/AuthWindow";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -32,11 +33,10 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
       <div className="auth__card">
         <div className="auth__brand"><Logo size={48} /></div>
         {"fatal" in request ? (
-          <div className="auth__sent">
-            <p className="auth__lead">{t.mcp.cannot}</p>
+          <AuthWindow title={t.mcp.pageTitle} heading={t.mcp.cannot} status={t.invite.signedInAs(ctx.user.email)}
+            footer={<Link href="/" className={buttonVariants()}>{t.mcp.goToApp}</Link>}>
             <p className="auth__hint">{request.fatal && request.reason === "redirect" ? t.mcp.badRedirect : t.mcp.badClient}</p>
-            <Link href="/" className={buttonVariants({ variant: "ghost", size: "sm" })}>{t.mcp.goToApp}</Link>
-          </div>
+          </AuthWindow>
         ) : (
           <AuthorizePanel
             app={request.clientName}

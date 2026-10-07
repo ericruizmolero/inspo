@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useT } from "./I18nProvider";
+import { StatusBar, StatusCell } from "@/components/criterio";
 import "./TextRef.css";
 
 /** The words, typed in place: they save themselves a moment after the typing stops, and when the page is left */
@@ -58,7 +59,7 @@ function Words({ body, onSave }: { body: string; onSave: (text: string) => Promi
         contentEditable="plaintext-only" suppressContentEditableWarning
         onInput={typed} onBlur={(e) => { clearTimeout(timer.current); void flush(read(e.currentTarget)); }}
         onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); e.currentTarget.blur(); } }} />
-      {state.kind && <p className={`ip-text__state${state.kind === "error" ? " is-error" : ""}`} role="status">{state.kind === "error" ? state.text : state.kind === "saving" ? t.doc.saving : t.doc.saved}</p>}
+      {state.kind && <StatusBar className="ip-text__state"><StatusCell className={state.kind === "error" ? "is-error" : undefined}>{state.kind === "error" ? state.text : state.kind === "saving" ? t.doc.saving : t.doc.saved}</StatusCell></StatusBar>}
     </>
   );
 }
@@ -78,10 +79,10 @@ export default function TextPage({ title, body, onSave, onRename }: { title: str
       <article className="ip-text__page">
         <span className="ip-text__kind">{t.card.text}</span>
         {onRename
-          ? <h2 className="display ip-text__title" role="textbox" aria-label={t.card.text} spellCheck={false} contentEditable="plaintext-only" suppressContentEditableWarning
+          ? <h2 className="ip-text__title" role="textbox" aria-label={t.card.text} spellCheck={false} contentEditable="plaintext-only" suppressContentEditableWarning
               onBlur={(e) => rename(e.currentTarget)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); e.stopPropagation(); e.currentTarget.blur(); } }}>{title}</h2>
-          : <h2 className="display ip-text__title">{title}</h2>}
+          : <h2 className="ip-text__title">{title}</h2>}
         {body === undefined
           ? <div className="ip-text__wait" aria-hidden>{["92%", "78%", "86%", "54%"].map((w) => <i key={w} style={{ width: w }} />)}</div>
           : body === null

@@ -70,7 +70,7 @@ function Row({ kind }: { kind: "primary" | "mark" }) {
         <span className="bl-panel__label">{s.clear}</span>
         <ClearSpace file={pair.light ?? pair.dark} wordmark={wordmark} x={logo.clearSpace} />
         <div className="bl-panel__foot">
-          <p className="bl-accent">{s.unit}{mode === "edit" && <> · <EditableNumber value={logo.clearSpace} min={0} max={4} step={0.5} label={s.clear} suffix="x" onCommit={(clearSpace) => set({ clearSpace })} /></>}</p>
+          <p className="bl-accent">{s.unit}{mode === "edit" && <>, <EditableNumber value={logo.clearSpace} min={0} max={4} step={0.5} label={s.clear} suffix="x" onCommit={(clearSpace) => set({ clearSpace })} /></>}</p>
           <p>{s.clearRule(xText)}</p>
           {(logo.minPx || mode === "edit") && kind === "primary" && <p className="bl-min">{s.minPx}: <EditableNumber value={logo.minPx ?? 0} min={0} max={2000} label={s.minPx} suffix={` ${s.px}`} onCommit={(n) => set({ minPx: n || null })} /></p>}
         </div>

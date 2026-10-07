@@ -12,6 +12,7 @@ import { areaIcon } from "./area-icons";
 import { Editable, Line } from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
+import { Chip, EmptyState, Separator } from "@/components/criterio";
 import "./SystemMarkdown.css";
 import "./SystemDoc.css";
 import "./RefCriterio.css";
@@ -47,7 +48,7 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
   const [busy, setBusy] = useState<SystemArea | null>(null);
   const [failed, setFailed] = useState(false);
 
-  if (!project || !system || !slice || !item.id) return <div className="ip-state"><span>{c.notFiled}</span></div>;
+  if (!project || !system || !slice || !item.id) return <EmptyState className="ip-state" title={c.notFiled} />;
   const id = item.id;
   const refs = blocks.find((b): b is Extract<CriterioBlock, { kind: "section" }> => b.kind === "section" && b.id === "refs")!;
   const save = async (part: string, text: string | null) => {
@@ -69,7 +70,7 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
     if (r.ok) onSystem(project.id, r.data); else setFailed(true);
   };
   const head = (label: string, spot: SystemSpot) => (
-    <button type="button" className="rfc-head" onClick={() => onGo(project.id, spot)} title={c.see}>
+    <button type="button" className="t-label rfc-head" onClick={() => onGo(project.id, spot)} data-tip={c.see}>
       <span>{label}</span><span className="rfc-see">{c.see} <i aria-hidden>{Icons.arrow}</i></span>
     </button>
   );
@@ -78,13 +79,13 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
     <div className="rfc">
       <p className="rfc-lead">{c.lead(project.name)}</p>
       <div className="rfc-areas" role="group" aria-label={c.areas}>
-        <span className="rfc-areas__label">{c.areas}</span>
+        <span className="t-label rfc-areas__label">{c.areas}</span>
         {SYSTEM_AREAS.map((k) => {
           const on = backs.has(k) !== (busy === k);
           return (
-            <button key={k} type="button" className={`rfc-area${on ? " is-on" : ""}`} aria-pressed={on} disabled={!!busy} onClick={() => toggle(k)}>
+            <Chip key={k} tone="chrome" className="rfc-area" pressed={on} disabled={!!busy} onClick={() => toggle(k)}>
               <span className="rfc-area__icon" aria-hidden>{areaIcon(k)}</span>{labels[k]}
-            </button>
+            </Chip>
           );
         })}
         {failed && <span className="rfc-areas__error" role="alert">{c.areasFailed}</span>}
@@ -96,8 +97,8 @@ export default function RefCriterio({ item, project, system, library, boardIds, 
           <Line text="" />
           <Editable key={`${project.id}:${id}`} raw={slice.entry.join("\n")} placeholder="" onSave={onSave} onReset={byHand ? () => save(`ref:${id}`, null) : undefined} />
           <Line text="" />
-          <div className="rfc-sep" aria-hidden />
-          <p className="rfc-label">{c.cited}</p>
+          <Separator className="rfc-sep" />
+          <p className="t-label rfc-label">{c.cited}</p>
           {slice.cited.length ? slice.cited.map((x) => (
             <div key={x.area} className="rfc-cite">
               {head(x.heading, { area: x.area })}

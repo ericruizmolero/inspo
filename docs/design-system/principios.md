@@ -4,15 +4,16 @@ El gusto de Criterio en frases que se pueden aplicar. Cada una enlaza la decisi�
 
 ## Visual
 
-1. **Jerarquía con peso y color, no con bordes.** Nada de cajas con contorno de 1 px, bordes discontinuos ni pastillas dentro de cajas. El estado se dice con relleno, sombra o un punto. → [sin mono, menos bordes](decisiones/2026-10-03-sin-mono-menos-bordes.md)
+0. **El sistema de diseño Criterio manda.** Tokens y componentes de `components/criterio/`; la criatura queda fuera por ahora. → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+1. **Jerarquía con peso y color.** Las tarjetas son planas, con una línea `--border` como mucho; nada de bordes discontinuos ni pastillas dentro de cajas. El borde de tinta es solo de los controles (botones, campos, chips). → [sin mono, menos bordes](decisiones/2026-10-03-sin-mono-menos-bordes.md), [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
 2. **La mono no es decoración.** Nunca para títulos, etiquetas, "eyebrows" ni líneas de estado; solo para datos literales (hex, easings, código). → misma decisión
-3. **Una sola familia: Inter**, con eje óptico; la jerarquía sale de tamaño y peso. → [una sola fuente](decisiones/2026-09-23-una-sola-fuente-inter.md)
-4. **Botones sin borde.** `.btn` o `.btn--primary`; `.btn--ghost` solo si no hay otra opción. El primario se reserva para la acción principal de la vista ("gritón" si no).
-5. **Cristal, no planchas.** Barras y superficies flotantes en cristal (casi transparente + `backdrop-filter` + línea de luz casi invisible): oscuro en tema oscuro, blanco esmerilado en tema claro. El blanco translúcido sobre oscuro se lee "como un gris": no. → [cristal](decisiones/2026-10-02-superficies-de-cristal.md)
-6. **Nada de esqueuomorfismo.** Si se pide algo "como un post-it", se toma la idea (una nota que se lee) y se resuelve con las superficies y tokens de la app.
+3. **Dos familias: Archivo y Bricolage Grotesque.** Archivo es la base (UI, texto). Bricolage 700/800 solo para titulares y títulos, nunca por debajo de 16 px ni en texto corrido. Sin tercera fuente. → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+4. **Botones gruesos con bisel, el guiño a 2000.** Borde de tinta, luz arriba a la izquierda, sombra abajo a la derecha. `.btn` (papel) por defecto; `.btn--primary` (ember) solo para la acción de la vista, uno por vista; `.btn--ghost` solo si no hay otra opción. → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+5. **Cromo sólido que sigue al tema.** Pestañas, selector de vista, zoom, barra de comandos y visor van en `--chrome*`: oscuros en Board, claros en Paper, con una línea `--chrome-border` y el texto fuerte en `--chrome-ink`. Sin cristal ni `backdrop-filter`. Solo la barra de comandos flota. → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+6. **Un guiño a un escritorio viejo, nunca un disfraz.** Bisel, campos hundidos y progreso en bloques sí; azul de Windows, degradados en barras de título, Tahoma o barras de tareas no. Lo demás ("como un post-it") se resuelve con las superficies y tokens de la app. → [sistema Criterio](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
 7. **Iconos propios cuando el concepto es nuestro** (las 8 áreas): 16 px, trazo 1,5, misma mano. Lucide para lo genérico. Solo un icono relleno en toda la app es aceptable si es la excepción deliberada. → [iconos por área](decisiones/2026-10-03-iconos-propios-por-area.md)
-8. **Dos temas de primera**, claro y oscuro, desde los mismos tokens. Nunca `#fff` ni `rgba(255,255,255,…)` para UI. → [tema claro/oscuro](decisiones/2026-09-21-tema-claro-oscuro.md)
-9. **Minimalismo con botones "muy curaditos"**: menos elementos, cada uno pulido. Fondo liso `--bg` en todas las vistas: sin tramas ni texturas que no digan cómo se usa la vista. → [fondo liso](decisiones/2026-10-05-fondo-liso-sin-puntos.md)
+8. **Dos temas de primera**, Paper (claro) y Board (oscuro), desde los mismos tokens; el cromo no cambia. Nunca `#fff` ni `rgba(255,255,255,…)` para UI. → [tema claro/oscuro](decisiones/2026-09-21-tema-claro-oscuro.md)
+9. **El primario es ember, y lo que era primario sigue siéndolo**: no se quita el naranja a un botón para que haya menos. Butter es solo para sugerencias. **Minimalismo con botones "muy curaditos"**: menos elementos, cada uno pulido. Fondo liso `--bg` en todas las vistas: sin tramas ni texturas que no digan cómo se usa la vista. → [fondo liso](decisiones/2026-10-05-fondo-liso-sin-puntos.md)
 
 ## Movimiento y sensación
 

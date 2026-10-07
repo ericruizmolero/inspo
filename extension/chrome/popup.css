@@ -1,41 +1,86 @@
-/* The popup follows the app: same tokens as app/globals.css (dark by default, light by system
-   preference), the same button, input and card recipes, Inter when the system has it. */
-:root {
-  --bg: #0e0e0d; --panel: #151514; --surface: #1d1d1b; --surface-2: #252523; --surface-3: #2f2f2c;
-  --border: rgba(255, 255, 250, 0.07); --border-strong: rgba(255, 255, 250, 0.14);
-  --text: #f2f2ef; --text-2: #b6b6b1; --muted: #8a8a84; --muted-2: #6a6a65; --text-strong: #fff;
-  --danger: #e5645a; --success: #5ac97a;
-  --ring: rgba(255, 255, 250, 0.1);
-  --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
-  --focus-ring: color-mix(in srgb, var(--text) 55%, transparent);
-  color-scheme: dark;
+/* Tokens from the Criterio design system. They must match app/globals.css: change them there first,
+   then here. The popup is product chrome, so it stays dark whatever the system prefers (like the app's
+   tab bar and command bar): chrome ground, paper text, 1px chrome hairlines, beveled paper and ember
+   controls with ink borders. Fonts are bundled in fonts/ so nothing loads from Google. */
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("fonts/archivo-latin.woff2") format("woff2");
 }
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f3f3f0; --panel: #f9f9f7; --surface: #ffffff; --surface-2: #e8e8e4; --surface-3: #d9d9d4;
-    --border: rgba(0, 0, 0, 0.12); --border-strong: rgba(0, 0, 0, 0.24);
-    --text: #0e0e0d; --text-2: #34342f; --muted: #5d5d57; --muted-2: #76766f; --text-strong: #000;
-    --danger: #c23a30; --success: #267d3f;
-    --ring: rgba(0, 0, 0, 0.1);
-    --shadow-card: 0 8px 24px -8px rgba(0, 0, 0, 0.18);
-    color-scheme: light;
-  }
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 700 800;
+  font-display: swap;
+  src: url("fonts/bricolage-grotesque-latin.woff2") format("woff2");
+}
+
+:root {
+  --paper: #EDE6D6;
+  --paper-light: #F6F1E6;
+  --paper-pressed: #D9CFBA;
+  --ink: #1B1B18;
+  --board: #0F0F0F;
+  --board-card: #1A1A1A;
+  --moss: #4F6B3A;
+  --moss-light: #7E9A5C;
+  --ember: #E8892B;
+  --ember-glow: #F6A848;
+  --butter: #FBF1C7;
+  /* Fields on the dark popup: the app's Board field (a near-black well, paper text, grey border) */
+  --field: #0A0A09;
+  --field-ink: var(--paper);
+  --field-border: #6E695F;
+  --field-placeholder: #8A847A;
+  --control-border: var(--ink);
+  --on-ember: var(--ink);
+  --on-moss: var(--paper);
+  --disabled: #E2DBCB;
+  --disabled-text: #6E695F;
+  --disabled-border: #B9B2A3;
+
+  --chrome: #161616;
+  --chrome-panel: #1C1C1C;
+  --chrome-raised: #2A2A2A;
+  --chrome-border: #262626;
+  --chrome-text: #D8D0C0;
+  --chrome-text-muted: #B8B1A3;
+  --chrome-muted: #8A847A;
+
+  --stroke-control: 1.5px;
+  --bevel: inset 2px 2px 0 rgba(255,255,255,0.65), inset -2px -3px 0 rgba(27,27,24,0.22);
+  --bevel-pressed: inset 2px 3px 0 rgba(27,27,24,0.22);
+  --sunken: inset 2px 2px 0 rgba(0,0,0,0.6);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Bricolage Grotesque", "Archivo", ui-sans-serif, system-ui, sans-serif;
+  /* On dark chrome the focus ring is ember-glow; error text is the app's dark-theme danger */
+  --focus: var(--ember-glow);
+  --danger: #E5645A;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
-/* The popup window is the card: Chrome draws its frame and corners, so nothing is boxed inside */
-html, body { margin: 0; background: var(--panel); color: var(--text); }
+/* The popup window is the panel: Chrome draws its frame and corners, so nothing is boxed inside */
+html, body { margin: 0; background: var(--chrome); color: var(--chrome-text); }
 body {
   width: 336px;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   font-size: 13px; line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
-button, input { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 a { color: inherit; }
-::selection { background: var(--text); color: var(--bg); }
-:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+::selection { background: var(--ember); color: var(--on-ember); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 h1, p { margin: 0; }
 
 .app { display: flex; flex-direction: column; gap: 14px; padding: 12px 14px 12px; }
@@ -43,24 +88,28 @@ h1, p { margin: 0; }
 
 /* Header: the mark, the name and the workspace this browser saves to */
 .top { display: flex; align-items: center; gap: 8px; min-height: 24px; }
-.logo { width: 22px; height: 22px; border-radius: 24%; flex-shrink: 0; user-select: none; }
-@media (prefers-color-scheme: light) { .logo { box-shadow: 0 0 0 1px var(--border); } }
-.brand { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
-/* Workspace switcher: a pill with a native select inside, so it opens the system menu */
-.chip {
-  position: relative; margin-left: auto; max-width: 160px; height: 22px; padding: 0 8px 0 9px;
-  display: inline-flex; align-items: center; gap: 4px;
-  border-radius: 999px; border: 1px solid var(--border);
-  color: var(--muted); font-size: 11px; font-weight: 500; cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+.logo { width: 22px; height: 22px; flex-shrink: 0; user-select: none; object-fit: contain; }
+.brand {
+  font-family: var(--font-display); font-size: 16px; font-weight: 800;
+  letter-spacing: -0.03em; line-height: 1; color: var(--paper);
 }
-.chip:hover { color: var(--text); border-color: var(--border-strong); background: var(--surface); }
+/* Workspace switcher: a chrome chip with a native select inside, so it opens the system menu */
+.chip {
+  position: relative; margin-left: auto; max-width: 160px; height: 24px; padding: 0 8px 0 10px;
+  display: inline-flex; align-items: center; gap: 4px;
+  border-radius: var(--radius-pill); border: 1px solid var(--chrome-border); background: var(--chrome-panel);
+  color: var(--chrome-text-muted); font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chip:hover, .chip:focus-within { color: var(--paper); border-color: var(--chrome-muted); }
+.chip:has(select:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 .chip[hidden] { display: none; }
 .chip select {
   appearance: none; -webkit-appearance: none; border: 0; background: none; padding: 0; margin: 0;
   color: inherit; font: inherit; cursor: pointer; outline: none; max-width: 130px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+.chip select option { background: var(--chrome-panel); color: var(--chrome-text); }
 .chip svg { flex-shrink: 0; }
 
 .view { display: none; flex-direction: column; gap: 10px; }
@@ -69,26 +118,38 @@ h1, p { margin: 0; }
 
 /* A view's content block: no box of its own, the popup frame already is one */
 .card { display: flex; flex-direction: column; gap: 12px; }
-.title { font-size: 15px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; }
-.hint { font-size: 12px; line-height: 1.4; color: var(--muted); text-wrap: pretty; }
+.title {
+  font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.15;
+  letter-spacing: -0.02em; color: var(--paper); text-wrap: balance;
+}
+.hint { font-size: 12px; line-height: 1.4; color: var(--chrome-text-muted); text-wrap: pretty; }
 .hint:empty { display: none; }
 .hint.is-error { color: var(--danger); }
-.hint.is-ok { color: var(--success); }
+.hint.is-ok { color: var(--moss-light); }
 
-/* Buttons and inputs: the .btn / .input recipes from the app */
+/* Button (design system): chunky and beveled, ink border. Paper by default, ember for the one action
+   the view is for; pressed sinks in */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  height: 36px; padding: 0 14px;
-  border-radius: 10px; border: 1px solid transparent;
-  background: var(--surface); color: var(--text);
-  font-size: 13px; font-weight: 500; white-space: nowrap; text-decoration: none;
-  transition: background 0.15s, color 0.15s, opacity 0.15s, transform 0.1s;
+  min-height: 40px; padding: 0 16px;
+  border-radius: var(--radius-md);
+  border: var(--stroke-control) solid var(--control-border);
+  background: var(--paper); color: var(--ink);
+  font-size: 15px; font-weight: 600; white-space: nowrap; text-decoration: none;
+  box-shadow: var(--bevel);
+  transition: background 0.15s, color 0.15s, box-shadow 0.1s, transform 0.1s;
 }
-.btn:hover { background: var(--surface-2); }
-.btn:active { transform: scale(0.96); }
-.btn:disabled { opacity: 0.4; cursor: default; transform: none; }
-.btn--primary { background: var(--text); color: var(--bg); }
-.btn--primary:hover { background: var(--text-strong); }
+.btn:hover { background: var(--paper-light); }
+.btn:active { background: var(--paper-pressed); box-shadow: var(--bevel-pressed); transform: translateY(1px); }
+.btn:disabled {
+  background: var(--disabled); color: var(--disabled-text); border-color: var(--disabled-border);
+  box-shadow: none; cursor: not-allowed; transform: none;
+}
+.btn--primary { background: var(--ember); color: var(--on-ember); }
+.btn--primary:hover { background: var(--ember-glow); }
+.btn--primary:active { background: var(--ember); }
+/* Saving: the button keeps its ember while it works, only the spinner says so */
+.btn--primary.is-busy:disabled { background: var(--ember); color: var(--on-ember); border-color: var(--control-border); cursor: progress; }
 .btn--block { width: 100%; }
 .btn[hidden] { display: none; }
 .btn.is-busy::before {
@@ -97,97 +158,110 @@ h1, p { margin: 0; }
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.link { background: none; border: 0; padding: 0; color: var(--muted); font-size: 12px; cursor: pointer; }
-.link:hover { color: var(--text); }
-
-.input {
-  width: 100%; height: 36px; padding: 0 12px;
-  background: var(--surface); border: 1px solid transparent; border-radius: 10px;
-  color: var(--text); font-size: 13px; outline: none;
-  transition: border-color 0.15s, background 0.15s;
+.link {
+  background: none; border: 0; padding: 0; border-radius: var(--radius-sm);
+  color: var(--chrome-text-muted); font-size: 12px; cursor: pointer;
 }
-.input::placeholder { color: var(--muted); }
-.input:focus { border-color: var(--border-strong); background: var(--surface-2); }
+.link:hover { color: var(--paper); }
+
+/* TextField (design system): sunken, ink border on white */
+.input {
+  width: 100%; height: 40px; padding: 0 12px;
+  background: var(--field); border: var(--stroke-control) solid var(--field-border); border-radius: var(--radius-md);
+  color: var(--field-ink); font-size: 15px; outline: none;
+  box-shadow: var(--sunken);
+}
+.input::placeholder { color: var(--field-placeholder); opacity: 1; }
+.input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library) */
-.input--note { height: auto; min-height: 58px; padding: 8px 12px; resize: none; font: inherit; font-size: 13px; line-height: 1.4; }
+.input--note { height: auto; min-height: 62px; padding: 9px 12px; resize: none; font: inherit; font-size: 15px; line-height: 1.4; }
 .input--note[hidden] { display: none; }
 
 /* Import row: what is saved elsewhere, one tap away under Save */
 .import-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
-.import-row__label { flex-basis: 100%; font-size: 11px; color: var(--muted); }
-.btn--small { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 8px; gap: 6px; }
+.import-row__label { flex-basis: 100%; font-size: 12px; color: var(--chrome-text-muted); }
+.btn--small { min-height: 32px; padding: 0 12px; font-size: 13px; gap: 6px; }
 .btn--small svg { flex-shrink: 0; }
 
 /* "I already have a key": quiet, folded away under the card */
-.paste { }
-.paste summary { list-style: none; font-size: 12px; color: var(--muted); cursor: pointer; width: fit-content; }
+.paste summary {
+  list-style: none; font-size: 12px; color: var(--chrome-text-muted); cursor: pointer; width: fit-content;
+  border-radius: var(--radius-sm);
+}
 .paste summary::-webkit-details-marker { display: none; }
-.paste summary:hover { color: var(--text); }
-.paste[open] summary { color: var(--text); }
+.paste summary:hover { color: var(--paper); }
+.paste[open] summary { color: var(--paper); }
 .paste__body { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; }
 
 /* The site about to be saved, laid out like a library tile: the shot, then favicon, title and host */
 .shot {
   position: relative; aspect-ratio: 16 / 10; overflow: hidden;
-  border-radius: 8px; background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--border);
+  border-radius: var(--radius-lg); background: var(--board-card);
 }
 .shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .shot img[hidden] { display: none; }
-.shot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--border); pointer-events: none; }
+.shot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px var(--chrome-border); pointer-events: none; }
 .site { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .site__icon {
   width: 32px; height: 32px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 8px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  border-radius: var(--radius-md); background: var(--chrome-panel); border: 1px solid var(--chrome-border);
 }
 .site__icon img { width: 16px; height: 16px; border-radius: 3px; }
 .site__icon img[hidden], .site__icon svg[hidden] { display: none; }
-.site__icon svg { color: var(--muted); }
+.site__icon svg { color: var(--chrome-muted); }
 .site__text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.site__title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.site__host { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site__title { font-size: 15px; font-weight: 600; color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site__host { font-size: 12px; color: var(--chrome-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .actions { display: flex; flex-direction: column; gap: 8px; }
 
-.foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+/* The foot is a status bar (the app's StatusBar): who is signed in sits in a sunken cell */
+.foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.5); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
 .foot[hidden] { display: none; }
-.foot__who { font-size: 11px; color: var(--muted-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foot__who { min-width: 0; padding: 3px 8px; font-size: 12px; color: var(--field-ink); background: var(--field); border: 1px solid var(--field-border); border-radius: var(--radius-sm); box-shadow: var(--sunken); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The board's add form: the note, then where it lands (the project, the areas of its system) */
 .form { display: flex; flex-direction: column; gap: 10px; }
 .form[hidden], .dest[hidden], .extras[hidden], .site[hidden] { display: none; }
 .dest { display: flex; flex-direction: column; gap: 10px; }
 .extras { display: flex; flex-direction: column; gap: 12px; }
-/* The project: a full-width field with the system menu inside, labelled on its left */
+/* The project: a full-width field (sunken white, like TextField) with the system menu inside, labelled on its left */
 .select {
-  position: relative; display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px;
-  background: var(--surface); border: 1px solid transparent; border-radius: 10px; cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  position: relative; display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px;
+  background: var(--field); border: var(--stroke-control) solid var(--field-border); border-radius: var(--radius-md);
+  box-shadow: var(--sunken); color: var(--field-ink); cursor: pointer;
 }
-.select:hover, .select:focus-within { border-color: var(--border-strong); background: var(--surface-2); }
-.select__label { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.select:has(select:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.select__label { font-size: 13px; color: var(--field-placeholder); flex-shrink: 0; }
 .select select {
   appearance: none; -webkit-appearance: none; flex: 1; min-width: 0; border: 0; background: none; padding: 0; margin: 0;
-  color: var(--text); font: inherit; font-size: 13px; text-align: right; cursor: pointer; outline: none;
+  color: var(--field-ink); font: inherit; font-size: 15px; font-weight: 500; text-align: right; cursor: pointer; outline: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.select svg { flex-shrink: 0; color: var(--muted); }
-/* The areas: the .pill recipe from the app */
+.select svg { flex-shrink: 0; color: var(--field-ink); }
+.select select option { color: var(--ink); }
+/* The areas: Chip (design system), paper with an ink border. A ticked area turns moss, the system's
+   colour for libraries and collections, so ember stays the Save button's alone */
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px;
-  border: 1px solid var(--border); background: transparent;
-  color: var(--muted); font-size: 12px; font-weight: 500; cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border-radius: var(--radius-pill);
+  border: var(--stroke-control) solid var(--control-border); background: var(--paper);
+  color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background 0.12s, color 0.12s, transform 0.1s;
 }
-.pill:hover { color: var(--text); border-color: var(--border-strong); }
-.pill:active { transform: scale(0.96); }
-.pill[aria-pressed="true"] { background: var(--surface-2); border-color: var(--border-strong); color: var(--text); }
+.pill:hover { background: var(--paper-light); }
+.pill:active { transform: translateY(1px); }
+/* A picked chip inverts (ink with paper text), as in the app; a paper outline keeps it on the dark popup */
+.pill[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--paper); }
 .pill svg { flex-shrink: 0; }
 
-/* Saved: the button stays where it was, turns quiet and says so with a check that draws itself in */
+/* Saved: the button stays where it was, sinks in, turns moss (synced, in the library) and says so
+   with a check that draws itself in */
 .btn__check { display: none; }
-.btn.is-done, .btn.is-done:disabled { opacity: 1; background: var(--surface); color: var(--success); cursor: default; }
+.btn.is-done, .btn.is-done:disabled {
+  background: var(--moss); color: var(--on-moss); border-color: var(--control-border);
+  box-shadow: var(--bevel-pressed); cursor: default; transform: none;
+}
 .btn.is-done .btn__check { display: inline-flex; }
 .btn.is-done .btn__check path { stroke-dasharray: 12; stroke-dashoffset: 12; animation: check 0.32s cubic-bezier(0.2, 0, 0, 1) 0.05s forwards; }
 @keyframes check { to { stroke-dashoffset: 0; } }

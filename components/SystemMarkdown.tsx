@@ -10,10 +10,9 @@ import { DECISION_MAX, NEVER_MAX } from "@/types/system";
 import { neverMd, type CriterioBlock } from "@/lib/criterio-md";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
-import { Button } from "@/components/ui/button";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
-import { Avatar } from "./CommentsPanel";
+import { Avatar, Busy, Button as SysButton, IconButton, SegmentedControl, TipWindow, TextArea, toneFor } from "@/components/criterio";
 import FileMenu from "./FileMenu";
 import "./SystemMarkdown.css";
 
@@ -24,6 +23,8 @@ const IconPin = (
   </svg>
 );
 export const WHY_MAX = 400;
+/** A person's face: the system's Avatar, their picture or their initial on their tone */
+const Face = ({ name, image, size }: { name: string; image: string | null; size: number }) => <Avatar initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} src={image} size={size} />;
 
 /** The part of an area's block a person writes: the decision, the why under its bold label, and the never list */
 const rawOf = (b: AreaBlock) => [b.decision, b.why ? `**${b.whyLabel}:** ${b.why}` : "", b.never ? neverMd(b) : ""].filter(Boolean).join("\n\n");
@@ -132,7 +133,7 @@ function PinMark({ pin, replies, active, style, onOpen }: { pin: DocPin; replies
   return (
     <button type="button" className={`mdv-pin${active ? " is-open" : ""}`} style={style} aria-label={pin.who}
       onClick={(e) => { e.stopPropagation(); onOpen(pin, e.currentTarget); }}>
-      <Avatar name={pin.who} image={pin.image} size={22} />
+      <Face name={pin.who} image={pin.image} size={22} />
       {replies > 0 && <b>{replies + 1}</b>}
     </button>
   );
@@ -289,7 +290,7 @@ export function Editable({ raw, placeholder, disabled, over, onSave, onPropose, 
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); clearTimeout(timer.current); void flush(readText(e.currentTarget), false); }
         }} />
       {(tooLong || state) && <p className={`mdv-state${tooLong ? " is-over" : ""}`} role="status">{tooLong || (state === "saving" ? t.doc.saving : state === "proposed" ? t.doc.proposed : t.doc.saved)}</p>}
-      {!focused && onReset && <p className="mdv-byhand">{t.doc.byHand} <button type="button" disabled={working} onClick={() => { setWorking(true); void onReset().finally(() => setWorking(false)); }}>{t.doc.restore}</button></p>}
+      {!focused && onReset && <p className="mdv-byhand">{t.doc.byHand} <SysButton variant="quiet" size="s" disabled={working} onClick={() => { setWorking(true); void onReset().finally(() => setWorking(false)); }}>{t.doc.restore}</SysButton></p>}
     </>
   );
 }
@@ -482,40 +483,46 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
     const r = await saveRecipe(projectId, text);
     if (r.ok) { setRecipe(text); setHasOne(!!text); setFile("recipe"); }
   };
+  // The two files: a SegmentedControl. Chrome tone on the Markdown panel (its bar is chrome); paper in the document
+  // look, where the bar sits on the page ground. Without a recipe yet, a quiet Button adds one
+  const pickFile = useRef<HTMLInputElement>(null);
   const tabs = (
-    <span className="mdv-files" role="tablist">
-      <button type="button" role="tab" aria-selected={file === "criterio"} className={`mdv-file${file === "criterio" ? " is-on" : ""}`} onClick={() => setFile("criterio")}>criterio.md</button>
-      {hasOne
-        ? <button type="button" role="tab" aria-selected={file === "recipe"} className={`mdv-file${file === "recipe" ? " is-on" : ""}`} onClick={() => void openRecipe()}>receta.md</button>
-        : !readOnly && <label className="mdv-file mdv-file--add" title={s.recipeHint}>{Icons.plus} receta.md<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
+    <span className="mdv-files">
+      <SegmentedControl tone={look === "doc" && file !== "recipe" ? "paper" : "chrome"} label={s.files} className="mdv-files__seg" active={file === "recipe" ? 1 : 0}
+        onChange={(i) => { if (i === 0) setFile("criterio"); else void openRecipe(); }}
+        items={hasOne ? [{ label: "criterio.md" }, { label: "receta.md" }] : [{ label: "criterio.md" }]} />
+      {!hasOne && !readOnly && <>
+        <SysButton variant="quiet" size="s" icon="plus" data-tip={s.recipeHint} onClick={() => pickFile.current?.click()}>receta.md</SysButton>
+        <input ref={pickFile} type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} />
+      </>}
     </span>
   );
   if (file === "recipe") return (
     <section className="mdv" aria-label="receta.md">
-      <header className="mdv-bar">
+      <header className="mdv-bar cr-on-chrome">
         {tabs}
         <span className="mdv-bar__hint">{s.recipeHint}</span>
         <span className="mdv-bar__tools">
-          <button type="button" className="mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}>{recipeCopied ? Icons.check : Icons.copy} {recipeCopied ? t.system.copied : s.copy}</button>
-          <button type="button" className="mdv-btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([recipe ?? ""], { type: "text/markdown" })); a.download = `${projectName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-receta.md`; a.click(); URL.revokeObjectURL(a.href); }}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
-          {!readOnly && <label className="mdv-btn" title={s.replaceRecipe}>{Icons.shuffle}<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
+          <button type="button" className="btn btn--sm mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}>{recipeCopied ? Icons.check : Icons.copy} {recipeCopied ? t.system.copied : s.copy}</button>
+          <button type="button" className="btn btn--sm mdv-btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([recipe ?? ""], { type: "text/markdown" })); a.download = `${projectName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-receta.md`; a.click(); URL.revokeObjectURL(a.href); }}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
+          {!readOnly && <label className="btn btn--sm mdv-btn" data-tip={s.replaceRecipe} aria-label={s.replaceRecipe}>{Icons.shuffle}<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
         </span>
       </header>
-      {recipe === null ? <div className="mdv-doc"><span className="spinner spinner--sm" /></div> : <div className="mdv-doc">{recipe.split("\n").map((line, i) => <Line key={i} text={line} />)}</div>}
+      {recipe === null ? <div className="mdv-doc"><Busy label={s.loadingRecipe} /></div> : <div className="mdv-doc">{recipe.split("\n").map((line, i) => <Line key={i} text={line} />)}</div>}
     </section>
   );
 
   return (
     <section className={`mdv${look === "doc" ? " mdv--doc" : ""}`} aria-label="criterio.md">
-      <header className="mdv-bar">
+      <header className={`mdv-bar${look === "doc" ? "" : " cr-on-chrome"}`}>
         {tabs}
         <span className="mdv-bar__hint">{readOnly ? s.readOnlyHint : onPin ? (commenting ? t.doc.hintComment : proposing ? t.doc.hintPropose : t.doc.hint) : s.hint}</span>
         <span className="mdv-bar__tools">
-          {onPropose && !readOnly && <button type="button" className={`mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} title={t.doc.proposeToolHint} onClick={() => { setProposing((x) => !x); setCommenting(false); setPop(null); }}>{t.doc.proposeTool}</button>}
-          {onPin && !readOnly && <button type="button" className={`mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} title={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setProposing(false); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
+          {onPropose && !readOnly && <button type="button" className={`btn btn--sm mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} data-tip={t.doc.proposeToolHint} onClick={() => { setProposing((x) => !x); setCommenting(false); setPop(null); }}>{t.doc.proposeTool}</button>}
+          {onPin && !readOnly && <button type="button" className={`btn btn--sm mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} data-tip={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setProposing(false); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           {fileTools}
           <span className="mdv-split">
-            <button type="button" className="mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.copy} {copied ? t.system.copied : s.copy}</button>
+            <button type="button" className="btn btn--sm mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.copy} {copied ? t.system.copied : s.copy}</button>
             <FileMenu markdown={markdown} projectName={projectName} onDownload={onDownload} />
           </span>
         </span>
@@ -599,26 +606,29 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
         })}
         {/* A pin's thread, beside it: who said what and when, and room to answer. Or the comment being started */}
         {pop && (root || pop.draft) && (
-          <div className="mdv-pop" style={{ left: pop.left, top: pop.top }} role="dialog">
-            {root && [root, ...all.filter((n) => n.to === root.id)].map((n) => (
-              <div key={n.id} className="mdv-pop__note">
-                <Avatar name={n.who} image={n.image} size={24} />
-                <div>
-                  <p className="mdv-pop__meta"><b>{n.who}</b><time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
-                    {n.mine && onUnpin && <button type="button" onClick={() => { if (n.id === root.id) setPop(null); void onUnpin(n.id); }}>{t.areaThread.remove}</button>}
-                  </p>
-                  <p>{n.text}</p>
+          // The thread is a TipWindow: the moss bar with its close, the notes, and the composer (TextArea with its toolbar)
+          <div className="mdv-pop" style={{ left: pop.left, top: pop.top }} role="dialog" aria-label={t.doc.commentTool}>
+            <TipWindow title={t.doc.commentTool} width={340} onClose={() => setPop(null)}>
+              {root && [root, ...all.filter((n) => n.to === root.id)].map((n) => (
+                <div key={n.id} className="mdv-pop__note">
+                  <Face name={n.who} image={n.image} size={24} />
+                  <div>
+                    <p className="mdv-pop__meta"><b>{n.who}</b><time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
+                      {n.mine && onUnpin && <IconButton icon="close" variant="quiet" size="xs" label={t.areaThread.remove} onClick={() => { if (n.id === root.id) setPop(null); void onUnpin(n.id); }} />}
+                    </p>
+                    <p>{n.text}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {!readOnly && (
-              <form className="mdv-pop__form" onSubmit={(e) => { e.preventDefault(); void sendPin(); }}>
-                <textarea autoFocus rows={root ? 1 : 2} value={pinText} placeholder={root ? t.doc.replyPlaceholder : t.doc.pinPlaceholder} aria-label={root ? t.doc.replyPlaceholder : t.doc.pinPlaceholder} disabled={pinning}
-                  onChange={(e) => setPinText(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendPin(); } }} />
-                <Button variant="primary" size="sm" type="submit" disabled={pinning || !pinText.trim()}>{root ? t.doc.reply : t.doc.pin}</Button>
-              </form>
-            )}
+              ))}
+              {!readOnly && (
+                <form className="mdv-pop__form" onSubmit={(e) => { e.preventDefault(); void sendPin(); }}>
+                  <TextArea autoFocus rows={root ? 1 : 2} value={pinText} placeholder={root ? t.doc.replyPlaceholder : t.doc.pinPlaceholder} aria-label={root ? t.doc.replyPlaceholder : t.doc.pinPlaceholder} disabled={pinning}
+                    onChange={(e) => setPinText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendPin(); } }}
+                    toolbar={<SysButton variant="primary" size="s" type="submit" disabled={pinning || !pinText.trim()}>{root ? t.doc.reply : t.doc.pin}</SysButton>} />
+                </form>
+              )}
+            </TipWindow>
           </div>
         )}
       </div>

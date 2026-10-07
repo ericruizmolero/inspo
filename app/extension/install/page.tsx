@@ -23,7 +23,7 @@ export default async function InstallPage() {
       <header className="page__head">
         <BackLink href="/settings/extension" />
         <div className="page__heading">
-          <h1 className="display page__title">{t.ext.install.title}</h1>
+          <h1 className="page__title">{t.ext.install.title}</h1>
           <p className="page__lead">{t.ext.install.lead}</p>
         </div>
       </header>

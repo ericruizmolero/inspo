@@ -121,7 +121,7 @@ export default function MotionSection() {
   const putCurve = (id: string, next: Partial<BrandCurve>) => set({ curves: motion.curves.map((c) => (c.id === id ? { ...c, ...next } : c)) });
   return (
     <div className="bm" style={vars}>
-      <h3 className="brand-k">{s.inMotion}</h3>
+      <h3 className="t-label brand-k">{s.inMotion}</h3>
       {reduced && <p className="brand-hint">{s.reduced}</p>}
       <div ref={ref} className={`bm-demos${reduced ? " is-still" : ""}`}>
         {MOTION_DEMOS.map((d) => (
@@ -134,7 +134,7 @@ export default function MotionSection() {
       {(motion.curves.length > 0 || mode === "edit") && (
         <div className="bm-curves">
           <div>
-            <h3 className="brand-k">{s.curve}</h3>
+            <h3 className="t-label brand-k">{s.curve}</h3>
             <div className="bm-curves__list">
               {motion.curves.map((c, i) => (
                 <div key={c.id} className="bm-curve">
@@ -151,7 +151,7 @@ export default function MotionSection() {
             <Editable as="p" className="bm-rule" value={motion.rule} onCommit={(rule) => set({ rule })} placeholder={t.brand.write} multiline maxLength={1200} />
             {(motion.durations.length > 0 || mode === "edit") && (
               <div className="bm-durations">
-                <h3 className="brand-k">{s.durations}</h3>
+                <h3 className="t-label brand-k">{s.durations}</h3>
                 <ul>
                   {motion.durations.map((d, i) => (
                     <li key={d.id}>

@@ -1,35 +1,34 @@
-/* The gathering bar (components/GatherBar.tsx): one object with the search dock, its top half. Same material, no
-   gap; the field's own hairline is the line between them. */
+/* The gathering bar (components/GatherBar.tsx): the command bar's top row (design system CommandBar). It sits
+   inside .dock__bar, which carries the chrome panel, the hairline and the float; the search's divider is the
+   line between them. Stack of thumbs, title in display 700 with the count in chrome-muted, one line under it,
+   one secondary action. */
 .gather {
-  display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 12px 12px 12px 14px;
-  margin-bottom: -8px; border-radius: 20px 20px 0 0;
-  background: var(--dock-surface); color: var(--dock-ink); border: 1px solid var(--dock-line); border-bottom: 0;
-  -webkit-backdrop-filter: var(--dock-blur); backdrop-filter: var(--dock-blur);
+  display: flex; align-items: center; gap: 14px; width: 100%; box-sizing: border-box; padding: 14px 16px;
+  color: var(--chrome-text);
 }
-.dock:has(.gather) .sb--dock .sb__field { border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
 /* What is already on the board, as a small stack: it grows with the first references */
-.gather__thumbs { flex-shrink: 0; display: inline-flex; align-items: center; padding-left: 2px; }
-.gather__thumbs img { width: 44px; height: 32px; border-radius: 8px; object-fit: cover; object-position: top; background: var(--dock-fill); box-shadow: 0 0 0 2px var(--dock-surface-pop, var(--dock-surface)), 0 2px 6px rgba(0,0,0,0.25); }
-.gather__thumbs img + img { margin-left: -22px; }
-.gather__thumbs img:nth-child(1) { z-index: 2; } .gather__thumbs img:nth-child(2) { z-index: 1; transform: scale(0.94); } .gather__thumbs img:nth-child(3) { transform: scale(0.88); }
-.gather__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gather__thumbs { flex-shrink: 0; display: inline-flex; align-items: center; }
+.gather__thumbs img {
+  width: 38px; height: 38px; box-sizing: border-box; border-radius: 8px; object-fit: cover; object-position: top;
+  background: var(--chrome-raised); border: 2px solid var(--chrome-panel);
+}
+.gather__thumbs img + img { margin-left: -14px; }
+.gather__thumbs img:nth-child(1) { position: relative; z-index: 2; } .gather__thumbs img:nth-child(2) { position: relative; z-index: 1; }
+.gather__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .gather__title, .gather__lead { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gather__title { display: flex; align-items: baseline; gap: 8px; font-size: 14px; line-height: 1.35; }
-.gather__title b { font-weight: 550; }
-.gather__title span { font-size: 12.5px; color: var(--dock-muted); font-variant-numeric: tabular-nums; }
-.gather__lead { font-size: 13px; line-height: 1.4; color: var(--dock-ink-2); }
-.gather__add, .gather__go { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 36px; border: 0; font: inherit; font-size: 13.5px; cursor: pointer; white-space: nowrap; transition: background 0.15s, opacity 0.15s, transform 0.15s var(--ease-out); }
-.gather__add svg, .gather__go svg { width: 14px; height: 14px; }
-/* Adding is the quiet one: the weight goes to the step out */
-.gather__add { padding: 0 10px; border-radius: 10px; background: none; color: var(--dock-ink-2); }
-.gather__add:hover { background: var(--dock-hover); color: var(--dock-ink); }
-.gather__go { padding: 0 14px 0 16px; border-radius: 999px; background: var(--dock-ink); color: var(--bg); font-weight: 550; }
-.gather__go i { display: inline-flex; transition: transform 0.2s var(--ease-out); }
-.gather__go:hover i { transform: translateX(2px); }
-.gather__go:active { transform: scale(0.98); }
-.gather__go:disabled { opacity: 0.6; cursor: default; }
+/* The name is title-s (.t-title-s on the element) */
+.gather__title { display: flex; align-items: baseline; gap: 8px; line-height: var(--lh-title-s); }
+.gather__title b { color: var(--chrome-ink); }
+.gather__title span { font-size: var(--fs-small); color: var(--chrome-muted); font-variant-numeric: tabular-nums; }
+.gather__lead { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--chrome-text-muted); }
+/* The actions are system Buttons at system sizes: "+ Add" quiet s (it reads the chrome's --ib-* tokens), the step
+   out "I have my references" secondary m with arrow-right after it. Only placement and focus live here */
+.gather .cr-btn { flex: none; }
+.gather .cr-btn:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
+.gather__go .cr-icon:last-child { transition: transform 0.2s var(--ease-out); }
+.gather__go:hover:not(:disabled) .cr-icon:last-child { transform: translateX(2px); }
 @media (max-width: 640px) {
   .gather { flex-wrap: wrap; } .gather__text { flex-basis: 60%; } .gather__lead { white-space: normal; }
   .gather__add, .gather__go { flex: 1; justify-content: center; }
 }
-@media (prefers-reduced-motion: reduce) { .gather__go i, .gather__go { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .gather__go .cr-icon:last-child { transition: none; } }

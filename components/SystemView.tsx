@@ -18,6 +18,7 @@ import { useSystemActivity } from "./useSystemActivity";
 import type { NoteCaption } from "./InspoCard";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Busy, Chip, Icon, MenuItem, SegmentedControl } from "@/components/criterio";
 import BrandPresentation from "./brand/BrandPresentation";
 import { useBrandEditor } from "./brand/useBrandEditor";
 import { useBrandFonts } from "./brand/useBrandFonts";
@@ -83,11 +84,13 @@ function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (
   const { t } = useT();
   const s = t.system.client;
   const [busy, setBusy] = useState(false);
+  // A removable Chip: the site's first screen, its name, and the x that clears it
   return (
-    <span className="spage-client" title={s.hint}>
-      <Thumb item={client} image={imageOf(client)} />
-      <span>{s.redesignOf} <b>{client.name}</b></span>
-      <button type="button" className="spage-client__x" disabled={busy} aria-label={s.clear} title={s.clear} onClick={() => { setBusy(true); void onPick(null).finally(() => setBusy(false)); }}>{Icons.x}</button>
+    <span className="spage-client" data-tip={s.hint}>
+      <Chip tone="paper" removeLabel={s.clear} onRemove={() => { if (busy) return; setBusy(true); void onPick(null).finally(() => setBusy(false)); }}>
+        <Thumb item={client} image={imageOf(client)} />
+        <span>{s.redesignOf} <b>{client.name}</b></span>
+      </Chip>
     </span>
   );
 }
@@ -231,28 +234,27 @@ export default function SystemView({ project, system, onSystem, board, library, 
     a.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`; a.click(); URL.revokeObjectURL(a.href);
   };
 
+  // The three ways to see the project sit in the page, not on the chrome: the paper tone, which follows the theme
+  const VIEWS = ["markdown", "doc", "presentation"] as const;
   const views = (
-    <div className="spage-views" role="tablist" aria-label={project.name}>
-      {(["markdown", "doc", "presentation"] as const).map((v) => (
-        <button key={v} type="button" role="tab" aria-selected={view === v} className={view === v ? "is-on" : ""} onClick={() => setView(v)}>{v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation}</button>
-      ))}
-    </div>
+    <SegmentedControl tone="paper" label={project.name} className="spage-views" active={VIEWS.indexOf(view)} onChange={(i) => setView(VIEWS[i])}
+      items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation }))} />
   );
   const actions = (
     <div className="spage-head__actions">
       {!filled && <p className="spage-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>}
       {board.length > 0 ? (
-        <Button variant="primary" size="sm" onClick={() => setImproving(true)} disabled={running} title={t.system.improveHint}>
-          {running ? <><span className="spinner spinner--sm" /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <>{Icons.spark} {t.system.improve}</>}
+        <Button variant="primary" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
+          {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={20} /> {t.system.improve}</>}
         </Button>
-      ) : <Button variant="primary" size="sm" onClick={onOpenBoard}>{Icons.plus} {t.system.addRefs}</Button>}
-      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="sm" onClick={() => void fillBrand()} title={t.brand.fillHint}>{t.brand.fill}</Button>}
+      ) : <Button variant="primary" onClick={onOpenBoard}><Icon name="plus" size={20} /> {t.system.addRefs}</Button>}
+      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
       {/* What is asked for now and then stays out of the row: bringing in a brand that exists, the share links */}
       <Popover open={moreOpen} onOpenChange={setMoreOpen}>
-        <PopoverTrigger className="btn btn--sm spage-more" aria-label={t.card.more} title={t.card.more}>{Icons.dots}</PopoverTrigger>
-        <PopoverContent align="end" className="pp pp--menu spage-more__menu">
-          <button type="button" className="ws__item" disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}><span className="ws__item-name">{t.brand.import.title}</span></button>
-          <button type="button" className="ws__item" onClick={() => { setMoreOpen(false); setSharing(true); }}><span className="ws__item-name">{t.brand.share.title}</span></button>
+        <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
+        <PopoverContent align="end" className="cr-menu spage-more__menu">
+          <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}>{t.brand.import.title}</MenuItem>
+          <MenuItem onClick={() => { setMoreOpen(false); setSharing(true); }}>{t.brand.share.title}</MenuItem>
         </PopoverContent>
       </Popover>
     </div>

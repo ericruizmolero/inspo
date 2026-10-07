@@ -3,14 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { DIRECTORY, DIRECTORY_TOTAL, siteShot, type DirectorySite } from "@/lib/directory";
-import { Icons, SearchBox } from "./Sidebar";
 import { useT } from "./I18nProvider";
 import AddToLibrary from "./AddToLibrary";
 // Only the directory text of each language, not the whole dictionaries
 import { directory as en } from "@/lib/i18n/en/directory";
 import { directory as es } from "@/lib/i18n/es/directory";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogWindow } from "@/components/ui/dialog";
+import { Button, Chip, EmptyState, Icon, SegmentedControl } from "@/components/criterio";
 
 type GroupKey = keyof typeof en.groups;
 
@@ -136,13 +135,13 @@ function GuestBody() {
           {TEASER.map((r) => <RecRow key={r.url} name={r.name} url={r.url} desc={t.directory.items[r.url]} />)}
         </ul>
         <div className="dir-gate__cta">
-          <p className="dir-gate__title">{t.directory.moreInside(hidden)}</p>
-          <p className="dir-gate__groups">
+          <p className="t-title-m dir-gate__title">{t.directory.moreInside(hidden)}</p>
+          <p className="dir-gate__groups" aria-hidden>
             {DIRECTORY.map((g) => (
-              <span key={g.key} className="chip" aria-hidden>{t.directory.groups[g.key as GroupKey].title}<span className="chip__count">{g.items.length}</span></span>
+              <Chip key={g.key} className="dir-gate__chip">{t.directory.groups[g.key as GroupKey].title}<span className="dir-count">{g.items.length}</span></Chip>
             ))}
           </p>
-          <Link href={LOGIN_HREF} className={buttonVariants({ variant: "primary" })}>{t.directory.signInForAll}</Link>
+          <Button variant="primary" href={LOGIN_HREF}>{t.directory.signInForAll}</Button>
           <p className="dir-gate__note">{t.directory.free}</p>
         </div>
       </section>
@@ -169,44 +168,42 @@ export default function DirectoryModal({ onClose, guest = false, onAdd, isAdded 
   }, [base, q, tab]);
 
   const shown = groups.reduce((n, g) => n + g.items.length, 0);
+  // The kinds as tabs: "All" first, then each group; pressing the open one goes back to all
+  const keys = ["todas", ...DIRECTORY.map((g) => g.key)];
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       {/* The search box takes focus on open; guests have none, so the default applies */}
-      <DialogContent size="lg" className="dir-modal" initialFocus={() => document.querySelector<HTMLElement>(".dir-modal__tools input")}>
-        <div className="dir-modal__header">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <DialogTitle className="dir-modal__title">{t.directory.title}</DialogTitle>
-            <p className="dir-modal__lead">
-              {t.directory.lead(DIRECTORY_TOTAL)}
-              {guest && <> {t.directory.guestNote} <Link href={LOGIN_HREF}>{t.directory.guestSignIn}</Link> {t.directory.guestNoteEnd}</>}
-            </p>
-          </div>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
-        </div>
+      <DialogWindow className="dir-modal modal--lg" bar={t.directory.bar} heading={t.directory.title} closeLabel={t.common.close}
+        initialFocus={() => document.querySelector<HTMLElement>(".dir-modal__tools input")}>
+        <p className="dir-modal__lead">
+          {t.directory.lead(DIRECTORY_TOTAL)}
+          {guest && <> {t.directory.guestNote} <Link href={LOGIN_HREF}>{t.directory.guestSignIn}</Link> {t.directory.guestNoteEnd}</>}
+        </p>
 
         {!guest && (
           <div className="dir-modal__tools">
-            <SearchBox value={q} onChange={setQ} autoFocus />
+            <label className="dir-search">
+              <Icon name="search" size={16} />
+              <input className="cr-input" type="search" value={q} aria-label={t.sidebar.search} placeholder={t.sidebar.search} autoComplete="off"
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Escape" && q) { e.preventDefault(); e.stopPropagation(); setQ(""); } }} />
+            </label>
             <div className="dir-modal__tabs">
-              <button className={`chip${tab === "todas" ? " is-active" : ""}`} onClick={() => setTab("todas")}>
-                {t.directory.all}<span className="chip__count">{DIRECTORY_TOTAL}</span>
-              </button>
-              {DIRECTORY.map((g) => (
-                <button key={g.key} className={`chip${tab === g.key ? " is-active" : ""}`} onClick={() => setTab(tab === g.key ? "todas" : g.key)}>
-                  {t.directory.groups[g.key as GroupKey].title}<span className="chip__count">{g.items.length}</span>
-                </button>
-              ))}
+              <SegmentedControl tone="paper" label={t.directory.title} active={keys.indexOf(tab)}
+                onChange={(i) => setTab(i === 0 || keys[i] === tab ? "todas" : keys[i])}
+                items={[
+                  { label: t.directory.all, count: DIRECTORY_TOTAL },
+                  ...DIRECTORY.map((g) => ({ label: t.directory.groups[g.key as GroupKey].title, count: g.items.length })),
+                ]} />
             </div>
           </div>
         )}
 
-        <div className={`modal__body dir-modal__body${guest ? " dir-modal__body--guest" : ""}`}>
+        <div className={`dir-modal__body${guest ? " dir-modal__body--guest" : ""}`}>
           {guest ? <GuestBody /> : (
             <>
-              {groups.length === 0 && (
-                <div className="dir-empty">{t.directory.noMatch}</div>
-              )}
+              {groups.length === 0 && <EmptyState className="dir-empty" title={t.directory.noMatch} />}
               {groups.map((g) => (
                 <section key={g.key} className="dir-group">
                   <header className="dir-group__head">
@@ -219,13 +216,11 @@ export default function DirectoryModal({ onClose, guest = false, onAdd, isAdded 
                   </ul>
                 </section>
               ))}
-              {(q || tab !== "todas") && shown > 0 && (
-                <div className="sidebar__footer-note" style={{ padding: 0 }}>{t.directory.showing(shown, DIRECTORY_TOTAL)}</div>
-              )}
+              {(q || tab !== "todas") && shown > 0 && <p className="dir-showing">{t.directory.showing(shown, DIRECTORY_TOTAL)}</p>}
             </>
           )}
         </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

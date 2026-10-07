@@ -5,6 +5,7 @@ import { normalizeWebUrl } from "@/lib/url";
 import { DIRECTORY, DIRECTORY_TOTAL, siteShot } from "@/lib/directory";
 import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
+import { Button, Card, PromptInput, SegmentedControl } from "@/components/criterio";
 import s from "./EmptyStart.module.css";
 import AddToLibrary from "./AddToLibrary";
 
@@ -72,8 +73,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
     setBusy(true);
     try { await onAddUrl(web); } finally { setBusy(false); }
   };
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = () => {
     const web = normalizeWebUrl(raw);
     if (!web) { setError(t.start.notUrl); return; }
     add(web);
@@ -82,6 +82,8 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
   const group = DIRECTORY.find((g) => g.key === tab);
   const shown = group ? group.items.slice(0, PER_TAB).map((r) => ({ group, ...r })) : PICKS;
   const groupTitle = (key: string) => t.directory.groups[key as keyof typeof t.directory.groups].title;
+  const tabs = [{ key: "picks", title: t.directory.featured, n: PICKS.length },
+    ...DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), n: g.items.length }))];
 
   return (
     <div className={s.scroll}>
@@ -89,42 +91,22 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
       <div className={s.head} data-flip>
         <h1 className={s.title}>{t.start.title}</h1>
         <p className={s.lead}>{t.start.lead}</p>
-        <form className={s.prompt} onSubmit={submit}>
-          <input
-            ref={inputRef}
-            className={s.promptInput}
-            value={raw}
-            onChange={(e) => { setRaw(e.target.value); setError(""); }}
-            placeholder={t.start.pasteUrl}
-            inputMode="url"
-            autoComplete="off"
-            spellCheck={false}
-            disabled={busy}
-            aria-label={t.start.firstUrlLabel}
-            aria-invalid={!!error}
-            aria-describedby={error ? "start-url-error" : undefined}
-          />
-          <button type="submit" className={s.send} disabled={busy} aria-label={busy ? t.start.saving : t.start.save}>
-            {busy ? <span className="spinner spinner--sm" /> : Icons.arrowUp}
-          </button>
-        </form>
+        <PromptInput className={s.prompt} id="start-url" inputRef={inputRef} value={raw} placeholder={t.start.pasteUrl}
+          label={t.start.firstUrlLabel} sendLabel={busy ? t.start.saving : t.start.save} disabled={busy} busy={busy}
+          onChange={(v) => { setRaw(v); setError(""); }} onSubmit={submit}
+          inputProps={{ inputMode: "url", spellCheck: false, "aria-invalid": !!error, "aria-describedby": error ? "start-url-error" : undefined }} />
         {error && <p id="start-url-error" className={s.error} role="alert">{error}</p>}
       </div>
 
       <div className={s.section} data-flip>
-        <div className={s.tabs} role="group" aria-label={t.start.trendingNow}>
-          {[{ key: "picks", title: t.directory.featured, n: PICKS.length },
-            ...DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), n: g.items.length }))].map((x) => (
-            <button key={x.key} type="button" aria-pressed={tab === x.key}
-              className={`${s.tab}${tab === x.key ? ` ${s.tabOn}` : ""}`} onClick={() => setTab(x.key)}>
-              {x.title}<span className={s.tabCount}>{x.n}</span>
-            </button>
-          ))}
+        <div className={s.tabs}>
+          <SegmentedControl tone="paper" label={t.start.trendingNow} active={tabs.findIndex((x) => x.key === tab)} onChange={(i) => setTab(tabs[i].key)}
+            items={tabs.map((x) => ({ label: x.title, count: x.n }))} />
         </div>
 
         <div className={s.grid}>
           {shown.map((r) => (
-            <div key={r.url} className={s.tile}>
+            <Card key={r.url} className={s.tile}>
               <a className={s.tileLink} href={r.url} target="_blank" rel="noopener noreferrer">
                 <Thumb name={r.name} url={r.url} />
                 <span className={s.text}>
@@ -137,13 +119,11 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
               <div className={s.foot}>
                 <AddToLibrary url={r.url} name={r.name} added={!!isDuplicate?.(r.url)} onAdd={add} />
               </div>
-            </div>
+            </Card>
           ))}
         </div>
 
-        <button type="button" className={s.more} onClick={onDirectory}>
-          {Icons.compass}<span>{t.start.seeAll(DIRECTORY_TOTAL)}</span>{Icons.arrow}
-        </button>
+        <Button className={s.more} icon="compass" iconEnd="arrow-right" onClick={onDirectory}>{t.start.seeAll(DIRECTORY_TOTAL)}</Button>
       </div>
     </section>
     </div>

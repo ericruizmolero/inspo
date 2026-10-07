@@ -6,14 +6,11 @@ import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { Workspace } from "@/lib/workspace-core";
-import { WorkspaceAvatar } from "@/components/WorkspaceMenu";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useConfirm } from "@/components/useConfirm";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
+import { Avatar, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
 
 export default function WorkspacePanel({ workspace, canManage }: { workspace: Workspace; canManage: boolean }) {
   const { t } = useT();
@@ -22,21 +19,18 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
   const logoRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(workspace.name);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  // Each error sits under the control it is about (leaving: in its window's footer)
+  const [nameError, setNameError] = useState("");
+  const [logoError, setLogoError] = useState("");
+  const [outError, setOutError] = useState("");
+  const [leaveError, setLeaveError] = useState("");
   const [saved, setSaved] = useState(false);
 
   if (workspace.kind === "personal") {
     return (
       <div className="page__body">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.settings.personalSpace}</CardTitle>
-            <CardDescription>{t.settings.personalSpaceHint}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Link className={buttonVariants({ variant: "ghost", size: "sm" })} href="/settings/account">{t.settings.goToAccount}</Link>
-          </CardFooter>
-        </Card>
+        <SettingsWindow title={t.settings.personalSpace} note={t.settings.personalSpaceHint}
+          actions={<Link className={buttonVariants()} href="/settings/account">{t.settings.goToAccount}</Link>} />
       </div>
     );
   }
@@ -45,19 +39,19 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
     e.preventDefault();
     const value = name.trim();
     if (!value || value === workspace.name) return;
-    setBusy(true); setError(""); setSaved(false);
+    setBusy(true); setNameError(""); setSaved(false);
     const { error: err } = await authClient.organization.update({ organizationId: workspace.id, data: { name: value } });
     setBusy(false);
-    if (err) { setError(err.message ?? t.ws.renameFailed); return; }
+    if (err) { setNameError(err.message ?? t.ws.renameFailed); return; }
     setSaved(true);
     router.refresh();
   };
 
   const setLogo = async (logo: string | null) => {
-    setBusy(true); setError("");
+    setBusy(true); setLogoError("");
     const { error: err } = await authClient.organization.update({ organizationId: workspace.id, data: { logo } });
     setBusy(false);
-    if (err) { setError(err.message ?? t.ws.logoFailed); return; }
+    if (err) { setLogoError(err.message ?? t.ws.logoFailed); return; }
     router.refresh();
   };
   const onLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,85 +59,56 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
     e.target.value = "";
     if (!file) return;
     try { await setLogo(await fileToSquareDataURL(file, 128)); }
-    catch (err) { setError(messageOf(err, t, t.ws.imageFailed)); }
+    catch (err) { setLogoError(messageOf(err, t, t.ws.imageFailed)); }
   };
 
   const leave = async () => {
     if (!(await confirm({ title: t.team.leaveConfirm(workspace.name), description: t.settings.leaveHint, action: t.team.leaveTeam, danger: true }))) return;
-    setBusy(true); setError("");
+    setBusy(true); setLeaveError("");
     const { error: err } = await authClient.organization.leave({ organizationId: workspace.id });
     setBusy(false);
-    if (err) { setError(err.message ?? t.team.leaveFailed); return; }
+    if (err) { setLeaveError(err.message ?? t.team.leaveFailed); return; }
     router.push("/"); router.refresh();
   };
 
   return (
     <div className="page__body">
       {confirmDialog}
-      {error && <p className="modal__error">{error}</p>}
 
-      <Card>
-        <CardHeader>
-          <CardTitle><Label htmlFor="ws-name" className="text-base leading-snug">{t.settings.teamName}</Label></CardTitle>
-          <CardDescription>{t.settings.teamNameHint}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={rename} className="invite">
-            <Input id="ws-name" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
-              placeholder={t.ws.teamName} maxLength={60} required disabled={!canManage} />
-            {canManage && (
+      <SettingsWindow title={t.ws.team}>
+        <form onSubmit={rename}>
+          <FieldRow label={t.settings.name} hint={t.settings.teamNameHint} htmlFor="team-name" error={nameError}
+            action={canManage && (
               <Button variant="primary" type="submit" disabled={busy || !name.trim() || name.trim() === workspace.name}>
                 {saved ? t.settings.saved : t.settings.save}
               </Button>
-            )}
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.ws.logo}</CardTitle>
-          <CardDescription>{t.settings.logoHint}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="setting-row">
-            <WorkspaceAvatar workspace={workspace} />
-            {canManage && (
-              <div className="setting-row__actions">
-                <Button size="sm" onClick={() => logoRef.current?.click()} disabled={busy}>{workspace.logo ? t.ws.change : t.ws.add}</Button>
-                {workspace.logo && <Button variant="ghost" size="sm" onClick={() => setLogo(null)} disabled={busy}>{t.ws.remove}</Button>}
-              </div>
-            )}
+            )}>
+            <input id="team-name" className="cr-input" value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }}
+              placeholder={t.ws.teamName} maxLength={60} required disabled={!canManage} aria-invalid={nameError ? true : undefined} />
+          </FieldRow>
+        </form>
+        <FieldRow label={t.ws.logo} hint={t.settings.logoHint} error={logoError}>
+          <span className="setting-photo">
+            <Avatar initials={workspace.name.slice(0, 1).toUpperCase()} name={workspace.name} tone={toneFor(workspace.name)} src={workspace.logo} size={44} square />
+            {canManage && <Button onClick={() => logoRef.current?.click()} disabled={busy}>{workspace.logo ? t.ws.change : t.ws.add}</Button>}
+            {canManage && workspace.logo && <Button variant="quiet" onClick={() => setLogo(null)} disabled={busy}>{t.ws.remove}</Button>}
             <input ref={logoRef} type="file" accept="image/*" hidden onChange={onLogoFile} />
-          </div>
-        </CardContent>
-      </Card>
+          </span>
+        </FieldRow>
+      </SettingsWindow>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t.settings.outputLanguage}</CardTitle>
-          <CardDescription>{t.settings.outputLanguageHint}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="setting-line">
-            <span>{t.settings.language}</span>
-            <OutputLanguageSwitch workspaceId={workspace.id} value={workspace.outputLanguage} disabled={!canManage} onError={setError} />
-          </div>
-          {/* A switch that does nothing needs a reason: members can see the language, not change it */}
-          {!canManage && <p className="card-note">{t.settings.outputLanguageAdmins}</p>}
-        </CardContent>
-      </Card>
+      {/* A switch that does nothing needs a reason: members can see the language, not change it */}
+      <SettingsWindow title={t.settings.outputLanguage} description={t.settings.outputLanguageHint}
+        note={!canManage ? t.settings.outputLanguageAdmins : undefined}>
+        <FieldRow label={t.settings.language} error={outError}>
+          <OutputLanguageSwitch workspaceId={workspace.id} value={workspace.outputLanguage} disabled={!canManage} onError={setOutError} />
+        </FieldRow>
+      </SettingsWindow>
 
       {workspace.role !== "owner" && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.settings.leave}</CardTitle>
-            <CardDescription>{t.settings.leaveHint}</CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button variant="ghost" size="sm" className="is-danger" onClick={leave} disabled={busy}>{t.team.leaveTeam}</Button>
-          </CardFooter>
-        </Card>
+        <SettingsWindow title={t.settings.leave}
+          note={leaveError ? <span className="cr-field-hint is-error" role="alert">{leaveError}</span> : t.settings.leaveHint}
+          actions={<Button onClick={leave} disabled={busy}>{t.team.leaveTeam}</Button>} />
       )}
     </div>
   );

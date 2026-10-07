@@ -8,10 +8,10 @@ import { fmtDate, fmtDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT, messageOf } from "./I18nProvider";
-import { Button } from "@/components/ui/button";
 import { mediaKindOf, readableDomain } from "@/lib/url";
 import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
+import { Avatar as SysAvatar, Busy, Button, Chip, EmptyState, IconButton, TextArea, toneFor } from "@/components/criterio";
 
 // Side panel for an inspo's comments. The original note from whoever saved it opens the list; then each
 // comment as a thread, oldest first: pinned ones (post-its on the page) carry their number and a way to the
@@ -54,23 +54,14 @@ interface CommentsPanelProps {
   onReply?: (parentId: string, body: string) => Promise<void>;
 }
 
-const IcX = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3l8 8M11 3l-8 8" /></svg>
-);
-const IcSend = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7h10M8 3l4 4-4 4" /></svg>
-);
 const IcTrash = (
-  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" /></svg>
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" /></svg>
 );
 const IcEdit = (
-  <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11l-2.5.5L3 9z" /></svg>
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11l-2.5.5L3 9z" /></svg>
 );
 const IcImage = (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
-);
-const IcChevron = (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3l5 5-5 5" /></svg>
 );
 const IcArrow = (
   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l6-6M4 3h5v5" /></svg>
@@ -87,17 +78,10 @@ export function hueFor(name: string): number {
   return HUES[h % HUES.length];
 }
 
+/** A person by name: the system's Avatar in that person's tone (the same one everywhere), their picture when
+ * there is one. Kept as a name-based shortcut for InspoCard, SystemDoc and SystemMarkdown. */
 export function Avatar({ name, image, size = 26 }: { name: string; image?: string | null; size?: number }) {
-  const hue = hueFor(name);
-  return (
-    <span
-      className="cm-avatar"
-      style={{ width: size, height: size, fontSize: Math.round(size * 0.42), background: image ? undefined : `hsl(${hue} 32% 26%)`, color: `hsl(${hue} 70% 82%)` }}
-      aria-hidden
-    >
-      {image ? <img src={image} alt="" /> : name.slice(0, 1).toUpperCase()}
-    </span>
-  );
+  return <SysAvatar className="cm-avatar" initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} size={size} src={image} />;
 }
 
 function relTime(iso: string, now: number, locale: Locale, t: Dict): string {
@@ -389,11 +373,6 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   const cancelEdit = () => { setEditing(null); setEditError(null); };
 
   const others = memberNames.filter((n) => n && n !== user.name);
-  // Ghost rows with the team's real avatars (you included)
-  const ghosts = [user.name || user.email, ...others].slice(0, 3).map((n, i) => ({
-    name: n, image: n === user.name ? user.image ?? null : memberImages[n] ?? null,
-    w1: ["72%", "58%", "80%"][i], w2: ["40%", "66%", "34%"][i],
-  }));
 
   // An uploaded image is not a site: its link opens the file itself, which is also the picture on top
   const kind = mediaKindOf(item.web);
@@ -406,17 +385,16 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
       {!grouped && (
         <div className="cm-msg__head">
           <Avatar name={m.name} image={m.image} />
-          <span className="cm-msg__name">{m.name}{m.mine && <span className="cm-msg__you">{t.comments.you}</span>}</span>
-          {m.original && <span className="cm-msg__tag">{m.id === "sub" ? t.comments.subComment : t.comments.originalNote}</span>}
-          <span className="cm-msg__time" title={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
+          <span className="cm-msg__name">{m.name}{m.mine && <Chip className="cm-msg__you">{t.comments.you}</Chip>}</span>
+          <span className="cm-msg__time" data-tip={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
         </div>
       )}
       <div className="cm-msg__row">
         <div className="cm-msg__content">
           {editing?.id === m.id ? (
             <div className="cm-edit">
-              <textarea
-                className="input cm-edit__input"
+              <TextArea
+                className="cm-edit__input"
                 value={editing.text}
                 rows={Math.min(8, Math.max(2, editing.text.split("\n").length + 1))}
                 autoFocus
@@ -431,9 +409,9 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 {editError
                   ? <span className="cm-composer__error">{editError}</span>
                   : <span className="cm-composer__hint">{t.comments.editHint}</span>}
-                <Button variant="ghost" size="sm" type="button" onClick={cancelEdit} disabled={savingEdit}>{t.comments.cancelEdit}</Button>
-                <Button variant="primary" size="sm" type="button" onClick={saveEdit} disabled={savingEdit}>
-                  {savingEdit ? <span className="spinner spinner--sm" /> : t.comments.saveEdit}
+                <Button size="s" onClick={cancelEdit} disabled={savingEdit}>{t.comments.cancelEdit}</Button>
+                <Button variant="primary" size="s" onClick={saveEdit} disabled={savingEdit}>
+                  {savingEdit ? <Busy label={t.comments.saveEdit} /> : t.comments.saveEdit}
                 </Button>
               </div>
             </div>
@@ -446,7 +424,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                   type="button"
                   className="cm-att"
                   style={m.attachments.length === 1 && a.w && a.h ? { aspectRatio: `${a.w} / ${a.h}` } : undefined}
-                  title={a.name ?? t.comments.seeScreenshot}
+                  data-tip={a.name ?? t.comments.seeScreenshot}
                   onClick={() => setLightbox({ list: m.attachments, idx: j })}
                 >
                   <img src={a.url} alt={a.name ?? t.comments.screenshot} loading="lazy" />
@@ -456,10 +434,10 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           )}
         </div>
         {m.editable && editing?.id !== m.id && (
-          <button className="cm-msg__edit" title={t.comments.editNote} aria-label={t.comments.editNote} onClick={() => { setEditError(null); setEditing({ id: m.id, text: m.body }); }}>{IcEdit}</button>
+          <IconButton icon={IcEdit} variant="quiet" size="xs" className="cm-msg__edit" label={t.comments.editNote} onClick={() => { setEditError(null); setEditing({ id: m.id, text: m.body }); }} />
         )}
         {m.deletable && (
-          <button className="cm-msg__del" title={t.comments.deleteComment} aria-label={t.comments.deleteComment} onClick={() => onDelete(m.id)}>{IcTrash}</button>
+          <IconButton icon={IcTrash} variant="quiet" size="xs" className="cm-msg__del" label={t.comments.deleteComment} onClick={() => onDelete(m.id)} />
         )}
       </div>
     </div>
@@ -481,22 +459,22 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         {dragging && (
           <div className="cm-drop" aria-hidden>
             <span className="cm-drop__icon">{IcImage}</span>
-            <span className="display cm-drop__title">{t.comments.dropTitle}</span>
+            <span className="t-title-m cm-drop__title">{t.comments.dropTitle}</span>
             <span className="cm-drop__text">{t.comments.dropText}</span>
           </div>
         )}
-        <header className="cm-panel__head">
+        <header className="cm-panel__head cr-viewer-aside-head">
           <div className="cm-panel__title">
-            <span className="display">{column ? t.comments.title : item.name}</span>
+            <span className="cr-viewer-aside-title">{column ? t.comments.title : item.name}</span>
             {!column && <a className="cm-panel__link" href={href} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
           </div>
-          <span className="cm-panel__count">{count === 0 ? t.comments.noComments : t.comments.count(count)}</span>
-          {onClose && <Button variant="icon" onClick={onClose} aria-label={column ? t.comments.hide : t.common.close}>{IcX}</Button>}
+          <span className="cm-panel__count cr-viewer-aside-meta">{total === 0 ? t.comments.noComments : t.comments.count(total)}</span>
+          {onClose && <IconButton icon="close" variant="quiet" size="s" onClick={onClose} label={column ? t.comments.hide : t.common.close} />}
         </header>
 
         {designMd && !column && (
           <div className={`cm-md-cta is-${designMd.status}`}>
-            <span className="cm-md-cta__icon">{designMd.status === "loading" ? <span className="spinner spinner--sm" /> : IcDoc}</span>
+            <span className="cm-md-cta__icon">{designMd.status === "loading" ? <Busy label={t.comments.mdLoading} /> : IcDoc}</span>
             <span className="cm-md-cta__text">
               {designMd.status === "ready"
                 ? t.comments.mdReady
@@ -504,8 +482,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                   ? t.comments.mdLoading
                   : t.comments.mdNone}
             </span>
-            {designMd.status === "ready" && <Button variant="ghost" size="sm" type="button" onClick={designMd.onOpen}>{t.comments.seeSpec}</Button>}
-            {designMd.status === "none" && <Button variant="primary" size="sm" type="button" onClick={designMd.onGenerate}>{t.comments.generateMd}</Button>}
+            {designMd.status === "ready" && <Button size="s" onClick={designMd.onOpen}>{t.comments.seeSpec}</Button>}
+            {designMd.status === "none" && <Button variant="primary" size="s" onClick={designMd.onGenerate}>{t.comments.generateMd}</Button>}
           </div>
         )}
 
@@ -516,41 +494,27 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             <VideoPlayer web={item.web} title={item.name} />
           ) : kind === "image" && image ? (
             // Whole, not cropped: the image is the inspo
-            <a className="cm-shot cm-shot--whole" href={href} target="_blank" rel="noopener noreferrer" title={t.card.openImage}>
+            <a className="cm-shot cm-shot--whole" href={href} target="_blank" rel="noopener noreferrer" data-tip={t.card.openImage}>
               <img src={image} alt={item.name} loading="lazy" />
             </a>
           ) : image && (
-            <a className="cm-shot" href={item.web} target="_blank" rel="noopener noreferrer" title={t.comments.openSite}>
+            <a className="cm-shot" href={item.web} target="_blank" rel="noopener noreferrer" data-tip={t.comments.openSite}>
               <img src={image} alt="" loading="lazy" />
             </a>
           )}
           {originals.map((m, i) => renderMsg(m, !!originals[i - 1] && originals[i - 1].name === m.name && Math.abs(Date.parse(originals[i - 1].at) - Date.parse(m.at)) < 5 * 60000))}
           {/* Nobody has answered yet: the invitation to, under the note the reference came with */}
-          {threads.length === 0 && (
-            <div className="cm-empty">
-              <div className="cm-empty__ghosts" aria-hidden>
-                {ghosts.map((g, i) => (
-                  <div key={i} className="cm-empty__ghost" style={{ animationDelay: `${i * 90}ms` }}>
-                    <Avatar name={g.name} image={g.image} size={22} />
-                    <span className="cm-empty__bars">
-                      <span style={{ width: g.w1 }} />
-                      <span style={{ width: g.w2 }} />
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <span className="display cm-empty__title">{originals.length ? t.comments.inviteTitle : t.comments.emptyTitle}</span>
-              <span className="cm-empty__text">
-                {others.length === 0
-                  ? t.comments.emptyAlone
-                  : t.comments.emptyWithOthers(listNames(others, t.comments.and), others.length > 1)}
-              </span>
-              <div className="cm-empty__prompts">
-                {(kind === "web" ? t.comments.prompts : t.comments.promptsMedia).map((p) => (
-                  <button key={p} type="button" className="chip" onClick={() => { setDraft(p + " "); textareaRef.current?.focus(); }}>{p}</button>
-                ))}
-              </div>
-            </div>
+          {total === 0 && (
+            <EmptyState
+              className="cm-empty"
+              title={originals.length ? t.comments.inviteTitle : t.comments.emptyTitle}
+              suggestions={[...(kind === "web" ? t.comments.prompts : t.comments.promptsMedia)]}
+              onSuggest={(p) => { setDraft(p + " "); textareaRef.current?.focus(); }}
+            >
+              {others.length === 0
+                ? t.comments.emptyAlone
+                : t.comments.emptyWithOthers(listNames(others, t.comments.and), others.length > 1)}
+            </EmptyState>
           )}
           {threads.map(({ head, replies }) => (
             // A post-it's thread wears the post-it's colour from its comment down to its last reply
@@ -559,34 +523,33 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               {replies.length > 0 && <div className="cm-replies">{replies.map((r, i) => renderMsg(r, !!replies[i - 1] && replies[i - 1].name === r.name && Math.abs(Date.parse(replies[i - 1].at) - Date.parse(r.at)) < 5 * 60000))}</div>}
               {onReply && (replying?.id === head.id ? (
                 <form className="cm-reply" onSubmit={(e) => { e.preventDefault(); sendReply(); }}>
-                  <Avatar name={user.name || user.email} image={user.image} size={20} />
-                  <div className="cm-reply__box">
-                    <textarea
-                      className="input cm-reply__input"
-                      autoFocus
-                      rows={Math.min(6, Math.max(1, replying.text.split("\n").length))}
-                      value={replying.text}
-                      disabled={replying.sending}
-                      placeholder={t.comments.reply}
-                      aria-label={t.comments.reply}
-                      onChange={(e) => setReplying({ ...replying, text: e.target.value })}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
-                        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeReply(head.id); }
-                      }}
-                      onBlur={() => { if (!replying.text.trim()) setReplying(null); }}
-                    />
-                    {replying.error && <span className="cm-composer__error">{replying.error}</span>}
-                  </div>
-                  <Button variant="primary" size="sm" type="submit" onMouseDown={(e) => e.preventDefault()} disabled={replying.sending || !replying.text.trim()}>
-                    {replying.sending ? <span className="spinner spinner--sm" /> : t.comments.send}
-                  </Button>
+                  <TextArea
+                    className="cm-reply__box"
+                    autoFocus
+                    rows={1}
+                    value={replying.text}
+                    disabled={replying.sending}
+                    placeholder={t.comments.reply}
+                    aria-label={t.comments.reply}
+                    onChange={(e) => setReplying({ ...replying, text: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
+                      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeReply(head.id); }
+                    }}
+                    onBlur={() => { if (!replying.text.trim()) setReplying(null); }}
+                    toolbar={
+                      <Button variant="primary" size="s" type="submit" onMouseDown={(e) => e.preventDefault()} disabled={replying.sending || !replying.text.trim()}>
+                        {replying.sending ? <Busy label={t.comments.send} /> : t.comments.send}
+                      </Button>
+                    }
+                  />
+                  {replying.error && <span className="cm-composer__error">{replying.error}</span>}
                 </form>
               ) : (
                 <div className="cm-thread__foot">
-                  <button type="button" className="cm-reply-btn" data-reply-for={head.id} onClick={() => setReplying({ id: head.id, text: "", sending: false })}>
+                  <Button variant="quiet" size="s" className="cm-reply-btn" data-reply-for={head.id} onClick={() => setReplying({ id: head.id, text: "", sending: false })}>
                     {t.comments.replyTo}
-                  </button>
+                  </Button>
                   {replies.length > 0 && <span className="cm-thread__count">{t.comments.replies(replies.length)}</span>}
                 </div>
               ))}
@@ -594,42 +557,44 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           ))}
         </div>
 
+        {/* One field: the text, the screenshots waiting to go, and a toolbar inside the same box (attach on
+            the left, Send on the right). No avatar (it is always you); the keys are read by screen readers and
+            the placeholder already says a screenshot can be pasted. */}
         <form className="cm-composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
-          <Avatar name={user.name || user.email} image={user.image} />
-          <div className="cm-composer__box">
-            <textarea
-              ref={textareaRef}
-              className="input cm-composer__input"
-              rows={2}
-              value={draft}
-              placeholder={count === 0 && !item.note ? t.comments.firstComment : t.comments.addComment}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }}
-            />
+          <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
+            onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
+          <TextArea
+            ref={textareaRef}
+            rows={2}
+            value={draft}
+            aria-label={t.comments.addComment}
+            aria-describedby="cm-composer-keys"
+            placeholder={count === 0 && !item.note ? t.comments.firstComment : t.comments.addComment}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }}
+            toolbar={<>
+              <IconButton icon="image" variant="quiet" size="s" label={t.comments.attach} onClick={() => fileRef.current?.click()} />
+              {uploading && <span className="cr-textbox-status" role="status">{t.comments.uploading}</span>}
+              <Button variant="primary" size="s" type="submit" disabled={!canSend}>
+                {sending ? <Busy label={t.comments.send} /> : t.comments.send}
+              </Button>
+            </>}
+          >
             {pending.length > 0 && (
               <div className="cm-files">
                 {pending.map((p) => (
-                  <div key={p.key} className={`cm-file is-${p.status}`} title={p.status === "error" ? p.error : p.name}>
+                  <div key={p.key} className={`cm-file is-${p.status}`} data-tip={p.status === "error" ? p.error : p.name}>
                     <img src={p.preview} alt="" />
-                    {p.status === "uploading" && <span className="spinner spinner--sm" />}
+                    {p.status === "uploading" && <Busy className="cm-file__busy" label={t.comments.uploading} />}
                     {p.status === "error" && <span className="cm-file__err">!</span>}
-                    <button type="button" className="cm-file__rm" aria-label={t.comments.removeScreenshot} onClick={() => removePending(p.key)}>{IcX}</button>
+                    <IconButton icon="close" variant="default" size="xs" className="cm-file__rm" label={t.comments.removeScreenshot} onClick={() => removePending(p.key)} />
                   </div>
                 ))}
               </div>
             )}
-            <div className="cm-composer__foot">
-              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
-                onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
-              <Button variant="icon" type="button" className="cm-composer__attach" title={t.comments.attach} aria-label={t.comments.attach} onClick={() => fileRef.current?.click()}>{IcImage}</Button>
-              {error
-                ? <span className="cm-composer__error">{error}</span>
-                : <span className="cm-composer__hint">{uploading ? t.comments.uploading : t.comments.composerHint}</span>}
-              <Button variant="primary" size="sm" type="submit" disabled={!canSend}>
-                {sending ? <span className="spinner spinner--sm" /> : <>{t.comments.send} {IcSend}</>}
-              </Button>
-            </div>
-          </div>
+          </TextArea>
+          {error && <p className="cm-composer__error" role="alert">{error}</p>}
+          <span id="cm-composer-keys" className="cr-visually-hidden">{t.comments.composerHint}</span>
         </form>
       </aside>
 
@@ -639,8 +604,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         const go = (d: number) => setLightbox({ list: lightbox.list, idx: (lightbox.idx + d + lightbox.list.length) % lightbox.list.length });
         return (
           <div className="cm-lightbox" role="dialog" aria-label={t.comments.screenshot} onClick={() => setLightbox(null)}>
-            <Button variant="icon" className="cm-lightbox__close" aria-label={t.common.close} onClick={() => setLightbox(null)}>{IcX}</Button>
-            {many && <button className="cm-lightbox__nav is-prev" aria-label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }}>{IcChevron}</button>}
+            <IconButton icon="close" variant="default" size="m" className="cm-lightbox__close" label={t.common.close} onClick={() => setLightbox(null)} />
+            {many && <IconButton icon="chevron-left" variant="default" size="l" className="cm-lightbox__nav is-prev" label={t.comments.previous} onClick={(e) => { e.stopPropagation(); go(-1); }} />}
             <img
               key={a.url}
               className="cm-lightbox__img"
@@ -648,7 +613,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               alt={a.name ?? t.comments.screenshot}
               onClick={(e) => e.stopPropagation()}
             />
-            {many && <button className="cm-lightbox__nav is-next" aria-label={t.comments.next} onClick={(e) => { e.stopPropagation(); go(1); }}>{IcChevron}</button>}
+            {many && <IconButton icon="chevron-right" variant="default" size="l" className="cm-lightbox__nav is-next" label={t.comments.next} onClick={(e) => { e.stopPropagation(); go(1); }} />}
             <div className="cm-lightbox__caption">
               {a.name && <span>{a.name}</span>}
               {many && <span className="cm-lightbox__count">{lightbox.idx + 1} / {lightbox.list.length}</span>}

@@ -1,23 +1,11 @@
-/* Handing a reference to the agent: "/" over a card. The corner of the card says it can be done; the card
-   handed over wears a ring; the search box carries it as "this" and offers what can be done with it. */
-.tile__agent-hint {
-  position: absolute; z-index: 6; left: 10px; bottom: 10px; display: grid; place-items: center; width: 22px; height: 22px;
-  border-radius: 6px; background: rgba(14,14,13,0.78); color: #f2f2ef; font: 600 12px/1 var(--font-mono, ui-monospace, monospace);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.18); pointer-events: none; animation: agent-hint-in 160ms var(--ease-out, ease-out) both;
-}
-@keyframes agent-hint-in { from { opacity: 0; transform: translateY(2px); } }
-@media (hover: none) { .tile__agent-hint { display: none; } }
-@media (prefers-reduced-motion: reduce) { .tile__agent-hint { animation: none; } }
-
-.sb--dock .sb__chip--target { gap: 7px; padding-left: 4px; background: var(--dock-chip); }
+/* Handing a reference to the agent: "/" over a card. The card handed over wears a ring; the search box carries it
+   as "this" (a chrome Chip) and offers what can be done with it. */
+.sb--dock .sb__chip--target.cr-chip { gap: 7px; padding-left: 4px; }
 .sb__chip--target .sb__chip-label { display: inline-flex; align-items: baseline; gap: 5px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sb__chip--target small { font-size: 11px; color: var(--dock-muted); }
-.sb__target-img { width: 34px; height: 22px; border-radius: 6px; object-fit: cover; object-position: top; flex-shrink: 0; }
-.sb__target-img--blank { display: grid; place-items: center; background: var(--dock-fill); color: var(--dock-ink); font-size: 11px; font-weight: 600; }
+.sb__chip--target small { font-size: var(--fs-label); color: var(--chrome-muted); }
+.sb__target-img { width: 34px; height: 22px; border-radius: var(--radius-pill); object-fit: cover; object-position: top; flex-shrink: 0; }
+.sb__target-img--blank { display: grid; place-items: center; background: var(--chrome-raised); color: var(--chrome-ink); font-size: var(--fs-label); font-weight: 600; }
 
-.sb--dock .sb__menu.sb__quick { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
-.sb__quick-title { padding: 0 4px; font-size: 12px; color: var(--dock-muted); }
-.sb__quick-list { display: flex; flex-wrap: wrap; gap: 6px; }
-.sb__quick-btn { height: 32px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--dock-fill); color: var(--dock-ink); font: inherit; font-size: 13px; cursor: pointer; }
-.sb__quick-btn:hover, .sb__quick-btn:focus-visible { background: var(--dock-chip); }
-.sb__quick-btn:disabled { opacity: 0.5; cursor: default; }
+/* What can be done with it, in the system's Menu that hangs from the bar: each one a secondary Button, size s */
+.sb--dock .sb__menu.sb__quick { gap: 4px; padding: 4px 8px 10px; }
+.sb__quick-list { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 2px; }

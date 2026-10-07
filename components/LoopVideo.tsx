@@ -1,9 +1,14 @@
 "use client";
 // A short recording looping on a card or a thumbnail, muted: it plays only while it is in view and lies over
 // the frame until it has something to show, so a slow load never blanks the picture.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
-export default function LoopVideo({ src, className = "" }: { src: string; className?: string }) {
+export default function LoopVideo({ src, className = "", progressRef }: {
+  src: string;
+  className?: string;
+  /** The card's scrub line: its fill follows the playback by transform alone (no render, a few writes a second) */
+  progressRef?: RefObject<HTMLElement | null>;
+}) {
   const ref = useRef<HTMLVideoElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -16,10 +21,17 @@ export default function LoopVideo({ src, className = "" }: { src: string; classN
     io.observe(v);
     return () => io.disconnect();
   }, []);
+  // Gone (the pointer left), the line goes back to the start
+  useEffect(() => () => { const el = progressRef?.current; if (el) el.style.transform = ""; }, [progressRef]);
   if (failed) return null;
   return (
     <video ref={ref} className={`${className}${ready ? "" : " is-hidden"}`} src={src} muted autoPlay loop playsInline preload="metadata"
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", maxHeight: "none", objectFit: "cover", objectPosition: "top", opacity: ready ? 1 : 0 }}
-      onPlaying={() => setReady(true)} onError={() => setFailed(true)} aria-hidden />
+      onPlaying={() => setReady(true)} onError={() => setFailed(true)}
+      onTimeUpdate={progressRef ? (e) => {
+        const v = e.currentTarget, el = progressRef.current;
+        if (el && v.duration) el.style.transform = `scaleX(${v.currentTime / v.duration})`;
+      } : undefined}
+      aria-hidden />
   );
 }

@@ -1,19 +1,21 @@
 /* ─── The templates as a library (components/TemplatesView.tsx): cards with what each work ended as; one opens its file ─── */
 .tplc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 32px 22px; margin-top: 10px; }
 .tplc { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.tplc .tpl-page { margin-bottom: 6px; transition: transform 0.25s var(--ease-out), box-shadow 0.25s; }
-@media (hover: hover) { .tplc:hover .tpl-page { transform: translateY(-3px); box-shadow: 0 0 0 1px rgb(255 255 255 / 0.14), 0 18px 40px rgba(0,0,0,0.3); } }
-.tplc:focus-visible { outline: none; } .tplc:focus-visible .tpl-page { box-shadow: 0 0 0 2px var(--text); }
+/* Cards are flat: on hover the frame lifts a touch and its hairline darkens, no shadow */
+.tplc .tpl-page { margin-bottom: 6px; transition: transform 0.25s var(--ease-out), border-color 0.25s; }
+@media (hover: hover) { .tplc:hover .tpl-page { transform: translateY(-3px); border-color: var(--border-strong); } }
+@media (prefers-reduced-motion: reduce) { .tplc:hover .tpl-page { transform: none; } }
+.tplc:focus-visible { outline: none; } .tplc:focus-visible .tpl-page { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* While the list loads: the card's shape, not a button */
 .tplc--loading { cursor: default; pointer-events: none; }
-.tplc__blank { display: grid; place-items: center; font-size: 34px; font-weight: 600; color: var(--muted); background: var(--surface); }
-.tplc__name { font-size: 15px; font-weight: 550; line-height: 1.3; color: var(--text); }
-.tplc__path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-2); }
-.tplc__path span { display: inline-flex; color: var(--muted); } .tplc__path svg { width: 12px; height: 12px; }
-.tplc__about { font-size: 13px; line-height: 1.45; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.tpls-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; }
-.tpls-back:hover { color: var(--text); background: var(--surface); }
-.tpls-back span { display: inline-flex; transform: rotate(180deg); } .tpls-back svg { width: 13px; height: 13px; }
+.tplc__sk { display: block; height: 12px; } .tplc__sk--name { width: 62%; height: 16px; margin-top: 2px; } .tplc__sk--path { width: 44%; } .tplc__sk--about { width: 88%; }
+/* The blank page's letter is display (.t-display) and the name title-m (.t-title-m), on the elements */
+.tplc__blank { display: grid; place-items: center; color: var(--text-2); background: var(--surface-raised); }
+.tplc__name { color: var(--text); }
+.tplc__path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: var(--fs-small); color: var(--text-2); }
+.tplc__path span { display: inline-flex; color: var(--text-2); } .tplc__path svg { width: 12px; height: 12px; }
+.tplc__about { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tpls-back { align-self: flex-start; }
 /* A recording of the result plays over the thumbnail on hover, in place of the page scrolling */
 .tpl-page__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
 .tpl-page.has-video:hover .tpl-page__video, .tplc:hover .tpl-page.has-video .tpl-page__video { opacity: 1; }

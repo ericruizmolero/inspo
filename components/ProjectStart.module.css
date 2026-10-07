@@ -1,87 +1,111 @@
-/* Empty project: pick references from the library to bring in. Shares the first-run layout
-   (EmptyStart.module.css); these are only the pieces it adds. */
-/* The search dock floats over the bottom of the screen: the last row ends above it */
-section.wrap { padding-bottom: 170px; }
-/* What the project is, under its name: a quiet sheet to write on, flat where the prompt box is raised */
-.describeBox {
-  display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 8px; box-sizing: border-box;
-  padding: 16px 20px 12px; border-radius: 16px; background: var(--surface); text-align: left; cursor: text;
-  transition: background 0.15s, box-shadow 0.15s;
+/* Empty project: a setup wizard in one window (the system's .cr-window, which follows the theme). Type comes from
+   the heading elements and the .t-* classes: nothing here sets a font. */
+/* The content area is one fixed screen: the view scrolls inside itself */
+.scroll { position: absolute; inset: 0; overflow-y: auto; }
+/* Top aligned, so the window keeps its place when a step is taller; the tab bar floats over the top and the
+   search dock over the bottom */
+.stage { box-sizing: border-box; width: 100%; padding: clamp(88px, 12vh, 152px) 24px 120px; }
+.window:global(.cr-window) { width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; }
+.barTitle { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* The steps: the paper SegmentedControl's well, the current step its raised key, no dots between */
+.steps {
+  list-style: none; display: flex; gap: 3px; margin: 16px 20px 0; padding: 3px;
+  background: var(--field); border: var(--field-stroke, 1.5px) solid var(--field-border); border-radius: var(--radius-md); box-shadow: var(--sunken);
 }
-@media (hover: hover) { .describeBox:hover { background: var(--surface-2); } }
-.describeBox:focus-within { background: var(--surface-2); box-shadow: 0 0 0 1px var(--border-strong); }
-.describe {
-  width: 100%; padding: 0; border: 0; background: transparent; resize: none; outline: none;
-  field-sizing: content; min-height: 3.2em; max-height: 40vh;
-  font: inherit; font-size: 15px; line-height: 1.6; color: var(--text); caret-color: var(--text);
+.step {
+  flex: 1; display: flex; align-items: center; gap: 8px; min-height: 35px; padding: 0 12px; border-radius: 7px;
+  color: var(--field-placeholder);
 }
-.describe::placeholder { color: var(--muted); }
-.describeFoot { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; line-height: 1.4; color: var(--muted); }
-.hint { max-width: 440px; margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--muted); }
-/* An image goes in from the same box: the button sits where the text would start */
-.attach {
-  position: absolute; left: 10px; display: grid; place-items: center;
-  width: 36px; height: 36px; border-radius: 50%; border: 0; background: transparent;
-  color: var(--muted); cursor: pointer; transition: color 0.12s, background 0.12s;
+.stepOn { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 1px var(--control-border), var(--bevel); }
+.stepMark {
+  display: inline-grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%;
+  border: 1px solid currentColor;
 }
-@media (hover: hover) { .attach:hover { color: var(--text); background: var(--surface-2); } }
-.attach:disabled { opacity: 0.4; cursor: default; }
-/* One class more than the shared rule, so it wins whatever order the two sheets load in */
-.attach ~ .promptInput { padding-left: 54px; }
-/* A file dragged over the screen: the whole of it takes the drop, whatever the scroll */
-.drop {
-  position: absolute; inset: 8px; z-index: 6;
-  display: flex; align-items: center; justify-content: center;
-  border: 1.5px dashed var(--text); border-radius: var(--radius-m);
-  background: color-mix(in srgb, var(--bg) 88%, transparent); font-size: 18px; color: var(--text);
-  pointer-events: none; animation: fade-in 0.12s;
+
+.body:global(.cr-window-body) { padding: 20px; gap: 16px; }
+.intro { display: flex; flex-direction: column; gap: 4px; }
+.muted { color: var(--text-2); }
+.about:global(.cr-textarea) { width: 100%; min-height: 112px; }
+
+/* The link and the upload: the PromptInput set as a field of the window (44, sunken, the theme's focus ring) */
+.add { display: flex; flex-direction: column; gap: 6px; }
+.prompt:global(.cr-prompt) {
+  width: 100%; min-height: 44px; padding: 0 4px; gap: 4px;
+  background: var(--field); border: var(--field-stroke, 1.5px) solid var(--field-border); border-radius: var(--radius-md); box-shadow: var(--sunken);
 }
-.label { font-size: 13px; color: var(--muted); }
-.none { font-size: 13px; color: var(--muted); padding: 24px 0; }
-.grid { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.prompt:global(.cr-prompt):focus-within { box-shadow: var(--sunken); outline: 2px solid var(--focus); outline-offset: 2px; }
+.prompt :global(input) { height: 40px; padding: 0 4px; color: var(--field-ink); }
+.prompt :global(input)::placeholder { color: var(--field-placeholder); }
+.prompt :global(input):disabled { opacity: 1; }
+.prompt :global(.cr-prompt-send) { width: 34px; height: 34px; background: none; color: var(--field-placeholder); }
+.prompt :global(.cr-prompt-send.is-ready) { background: var(--ember); color: var(--on-ember); }
+.prompt :global(.cr-prompt-send:focus-visible) { outline-color: var(--focus); }
+
+/* From the library: the heading and the Inbox/Everything choice on one row, the picker in the sunken well, as
+   tall as lets the footer clear the search dock */
+.library { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.libraryHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.well:global(.cr-listbox) { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; max-height: min(440px, max(200px, calc(100dvh - 600px))); }
+.none { align-self: stretch; padding: 24px 8px; text-align: center; }
+.grid { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+/* Flat on the well; a picked one wears an ink outline */
 .pick {
   position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0;
-  padding: 8px 8px 10px; border-radius: var(--radius-m); text-align: left; cursor: pointer;
-  background: var(--surface); border: 1px solid var(--border); color: var(--text);
-  transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
+  padding: 6px 6px 8px; border-radius: var(--radius-sm); text-align: left; cursor: pointer;
+  background: none; border: 1.5px solid transparent; color: var(--field-ink);
+  transition: background-color 0.12s, border-color 0.12s;
 }
-@media (hover: hover) { .pick:hover { background: var(--surface-2); border-color: var(--border-strong); } }
-.pickOn, .pickOn:hover { border-color: var(--text-2); box-shadow: 0 0 0 1px var(--text-2); }
-.thumb { margin-bottom: 6px; }
+@media (hover: hover) { .pick:hover { background: color-mix(in srgb, var(--field-ink) 7%, var(--field)); } }
+.pick:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.pickOn, .pickOn:hover { border-color: var(--field-ink); }
+.thumb {
+  width: 100%; aspect-ratio: 16 / 10; margin-bottom: 6px; border-radius: 6px; overflow: hidden;
+  display: grid; place-items: center; background: var(--surface-2); color: var(--text-2);
+}
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 /* A text: its first lines, set like a page and fading out at the bottom */
-.page { place-items: start; padding: 12px 14px; }
+.page { place-items: start; padding: 10px 12px; box-sizing: border-box; }
 .pageBody {
-  font-size: 11.5px; font-weight: 400; line-height: 1.5; color: var(--text-2); white-space: pre-line; text-align: left;
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden;
+  color: var(--text-2); white-space: pre-line; text-align: left;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; overflow: hidden;
 }
-/* Round tick in the corner of the picture: empty ring until picked */
-.check {
-  position: absolute; top: 14px; right: 14px; display: grid; place-items: center;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(0,0,0,0.35); border: 1.5px solid rgba(255,255,255,0.85); color: var(--bg);
-  opacity: 0; transition: opacity 0.12s;
-}
+/* The system's Checkbox box in the corner of the picture: the tick shows once picked */
+.check { position: absolute; top: 12px; right: 12px; width: 20px; height: 20px; opacity: 0; transition: opacity 0.12s; }
 .pick:hover .check, .pick:focus-visible .check, .pickOn .check { opacity: 1; }
-.pickOn .check { background: var(--text); border-color: var(--text); }
-.name { font-size: 13px; font-weight: 500; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
-.host { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
-/* Floats over the bottom of the screen while there is a choice to confirm */
-.bar {
-  position: sticky; bottom: 100px; z-index: 5; margin-top: 24px;
-  display: flex; align-items: center; gap: 8px; max-width: 100%;
-  padding: 8px 8px 8px 16px; border-radius: 14px;
-  background: var(--surface-2); border: 1px solid var(--border-strong); box-shadow: var(--shadow-pop);
+.pickOn .check svg { opacity: 1; }
+.name, .host { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px; }
+.more { margin: 4px 0 2px; }
+
+/* The footer: the state in a StatusBar on the left, the step's answers on the right */
+.sep { margin: 0 20px; }
+.footer:global(.cr-window-footer) { padding: 14px 20px 16px; }
+.footStart, .footEnd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.footEnd { margin-left: auto; }
+
+/* A file dragged over the screen: the whole of it takes the drop, a sunken well in the middle */
+.drop {
+  position: absolute; inset: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--scrim); pointer-events: none; animation: fade-in 0.12s;
 }
-.barText { font-size: 13px; color: var(--text-2); white-space: nowrap; margin-right: 8px; }
-.barAction { min-width: 0; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drop > * {
+  padding: 40px 64px; border-radius: var(--radius-md);
+  background: var(--field); color: var(--field-ink); border: var(--field-stroke, 1.5px) solid var(--field-border); box-shadow: var(--sunken);
+}
+
+/* InboxZero (it shares the drop above): the attach button where the text would start, its label, the boards */
+.promptAttach.promptAttach { padding-left: 8px; }
+.label { font-size: var(--fs-small); color: var(--text-2); }
+.homes.homes { margin-top: 0; }
 
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
+  .stage { padding-left: 16px; padding-right: 16px; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .barAction { max-width: 140px; }
+  .steps { margin: 12px 12px 0; }
+  .body:global(.cr-window-body) { padding: 16px 12px; }
+  .sep { margin: 0 12px; }
+  .footer:global(.cr-window-footer) { padding: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .pick, .check { transition: none; } }
-
-/* A brand that already exists: a quiet way in, under the hint */
-.bring { padding: 0; border: 0; background: none; color: var(--text-2); font: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong); cursor: pointer; }
-.bring:hover { color: var(--text); text-decoration-color: currentColor; }

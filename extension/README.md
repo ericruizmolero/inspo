@@ -96,8 +96,11 @@ remembers it. A workspace the person is not in gets a 403.
 
 ## Look
 
-The popup uses the app's tokens (`app/globals.css`), dark by default and light when the system prefers it,
-and shows the tab as it will look in the library: the shot, the favicon, the title and the address. The
+The popup and the import page use the Criterio design system: its tokens are copied at the top of
+`popup.css` (keep them equal to `app/globals.css`). The popup is product chrome, so it stays dark in both
+system themes, with beveled paper buttons and the ember Save. Archivo and Bricolage Grotesque are bundled
+in `chrome/fonts` (SIL OFL, source in its README), so nothing loads from Google. The popup shows the tab
+as it will look in the library: the shot, the favicon, the title and the address. The
 icons in `chrome/icons` are `public/logo.png` with the mark's rounded corners; regenerate them from there
 when the mark changes.
 

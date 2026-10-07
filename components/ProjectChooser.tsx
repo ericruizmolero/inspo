@@ -1,12 +1,12 @@
 "use client";
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
+import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
 import { useT } from "./I18nProvider";
-import { FillRing, Icons } from "./Sidebar";
+import { BoardCard, PromptInput } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
 import { keyOf } from "@/lib/board";
 import { parseDate } from "@/lib/search-query";
@@ -51,15 +51,6 @@ function Examples({ list }: { list: readonly string[] }) {
   );
 }
 
-// The cover is the project's board in small: the same order and the same columns rule (components/Grid.tsx),
-// cut at the cover's height. Measures are hundredths of the cover's width; the cover is 16:10.
-const COLS = 4;
-const PAD = 3;
-const GAP = 1.5;
-const VIEW = 62.5;
-const COL = (100 - 2 * PAD - (COLS - 1) * GAP) / COLS;
-const NONE: InspoItem[] = [];
-
 function Shot({ item, image }: { item: InspoItem; image: string | null }) {
   const [at, setAt] = useState(0);
   const kind = mediaKindOf(item.web);
@@ -67,57 +58,55 @@ function Shot({ item, image }: { item: InspoItem; image: string | null }) {
   const srcs = [image, kind === "image" ? item.web : null, kind === "video" ? videoEmbedOf(item.web)?.poster : null, cachedCardImage(item.web),
     kind === "web" || kind === "post" ? `/api/og?url=${encodeURIComponent(item.web)}` : null].filter((x): x is string => !!x);
   const src = srcs[at];
-  // Without a picture it stays a blank card, as on the board while one loads
+  // Without a picture it stays a blank tile, as on the board while one loads
   return src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : null;
 }
 
-/** A project told by its board, seen from afar. Without references, its initial. */
-export function Cover({ name, items, ratioOf, imageOf }: { name: string; items: InspoItem[]; ratioOf: (item: InspoItem) => number; imageOf: (item: InspoItem) => string | null }) {
-  const slots = useMemo(() => {
-    const bottoms = new Array<number>(COLS).fill(PAD);
-    const out: { item: InspoItem; x: number; y: number; h: number }[] = [];
-    // A pasted text is the project's words, not a look: the cover shows what the project looks like
-    for (const item of items) {
-      if (mediaKindOf(item.web) === "text") continue;
-      let c = 0;
-      for (let i = 1; i < COLS; i++) if (bottoms[i] < bottoms[c] - 0.01) c = i;
-      // The shortest column already ends below the cover: nothing else would be seen
-      if (bottoms[c] >= VIEW) break;
-      const h = COL * ratioOf(item);
-      out.push({ item, x: PAD + c * (COL + GAP), y: bottoms[c], h });
-      bottoms[c] += h + GAP;
-    }
-    return out;
-  }, [items, ratioOf]);
-  return (
-    <span className="chooser__cover" data-n={slots.length} aria-hidden>
-      {slots.length === 0 ? name.slice(0, 1).toUpperCase() : slots.map(({ item, x, y, h }) => (
-        <span key={keyOf(item)} className="chooser__shot" style={{ left: `${x}%`, width: `${COL}%`, top: `${(y / VIEW) * 100}%`, height: `${(h / VIEW) * 100}%` }}>
-          <Shot item={item} image={imageOf(item)} />
-        </span>
-      ))}
-    </span>
-  );
+/** A project told by its board, seen from afar: the BoardCard's mosaic of its first references (4 x 2). A pasted text
+ *  is the project's words, not a look: the mosaic shows what the project looks like */
+export function boardTiles(items: InspoItem[], imageOf: (item: InspoItem) => string | null): ReactNode[] {
+  const out: ReactNode[] = [];
+  for (const item of items) {
+    if (mediaKindOf(item.web) === "text") continue;
+    out.push(<Shot key={keyOf(item)} item={item} image={imageOf(item)} />);
+    if (out.length === 8) break;
+  }
+  return out;
 }
 
-export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onPick, onCreate }: {
+/** The fill ring on the BoardCard's StatusRing: the board moved past the last reading is something new (ember dot),
+ *  a system with every area decided is up to date (moss ring), anything else waits (muted ring). The label says which */
+export function useBoardStatus() {
+  const { t } = useT();
+  return (system: ProjectSystem | undefined, filed: InspoItem[]): { tone: "synced" | "new" | "idle"; label: string } => {
+    const filled = system?.areas.filter((a) => a.decision).length ?? 0;
+    const unread = system?.run ? staleness(system, filed.flatMap((i) => (i.id ? [i.id] : []))).unread : 0;
+    if (unread > 0) return { tone: "new", label: t.system.stale(unread) };
+    return { tone: filled === SYSTEM_AREAS.length ? "synced" : "idle", label: t.system.filled(filled, SYSTEM_AREAS.length) };
+  };
+}
+
+const NONE: InspoItem[] = [];
+
+export default function ProjectChooser({ projects, systems, items, links, imageOf, onPick, onCreate }: {
   projects: Project[];
   systems: Record<string, ProjectSystem>;
   items: InspoItem[];
   links: ProjectLinks;
-  /** Height/width of each card on the board */
-  ratioOf: (item: InspoItem) => number;
+  /** Height/width of each card on the board (the old cover's masonry; the BoardCard mosaic crops to fill) */
+  ratioOf?: (item: InspoItem) => number;
   /** What each card shows on the board, at its smallest size */
   imageOf: (item: InspoItem) => string | null;
   onPick: (id: string) => void;
   onCreate: (name: string) => Promise<Project | null>;
 }) {
   const { t } = useT();
+  const statusOf = useBoardStatus();
   const [name, setName] = useState("");
   const [about, setAbout] = useState("");
   const [busy, setBusy] = useState(false);
   // Each project's references in the order its board shows them: newest first
-  const filed = useMemo(() => {
+  const byProject = useMemo(() => {
     const by: Record<string, InspoItem[]> = {};
     for (const i of items) for (const p of (i.id && links[i.id]) || []) (by[p] ??= []).push(i);
     for (const list of Object.values(by)) list.sort((a, b) => parseDate(b.date) - parseDate(a.date));
@@ -138,34 +127,29 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   return (
     <div className="chooser">
       <div className="chooser__inner">
-        <h1 className="chooser__title">{projects.length ? t.chooser.titleSome : t.chooser.titleNone}</h1>
-        <form className="chooser__box" onSubmit={(e) => { e.preventDefault(); void create(); }}>
-          <input className="chooser__name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} disabled={busy} autoFocus autoComplete="off" aria-label={t.chooser.placeholder} />
-          {!name && <Examples list={t.chooser.examples} />}
-          {/* The second line only shows once there is a name: until then the box is one question */}
-          <div className={`chooser__more${named ? " is-open" : ""}`}>
-            <div className="chooser__more-inner">
-              <textarea className="chooser__about" rows={1} value={about} onChange={(e) => setAbout(e.target.value)} placeholder={t.chooser.aboutPlaceholder} maxLength={500} disabled={busy} aria-label={t.chooser.aboutPlaceholder}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void create(); } }} />
+        <h1 className="cr-hello chooser__title">{projects.length ? t.chooser.titleSome : t.chooser.titleNone}</h1>
+        {/* The system's PromptInput, with the app's two lines: the name, and under it (once there is one) the sentence */}
+        <PromptInput className="chooser__box" id="chooser-name" value={name} onChange={setName} onSubmit={() => void create()}
+          label={t.chooser.placeholder} placeholder="" sendLabel={t.chooser.start} disabled={busy} busy={busy}
+          inputProps={{ className: "chooser__name", maxLength: 60, autoFocus: true }}
+          leading={!name ? <Examples list={t.chooser.examples} /> : null}
+          below={
+            // The second line only shows once there is a name: until then the box is one question
+            <div className={`chooser__more${named ? " is-open" : ""}`}>
+              <div className="chooser__more-inner">
+                <textarea className="chooser__about" rows={1} value={about} onChange={(e) => setAbout(e.target.value)} placeholder={t.chooser.aboutPlaceholder} maxLength={500} disabled={busy} aria-label={t.chooser.aboutPlaceholder}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void create(); } }} />
+              </div>
             </div>
-          </div>
-          <button type="submit" className="chooser__send" disabled={busy || !named} aria-label={t.chooser.start} title={t.chooser.start}>
-            {busy ? <span className="spinner spinner--sm" /> : Icons.arrow}
-          </button>
-        </form>
+          } />
         {projects.length > 0 && (
           <div className="chooser__grid" role="group" aria-label={t.chooser.existing}>
             {projects.map((p) => {
-              const filled = systems[p.id]?.areas.filter((a) => a.decision).length ?? 0;
+              const filed = byProject[p.id] ?? NONE;
+              const status = statusOf(systems[p.id], filed);
               return (
-                <button key={p.id} type="button" className="chooser__card" onClick={() => onPick(p.id)}>
-                  <Cover name={p.name} items={filed[p.id] ?? NONE} ratioOf={ratioOf} imageOf={imageOf} />
-                  <span className="chooser__card-head">
-                    <span className="chooser__card-name">{p.name}</span>
-                    {filled > 0 && <FillRing filled={filled} total={SYSTEM_AREAS.length} />}
-                  </span>
-                  <span className="chooser__card-meta">{t.chooser.refs(filed[p.id]?.length ?? 0)}</span>
-                </button>
+                <BoardCard key={p.id} className="chooser__card" name={p.name} count={filed.length} countLabel={t.chooser.refs(filed.length)}
+                  tiles={boardTiles(filed, imageOf)} status={status.tone} statusLabel={status.label} onClick={() => onPick(p.id)} />
               );
             })}
           </div>

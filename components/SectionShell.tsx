@@ -87,11 +87,13 @@ function Crumbs({ title, base, groups }: { title: string; base: string; groups: 
 function Trigger() {
   const { t } = useT();
   const { open, isMobile } = useSidebar();
-  return <SidebarTrigger aria-label={isMobile ? t.app.showSidebar : open ? t.app.hideSidebar : t.app.showSidebar} />;
+  return <SidebarTrigger variant="quiet" size="s" aria-label={isMobile ? t.app.showSidebar : open ? t.app.hideSidebar : t.app.showSidebar} />;
 }
 
-export default function SectionShell({ title, base, groups, wide = false, defaultOpen = true, children }: {
-  title: string; base: string; groups: ShellGroup[]; wide?: boolean; defaultOpen?: boolean; children: ReactNode;
+export default function SectionShell({ title, base, groups, wide = false, defaultOpen = true, crumbs = true, children }: {
+  title: string; base: string; groups: ShellGroup[]; wide?: boolean; defaultOpen?: boolean;
+  /** false where the trail would only repeat the page's h1 (Settings) */
+  crumbs?: boolean; children: ReactNode;
 }) {
   return (
     <SidebarProvider className="shell shell--docked" defaultOpen={defaultOpen}>
@@ -100,7 +102,7 @@ export default function SectionShell({ title, base, groups, wide = false, defaul
         <header className="topbar">
           <span className="topbar__trigger"><Trigger /></span>
           <Logo size={24} className="settings__logo" />
-          <Crumbs title={title} base={base} groups={groups} />
+          {crumbs && <Crumbs title={title} base={base} groups={groups} />}
         </header>
         <div className={`page settings${wide ? " settings--wide" : ""}`}>{children}</div>
       </SidebarInset>

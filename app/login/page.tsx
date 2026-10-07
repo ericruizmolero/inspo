@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/workspace";
 import { showcaseImages } from "@/lib/showcase";
@@ -9,6 +8,7 @@ import { getT, type Dict } from "@/lib/i18n";
 import { Fragment } from "react";
 import Logo from "@/components/Logo";
 import { isLocalPath } from "@/lib/url";
+import { Button } from "@/components/criterio";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,12 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** Headlines carry a deliberate line break: in the dictionary it is a \n. */
 const lines = (s: string) => s.split("\n").map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>);
-
-const IcBack = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M11 7H3M6.5 3.5L3 7l3.5 3.5" />
-  </svg>
-);
 
 // Messages for the error codes Better Auth returns to /login?error=… with
 function loginError(code: string | undefined, t: Dict): string | undefined {
@@ -65,7 +59,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <Logo size={36} />
             <span className="auth__by">savvia.studio</span>
           </span>
-          <Link href="/" className="auth__back">{IcBack} {t.common.back}</Link>
+          <Button size="s" icon="chevron-left" href="/">{t.common.back}</Button>
         </header>
 
         <div className="auth__card">
@@ -95,7 +89,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               ))}
             </div>
             <div className="auth__visual-caption">
-              <span className="display">{t.login.latest}</span>
+              <span className="t-title-m">{t.login.latest}</span>
               <span>{t.login.latestSub}</span>
             </div>
           </>

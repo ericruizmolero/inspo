@@ -20,7 +20,7 @@ function Blocks() {
   const radii = [...new Set((layout?.decision ?? "").match(/\b\d{1,3}px\b/g) ?? [])].map((v) => parseInt(v)).filter((v) => v > 0 && v <= 48).slice(0, 4);
   return (
     <div className="ba-blocks">
-      <h3 className="brand-k">{t.brand.apps.blocks}</h3>
+      <h3 className="t-label brand-k">{t.brand.apps.blocks}</h3>
       <div className="ba-blocks__grid">
         {layout?.decision && (
           <div className="ba-block">
@@ -72,8 +72,8 @@ export default function ApplicationsSection() {
     <div className="ba">
       <Blocks />
       <div className="ba-head">
-        <h3 className="brand-k">{s.inUse}</h3>
-        {mode === "edit" && <button type="button" className="be-link" onClick={() => setEditing((e) => !e)} aria-expanded={editing}>{editing ? t.brand.done : `${s.handle}, ${s.domain.toLowerCase()}, ${s.postLine.toLowerCase()}`}</button>}
+        <h3 className="t-label brand-k">{s.inUse}</h3>
+        {mode === "edit" && <button type="button" className="cr-btn cr-btn-quiet cr-btn-s ba-edit" onClick={() => setEditing((e) => !e)} aria-expanded={editing}>{editing ? t.brand.done : `${s.handle}, ${s.domain.toLowerCase()}, ${s.postLine.toLowerCase()}`}</button>}
       </div>
       {mode === "edit" && editing && (
         <div className="ba-fields">

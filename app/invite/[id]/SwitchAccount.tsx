@@ -15,7 +15,7 @@ export default function SwitchAccount({ next }: { next: string }) {
     window.location.assign(`/login?next=${encodeURIComponent(next)}`);
   };
   return (
-    <Button variant="primary" block onClick={go} disabled={busy}>
+    <Button variant="primary" onClick={go} disabled={busy}>
       {busy ? t.invite.signingOut : t.invite.useAnotherEmail}
     </Button>
   );

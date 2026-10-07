@@ -5,7 +5,7 @@
 // from then on the project opens there. The Inbox wears it too, with its own title and line and no step out.
 import { useState } from "react";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
+import { Busy, Button } from "@/components/criterio";
 import "./GatherBar.css";
 
 export default function GatherBar({ count, thumbs, onAdd, onStart, title, lead }: {
@@ -28,14 +28,18 @@ export default function GatherBar({ count, thumbs, onAdd, onStart, title, lead }
         <span className="gather__thumbs" aria-hidden>{shown.map((src) => <img key={src} src={src} alt="" />)}</span>
       )}
       <div className="gather__text">
-        <p className="gather__title"><b>{title ?? s.title}</b><span>{s.count(count)}</span></p>
+        <p className="gather__title"><b className="t-title-s">{title ?? s.title}</b><span>{s.count(count)}</span></p>
         <p className="gather__lead">{lead ?? s.lead}</p>
       </div>
-      <button type="button" className="gather__add" onClick={onAdd}>{Icons.plus} {s.add}</button>
+      {/* One secondary action: the step out when there is one ("I have my references", secondary m with the arrow
+          after it), and adding stays the quiet inline "+ Add" beside it. In the Inbox, adding is the one action */}
+      {onStart
+        ? <Button variant="quiet" icon="plus" className="gather__add" onClick={onAdd}>{s.add}</Button>
+        : <Button icon="plus" className="gather__add" onClick={onAdd}>{s.add}</Button>}
       {onStart && (
-        <button type="button" className="gather__go" onClick={() => void start()} disabled={busy}>
-          {busy && <span className="spinner spinner--sm" />}{s.ready} <i aria-hidden>{Icons.arrow}</i>
-        </button>
+        <Button iconEnd="arrow-right" className="gather__go" onClick={() => void start()} disabled={busy}>
+          {busy && <Busy label={s.ready} />}{s.ready}
+        </Button>
       )}
     </aside>
   );

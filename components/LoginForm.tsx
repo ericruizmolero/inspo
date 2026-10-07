@@ -5,14 +5,9 @@ import { authClient } from "@/lib/auth-client";
 import type { SocialProvider } from "@/lib/auth";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Busy, Button as CrButton, Chip, Icon, Separator, TextField } from "@/components/criterio";
 import { isLocalPath } from "@/lib/url";
 
-const IcArrow = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" />
-  </svg>
-);
 const IcMail = (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
     <rect x="3" y="5" width="18" height="14" rx="3" /><path d="M3.5 7.5L12 13l8.5-5.5" />
@@ -68,7 +63,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
   // Cookie the lastLoginMethod plugin sets on sign-in: "google" | "apple" | "twitter" | "magic-link"
   const [lastUsed, setLastUsed] = useState<string | null>(null);
   useEffect(() => setLastUsed(authClient.getLastUsedLoginMethod()), []);
-  const badge = <span className="auth__last">{t.login.lastUsed}</span>;
+  const badge = <Chip tone="butter" className="auth__last">{t.login.lastUsed}</Chip>;
 
   // Return route after sign-in (relative, never /login or //other-domain)
   const backPath = () => {
@@ -110,16 +105,16 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
     return (
       <div className="auth__sent" role="status">
         <span className="auth__sent-icon">{IcMail}</span>
-        <p className="auth__lead display">{t.login.checkInbox}</p>
+        <h1 className="auth__lead">{t.login.checkInbox}</h1>
         <p className="auth__hint">{t.login.sentToBefore}<strong>{email.trim()}</strong>{t.login.sentToAfter}</p>
-        <button className="auth__alt" type="button" onClick={() => setSent(false)}>{t.login.useAnotherEmail}</button>
+        <CrButton variant="quiet" size="s" className="auth__alt" onClick={() => setSent(false)}>{t.login.useAnotherEmail}</CrButton>
       </div>
     );
   }
 
   return (
     <form onSubmit={submit} className="auth__form">
-      <p className="auth__lead display">{lead ?? t.login.leadDefault}</p>
+      <h1 className="auth__lead">{lead ?? t.login.leadDefault}</h1>
       <p className="auth__hint">{hint ?? t.login.hintDefault}</p>
       {providers.length > 0 && (
         <>
@@ -127,44 +122,43 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
             {providers.map((p) => (
               <Button
                 key={p}
+                size="lg"
                 className={`auth__social-btn auth__social-btn--${p}`}
                 disabled={loading || social !== null}
                 aria-busy={social === p}
                 onClick={() => social_(p)}
               >
-                {social === p ? <span className="spinner spinner--sm" /> : SOCIAL[p].icon}
+                {social === p ? <Busy label={t.login.continueWith(SOCIAL[p].label)} /> : SOCIAL[p].icon}
                 <span>{t.login.continueWith(SOCIAL[p].label)}</span>
                 {lastUsed === p && badge}
               </Button>
             ))}
           </div>
-          <div className="auth__or" aria-hidden><span>{t.login.orWithEmail}</span></div>
+          <div className="auth__or" aria-hidden><Separator /><span>{t.login.orWithEmail}</span><Separator /></div>
         </>
       )}
-      <label className="auth__field">
-        <span className="auth__label">{t.login.email}{lastUsed === "magic-link" && badge}</span>
-        <Input size="lg"
-          
-          type="email"
-          autoFocus={autoFocus}
-          autoComplete="email"
-          inputMode="email"
-          placeholder={t.login.emailPlaceholder}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-      </label>
+      <TextField
+        className="auth__field"
+        label={<>{t.login.email}{lastUsed === "magic-link" && badge}</>}
+        type="email"
+        autoFocus={autoFocus}
+        autoComplete="email"
+        inputMode="email"
+        placeholder={t.login.emailPlaceholder}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
       {error && <p className="modal__error">{error}</p>}
-      <Button variant="primary" block className="auth__submit" type="submit" disabled={loading || social !== null || !email.trim()}>
+      <Button variant="primary" size="lg" block type="submit" disabled={loading || social !== null || !email.trim()}>
         {loading
-          ? <><span className="spinner" /> {t.login.sending}</>
-          : <>{t.login.sendLink} {IcArrow}</>}
+          ? <><Busy label={t.login.sending} /> {t.login.sending}</>
+          : <>{t.login.sendLink} <Icon name="arrow-right" size={20} /></>}
       </Button>
       {devEmail && (
-        <a className="auth__alt auth__dev" href={devLoginHref(isLocalPath(next) ? next : "/")}>
+        <CrButton variant="quiet" size="s" className="auth__dev" href={devLoginHref(isLocalPath(next) ? next : "/")}>
           {t.login.devLogin(devEmail)}
-        </a>
+        </CrButton>
       )}
     </form>
   );

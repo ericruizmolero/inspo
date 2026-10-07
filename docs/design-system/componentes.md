@@ -2,15 +2,70 @@
 
 Cada pieza de la app con su nombre en castellano (el que usamos al hablar), su nombre técnico, su fichero y lo que hay que saber para usarla. Antes de crear algo, búscalo aquí; si creas una pieza reutilizable, añade su ficha.
 
+## Sistema Criterio
+
+Los componentes del sistema de diseño Criterio (`components/criterio/index.tsx`, `components/criterio/criterio.css`, clases `cr-*`), portados de su bundle y ampliados aquí. Antes de dibujar algo, búscalo en esta pestaña. La criatura solo es el logotipo: `Creature`, `Profile` y `Sprite` siguen fuera. → [decisión](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+
+### Botón del sistema
+`Button` · `.cr-btn` · `.btn` · muestra: botones
+Grueso, con borde de tinta y bisel; al pulsar se hunde. `primary` (ember) es la acción de la vista y lo que ya era primario no se baja; `secondary` (papel) todo lo demás; `dark` (tinta) una segunda acción fuerte sobre papel; `quiet` sin borde ni relleno hasta el hover, para acciones dentro de barras; `danger` (rojo hondo) solo para confirmar algo que destruye.
+- Tallas: s 34, m 44 (la normal en producto), l 52. En una misma barra, todos los botones en la misma talla.
+- `icon` delante, `iconEnd` detrás ("Ya tengo mis referencias" lleva la flecha).
+
+### Botón de icono del sistema
+`IconButton` · `.cr-iconbtn` · muestra: boton-icono
+Siempre redondo, un icono y su `label`, que es también el tooltip. quiet (dentro de barras), default (acciones sueltas), strong (la más importante de su fila). Tallas xs 24, s 32, m 40, l 48. En una tarjeta, s como mucho.
+
+### Control segmentado
+`SegmentedControl` · `.cr-seg` · muestra: segmentado
+Vistas excluyentes, una activa. `chrome` en el cromo, `paper` en la página; `choice` lo vuelve un grupo de radio (tema, idioma, rol).
+
+### Campos
+`TextField` · `TextArea` · `PromptInput` · `.cr-input` · `.input` · muestra: campo
+El pozo hundido (`--field`, `--sunken`): oscuro en Board, blanco en Paper. `TextArea` con `toolbar` es el compositor (comentar, responder, editar). `PromptInput` es la pregunta de Inicio, con `leading`, `below` y `busy`.
+
+### Chip
+`Chip` · `.cr-chip` · `.pill` · muestra: pastillas
+Etiquetas con borde de tinta: paper, butter (sugerencias), ember (una regla activa), moss (bibliotecas), chrome. `pressed` se invierte a tinta con texto papel (con borde papel en Board); `onRemove` añade una x. Elegido no es ember.
+
+### Casilla e interruptor
+`Checkbox` · `Switch` · `.cr-check` · `.cr-switch`
+La casilla hundida con el tic de tinta; el interruptor con pozo hundido, perilla con bisel y ember encendido.
+
+### Tarjeta, globo y ventana
+`Card` · `Balloon` · `TipWindow` · `DialogWindow` · `.cr-window` · `.modal--window`
+Tarjetas planas. El globo de mantequilla para la voz de la app; la ventana (barra moss, cerrar strong xs, cuerpo, pie) para avisos largos, y `DialogWindow` para todo diálogo. Las confirmaciones (`useConfirm`) son ventanas con `danger` cuando destruyen. Siguen al tema: papel y tinta en Paper, panel oscuro con texto papel en Board.
+
+### Menú
+`.cr-menu` · `MenuItem` · `MenuLabel` · `Separator`
+Cualquier popover con `cr-menu` es una ventana (papel en Paper, oscura en Board): filas de 32, títulos (`bar` = barra moss) y grupos separados por la línea grabada.
+
+### Tooltip
+`TipLayer` · `data-tip` · `.cr-tip`
+Un globo de mantequilla pequeño para todo lo que lleve `data-tip`, pintado por una sola capa en `app/layout.tsx`. Nada de `title` nativo para tooltips.
+
+### Lista, barra de estado, espera y tecla
+`.cr-listbox` · `StatusBar` · `Busy` · `Key`
+La lista en el pozo hundido (sugerencias, ⌘K, personas); celdas hundidas al pie (guardado, quién eres); cuatro celdas con una ember que avanza (todo `.spinner` se pinta así); una tecla con bisel para atajos.
+
+### Estado y personas
+`StatusRing` · `Progress` · `Avatar` · `AvatarStack` · `toneFor` · `Comment` · muestra: estado
+Anillo moss al día, punto ember algo nuevo, anillo apagado sin empezar. Progreso en bloques ember. La misma persona, el mismo tono, en todas partes.
+
+### Tablero y cromo
+`BoardCard` · `ReferenceTile` · `NoteCard` · `EmptyState` · `ZoomControl` · `PillBar` · `Icon`
+Las piezas del tablero y de las barras. `EmptyState` sin dibujo. `ZoomControl` con `inDisabled` y `outDisabled`.
+
 ## Comunes
 
 ### Botón
 `Button` · `components/ui/button.tsx` · `.btn` · muestra: botones
-Botón de Base UI cuyas variantes se traducen a las clases globales de `app/globals.css`. Se usa en unos 27 ficheros.
-- Variantes: `default` (`.btn`, 36 px, fondo `--surface`, sin borde), `primary` (`.btn--primary`, una por vista), `ghost` (`.btn--ghost`, evitar), `icon` (`.btn-icon`).
-- Tamaños: `default` y `sm` (`.btn--sm`, 30 px); `block` ocupa todo el ancho.
+Botón de Base UI cuyas variantes se traducen a las clases globales de `app/globals.css`, con el aspecto del `Button` del sistema Criterio: borde de tinta, bisel, se hunde al pulsar.
+- Variantes: `primary` (`.btn--primary`, ember: la acción para la que existe la vista; una por vista), secundario (`default`, `.btn`, papel: todo lo demás, también Cancelar y Ahora no), `dark` (`.btn--dark`, tinta: en suelo papel cuando hace falta una segunda acción fuerte), `quiet` (`.btn--quiet`, `ghost` es su nombre viejo: sin borde, bisel ni relleno hasta el hover; acciones pequeñas dentro de barras y paneles, como "+ Añadir" en la barra de comandos, casi siempre con icono), `icon` (`.btn-icon`). En React también `Button` de `components/criterio` (`cr-btn`), con `icon` (delante) e `iconEnd` (detrás).
+- Tamaños del sistema, sin excepciones locales de alto, relleno, letra o radio: l 52 (`.btn--lg`, héroes y marketing), m 44 (por defecto en producto: páginas, vistas, pies de diálogo), s 34 (`.btn--sm`, globos, ventanas, barras de herramientas, menús, la tarjeta del tablero). Solo dos excepciones: el botón partido junta sus esquinas, y el botón dentro de un campo (`.cr-textbox-bar`) lleva radio 6. `block` ocupa todo el ancho.
+- Etiquetas en sentence case, verbo primero, cortas.
 - Peligro: `.btn.is-danger` (texto) y `.is-danger-solid` (relleno).
-- Pulsar encoge a 0.96; desactivado baja a 0.4 de opacidad.
+- Desactivado: relleno `--disabled`, texto `--disabled-text`, borde `--disabled-border`, sin bisel.
 
 ### Botón de icono
 `.btn-icon` · `app/globals.css` · muestra: boton-icono
@@ -18,11 +73,23 @@ Botón de Base UI cuyas variantes se traducen a las clases globales de `app/glob
 
 ### Campo de texto
 `Input` · `components/ui/input.tsx` · `.input` · muestra: campo
-38 px, radio 10, padding 12. El placeholder en tema claro va en `--muted` a opacidad completa para que se lea.
+40 px, radio `--radius-md`, hundido (`--sunken`) sobre `--field` con borde de tinta, como el `TextField` del sistema.
 
 ### Logotipo
 `Logo` · `components/Logo.tsx` · `.logo` · muestra: logo
-La marca en SVG; sustituye al nombre en la interfaz (el nombre va en el `alt`). Baldosa oscura que se funde con el tema oscuro y se lee como icono de app en el claro. 28 px en la barra superior.
+La criatura en 3D (verde, antenas naranjas, tres ojos), transparente: sustituye al nombre en la interfaz (el nombre va en el `alt`). Sin baldosa, radio ni sombra propios. `public/logo.png` hasta 96 px y `public/icon-512.png` por encima. El mismo dibujo es el favicon, el icono de Apple y el de la extensión. → [decisión](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+
+### Ventana de ajustes y fila de campo
+`SettingsWindow` · `FieldRow` · `components/criterio/index.tsx`
+Cada sección de Ajustes y Actividad es una ventana: barra moss con el título (`h2`) y una cifra opcional a la derecha, descripción, cuerpo y pie (nota a la izquierda, acciones a la derecha; todos los pies igual de altos). Dentro, `FieldRow`: la etiqueta en una columna de 200 (con su pista debajo) y el control con su acción en la otra, todo a 44; el error va debajo del control. Las listas: filas de 52 como mínimo, avatar 32, solo líneas finas.
+
+### Asistente de proyecto nuevo
+`ProjectStart` · `components/ProjectStart.tsx`
+Una ventana con el nombre del proyecto en la barra y dos pasos (Sobre qué es, Referencias): el campo de la descripción; luego pegar o subir y, debajo, la librería en un pozo hundido para elegir. El pie lleva el estado a la izquierda y Atrás/Añadir a la derecha.
+
+### Ventana modal
+`DialogWindow` · `components/ui/dialog.tsx` · `.modal--window`
+Un modal con la forma de `TipWindow`: barra moss con título corto (`bar`) y cerrar en `IconButton` strong xs; `heading` en display 700; el cuerpo; `footer` opcional con una `Checkbox` y como mucho dos botones. Siempre papel y tinta, en los dos temas. Lo usa Conectar MCP.
 
 ### Isla
 `Island` · `components/Island.tsx` · `.island` · captura: isla
@@ -44,7 +111,7 @@ Diálogo cmdk con ⌘K / Ctrl+K: guardar la URL tecleada, añadir referencia, di
 
 ### Diálogo
 `Dialog` · `components/ui/dialog.tsx` · `.modal`
-Diálogo de Base UI. Tamaños `sm` y `lg`; el título lleva `.display.modal__title`. Fondo `.modal-backdrop` en z 200.
+Diálogo de Base UI. Tamaños `sm` y `lg`; el título es un `h2` con `.t-title-m` (toda ventana usa `DialogWindow`). Fondo `.modal-backdrop` en z 200.
 - Lo usan: añadir referencia, Mejorar con IA, crear equipo, directorio, paleta.
 
 ### Confirmación
@@ -282,7 +349,7 @@ El marco de Ajustes, Actividad y esta librería: sidebar con grupos e iconos, mi
 
 ### Encabezado de sección
 `SettingsHeading` · `components/SettingsHeading.tsx` · `.settings__heading`
-Título `.display`, entradilla y un aparte opcional a la derecha (selector de periodo, fuente…).
+Un `h1` (sin clase: el elemento ya da el tamaño), entradilla en `.t-body` y un aparte opcional a la derecha (selector de periodo, fuente…).
 
 ### Paneles de ajustes
 `AccountPanel` · `WorkspacePanel` · `MembersPanel` · `ExtensionPanel` · `UsageCard` · `app/settings/_components/`

@@ -5,7 +5,7 @@ import { useState, type ReactNode } from "react";
 import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
+import { MenuItem, MenuLabel } from "@/components/criterio";
 import { areaIcon } from "./area-icons";
 
 export default function AreaPicker({ backs, onToggle, onOpenChange, className, label, children }: {
@@ -25,20 +25,17 @@ export default function AreaPicker({ backs, onToggle, onOpenChange, className, l
       <PopoverTrigger className={className} aria-label={label} data-tip={open ? undefined : label} onClick={(e) => e.stopPropagation()}>
         {children}
       </PopoverTrigger>
-      <PopoverContent align="end" className="pp" onClick={(e) => e.stopPropagation()}>
-        <div className="ws__section">{t.system.fileUnder}</div>
-        <div className="pp__list">
-          {SYSTEM_AREAS.map((k) => {
-            const on = backs.includes(k);
-            return (
-              <button key={k} type="button" className={`ws__item${on ? " is-active" : ""}`} aria-pressed={on} onClick={() => onToggle(k, !on)}>
-                <span className="pp__icon">{areaIcon(k)}</span>
-                <span className="ws__item-name">{labels[k]}</span>
-                {on && <span className="ws__item-check">{Icons.check}</span>}
-              </button>
-            );
-          })}
-        </div>
+      {/* The system's Menu: a paper window, the eight areas as checkable rows */}
+      <PopoverContent align="end" className="cr-menu area-picker" onClick={(e) => e.stopPropagation()}>
+        <MenuLabel>{t.system.fileUnder}</MenuLabel>
+        {SYSTEM_AREAS.map((k) => {
+          const on = backs.includes(k);
+          return (
+            <MenuItem key={k} role="menuitemcheckbox" aria-checked={on} icon={areaIcon(k)} checked={on} onClick={() => onToggle(k, !on)}>
+              {labels[k]}
+            </MenuItem>
+          );
+        })}
       </PopoverContent>
     </Popover>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Busy, Icon, Key, MenuItem, Progress, Separator } from "@/components/criterio";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -17,24 +18,15 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
-// ─── Icons (16px, 1.5 stroke) ─────────────────────────────────────────────────
+// ─── Icons: the system's Icon where it has the glyph; the rest drawn in the same hand (16px, 1.5 stroke) ─
 const I = {
   info: (
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
     </svg>
   ),
-  all: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="5" height="5" rx="1.2" /><rect x="9" y="2" width="5" height="5" rx="1.2" />
-      <rect x="2" y="9" width="5" height="5" rx="1.2" /><rect x="9" y="9" width="5" height="5" rx="1.2" />
-    </svg>
-  ),
-  spark: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-      <path d="M8 2c.6 3.4 2.6 5.4 6 6-3.4.6-5.4 2.6-6 6-.6-3.4-2.6-5.4-6-6 3.4-.6 5.4-2.6 6-6z" />
-    </svg>
-  ),
+  all: <Icon name="grid" size={16} />,
+  spark: <Icon name="sparkle" size={16} />,
   // Polish, and nothing else in the app: a solid shine, the one filled icon among strokes
   gem: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -62,11 +54,7 @@ const I = {
       <path d="M2 9l1.6-5.2A1.5 1.5 0 015 2.8h6a1.5 1.5 0 011.4 1L14 9v3.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5z" /><path d="M2 9h3.2l.8 1.6h4l.8-1.6H14" />
     </svg>
   ),
-  folder: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-      <path d="M2 4.5A1.5 1.5 0 013.5 3h2.8l1.5 1.7h4.7A1.5 1.5 0 0114 6.2v5.3a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 11.5z" />
-    </svg>
-  ),
+  folder: <Icon name="folder" size={16} />,
   dots: (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
       <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" /><circle cx="11" cy="7" r="1.2" />
@@ -87,36 +75,16 @@ const I = {
       <rect x="2" y="3" width="12" height="11" rx="2" /><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
     </svg>
   ),
-  plus: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <path d="M7 2v10M2 7h10" />
-    </svg>
-  ),
-  search: (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5L14 14" />
-    </svg>
-  ),
-  x: (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <path d="M2 2l8 8M10 2l-8 8" />
-    </svg>
-  ),
-  arrow: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7h8M7.5 3.5L11 7l-3.5 3.5" />
-    </svg>
-  ),
+  plus: <Icon name="plus" size={14} />,
+  search: <Icon name="search" size={16} />,
+  x: <Icon name="close" size={12} />,
+  arrow: <Icon name="arrow-right" size={14} />,
   arrowUp: (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M7 11.5v-9M3 6.5l4-4 4 4" />
     </svg>
   ),
-  check: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2.5 7.5l3 3 6-7" />
-    </svg>
-  ),
+  check: <Icon name="check" size={14} />,
   copy: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M3.6 10.4A1.5 1.5 0 012.5 9V4A1.5 1.5 0 014 2.5h5a1.5 1.5 0 011.4 1.1" />
@@ -127,16 +95,8 @@ const I = {
       <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" />
     </svg>
   ),
-  chevron: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3.5 5.5L7 9l3.5-3.5" />
-    </svg>
-  ),
-  compass: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="8" cy="8" r="6" /><path d="M10.5 5.5l-1.6 4-4 1.6 1.6-4z" />
-    </svg>
-  ),
+  chevron: <Icon name="chevron-down" size={14} />,
+  compass: <Icon name="compass" size={16} />,
   external: (
     <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M4 10l6-6M5 4h5v5" />
@@ -196,7 +156,7 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
   }, [shortcut]);
   return (
     <div className={`search ${className}${ai ? " is-ai" : ""}`}>
-      <span className="search__icon">{aiLoading ? <span className="spinner spinner--sm" /> : ai ? I.spark : I.search}</span>
+      <span className="search__icon">{aiLoading ? <Busy label={t.sidebar.searchAi} /> : ai ? I.spark : I.search}</span>
       <Input
         ref={ref}
         type="text"
@@ -207,7 +167,7 @@ export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLo
         placeholder={ai ? t.sidebar.searchAi : t.sidebar.search}
       />
       <div className="search__right">
-        {shortcut && !value && <kbd className="search__kbd" aria-hidden>/</kbd>}
+        {shortcut && !value && <Key className="search__kbd">/</Key>}
         {value && (
           <Button variant="icon" className="search__clear" onClick={() => onChange("")} aria-label={t.sidebar.clear}>
             {I.x}
@@ -320,16 +280,13 @@ function ProjectRow({ project, count, filled, active, onClick, onRename, onDelet
       </SidebarMenuButton>
       <SidebarMenuBadge className="nav-item__count">{filled > 0 && <FillRing filled={filled} total={SYSTEM_AREAS.length} />}{count}</SidebarMenuBadge>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger render={<SidebarMenuAction showOnHover className="nav-item__more" aria-label={t.projects.options(project.name)} />}>
+        <PopoverTrigger render={<SidebarMenuAction showOnHover className="nav-item__more" aria-label={t.projects.options(project.name)} data-tip={open ? undefined : t.projects.options(project.name)} />}>
           {I.dots}
         </PopoverTrigger>
-        <PopoverContent align="start" side="right" className="pp pp--menu">
-          <button type="button" className="ws__item" onClick={() => { setOpen(false); onRename(); }}>
-            <span className="ws__item-name">{t.projects.rename}</span>
-          </button>
-          <button type="button" className="ws__item ws__item--danger" onClick={() => { setOpen(false); onDelete(); }}>
-            <span className="ws__item-name">{t.projects.remove}</span>
-          </button>
+        <PopoverContent align="start" side="right" className="cr-menu">
+          <MenuItem onClick={() => { setOpen(false); onRename(); }}>{t.projects.rename}</MenuItem>
+          <Separator />
+          <MenuItem danger onClick={() => { setOpen(false); onDelete(); }}>{t.projects.remove}</MenuItem>
         </PopoverContent>
       </Popover>
     </SidebarMenuItem>
@@ -355,11 +312,11 @@ export function PlanMeter({ quota }: { quota: QuotaView }) {
   const { t } = useT();
   const { used, limit } = quota.designMd;
   const full = limit !== null && used >= limit;
-  const pct = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100));
   return (
     <Link href="/settings/plan" className={`sidebar__plan${full ? " is-full" : ""}`} title={t.sidebar.seePlans}>
       <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${used} DESIGN.md` : `${used}/${limit} DESIGN.md`}</span></span>
-      {limit !== null && <span className="quota__bar"><span style={{ width: `${pct}%` }} className={full ? "is-full" : ""} /></span>}
+      {/* The system's Progress: segmented ember blocks in a sunken field */}
+      {limit !== null && <Progress value={used} max={limit} segments={20} label={`${used}/${limit} DESIGN.md`} className="sidebar__plan-progress" />}
       <span className="sidebar__plan-note">{full ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>
     </Link>
   );

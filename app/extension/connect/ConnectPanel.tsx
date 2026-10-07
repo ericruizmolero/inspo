@@ -4,12 +4,11 @@ import { createKey } from "@/app/actions/ext-keys";
 import { useEffect, useState } from "react";
 import { useT } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { TextField } from "@/components/criterio";
+import AuthWindow from "@/components/AuthWindow";
 import { browserName, useExtension } from "@/hooks/use-extension";
 
-export default function ConnectPanel({ currentId }: { currentId: string }) {
+export default function ConnectPanel({ currentId, youAre }: { currentId: string; youAre: string }) {
   const { t } = useT();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,45 +39,33 @@ export default function ConnectPanel({ currentId }: { currentId: string }) {
     try { await navigator.clipboard.writeText(result.key); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* no permission */ }
   };
 
+  const status = t.invite.signedInAs(youAre);
+
   if (result) {
     return (
-      <div className="page__body">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t.ext.keyCreated}</CardTitle>
-            {!received && <CardDescription>{info ? t.ext.handingOver : t.ext.notDetected}</CardDescription>}
-          </CardHeader>
-          <CardContent>
-            {received ? (
-              <p className="ext-ok">{t.ext.keyReceived}</p>
-            ) : (
-              <div className="ext-key">
-                <code>{result.key}</code>
-                <Button variant="default" size="sm" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</Button>
-              </div>
-            )}
-          </CardContent>
-          {!received && <CardFooter><p className="card-note">{t.ext.onlyOnce}</p></CardFooter>}
-        </Card>
-      </div>
+      <AuthWindow title={t.ext.connect} heading={t.ext.keyCreated} status={status} live>
+        {received ? (
+          <p className="ext-ok">{t.ext.keyReceived}</p>
+        ) : (
+          <>
+            <p className="auth__hint">{info ? t.ext.handingOver : t.ext.notDetected}</p>
+            <div className="ext-key">
+              <code>{result.key}</code>
+              <Button variant="default" size="sm" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</Button>
+            </div>
+            <p className="auth__hint">{t.ext.onlyOnce}</p>
+          </>
+        )}
+      </AuthWindow>
     );
   }
 
   return (
-    <form className="page__body" onSubmit={create}>
+    <AuthWindow as="form" onSubmit={create} title={t.ext.connect} heading={t.ext.nameIt} status={status}
+      footer={<Button variant="primary" type="submit" disabled={busy}>{busy ? t.ext.creating : t.ext.createKey}</Button>}>
+      <p className="auth__hint">{t.ext.allWorkspaces} {t.ext.nameHint}</p>
+      <TextField label={t.settings.name} value={name} onChange={(e) => setName(e.target.value)} placeholder={t.ext.namePlaceholder} maxLength={60} />
       {error && <p className="modal__error">{error}</p>}
-      <Card>
-        <CardHeader>
-          <CardTitle><Label htmlFor="ext-key-name" className="text-base leading-snug">{t.ext.nameIt}</Label></CardTitle>
-          <CardDescription>{t.ext.allWorkspaces} {t.ext.nameHint}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Input id="ext-key-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={t.ext.namePlaceholder} maxLength={60} />
-        </CardContent>
-        <CardFooter>
-          <Button variant="primary" type="submit" disabled={busy}>{busy ? t.ext.creating : t.ext.createKey}</Button>
-        </CardFooter>
-      </Card>
-    </form>
+    </AuthWindow>
   );
 }

@@ -25,6 +25,7 @@ import { usePathname } from "next/navigation";
 import type { Annotation } from "agentation";
 import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
 import { useT } from "./I18nProvider";
+import { IconButton, StatusRing } from "@/components/criterio";
 import { FEEDBACK_LOAD_EVENT, clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, flushPendingEnter, isFeedbackModeOn as isModeOn } from "./feedback-mode";
 
 // Agentation is most of this tool's weight and only does anything in feedback mode: it loads the
@@ -258,7 +259,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
   const sendButton = (
     <button
       type="button"
-      className="fb-btn fb-btn--send"
+      className="btn btn--sm fb-btn--send"
       data-state={state}
       onClick={send}
       disabled={state === "sending" || state === "sent"}
@@ -284,14 +285,12 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
       {/* data-feedback-toolbar: Agentation ignores clicks and hovers inside it, so our own
           buttons cannot be annotated while feedback mode is on */}
       {active ? (
-        <section className="fb-panel" role="dialog" aria-label={t.feedback.title} data-feedback-toolbar="true" style={panelStyle}>
-          <header className="fb-panel__head">
-            <span className="fb-panel__dot" aria-hidden />
-            <strong className="fb-panel__title">{t.feedback.title}</strong>
-            <button type="button" className="fb-panel__close" onClick={exitMode} aria-label={t.feedback.exit} title={t.feedback.exit}>
-              <IconClose />
-            </button>
+        <section className="cr-window fb-panel" role="dialog" aria-label={t.feedback.title} data-feedback-toolbar="true" style={panelStyle}>
+          <header className="cr-window-bar">
+            <span className="cr-window-title"><StatusRing tone="new" label={t.feedback.title} />{t.feedback.title}</span>
+            <IconButton icon="close" variant="strong" size="xs" className="fb-panel__close" onClick={exitMode} label={t.feedback.exit} />
           </header>
+          <div className="cr-window-body fb-panel__body">
           {count === 0 ? (
             <>
               <p className="fb-panel__lead">{t.feedback.lead}</p>
@@ -304,11 +303,12 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
               <p className="fb-panel__lead">{t.feedback.count(count)}</p>
               <div className="fb-panel__actions">
                 {sendButton}
-                <button type="button" className="fb-btn fb-btn--ghost" onClick={clear} disabled={state === "sending" || state === "sent"}>{t.feedback.clear}</button>
+                <button type="button" className="btn btn--sm" onClick={clear} disabled={state === "sending" || state === "sent"}>{t.feedback.clear}</button>
               </div>
             </>
           )}
           <p className="fb-panel__hint">{t.feedback.esc}</p>
+          </div>
         </section>
       ) : (
         <div
@@ -322,10 +322,10 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
           onPointerCancel={onDockPointerUp}
           onClickCapture={onDockClickCapture}
           onDoubleClick={resetPos}
-          title={t.feedback.dragHint}
+          data-tip={t.feedback.dragHint}
         >
           {count > 0 && sendButton}
-          <button type="button" className="fb-pill" onClick={enterMode} onPointerEnter={() => void loadAgentation()} onFocus={() => void loadAgentation()} title={count > 0 ? undefined : t.feedback.entryHint}>
+          <button type="button" className="cr-pillbar fb-pill" onClick={enterMode} onPointerEnter={() => void loadAgentation()} onFocus={() => void loadAgentation()} data-tip={count > 0 ? undefined : t.feedback.entryHint}>
             <IconBubble />
             <span>{count > 0 ? t.feedback.resume : t.feedback.open}</span>
             {count > 0 && <span className="fb-count">{count}</span>}
@@ -348,7 +348,4 @@ const IconSend = () => (
 );
 const IconCheck = () => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M2.5 7.5l3 3 6-6" /></svg>
-);
-const IconClose = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden><path d="M3 3l8 8M11 3l-8 8" /></svg>
 );

@@ -8,6 +8,7 @@ import { useBrandFonts } from "./useBrandFonts";
 import type { BrandRef } from "./context";
 import { emptyBrand } from "@/types/brand";
 import type { ProjectSystem } from "@/types/system";
+import { Button } from "@/components/criterio";
 
 const none = () => {};
 
@@ -26,8 +27,8 @@ export default function SharePage({ token, name, system, refs, markdown }: { tok
     <div className="share-bar">
       <p>{t.brand.share.forAgents}</p>
       <span>
-        <button type="button" className="share-btn share-btn--solid" onClick={() => void copy()}>{copied ? t.brand.color.copied : t.brand.share.copy}</button>
-        <a className="share-btn" href={`${base}/md?download=1`}>{t.brand.share.download}</a>
+        <Button variant="primary" onClick={() => void copy()}>{copied ? t.brand.color.copied : t.brand.share.copy}</Button>
+        <Button href={`${base}/md?download=1`}>{t.brand.share.download}</Button>
       </span>
     </div>
   );

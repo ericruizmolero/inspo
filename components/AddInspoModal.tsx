@@ -6,11 +6,10 @@ import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import { areaIcon } from "./area-icons";
 import { normalizeWebUrl, typeFromUrl } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
-import { Icons } from "./Sidebar";
 import { useT } from "./I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogWindow } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Button, Chip, Icon, IconButton, TextArea } from "@/components/criterio";
 import "./TextRef.css";
 
 export interface NewInspoInput {
@@ -37,14 +36,6 @@ interface AddInspoModalProps {
   /** What was pasted or dropped on the board: the dialog opens with it in place, waiting for the note */
   initial?: { file?: File; web?: string; text?: string };
 }
-
-const IconText = (
-  <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 3.5h9M2.5 6.5h9M2.5 9.5h5.5" /></svg>
-);
-
-const IconImage = (
-  <svg width="16" height="16" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
-);
 
 /** Only the link (or the image) is needed: name, screenshot, tags and collection are inferred.
  *  An image can be chosen, dropped anywhere on the dialog or pasted with ⌘V. */
@@ -126,31 +117,35 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
     close();
   };
 
+  const canSave = writing ? !!title.trim() && !!text.trim() : !!raw.trim() || !!file;
+
   return (
     <Dialog open={open} onOpenChange={setOpen} onOpenChangeComplete={(o) => { if (!o) onClose(); }}>
-      <DialogContent initialFocus={initial?.text ? titleRef : initial ? noteRef : urlRef}>
-        <div className="modal__header">
-          <DialogTitle>{project ? t.add.titleIn(project) : t.add.title}</DialogTitle>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
-        </div>
-
-        <form onSubmit={handleSubmit} className={`modal__body add${dragging ? " is-dragging" : ""}`}
+      <DialogWindow initialFocus={initial?.text ? titleRef : initial ? noteRef : urlRef}
+        bar={t.add.bar} heading={project ? t.add.titleIn(project) : t.add.title} closeLabel={t.common.close}
+        footer={
+          <div className="modal__footer">
+            <Button onClick={close}>{t.common.cancel}</Button>
+            <Button variant="primary" type="submit" form="add-inspo" disabled={!canSave}>{t.common.save}</Button>
+          </div>
+        }>
+        <form id="add-inspo" onSubmit={handleSubmit} className={`add${dragging ? " is-dragging" : ""}`}
           onPaste={onPaste} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
-          {dragging && <div className="add__drop" aria-hidden><span className="display">{t.add.dropHere}</span></div>}
+          {dragging && <div className="add__drop" aria-hidden><span className="t-title-l">{t.add.dropHere}</span></div>}
           {file && preview ? (
             <div className="field">
               <div className="add__preview">
                 <img src={preview} alt="" />
-                <button type="button" className="add__remove" onClick={clearFile} aria-label={t.add.removeImage} data-tip={t.add.removeImage}>{Icons.x}</button>
+                <IconButton icon="close" variant="default" size="s" className="add__remove" onClick={clearFile} label={t.add.removeImage} />
               </div>
               <p className="modal__hint">{t.add.imageHint}</p>
             </div>
           ) : writing ? (
             <div className="field">
               <Input size="lg" ref={titleRef} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t.add.textTitle} maxLength={80} autoComplete="off" />
-              <textarea className="add__text" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.add.textBody} aria-label={t.add.textBody} />
+              <TextArea className="add__text" value={text} onChange={(e) => setText(e.target.value)} placeholder={t.add.textBody} aria-label={t.add.textBody} />
               <p className="modal__hint">{t.add.textHint}</p>
-              <button type="button" className="add__text-back" onClick={clearText}>{t.add.removeText}</button>
+              <Button variant="quiet" size="s" className="add__text-back" onClick={clearText}>{t.add.removeText}</Button>
             </div>
           ) : (
             <>
@@ -166,12 +161,13 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
                 />
                 <p className="modal__hint">{t.add.linkHint}</p>
               </div>
+              {/* The other two ways in: sunken wells, the field's shape, since an image can be dropped on them */}
               <button type="button" className="add__pick" onClick={() => fileRef.current?.click()}>
-                <span className="add__pick-icon" aria-hidden>{IconImage}</span>
+                <Icon name="image" size={16} />
                 <span>{t.add.dropImage} <u>{t.add.chooseFile}</u></span>
               </button>
               <button type="button" className="add__pick" onClick={() => startText()}>
-                <span className="add__pick-icon" aria-hidden>{IconText}</span>
+                <Icon name="text" size={16} />
                 <span>{t.add.pickText}</span>
               </button>
             </>
@@ -190,21 +186,16 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           {project && !writing && (
             <div className="pills" role="group" aria-label={t.add.areas}>
               {SYSTEM_AREAS.map((a) => (
-                <button key={a} type="button" aria-pressed={areas.includes(a)} className={`pill pill--area${areas.includes(a) ? " is-on" : ""}`} style={{ display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => toggleArea(a)}>
+                <Chip key={a} className="add__area" pressed={areas.includes(a)} onClick={() => toggleArea(a)}>
                   {areaIcon(a, 13)}{t.system.areas[a]}
-                </button>
+                </Chip>
               ))}
             </div>
           )}
 
           {error && <p className="modal__error">{error}</p>}
-
-          <div className="modal__footer">
-            <Button variant="ghost" type="button" onClick={close}>{t.common.cancel}</Button>
-            <Button variant="primary" type="submit" disabled={writing ? !title.trim() || !text.trim() : !raw.trim() && !file}>{t.common.save}</Button>
-          </div>
         </form>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }

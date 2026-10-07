@@ -3,128 +3,61 @@
    instead of lines. */
 .sdoc { display: flex; align-items: flex-start; gap: 40px; width: 100%; max-width: 1080px; margin: 8px auto 0; }
 .sdoc-toc { position: sticky; top: 0; flex: 0 0 188px; display: flex; flex-direction: column; gap: 1px; padding-top: 4px; }
-.sdoc-toc button { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--text-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
-.sdoc-toc button:hover { background: var(--surface); color: var(--text); }
+.sdoc-toc button { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-ui); font-weight: 500; text-align: left; cursor: pointer; }
+.sdoc-toc button:hover { background: var(--surface-raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
 .sdoc-toc__gap { height: 10px; }
-/* Where an area stands: decided by the team, proposed, or open */
-.sdoc-toc button i { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
-.sdoc-toc button.is-team i, .sdoc-toc button.is-backed i { background: var(--success); }
-.sdoc-toc button.is-open i { background: none; box-shadow: inset 0 0 0 1.5px var(--muted); }
-.sdoc-toc button.is-open { color: var(--muted); }
-.sdoc-toc button b { margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--warning); color: #1a1405; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; }
-.sdoc-toc button em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Where an area stands, by colour and by shape: backed by references (a moss disc), open and waiting for the team
+   (an ember diamond, ink-edged so it holds on paper), decided by the team without references (a muted square), or
+   proposed by the model (a muted ring) */
+.sdoc-toc button i { flex-shrink: 0; box-sizing: border-box; width: 8px; height: 8px; margin: 0 1px; border-radius: 50%; background: none; box-shadow: inset 0 0 0 1.5px var(--text-2); }
+.sdoc-toc button.is-backed i { background: var(--success); box-shadow: none; }
+.sdoc-toc button.is-open i { width: 8px; height: 8px; border-radius: 1.5px; transform: rotate(45deg); background: var(--ember); box-shadow: inset 0 0 0 1px var(--ink); }
+.sdoc-toc button.is-team i { border-radius: 2px; background: var(--text-2); box-shadow: none; }
+.sdoc-toc button.is-open { color: var(--text-2); }
+/* Proposals waiting under an area: an ember Chip with the count, set small for the list */
+.sdoc-toc__count { margin-left: auto; display: inline-flex; }
+.sdoc-toc__count .cr-chip { justify-content: center; min-width: 22px; box-sizing: border-box; padding: 0 6px; height: 20px; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sdoc-toc button em { margin-left: auto; font-style: normal; font-size: var(--fs-small); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.sdoc-toc button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .sdoc-page { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 44px; padding-bottom: 40px; }
-.sdoc-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 11px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
-.sdoc-btn svg { width: 13px; height: 13px; }
-.sdoc-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
-.sdoc-btn:disabled { opacity: 0.45; cursor: default; }
-.sdoc-btn--fill { background: var(--surface-2); color: var(--text); } .sdoc-btn--fill:hover:not(:disabled) { background: var(--surface-3); }
-.sdoc-btn--solid { background: var(--text); color: var(--bg); font-weight: 550; } .sdoc-btn--solid:hover:not(:disabled) { background: var(--text); color: var(--bg); opacity: 0.9; }
-.sdoc-btn__down { display: inline-flex; transform: rotate(90deg); }
-
-/* A part jumped to lands under the bars that float over the page */
-.sdoc-part { display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 92px; }
-.sdoc-part h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-family: var(--font-display, var(--font)); font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.015em; color: var(--text); }
-.sdoc-part h2 em, .sdoc-refs h3 em { font-family: var(--font); font-style: normal; font-size: 13px; font-weight: 400; letter-spacing: 0; color: var(--muted); font-variant-numeric: tabular-nums; }
-.sdoc-part p { margin: 0; font-size: 15px; line-height: 1.62; color: var(--text-2); text-wrap: pretty; }
-.sdoc-part p.sdoc-lead { font-size: 16.5px; line-height: 1.55; color: var(--text); }
-.sdoc-part p.sdoc-muted, .sdoc-muted { font-size: 13px; color: var(--muted); }
-
-.sdoc-area.is-busy { opacity: 0.6; }
-.sdoc-area__head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.sdoc-state { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); }
-.sdoc-state svg { width: 13px; height: 13px; } .sdoc-state.is-team { color: var(--success); }
-.sdoc-area__tools { margin-left: auto; display: inline-flex; gap: 2px; }
-.sdoc-area__tools .sdoc-btn { color: var(--muted); }
-
-/* The words a person writes: pressed to change them */
-.sdoc-text { display: flex; flex-direction: column; gap: 10px; margin: 0 -12px; padding: 8px 12px; border-radius: 12px; cursor: text; transition: background 0.15s; }
-.sdoc-text:hover, .sdoc-text:focus-visible { background: var(--surface); outline: none; }
-.sdoc-part p.sdoc-decision { font-size: 16px; line-height: 1.6; color: var(--text); }
-.sdoc-part p.sdoc-open { color: var(--muted); }
-.sdoc-why b, .sdoc-never > b { font-weight: 550; color: var(--text); margin-right: 4px; }
-.sdoc-never { font-size: 15px; line-height: 1.6; color: var(--text-2); }
+/* What a proposal says: the decision, its why and what it never does */
+.sdoc-why b, .sdoc-never > b { font-weight: 600; color: var(--text); margin-right: 4px; }
+.sdoc-never { font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .sdoc-never ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .sdoc-never li { display: flex; gap: 10px; align-items: baseline; }
 .sdoc-never li::before { content: ""; flex-shrink: 0; width: 9px; height: 1.5px; border-radius: 1px; background: var(--muted); transform: translateY(-4px); }
 
-.sdoc-edit { display: flex; flex-direction: column; gap: 8px; }
-.sdoc-input, .sdoc-reason { width: 100%; box-sizing: border-box; border: 0; border-radius: 12px; background: var(--surface); color: var(--text); font: inherit; outline: none; }
-.sdoc-input { padding: 12px 14px; font-size: 15px; line-height: 1.6; resize: vertical; box-shadow: inset 0 0 0 1px var(--border-strong); }
-.sdoc-reason { height: 36px; padding: 0 14px; font-size: 13.5px; }
-.sdoc-edit__row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.sdoc-edit__row small { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; } .sdoc-edit__row small.is-over { color: var(--danger, #ff6b61); }
-
 /* A proposal: what someone would write instead, waiting for the team */
-.sdoc-proposal { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--warning) 9%, var(--surface)); }
-.sdoc-proposal header { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
-.sdoc-proposal header b { font-weight: 550; color: var(--text); }
-.sdoc-proposal time { font-size: 12px; color: var(--muted); }
+.sdoc-proposal { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4) 18px; border-radius: var(--radius-lg); background: var(--surface-raised); border: 1px solid var(--border); }
+.sdoc-proposal header { display: flex; align-items: center; gap: 8px; font-size: var(--fs-small); color: var(--text-2); flex-wrap: wrap; }
+/* Waiting for the team: the same ember diamond as the parts list */
+.sdoc-proposal header::before { content: ""; flex-shrink: 0; width: 8px; height: 8px; margin: 0 2px; border-radius: 1.5px; transform: rotate(45deg); background: var(--ember); box-shadow: inset 0 0 0 1px var(--ink); }
+.sdoc-proposal header b { font-weight: 600; color: var(--text); }
+.sdoc-proposal time { font-size: var(--fs-label); color: var(--text-2); }
 .sdoc-proposal__tools { margin-left: auto; display: inline-flex; gap: 4px; }
-.sdoc-part p.sdoc-proposal__reason { font-size: 13.5px; color: var(--muted); }
-
-/* The references behind an area: the picture, its code, what it brings and what was said of it */
-.sdoc-refs { display: flex; flex-direction: column; gap: 4px; }
-.sdoc-refs h3 { display: flex; align-items: baseline; gap: 7px; margin: 4px 0 2px; font-size: 13px; font-weight: 550; color: var(--text); }
-.sdoc-ref { display: flex; gap: 14px; margin: 0 -12px; padding: 8px 12px; border-radius: 12px; }
-.sdoc-ref:hover { background: var(--surface); }
-.sdoc-ref__pic, .sdoc-entry__pic { flex-shrink: 0; display: grid; place-items: center; padding: 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--surface-2); color: var(--muted); font: inherit; cursor: pointer; }
-.sdoc-ref__pic { width: 84px; height: 56px; }
-.sdoc-ref__pic img, .sdoc-entry__pic img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.sdoc-ref__body, .sdoc-entry__body { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.sdoc-part p.sdoc-ref__name { display: flex; align-items: baseline; gap: 7px; font-size: 14px; line-height: 1.4; color: var(--text); }
-.sdoc-ref__name b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-2); }
-.sdoc-ref__name span { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sdoc-ref__name em { font-style: normal; font-size: 12.5px; color: var(--muted); }
-.sdoc-ref__name a { display: inline-flex; color: var(--muted); } .sdoc-ref__name a:hover { color: var(--text); } .sdoc-ref__name a svg { width: 13px; height: 13px; }
-.sdoc-part p.sdoc-ref__take { font-size: 14px; line-height: 1.5; color: var(--text); }
-.sdoc-part p.sdoc-ref__said { font-size: 13.5px; line-height: 1.5; color: var(--text-2); }
-.sdoc-ref__said b { font-weight: 550; color: var(--text); margin-right: 3px; }
-
-.sdoc-talk { display: flex; flex-direction: column; gap: 10px; }
-.sdoc-talk__toggle { align-self: flex-start; display: inline-flex; align-items: center; gap: 7px; height: 30px; margin-left: -10px; padding: 0 10px; border: 0; border-radius: 9px; background: none; color: var(--text-2); font: inherit; font-size: 13px; cursor: pointer; }
-.sdoc-talk__toggle:hover { background: var(--surface); color: var(--text); }
-.sdoc-talk__toggle i { display: inline-flex; color: var(--muted); transition: transform 0.2s var(--ease-out); } .sdoc-talk__toggle i svg { width: 12px; height: 12px; }
-.sdoc-talk__toggle[aria-expanded="true"] i { transform: rotate(180deg); }
-.sdoc-talk__faces { display: inline-flex; } .sdoc-talk__faces .cm-avatar + .cm-avatar { margin-left: -5px; box-shadow: 0 0 0 2px var(--bg); }
-.sdoc-talk .ath { max-width: 560px; }
-
-/* Every reference once */
-.sdoc-entries { display: flex; flex-direction: column; gap: 22px; margin-top: 6px; }
-.sdoc-entry { display: flex; gap: 18px; }
-.sdoc-entry__pic { width: 168px; height: 112px; border-radius: 10px; }
-.sdoc-part p.sdoc-entry__what { font-size: 14px; line-height: 1.55; }
-.sdoc-brings { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font-size: 14px; line-height: 1.5; color: var(--text); }
-.sdoc-brings li { display: flex; gap: 8px; align-items: baseline; }
-.sdoc-brings button { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border: 0; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font: inherit; font-size: 12px; cursor: pointer; transform: translateY(-1px); }
-.sdoc-brings button:hover { background: var(--surface-3); color: var(--text); }
-.sdoc-part p.sdoc-tags { font-size: 12.5px; color: var(--muted); }
+.sdoc-proposal p.sdoc-proposal__reason { font-size: var(--fs-small); color: var(--text-2); }
 
 @media (max-width: 900px) { .sdoc { flex-direction: column; gap: 16px; } .sdoc-toc { position: static; flex: none; flex-direction: row; flex-wrap: wrap; } .sdoc-toc__gap { display: none; } }
 /* A narrow page: the file's bar goes onto two rows (its tools under its tabs) instead of pushing the panel wider than the page */
 @media (max-width: 900px) { .sdoc-page { width: 100%; } .sdoc .mdv-bar { flex-wrap: wrap; gap: 8px 12px; padding-top: 8px; padding-bottom: 8px; } .sdoc .mdv-bar__hint { flex: 1; } .sdoc .mdv-bar__tools { margin-left: 0; flex-wrap: wrap; flex-shrink: 1; } }
-@media (max-width: 600px) { .sdoc-entry { flex-direction: column; gap: 10px; } .sdoc-entry__pic { width: 100%; height: 160px; } }
 
 /* ─── The file itself, first: the Markdown panel (components/SystemMarkdown.tsx) beside the same parts list, set
    with more air than a code block, and with the team's tools on each area ─── */
 .sdoc-page--md { gap: 12px; }
 .sdoc .mdv { max-width: none; }
-.sdoc .mdv-doc { padding: 26px 30px 36px; font-size: 13.5px; line-height: 1.75; }
+/* The raw file keeps mono with its code leading (1.75 here, more air than a code block) */
+.sdoc .mdv-doc { padding: var(--space-5) 30px 36px; font-size: var(--fs-small); line-height: 1.75; }
 .sdoc .mdv-line { min-height: 1.75em; }
-.sdoc .mdv-h { font-size: 15px; }
-.sdoc #sdoc-head .mdv-h { font-size: 17px; }
+.sdoc .mdv-h { font-size: var(--fs-ui); }
+.sdoc #sdoc-head .mdv-h { font-size: var(--fs-body); }
 .sdoc .mdv-block { scroll-margin-top: 92px; }
 .sdoc .mdv-block--area { margin-top: 10px; }
 .sdoc .mdv-tools { opacity: 1; }
-.mdv-tool--solid { display: inline-flex; align-items: center; gap: 5px; background: var(--md-strong); color: var(--md-bg); font-weight: 550; }
-.mdv-tool--solid:hover { background: var(--md-strong); color: var(--md-bg); opacity: 0.9; } .mdv-tool--solid svg { width: 12px; height: 12px; }
-.mdv-reason { width: 100%; box-sizing: border-box; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: rgba(255,255,255,0.06); color: var(--md-strong); font: inherit; font-size: 13px; outline: none; }
-.mdv-reason::placeholder { color: var(--md-dim); }
 /* What the team is doing with the area, under its block: the app's own voice, not the file's */
 .mdv-team { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 14px; font-family: var(--font); }
 .mdv-team:empty { display: none; }
-.sdoc-proposal p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text); }
+.sdoc-proposal p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text); }
 .sdoc-proposal p.sdoc-why { color: var(--text-2); }
 
 /* ─── Working on the file. Writing is the default: the parts people write (what the project is, an area's
@@ -137,10 +70,6 @@
 .mdv-live { white-space: pre-wrap; overflow-wrap: anywhere; outline: none; cursor: text; caret-color: var(--md-strong); min-height: 1.75em; }
 .mdv-live:empty::before { content: attr(data-placeholder); color: var(--md-dim); font-style: italic; }
 .mdv-live[contenteditable="false"] { cursor: default; opacity: 0.7; }
-.mdv-savebar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 8px 0 4px; font-family: var(--font); }
-.mdv-savebar .mdv-reason { flex: 1 1 200px; width: auto; height: 30px; }
-.mdv-savebar small { font-size: 12px; color: var(--md-dim); font-variant-numeric: tabular-nums; } .mdv-savebar small.is-over { color: #ff8f85; }
-.mdv-savebar .btn--ghost { color: var(--md-ink); }
 /* An area's heading with its quiet tools */
 .mdv-headrow { display: flex; align-items: center; gap: 12px; }
 .mdv-headrow > .mdv-line, .mdv-headrow > .mdv-written { flex: 1; min-width: 0; }
@@ -149,75 +78,75 @@
 @media (hover: none) { .sdoc .mdv-headrow .mdv-tools { opacity: 1; } }
 
 /* The comment tool */
-.mdv-btn--comment.is-on { background: var(--postit, #fde68a); color: #2a2205; }
-.mdv-btn--comment.is-on:hover { background: var(--postit, #fde68a); color: #2a2205; opacity: 0.92; }
 .mdv-doc.is-commenting .mdv-line.is-pressable { cursor: crosshair; }
 .mdv-line.is-pressable { position: relative; border-radius: 4px; }
-.mdv-doc.is-commenting .mdv-line.is-pressable:hover { background: color-mix(in srgb, var(--postit, #fde68a) 9%, transparent); }
+.mdv-doc.is-commenting .mdv-line.is-pressable:hover { background: color-mix(in srgb, var(--paper) 9%, transparent); }
 /* A pin, on the spot it was left: the face of who left it in a comment's shape (its corner points at the spot),
    and how many lines its thread has. It sits over the text, as on a design file */
-.mdv-pin { position: absolute; top: 0; z-index: 2; transform: translate(-2px, -100%); display: inline-flex; align-items: center; padding: 2px; border: 0; border-radius: 999px 999px 999px 3px; background: #f4f4f1; text-indent: 0; font-family: var(--font); cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,0.5); transition: transform 0.15s var(--ease-out); }
+.mdv-pin { position: absolute; top: 0; z-index: 2; transform: translate(-2px, -100%); display: inline-flex; align-items: center; padding: 2px; border: 0; border-radius: 999px 999px 999px 3px; background: var(--paper-light); text-indent: 0; font-family: var(--font); cursor: pointer; box-shadow: 0 0 0 1px var(--ink), var(--shadow-pop); transition: transform 0.15s var(--ease-out); }
 .mdv-pin:hover, .mdv-pin.is-open { transform: translate(-2px, -100%) scale(1.08); transform-origin: bottom left; }
-.mdv-pin.is-open { background: var(--postit, #fde68a); }
-.mdv-pin b { margin: 0 6px 0 5px; font-size: 11.5px; font-weight: 600; color: #1a1a18; font-variant-numeric: tabular-nums; }
+.mdv-pin.is-open { background: var(--paper-pressed); box-shadow: 0 0 0 1.5px var(--ink), var(--shadow-pop); }
+.mdv-pin b { margin: 0 6px 0 5px; font-size: var(--fs-label); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
 .mdv-line.has-pins { position: relative; }
-/* Its thread, beside it */
-.mdv-pop { position: absolute; z-index: 6; width: 340px; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 4px 16px 16px 16px; background: #1f2022; box-shadow: 0 0 0 1px rgba(255,255,255,0.09), 0 18px 44px -12px rgba(0,0,0,0.75); font-family: var(--font); text-indent: 0; }
-.mdv-pop__note { display: flex; gap: 10px; } .mdv-pop__note .cm-avatar { flex-shrink: 0; }
-.mdv-pop__note p { margin: 0; font-size: 13.5px; line-height: 1.5; color: #e9e9e4; white-space: pre-wrap; overflow-wrap: anywhere; }
-.mdv-pop__note p.mdv-pop__meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 1px; font-size: 12px; color: var(--md-dim); }
-.mdv-pop__meta b { font-size: 13px; font-weight: 550; color: #f4f4f1; }
-.mdv-pop__meta button { margin-left: auto; padding: 0; border: 0; background: none; color: var(--md-dim); font: inherit; cursor: pointer; opacity: 0; } .mdv-pop__note:hover .mdv-pop__meta button { opacity: 1; } .mdv-pop__meta button:hover { color: #f4f4f1; }
-.mdv-pop__form { display: flex; align-items: flex-end; gap: 8px; }
-.mdv-pop__form textarea { flex: 1; min-width: 0; box-sizing: border-box; resize: none; padding: 8px 10px; border: 0; border-radius: 10px; background: rgba(255,255,255,0.07); color: #f4f4f1; font: inherit; font-size: 13.5px; line-height: 1.45; outline: none; field-sizing: content; max-height: 140px; }
+/* Its thread, beside it: a TipWindow (paper, the moss bar and its close), the notes and the composer (TextArea) */
+.mdv-pop { position: absolute; z-index: 6; width: 340px; max-width: calc(100% - 16px); text-indent: 0; white-space: normal; }
+.mdv-pop .cr-window { box-shadow: var(--bevel), var(--shadow-popover); }
+.mdv-pop .cr-window-text { display: flex; flex-direction: column; gap: 12px; }
+.mdv-pop__note { display: flex; gap: 10px; }
+.mdv-pop__note > div { flex: 1; min-width: 0; }
+.mdv-pop__note p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.mdv-pop__note p.mdv-pop__meta { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: var(--fs-label); color: var(--text-2); }
+.mdv-pop__meta b { font-size: var(--fs-small); font-weight: 600; color: var(--ink); }
+.mdv-pop__meta .cr-iconbtn { margin-left: auto; opacity: 0; transition: opacity 0.15s; }
+.mdv-pop__note:hover .mdv-pop__meta .cr-iconbtn, .mdv-pop__meta .cr-iconbtn:focus-visible { opacity: 1; }
+@media (hover: none) { .mdv-pop__meta .cr-iconbtn { opacity: 1; } }
 
 /* Written in place, row by row: the rows keep the file's look (colours, hanging lists); a long address is whole in
    the text and only cut on screen */
 .mdv-eline { min-height: 1.75em; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mdv-url--cut { display: inline-block; max-width: 34ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; text-indent: 0; }
 .mdv-live:focus .mdv-url--cut { max-width: none; white-space: pre-wrap; display: inline; }
-.mdv-byhand { margin: 6px 0 0; font-family: var(--font); font-size: 12px; color: var(--md-dim); opacity: 0; transition: opacity 0.15s; }
+.mdv-byhand { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin: 6px 0 0; font-family: var(--font); font-size: var(--fs-label); color: var(--md-dim); opacity: 0; transition: opacity 0.15s; }
 .mdv-block:hover .mdv-byhand, .mdv-block:focus-within .mdv-byhand { opacity: 1; }
-.mdv-byhand button { padding: 0; border: 0; background: none; color: var(--md-ink); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+/* "Go back to the app's text": a quiet Button, size s */
 
 /* The file saves itself: a quiet word under the part while it does, and when it has. A save in flight does not dim the block */
 .sdoc .mdv-block.is-busy { opacity: 1; }
-.mdv-state { margin: 4px 0 0; font-family: var(--font); font-size: 12px; color: var(--md-dim); text-align: right; }
-.mdv-state.is-over { color: #ff8f85; }
-.mdv-btn--propose.is-on { background: var(--md-strong); color: var(--md-bg); }
-.mdv-btn--propose.is-on:hover { background: var(--md-strong); color: var(--md-bg); opacity: 0.92; }
+.mdv-state { margin: 4px 0 0; font-family: var(--font); font-size: var(--fs-label); color: var(--md-dim); text-align: right; }
+.mdv-state.is-over { color: var(--md-danger); }
 
 /* ─── The document look: the same file and the same tools, set for reading. Markdown's marks are hidden (they
    stay in the text: font-size 0, so what is typed and read back is still the file) and what they mean is set:
    headings by size, the note as a quote, lists with their dot, links by name ─── */
-.mdv--doc { --md-bg: transparent; --md-ink: var(--text-2); --md-strong: var(--text); --md-dim: var(--muted); --md-head: var(--text); --md-quote: var(--text-2); --md-code: var(--text); --md-line: var(--border); background: none; box-shadow: none; }
-.sdoc .mdv--doc .mdv-bar { padding: 0; box-shadow: none; }
-.sdoc .mdv--doc .mdv-doc { padding: 22px 0 36px; font-family: var(--font); font-size: 15.5px; line-height: 1.65; color: var(--text-2); }
+.mdv--doc { --md-bg: transparent; --md-ink: var(--text-2); --md-strong: var(--text); --md-dim: var(--text-2); --md-head: var(--text); --md-quote: var(--text-2); --md-code: var(--text); --md-line: var(--border); --md-danger: var(--danger); background: none; box-shadow: none; border: 0; }
+.sdoc .mdv--doc .mdv-bar { padding: 0; box-shadow: none; background: none; }
+.mdv--doc .mdv-bar { background: none; }
+.sdoc .mdv--doc .mdv-doc { padding: 22px 0 36px; font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-2); }
 .mdv--doc .mdv-mark { font-size: 0; }
-.mdv--doc .mdv-line, .mdv--doc .mdv-eline { min-height: 1.65em; }
-.mdv--doc .mdv-h { font-family: var(--font-display, var(--font)); color: var(--text); font-weight: 600; letter-spacing: -0.015em; }
-.sdoc .mdv--doc .mdv-h1 { font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; }
-.sdoc .mdv--doc .mdv-h2 { font-size: 22px; line-height: 1.25; }
-.sdoc .mdv--doc .mdv-h3 { font-size: 16.5px; line-height: 1.35; font-family: var(--font); letter-spacing: 0; margin-top: 6px; }
+.mdv--doc .mdv-line, .mdv--doc .mdv-eline { min-height: calc(var(--lh-body) * 1em); }
+/* Headings read as the app's headings: # title-l, ## title-m, ### and deeper title-s, all in the display face */
+.mdv--doc .mdv-h { font-family: var(--font-display, var(--font)); color: var(--text); font-weight: 700; font-size: var(--fs-title-s); line-height: var(--lh-title-s); }
+.sdoc .mdv--doc .mdv-h1 { font-size: var(--fs-title-l); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
+.sdoc .mdv--doc .mdv-h2 { font-size: var(--fs-title-m); line-height: var(--lh-title-m); letter-spacing: var(--tr-title-m); }
+/* The file's title (the head's id outranks the line above) */
+.sdoc .mdv--doc #sdoc-head .mdv-h1 { font-size: var(--fs-title-l); }
+.sdoc .mdv--doc .mdv-h3 { font-size: var(--fs-title-s); line-height: var(--lh-title-s); margin-top: 6px; }
 .mdv--doc .mdv-q { padding-left: 14px; box-shadow: inset 2px 0 0 var(--border-strong); color: var(--text-2); }
-.mdv--doc .mdv-em { color: var(--muted); font-style: normal; }
+.mdv--doc .mdv-em { color: var(--text-2); font-style: normal; }
 .mdv--doc .mdv-b { color: var(--text); font-weight: 600; }
 .mdv--doc .mdv-li { position: relative; padding-left: calc(20px + var(--d, 0) * 20px) !important; text-indent: 0 !important; }
-.mdv--doc .mdv-li::before { content: ""; position: absolute; left: calc(7px + var(--d, 0) * 20px); top: 0.72em; width: 4px; height: 4px; border-radius: 50%; background: var(--muted); }
+.mdv--doc .mdv-li::before { content: ""; position: absolute; left: calc(7px + var(--d, 0) * 20px); top: 0.72em; width: 4px; height: 4px; border-radius: 50%; background: var(--text-2); }
 .mdv--doc .mdv-link { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .mdv--doc .mdv-live { caret-color: var(--text); }
-.mdv--doc .mdv-state, .mdv--doc .mdv-byhand { color: var(--muted); }
-.mdv--doc .mdv-btn { background: var(--surface-2); color: var(--text-2); } .mdv--doc .mdv-btn:hover { background: var(--surface-3); color: var(--text); }
-.mdv--doc .mdv-btn--comment.is-on { background: var(--postit, #fde68a); color: #2a2205; }
-.mdv--doc .mdv-btn--propose.is-on { background: var(--text); color: var(--bg); }
-.mdv--doc .mdv-file.is-on { background: var(--surface-2); color: var(--text); } .mdv--doc .mdv-file { color: var(--muted); }
-.mdv--doc .mdv-tool--solid { background: var(--text); color: var(--bg); }
-.mdv--doc .mdv-pin { box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+.mdv--doc .mdv-state, .mdv--doc .mdv-byhand { color: var(--text-2); }
+/* In the document look the file's bar sits on the page ground: its buttons are the system's secondary, beveled paper,
+   and the files' SegmentedControl takes the paper tone */
+.mdv--doc .mdv-split { gap: 0; }
+.mdv--doc .mdv-split .mdv-btn--more { border-left-width: 0; }
 .mdv--doc .mdv-block--area { margin-top: 22px; }
 
 /* ─── The document shows what it talks about. Where a reference is named its picture sits beside the line (drawn
    by the row itself, from --pic: nothing is added to the text), and what someone said reads as their words ─── */
-.sdoc .mdv--doc #sdoc-head .mdv-h1 { font-size: 24px; }
 /* A reference reads like a citation: its first screen on the left, big enough to be recognised, and beside it one
    column with its name, what is taken from it and what was said about it. The picture is a float pulled into the
    row's padding: the next row clears it, so a reference never rides over the one above however little was said */
@@ -225,35 +154,35 @@
 .mdv--doc .mdv-live, .mdv--doc .mdv-block { display: flow-root; }
 .mdv--doc .mdv-eline:not(.mdv-said--pic), .mdv--doc .mdv-line:not(.mdv-said--pic) { clear: left; }
 .mdv--doc .mdv-ref { padding-left: calc(var(--ref-in) + var(--ref-w) + var(--ref-gap)) !important; margin-top: 20px; color: var(--text-2); }
-.mdv--doc .mdv-ref::before { position: static; float: left; left: auto; top: auto; width: var(--ref-w); height: var(--ref-h); margin: 3px var(--ref-gap) 20px calc(-1 * (var(--ref-w) + var(--ref-gap))); border-radius: 10px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
+.mdv--doc .mdv-ref::before { position: static; float: left; left: auto; top: auto; width: var(--ref-w); height: var(--ref-h); margin: 3px var(--ref-gap) 20px calc(-1 * (var(--ref-w) + var(--ref-gap))); border-radius: var(--radius-md); background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
 .mdv--doc :is(.mdv-ref, .mdv-said--pic) + :not(.mdv-ref, .mdv-said--pic) { margin-top: 20px; }
 /* Its code is a quiet tag and its name the title of the row: the hierarchy comes from weight and colour */
-.mdv--doc .mdv-ref > .mdv-b:first-of-type { margin-right: 2px; font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
-.mdv--doc .mdv-ref .mdv-link { font-weight: 550; color: var(--text); text-decoration: none; } .mdv--doc .mdv-ref .mdv-link:hover { text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.mdv--doc .mdv-ref > .mdv-b:first-of-type { margin-right: 2px; font-size: var(--fs-small); font-weight: 500; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mdv--doc .mdv-ref .mdv-link { font-weight: 600; color: var(--text); text-decoration: none; } .mdv--doc .mdv-ref .mdv-link:hover { text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .mdv--doc .mdv-said { color: var(--text-2); }
 .mdv--doc .mdv-said::before { top: 0.3em; width: 2px; height: calc(100% - 0.6em); border-radius: 1px; background: var(--border-strong); }
 /* Under a reference, the words left on it line up with its text: smaller and quieter, without a rule of their own */
-.mdv--doc .mdv-said--pic { padding-left: calc(var(--ref-in) + var(--ref-w) + var(--ref-gap)) !important; margin-top: 4px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.mdv--doc .mdv-said--pic { padding-left: calc(var(--ref-in) + var(--ref-w) + var(--ref-gap)) !important; margin-top: 4px; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .mdv--doc .mdv-said--pic::before { content: none; }
 /* Said with a picture attached: the picture, under the words */
 .mdv--doc .mdv-said--img::after { content: ""; display: block; width: min(320px, 100%); aspect-ratio: 16 / 9; margin: 8px 0 4px; border-radius: 10px; background: var(--pic) top center / cover no-repeat, var(--surface); box-shadow: 0 0 0 1px var(--border); }
 /* A Markdown table reads as a table. Each row sets its cells side by side at the widths the table's longest cells
    ask for (--w, components/SystemMarkdown.tsx), so the columns line up row after row; the pipes are marks, hidden
    like the rest, and the rule under the head ("|---|---|") takes no room. Lines between rows only: no box */
-.mdv--doc .mdv-tr { min-height: 0; white-space: nowrap; font-size: 14px; line-height: 1.45; color: var(--text-2); font-variant-numeric: tabular-nums; box-shadow: inset 0 -1px 0 var(--border); }
+.mdv--doc .mdv-tr { min-height: 0; white-space: nowrap; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); font-variant-numeric: tabular-nums; box-shadow: inset 0 -1px 0 var(--border); }
 .mdv--doc .mdv-tr:not(:has(+ .mdv-tr)) { box-shadow: none; }
 .mdv--doc .mdv-td { display: inline-block; box-sizing: border-box; width: var(--w); padding: 9px 16px 9px 0; vertical-align: top; white-space: pre-wrap; overflow-wrap: anywhere; }
 .mdv--doc .mdv-tr:not(.mdv-th) .mdv-td--first { color: var(--text); font-weight: 500; }
-.mdv--doc .mdv-th { font-size: 12.5px; color: var(--muted); box-shadow: inset 0 -1px 0 var(--border-strong); }
+.mdv--doc .mdv-th { font-size: var(--fs-label); color: var(--text-2); box-shadow: inset 0 -1px 0 var(--border-strong); }
 .mdv--doc .mdv-tsep { height: 0; font-size: 0; line-height: 0; overflow: hidden; box-shadow: none; }
 /* A reference's own entry opens with its picture */
 .mdv--doc .mdv-refhead { position: relative; margin-top: 34px; padding-top: 176px; }
-.mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: 12px; background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
-@media (max-width: 600px) { .mdv--doc { --ref-w: 96px; --ref-h: 60px; --ref-gap: 12px; --ref-in: 0px; } .mdv--doc .mdv-tr { font-size: 12px; } .mdv--doc .mdv-th { font-size: 11px; } .mdv--doc .mdv-td { padding: 8px 6px 8px 0; } }
+.mdv--doc .mdv-refhead::before { content: ""; position: absolute; left: 0; top: 0; width: 256px; height: 162px; border-radius: var(--radius-lg); background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
+@media (max-width: 600px) { .mdv--doc { --ref-w: 96px; --ref-h: 60px; --ref-gap: 12px; --ref-in: 0px; } .mdv--doc .mdv-tr { font-size: var(--fs-label); } .mdv--doc .mdv-th { font-size: var(--fs-label); } .mdv--doc .mdv-td { padding: 8px 6px 8px 0; } }
 
 /* A skill switched on, in the parts list: its mark instead of a dot, its name on one line */
 .sdoc-toc button.is-skill { color: var(--text); }
-.sdoc-toc__spark { flex-shrink: 0; display: inline-flex; width: 13px; margin-left: -3px; color: var(--muted); } .sdoc-toc__spark svg { width: 13px; height: 13px; }
+.sdoc-toc__spark { flex-shrink: 0; display: inline-flex; width: 14px; margin-left: -3px; color: var(--text-2); } .sdoc-toc__spark svg { width: 14px; height: 14px; }
 .sdoc-toc__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The skills menu holds eleven now: it scrolls inside instead of running off the screen */

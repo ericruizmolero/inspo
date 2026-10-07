@@ -16,7 +16,7 @@ export default async function ExtensionPrivacyPage() {
       <header className="page__head">
         <Logo size={36} />
         <div className="page__heading">
-          <h1 className="display page__title">{t.ext.privacy.title}</h1>
+          <h1 className="page__title">{t.ext.privacy.title}</h1>
           <p className="page__lead">{t.ext.privacy.lead}</p>
         </div>
       </header>

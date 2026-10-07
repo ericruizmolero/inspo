@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { setOutputLanguage } from "@/app/actions/workspace";
 import { OUTPUT_LANGUAGES, OWN_NAME, type OutputLanguage } from "@/lib/output-language";
+import { Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
 export default function OutputLanguageSwitch({ workspaceId, value, disabled, onError }: { workspaceId: string; value: OutputLanguage; disabled?: boolean; onError?: (msg: string) => void }) {
@@ -35,9 +36,7 @@ export default function OutputLanguageSwitch({ workspaceId, value, disabled, onE
       >
         {OUTPUT_LANGUAGES.map((l) => <option key={l} value={l}>{OWN_NAME[l]}</option>)}
       </select>
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M3 4.5l3 3 3-3" />
-      </svg>
+      <Icon name="chevron-down" size={16} />
     </span>
   );
 }

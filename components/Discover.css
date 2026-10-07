@@ -1,63 +1,69 @@
 /* ─── Discover (components/Discover.tsx): the directory as a list, group by group, with its shelves and kinds on top ─── */
-.disc-card__new { flex-shrink: 0; padding: 2px 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--bg); background: var(--text); }
-.disc__bar { position: absolute; left: 20px; right: 20px; top: 72px; z-index: 6; display: flex; align-items: center; gap: 12px; min-width: 0; pointer-events: none; }
+/* The bar floats over the list: product chrome (PillBar + SegmentedControl, chrome tone), dark in both themes, no blur */
+.disc__bar { position: absolute; left: 20px; right: 20px; top: 72px; z-index: 6; display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); min-width: 0; pointer-events: none; }
 .disc__bar > * { pointer-events: auto; }
-.disc__shelves { flex-shrink: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
-.disc__shelves .tt-mode { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.disc__shelves .tt-mode b { font-weight: 450; color: var(--muted); }
-.disc__group svg { width: 11px; height: 11px; margin-left: 2px; }
-.disc__group { flex-shrink: 0; display: inline-flex; align-items: center; height: 30px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); color: var(--text-2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; transition: background 0.15s, color 0.15s; }
-.disc__group:hover { color: var(--text); background: var(--surface-2); }
-.disc__group.is-on { background: var(--text); color: var(--bg); }
+.disc__shelves, .disc__sections { flex-shrink: 0; max-width: 100%; }
+.disc__bar .cr-seg-item { white-space: nowrap; }
+.disc__group { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.disc__group svg { width: 16px; height: 16px; }
+/* The kinds of resource: a Menu (.cr-menu); a long list scrolls inside */
+.disc__menu { max-height: min(70vh, 520px); overflow-y: auto; }
+.disc__group.is-on, .disc__group[data-popup-open] { background: var(--chrome-raised); color: var(--chrome-ink); }
+@media (max-width: 560px) {
+  .disc__bar { left: 12px; right: 12px; }
+  .disc__bar .cr-seg-item { padding: 7px 9px; font-size: var(--fs-small); }
+  .disc__bar .cr-pillbar { gap: 2px; padding: 4px; overflow-x: auto; scrollbar-width: none; }
+  .disc__bar .cr-pillbar::-webkit-scrollbar { display: none; }
+  .disc__bar .cr-pillbar-sep { margin: 0 2px; }
+}
 /* Discover as a list: the directory group by group */
 .disc-list { position: absolute; inset: 0; overflow-y: auto; padding: 232px 28px 72px; background: var(--bg); }
 .disc-list__group { max-width: 1100px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
-.disc-list__head h2 { margin: 0; font-size: 17px; font-weight: 550; color: var(--text); }
-.disc-list__head p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+/* A group's name is an h2 (title-l) */
+.disc-list__head h2 { color: var(--text); }
+.disc-list__head p { margin: 4px 0 0; font-size: var(--fs-small); color: var(--text-2); }
 .disc-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
 .disc-rows li { border-bottom: 1px solid var(--border); }
-.disc-row { display: flex; align-items: baseline; gap: 12px; min-width: 0; padding: 11px 4px; color: var(--text-2); text-decoration: none; font-size: 13.5px; transition: background 0.15s, color 0.15s; }
-.disc-row:hover { background: var(--surface); color: var(--text); }
-.disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 550; color: var(--text); }
-.disc-row .disc-card__new { align-self: center; margin-left: -6px; }
-/* A skill criterio.md carries too: said quietly, beside the name */
-.disc-row__skill { flex-shrink: 0; align-self: center; margin-left: -6px; padding: 2px 7px; border-radius: 999px; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--text-2); background: var(--surface-2); }
-.disc-row__text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--muted); }
-.disc-row:hover .disc-row__text { color: var(--text-2); }
-.disc-row__host { flex-shrink: 0; font-size: 12.5px; color: var(--muted); }
+.disc-row { display: flex; align-items: baseline; gap: 12px; min-width: 0; padding: 12px 8px; color: var(--text-2); text-decoration: none; font-size: var(--fs-ui); transition: background 0.15s, color 0.15s; }
+.disc-row:hover { background: var(--surface-raised); color: var(--text); }
+.disc-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: var(--radius-sm); }
+.disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; color: var(--text); }
+/* "New": the system's paper Chip, set small for the row */
+.disc-row__new.cr-chip, .disc-skill__inmd .cr-chip { flex-shrink: 0; align-self: center; padding: 1px 8px; font-size: var(--fs-label); font-weight: 600; }
+.disc-row__new { margin-left: -6px; }
+.disc-row__text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-2); }
+.disc-row:hover .disc-row__text { color: var(--text); }
+.disc-row__host { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; align-self: center; font-size: var(--fs-small); color: var(--text-2); }
 @media (max-width: 700px) { .disc-row { flex-wrap: wrap; gap: 4px 10px; } .disc-row__name { flex-basis: auto; } .disc-row__text { flex-basis: 100%; order: 3; white-space: normal; } }
 /* The hero of the site under the pointer: fixed to the window, placed with `translate` each frame and grown with WAAPI
    (opacity, transform); never catches the pointer */
-.disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-s); overflow: hidden; background: var(--surface); box-shadow: var(--shadow-pop); pointer-events: none; opacity: 0; transform: scale(0.85); will-change: translate, transform, opacity; }
+.disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); box-shadow: var(--shadow-pop); pointer-events: none; opacity: 0; transform: scale(0.85); will-change: translate, transform, opacity; }
 .disc-peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.disc-list__none { margin: 0 auto; max-width: 1320px; font-size: 13px; color: var(--muted); }
+.disc-list__none { margin: 0 auto; max-width: 1100px; font-size: var(--fs-ui); color: var(--text-2); }
 
 /* Resources or templates: the first choice on the bar; with templates open their page sits below it */
-.disc__sections { flex-shrink: 0; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 .tpls:has(+ .disc__bar) { padding-top: 232px; }
 /* An open template is a page of its own: it starts right under the bar, without the air the lists keep on top */
 .tpls:has(.tpls-back), .tpls:has(.tpls-back):has(+ .disc__bar) { padding-top: 132px; }
 
 /* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command ─── */
 .disc-skills__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.disc-skills__catalog { flex-shrink: 0; font-size: 13px; color: var(--text-2); text-decoration: none; }
+.disc-skills__catalog { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-small); color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .disc-skills__catalog:hover { color: var(--text); }
 .disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 8px 0 0; padding: 0; list-style: none; }
-.disc-skill { position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 16px; border-radius: var(--radius-l); background: var(--panel); transition: background 0.15s var(--ease-out); }
-@media (hover: hover) { .disc-skill:hover { background: var(--surface); } }
+/* Cards: the system's Card (raised: surface-raised with a hairline); the hairline darkens on hover */
+.disc-skill.cr-card { min-width: 0; transition: border-color 0.15s var(--ease-out); }
+@media (hover: hover) { .disc-skill:hover { border-color: var(--border-strong); } }
 .disc-skill:has(.disc-skill__name:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.disc-skill__by { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12.5px; color: var(--muted); }
+.disc-skill__by { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-small); color: var(--text-2); }
 .disc-skill__by > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.disc-skill__by .disc-row__skill { margin-left: auto; }
-.disc-skill__avatar { position: relative; flex-shrink: 0; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px; overflow: hidden; font-size: 11px; font-weight: 600; color: var(--text-2); background: var(--surface-2); }
-.disc-skill__avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.disc-skill__name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); text-decoration: none; outline: none; }
+.disc-skill__inmd { display: inline-flex; margin-left: auto; }
+/* The skill's name is title-m (.t-title-m on the link) */
+.disc-skill__name { color: var(--text); text-decoration: none; outline: none; }
 .disc-skill__name::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
-.disc-skill__what { flex: 1; margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.disc-skill__install { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; min-width: 0; height: 32px; margin-top: 4px; padding: 0 6px 0 10px; border: 0; border-radius: var(--radius-s); background: var(--bg); color: var(--muted); font: inherit; text-align: left; cursor: pointer; transition: color 0.15s, transform 0.1s var(--ease-out); }
-.disc-skill__install:active { transform: scale(0.98); }
-.disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: 11px; }
-.disc-skill__install span { flex-shrink: 0; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-2); background: var(--surface-2); }
-.disc-skill__install:hover { color: var(--text-2); } .disc-skill__install:hover span { color: var(--text); }
-.disc-skill__install.is-copied span { color: var(--bg); background: var(--text); }
+.disc-skill__what { flex: 1; margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* The install command: a secondary Button, size s (on a card), pressed once copied; the command is literal, so mono */
+.disc-skill__install { position: relative; z-index: 1; display: flex; justify-content: flex-start; min-width: 0; margin-top: 4px; text-align: left; }
+.disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-muted); }
+.disc-skill__install span { flex-shrink: 0; }
 @media (max-width: 560px) { .disc-skills__head { flex-direction: column; align-items: flex-start; } }

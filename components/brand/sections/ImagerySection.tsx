@@ -8,9 +8,8 @@ import { AddButton, ItemTools, useSection } from "../BrandPresentation";
 import { Editable } from "../edit/Editable";
 import { FileSlot } from "../edit/FileSlot";
 import { brandId } from "@/types/brand";
-import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Icons } from "../../Sidebar";
+import { Dialog, DialogWindow } from "@/components/ui/dialog";
+import { Button, IconButton } from "@/components/criterio";
 
 const MAX = 9;
 
@@ -24,12 +23,11 @@ function Picker({ onClose }: { onClose: () => void }) {
   const room = MAX - img.files.length;
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="bmo-pick" size="lg">
-        <div className="modal__header">
-          <DialogTitle>{t.brand.imagery.pick}</DialogTitle>
-          <DialogClose render={<Button variant="icon" aria-label={t.common.close} />}>{Icons.x}</DialogClose>
-        </div>
-        <div className="modal__body">
+      <DialogWindow className="bmo-pick modal--lg" bar={t.brand.imagery.examples} heading={t.brand.imagery.pick} closeLabel={t.common.close}
+        footer={<>
+          <span className="bmo-pick__count">{t.brand.imagery.picked(picked.length, room)}</span>
+          <Button variant="primary" onClick={() => { set({ itemIds: picked.slice(0, room) }); onClose(); }}>{t.brand.done}</Button>
+        </>}>
           <ul className="bmo-pick__grid">
             {all.map((r) => {
               const on = picked.includes(r.id);
@@ -45,12 +43,7 @@ function Picker({ onClose }: { onClose: () => void }) {
               );
             })}
           </ul>
-        </div>
-        <div className="modal__footer bmo-pick__foot">
-          <span>{t.brand.imagery.picked(picked.length, room)}</span>
-          <Button variant="primary" size="sm" onClick={() => { set({ itemIds: picked.slice(0, room) }); onClose(); }}>{t.brand.done}</Button>
-        </div>
-      </DialogContent>
+      </DialogWindow>
     </Dialog>
   );
 }
@@ -82,10 +75,10 @@ export default function ImagerySection() {
       {(pics.length > 0 || mode === "edit") && (
         <div className="bim-examples">
           <div className="bim-head">
-            <h3 className="brand-k">{s.examples}</h3>
+            <h3 className="t-label brand-k">{s.examples}</h3>
             {mode === "edit" && (
               <span className="bim-head__tools">
-                <button type="button" className="be-btn" onClick={() => setPicking(true)}>{s.pick}</button>
+                <button type="button" className="btn btn--sm" onClick={() => setPicking(true)}>{s.pick}</button>
                 {pics.length < MAX && <FileSlot purpose="image" accept="image/png,image/jpeg,image/webp" has={false} onFile={(f) => set({ files: [...img.files, f].slice(0, MAX) })} className="bmo-upload" />}
               </span>
             )}
@@ -95,7 +88,7 @@ export default function ImagerySection() {
               {pics.map((p) => (
                 <figure key={p.key} className="bmo-pic">
                   <img src={p.src} alt={p.alt} loading="lazy" decoding="async" draggable={false} />
-                  {mode === "edit" && <button type="button" className="bmo-pic__x" onClick={p.remove} aria-label={t.brand.remove} title={t.brand.remove}>×</button>}
+                  {mode === "edit" && <IconButton icon="close" variant="strong" size="xs" className="bmo-pic__x" onClick={p.remove} label={t.brand.remove} />}
                 </figure>
               ))}
             </div>
@@ -104,7 +97,7 @@ export default function ImagerySection() {
       )}
       {(img.avoid.length > 0 || mode === "edit") && (
         <div className="bim-avoid">
-          <h3 className="brand-k">{s.avoid}</h3>
+          <h3 className="t-label brand-k">{s.avoid}</h3>
           <ul>
             {img.avoid.map((line, i) => (
               <li key={i}>

@@ -101,7 +101,7 @@ export default function AreaThumb({ area, label }: { area: string; label?: strin
     <rect x="5" y="5" width="30" height="18" rx="2.5" fill={soft} />
   );
   return (
-    <span className="area-thumb" title={label} aria-hidden>
+    <span className="area-thumb" data-tip={label} aria-hidden>
       <svg width="40" height="28" viewBox="0 0 40 28">{drawing}</svg>
     </span>
   );

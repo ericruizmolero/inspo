@@ -10,7 +10,7 @@ export default function AddToLibrary({ url, name, onAdd, added, className = "" }
 }) {
   const { t } = useT();
   return (
-    <button type="button" className={`dir-add${added ? " is-added" : ""} ${className}`} disabled={added}
+    <button type="button" className={`btn btn--sm dir-add${added ? " is-added" : ""} ${className}`} disabled={added}
       onClick={() => onAdd(url)} aria-label={added ? t.directory.addedLabel(name) : t.directory.addLabel(name)}>
       {added ? Icons.check : Icons.plus}<span>{added ? t.directory.added : t.directory.add}</span>
     </button>

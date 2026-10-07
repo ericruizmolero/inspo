@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
+import { Icon, MenuItem, MenuLabel, Separator } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import "./SkillsMenu.css";
 
@@ -29,22 +29,21 @@ export default function FileMenu({ markdown, projectName, onDownload }: { markdo
 
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setReady(null); setFailed(false); } }}>
-      <PopoverTrigger className="mdv-btn mdv-btn--more" aria-label={s.more} title={s.more}>{Icons.chevron}</PopoverTrigger>
-      <PopoverContent align="end" className="pp sys-skills">
-        <button type="button" className="sys-skills__row" onClick={() => { setOpen(false); onDownload(); }}>
-          <span className="sys-skills__text"><span className="sys-skills__name">{s.download}</span></span>
-        </button>
+      <PopoverTrigger className="btn btn--sm mdv-btn mdv-btn--more" aria-label={s.more} data-tip={open ? undefined : s.more}><Icon name="chevron-down" size={16} /></PopoverTrigger>
+      {/* The system's Menu: a paper window; the chats are a second group under an engraved line */}
+      <PopoverContent align="end" className="cr-menu sys-skills">
+        <MenuItem onClick={() => { setOpen(false); onDownload(); }}>{s.download}</MenuItem>
         {markdown && <>
-          <p className="sys-skills__hint sys-skills__hint--section"><b>{s.openIn}</b>{failed ? s.openInFailed : s.openInHint}</p>
+          <Separator />
+          <MenuLabel>{s.openIn}</MenuLabel>
+          <p className="sys-skills__hint">{failed ? s.openInFailed : s.openInHint}</p>
           {CHATS.map((c) => ready === c.id
             ? (
-              <a key={c.id} href={c.href} target="_blank" rel="noopener noreferrer" className="sys-skills__row is-on">
+              <a key={c.id} href={c.href} target="_blank" rel="noopener noreferrer" role="menuitem" className="cr-menu-item sys-skills__row is-on">
                 <span className="sys-skills__text"><span className="sys-skills__name">{s.openInGo(c.name)}</span><span className="sys-skills__what">{s.openInPaste}</span></span>
               </a>
             ) : (
-              <button key={c.id} type="button" className="sys-skills__row" onClick={() => void copy(c.id)}>
-                <span className="sys-skills__text"><span className="sys-skills__name">{c.name}</span></span>
-              </button>
+              <MenuItem key={c.id} onClick={() => void copy(c.id)}>{c.name}</MenuItem>
             ))}
         </>}
       </PopoverContent>

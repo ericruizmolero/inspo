@@ -1,3 +1,42 @@
+/* What are you making? The first screen inside a workspace (components/ProjectChooser.tsx): the system's hello, its
+   PromptInput, and the projects as BoardCards. The mosaic grid of BoardCards is shared with the empty Inbox. */
+.chooser { position: absolute; inset: 0; overflow-y: auto; display: flex; justify-content: center; padding: clamp(96px, 18vh, 200px) 24px 120px; background: var(--bg); }
+.chooser__inner { width: 100%; max-width: 1060px; height: max-content; display: flex; flex-direction: column; align-items: center; }
+
+/* The system's PromptInput in its two-line shape: the name, and under it (once there is a name) how it should feel.
+   The send sits on the first line; it turns ember once there is a name */
+.chooser__box.cr-prompt { width: 100%; max-width: 640px; margin-top: var(--space-6); padding: 10px 10px 10px 24px; gap: 0; }
+.chooser__box .cr-prompt-row { position: relative; }
+.chooser__box .chooser__name { font-size: var(--fs-body); }
+.chooser__box .chooser__name:disabled { opacity: 1; }
+.chooser__box .cr-prompt-send:disabled:not(.is-ready) { cursor: default; }
+.chooser__box .cr-prompt-below { padding: 0; font-size: inherit; color: inherit; }
 /* The examples taking turns where the placeholder would be, letter by letter (ProjectChooser's Examples) */
-.chooser__example { position: absolute; top: 0; left: 22px; right: 64px; height: 60px; display: flex; align-items: center; overflow: hidden; white-space: nowrap; color: var(--muted); font-size: 17px; pointer-events: none; }
+.chooser__example { position: absolute; top: 0; left: 0; right: 56px; height: 100%; display: flex; align-items: center; overflow: hidden; white-space: nowrap; color: var(--chrome-muted); font-size: var(--fs-body); pointer-events: none; }
 .chooser__char { display: inline-block; will-change: transform, opacity; }
+.chooser__more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.3s var(--ease-out); }
+.chooser__more.is-open { grid-template-rows: 1fr; }
+.chooser__more-inner { min-height: 0; overflow: hidden; visibility: hidden; opacity: 0; transition: opacity 0.2s, visibility 0s 0.3s; }
+.chooser__more.is-open .chooser__more-inner { visibility: visible; opacity: 1; transition: opacity 0.25s 0.05s, visibility 0s; }
+.chooser__about { display: block; width: 100%; padding: 2px 56px 8px 0; border: 0; background: transparent; outline: none; resize: none; field-sizing: content; min-height: calc(1.5em + 12px); max-height: 30vh; box-sizing: border-box; color: var(--chrome-text); font: inherit; font-size: var(--fs-ui); line-height: var(--lh-body); }
+.chooser__about::placeholder { color: var(--chrome-muted); }
+
+/* The projects: BoardCards, a mosaic of each board's first references */
+.chooser__grid { width: 100%; margin-top: clamp(56px, 9vh, 96px); display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-6) 20px; }
+.chooser__grid .cr-boardcard { width: auto; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.chooser__grid .cr-boardcard-mosaic { height: auto; aspect-ratio: 33 / 20; grid-template-rows: repeat(2, minmax(0, 1fr)); grid-auto-rows: 0; align-content: stretch; transition: border-color 0.15s; }
+.chooser__grid .cr-boardcard-tile { position: relative; overflow: hidden; background: var(--surface-2); }
+.chooser__grid .cr-boardcard-tile img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.chooser__grid .cr-boardcard-meta { gap: var(--space-2); }
+.chooser__grid .cr-boardcard-meta > span:first-child { min-width: 0; }
+.chooser__grid .cr-boardcard-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chooser__grid .cr-ring { margin-top: 4px; }
+/* On the ground, not on chrome: the theme's focus ring */
+.chooser__grid .cr-boardcard:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-width: 560px) {
+  .chooser { padding-left: 16px; padding-right: 16px; }
+  .chooser__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5) 12px; }
+  .chooser__grid .cr-boardcard-mosaic { padding: 6px; gap: 4px; }
+  .chooser__box.cr-prompt { padding-left: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .chooser__more, .chooser__more-inner, .chooser__grid .cr-boardcard-mosaic { transition: none; } }

@@ -24,7 +24,7 @@ function Toc({ blocks }: { blocks: Block[] }) {
   if (hs.length < 3) return null;
   return (
     <nav className="ds-toc" aria-label="En esta página">
-      <span className="ds-toc__label">En esta página</span>
+      <span className="t-label ds-toc__label">En esta página</span>
       {hs.map((h) => <a key={h.id} href={`#${h.id}`}>{h.text.map((x) => x.v).join("")}</a>)}
     </nav>
   );
@@ -36,9 +36,9 @@ async function Blocks() {
   return (
     <div className="ds-cards">
       {DS_GROUPS.filter((g) => g.label !== "Introducción").map((g) => (
-        <Link key={g.label} href={`/library/${g.pages[0].slug}`} className="ds-card">
+        <Link key={g.label} href={`/library/${g.pages[0].slug}`} className="cr-card cr-card-raised ds-card">
           <span className="ds-card__icon">{sectionIcon(g.pages[0].icon)}</span>
-          <span className="ds-card__title">{g.label}</span>
+          <span className="t-title-m ds-card__title">{g.label}</span>
           <span className="ds-card__lead">{g.lead}</span>
           <span className="ds-card__pages">{g.pages.map((p) => titles[p.slug]).join(", ")}</span>
         </Link>

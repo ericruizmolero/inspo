@@ -4,6 +4,7 @@
 import type { Project } from "@/types/inspo";
 import ProjectPicker, { IconFolder } from "./ProjectPicker";
 import { useT } from "./I18nProvider";
+import { Button, Icon, Separator } from "@/components/criterio";
 import "./SelectBar.css";
 
 export default function SelectBar({ count, closing, onClosed, projects, filed, partly, current, onFile, onMove, onCreate, onRemove, onDone }: {
@@ -24,31 +25,29 @@ export default function SelectBar({ count, closing, onClosed, projects, filed, p
   const { t } = useT();
   const s = t.select;
   return (
-    <aside className={`selbar${closing ? " is-closing" : ""}`} aria-label={s.selected(count)} inert={closing}
+    <aside className={`selbar cr-on-chrome${closing ? " is-closing" : ""}`} aria-label={s.selected(count)} inert={closing}
       onTransitionEnd={(e) => { if (closing && e.target === e.currentTarget && e.propertyName === "opacity") onClosed(); }}>
-      <span className="selbar__count" role="status" aria-live="polite">{s.selected(count)}</span>
-      <span className="selbar__sep" aria-hidden />
+      <span className="t-title-m selbar__count" role="status" aria-live="polite">{s.selected(count)}</span>
+      <Separator vertical className="selbar__sep" />
       {current ? (
         <ProjectPicker projects={projects.filter((p) => p.id !== current.id)} filed={[]} onToggle={(id) => onMove(id)} onCreate={onCreate}
-          side="top" closeOnPick className="selbar__btn" label={s.moveTo}>
+          side="top" closeOnPick className="btn btn--quiet selbar__btn" label={s.moveTo}>
           {IconFolder}<span>{s.move}</span>
         </ProjectPicker>
       ) : (
         <ProjectPicker projects={projects} filed={filed} partly={partly} onToggle={onFile} onCreate={onCreate}
-          side="top" className="selbar__btn" label={s.addTo}>
+          side="top" className="btn btn--quiet selbar__btn" label={s.addTo}>
           {IconFolder}<span>{s.add}</span>
         </ProjectPicker>
       )}
       {current && (
-        <button type="button" className="selbar__btn" onClick={onRemove} aria-label={s.removeFrom(current.name)} data-tip={s.removeFrom(current.name)}>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-            <path d="M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 8.2a1.5 1.5 0 001.5 1.3h3.6a1.5 1.5 0 001.5-1.3l.7-8.2" />
-          </svg>
+        <button type="button" className="btn btn--quiet selbar__btn" onClick={onRemove} aria-label={s.removeFrom(current.name)} data-tip={s.removeFrom(current.name)}>
+          <Icon name="trash" size={16} />
           <span>{s.remove}</span>
         </button>
       )}
-      <span className="selbar__sep" aria-hidden />
-      <button type="button" className="selbar__done" onClick={onDone}>{t.projects.done}</button>
+      <Separator vertical className="selbar__sep" />
+      <Button className="selbar__done" onClick={onDone}>{t.projects.done}</Button>
     </aside>
   );
 }

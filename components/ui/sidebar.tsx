@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 import { useIsMobile } from "@/hooks/use-mobile"
-import { Button } from "@/components/ui/button"
+import { IconButton, Key } from "@/components/criterio"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -254,33 +254,40 @@ function Sidebar({
   )
 }
 
-// The label comes from the caller (the app is bilingual). On desktop a tooltip repeats it with the shortcut.
+// The label comes from the caller (the app is bilingual). The system's IconButton (default m over the board on a
+// phone, quiet s in the docked sections); on desktop its tooltip repeats the label with the shortcut as a Key.
 function SidebarTrigger({
   className,
   onClick,
   "aria-label": label,
+  variant = "default",
+  size = "m",
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: Omit<React.ComponentProps<"button">, "children"> & { variant?: "quiet" | "default" | "strong"; size?: "xs" | "s" | "m" | "l" }) {
   const { toggleSidebar, isMobile } = useSidebar()
 
   const button = (
-    <Button
+    <IconButton
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="icon"
+      // its own tooltip carries the label and the shortcut, so the page-wide one stays out
+      data-tip={undefined}
+      variant={variant}
+      size={size}
+      label={label ?? ""}
       className={cn(className)}
-      aria-label={label}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
       }}
+      icon={
+        <svg width={size === "s" || size === "xs" ? 16 : 18} height={size === "s" || size === "xs" ? 16 : 18} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" />
+          <path d="M6 2.75v10.5" />
+        </svg>
+      }
       {...props}
-    >
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" />
-        <path d="M6 2.75v10.5" />
-      </svg>
-    </Button>
+    />
   )
 
   if (isMobile || !label) return button
@@ -289,7 +296,7 @@ function SidebarTrigger({
       <TooltipTrigger render={button} />
       <TooltipContent side="bottom" align="start">
         {label}
-        <kbd className="kbd">{/Mac|iPhone|iPad/.test(navigator.userAgent) ? "\u2318B" : "Ctrl B"}</kbd>
+        <Key>{/Mac|iPhone|iPad/.test(navigator.userAgent) ? "\u2318B" : "Ctrl B"}</Key>
       </TooltipContent>
     </Tooltip>
   )
