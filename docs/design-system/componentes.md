@@ -9,7 +9,7 @@ Los componentes del sistema de diseño Criterio (`components/criterio/index.tsx`
 ### Botón
 `Button` · `components/criterio/index.tsx` · `.cr-btn` · `components/ui/button.tsx` · `.btn` · muestra: botones
 Grueso, con borde de tinta y bisel; al pulsar se hunde (`--bevel-pressed` y 1 px abajo). `primary` (ember) es la acción para la que existe la vista, una por vista, y lo que ya era primario no se baja; `secondary` (papel, la variante por defecto) todo lo demás, también Cancelar y Ahora no; `dark` (tinta) una segunda acción fuerte sobre papel; `quiet` sin borde, bisel ni relleno hasta el hover, para acciones pequeñas dentro de barras y paneles, casi siempre con icono; `danger` (`--danger-deep`) solo para confirmar algo que destruye. → [lo que era primario](decisiones/2026-10-07-lo-que-era-primario-sigue-siendo-primario.md)
-- Tallas: s 34 (globos, ventanas, barras de herramientas, menús, la tarjeta del tablero), m 44 (la normal en producto: páginas, vistas, pies de diálogo), l 52 (héroes). En una misma barra, todos en la misma talla. Sin excepciones locales de alto, relleno, letra o radio; solo dos: el botón partido junta sus esquinas y el botón dentro de un campo (`.cr-textbox-bar`) lleva radio 6.
+- Tallas: s 34 (globos, ventanas y sus pies, barras de herramientas, menús, la tarjeta del tablero), m 44 (la normal en producto: páginas y vistas), l 52 (héroes). En una misma barra, todos en la misma talla. Sin excepciones locales de alto, relleno, letra o radio; solo dos: el botón partido junta sus esquinas y el botón dentro de un campo (`.cr-textbox-bar`) lleva radio 6.
 - `icon` delante, `iconEnd` detrás ("Ya tengo mis referencias" lleva la flecha); `pressed` lo deja hundido; `href` lo vuelve un enlace.
 - `Button` de `components/ui/button.tsx` (Base UI) es la misma pieza con las clases globales `.btn`, `.btn--primary`, `.btn--dark`, `.btn--quiet` (`ghost` es su nombre viejo), `.btn--danger`, `.btn--sm`, `.btn--lg` y `block`: lo usan los componentes anteriores al sistema. Lo nuevo va en el `Button` del sistema.
 - Etiquetas en sentence case, verbo primero, cortas. Desactivado: relleno `--disabled`, texto `--disabled-text`, borde `--disabled-border`, sin bisel.
@@ -36,7 +36,7 @@ El pozo hundido (`--field`, `--sunken`, 44 de alto, radio `--radius-md`; talla s
 
 ### Área de texto y compositor
 `TextArea` · `.cr-textarea` · `.cr-textbox` · muestra: compositor
-El gemelo de varias líneas del campo. Con `toolbar` se vuelve el compositor (comentar, responder, editar): el textarea, lo que se pase como hijos (adjuntos esperando) y una barra de herramientas (`.cr-textbox-bar`, herramientas `.cr-textbox-tool`) dentro de un solo campo, y el foco rodea el campo entero.
+El gemelo de varias líneas del campo. Con `toolbar` se vuelve el compositor (comentar, responder, editar): el textarea, lo que se pase como hijos (adjuntos esperando) y una barra de herramientas (`.cr-textbox-bar`, herramientas `.cr-textbox-tool`) dentro de un solo campo, y el foco rodea el campo entero. En el compositor de comentarios la mini ayuda (`.cm-composer__keys`: ↩ envía, ⇧↩ salto de línea, ⌘V pega capturas) va debajo del campo, entera y en tamaño label; dentro de la barra se cortaba y estorbaba. "Subiendo captura…" sí sale en la barra mientras sube. → [decisión](decisiones/2026-10-07-el-compositor-de-comentarios-ensena-su-ayuda.md)
 
 ### Casilla
 `Checkbox` · `.cr-check` · muestra: casilla
@@ -282,7 +282,7 @@ Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y so
 `InspoCard` · `components/InspoCard.tsx` · `.tile`
 La miniatura en su forma real: web (og:image, captura o póster tipográfico), imagen, vídeo en bucle o texto.
 - Nota con avatares, chips de etiquetas y estado "reuniendo".
-- Abajo: Archivar en proyecto, Al sistema y Comentarios. Al pasar el ratón, la página hace scroll dentro de la tarjeta.
+- Abajo a la izquierda, al pasar el ratón (`.tile__go`): tres `IconButton` default s iguales, icono solo, la misma talla y el mismo aire (6 px) que los tres de arriba a la derecha: carpeta (archivar en proyecto; ember con `.is-filed` cuando ya está archivada, el único color sobre la imagen), brújula (al sistema) y comentarios. Las palabras (en qué proyectos, cuántos) van en la fila del pie y en cada `label`. Al pasar el ratón, la página hace scroll dentro de la tarjeta. → [decisión](decisiones/2026-10-07-las-dos-filas-de-la-tarjeta-llevan-los-mismos-botones-s-y-la-carpeta-archivada-es-ember.md)
 - Arriba a la derecha: Ver URL, los tres puntos (solo la miniatura) y la papelera, que dice de dónde quita la tarjeta. En el tablón de un proyecto dice "Quitar del proyecto", la saca con un clic y la tarjeta vuela a la pestaña Inbox de la Isla como en Pulido (`components/fly-to-inbox.ts`, `.tile-fly`); fuera, "Quitar de" y el nombre del espacio. → [decisión](decisiones/2026-10-06-en-un-proyecto-la-papelera-saca-la-tarjeta-al-inbox.md) Fuera de un proyecto borra: son dos clics seguidos sobre la papelera, que al primero pasa a decir "Borrar" en rojo en el mismo sitio; Esc, sacar el puntero o 6 s lo cancelan. → [decisión](decisiones/2026-10-06-borrar-tarjeta-con-dos-clics-en-la-papelera.md) La papelera solo se pinta para quien puede borrar la referencia: quien la guardó o quien gestiona el espacio (`deletable`). → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 - Arriba a la izquierda: el círculo de selección (al pasar el ratón o mientras se selecciona) y, tras una búsqueda, el porcentaje de encaje con su porqué. Cuando el círculo aparece, el porcentaje y el chip GIF se apartan 32 px a la derecha. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
 
@@ -368,7 +368,7 @@ Grabación corta, muda y en bucle que solo se reproduce mientras está a la vist
 
 ### Vista Sistema
 `SystemView` · `components/SystemView.tsx` · `.spage`
-La página del proyecto. Cabecera en dos líneas: el nombre arriba y, debajo, una sola fila (`.spage-bar`) con las pestañas a la izquierda y las acciones a la derecha, del ancho de la columna del fichero. Tres pestañas: **Markdown** (criterio.md tal cual, la que abre por defecto), **Documento** (el mismo fichero maquetado para leer) y **Presentación** (la marca como guía visual, `BrandPresentation`). → [vuelve la Presentación](decisiones/2026-10-06-vuelve-la-presentacion.md) A la derecha, "Mejorar con IA" como única acción primaria y un menú "…" con traer una marca que ya existe y compartir. Se recuerda en el navegador si se estaba en el fichero o en Resultados; el fichero siempre abre como Markdown. → [cabecera en dos líneas](decisiones/2026-10-06-cabecera-del-proyecto-en-dos-lineas.md) → [resultados en vez de presentación](decisiones/2026-10-05-resultados-en-vez-de-presentacion.md)
+La página del proyecto. Cabecera en dos líneas: el nombre arriba y, debajo, una sola fila (`.spage-bar`) con las pestañas a la izquierda y las acciones a la derecha, del ancho de la columna del fichero. Tres pestañas: **Markdown** (criterio.md tal cual, la que abre por defecto), **Documento** (el mismo fichero maquetado para leer) y **Presentación** (la marca como guía visual, `BrandPresentation`). → [vuelve la Presentación](decisiones/2026-10-06-vuelve-la-presentacion.md) A la derecha, "Mejorar con IA" como única acción primaria y un menú "…" con traer una marca que ya existe y compartir. Toda la fila va en talla s (pestañas, botones y el "…"), para que no pese más que el nombre (Eric, 07-10: "más pequeños"). → [decisión](decisiones/2026-10-07-la-fila-de-la-pagina-del-proyecto-va-en-s-y-la-barra-del-fichero-es-quiet.md) Se recuerda en el navegador si se estaba en el fichero o en Resultados; el fichero siempre abre como Markdown. → [cabecera en dos líneas](decisiones/2026-10-06-cabecera-del-proyecto-en-dos-lineas.md) → [resultados en vez de presentación](decisiones/2026-10-05-resultados-en-vez-de-presentacion.md)
 
 ### Presentación de marca
 `BrandPresentation` · `components/brand/BrandPresentation.tsx` · `components/brand/brand.css`
@@ -420,7 +420,7 @@ El fichero en un panel de código con el resaltado de un editor, o con aspecto d
 - Aspecto Documento: una tabla de Markdown se pinta como tabla (`.mdv-tr`, `.mdv-td`), con líneas entre filas y sin caja. → [decisión](decisiones/2026-10-06-tablas-del-documento-como-tabla.md)
 - Tecla C: modo comentar con pines en el punto exacto; Enter envía el pin.
 - Proponer: al activarlo el cursor queda en la primera línea editable a la vista, sin mover el scroll; lo escrito en un área queda como propuesta al salir. No convive con Comentar.
-- Barra: Proponer, Comentar, Skills y Copiar. Copiar es un botón partido (`.mdv-split`): la mitad de la flecha abre el menú del fichero. Los botones de la barra no llevan contorno. → [decisión](decisiones/2026-10-06-barra-del-fichero-en-cuatro-piezas.md)
+- Barra: Proponer, Comentar, Skills y Copiar. Copiar es un botón partido (`.mdv-split`): la mitad de la flecha abre el menú del fichero. Los botones de la barra son `Button` quiet s sobre el chrome, sin contorno ni papel, con un relleno suave en reposo (`--md-fill`) y más fuerte en hover o activo (`--md-fill-2`), definidos en los tokens del fichero para que valgan en claro y en oscuro. → [cuatro piezas](decisiones/2026-10-06-barra-del-fichero-en-cuatro-piezas.md), [quiet, no papel](decisiones/2026-10-07-la-fila-de-la-pagina-del-proyecto-va-en-s-y-la-barra-del-fichero-es-quiet.md)
 
 ### Menú de skills
 `SkillsMenu` · `components/SkillsMenu.tsx` · `.sys-skills`
@@ -449,7 +449,7 @@ Hoja sobre el lienzo: favicon, nombre, migas, pestañas Página / Criterio y cer
 
 ### Vista de página
 `PageView` · `components/PageView.tsx` · `.pn`
-La captura completa para leer con scroll, o la imagen centrada. Brillo mientras carga.
+La captura completa para leer con scroll, o la imagen centrada. Brillo mientras carga. En la ficha, la tarjeta de la página termina donde termina la captura y se centra en el escenario (`.ip-card--page:has(> .pn-wrap)`): una captura corta no deja una banda oscura debajo; una larga sigue haciendo scroll dentro, con la tarjeta a la altura del escenario como tope. Mientras carga, la tarjeta guarda casi toda la altura para no dar un salto. → [decisión](decisiones/2026-10-07-la-tarjeta-de-la-pagina-termina-donde-termina-la-captura.md)
 
 ### Vista de post de X
 `PostView` · `components/PostView.tsx` · `.pv`

@@ -194,8 +194,8 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           {error && <p className="modal__error">{error}</p>}
 
           <div className="modal__footer">
-            <Button onClick={close}>{t.common.cancel}</Button>
-            <Button variant="primary" type="submit" disabled={!canSave}>{t.common.save}</Button>
+            <Button size="s" onClick={close}>{t.common.cancel}</Button>
+            <Button size="s" variant="primary" type="submit" disabled={!canSave}>{t.common.save}</Button>
           </div>
         </form>
       </DialogContent>

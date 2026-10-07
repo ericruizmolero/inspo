@@ -1229,8 +1229,17 @@ export default function InspoClient({
   // The board starts from the top again when the space or the search changes, not when a slower layer reorders
   const fitKey = `${space}|${chips.map(filterKey).join(",")}|${filtering ? text : ""}`;
 
-  // Presence: which area the person is in right now (read by the /admin panel)
-  const area = panelItem ? "design-md" : space === "discover" ? "directory" : showAdd ? "add" : filtering ? "search" : "library";
+  // Presence: which place of the interface the person is in right now, named as the interface names it
+  // (read by the /admin panel, "Where they spend the time"; the words are t.labels.area)
+  const area = currentProject && projectView === "polish" ? "polish"
+    : panelItem ? "sheet"
+    : showAdd ? "add"
+    : space === "discover" ? "directory" : space === "templates" ? "examples" : space === "skills" ? "skills"
+    : filtering ? "search"
+    : currentProject ? projectView
+    : space === "inbox" ? "inbox"
+    : space === "home" ? "home"
+    : "board";
   useActivity(area, workspace.id);
 
   // The cards' handlers, behind one stable ref: a card only re-renders when its own data changes

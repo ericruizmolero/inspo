@@ -413,14 +413,17 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
       <Icon name="compass" size={iconSize} />
     </AreaPicker>
   );
-  const picker = (className: string, onOpenChange?: (o: boolean) => void) => projects && onToggleProject && onCreateProject && (
+  // The picker as a Button s with its words (the caption), or as an IconButton s, folder only, ember once filed (the hover row)
+  const picker = (className: string, onOpenChange?: (o: boolean) => void, iconOnly = false) => projects && onToggleProject && onCreateProject && (
     <ProjectPicker
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
       areasIn={areasIn}
-      className={`${className} cr-btn ${filedCount ? "cr-btn-primary" : "cr-btn-secondary"} cr-btn-s`}
+      className={iconOnly
+        ? `${className} cr-iconbtn ${filedCount ? "cr-iconbtn-default is-filed" : "cr-iconbtn-default"} cr-iconbtn-s`
+        : `${className} cr-btn ${filedCount ? "cr-btn-primary" : "cr-btn-secondary"} cr-btn-s`}
       label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
     >
-      <Icon name="folder" size={16} /><span className="tile__go-label">{filedCount ? t.card.filed(filedCount) : t.card.file}</span>
+      <Icon name="folder" size={16} />{!iconOnly && <span className="tile__go-label">{filedCount ? t.card.filed(filedCount) : t.card.file}</span>}
     </ProjectPicker>
   );
 
@@ -623,10 +626,12 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           {/* Down here, what is done most with a reference: file it (projects and areas) and talk about it */}
           {(onToggleProject || onComments) && (
             <div className={`tile__go${pickerOpen ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-              {/* The system's ProjectPicker row: the picker Button, then IconButtons size s on a card (l in the viewer) (strong for the
-                  one that matters most, the areas of the system; default for comments) */}
-              {picker("tile__go-pick", setPickerOpen)}
-              {areaPicker("cr-iconbtn cr-iconbtn-strong cr-iconbtn-s", setPickerOpen)}
+              {/* Three default IconButtons s, the same as the three up on the right (Eric, 07-10: "me gustan los 3 de
+                  arriba a la derecha, el resto homogeneizamos"), icon only: the folder (ember once filed, the one colour
+                  on the card), the areas of the system and comments. The words (filed where, in how many) live in the
+                  caption's row and in each label */}
+              {picker("tile__go-pick", setPickerOpen, true)}
+              {areaPicker("cr-iconbtn cr-iconbtn-default cr-iconbtn-s", setPickerOpen)}
               {onComments && (
                 <IconButton icon="comment" variant="default" size="s"
                   label={commentCount > 0 ? `${t.card.comments} (${commentCount})` : t.card.comments}

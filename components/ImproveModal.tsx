@@ -37,8 +37,8 @@ export default function ImproveModal({ system, onRun, onClose }: {
       <DialogWindow className="imp" bar={m.bar} heading={t.system.improve} closeLabel={t.common.close}
         footer={
           <div className="modal__footer">
-            <Button onClick={onClose}>{t.common.cancel}</Button>
-            <Button variant="primary" type="submit" form="improve-ai" icon="sparkle" disabled={!ready}>{m.run}</Button>
+            <Button size="s" onClick={onClose}>{t.common.cancel}</Button>
+            <Button size="s" variant="primary" type="submit" form="improve-ai" icon="sparkle" disabled={!ready}>{m.run}</Button>
           </div>
         }>
         <form id="improve-ai" className="imp__body" onSubmit={(e) => { e.preventDefault(); run(); }}>

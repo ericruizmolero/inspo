@@ -561,8 +561,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         </div>
 
         {/* One field: the text, the screenshots waiting to go, and a toolbar inside the same box (attach on
-            the left, Send on the right). No avatar (it is always you); the keys are read by screen readers and
-            the placeholder already says a screenshot can be pasted. */}
+            the left, Send on the right), and the keys and how to attach as a line under the field. No avatar (it is
+            always you). The little help is on screen again (Eric, 07-10: "antes teníamos una mini ayuda... eso podemos rescatar?") */}
         <form className="cm-composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
             onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
@@ -597,7 +597,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             )}
           </TextArea>
           {error && <p className="cm-composer__error" role="alert">{error}</p>}
-          <span id="cm-composer-keys" className="cr-visually-hidden">{t.comments.composerHint}</span>
+          {/* The little help under the field, whole and out of the way (Eric, 07-10: in the bar it was cut and in the way) */}
+          <p id="cm-composer-keys" className="cm-composer__hint cm-composer__keys">{t.comments.composerHint}</p>
         </form>
       </aside>
 

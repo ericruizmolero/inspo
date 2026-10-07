@@ -6,6 +6,7 @@ import { getSession } from "@/lib/workspace";
 import { isAdmin } from "@/lib/activity";
 import { getT } from "@/lib/i18n";
 import { DS_GROUPS, pageTitles } from "@/lib/design-system";
+import ActivityPing from "@/components/ActivityPing";
 import "@/components/design-library/DesignLibrary.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,6 +32,7 @@ export default async function DesignLibraryLayout({ children }: { children: Reac
         items: g.pages.map((p) => ({ slug: p.slug, label: titles[p.slug], icon: p.icon })),
       }))}
     >
+      <ActivityPing area="design-system" />
       {children}
     </SectionShell>
   );

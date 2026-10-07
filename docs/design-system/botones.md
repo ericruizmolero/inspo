@@ -16,8 +16,8 @@ El botón es la firma del sistema: grueso, con borde de tinta y bisel, el guiño
 
 | Talla | Alto | Icono | Dónde |
 | --- | --- | --- | --- |
-| s | 34 | 16 | Globos, ventanas, barras de herramientas, menús, la tarjeta del tablero, Ajustes y Actividad (filas y pies) → [decisión](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md) |
-| m | 44 | 20 | Lo normal en producto: páginas, vistas, pies de diálogo |
+| s | 34 | 16 | Globos, ventanas y sus pies (Cancelar y Guardar), barras de herramientas, la fila de pestañas y acciones de la página del proyecto, la barra del fichero, menús, la tarjeta del tablero, Ajustes y Actividad (filas y pies) → [Ajustes](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md), [pies de ventana](decisiones/2026-10-07-los-pies-de-ventana-llevan-botones-s.md) |
+| m | 44 | 20 | Lo normal en producto: páginas y vistas |
 | l | 52 | 20 | Héroes |
 
 En una misma barra, todos en la misma talla. Sin excepciones locales de alto, relleno, letra o radio; solo dos: el botón partido junta sus esquinas y el botón dentro de un campo (`.cr-textbox-bar`) lleva radio 6.

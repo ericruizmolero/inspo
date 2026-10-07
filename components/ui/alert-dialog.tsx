@@ -38,12 +38,13 @@ function AlertDialogDescription({ className, ...props }: AlertDialogPrimitive.De
   return <AlertDialogPrimitive.Description data-slot="alert-dialog-description" className={cn("confirm__text", className)} {...props} />
 }
 
+// Both at the system's size s ("sm" in this older Button): the footer of a window (design system, Tallas)
 function AlertDialogCancel({ ...props }: AlertDialogPrimitive.Close.Props) {
-  return <AlertDialogPrimitive.Close data-slot="alert-dialog-cancel" render={<Button />} {...props} />
+  return <AlertDialogPrimitive.Close data-slot="alert-dialog-cancel" render={<Button size="sm" />} {...props} />
 }
 
 function AlertDialogAction({ ...props }: React.ComponentProps<typeof Button>) {
-  return <Button data-slot="alert-dialog-action" variant="primary" {...props} />
+  return <Button data-slot="alert-dialog-action" variant="primary" size="sm" {...props} />
 }
 
 export { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle }

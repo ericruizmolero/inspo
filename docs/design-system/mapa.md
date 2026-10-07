@@ -33,7 +33,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 
 | URL | Qué hay |
 | --- | --- |
-| `/admin/overview`, `usage`, `people`, `feedback`, `access` | Actividad de toda la app; `?dias=` cambia el periodo |
+| `/admin/overview`, `usage`, `people`, `feedback`, `access` | Actividad de toda la app; `?dias=` cambia el periodo. "Dónde pasan el tiempo" nombra los sitios como la interfaz: Inicio, Inbox, Tablón, Pulido, Sistema, Ficha, Búsqueda, Recursos, Ejemplos, Skills, Añadir, Ajustes, Equipo, Planes, Extensión, Actividad, Sistema de diseño y Conector ([decisión](decisiones/2026-10-07-el-panel-de-actividad-nombra-los-sitios-como-la-interfaz.md)) |
 | `/library/…` | Esta librería: Introducción, Fundamentos (Principios, Tokens y una página por familia: color, tipografía, espaciado, radios y sombras, movimiento, iconos, pantalla), Componentes (Botones, Marca, catálogo), Construir y Mantenimiento (técnico, desarrollo, stack, seguridad y políticas, decisiones) |
 
 Se da acceso con `npm run admin -- <correo>`.

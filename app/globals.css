@@ -1174,6 +1174,8 @@ video.vp__media { object-fit: contain; }
 .cm-edit__foot > span { margin-right: auto; }
 /* The Composer, pinned at the bottom of the aside: avatar, chrome textarea, attach, the keys, Send */
 .cm-composer__hint { font-size: var(--fs-label); color: var(--chrome-muted); }
+/* The help (keys, ⌘V pastes screenshots) is a line under the field, whole: in the bar it was cut and in the way (Eric, 07-10) */
+.cm-composer__keys { margin: 6px 2px 0; line-height: var(--lh-label); }
 .cm-composer__error { font-size: var(--fs-label); color: var(--danger); }
 @media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
 
@@ -2390,6 +2392,11 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .ip-bento.cr-viewer-body { flex: 1; min-height: 0; }
 .ip-stage.cr-viewer-stage { min-height: 0; padding: 16px; gap: 16px; }
 .ip-card--page.cr-viewer-media { position: relative; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; border: 1px solid var(--chrome-border); }
+/* A page or an image: the card ends where the capture ends, centred in the stage, instead of leaving a dark band
+   under a short capture (Eric, 07-10). A long page still scrolls inside it (capped to the stage). While the capture
+   loads, the card holds most of the height so it does not jump */
+.ip-card--page.cr-viewer-media:has(> .pn-wrap) { align-self: center; max-height: 100%; }
+.ip .pn-page:has(.shimmer) { min-height: min(70svh, 100%); }
 .ip-card--talk.cr-viewer-aside { width: 380px; min-height: 0; overflow: hidden; border-left-color: var(--chrome-raised); }
 .ip-media { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
 .ip-state.cr-empty { flex: 1; justify-content: center; padding: 40px; text-wrap: balance; }
@@ -2578,8 +2585,11 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 }
 .tile:hover .tile__go, .tile__go.is-visible, .tile__go:focus-within { opacity: 1; transform: none; }
 .tile__go-pick { font-variant-numeric: tabular-nums; }
-/* A narrow card keeps the folder and drops the words; the label stays the button's accessible name */
-@container (max-width: 300px) { .tile__go-pick .tile__go-label { display: none; } .tile__go-pick { padding: 0 12px; } }
+/* The row is three default IconButtons s (32), 6 px apart, the same as .tile__actions up on the right; the folder turns
+   ember once the card is filed, the one colour over the picture. The words live in the caption */
+.tile__go { gap: 6px; }
+.tile__go .cr-iconbtn.is-filed { background: var(--ember); color: var(--on-ember); border-color: var(--ember); }
+.tile__go .cr-iconbtn.is-filed:hover, .tile__go .cr-iconbtn.is-filed.is-active { background: var(--ember-glow); border-color: var(--ember-glow); }
 @media (hover: none) { .tile__go { display: none; } }
 
 /* A card taken out of a project, on its way to the Inbox tab of the tab bar (components/fly-to-inbox.ts): the
@@ -2645,6 +2655,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }
+
 
 
 
