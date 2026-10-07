@@ -1,0 +1,21 @@
+---
+title: Pulido es un slider de lo pendiente, y la tarjeta decidida vuela a su pestaña
+date: 2026-10-06
+status: vigente
+kind: diseño
+---
+**Contexto.** La primera versión de Pulido paraba el tornado en cada tarjeta y al decidir la tarjeta se fundía. Eric fue probando variantes el mismo día: una con la tarjeta separada del tornado y muy grande (62 % del ancho, fondo desenfocado entero) que apagaba demasiado lo de detrás; otra con la tarjeta fuera de su hueco y el tornado girando sin parar; y otra que giraba sola hasta pasar el ratón. Se quedó con la que sigue.
+
+**Decisión.** En `components/PolishView.tsx`:
+- **Un solo slider.** La tarjeta que se decide es la que está delante del tornado, una más de él, solo que ocupa más sitio (`FRONT_W` 30em frente a `CARD_W` 18em, vecinas apartadas con `SPREAD`). Nítida delante, desenfoque y niebla solo con la profundidad, sin velo.
+- **Slider manual, siempre.** Sin giro automático ni transición de entrada: se mueve con la rueda, arrastrando o al decidir, y descansa sobre una tarjeta. Cada vez que se entra en Pulido la tarjeta de delante es otra, al azar entre las pendientes.
+- **Solo gira lo pendiente.** Lo conservado sale del tornado igual que lo olvidado. Con todo decidido, el tablón que se ha quedado gira solo, desenfocado entero y tras un velo, y sobre él unas pocas de las referencias que se quedan se ordenan en abanico encima de "Todo está en orden" y del aviso de que se podrá volver a pulir cuando entren más (Eric: "mejoremos el diseño final, que sea placentero").
+- **Nada desaparece sin decir adónde va.** Una copia de la tarjeta (`Flyer`) vuela a la pestaña Tablón al conservar y a la pestaña Inbox de la Isla al olvidar (`LANDING`), y la pestaña da un bote al recibirla. La olvidada sale del proyecto al aterrizar (`LAND`), para que el contador del Inbox suba en ese momento.
+- **Las respuestas** son una pieza de cristal en dos mitades del mismo peso (`.polish__choice`): la palabra, debajo adónde va la tarjeta ("Vuelve al Inbox", "Se queda en el tablón") y la flecha de su tecla. Deshacer solo existe cuando hay algo que deshacer; el nombre y cuántas quedan van en su pastilla. (Cambiado el mismo día: el pie enseña también el texto del post y la nota, y cuántas quedan pasó a la pestaña Pulido → [decisión](2026-10-06-el-pie-de-pulido-ensena-el-texto-del-post-y-la-nota.md).)
+- "Ya tengo las referencias" sigue llevando siempre al Sistema; a Pulido se entra por su pestaña.
+
+(En un espacio de equipo esto pasó a ser una votación el mismo día: nada sale al votar y el voto vuela a la pestaña Pulido → [decisión](2026-10-06-en-equipo-el-pulido-es-una-votacion-que-se-cierra.md).)
+
+**Por qué.** Eric, 06-10, en este orden: "Creo que el elemento principal tiene que ser más grande", "Los botones de abajo olvidar/conservar tienen que estar mejor diseñados", "olvidar hace que esa ficha vaya al inbox, tiene que quedar claro. No que desaparece por completo", "cuando le das a conservar ese elemento desaparece también, se tiene que entender que es que se queda en el tablón", "igual lo de detrás se tiene que notar más. No sé si me gustaba más antes todo unido", "la pestaña activa igual no tiene que ser taaaan grande", "mejor hacer el slider en movimiento de primeras [...] solo que el elemento visible tiene un poco más de espacio", "el giro automático es como para colocar la primera slide por así decirlo y hacer ver al usuario que eso gira", "que sea smooth la transición de inicio cuando entras, que sea pasar de una slide a otra y ya", "vamos a quitar la transición inicial, creo que no aporta nada. Slider manual siempre y listo. Eso sí, cada vez que entres a pulir que te aparezca una card random diferente activa", "si ya has conservado ese elemento, ese elemento se va", "cuando ya has hecho el pulido entero te sale mensaje de que todo está en orden, que cuando se añadan más referencias se podrá volver a pulir", "El ya tengo las referencias te lleva siempre a Sistema".
+
+**Cómo aplicarlo.** Lo que se decide se va a la vista hacia donde queda, no se funde. La tarjeta en juego es parte del conjunto, no una ventana encima, y lo de detrás tiene que notarse. Sin movimiento automático mientras hay algo que decidir: se probaron el giro continuo y una transición de entrada y Eric los retiró ("no aporta nada"). Dos respuestas del mismo peso: ninguna es el primario.

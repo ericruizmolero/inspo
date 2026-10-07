@@ -1,7 +1,7 @@
 ---
 title: La extensión y el MCP van juntos en un menú "Conectores" de la barra superior, que se va cuando los dos están conectados
 date: 2026-10-06
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** El conector MCP nació con un botón "Conectar" en la cabecera del proyecto, y la barra superior ya tenía "Instalar extensión" como aviso mientras falta la extensión. Eric, 06-10: "¿no es mejor que Conectar MCP esté junto con instalar Extensión? dos botones de conexiones", y después: "que sea Conectar MCP mejor e igual agruparlo en apartado conectores; si están los dos instalados entonces se quita, si está solo 1/2 entonces un tic a ese", y sobre el icono: "el conectar mcp igual tiene que tener otro icono menos evidente".

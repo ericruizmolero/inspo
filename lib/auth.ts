@@ -212,6 +212,8 @@ export const auth = betterAuth({
         // The database cascade removes every row of the workspace, but not its files in storage:
         // their URLs are read before the delete and the files dropped after it
         async beforeDeleteOrganization({ organization: org }) {
+          // The personal space is where a person lands with no team: only teams are deleted
+          if ((org as { kind?: string }).kind === "personal") throw new APIError("FORBIDDEN", { message: (await getErrors()).personalSpaceStays });
           filesOfDeleted.set(org.id, await collectItemFiles(org.id));
         },
         async afterDeleteOrganization({ organization: org }) {

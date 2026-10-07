@@ -13,7 +13,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
 import { useT } from "./I18nProvider";
-import { ZoomControl } from "@/components/criterio";
+import SoundControl from "./SoundControl";
+import ZoomPill from "./ZoomPill";
 
 /** Which copy of the page a card draws, by how wide it is on screen (the stored copies: 288, 720 and 1440px) */
 export type ShotLevel = "thumb" | "tile" | "full";
@@ -280,12 +281,21 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
       </div>
 
       {/* Outside the scroller, so it stays in its corner while the board moves */}
-      {/* The system's ZoomControl: a chrome pill, minus, the percentage in tabular figures (back to 100%), plus */}
-      <ZoomControl className="board-zoom" value={pct}
-        labels={{ group: t.zoom.label, in: t.zoom.zoomIn, out: t.zoom.zoomOut, reset: t.zoom.reset }}
-        valueLabel={`${pct}%, ${t.zoom.columns(cols)}. ${t.zoom.reset}`}
-        outDisabled={cols >= maxCols} inDisabled={cols <= MIN_COLS}
-        onOut={() => stepRef.current(1)} onIn={() => stepRef.current(-1)} onReset={() => onZoom(DEFAULT_ZOOM)} />
+      {/* The corner pill: the system's chrome pill with the zoom (minus, %, plus) and the music after a hairline */}
+      <ZoomPill
+        className="board-zoom"
+        zoom={{
+          pct,
+          label: t.zoom.columns(cols),
+          canOut: cols < maxCols,
+          canIn: cols > MIN_COLS,
+          onOut: () => stepRef.current(1),
+          onIn: () => stepRef.current(-1),
+          onReset: () => onZoom(DEFAULT_ZOOM),
+        }}
+      >
+        <SoundControl />
+      </ZoomPill>
     </>
   );
 });

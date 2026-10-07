@@ -60,7 +60,7 @@ export default async function PlanPage() {
             </>
           ) : undefined}>
           <div className="pl-usage__grid">
-            <Line label={t.plans.designMdThisMonth} used={q.designMd.used} limit={q.designMd.limit} t={t} />
+            <Line label={t.plans.aiThisMonth} used={q.ai.used} limit={q.ai.limit} t={t} />
             <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} />
             <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
           </div>

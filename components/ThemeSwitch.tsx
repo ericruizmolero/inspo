@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { applyThemePref, readThemePref, resolveTheme, setTheme, type ThemePref } from "@/lib/theme";
+import { switchTheme, readThemePref, resolveTheme, setTheme, type ThemePref } from "@/lib/theme";
 import { SegmentedControl } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
@@ -24,7 +24,7 @@ export default function ThemeSwitch() {
     return () => mq.removeEventListener("change", onChange);
   }, [pref]);
 
-  const choose = (v: ThemePref) => { setPref(v); applyThemePref(v); };
+  const choose = (v: ThemePref) => { setPref(v); switchTheme(v); };
 
   return (
     <SegmentedControl

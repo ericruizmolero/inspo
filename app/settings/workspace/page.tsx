@@ -17,7 +17,7 @@ export default async function WorkspacePage() {
     <>
       <ActivityPing area="settings" organizationId={ws.id} />
       <SettingsHeading title={t.settings.sections.workspace} lead={ws.kind === "personal" ? t.settings.leads.personal : t.settings.leads.workspace(ws.name)} />
-      <WorkspacePanel workspace={ws} canManage={canManage(ws.role)} />
+      <WorkspacePanel workspace={ws} workspaces={ctx.workspaces} me={ctx.user} canManage={canManage(ws.role)} />
     </>
   );
 }

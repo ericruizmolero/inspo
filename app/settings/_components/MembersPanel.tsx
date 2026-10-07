@@ -74,6 +74,14 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
     router.refresh();
   };
 
+  // Owner stays owner: the team's creator is not moved from here
+  const setMemberRole = async (m: Member, next: "member" | "admin") => {
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.updateMemberRole({ memberId: m.id, role: next, organizationId: workspace.id });
+    setBusy(false);
+    if (err) setError(err.message ?? t.team.roleFailed); else router.refresh();
+  };
+
   const removeMember = async (m: Member) => {
     if (!(await confirm({ title: t.team.removeConfirm(m.name), action: t.team.remove, danger: true }))) return;
     setBusy(true);
@@ -115,7 +123,14 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                   <span className="list__name t-ui"><span className="list__text">{m.name}</span>{m.userId === me.id && <Chip className="list__you t-label">{t.team.you}</Chip>}</span>
                   <span className="list__sub t-small">{m.email}</span>
                 </span>
-                <span className="list__meta t-small">{roleOf(m.role)}</span>
+                {canManage && m.userId !== me.id && !m.role.split(",").includes("owner") ? (
+                  <SegmentedControl tone="paper" choice className="list__pick" label={t.team.roleOf(m.name)}
+                    active={m.role.split(",").includes("admin") ? 1 : 0}
+                    onChange={(i) => { if (!busy && ROLES[i] !== (m.role.split(",").includes("admin") ? "admin" : "member")) setMemberRole(m, ROLES[i]); }}
+                    items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
+                ) : (
+                  <span className="list__meta t-small">{roleOf(m.role)}</span>
+                )}
                 {canManage && m.userId !== me.id && (
                   <Button variant="quiet" size="sm" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
                 )}

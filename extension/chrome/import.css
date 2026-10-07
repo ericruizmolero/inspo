@@ -21,7 +21,7 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
 }
 .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
 .row .hint { flex: 1; min-width: 160px; }
-.btn[hidden] { display: none; }
+.btn[hidden], .select[hidden] { display: none; }
 
 /* Bookmark folders: nested checkboxes, each with how many web pages it holds */
 /* The folders sit in a list box: the field's sunken well (the app's .cr-listbox) */

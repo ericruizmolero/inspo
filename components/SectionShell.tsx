@@ -8,6 +8,8 @@ import { useT } from "./I18nProvider";
 import Logo from "./Logo";
 import { sectionIcon } from "./section-icons";
 import FeedbackEntry from "./FeedbackEntry";
+import SoundControl from "./SoundControl";
+import ZoomPill from "./ZoomPill";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -105,6 +107,8 @@ export default function SectionShell({ title, base, groups, wide = false, defaul
           {crumbs && <Crumbs title={title} base={base} groups={groups} />}
         </header>
         <div className={`page settings${wide ? " settings--wide" : ""}`}>{children}</div>
+        {/* The music, in the corner it has across the app: the page's own bottom-left, beside the sidebar */}
+        <div className="shell-corner"><ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill></div>
       </SidebarInset>
     </SidebarProvider>
   );

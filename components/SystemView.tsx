@@ -136,7 +136,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
     try {
       await post("/api/system", { projectId: project.id, focus });
       setPhase("brand");
-      await post("/api/system/brand", { projectId: project.id });
+      await post("/api/system/brand", { projectId: project.id, auto: true });
     } finally { setRunning(false); setPhase(null); }
   };
   const run = useCallback(async (focus?: SystemFocus) => {

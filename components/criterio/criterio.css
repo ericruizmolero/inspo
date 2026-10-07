@@ -518,3 +518,10 @@
 /* Board: a disabled field stays dark (a dimmer well), not the paper disabled fill */
 :root:not([data-theme="light"]) :is(.cr-input,.input,.cr-textarea,.select select):disabled{background:#141413;color:#6E695F;border-color:#34342F}
 :root:not([data-theme="light"]) :is(.modal--window,.cr-window,.cr-menu) :is(.cr-input,.input,.cr-textarea,.select select):disabled{background:#141413}
+
+/* SegmentedControl through Liquid: the chosen option and the one under the pointer are its two pills, in each
+   tone's colours. Until the pill is measured the option carries its own fill (no blink before the script runs) */
+.cr-seg-chrome{--liquid-on:var(--chrome-raised);--liquid-hover:color-mix(in srgb,var(--chrome-raised) 60%,transparent);--liquid-ink:var(--chrome-ink);--liquid-ink-off:var(--chrome-muted)}
+.cr-seg-paper{--liquid-on:var(--paper);--liquid-ring:inset 0 0 0 1px var(--control-border),var(--bevel);--liquid-hover:color-mix(in srgb,var(--field-ink) 8%,transparent);--liquid-ink:var(--ink);--liquid-ink-off:var(--field-placeholder)}
+.cr-seg[data-liquid]>.cr-seg-item.is-active{background:none;box-shadow:none}
+.cr-seg[data-liquid]>.cr-seg-item:hover:not(.is-active){background:none}

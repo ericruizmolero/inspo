@@ -16,6 +16,19 @@ Decisiones de cómo construimos, no de cómo se ve.
 - `npm run check:mcp -- --write` recorre el flujo entero contra el dev server local (registro, permiso, tokens, herramientas); con `--write` escribe en un proyecto "Prueba MCP". En producción, un cliente necesita la URL pública (`criterio.design/mcp`); el `iss` y los enlaces salen de `APP_URL` allí y del `Host` en local.
 - No se usa el SDK de MCP ni el plugin OAuth de Better Auth: nada que toque la autenticación que ya funciona. → [decisión](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md)
 
+## Pulido en equipo
+
+- Un voto por persona y referencia en `polish_vote` (migración `0025`); `closed_at` vacío = voto abierto. Votar es `votePolish`, cerrar `closeProjectPolish` (solo quien gestiona), devolver `restoreToBoard` (`app/actions/library.ts`, lógica en `lib/polish-votes.ts`).
+- Los votos viajan con la biblioteca (`initialPolishVotes` en `lib/library.ts`) y cuentan en su sello (`libraryStamp`): los de los compañeros llegan con la consulta de cada 15 s, sin canal aparte. Los propios se aplican al momento en el cliente y se superponen a lo que llegue mientras se guardan (`voteWrites` en `InspoClient.tsx`).
+- Lo que suman los votos se lee con `lib/polish-tally.ts` (sin servidor): lo usan la vista, la pestaña y el aviso de la ficha.
+- Quitar una referencia de un tablón a mano borra sus votos allí (`unfileItems`); sacarla al cerrar el pulido los conserva, que son los que dicen quién la olvidó. → [decisión](decisiones/2026-10-06-en-equipo-el-pulido-es-una-votacion-que-se-cierra.md)
+
+## Contenido de terceros
+
+- Un fichero ajeno que copiamos (un pin, una imagen guardada de una web, un vídeo) guarda su página en `inspo_item.source`, y todo lo que lo cita enlaza esa página, no nuestro fichero.
+- Lo que viene de X o de Pinterest (`staysInside`, `lib/url.ts`) no se enseña sin sesión: un enlace compartido lo nombra y apunta al original.
+- Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista). → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
+
 ## Idiomas
 
 - Código, comentarios, nombres de campos y rutas en **inglés**.

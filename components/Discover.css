@@ -1,24 +1,27 @@
 /* ─── Discover (components/Discover.tsx): the directory as a list, group by group, with its shelves and kinds on top ─── */
-/* The bar floats over the list: product chrome (PillBar + SegmentedControl, chrome tone), dark in both themes, no blur */
-.disc__bar { position: absolute; left: 20px; right: 20px; top: 72px; z-index: 6; display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-3); min-width: 0; pointer-events: none; }
-.disc__bar > * { pointer-events: auto; }
-.disc__shelves, .disc__sections { flex-shrink: 0; max-width: 100%; }
-.disc__bar .cr-seg-item { white-space: nowrap; }
-.disc__group { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.disc__group svg { width: 16px; height: 16px; }
-/* The kinds of resource: a Menu (.cr-menu); a long list scrolls inside */
+/* The head of the page, the same in the three sections and in their column, as a project's page has it (.spage-head):
+   the name (the page's h1, display) and what the open section holds (.t-body, muted), then one row with the sections
+   on the left (the paper SegmentedControl) and its controls on the right. It all scrolls away with the page: over
+   the content only the top bar floats */
+.disc-head { max-width: 1040px; margin: 0 auto; }
+.disc-title { margin: 0; color: var(--text); }
+.disc-lead { margin: var(--space-2) 0 0; max-width: 62ch; color: var(--text-2); }
+.disc-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); flex-wrap: wrap; min-width: 0; max-width: 1040px; margin: var(--space-5) auto var(--space-6); }
+.disc-bar__side { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
+.disc-bar .cr-seg { flex-shrink: 0; max-width: 100%; }
+.disc-bar .cr-seg-item { white-space: nowrap; }
+/* Over the templates' cards the head and the row are two more pieces of their column, which keeps its own gaps */
+.tpls-inner > :is(.disc-head, .disc-bar) { width: 100%; margin: 0; }
+/* The kinds of resource, or the skills' topics: a secondary Button opens a Menu (.cr-menu); pressed while one is
+   chosen or the menu is open. A long list scrolls inside */
+.disc__group { flex-shrink: 0; white-space: nowrap; }
+.disc__group[data-popup-open] { background: var(--paper-pressed); box-shadow: var(--bevel-pressed); }
 .disc__menu { max-height: min(70vh, 520px); overflow-y: auto; }
-.disc__group.is-on, .disc__group[data-popup-open] { background: var(--chrome-raised); color: var(--chrome-ink); }
-@media (max-width: 560px) {
-  .disc__bar { left: 12px; right: 12px; }
-  .disc__bar .cr-seg-item { padding: 7px 9px; font-size: var(--fs-small); }
-  .disc__bar .cr-pillbar { gap: 2px; padding: 4px; overflow-x: auto; scrollbar-width: none; }
-  .disc__bar .cr-pillbar::-webkit-scrollbar { display: none; }
-  .disc__bar .cr-pillbar-sep { margin: 0 2px; }
-}
-/* Discover as a list: the directory group by group */
-.disc-list { position: absolute; inset: 0; overflow-y: auto; padding: 232px 28px 72px; background: var(--bg); }
-.disc-list__group { max-width: 1100px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 560px) { .disc-bar .cr-seg { overflow-x: auto; scrollbar-width: none; } .disc-bar .cr-seg::-webkit-scrollbar { display: none; } }
+/* Discover as a list: the directory group by group. The gutter of the scrollbar is kept in every section (as .tpls
+   keeps it), so the column never shifts between a short one and a long one */
+.disc-list { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }
+.disc-list__group { max-width: 1040px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
 /* A group's name is an h2 (title-l) */
 .disc-list__head h2 { color: var(--text); }
 .disc-list__head p { margin: 4px 0 0; font-size: var(--fs-small); color: var(--text-2); }
@@ -39,18 +42,11 @@
    (opacity, transform); never catches the pointer */
 .disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); box-shadow: var(--shadow-pop); pointer-events: none; opacity: 0; transform: scale(0.85); will-change: translate, transform, opacity; }
 .disc-peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-.disc-list__none { margin: 0 auto; max-width: 1100px; font-size: var(--fs-ui); color: var(--text-2); }
+.disc-list__none { margin: 0 auto; max-width: 1040px; font-size: var(--fs-ui); color: var(--text-2); }
 
-/* Resources or templates: the first choice on the bar; with templates open their page sits below it */
-.tpls:has(+ .disc__bar) { padding-top: 232px; }
-/* An open template is a page of its own: it starts right under the bar, without the air the lists keep on top */
-.tpls:has(.tpls-back), .tpls:has(.tpls-back):has(+ .disc__bar) { padding-top: 132px; }
-
-/* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command ─── */
-.disc-skills__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.disc-skills__catalog { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-small); color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
-.disc-skills__catalog:hover { color: var(--text); }
-.disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 8px 0 0; padding: 0; list-style: none; }
+/* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command,
+   grouped by topic under the page's head ─── */
+.disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 /* Cards: the system's Card (raised: surface-raised with a hairline); the hairline darkens on hover */
 .disc-skill.cr-card { min-width: 0; transition: border-color 0.15s var(--ease-out); }
 @media (hover: hover) { .disc-skill:hover { border-color: var(--border-strong); } }
@@ -66,4 +62,3 @@
 .disc-skill__install { position: relative; z-index: 1; display: flex; justify-content: flex-start; min-width: 0; margin-top: 4px; text-align: left; }
 .disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); color: var(--ink-muted); }
 .disc-skill__install span { flex-shrink: 0; }
-@media (max-width: 560px) { .disc-skills__head { flex-direction: column; align-items: flex-start; } }

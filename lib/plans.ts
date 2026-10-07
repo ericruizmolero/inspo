@@ -12,22 +12,23 @@ export interface Plan {
   priceEur: number;
   /** null = unlimited */
   members: number | null;
-  designMdPerMonth: number | null;
+  /** What a person asks of the model in a month (see AI_ACTIONS in lib/quota.ts) */
+  aiActionsPerMonth: number | null;
   searchesPerMonth: number | null;
 }
 
 export const PLANS: Plan[] = [
   {
     key: "solo", name: "Solo", priceEur: 0,
-    members: 1, designMdPerMonth: 3, searchesPerMonth: 30,
+    members: 1, aiActionsPerMonth: 30, searchesPerMonth: 30,
   },
   {
     key: "studio", name: "Studio", priceEur: 29,
-    members: 5, designMdPerMonth: 25, searchesPerMonth: null,
+    members: 5, aiActionsPerMonth: 500, searchesPerMonth: null,
   },
   {
     key: "agency", name: "Agency", priceEur: 79,
-    members: 15, designMdPerMonth: 100, searchesPerMonth: null,
+    members: 15, aiActionsPerMonth: 2000, searchesPerMonth: null,
   },
 ];
 

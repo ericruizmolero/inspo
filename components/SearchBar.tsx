@@ -164,7 +164,8 @@ export default function SearchBar({ filters, text, onFilters, onText, vocab, bus
           onBlur={() => setFocused(false)}
         />
         <span className="sb__right">
-          {gathering ? <span className="sb__gathering" role="status">{Icons.spark} {t.sidebar.gathering(gathering)}</span> : null}
+          {/* Background work, not an option of the search: it only shows while the box is empty */}
+          {gathering && empty ? <span className="sb__gathering" role="status">{Icons.spark} {t.sidebar.gathering(gathering)}</span> : null}
           {onAsk && text.trim() && (
             <Button variant="quiet" size="s" className="sb__ask" disabled={asking} aria-label={t.agent.ask} data-tip={t.agent.hint} onClick={(e) => { e.stopPropagation(); ask(); }}>
               {asking ? <Busy label={t.agent.thinking} /> : Icons.spark}<span className="sb__ask-label">{asking ? t.agent.thinking : t.agent.ask}</span>

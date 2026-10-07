@@ -52,6 +52,7 @@ export function rowToItem(r: Row): InspoItem {
     note: r.note,
     subNote: r.subNote || undefined,
     ...(r.via ? { via: r.via } : {}),
+    ...(r.source ? { source: r.source } : {}),
   };
 }
 
@@ -113,6 +114,14 @@ export async function findByWeb(organizationId: string, web: string): Promise<Ro
   return r ?? null;
 }
 
+/** The first item saved at any of these addresses, or null */
+export async function findByWebs(organizationId: string, webs: string[]): Promise<Row | null> {
+  if (!webs.length) return null;
+  const [r] = await db.select(ROW).from(T)
+    .where(and(eq(T.organizationId, organizationId), inArray(T.webKey, webs.map(webKeyOf)))).limit(1);
+  return r ?? null;
+}
+
 export interface NewItem {
   name: string; web: string; type?: string; note?: string; subNote?: string;
   author: string; createdBy?: string | null; dateIso?: string;
@@ -120,6 +129,8 @@ export interface NewItem {
   thumbnailUrl?: string | null;
   /** The AI client it was saved from over MCP ("Claude"); nothing for the app and the extension */
   via?: string | null;
+  /** The page a copied image or video was found on */
+  source?: string | null;
 }
 
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
@@ -143,6 +154,7 @@ export async function addItem(organizationId: string, input: NewItem): Promise<I
     subNote: (input.subNote ?? "").trim().slice(0, 4000) || null,
     thumbnailUrl: input.thumbnailUrl ?? null,
     via: input.via?.trim().slice(0, 40) || null,
+    source: input.source?.trim().slice(0, 2048) || null,
     createdAt: now,
     updatedAt: now,
   };
@@ -232,6 +244,19 @@ export async function setItemNote(
   // New words, new meaning: the vector is cleared in the same write (lib/embed.ts makes it again)
   await db.update(T).set({ ...patch, embedding: null, updatedAt }).where(and(eq(T.organizationId, organizationId), eq(T.id, id)));
   return rowToItem({ ...row, ...patch, updatedAt });
+}
+
+/**
+ * Which of these items this person may delete: any of them for someone who manages the workspace, a member
+ * only the ones they saved (proved as in setItemNote: createdBy, or the author name on older rows).
+ */
+export async function deletableIds(
+  organizationId: string, ids: string[], user: { id: string; name: string; email: string }, admin: boolean,
+): Promise<string[]> {
+  if (admin || !ids.length) return ids;
+  const rows = await db.select({ id: T.id, author: T.author, createdBy: T.createdBy }).from(T)
+    .where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
+  return rows.filter((r) => (r.createdBy ? r.createdBy === user.id : r.author === (user.name || user.email))).map((r) => r.id);
 }
 
 export async function deleteItem(organizationId: string, id: string): Promise<boolean> {

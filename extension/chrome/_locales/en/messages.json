@@ -159,6 +159,60 @@
       }
     }
   },
+  "importPinterestShort": {
+    "message": "Pinterest board"
+  },
+  "pinTitle": {
+    "message": "From Pinterest"
+  },
+  "pinLead": {
+    "message": "Paste the address of one of your boards. Each of its pins is saved as an image, sections included. A secret board needs you signed in to Pinterest in this browser."
+  },
+  "pinUrlLabel": {
+    "message": "Board address"
+  },
+  "importPinterest": {
+    "message": "Import from Pinterest"
+  },
+  "pinPermission": {
+    "message": "Chrome asks for permission to read pinterest.com; it is only used while importing."
+  },
+  "pinPermissionDenied": {
+    "message": "Without permission to read pinterest.com the extension cannot see the board."
+  },
+  "pinBadUrl": {
+    "message": "That is not a board. Paste the address of a board, like pinterest.com/you/board."
+  },
+  "pinNotFound": {
+    "message": "Pinterest does not show that board. If it is secret, sign in to Pinterest in this browser and try again."
+  },
+  "pinFailed": {
+    "message": "Pinterest stopped answering. Try again in a while."
+  },
+  "pinPartial": {
+    "message": "Pinterest stopped answering halfway: $N$ new references saved. Import the board again to bring the rest; what is saved is not repeated.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "48"
+      }
+    }
+  },
+  "pinTabClosed": {
+    "message": "The Pinterest tab was closed. What was found so far is saved."
+  },
+  "pinInjectFailed": {
+    "message": "Could not read the Pinterest tab: $ERR$",
+    "placeholders": {
+      "err": {
+        "content": "$1",
+        "example": "Cannot access contents of the page"
+      }
+    }
+  },
+  "progressPinterest": {
+    "message": "Reading the board's pins…"
+  },
   "progressBrowser": {
     "message": "Importing bookmarks…"
   },
@@ -205,6 +259,32 @@
       }
     }
   },
+  "doneSavedIn": {
+    "message": "Done: $N$ new references in $PROJECT$. Thumbnails and tags arrive over the next minutes.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "48"
+      },
+      "project": {
+        "content": "$2",
+        "example": "Landing"
+      }
+    }
+  },
+  "nothingNewIn": {
+    "message": "Nothing new: everything was already in $WS$, and now it is in $PROJECT$ too.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      },
+      "project": {
+        "content": "$2",
+        "example": "Landing"
+      }
+    }
+  },
   "nothingFound": {
     "message": "Nothing found."
   },
@@ -219,6 +299,9 @@
   },
   "openLibrary": {
     "message": "Open the library"
+  },
+  "openProject": {
+    "message": "Open the project"
   },
   "importMore": {
     "message": "Import more"

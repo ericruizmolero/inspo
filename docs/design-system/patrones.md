@@ -9,8 +9,12 @@ Cómo resolvemos problemas que se repiten. Cada patrón enlaza la decisión que 
 | Hover, pulsar, entradas cortas | CSS con las curvas de los tokens | `.btn:active { scale(0.96) }`, `pop-in` |
 | Muchas piezas que cambian de sitio | Transición CSS de `transform` sobre posiciones calculadas | Tarjetas del tablero (`Grid.tsx`) |
 | Una pieza que nace de un punto | WAAPI (`el.animate`) | La ficha crece desde donde se pulsó (`ItemPanel.tsx`) |
+| El hover de un grupo de pestañas, que pasa de una a otra | WAAPI: una pastilla aparte, de la posición medida a la nueva, con `transform` muestreado para que un borde llegue antes que el otro. La elegida no se anima | `Liquid` (`components/ui/liquid.tsx`) → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md) |
+| Un clic que abre una vista pesada | Pintar primero la respuesta (el relleno en la pestaña) y lanzar el trabajo después de ese fotograma | `afterPaint` (`components/ui/liquid.tsx`) |
 | Algo que sigue al puntero | `requestAnimationFrame` con suavizado y WAAPI para entrar y salir | La miniatura de Descubrir (`Discover.tsx`) → [decisión](decisiones/2026-10-05-miniatura-descubrir-sin-gsap.md) |
 | Llevar la página a una parte (índice) | `requestAnimationFrame` sobre el `scrollTop` del contenedor, releyendo el destino en cada frame | El índice de criterio.md (`go` en `SystemDoc.tsx`) → [decisión](decisiones/2026-10-06-indice-baja-con-scroll-propio.md) |
+| Muchas piezas en 3D que giran sin parar | Un bucle `requestAnimationFrame` que escribe `transform` en cada pieza, ventaneado, con el desenfoque en pasos de medio píxel | El tornado de Pulido (`PolishView.tsx`) → [decisión](decisiones/2026-10-06-vuelve-pulido-como-fase-entre-tablon-y-sistema.md) |
+| Algo que cambia de sitio en la app (sale de un proyecto, se queda en él) | WAAPI: la pieza vuela hasta la pestaña de su destino, que da un pequeño bote | Conservar y Olvidar en Pulido (`Flyer` en `PolishView.tsx`); en equipo el voto vuela a la pestaña Pulido, porque la tarjeta aún no va a ningún sitio → [decisión](decisiones/2026-10-06-en-pulido-la-tarjeta-decidida-vuela-a-su-pestana.md) |
 | Cambio de vista completo | View Transitions | Abrir un área en `SystemView` (≥801 px) |
 
 Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay que medir, medir todo antes de animar; nada de GSAP Flip sobre muchos elementos (1,5 s de congelación con 286 tarjetas); respetar `prefers-reduced-motion` (se deja solo el fundido). GSAP ya no está en el proyecto. → [cortina](decisiones/2026-09-24-cortina-sidebar-waapi.md), [tablero](decisiones/2026-10-01-masonry-ventanada-sin-flip.md)
@@ -24,7 +28,9 @@ Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay 
 
 ## Zoom del tablero
 
-Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `.board-zoom` `− % +` abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
+Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `ZoomPill` (`.zoom-pill`, `− % +`) abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
+
+Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada. → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
 
 ## Acciones: a mano o por el agente
 

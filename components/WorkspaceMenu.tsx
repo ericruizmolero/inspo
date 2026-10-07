@@ -50,7 +50,7 @@ const I = {
   ),
 };
 
-export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras }: {
+export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras, onOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
   /** What opens the menu, in place of the workspace card (the island's avatar); the menu then hangs from it */
   trigger?: ReactNode;
@@ -58,6 +58,8 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   triggerLabel?: string;
   /** Rows above Settings (the island puts the directory, feedback and the plan here); any click in them closes the menu */
   extras?: ReactNode;
+  /** Called each time the menu opens (the island re-reads the plan's usage, so the meter is never stale) */
+  onOpen?: () => void;
 }) {
   const { t } = useT();
   const [open, setOpen] = useState(false);
@@ -88,7 +90,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
 
   return (
     <div className={trigger ? "ws ws--inline" : "ws"} ref={ref}>
-      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) instant?.prefetch(); }}>
+      <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) { instant?.prefetch(); onOpen?.(); } }}>
       <PopoverTrigger className={triggerClassName ?? "ws__trigger"} aria-label={triggerLabel} onPointerEnter={() => instant?.prefetch()}>
         {trigger ?? (
           <>
@@ -105,9 +107,11 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
         )}
       </PopoverTrigger>
 
-      {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip */}
+      {/* Anchored to the whole .ws block, so the panel spans the sidebar; from a chip, to the chip.
+          It always hangs below: a menu too tall for the window scrolls inside instead of jumping to the side */}
       {/* The system's Menu: a paper window in both themes, the moss bar on top, engraved lines between groups */}
-      <PopoverContent className={trigger ? "cr-menu ws__menu ws__menu--inline" : "cr-menu ws__menu"} anchor={trigger ? undefined : ref}>
+      <PopoverContent className={trigger ? "cr-menu ws__menu ws__menu--inline" : "cr-menu ws__menu"} anchor={trigger ? undefined : ref}
+        collisionAvoidance={{ side: "none", align: "shift", fallbackAxisSide: "none" }}>
           <MenuLabel bar>{t.ws.workspaces}</MenuLabel>
           {personal.map((w) => (
             <MenuItem key={w.id} icon={<WorkspaceFace workspace={w} user={user} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>

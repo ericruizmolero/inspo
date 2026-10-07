@@ -24,6 +24,11 @@ export function fmtUsd(n: number, locale: Locale): string {
   return new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
 }
 
+/** A count with the language's thousands separator, from four digits on: "2.000" in Spanish, "2,000" in English. */
+export function fmtCount(n: number, locale: Locale): string {
+  return new Intl.NumberFormat(INTL_LOCALE[locale], { useGrouping: "always" } as Intl.NumberFormatOptions).format(n);
+}
+
 /** "just now", "5 min ago"… up to a week, then the date */
 export function timeAgo(iso: string, locale: Locale, t: Dict): string {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);

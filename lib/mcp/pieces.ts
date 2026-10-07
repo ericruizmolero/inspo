@@ -119,7 +119,7 @@ export async function listReferences(ctx: McpCtx, ref: string) {
   const project = await resolveProject(ctx, ref);
   const org = project.workspace.id;
   const [rows, system] = await Promise.all([
-    db.select({ id: T.id, name: T.name, web: T.web, author: T.author, via: T.via, note: T.note })
+    db.select({ id: T.id, name: T.name, web: T.web, source: T.source, author: T.author, via: T.via, note: T.note })
       .from(PI).innerJoin(T, eq(T.id, PI.itemId))
       .where(and(eq(PI.organizationId, org), eq(PI.projectId, project.id))).orderBy(asc(PI.createdAt)),
     getSystem(org, project.id),
@@ -132,8 +132,9 @@ export async function listReferences(ctx: McpCtx, ref: string) {
       const kind = mediaKindOf(r.web);
       return {
         id: r.id, code: `R${i + 1}`, name: r.name, kind,
-        // A stored file (a picture, a text) has no address outside the app
+        // A stored file (a picture, a text) has no address outside the app: a picture found on a page gives that page
         ...(kind === "image" || kind === "text" ? {} : { url: r.web }),
+        ...(r.source ? { source: r.source } : {}),
         saved_by: r.via ? `${r.author} (via ${r.via})` : r.author,
         ...(r.note.trim() ? { note: r.note.trim() } : {}),
         ...(areasOf[r.id]?.length ? { areas: areasOf[r.id] } : {}),
@@ -157,6 +158,7 @@ export async function readReference(ctx: McpCtx, id: string) {
   return {
     id: row.id, name: row.name, kind,
     ...(kind === "image" || kind === "text" ? {} : { url: row.web }),
+    ...(row.source ? { source: row.source } : {}),
     saved_by: row.via ? `${row.author} (via ${row.via})` : row.author, saved_on: info.date,
     ...(info.what ? { what_it_is: info.what } : {}),
     ...(info.tags?.length ? { tags: info.tags } : {}),
@@ -222,7 +224,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
     const image = IMAGE_FILE.test(new URL(web).pathname) ? await fetchFile(web, undefined, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES) : null;
     if (image) {
       const url = await putFile(newMediaKey(org, image.type), image.body, image.type);
-      const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", web: url, thumbnailUrl: url, type: "inspiration" });
+      const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", web: url, thumbnailUrl: url, source: web, type: "inspiration" });
       itemId = item.id!; name = item.name;
       if (taggerEnabled()) after(() => startTagJob(org, itemId, author.id));
     } else {

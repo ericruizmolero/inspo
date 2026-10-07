@@ -6,6 +6,7 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
+import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
 
 function cx(...parts: (string | false | null | undefined)[]) {
@@ -135,7 +136,10 @@ export function SegmentedControl({ items, active = 0, onChange, tone = "chrome",
   items: SegmentItem[]; active?: number; onChange?: (i: number) => void; tone?: "chrome" | "paper"; label?: string; choice?: boolean; className?: string;
 }) {
   return (
-    <div className={cx("cr-seg", `cr-seg-${tone}`, className)} role={choice ? "radiogroup" : "tablist"} aria-label={label}>
+    // Through Liquid (components/ui/liquid.tsx): the hover flows from option to option and the chosen fill moves
+    // in the click itself; the pills take the segment's colours (criterio.css, .cr-seg)
+    <Liquid className={cx("cr-seg", `cr-seg-${tone}`, className)} role={choice ? "radiogroup" : "tablist"} aria-label={label}
+      on={choice ? ':scope > [aria-checked="true"]' : undefined}>
       {items.map((it, i) => (
         <button key={i} type="button" role={choice ? "radio" : "tab"} {...(choice ? { "aria-checked": active === i } : { "aria-selected": active === i })} title={it.title}
           className={cx("cr-seg-item", active === i && "is-active")} onClick={() => onChange?.(i)}>
@@ -145,7 +149,7 @@ export function SegmentedControl({ items, active = 0, onChange, tone = "chrome",
           {it.dot && <span className="cr-seg-dot" aria-hidden />}
         </button>
       ))}
-    </div>
+    </Liquid>
   );
 }
 

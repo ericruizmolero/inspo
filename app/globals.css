@@ -424,6 +424,28 @@ p { text-wrap: pretty; }
 .btn--block { width: 100%; }
 .btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
+/* ─── Liquid (components/ui/liquid.tsx): a group of tabs whose hover flows ───
+   A faint pill follows the pointer from tab to tab, stretching towards the next; the chosen tab's fill is a pill
+   too, set on the tab at once. The tabs sit over both and keep the colours of their own control; until the pill is
+   measured the chosen tab carries the fill itself, so nothing blinks before the script runs */
+.liquid { position: relative; }
+/* Positioned and after the pills in the document: the tabs paint over them without a layer of their own */
+.liquid > :not(.liquid__pill) { position: relative; }
+.liquid > :is(button, a) { transition: color 0.15s var(--ease-out), transform 0.1s var(--ease-out); }
+/* A tab just clicked wears the chosen ink at once, with the fill, and the one it leaves loses it, while the control
+   has not answered yet (a heavy view opening). Each control says its inks with --liquid-ink and --liquid-ink-off.
+   Without a transition: one that starts as the view renders stays frozen half-way until the render ends */
+.liquid > [data-liquid-wish] { color: var(--liquid-ink, var(--text)); transition: none; }
+.liquid[data-liquid-wishing] > :is(.is-on, .is-active, [aria-selected="true"], [aria-pressed="true"]):not([data-liquid-wish]) { color: var(--liquid-ink-off, var(--muted)); transition: none; }
+.liquid > :is(button, a):active { transform: scale(0.96); }
+.liquid:not([data-liquid]) > :is([aria-selected="true"], [aria-pressed="true"]) { background: var(--surface-3); }
+.liquid:not([data-liquid]) > .liquid__pill { visibility: hidden; }
+.liquid__pill { position: absolute; top: 0; left: 0; width: 0; height: 0; border-radius: 8px; background: var(--liquid-on, var(--surface-3)); box-shadow: var(--liquid-ring, none); transform-origin: 0 0; pointer-events: none; }
+.liquid__pill--hover { background: var(--liquid-hover, var(--surface-2)); box-shadow: none; opacity: 0; transition: opacity 0.2s var(--ease-out); }
+.liquid__pill--hover.is-shown { opacity: 1; }
+.liquid__pill--hover.is-cut { transition: none; }
+@media (hover: none) { .liquid__pill--hover { display: none; } }
+
 /* IconButton (design system), quiet, size s: a 32 circle, no fill or border until hover. The same look as
    <IconButton variant="quiet" size="s"> (.cr-iconbtn), for Button variant="icon" and DialogClose renders.
    Always with an aria-label. On a raised surface (a dialog) the hover fill steps to surface-2 so it shows */
@@ -517,15 +539,15 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 /* What sits left of the board moves aside for the island with it, on the same curve: by transform, so
    nothing is laid out again while it slides */
 @media (min-width: 801px) {
-  .topbar__trigger, .board-zoom { transition: transform 280ms var(--ease-drawer); }
-  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .board-zoom) { transform: translateX(280px); }
+  .topbar__trigger, .board-zoom, .polish__corner { transition: transform 280ms var(--ease-drawer); }
+  .shell:not(.shell--docked):has([data-slot="sidebar"][data-state="expanded"]) :is(.topbar__trigger, .board-zoom, .polish__corner) { transform: translateX(280px); }
 }
 /* ⌘B: a shortcut is pressed too often to wait for, so nothing slides */
-:root[data-instant] :is(.app-sidebar, .topbar__trigger, .board-zoom) { transition: none; }
+:root[data-instant] :is(.app-sidebar, .topbar__trigger, .board-zoom, .polish__corner) { transition: none; }
 @media (min-width: 801px) and (prefers-reduced-motion: reduce) {
   .app-sidebar { transition: opacity 200ms var(--ease-out); }
   [data-slot="sidebar"][data-state="collapsed"] > .app-sidebar { transform: none; }
-  .topbar__trigger, .board-zoom { transition: none; }
+  .topbar__trigger, .board-zoom, .polish__corner { transition: none; }
 }
 /* Settings and the other sections keep the docked column: it takes its room and the page moves aside,
    the page scrolls, and the top bar is a band of its own over it */
@@ -573,7 +595,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    open projects (count and StatusRing) and + for a new one. The active tab sits on chrome-raised and gains
    its ⌄ and ×. Tabs are 38 tall in a 5px inset, radius md (10) inside the bar's lg (14). Nothing moves on
    selection: people switch projects all day. Focus on chrome is the ember glow. */
-.island, .board-zoom, .island-pop, .topbar__switch, .topbar__trigger { --focus-ring: var(--ember-glow); }
+.island, .board-zoom, .zoom-pill, .island-pop, .topbar__switch, .topbar__trigger { --focus-ring: var(--ember-glow); }
 .island {
   position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 5px;
   border: 1px solid var(--chrome-border); border-radius: 15px; /* concentric: 10px tabs + 5px padding */ background: var(--chrome); color: var(--chrome-text);
@@ -597,6 +619,11 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
   transition: background-color 150ms ease, color 150ms ease;
 }
 .island__tab.is-on { background: var(--chrome-raised); color: var(--chrome-ink); }
+/* Liquid's pills (components/ui/liquid.tsx) in the tab bar's own material: the chrome tokens, no ring */
+.island__tabs { --liquid-on: var(--chrome-raised); --liquid-hover: color-mix(in srgb, var(--chrome-raised) 60%, transparent); --liquid-ink: var(--chrome-ink); --liquid-ink-off: var(--chrome-text); }
+.island__tabs[data-liquid] > .island__tab.is-on { background: none; box-shadow: none; }
+.island__tabs[data-liquid] > .island__tab:not(.is-on):not(.island__tab--field):hover { background: none; }
+.island__tabs.liquid > :is(button, a):active { transform: none; }
 @media (forced-colors: active) { .island__tab.is-on { outline: 2px solid Highlight; outline-offset: -2px; } }
 /* A long name stops at 200px; the tab's tooltip keeps it whole */
 .island__label { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
@@ -934,7 +961,7 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
   .dir-row__add, .dir-add, .chip, .btn-icon, .sb__field { transition: none; }
-  .chip:active, .btn-icon:active:not(:disabled), .dir-add:active, .board-zoom .cr-zoom-value:active { transform: none; }
+  .chip:active, .btn-icon:active:not(:disabled), .dir-add:active, .board-zoom .cr-zoom-value:active, .zoom-pill button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -1058,17 +1085,7 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 /* Delete confirmation: the question is a chrome bar of its own, ringed in the danger red. "Delete" is the
    system's danger Button, size s (the confirm step); the X or Esc cancel, and after 6 s it cancels itself.
    The bar's radius is the button's plus the 3px inset, so the two stay concentric */
-.tile__actions.is-confirm {
-  max-width: calc(100% - 20px); box-sizing: border-box;
-  padding: 3px 3px 3px 12px; border-radius: calc(var(--radius-md) + 3px); background: var(--chrome);
-  box-shadow: inset 0 0 0 1px var(--danger);
-  animation: tile-confirm-in 0.22s ease-out;
-}
-/* Only the ring fades: nothing moves, so the button swap does not look like a jump */
-@keyframes tile-confirm-in { from { box-shadow: inset 0 0 0 1px var(--chrome-border); } }
-.tile__confirm-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-label); font-weight: 500; color: var(--chrome-ink); white-space: nowrap; margin-right: 2px; }
 .tile__action--confirm:focus-visible { outline-color: var(--ember-glow); }
-@container (max-width: 300px) { .tile__confirm-text { display: none; } .tile__actions.is-confirm { padding-left: 3px; } }
 /* ─── Comments (Figma-style thread side panel) ────────────────────────────── */
 .cm-backdrop { position: fixed; inset: 0; z-index: 60; background: var(--scrim); animation: fade-in 0.2s; }
 .cm-panel {
@@ -1088,6 +1105,9 @@ html .island__logo .logo { border-radius: 0; box-shadow: none; }
 .cm-panel__link:hover { color: var(--chrome-ink); }
 .cm-panel__count { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cm-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+/* Above the thread: what happened to the reference somewhere else (a closed polish forgot it), and the way back */
+.cm-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-small); line-height: var(--lh-small); }
+.cm-notice .btn { flex-shrink: 0; }
 .cm-shot { display: block; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
 .cm-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .cm-shot:hover img { transform: scale(1.02); }
@@ -1619,6 +1639,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
    the collage beside it sits on board, the product's ground, because it shows what lives in the product.
    Invitations, the MCP consent and the extension pages are steps inside the product: they follow the theme. */
 .auth { min-height: 100dvh; display: grid; grid-template-columns: minmax(380px, 44%) 1fr; }
+/* The page is the height of the window, never the collage's: the foot (and its legal links) is always in view.
+   A window shorter than the form scrolls the panel. */
+.auth:not(.auth--solo) { height: 100dvh; grid-template-rows: minmax(0, 1fr); }
 .auth__panel {
   /* Paper, whatever the theme: the theme-aware roles are set to their Paper values inside the panel */
   --bg: var(--paper); --surface-page: var(--paper); --surface-raised: var(--paper-light);
@@ -1629,7 +1652,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   background: var(--paper); color: var(--ink); color-scheme: light;
   display: flex; flex-direction: column; gap: 32px;
   padding: 28px 48px 24px;
-  min-height: 100dvh;
+  min-height: 0; overflow-y: auto;
 }
 .auth__top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .auth__brand { display: flex; align-items: center; gap: 10px; }
@@ -1676,7 +1699,10 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   background: var(--paper-light); border: var(--stroke-control) solid var(--control-border); color: var(--ink); box-shadow: var(--bevel); margin-bottom: 6px;
 }
 .auth__alt { align-self: flex-start; margin-left: -14px; }
-.auth__foot { font-size: var(--fs-small); color: var(--text-muted); }
+/* The foot: who it is for, and the legal pages (privacy, terms) */
+.auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
+.auth__foot a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.auth__foot a:hover { color: var(--text); }
 
 /* The collage: board ground in both themes, the references on it as flat cards */
 .auth__visual {
@@ -1712,6 +1738,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 
 @media (max-width: 900px) {
   .auth { grid-template-columns: 1fr; }
+  .auth:not(.auth--solo) { height: auto; grid-template-rows: auto; }
+  .auth__panel { min-height: 100dvh; overflow-y: visible; }
   .auth__visual { display: none; }
   .auth__panel { padding: 20px 20px 24px; gap: 24px; }
   .auth__card { max-width: none; justify-content: flex-start; padding-top: 24px; }
@@ -1734,7 +1762,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .page__title { margin: 0; color: var(--text); text-wrap: balance; }
 .page__heading { display: flex; flex-direction: column; gap: 12px; }
 .page__lead { margin: 0; max-width: 62ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-muted); }
-@media (max-width: 560px) { .page__title { font-size: var(--fs-title-l); letter-spacing: -0.5px; } .page__lead { font-size: 15px; } }
+@media (max-width: 560px) { .page__lead { font-size: var(--fs-ui); } }
 
 /* Settings and Activity: shadcn Sidebar for the sections, one column of windows (SettingsWindow). The same 24
    between the heading and the first window as between windows */
@@ -1822,6 +1850,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   .list__row:has(.list__actions) { flex-wrap: wrap; }
   .list__actions { flex-basis: 100%; justify-content: flex-start; margin-left: -12px; }
 }
+/* The role as something to change (members, for whoever manages the team): a two-way paper SegmentedControl at
+   the row's end, its own width */
+.list__row .list__pick.cr-seg { flex: none; }
 
 /* ─── Workspace picker ────────────────────────────────────────────────────── */
 .ws { position: relative; width: 100%; }
@@ -1834,6 +1865,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
    (.cr-menu, components/criterio): a paper window with MenuItem rows. The Connectors' rows need the room */
 .connectors__menu.cr-menu { width: 240px; }
 .cr-menu-item > svg:not(.cr-icon) { flex: none; color: var(--text-2); }
+/* Never taller than the room under its trigger (Base UI's --available-height): past that, the menu scrolls inside */
+.ws__menu.cr-menu { max-height: min(640px, var(--available-height, calc(100dvh - 96px))); }
 
 /* Theme picker (System / Light / Dark): the system's SegmentedControl in its paper tone (ThemeSwitch.tsx).
    Three equal cells on the page ground, the active one raised with a hairline, so it reads on a raised card */
@@ -2003,8 +2036,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 /* ─── Feedback (Agentation) ──────────────────────────────────────────────────
    Agentation's own bar is hidden: eight unlabeled icons made for pasting markdown into
    an agent. components/FeedbackTool.tsx clicks it programmatically and draws its own
-   pill and panel here, with the app's tokens. Its markers and note popup stay as they are. */
-[data-agentation-toolbar] { display: none !important; }
+   pill and panel here, with the app's tokens. Its markers and note popup stay as they are.
+   The bar sits in a shadow root, out of this file's reach: components/feedback-mode.ts hides it from inside. */
 
 /* Closed: the pill in the bottom-right corner, with the send button beside it if there are notes.
    The whole dock can be dragged anywhere (FeedbackTool sets right/bottom inline and remembers them);
@@ -2187,20 +2220,77 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 /* Zoomed far out a note is a few words a line: only the pages remain (Grid.tsx BARE_COL) */
 .board[data-bare] .tile__note, .board[data-bare] .tile__caption, .board[data-bare] .tile__actions { display: none; }
 
-/* Zoom: how many columns, said as a size (100% is the usual one). The system's ZoomControl: a chrome pill in the
-   bottom-left corner, dark in both themes, minus, the percentage in tabular figures, plus. Its left edge is the
-   island's. A phone gets its columns from its width alone. */
-.board-zoom.cr-zoom { position: absolute; left: 12px; bottom: calc(26px + env(safe-area-inset-bottom)); z-index: 12; }
+/* Zoom: how many columns, said as a size (100% is the usual one). The system's ZoomControl look on a chrome pill
+   in the bottom-left corner, as far from the side as from the bottom: 16 px, the margin the theme button has in
+   the opposite corner (Eric, 06-10). A phone gets its columns from its width alone. */
+.board-zoom { position: absolute; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12; }
 /* The percentage is a text button the height of the IconButtons beside it; it lifts to chrome-raised on hover */
-.board-zoom .cr-zoom-value {
+.board-zoom .cr-zoom-value, .zoom-pill .cr-zoom-value {
   height: 32px; border-radius: var(--radius-md); font-weight: 500;
   transition: background-color 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
 }
-@media (hover: hover) and (pointer: fine) { .board-zoom .cr-zoom-value:hover { background: var(--chrome-raised); } }
-.board-zoom .cr-zoom-value:active { transform: scale(0.96); }
-.board-zoom .cr-zoom-value:focus-visible { outline: 2px solid var(--ib-focus); outline-offset: 2px; }
-.board-zoom .cr-iconbtn:disabled { pointer-events: none; }
-@media (max-width: 800px) { .board-zoom.cr-zoom { display: none; } }
+@media (hover: hover) and (pointer: fine) { :is(.board-zoom, .zoom-pill) .cr-zoom-value:hover { background: var(--chrome-raised); } }
+:is(.board-zoom, .zoom-pill) .cr-zoom-value:active { transform: scale(0.96); }
+:is(.board-zoom, .zoom-pill) .cr-zoom-value:focus-visible { outline: 2px solid var(--ib-focus); outline-offset: 2px; }
+:is(.board-zoom, .zoom-pill) .cr-iconbtn:disabled { pointer-events: none; }
+/* The control itself (components/ZoomPill.tsx), the system's chrome pill (the ZoomControl and PillBar look):
+   chrome ground, its hairline, radius 15 around 32px controls (concentric with a 5px inset). Polish has it too,
+   in the same corner, for the size of its tornado; the music shares it after a hairline */
+.zoom-pill {
+  display: flex; align-items: center; gap: 4px; padding: 5px;
+  border-radius: 15px; background: var(--chrome); border: 1px solid var(--chrome-border); color: var(--chrome-text);
+  --ib-fg: var(--chrome-text); --ib-fg-strong: var(--chrome-ink); --ib-bg: var(--chrome); --ib-line: var(--chrome-border);
+  --ib-line-strong: var(--chrome-muted); --ib-hover: var(--chrome-raised); --ib-focus: var(--focus);
+}
+.zoom-pill button:not(.cr-iconbtn):not(.cr-btn) {
+  display: inline-flex; align-items: center; justify-content: center; height: 32px; border: 0; border-radius: var(--radius-md);
+  background: transparent; color: var(--chrome-text); font: inherit; font-size: var(--fs-small); font-weight: 500; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) { .zoom-pill button:not(.cr-iconbtn):not(.cr-btn):hover { background: var(--chrome-raised); color: var(--chrome-ink); } }
+.zoom-pill button:active { transform: scale(0.96); }
+.zoom-pill button:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+.zoom-pill__btn { width: 32px; }
+.zoom-pill__pct { min-width: 52px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+/* The zoom's own three buttons, and the hairline before what shares the pill with them (the PillBar's) */
+.zoom-pill__zoom { display: contents; }
+.zoom-pill__sep { flex-shrink: 0; width: 1px; height: 22px; margin: 0 4px; background: var(--chrome-raised); }
+/* The music (components/SoundControl.tsx), in the pill of every screen once signed in. The speaker is the switch,
+   lit while it plays; then a chevron hangs from it, the list of tracks by name (a .cr-menu) */
+.zoom-pill .zoom-pill__sound { width: 32px; padding: 0; color: var(--chrome-muted); }
+.zoom-pill .zoom-pill__sound.is-on { color: var(--chrome-ink); }
+.zoom-pill .zoom-pill__track { width: 20px; margin-left: -2px; padding: 0; color: var(--chrome-muted); }
+.zoom-pill__track svg { transition: transform 150ms var(--ease-out); }
+.zoom-pill__track.is-open svg { transform: rotate(180deg); transition-duration: 200ms; }
+.sound-tracks.sound-tracks { width: 208px; }
+/* Where the page scrolls with the window (components/SectionShell.tsx) the pill rides its bottom edge: a line of no
+   height stuck there, and the pill in its corner as everywhere else */
+.shell-corner { position: sticky; bottom: 0; z-index: 12; height: 0; margin-top: auto; }
+
+/* Light or dark, one click (components/ThemeToggle.tsx): the icon is the theme the click leads to. The system's
+   IconButton default on the chrome, a 40 circle in the bottom-right corner, 16 px from its walls like the pill of
+   the opposite corner (Eric, 06-10). Quiet until the pointer comes near. A phone has it in the sidebar instead. */
+.theme-toggle__moon, :root[data-theme="light"] .theme-toggle__sun { display: none; }
+:root[data-theme="light"] .theme-toggle__moon { display: block; }
+.theme-float {
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12;
+  display: grid; place-items: center; width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--chrome-border); border-radius: var(--radius-pill);
+  background: var(--chrome); color: var(--chrome-text);
+  cursor: pointer; opacity: 0.7; --focus-ring: var(--focus);
+  transition: opacity 150ms ease, color 150ms ease, border-color 150ms ease, transform 120ms var(--ease-out);
+}
+.theme-float:active { transform: scale(0.96); }
+.theme-float:focus-visible { opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .theme-float:hover { opacity: 1; color: var(--chrome-ink); border-color: var(--chrome-muted); } }
+/* Unsent feedback notes bring their dock to this corner: the button waits above it */
+body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-inset-bottom)); }
+/* A theme changed by hand crosses over as one picture, in 600 ms (switchTheme in lib/theme.ts) */
+:root[data-theme-switch]::view-transition-group(*), :root[data-theme-switch]::view-transition-old(*), :root[data-theme-switch]::view-transition-new(*) {
+  animation-duration: 600ms; animation-timing-function: var(--ease-in-out);
+}
+@media (prefers-reduced-motion: reduce) { .zoom-pill__track svg { transition: none; } .theme-float:active { transform: none; } }
+@media (max-width: 800px) { .board-zoom, .zoom-pill__zoom, .theme-float { display: none; } }
 
 /* ─── The reference sheet (components/ItemPanel.tsx) ─────────────────────────
    The system's Viewer (.cr-viewer, components/criterio): one reference over the canvas, which dims behind it.
@@ -2323,6 +2413,13 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 @media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
 /* ─── The project's system (components/SystemView.tsx and its own stylesheets) ─── */
 /* System fill: a ring per project in the sidebar (the top bar uses the system's SegmentedControl and StatusRing) */
+/* The team on the Polish tab: everyone's face, and in full only those who have voted the whole board */
+.topbar__faces { display: inline-flex; margin-left: 2px; }
+.topbar__face { display: inline-flex; opacity: 0.32; filter: grayscale(1); transition: opacity 200ms ease, filter 200ms ease; }
+.topbar__face.is-done { opacity: 1; filter: none; }
+.topbar__face + .topbar__face { margin-left: -3px; }
+.topbar__face .cr-avatar { box-shadow: 0 0 0 1.5px var(--chrome); }
+@media (prefers-reduced-motion: reduce) { .topbar__face { transition: none; } }
 .nav-item__count { display: inline-flex; align-items: center; gap: 5px; }
 .nav-item__ring { color: var(--muted); flex-shrink: 0; }
 .nav-item__ring.is-full { color: var(--success); }
@@ -2335,9 +2432,9 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .area-icon { flex-shrink: 0; }
 /* What are you making? (the home): its rules live in components/ProjectChooser.css */
 
-/* ─── Product chrome (design system): the tab bar, the view switcher, the command bar and the zoom pill are
-   solid dark chrome in both themes, with a hairline. No glass, no blur. The --dock-* names map onto the
-   chrome tokens so every bar follows them. ─── */
+/* ─── Product chrome (design system): the tab bar, the view switcher, the command bar, the zoom pill and the
+   theme button are solid chrome that follows the theme, with a hairline. No glass, no blur. The --dock-* names
+   map onto the chrome tokens so every bar follows them. ─── */
 :root {
   --dock-ink: var(--chrome-ink); --dock-ink-2: var(--chrome-text); --dock-muted: var(--chrome-muted);
   --dock-surface: var(--chrome);
@@ -2402,6 +2499,20 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
    TextField and TextArea (sunken white fields, ink border) and the one ember Button */
 .island__new.cr-menu { width: 320px; padding: 12px; }
 .island__new .cr-menu-bar { margin: -12px -12px 4px; }
+/* The team in the workspace menu: one row of overlapping faces (the system's Avatar), each a button, and the way to
+   Members at its end. Each face wears a ring of the menu's own ground, so the overlap reads as a cut; the one under
+   the pointer comes to the front */
+.cr-menu { --menu-ground: var(--paper); }
+:root:not([data-theme="light"]) .cr-menu { --menu-ground: #1E1E1C; }
+.island__team { display: flex; align-items: center; min-height: 36px; padding: 4px 4px 4px 10px; }
+.island__face { position: relative; display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--menu-ground); box-shadow: 0 0 0 2px var(--menu-ground); cursor: pointer; text-decoration: none; transition: transform 150ms var(--ease-out); }
+.island__face + .island__face { margin-left: -6px; }
+.island__face:hover, .island__face:focus-visible { z-index: 1; transform: translateY(-2px); }
+.island__face--more { padding: 0 7px; background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: 500; font-variant-numeric: tabular-nums; }
+.island__face--more:hover { color: var(--text); }
+.island__team-manage { margin-left: auto; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--text-2); font-size: var(--fs-small); font-weight: 500; text-decoration: none; }
+.island__team-manage:hover { background: var(--surface-2); color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .island__face { transition: none; } .island__face:hover, .island__face:focus-visible { transform: none; } }
 .island__new-form { display: flex; flex-direction: column; gap: 8px; }
 .island__new-form .cr-input { width: 100%; }
 .island__new-form .cr-textarea { min-height: 72px; resize: none; }
@@ -2423,6 +2534,13 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 @container (max-width: 300px) { .tile__go-pick .tile__go-label { display: none; } .tile__go-pick { padding: 0 12px; } }
 @media (hover: none) { .tile__go { display: none; } }
 
+/* A card taken out of a project, on its way to the Inbox tab of the tab bar (components/fly-to-inbox.ts): the
+   flying card of Polish, over the board and the bars. Flat, the card's radius */
+.tile-fly {
+  position: fixed; z-index: 30; overflow: hidden; border-radius: var(--radius-lg); background: var(--surface-2) center top / cover no-repeat;
+  box-shadow: var(--shadow-pop); pointer-events: none; will-change: transform, opacity;
+}
+
 /* Selecting several cards (SelectBar): the system's Checkbox box top left on hover (a sunken white field, an ink
    border), the ink tick once picked; picked cards wear a ring. The button is the 28px target around the 20px box */
 .tile__select {
@@ -2436,6 +2554,13 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 /* Touch fires a hover on tap: the box only rises under a real pointer (on touch it shows while picking) */
 @media (hover: hover) and (pointer: fine) { .tile:hover .tile__select { opacity: 1; transform: none; } }
 .tile__select:active { transform: scale(0.9); }
+/* The match badge and the GIF chip live in that same corner: they step aside whenever the circle is up */
+.tile__select ~ .tile__score, .tile__select ~ .tile__badge { transition: transform 0.18s var(--ease-out); }
+.tile.is-selecting .tile__select ~ .tile__score, .tile__select:focus-visible ~ .tile__score,
+.tile.is-selecting .tile__select ~ .tile__badge, .tile__select:focus-visible ~ .tile__badge { transform: translateX(32px); }
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover .tile__select ~ .tile__score, .tile:hover .tile__select ~ .tile__badge { transform: translateX(32px); }
+}
 .tile.is-selecting:hover { transform: none; }
 .tile.is-selecting .tile__actions, .tile.is-selecting .tile__go { display: none; }
 
@@ -2468,6 +2593,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   .pp--pick[data-starting-style], .pp--pick[data-ending-style] { transform: none; }
   .tile__select svg { transition-property: opacity; @starting-style { transform: none; } }
   .tile__select svg { transform: none; }
+  .tile__select ~ .tile__score, .tile__select ~ .tile__badge { transition: none; }
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }

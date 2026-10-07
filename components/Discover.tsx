@@ -2,16 +2,18 @@
 // Discover: the library of libraries as a list, group by group, in the directory's own order: one line per site,
 // its name, what it is and its domain; a click opens it. On top: everything, what just came in or what we open
 // most, and the kinds of resource in a menu. Beside it, the templates (whole systems to start a project from) and the
-// skills for agents, a list of their own.
+// skills for agents, a list of their own with its topics in the same menu. The three share one head, in the column
+// of the content.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DIRECTORY, SKILLS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
+import { DIRECTORY, SKILLS, SKILL_TOPICS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { directory as enDirectory } from "@/lib/i18n/en/directory";
 import { useT } from "./I18nProvider";
 import DiscoverSkills from "./DiscoverSkills";
-import { Chip, Icon, MenuItem, PillBar, PillBarSep, SegmentedControl } from "@/components/criterio";
+import { Chip, Icon, MenuItem, SegmentedControl } from "@/components/criterio";
 import "./Discover.css";
+import { afterPaint } from "@/components/ui/liquid";
 
 interface Site extends DirectorySite { group: string }
 /** Everything, what came in lately (the last 30 days), or what we open most */
@@ -22,68 +24,86 @@ type Section = "templates" | "sites" | "skills";
 const ALL: Site[] = DIRECTORY.flatMap((g) => g.items.map((s) => ({ ...s, group: g.key })));
 
 const FRESH = ALL.filter((s) => isNewSite(s));
+/** The skills that came in lately: as with the resources, the first batch (criterio.design's own) carries no date */
+const FRESH_SKILLS = SKILLS.filter((s) => s.install && isNewSite(s)).length;
 const inShelf = (s: Site, shelf: Shelf) => shelf === "all" || (shelf === "new" ? isNewSite(s) : featuredUrls().includes(s.url));
 const matching = (group: string | null, shelf: Shelf = "all") => ALL.filter((s) => (!group || s.group === group) && inShelf(s, shelf));
 
 /** Discover: the places to look, and the templates, whole systems to start a project from */
-export default function Discover({ section = "sites", onSection, templates }: {
-  section?: Section;
-  onSection?: (s: Section) => void;
-  /** The templates' own view, rendered here when that section is chosen */
-  templates?: React.ReactNode;
+export default function Discover({ section, onSection, templates }: {
+  section: Section;
+  onSection: (s: Section) => void;
+  /** The templates' own view, rendered when that section is chosen, under the page's head */
+  templates: (head: React.ReactNode) => React.ReactNode;
 }) {
   const { t } = useT();
   const [group, setGroup] = useState<string | null>(null);
   const [shelf, setShelf] = useState<Shelf>("all");
   const [groupsOpen, setGroupsOpen] = useState(false);
+  const [topic, setTopic] = useState<SkillTopic | null>(null);
+  const [topicsOpen, setTopicsOpen] = useState(false);
+  const [skillShelf, setSkillShelf] = useState<Shelf>("all");
   const groupTitle = (k: string) => t.directory.groups[k as GroupKey]?.title ?? k;
-  // The bar floats over the list, so it is product chrome: dark in both themes
+  // One of a section's kinds, or all of them: the menu on the right of the row, the same for resources and skills. The
+  // trigger is a secondary Button; the popup the system's Menu, a check on the one chosen
+  const picker = <K extends string>(p: { open: boolean; onOpen: (o: boolean) => void; value: K | null; onPick: (k: K | null) => void; label: string; options: { key: K; title: string; hint?: string }[] }) => (
+    <Popover open={p.open} onOpenChange={p.onOpen}>
+      <PopoverTrigger className={`cr-btn cr-btn-secondary cr-btn-m disc__group${p.value ? " is-pressed" : ""}`}>
+        {p.options.find((o) => o.key === p.value)?.title ?? p.label} <Icon name="chevron-down" size={20} />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="cr-menu disc__menu">
+        <MenuItem checked={p.value === null} onClick={() => { p.onPick(null); p.onOpen(false); }}>{t.discover.all}</MenuItem>
+        {p.options.map((o) => (
+          <MenuItem key={o.key} checked={p.value === o.key} data-tip={o.hint} onClick={() => { p.onPick(o.key); p.onOpen(false); }}>{o.title}</MenuItem>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+  // The head of the page, the same in the three sections and in their column, as a project's page has it: the name
+  // (the page's h1) on top with what the open section holds, and below one row with the sections on the left and, on
+  // the right, what the open one is looked through with. It scrolls away with the page, so its tabs are the paper
+  // SegmentedControl, as a project's are
   const SECTIONS = ["templates", "sites", "skills"] as const;
-  const sections = templates && onSection && (
-    <PillBar className="disc__sections">
-      <SegmentedControl tone="chrome" label={t.discover.sections.label} active={SECTIONS.indexOf(section)} onChange={(i) => onSection(SECTIONS[i])}
-        items={SECTIONS.map((k) => ({ label: t.discover.sections[k] }))} />
-    </PillBar>
-  );
-  const SHELVES = (["all", "new", "featured"] as const).filter((k) => k !== "new" || FRESH.length > 0);
-  if (section === "templates" && templates) return (
+  const head = (lead: string, side?: React.ReactNode) => (
     <>
-      {templates}
-      <div className="disc__bar">{sections}</div>
-    </>
-  );
-  if (section === "skills") return (
-    <>
-      <DiscoverSkills sites={SKILLS} />
-      <div className="disc__bar">{sections}</div>
-    </>
-  );
-  return (
-    <>
-      <DiscoverList group={group} shelf={shelf} />
-      <div className="disc__bar">
-        {sections}
-        {/* What to look at first: everything, what just came in, what we open most. The kinds of resource wait in a menu */}
-        <PillBar className="disc__shelves">
-          <SegmentedControl tone="chrome" label={t.discover.shelves} active={SHELVES.indexOf(shelf)} onChange={(i) => setShelf(SHELVES[i])}
-            items={SHELVES.map((k) => ({ label: t.discover.shelf[k], count: k === "new" ? FRESH.length : undefined }))} />
-          <PillBarSep />
-          <Popover open={groupsOpen} onOpenChange={setGroupsOpen}>
-          <PopoverTrigger className={`cr-seg-item disc__group${group ? " is-on" : ""}`}>
-            {group ? groupTitle(group) : t.discover.groups} <Icon name="chevron-down" size={16} />
-          </PopoverTrigger>
-          <PopoverContent align="start" className="cr-menu disc__menu">
-            <MenuItem checked={group === null} onClick={() => { setGroup(null); setGroupsOpen(false); }}>{t.discover.all}</MenuItem>
-            {DIRECTORY.map((g) => (
-              <MenuItem key={g.key} checked={group === g.key} data-tip={t.directory.groups[g.key as GroupKey]?.hint}
-                onClick={() => { setGroup(g.key); setGroupsOpen(false); }}>{groupTitle(g.key)}</MenuItem>
-            ))}
-          </PopoverContent>
-          </Popover>
-        </PillBar>
+      <header className="disc-head">
+        <h1 className="disc-title">{t.sidebar.discover}</h1>
+        <p className="t-body disc-lead">{lead}</p>
+      </header>
+      <div className="disc-bar">
+        <SegmentedControl tone="paper" label={t.discover.sections.label} active={SECTIONS.indexOf(section)} onChange={(i) => afterPaint(() => onSection(SECTIONS[i]))}
+          items={SECTIONS.map((k) => ({ label: t.discover.sections[k] }))} />
+        {side && <div className="disc-bar__side">{side}</div>}
       </div>
     </>
   );
+  if (section === "templates") return templates(head(t.templates.lead));
+  // What to look at first: everything, what just came in, what we open most. The same three for resources and skills
+  const shelves = (value: Shelf, onPick: (s: Shelf) => void, fresh: number) => {
+    const keys = (["all", "new", "featured"] as const).filter((k) => k !== "new" || fresh > 0);
+    return (
+      <SegmentedControl tone="paper" className="disc__shelves" label={t.discover.shelves} active={keys.indexOf(value)} onChange={(i) => onPick(keys[i])}
+        items={keys.map((k) => ({ label: t.discover.shelf[k], count: k === "new" ? fresh : undefined }))} />
+    );
+  };
+  if (section === "skills") {
+    return <DiscoverSkills sites={SKILLS} topic={topic} shelf={skillShelf} head={head(t.directory.groups.skills.hint, (
+      <>
+        {shelves(skillShelf, setSkillShelf, FRESH_SKILLS)}
+        {picker({ open: topicsOpen, onOpen: setTopicsOpen, value: topic, onPick: setTopic, label: t.discover.skills.topicsLabel,
+          options: SKILL_TOPICS.map((k) => ({ key: k, title: t.discover.skills.topics[k] })) })}
+      </>
+    ))} />;
+  }
+  // The kinds of resource wait in a menu
+  const filters = (
+    <>
+      {shelves(shelf, setShelf, FRESH.length)}
+      {picker({ open: groupsOpen, onOpen: setGroupsOpen, value: group, onPick: setGroup, label: t.discover.groups,
+        options: DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), hint: t.directory.groups[g.key as GroupKey]?.hint })) })}
+    </>
+  );
+  return <DiscoverList group={group} shelf={shelf} head={head(t.discover.lead, filters)} />;
 }
 
 /** The list: the directory group by group, in its own order, each with what it is for; one line per site */
@@ -176,7 +196,7 @@ function usePeek() {
   return { node, show, place, hide, warm };
 }
 
-function DiscoverList({ group, shelf }: { group: string | null; shelf: Shelf }) {
+function DiscoverList({ group, shelf, head }: { group: string | null; shelf: Shelf; head: React.ReactNode }) {
   const { t } = useT();
   const peek = usePeek();
   const groups = useMemo(() => {
@@ -186,6 +206,7 @@ function DiscoverList({ group, shelf }: { group: string | null; shelf: Shelf }) 
   return (
     <div className="disc-list" onScroll={peek.hide}>
       {peek.node}
+      {head}
       {groups.map((g) => {
         const text = t.directory.groups[g.key as keyof typeof t.directory.groups];
         return (

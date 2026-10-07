@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useT } from "@/components/I18nProvider";
 import type { Block } from "@/lib/design-system";
 import DsMarkdown from "./DsMarkdown";
-import { Chip, SegmentedControl } from "@/components/criterio";
+import { Chip } from "@/components/criterio";
+import { LiquidSegmented } from "./Specimens";
 import "./DesignLibrary.css";
 
 export interface DecisionView { slug: string; title: string; date: string; status: string; kind: string; supersedes?: string; blocks: Block[] }
@@ -18,7 +19,7 @@ export default function Decisions({ items }: { items: DecisionView[] }) {
   const fmt = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" });
   return (
     <div className="ds-specimen">
-      <SegmentedControl tone="paper" choice className="ds-seg" label={d.filter} active={kind ? kinds.indexOf(kind) + 1 : 0}
+      <LiquidSegmented choice className="ds-seg" label={d.filter} active={kind ? kinds.indexOf(kind) + 1 : 0}
         onChange={(i) => setKind(i === 0 ? null : kinds[i - 1])}
         items={[{ label: d.all, count: items.length }, ...kinds.map((k) => ({ label: d.kinds[k] ?? k, count: items.filter((i) => i.kind === k).length }))]} />
       <ol className="ds-log">

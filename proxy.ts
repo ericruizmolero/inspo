@@ -8,12 +8,13 @@ import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, DEFAULT_LOCALE, isLocale, localeFromH
 // The home page (/) is public too: signed out it shows the start canvas (app/page.tsx)
 // and the first action opens the sign-in dialog. Everything else needs a session.
 // /extension/privacy: the extension's privacy page, linked from the Chrome Web Store
+// /privacy and /terms: the legal pages, read before there is an account (lib/legal.ts)
 // /api/ext/: the browser extension gets in with its key (lib/ext-keys.ts), not a cookie
 // /api/cron/: the scheduler has no session; each route checks CRON_SECRET itself
 // /s/: a project's brand shared by link; the token in the path is the proof (lib/share.ts)
 // /mcp, /api/mcp/ and /.well-known/: the MCP connector and its OAuth endpoints; an AI client gets in with a bearer
 // token (lib/mcp/auth.ts), never a cookie. /mcp/authorize is not here: approving an app takes a session
-const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/, /^\/s\//, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
+const PUBLIC = [/^\/$/, /^\/login(\/|$)/, /^\/api\/auth(\/|$)/, /^\/api\/ext\//, /^\/api\/cron\//, /^\/api\/dev-login(\/|$)/, /^\/invite\//, /^\/extension\/privacy(\/|$)/, /^\/(privacy|terms)(\/|$)/, /^\/s\//, /^\/mcp$/, /^\/api\/mcp\//, /^\/\.well-known\//];
 
 // Auto-login in development (see lib/auth.ts): with no cookie, /api/dev-login is used instead of /login
 const DEV_AUTO_LOGIN = process.env.NODE_ENV !== "production" && !!process.env.DEV_LOGIN_EMAIL;
@@ -62,6 +63,8 @@ export const config = {
   // opengraph-image and twitter-image: WhatsApp and friends request the share card without a session
   // showcase/: the fixed images beside /login, shown signed out
   // logo.png: the header logo, on the signed-out home and /login too
-  // polish/: the bundled tone covers in the Polish modal, plain static images
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon0.svg|icon1.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|thumbs/|design-md/|shots/|fonts/|directory/|showcase/|polish/).*)"],
+  // polish/: what Polish bundles (its optional track, the old tone covers), plain static files
+  // icon.png: the page's <link rel="icon"> points at it; favicon services (Google's, which Claude uses for the
+  // connector's logo) fetch it with no session
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|thumbs/|design-md/|shots/|fonts/|directory/|showcase/|polish/).*)"],
 };

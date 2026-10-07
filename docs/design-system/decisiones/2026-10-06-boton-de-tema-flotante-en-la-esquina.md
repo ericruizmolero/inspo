@@ -1,0 +1,19 @@
+---
+title: El tema se cambia con un botón flotante en la esquina inferior derecha, y el cambio dura 600 ms
+date: 2026-10-06
+status: vigente
+kind: diseño
+---
+**Contexto.** El tema solo se cambiaba en Ajustes, Cuenta, con el selector Sistema, Claro, Oscuro (`ThemeSwitch`). Eric, 06-10: "el lightmode-dark-mode igual tiene que aparecer por pantalla con iconito en algun lado no?". La primera versión lo puso en la Isla, junto al avatar del espacio, y Eric la corrigió al verla: "igual hay que ponerlo en vez de ahí que ahí están los botones importantes, en flotante abajo a la derecha no? y que no moleste ni nada". Después: "que esté más abajo en la esquina inferior derecha pero mismo padding de pared lateral y abajo", "la transición de light a dark tiene que ser easing 600ms" y "el botón de zoom in/out en tablero a la izquierda tiene que estar alineado también, padding lateral izquierdo y abajo".
+
+**Decisión.** Un botón flotante, `ThemeToggle` (`components/ThemeToggle.tsx`, clase `.theme-float` en `app/globals.css`), fijo en la esquina inferior derecha de la app: 36 px, radio 12, el cristal de la Isla (`--dock-surface`), icono en `--dock-muted` y al 70 % de opacidad hasta que se acerca el puntero. Está a 16 px de la pared derecha y a 16 px de abajo (el borde derecho de la barra superior). El control de zoom del tablero (`.board-zoom`) pasa a 12 px de la izquierda y 12 px de abajo (el borde izquierdo de la Isla); antes estaba a 26 px de abajo para compartir eje con el buscador. Así los dos comparten eje entre sí. El icono es el del tema al que lleva el clic: sol en oscuro, luna en claro, de Lucide a 16 px. Los dos están siempre en el HTML y el CSS enseña uno según `<html data-theme>`, así que no parpadea al cargar. En móvil no flota: es la fila "Cambiar tema" al pie de la barra lateral. Si hay notas de feedback sin enviar, que traen su dock a esa esquina, el botón sube por encima. La opción Sistema se queda solo en Ajustes.
+
+El cambio de tema hecho a mano (este botón o el selector de Ajustes) pasa por `switchTheme` (`lib/theme.ts`): toda la página funde de un tema al otro como una sola imagen en 600 ms con `--ease-in-out`, con una view transition (`:root[data-theme-switch]::view-transition-*`). Sin soporte del navegador o con "reducir movimiento", cambia al momento.
+
+En desarrollo, el indicador de rutas de Next se apaga (`devIndicators: false` en `next.config.ts`): ya no queda ninguna esquina libre. Los errores de compilación y de ejecución siguen saliendo.
+
+**Por qué.** Las citas de Eric. Interpretación mía: la Isla y la píldora de acciones son para lo que se hace con el proyecto, y el tema es una preferencia que se toca de vez en cuando, así que va donde no compite. El fundido de página entera, y no una transición de color pieza a pieza, sale del principio 10 (todo se mueve en bloque y al unísono).
+
+**Cómo aplicarlo.** Un control flotante de esquina guarda la misma distancia a la pared lateral y al borde inferior, y esa distancia es la del borde de la barra superior de su lado (12 px a la izquierda, 16 px a la derecha). Lo que es preferencia y no trabajo va en una esquina, apagado, no en la Isla ni en la píldora de acciones. Un cambio de tema pedido con un clic usa `switchTheme`, nunca `applyThemePref` a secas.
+
+**Después.** El mismo día, con el altavoz solo en la esquina izquierda, Eric vio que los dos botones no guardaban la misma distancia a sus paredes (12 px el de la izquierda, 16 el de tema): "margen a sus paredes tiene que ser igual!", y fijó el valor: "que estén a 16/16". Los dos botones de abajo están a 16 px de su pared lateral y a 16 de abajo: el de tema (`.theme-float`) no cambia, y la pastilla de zoom y música (`.board-zoom`, `.polish__corner`) pasa de 12 a 16. Ya no comparten eje vertical (el de tema mide 36 y la pastilla 44): comparten la línea de abajo. La Isla sigue a 12 px de la izquierda, así que la pastilla queda 4 px más adentro que ella.

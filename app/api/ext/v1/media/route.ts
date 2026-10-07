@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       const host = page ? new URL(page).hostname.replace(/^www\./, "") : "";
       const item = await addItem(ctx.workspace.id, {
         name: clip(body.alt, 48) || clip(body.title, 48) || host || "Image",
-        web: url, thumbnailUrl: url, type: "inspiration", note, author, createdBy: ctx.user.id,
+        web: url, thumbnailUrl: url, source: page, type: "inspiration", note, author, createdBy: ctx.user.id,
       });
       await settle(ctx, item, body.projectId, body.areas);
       return Response.json({ ok: true, existed: false, item, saved: "copy" });
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       const file = await fetchFile(body.src ?? "", page, (t) => t in VIDEO_TYPES, MAX_VIDEO_BYTES);
       if (file) {
         const url = await putFile(newVideoKey(ctx.workspace.id, file.type), file.body, file.type);
-        const item = await addItem(ctx.workspace.id, { name: name || "Video", web: url, type: "videos", note, author, createdBy: ctx.user.id });
+        const item = await addItem(ctx.workspace.id, { name: name || "Video", web: url, source: page, type: "videos", note, author, createdBy: ctx.user.id });
         await saveFrame(url);
         await settle(ctx, item, body.projectId, body.areas);
         return Response.json({ ok: true, existed: false, item, saved: "copy" });

@@ -5,13 +5,14 @@
 // whatever the browser does next. The library pages give their actions the time for it (maxDuration).
 import { cookies } from "next/headers";
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
-import { addItem, deleteItem, setItemNote, editUserTags } from "@/lib/items";
+import { addItem, deleteItem, deleteItems, deletableIds, setItemNote, editUserTags } from "@/lib/items";
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
-import { createProject, renameProject, deleteProject, fileItems, unfileItems, startProject } from "@/lib/projects";
+import { createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
+import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
@@ -21,7 +22,7 @@ import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
-import type { CommentAttachment, CommentAnchor } from "@/types/inspo";
+import type { CommentAttachment, CommentAnchor, PolishChoice } from "@/types/inspo";
 
 /** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
  *  so a failure leaves it for the worker instead of keeping the old vector. */
@@ -75,8 +76,14 @@ export async function editProject(id: string, name: string) {
   return withCtx(async (ctx) => renameProject(ctx.workspace.id, String(id), name));
 }
 
+/** A project goes with everything the team decided in it: whoever manages the workspace, or whoever started it */
 export async function removeProject(id: string) {
-  return withCtx(async (ctx) => { await deleteProject(ctx.workspace.id, String(id)); });
+  return withCtx(async (ctx) => {
+    if (!canManage(ctx.workspace.role) && !(await startedProject(ctx.workspace.id, String(id), ctx.user.id))) {
+      throw new HttpError(403, (await getErrors()).projectNotYours);
+    }
+    await deleteProject(ctx.workspace.id, String(id));
+  });
 }
 
 /** Files items in a project (on) or takes them out (off). */
@@ -86,6 +93,19 @@ export async function setFiled(projectId: string, itemIds: string[], on: boolean
     if (on) await fileItems(ctx.workspace.id, String(projectId), ids, ctx.user.id);
     else await unfileItems(ctx.workspace.id, String(projectId), ids);
   });
+}
+
+// Polish as a team (lib/polish-votes.ts): any member votes, whoever manages the workspace closes
+export async function votePolish(projectId: string, itemIds: string[], vote: PolishChoice | null) {
+  return withCtx(async (ctx) => castVotes(ctx.workspace.id, String(projectId), Array.isArray(itemIds) ? itemIds.map(String).slice(0, 2000) : [], ctx.user.id, vote));
+}
+
+export async function closeProjectPolish(projectId: string, resolve: Record<string, PolishChoice>) {
+  return withCtx(async (ctx) => closePolish(ctx.workspace.id, String(projectId), ctx.user.id, resolve && typeof resolve === "object" ? resolve : {}), { manage: true });
+}
+
+export async function restoreToBoard(projectId: string, itemId: string) {
+  return withCtx(async (ctx) => restoreForgotten(ctx.workspace.id, String(projectId), String(itemId), ctx.user.id));
 }
 
 /** An image (or GIF) as an inspo of its own. The file was uploaded first via /api/media;
@@ -110,15 +130,36 @@ export async function addImage(input: { url: string; fileName?: string; type?: s
   });
 }
 
-/** Any member can remove a card (with its thread). If it was already gone, it is not an error. */
+/** Removes a card (with its thread): a member the ones they saved, whoever manages the workspace any of them.
+ *  If it was already gone, it is not an error. */
 export async function removeInspo(id: string) {
   return withCtx(async (ctx) => {
     const [row] = await db.select({ web: schema.inspoItem.web }).from(schema.inspoItem)
       .where(and(eq(schema.inspoItem.organizationId, ctx.workspace.id), eq(schema.inspoItem.id, String(id)))).limit(1);
+    if (row && !(await deletableIds(ctx.workspace.id, [String(id)], ctx.user, canManage(ctx.workspace.role))).length) {
+      throw new HttpError(403, (await getErrors()).cardsNotYours);
+    }
     await deleteItem(ctx.workspace.id, id);
     // An uploaded image or a copied video goes with its card: nothing else points at that file
     if (row) await deleteMediaFile(ctx.workspace.id, row.web);
     if (row) await deleteTextFile(ctx.workspace.id, row.web);
+  });
+}
+
+/** Several cards at once (the selection bar), in one request. Answers how many were there to remove. */
+export async function removeInspos(ids: string[]) {
+  return withCtx(async (ctx) => {
+    const list = [...new Set((Array.isArray(ids) ? ids : []).map(String))].slice(0, 5000);
+    if (!list.length) return 0;
+    const rows = await db.select({ id: schema.inspoItem.id, web: schema.inspoItem.web }).from(schema.inspoItem)
+      .where(and(eq(schema.inspoItem.organizationId, ctx.workspace.id), inArray(schema.inspoItem.id, list)));
+    // All or nothing: a selection with someone else's cards in it is not half deleted
+    const mine = await deletableIds(ctx.workspace.id, rows.map((r) => r.id), ctx.user, canManage(ctx.workspace.role));
+    if (mine.length < rows.length) throw new HttpError(403, (await getErrors()).cardsNotYours);
+    const n = await deleteItems(ctx.workspace.id, list);
+    // Uploaded images, copied videos and pasted texts go with their cards, as in removeInspo
+    await Promise.all(rows.flatMap((r) => [deleteMediaFile(ctx.workspace.id, r.web), deleteTextFile(ctx.workspace.id, r.web)]));
+    return n;
   });
 }
 

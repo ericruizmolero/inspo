@@ -154,6 +154,11 @@ export interface ProjectTemplate {
   video?: string;
   /** A built-in template (its folder under docs/templates): every workspace has it, and it is not the workspace's to delete */
   builtin?: string;
+  /** The picture of the result when it is not a page to capture (a post, for instance): a file of the template's
+   *  folder, stored with its board */
+  poster?: string;
+  /** Worked out from the outside: somebody else's result and what they told of how it was made, not the team's own work */
+  reverse?: boolean;
 }
 export const RECIPE_MAX = 200_000;
 

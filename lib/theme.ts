@@ -49,3 +49,20 @@ export function applyThemePref(pref: ThemePref) {
   } catch {}
   setTheme(resolveTheme(pref));
 }
+
+/** How long a change of theme made by hand takes (globals.css reads the same figure for the cross-fade) */
+export const THEME_SWITCH_MS = 600;
+
+/**
+ * A change of theme somebody asked for with a click: the whole page crosses from one to the other at once, as one
+ * picture (a view transition), instead of each piece changing colour on its own clock. Where the browser cannot,
+ * or the person asked for less motion, it just changes.
+ */
+export function switchTheme(pref: ThemePref) {
+  const root = document.documentElement;
+  const same = resolveTheme(pref) === root.dataset.theme;
+  if (same || !document.startViewTransition || matchMedia("(prefers-reduced-motion: reduce)").matches) return applyThemePref(pref);
+  root.dataset.themeSwitch = "";
+  const done = () => { delete root.dataset.themeSwitch; };
+  document.startViewTransition(() => applyThemePref(pref)).finished.then(done, done);
+}

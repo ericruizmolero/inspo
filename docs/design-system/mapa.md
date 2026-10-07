@@ -12,7 +12,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=library` | Toda la biblioteca |
-| `/?in=discover`, `/?in=templates` | Descubrir: recursos y plantillas |
+| `/?in=discover`, `/?in=templates` | Descubrir: recursos y ejemplos |
 | `/?in=<proyecto>` | Un proyecto: tablero hasta "Ya tengo mis referencias", luego Sistema |
 | `&view=board` / `&view=system` | Fuerza tablero o Sistema dentro del proyecto |
 | `?add=<url>` | Abre "Añadir" con esa URL (viene del login de invitado) |
@@ -46,6 +46,7 @@ Se da acceso con `npm run admin -- <correo>`.
 | `/invite/[id]` | Aceptar una invitación (pasa el proxy, pero la página pide sesión) |
 | `/s/[token]` | La marca de un proyecto compartida por enlace, de solo lectura, con criterio.md para copiar o descargar. El token es la prueba; no se indexa |
 | `/extension/privacy` | Privacidad de la extensión, enlazada desde la Chrome Web Store |
+| `/privacy`, `/terms` | Política de privacidad y términos de uso. Borrador: 404 en producción hasta que `lib/legal.ts` tenga los datos de la sociedad |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
 
 ## Extensión

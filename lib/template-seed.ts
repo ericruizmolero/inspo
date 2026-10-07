@@ -6,11 +6,12 @@
 // (`takes`, area by area) or, failing that, its note.
 // The folders under docs/templates are the built-in templates: every workspace gets them the first time its
 // templates are listed (ensureBuiltinTemplates), so nobody has to load them by hand. scripts/seed-template.ts
-// loads one folder into one workspace, replacing what was there.
+// loads one folder into one workspace, replacing what was there. A folder kept anywhere else (docs/template-drafts)
+// is nobody's until that script loads it: a trial, in the one workspace it was loaded into, which can delete it.
 import "server-only";
 import { createHash } from "crypto";
 import { existsSync, readFileSync, readdirSync } from "fs";
-import { basename, extname, join } from "path";
+import { basename, dirname, extname, join, resolve } from "path";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./workspace-core";
@@ -27,6 +28,7 @@ export const TEMPLATE_AUTHOR = "Criterio";
 const TYPES: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" };
 
 interface TemplateSpec {
+  /** `poster` here is a file of the folder ("board/result.png"), not yet an address */
   name: string; template: Omit<ProjectTemplate, "builtin">; summary: string;
   areas: Record<string, { decision: string; why: string; never: string[] }>;
   board?: { web?: string; file?: string; text?: string; name: string; note: string; areas: string[]; takes?: Record<string, string> }[];
@@ -74,6 +76,17 @@ export async function loadTemplateFolder(dir: string, organizationId: string, op
     for (const area of ref.areas) (evidence[area] ??= []).push({ itemId, take: ref.takes?.[area] ?? ref.note, pinned: true });
   }
 
+  // The result's own picture, when it is not a page to capture: a file of the folder, kept like the board's
+  let poster: string | undefined;
+  if (spec.template.poster) {
+    const ext = extname(spec.template.poster).toLowerCase();
+    const key = `${mediaPrefix(organizationId)}template-${folder}-${basename(spec.template.poster, ext)}${ext}`;
+    await putFile(key, readFileSync(join(dir, spec.template.poster)), TYPES[ext] ?? "image/jpeg");
+    poster = fileUrl(key);
+  }
+  // Only the folders under docs/templates are built in; one loaded from elsewhere is the workspace's own
+  const builtin = dirname(resolve(dir)) === BUILTIN_ROOT;
+
   // Then the template itself, whole or not at all
   const id = opts.id ?? newId();
   return db.transaction(async (tx) => {
@@ -82,7 +95,7 @@ export async function loadTemplateFolder(dir: string, organizationId: string, op
       const [old] = await tx.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.name, spec.name), isNotNull(P.template))).limit(1);
       if (old) { await tx.delete(P).where(eq(P.id, old.id)); replaced = true; }
     }
-    const made = await tx.insert(P).values({ id, organizationId, name: spec.name, createdBy: authorId, template: { ...spec.template, builtin: folder }, recipe, createdAt: now, updatedAt: now })
+    const made = await tx.insert(P).values({ id, organizationId, name: spec.name, createdBy: authorId, template: { ...spec.template, ...(poster ? { poster } : {}), ...(builtin ? { builtin: folder } : {}) }, recipe, createdAt: now, updatedAt: now })
       .onConflictDoNothing().returning({ id: P.id });
     if (!made.length) return null;
     await tx.insert(S).values({ projectId: id, organizationId, summary: spec.summary, runJson: null, createdAt: now, updatedAt: now });

@@ -1,11 +1,20 @@
 /* ─── The templates as a library (components/TemplatesView.tsx): cards with what each work ended as; one opens its file ─── */
 .tplc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 32px 22px; margin-top: 10px; }
-.tplc { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.tplc { position: relative; min-width: 0; }
+.tplc__open, .tplc--loading { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; }
+.tplc__open { cursor: pointer; }
 /* Cards are flat: on hover the frame lifts a touch and its hairline darkens, no shadow */
 .tplc .tpl-page { margin-bottom: 6px; transition: transform 0.25s var(--ease-out), border-color 0.25s; }
 @media (hover: hover) { .tplc:hover .tpl-page { transform: translateY(-3px); border-color: var(--border-strong); } }
 @media (prefers-reduced-motion: reduce) { .tplc:hover .tpl-page { transform: none; } }
-.tplc:focus-visible { outline: none; } .tplc:focus-visible .tpl-page { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tplc__open:focus-visible { outline: none; } .tplc__open:focus-visible .tpl-page { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* What is done with a template, over its picture on hover: the board card's action row (.tile__go), the system's
+   Button size s. The strip has the picture's shape, so the buttons sit at its foot */
+.tplc__go { position: absolute; inset: 0 0 auto; aspect-ratio: 16 / 10; display: flex; align-items: flex-end; gap: var(--space-2); padding: 10px; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity 0.2s, transform 0.25s var(--ease-out); }
+.tplc__go > * { pointer-events: auto; }
+.tplc:hover .tplc__go, .tplc__go.is-visible, .tplc__go:focus-within { opacity: 1; transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) { .tplc__go, .tplc:hover .tplc__go, .tplc__go.is-visible, .tplc__go:focus-within { transform: none; } }
+@media (hover: none) { .tplc__go { display: none; } }
 /* While the list loads: the card's shape, not a button */
 .tplc--loading { cursor: default; pointer-events: none; }
 .tplc__sk { display: block; height: 12px; } .tplc__sk--name { width: 62%; height: 16px; margin-top: 2px; } .tplc__sk--path { width: 44%; } .tplc__sk--about { width: 88%; }
@@ -14,6 +23,8 @@
 .tplc__name { color: var(--text); }
 .tplc__path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: var(--fs-small); color: var(--text-2); }
 .tplc__path span { display: inline-flex; color: var(--text-2); } .tplc__path svg { width: 12px; height: 12px; }
+/* Worked out from the outside, said in the line of what turned into what: colour, no pill */
+.tplc__kind { color: var(--text); margin-right: 4px; }
 .tplc__about { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .tpls-back { align-self: flex-start; }
 /* A recording of the result plays over the thumbnail on hover, in place of the page scrolling */

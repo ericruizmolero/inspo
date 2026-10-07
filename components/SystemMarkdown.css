@@ -3,13 +3,13 @@
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.2s; }
 
 /* ─── criterio.md in sight (components/SystemMarkdown.tsx): the raw file in a code panel, coloured the way
-   an editor colours Markdown. Literal data, so it stays monospace and on the dark chrome in both themes, with the
-   chrome's hairline. Headings in moss-light, quotes in the chrome's muted text: no warm colour in the file, the view
-   keeps its one ember for "Improve with AI". A block is pressed to edit it. ─── */
-.mdv { --md-bg: var(--chrome-panel); --md-ink: var(--chrome-text); --md-dim: var(--chrome-muted); --md-head: var(--moss-light); --md-quote: var(--chrome-text-muted); --md-code: var(--chrome-ink); --md-strong: var(--chrome-ink); --md-line: var(--chrome-border); --md-danger: var(--danger);
+   an editor colours Markdown. Literal data, so it stays monospace. It follows the theme (Eric, 06-10): the dark
+   chrome panel in Board, a white sheet (the field's white, the soft line) in Paper; every colour is a --md-*
+   variable. Headings in moss, quotes in the chrome's muted text: no warm colour in the file, the view keeps its one ember for "Improve with AI". A block is pressed to edit it. ─── */
+.mdv { --md-bg: var(--chrome-panel); --md-ink: var(--chrome-text); --md-dim: var(--chrome-muted); --md-head: var(--moss-light); --md-quote: var(--chrome-text-muted); --md-code: var(--chrome-ink); --md-strong: var(--chrome-ink); --md-line: var(--chrome-border); --md-bar: var(--chrome); --md-danger: var(--danger);
   max-width: 980px; display: flex; flex-direction: column; border-radius: var(--radius-lg); background: var(--md-bg); color: var(--md-ink); border: 1px solid var(--md-line); overflow: hidden; }
 /* The file's bar: the chrome's own controls (ghost on chrome-raised), in the app's sans, over the mono file */
-.mdv-bar { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 10px 0 12px; box-shadow: inset 0 -1px 0 var(--md-line); background: var(--chrome); font-family: var(--font-sans); font-size: var(--fs-small); }
+.mdv-bar { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 10px 0 12px; box-shadow: inset 0 -1px 0 var(--md-line); background: var(--md-bar); font-family: var(--font-sans); font-size: var(--fs-small); }
 .mdv-bar__hint { color: var(--md-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .mdv-bar__tools { margin-left: auto; display: inline-flex; gap: 6px; flex-shrink: 0; }
 /* The bar's actions are the system's Button, secondary size s (btn btn--sm); this only sets what is theirs here */
@@ -41,11 +41,8 @@
 .dock__agent-options { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ─── Templates (components/TemplatesView.tsx): whole systems in the library ─── */
-.tpls { position: absolute; inset: 0; overflow-y: auto; padding: 232px 28px 72px; background: var(--bg); }
+.tpls { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }
 .tpls-inner { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
-/* The title is the page's h1 (display) */
-.tpls-title { color: var(--text); }
-.tpls-lead { margin: var(--space-2) 0 0; max-width: 62ch; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-2); }
 .tpls-empty { margin: 0; font-size: var(--fs-ui); color: var(--text-2); }
 .tpl { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); border-radius: var(--radius-xl); background: var(--surface-raised); border: 1px solid var(--border); }
 .tpl-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px 24px; flex-wrap: wrap; }
@@ -73,3 +70,5 @@
 
 /* Paper: the file panel is light chrome, so the headings take moss (moss-light is under 3:1 on paper-light) */
 :root[data-theme="light"] .mdv { --md-head: var(--moss); --md-danger: var(--danger-deep); }
+/* Paper: the raw file is a white sheet, the field's white with the soft line, its bar on the same white */
+:root[data-theme="light"] .mdv:not(.mdv--doc) { --md-bg: var(--field); --md-bar: var(--field); --md-line: var(--field-border); --md-ink: var(--chrome-text); --md-strong: var(--text); }

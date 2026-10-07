@@ -5,25 +5,24 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
-import type { Workspace } from "@/lib/workspace-core";
+import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useConfirm } from "@/components/useConfirm";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import { Avatar, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
+import PersonAvatar from "@/components/PersonAvatar";
 
-export default function WorkspacePanel({ workspace, canManage }: { workspace: Workspace; canManage: boolean }) {
+export default function WorkspacePanel({ workspace, workspaces, me, canManage }: { workspace: Workspace; workspaces: Workspace[]; me: SessionUser; canManage: boolean }) {
   const { t } = useT();
-  const [confirm, confirmDialog] = useConfirm();
   const router = useRouter();
   const logoRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(workspace.name);
   const [busy, setBusy] = useState(false);
-  // Each error sits under the control it is about (leaving: in its window's footer)
+  // Each error sits under the control it is about
   const [nameError, setNameError] = useState("");
   const [logoError, setLogoError] = useState("");
   const [outError, setOutError] = useState("");
-  const [leaveError, setLeaveError] = useState("");
   const [saved, setSaved] = useState(false);
 
   if (workspace.kind === "personal") {
@@ -31,6 +30,7 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
       <div className="page__body">
         <SettingsWindow title={t.settings.personalSpace} note={t.settings.personalSpaceHint}
           actions={<Link className={buttonVariants()} href="/settings/account">{t.settings.goToAccount}</Link>} />
+        <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
     );
   }
@@ -62,18 +62,8 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
     catch (err) { setLogoError(messageOf(err, t, t.ws.imageFailed)); }
   };
 
-  const leave = async () => {
-    if (!(await confirm({ title: t.team.leaveConfirm(workspace.name), description: t.settings.leaveHint, action: t.team.leaveTeam, danger: true }))) return;
-    setBusy(true); setLeaveError("");
-    const { error: err } = await authClient.organization.leave({ organizationId: workspace.id });
-    setBusy(false);
-    if (err) { setLeaveError(err.message ?? t.team.leaveFailed); return; }
-    router.push("/"); router.refresh();
-  };
-
   return (
     <div className="page__body">
-      {confirmDialog}
 
       <SettingsWindow title={t.ws.team}>
         <form onSubmit={rename}>
@@ -105,11 +95,63 @@ export default function WorkspacePanel({ workspace, canManage }: { workspace: Wo
         </FieldRow>
       </SettingsWindow>
 
-      {workspace.role !== "owner" && (
-        <SettingsWindow title={t.settings.leave}
-          note={leaveError ? <span className="cr-field-hint is-error" role="alert">{leaveError}</span> : t.settings.leaveHint}
-          actions={<Button onClick={leave} disabled={busy}>{t.team.leaveTeam}</Button>} />
-      )}
+      <Spaces workspace={workspace} workspaces={workspaces} me={me} />
     </div>
+  );
+}
+
+/** Every space the person is in, whichever is open: a team is left, or deleted by whoever created it. Each row
+ *  names its space, so nobody leaves the one that happens to be open meaning another. The personal one stays. */
+function Spaces({ workspace, workspaces, me }: { workspace: Workspace; workspaces: Workspace[]; me: SessionUser }) {
+  const { t } = useT();
+  const [confirm, confirmDialog] = useConfirm();
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  // Out of the open space there is nothing left to show here: back to the library, which opens another
+  const after = (id: string) => { if (id === workspace.id) router.push("/"); router.refresh(); };
+  const leave = async (w: Workspace) => {
+    if (!(await confirm({ title: t.team.leaveConfirm(w.name), description: t.settings.leaveHint, action: t.team.leaveTeam, danger: true }))) return;
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.leave({ organizationId: w.id });
+    setBusy(false);
+    if (err) { setError(err.message ?? t.team.leaveFailed); return; }
+    after(w.id);
+  };
+  const remove = async (w: Workspace) => {
+    if (!(await confirm({ title: t.settings.deleteSpaceConfirm(w.name), description: t.settings.deleteSpaceHint, action: t.settings.deleteSpaceAction, danger: true, typed: w.name }))) return;
+    setBusy(true); setError("");
+    const { error: err } = await authClient.organization.delete({ organizationId: w.id });
+    setBusy(false);
+    if (err) { setError(err.message ?? t.settings.deleteSpaceFailed); return; }
+    after(w.id);
+  };
+
+  // The window's footer carries the error of the last leave or delete
+  return (
+    <SettingsWindow title={t.settings.spaces} figure={workspaces.length} description={t.settings.spacesHint}
+      note={error ? <span className="cr-field-hint is-error" role="alert">{error}</span> : undefined}>
+      {confirmDialog}
+      <ul className="list">
+        {workspaces.map((w) => {
+          // The personal space wears its person until it has a logo; a team wears its logo or its initial, square
+          const personal = w.kind === "personal" && !w.logo;
+          return (
+            <li key={w.id} className="list__row">
+              <PersonAvatar name={personal ? me.name : w.name} image={personal ? me.image : w.logo} size={32} square={!personal} />
+              <span className="list__main">
+                <span className="list__name t-ui"><span className="list__text">{w.name}{w.id === workspace.id && t.settings.spaceOpen}</span></span>
+                <span className="list__sub t-small">{w.kind === "personal" ? t.ws.personal : t.team.roles[w.role]}</span>
+              </span>
+              {/* The danger red waits for the confirm step, which also asks for the name typed */}
+              {w.kind === "team" && (w.role === "owner"
+                ? <Button variant="quiet" size="sm" onClick={() => remove(w)} disabled={busy}>{t.settings.deleteSpace}</Button>
+                : <Button variant="quiet" size="sm" onClick={() => leave(w)} disabled={busy}>{t.team.leaveTeam}</Button>)}
+            </li>
+          );
+        })}
+      </ul>
+    </SettingsWindow>
   );
 }

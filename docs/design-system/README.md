@@ -28,4 +28,5 @@ Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué 
 
 - Antes de diseñar o tocar UI: lee `principios.md` y `fundamentos.md`. Antes de crear un componente, busca en `componentes.md`.
 - Cuando el equipo apruebe, rechace o corrija algo de diseño o desarrollo en la conversación, regístralo con la skill `registrar-decision` (`.claude/skills/registrar-decision/`) en el mismo trabajo, sin esperar a que te lo pidan.
+- Todo trabajo que cambie la interfaz, un token, un componente, un patrón, una ruta, un atajo o la forma de construir termina con este sistema al día en ese mismo trabajo, haya habido decisión o no: la ficha en `componentes.md`, la regla en su página, la ruta en `mapa.md`, el atajo en `atajos.md`. → [decisión](decisiones/2026-10-06-el-sistema-de-diseno-se-actualiza-con-cada-cambio.md)
 - Si encuentras una contradicción entre este sistema y el código, dilo en tu respuesta en vez de elegir en silencio.

@@ -1,39 +1,42 @@
 "use client";
 // Discover › Skills: every skill is an agent skill, as cards and not rows. Each one says who made it, what it does
-// and the command that installs it, ready to copy; a click elsewhere on the card opens its page. First the thirteen
-// of criterio.design (lib/md-skill-ids.ts), which also travel inside criterio.md as sections; then the ones from
-// other authors, and the ones criterio.md carries too say so. The catalog they come from waits in the header.
+// and the command that installs it, ready to copy; a click elsewhere on the card opens its page. They are sorted by
+// what they are about (SKILL_TOPICS in lib/directory.ts), and under each topic criterio.design's own come first
+// (lib/md-skill-ids.ts, which also travel inside criterio.md as sections), then the ones from other authors; the
+// ones criterio.md carries too say so. The page's head chooses what is shown: everything, what just came in or the
+// featured ones (FEATURED_SKILLS), and one topic or all of them.
 import { useRef, useState } from "react";
-import type { DirectorySite } from "@/lib/directory";
+import { FEATURED_SKILLS, MD_SKILL_TOPIC, SKILL_TOPICS, isNewSite, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { MD_SKILLS, skillInstall, skillPage } from "@/lib/md-skill-ids";
 import { useT } from "./I18nProvider";
-import { Avatar, Card, Chip, Icon, toneFor } from "@/components/criterio";
+import { Avatar, Card, Chip, toneFor } from "@/components/criterio";
 
 /** The GitHub owner of the repo the command installs from: the skill's author */
 const ownerOf = (install: string) => install.match(/github\.com\/([^/\s]+)/)?.[1] ?? "";
 
-interface Skill { owner: string; avatar: string; name: string; what: string; url: string; install: string; inMd?: boolean }
+interface Skill { owner: string; avatar: string; name: string; what: string; url: string; install: string; topic: SkillTopic; inMd?: boolean; fresh: boolean; featured: boolean }
 
-export default function DiscoverSkills({ sites }: { sites: DirectorySite[] }) {
+export default function DiscoverSkills({ sites, topic, shelf, head }: { sites: DirectorySite[]; topic: SkillTopic | null; shelf: "all" | "new" | "featured"; head: React.ReactNode }) {
   const { t } = useT();
-  const catalog = sites.find((s) => !s.install);
-  const group = t.directory.groups.skills;
-  const own: Skill[] = MD_SKILLS.map((id) => ({ owner: "criterio.design", avatar: "/icon-512.png", ...t.system.skillsList[id], url: skillPage(id), install: skillInstall(id) }));
+  const own: Skill[] = MD_SKILLS.map((id) => ({ owner: "criterio.design", avatar: "/icon-512.png", ...t.system.skillsList[id], url: skillPage(id), install: skillInstall(id), topic: MD_SKILL_TOPIC[id], fresh: false, featured: FEATURED_SKILLS.includes(id) }));
   const others: Skill[] = sites.filter((s) => s.install).map((s) => {
     const owner = ownerOf(s.install!);
-    return { owner, avatar: `https://github.com/${owner}.png?size=64`, name: s.name, what: t.directory.items[s.url] ?? "", url: s.url, install: s.install!, inMd: !!s.skill };
+    return { owner, avatar: `https://github.com/${owner}.png?size=64`, name: s.name, what: t.directory.items[s.url] ?? "", url: s.url, install: s.install!, topic: s.topic ?? "interface", inMd: !!s.skill, fresh: isNewSite(s), featured: FEATURED_SKILLS.includes(s.url) };
   });
+  const all = [...own, ...others].filter((s) => shelf === "all" || (shelf === "new" ? s.fresh : s.featured));
+  const groups = SKILL_TOPICS.filter((k) => !topic || k === topic).map((k) => ({ topic: k, skills: all.filter((s) => s.topic === k) })).filter((g) => g.skills.length);
   return (
     <div className="disc-list">
-      <section className="disc-list__group">
-        <header className="disc-list__head disc-skills__head">
-          <div><h2>{group.title}</h2><p>{group.hint}</p></div>
-          {catalog && <a className="disc-skills__catalog" href={catalog.url} target="_blank" rel="noopener noreferrer">{t.discover.skills.catalog(catalog.name)}<Icon name="arrow-up-right" size={14} /></a>}
-        </header>
-        <ul className="disc-skills">
-          {[...own, ...others].map((s) => <SkillCard key={s.url} skill={s} />)}
-        </ul>
-      </section>
+      {head}
+      {groups.map((g) => (
+        <section key={g.topic} className="disc-list__group">
+          <header className="disc-list__head"><h2>{t.discover.skills.topics[g.topic]}</h2></header>
+          <ul className="disc-skills">
+            {g.skills.map((s) => <SkillCard key={s.url} skill={s} />)}
+          </ul>
+        </section>
+      ))}
+      {!groups.length && <p className="disc-list__none">{t.discover.skills.none}</p>}
     </div>
   );
 }

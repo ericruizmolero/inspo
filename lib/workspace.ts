@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "./session";
 import { auth } from "./auth";
 import { toLocale } from "./i18n/locale";
-import { ensurePersonalWorkspace, listWorkspaces, HttpError, type Ctx, type Role, type SessionUser } from "./workspace-core";
+import { ensurePersonalWorkspace, listWorkspaces, canManage, HttpError, type Ctx, type Role, type SessionUser } from "./workspace-core";
 import { getErrors } from "./i18n";
 
 export * from "./workspace-core";
@@ -50,7 +50,7 @@ const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
   return { ctx: { user, workspace, workspaces }, fallback: !active };
 });
 
-export const canManage = (role: Role) => role === "owner" || role === "admin";
+export { canManage };
 
 /** For route handlers: returns the context or an error Response. */
 export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Response> {

@@ -14,6 +14,7 @@ import {
 } from "@/components/criterio";
 import { Dialog, DialogWindow } from "@/components/ui/dialog";
 import "./DesignLibrary.css";
+import type { SegmentItem } from "@/components/criterio";
 
 // The Criterio system's tokens (tokens.json, mirrored as CSS variables in app/globals.css). The brand and the chrome
 // are the same in both themes; the roles change between Paper (light) and Board (dark).
@@ -63,6 +64,11 @@ function useTokens(names: string[]) {
   return vals;
 }
 
+/** The system's SegmentedControl (it runs through Liquid itself now); kept as a name for the library's pages */
+export function LiquidSegmented(props: { items: SegmentItem[]; active?: number; onChange?: (i: number) => void; tone?: "paper" | "chrome"; label: string; choice?: boolean; className?: string }) {
+  return <SegmentedControl tone="paper" {...props} />;
+}
+
 function Block({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
   return (
     <section className="ds-block">
@@ -83,7 +89,7 @@ function ThemeFlip() {
   const set = (v: "light" | "dark") => { applyTheme(v); setTheme(v); };
   const opts = ["light", "dark"] as const;
   return (
-    <SegmentedControl tone="paper" choice className="ds-flip" label="Tema" active={theme ? opts.indexOf(theme) : -1}
+    <LiquidSegmented tone="paper" choice className="ds-flip" label="Tema" active={theme ? opts.indexOf(theme) : -1}
       onChange={(i) => set(opts[i])} items={[{ label: t.designLibrary.themeLight }, { label: t.designLibrary.themeDark }]} />
   );
 }
@@ -325,7 +331,7 @@ const SAMPLES: Record<string, () => ReactNode> = {
   ),
   segmentado: () => (
     <div className="ds-row ds-row--col">
-      <SegmentedControl tone="paper" choice className="theme-seg" label="Tema" active={0} items={[{ label: "Sistema" }, { label: "Claro" }, { label: "Oscuro" }]} />
+      <LiquidSegmented tone="paper" choice className="theme-seg" label="Tema" active={0} items={[{ label: "Sistema" }, { label: "Claro" }, { label: "Oscuro" }]} />
       <PillBar><SegmentedControl label="Vista" active={0} items={[{ label: "Board" }, { label: "System" }]} /></PillBar>
     </div>
   ),

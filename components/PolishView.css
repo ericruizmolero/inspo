@@ -1,0 +1,166 @@
+/* Polish (components/PolishView.tsx): what is still undecided on the board, turning as a tornado of cards, sharp at
+   the front and out of focus with depth. The card facing the screen takes more room and is the one being decided. */
+.polish { position: absolute; inset: 0; overflow: clip; background: var(--bg); -webkit-user-select: none; user-select: none; }
+
+/* ─── The tornado ─── */
+.polish__sky { position: absolute; inset: 0; font-size: clamp(9px, min(1.2vw, 2.1vh), 22px); cursor: grab; touch-action: none; transition: filter 900ms var(--ease-out); }
+.polish__sky.is-grabbing { cursor: grabbing; }
+/* The stage's font-size is the tornado's unit: every distance of the orbit is in em, so it scales as one piece.
+   The sky has the size the screen gives it, and the zoom (set by the loop) multiplies it */
+.polish__stage {
+  position: absolute; inset: 0; font-size: calc(1em * var(--polish-zoom, 1));
+  perspective: 75em; transform-style: preserve-3d;
+}
+/* A card: placed by the loop (transform, filter, z-index), centred by `translate` so the two never fight. It is laid
+   out at the width it has facing the screen (FRONT_W) and drawn smaller on the orbit, so the one in front is sharp.
+   A little above the middle: the answers take the bottom */
+.polish__card { position: absolute; top: 46%; left: 50%; width: 30em; translate: -50% -50%; backface-visibility: visible; will-change: transform, filter; cursor: pointer; }
+.polish__sky.is-grabbing .polish__card { cursor: grabbing; }
+.polish__in {
+  position: absolute; inset: 0; overflow: hidden; border-radius: 1.5em; background: var(--surface-2); box-shadow: 0 0 0 1px var(--border);
+  animation: polish-in 480ms var(--ease-out) backwards;
+}
+@keyframes polish-in { from { opacity: 0; } }
+.polish__in img, .polish__fly img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; pointer-events: none; }
+/* The bigger copy of the cards nearest the front, over the small one once it loads */
+.polish__in .polish__hi { position: absolute; inset: 0; }
+/* The initial is display (.t-display); its size is the tornado's em, so it scales with the card (see .polish__text) */
+.polish .polish__initial { display: grid; place-items: center; width: 100%; height: 100%; font-size: 8em; color: var(--muted-2); }
+/* Depth: a card further round the orbit sinks into the page's own colour, so it works in both themes */
+.polish__fog { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; }
+/* Only when everything is decided does a veil of the page come over it, for the words */
+.polish__veil { position: absolute; inset: 0; pointer-events: none; background: var(--bg); opacity: 0; transition: opacity 600ms var(--ease-out); }
+.polish.is-done .polish__veil { opacity: 0.6; }
+
+/* A text reference: its title (.t-title-s) and first lines (.t-small), the step's face and weight. The one exception
+   to "no size in component CSS": a card of the tornado is a picture drawn at any zoom, so its type is sized in the
+   card's own em and scales with it, as the brand's own content does in the presentation */
+.polish__text { display: flex; flex-direction: column; gap: 0.7em; height: 100%; box-sizing: border-box; padding: 1.5em; background: var(--surface-raised); font-size: 1.6em; }
+.polish__text b { font-size: 1.3em; color: var(--text); text-wrap: balance; }
+.polish__text p { flex: 1; min-height: 0; margin: 0; overflow: hidden; font-size: 0.8em; color: var(--text-2); white-space: pre-wrap; }
+
+/* A decided card on its way to its tab: a copy, over everything in the view */
+.polish__fly {
+  position: absolute; z-index: 7; overflow: hidden; border-radius: var(--radius-lg); background: var(--surface-2); box-shadow: var(--shadow-pop);
+  pointer-events: none; will-change: transform, opacity;
+}
+.polish__fly .polish__text { font-size: var(--fs-small); }
+
+/* ─── The answers, where the dock sits on the board: solid chrome that follows the theme, its hairline, no glass ─── */
+.polish__bar {
+  position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 6; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-3); max-width: calc(100% - 32px);
+  animation: polish-up 420ms var(--ease-out) backwards;
+}
+@keyframes polish-up { from { opacity: 0; transform: translate(-50%, 8px); } }
+/* What is in front, on its own piece of chrome (.t-small): the cards pass behind. A site is its name. A post is who
+   wrote it and what it says, and what the team said about a reference goes under either: each with the face of who
+   said it, as under a tile on the board (.tile__note) */
+.polish__now {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-2); max-width: min(460px, 100%); box-sizing: border-box; margin: 0; padding: 6px 14px;
+  border-radius: var(--radius-lg); background: var(--chrome); color: var(--chrome-text); border: 1px solid var(--chrome-border); text-align: center;
+}
+.polish__now.has-words { align-items: stretch; padding: 10px 14px; text-align: left; }
+.polish__name, .polish__say > span:last-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.polish__name { color: var(--chrome-ink); }
+.polish__say { display: flex; align-items: flex-start; gap: var(--space-2); margin: 0; }
+.polish__say > span:last-child { -webkit-line-clamp: 3; }
+.polish__say b { color: var(--chrome-ink); }
+.polish__say .cr-avatar { flex-shrink: 0; overflow: hidden; } .polish__say .cr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.polish__say--note { color: var(--chrome-text-muted); }
+.polish__say--note > span:last-child { -webkit-line-clamp: 2; }
+.polish__faces { flex-shrink: 0; display: inline-flex; }
+.polish__faces .cr-avatar + .cr-avatar { margin-left: -5px; }
+/* What the team voted on it, once this person has: the faces of who keeps it and of who forgets it */
+.polish__votes { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; color: var(--chrome-text-muted); }
+.polish__voted { display: inline-flex; align-items: center; gap: 6px; }
+/* One piece in two halves of the same weight: each says what it does (.t-ui) and, under it, where the card goes (.t-label) */
+.polish__choice {
+  position: relative; display: flex; flex-wrap: wrap; align-items: stretch; max-width: 100%; box-sizing: border-box; padding: 6px;
+  border-radius: var(--radius-xl); background: var(--chrome); color: var(--chrome-ink); border: 1px solid var(--chrome-border); box-shadow: var(--float);
+}
+.polish__btn {
+  display: flex; align-items: center; gap: 14px; min-width: 216px; height: 60px; padding: 0 24px 0 12px; border: 0; border-radius: var(--radius-lg);
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+  transition: background-color 150ms var(--ease-out), transform 100ms var(--ease-out);
+}
+.polish__btn--keep { flex-direction: row-reverse; padding: 0 12px 0 24px; text-align: right; }
+.polish__btn:active { transform: translateY(1px); }
+.polish__btn:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.polish__btn-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; white-space: nowrap; }
+.polish__btn-text b { color: var(--chrome-ink); }
+.polish__btn-text small { color: var(--chrome-muted); }
+/* The arrow is the key that does the same (the system's Key), and the side the card leaves by */
+.polish__key { flex-shrink: 0; min-width: 28px; height: 28px; }
+.polish__sep { flex-shrink: 0; width: 1px; margin: 16px 6px; background: var(--chrome-border); }
+/* In a team, under the two answers and in their chrome (.t-label): what an answer is here. On a line of its own that
+   never widens the piece (no width of its own, all of the piece's) */
+.polish__team { flex: 0 0 100%; width: 0; min-width: 100%; box-sizing: border-box; margin: 0; padding: 6px 12px; color: var(--chrome-muted); text-align: center; text-wrap: balance; }
+.polish__back { margin-left: var(--space-2); vertical-align: middle; }
+/* Taking the last answer back: the system's IconButton beside the piece */
+.polish__undo { position: absolute; left: calc(100% + 10px); top: 36px; margin-top: -20px; transition: opacity 200ms var(--ease-out); }
+/* Nothing to take back: it is not there */
+.polish__undo:disabled { opacity: 0; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+  .polish__btn:hover { background: var(--chrome-raised); }
+}
+
+/* The corner the zoom has on the board, and its pill (components/ZoomPill.tsx): the zoom in the same place, and the
+   music in the same piece */
+.polish__corner { position: absolute; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 12; }
+
+/* Everything decided. The board that stays keeps turning, far and out of focus, and over it what was done falls
+   into place: a few of the kept references tidy themselves into a fan, then the words, then the way on */
+.polish.is-done .polish__sky { filter: blur(14px) saturate(0.85); pointer-events: none; }
+.polish__done {
+  position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 24px 24px 64px; text-align: center; pointer-events: none;
+}
+.polish__done > * { pointer-events: auto; animation: polish-rise 700ms var(--ease-out) backwards; }
+.polish__done > :nth-child(2) { animation-delay: 420ms; }
+.polish__done > :nth-child(3) { animation-delay: 500ms; }
+.polish__done > :nth-child(4) { animation-delay: 580ms; }
+.polish__done > :nth-child(5) { animation-delay: 700ms; }
+@keyframes polish-rise { from { opacity: 0; transform: translateY(10px); } }
+.polish__fan { display: flex; justify-content: center; align-items: flex-end; height: 96px; margin-bottom: 32px; animation: none; }
+.polish__fan-card {
+  position: relative; width: 120px; height: 78px; margin: 0 -28px; overflow: hidden; border-radius: var(--radius-md); background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  transform: translateY(calc(var(--i) * var(--i) * 4px)) rotate(calc(var(--i) * 7deg));
+  animation: polish-fan 900ms var(--ease-out) backwards; animation-delay: calc(80ms + (var(--i) + 2) * 70ms);
+}
+.polish__fan-card img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.polish__fan-card .polish__initial { font-size: var(--fs-title-m); }
+/* A text among them: its title (.t-label), as small as the card */
+.polish__fan-text { display: block; height: 100%; box-sizing: border-box; padding: 10px; overflow: hidden; background: var(--surface-raised); color: var(--text); text-align: left; }
+/* From loose and askew to its place in the fan */
+@keyframes polish-fan { from { opacity: 0; transform: translate(calc(var(--i) * 34px), 36px) rotate(calc(var(--i) * -16deg)) scale(0.72); } }
+/* The title is an h2 (title-l), the lines .t-body and .t-small */
+.polish__done-title { margin: 0; color: var(--text); }
+.polish__done-line { margin: 0; color: var(--text-2); }
+.polish__done-next { max-width: 360px; text-wrap: balance; }
+.polish__done-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin-top: var(--space-5); }
+.polish__empty-actions { display: flex; justify-content: center; gap: var(--space-2); margin-top: var(--space-3); }
+
+/* A window too narrow for the pill and the answers side by side: the answers go over it */
+@media (min-width: 801px) and (max-width: 860px) {
+  .polish__bar { bottom: calc(72px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 800px) {
+  /* The answers take the bottom: the sound goes up under the top bar (a phone has no zoom), and undo sits over their corner */
+  .polish__corner { top: 64px; bottom: auto; }
+  .polish__bar { width: calc(100% - 32px); gap: 8px; }
+  .polish__choice { width: 100%; }
+  .polish__btn { flex: 1; min-width: 0; padding: 0 12px; gap: 10px; }
+  .polish__btn--keep { padding: 0 12px; }
+  .polish__undo { left: auto; right: 0; top: auto; bottom: calc(100% + 40px); margin: 0; }
+}
+/* No arrow keys on a touch screen: the words alone, centred */
+@media (hover: none) {
+  .polish__key { display: none; }
+  .polish__btn, .polish__btn--keep { justify-content: center; text-align: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .polish__in, .polish__bar, .polish__done > *, .polish__fan-card { animation: none; }
+  .polish__btn:active { transform: none; }
+}

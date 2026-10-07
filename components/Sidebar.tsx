@@ -8,7 +8,9 @@ import { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
 import { DIRECTORY_TOTAL, SIDEBAR_PICKS, shuffleSidebarPicks, siteGroupKey, siteHost, siteShot, type DirectorySite } from "@/lib/directory";
 import { useT } from "./I18nProvider";
+import { fmtCount } from "@/lib/i18n/format";
 import FeedbackEntry from "./FeedbackEntry";
+import ThemeToggle from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -196,7 +198,8 @@ function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }:
 
 export interface QuotaView {
   planName: string;
-  designMd: { used: number; limit: number | null };
+  /** AI actions this month: what people asked of the model */
+  ai: { used: number; limit: number | null };
   searches: { used: number; limit: number | null };
 }
 
@@ -308,16 +311,16 @@ export function useSpaceCounts(items: InspoItem[], links: ProjectLinks) {
 }
 
 /** This month's DESIGN.md quota: the only thing that runs out. Links to /settings/plan. */
-export function PlanMeter({ quota }: { quota: QuotaView }) {
-  const { t } = useT();
-  const { used, limit } = quota.designMd;
+export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head and bar only, without the note under them */ compact?: boolean }) {
+  const { t, locale } = useT();
+  const { used, limit } = quota.ai;
   const full = limit !== null && used >= limit;
   return (
     <Link href="/settings/plan" className={`sidebar__plan${full ? " is-full" : ""}`} title={t.sidebar.seePlans}>
-      <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${used} DESIGN.md` : `${used}/${limit} DESIGN.md`}</span></span>
+      <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${fmtCount(used, locale)} ${t.sidebar.ai}` : `${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`}</span></span>
       {/* The system's Progress: segmented ember blocks in a sunken field */}
-      {limit !== null && <Progress value={used} max={limit} segments={20} label={`${used}/${limit} DESIGN.md`} className="sidebar__plan-progress" />}
-      <span className="sidebar__plan-note">{full ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>
+      {limit !== null && <Progress value={used} max={limit} segments={20} label={`${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`} className="sidebar__plan-progress" />}
+      {!compact && <span className="sidebar__plan-note">{full ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>}
     </Link>
   );
 }
@@ -442,6 +445,7 @@ export function SidebarNav({ quota, items, isAll, onReset, onAdd, onDirectory, o
 
       <SidebarFooter className="app-sidebar__footer">
         <FeedbackEntry onPick={onPick} />
+        <ThemeToggle row />
         {quota && <PlanMeter quota={quota} />}
       </SidebarFooter>
     </>

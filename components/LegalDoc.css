@@ -1,0 +1,15 @@
+/* The legal pages (/privacy, /terms), on top of .page and .legal (app/globals.css): the extension privacy page's
+   reading column. Sizes come from the type classes in the markup (h1, h2, .t-body, .t-small); only spacing and
+   colour here, in tokens, so both themes read the same. */
+.legal section { display: flex; flex-direction: column; gap: 8px; }
+.legal section h2 { margin: 0; color: var(--text); }
+.legal ul { margin: 0; padding-left: 20px; list-style: disc; display: flex; flex-direction: column; gap: 8px; }
+.legal li { color: var(--text-muted); text-wrap: pretty; }
+.legal li::marker { color: var(--text-muted); }
+.legal__date { margin: 0; color: var(--text-muted); }
+/* The draft notice is the system's butter Card: a note to act on, not an alarm */
+.legal__draft.cr-card { align-self: flex-start; padding: 10px 14px; }
+.legal__links { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 24px; border-top: 1px solid var(--border); }
+.legal__links a { color: var(--text-muted); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; transition: color 0.15s var(--ease-out); }
+.legal__links a:hover { color: var(--text); text-decoration-color: currentColor; }
+.legal__links a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }

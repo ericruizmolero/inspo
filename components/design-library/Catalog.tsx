@@ -4,8 +4,8 @@
 import { useState } from "react";
 import type { CatalogTab } from "@/lib/design-system";
 import DsMarkdown from "./DsMarkdown";
-import { Sample } from "./Specimens";
-import { Chip as SysChip, SegmentedControl } from "@/components/criterio";
+import { LiquidSegmented, Sample } from "./Specimens";
+import { Chip as SysChip } from "@/components/criterio";
 import "./DesignLibrary.css";
 
 function Chip({ text }: { text: string }) {
@@ -25,7 +25,7 @@ export default function Catalog({ tabs }: { tabs: CatalogTab[] }) {
   const current = tabs.find((t) => t.id === tab) ?? tabs[0];
   return (
     <div className="ds-specimen">
-      <SegmentedControl tone="paper" className="ds-seg" label="Contextos" active={tabs.indexOf(current)}
+      <LiquidSegmented className="ds-seg" label="Contextos" active={tabs.indexOf(current)}
         onChange={(i) => setTab(tabs[i].id)} items={tabs.map((t) => ({ label: t.name, count: t.items.length }))} />
       <div className="ds-catalog">
         {current.items.map((it) => (

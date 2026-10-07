@@ -10,7 +10,7 @@
 
 /* Tabs and filters: the system's SegmentedControl in its paper tone, in the theme picker's well, with counts */
 .ds-seg .cr-seg-count { font-variant-numeric: tabular-nums; }
-.ds-flip .cr-seg-item { padding: 6px 12px; font-weight: 500; }
+.ds-flip .cr-seg-item { padding: 6px 12px; }
 .ds-flip .cr-seg-item:focus-visible { outline-color: var(--focus); }
 
 /* Colour */

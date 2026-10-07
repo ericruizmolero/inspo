@@ -2,17 +2,18 @@
 
 import { hueFor } from "./CommentsPanel";
 
-import { Fragment, useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags, Project, TagStatus, type InspoComment } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
 import { useT } from "./I18nProvider";
+import { flyToInbox } from "./fly-to-inbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import ProjectPicker from "./ProjectPicker";
 import AreaPicker from "./AreaPicker";
 import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, readableDomain } from "@/lib/url";
 import LoopVideo from "./LoopVideo";
-import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, Separator, toneFor } from "@/components/criterio";
+import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
 import "./TextRef.css";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
@@ -81,6 +82,12 @@ interface InspoCardProps {
   caption?: NoteCaption | null;
   onComments?: () => void;
   onDelete?: () => Promise<void>; // remove the card from the workspace
+  /** On a project's board: takes the card out of that project. It stays in the workspace and, in no other
+   *  project, goes back to the Inbox, so the bin does this in one click and deleting is left to the Inbox */
+  onTakeOut?: () => void | Promise<void>;
+  /** The open workspace by name: off a project, what the bin says the card leaves (on one it says "the project":
+   *  a project's name does not fit over a card) */
+  spaceName: string;
   /** The workspace's projects and the ones this card is filed in (the folder button); none = no button */
   projects?: Project[];
   projectIds?: string[];
@@ -148,7 +155,7 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
@@ -184,15 +191,13 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const manual = useImageReady(manualThumbnail);
   const [hovering, setHovering] = useState(false);
   const [scrollDist, setScrollDist] = useState(0);
-  // Delete in two taps: the first asks for confirmation on the button itself, the second deletes
+  // Delete in two clicks on the same spot: the first turns the bin into the red word, the second deletes.
+  // A double click or a double tap on the bin is those two clicks.
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // The project menu keeps the action bar on screen while it is open (the pointer leaves the tile for it)
   const [pickerOpen, setPickerOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  // When the confirmation opened: a near-instant second click/tap/key doesn't count,
-  // so deleting is always two deliberate actions (double click, double tap or Space don't delete).
-  const confirmAt = useRef(0);
   const scrollBoxRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,7 +283,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, item.web]);
 
-  const domain = kind === "text" ? t.card.text : kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
+  // A copied picture or video says where it was found, when it knows
+  const domain = kind === "text" ? t.card.text : item.source ? getDomain(item.source) : kind === "image" ? (isGif(item.web) ? t.card.gif : t.card.image) : getDomain(item.web);
   // A text is its own poster: its title, and its first lines where a site's note would go
   const posterNote = kind === "text" ? tags?.summary || item.note : item.note;
   const isError = !useManual && !useDesign && !useFrame && source === "error";
@@ -332,7 +338,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     }
   };
 
-  // The confirmation cancels with Esc or on its own after 6 s
+  // The confirmation cancels with Esc, when the pointer leaves the card, or on its own after 6 s
   useEffect(() => {
     if (!confirmDelete) return;
     const t = setTimeout(() => setConfirmDelete(false), 6000);
@@ -340,13 +346,20 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     window.addEventListener("keydown", onKey);
     return () => { clearTimeout(t); window.removeEventListener("keydown", onKey); };
   }, [confirmDelete]);
-  const cancelDelete = (e: React.MouseEvent) => { e.stopPropagation(); setConfirmDelete(false); };
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Out of a project nothing is lost: no second click. The card is seen flying to the Inbox tab, as in Polish,
+    // and leaves the project when it lands; refused by the server, it is back in its place
+    if (onTakeOut) {
+      const tile = e.currentTarget.closest<HTMLElement>(".tile");
+      const wait = tile ? flyToInbox(tile) : 0;
+      if (tile && wait) tile.style.visibility = "hidden";
+      window.setTimeout(() => { void Promise.resolve(onTakeOut()).finally(() => { if (tile) tile.style.visibility = ""; }); }, wait);
+      return;
+    }
     if (!onDelete) return;
-    if (!confirmDelete) { confirmAt.current = Date.now(); setConfirmDelete(true); return; }
-    if (Date.now() - confirmAt.current < 400) return; // too quick: not a decision
+    if (!confirmDelete) { setConfirmDelete(true); return; }
     setConfirmDelete(false);
     setDeleting(true);
     try { await onDelete(); } finally { setDeleting(false); }
@@ -361,8 +374,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
 
   // The external site only opens from its icon: a click on the card leads to our own views.
 
-  const openHref = kind === "image" ? item.web : item.web;
-  const openLabel = kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
+  const openHref = item.source ?? item.web;
+  const openLabel = item.source ? t.card.openOriginal : kind === "image" ? t.card.openImage : kind === "video" ? t.card.openVideo : kind === "post" ? t.card.openPost : t.card.openSite;
 
   const meta = (
     <div className="tile__meta">
@@ -420,7 +433,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           onOpen();
         }}
         onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
+        onMouseLeave={() => { setHovering(false); setConfirmDelete(false); }}
       >
         <div ref={containerRef} className={`tile__media${!isLoaded && !isError ? " is-loading" : ""}`}
           style={board?.ratio ? { aspectRatio: `1 / ${board.ratio}`, background: board.color } : undefined}>
@@ -561,61 +574,52 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           )}
 
           <div
-            className={`tile__actions cr-on-chrome${uploading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}${confirmDelete || deleting ? " is-confirm" : ""}`}
+            className={`tile__actions cr-on-chrome${uploading || confirmDelete || deleting || pickerOpen ? " is-visible" : ""}`}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            {confirmDelete || deleting ? (
-              <Fragment key="confirm">
-                <span className="tile__confirm-text">{deleting ? t.card.removing : t.card.confirmRemove}</span>
-                <Button variant="danger" size="s" className="tile__action--confirm" onClick={handleDelete} disabled={deleting} autoFocus>
-                  {deleting ? <Busy label={t.card.removing} /> : t.common.delete}
-                </Button>
-                {!deleting && (
-                  <IconButton icon="close" variant="default" size="s" label={t.common.cancel} onClick={cancelDelete} />
-                )}
-              </Fragment>
-            ) : (
-              <Fragment key="actions">
-            {/* Up here, the quieter ones: the site, and the rest behind ···. Each is its own default IconButton,
-                size s: filled with the hairline, so it reads over any screenshot */}
+            {/* Up here, the quieter ones: the site, the thumbnail behind ···, and the bin. Each is its own default
+                IconButton, size s: filled with the hairline, so it reads over any screenshot */}
             {/* A text has no page of its own to open: it is read in its panel */}
             {kind !== "text" && <a className="cr-iconbtn cr-iconbtn-default cr-iconbtn-s" href={openHref} target="_blank" rel="noopener noreferrer"
               aria-label={openLabel} data-tip={openLabel} onClick={(e) => e.stopPropagation()}>
               {IconExternal}
             </a>}
-            {(kind !== "image" || onDelete) && (
+            {kind !== "image" && kind !== "text" && (
               <Popover open={moreOpen} onOpenChange={(o) => { setMoreOpen(o); setPickerOpen(o); }}>
                 <PopoverTrigger className="cr-iconbtn cr-iconbtn-default cr-iconbtn-s tile__more" aria-label={t.card.more} data-tip={moreOpen ? undefined : t.card.more} onClick={(e) => e.stopPropagation()}>
                   {uploading ? <Busy label={t.card.more} /> : IconMore}
                 </PopoverTrigger>
-                {/* The system's Menu: a paper window, its rows MenuItems, the delete set apart by an engraved line */}
+                {/* The system's Menu: a paper window, its rows MenuItems */}
                 <PopoverContent align="end" className="cr-menu" onClick={(e) => e.stopPropagation()}>
-                  {kind !== "image" && kind !== "text" && (
-                    <MenuItem icon={IconUpload} onClick={(e) => { setMoreOpen(false); setPickerOpen(false); triggerUpload(e); }}>
-                      {uploadedThumb ? t.card.replaceThumb : t.card.uploadThumb}
-                    </MenuItem>
-                  )}
-                  {uploadedThumb && kind !== "image" && (
+                  <MenuItem icon={IconUpload} onClick={(e) => { setMoreOpen(false); setPickerOpen(false); triggerUpload(e); }}>
+                    {uploadedThumb ? t.card.replaceThumb : t.card.uploadThumb}
+                  </MenuItem>
+                  {uploadedThumb && (
                     <MenuItem icon="close" onClick={async (e) => { e.stopPropagation(); setMoreOpen(false); setPickerOpen(false); await onRemoveThumbnail(); }}>
                       {t.card.removeThumb}
-                    </MenuItem>
-                  )}
-                  {onDelete && kind !== "image" && (kind !== "text" || !!uploadedThumb) && <Separator />}
-                  {onDelete && (
-                    <MenuItem icon="trash" danger onClick={(e) => { setMoreOpen(false); setPickerOpen(false); handleDelete(e); }}>
-                      {t.card.removeFromInspo}
                     </MenuItem>
                   )}
                 </PopoverContent>
               </Popover>
             )}
-            </Fragment>
-            )}
+            {/* The bin is last so that the red word grows leftwards and stays under the pointer.
+                A held Enter doesn't count as the second click. */}
+            {(onDelete || onTakeOut) && (confirmDelete || deleting ? (
+              // Armed: the confirm step's look, the system's danger Button s, the word Delete under the pointer
+              <Button key="confirm" variant="danger" size="s" className="tile__action--confirm" aria-label={t.card.confirmDelete}
+                onClick={handleDelete} onKeyDown={(e) => { if (e.repeat) e.preventDefault(); }} disabled={deleting}>
+                {deleting ? <Busy label={t.common.delete} /> : t.common.delete}
+              </Button>
+            ) : (
+              <IconButton key="bin" icon="trash" variant="default" size="s"
+                label={onTakeOut ? t.card.removeFromProject : t.card.removeFrom(spaceName)}
+                onClick={handleDelete} onKeyDown={(e) => { if (e.repeat) e.preventDefault(); }} />
+            ))}
           </div>
 
           {/* Down here, what is done most with a reference: file it (projects and areas) and talk about it */}
-          {!(confirmDelete || deleting) && (onToggleProject || onComments) && (
+          {(onToggleProject || onComments) && (
             <div className={`tile__go${pickerOpen ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
               {/* The system's ProjectPicker row: the picker Button, then IconButtons size s on a card (l in the viewer) (strong for the
                   one that matters most, the areas of the system; default for comments) */}
@@ -672,15 +676,14 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
         {/* The icon-only ones are the system's default IconButton, size xs */}
         {areaPicker("cr-iconbtn cr-iconbtn-default cr-iconbtn-xs tile__caption-ib", undefined, 14)}
         <a className="cr-iconbtn cr-iconbtn-default cr-iconbtn-xs tile__caption-ib" href={openHref} target="_blank" rel="noopener noreferrer" aria-label={openLabel} data-tip={openLabel}>{IconExternal}</a>
-        {onDelete && (confirmDelete || deleting ? (
-          <Fragment key="confirm">
-            <Button variant="danger" size="s" className="tile__caption-del" onClick={handleDelete} disabled={deleting} aria-label={t.card.confirmDelete}>
-              {deleting ? <Busy label={t.card.removing} /> : t.common.delete}
-            </Button>
-            {!deleting && <IconButton icon="close" variant="default" size="xs" className="tile__caption-ib" onClick={cancelDelete} label={t.common.cancel} />}
-          </Fragment>
+        {/* The bin in two clicks: the first turns it into the confirm step's danger Button, the second deletes */}
+        {(onDelete || onTakeOut) && (confirmDelete || deleting ? (
+          <Button key="confirm" variant="danger" size="s" className="tile__caption-del" onClick={handleDelete} disabled={deleting} aria-label={t.card.confirmDelete}>
+            {deleting ? <Busy label={t.common.delete} /> : t.common.delete}
+          </Button>
         ) : (
-          <IconButton key="trash" icon="trash" variant="default" size="xs" className="tile__caption-ib" onClick={handleDelete} label={t.card.removeFromInspo} />
+          <IconButton key="trash" icon="trash" variant="default" size="xs" className="tile__caption-ib" onClick={handleDelete}
+            label={onTakeOut ? t.card.removeFromProject : t.card.removeFrom(spaceName)} />
         ))}
       </div>
     </div>

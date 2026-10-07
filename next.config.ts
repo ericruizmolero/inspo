@@ -9,8 +9,9 @@ const nextConfig: NextConfig = {
   // Memoizes components and hooks at build time (babel-plugin-react-compiler): the board's big client tree
   // no longer re-renders whole on a keystroke or a poll. The manual useMemo/useCallback stay; new code needn't add them.
   reactCompiler: true,
-  // Development only: the bottom-left corner holds the zoom pill, so the indicator takes the free corner
-  devIndicators: { position: "bottom-right" },
+  // Development only: every corner is taken (the island, the actions pill, the zoom pill, the theme button), so
+  // Next's route indicator is off. Compile and runtime errors still show
+  devIndicators: false,
   poweredByHeader: false,
   // Settings moved under /settings (22/09/2026). Old links, bookmarks and emails keep working;
   // the query passes through.

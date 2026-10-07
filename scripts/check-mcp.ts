@@ -69,6 +69,8 @@ async function main() {
   const call = async (name: string, a: unknown) => { const r = await rpc("tools/call", { name, arguments: a }); const c = (r.result?.content as { text: string }[] | undefined)?.[0]?.text ?? JSON.stringify(r.error); return { text: c, isError: !!r.result?.isError || !!r.error }; };
   const init = await rpc("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "check", version: "0" } });
   ok("initialize", (init.result?.serverInfo as Json)?.name === "criterio", `protocol ${init.result?.protocolVersion}`);
+  const icon = ((init.result?.serverInfo as Json)?.icons as { src: string }[] | undefined)?.[0]?.src ?? "";
+  ok("server icon is public", (await fetch(icon, { redirect: "manual" }).catch(() => null))?.headers.get("content-type") === "image/png", icon);
   const tools = ((await rpc("tools/list")).result?.tools as Json[]) ?? [];
   ok("tools/list", tools.length >= 8, tools.map((t) => t.name).join(", "));
   const prompts = ((await rpc("prompts/list")).result?.prompts as Json[]) ?? [];

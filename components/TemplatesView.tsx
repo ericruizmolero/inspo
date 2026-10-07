@@ -13,14 +13,15 @@ import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import LoopVideo from "./LoopVideo";
 import { useConfirm } from "./useConfirm";
-import { Busy, Icon } from "@/components/criterio";
-import { mediaKindOf, readableDomain, videoEmbedOf } from "@/lib/url";
+import { Busy, Button, Icon } from "@/components/criterio";
+import { mediaKindOf, postOf, readableDomain, videoEmbedOf } from "@/lib/url";
 import { posterOf, preloadTemplates, remember, remembered, seen } from "./templates-cache";
 import "./SystemMarkdown.css";
 import "./Templates.css";
 
 const NONE = new Set<SystemArea>();
-const host = (u: string) => readableDomain(u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""));
+// A post is named by whose it is, not by its long address
+const host = (u: string) => { const post = postOf(u); return post ? `x.com/${post.user}` : readableDomain(u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")); };
 function download(name: string, text: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type: "text/markdown" }));
@@ -54,11 +55,12 @@ function Result({ id, url, video, poster, still = false }: { id: string; url: st
   const kind = mediaKindOf(url);
   const hover = video ? videoEmbedOf(video) : null;
   const hoverSrc = hover && (hover.loops || hover.provider === "file") ? hover.src : null;
-  if (kind !== "image" && kind !== "video") return <ResultPage id={id} url={url} still={still} hoverSrc={hoverSrc} poster={poster} />;
+  // A post is not a page to capture: its picture is the one the template brings
+  if (kind !== "image" && kind !== "video" && kind !== "post") return <ResultPage id={id} url={url} still={still} hoverSrc={hoverSrc} poster={poster} />;
   const v = kind === "video" ? videoEmbedOf(url) : null;
   const view = (
     <div className="tpl-page__view">
-      {kind === "image" ? <img className="tpl-page__top" src={url} alt="" /> : v?.poster && <img className="tpl-page__top" src={v.poster} alt="" />}
+      {kind === "image" ? <img className="tpl-page__top" src={url} alt="" /> : kind === "post" ? poster && <img className="tpl-page__top" src={poster} alt="" /> : v?.poster && <img className="tpl-page__top" src={v.poster} alt="" />}
       {v && (v.loops || v.provider === "file") && <LoopVideo src={v.src} />}
     </div>
   );
@@ -99,21 +101,34 @@ function ResultPage({ id, url, still, hoverSrc, poster }: { id: string; url: str
   );
 }
 
-/** A template in the library: what it ended as, its name, what it turned into what, and what it was */
-function TemplateCardView({ tpl, onOpen }: { tpl: TemplateCard; onOpen: () => void }) {
+/** A template in the library: what it ended as, its name, what it turned into what, and what it was. The card
+ *  opens it; over its picture, on hover, the two things done with a template, as on the board's cards */
+function TemplateCardView({ tpl, onOpen, onUse }: { tpl: TemplateCard; onOpen: () => void; onUse: (tpl: TemplateCard, name: string) => Promise<void> }) {
+  const { t } = useT();
+  const s = t.templates;
+  const [busy, setBusy] = useState(false);
+  const use = async () => { if (busy) return; setBusy(true); try { await onUse(tpl, tpl.name); } finally { setBusy(false); } };
   return (
-    <button type="button" className="tplc" onClick={onOpen}>
-      {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} still /> : <div className="tpl-page"><div className="tpl-page__view t-display tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
-      <span className="t-title-m tplc__name">{tpl.name}</span>
-      {(tpl.template.from || tpl.template.to) && (
-        <span className="tplc__path">
-          {tpl.template.from && host(tpl.template.from)}
-          {tpl.template.from && tpl.template.to && <span aria-hidden>{Icons.arrow}</span>}
-          {tpl.template.to && host(tpl.template.to)}
-        </span>
-      )}
-      {tpl.template.about && <span className="tplc__about">{tpl.template.about}</span>}
-    </button>
+    <div className="tplc">
+      <button type="button" className="tplc__open" onClick={onOpen}>
+        {tpl.template.to ? <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} still /> : <div className="tpl-page"><div className="tpl-page__view t-display tplc__blank">{tpl.name.slice(0, 1)}</div></div>}
+        <span className="t-title-m tplc__name">{tpl.name}</span>
+        {(tpl.template.from || tpl.template.to) && (
+          <span className="tplc__path">
+            {tpl.template.reverse && <b className="tplc__kind" data-tip={s.reverseHint}>{s.reverse}</b>}
+            {tpl.template.from && host(tpl.template.from)}
+            {tpl.template.from && tpl.template.to && <span aria-hidden>{Icons.arrow}</span>}
+            {tpl.template.to && host(tpl.template.to)}
+          </span>
+        )}
+        {tpl.template.about && <span className="tplc__about">{tpl.template.about}</span>}
+      </button>
+      {/* Over its picture, on hover: the board card's action row, the system's Button size s */}
+      <div className={`tplc__go${busy ? " is-visible" : ""}`}>
+        <Button size="s" disabled={busy} data-tip={s.useHint} onClick={() => void use()}>{busy ? <Busy label={s.clone} /> : <Icon name="plus" size={16} />}{s.clone}</Button>
+        <Button size="s" onClick={onOpen}>{s.view}</Button>
+      </div>
+    </div>
   );
 }
 
@@ -151,6 +166,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
           <h2 className="tpl-name">{tpl.name}</h2>
           {(tpl.template.from || tpl.template.to) && (
             <p className="tpl-path">
+              {tpl.template.reverse && <b className="tplc__kind" data-tip={s.reverseHint}>{s.reverse}</b>}
               {tpl.template.from && <a href={tpl.template.from} target="_blank" rel="noreferrer">{host(tpl.template.from)}</a>}
               {tpl.template.from && tpl.template.to && <span aria-hidden>{Icons.arrow}</span>}
               {tpl.template.to && <a href={tpl.template.to} target="_blank" rel="noreferrer">{host(tpl.template.to)}</a>}
@@ -178,7 +194,12 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
   );
 }
 
-export default function TemplatesView({ workspaceId, onStarted }: { workspaceId: string; onStarted: (project: Project & { boardIds?: string[] }) => void }) {
+export default function TemplatesView({ workspaceId, head, onStarted }: {
+  workspaceId: string;
+  /** The head of the page over the cards (Discover's, with its sections); an open template has its own way back */
+  head: React.ReactNode;
+  onStarted: (project: Project & { boardIds?: string[] }) => void;
+}) {
   const { t } = useT();
   const s = t.templates;
   const [list, setList] = useState<TemplateCard[] | null>(() => seen.get(workspaceId) ?? null);
@@ -222,14 +243,11 @@ export default function TemplatesView({ workspaceId, onStarted }: { workspaceId:
           </>
         ) : (
           <>
-            <header className="tpls-head">
-              <h1 className="tpls-title">{s.title}</h1>
-              <p className="tpls-lead">{s.lead}</p>
-            </header>
+            {head}
             {error && <p className="sysv-error" role="alert">{error}</p>}
             {list === null && !error && <div className="tplc-grid" aria-busy="true"><TemplateCardSkeleton /><TemplateCardSkeleton /></div>}
             {list?.length === 0 && <p className="tpls-empty">{s.empty}</p>}
-            {!!list?.length && <div className="tplc-grid">{list.map((tpl) => <TemplateCardView key={tpl.id} tpl={tpl} onOpen={() => go(tpl.id)} />)}</div>}
+            {!!list?.length && <div className="tplc-grid">{list.map((tpl) => <TemplateCardView key={tpl.id} tpl={tpl} onOpen={() => go(tpl.id)} onUse={use} />)}</div>}
           </>
         )}
       </div>

@@ -21,11 +21,14 @@ import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Liquid, afterPaint } from "@/components/ui/liquid";
 
 /** Open tabs shown at most, room allowing; the rest wait in "N more" */
 const MAX_TABS = 8;
 /** On a first visit, before anything was opened or closed here: the most recently active, this many */
 const FIRST_TABS = 5;
+/** Faces in the menu's team row, overlapping; past this, the last slot counts the rest */
+const MAX_FACES = 7;
 /** Gap between tabs, as in .island__tabs */
 const GAP = 4;
 /** A name past this many characters is cut by the tab's max-width: the tooltip keeps it whole */
@@ -90,7 +93,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace,
-  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -98,6 +101,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   /** The team, listed in the workspace menu; picking someone filters by what they saved */
   members?: { name: string; image: string | null }[];
   onPerson?: (name: string) => void;
+  /** The workspace menu just opened: the moment to re-read the plan's usage */
+  onMenuOpen?: () => void;
   /** "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
@@ -239,7 +244,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const go = (id: string) => (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
-    onSpace(id);
+    // The tab's fill is painted first: opening a space is a heavy render, and the tab would not answer until it ended
+    afterPaint(() => onSpace(id));
   };
   const filledOf = (id: string) => systems[id]?.areas.filter((a) => a.decision).length ?? 0;
   // The tab's StatusRing: an ember dot when references came in since the system's last read, a moss ring when
@@ -259,7 +265,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   );
   const tab = (id: string, name: string, n: number, fixed?: boolean) => (
     <a key={id} href={hrefOf(id)} className={`island__tab${space === id ? " is-on" : ""}`} aria-current={space === id ? "page" : undefined}
-      title={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
+      data-tip={name.length > LONG_NAME ? name : undefined} data-fixed={fixed || undefined} onClick={go(id)}>
       {label(name, n, fixed ? undefined : id)}
     </a>
   );
@@ -269,50 +275,37 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     <div className="island" ref={root} data-feedback-entry="">
       <WorkspaceMenu
         user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-        triggerClassName="island__ws" triggerLabel={t.ws.menuFor(workspace.name)}
+        triggerClassName="island__ws" triggerLabel={t.ws.menuFor(workspace.name)} onOpen={onMenuOpen}
         trigger={<>
           <span className="island__logo"><Logo size={24} /></span>
           <span className="island__chev" aria-hidden><Icon name="chevron-down" size={14} /></span>
         </>}
         extras={<>
-          {/* The projects as folders and the team, one click from anywhere */}
-          <MenuLabel>{t.projects.title}</MenuLabel>
-          {projects.length > 0 && (
-            <div className="island__menu-list">
-              {projects.map((p) => (
-                <MenuItem key={p.id} icon="folder" checked={space === p.id} onClick={() => onSpace(p.id)}>
-                  <span className="island__menu-name">{p.name}</span><span className="island__n">{counts.byProject[p.id] ?? 0}</span>
-                </MenuItem>
-              ))}
-            </div>
-          )}
-          {/* After the menu has closed: opening one popover on the click that closes another shuts it at once */}
-          <MenuItem icon="plus" className="is-muted" onClick={() => setTimeout(() => setNaming("new"), 150)}>{t.projects.newProject}</MenuItem>
-          <Separator />
+          {/* The team in one row of faces: each one filters by who saved, and the row ends in the way to Members.
+              The projects are not listed here: the tabs beside this menu are the projects */}
           <MenuLabel>{t.team.title}</MenuLabel>
-          {members.length > 0 && (
-            <div className="island__menu-list">
-              {members.map((m) => (
-                <MenuItem key={m.name} icon={<UserAvatar name={m.name} image={m.image} small />} data-tip={t.ws.savedBy(m.name)} onClick={() => onPerson?.(m.name)}>
-                  {m.name}
-                </MenuItem>
-              ))}
-            </div>
-          )}
-          <Link className="cr-menu-item is-muted" role="menuitem" href="/settings/members">
-            <Icon name="plus" size={16} /><span className="cr-menu-label">{t.ws.manageTeam}</span>
-          </Link>
+          <div className="island__team">
+            {(members.length > MAX_FACES ? members.slice(0, MAX_FACES - 1) : members).map((m) => (
+              <button key={m.name} type="button" className="island__face" data-tip={t.ws.savedBy(m.name)} aria-label={t.ws.savedBy(m.name)} onClick={() => onPerson?.(m.name)}>
+                <UserAvatar name={m.name} image={m.image} small />
+              </button>
+            ))}
+            {members.length > MAX_FACES && (
+              <Link className="island__face island__face--more" href="/settings/members" aria-label={t.ws.manageTeam}>+{members.length - MAX_FACES + 1}</Link>
+            )}
+            <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
+          </div>
           <Separator />
           <MenuItem icon="compass" onClick={onDirectory}>{t.palette.openDirectory}</MenuItem>
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>
-          {quota && <div className="island__plan"><PlanMeter quota={quota} /></div>}
+          {quota && <div className="island__plan"><PlanMeter quota={quota} compact /></div>}
           <Separator />
         </>}
       />
 
-      <nav className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
+      <Liquid as="nav" on=":scope > .is-on" className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
         {/* Home: every project, as pictures, and where a new one starts */}
         {/* The system's quiet IconButton, size m, as a link: active on home */}
         <a href={hrefOf("home")} className={`cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m island__home${space === "home" ? " is-active" : ""}`} aria-current={space === "home" ? "page" : undefined}
@@ -330,7 +323,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           // The selected project: its name goes to it, its ⌄ renames or deletes it
           <span key={p.id} className="island__tab is-on island__tab--split">
             <a href={hrefOf(p.id)} className="island__tab-main" aria-current="page"
-              title={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
+              data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
               {label(p.name, counts.byProject[p.id] ?? 0, p.id)}
             </a>
             <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
@@ -345,7 +338,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           </span>
         ) : (
           <span key={p.id} className="island__tab island__tab--split island__tab--closable">
-            <a href={hrefOf(p.id)} className="island__tab-main" title={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
+            <a href={hrefOf(p.id)} className="island__tab-main" data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
               {label(p.name, counts.byProject[p.id] ?? 0, p.id)}
             </a>
             {closeX(p)}
@@ -378,7 +371,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <NewProject onCreate={createNew} onDone={() => setNaming(null)} />
           </PopoverContent>
         </Popover>
-      </nav>
+      </Liquid>
 
       {/* Every project tab and "N more" at their own width, out of sight, for the measure above */}
       <div className="island__measure" ref={sizesRef} aria-hidden>

@@ -159,6 +159,60 @@
       }
     }
   },
+  "importPinterestShort": {
+    "message": "Tablero de Pinterest"
+  },
+  "pinTitle": {
+    "message": "De Pinterest"
+  },
+  "pinLead": {
+    "message": "Pega la dirección de uno de tus tableros. Cada pin se guarda como imagen, secciones incluidas. Para un tablero secreto tienes que tener la sesión de Pinterest iniciada en este navegador."
+  },
+  "pinUrlLabel": {
+    "message": "Dirección del tablero"
+  },
+  "importPinterest": {
+    "message": "Importar de Pinterest"
+  },
+  "pinPermission": {
+    "message": "Chrome pide permiso para leer pinterest.com; solo se usa mientras importa."
+  },
+  "pinPermissionDenied": {
+    "message": "Sin permiso para leer pinterest.com la extensión no puede ver el tablero."
+  },
+  "pinBadUrl": {
+    "message": "Eso no es un tablero. Pega la dirección de un tablero, como pinterest.com/tu-usuario/tablero."
+  },
+  "pinNotFound": {
+    "message": "Pinterest no enseña ese tablero. Si es secreto, inicia sesión en Pinterest en este navegador y vuelve a probar."
+  },
+  "pinFailed": {
+    "message": "Pinterest ha dejado de responder. Prueba otra vez en un rato."
+  },
+  "pinPartial": {
+    "message": "Pinterest dejó de responder a medias: $N$ referencias nuevas guardadas. Vuelve a importar el tablero para traer el resto; lo guardado no se repite.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "48"
+      }
+    }
+  },
+  "pinTabClosed": {
+    "message": "Se cerró la pestaña de Pinterest. Lo encontrado hasta ahora queda guardado."
+  },
+  "pinInjectFailed": {
+    "message": "No se pudo leer la pestaña de Pinterest: $ERR$",
+    "placeholders": {
+      "err": {
+        "content": "$1",
+        "example": "Cannot access contents of the page"
+      }
+    }
+  },
+  "progressPinterest": {
+    "message": "Leyendo los pines del tablero…"
+  },
   "progressBrowser": {
     "message": "Importando marcadores…"
   },
@@ -205,6 +259,32 @@
       }
     }
   },
+  "doneSavedIn": {
+    "message": "Listo: $N$ referencias nuevas en $PROJECT$. Miniaturas y etiquetas van llegando en los próximos minutos.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "48"
+      },
+      "project": {
+        "content": "$2",
+        "example": "Landing"
+      }
+    }
+  },
+  "nothingNewIn": {
+    "message": "Nada nuevo: todo estaba ya en $WS$, y ahora también está en $PROJECT$.",
+    "placeholders": {
+      "ws": {
+        "content": "$1",
+        "example": "Studio"
+      },
+      "project": {
+        "content": "$2",
+        "example": "Landing"
+      }
+    }
+  },
   "nothingFound": {
     "message": "No se ha encontrado nada."
   },
@@ -219,6 +299,9 @@
   },
   "openLibrary": {
     "message": "Abrir la librería"
+  },
+  "openProject": {
+    "message": "Abrir el proyecto"
   },
   "importMore": {
     "message": "Importar más"

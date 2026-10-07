@@ -101,6 +101,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
         isAdmin={shown.isAdmin}
         initialQuota={shown.initialQuota}
         initialComments={shown.initialComments}
+        initialPolishVotes={shown.initialPolishVotes}
         initialDesignMdIndex={shown.initialDesignMdIndex}
         initialPageShots={shown.initialPageShots}
       />

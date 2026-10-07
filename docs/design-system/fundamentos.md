@@ -107,6 +107,7 @@ Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 so
 
 - Microinteracciones 0.1–0.15 s; pulsar un control con bisel = `--bevel-pressed` y `translateY(1px)` (se hunde, no encoge).
 - Keyframes disponibles: `fade-in`, `pop-in` (6 px + 0.985), `shimmer` (skeleton), `spin`.
+- Cambio de tema hecho a mano: fundido de la página entera en 600 ms con `--ease-in-out` (`switchTheme` en `lib/theme.ts`). → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
 ## Puntos de corte
 
@@ -124,7 +125,7 @@ Cada icono se pinta con su propio trazo: los del sistema (`Icon`) con trazo 2 so
 | --- | --- |
 | 0–3 | Decoración dentro de tarjetas (badges, botones inferiores, tooltips de tarjeta) |
 | 5–6 | Capas dentro de una vista (barras sticky, zonas de soltar, popover de pin) |
-| 12 | Control de zoom del tablero |
+| 12 | Pastilla de la esquina (zoom y música) y botón de tema |
 | 20 | Barra superior (`.topbar`, Isla) y barra de invitado |
 | 25 | Dock (buscador y agente) |
 | 30 | Sugerencias del buscador, ficha de referencia (escritorio), selector de referencias |

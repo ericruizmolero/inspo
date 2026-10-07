@@ -16,13 +16,16 @@
 /* Between the groups, the system's Separator, vertical (the engraved line) */
 .selbar__sep.cr-sep-v { height: 32px; margin: 0 6px; }
 /* The moves are quiet Buttons, size s (the bar is a toolbar; .cr-on-chrome hands them the chrome's --ib-* tokens);
-   Done the one secondary, size s. An open picker keeps its trigger lit */
+   Done the one secondary. An open picker keeps its trigger lit */
 .selbar__btn[data-popup-open] { background: var(--ib-hover); }
 .selbar__done { margin-left: 2px; }
-.selbar .btn:focus-visible { outline-color: var(--ember-glow); }
+.selbar .btn:focus-visible, .selbar .cr-btn:focus-visible { outline-color: var(--ember-glow); }
+/* With "Select all" and "Delete" the labels no longer fit under the app's mobile cut: icons only there */
+@media (max-width: 800px) {
+  .selbar__btn span { display: none; }
+}
 @media (max-width: 520px) {
   .selbar { padding-left: 14px; }
-  .selbar__btn span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .selbar { transition: opacity 180ms var(--ease-out); @starting-style { opacity: 0; transform: translateX(-50%); } }

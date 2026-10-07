@@ -8,16 +8,16 @@ import { after } from "next/server";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
-import { HttpError } from "./workspace-core";
+import { HttpError, canManage } from "./workspace-core";
 import type { Ctx } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
 import { recordUsage, type UsageCtx } from "./usage";
-import { addItem, deleteItems, rowToItem, setItemNote, editUserTags } from "./items";
+import { addItem, deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
-import { loadProjects, createProject, renameProject, deleteProject, fileItems, unfileItems } from "./projects";
+import { loadProjects, createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems } from "./projects";
 import { saveBrief, setClientBrand } from "./brief";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
@@ -42,7 +42,7 @@ const ActionSchema = z.discriminatedUnion("kind", [
   // Not a command: a search of the library, run by the interface
   z.object({ kind: z.literal("search"), text: z.string() }),
   // Go somewhere: a project (or "inbox", "library", "home"), a view, an area
-  z.object({ kind: z.literal("go"), project: z.string().nullable(), view: z.enum(["system", "board"]).nullable(), area: Area.nullable() }),
+  z.object({ kind: z.literal("go"), project: z.string().nullable(), view: z.enum(["system", "polish", "board"]).nullable(), area: Area.nullable() }),
   z.object({ kind: z.literal("file"), items: z.array(z.string()), project: z.string(), on: z.boolean() }),
   z.object({ kind: z.literal("assign"), items: z.array(z.string()), project: z.string(), area: Area, on: z.boolean() }),
   // Writes the area as the team's: the person dictated it, runs leave it alone
@@ -91,7 +91,7 @@ export interface AgentScope {
   projectId?: string | null;
   /** "inbox" | "library" | "home" | a project id */
   space?: string | null;
-  view?: "system" | "board" | null;
+  view?: "system" | "polish" | "board" | null;
   /** The area open in the system, if any */
   area?: string | null;
   /** The reference open in the panel, if any */
@@ -133,7 +133,7 @@ export interface AgentDone {
   /** ask: the answers to pick from, each the order it would give */
   options?: { label: string; order: string }[];
   /** For the interface's own actions */
-  go?: { space: string | null; view: "system" | "board" | null; area: SystemArea | null };
+  go?: { space: string | null; view: "system" | "polish" | "board" | null; area: SystemArea | null };
 }
 
 /** What changed, so the interface catches up without reloading */
@@ -172,7 +172,7 @@ THE TOOL
 THE CATALOGUE (kind: what it does)
 Moving around
 - search: search the library by words. Never guess ids for a search.
-- go: open a project (or "inbox", "library", "home"), a view ("system" or "board"), an area.
+- go: open a project (or "inbox", "library", "home"), a view ("board", "polish" to go through the board card by card keeping or forgetting each, or "system"), an area.
 Filing
 - file: put references in a project (on: true) or take them out (on: false).
 - assign: hang references from an area of a project's system (on: true) or take them off it (on: false). It files them in the project too.
@@ -376,7 +376,11 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           names.set(p.id, p.name); created = p.id; line.project = p.name; projectsTouched = true; break;
         }
         case "rename_project": { const p = await renameProject(org, a.project, a.name.trim().slice(0, 60)); line.project = p.name; line.text = names.get(a.project); projectsTouched = true; break; }
-        case "delete_project": line.project = names.get(a.project); await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
+        // The agent deletes what the person asking could delete by hand, and no more (app/actions/library.ts)
+        case "delete_project":
+          line.project = names.get(a.project);
+          if (!canManage(ctx.workspace.role) && !(await startedProject(org, a.project, author.id))) throw new HttpError(403, (await getErrors()).projectNotYours);
+          await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
         case "brief": await saveBrief(org, a.project, { about: a.about.trim() }, author.id); line.project = names.get(a.project); line.text = a.about; break;
         case "client": await setClientBrand(org, a.project, a.item, author.id); line.project = names.get(a.project); line.on = !!a.item; line.items = a.item ? [a.item] : []; projectsTouched = true; break;
         case "add_url": {
@@ -399,6 +403,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           line.name = await itemName(a.item); line.text = a.add ?? a.remove ?? ""; line.items = [a.item]; break;
         }
         case "delete_items":
+          if ((await deletableIds(org, a.items, ctx.user, canManage(ctx.workspace.role))).length < a.items.length) throw new HttpError(403, (await getErrors()).cardsNotYours);
           await deleteItems(org, a.items);
           (patch.removed ??= []).push(...a.items); line.n = a.items.length; projectsTouched = true; systemsTouched = true; break;
       }

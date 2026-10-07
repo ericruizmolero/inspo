@@ -1,7 +1,8 @@
 "use client";
 // The ways into criterio from outside, in one place on the top bar: the browser extension and the MCP connector
-// for AI clients. A menu with the two, each ticked once it is connected; when both are, the button goes, as a
-// nudge does once it has been followed (Eric, 06-10).
+// for AI clients. A menu with the two, each ticked once it is connected. The button stays when both are: it is the
+// only place to see the apps let in and cut one off, and an AI client that drops the connector does not tell us,
+// so "connected" here can outlive the connection (Eric, 06-10).
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Cable } from "lucide-react";
@@ -24,9 +25,7 @@ export default function Connectors() {
   const [open, setOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
   useEffect(() => { if (!connecting) void loadConnections().then((r) => { if (r.ok) setApps(r.data.length); }); }, [connecting]);
-  const extDone = !installable || !!info?.connected;
   const mcpDone = (apps ?? 0) > 0;
-  if (extDone && mcpDone) return connecting ? <ConnectDialog onClose={() => setConnecting(false)} /> : null;
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>

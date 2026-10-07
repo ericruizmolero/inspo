@@ -3,7 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
 import { ask, confirm, type AgentScope } from "@/lib/agent";
 import { llmEnabled } from "@/lib/llm";
-import { assertSeatsOk, quotaBlock } from "@/lib/quota";
+import { assertQuota, assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 300;
@@ -14,9 +14,10 @@ export async function POST(req: NextRequest) {
   if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
-  if (blocked) return blocked;
   const body = (await req.json().catch(() => ({}))) as { text?: string; scope?: AgentScope; run?: unknown };
+  // Asking the agent is an AI action; running what it already planned (a confirmation, an undo) is not
+  const blocked = await quotaBlock(Array.isArray(body.run) ? assertSeatsOk(ctx.workspace) : assertQuota(ctx.workspace, "ai"));
+  if (blocked) return blocked;
   const usage = { organizationId: ctx.workspace.id, userId: ctx.user.id };
   // The model writes in the team's language, whatever the person's interface is in
   const language = ctx.workspace.outputLanguage;
