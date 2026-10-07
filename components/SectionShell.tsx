@@ -1,20 +1,20 @@
 "use client";
-// Frame for the areas outside the library (Settings, Activity): a shadcn Sidebar with the sections,
-// and a header with the trigger and the breadcrumb. The server layout passes labels and icons.
+// Frame for the areas outside the library (Settings, Activity, /library): a docked shadcn Sidebar with the sections,
+// always open on desktop (no trigger, no ⌘B: Eric, 07-10, a toggle there "makes no sense"), a sheet on a phone opened
+// from the top bar. The server layout passes labels and icons.
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import type { ReactNode } from "react";
 import { useT } from "./I18nProvider";
 import Logo from "./Logo";
 import { sectionIcon } from "./section-icons";
-import FeedbackEntry from "./FeedbackEntry";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu,
+  Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarInset, SidebarMenu,
   SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -57,9 +57,6 @@ function Nav({ title, base, groups }: { title: string; base: string; groups: She
           ))}
         </nav>
       </SidebarContent>
-      <SidebarFooter className="app-sidebar__footer">
-        <FeedbackEntry onPick={close} />
-      </SidebarFooter>
     </Sidebar>
   );
 }
@@ -85,29 +82,31 @@ function Crumbs({ title, base, groups }: { title: string; base: string; groups: 
   );
 }
 
-// Inside the provider, so the label can follow the sidebar's state
+// Only a phone sees it (globals.css hides it on desktop), so it only ever opens the sheet
 function Trigger() {
   const { t } = useT();
-  const { open, isMobile } = useSidebar();
-  return <SidebarTrigger variant="quiet" size="s" aria-label={isMobile ? t.app.showSidebar : open ? t.app.hideSidebar : t.app.showSidebar} />;
+  return <SidebarTrigger variant="quiet" size="s" aria-label={t.app.showSidebar} />;
 }
 
-export default function SectionShell({ title, base, groups, wide = false, defaultOpen = true, crumbs = true, children }: {
-  title: string; base: string; groups: ShellGroup[]; wide?: boolean; defaultOpen?: boolean;
-  /** false where the trail would only repeat the page's h1 (Settings) */
+export default function SectionShell({ title, base, groups, wide = false, crumbs = true, children }: {
+  title: string; base: string; groups: ShellGroup[]; wide?: boolean;
+  /** false where the trail would only repeat the page's h1 (Settings): then the bar is a phone's only */
   crumbs?: boolean; children: ReactNode;
 }) {
   return (
-    <SidebarProvider className="shell shell--docked" defaultOpen={defaultOpen}>
+    // Controlled and never changed: the docked column cannot collapse, there is nothing to bring it back
+    <SidebarProvider className="shell shell--docked" open onOpenChange={() => {}}>
       <Nav title={title} base={base} groups={groups} />
       <SidebarInset className="content">
-        <header className="topbar">
+        <header className={`topbar${crumbs ? "" : " topbar--phone"}`}>
           <span className="topbar__trigger"><Trigger /></span>
           <Logo size={24} className="settings__logo" />
           {crumbs && <Crumbs title={title} base={base} groups={groups} />}
         </header>
-        <div className={`page settings${wide ? " settings--wide" : ""}`}>{children}</div>
-        {/* The music, in the corner it has across the app: the page's own bottom-left, beside the sidebar */}
+        {/* data-feedback-entry: no "Give feedback" row at the foot of this column (Eric, 07-10); feedback is reached
+            from ⌘K, and the floating dock stays hidden until there are unsent notes, as on every page with a sidebar */}
+        <div className={`page settings${wide ? " settings--wide" : ""}`} data-feedback-entry="">{children}</div>
+        {/* The music, in the corner it has across the app: the window's bottom-left */}
         <div className="shell-corner"><ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill></div>
       </SidebarInset>
     </SidebarProvider>

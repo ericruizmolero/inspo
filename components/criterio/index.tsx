@@ -311,31 +311,30 @@ export function TipWindow({ title, heading, children, footer, width, onClose, cl
   );
 }
 
-/** app: one section of Settings or Activity, a Windows 2000 property sheet. Moss bar with the section's name (an h2)
- * and an optional figure on the right (plain tabular text, never a chip), the body (an optional description, then the
- * section), and a footer with a one-line note on the left and the actions on the right. Full width of the column. */
+/** app: one section of Settings, Activity or Admin, flat on the page (no frame, no moss bar: Eric, 07-10, "too much"):
+ * a hairline over it, the section's name (an h2 at title-m) with an optional figure at its end (plain tabular text,
+ * never a chip), the description under the name, the body, and a foot with a one-line note on the left and the
+ * actions on the right. Full width of the column. */
 export function SettingsWindow({ title, figure, description, children, note, actions, id, className }: {
   title: ReactNode; figure?: ReactNode; description?: ReactNode; children?: ReactNode;
-  /** footer, left: a one-line note, a success or an error that belongs to the whole section */
+  /** foot, left: a one-line note, a success or an error that belongs to the whole section */
   note?: ReactNode;
-  /** footer, right: the section's buttons */
+  /** foot, right: the section's buttons */
   actions?: ReactNode;
   id?: string; className?: string;
 }) {
   const auto = useId();
   const titleId = `${id ?? auto}-title`;
   return (
-    <section id={id} className={cx("cr-window", "cr-swin", className)} aria-labelledby={titleId}>
-      <header className="cr-window-bar">
-        <h2 id={titleId} className="cr-window-title t-title-s">{title}</h2>
+    <section id={id} className={cx("cr-swin", className)} aria-labelledby={titleId}>
+      <header className="cr-swin-head">
+        <div className="cr-swin-titles">
+          <h2 id={titleId} className="cr-swin-title t-title-m">{title}</h2>
+          {description ? <p className="cr-swin-desc t-small">{description}</p> : null}
+        </div>
         {figure != null && figure !== false ? <span className="cr-swin-figure t-ui">{figure}</span> : null}
       </header>
-      {description || children ? (
-        <div className="cr-swin-body">
-          {description ? <p className="cr-swin-desc t-small">{description}</p> : null}
-          {children}
-        </div>
-      ) : null}
+      {children ? <div className="cr-swin-body">{children}</div> : null}
       {note || actions ? (
         <footer className="cr-swin-footer">
           <div className="cr-swin-note t-small">{note}</div>

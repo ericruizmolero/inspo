@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
 import SectionShell from "@/components/SectionShell";
-import { sidebarOpen } from "@/lib/sidebar-state";
 import { getSession } from "@/lib/workspace";
 import { isAdmin } from "@/lib/activity";
 import { getT } from "@/lib/i18n";
@@ -24,7 +23,6 @@ export default async function DesignLibraryLayout({ children }: { children: Reac
   const [{ t }, titles] = await Promise.all([getT(), pageTitles()]);
   return (
     <SectionShell
-      defaultOpen={await sidebarOpen()}
       title={t.designLibrary.title}
       base="/library"
       wide

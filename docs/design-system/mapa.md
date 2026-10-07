@@ -25,7 +25,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/settings/account` | Sesión | Nombre, foto, tema, idioma y sonidos |
 | `/settings/workspace` | Sesión (editar: quien gestiona) | Nombre y logo del espacio |
 | `/settings/members` | Sesión | Miembros e invitaciones; `?create=1` abre "Crear equipo" |
-| `/settings/plan` | Sesión | Plan, cuotas, asientos y gasto de IA |
+| `/settings/plan` | Sesión | Planes primero, luego cuotas, asientos y gasto de IA |
 | `/settings/extension` | Sesión | Claves de la extensión |
 | `/settings/feedback` | Sesión | El feedback que ha mandado la persona |
 
@@ -34,7 +34,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | URL | Qué hay |
 | --- | --- |
 | `/admin/overview`, `usage`, `people`, `feedback`, `access` | Actividad de toda la app; `?dias=` cambia el periodo |
-| `/library/…` | Esta librería |
+| `/library/…` | Esta librería: Introducción, Fundamentos (Principios, Tokens y una página por familia: color, tipografía, espaciado, radios y sombras, movimiento, iconos, pantalla), Componentes (Botones, Marca, catálogo), Construir y Mantenimiento |
 
 Se da acceso con `npm run admin -- <correo>`.
 

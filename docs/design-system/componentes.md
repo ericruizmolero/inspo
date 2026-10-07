@@ -31,7 +31,7 @@ La única pregunta de la casa: un campo grande y redondeado con el botón redond
 
 ### Campo de texto
 `TextField` · `.cr-field` · `.cr-input` · `components/ui/input.tsx` · `.input` · muestra: campo
-El pozo hundido (`--field`, `--sunken`, 44 de alto, radio `--radius-md`): casi negro con texto papel en Board, blanco con tinta y línea suave en Paper. `label` arriba en pequeño y apagado; `hint` debajo, y con `.cr-field-hint.is-error` el error va bajo el campo. Un campo de solo lectura o desactivado se ve plano y apagado. → [campos en Board](decisiones/2026-10-07-los-campos-tienen-version-oscura.md)
+El pozo hundido (`--field`, `--sunken`, 44 de alto, radio `--radius-md`; talla s de 34 con letra pequeña, `.cr-input-s`, junto a un `Button` s): casi negro con texto papel en Board, blanco con tinta y línea suave en Paper. `label` arriba en pequeño y apagado; `hint` debajo, y con `.cr-field-hint.is-error` el error va bajo el campo. Un campo de solo lectura o desactivado se ve plano y apagado. → [campos en Board](decisiones/2026-10-07-los-campos-tienen-version-oscura.md)
 - `Input` de `components/ui/input.tsx` (`.input`, `.input--lg`) es el mismo pozo con el nombre viejo; quedan dos usos.
 
 ### Área de texto y compositor
@@ -68,13 +68,13 @@ Para avisos largos, una vez por sesión como mucho: barra moss con el título co
 El diálogo de Base UI (`Dialog`, fondo `.modal-backdrop` en z 200) con dos cuerpos. `DialogWindow` es la ventana de consejo como modal: barra moss (`bar`) y cerrar en `IconButton` strong xs (`closeLabel`), `heading` en display 700, el cuerpo y `footer` con una casilla opcional y como mucho dos botones; para avisos, confirmaciones y pasos cortos (Conectar MCP a 680, el asistente de proyecto nuevo). `DialogContent` (`.modal`, tamaños `sm` y `lg`, `.modal__header` con título en `t-title-s` y cierre `IconButton` default s) es el modal plano con marco de tinta de 1,5 px: para un formulario largo (Añadir, Mejorar con IA, crear equipo, directorio, paleta). Los dos siguen al tema. → [ventanas](decisiones/2026-10-07-toda-ventana-lleva-barra-moss-y-sigue-al-tema.md), [Añadir en el modal plano](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
 - Las confirmaciones (`useConfirm`) son una `DialogWindow` con `Button` danger cuando destruyen.
 
-### Ventana de ajustes
+### Sección de ajustes
 `SettingsWindow` · `.cr-swin` · muestra: ventana-ajustes
-Cada sección de Ajustes y Actividad es una ventana a todo el ancho de la columna: barra moss con el título (`h2`) y una cifra opcional a la derecha (`figure`, texto tabular, nunca un chip), descripción, cuerpo y pie con una nota a la izquierda (`note`: un aviso, un éxito o un error de toda la sección) y las acciones a la derecha (`actions`); todos los pies igual de altos. Las listas dentro: filas de 52 como mínimo, avatar 32, solo líneas finas.
+Cada sección de Ajustes, Actividad y `/admin` va plana sobre la página, a todo el ancho de la columna: una línea `--border` encima, el nombre (`h2` en `t-title-m`) con una cifra opcional a su derecha (`figure`, texto tabular apagado, nunca un chip), la descripción debajo del nombre, el cuerpo y el pie con una nota a la izquierda (`note`: un aviso, un éxito o un error de toda la sección) y las acciones a la derecha (`actions`); los pies miden 44 como mínimo para que las columnas de los planes alineen, y sus botones son `Button` s. Sin marco, sin bisel y sin barra moss: eso queda para los diálogos. Las listas dentro: filas de 52 como mínimo, avatar 32, solo líneas finas. En Personas el estado es un punto `--success` y la palabra (`.ad-state`), no un chip. → [decisión](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 
 ### Fila de campo
 `FieldRow` · `.cr-fieldrow` · muestra: fila-campo
-Un ajuste en una línea: la etiqueta en una columna de 200 (con su `hint` debajo) y el control con su `action` en la otra, todo a 44 y centrado; el `error` va debajo del control. Se apila por debajo de 560 px. `htmlFor` cuando el control es un campo (la etiqueta pasa a `label`); un grupo de radio o una imagen se nombran solos.
+Un ajuste en una línea: la etiqueta en una columna de 200 (con su `hint` debajo) y el control con su `action` en la otra, todo en talla s (34: `Button` s, segmentado de papel s, el campo y el select a 34 con letra pequeña) y centrado; el `error` va debajo del control. → [decisión](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md) Se apila por debajo de 560 px. `htmlFor` cuando el control es un campo (la etiqueta pasa a `label`); un grupo de radio o una imagen se nombran solos.
 
 ### Menú
 `MenuItem` · `MenuLabel` · `.cr-menu` · muestra: menu
@@ -121,7 +121,7 @@ Iniciales (o la foto, `src`; si no carga, vuelven las iniciales) sobre un color 
 
 ### Comentario
 `Comment` · `.cr-comment` · muestra: comentario
-Un comentario corto bajo una referencia: avatar de 20, autor en negrita y dos líneas como mucho.
+Un comentario corto bajo una referencia: avatar de 20, autor en negrita y dos líneas como mucho. Bajo una tarjeta del tablón (`.tile__note`) el avatar y el contador de respuestas se centran en la primera línea del texto, calculado con los tokens, no en el borde superior del bloque. → [decisión](decisiones/2026-10-07-la-cara-de-un-comentario-se-centra-en-su-primera-linea.md)
 
 ### Tarjeta de tablero
 `BoardCard` · `.cr-boardcard` · muestra: tarjeta-tablero
@@ -239,7 +239,7 @@ Cada idioma escrito en su propio nombre. Guarda cookie y cuenta, y vuelve a pint
 
 ### Herramienta de feedback
 `FeedbackTool` · `FeedbackEntry` · `components/FeedbackTool.tsx` · `.fb-dock`
-Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al equipo". El dock se arrastra y recuerda su sitio. z 100000, siempre encima. `FeedbackEntry` es su entrada al pie de las barras laterales. Solo con sesión: en la portada de invitado y en el login no se monta (ahí nadie puede enviar y el globo pisaba el botón de tema de la esquina). La barra de Agentation vive en un shadow root y se maneja desde `components/feedback-mode.ts`; su versión va fija. → [decisión](decisiones/2026-10-06-la-herramienta-de-feedback-va-con-version-fija.md)
+Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al equipo". El dock se arrastra y recuerda su sitio. z 100000, siempre encima. `FeedbackEntry` es su entrada al pie de la barra lateral de la biblioteca; en Ajustes, Actividad y esta librería no hay entrada en la columna (se llega por ⌘K) y el dock sigue escondido hasta que hay notas sin enviar. Solo con sesión: en la portada de invitado y en el login no se monta (ahí nadie puede enviar y el globo pisaba el botón de tema de la esquina). La barra de Agentation vive en un shadow root y se maneja desde `components/feedback-mode.ts`; su versión va fija. → [decisión](decisiones/2026-10-06-la-herramienta-de-feedback-va-con-version-fija.md)
 
 ### Esqueleto
 `.sk` · `app/globals.css` · muestra: skeleton
@@ -251,9 +251,9 @@ Envuelve un grupo de pestañas y pinta sus rellenos como dos pastillas: la del h
 
 ### Pastilla de la esquina: zoom y música
 `ZoomPill` · `components/ZoomPill.tsx` · `.zoom-pill` · `SoundControl` · `components/SoundControl.tsx`
-La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el botón de tema en la esquina contraria), en toda la app con sesión iniciada, la casa incluida; antes de iniciar sesión (portada de invitado, login) no está la pastilla, aunque sí el botón de tema (`.board-zoom` en los tablones y las demás vistas, `.polish__corner` en Pulido, `.shell-corner` en Ajustes, biblioteca de diseño y actividad). → [decisión](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
+La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el botón de tema en la esquina contraria), en toda la app con sesión iniciada, la casa incluida; antes de iniciar sesión (portada de invitado, login) no está la pastilla, aunque sí el botón de tema (`.board-zoom` en los tablones y las demás vistas, `.polish__corner` en Pulido, `.shell-corner` fijo en la esquina de la ventana en Ajustes, biblioteca de diseño y actividad, por encima de la columna). Nunca se mueve de su esquina. → [decisión](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md), [Ajustes planos](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 - Zoom (− % +): columnas en los tablones, tamaño del tornado en Pulido; las demás vistas no tienen (`zoom={null}`) y la pastilla es el altavoz solo.
-- Música, tras una línea fina: el altavoz (`.zoom-pill__sound`) enciende y apaga con un clic; mientras suena, la flecha (`.zoom-pill__track`) abre las canciones por nombre (`.sound-tracks`, un menú `.island-pop` sobre el cromo de la pastilla) y gira con él: 200 ms al abrir, 150 al cerrar (Eric, 06-10: "que gire acompasado"). Seis pistas en `public/polish/` (lista `TRACKS`), que no se descargan hasta encenderla; entra y sale con fundido y al acabar una sigue la siguiente. → [las pistas](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
+- Música, tras una línea fina: el altavoz (`.zoom-pill__sound`) enciende y apaga con un clic; mientras suena, la flecha (`.zoom-pill__track`) abre el menú de la música (`.sound-tracks`, un `cr-menu` de 236) y gira con él: 200 ms al abrir, 150 al cerrar (Eric, 06-10: "que gire acompasado"). Arriba, bajo "Emisora", las tres emisoras con tic (Todas, Lo-fi, Instrumental); bajo la línea, las canciones de la sintonizada en una zona de altura fija que hace scroll (`.sound-tracks__list`, 208 px), con la que suena a la vista. Doce pistas en `public/polish/` (lista `TRACKS`, cada una con su emisora), que no se descargan hasta encenderla; entra y sale con fundido y al acabar una sigue la siguiente de la emisora. → [emisoras](decisiones/2026-10-07-la-musica-se-elige-por-emisora-y-la-lista-no-crece.md), [las pistas](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
 - Siempre arranca apagada al abrir o recargar la página; solo se recuerda la última canción.
 - El audio es uno para toda la página y no se corta al cambiar de pantalla ni de pestaña del navegador (sigue sonando en segundo plano). Suena solo mientras uno de sus botones está en pantalla.
 - En móvil solo Pulido la tiene, arriba bajo la barra.
@@ -476,7 +476,7 @@ La entrada de la referencia dentro del criterio.md del proyecto, editable, y las
 
 ### Marco de sección
 `SectionShell` · `components/SectionShell.tsx` · `.settings`
-El marco de Ajustes, Actividad y esta librería: sidebar con grupos e iconos, migas y contenido a 800 px (1040 con `wide`).
+El marco de Ajustes, Actividad y esta librería: columna fija con grupos e iconos (siempre abierta en escritorio, sin botón de plegar ni ⌘B; en móvil, una hoja que abre el botón de la barra), migas donde hay (`crumbs`; en Ajustes no, y entonces la barra superior solo existe en móvil y la página empieza en su `h1`), sin entrada de feedback al pie, y contenido a 800 px (1040 con `wide`). → [decisión](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 
 ### Encabezado de sección
 `SettingsHeading` · `components/SettingsHeading.tsx` · `.settings__heading`

@@ -25,6 +25,7 @@ export default function LangSwitch() {
   return (
     <SegmentedControl
       tone="paper"
+      size="s"
       choice
       className="theme-seg"
       label={t.settings.language}

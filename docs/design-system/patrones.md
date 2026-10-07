@@ -21,7 +21,7 @@ Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay 
 
 ## Sonido
 
-Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la esquina (`SoundControl`). Los sonidos de la interfaz son respuesta: cuelume con tema `press`, por `cue` de `lib/ui-sounds.ts`, apagados hasta que se encienden en Ajustes, Cuenta, Apariencia. Suenan solo guardar una referencia (`success` sutil), Conservar y Olvidar en Pulido (`select` adelante y atrás), deshacer (`navigate` atrás), cerrar el pulido (`success`), sacar una carta al Inbox (como Olvidar) y el aviso de error (`error`). Nada más suena. → [decisión](decisiones/2026-10-07-la-interfaz-suena-solo-en-lo-que-decide-y-arranca-callada.md)
+Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la esquina (`SoundControl`) y se elige por emisora (Todas, Lo-fi, Instrumental) antes que por canción. → [emisoras](decisiones/2026-10-07-la-musica-se-elige-por-emisora-y-la-lista-no-crece.md) Los sonidos de la interfaz son respuesta: cuelume con tema `press`, por `cue` de `lib/ui-sounds.ts`, apagados hasta que se encienden en Ajustes, Cuenta, Apariencia. Suenan solo guardar una referencia (`success` sutil), Conservar y Olvidar en Pulido (`select` adelante y atrás), deshacer (`navigate` atrás), cerrar el pulido (`success`), sacar una carta al Inbox (como Olvidar) y el aviso de error (`error`). Nada más suena. → [decisión](decisiones/2026-10-07-la-interfaz-suena-solo-en-lo-que-decide-y-arranca-callada.md)
 
 ## Listas largas
 
@@ -34,7 +34,7 @@ Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la es
 
 Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `ZoomPill` (`.zoom-pill`, `− % +`) abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
 
-Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada. → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
+Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada, siempre en la esquina inferior izquierda de la ventana, también en Ajustes (fija, por encima de la columna). Como la columna hace scroll por debajo, su lista deja 88 px libres al final y las filas se funden (`mask-image`) antes de llegar a la pastilla: ninguna queda cortada por ella (Eric, 07-10: "cuidado que aquí se solapan cosas"). → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md), [Ajustes planos](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 
 ## Acciones: a mano o por el agente
 

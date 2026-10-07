@@ -6,7 +6,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useT } from "@/components/I18nProvider";
 import { areaIcon } from "@/components/area-icons";
-import { sectionIcon } from "@/components/section-icons";
+import { sectionIcon, SECTION_ICON_NAMES } from "@/components/section-icons";
 import Logo from "@/components/Logo";
 import { setTheme as applyTheme } from "@/lib/theme";
 import { SYSTEM_AREAS } from "@/types/system";
@@ -117,13 +117,66 @@ function Ease({ name, value, ms }: { name: string; value: string; ms: number }) 
   );
 }
 
-/** The tokens page: colour, type, radii, bevel, spacing, motion and the chrome. The components live in the catalogue. */
-export function FoundationsSpecimen() {
-  const all = [...COLORS.flatMap((c) => c.tokens), ...RADII, ...SHADOWS, ...SPACES, ...EASES.map((e) => e.token), ...TYPE.map((r) => `--fs-${r.name}`), "--font-sans", "--font-display"];
-  const v = useTokens(all);
+/** The visual half of each page of the library, drawn above its Markdown. Pages that are only text draw nothing. */
+export function PageSpecimen({ slug }: { slug: string }) {
+  switch (slug) {
+    case "fundamentos": return <TokensSpecimen />;
+    case "color": return <ColorSpecimen />;
+    case "tipografia": return <TypeSpecimen />;
+    case "espaciado": return <SpaceSpecimen />;
+    case "radios-y-sombras": return <RadiiSpecimen />;
+    case "movimiento": return <MotionSpecimen />;
+    case "iconos": return <IconsSpecimen />;
+    case "pantalla": return <ScreenSpecimen />;
+    case "botones": return <ButtonsSpecimen />;
+    case "marca": return <BrandSpecimen />;
+    default: return null;
+  }
+}
+
+const BRAND = [
+  { token: "--paper", name: "Papel", ink: "var(--ink)" },
+  { token: "--ink", name: "Tinta", ink: "var(--paper)" },
+  { token: "--board", name: "Board", ink: "var(--paper)" },
+  { token: "--moss", name: "Moss", ink: "var(--paper)" },
+  { token: "--ember", name: "Ember", ink: "var(--ink)" },
+  { token: "--butter", name: "Butter", ink: "var(--ink)" },
+];
+
+/** The Tokens hub: the system in one glance, the five brand colours with the type and a button on them. */
+function TokensSpecimen() {
+  const v = useTokens(BRAND.map((b) => b.token));
   return (
     <div className="ds-specimen">
-      <Block title="Color" aside={<ThemeFlip />}>
+      <div className="ds-poster">
+        {BRAND.map((b) => (
+          <div key={b.token} className="ds-poster__tile" style={{ background: `var(${b.token})`, color: b.ink }}>
+            <span className="t-title-l">{b.name}</span>
+            <span className="ds-poster__val">{b.token}<br />{v[b.token]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Text on each ground: the pairs the system allows, so the contrast of each one is seen, not read
+const PAIRS = [
+  { bg: "var(--paper)", fg: "var(--ink)", label: "Tinta sobre papel", border: true },
+  { bg: "var(--board)", fg: "var(--paper)", label: "Papel sobre board", border: true },
+  { bg: "var(--ember)", fg: "var(--ink)", label: "Tinta sobre ember" },
+  { bg: "var(--moss)", fg: "var(--paper)", label: "Papel sobre moss" },
+  { bg: "var(--butter)", fg: "var(--ink)", label: "Tinta sobre butter" },
+  { bg: "var(--chrome)", fg: "var(--chrome-ink)", label: "Texto sobre cromo", border: true },
+  { bg: "var(--surface-raised)", fg: "var(--text-muted)", label: "Secundario sobre panel", border: true },
+  { bg: "var(--field)", fg: "var(--field-ink)", label: "Texto en un campo", border: true },
+];
+
+function ColorSpecimen() {
+  const v = useTokens(COLORS.flatMap((c) => c.tokens));
+  return (
+    <div className="ds-specimen">
+      <Block title="Paleta" aside={<ThemeFlip />}>
         {COLORS.map((g) => (
           <div key={g.group} className="ds-colors">
             <h3 className="t-label">{g.group}</h3>
@@ -139,19 +192,95 @@ export function FoundationsSpecimen() {
           </div>
         ))}
       </Block>
-
-      <Block title="Tipografía">
-        <p className="ds-note">Bricolage Grotesque (display, 700 y 800) para titulares y títulos, nunca por debajo de 16 px ni en texto corrido. Archivo para todo lo demás. Sin monoespaciada salvo datos literales. Un solo sitio: el elemento da el nivel y la clase solo cambia el aspecto.</p>
-        <div className="ds-type">
-          {TYPE.map((r) => (
-            <div key={r.name} className="ds-type__row">
-              <span className={`ds-type__sample t-${r.name}`}>Tu criterio, junto</span>
-              <span className="ds-type__meta"><span className="ds-type__name">.t-{r.name}{r.el ? `, ${r.el}` : ""}</span>{r.label}<span className="ds-val">{v[`--fs-${r.name}`]}, {r.weight}</span></span>
+      <Block title="Texto sobre cada suelo">
+        <p className="ds-note">Las parejas que el sistema permite. Si una combinación no está aquí, no se usa.</p>
+        <div className="ds-pairs">
+          {PAIRS.map((p) => (
+            <div key={p.label} className={`ds-pair${p.border ? " ds-pair--line" : ""}`} style={{ background: p.bg, color: p.fg }}>
+              <span className="t-title-l">Aa</span>
+              <span className="ds-pair__text">Tu criterio, junto</span>
+              <span className="ds-pair__label">{p.label}</span>
             </div>
           ))}
         </div>
       </Block>
+    </div>
+  );
+}
 
+const FAMILIES = [
+  { name: "Bricolage Grotesque", token: "--font-display", cls: "ds-family__sample--display", weights: "700 y 800", role: "Titulares y títulos. Nunca por debajo de 16 px ni en texto corrido." },
+  { name: "Archivo", token: "--font-sans", cls: "ds-family__sample--sans", weights: "400 y 500", role: "La base: texto corrido, interfaz, botones, campos." },
+  { name: "Monoespaciada", token: "--font-mono", cls: "ds-family__sample--mono", weights: "400", role: "Solo datos literales: hex, código, el fichero crudo." },
+];
+
+function TypeSpecimen() {
+  const v = useTokens([...TYPE.map((r) => `--fs-${r.name}`), ...TYPE.map((r) => `--lh-${r.name}`)]);
+  return (
+    <div className="ds-specimen">
+      <Block title="Familias">
+        <div className="ds-families">
+          {FAMILIES.map((f) => (
+            <div key={f.token} className="ds-family">
+              <span className={`ds-family__sample ${f.cls}`} aria-hidden>Aa Bb Cc 0123</span>
+              <span className="ds-family__name">{f.name}</span>
+              <span className="ds-family__role">{f.role}</span>
+              <span className="ds-val">{f.token}, {f.weights}</span>
+            </div>
+          ))}
+        </div>
+      </Block>
+      <Block title="Escala">
+        <p className="ds-note">Ocho pasos, cada uno pintado con su clase y leído de su token. El elemento da el nivel; la clase, solo si el aspecto debe ser otro.</p>
+        <div className="ds-type">
+          {TYPE.map((r) => (
+            <div key={r.name} className="ds-type__row">
+              <span className={`ds-type__sample t-${r.name}`}>Tu criterio, junto</span>
+              <span className="ds-type__meta"><span className="ds-type__name">.t-{r.name}{r.el ? `, ${r.el}` : ""}</span>{r.label}<span className="ds-val">{v[`--fs-${r.name}`]} / {r.weight} / {v[`--lh-${r.name}`]}</span></span>
+            </div>
+          ))}
+        </div>
+      </Block>
+    </div>
+  );
+}
+
+function SpaceSpecimen() {
+  const v = useTokens(SPACES);
+  return (
+    <div className="ds-specimen">
+      <Block title="Escala">
+        <div className="ds-space">
+          {SPACES.map((n) => (
+            <div key={n} className="ds-space__row"><span className="ds-space__bar" style={{ width: `var(${n})` }} /><span className="ds-swatch__name">{n}</span><span className="ds-val">{v[n]}</span></div>
+          ))}
+        </div>
+      </Block>
+      <Block title="Una sola altura">
+        <p className="ds-note">Tres tallas de control, y en una misma fila todas iguales: el botón, el campo y el segmentado miden lo mismo.</p>
+        <div className="ds-heights">
+          {([["s", 34, "Barras y menús"], ["m", 44, "Lo normal en producto"], ["l", 52, "Héroes"]] as const).map(([size, px, where]) => (
+            <div key={size} className="ds-heights__row">
+              <span className="ds-heights__rule" style={{ height: px }}><span className="ds-val">{px}</span></span>
+              <Button size={size} variant="primary">Talla {size}</Button>
+              <Button size={size}>Secundario</Button>
+              {size !== "l" && <SegmentedControl tone="paper" size={size} label={`Talla ${size}`} active={0} items={[{ label: "Uno" }, { label: "Dos" }]} />}
+              {size === "m" && <TextField label="" placeholder="Un campo de 44" className="ds-field--bare ds-heights__field" />}
+              <span className="ds-heights__where">{where}</span>
+            </div>
+          ))}
+        </div>
+      </Block>
+    </div>
+  );
+}
+
+const POPS = ["--shadow-pop", "--shadow-modal", "--float"];
+
+function RadiiSpecimen() {
+  const v = useTokens([...RADII, ...POPS]);
+  return (
+    <div className="ds-specimen">
       <Block title="Radios">
         <div className="ds-tiles">
           {RADII.map((r) => (
@@ -162,38 +291,227 @@ export function FoundationsSpecimen() {
           ))}
         </div>
       </Block>
-
-      <Block title="Bisel y sombra">
-        <p className="ds-note">El guiño al 2000: los controles llevan borde de tinta y bisel; campos, casillas y progreso van hundidos. Las tarjetas son planas. Solo la barra de comandos flota.</p>
+      <Block title="Bordes y bisel">
+        <p className="ds-note">El guiño al 2000: los controles llevan borde de tinta y bisel; campos, casillas y progreso van hundidos. Las tarjetas son planas.</p>
         <div className="ds-tiles">
-          {SHADOWS.map((s) => (
+          {SHADOWS.filter((s) => s !== "--float").map((s) => (
             <div key={s} className="ds-tile">
               <span className={`ds-tile__box ds-tile__box--${s.slice(2)}`} style={{ boxShadow: `var(${s})` }} />
               <span className="ds-swatch__name">{s}</span>
             </div>
           ))}
+          <div className="ds-tile">
+            <span className="ds-tile__box ds-tile__box--bevel-dark" style={{ boxShadow: "var(--bevel-dark)" }} />
+            <span className="ds-swatch__name">--bevel-dark</span>
+          </div>
+          <div className="ds-tile">
+            <span className="ds-tile__box" />
+            <span className="ds-swatch__name">--shadow-card</span><span className="ds-val">none</span>
+          </div>
         </div>
       </Block>
-
-      <Block title="Espaciado">
-        <div className="ds-space">
-          {SPACES.map((n) => (
-            <div key={n} className="ds-space__row"><span className="ds-space__bar" style={{ width: `var(${n})` }} /><span className="ds-swatch__name">{n}</span><span className="ds-val">{v[n]}</span></div>
+      <Block title="Sombras">
+        <p className="ds-note">Solo lo que se levanta de la página: menús, diálogos y la barra de comandos.</p>
+        <div className="ds-tiles ds-tiles--shadows">
+          {POPS.map((s) => (
+            <div key={s} className="ds-tile">
+              <span className={`ds-tile__box ds-tile__box--pop${s === "--float" ? " ds-tile__box--float" : ""}`} style={{ boxShadow: `var(${s})` }} />
+              <span className="ds-swatch__name">{s}</span>
+            </div>
           ))}
         </div>
       </Block>
+    </div>
+  );
+}
 
-      <Block title="Movimiento">
+const KEYFRAMES = [
+  { name: "fade-in", ms: 300 },
+  { name: "pop-in", ms: 300 },
+  { name: "shimmer", ms: 1200 },
+  { name: "spin", ms: 900 },
+];
+
+function Keyframe({ name, ms }: { name: string; ms: number }) {
+  const [tick, setTick] = useState(0);
+  return (
+    <button type="button" className="ds-key" onClick={() => setTick((t) => t + 1)} aria-label={`Repetir ${name}`}>
+      <span className="ds-key__stage">
+        <span key={tick} className={`ds-key__box ds-key__box--${name}`} style={{ animationDuration: `${ms}ms` }} />
+      </span>
+      <span className="ds-swatch__name">{name}</span>
+      <span className="ds-val">{ms} ms</span>
+    </button>
+  );
+}
+
+function MotionSpecimen() {
+  const v = useTokens(EASES.map((e) => e.token));
+  return (
+    <div className="ds-specimen">
+      <Block title="Curvas">
         <p className="ds-note">Pulsa cada curva para verla.</p>
         <div className="ds-eases">
           {EASES.map((e) => <Ease key={e.token} name={e.token} value={v[e.token] ?? ""} ms={e.ms} />)}
         </div>
       </Block>
+      <Block title="Keyframes">
+        <p className="ds-note">Los cuatro que existen. Pulsa para repetir.</p>
+        <div className="ds-keys">
+          {KEYFRAMES.map((k) => <Keyframe key={k.name} {...k} />)}
+        </div>
+      </Block>
+      <Block title="Pulsar">
+        <p className="ds-note">Un control con bisel se hunde al pulsarlo, no encoge. Mantén pulsado el botón.</p>
+        <div className="ds-row"><Button variant="primary">Mantén pulsado</Button><Button>Y este</Button><Button pressed>Así queda pulsado</Button></div>
+      </Block>
+    </div>
+  );
+}
 
-      <Block title="Cromo">
-        <p className="ds-note">El cromo del producto (Isla, selector de vista, zoom, dock, ficha) es sólido y sigue al tema: oscuro en Board, claro en Paper. Sin cristal ni desenfoque en barras ni superficies; el cristal es solo de las pastillas de hover y activa de la Isla y del selector.</p>
-        <div className="ds-chrome-stage">
-          <ChromeSample />
+const ALL_ICONS: IconName[] = ["home", "plus", "minus", "close", "chevron-down", "chevron-left", "chevron-right", "arrow-right", "arrow-up-right", "search", "sun", "mute", "grid", "sparkle", "gauge", "plug", "text", "image", "play", "folder", "compass", "comment", "quote", "check", "trash", "copy"];
+
+function IconsSpecimen() {
+  return (
+    <div className="ds-specimen">
+      <Block title="Del sistema" aside={<span className="ds-val">24 px, trazo 2</span>}>
+        <div className="ds-icons">{ALL_ICONS.map((n) => <span key={n} className="ds-icon"><Icon name={n} size={20} /><span>{n}</span></span>)}</div>
+      </Block>
+      <Block title="De área" aside={<span className="ds-val">16 px, trazo 1,5</span>}>
+        <div className="ds-icons">{SYSTEM_AREAS.map((a) => <span key={a} className="ds-icon">{areaIcon(a, 20)}<span>{a}</span></span>)}</div>
+      </Block>
+      <Block title="De sección" aside={<span className="ds-val">16 px, trazo 1,5</span>}>
+        <div className="ds-icons">{SECTION_ICON_NAMES.map((n) => <span key={n} className="ds-icon">{sectionIcon(n)}<span>{n}</span></span>)}</div>
+      </Block>
+    </div>
+  );
+}
+
+const BREAKS = [560, 640, 800, 900, 1100];
+const LAYERS = [
+  { z: "0–3", what: "Dentro de tarjetas" },
+  { z: "5–6", what: "Dentro de una vista" },
+  { z: "12", what: "Pastilla de la esquina" },
+  { z: "20", what: "Barra superior, Isla" },
+  { z: "25", what: "Dock" },
+  { z: "30", what: "Sugerencias, ficha" },
+  { z: "40", what: "Sidebar flotante" },
+  { z: "50–55", what: "Hojas y popovers" },
+  { z: "60", what: "Ficha en móvil" },
+  { z: "80", what: "Lightbox" },
+  { z: "150", what: "Avisos" },
+  { z: "200", what: "Diálogos" },
+  { z: "100000", what: "Feedback" },
+];
+
+function ScreenSpecimen() {
+  return (
+    <div className="ds-specimen">
+      <Block title="Puntos de corte">
+        <p className="ds-note">A escala: cada línea es un corte. El de 800 es el de la app; por debajo, la Isla se esconde y el sidebar es una hoja.</p>
+        <div className="ds-breaks">
+          {BREAKS.map((b) => (
+            <span key={b} className={`ds-breaks__mark${b === 800 ? " is-app" : ""}`} style={{ left: `${(b / 1200) * 100}%` }}><span className="ds-val">{b}</span></span>
+          ))}
+          <span className="ds-breaks__zone" style={{ width: `${(800 / 1200) * 100}%` }}>Móvil</span>
+          <span className="ds-breaks__zone ds-breaks__zone--desk" style={{ left: `${(800 / 1200) * 100}%` }}>Escritorio</span>
+        </div>
+      </Block>
+      <Block title="Capas">
+        <p className="ds-note">De la página hacia arriba. Una pieza nueva entra en una de estas bandas.</p>
+        <ol className="ds-layers">
+          {LAYERS.map((l, i) => (
+            <li key={l.z} className="ds-layer" style={{ marginLeft: i * 10 }}><span className="ds-val">z {l.z}</span><span>{l.what}</span></li>
+          ))}
+        </ol>
+      </Block>
+      <Block title="Foco">
+        <p className="ds-note">Tabula por estas piezas: el anillo es de 2 px en el color de foco, desplazado 2 px. Nunca el azul del navegador.</p>
+        <div className="ds-row ds-row--top">
+          <Button>Un botón</Button>
+          <IconButton icon="search" label="Buscar" variant="default" size="m" />
+          <TextField label="" placeholder="Un campo" className="ds-field--bare ds-heights__field" />
+          <Chip onClick={() => {}}>Un chip</Chip>
+        </div>
+      </Block>
+    </div>
+  );
+}
+
+const VARIANTS = ["primary", "secondary", "dark", "quiet", "danger"] as const;
+const VARIANT_LABEL: Record<(typeof VARIANTS)[number], string> = { primary: "Primario", secondary: "Secundario", dark: "Oscuro", quiet: "Quiet", danger: "Peligro" };
+
+function ButtonsSpecimen() {
+  return (
+    <div className="ds-specimen">
+      <Block title="Variantes y tallas">
+        <div className="ds-matrix">
+          {(["s", "m", "l"] as const).map((size) => (
+            <div key={size} className="ds-matrix__row">
+              <span className="ds-val">{size} {size === "s" ? 34 : size === "m" ? 44 : 52}</span>
+              {VARIANTS.map((vt) => <span key={vt} className="ds-matrix__cell"><Button size={size} variant={vt}>{VARIANT_LABEL[vt]}</Button></span>)}
+            </div>
+          ))}
+        </div>
+      </Block>
+      <Block title="Estados">
+        <div className="ds-row">
+          <Button variant="primary">Normal</Button>
+          <Button variant="primary" pressed>Pulsado</Button>
+          <Button variant="primary" disabled>Desactivado</Button>
+          <Button variant="primary" disabled><Busy label="Guardando" /> Ocupado</Button>
+          <Button icon="folder">Con icono</Button>
+          <Button iconEnd="arrow-right">Y detrás</Button>
+        </div>
+      </Block>
+      <Block title="Botón de icono">
+        <div className="ds-row ds-row--col ds-row--wide">
+          <div className="ds-row">{(["quiet", "default", "strong"] as const).map((variant) => <span key={variant} className="ds-row"><IconButton icon="folder" variant={variant} size="m" label={variant} /><span className="ds-val">{variant}</span></span>)}</div>
+          <div className="ds-row">{(["xs", "s", "m", "l"] as const).map((size) => <span key={size} className="ds-row"><IconButton icon="plus" variant="default" size={size} label={`Talla ${size}`} /><span className="ds-val">{size}</span></span>)}</div>
+          <div className="ds-chrome ds-chrome--inline cr-on-chrome"><IconButton icon="search" variant="quiet" size="s" label="Buscar" /><IconButton icon="plus" variant="quiet" size="s" label="Añadir" /><IconButton icon="home" variant="quiet" size="s" label="Inicio" active /><span className="ds-chrome__line">sobre el cromo</span></div>
+        </div>
+      </Block>
+      <Block title="Confirmar algo que destruye">
+        <p className="ds-note">Secundario para dejarlo, danger para hacerlo. Nunca el primario para borrar.</p>
+        <div className="ds-row"><Button size="s">Déjalo</Button><Button size="s" variant="danger">Sí, borrar</Button></div>
+      </Block>
+    </div>
+  );
+}
+
+const LOGO_SIZES = [24, 28, 36, 48, 88];
+
+function BrandSpecimen() {
+  return (
+    <div className="ds-specimen">
+      <Block title="Logotipo">
+        <p className="ds-note">La criatura, transparente, a los tamaños que usa la app. Sobre la página y sobre el cromo.</p>
+        <div className="ds-row ds-row--top">
+          <div className="ds-logos">{LOGO_SIZES.map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
+          <div className="ds-logos ds-logos--chrome cr-on-chrome">{[24, 36].map((n) => <span key={n} className="ds-logos__one"><Logo size={n} /><span className="ds-val">{n}</span></span>)}</div>
+        </div>
+      </Block>
+      <Block title="Favicon e iconos">
+        <div className="ds-row ds-row--top">
+          <span className="ds-logos__one"><img src="/icon.png" alt="Favicon" width={32} height={32} /><span className="ds-val">favicon 32</span></span>
+          <span className="ds-logos__one"><img src="/apple-icon.png" alt="Icono de Apple" width={64} height={64} className="ds-apple" /><span className="ds-val">apple-icon</span></span>
+          <span className="ds-logos__one"><img src="/icon-512.png" alt="Icono grande" width={96} height={96} /><span className="ds-val">icon-512</span></span>
+        </div>
+      </Block>
+      <Block title="Nombre">
+        <div className="ds-row ds-row--top">
+          <span className="ds-pair ds-pair--line" style={{ background: "var(--paper)", color: "var(--ink)" }}><Wordmark size={32} /><span className="ds-pair__label">Tinta sobre papel</span></span>
+          <span className="ds-pair" style={{ background: "var(--moss)", color: "var(--paper)" }}><Wordmark size={32} tone="paper" /><span className="ds-pair__label">Papel sobre moss</span></span>
+        </div>
+      </Block>
+      <Block title="Colores de marca">
+        <div className="ds-poster ds-poster--four">
+          {BRAND.filter((b) => ["--paper", "--ink", "--moss", "--ember"].includes(b.token)).map((b) => (
+            <div key={b.token} className="ds-poster__tile" style={{ background: `var(${b.token})`, color: b.ink }}>
+              <span className="t-title-m">{b.name}</span>
+              <span className="ds-poster__val">{b.token}</span>
+            </div>
+          ))}
         </div>
       </Block>
     </div>
@@ -284,7 +602,7 @@ const ICON_NAMES: IconName[] = ["home", "plus", "close", "search", "folder", "co
 const SAMPLES: Record<string, () => ReactNode> = {
   // ─── Sistema Criterio ───
   botones: () => (
-    <div className="ds-row ds-row--col">
+    <div className="ds-row ds-row--col ds-row--wide">
       <div className="ds-row"><Button variant="primary">Primario</Button><Button>Secundario</Button><Button variant="dark">Oscuro</Button><Button variant="quiet" icon="plus">Añadir</Button><Button variant="danger">Sí, borrar</Button></div>
       <div className="ds-row"><Button size="l" variant="primary">Empezar</Button><Button icon="folder">Proyecto</Button><Button iconEnd="arrow-right">Ya tengo las referencias</Button><Button size="s">Copiar</Button><Button disabled>Desactivado</Button></div>
     </div>

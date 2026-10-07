@@ -2,7 +2,7 @@
 
 Aquí se recoge **cada decisión de diseño y desarrollo** que tomamos sobre la plataforma, con su porqué, para que cualquiera del equipo (persona o agente) construya igual que lo haríamos nosotros. No es documentación del producto para clientes: es nuestro criterio sobre nuestra propia app.
 
-Se ve en **criterio.design/library** (solo para quien tiene acceso a `/admin`), que pinta estos mismos ficheros: los tokens y componentes en vivo, con el CSS real de la app, y las decisiones como registro filtrable. Los agentes leen los `.md`; las personas, la página. Es la misma fuente.
+Se ve en **criterio.design/library** (solo para quien tiene acceso a `/admin`), que pinta estos mismos ficheros: cada página de tokens con su muestra viva encima de las reglas (la paleta, la escala tipográfica, los radios, las curvas…), los componentes con el CSS real de la app, y las decisiones como registro filtrable. Los agentes leen los `.md`; las personas, la página. Es la misma fuente.
 
 Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué hacer**, **por qué** y **de dónde sale** (decisión fechada), y lo que se retiró queda escrito para que nadie lo vuelva a meter.
 
@@ -11,8 +11,8 @@ Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué 
 | Bloque | Páginas | Cuándo leerlo |
 | --- | --- | --- |
 | Introducción | [Cómo usar](README.md), [Mapa de la app](mapa.md), [Atajos de teclado](atajos.md) | Al llegar al proyecto |
-| Fundamentos | [Principios](principios.md), [Tokens](fundamentos.md) | Antes de diseñar o escribir CSS |
-| Componentes | [Catálogo](componentes.md) | Antes de crear una pieza nueva |
+| Fundamentos | [Principios](principios.md), [Tokens](fundamentos.md) y una página por familia: [Color](fundamentos/color.md), [Tipografía](fundamentos/tipografia.md), [Espaciado](fundamentos/espaciado.md), [Radios y sombras](fundamentos/radios-y-sombras.md), [Movimiento](fundamentos/movimiento.md), [Iconos](fundamentos/iconos.md), [Pantalla, capas y foco](fundamentos/pantalla.md) | Antes de diseñar o escribir CSS |
+| Componentes | [Botones](botones.md), [Marca](marca.md), [Catálogo](componentes.md) | Antes de crear una pieza nueva |
 | Construir | [Patrones](patrones.md), [Montar el proyecto](construir/montar.md), [Textos e idiomas](construir/textos-e-idiomas.md), [Añadir una página](construir/pagina-nueva.md), [Añadir un componente](construir/componente-nuevo.md), [Buenas prácticas](construir/buenas-practicas.md) | Al montar algo |
 | Mantenimiento | [Mantenimiento técnico](mantenimiento.md), [Desarrollo](desarrollo.md), [Decisiones](decisiones/README.md) | Al cambiar algo de base, o para saber por qué algo es así |
 
@@ -26,7 +26,7 @@ Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué 
 
 ## Para agentes
 
-- Antes de diseñar o tocar UI: lee `principios.md` y `fundamentos.md`. Antes de crear un componente, busca en `componentes.md`.
+- Antes de diseñar o tocar UI: lee `principios.md`, `fundamentos.md` y la página de `fundamentos/` que toques (color, tipografía, espaciado…). Antes de crear un componente, busca en `componentes.md`.
 - Cuando el equipo apruebe, rechace o corrija algo de diseño o desarrollo en la conversación, regístralo con la skill `registrar-decision` (`.claude/skills/registrar-decision/`) en el mismo trabajo, sin esperar a que te lo pidan.
 - Todo trabajo que cambie la interfaz, un token, un componente, un patrón, una ruta, un atajo o la forma de construir termina con este sistema al día en ese mismo trabajo, haya habido decisión o no: la ficha en `componentes.md`, la regla en su página, la ruta en `mapa.md`, el atajo en `atajos.md`. → [decisión](decisiones/2026-10-06-el-sistema-de-diseno-se-actualiza-con-cada-cambio.md)
 - Si encuentras una contradicción entre este sistema y el código, dilo en tu respuesta en vez de elegir en silencio.

@@ -765,9 +765,14 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__switch .cr-iconbtn:hover { color: var(--chrome-ink); }
 /* A hairline only between two things: none first, none twice (Connectors leaves once both ways are connected) */
 .topbar__switch > .cr-pillbar-sep:first-child, .topbar__switch .cr-pillbar-sep + .cr-pillbar-sep { display: none; }
-/* Docked sections (settings) have no view switcher; their bar keeps only the trigger */
+/* Docked sections (settings, activity, /library) have no view switcher. On desktop their column is always open, so
+   the trigger goes; where the bar would only hold it (Settings, no breadcrumb) the whole bar goes and the page starts
+   with its own heading (Eric, 07-10: a sidebar toggle there "makes no sense") */
 @media (min-width: 801px) {
   .shell:not(.shell--docked) .topbar { height: 68px; }
+  .shell--docked .topbar__trigger { display: none; }
+  .shell--docked .topbar--phone { display: none; }
+  .shell--docked .topbar--phone + .settings { padding-top: 48px; }
   .shell:not(.shell--docked) .topbar__trigger { display: none; }
 }
 /* A narrow desktop window (801 to 1100): the switcher keeps only its icons (and the fill), so the island's project
@@ -1249,12 +1254,16 @@ video.vp__media { object-fit: contain; }
 }
 .tile__note:hover .tile__note-text { color: var(--text); }
 .tile__note-who { font-weight: 600; color: var(--text); }
-/* Several voices in the thread: the system's AvatarStack, each circle cut out of the next by a ring of page background */
+/* The face sits centred on the FIRST line of the note (13px at 1.3 = 16.9px), not on the top edge of the text:
+   the 20px circle is pulled up by half the difference, so a two-line note reads as face + line, not face between lines.
+   Several voices in the thread: the system's AvatarStack, each circle cut out of the next by a ring of page background */
+.tile__note > .cr-avatar, .tile__note-stack { flex-shrink: 0; margin-top: calc((var(--fs-small) * var(--lh-label) - 20px) / 2); }
 .tile__note .cr-avatar { flex-shrink: 0; }
 .tile__note-stack .cr-avatar { box-shadow: 0 0 0 1.5px var(--bg); }
-/* Replies in the thread: the activity shows at the end of the line, without opening anything */
+/* Replies in the thread: the activity shows at the end of the line, centred on that same first line */
 .tile__note-count {
-  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; margin-left: auto; margin-top: 2px;
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; margin-left: auto;
+  margin-top: calc((var(--fs-small) * var(--lh-label) - var(--fs-label) * var(--lh-label)) / 2);
   color: var(--muted); font-variant-numeric: tabular-nums; font-size: var(--fs-label); line-height: var(--lh-label);
 }
 .tile__note-count svg { width: 12px; height: 12px; }
@@ -1904,9 +1913,10 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .pl-quota.is-full .pl-quota__nums { color: var(--danger); }
 .pl-over a { color: inherit; text-underline-offset: 3px; }
 
-/* Plan windows: the same height in a row (the tagline holds two lines, the features take the rest, the footers
-   line up at the bottom). The current one says so in its footer, where the others have their button */
-.pl-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+/* Plan columns, first on the page (Eric, 07-10: "más presentes"): the same height in a row (the tagline holds two
+   lines, the features take the rest, the feet line up at the bottom). The current one says so in its foot, where
+   the others have their button */
+.pl-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; align-items: stretch; }
 .pl-plan .cr-swin-body { gap: 16px; }
 .pl-plan__tagline { margin: 0; min-height: 2lh; color: var(--text-muted); }
 .pl-plan__price { display: flex; align-items: baseline; gap: 8px; color: var(--text); }
@@ -1946,10 +1956,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 /* Panel header: back, title with subtitle and the period on the right */
 /* The period switch (app/admin/PeriodSwitch.tsx): the paper SegmentedControl, the theme picker's cells */
 .ad-period .cr-seg-item { font-variant-numeric: tabular-nums; }
-/* The KPI strip (Overview and Usage): edge to edge of the window's body, cells divided by hairlines. Each cell
-   draws its left and top hairline; the grid sits 1px out so the ones on the outer edge are clipped */
-.ad-kpis { margin: -16px -20px 0; overflow: hidden; }
-.ad-kpis:last-child { margin-bottom: -16px; }
+/* The KPI strip (Overview and Usage): the section's full width, cells divided by hairlines. Each cell draws its
+   left and top hairline; the grid sits 1px out so the ones on the outer edge are clipped */
+.ad-kpis { overflow: hidden; }
 .ad-kpis:not(:last-child) { border-bottom: 1px solid var(--border); }
 .ad-kpis__grid { margin: -1px 0 0 -1px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 .ad-kpi { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
@@ -1990,7 +1999,11 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .area-thumb { flex: none; display: grid; place-items: center; width: 48px; height: 36px; border-radius: var(--radius-s); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); }
 .area-thumb svg { display: block; }
 /* People: a plain table in the window's body, hairlines between rows; it scrolls sideways when it must */
-.ad-table-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+.ad-table-wrap { overflow-x: auto; }
+/* A person's state: a filled success dot when connected (the green dot Eric asked back, 07-10), the idle ring with
+   a session open, muted text alone when off */
+.ad-state { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
+.ad-state__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
 .ad-table { width: 100%; border-collapse: collapse; min-width: 760px; }
 .ad-table th { text-align: left; font-weight: inherit; color: var(--text-muted); padding: 0 12px 8px 0; white-space: nowrap; }
 .ad-table td { height: 52px; padding: 6px 12px 6px 0; border-top: 1px solid var(--border); color: var(--text); vertical-align: middle; white-space: nowrap; }
@@ -2270,10 +2283,20 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .zoom-pill .zoom-pill__track { width: 20px; margin-left: -2px; padding: 0; color: var(--chrome-muted); }
 .zoom-pill__track svg { transition: transform 150ms var(--ease-out); }
 .zoom-pill__track.is-open svg { transform: rotate(180deg); transition-duration: 200ms; }
-.sound-tracks.sound-tracks { width: 208px; }
-/* Where the page scrolls with the window (components/SectionShell.tsx) the pill rides its bottom edge: a line of no
-   height stuck there, and the pill in its corner as everywhere else */
-.shell-corner { position: sticky; bottom: 0; z-index: 12; height: 0; margin-top: auto; }
+.sound-tracks.sound-tracks { width: 236px; }
+/* The stations stay put; the tracks scroll in six rows and a half, so the half row says there are more below */
+.sound-tracks__list { max-height: 208px; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
+/* Where the page scrolls with the window (components/SectionShell.tsx) the pill keeps the corner it has everywhere:
+   the window's own bottom-left, over the docked column (Eric, 07-10: "siempre en un mismo sitio"). A line of no
+   height fixed there, and the pill 16 px in from its walls as on the boards */
+.shell-corner { position: fixed; left: 0; bottom: 0; z-index: 12; height: 0; }
+/* The pill sits over the docked column's bottom-left, so the list keeps room beneath its last row to scroll clear of it
+   (Eric, 07-10: "cuidado que aquí se solapan cosas") */
+.shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-content"] {
+  padding-bottom: 88px;
+  /* and the rows fade out before they reach the pill, so none is ever cut by it */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 124px), transparent calc(100% - 68px));
+}
 
 /* Light or dark, one click (components/ThemeToggle.tsx): the icon is the theme the click leads to. The system's
    IconButton default on the chrome, a 40 circle in the bottom-right corner, 16 px from its walls like the pill of
@@ -2619,3 +2642,6 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }
+
+
+

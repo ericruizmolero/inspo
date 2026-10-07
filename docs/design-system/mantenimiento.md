@@ -4,7 +4,7 @@ Qué tocar y en qué orden cuando cambia algo de base.
 
 ## Lista
 
-1. **Tokens**: en `app/globals.css` (`:root` y `:root[data-theme="light"]`), y la tabla de [Fundamentos](fundamentos.md) en el mismo cambio.
+1. **Tokens**: en `app/globals.css` (`:root` y `:root[data-theme="light"]`), y la tabla de su página de [Tokens](fundamentos.md) (`fundamentos/color.md`, `tipografia.md`…) en el mismo cambio; la muestra de `/library` lee el valor del CSS vivo, así que se actualiza sola.
 2. **Componentes reutilizables**: en `components/`, con su CSS propio, y su ficha en [Componentes](componentes.md).
 3. **Textos**: en `lib/i18n/en` y `lib/i18n/es` a la vez.
 4. **Base de datos**: cambiar `lib/db/schema.ts`, `npm run db:generate`, revisar el SQL en `drizzle/`. La migración corre en el build de Vercel: si falla, no se despliega. Añadir la tabla nueva a `scripts/seed.ts` (padres primero).

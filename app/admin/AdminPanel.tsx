@@ -211,7 +211,7 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
       </ul>
       <form onSubmit={add}>
         <FieldRow label={t.team.emailLabel} htmlFor="grant-email" error={error}
-          action={<Button variant="primary" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</Button>}>
+          action={<Button variant="primary" size="sm" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</Button>}>
           <input id="grant-email" type="email" className="cr-input" placeholder={t.admin.partnerEmail} value={email}
             onChange={(e) => setEmail(e.target.value)} required aria-invalid={error ? true : undefined} />
         </FieldRow>
@@ -561,9 +561,9 @@ export default function AdminPanel({ section, data, usage, feedback, admins, me 
                     </td>
                     <td>
                       {u.online ? (
-                        <Chip className="t-label" tone="moss">{t.admin.stateOnline}</Chip>
+                        <span className="ad-state"><span className="ad-state__dot" aria-hidden />{t.admin.stateOnline}</span>
                       ) : u.openSessions > 0 ? (
-                        <Chip className="t-label" tone="butter">{t.admin.stateSession}</Chip>
+                        <span className="ad-state"><StatusRing tone="idle" label={t.admin.stateSession} />{t.admin.stateSession}</span>
                       ) : (
                         <span className="ad-muted">{t.admin.stateOff}</span>
                       )}

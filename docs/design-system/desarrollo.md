@@ -35,6 +35,7 @@ Decisiones de cómo construimos, no de cómo se ve.
 - Lo que servimos de un tercero desde nuestro origen (`/api/og`, las fuentes en `lib/font-proxy.ts`) sale con un tipo fijo (imagen rasterizada o fuente), `nosniff` y `sandbox`: un SVG o un HTML ajeno en criterio.design correría con la sesión de quien lo abre.
 - Límites propios con `allow()` (`lib/rate-limit.ts`, en la tabla `rate_limit`, claves `app:`): enlaces mágicos por dirección, feedback por persona, capturas por workspace.
 - La propiedad de una tarjeta es `createdBy`, nunca el nombre de quien la guardó.
+- Los ficheros de un espacio (`/api/files/inspo/<ws>/…`) se sirven a cualquier miembro de ese espacio, no solo al que lo tiene activo en la sesión: al cambiar de espacio (`LibraryHost`) la librería nueva se pinta antes de que el servidor sepa del cambio, y con la regla antigua sus miniaturas pedían en ese hueco recibían 403 y se quedaban en blanco hasta recargar.
 
 ## Idiomas
 
