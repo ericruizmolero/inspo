@@ -177,7 +177,7 @@ Barra flotante de escritorio con los proyectos como pestañas, a lo Figma: Inici
 - El tile de la izquierda (`.island__logo`, 26 px) es `WorkspaceFace` del espacio activo: su logo, o tu foto en el personal; nunca la mascota del producto. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
 - Las pestañas abiertas se guardan por navegador y espacio; el ancho se mide con un `.island__measure` oculto.
 - El relleno de la pestaña activa y el del hover son las pastillas de `Liquid`, sin borde: la del hover fluye de una pestaña a otra y la activa aparece en el mismo clic. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
-- La pestaña activa lleva ⌄ (renombrar, borrar) y × (cerrar pestaña); el × ocupa el sitio del anillo de progreso.
+- La pestaña activa lleva ⌄ (renombrar, borrar) y × (cerrar pestaña); el × ocupa el sitio del anillo de progreso. En las demás pestañas abiertas el × sale al pasar el ratón en el sitio del anillo, con su hueco reservado (24 px más 4 de aire) para que su círculo no pise el contador. → [decisión](decisiones/2026-10-07-el-circulo-del-hover-nunca-pisa-el-texto-vecino.md)
 - Renombrar en el sitio: Enter guarda, Esc cancela. Proyecto nuevo: ⌘/Ctrl+Enter.
 - Mide 44 px: pestañas y botones de 34, letra `--fs-chrome` (14 px), relleno de 4. Hover y activa son pastillas de cristal (`--glass-*`). → [cromo de arriba](decisiones/2026-10-07-el-cromo-de-arriba-vuelve-a-44-y-sus-pastillas-a-cristal.md)
 - Se oculta a ≤800 px; en móvil navega la barra lateral. z 20 dentro de `.topbar`.
@@ -341,7 +341,7 @@ La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir
 
 ### Inicio: ¿qué vas a hacer?
 `ProjectChooser` · `Cover` · `components/ProjectChooser.tsx` · `.chooser` · `.cr-hello`
-Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion.
+Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion. La caja no toma el foco al entrar. → [sin foco al entrar](decisiones/2026-10-07-la-casa-no-enfoca-el-buscador-al-entrar.md)
 
 ### Inbox vacío
 `InboxZero` · `components/InboxZero.tsx`

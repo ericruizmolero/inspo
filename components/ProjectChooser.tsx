@@ -131,7 +131,7 @@ export default function ProjectChooser({ projects, systems, items, links, imageO
         {/* The system's PromptInput, with the app's two lines: the name, and under it (once there is one) the sentence */}
         <PromptInput className="chooser__box" id="chooser-name" value={name} onChange={setName} onSubmit={() => void create()}
           label={t.chooser.placeholder} placeholder="" sendLabel={t.chooser.start} disabled={busy} busy={busy}
-          inputProps={{ className: "chooser__name", maxLength: 60, autoFocus: true }}
+          inputProps={{ className: "chooser__name", maxLength: 60 }}
           leading={!name ? <Examples list={t.chooser.examples} /> : null}
           below={
             // The second line only shows once there is a name: until then the box is one question

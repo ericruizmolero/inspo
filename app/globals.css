@@ -655,8 +655,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .island__tab--more { gap: 4px; padding-right: 8px; color: var(--chrome-text-muted); }
 /* On the others the × takes no room: it shows over the ring at the end of the tab while the pointer is there */
 .island__tab--closable { position: relative; }
-.island__tab--closable .island__tab-main { padding-right: 12px; }
-.island__tab--closable .island__tab-x { position: absolute; right: 7px; top: 50%; margin: -12px 0 0; background: var(--chrome); }
+/* The × takes the ring's place without touching the count: the ring's slot (gap 6 + ring 12 + 14 of padding) is
+   as wide as the × (24) plus 4 of air before the digits, and the ember dot fills the same slot as the ring */
+.island__tab--closable .island__tab-main { padding-right: 14px; }
+.island__tab--closable .island__ring.cr-ring-new { margin: 0 2px 0 0; }
+.island__tab--closable .island__tab-x { position: absolute; right: 4px; top: 50%; margin: -12px 0 0; background: var(--chrome); }
 .island__tab--closable:hover .island__ring { visibility: hidden; }
 /* A name typed in place: the system's TextField look (a sunken field with its border) at the tab's height */
 .island__tab.island__tab--field.cr-input {
