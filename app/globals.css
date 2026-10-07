@@ -282,6 +282,18 @@
 
 html { background: var(--bg); color: var(--text); color-scheme: dark; }
 html[data-theme="light"] { color-scheme: light; }
+/* Paper: menus and windows sit on the near-white floor, so they take the white of the panels, not the brand paper
+   (Eric, 2026-10-07, on the workspace menu: "esta card conserva el color más beige que tenemos que cambiar"). Board
+   keeps them as paper: the lit window over the dark floor */
+:root[data-theme="light"] :is(.cr-menu, .cr-window, .modal.modal--window) {
+  --bg: #FFFFFF; --surface-page: #FFFFFF;
+  --panel: var(--paper-white); --surface: var(--paper-white); --surface-raised: var(--paper-white);
+  --surface-2: var(--paper-light); --ib-hover: var(--paper-light);
+  background: #FFFFFF;
+}
+/* Paper: the menu takes the soft line Alberto gave the fields this morning ("softer"), not the ink (Eric: "respetamos
+   el borde propuesto por Alberto"). Windows keep their ink border and bevel: that frame is what makes them a window */
+:root[data-theme="light"] .cr-menu { border-color: var(--border); }
 html[data-theme="light"] ::placeholder { color: var(--muted); opacity: 1; }
 
 body {
@@ -639,6 +651,10 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__switch .cr-seg[data-liquid] > .cr-seg-item:not(.is-active):hover { background: none; }
 .island__tabs[data-liquid] > .island__tab.is-on { background: none; box-shadow: none; }
 .island__tabs[data-liquid] > .island__tab:not(.is-on):not(.island__tab--field):hover { background: none; }
+/* The home is a tab too: the tabs' radius, and no fill of its own, so only Liquid's glass pills show under it
+   (Eric, 2026-10-07: "el hovering pill de la home no es lo mismo que el del resto") */
+.island__tabs > .island__home.cr-iconbtn { border-radius: var(--radius-md); }
+.island__tabs[data-liquid] > .island__home:hover, .island__tabs[data-liquid] > .island__home.is-active { background: none; }
 .island__tabs.liquid > :is(button, a):active { transform: none; }
 @media (forced-colors: active) { .island__tab.is-on { outline: 2px solid Highlight; outline-offset: -2px; } }
 /* A long name stops at 200px; the tab's tooltip keeps it whole */
@@ -671,7 +687,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 .island__tab--field.cr-input:focus-visible { outline: 2px solid var(--ib-focus); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
-  .island__ws:hover { background: var(--chrome-raised); color: var(--chrome-ink); }
+  /* The workspace tile and the bar's icon buttons (home, new project) hover with the tabs' glass, not a solid fill
+     (Eric, 2026-10-07: "y el hovering del espacio entonces?"); the open menu keeps the tile lit with the live glass */
+  .island__ws:hover { background: var(--glass-hover); box-shadow: var(--glass-line); color: var(--chrome-ink); }
+  .island__ws[data-popup-open] { background: var(--glass-on); box-shadow: var(--glass-line); color: var(--chrome-ink); }
+  .island > .cr-iconbtn-quiet:hover, .island__tabs > .cr-iconbtn-quiet:not(.island__home):hover, .island__tabs > .cr-iconbtn-quiet[data-popup-open] { background: var(--glass-hover); box-shadow: var(--glass-line); color: var(--chrome-ink); }
   .island__tab:not(.is-on):not(.island__tab--field):hover { background: color-mix(in srgb, var(--chrome-raised) 60%, transparent); color: var(--chrome-ink); }
   .island__tab--closable:hover .island__tab-x { background: color-mix(in srgb, var(--chrome-raised) 60%, var(--chrome)); }
   /* On a tab that already sits on chrome-raised, the hover fill steps back to chrome so it shows */
@@ -1801,8 +1821,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .settings__meta { font-size: var(--fs-label); color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .settings__aside { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .section-nav__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* The docked column on desktop (SectionShell): rows at ui size; the current page is a pressed Button
-   (paper, ink border, the pressed bevel). The group label is a plain 12px muted label */
+/* The docked column on desktop (SectionShell): rows at ui size; the current page is a flat pill, the same glass
+   as the Island's live tab (Eric, 2026-10-07, on Paper: "este active state queda demasiado potente" as a pressed
+   Button with ink border and bevel). The group label is a plain 12px muted label */
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"] {
   height: 36px; padding: 0 10px; gap: 10px;
   border: var(--stroke-control) solid transparent; border-radius: var(--radius-md);
@@ -1810,10 +1831,10 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"]:hover { background: var(--surface-raised); color: var(--text); }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active] {
-  background: var(--paper-pressed); color: var(--ink); font-weight: 600;
-  border-color: var(--control-border); box-shadow: var(--bevel-pressed);
+  background: var(--glass-on); color: var(--text); font-weight: 600;
+  border-color: transparent; box-shadow: none;
 }
-.shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active] .nav-item__icon { color: var(--ink); }
+.shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active] .nav-item__icon { color: var(--text); }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"]:focus-visible:not([data-active]) { box-shadow: none; }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-group-label"] { font-size: var(--fs-label); color: var(--text-muted); }
@@ -2562,10 +2583,13 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
    the pointer comes to the front */
 .cr-menu { --menu-ground: var(--paper); }
 :root:not([data-theme="light"]) .cr-menu { --menu-ground: #1E1E1C; }
+/* Paper menus are white now, so the ring between faces is white too (Eric, 2026-10-07: "el circle tiene que ser
+   mínimo y mismo color que el back") */
+:root[data-theme="light"] .cr-menu { --menu-ground: #FFFFFF; }
 .island__team { display: flex; align-items: center; min-height: 36px; padding: 4px 4px 4px 10px; }
-.island__face { position: relative; display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--menu-ground); box-shadow: 0 0 0 2px var(--menu-ground); cursor: pointer; text-decoration: none; transition: transform 150ms var(--ease-out); }
+.island__face { position: relative; display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--menu-ground); box-shadow: 0 0 0 1.5px var(--menu-ground); cursor: pointer; text-decoration: none; transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
 .island__face + .island__face { margin-left: -6px; }
-.island__face:hover, .island__face:focus-visible { z-index: 1; transform: translateY(-2px); }
+.island__face:hover, .island__face:focus-visible { z-index: 1; transform: translateY(-2px) scale(1.08); box-shadow: 0 0 0 1.5px var(--menu-ground), 0 3px 8px rgba(27,27,24,0.22); }
 .island__face--more { padding: 0 7px; background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: 500; font-variant-numeric: tabular-nums; }
 .island__face--more:hover { color: var(--text); }
 .island__team-manage { margin-left: auto; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--text-2); font-size: var(--fs-small); font-weight: 500; text-decoration: none; }
@@ -2588,11 +2612,16 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 }
 .tile:hover .tile__go, .tile__go.is-visible, .tile__go:focus-within { opacity: 1; transform: none; }
 .tile__go-pick { font-variant-numeric: tabular-nums; }
-/* The row is three default IconButtons s (32), 6 px apart, the same as .tile__actions up on the right; the folder turns
+/* The row is three strong IconButtons s (32), 6 px apart, the size of .tile__actions up on the right; the folder turns
    ember once the card is filed, the one colour over the picture. The words live in the caption */
 .tile__go { gap: 6px; }
-.tile__go .cr-iconbtn.is-filed { background: var(--ember); color: var(--on-ember); border-color: var(--ember); }
-.tile__go .cr-iconbtn.is-filed:hover, .tile__go .cr-iconbtn.is-filed.is-active { background: var(--ember-glow); border-color: var(--ember-glow); }
+/* Down here the three keep the Button's rounded square (--radius-md), as the old "Archivar" had; up on the right
+   they stay round (Eric, 2026-10-07: "los tres de abajo a la izquierda sí que pueden ir en rectángulo/cuadrado
+   como teníamos antes, pero ese tamaño está bien") */
+.tile__go .cr-iconbtn { border-radius: var(--radius-md); }
+/* Strong (retro: paper, ink border, bevel); filed, the folder is ember under the same bevel, like the old primary Button */
+.tile__go .cr-iconbtn.is-filed { background: var(--ember); color: var(--on-ember); }
+.tile__go .cr-iconbtn.is-filed:hover { background: var(--ember-glow); }
 @media (hover: none) { .tile__go { display: none; } }
 
 /* A card taken out of a project, on its way to the Inbox tab of the tab bar (components/fly-to-inbox.ts): the
@@ -2658,6 +2687,14 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }
+
+
+
+
+
+
+
+
 
 
 

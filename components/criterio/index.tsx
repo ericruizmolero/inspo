@@ -367,10 +367,26 @@ export function FieldRow({ label, hint, htmlFor, children, action, error, classN
 
 // ─── Status and people ─────────────────────────────────────────────────────
 
-/** A board's state: moss ring up to date, ember dot something new, muted ring idle. */
-export function StatusRing({ tone = "synced", label, className }: { tone?: "synced" | "new" | "idle"; label?: string; className?: string }) {
-  return <span className={cx("cr-ring", `cr-ring-${tone}`, className)} role="img"
-    aria-label={label || (tone === "synced" ? "Up to date" : tone === "new" ? "Something new" : "Idle")} />;
+/** A board's state: moss ring up to date, ember dot something new, muted ring idle. With `progress` (0 to 1) the
+ *  ring is a gauge: the moss arc alone is how far the board has come (its areas decided), with nothing drawn for
+ *  the rest, so 7 of 8 reads as a ring almost closed. Nothing done keeps the muted ring; the ember dot ignores
+ *  it: something new comes first. */
+export function StatusRing({ tone = "synced", progress, label, className }: { tone?: "synced" | "new" | "idle"; progress?: number; label?: string; className?: string }) {
+  // Only a partial arc is drawn as such: the closed ring and the empty one are the CSS borders, the cleanest 12px circle
+  const gauge = !!progress && progress > 0 && progress < 1 && tone !== "new";
+  // An SVG stroke, not a conic gradient: the arc's ends and its edges stay smooth at 12px
+  const C = 2 * Math.PI * 5;
+  return (
+    <span className={cx("cr-ring", `cr-ring-${tone}`, gauge && "cr-ring-gauge", className)} role="img"
+      aria-label={label || (tone === "synced" ? "Up to date" : tone === "new" ? "Something new" : "Idle")}>
+      {gauge && (
+        <svg viewBox="0 0 12 12" aria-hidden>
+          <circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" strokeWidth="2" transform="rotate(-90 6 6)"
+            strokeDasharray={`${Math.min(1, progress) * C} ${C}`} />
+        </svg>
+      )}
+    </span>
+  );
 }
 
 /** Segmented ember progress in a sunken field. Pair it with a label that says what is happening. */
@@ -425,21 +441,32 @@ export function Comment({ author, initials, tone, children, className }: { autho
 
 // ─── Board ─────────────────────────────────────────────────────────────────
 
-/** A board on home: a mosaic of its first references, the name, the count and a status ring. */
-export function BoardCard({ name, count, countLabel, tiles = [], status = "synced", statusLabel, href, onClick, className }: {
-  name: string; count: number; countLabel?: string; tiles?: ReactNode[]; status?: "synced" | "new" | "idle"; statusLabel?: string; href?: string; onClick?: () => void; className?: string;
+/** One reference in a BoardCard's masonry: what it shows and its height over its width, as on the board */
+export interface BoardTile { node: ReactNode; ratio: number }
+
+/** A board on home: its first references laid out as the board itself lays them (`columns`: the masonry, each
+ *  tile keeping its shape, cropped at the mosaic's bottom), or a flat mosaic of up to 8 `tiles`. Then the name,
+ *  the count and a status ring. */
+export function BoardCard({ name, count, countLabel, tiles = [], columns, status = "synced", progress, statusLabel, href, onClick, className }: {
+  name: string; count: number; countLabel?: string; tiles?: ReactNode[]; columns?: BoardTile[][]; status?: "synced" | "new" | "idle"; progress?: number; statusLabel?: string; href?: string; onClick?: () => void; className?: string;
 }) {
   const body = (
     <>
-      <span className="cr-boardcard-mosaic" aria-hidden>
-        {tiles.slice(0, 8).map((t, i) => <span key={i} className="cr-boardcard-tile" style={typeof t === "string" ? { background: t } : undefined}>{typeof t === "string" ? null : t}</span>)}
+      <span className={cx("cr-boardcard-mosaic", columns && "cr-boardcard-mosaic-masonry")} aria-hidden>
+        {columns
+          ? columns.map((col, c) => (
+            <span key={c} className="cr-boardcard-col">
+              {col.map((t, i) => <span key={i} className="cr-boardcard-tile" style={{ aspectRatio: `1 / ${t.ratio}` }}>{t.node}</span>)}
+            </span>
+          ))
+          : tiles.slice(0, 8).map((t, i) => <span key={i} className="cr-boardcard-tile" style={typeof t === "string" ? { background: t } : undefined}>{typeof t === "string" ? null : t}</span>)}
       </span>
       <span className="cr-boardcard-meta">
         <span>
           <span className="cr-boardcard-name">{name}</span>
           <span className="cr-boardcard-count">{countLabel ?? `${count} references`}</span>
         </span>
-        <StatusRing tone={status} label={statusLabel} />
+        <StatusRing tone={status} progress={progress} label={statusLabel} />
       </span>
     </>
   );

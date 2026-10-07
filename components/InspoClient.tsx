@@ -1719,6 +1719,7 @@ export default function InspoClient({
             links={links}
             ratioOf={ratioOf}
             imageOf={miniImageOf}
+            onMeasure={measure}
             onPick={(id) => setSpace(id)}
             onCreate={createProject}
           />
@@ -1820,6 +1821,7 @@ export default function InspoClient({
             links={links}
             ratioOf={ratioOf}
             imageOf={miniImageOf}
+            onMeasure={measure}
             isDuplicate={isDuplicate}
             onAddUrl={async (web) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
             onUpload={async (files) => { await Promise.all(files.map((file) => addByUpload({ web: "", file, type: "inspiration", note: "" }))); }}

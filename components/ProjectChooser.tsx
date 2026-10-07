@@ -1,14 +1,14 @@
 "use client";
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
-import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
 import { useT } from "./I18nProvider";
-import { BoardCard, PromptInput } from "@/components/criterio";
+import { BoardCard, PromptInput, type BoardTile } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
-import { keyOf } from "@/lib/board";
+import { DEFAULT_RATIO, keyOf } from "@/lib/board";
 import { parseDate } from "@/lib/search-query";
 import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import "./ProjectChooser.css";
@@ -51,52 +51,72 @@ function Examples({ list }: { list: readonly string[] }) {
   );
 }
 
-function Shot({ item, image }: { item: InspoItem; image: string | null }) {
+function Shot({ item, image, onMeasure }: { item: InspoItem; image: string | null; onMeasure?: (ratio: number) => void }) {
   const [at, setAt] = useState(0);
   const kind = mediaKindOf(item.web);
   // A video shows its frame (a Screen Studio share's poster, a YouTube still); only a site has a page to ask og for
   const srcs = [image, kind === "image" ? item.web : null, kind === "video" ? videoEmbedOf(item.web)?.poster : null, cachedCardImage(item.web),
     kind === "web" || kind === "post" ? `/api/og?url=${encodeURIComponent(item.web)}` : null].filter((x): x is string => !!x);
   const src = srcs[at];
-  // Without a picture it stays a blank tile, as on the board while one loads
-  return src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onError={() => setAt((i) => i + 1)} /> : null;
+  // Without a picture it stays a blank tile, as on the board while one loads. Once one is there its shape is
+  // told to the board's measure, as a card does: the mini relays out, and the board opens with the same shapes
+  const measure = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+    if (w && h) onMeasure?.(h / w);
+  };
+  return src ? <img key={src} src={src} alt="" loading="lazy" decoding="async" onLoad={measure} onError={() => setAt((i) => i + 1)} /> : null;
 }
 
-/** A project told by its board, seen from afar: the BoardCard's mosaic of its first references (4 x 2). A pasted text
- *  is the project's words, not a look: the mosaic shows what the project looks like */
-export function boardTiles(items: InspoItem[], imageOf: (item: InspoItem) => string | null): ReactNode[] {
-  const out: ReactNode[] = [];
+/** The mini masonry: five columns, the mosaic's 6px gap as a share of a column (a 330px card) and its height in
+ *  columns (33:20): past that the crop does the rest, so no more pictures are asked for than the card can show */
+const MINI_COLS = 5;
+const MINI_GAP = 0.105;
+const MINI_FULL = 3.3;
+
+/** A project told by its board, seen from afar: its first references laid out as the board lays them, shortest
+ *  column first and each at its own height (the same rule as Grid's layoutBoard), cropped at the mosaic's bottom.
+ *  A pasted text is the project's words, not a look: the mosaic shows what the project looks like */
+export function boardColumns(items: InspoItem[], imageOf: (item: InspoItem) => string | null, ratioOf?: (item: InspoItem) => number, measure?: (web: string, ratio: number) => void): BoardTile[][] {
+  const bottoms = new Array<number>(MINI_COLS).fill(0);
+  const cols: BoardTile[][] = Array.from({ length: MINI_COLS }, () => []);
   for (const item of items) {
     if (mediaKindOf(item.web) === "text") continue;
-    out.push(<Shot key={keyOf(item)} item={item} image={imageOf(item)} />);
-    if (out.length === 8) break;
+    let c = 0;
+    for (let i = 1; i < MINI_COLS; i++) if (bottoms[i] < bottoms[c] - 1e-3) c = i;
+    if (bottoms[c] >= MINI_FULL) break;
+    const ratio = ratioOf?.(item) ?? DEFAULT_RATIO;
+    cols[c].push({ ratio, node: <Shot key={keyOf(item)} item={item} image={imageOf(item)} onMeasure={measure && ((r) => measure(item.web, r))} /> });
+    bottoms[c] += ratio + MINI_GAP;
   }
-  return out;
+  return cols;
 }
 
-/** The fill ring on the BoardCard's StatusRing: the board moved past the last reading is something new (ember dot),
- *  a system with every area decided is up to date (moss ring), anything else waits (muted ring). The label says which */
+/** The BoardCard's StatusRing: the board moved past the last reading is something new (ember dot); otherwise the ring
+ *  is a gauge of the areas decided (moss over muted), closed when all eight are. The label says which */
 export function useBoardStatus() {
   const { t } = useT();
-  return (system: ProjectSystem | undefined, filed: InspoItem[]): { tone: "synced" | "new" | "idle"; label: string } => {
+  return (system: ProjectSystem | undefined, filed: InspoItem[]): { tone: "synced" | "new" | "idle"; progress: number; label: string } => {
     const filled = system?.areas.filter((a) => a.decision).length ?? 0;
+    const progress = filled / SYSTEM_AREAS.length;
     const unread = system?.run ? staleness(system, filed.flatMap((i) => (i.id ? [i.id] : []))).unread : 0;
-    if (unread > 0) return { tone: "new", label: t.system.stale(unread) };
-    return { tone: filled === SYSTEM_AREAS.length ? "synced" : "idle", label: t.system.filled(filled, SYSTEM_AREAS.length) };
+    if (unread > 0) return { tone: "new", progress, label: t.system.stale(unread) };
+    return { tone: filled === SYSTEM_AREAS.length ? "synced" : "idle", progress, label: t.system.filled(filled, SYSTEM_AREAS.length) };
   };
 }
 
 const NONE: InspoItem[] = [];
 
-export default function ProjectChooser({ projects, systems, items, links, imageOf, onPick, onCreate }: {
+export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate }: {
   projects: Project[];
   systems: Record<string, ProjectSystem>;
   items: InspoItem[];
   links: ProjectLinks;
-  /** Height/width of each card on the board (the old cover's masonry; the BoardCard mosaic crops to fill) */
+  /** Height/width of each card on the board: the mini masonry keeps the same shapes */
   ratioOf?: (item: InspoItem) => number;
   /** What each card shows on the board, at its smallest size */
   imageOf: (item: InspoItem) => string | null;
+  /** The board's measure: a picture's shape, once the mini has loaded it */
+  onMeasure?: (web: string, ratio: number) => void;
   onPick: (id: string) => void;
   onCreate: (name: string) => Promise<Project | null>;
 }) {
@@ -149,7 +169,7 @@ export default function ProjectChooser({ projects, systems, items, links, imageO
               const status = statusOf(systems[p.id], filed);
               return (
                 <BoardCard key={p.id} className="chooser__card" name={p.name} count={filed.length} countLabel={t.chooser.refs(filed.length)}
-                  tiles={boardTiles(filed, imageOf)} status={status.tone} statusLabel={status.label} onClick={() => onPick(p.id)} />
+                  columns={boardColumns(filed, imageOf, ratioOf, onMeasure)} status={status.tone} progress={status.progress} statusLabel={status.label} onClick={() => onPick(p.id)} />
               );
             })}
           </div>

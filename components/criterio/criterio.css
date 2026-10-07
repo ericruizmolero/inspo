@@ -107,6 +107,9 @@
 .cr-ring-synced{border:2px solid var(--moss-light,#7E9A5C)}
 .cr-ring-new{background:var(--ember,#E8892B);width:8px;height:8px}
 .cr-ring-idle{border:2px solid var(--chrome-muted,#8A847A)}
+/* The gauge: a moss arc (an SVG stroke of 2px, from the top, clockwise) and nothing for the rest */
+.cr-ring-gauge{border:0;color:var(--moss-light,#7E9A5C)}
+.cr-ring-gauge svg{display:block;width:100%;height:100%;overflow:visible}
 
 /* ---- segmented, view switcher, zoom ---- */
 .cr-seg{display:inline-flex;align-items:center;gap:2px;font-family:var(--font-sans,"Archivo",sans-serif)}
@@ -156,6 +159,11 @@
 .cr-boardcard-mosaic{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:85px;gap:6px;padding:10px;height:200px;box-sizing:border-box;align-content:start;overflow:hidden;background:var(--board-card,#1A1A1A);border:1px solid var(--chrome-border,#262626);border-radius:var(--radius-lg,14px)}
 .cr-boardcard:hover .cr-boardcard-mosaic{border-color:var(--chrome-muted,#8A847A)}
 .cr-boardcard-tile{border-radius:4px}
+/* The masonry: the board's own columns, shortest first, every tile its own height (aspect-ratio set inline), cut at the bottom */
+.cr-boardcard-mosaic-masonry{display:flex;align-items:flex-start}
+.cr-boardcard-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:inherit}
+.cr-boardcard-mosaic-masonry .cr-boardcard-tile{display:block;width:100%;overflow:hidden;background:var(--surface-2,#222)}
+.cr-boardcard-mosaic-masonry .cr-boardcard-tile img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
 .cr-boardcard-meta{display:flex;justify-content:space-between;align-items:flex-start;padding:0 2px}
 .cr-boardcard-name{display:block;font-size:var(--fs-ui,15px);font-weight:500;color:var(--chrome-ink,#EDE6D6)}
 .cr-boardcard-count{display:block;font-size:var(--fs-small,13px);color:var(--chrome-muted,#8A847A);margin-top:2px}

@@ -419,7 +419,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
       projects={projects} filed={projectIds} onToggle={onToggleProject} onCreate={onCreateProject} onOpenChange={onOpenChange}
       areasIn={areasIn}
       className={iconOnly
-        ? `${className} cr-iconbtn ${filedCount ? "cr-iconbtn-default is-filed" : "cr-iconbtn-default"} cr-iconbtn-s`
+        ? `${className} cr-iconbtn cr-iconbtn-strong${filedCount ? " is-filed" : ""} cr-iconbtn-s`
         : `${className} cr-btn ${filedCount ? "cr-btn-primary" : "cr-btn-secondary"} cr-btn-s`}
       label={filedCount ? t.projects.filedIn(filedCount) : t.projects.fileIn}
     >
@@ -626,14 +626,15 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
           {/* Down here, what is done most with a reference: file it (projects and areas) and talk about it */}
           {(onToggleProject || onComments) && (
             <div className={`tile__go${pickerOpen ? " is-visible" : ""}`} onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
-              {/* Three default IconButtons s, the same as the three up on the right (Eric, 07-10: "me gustan los 3 de
-                  arriba a la derecha, el resto homogeneizamos"), icon only: the folder (ember once filed, the one colour
-                  on the card), the areas of the system and comments. The words (filed where, in how many) live in the
-                  caption's row and in each label */}
+              {/* Three strong IconButtons s (the retro one: paper, ink border, bevel), square, the size of the three up on
+                  the right (Eric, 07-10: "el resto homogeneizamos", "ese tamaño está bien", "con el botón tipo retro que
+                  tenía una especie de sombreado"), icon only: the folder (ember once filed, the one colour on the card),
+                  the areas of the system and comments. The words (filed where, in how many) live in the caption's row
+                  and in each label */}
               {picker("tile__go-pick", setPickerOpen, true)}
-              {areaPicker("cr-iconbtn cr-iconbtn-default cr-iconbtn-s", setPickerOpen)}
+              {areaPicker("cr-iconbtn cr-iconbtn-strong cr-iconbtn-s", setPickerOpen)}
               {onComments && (
-                <IconButton icon="comment" variant="default" size="s"
+                <IconButton icon="comment" variant="strong" size="s"
                   label={commentCount > 0 ? `${t.card.comments} (${commentCount})` : t.card.comments}
                   onClick={(e) => { e.stopPropagation(); onComments(); }} />
               )}

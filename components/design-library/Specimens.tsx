@@ -686,6 +686,7 @@ const SAMPLES: Record<string, () => ReactNode> = {
       <span className="ds-row"><StatusRing tone="synced" /><span className="ds-note">Al día</span></span>
       <span className="ds-row"><StatusRing tone="new" /><span className="ds-note">Algo nuevo</span></span>
       <span className="ds-row"><StatusRing tone="idle" /><span className="ds-note">Sin empezar</span></span>
+      <span className="ds-row"><StatusRing tone="idle" progress={7 / 8} /><span className="ds-note">7 de 8 áreas</span></span>
     </div>
   ),
   progreso: () => <div className="ds-row ds-row--narrow ds-row--col"><Progress value={14} max={23} label="Mirando tu librería" /><span className="ds-note">Mirando tu librería: 14 de 23</span></div>,

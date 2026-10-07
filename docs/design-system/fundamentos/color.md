@@ -6,7 +6,7 @@ Dos temas: **Board** (oscuro, el suelo del producto) y **Paper** (claro). La pal
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `--paper` | `#EDE6D6` | Papel de marca; botón secundario y suelo de ventanas, menús y tips |
+| `--paper` | `#EDE6D6` | Papel de marca; botón secundario y, en Board, suelo de ventanas y menús (en Paper van en blanco, como los paneles) |
 | `--paper-light` | `#F6F1E6` | Hover del secundario; tarjetas dentro de una ventana |
 | `--paper-white` | `#FCFAF6` | Suelo del tema Paper; encima, tarjetas, paneles y cromo en blanco puro |
 | `--paper-pressed` | `#D9CFBA` | Secundario pulsado |
@@ -46,7 +46,7 @@ El cromo es sólido: sin cristal ni desenfoque en barras ni superficies. El cris
 | `--surface` | `--chrome-panel` | `#FFFFFF` | Popovers, rellenos |
 | `--surface-2` | `--chrome-raised` | `--disabled` | Hover, relleno de estado |
 | `--surface-3` | `#34342F` | `--paper-pressed` | Scrollbar, relleno fuerte |
-| `--border` | `#2A2A2A` | `#D9D1BF` | Línea de tarjeta, decorativa |
+| `--border` | `#2A2A2A` | `#D9D1BF` | Línea de tarjeta, decorativa; en Paper también la del menú y la de los campos |
 | `--border-strong` | `#3A3A35` | `--disabled-border` | Separadores fuertes |
 | `--text` | `--paper` | `--ink` | Texto principal |
 | `--text-2` (`--text-muted`) | `#B8B1A3` | `#5A5850` | Texto secundario (9:1 y 5,6:1) |

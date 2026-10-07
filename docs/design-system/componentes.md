@@ -109,7 +109,7 @@ Una tecla con bisel para los atajos: ⌘K, /, Esc.
 
 ### Anillo de estado
 `StatusRing` · `.cr-ring` · muestra: anillo
-El estado de un tablero: anillo moss al día (`synced`), punto ember algo nuevo (`new`), anillo apagado sin empezar (`idle`). Con `label` propio si el nombre por defecto no sirve.
+El estado de un tablero: anillo moss al día (`synced`), punto ember algo nuevo (`new`), anillo apagado sin empezar (`idle`). Con `progress` (0 a 1) es un indicador: solo el arco moss, sin pista gris, tantos grados como áreas decididas (7 de 8 es un anillo casi cerrado; 0 deja el anillo apagado); el punto ember lo ignora. Con `label` propio si el nombre por defecto no sirve. → [indicador](decisiones/2026-10-07-el-anillo-de-estado-es-un-indicador-de-areas-decididas.md)
 
 ### Progreso
 `Progress` · `.cr-progress` · muestra: progreso
@@ -125,7 +125,7 @@ Un comentario corto bajo una referencia: avatar de 20, autor en negrita y dos l�
 
 ### Tarjeta de tablero
 `BoardCard` · `.cr-boardcard` · muestra: tarjeta-tablero
-Un tablero en la casa: mosaico de sus primeras referencias (`tiles`, hasta 8), el nombre, la cuenta (`countLabel`) y su anillo de estado. Enlace con `href` o botón con `onClick`. Es la portada de proyecto de Inicio y de Inbox vacío.
+Un tablero en la casa: sus primeras referencias colocadas como las coloca el tablón (`columns`, cinco columnas con cada baldosa a su `ratio`, recortadas abajo) o un mosaico plano de hasta 8 `tiles`; el nombre, la cuenta (`countLabel`) y su anillo de estado (`status`, `progress`). Enlace con `href` o botón con `onClick`. Es la portada de proyecto de Inicio y de Inbox vacío. → [masonry en pequeño](decisiones/2026-10-07-la-portada-de-un-tablero-es-su-masonry-en-pequeno.md)
 
 ### Baldosa de referencia
 `ReferenceTile` · `.cr-ref` · muestra: referencia
@@ -176,7 +176,7 @@ Una ventana con el nombre del proyecto en la barra y dos pasos (Sobre qué es, R
 Barra flotante de escritorio con los proyectos como pestañas, a lo Figma: Inicio (la casa), Descubrir, Inbox, "N más", "+" para proyecto nuevo y, a la izquierda, el avatar del espacio que abre el menú de espacio.
 - El tile de la izquierda (`.island__logo`, 26 px) es `WorkspaceFace` del espacio activo: su logo, o tu foto en el personal; nunca la mascota del producto. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
 - Las pestañas abiertas se guardan por navegador y espacio; el ancho se mide con un `.island__measure` oculto.
-- El relleno de la pestaña activa y el del hover son las pastillas de `Liquid`, sin borde: la del hover fluye de una pestaña a otra y la activa aparece en el mismo clic. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
+- El relleno de la pestaña activa y el del hover son las pastillas de `Liquid`, sin borde: la del hover fluye de una pestaña a otra y la activa aparece en el mismo clic. La casa (`.island__home`) es una pestaña más: misma forma (`--radius-md`) y sin relleno propio, para que su hover y su estado activo sean las mismas pastillas. El tile del espacio (`.island__ws`) y el "+" de proyecto nuevo pasan el ratón con el mismo cristal (`--glass-hover`, y `--glass-on` con su menú abierto), nunca con un relleno sólido. En el menú del espacio, las caras del equipo (`.island__face`) llevan un anillo de 1,5 px del color del propio menú (`--menu-ground`, blanco en Paper) y al pasar el ratón suben con una sombra corta. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
 - La pestaña activa lleva ⌄ (renombrar, borrar) y × (cerrar pestaña); el × ocupa el sitio del anillo de progreso. En las demás pestañas abiertas el × sale al pasar el ratón en el sitio del anillo, con su hueco reservado (24 px más 4 de aire) para que su círculo no pise el contador. → [decisión](decisiones/2026-10-07-el-circulo-del-hover-nunca-pisa-el-texto-vecino.md)
 - Renombrar en el sitio: Enter guarda, Esc cancela. Proyecto nuevo: ⌘/Ctrl+Enter.
 - Mide 44 px: pestañas y botones de 34, letra `--fs-chrome` (14 px), relleno de 4. Hover y activa son pastillas de cristal (`--glass-*`). → [cromo de arriba](decisiones/2026-10-07-el-cromo-de-arriba-vuelve-a-44-y-sus-pastillas-a-cristal.md)
@@ -282,7 +282,7 @@ Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y so
 `InspoCard` · `components/InspoCard.tsx` · `.tile`
 La miniatura en su forma real: web (og:image, captura o póster tipográfico), imagen, vídeo en bucle o texto.
 - Nota con avatares, chips de etiquetas y estado "reuniendo".
-- Abajo a la izquierda, al pasar el ratón (`.tile__go`): tres `IconButton` default s iguales, icono solo, la misma talla y el mismo aire (6 px) que los tres de arriba a la derecha: carpeta (archivar en proyecto; ember con `.is-filed` cuando ya está archivada, el único color sobre la imagen), brújula (al sistema) y comentarios. Las palabras (en qué proyectos, cuántos) van en la fila del pie y en cada `label`. Al pasar el ratón, la página hace scroll dentro de la tarjeta. → [decisión](decisiones/2026-10-07-las-dos-filas-de-la-tarjeta-llevan-los-mismos-botones-s-y-la-carpeta-archivada-es-ember.md)
+- Abajo a la izquierda, al pasar el ratón (`.tile__go`): tres `IconButton` strong s iguales (el retro: papel, borde ink y bisel), icono solo, la misma talla y el mismo aire (6 px) que los tres de arriba a la derecha, pero en cuadrado redondeado (`--radius-md`, el del `Button`) y no en círculo: carpeta (archivar en proyecto; ember bajo el mismo bisel con `.is-filed` cuando ya está archivada, el único color sobre la imagen), brújula (al sistema) y comentarios. Las palabras (en qué proyectos, cuántos) van en la fila del pie y en cada `label`. Al pasar el ratón, la página hace scroll dentro de la tarjeta. → [decisión](decisiones/2026-10-07-las-dos-filas-de-la-tarjeta-llevan-los-mismos-botones-s-y-la-carpeta-archivada-es-ember.md)
 - Arriba a la derecha: Ver URL, los tres puntos (solo la miniatura) y la papelera, que dice de dónde quita la tarjeta. En el tablón de un proyecto dice "Quitar del proyecto", la saca con un clic y la tarjeta vuela a la pestaña Inbox de la Isla como en Pulido (`components/fly-to-inbox.ts`, `.tile-fly`); fuera, "Quitar de" y el nombre del espacio. → [decisión](decisiones/2026-10-06-en-un-proyecto-la-papelera-saca-la-tarjeta-al-inbox.md) Fuera de un proyecto borra: son dos clics seguidos sobre la papelera, que al primero pasa a decir "Borrar" en rojo en el mismo sitio; Esc, sacar el puntero o 6 s lo cancelan. → [decisión](decisiones/2026-10-06-borrar-tarjeta-con-dos-clics-en-la-papelera.md) La papelera solo se pinta para quien puede borrar la referencia: quien la guardó o quien gestiona el espacio (`deletable`). → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 - Arriba a la izquierda: el círculo de selección (al pasar el ratón o mientras se selecciona) y, tras una búsqueda, el porcentaje de encaje con su porqué. Cuando el círculo aparece, el porcentaje y el chip GIF se apartan 32 px a la derecha. → [decisión](decisiones/2026-10-06-el-estado-de-etiquetado-no-acompana-a-la-busqueda.md)
 
@@ -341,11 +341,11 @@ La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir
 
 ### Inicio: ¿qué vas a hacer?
 `ProjectChooser` · `Cover` · `components/ProjectChooser.tsx` · `.chooser` · `.cr-hello`
-Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (mini masonry de su tablero) y su anillo. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion. La caja no toma el foco al entrar. → [sin foco al entrar](decisiones/2026-10-07-la-casa-no-enfoca-el-buscador-al-entrar.md)
+Caja para nombrar un proyecto nuevo (Enter crea) y la cuadrícula de proyectos, cada uno con su portada (`boardColumns`: el masonry de su tablón en pequeño, con la regla de `layoutBoard` y los mismos `ratioOf`; la miniatura mide la imagen al cargar y se lo dice al tablón) y su anillo indicador. El placeholder rota ejemplos palabra a palabra y respeta reduced-motion. La caja no toma el foco al entrar. → [sin foco al entrar](decisiones/2026-10-07-la-casa-no-enfoca-el-buscador-al-entrar.md)
 
 ### Inbox vacío
 `InboxZero` · `components/InboxZero.tsx`
-Trabajo hecho: un mensaje, los proyectos como portadas (los más llenos primero) y la misma caja para pegar URL o imagen.
+Trabajo hecho: un mensaje, los proyectos como portadas (`BoardCard` con el mismo masonry en pequeño que la casa, los más llenos primero) y la misma caja para pegar URL o imagen.
 
 ### Proyecto vacío
 `ProjectStart` · `components/ProjectStart.tsx`
