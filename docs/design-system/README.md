@@ -4,6 +4,8 @@ Aquí se recoge **cada decisión de diseño y desarrollo** que tomamos sobre la 
 
 Se ve en **criterio.design/library** (solo para quien tiene acceso a `/admin`), que pinta estos mismos ficheros: cada página de tokens con su muestra viva encima de las reglas (la paleta, la escala tipográfica, los radios, las curvas…), los componentes con el CSS real de la app, y las decisiones como registro filtrable. Los agentes leen los `.md`; las personas, la página. Es la misma fuente.
 
+El nombre está en revisión: "sistema de diseño" se queda corto para lo que recoge (también el stack, la seguridad y cómo trabajamos); Eric propuso el 2026-10-07 algo como "sistema agéntico". Hasta que se decida, se queda así.
+
 Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué hacer**, **por qué** y **de dónde sale** (decisión fechada), y lo que se retiró queda escrito para que nadie lo vuelva a meter.
 
 ## Cómo está ordenado
@@ -14,7 +16,7 @@ Está pensado para que lo lea primero un agente. Por eso cada regla dice **qué 
 | Fundamentos | [Principios](principios.md), [Tokens](fundamentos.md) y una página por familia: [Color](fundamentos/color.md), [Tipografía](fundamentos/tipografia.md), [Espaciado](fundamentos/espaciado.md), [Radios y sombras](fundamentos/radios-y-sombras.md), [Movimiento](fundamentos/movimiento.md), [Iconos](fundamentos/iconos.md), [Pantalla, capas y foco](fundamentos/pantalla.md) | Antes de diseñar o escribir CSS |
 | Componentes | [Botones](botones.md), [Marca](marca.md), [Catálogo](componentes.md) | Antes de crear una pieza nueva |
 | Construir | [Patrones](patrones.md), [Montar el proyecto](construir/montar.md), [Textos e idiomas](construir/textos-e-idiomas.md), [Añadir una página](construir/pagina-nueva.md), [Añadir un componente](construir/componente-nuevo.md), [Buenas prácticas](construir/buenas-practicas.md) | Al montar algo |
-| Mantenimiento | [Mantenimiento técnico](mantenimiento.md), [Desarrollo](desarrollo.md), [Decisiones](decisiones/README.md) | Al cambiar algo de base, o para saber por qué algo es así |
+| Mantenimiento | [Mantenimiento técnico](mantenimiento.md), [Desarrollo](desarrollo.md), [Stack tecnológico](stack.md), [Seguridad y políticas](seguridad.md), [Decisiones](decisiones/README.md) | Al cambiar algo de base, al tocar un servicio o una clave, o para saber por qué algo es así |
 
 ## Reglas del sistema
 

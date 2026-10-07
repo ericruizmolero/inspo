@@ -218,7 +218,7 @@ export default function SoundControl() {
             ))}
             <Separator />
             {/* The tracks scroll within a fixed height, the stations stay put: the menu never grows with the catalogue */}
-            <div className="sound-tracks__list" ref={listRef}>
+            <div className="sound-tracks__list cr-scroll-fade" ref={listRef}>
               {list.map((i) => (
                 <MenuItem key={TRACKS[i].id} role="menuitemradio" aria-checked={i === track} checked={i === track}
                   onClick={() => { setOpen(false); if (i !== track) go(i, true); }}>

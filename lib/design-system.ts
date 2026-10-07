@@ -61,6 +61,8 @@ export const DS_GROUPS: { label: string; lead: string; pages: { slug: string; fi
     pages: [
       { slug: "mantenimiento", file: "mantenimiento.md", icon: "usage" },
       { slug: "desarrollo", file: "desarrollo.md", icon: "code" },
+      { slug: "stack", file: "stack.md", icon: "workspace" },
+      { slug: "seguridad", file: "seguridad.md", icon: "access" },
       { slug: "decisiones", file: "decisiones/", icon: "decisions" },
     ],
   },

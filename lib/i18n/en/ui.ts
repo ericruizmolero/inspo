@@ -1433,9 +1433,9 @@ export const ui = {
     talk: (n: number): string => (n === 1 ? "1 comment" : `${n} comments`),
   },
   gather: {
-    title: "First, the board",
+    title: "The board",
     count: (n: number): string => (n === 1 ? "1 reference" : `${n} references`),
-    lead: "Bring in what inspires you: sites, images, videos.",
+    lead: "Add what inspires you.",
     inboxLead: "What has no project yet. Each card takes it to one.",
     add: "Add",
     ready: "I have my references",

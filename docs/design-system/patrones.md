@@ -29,6 +29,7 @@ Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la es
 - **Ventanado**: solo se montan las tarjetas a ±1 pantalla del viewport; un tablero de 3000 cuesta lo que unas pocas pantallas.
 - **Tres copias de cada captura** (288, 720 y 1440 px): cada tarjeta pide la que su ancho en pantalla necesita.
 - El React Compiler memoiza; que un sondeo, el teclado o un panel no re-rendericen el tablero entero (Alberto, 05-10).
+- **Nubecita donde hay scroll**: una lista que hace scroll dentro de un menú o un selector lleva `.cr-scroll-fade` (`components/criterio/criterio.css`): funde 28 px del borde por donde queda más lista. Sigue al propio scroll (`animation-timeline: scroll(self)`): arriba del todo solo se funde el final, la de arriba aparece al empezar a bajar, y al llegar al final desaparece; una lista que no hace scroll no se funde. Puesta en las pistas de sonido (`.sound-tracks__list`) y en la lista del selector de proyecto (`.cr-picker-list`). → [decisión](decisiones/2026-10-07-las-listas-con-scroll-se-funden-por-donde-sigue.md)
 
 ## Zoom del tablero
 

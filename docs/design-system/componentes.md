@@ -316,7 +316,7 @@ Caja fija abajo, con chips de filtro (persona, fecha, color, sección…) y suge
 
 ### Barra de reunir referencias
 `GatherBar` · `components/GatherBar.tsx` · `.gather`
-Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis referencias", que marca el proyecto como empezado y lleva siempre al Sistema (no pasa por Pulido, que es una pestaña aparte). En teléfono (≤640 px) es una fila: el título y el botón; miniaturas, recuento, entradilla y "Añadir" fuera (añade el "+" de la barra).
+Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis referencias", que marca el proyecto como empezado y lleva siempre al Sistema (no pasa por Pulido, que es una pestaña aparte). El dock no se ensancha por ella (sigue en 640 px): al texto le quedan unos 160 px junto a las miniaturas y los dos botones, así que los textos son cortos ("El tablón", "7 referencias" y "Sube lo que te inspira." de entradilla) los dos botones siguen en m, a la misma altura (Eric: "cuidado con eso"); "Añadir" lleva menos relleno lateral (10 px) y los huecos de la fila son de 10 px. Si aun así falta sitio, el nombre y la entradilla acaban en puntos suspensivos; el número nunca se recorta. → [decisión](decisiones/2026-10-07-el-dock-no-se-ensancha-por-la-barra-de-reunir.md) En teléfono (≤640 px) es una fila: el título y el botón; miniaturas, recuento, entradilla y "Añadir" fuera (añade el "+" de la barra).
 
 ### Pulido
 `PolishView` · `components/PolishView.tsx` · `components/PolishView.css` · `.polish`

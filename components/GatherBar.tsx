@@ -1,7 +1,7 @@
 "use client";
 // A project that is still gathering: it opens on its board, and this bar, joined to the top of the search dock,
 // says what the board is for now (bring in what inspires: sites, images, videos), shows what is already in and
-// holds the one step out of it. "I have my references" takes the team to the system, which reads the board;
+// holds the one step out of it. "I have my references" (both at m, the same height: Eric 07-10) takes the team to the system, which reads the board;
 // from then on the project opens there. The Inbox wears it too, with its own title and line and no step out.
 import { useState } from "react";
 import { useT } from "./I18nProvider";

@@ -2287,7 +2287,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .zoom-pill__track svg { transition: transform 150ms var(--ease-out); }
 .zoom-pill__track.is-open svg { transform: rotate(180deg); transition-duration: 200ms; }
 .sound-tracks.sound-tracks { width: 236px; }
-/* The stations stay put; the tracks scroll in six rows and a half, so the half row says there are more below */
+/* The stations stay put; the tracks scroll in six rows and a half, and the list fades where there is more (.cr-scroll-fade) */
 .sound-tracks__list { max-height: 208px; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
 /* Where the page scrolls with the window (components/SectionShell.tsx) the pill keeps the corner it has everywhere:
    the window's own bottom-left, over the docked column (Eric, 07-10: "siempre en un mismo sitio"). A line of no

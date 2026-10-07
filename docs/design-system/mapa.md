@@ -34,7 +34,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | URL | Qué hay |
 | --- | --- |
 | `/admin/overview`, `usage`, `people`, `feedback`, `access` | Actividad de toda la app; `?dias=` cambia el periodo |
-| `/library/…` | Esta librería: Introducción, Fundamentos (Principios, Tokens y una página por familia: color, tipografía, espaciado, radios y sombras, movimiento, iconos, pantalla), Componentes (Botones, Marca, catálogo), Construir y Mantenimiento |
+| `/library/…` | Esta librería: Introducción, Fundamentos (Principios, Tokens y una página por familia: color, tipografía, espaciado, radios y sombras, movimiento, iconos, pantalla), Componentes (Botones, Marca, catálogo), Construir y Mantenimiento (técnico, desarrollo, stack, seguridad y políticas, decisiones) |
 
 Se da acceso con `npm run admin -- <correo>`.
 

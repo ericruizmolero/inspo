@@ -542,3 +542,15 @@
 .cr-seg-paper{--liquid-on:var(--paper);--liquid-ring:inset 0 0 0 1px var(--control-border),var(--bevel);--liquid-hover:color-mix(in srgb,var(--field-ink) 8%,transparent);--liquid-ink:var(--ink);--liquid-ink-off:var(--field-placeholder)}
 .cr-seg[data-liquid]>.cr-seg-item.is-active{background:none;box-shadow:none}
 .cr-seg[data-liquid]>.cr-seg-item:hover:not(.is-active){background:none}
+/* app: a list that scrolls inside a menu or a picker fades at the edge where there is more (Eric, 07-10: "si hay
+   scroll hay que poner nubecita"). The two fades follow the scroll itself: at the top only the bottom fades, at the
+   bottom only the top, and a list that does not scroll has none. Where the browser has no scroll timelines (Firefox)
+   the list simply has no fade */
+@property --cr-fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --cr-fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.cr-scroll-fade{--cr-fade-top:0px;--cr-fade-bottom:0px;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 var(--cr-fade-top),#000 calc(100% - var(--cr-fade-bottom)),transparent);mask-image:linear-gradient(to bottom,transparent,#000 var(--cr-fade-top),#000 calc(100% - var(--cr-fade-bottom)),transparent)}
+@supports (animation-timeline: scroll()) {
+  .cr-scroll-fade{animation-name:cr-fade-top,cr-fade-bottom;animation-timing-function:linear;animation-fill-mode:both;animation-timeline:scroll(self);animation-range:0px 28px,calc(100% - 28px) 100%}
+  @keyframes cr-fade-top{from{--cr-fade-top:0px}to{--cr-fade-top:28px}}
+  @keyframes cr-fade-bottom{from{--cr-fade-bottom:28px}to{--cr-fade-bottom:0px}}
+}
