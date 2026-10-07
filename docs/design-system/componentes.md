@@ -44,7 +44,7 @@ La casilla hundida con el tic de tinta y su etiqueta al lado. Controlada (`check
 
 ### Interruptor
 `Switch` · `.cr-switch` · muestra: interruptor
-Encendido y apagado: pista hundida (copia el pozo de la casilla), perilla de papel con bisel (copia el botón) y ember encendido. Siempre con `label`; `role=switch`. → [las piezas pequeñas](decisiones/2026-10-07-las-piezas-pequenas-copian-a-las-grandes.md)
+Encendido y apagado: pista hundida (copia el pozo de la casilla), perilla de papel con bisel (copia el botón) y ember encendido. Siempre con `label`; `role=switch`. → [las piezas pequeñas](decisiones/2026-10-07-las-piezas-pequenas-copian-a-las-grandes.md) Dentro de un `FieldRow` guarda su tamaño (34 por 20), no se estira como un campo.
 
 ### Chip
 `Chip` · `.cr-chip` · `.pill` · muestra: pastillas

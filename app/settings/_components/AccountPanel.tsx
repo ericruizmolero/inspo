@@ -8,13 +8,15 @@ import type { SessionUser, Workspace } from "@/lib/workspace-core";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
+import { setUiSounds, useUiSounds } from "@/lib/ui-sounds";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
-import { Avatar, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
+import { Avatar, FieldRow, SettingsWindow, Switch, toneFor } from "@/components/criterio";
 
 export default function AccountPanel({ user, personal }: { user: SessionUser; personal: Workspace | null }) {
   const personalId = personal?.id ?? null;
   const { t } = useT();
+  const sounds = useUiSounds();
   const router = useRouter();
   const photoRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(user.name);
@@ -93,6 +95,9 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
       <SettingsWindow title={t.settings.appearance} description={t.settings.appearanceHint}>
         <FieldRow label={t.settings.theme}><ThemeSwitch /></FieldRow>
         <FieldRow label={t.settings.language}><LangSwitch /></FieldRow>
+        <FieldRow label={t.settings.uiSounds} hint={t.settings.uiSoundsHint}>
+          <Switch checked={sounds} onChange={setUiSounds} label={t.settings.uiSounds} />
+        </FieldRow>
       </SettingsWindow>
 
       {personal && (

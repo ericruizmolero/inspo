@@ -5,7 +5,7 @@ Decisiones de cómo construimos, no de cómo se ve.
 ## Stack
 
 - **Next.js 16** (App Router). Antes de tocarlo, leer la doc en `node_modules/next/dist/docs/` (AGENTS.md).
-- React 19, Tailwind 4 + CSS propio con tokens, shadcn (`base-nova`) sobre Base UI, lucide, React Compiler activado (`reactCompiler` en `next.config.ts`: no hace falta memoizar a mano), WAAPI y CSS para el movimiento. GSAP se quitó el 2026-10-05: no volver a añadirlo sin decisión.
+- React 19, Tailwind 4 + CSS propio con tokens, shadcn (`base-nova`) sobre Base UI, lucide, React Compiler activado (`reactCompiler` en `next.config.ts`: no hace falta memoizar a mano), WAAPI y CSS para el movimiento. cuelume para los sonidos de la interfaz, siempre a través de `lib/ui-sounds.ts`. GSAP se quitó el 2026-10-05: no volver a añadirlo sin decisión.
 - Auth: Better Auth con organizaciones (workspaces). BD: Drizzle (Postgres/Neon en producción). Ficheros: R2 / Vercel Blob. Correo: Resend.
 - Producción en Vercel (team criterio-design), región Frankfurt; las migraciones corren en el build, así una migración rota para el deploy.
 

@@ -518,6 +518,7 @@
 .cr-fieldrow-line{display:flex;align-items:center;gap:8px;min-height:44px;min-width:0}
 .cr-fieldrow-line>:first-child{flex:1 1 auto;min-width:0}
 .cr-fieldrow-line>:not(:first-child){flex:none}
+.cr-fieldrow-line>.cr-switch{flex:none}
 .cr-fieldrow-line>.cr-input{width:100%}
 @media (max-width:560px){
   .cr-fieldrow{grid-template-columns:minmax(0,1fr)}

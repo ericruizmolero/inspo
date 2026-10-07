@@ -34,6 +34,8 @@ export const ui: typeof EnUi = {
     emailHint: "Entras con esta dirección. No se puede cambiar desde aquí.",
     appearance: "Apariencia",
     appearanceHint: "Solo en este navegador.",
+    uiSounds: "Sonidos",
+    uiSoundsHint: "Un clic suave al guardar una referencia, quedarte u olvidar una carta, o cuando algo falla.",
     session: "Sesión",
     sessionHint: "Cierra la sesión de criterio.design en este navegador.",
     teamName: "Nombre del equipo",

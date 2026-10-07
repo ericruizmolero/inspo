@@ -31,6 +31,7 @@ import { Avatar } from "./CommentsPanel";
 import { useT } from "./I18nProvider";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
+import { cue } from "@/lib/ui-sounds";
 import "./PolishView.css";
 
 // The tornado, in Osmo's own terms
@@ -568,6 +569,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     if (!current || done) return;
     const at = frontAt(), item = list[mod(at, ln)];
     press(keepRef.current);
+    cue("select", { direction: "forward" });
     if (team) { vote("keep", at, item); return; }
     send(at, item, "board");
     void onVote([item], "keep");
@@ -577,6 +579,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     if (!current || done) return;
     const at = frontAt(), item = list[mod(at, ln)];
     press(forgetRef.current);
+    cue("select", { direction: "back" });
     if (team) { vote("forget", at, item); return; }
     send(at, item, "inbox");
     setHistory((h) => [...h, { kind: "forget", item }]);
@@ -595,6 +598,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const undo = () => {
     const last = history[history.length - 1];
     if (!last) return;
+    cue("navigate", { direction: "back" });
     setHistory((h) => h.slice(0, -1));
     const key = keyOf(last.item);
     // It comes back to the tornado, and to the front
@@ -629,6 +633,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     try {
       const gone = await onClose(ruled);
       if (gone === null) return;
+      cue("success");
       setRuled({});
       setHistory([]);
       setForgot((c) => c + gone);

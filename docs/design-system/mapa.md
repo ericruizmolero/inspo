@@ -22,7 +22,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 
 | URL | Acceso | Qué hay |
 | --- | --- | --- |
-| `/settings/account` | Sesión | Nombre, foto, tema e idioma |
+| `/settings/account` | Sesión | Nombre, foto, tema, idioma y sonidos |
 | `/settings/workspace` | Sesión (editar: quien gestiona) | Nombre y logo del espacio |
 | `/settings/members` | Sesión | Miembros e invitaciones; `?create=1` abre "Crear equipo" |
 | `/settings/plan` | Sesión | Plan, cuotas, asientos y gasto de IA |

@@ -18,6 +18,7 @@ import "./TextRef.css";
 import { useDecodedSrc } from "@/hooks/use-decoded-src";
 import { markShown, wasShown } from "@/lib/shown-images";
 import { useImageReady } from "@/hooks/use-image-ready";
+import { cue } from "@/lib/ui-sounds";
 
 const BLOCKED = ["x.com", "twitter.com", "linkedin.com", "primevideo.com", "instagram.com", "youtube.com"];
 
@@ -354,6 +355,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     if (onTakeOut) {
       const tile = e.currentTarget.closest<HTMLElement>(".tile");
       const wait = tile ? flyToInbox(tile) : 0;
+      cue("select", { direction: "back" });
       if (tile && wait) tile.style.visibility = "hidden";
       window.setTimeout(() => { void Promise.resolve(onTakeOut()).finally(() => { if (tile) tile.style.visibility = ""; }); }, wait);
       return;

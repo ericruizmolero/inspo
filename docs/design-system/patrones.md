@@ -19,6 +19,10 @@ Cómo resolvemos problemas que se repiten. Cada patrón enlaza la decisión que 
 
 Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay que medir, medir todo antes de animar; nada de GSAP Flip sobre muchos elementos (1,5 s de congelación con 286 tarjetas); respetar `prefers-reduced-motion` (se deja solo el fundido). GSAP ya no está en el proyecto. → [cortina](decisiones/2026-09-24-cortina-sidebar-waapi.md), [tablero](decisiones/2026-10-01-masonry-ventanada-sin-flip.md)
 
+## Sonido
+
+Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la esquina (`SoundControl`). Los sonidos de la interfaz son respuesta: cuelume con tema `press`, por `cue` de `lib/ui-sounds.ts`, apagados hasta que se encienden en Ajustes, Cuenta, Apariencia. Suenan solo guardar una referencia (`success` sutil), Conservar y Olvidar en Pulido (`select` adelante y atrás), deshacer (`navigate` atrás), cerrar el pulido (`success`), sacar una carta al Inbox (como Olvidar) y el aviso de error (`error`). Nada más suena. → [decisión](decisiones/2026-10-07-la-interfaz-suena-solo-en-lo-que-decide-y-arranca-callada.md)
+
 ## Listas largas
 
 - **El layout son números**: columna y desplazamiento salen del ratio de cada tarjeta (índice o medida previa); ninguna tarjeta se mide para colocarse.

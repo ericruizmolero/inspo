@@ -37,6 +37,7 @@ import { useTextBodies } from "@/hooks/use-text-bodies";
 import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
+import { cue } from "@/lib/ui-sounds";
 import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
@@ -525,6 +526,7 @@ export default function InspoClient({
   const [addError, setAddError] = useState<{ title: string; detail: string } | null>(null);
   useEffect(() => {
     if (!addError) return;
+    cue("error");
     const t = setTimeout(() => setAddError(null), 6000);
     return () => clearTimeout(t);
   }, [addError]);
@@ -571,6 +573,7 @@ export default function InspoClient({
       // Its tags are already being gathered on the server: the card shows it until they arrive
       if (mediaKindOf(item.web) === "post") importPost(item.web);
       watch(item.web);
+      cue("success", { emphasis: "subtle" });
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
@@ -604,6 +607,7 @@ export default function InspoClient({
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       watch(item.web);
       void cardCopy(item.web, input.file);
+      cue("success", { emphasis: "subtle" });
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
@@ -635,6 +639,7 @@ export default function InspoClient({
       setItems((prev) => prev.map((i) => (i === temp ? item : i)));
       // Its "tags" (its first lines) are already written: one look brings them to the card
       watch(item.web);
+      cue("success", { emphasis: "subtle" });
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));

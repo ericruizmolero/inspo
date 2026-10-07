@@ -36,6 +36,8 @@ export const ui = {
     emailHint: "You sign in with this address. It cannot be changed here.",
     appearance: "Appearance",
     appearanceHint: "Only on this browser.",
+    uiSounds: "Sounds",
+    uiSoundsHint: "A soft click when you save a reference, keep or forget a card, or something fails.",
     session: "Session",
     sessionHint: "Sign out of criterio.design on this browser.",
     teamName: "Team name",
