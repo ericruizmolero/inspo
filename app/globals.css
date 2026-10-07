@@ -1634,13 +1634,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
    A window shorter than the form scrolls the panel. */
 .auth:not(.auth--solo) { height: 100dvh; grid-template-rows: minmax(0, 1fr); }
 .auth__panel {
-  /* Paper, whatever the theme: the theme-aware roles are set to their Paper values inside the panel */
-  --bg: var(--paper); --surface-page: var(--paper); --surface-raised: var(--paper-light);
-  --panel: var(--paper-light); --surface: var(--paper-light); --surface-2: var(--disabled); --surface-3: var(--paper-pressed);
-  --border: #D9D1BF; --border-strong: var(--disabled-border);
-  --text: var(--ink); --text-muted: #5A5850; --text-2: #5A5850; --muted: #5A5850; --muted-2: var(--disabled-text);
-  --danger: #B3362C; --focus: var(--ink); --focus-ring: var(--ink);
-  background: var(--paper); color: var(--ink); color-scheme: light;
+  /* Follows the theme (Eric, 07-10: "me gustaba más dark mode"): board ground in Board, paper in Paper */
+  background: var(--bg); color: var(--text);
   display: flex; flex-direction: column; gap: 32px;
   padding: 28px 48px 24px;
   min-height: 0; overflow-y: auto;
@@ -1666,21 +1661,41 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .auth-window__who { display: flex; flex-direction: column; min-width: 0; }
 .auth-window__name { font-size: var(--fs-ui); font-weight: 600; color: var(--text); }
 .auth-window__email { font-size: var(--fs-small); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The form as it was before the system (Eric, 07-10): flat fields and social buttons on the surface with a thin line,
+   no sunken black well and no bevel; the one bevel is the ember CTA. "Last used" is a small quiet pill at the button's end */
+.auth__panel {
+  --field: var(--surface); --field-ink: var(--text); --field-border: var(--border); --field-stroke: 1px;
+  --field-placeholder: var(--muted-2); --sunken: none;
+}
+.auth__panel .btn:not(.btn--primary) {
+  min-height: 46px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text); box-shadow: none; font-size: var(--fs-ui); font-weight: 500;
+}
+.auth__panel .btn:not(.btn--primary):hover { background: var(--surface-2); border-color: var(--border-strong); }
+.auth__panel .btn:not(.btn--primary):active { transform: none; box-shadow: none; }
+.auth__panel .btn--primary.btn--lg { min-height: 46px; font-size: var(--fs-ui); }
+/* Waiting for an email: the CTA goes quiet in the theme's own greys, not the paper "disabled" tone */
+.auth__panel .btn:disabled { background: var(--surface-2); color: var(--muted); border-color: var(--border-strong); box-shadow: none; }
+.auth__top .cr-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); box-shadow: none; font-weight: 500; }
+.auth__top .cr-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .auth__form, .auth__sent { display: flex; flex-direction: column; gap: 14px; animation: pop-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 /* The headline is the page's h1 (display). Invite and consent say longer things (a team's name, an app's name):
    their h1 takes title-l (.t-title-l, AuthWindow.tsx) */
 .auth__lead { margin: 0; color: var(--text); text-wrap: balance; }
-.auth__hint { font-size: var(--fs-body); color: var(--text-muted); margin: 0 0 6px; line-height: var(--lh-body); max-width: 40ch; }
+.auth__hint { font-size: var(--fs-ui); color: var(--text-muted); margin: 0 0 6px; line-height: var(--lh-body); max-width: 40ch; }
 .auth__hint strong { color: var(--text); font-weight: 600; }
 .auth__hint a { color: var(--text); text-underline-offset: 3px; }
 /* The email is the system's TextField at the hero's size (it lines up with the l Buttons); "Last used" sits at the label's end */
-.auth__field .cr-field-label { display: flex; align-items: center; justify-content: space-between; }
-.auth__field .cr-input { width: 100%; height: 48px; font-size: var(--fs-body); }
+.auth__field .cr-field-label { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-label); color: var(--muted); }
+.auth__field .cr-input { width: 100%; height: 46px; font-size: var(--fs-ui); }
+.auth__field .cr-input:focus-visible { outline: none; border-color: var(--border-strong); background: var(--surface-2); }
 .auth__social { display: flex; flex-direction: column; gap: 8px; }
 /* Social sign-in: secondary Buttons, size l like the hero's CTA under them, the provider's mark on the left */
 .auth__social-btn { position: relative; }
 .auth__social-btn svg { flex-shrink: 0; }
 .auth__social-btn .auth__last { position: absolute; right: 10px; }
+/* Small and quiet, so it never reaches the label: 12 px, one line, surface-2 */
+.auth__last.cr-chip { padding: 3px 7px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: var(--fs-label); line-height: 1.2; font-weight: 500; }
 /* "Last used" is the system's butter Chip; "or with your email" sits between two engraved Separators */
 .auth__or { display: flex; align-items: center; gap: 12px; font-size: var(--fs-small); color: var(--text-muted); margin: 2px 0; }
 .auth__or .cr-sep { flex: 1; margin: 0; }
@@ -1691,7 +1706,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 }
 .auth__alt { align-self: flex-start; margin-left: -14px; }
 /* The foot: who it is for, and the legal pages (privacy, terms) */
-.auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
+.auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-label); line-height: var(--lh-small); color: var(--text-muted); }
 .auth__foot a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .auth__foot a:hover { color: var(--text); }
 /* A phone: the feedback button sits in that corner, so the two legal lines keep clear of it */

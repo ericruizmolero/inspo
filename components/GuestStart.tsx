@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { useT } from "./I18nProvider";
 import { Button } from "@/components/criterio";
 import Logo from "@/components/Logo";
+import ThemeToggle from "./ThemeToggle";
 
 // Only once someone opens it
 const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
@@ -36,6 +37,8 @@ export default function GuestStart() {
       />
 
       {showDirectory && <DirectoryModal guest onClose={() => setShowDirectory(false)} />}
+      {/* The theme is a preference, so it is here before signing in too (Eric, 07-10) */}
+      <ThemeToggle />
     </div>
   );
 }

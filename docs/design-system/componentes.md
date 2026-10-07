@@ -231,7 +231,7 @@ El `SegmentedControl` de papel con `choice`, Sistema / Claro / Oscuro. Aplica `d
 
 ### Botón de tema
 `ThemeToggle` · `components/ThemeToggle.tsx` · `.theme-float` · `.theme-toggle`
-Un clic entre claro y oscuro. En escritorio, un botón de cromo de 36 px (`--chrome`, línea `--chrome-border`) que flota en la esquina inferior derecha, a 16 px de cada pared (el mismo margen que la pastilla de la esquina izquierda) y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
+Un clic entre claro y oscuro. En escritorio, un botón de cromo de 36 px (`--chrome`, línea `--chrome-border`) que flota en la esquina inferior derecha, a 16 px de cada pared (el mismo margen que la pastilla de la esquina izquierda) y apagado hasta que se acerca el puntero; en móvil, la fila "Cambiar tema" al pie de la barra lateral. Está en toda la app, también antes de entrar: portada de invitado (`GuestStart`) y login. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md) Enseña el tema al que lleva (sol en oscuro, luna en claro). El cambio funde la página entera en 600 ms (`switchTheme`). No ofrece "Sistema": eso sigue en el selector de Ajustes. → [decisión](decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md)
 
 ### Selector de idioma
 `LangSwitch` · `components/LangSwitch.tsx` · `.select`
@@ -239,7 +239,7 @@ Cada idioma escrito en su propio nombre. Guarda cookie y cuenta, y vuelve a pint
 
 ### Herramienta de feedback
 `FeedbackTool` · `FeedbackEntry` · `components/FeedbackTool.tsx` · `.fb-dock`
-Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al equipo". El dock se arrastra y recuerda su sitio. z 100000, siempre encima. `FeedbackEntry` es su entrada al pie de las barras laterales. La barra de Agentation vive en un shadow root y se maneja desde `components/feedback-mode.ts`; su versión va fija. → [decisión](decisiones/2026-10-06-la-herramienta-de-feedback-va-con-version-fija.md)
+Capa sobre Agentation: píldora "Dar feedback", panel de 3 pasos y "Enviar al equipo". El dock se arrastra y recuerda su sitio. z 100000, siempre encima. `FeedbackEntry` es su entrada al pie de las barras laterales. Solo con sesión: en la portada de invitado y en el login no se monta (ahí nadie puede enviar y el globo pisaba el botón de tema de la esquina). La barra de Agentation vive en un shadow root y se maneja desde `components/feedback-mode.ts`; su versión va fija. → [decisión](decisiones/2026-10-06-la-herramienta-de-feedback-va-con-version-fija.md)
 
 ### Esqueleto
 `.sk` · `app/globals.css` · muestra: skeleton
@@ -251,7 +251,7 @@ Envuelve un grupo de pestañas y pinta sus rellenos como dos pastillas: la del h
 
 ### Pastilla de la esquina: zoom y música
 `ZoomPill` · `components/ZoomPill.tsx` · `.zoom-pill` · `SoundControl` · `components/SoundControl.tsx`
-La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el botón de tema en la esquina contraria), en toda la app con sesión iniciada, la casa incluida; antes de iniciar sesión (portada de invitado, login) no está (`.board-zoom` en los tablones y las demás vistas, `.polish__corner` en Pulido, `.shell-corner` en Ajustes, biblioteca de diseño y actividad). → [decisión](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
+La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el botón de tema en la esquina contraria), en toda la app con sesión iniciada, la casa incluida; antes de iniciar sesión (portada de invitado, login) no está la pastilla, aunque sí el botón de tema (`.board-zoom` en los tablones y las demás vistas, `.polish__corner` en Pulido, `.shell-corner` en Ajustes, biblioteca de diseño y actividad). → [decisión](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
 - Zoom (− % +): columnas en los tablones, tamaño del tornado en Pulido; las demás vistas no tienen (`zoom={null}`) y la pastilla es el altavoz solo.
 - Música, tras una línea fina: el altavoz (`.zoom-pill__sound`) enciende y apaga con un clic; mientras suena, la flecha (`.zoom-pill__track`) abre las canciones por nombre (`.sound-tracks`, un menú `.island-pop` sobre el cromo de la pastilla) y gira con él: 200 ms al abrir, 150 al cerrar (Eric, 06-10: "que gire acompasado"). Seis pistas en `public/polish/` (lista `TRACKS`), que no se descargan hasta encenderla; entra y sale con fundido y al acabar una sigue la siguiente. → [las pistas](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
 - Siempre arranca apagada al abrir o recargar la página; solo se recuerda la última canción.
@@ -498,7 +498,8 @@ Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a logi
 
 ### Acceso
 `LoginForm` · `components/LoginForm.tsx` · `.auth`
-Enlace mágico, Google, Apple y X, recordando el último método. Al lado, el collage fijo de `public/showcase/`, curado a mano. La página mide lo que la ventana (`.auth:not(.auth--solo)`, `100dvh`): el pie (`.auth__foot`), con la aceptación de Términos y Privacidad cuando `legalShown()`, se lee sin scroll; si la ventana es más baja que el formulario, hace scroll el panel. → [decisión](decisiones/2026-10-06-el-login-mide-la-ventana-y-su-pie-se-ve-sin-scroll.md)
+Enlace mágico, Google, Apple y X, recordando el último método. Al lado, el collage fijo de `public/showcase/`, curado a mano. La página mide lo que la ventana (`.auth:not(.auth--solo)`, `100dvh`): el pie (`.auth__foot`), con la aceptación de Términos y Privacidad (siempre: `legalShown()` ya no oculta nada), se lee sin scroll; si la ventana es más baja que el formulario, hace scroll el panel. → [decisión](decisiones/2026-10-06-el-login-mide-la-ventana-y-su-pie-se-ve-sin-scroll.md)
+- El panel sigue el tema (oscuro en Board, papel en Paper), ya no fuerza Paper. El formulario es plano, como antes del sistema: campo y botones sociales de 46 sobre la superficie con línea de 1 px, sin pozo negro ni bisel (`.auth__panel` redefine los tokens de campo y `.btn`); el único bisel es el CTA ember. "Último usado" es una pastilla pequeña de 12 px en `--surface-2`, pegada al final del botón, que no alcanza el texto. Pista a 15, etiqueta y pie a 12. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
 
 ### Documento legal
 `LegalDoc` · `components/LegalDoc.tsx` · `.legal`

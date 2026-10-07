@@ -63,8 +63,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // The feedback bar is on every page, also without a session (login, plans,
-  // invite): without a session you can annotate and copy, but sending to the partners requires signing in.
+  // The feedback bar is on every page with a session; a guest (start page, login, plans, invite) has nobody to
+  // send it to, so it is not mounted there.
   // The nonce proxy.ts puts in this request's CSP: the one inline script of our own needs it to run
   const [session, locale, nonce] = await Promise.all([getSession(), getLocale(), headers().then((h) => h.get("x-nonce") ?? undefined)]);
   return (
@@ -80,7 +80,9 @@ export default async function RootLayout({
       <body>
         <I18nProvider locale={locale}>
           {children}
-          <FeedbackTool canSend={!!session} />
+          {/* Feedback is for the team, from the Island's menu and the sidebars' foot: a guest (start page, login) has
+              nowhere to send it, so no floating bubble there (Eric, 07-10: it was sitting on the theme button) */}
+          {session && <FeedbackTool />}
           {/* Tooltips: the system's butter balloon for every [data-tip] on the page */}
           <TipLayer />
         </I18nProvider>
