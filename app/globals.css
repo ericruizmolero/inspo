@@ -11,6 +11,7 @@
   /* Brand palette */
   --paper: #EDE6D6;
   --paper-light: #F6F1E6;
+  --paper-white: #FCFAF6; /* Paper theme: the floor; cards, panels and chrome over it are plain white */
   --paper-pressed: #D9CFBA;
   --ink: #1B1B18;
   --board: #0F0F0F;
@@ -235,8 +236,10 @@
   --field-stroke: 1px;
   --field-placeholder: #6E695F;
   --sunken: inset 2px 2px 0 rgba(27,27,24,0.12);
-  --chrome: var(--paper-light);
-  --chrome-panel: var(--paper-light);
+  /* Paper floor is paper-white, far from the brand paper (Eric, 2026-10-07: "haría el fondo más blanco, que tan
+     pastel", then "algo más blanco todavía"); what sits on it is plain white, so cards and chrome keep their lift */
+  --chrome: #FFFFFF;
+  --chrome-panel: #FFFFFF;
   --chrome-raised: var(--disabled);
   --chrome-border: #D9D1BF;
   --chrome-text: #3D3B35;
@@ -244,14 +247,14 @@
   --chrome-muted: #6E695F;
   --chrome-ink: var(--ink);
   --float: 0 20px 50px rgba(27,27,24,0.16);
-  --surface-page: var(--paper);
-  --surface-raised: var(--paper-light);
+  --surface-page: var(--paper-white);
+  --surface-raised: #FFFFFF;
   --text-muted: #5A5850;
   --focus: var(--ink);
 
-  --bg: var(--paper);
-  --panel: var(--paper-light);
-  --surface: var(--paper-light);
+  --bg: var(--paper-white);
+  --panel: #FFFFFF;
+  --surface: #FFFFFF;
   --surface-2: var(--disabled);
   --surface-3: var(--paper-pressed);
   --border: #D9D1BF;
@@ -2655,6 +2658,8 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }
+
+
 
 
 

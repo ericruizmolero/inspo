@@ -6,8 +6,9 @@ Dos temas: **Board** (oscuro, el suelo del producto) y **Paper** (claro). La pal
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `--paper` | `#EDE6D6` | Papel de marca; botón secundario, suelo del tema claro |
-| `--paper-light` | `#F6F1E6` | Tarjetas y paneles sobre papel |
+| `--paper` | `#EDE6D6` | Papel de marca; botón secundario y suelo de ventanas, menús y tips |
+| `--paper-light` | `#F6F1E6` | Hover del secundario; tarjetas dentro de una ventana |
+| `--paper-white` | `#FCFAF6` | Suelo del tema Paper; encima, tarjetas, paneles y cromo en blanco puro |
 | `--paper-pressed` | `#D9CFBA` | Secundario pulsado |
 | `--ink` | `#1B1B18` | Tinta: texto sobre papel, butter y ember; borde de todo control |
 | `--board` | `#0F0F0F` | Suelo negro del producto |
@@ -28,7 +29,7 @@ Dos temas: **Board** (oscuro, el suelo del producto) y **Paper** (claro). La pal
 
 | Token | Board | Paper | Uso |
 | --- | --- | --- | --- |
-| `--chrome` / `--chrome-panel` / `--chrome-raised` | `#161616` / `#1C1C1C` / `#2A2A2A` | `--paper-light` / `--paper-light` / `--disabled` | Cromo del producto (Isla, selector de vista, zoom, dock, ficha); sigue al tema |
+| `--chrome` / `--chrome-panel` / `--chrome-raised` | `#161616` / `#1C1C1C` / `#2A2A2A` | `#FFFFFF` / `#FFFFFF` / `--disabled` | Cromo del producto (Isla, selector de vista, zoom, dock, ficha); sigue al tema |
 | `--chrome-border` | `#262626` | `#D9D1BF` | Línea alrededor del cromo |
 | `--chrome-ink` | `--paper` | `--ink` | Texto fuerte sobre el cromo |
 | `--chrome-text` / `--chrome-text-muted` / `--chrome-muted` | `#D8D0C0` / `#B8B1A3` / `#8A847A` | `#3D3B35` / `#5A5850` / `#6E695F` | Texto sobre cromo |
@@ -40,9 +41,9 @@ El cromo es sólido: sin cristal ni desenfoque en barras ni superficies. El cris
 
 | Token | Board | Paper | Uso |
 | --- | --- | --- | --- |
-| `--bg` (`--surface-page`) | `--board` | `--paper` | Fondo de página |
-| `--panel` (`--surface-raised`) | `--board-card` | `--paper-light` | Tarjetas y paneles |
-| `--surface` | `--chrome-panel` | `--paper-light` | Popovers, rellenos |
+| `--bg` (`--surface-page`) | `--board` | `--paper-white` | Fondo de página. En Paper, el papel de marca quedaba pastel; el suelo es casi blanco y lo que va encima, blanco → [decisión](../decisiones/2026-10-07-el-suelo-del-tema-paper-es-mas-blanco-que-el-papel-de-marca.md) |
+| `--panel` (`--surface-raised`) | `--board-card` | `#FFFFFF` | Tarjetas y paneles |
+| `--surface` | `--chrome-panel` | `#FFFFFF` | Popovers, rellenos |
 | `--surface-2` | `--chrome-raised` | `--disabled` | Hover, relleno de estado |
 | `--surface-3` | `#34342F` | `--paper-pressed` | Scrollbar, relleno fuerte |
 | `--border` | `#2A2A2A` | `#D9D1BF` | Línea de tarjeta, decorativa |
