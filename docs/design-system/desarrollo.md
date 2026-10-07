@@ -29,6 +29,13 @@ Decisiones de cómo construimos, no de cómo se ve.
 - Lo que viene de X o de Pinterest (`staysInside`, `lib/url.ts`) no se enseña sin sesión: un enlace compartido lo nombra y apunta al original.
 - Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista). → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
 
+## Seguridad
+
+- CSP con nonce en cada página (`proxy.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic'`. Un script inline propio lleva `nonce` (lo lee `app/layout.tsx` de `x-nonce`); nunca `onerror=` ni otros manejadores en HTML, tampoco dentro de un `srcDoc`. Esa cabecera sustituye a la de `next.config.ts`, así que lleva también `frame-ancestors`.
+- Lo que servimos de un tercero desde nuestro origen (`/api/og`, las fuentes en `lib/font-proxy.ts`) sale con un tipo fijo (imagen rasterizada o fuente), `nosniff` y `sandbox`: un SVG o un HTML ajeno en criterio.design correría con la sesión de quien lo abre.
+- Límites propios con `allow()` (`lib/rate-limit.ts`, en la tabla `rate_limit`, claves `app:`): enlaces mágicos por dirección, feedback por persona, capturas por workspace.
+- La propiedad de una tarjeta es `createdBy`, nunca el nombre de quien la guardó.
+
 ## Idiomas
 
 - Código, comentarios, nombres de campos y rutas en **inglés**.
@@ -38,6 +45,7 @@ Decisiones de cómo construimos, no de cómo se ve.
 ## IA
 
 - Todo gasto de modelo pasa por `recordUsage()` con su acción, con coste real.
+- Toda ruta que llama a un modelo comprueba antes `assertQuota(ctx.workspace, "ai")`. Confirmar en el agente (`{ run }`) solo ejecuta borrados y deshacer: el resto iría fuera de la cuota.
 - Prefiltro barato (Jev) antes del modelo caro cuando hay que cribar muchas referencias.
 - Cambiar un prompt = subir su `PROMPT_VERSION`.
 - Visión con Haiku; razonamiento largo con cuidado: el razonamiento consume `max_tokens`.

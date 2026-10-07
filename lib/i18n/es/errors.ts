@@ -74,4 +74,5 @@ export const errors: typeof EnErrors = {
   brandFileTooBig: "Ese archivo pesa demasiado (el límite son 20 MB)",
   brandSvgUnsafe: "Ese SVG lleva scripts o enlaces a otros archivos, así que no se puede usar. Expórtalo otra vez como SVG simple",
   brandTextEmpty: "Pega primero el texto de la guía",
+  tooMany: "Demasiadas veces en poco tiempo. Espera unos minutos y vuelve a probar",
 };

@@ -31,8 +31,33 @@ function langToSet(request: NextRequest): string | null {
   return localeFromHeader(request.headers.get("accept-language")) ?? DEFAULT_LOCALE;
 }
 
+// Scripts run only when the server put them in the page: Next adds this request's nonce to its own, and
+// 'strict-dynamic' lets those load the rest. An injected <script> or SVG has no nonce, so it never runs.
+// Styles and images are left open. This header replaces the one next.config.ts sets, so it carries the same
+// frame-ancestors: nobody frames a page, and the MCP consent not even we do.
+// Development needs 'unsafe-eval' (React rebuilds server error stacks with eval).
+function csp(nonce: string, pathname: string): string {
+  const dev = process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
+  const frames = pathname === "/mcp/authorize" ? "'none'" : "'self'";
+  return `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev}; object-src 'none'; base-uri 'self'; frame-ancestors ${frames}`;
+}
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // Pages only: a route handler answers data or files, and those carry their own headers
+  const page = !pathname.startsWith("/api/") && pathname !== "/mcp" && !pathname.startsWith("/.well-known/");
+  const nonce = page ? btoa(crypto.randomUUID()) : null;
+  const policy = nonce ? csp(nonce, pathname) : null;
+  // Next reads the nonce from the request's CSP while rendering; the browser enforces the response's
+  const next = () => {
+    if (!policy) return NextResponse.next();
+    const headers = new Headers(request.headers);
+    headers.set("x-nonce", nonce!);
+    headers.set("Content-Security-Policy", policy);
+    const res = NextResponse.next({ request: { headers } });
+    res.headers.set("Content-Security-Policy", policy);
+    return res;
+  };
   // /api calls don't pick a locale: they inherit it from the cookie the browser already sends.
   // Nor does an AI client talking to the MCP connector, which keeps no cookies
   const lang = pathname.startsWith("/api/") || pathname === "/mcp" || pathname.startsWith("/.well-known/") ? null : langToSet(request);
@@ -43,9 +68,9 @@ export function proxy(request: NextRequest) {
     return res;
   };
 
-  if (PUBLIC.some((re) => re.test(pathname))) return withLang(NextResponse.next());
+  if (PUBLIC.some((re) => re.test(pathname))) return withLang(next());
 
-  if (getSessionCookie(request)) return withLang(NextResponse.next());
+  if (getSessionCookie(request)) return withLang(next());
 
   if (pathname.startsWith("/api/")) {
     // Signed out there's no user locale: answer with the cookie it brings, or English

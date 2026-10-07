@@ -1146,6 +1146,8 @@ export const ui = {
     denied: "Nothing was connected. You can close this tab.",
     cannot: "This cannot be connected",
     badClient: "criterio does not know this app. Start the connection again from the app itself.",
+    badRequest: "The app's request is missing something, so nothing was connected.",
+    backTo: (host: string) => `Back to ${host}`,
     badRedirect: "This request would send you to an address the app never registered, so nothing was connected.",
     goToApp: "Go to criterio",
     open: "Connect MCP",

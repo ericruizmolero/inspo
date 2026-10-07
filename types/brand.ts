@@ -28,7 +28,8 @@ export const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 /** A file the brand owns or points at, by its storage key (served at /api/files/<key>, or through a share) */
 export const BrandFileSchema = z.object({
-  key: z.string().min(1).max(400).regex(/^inspo\/[\w./-]+$/),
+  // No "." or ".." segment: a prefix check on the key must mean the file really is under that prefix
+  key: z.string().min(1).max(400).regex(/^inspo\/[\w./-]+$/).refine((k) => !k.split("/").some((p) => !p || p === "." || p === "..")),
   type: z.string().max(80),
   w: z.number().int().positive().max(20000).optional(),
   h: z.number().int().positive().max(20000).optional(),

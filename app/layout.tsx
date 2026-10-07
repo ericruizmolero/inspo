@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { archivo, bricolage } from "./fonts";
 import "./globals.css";
@@ -64,7 +65,8 @@ export default async function RootLayout({
 }>) {
   // The feedback bar is on every page, also without a session (login, plans,
   // invite): without a session you can annotate and copy, but sending to the partners requires signing in.
-  const [session, locale] = await Promise.all([getSession(), getLocale()]);
+  // The nonce proxy.ts puts in this request's CSP: the one inline script of our own needs it to run
+  const [session, locale, nonce] = await Promise.all([getSession(), getLocale(), headers().then((h) => h.get("x-nonce") ?? undefined)]);
   return (
     <html
       lang={locale}
@@ -73,7 +75,7 @@ export default async function RootLayout({
     >
       <head>
         {/* Sets data-theme before the first paint so it does not flicker on load */}
-        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body>
         <I18nProvider locale={locale}>

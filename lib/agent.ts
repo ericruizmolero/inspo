@@ -83,6 +83,9 @@ const PlanSchema = z.object({
 const DANGEROUS = new Set<AgentAction["kind"]>(["delete_items", "delete_project", "clear"]);
 /** Actions the interface runs itself (nothing changes on the server) */
 const CLIENT_SIDE = new Set<AgentAction["kind"]>(["search", "go", "guide", "ask"]);
+// What a confirmation may run: the deletions the person said yes to, and the undo of a filing (line.undo).
+// Anything else would run outside the AI quota, which a confirmation does not count
+const CONFIRMABLE = new Set<AgentAction["kind"]>([...DANGEROUS, "file", "assign"]);
 
 // ─── Where the person is ─────────────────────────────────────────────────────
 
@@ -392,8 +395,9 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           (patch.added ??= []).push(item); line.name = item.name; if (item.id) line.items = [item.id]; break;
         }
         case "note": {
-          const r = await setItemNote(org, a.item, "note", a.text, ctx.user, true);
-          if (!r) throw new HttpError(404, (await getErrors()).cardGone);
+          const r = await setItemNote(org, a.item, "note", a.text, ctx.user, canManage(ctx.workspace.role));
+          if (r === null) throw new HttpError(404, (await getErrors()).cardGone);
+          if (r === false) throw new HttpError(403, (await getErrors()).cannotEditNote);
           line.name = r.name; line.text = a.text; line.items = [a.item]; break;
         }
         case "comment": await addComment(org, { itemId: a.item, authorId: author.id, authorName: author.name.split("@")[0], body: a.text }); line.name = await itemName(a.item); line.text = a.text; line.items = [a.item]; break;
@@ -408,8 +412,10 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           (patch.removed ??= []).push(...a.items); line.n = a.items.length; projectsTouched = true; systemsTouched = true; break;
       }
     } catch (e) {
-      line.ok = false; line.error = e instanceof Error ? e.message : String(e);
-      console.warn("agent action failed:", a.kind, line.error);
+      line.ok = false;
+      // Our own messages are written for the person; anything else (the database, a driver) stays in the log
+      line.error = e instanceof HttpError ? e.message : (await getErrors()).unexpected;
+      console.warn("agent action failed:", a.kind, e instanceof Error ? e.message : e);
     }
     done.push(line);
   }
@@ -457,7 +463,7 @@ export async function confirm(ctx: Ctx, actions: unknown, usage: UsageCtx, langu
   const org = ctx.workspace.id;
   const itemIds = new Set((await db.select({ id: T.id }).from(T).where(eq(T.organizationId, org))).map((r) => r.id));
   const projectIds = new Set((await db.select({ id: P.id }).from(P).where(eq(P.organizationId, org))).map((r) => r.id));
-  const ok = parsed.filter((a) => !CLIENT_SIDE.has(a.kind)).filter((a) => {
+  const ok = parsed.filter((a) => CONFIRMABLE.has(a.kind)).filter((a) => {
     if ("items" in a && Array.isArray(a.items) && a.items.some((i) => !itemIds.has(i))) return false;
     if ("item" in a && a.item !== null && !itemIds.has(a.item)) return false;
     if ("project" in a && typeof a.project === "string" && !projectIds.has(a.project)) return false;

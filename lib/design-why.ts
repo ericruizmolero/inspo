@@ -118,11 +118,16 @@ export function getOrBuildWhy(input: {
   screenshot: () => Promise<Buffer | null>; probe?: () => Promise<{ report: ProbeReport; shotUrls: Record<string, string> } | null>; language?: OutputLanguage;
   /** Keeps a promise alive after the response (Next's `after`): enables stale-while-rebuild */
   background?: (job: Promise<unknown>) => void;
-}): Promise<WhyResult> {
+  /** False when the workspace has no AI actions left: the saved answer, however old, or null */
+  build?: boolean;
+}): Promise<WhyResult | null> {
   const key = `${input.organizationId}|${input.url}`;
   const running = inflight.get(key);
   if (running) return running;
   const stamp = stampFor(input.voices, input.specStamp, input.language);
+  if (input.build === false) {
+    return getWhy(input.organizationId, input.url).then((cached) => cached ? { why: cached.why, built: null, stale: cached.stamp !== stamp } : null);
+  }
   const job = (async (): Promise<{ why: DesignWhy; built: BuildResult | null; stale: false }> => {
     const cached = await getWhy(input.organizationId, input.url);
     if (cached && cached.stamp === stamp) return { why: cached.why, built: null, stale: false };

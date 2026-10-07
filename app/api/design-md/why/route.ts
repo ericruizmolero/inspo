@@ -12,6 +12,7 @@ import { recordUsage } from "@/lib/usage";
 import { getErrors } from "@/lib/i18n";
 import type { DesignWhy } from "@/types/design";
 import { HttpError } from "@/lib/workspace-core";
+import { assertQuota, quotaBlock } from "@/lib/quota";
 
 export const maxDuration = 120;
 
@@ -51,10 +52,13 @@ export async function GET(req: NextRequest) {
 
   if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: (await getErrors()).noModelKey }, { status: 500 });
 
+  // Building is a model call and a browser run: past the plan's AI actions, only what is already saved is shown
+  const blocked = await quotaBlock(assertQuota(ctx.workspace, "ai"));
+
   try {
     const t0 = Date.now();
-    const { why, built, stale } = await getOrBuildWhy({
-      organizationId: ctx.workspace.id, url, voices, specStamp, spec,
+    const result = await getOrBuildWhy({
+      organizationId: ctx.workspace.id, url, voices, specStamp, spec, build: !blocked,
       screenshot: () => getDesignScreenshot(url), language: ctx.workspace.outputLanguage,
       background: (job) => after(() => job),
       // The browser goes to look at what the notes point at: captures the sections, hovers, listens
@@ -67,6 +71,8 @@ export async function GET(req: NextRequest) {
         return { report, shotUrls };
       },
     });
+    if (!result) return blocked!;
+    const { why, built, stale } = result;
     if (built) {
       console.log(`design-why ${url}: ${voices.length} voices → ${why.highlights.length} highlights${why.probe ? `, probe ${why.probe.ms}ms` : ""}, ${built.model} ${Date.now() - t0}ms`);
       void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, {

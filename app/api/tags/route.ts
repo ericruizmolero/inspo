@@ -2,7 +2,7 @@ import { NextRequest, after } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { requireCtx, isResponse } from "@/lib/workspace";
-import { tagsOfRow } from "@/lib/items";
+import { findByWeb, tagsOfRow } from "@/lib/items";
 import { taggerEnabled } from "@/lib/tagger";
 import { resetTagJob, startTagJob, statusOf } from "@/lib/tag-jobs";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
@@ -43,7 +43,11 @@ export async function POST(req: NextRequest) {
   const { web } = (await req.json().catch(() => ({}))) as { web?: string };
   if (!web) return Response.json({ error: (await getErrors()).missingWebOrAll }, { status: 400 });
   const id = await resetTagJob(ctx.workspace.id, web);
-  if (!id) return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 404 });
+  if (!id) {
+    // Not updated: the card is not here, or it ran in the last ten minutes (lib/tag-jobs.ts)
+    if (await findByWeb(ctx.workspace.id, web)) return Response.json({ error: (await getErrors()).tooMany }, { status: 429 });
+    return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 404 });
+  }
   after(() => startTagJob(ctx.workspace.id, id, ctx.user.id));
   return Response.json({ status: "pending" }, { status: 202 });
 }

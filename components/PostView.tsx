@@ -66,7 +66,13 @@ function Moving({ m }: { m: PostMedia }) {
   }
   const attr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const doc = `<!doctype html><meta name="referrer" content="no-referrer"><style>html,body{margin:0;height:100%;background:#000}video{display:block;width:100%;height:100%;object-fit:contain}</style>`
-    + `<video src="${attr(m.src)}" poster="${attr(poster)}" data-backup="${attr(backup)}" playsinline autoplay loop muted${gif ? "" : " controls"}`
-    + ` onerror="var b=this.dataset.backup;if(b&&this.getAttribute('src')!==b){this.src=b;this.play()}"></video>`;
-  return <iframe className="pv__video pv__video--frame" style={{ aspectRatio: ratio }} srcDoc={doc} title="" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />;
+    + `<video src="${attr(m.src)}" poster="${attr(poster)}" playsinline autoplay loop muted${gif ? "" : " controls"}></video>`;
+  // The backup is wired from here: the frame shares our CSP, which allows no inline handler in it
+  const onLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    const v = e.currentTarget.contentDocument?.querySelector("video");
+    if (!v || !backup) return;
+    const swap = () => { if (v.getAttribute("src") !== backup) { v.src = backup; void v.play().catch(() => {}); } };
+    if (v.error) swap(); else v.addEventListener("error", swap, { once: true });
+  };
+  return <iframe className="pv__video pv__video--frame" style={{ aspectRatio: ratio }} srcDoc={doc} onLoad={onLoad} title="" allow="autoplay; fullscreen; picture-in-picture" allowFullScreen />;
 }

@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import puppeteer, { Browser } from "puppeteer-core";
 import { webKeyOf } from "./url";
 import { getFile, fileExists, putFile } from "./storage";
-import { gatedLaunch } from "./browser-gate";
+import { gatedLaunch, QueueFull } from "./browser-gate";
 import type { PageShot } from "@/types/inspo";
 import { guardPage } from "./safe-fetch";
 import { egressArgs } from "./egress-proxy";
@@ -150,12 +150,28 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
   }
 }
 
-export async function getOrCaptureShot(url: string): Promise<Buffer> {
+// A site that failed is not tried again for a while. The browser's own cache on the 204 is not enough:
+// a client that ignores it would hold the only Chromium slot with sites that hang for 20 s each
+const FAILED_FOR_MS = 15 * 60 * 1000;
+const failedAt = new Map<string, number>();
+
+/** `beforeCapture` runs only when the browser is about to be launched (a stored shot costs nothing) and may throw */
+export async function getOrCaptureShot(url: string, beforeCapture?: () => Promise<void>): Promise<Buffer> {
   const cached = await getStoredShot(url);
   if (cached) return cached;
-  const jpeg = await captureHero(url);
-  await storeShot(url, jpeg);
-  return jpeg;
+  const failed = failedAt.get(url);
+  if (failed && Date.now() - failed < FAILED_FOR_MS) throw new Error("failed recently");
+  await beforeCapture?.();
+  try {
+    const jpeg = await captureHero(url);
+    failedAt.delete(url);
+    await storeShot(url, jpeg);
+    return jpeg;
+  } catch (e) {
+    if (failedAt.size > 5000) failedAt.clear();
+    if (!(e instanceof QueueFull)) failedAt.set(url, Date.now());
+    throw e;
+  }
 }
 
 // ─── Whole page ──────────────────────────────────────────────────────────────

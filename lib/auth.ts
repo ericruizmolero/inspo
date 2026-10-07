@@ -14,6 +14,7 @@ import { planOf, DEFAULT_PLAN } from "./plans";
 import { toOutputLanguage, DEFAULT_OUTPUT_LANGUAGE } from "./output-language";
 import { collectItemFiles, dropUnusedFiles, type ItemFiles } from "./item-files";
 import { eq } from "drizzle-orm";
+import { allow } from "./rate-limit";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -161,6 +162,8 @@ export const auth = betterAuth({
       expiresIn: 60 * 10,
       async sendMagicLink({ email, url }, ctx) {
         if (DEV_LOGIN_EMAIL && email.toLowerCase() === DEV_LOGIN_EMAIL) { g.__inspoDevLink = url; return; }
+        // The plugin limits each IP; this limits each address, so nobody fills someone's inbox from many IPs
+        if (!(await allow(`magic:${email.toLowerCase()}`, 5, 60 * 60 * 1000))) throw new APIError("TOO_MANY_REQUESTS", { message: (await getErrors()).tooMany });
         const callbackURL = (ctx?.body as { callbackURL?: string } | undefined)?.callbackURL;
         // If the address already has an account, its language; otherwise that of the requesting tab
         const locale = await localeForEmail(email, localeFromCookie(ctx?.headers ?? ctx?.request?.headers));

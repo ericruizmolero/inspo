@@ -7,9 +7,14 @@ import type { Browser } from "puppeteer-core";
 const MAX = Math.max(1, Number(process.env.CHROME_CONCURRENCY) || 1);
 let active = 0;
 const waiters: (() => void)[] = [];
+// Past this many in line, a new job fails at once instead of waiting minutes behind the others
+const MAX_WAITING = 20;
+/** The gate was full: the site itself did not fail */
+export class QueueFull extends Error { constructor() { super("browser queue full"); } }
 
 function acquire(): Promise<void> {
   if (active < MAX) { active++; return Promise.resolve(); }
+  if (waiters.length >= MAX_WAITING) return Promise.reject(new QueueFull());
   return new Promise((resolve) => waiters.push(() => { active++; resolve(); }));
 }
 

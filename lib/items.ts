@@ -236,8 +236,8 @@ export async function setItemNote(
 ): Promise<InspoItem | null | false> {
   const [row] = await db.select(ROW).from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id))).limit(1);
   if (!row) return null;
-  const own = row.createdBy ? row.createdBy === user.id : row.author === (user.name || user.email);
-  if (!own && !admin) return false;
+  // Ownership is the account id. Never the author name: a member can change their name to anyone's
+  if (row.createdBy !== user.id && !admin) return false;
   const clean = text.replace(/\r\n/g, "\n").trim().slice(0, 4000);
   const patch = field === "note" ? { note: clean } : { subNote: clean || null };
   const updatedAt = new Date();
@@ -248,15 +248,15 @@ export async function setItemNote(
 
 /**
  * Which of these items this person may delete: any of them for someone who manages the workspace, a member
- * only the ones they saved (proved as in setItemNote: createdBy, or the author name on older rows).
+ * only the ones they saved (proved as in setItemNote, by createdBy).
  */
 export async function deletableIds(
   organizationId: string, ids: string[], user: { id: string; name: string; email: string }, admin: boolean,
 ): Promise<string[]> {
   if (admin || !ids.length) return ids;
-  const rows = await db.select({ id: T.id, author: T.author, createdBy: T.createdBy }).from(T)
+  const rows = await db.select({ id: T.id, createdBy: T.createdBy }).from(T)
     .where(and(eq(T.organizationId, organizationId), inArray(T.id, ids)));
-  return rows.filter((r) => (r.createdBy ? r.createdBy === user.id : r.author === (user.name || user.email))).map((r) => r.id);
+  return rows.filter((r) => r.createdBy === user.id).map((r) => r.id);
 }
 
 export async function deleteItem(organizationId: string, id: string): Promise<boolean> {

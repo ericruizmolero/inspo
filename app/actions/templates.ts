@@ -1,6 +1,8 @@
 "use server";
 // Templates: list them, start a project from one, the recipe of a project.
-import { withCtx } from "@/lib/workspace";
+import { withCtx, canManage, HttpError } from "@/lib/workspace";
+import { startedProject } from "@/lib/projects";
+import { getErrors } from "@/lib/i18n";
 import { deleteTemplate, getRecipe, listTemplates, setRecipe, useTemplate } from "@/lib/templates";
 
 export async function loadTemplates() {
@@ -20,5 +22,11 @@ export async function saveRecipe(projectId: string, recipe: string) {
 }
 
 export async function removeTemplate(templateId: string) {
-  return withCtx(async (ctx) => deleteTemplate(ctx.workspace.id, String(templateId)));
+  // A template is a project: deleted by whoever could delete that project (removeProject)
+  return withCtx(async (ctx) => {
+    if (!canManage(ctx.workspace.role) && !(await startedProject(ctx.workspace.id, String(templateId), ctx.user.id))) {
+      throw new HttpError(403, (await getErrors()).projectNotYours);
+    }
+    await deleteTemplate(ctx.workspace.id, String(templateId));
+  });
 }

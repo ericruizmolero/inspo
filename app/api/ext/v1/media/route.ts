@@ -116,7 +116,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ error: errors.missingData }, { status: 400 });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return Response.json({ error: msg }, { status: err instanceof HttpError ? err.status : 500 });
+    // Our own messages go back as they are; anything else (a driver, the database) stays in the log
+    if (err instanceof HttpError) return Response.json({ error: err.message }, { status: err.status });
+    console.error("ext media error:", err instanceof Error ? err.message : err);
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

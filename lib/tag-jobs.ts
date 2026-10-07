@@ -121,7 +121,9 @@ export async function startTagJob(organizationId: string, itemId: string, userId
  *  By the exact address the library holds: an old row's web_key may not match today's webKeyOf. */
 export async function resetTagJob(organizationId: string, web: string): Promise<string | null> {
   const [row] = await db.update(T).set({ tagStatus: "pending", tagAttempts: 0, tagError: null })
-    .where(and(eq(T.organizationId, organizationId), eq(T.web, web), sql`${T.tagStatus} <> 'running'`))
+    // Ten minutes between two runs of the same card: each one is a vision model call
+    .where(and(eq(T.organizationId, organizationId), eq(T.web, web), sql`${T.tagStatus} <> 'running'`,
+      sql`(${T.tagStartedAt} is null or ${T.tagStartedAt} < now() - interval '10 minutes')`))
     .returning({ id: T.id });
   return row?.id ?? null;
 }

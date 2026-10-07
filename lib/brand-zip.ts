@@ -53,7 +53,9 @@ export async function brandZip(organizationId: string, brand: BrandSpec, name: s
     const body = await fetchKey(f.key);
     if (body) entries.push({ name: `fonts/${fileStem(face.family)}-${f.weight}${f.style === "italic" ? "-italic" : ""}.${f.key.split(".").pop()}`, data: body });
   }
-  for (const f of brand.assets.files) { const body = await read(f); if (body) entries.push({ name: `files/${f.name ?? `${stem}.${ext(f)}`}`, data: body }); }
+  // The name is whatever the person typed: only its last part, with no path in it, goes in the zip
+  const safeName = (n: string | undefined) => n?.split(/[\\/]/).pop()?.replace(/[\x00-\x1f:*?"<>|]/g, "").replace(/^\.+/, "").trim() || null;
+  for (const f of brand.assets.files) { const body = await read(f); if (body) entries.push({ name: `files/${safeName(f.name) ?? `${stem}.${ext(f)}`}`, data: body }); }
   const fonts = fontLinks(brand);
   entries.push({ name: "README.md", data: Buffer.from([
     `# ${name}`, "",

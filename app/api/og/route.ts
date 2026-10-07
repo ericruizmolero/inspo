@@ -5,6 +5,7 @@ import { safeFetch } from "@/lib/safe-fetch";
 const TTL = 60 * 60 * 24 * 30; // 30 days
 const FETCH_TIMEOUT_MS = 6000;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const RASTER = /^image\/(png|jpeg|jpg|webp|gif|avif)\s*(;|$)/i;
 
 function extractOgImage(html: string, baseUrl: string): string | null {
   const patterns = [
@@ -58,13 +59,14 @@ export async function GET(req: Request) {
     const imgRes = await fetchWithTimeout(imageUrl);
     if (!imgRes.ok) return none("image-fetch-failed");
     const contentType = imgRes.headers.get("content-type") ?? "";
-    if (!contentType.startsWith("image/")) return none("not-an-image", NO_CACHE);
+    // Raster only: an SVG served from our origin is a page, and its scripts would run as criterio.design
+    if (!RASTER.test(contentType)) return none("not-an-image", NO_CACHE);
 
     const blob = await imgRes.arrayBuffer();
     if (blob.byteLength > MAX_IMAGE_BYTES) return none("too-big", NO_CACHE);
 
     return new Response(blob, {
-      headers: { "Content-Type": contentType, "Cache-Control": LONG_CACHE },
+      headers: { "Content-Type": contentType, "Cache-Control": LONG_CACHE, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; sandbox" },
     });
   } catch (e) {
     return none((e as Error).name === "AbortError" ? "timeout" : "error");

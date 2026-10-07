@@ -74,4 +74,5 @@ export const errors = {
   brandFileTooBig: "That file is too big (the limit is 20 MB)",
   brandSvgUnsafe: "That SVG carries scripts or links to other files, so it cannot be used. Export it again as a plain SVG",
   brandTextEmpty: "Paste the guide's text first",
+  tooMany: "That is a lot in a short time. Wait a few minutes and try again",
 };

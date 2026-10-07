@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { getOrCaptureShot } from "@/lib/screenshot";
+import { allow } from "@/lib/rate-limit";
 
 export const maxDuration = 90; // Chromium cold start + 20 s load + capture
 
@@ -19,7 +20,10 @@ export async function GET(req: NextRequest) {
   if (!(await findByWeb(ctx.workspace.id, url))) return new Response("url not in workspace", { status: 403 });
 
   try {
-    const jpeg = await getOrCaptureShot(url);
+    // Captures per workspace: Chromium is one slot shared by every team (lib/browser-gate.ts)
+    const jpeg = await getOrCaptureShot(url, async () => {
+      if (!(await allow(`shot:${ctx.workspace.id}`, 60, 10 * 60 * 1000))) throw new Error("capture limit");
+    });
     return new Response(new Uint8Array(jpeg), {
       headers: {
         "Content-Type": "image/jpeg",

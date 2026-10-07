@@ -1144,6 +1144,8 @@ export const ui: typeof EnUi = {
     denied: "No se ha conectado nada. Puedes cerrar esta pestaña.",
     cannot: "Esto no se puede conectar",
     badClient: "Criterio no conoce esta aplicación. Empieza la conexión otra vez desde la propia aplicación.",
+    badRequest: "A la petición de la aplicación le falta algo, así que no se ha conectado nada.",
+    backTo: (host: string) => `Volver a ${host}`,
     badRedirect: "Esta petición te mandaría a una dirección que la aplicación no registró, así que no se ha conectado nada.",
     goToApp: "Ir a Criterio",
     open: "Conectar MCP",

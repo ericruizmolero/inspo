@@ -8,6 +8,7 @@ import { renderDesignMd, type DesignSpec } from "@/types/design";
 import { SECTIONS, addRevision, getRevisionSpec, latestRevision, listRevisions, reviseDesignSpec } from "@/lib/design-revise";
 import { getErrors, getT, fmtDate } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { assertQuota, quotaBlock } from "@/lib/quota";
 
 export const maxDuration = 120;
 
@@ -46,6 +47,9 @@ export async function POST(req: NextRequest) {
     if (comment.length < 5) return Response.json({ error: (await getErrors()).tellUsWhat }, { status: 400 });
     if (!(section in SECTIONS)) return Response.json({ error: (await getErrors()).unknownSection }, { status: 400 });
     if (!process.env.OPENROUTER_API_KEY) return Response.json({ error: (await getErrors()).noModelKey }, { status: 500 });
+    // A revision is a model call: it counts against the plan's AI actions ("revise" in lib/quota.ts)
+    const blocked = await quotaBlock(assertQuota(ctx.workspace, "ai"));
+    if (blocked) return blocked;
 
     const t0 = Date.now();
     const out = await reviseDesignSpec({ spec: current, url, section, comment, language: ctx.workspace.outputLanguage });

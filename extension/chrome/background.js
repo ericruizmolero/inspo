@@ -2,10 +2,19 @@
 // (which picks it up at criterio.design/extension/install or /connect) and stores it in
 // chrome.storage.local. Everything else (API calls) the popup does directly.
 
-chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg?.type === "ext-key" && typeof msg.key === "string" && msg.key.startsWith("crit_")) {
+// Only an origin this build may reach can be the base: the key and every saved page go there
+const allowedBase = (base) => {
+  try {
+    const origin = new URL(base).origin;
+    return (chrome.runtime.getManifest().host_permissions || []).some((h) => new URL(h.replace(/\*$/, "")).origin === origin.replace(/:\d+$/, "")) ? origin : null;
+  } catch { return null; }
+};
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  const base = sender.id === chrome.runtime.id && sender.origin ? allowedBase(sender.origin) : null;
+  if (msg?.type === "ext-key" && typeof msg.key === "string" && msg.key.startsWith("crit_") && base) {
     chrome.storage.local
-      .set({ key: msg.key, base: msg.base, workspace: msg.workspace ?? null, connectedAt: Date.now() })
+      .set({ key: msg.key, base, workspace: msg.workspace ?? null, connectedAt: Date.now() })
       .then(() => sendResponse({ ok: true }))
       .catch((e) => sendResponse({ ok: false, error: String(e) }));
     return true; // async response

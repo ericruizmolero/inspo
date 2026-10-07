@@ -7,6 +7,7 @@ import "server-only";
 import { db, schema } from "./db";
 import { listAdmins } from "./activity";
 import { feedbackMail, sendMail, localeForEmail } from "./mail";
+import { allow } from "./rate-limit";
 import { feedbackMarkdown, pathOf, type Annotation, type FeedbackBatch, type FeedbackEvent, type FeedbackNoteView, type FeedbackOverview } from "./feedback-core";
 import { getErrors } from "./i18n";
 import { HttpError } from "./workspace-core";
@@ -76,6 +77,8 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
     case "submit": {
       const annotations = (Array.isArray(ev.annotations) ? ev.annotations : []).filter(validAnnotation);
       if (!annotations.length) throw new HttpError(400, (await getErrors()).noNotesToSend);
+      // Each submit is an email to every admin
+      if (!(await allow(`feedback:${author.id}`, 10, 60 * 60 * 1000))) throw new HttpError(429, (await getErrors()).tooMany);
       await upsert(author, organizationId, annotations, url, viewport);
       const path = pathOf(url);
       const markdown = typeof ev.output === "string" && ev.output.trim() ? ev.output.trim().slice(0, 60000) : feedbackMarkdown(annotations.map(slim), path, viewport);

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { getCtxOrLogin } from "@/lib/workspace";
 import { getT } from "@/lib/i18n";
 import { originOfHeaders } from "@/lib/mcp/auth";
@@ -25,8 +24,9 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
   for (const [k, v] of Object.entries(sp)) { const one = Array.isArray(v) ? v[0] : v; if (typeof one === "string") query[k] = one; }
   const [ctx, { t }] = await Promise.all([getCtxOrLogin(`/mcp/authorize?${new URLSearchParams(query)}`), getT()]);
   const request = await readAuthRequest(query, originOfHeaders(await headers()));
-  // Wrong, but the app is known and so is its address: the error goes back to it, as OAuth has it
-  if ("fatal" in request && !request.fatal && /^https?:/.test(request.redirect)) redirect(request.redirect);
+  // Wrong, but the app is known and so is its address: the error goes back to it, as OAuth has it, but only
+  // on a click. Anyone can register an app, so an automatic redirect would make our address a launch pad
+  const back = "fatal" in request && !request.fatal && /^https?:/.test(request.redirect) ? request.redirect : null;
 
   return (
     <div className="auth auth--solo">
@@ -34,8 +34,10 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
         <div className="auth__brand"><Logo size={48} /></div>
         {"fatal" in request ? (
           <AuthWindow title={t.mcp.pageTitle} heading={t.mcp.cannot} status={t.invite.signedInAs(ctx.user.email)}
-            footer={<Link href="/" className={buttonVariants()}>{t.mcp.goToApp}</Link>}>
-            <p className="auth__hint">{request.fatal && request.reason === "redirect" ? t.mcp.badRedirect : t.mcp.badClient}</p>
+            footer={back
+              ? <a href={back} rel="noreferrer" className={buttonVariants()}>{t.mcp.backTo(new URL(back).host)}</a>
+              : <Link href="/" className={buttonVariants()}>{t.mcp.goToApp}</Link>}>
+            <p className="auth__hint">{!request.fatal ? t.mcp.badRequest : request.reason === "redirect" ? t.mcp.badRedirect : t.mcp.badClient}</p>
           </AuthWindow>
         ) : (
           <AuthorizePanel

@@ -4,7 +4,7 @@
 // handlers, no links out), because a logo is shown to people outside the team through a share.
 import "server-only";
 import sharp from "sharp";
-import { getFile, deleteFiles, listFiles } from "./storage";
+import { getFile, deleteFiles, listFiles, isSafeKey } from "./storage";
 import type { BrandFile } from "@/types/brand";
 
 export const brandPrefix = (organizationId: string) => `inspo/${organizationId}/brand/`;
@@ -18,7 +18,7 @@ const DESIGN_MD_FILES = "inspo/design-md/";
 /** May this workspace's brand point at this key? Only its own brand files, or a captured DESIGN.md logo.
  *  Any other key would let a brand read someone else's file through its zip or its share link. */
 export const brandKeyAllowed = (organizationId: string, key: string) =>
-  key.startsWith(brandPrefix(organizationId)) || key.startsWith(DESIGN_MD_FILES);
+  isSafeKey(key) && (key.startsWith(brandPrefix(organizationId)) || key.startsWith(DESIGN_MD_FILES));
 
 /** Every storage key inside a brand value (a section or the whole spec): any `key` that is a storage path */
 export function keysIn(value: unknown, out: string[] = []): string[] {
