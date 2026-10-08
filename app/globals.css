@@ -2402,7 +2402,9 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 
 /* Body: the stage takes the room, the conversation is a column of 320 down its right */
 .ip-bento.cr-viewer-body { flex: 1; min-height: 0; }
-.ip-stage.cr-viewer-stage { min-height: 0; padding: 16px; gap: 16px; }
+/* The stage is the size container the fitted image measures against (.pn.is-fit img, cqh): it has a definite height
+   (the viewer's, or 70svh on a phone), while the card hugs its content and could not be one */
+.ip-stage.cr-viewer-stage { min-height: 0; padding: 16px; gap: 16px; container-type: size; }
 .ip-card--page.cr-viewer-media { position: relative; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; border: 1px solid var(--chrome-border); }
 /* Only the reference shows, in the middle of the stage: the card ends where it ends instead of leaving a dark
    band around it (Eric, 07-10 for captures, 08-10 for everything). A long one still scrolls inside it (capped to
@@ -2466,10 +2468,13 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .pn-bar__url span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pn-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* An image is shown whole, centred in the card at the size it allows (the auto margins give way when it overflows) */
-.pn.is-fit { container-type: size; display: flex; flex-direction: column; }
+/* Inline-size only: with size containment the viewer had no height of its own and, as the ficha's card hugs its
+   content (align-self: center), the whole image collapsed to a 2px line (Eric, 08-10: "algunas imágenes no salen en la ficha") */
+.pn.is-fit { container-type: inline-size; display: flex; flex-direction: column; }
 .pn.is-fit .pn-page { margin: auto; width: fit-content; min-height: 0; }
 .pn.is-fit .pn-page:has(.shimmer) { width: calc(100% - 40px); min-height: 240px; }
-.pn.is-fit .pn-page img { width: auto; max-width: calc(100cqw - 40px); max-height: calc(100cqh - 40px); border-radius: 6px; }
+/* cqw is the viewer's width; cqh the stage's height (its padding, the card's border and a margin taken off) */
+.pn.is-fit .pn-page img { width: auto; max-width: calc(100cqw - 40px); max-height: calc(100cqh - 74px); border-radius: 6px; }
 .pn-page { position: relative; min-height: 240px; }
 .pn-page img { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; user-select: none; -webkit-user-drag: none; }
 .pn-page img.is-loaded { opacity: 1; }
