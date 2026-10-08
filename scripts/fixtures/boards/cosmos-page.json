@@ -1,0 +1,532 @@
+{
+"data": {
+"clusterConnections": {
+"items": [
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 156812015,
+"source": {
+"url": "https://www.moment.so/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "MOMENT"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 244912534,
+"source": {
+"url": "https://www.placement.is/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "PLACEMENT"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1568075657,
+"source": {
+"url": "https://gt-mechanik.com/?ref=maxibestof.one",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "GT Mechanik"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 828245947,
+"source": {
+"url": "https://byplanlab.dk/da",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Vi kvalificerer planl\u00e6gningen \u2013 sammen"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 253628790,
+"source": {
+"url": "https://www.paulkalkbrenner.net/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Paul Kalkbrenner \u2013 Official Website"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 513506486,
+"source": {
+"url": "https://stateofaidesign.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "AI in Design Report 2026"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 903345524,
+"source": {
+"url": "https://format.obys.agency/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "FORMAT"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 145441241,
+"source": {
+"url": "https://auar.io/how-it-works",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "How it works \u2013 Automated Architecture"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1965021775,
+"source": {
+"url": "https://bakerbleu.com.au/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Baker Bleu \u2014 Artisan Sourdough Bakery"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 67628268,
+"source": {
+"url": "https://coffeecollective.dk/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Coffee Collective"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1607391966,
+"source": {
+"url": "https://www.anduril.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Anduril"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1119160104,
+"source": {
+"url": "https://itshassco.design/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Work by \u2014 Hassco Design\u00a9"
+}
+},
+{
+"element": {
+"__typename": "MediaElementTile",
+"id": 634717342,
+"source": {
+"url": "https://pomidrink.com.au/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": null
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 2059645199,
+"source": {
+"url": "https://jib.design/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Product design engineering for startups"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 758218591,
+"source": {
+"url": "https://craft.wild.as/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "wild \u00b7 Craft, engineered."
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 581264732,
+"source": {
+"url": "https://studiojud.com/#services",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Studio Jud"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1067007478,
+"source": {
+"url": "https://www.almond.studio/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Studio Almond | Shopify Plus Experts"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1789185697,
+"source": {
+"url": "https://www.native.inc/?ref=land-book.com",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Welcome | Native | Insurance in tune with tech"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 738666983,
+"source": {
+"url": "https://www.gentle.systems/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Home | Gentle Systems"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 279670604,
+"source": {
+"url": "https://www.koppen.co/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnj6iQcwWF3oFxrEcXHfC7firxFUbQydDXK2uLDePz18zP-sLLqLW8hTzRwQA_aem_V1apK2vk5dAIBQpfsgKBSQ",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "K\u00d6PPEN Oral Health"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1150286053,
+"source": {
+"url": "https://www.abewynen.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Abe Wynen \u2014\u00a0Colourist"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1749211648,
+"source": {
+"url": "https://nlc.obys.agency/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "New Layer Capital"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 489933271,
+"source": {
+"url": "https://konolee.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Konolee.com"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 637488710,
+"source": {
+"url": "https://studiobruch.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Studio\u00a0Bruch"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 998929365,
+"source": {
+"url": "https://aim.obys.agency/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "AIM\u2014 AI Modernism Of Kharkiv"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1122761763,
+"source": {
+"url": "https://www.nordiskamuseet.se/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Utforska livet i Norden | Djurg\u00e5rden Stockholm | Nordiska museet"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 945062297,
+"source": {
+"url": "https://system.studio/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "System"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 972360862,
+"source": {
+"url": "https://primer.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Primer Microschools for K-8th Grade | Learn without Limits"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1329628780,
+"source": {
+"url": "https://www.icebug.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Icebug Webshop \u2013 Largest selection of Icebug shoes | Webshop"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 583019559,
+"source": {
+"url": "https://ssaarchitects.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "SSA Home / Architecture and Beyond"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 641068261,
+"source": {
+"url": "https://estrela.studio/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Estrela Studio"
+}
+},
+{
+"element": {
+"__typename": "MediaElementTile",
+"id": 2108101664,
+"source": {
+"url": "https://hardsun.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": null
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 569731213,
+"source": {
+"url": "https://jacksonalexander.com.au/?ref=designerdailyreport.com",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Brand and Digital Design Partner "
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 2135846321,
+"source": {
+"url": "https://www.harkcap.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Hark Capital"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1429815650,
+"source": {
+"url": "https://styleframe.de/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Home / Styleframe"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 739082819,
+"source": {
+"url": "https://pantertourron.com/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Panter&amp;Tourron"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1098675941,
+"source": {
+"url": "https://www.rghv.ca/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "raghav agarwal"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 681863481,
+"source": {
+"url": "https://www.on.energy/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "ON.energy | The Race is ON for Grid-Safe AI Power"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 1807504322,
+"source": {
+"url": "https://www.base.org/",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Base"
+}
+},
+{
+"element": {
+"__typename": "WebsiteElementTile",
+"id": 241118559,
+"source": {
+"url": "https://futurefur.com.au/collections/all",
+"isEditable": false,
+"isPublicDomain": false,
+"author": null
+},
+"websiteTitle": "Products"
+}
+}
+],
+"meta": {
+"nextPageCursor": "eyJ2MSI6MTg1LjAsInYyIjo3MjAyMjg5fQ==",
+"count": 212
+}
+}
+}
+}

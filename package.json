@@ -23,6 +23,7 @@
     "check:design-system": "tsx --conditions=react-server scripts/check-design-system.ts",
     "check:usage": "tsx --conditions=react-server scripts/check-usage.ts",
     "check:url-keys": "tsx --conditions=react-server scripts/check-url-keys.ts",
+    "check:boards": "tsx --conditions=react-server scripts/check-boards.ts",
     "check:postgres": "tsx --conditions=react-server scripts/check-postgres.ts",
     "check:system": "tsx --conditions=react-server scripts/check-system.ts",
     "check:brand": "tsx --conditions=react-server scripts/check-brand.ts",
