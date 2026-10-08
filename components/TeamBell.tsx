@@ -68,7 +68,7 @@ export default function TeamBell({ workspaceId }: { workspaceId: string }) {
           <div className="island__activity-list">
             {feed.lines.map((l, i) => (
               <a key={`${l.at}-${i}`} href={l.path} className={`island__event${l.fresh ? " is-fresh" : ""}`} onClick={() => setOpen(false)}>
-                <Avatar initials={(l.who || "?").slice(0, 1).toUpperCase()} name={l.who} tone={toneFor(l.who)} src={l.image} size={24} className="island__event-face" />
+                <Avatar initials={(l.who || "?").slice(0, 1).toUpperCase()} name={l.who} tone={toneFor(l.who)} src={l.image} size={20} className="island__event-face" />
                 <span className="island__event-body">
                   <span className="island__event-text">{words(l.text, l.who)}</span>
                   {l.quote && <span className="island__event-quote">{l.quote}</span>}
