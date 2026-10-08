@@ -513,6 +513,10 @@ Aceptar la invitación a un equipo; si el correo no coincide, cierra sesión y v
 `InstallGuide` · `ConnectPanel` · `app/extension/`
 Pasos para instalar el zip en `chrome://extensions` y conectar la extensión a un espacio generando su clave.
 
+### Importar (extensión)
+`extension/chrome/import.html` · `import.js` · `import.css` · `.where` · `.dlg`
+La pestaña de importar de la extensión, con los tokens del popup. Empieza por la tarjeta "Dónde va": Espacio y Proyecto como dos campos `.select` a la vista y la frase que nombra el destino en negrita (`.where__sum`); sin proyectos, el Inbox. Los botones de importar esperan a que el destino esté cargado. Cada fuente abre una ventana de diálogo (`<dialog>.dlg`: barra moss, título en display, qué entra y dónde en negrita, pie con "Cambiar el destino" e "Importar a Proyecto"), y la vista de progreso repite el destino bajo el título. X y Pinterest llevan el campo "Cuáles" (los últimos 50 a 500 o todos; X también la última semana o el último mes, por la fecha del post). → [decisión](decisiones/2026-10-08-importar-dice-el-destino-y-lo-confirma-antes.md)
+
 ### Error y 404
 `Lost` · `components/Lost.tsx` · `Lost.css` · `.lost` · lo usan `app/not-found.tsx` y `app/error.tsx`
 La cabeza del logotipo flota en el sitio del cero de un "404" grande y tenue (`digits`); en un error va sola y torcida. Debajo, título, una línea de por qué y las salidas como hijos.

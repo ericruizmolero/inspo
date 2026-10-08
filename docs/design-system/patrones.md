@@ -51,6 +51,7 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 ## Confirmaciones y vacíos
 
 - Confirmar solo lo que destruye o saca algo (`useConfirm`). Sacar de un proyecto = vuelve al Inbox, nunca se borra ni se archiva en silencio; hay que decirlo donde se decide.
+- La excepción: meter muchas piezas de golpe en un proyecto (importar de X, Pinterest o el navegador) se confirma, porque deshacerlo es un trabajo; la confirmación dice qué entra y el destino con sus nombres reales, y ofrece cambiarlo. → [decisión](decisiones/2026-10-08-importar-dice-el-destino-y-lo-confirma-antes.md)
 - Un estado vacío ayuda a empezar (qué hacer y con qué), no es solo un "No hay nada".
 
 ## Texto generado por IA

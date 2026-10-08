@@ -96,9 +96,17 @@ soon as it loses focus, and an import takes minutes). Three sources:
   twice. A video or a pin of several pages is saved as its cover. Up to 1000 pins a run, 10 a request.
   These are not an official API: if Pinterest changes them, `call()` in the collector is what to fix.
 
-The page asks which project it all lands in (the same field as the popup's form, the one this person
-last added to picked first). What the workspace already had is filed in that project too, since a
-reference can be in several; "Open the project" at the end goes there.
+The page starts with where it all lands: workspace and project as two fields in the open (the one
+this person last added to picked first; the Inbox when the workspace has no project yet), and a
+sentence naming them. The import buttons wait until that is known, and each one opens a confirmation
+that says what is coming and the destination again, with "Change destination" as the way out. What
+the workspace already had is filed in that project too, since a reference can be in several; "Open
+the project" at the end goes there.
+
+X and Pinterest also ask which ones: the latest 50, 100, 250 or 500, or all (up to 1000). X adds
+the last week and the last month, by the post's date (the only date the page sees; a pin has none):
+posts older than the period are skipped, and after 60 older posts in a row the collector is told to
+stop, since X lists bookmarks newest-bookmarked first and a post is always older than its bookmark.
 
 Either way the addresses go to `POST /items/batch` in batches of 25, one request at a time, and the
 page shows the counts (found, saved, already here, not web pages, failed). The server names, tags and
