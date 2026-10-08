@@ -10,6 +10,7 @@ import ProjectPicker from "./ProjectPicker";
 import AreaPicker from "./AreaPicker";
 import type { SystemArea } from "@/types/system";
 import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, postOf, readableDomain } from "@/lib/url";
+import { usePost } from "./post-cache";
 import LoopVideo from "./LoopVideo";
 import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
 import "./TextRef.css";
@@ -32,9 +33,8 @@ function isBlocked(url: string) {
 type ImgSource = "idle" | "og" | "shot" | "error";
 
 /** What a post without a picture says, for its card: who wrote it and its words. Read once per session
- *  from /api/post (the copy lib/posts.ts keeps); until it comes, what its name already says */
+ *  (components/post-cache.ts, the copy lib/posts.ts keeps); until it comes, what its name already says */
 type PostWords = { author: string; handle: string; avatar: string | null; text: string };
-const postWords = new Map<string, PostWords | null>();
 /** The words without their links, with X's own line breaks and no run of blank lines */
 const wordsOf = (text: string) => text.replace(/https?:\/\/\S+/g, "").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{2,}/g, "\n").trim();
 /** "Wilson · Ferndesk has been live…" (lib/posts.ts postName) read back as author and words */
@@ -48,26 +48,10 @@ function wordsFromSummary(summary: string | undefined): PostWords | null {
   return m ? { author: m[1], handle: m[2], avatar: null, text: wordsOf(m[3]) } : null;
 }
 function usePostWords(web: string | null, name: string, summary?: string): PostWords | null {
-  // The words live in state, not only in the map: the React Compiler memoises what a render reads from the map
-  // by `web` alone, so a map filled after the first render would never reach the card
-  const [read, setRead] = useState<{ web: string; words: PostWords | null } | null>(() => (web && postWords.has(web) ? { web, words: postWords.get(web)! } : null));
-  useEffect(() => {
-    if (!web) return;
-    const had = postWords.get(web);
-    if (had !== undefined) { setRead((r) => (r?.web === web ? r : { web, words: had })); return; }
-    const ctrl = new AbortController();
-    fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }), signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        const words: PostWords | null = d?.post ? { author: String(d.post.author ?? ""), handle: String(d.post.handle ?? ""), avatar: d.post.avatar ? String(d.post.avatar) : null, text: wordsOf(String(d.post.text ?? "")) } : null;
-        postWords.set(web, words);
-        setRead({ web, words });
-      })
-      .catch(() => { /* its name says the start of it */ });
-    return () => ctrl.abort();
-  }, [web]);
+  const read = usePost(web);
   if (!web) return null;
-  return (read?.web === web ? read.words : null) ?? wordsFromSummary(summary) ?? wordsFromName(name, postOf(web)?.user ?? "");
+  const post = read?.post;
+  return (post ? { author: post.author, handle: post.handle, avatar: post.avatar, text: wordsOf(post.text) } : null) ?? wordsFromSummary(summary) ?? wordsFromName(name, postOf(web)?.user ?? "");
 }
 
 /** Whether a block of words is cut by its box (true only when it needs more height than it has) */

@@ -39,6 +39,25 @@
 .polish__text b { font-size: 1.3em; color: var(--text); text-wrap: balance; }
 .polish__text p { flex: 1; min-height: 0; margin: 0; overflow: hidden; font-size: 0.8em; color: var(--text-2); white-space: pre-wrap; }
 
+.polish__text-kind { font-size: 0.6em; font-weight: 500; color: var(--muted); }
+
+/* A post: the box its sheet shows (PostView's .pv), on the card, so a post looks the one way everywhere. The card
+   is as tall as the post, up to a cap, past which it fades out at the foot as on the board; its type is sized in the
+   card's em as a text's is, so it scales with the tornado (the sheet's 15 px at 600 wide, here at 30em) */
+.polish__card.is-post .polish__in { position: relative; }
+.polish__post { position: relative; max-height: 36em; overflow: hidden; }
+.polish__post.is-cut::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 4em; background: linear-gradient(transparent, var(--surface-raised)); pointer-events: none; }
+.polish .pv { gap: 0.7em; padding: 1em 1.1em; border-radius: 0; background: var(--surface-raised); box-shadow: none; }
+.polish .pv__head { gap: 0.55em; font-size: 0.85em; }
+.polish .pv__avatar { width: 1.9em; height: 1.9em; }
+.polish .pv__date { font-size: 0.75em; }
+.polish .pv__text { font-size: 0.9em; }
+.polish .pv__video, .polish .pv__photos img { max-height: none; }
+.polish .pv__video, .polish .pv__photos { border-radius: 0.7em; }
+/* The card is what is pressed (it opens the sheet) and dragged: nothing in the post takes the pointer */
+.polish .pv a, .polish .pv iframe, .polish .pv video { pointer-events: none; }
+.polish .pv__photos img { pointer-events: none; }
+
 /* A decided card on its way to its tab: a copy, over everything in the view */
 .polish__fly {
   position: absolute; z-index: 7; overflow: hidden; border-radius: var(--radius-lg); background: var(--surface-2); box-shadow: var(--shadow-pop);
