@@ -105,6 +105,9 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
     browser = await gatedLaunch(launchBrowser);
     const page = await browser.newPage();
     await guardPage(page);
+    // Reduced motion: sites that hold the page behind an intro or reveal it on scroll show everything at once.
+    // Light: the same capture on any machine, not the dark mode of the Mac that runs it.
+    await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }, { name: "prefers-color-scheme", value: "light" }]);
     await page.setUserAgent(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 InspoBot/1.0"
     );
