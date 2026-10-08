@@ -10,6 +10,9 @@ import { arenaChannel, arenaPage, collect, cosmosCluster, cosmosPage, entryOf, p
 import { batchesOf, KINDS, MAX_ENTRIES, noneSkipped, type Entry } from "../lib/boards/entries";
 import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "../lib/batch-limits";
 import { staysInside } from "../lib/url";
+import { importSummary, type ImportTally } from "../lib/boards/summary";
+import en, { type Dict } from "../lib/i18n/en";
+import es from "../lib/i18n/es";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/boards/${name}`, import.meta.url), "utf8");
 const json = (name: string): unknown => JSON.parse(fixture(name));
@@ -156,6 +159,25 @@ async function main() {
   assert.equal(staysInside({ web: "/api/files/inspo/w/media/from-1.png", source: "https://www.pinterest.com/pin/1/" }), true);
   assert.equal(staysInside({ web: "https://linear.app" }), false);
   assert.equal(staysInside({ web: "/api/files/inspo/w/media/1.png", source: "https://notcosmos.so/e/1" }), false);
+
+  // ── importSummary: new is new, the rest is said apart ───────────────────
+  type Some = { imported?: Partial<ImportTally["imported"]>; skipped?: Partial<ImportTally["skipped"]>; existed?: number; failed?: number };
+  const tally = (o: Some): ImportTally => ({
+    existed: 0, failed: 0, capped: false, ...o,
+    imported: { web: 0, image: 0, video: 0, post: 0, text: 0, ...o.imported },
+    skipped: { ...noneSkipped(), invalid: 0, ...o.skipped },
+  });
+  const line = (t: Dict, o: Some) => { const s = importSummary(t, tally(o)); return [s.title, s.detail].filter(Boolean).join(" "); };
+  assert.equal(line(en, { imported: { web: 12, image: 3 }, existed: 20, skipped: { board: 1 } }),
+    "12 websites and 3 images imported. 20 were already in your library. 1 skipped (a board inside the board).");
+  assert.equal(line(en, { existed: 32 }), "All 32 were already in your library.", "a second import says nothing came in");
+  assert.equal(line(en, { existed: 1 }), "It was already in your library.");
+  assert.equal(line(en, { imported: { web: 1, image: 1, text: 2 }, existed: 1, failed: 2 }), "1 website, 1 image and 2 texts imported. 1 was already in your library. 2 could not be saved.");
+  assert.equal(line(en, { imported: { image: 4 }, skipped: { file: 2, board: 1 } }), "4 images imported. 3 skipped (2 files, 1 board inside the board).");
+  assert.equal(line(en, { skipped: { file: 3 } }), "Nothing came in. 3 skipped (files).");
+  assert.equal(line(es, { imported: { web: 12, image: 3 }, existed: 20, skipped: { board: 1 } }),
+    "Importado: 12 webs y 3 imágenes. 20 ya estaban en tu librería. 1 se queda fuera (un tablero dentro del tablero).");
+  assert.equal(line(es, { existed: 1 }), "Ya estaba en tu librería.");
 
   console.log("boards: pure checks pass");
 

@@ -286,12 +286,24 @@ export const ui = {
       post: (n: number): string => (n === 1 ? "1 post" : `${n} posts`),
       text: (n: number): string => (n === 1 ? "1 text" : `${n} texts`),
     },
+    list: (parts: string[]): string => (parts.length > 1 ? `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}` : parts[0] ?? ""),
     imported: (list: string): string => `${list} imported.`,
     nothingImported: "Nothing came in.",
+    existed: (n: number): string => (n === 1 ? "1 was already in your library." : `${n} were already in your library.`),
+    allExisted: (n: number): string => (n === 1 ? "It was already in your library." : `All ${n} were already in your library.`),
+    /** A reason with its count, when there are several: "2 files, 1 board inside the board" */
     reasons: {
       file: (n: number): string => (n === 1 ? "1 file" : `${n} files`),
       board: (n: number): string => (n === 1 ? "1 board inside the board" : `${n} boards inside the board`),
       empty: (n: number): string => `${n} with nothing to save`,
+      invalid: (n: number): string => (n === 1 ? "1 not a web address" : `${n} not web addresses`),
+    },
+    /** The reason alone, when it is the only one: "3 skipped (files)" */
+    reason: {
+      file: (n: number): string => (n === 1 ? "a file" : "files"),
+      board: (n: number): string => (n === 1 ? "a board inside the board" : "boards inside the board"),
+      empty: (): string => "nothing to save",
+      invalid: (n: number): string => (n === 1 ? "not a web address" : "not web addresses"),
     },
     skipped: (n: number, why: string): string => `${n} skipped (${why}).`,
     failed: (n: number): string => (n === 1 ? "1 could not be saved." : `${n} could not be saved.`),

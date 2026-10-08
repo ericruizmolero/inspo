@@ -3,7 +3,8 @@
 import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, votePolish, closeProjectPolish, restoreToBoard, readBoardAction, importBatch, boardProject } from "@/app/actions/library";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
 import { batchesOf } from "@/lib/boards/entries";
-import { importSummary, noneImported, type BoardStep, type ImportBoard } from "./BoardImport";
+import { noneImported, type BoardStep, type ImportBoard } from "./BoardImport";
+import { importSummary } from "@/lib/boards/summary";
 import { votesByItem, finishedOf, forgottenBy, openVotes } from "@/lib/polish-tally";
 import { authClient } from "@/lib/auth-client";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
@@ -728,14 +729,16 @@ export default function InspoClient({
     const imported = noneImported();
     const added: InspoItem[] = [];
     const ids: string[] = [];
-    let done = 0, failed = 0;
+    let done = 0, failed = 0, existed = 0, invalid = 0;
     onStep({ phase: "saving", done, total });
     for (const batch of batchesOf(board.entries)) {
       const r = await importBatch(project.id, batch).catch((e) => ({ ok: false as const, error: String(e) }));
       if (r.ok) {
         r.data.results.forEach((x, i) => {
-          if (x.id && (x.status === "added" || x.status === "existed")) { ids.push(x.id); imported[batch[i].kind]++; }
-          else if (x.status === "error" || x.status === "invalid") failed++;
+          if (x.id && x.status === "added") { ids.push(x.id); imported[batch[i].kind]++; }
+          else if (x.id && x.status === "existed") { ids.push(x.id); existed++; }
+          else if (x.status === "invalid") invalid++;
+          else failed++;
         });
         added.push(...r.data.added);
       } else {
@@ -750,7 +753,7 @@ export default function InspoClient({
     setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...new Set([...(next[id] ?? []), project.id])]; return next; });
     for (const a of added) watch(a.web);
     setSpace(project.id);
-    setToast({ ok: true, ...importSummary(t, { imported, skipped: board.skipped, failed, capped: board.capped }) });
+    setToast({ ok: true, ...importSummary(t, { imported, existed, skipped: { ...board.skipped, invalid }, failed, capped: board.capped }) });
     return null;
   }, [t, watch, setSpace]);
   const renameProject = useCallback(async (id: string, name: string) => {
