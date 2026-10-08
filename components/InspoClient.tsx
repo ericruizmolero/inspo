@@ -11,7 +11,7 @@ import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment,
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import type { LibraryData } from "@/lib/library";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
-import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, type Filter } from "@/lib/search-query";
+import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, newestFirst, type Filter } from "@/lib/search-query";
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
 import Connectors from "./Connectors";
 import ThemeToggle from "./ThemeToggle";
@@ -104,17 +104,6 @@ async function compressImage(file: File, maxPx = 1400, quality = 0.85, type: "im
   });
 }
 
-function parseDate(s: string): number {
-  if (!s) return 0;
-  const parts = s.split("/");
-  if (parts.length === 3) {
-    const [d, m, y] = parts;
-    const ts = Date.parse(`${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`);
-    if (!isNaN(ts)) return ts;
-  }
-  const ts = Date.parse(s);
-  return isNaN(ts) ? 0 : ts;
-}
 
 /** A new item's job is asked about every 4 s, for up to 5 minutes (a whole-page capture can take one);
  *  past that it keeps "gathering" until the page is opened again */
@@ -1055,7 +1044,7 @@ export default function InspoClient({
 
   const ranked = useMemo(() => (words.length || near ? rankText(base.map((i) => i.web), local, near, jevScores) : null), [words, near, base, local, jevScores]);
   const filtered = useMemo(() => {
-    if (!ranked) return [...base].sort((a, b) => parseDate(b.date) - parseDate(a.date));
+    if (!ranked) return [...base].sort(newestFirst);
     const byWeb = new Map(base.map((i) => [i.web, i]));
     return ranked.order.map((w) => byWeb.get(w)!).filter(Boolean);
   }, [ranked, base]);
@@ -1095,7 +1084,7 @@ export default function InspoClient({
   // At rest, the whole space, newest first. While searching, only the results, laid out again in the
   // order they rank: the best one top left. What doesn't match isn't there.
   const boardItems = useMemo(
-    () => (filtering ? filtered : [...spaceItems].sort((a, b) => parseDate(b.date) - parseDate(a.date))),
+    () => (filtering ? filtered : [...spaceItems].sort(newestFirst)),
     [filtering, filtered, spaceItems],
   );
   // The references either side of the open one, in the board's order (a search walks its results).

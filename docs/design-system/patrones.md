@@ -48,6 +48,10 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 - Lo mismo para un cliente de IA conectado por MCP: lee el MD, escribe piezas, y una decisión suya es una propuesta que espera al equipo. Lo que viene de fuera dice de dónde viene ("Eric vía Claude"). → [decisión](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md)
 - Comentar es una herramienta aparte (tecla C) que deja pines tipo Figma con respuestas, en el documento. No hay anotaciones posicionales sobre las páginas de referencia.
 
+## Orden del tablón
+
+- Día más reciente primero y, a igual día, la hora del post en X (su id); el resto como llega del servidor. Un solo comparador, `newestFirst` (`lib/search-query.ts`). → [decisión](decisiones/2026-10-08-el-tablon-ordena-por-dia-y-dentro-del-dia-por-hora-del-post.md)
+
 ## Confirmaciones y vacíos
 
 - Confirmar solo lo que destruye o saca algo (`useConfirm`). Sacar de un proyecto = vuelve al Inbox, nunca se borra ni se archiva en silencio; hay que decirlo donde se decide.

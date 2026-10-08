@@ -130,6 +130,7 @@ export const DIRECTORY: DirectoryGroup[] = [
       { name: "60fps", url: "https://60fps.design" },
       { name: "Detail", url: "https://detail.design", added: "2026-10-04" },
       { name: "Scrolltide", url: "https://scrolltide.co", added: "2026-10-05" },
+      { name: "Prompt Motion", url: "https://prompt-motion.com", added: "2026-10-08" },
       { name: "Animos", url: "https://animos.app" },
       { name: "Motion in Design", url: "https://motionin.design" },
       { name: "Motionsites", url: "https://motionsites.ai" },

@@ -42,6 +42,7 @@ export const directory: typeof EnDirectory = {
     "https://scrolltide.co": "Más de 300 componentes animados y webs completas, cada uno con el prompt entero para rehacerlo en Claude o Cursor.",
     "https://icon.museum": "Galer\u00eda curada de iconos de app para iOS y macOS, de los mejores dise\u00f1adores.",
     "https://designforb2b.com": "Webs B2B elegidas a mano, filtrables por sector, estilo y ronda de financiación.",
+    "https://prompt-motion.com": "Galería creciente de motion graphics hechos con Claude, cada uno junto al prompt o la skill que lo hizo, con crédito a su autor.",
     "https://searchsystem.co": "Colección creciente de referencias y herramientas para diseñadores, de Julien Van Havere.",
     "https://umanmade.com": "Directorio de trabajo digital hecho por humanos, para humanos.",
     "https://logggos.club": "Catálogo de logos bien diseñados, por sector, tema, tipografía y color.",

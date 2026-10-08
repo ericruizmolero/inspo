@@ -240,19 +240,19 @@ h1, p { margin: 0; }
 }
 .select svg { flex-shrink: 0; color: var(--field-ink); }
 .select select option { color: var(--ink); }
-/* The areas: Chip (design system), paper with an ink border. A ticked area turns moss, the system's
-   colour for libraries and collections, so ember stays the Save button's alone */
+/* The areas: the Chip as the app's Add form paints it (.add__area): a 28 px pill, transparent, a quiet
+   grey line and muted text. Only a picked one fills, inverted to paper with ink text, so the dark popup
+   stays dark and ember stays the Save button's alone */
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border-radius: var(--radius-pill);
-  border: var(--stroke-control) solid var(--control-border); background: var(--paper);
-  color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: background 0.12s, color 0.12s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: var(--radius-pill);
+  border: 1px solid var(--chrome-raised); background: transparent;
+  color: var(--chrome-text-muted); font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
 }
-.pill:hover { background: var(--paper-light); }
-.pill:active { transform: translateY(1px); }
-/* A picked chip inverts (ink with paper text), as in the app; a paper outline keeps it on the dark popup */
-.pill[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--paper); }
+.pill:hover { color: var(--paper); border-color: var(--chrome-muted); }
+.pill:active { transform: scale(0.96); }
+.pill[aria-pressed="true"] { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 .pill svg { flex-shrink: 0; }
 
 /* Saved: the button stays where it was, sinks in, turns moss (synced, in the library) and says so

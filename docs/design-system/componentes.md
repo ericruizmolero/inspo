@@ -50,6 +50,7 @@ Encendido y apagado: pista hundida (copia el pozo de la casilla), perilla de pap
 `Chip` · `.cr-chip` · `.pill` · muestra: pastillas
 Etiquetas con borde de tinta: paper (por defecto), butter (sugerencias), ember (una regla activa), moss (bibliotecas), chrome (sobre el cromo y en las sugerencias de los vacíos). Con `onClick` es un botón; `pressed` lo invierte a tinta con texto papel (con borde papel en Board); `onRemove` añade una x (un filtro). Elegido no es ember. `.pill` es el nombre viejo; quedan dos usos.
 - Dentro de Añadir (`.add__area`) la Chip se pinta como pastilla de 28, transparente, con los dos grises del formulario. → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
+- Las áreas del popup de la extensión (`.pill` en `extension/chrome/popup.css`) van igual: oscuras y calladas, solo la elegida se invierte a papel. → [decisión](decisiones/2026-10-08-las-areas-del-popup-son-pastillas-oscuras.md)
 
 ### Tarjeta
 `Card` · `.cr-card` · muestra: tarjeta

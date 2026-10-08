@@ -9,7 +9,7 @@ import { useT } from "./I18nProvider";
 import { BoardCard, PromptInput, type BoardTile } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
 import { DEFAULT_RATIO, keyOf } from "@/lib/board";
-import { parseDate } from "@/lib/search-query";
+import { newestFirst } from "@/lib/search-query";
 import { mediaKindOf, videoEmbedOf } from "@/lib/url";
 import "./ProjectChooser.css";
 
@@ -129,7 +129,7 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   const byProject = useMemo(() => {
     const by: Record<string, InspoItem[]> = {};
     for (const i of items) for (const p of (i.id && links[i.id]) || []) (by[p] ??= []).push(i);
-    for (const list of Object.values(by)) list.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+    for (const list of Object.values(by)) list.sort(newestFirst);
     return by;
   }, [items, links]);
   const create = async () => {

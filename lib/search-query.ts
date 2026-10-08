@@ -5,7 +5,7 @@
 // Layer 2 (/api/search/semantic, ~0.3–0.6 s): nearness in meaning, any language (lib/embed.ts).
 // Layer 3 (/api/search, ~1 s, descriptive queries only): Jev reads the top 20 and reorders them.
 import { COLORS, SECTIONS, ELEMENTS, TYPE, LAYOUT, TAGS, SECTORS, STYLES, FACETS, viewOf, hasFacet, type Term } from "./taxonomy";
-import { mediaKindOf, hostOf, type MediaKind } from "./url";
+import { mediaKindOf, hostOf, postOf, type MediaKind } from "./url";
 import { taxonomy as enTax } from "./i18n/en/taxonomy";
 import { taxonomy as esTax } from "./i18n/es/taxonomy";
 import { labels as enLabels } from "./i18n/en/labels";
@@ -36,6 +36,18 @@ export function parseDate(s: string): number {
   if (p?.length === 3) { const t = Date.parse(`${p[2]}-${p[1].padStart(2, "0")}-${p[0].padStart(2, "0")}`); if (!isNaN(t)) return t; }
   const t = Date.parse(s);
   return isNaN(t) ? 0 : t;
+}
+
+/** A post's id on X is a snowflake: it grows with time, so two posts from one day order by it */
+const postTime = (web: string): bigint | null => { const p = postOf(web); return p ? BigInt(p.id) : null; };
+
+/** The board's order: newest day first; within a day, the later post on X first; otherwise as they came (the server gives newest saved first) */
+export function newestFirst(a: { date: string; web: string }, b: { date: string; web: string }): number {
+  const d = parseDate(b.date) - parseDate(a.date);
+  if (d) return d;
+  const ta = postTime(a.web), tb = postTime(b.web);
+  if (ta == null || tb == null) return 0;
+  return tb > ta ? 1 : tb < ta ? -1 : 0;
 }
 
 const day = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());

@@ -43,6 +43,7 @@ export const directory = {
     "https://scrolltide.co": "300+ animated components and full sites, each with the complete prompt to rebuild it in Claude or Cursor.",
     "https://icon.museum": "A curated gallery of iOS and macOS app icons by top designers.",
     "https://designforb2b.com": "Hand-picked B2B websites, filterable by industry, visual style and funding stage.",
+    "https://prompt-motion.com": "A growing gallery of motion graphics made with Claude, each next to the prompt or skill that made it, credited to its creator.",
     "https://searchsystem.co": "An ever-growing collection of references and tools for designers, by Julien Van Havere.",
     "https://umanmade.com": "A directory of digital work made by humans, for humans.",
     "https://logggos.club": "A catalog of well-designed logos, by industry, theme, typography and colour.",
