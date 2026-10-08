@@ -22,8 +22,6 @@ const ws = () => state.workspace?.name || t("yourLibrary");
 const project = () => { const o = $("dest").hidden ? null : $("project-select").selectedOptions[0]; return o?.value ? { id: o.value, name: o.textContent } : null; };
 
 let state = { key: null, base: DEFAULT_BASE, workspace: null, workspaces: [], user: null };
-/** The workspace's projects as GET /projects listed them: a board imported again lands in its project again */
-let projects = [];
 
 const api = async (path, init = {}) => {
   const res = await fetch(state.base + API + path, {
@@ -81,7 +79,6 @@ $("ws-select").addEventListener("change", async () => {
 async function loadProjects() {
   try {
     const r = await api("/projects");
-    projects = r.projects;
     const sel = $("project-select");
     sel.replaceChildren(...r.projects.map((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; return o; }));
     if (r.active) sel.value = r.active;
@@ -240,13 +237,10 @@ async function importBoard(raw, { ask = true } = {}) {
 $("btn-board").addEventListener("click", () => importBoard($("board-url").value));
 $("board-url").addEventListener("keydown", (e) => { if (e.key === "Enter") $("btn-board").click(); });
 
-/** The project named after the board: the one already there from an earlier import, or a new one */
+/** The project named after the board: the server reuses the one an earlier import made (lib/projects.ts projectForBoard) */
 async function boardProject(name) {
-  const r = await api("/projects");
-  const had = r.projects.find((p) => p.name === name);
-  if (had) return had;
-  const made = await api("/projects", { method: "POST", body: JSON.stringify({ name }) });
-  return made.project;
+  const r = await api("/projects", { method: "POST", body: JSON.stringify({ name }) });
+  return r.project;
 }
 
 /** Opened with ?source= (the popup's buttons, the button on a board): that source comes into view.

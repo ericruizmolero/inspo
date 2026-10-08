@@ -1,6 +1,6 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, votePolish, closeProjectPolish, restoreToBoard, readBoardAction, importBatch } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, votePolish, closeProjectPolish, restoreToBoard, readBoardAction, importBatch, boardProject } from "@/app/actions/library";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
 import { batchesOf } from "@/lib/boards/entries";
 import { importSummary, noneImported, type BoardStep, type ImportBoard } from "./BoardImport";
@@ -718,7 +718,7 @@ export default function InspoClient({
 
   // ─── Import a board ──────────────────────────────────────────────────────────
   // A board pasted from Are.na, Pinterest or Cosmos: everything on it Criterio can save (websites, images, videos,
-  // posts, texts) comes in batches into a project named after it, and the user lands there. Nothing is created if
+  // posts, texts) comes in batches into the project named after it, made the first time, and the user lands there. Nothing is created if
   // the board cannot be read or has nothing to save.
   const importBoard = useCallback<ImportBoard>(async (input, onStep) => {
     const ref = boardOf(input);
@@ -730,8 +730,11 @@ export default function InspoClient({
     const board = read.data;
     if (!board.ok) return board.reason === "private" ? t.board.private : board.reason === "not-found" ? t.board.notFound : t.board.unavailable(platform);
     if (!board.entries.length) return t.board.none;
-    const project = await createProject(board.name);
-    if (!project) return t.projects.saveFailed;
+    // The board's project: the same one each time this board is imported, here or from the extension
+    const made = await boardProject(board.name).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!made.ok) return made.error;
+    const project = made.data;
+    setProjects((prev) => (prev.some((p) => p.id === project.id) ? prev : [...prev, project]));
     const total = board.entries.length;
     const imported = noneImported();
     const added: InspoItem[] = [];
@@ -760,7 +763,7 @@ export default function InspoClient({
     setSpace(project.id);
     setToast({ ok: true, ...importSummary(t, { imported, skipped: board.skipped, failed, capped: board.capped }) });
     return null;
-  }, [t, createProject, watch, setSpace]);
+  }, [t, watch, setSpace]);
   const renameProject = useCallback(async (id: string, name: string) => {
     const before = projects.find((p) => p.id === id);
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));

@@ -11,7 +11,7 @@ import { addItem, deleteItem, deleteItems, deletableIds, setItemNote, editUserTa
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
-import { createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
+import { createProject, projectForBoard, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
 import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
@@ -103,7 +103,7 @@ const refOf = (e: Entry): NewRef =>
   : e.kind === "text" ? { url: e.page, title: e.title, text: e.text }
   : { url: e.url, title: e.title };
 
-/** One batch of a board's entries (batchesOf in lib/boards/entries.ts), filed in the project made for it (what was
+/** One batch of a board's entries (batchesOf in lib/boards/entries.ts), filed in the board's project (boardProject; what was
  *  already saved goes there too). The results keep the order of the batch. */
 export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
   return withCtx(async (ctx) => {
@@ -111,6 +111,11 @@ export async function importBatch(projectId: string, entries: Entry[]): Promise<
     if (!batch.success) throw new HttpError(400, (await getErrors()).badBody);
     return addMany({ workspaceId: ctx.workspace.id, user: ctx.user }, batch.data.map(refOf), { source: "board", projectId: String(projectId) });
   });
+}
+
+/** The project a board's batches go to: the one already named after the board, made the first time */
+export async function boardProject(name: string) {
+  return withCtx(async (ctx) => projectForBoard(ctx.workspace.id, String(name), ctx.user.id));
 }
 
 // Projects: any member can create, rename and delete them. Deleting one never deletes references.
