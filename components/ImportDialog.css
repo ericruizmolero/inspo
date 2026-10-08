@@ -1,13 +1,13 @@
 /* Import (components/ImportDialog.tsx): a board pasted and imported, then the bookmarks only the extension can read */
 .impd.modal { width: min(560px, 94vw); max-width: none; }
 .impd__body { display: flex; flex-direction: column; gap: var(--space-5); }
-.impd__lead { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
+.impd__lead { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--text-2); }
 .impd__part { display: flex; flex-direction: column; gap: var(--space-2); }
 .impd__part h3 { color: var(--text); }
 .impd__row { display: flex; gap: var(--space-2); align-items: center; }
 .impd__row input { flex: 1; min-width: 0; }
 .impd__row .cr-btn { flex-shrink: 0; }
-.impd__text { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
+.impd__text { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--text-2); }
 .impd__hint { margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 .impd__error { margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--danger); }
 .impd__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
