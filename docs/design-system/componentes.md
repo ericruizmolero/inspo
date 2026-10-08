@@ -304,6 +304,7 @@ Las 8 áreas, marcadas donde la referencia ya cuenta.
 ### Añadir referencia
 `AddInspoModal` · `components/AddInspoModal.tsx` · `.add`
 Pegar enlace, subir, soltar o pegar con ⌘V una imagen, o pegar texto (varias líneas = referencia de texto). Dentro de un proyecto deja elegir áreas. Se abre con N, el "+" o la paleta.
+- Si lo pegado es un tablero de Are.na, Pinterest o Cosmos (`boardOf`, `lib/boards/match.ts`), el botón pasa a "Importar tablero", se van las otras entradas, la nota y las áreas, y la pista dice qué trae. Al importar, el campo se apaga y debajo sale `BoardProgress` (`components/BoardImport.tsx`, `.board-progress`): el `Progress` de bloques y la línea de lo que pasa ("Leyendo tu tablero de Are.na", "Guardando, 10 de 32"). El diálogo se cierra al terminar y el usuario aterriza en el proyecto del tablero. → [decisión](decisiones/2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)
 - El modal plano (`DialogContent` con `.modal__header`), no la ventana moss; el guiño retro es el marco de tinta y los botones con bisel. Dentro, el formulario empaquetado: campos de 44 sin pozo (en Board, `--surface-2`), 12 px entre piezas, las otras dos entradas (`.add__pick`) como recuadros discontinuos transparentes y las áreas (`.add__area`) como pastillas de 28 (transparentes, la elegida invertida). Dos grises en todo el interior (`--add-line`, `--add-quiet`). → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
 
 ### Buscador y barra del agente
@@ -354,6 +355,7 @@ Caja para pegar enlace o imagen, la frase de intención editable y la biblioteca
 ### Primer arranque
 `EmptyStart` · `components/EmptyStart.tsx`
 Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pestañas, cada uno con "Añadir".
+- La caja también acepta un tablero de Are.na, Pinterest o Cosmos: la pista de debajo (`.boardHint`) dice que trae webs, imágenes, vídeos y textos a un proyecto propio, y al importar sale `BoardProgress` del ancho de la caja (`.board`). Lo importado se pinta de una vez al terminar: si entrara lote a lote, la primera referencia se llevaría el primer arranque y su progreso. Al acabar, el aviso de arriba (`.toast`, sin `--error`, con título y detalle que saltan de línea) dice qué entró por tipo y qué se quedó fuera y por qué. Un tablero pegado sin sesión vuelve del login por `?add=` y se importa igual. → [decisión](decisiones/2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)
 
 ### Descubrir: ejemplos, recursos y skills
 `Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`

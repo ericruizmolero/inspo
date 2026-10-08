@@ -26,7 +26,9 @@ Decisiones de cómo construimos, no de cómo se ve.
 ## Contenido de terceros
 
 - Un fichero ajeno que copiamos (un pin, una imagen guardada de una web, un vídeo) guarda su página en `inspo_item.source`, y todo lo que lo cita enlaza esa página, no nuestro fichero.
-- Lo que viene de X o de Pinterest (`staysInside`, `lib/url.ts`) no se enseña sin sesión: un enlace compartido lo nombra y apunta al original.
+- Lo que viene de X, Pinterest, Are.na o Cosmos (`staysInside`, `lib/url.ts`: un post, o una imagen, vídeo o texto cuya página está en una de esas plataformas) no se enseña sin sesión: un enlace compartido lo nombra y apunta al original.
+- Importar un tablero (`lib/boards/`): `match.ts` reconoce la dirección (puro, también en el cliente), `read.ts` lee el tablero, `parse.ts` valida cada respuesta con zod y la convierte en `Found` (página, enlace, imágenes, texto), y `entryOf` decide qué `Entry` es (`entries.ts`). Are.na tiene API pública (`api.are.na/v3`, sin token, 30 llamadas por minuto). Pinterest y Cosmos no: se usan los endpoints que llaman sus propias webs (`/resource/BoardFeedResource/get/` de Pinterest, el GraphQL `GetClusterElements` de Cosmos), no oficiales, y pueden cambiar sin aviso. Una respuesta que no se entiende se trata como la plataforma sin responder, nunca como un tablero a medias. `npm run check:boards` prueba los parsers con respuestas reales guardadas en `scripts/fixtures/boards` (8 de octubre de 2026); `-- --live` lee tableros reales y escribe lo que traen por tipo.
+- Lo importado se guarda por `addMany` (`lib/add-many.ts`, también la ruta por lotes de la extensión): una imagen se copia con su página en `source`, un texto se guarda en una ruta que decide su página (`putText` con `from`, `lib/text-refs.ts`), así importar dos veces no duplica. Los lotes los limita `lib/batch-limits.ts`: 25, o 10 si llevan imágenes. → [decisión](decisiones/2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)
 - Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista). → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
 
 ## Seguridad
