@@ -6,7 +6,7 @@
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
-import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
+import { withCtx, getSession, canManage, HttpError, type ActionResult } from "@/lib/workspace";
 import { addItem, deleteItem, deleteItems, deletableIds, setItemNote, editUserTags } from "@/lib/items";
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
@@ -18,11 +18,15 @@ import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
 import { nameFor } from "@/lib/item-name";
+import { addMany, MAX_PER_BATCH, type AddResult } from "@/lib/add-many";
+import { boardOf, type Platform } from "@/lib/boards/match";
+import { readBoard, BoardError, type BoardFailure } from "@/lib/boards/read";
+import { allow } from "@/lib/rate-limit";
 import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
-import type { CommentAttachment, CommentAnchor, PolishChoice } from "@/types/inspo";
+import type { CommentAttachment, CommentAnchor, InspoItem, PolishChoice } from "@/types/inspo";
 
 /** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
  *  so a failure leaves it for the worker instead of keeping the old vector. */
@@ -59,6 +63,35 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
     if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
     startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
+  });
+}
+
+export type BoardRead =
+  | { ok: true; name: string; platform: Platform; urls: string[]; skipped: number; capped: boolean }
+  | { ok: false; reason: BoardFailure };
+
+/** The websites of a board on Are.na, Pinterest or Cosmos, to import with importBatch. Creates nothing. */
+export async function readBoardAction(input: string): Promise<ActionResult<BoardRead>> {
+  return withCtx(async (ctx) => {
+    const ref = boardOf(String(input ?? ""));
+    if (!ref) throw new HttpError(400, (await getErrors()).badUrl);
+    if (!(await allow(`board:${ctx.user.id}`, 10, 10 * 60 * 1000))) throw new HttpError(429, (await getErrors()).tooMany);
+    try {
+      const b = await readBoard(ref);
+      return { ok: true, name: b.name, platform: b.platform, urls: b.webs.map((w) => w.url), skipped: b.skipped, capped: b.capped };
+    } catch (e) {
+      if (!(e instanceof BoardError)) throw e;
+      console.warn("board not read", e.message);
+      return { ok: false, reason: e.reason };
+    }
+  });
+}
+
+/** One batch of a board's websites, filed in the project made for it (what was already saved goes there too) */
+export async function importBatch(projectId: string, urls: string[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
+  return withCtx(async (ctx) => {
+    if (!Array.isArray(urls) || urls.length > MAX_PER_BATCH) throw new HttpError(400, (await getErrors()).badBody);
+    return addMany({ workspaceId: ctx.workspace.id, user: ctx.user }, urls.map((url) => ({ url: String(url) })), { source: "board", projectId: String(projectId) });
   });
 }
 
