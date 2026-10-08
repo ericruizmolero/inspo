@@ -308,7 +308,7 @@ export function digestGroups(events: TeamEvent[], locale: Locale, projectNames: 
   return groups.sort((a, b) => (a.title === library ? 1 : 0) - (b.title === library ? 1 : 0));
 }
 
-export interface DigestRun { teams: number; sent: number; paused: number; skipped: number; /** Held for another day: too soon since their last one for how long they have been away */ spaced: number; mails: { to: string; subject: string; text: string }[] }
+export interface DigestRun { teams: number; sent: number; paused: number; skipped: number; /** Held for another day: too soon since their last one for how long they have been away */ spaced: number; mails: { to: string; subject: string; text: string; html: string }[] }
 
 /**
  * The morning run. For every team with more than one person: the events since the earliest member's window,
@@ -356,7 +356,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       if (lastOpened < pauseBefore) {
         // A month away: the digest stops on its own, with one email that says so and how to turn it back on
         const p = pausedMail(`${baseUrl()}/settings/account`, locale);
-        run.mails.push({ to: m.email, subject: p.subject, text: p.text });
+        run.mails.push({ to: m.email, subject: p.subject, text: p.text, html: p.html });
         if (!dryRun) { await setEmailPref(m.userId, "digest", false); await sendMail(m.email, p.subject, p.html, p.text); }
         await cover(); run.paused++;
         continue;
@@ -366,7 +366,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       const foot = footOf(m.userId, "digest", team.name);
       // The button opens where most happened: the first group
       const d = digestMail({ summary: digestSummary(theirs, locale), url: groups[0].url, groups }, foot, locale);
-      run.mails.push({ to: m.email, subject: d.subject, text: d.text });
+      run.mails.push({ to: m.email, subject: d.subject, text: d.text, html: d.html });
       if (!dryRun) await sendMail(m.email, d.subject, d.html, d.text, { headers: unsubscribeHeaders(foot.stopUrl) });
       await cover(); run.sent++;
     }

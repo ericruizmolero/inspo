@@ -7,7 +7,7 @@ Qué tocar y en qué orden cuando cambia algo de base.
 1. **Tokens**: en `app/globals.css` (`:root` y `:root[data-theme="light"]`), y la tabla de su página de [Tokens](fundamentos.md) (`fundamentos/color.md`, `tipografia.md`…) en el mismo cambio; la muestra de `/library` lee el valor del CSS vivo, así que se actualiza sola.
 2. **Componentes reutilizables**: en `components/`, con su CSS propio, y su ficha en [Componentes](componentes.md).
 3. **Textos**: en `lib/i18n/en` y `lib/i18n/es` a la vez.
-4. **Base de datos**: cambiar `lib/db/schema.ts`, `npm run db:generate`, revisar el SQL en `drizzle/`. La migración corre en el build de Vercel: si falla, no se despliega. Añadir la tabla nueva a `scripts/seed.ts` (padres primero).
+4. **Base de datos**: cambiar `lib/db/schema.ts`, `npm run db:generate`, revisar el SQL en `drizzle/`. La migración corre en el build de Vercel: si falla, no se despliega. Añadir la tabla nueva a `scripts/seed.ts` (padres primero) y, si lleva contenido de un espacio, a `scripts/copy-workspace.ts` (copia referencias, proyectos, comentarios y ficheros de un workspace a otro en producción; sin `--apply` solo cuenta).
 5. **Decisiones**: un fichero en `docs/design-system/decisiones/` por cada una.
 6. **Comprobar**: `npx tsc --noEmit` siempre; `npm run build` si tocaste configuración, rutas o `next.config.ts`; los `npm run check:*` del área que tocaste (`check:system`, `check:locale`, `check:usage`…); si tocaste `docs/design-system/` o `components/criterio/`, `npm run check:design-system` (muestras, fichas, enlaces y decisiones).
 7. **Desplegar**: push a `main` despliega producción (Vercel, Frankfurt); cada PR tiene su preview con su rama de Neon. La fusión del PR la hace una persona.

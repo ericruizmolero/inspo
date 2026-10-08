@@ -30,6 +30,7 @@ export const DS_GROUPS: { label: string; lead: string; pages: { slug: string; fi
       { slug: "espaciado", file: "fundamentos/espaciado.md", icon: "spacing" },
       { slug: "radios-y-sombras", file: "fundamentos/radios-y-sombras.md", icon: "radius" },
       { slug: "movimiento", file: "fundamentos/movimiento.md", icon: "motion" },
+      { slug: "sonido", file: "fundamentos/sonido.md", icon: "sound" },
       { slug: "iconos", file: "fundamentos/iconos.md", icon: "icons" },
       { slug: "pantalla", file: "fundamentos/pantalla.md", icon: "layout" },
     ],

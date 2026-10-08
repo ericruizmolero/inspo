@@ -31,6 +31,7 @@ const PATHS: Record<string, ReactNode> = {
   spacing: <><path d="M2.5 3v10M13.5 3v10" /><path d="M5 8h6M5 8l1.5-1.5M5 8l1.5 1.5M11 8l-1.5-1.5M11 8l-1.5 1.5" /></>,
   radius: <path d="M2.5 13.5V8a5.5 5.5 0 015.5-5.5h5.5" />,
   motion: <><path d="M2.5 12c3-9 8-9 11 0" /><circle cx="13.5" cy="12" r="1.2" fill="currentColor" stroke="none" /></>,
+  sound: <><path d="M2.5 6.2h2.3L8.5 3.5v9L4.8 9.8H2.5z" /><path d="M11 6a2.8 2.8 0 010 4M13 4.3a5.4 5.4 0 010 7.4" /></>,
   icons: <><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2" /><circle cx="11.25" cy="4.75" r="2.25" /><path d="M2.5 13.5l2.25-4 2.25 4z" /><path d="M9.5 9.5h3.5v3.5h-3.5z" /></>,
   button: <><rect x="1.8" y="4.5" width="12.4" height="7" rx="3.5" /><path d="M5.5 8h5" /></>,
   brand: <><circle cx="8" cy="9" r="4.5" /><circle cx="6.3" cy="8.5" r=".6" fill="currentColor" stroke="none" /><circle cx="9.7" cy="8.5" r=".6" fill="currentColor" stroke="none" /><circle cx="8" cy="10.8" r=".6" fill="currentColor" stroke="none" /><path d="M6 4.8L4.5 2.5M10 4.8l1.5-2.3" /></>,
