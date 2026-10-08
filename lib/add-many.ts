@@ -1,25 +1,28 @@
-// Saving many addresses at once: the extension's imports (bookmarks, X, a Pinterest board) and a board
+// Saving many things at once: the extension's imports (bookmarks, X, a Pinterest board) and a board
 // pasted in the app (Are.na, Pinterest, Cosmos). No screenshots arrive (nobody was looking at those pages):
-// a site gets its thumbnail the way a pasted URL does, a post on X gets its picture once imported. A pin
-// comes with its image, which is copied and becomes the reference itself, as an image saved with the
-// right-click menu does. Callers pace themselves: one batch per request, the next when this one answers.
+// a site gets its thumbnail the way a pasted URL does, a post on X gets its picture once imported. An image
+// (a pin, a block on Are.na) is copied and becomes the reference itself, as an image saved with the right-click
+// menu does; a text (a block on Are.na) is kept whole, as a pasted text is. Either keeps its page as `source`.
+// Callers pace themselves: one batch per request, the next when this one answers.
 import "server-only";
 import { after } from "next/server";
-import { addItem, findByWeb, findByWebs, setThumbnail, setItemDate } from "@/lib/items";
+import { addItem, findByWeb, findByWebs, setTags, setThumbnail, setItemDate } from "@/lib/items";
 import { activeProjectFor, fileItems } from "@/lib/projects";
 import { nameFor } from "@/lib/item-name";
 import { importedMediaKey, importedMediaUrls, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/lib/media";
 import { putFile } from "@/lib/storage";
 import { fetchFile } from "@/lib/remote-file";
 import { ensurePost, postThumb, postDay } from "@/lib/posts";
+import { cleanText, deleteTextFile, importedTextUrl, putText, textTags, TEXT_TITLE_MAX } from "@/lib/text-refs";
+import { embedItems } from "@/lib/embed";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
+import { MAX_PER_BATCH } from "@/lib/batch-limits";
 import { taggerEnabled } from "@/lib/tagger";
 import { startTagJob } from "@/lib/tag-jobs";
 import { HttpError } from "@/lib/workspace-core";
 import type { InspoItem } from "@/types/inspo";
 
-/** Addresses per request: enough to move fast, few enough to answer well within the limit */
-export const MAX_PER_BATCH = 25;
+export { MAX_PER_BATCH };
 /** Sites read at once while naming (each read has its own time limit) */
 const NAME_AT_ONCE = 5;
 /** Posts imported and items tagged at once, after the response */
@@ -30,9 +33,10 @@ const MAX_IMAGE_TRIES = 3;
 export type AddStatus = "added" | "existed" | "invalid" | "error";
 export interface AddResult { url: string; status: AddStatus; id?: string }
 
-/** One address to save. `image` makes the item that image, found on the page at `url`; `date` (YYYY-MM-DD)
- *  is the day it was saved or published elsewhere. Both arrive unchecked and are checked here. */
-export interface NewWeb { url: string; title?: string; date?: unknown; image?: unknown }
+/** One thing to save, at `url`. `image` makes the item that image, found on the page at `url`; `text` makes it
+ *  those words, found on the page at `url`; `date` (YYYY-MM-DD) is the day it was saved or published elsewhere.
+ *  They arrive unchecked and are checked here. */
+export interface NewRef { url: string; title?: string; date?: unknown; image?: unknown; text?: unknown }
 
 interface Who { workspaceId: string; user: { id: string; name?: string | null; email: string } }
 
@@ -58,12 +62,12 @@ const imagesOf = (image: unknown): string[] =>
   (Array.isArray(image) ? image : [image]).filter((s): s is string => typeof s === "string" && /^https?:\/\//.test(s)).slice(0, MAX_IMAGE_TRIES);
 
 /**
- * Saves up to MAX_PER_BATCH addresses (the caller checks the count) and files them.
+ * Saves up to MAX_PER_BATCH things (the caller checks the count) and files them. Results keep the order of `items`.
  * With `projectId`, what is new goes there and so does what the workspace already had (a reference can be in
  * several projects). Without it, only what is new is filed, in the project this person was working in.
  * `source` names the import in the logs ("pinterest", "arena", "bookmarks").
  */
-export async function addMany({ workspaceId, user }: Who, items: NewWeb[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[] }> {
+export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[] }> {
   const { source } = opts;
   const author = user.name || user.email;
 
@@ -79,6 +83,26 @@ export async function addMany({ workspaceId, user }: Who, items: NewWeb[], opts:
     seen.add(web);
     try {
       const dateIso = dateOf(it.date);
+      const words = it.text === undefined ? "" : cleanText(it.text);
+      if (words) {
+        const at = importedTextUrl(workspaceId, web);
+        const had = await findByWeb(workspaceId, at);
+        if (had) return { url: raw, status: "existed", id: had.id };
+        const stored = await putText(workspaceId, words, web);
+        const firstLine = words.split("\n").find((l) => l.trim())?.replace(/^[#>\-*\s]+/, "").replace(/[*_`]/g, "");
+        try {
+          const item = await addItem(workspaceId, {
+            name: clip(it.title, TEXT_TITLE_MAX) || clip(firstLine, TEXT_TITLE_MAX) || new URL(web).hostname.replace(/^www\./, ""),
+            web: stored, source: web, type: "inspiration", author, createdBy: user.id, dateIso,
+          });
+          await setTags(workspaceId, item.web, await textTags(item.web));
+          added.push(item);
+          return { url: raw, status: "added", id: item.id };
+        } catch (e) {
+          if (!(e instanceof HttpError && e.status === 409)) await deleteTextFile(workspaceId, stored).catch(() => {});
+          throw e;
+        }
+      }
       const images = imagesOf(it.image);
       if (images.length) {
         const had = await findByWebs(workspaceId, importedMediaUrls(workspaceId, web));
@@ -124,9 +148,13 @@ export async function addMany({ workspaceId, user }: Who, items: NewWeb[], opts:
     if (projectId) await fileItems(workspaceId, projectId, ids, user.id).catch((e) => console.error(`add many (${source}): not filed`, e));
   }
 
-  // Posts on X get their copies and picture; then the AI tags, as when a URL is pasted in the app
-  if (added.length && (taggerEnabled() || added.some((i) => mediaKindOf(i.web) === "post"))) {
-    after(() => eachLimit(added, FINISH_AT_ONCE, async (item) => {
+  // Posts on X get their copies and picture; then the AI tags, as when a URL is pasted in the app.
+  // A text is not tagged (its first lines are its tags, set above): it only gets its meaning vector.
+  const texts = added.filter((i) => mediaKindOf(i.web) === "text").map((i) => i.id).filter((x): x is string => !!x);
+  if (texts.length) after(() => embedItems(texts).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+  const others = added.filter((i) => mediaKindOf(i.web) !== "text");
+  if (others.length && (taggerEnabled() || others.some((i) => mediaKindOf(i.web) === "post"))) {
+    after(() => eachLimit(others, FINISH_AT_ONCE, async (item) => {
       try {
         if (mediaKindOf(item.web) === "post") {
           const post = await ensurePost(item.web);

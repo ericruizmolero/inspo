@@ -3,7 +3,7 @@
 // a board pasted in the app. The extension paces itself: one batch per request, the next when this one answers.
 import { NextRequest } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
-import { addMany, MAX_PER_BATCH, type NewWeb } from "@/lib/add-many";
+import { addMany, MAX_PER_BATCH, type NewRef } from "@/lib/add-many";
 import { getErrors } from "@/lib/i18n";
 
 export const maxDuration = 120; // posts are copied and items tagged in after(), once the response is sent
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (!Array.isArray(body.items) || body.items.length > MAX_PER_BATCH) {
     return Response.json({ error: (await getErrors()).badBody }, { status: 400 });
   }
-  const items: NewWeb[] = body.items.map((it) => ({
+  const items: NewRef[] = body.items.map((it) => ({
     url: typeof it?.url === "string" ? it.url : "",
     title: typeof it?.title === "string" ? it.title : undefined,
     date: it?.date, image: it?.image,
