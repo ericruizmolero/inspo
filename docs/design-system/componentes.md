@@ -476,6 +476,7 @@ Póster que solo carga el iframe del proveedor al pulsarlo.
 ### Conversación
 `CommentsPanel` · `components/CommentsPanel.tsx` · `.cm`
 La nota original y los hilos, con respuestas a un nivel. Capturas pegadas con ⌘V, arrastradas o con el clip; lightbox con ← → y Esc. Enter envía, Shift+Enter salta línea.
+- El texto de todos los comentarios va en `--text`, sea de quien sea (`.cm-msg__body`); el papel apagado es solo del avance de dos líneas bajo la tarjeta (`Comment`). → [decisión](decisiones/2026-10-08-todos-los-comentarios-del-hilo-llevan-el-mismo-color-de-texto.md)
 - La variante `drawer` no se usa.
 
 ### Criterio de la referencia
@@ -522,6 +523,10 @@ Aceptar la invitación a un equipo; si el correo no coincide, cierra sesión y v
 ### Extensión
 `InstallGuide` · `ConnectPanel` · `app/extension/`
 Pasos para instalar el zip en `chrome://extensions` y conectar la extensión a un espacio generando su clave.
+
+### Guardar (extensión)
+`extension/chrome/popup.html` · `popup.js` · `popup.css` · `.field` · `.select--plain` · `.pill`
+El popup: la captura de la pestaña como baldosa, el sitio (favicon, título, host) y el formulario de Añadir con los tokens del cromo: Nota, Proyecto y Áreas del sistema, cada uno con su etiqueta pequeña encima (`.field__label`), el placeholder de la nota de una línea y el proyecto a todo el ancho desde la izquierda. Guardar es el único ember; las áreas son pastillas oscuras y solo la elegida se invierte a papel. → [etiqueta encima del campo](decisiones/2026-10-08-el-formulario-del-popup-lleva-la-etiqueta-encima-del-campo.md), [pastillas oscuras](decisiones/2026-10-08-las-areas-del-popup-son-pastillas-oscuras.md)
 
 ### Importar (extensión)
 `extension/chrome/import.html` · `import.js` · `import.css` · `.where` · `.dlg`

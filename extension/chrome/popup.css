@@ -173,8 +173,13 @@ h1, p { margin: 0; }
 }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
 .input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library) */
-.input--note { height: auto; min-height: 62px; padding: 9px 12px; resize: none; font: inherit; font-size: 15px; line-height: 1.4; }
+/* A field as the system's TextField: the label small and quiet above the well, never inside it (Eric, 08-10:
+   the inline label and the three-line placeholder left the note cut and the project truncated) */
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field__label { font-size: 12px; font-weight: 500; color: var(--chrome-text-muted); }
+/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library).
+   Two lines of 14 px, the placeholder one of them */
+.input--note { height: auto; min-height: 60px; padding: 9px 12px; resize: none; font: inherit; font-size: 14px; line-height: 1.45; }
 .input--note[hidden] { display: none; }
 
 /* Import row: what is saved elsewhere, one tap away under Save */
@@ -240,6 +245,9 @@ h1, p { margin: 0; }
 }
 .select svg { flex-shrink: 0; color: var(--field-ink); }
 .select select option { color: var(--ink); }
+/* Labelled from above (.field): the name of the project reads from the left, at the field's size */
+.select--plain select { text-align: left; font-size: 14px; }
+.select--plain svg { color: var(--chrome-text-muted); }
 /* The areas: the Chip as the app's Add form paints it (.add__area): a 28 px pill, transparent, a quiet
    grey line and muted text. Only a picked one fills, inverted to paper with ink text, so the dark popup
    stays dark and ember stays the Save button's alone */

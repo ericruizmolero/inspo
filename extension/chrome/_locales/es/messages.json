@@ -20,8 +20,11 @@
   "save": {
     "message": "Guardar"
   },
+  "noteLabel": {
+    "message": "Nota"
+  },
   "noteHint": {
-    "message": "¿Qué te ha llamado la atención? Un sonido, una transición, el menú… (opcional)"
+    "message": "¿Qué te ha llamado la atención? (opcional)"
   },
   "saving": {
     "message": "Guardando…"
