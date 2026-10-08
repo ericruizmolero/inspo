@@ -9,7 +9,7 @@ import { Button, Card, PromptInput, SegmentedControl } from "@/components/criter
 import s from "./EmptyStart.module.css";
 import AddToLibrary from "./AddToLibrary";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
-import { BoardProgress, type BoardStep, type ImportBoard } from "./BoardImport";
+import { BoardProgress, useBoardImport, type BoardStep, type ImportBoard } from "./BoardImport";
 
 // Always 9 sites (3×3 grid): the most used and the most popular right now, picked by hand
 // with a screenshot that looks perfect. If one leaves the directory, the first site of each
@@ -79,15 +79,15 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
     setBusy(true);
     try { await onAddUrl(web); } finally { setBusy(false); }
   };
-  const [ownStep, setStep] = useState<BoardStep | null>(null);
+  const { step: ownStep, run } = useBoardImport(onImportBoard);
   const step = ownStep ?? arriving ?? null;
   const board = boardOf(raw);
   const importBoard = async () => {
     setBusy(true);
     try {
-      const failed = await onImportBoard(raw, setStep);
+      const failed = await run(raw);
       if (failed) setError(failed);
-    } finally { setBusy(false); setStep(null); }
+    } finally { setBusy(false); }
   };
   const submit = () => {
     if (board) { importBoard(); return; }

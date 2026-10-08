@@ -11,7 +11,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Button, Chip, Icon, IconButton, TextArea } from "@/components/criterio";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
-import { BoardProgress, type BoardStep, type ImportBoard } from "./BoardImport";
+import { BoardProgress, useBoardImport, type ImportBoard } from "./BoardImport";
 import "./TextRef.css";
 
 export interface NewInspoInput {
@@ -71,11 +71,10 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
   const web = normalizeWebUrl(raw);
   // A board instead of a site: the dialog stays open while it comes in, then the user lands in its project
   const board = !file && !writing ? boardOf(raw) : null;
-  const [step, setStep] = useState<BoardStep | null>(null);
+  const { step, run } = useBoardImport(onImportBoard);
   const importBoard = async () => {
     setError("");
-    const failed = await onImportBoard(raw, setStep);
-    setStep(null);
+    const failed = await run(raw);
     if (failed) setError(failed); else close();
   };
   const suggested = !file && web ? typeFromUrl(web) : "inspiration";

@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { PLATFORM_NAME, type Platform } from "@/lib/boards/match";
 import { KINDS, SKIP_REASONS, type Kind, type Skipped } from "@/lib/boards/entries";
 import type { Dict } from "@/lib/i18n/en";
@@ -29,6 +30,15 @@ export function importSummary(t: Dict, r: { imported: Record<Kind, number>; skip
       r.capped ? t.board.capped : "",
     ].filter(Boolean).join(" "),
   };
+}
+
+/** One import at a time from a paste field (first run, Add, Import): its step while it runs, and what went wrong */
+export function useBoardImport(importBoard: ImportBoard) {
+  const [step, setStep] = useState<BoardStep | null>(null);
+  const run = useCallback(async (input: string): Promise<string | null> => {
+    try { return await importBoard(input, setStep); } finally { setStep(null); }
+  }, [importBoard]);
+  return { step, run };
 }
 
 /** The Progress blocks and the line that says what is happening, under the paste field */
