@@ -1411,14 +1411,18 @@ video.vp__media { object-fit: contain; }
 .add__pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .add__pick u { text-underline-offset: 3px; color: var(--text); }
 .add__pick > .cr-icon { flex-shrink: 0; }
-/* The areas: the dashboard's pills (28 high, 12 px, transparent) instead of the paper Chip; chosen inverts, like the system's Chip */
-.modal .add .add__area.cr-chip {
-  gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--add-line); background: transparent;
-  color: var(--add-quiet); font-size: var(--fs-label); font-weight: 500;
+/* Line pills (.pills--line, Add and Improve with AI): the dashboard's pills (28 high, 12 px, transparent) instead of
+ * the paper Chip. The line is the soft border; chosen is the same glass as the Island's live tab (no border, no white
+ * fill: Eric, 08-10, "los borders que no sean blancos, más minimalistas") */
+.modal .pills--line { gap: 6px; }
+.modal .pills--line .cr-chip {
+  gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--border); background: transparent;
+  color: var(--muted); font-size: var(--fs-label); font-weight: 500;
+  transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
 }
-.modal .add .add__area.cr-chip:hover { color: var(--text); border-color: var(--text); }
-.modal .add .add__area.cr-chip.is-pressed { background: var(--text); border-color: var(--text); color: var(--bg); }
-.modal .add .pills { gap: 6px; }
+.modal .pills--line .cr-chip:hover { color: var(--text); border-color: var(--border-strong); }
+.modal .pills--line .cr-chip.is-pressed { background: var(--glass-on); border-color: transparent; color: var(--text); }
+.modal .pills--line .cr-chip-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* A window's footer holding Cancel and the action: both to the right */
 .modal-window__footer > .modal__footer { margin-left: auto; padding-top: 0; }
 .new-team { display: flex; flex-direction: column; gap: 16px; }

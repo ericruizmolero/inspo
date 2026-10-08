@@ -182,9 +182,9 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           </div>
 
           {project && !writing && (
-            <div className="pills" role="group" aria-label={t.add.areas}>
+            <div className="pills pills--line" role="group" aria-label={t.add.areas}>
               {SYSTEM_AREAS.map((a) => (
-                <Chip key={a} className="add__area" pressed={areas.includes(a)} onClick={() => toggleArea(a)}>
+                <Chip key={a} pressed={areas.includes(a)} onClick={() => toggleArea(a)}>
                   {areaIcon(a, 13)}{t.system.areas[a]}
                 </Chip>
               ))}

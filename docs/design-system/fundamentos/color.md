@@ -56,7 +56,7 @@ El cromo es sólido: sin cristal ni desenfoque en barras ni superficies. El cris
 
 ## Reglas
 
-- **Ember es el primario** y lo que era primario no se baja. Un punto cálido por vista. → [lo que era primario](../decisiones/2026-10-07-lo-que-era-primario-sigue-siendo-primario.md)
+- **Ember es el primario** y lo que era primario no se baja. Un punto cálido por vista. → [lo que era primario](../decisiones/2026-10-07-lo-que-era-primario-sigue-siendo-primario.md) Única excepción en texto: los títulos `###` y más hondos del criterio.md en bruto (`--md-head-2`). → [dos colores de título](../decisiones/2026-10-08-el-markdown-en-bruto-lleva-dos-colores-de-titulo.md)
 - **Butter solo para lo que sugiere la app**: globos, consejos, tooltips.
 - **Moss es la biblioteca**: anillo al día, éxito, barra de las ventanas. → [ventanas](../decisiones/2026-10-07-toda-ventana-lleva-barra-moss-y-sigue-al-tema.md)
 - Nunca colores sueltos para UI: tokens o `color-mix()` con tokens. Nunca `#fff` ni `rgba(255,255,255,…)`. → [tema claro/oscuro](../decisiones/2026-09-21-tema-claro-oscuro.md)

@@ -2,12 +2,14 @@
 // "Improve with AI": before the model works, the team says what it wants from the pass (put order, sharpen the
 // writing, read the references again), in which areas (any of the eight), and anything else in its own words. Under
 // that, what to expect from it. The choice travels with the run (SystemFocus, lib/system.ts): what is left out stays as it was.
+// A long form, so the flat modal with the packed form inside, like Add (decision of 2026-10-07): no moss bar, one title,
+// line pills, no paper card.
 import { useState } from "react";
 import { IMPROVE_AIMS, IMPROVE_NOTE_MAX, SYSTEM_AREAS, type ImproveAim, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
-import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { useT } from "./I18nProvider";
 import { areaIcon } from "./area-icons";
-import { Button, Card, Chip, Switch, TextArea } from "@/components/criterio";
+import { Button, Chip, IconButton, Switch, TextArea } from "@/components/criterio";
 import "./ImproveModal.css";
 
 export default function ImproveModal({ system, onRun, onClose }: {
@@ -34,14 +36,12 @@ export default function ImproveModal({ system, onRun, onClose }: {
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogWindow className="imp" bar={m.bar} heading={t.system.improve} closeLabel={t.common.close}
-        footer={
-          <div className="modal__footer">
-            <Button size="s" onClick={onClose}>{t.common.cancel}</Button>
-            <Button size="s" variant="primary" type="submit" form="improve-ai" icon="sparkle" disabled={!ready}>{m.run}</Button>
-          </div>
-        }>
-        <form id="improve-ai" className="imp__body" onSubmit={(e) => { e.preventDefault(); run(); }}>
+      <DialogContent className="imp">
+        <div className="modal__header">
+          <DialogTitle className="t-title-s">{t.system.improve}</DialogTitle>
+          <DialogClose render={<IconButton icon="close" variant="default" size="s" label={t.common.close} />} />
+        </div>
+        <form id="improve-ai" className="modal__body imp__body" onSubmit={(e) => { e.preventDefault(); run(); }}>
           <DialogDescription className="imp__lead">{m.lead}</DialogDescription>
 
           <section className="imp__group">
@@ -59,10 +59,10 @@ export default function ImproveModal({ system, onRun, onClose }: {
 
           <section className="imp__group">
             <h3 className="t-label imp__label">{m.areasLabel}</h3>
-            <div className="pills" role="group" aria-label={m.areasLabel}>
+            <div className="pills pills--line" role="group" aria-label={m.areasLabel}>
               <Chip pressed={all} onClick={() => setAreas(all ? new Set() : new Set(SYSTEM_AREAS))}>{m.allAreas}</Chip>
               {SYSTEM_AREAS.map((a) => (
-                <Chip key={a} className="imp__area" pressed={areas.has(a)} onClick={() => setAreas((s) => toggle(s, a))}>
+                <Chip key={a} pressed={areas.has(a)} onClick={() => setAreas((s) => toggle(s, a))}>
                   {areaIcon(a, 13)}{t.system.areas[a]}
                 </Chip>
               ))}
@@ -74,7 +74,9 @@ export default function ImproveModal({ system, onRun, onClose }: {
             <TextArea rows={2} maxLength={IMPROVE_NOTE_MAX} value={note} onChange={(e) => setNote(e.target.value)} placeholder={m.notePlaceholder} />
           </label>
 
-          <Card as="section" tone="paper" className="imp__expect" eyebrow={m.expectLabel}>
+          {/* What to expect: read once, so quiet text over a line, not a card of its own */}
+          <section className="imp__group imp__expect">
+            <h3 className="t-label imp__label">{m.expectLabel}</h3>
             <ul>
               <li>{m.expect.words}</li>
               <li>{m.expect.time}</li>
@@ -82,9 +84,14 @@ export default function ImproveModal({ system, onRun, onClose }: {
               <li>{m.expect.empty}</li>
               <li>{m.expect.undo}</li>
             </ul>
-          </Card>
+          </section>
+
+          <div className="modal__footer">
+            <Button size="s" onClick={onClose}>{t.common.cancel}</Button>
+            <Button size="s" variant="primary" type="submit" icon="sparkle" disabled={!ready}>{m.run}</Button>
+          </div>
         </form>
-      </DialogWindow>
+      </DialogContent>
     </Dialog>
   );
 }

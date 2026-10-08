@@ -49,7 +49,7 @@ Encendido y apagado: pista hundida (copia el pozo de la casilla), perilla de pap
 ### Chip
 `Chip` · `.cr-chip` · `.pill` · muestra: pastillas
 Etiquetas con borde de tinta: paper (por defecto), butter (sugerencias), ember (una regla activa), moss (bibliotecas), chrome (sobre el cromo y en las sugerencias de los vacíos). Con `onClick` es un botón; `pressed` lo invierte a tinta con texto papel (con borde papel en Board); `onRemove` añade una x (un filtro). Elegido no es ember. `.pill` es el nombre viejo; quedan dos usos.
-- Dentro de Añadir (`.add__area`) la Chip se pinta como pastilla de 28, transparente, con los dos grises del formulario. → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
+- Dentro de un formulario en el modal plano (Añadir, Mejorar con IA) las Chips van en `.pills--line` (`app/globals.css`): pastillas de 28, transparentes, línea suave `--border` y texto `--muted`; la elegida va en el cristal de la Isla (`--glass-on`), sin borde, no invertida a blanco. → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md), [Mejorar con IA en el modal plano](decisiones/2026-10-08-mejorar-con-ia-es-el-modal-plano-sin-barra-ni-tarjeta.md)
 - Las áreas del popup de la extensión (`.pill` en `extension/chrome/popup.css`) van igual: oscuras y calladas, solo la elegida se invierte a papel. → [decisión](decisiones/2026-10-08-las-areas-del-popup-son-pastillas-oscuras.md)
 
 ### Tarjeta
@@ -307,7 +307,7 @@ Las 8 áreas, marcadas donde la referencia ya cuenta.
 ### Añadir referencia
 `AddInspoModal` · `components/AddInspoModal.tsx` · `.add`
 Pegar enlace, subir, soltar o pegar con ⌘V una imagen, o pegar texto (varias líneas = referencia de texto). Dentro de un proyecto deja elegir áreas. Se abre con N, el "+" o la paleta.
-- El modal plano (`DialogContent` con `.modal__header`), no la ventana moss; el guiño retro es el marco de tinta y los botones con bisel. Dentro, el formulario empaquetado: campos de 44 sin pozo (en Board, `--surface-2`), 12 px entre piezas, las otras dos entradas (`.add__pick`) como recuadros discontinuos transparentes y las áreas (`.add__area`) como pastillas de 28 (transparentes, la elegida invertida). Dos grises en todo el interior (`--add-line`, `--add-quiet`). → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
+- El modal plano (`DialogContent` con `.modal__header`), no la ventana moss; el guiño retro es el marco de tinta y los botones con bisel. Dentro, el formulario empaquetado: campos de 44 sin pozo (en Board, `--surface-2`), 12 px entre piezas, las otras dos entradas (`.add__pick`) como recuadros discontinuos transparentes y las áreas como pastillas de línea (`.pills--line`: 28 de alto, transparentes, la elegida en cristal). Dos grises en todo el interior (`--add-line`, `--add-quiet`). → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
 
 ### Buscador y barra del agente
 `SearchBar` · `components/SearchBar.tsx` · `.sb`
@@ -419,7 +419,7 @@ La vista Markdown: el fichero con índice lateral y un punto de estado por área
 - En teléfono el índice es una fila que se desplaza de lado y la barra del fichero otra, sin la pista de texto: el fichero empieza en la primera pantalla. → [móvil](decisiones/2026-10-06-en-movil-cada-vista-cabe-en-la-primera-pantalla.md)
 ### Visor y editor Markdown
 `SystemMarkdown` · `components/SystemMarkdown.tsx` · `components/SystemMarkdown.css` · `.mdv`
-El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. El panel sigue el tema: oscuro en oscuro, hoja blanca en claro, con sus colores en variables `--md-*`. → [decisión](decisiones/2026-10-06-el-markdown-sigue-el-tema.md) Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
+El fichero en un panel de código con el resaltado de un editor, o con aspecto de documento. El panel sigue el tema: oscuro en oscuro, hoja blanca en claro, con sus colores en variables `--md-*`. → [decisión](decisiones/2026-10-06-el-markdown-sigue-el-tema.md) En bruto, los títulos van en dos colores: `#` y `##` en moss (`--md-head`), `###` y más hondos en ember (`--md-head-2`, el ember del tema Paper en claro). → [dos colores de título](decisiones/2026-10-08-el-markdown-en-bruto-lleva-dos-colores-de-titulo.md) Cada bloque se edita en el sitio (guarda al dejar de teclear o con ⌘Enter).
 - Aspecto Documento: cada referencia citada es una fila con su captura (144×90) a la izquierda y, en una columna, su nombre, lo que se toma y lo que se dijo. → [decisión](decisiones/2026-10-06-referencias-del-documento-como-cita-con-captura.md)
 - Aspecto Documento: una tabla de Markdown se pinta como tabla (`.mdv-tr`, `.mdv-td`), con líneas entre filas y sin caja. → [decisión](decisiones/2026-10-06-tablas-del-documento-como-tabla.md)
 - Tecla C: modo comentar con pines en el punto exacto; Enter envía el pin.
@@ -436,7 +436,7 @@ La flecha junto a Copiar: "Descargar .md" y "Abrir en un chat" (Claude, ChatGPT,
 
 ### Mejorar con IA
 `ImproveModal` · `components/ImproveModal.tsx` · `.imp`
-Antes de la pasada del modelo se elige el objetivo (ordenar, afinar la escritura, releer referencias), las áreas y un texto libre. Pregunta antes de gastar.
+Antes de la pasada del modelo se elige el objetivo (ordenar, afinar la escritura, releer referencias), las áreas y un texto libre. Pregunta antes de gastar. Es el modal plano con el formulario empaquetado, como Añadir: `.modal__header` con el único título ("Mejorar con IA" en `t-title-s`) y cierre `IconButton` default s, sin barra moss ni segundo encabezado; los objetivos son filas con `Switch`; las áreas, Chips en `.pills--line`; el campo sin pozo (en Board, `--surface-2`) con el foco en el borde; "Qué puedes esperar" es texto apagado sobre una línea `--border`, no una tarjeta de papel; el pie (Cancelar y Mejorar en s) dentro del formulario. → [decisión](decisiones/2026-10-08-mejorar-con-ia-es-el-modal-plano-sin-barra-ni-tarjeta.md)
 
 ### Miniatura de referencia
 `Thumb` · `components/Thumb.tsx`
@@ -493,7 +493,7 @@ Cuenta (nombre, foto, tema, idioma), espacio, miembros e invitaciones, claves de
 
 ### Panel de actividad
 `AdminPanel` · `AreaThumb` · `app/admin/AdminPanel.tsx` · `.ad-kpi`
-Cifras, gráficos de columnas en SVG, personas, feedback y accesos. `AreaThumb` dibuja mini interfaces de 40 × 28 por zona de la app.
+Cifras, gráficos de columnas en SVG, personas, feedback y accesos. `AreaThumb` dibuja mini interfaces de 40 × 28 por zona de la app. El periodo (7, 30, 90 días) es `PeriodSwitch` (`app/admin/PeriodSwitch.tsx`): `SegmentedControl` de papel en talla s, como todo control de Ajustes, Actividad y `/admin` (Eric, 08-10: "estos tabs tienen que ser más pequeñas"). → [talla s](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 
 ## Públicas
 
