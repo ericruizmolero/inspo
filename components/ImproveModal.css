@@ -1,27 +1,30 @@
-/* "Improve with AI" (components/ImproveModal.tsx): what the pass should do, where, and what to expect from it */
+/* "Improve with AI" (components/ImproveModal.tsx): what the pass should do, where, and what to expect from it.
+ * The flat modal with the packed form inside, like Add (app/globals.css, .add): fields a step lighter than the panel
+ * and without the sunken well, one grey for every line and one for every quiet text, line pills for the areas */
 .modal.imp { max-width: 520px; }
-.imp__body { display: flex; flex-direction: column; gap: 22px; }
+.imp__body {
+  gap: 20px;
+  --imp-quiet: var(--muted);
+  --field-ink: var(--text); --field-border: var(--border-strong); --field-stroke: 1px;
+  --field-placeholder: var(--imp-quiet); --sunken: none;
+}
+:root:not([data-theme="light"]) .imp__body { --field: var(--surface-2); }
+.imp__body .cr-textarea:focus-visible { outline: none; border-color: var(--text); }
 .imp__lead { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .imp__group { display: flex; flex-direction: column; gap: 8px; margin: 0; }
 /* A group's label (.t-label on the element) */
 .imp__label { margin: 0; color: var(--text); }
-.imp__label small { font-size: inherit; font-weight: var(--fw-regular); color: var(--text-2); }
+.imp__label small { font-size: inherit; font-weight: var(--fw-regular); color: var(--imp-quiet); }
 /* An aim: the row toggles, the system's Switch at its end */
 .imp__aims { display: flex; flex-direction: column; gap: 2px; margin: 0 -10px; }
-.imp-aim { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 10px; border-radius: var(--radius-md); color: var(--text); cursor: pointer; }
+.imp-aim { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: var(--radius-md); color: var(--text); cursor: pointer; }
 .imp-aim:hover { background: var(--surface-2); }
 .imp-aim__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .imp-aim__text b { font-size: var(--fs-ui); font-weight: var(--fw-medium); }
 .imp-aim__text span { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
-/* The areas: the system's Chip as a toggle. The window's ember belongs to "Run", so a chosen area inverts */
-.imp__area.cr-chip { gap: 6px; }
-.imp__group .cr-chip-button { font-weight: var(--fw-medium); }
-.imp__group .cr-chip-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* What to expect: a paper Card, ringed so it reads on the paper window; quieter than the choices, it is read once */
-.imp__expect.cr-card { border: 1px solid var(--border); }
-/* A paper card keeps Paper's text roles, also inside the dark window on Board */
-.imp__expect.cr-card { --text: var(--ink); --text-2: #5A5850; }
-.imp__expect .cr-card-eyebrow { font-weight: var(--fw-medium); opacity: 1; color: var(--text); }
+/* What to expect: quiet text over a line, read once; no card of its own */
+.imp__expect { padding-top: 16px; border-top: 1px solid var(--border); }
 .imp__expect ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .imp__expect li { position: relative; padding-left: 14px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
-.imp__expect li::before { content: ""; position: absolute; left: 2px; top: 0.62em; width: 4px; height: 4px; border-radius: 50%; background: var(--text-2); }
+.imp__expect li::before { content: ""; position: absolute; left: 2px; top: 0.62em; width: 4px; height: 4px; border-radius: 50%; background: var(--imp-quiet); }
+.imp__body .modal__footer { padding-top: var(--space-2); }

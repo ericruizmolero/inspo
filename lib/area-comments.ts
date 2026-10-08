@@ -6,6 +6,7 @@ import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
+import { inBackground, notifyReply, notifyProposalResolved } from "./notify";
 import { NEVER_MAX, SYSTEM_AREAS, cleanDecision, type ProjectSystem, type SystemArea } from "@/types/system";
 
 const A = schema.systemAreaComment;
@@ -115,6 +116,12 @@ export async function addAreaComment(organizationId: string, projectId: string, 
   if (!text) throw new HttpError(400, (await getErrors()).badBody);
   const row = { id: newId(), projectId, organizationId, area: key, authorId: author.id, authorName: author.name, body: text, about, createdAt: new Date() };
   await db.insert(A).values(row);
+  // An answer to a pin: whoever left the pin hears of it by email, once this has answered (lib/notify.ts)
+  const to = about && "pin" in about ? about.pin.to : undefined;
+  if (to) {
+    const [pin] = await db.select({ authorId: A.authorId, body: A.body }).from(A).where(and(eq(A.organizationId, organizationId), eq(A.id, to))).limit(1);
+    if (pin) inBackground(async () => { await notifyReply(organizationId, { toUserId: pin.authorId, fromUserId: author.id, fromName: author.name, mine: pin.body, theirs: text, path: `/?in=${encodeURIComponent(projectId)}&view=system` }); });
+  }
   return { id: row.id, kind: "area", authorId: author.id, authorName: author.name, authorImage: author.image ?? null, body: text, createdAt: row.createdAt.toISOString(), mine: true, ...(about ? { about } : {}) };
 }
 
@@ -210,5 +217,8 @@ export async function resolveProposal(organizationId: string, id: string, accept
     if (about.proposal.never !== (current?.never ?? "")) await setAreaNever(organizationId, row.projectId, row.area, about.proposal.never);
   }
   await db.update(A).set({ about: { proposal: { ...about.proposal, state: accept ? "accepted" : "rejected", resolvedBy: user.name } } }).where(eq(A.id, row.id));
+  // Whoever proposed it hears the answer by email, once this has answered (lib/notify.ts)
+  const [p] = await db.select({ name: P.name }).from(P).where(eq(P.id, row.projectId)).limit(1);
+  inBackground(async () => { await notifyProposalResolved(organizationId, { toUserId: row.authorId, fromUserId: user.id, fromName: user.name, accepted: accept, area: row.area, projectId: row.projectId, projectName: p?.name ?? "", decision: about.proposal.decision }); });
   return getSystem(organizationId, row.projectId);
 }

@@ -4,10 +4,7 @@ Decisiones de cómo construimos, no de cómo se ve.
 
 ## Stack
 
-- **Next.js 16** (App Router). Antes de tocarlo, leer la doc en `node_modules/next/dist/docs/` (AGENTS.md).
-- React 19, Tailwind 4 + CSS propio con tokens, shadcn (`base-nova`) sobre Base UI, lucide, React Compiler activado (`reactCompiler` en `next.config.ts`: no hace falta memoizar a mano), WAAPI y CSS para el movimiento. cuelume para los sonidos de la interfaz, siempre a través de `lib/ui-sounds.ts`. GSAP se quitó el 2026-10-05: no volver a añadirlo sin decisión.
-- Auth: Better Auth con organizaciones (workspaces). BD: Drizzle (Postgres/Neon en producción). Ficheros: R2 / Vercel Blob. Correo: Resend.
-- Producción en Vercel (team criterio-design), región Frankfurt; las migraciones corren en el build, así una migración rota para el deploy.
+Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack tecnológico](stack.md). Lo que decide cómo se construye: Next.js 16 (leer `node_modules/next/dist/docs/` antes de tocarlo), React 19 con el React Compiler activado (no hace falta memoizar a mano), Tailwind 4 con CSS propio y tokens, shadcn (`base-nova`) sobre Base UI, WAAPI y CSS para el movimiento (GSAP se quitó el 2026-10-05: no volver a añadirlo sin decisión), cuelume para los sonidos siempre a través de `lib/ui-sounds.ts`.
 
 ## Conector MCP
 
@@ -23,18 +20,17 @@ Decisiones de cómo construimos, no de cómo se ve.
 - Lo que suman los votos se lee con `lib/polish-tally.ts` (sin servidor): lo usan la vista, la pestaña y el aviso de la ficha.
 - Quitar una referencia de un tablón a mano borra sus votos allí (`unfileItems`); sacarla al cerrar el pulido los conserva, que son los que dicen quién la olvidó. → [decisión](decisiones/2026-10-06-en-equipo-el-pulido-es-una-votacion-que-se-cierra.md)
 
-## Contenido de terceros
+## Avisos del equipo
 
-- Un fichero ajeno que copiamos (un pin, una imagen guardada de una web, un vídeo) guarda su página en `inspo_item.source`, y todo lo que lo cita enlaza esa página, no nuestro fichero.
-- Lo que viene de X o de Pinterest (`staysInside`, `lib/url.ts`) no se enseña sin sesión: un enlace compartido lo nombra y apunta al original.
-- Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista). → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
+- Una sola lista de hechos (`teamEvents` en `lib/notify.ts`: referencias, proyectos, comentarios, conversación y propuestas de área, decisiones del equipo, votos y cierres del Pulido) alimenta las tres salidas: la campanita de la Isla (`TeamBell`, `teamActivity`), el resumen diario por correo (`sendDigests`, cron `morning`) y los correos al momento (`notifyReply`, `notifyProposalResolved`). Lo propio nunca sale; en un espacio personal no hay nada.
+- Las frases de las líneas viven en `lib/i18n/<locale>/ui.ts` (`teamActivity.line`) y las usan la campanita y el correo; el resto del correo en `mail.ts` (`digest`, `reply`, `proposal`, `paused`, `team`). El idioma es el de quien recibe, nunca el de quien escribe.
+- Reglas para no ser pesados: un resumen al día como mucho; nada si no pasó nada o si el heartbeat (`activity_segment`) dice que la persona ya entró después; el primer resumen cubre solo el día anterior (nunca el histórico) y ninguno más de una semana; al mes sin abrir la app el resumen se apaga solo con un correo que lo dice. Lo único inmediato: la respuesta a un comentario o un pin tuyo y la resolución de una propuesta tuya, con `reply-to` a quien escribió.
+- Apagar y encender: dos interruptores en Cuenta (`user.digest_emails`, `user.reply_emails`), el enlace firmado de un clic al pie de cada correo (`/unsubscribe`) y la cabecera `List-Unsubscribe` para el botón del cliente de correo. Las marcas por persona y equipo van en `member` (`digest_sent_at`, `activity_seen_at`), migración `0026`.
+- Los correos al momento salen tras responder (`inBackground` usa `after` de Next; fuera de una petición, al instante). `npm run check:notifications` comprueba las partes puras y monta los resúmenes de hoy contra la BD local sin enviar nada. → [decisión](decisiones/2026-10-08-avisos-del-equipo-campanita-y-resumen-diario.md)
 
-## Seguridad
+## Contenido de terceros y seguridad
 
-- CSP con nonce en cada página (`proxy.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic'`. Un script inline propio lleva `nonce` (lo lee `app/layout.tsx` de `x-nonce`); nunca `onerror=` ni otros manejadores en HTML, tampoco dentro de un `srcDoc`. Esa cabecera sustituye a la de `next.config.ts`, así que lleva también `frame-ancestors`.
-- Lo que servimos de un tercero desde nuestro origen (`/api/og`, las fuentes en `lib/font-proxy.ts`) sale con un tipo fijo (imagen rasterizada o fuente), `nosniff` y `sandbox`: un SVG o un HTML ajeno en criterio.design correría con la sesión de quien lo abre.
-- Límites propios con `allow()` (`lib/rate-limit.ts`, en la tabla `rate_limit`, claves `app:`): enlaces mágicos por dirección, feedback por persona, capturas por workspace.
-- La propiedad de una tarjeta es `createdBy`, nunca el nombre de quien la guardó.
+Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y políticas públicas están en [Seguridad y políticas](seguridad.md). Lo que afecta a cómo se construye: todo fetch de una URL ajena pasa por `safeFetch`, todo Chromium por `lib/egress-proxy.ts`; un script inline propio lleva el `nonce` y nunca hay manejadores en HTML; una superficie nueva sin sesión pasa las referencias por `staysInside` antes de enseñar una copia; una clave o un servicio nuevo se apunta en el stack y en la política de privacidad en el mismo trabajo.
 
 ## Idiomas
 
@@ -63,3 +59,6 @@ Decisiones de cómo construimos, no de cómo se ve.
 
 - Medir antes de opinar: sonda con `requestAnimationFrame` + `PerformanceObserver('longtask')` vía `console.warn`; en dev los avisos del navegador llegan a `.next/dev/logs/next-development.log`.
 - La preview de Ship Studio está oculta (sin rAF ni autoplay): para medir, Chrome headless con puppeteer-core.
+- Con el React Compiler, lo que un render lee de un `Map` de módulo queda memoizado por sus entradas visibles (`web`): rellenar el mapa y forzar un render con un contador no repinta. El dato tiene que pasar por `useState` (`usePost` en `components/post-cache.ts`).
+- Un fichero guardado solo se borra cuando ninguna fila lo usa, y "usar" incluye ser la referencia misma (`web`), no solo la miniatura (`dropUnusedFiles` en `lib/item-files.ts`). Una imagen subida es su propia miniatura hasta que llega su copia de tarjeta (`cardCopy`, webp de 1400 px), y ese cambio de miniatura borraba el original en R2 (incidente del 2026-10-08: una imagen subida el 07-10 quedó sin original, con la tarjeta bien y la ficha y "Abrir la imagen" en 404).
+- Un post de X se pide a `/api/post` una vez por sesión, para todas las vistas (`components/post-cache.ts`: `loadPost` comparte la petición en vuelo y guarda la respuesta, `usePost` la lee desde un componente). La ficha (`PostView`), la tarjeta del tablón sin imagen (`InspoCard`) y la tarjeta de Pulido (`PolishView`) pasan por ahí; en Pulido solo piden las tarjetas cercanas a la de delante (`POST_NEAR`), para no lanzar treinta peticiones al montar el tornado.

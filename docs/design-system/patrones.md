@@ -21,7 +21,7 @@ Reglas: animar `transform` y `opacity`, nunca anchos ni altos por frame; si hay 
 
 ## Sonido
 
-Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la esquina (`SoundControl`). Los sonidos de la interfaz son respuesta: cuelume con tema `press`, por `cue` de `lib/ui-sounds.ts`, apagados hasta que se encienden en Ajustes, Cuenta, Apariencia. Suenan solo guardar una referencia (`success` sutil), Conservar y Olvidar en Pulido (`select` adelante y atrás), deshacer (`navigate` atrás), cerrar el pulido (`success`), sacar una carta al Inbox (como Olvidar) y el aviso de error (`error`). Nada más suena. → [decisión](decisiones/2026-10-07-la-interfaz-suena-solo-en-lo-que-decide-y-arranca-callada.md)
+Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la esquina (`SoundControl`) y se elige por emisora (Todas, Lo-fi, Instrumental) antes que por canción. → [emisoras](decisiones/2026-10-07-la-musica-se-elige-por-emisora-y-la-lista-no-crece.md) Los sonidos de la interfaz son respuesta: cuelume con tema `press`, por `cue` de `lib/ui-sounds.ts`, apagados hasta que se encienden en Ajustes, Cuenta, Apariencia. Suenan solo guardar una referencia (`success` sutil), Conservar y Olvidar en Pulido (`select` adelante y atrás), deshacer (`navigate` atrás), cerrar el pulido (`success`), sacar una carta al Inbox (como Olvidar), el aviso de error (`error`) y, desde el 08-10, algo nuevo del equipo en la campanita (`attention` sutil; Eric: "música si entra algo"). Nada más suena. → [decisión](decisiones/2026-10-07-la-interfaz-suena-solo-en-lo-que-decide-y-arranca-callada.md)
 
 ## Listas largas
 
@@ -29,12 +29,13 @@ Dos cosas distintas. La música es ambiente: se enciende en la pastilla de la es
 - **Ventanado**: solo se montan las tarjetas a ±1 pantalla del viewport; un tablero de 3000 cuesta lo que unas pocas pantallas.
 - **Tres copias de cada captura** (288, 720 y 1440 px): cada tarjeta pide la que su ancho en pantalla necesita.
 - El React Compiler memoiza; que un sondeo, el teclado o un panel no re-rendericen el tablero entero (Alberto, 05-10).
+- **Nubecita donde hay scroll**: una lista que hace scroll dentro de un menú o un selector lleva `.cr-scroll-fade` (`components/criterio/criterio.css`): funde 28 px del borde por donde queda más lista. Sigue al propio scroll (`animation-timeline: scroll(self)`): arriba del todo solo se funde el final, la de arriba aparece al empezar a bajar, y al llegar al final desaparece; una lista que no hace scroll no se funde. Puesta en las pistas de sonido (`.sound-tracks__list`) y en la lista del selector de proyecto (`.cr-picker-list`). → [decisión](decisiones/2026-10-07-las-listas-con-scroll-se-funden-por-donde-sigue.md)
 
 ## Zoom del tablero
 
 Zoom = pasos de columnas (base 360 px de columna = 100 %; el tablero abre un paso más lejos, `DEFAULT_ZOOM = -1`, para ver más de golpe), control `ZoomPill` (`.zoom-pill`, `− % +`) abajo a la izquierda, clic en el % vuelve a 100, pellizco o ⌘/Ctrl+rueda. Scroll vertical, nunca lienzo infinito. → [grid en vez de canvas](decisiones/2026-10-03-grid-en-vez-de-canvas.md)
 
-Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada. → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md)
+Pulido tiene el mismo control en la misma esquina, con los mismos gestos: allí el zoom es el tamaño del tornado, no columnas. La pastilla lleva también la música, y donde no hay zoom (Sistema, Descubrir, Ajustes) es el altavoz solo: está en toda la app con sesión iniciada, siempre en la esquina inferior izquierda de la ventana, también en Ajustes (fija, por encima de la columna). Como la columna hace scroll por debajo, su lista deja 88 px libres al final y las filas se funden (`mask-image`) antes de llegar a la pastilla: ninguna queda cortada por ella (Eric, 07-10: "cuidado que aquí se solapan cosas"). → [zoom y música en la misma pastilla](decisiones/2026-10-06-zoom-y-musica-comparten-la-pastilla-de-la-esquina.md), [Ajustes planos](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
 
 ## Acciones: a mano o por el agente
 
@@ -47,9 +48,14 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 - Lo mismo para un cliente de IA conectado por MCP: lee el MD, escribe piezas, y una decisión suya es una propuesta que espera al equipo. Lo que viene de fuera dice de dónde viene ("Eric vía Claude"). → [decisión](decisiones/2026-10-06-conector-mcp-lee-el-md-y-escribe-piezas.md)
 - Comentar es una herramienta aparte (tecla C) que deja pines tipo Figma con respuestas, en el documento. No hay anotaciones posicionales sobre las páginas de referencia.
 
+## Orden del tablón
+
+- Día más reciente primero y, a igual día, la hora del post en X (su id); el resto como llega del servidor. Un solo comparador, `newestFirst` (`lib/search-query.ts`). → [decisión](decisiones/2026-10-08-el-tablon-ordena-por-dia-y-dentro-del-dia-por-hora-del-post.md)
+
 ## Confirmaciones y vacíos
 
 - Confirmar solo lo que destruye o saca algo (`useConfirm`). Sacar de un proyecto = vuelve al Inbox, nunca se borra ni se archiva en silencio; hay que decirlo donde se decide.
+- La excepción: meter muchas piezas de golpe en un proyecto (importar de X, Pinterest o el navegador) se confirma, porque deshacerlo es un trabajo; la confirmación dice qué entra y el destino con sus nombres reales, y ofrece cambiarlo. → [decisión](decisiones/2026-10-08-importar-dice-el-destino-y-lo-confirma-antes.md)
 - Un estado vacío ayuda a empezar (qué hacer y con qué), no es solo un "No hay nada".
 
 ## Texto generado por IA

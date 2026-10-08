@@ -18,17 +18,30 @@ export const DS_GROUPS: { label: string; lead: string; pages: { slug: string; fi
     ],
   },
   {
+    // One page per family of tokens, each drawn live above its rules (Eric, 07-10: the design decisions, the palette,
+    // the type "and the rest" have to show visually; the split follows the sections of the Neety library)
     label: "Fundamentos",
     lead: "El gusto y los tokens: color, tipo, espacio, movimiento.",
     pages: [
       { slug: "principios", file: "principios.md", icon: "principles" },
       { slug: "fundamentos", file: "fundamentos.md", icon: "foundations" },
+      { slug: "color", file: "fundamentos/color.md", icon: "color" },
+      { slug: "tipografia", file: "fundamentos/tipografia.md", icon: "type" },
+      { slug: "espaciado", file: "fundamentos/espaciado.md", icon: "spacing" },
+      { slug: "radios-y-sombras", file: "fundamentos/radios-y-sombras.md", icon: "radius" },
+      { slug: "movimiento", file: "fundamentos/movimiento.md", icon: "motion" },
+      { slug: "iconos", file: "fundamentos/iconos.md", icon: "icons" },
+      { slug: "pantalla", file: "fundamentos/pantalla.md", icon: "layout" },
     ],
   },
   {
     label: "Componentes",
     lead: "Cada pieza de la app, con su nombre, su fichero y cómo se usa.",
-    pages: [{ slug: "componentes", file: "componentes.md", icon: "components" }],
+    pages: [
+      { slug: "botones", file: "botones.md", icon: "button" },
+      { slug: "marca", file: "marca.md", icon: "brand" },
+      { slug: "componentes", file: "componentes.md", icon: "components" },
+    ],
   },
   {
     label: "Construir",
@@ -48,6 +61,8 @@ export const DS_GROUPS: { label: string; lead: string; pages: { slug: string; fi
     pages: [
       { slug: "mantenimiento", file: "mantenimiento.md", icon: "usage" },
       { slug: "desarrollo", file: "desarrollo.md", icon: "code" },
+      { slug: "stack", file: "stack.md", icon: "workspace" },
+      { slug: "seguridad", file: "seguridad.md", icon: "access" },
       { slug: "decisiones", file: "decisiones/", icon: "decisions" },
     ],
   },

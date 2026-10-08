@@ -1,31 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { Post, PostMedia } from "@/lib/posts";
 import { fmtDate } from "@/lib/i18n/format";
 import { useT } from "./I18nProvider";
+import { usePost } from "./post-cache";
 
 // A post from X at the top of its thread, as it read there: who, what they wrote, and its
 // photos, video or gif. The first time it is opened it gets imported (if the add didn't already),
-// and its picture becomes the card's.
+// and its picture becomes the card's. The box itself (PostBox) is the same one Polish draws on
+// the card in front: a post is shown the one way everywhere.
 export default function PostView({ web, onThumb }: { web: string; onThumb?: (thumb: string) => void }) {
-  const { t, locale } = useT();
-  const [post, setPost] = useState<Post | null | undefined>(undefined); // undefined = loading
+  const { t } = useT();
+  const read = usePost(web);
+  const thumb = read?.thumb ?? null;
+  // The picture only reports back; the post depends on the address alone
+  useEffect(() => { if (thumb) onThumb?.(thumb); }, [thumb]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }), signal: ctrl.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { setPost(d?.post ?? null); if (d?.thumb) onThumb?.(d.thumb); })
-      .catch(() => { if (!ctrl.signal.aborted) setPost(null); });
-    return () => ctrl.abort();
-    // onThumb only reports back; the post depends on the address alone
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [web]);
+  if (read === undefined) return <div className="pv pv--loading" aria-busy><span className="shimmer" /></div>;
+  if (read.post === null) return <p className="pv pv--none">{t.card.postUnavailable}</p>;
+  return <PostBox post={read.post} />;
+}
 
-  if (post === undefined) return <div className="pv pv--loading" aria-busy><span className="shimmer" /></div>;
-  if (post === null) return <p className="pv pv--none">{t.card.postUnavailable}</p>;
-
+/** The post as it read on X: who wrote it, when, its words and its pictures. `playing` false (a card going by in
+ *  Polish) draws a video's frame instead of playing it */
+export function PostBox({ post, playing = true }: { post: Post; playing?: boolean }) {
+  const { locale } = useT();
   const photos = post.media.filter((m) => m.kind === "photo");
   const moving = post.media.filter((m) => m.kind !== "photo");
   return (
@@ -36,7 +36,7 @@ export default function PostView({ web, onThumb }: { web: string; onThumb?: (thu
         {post.createdAt && <time className="pv__date" dateTime={post.createdAt}>{fmtDate(post.createdAt, locale, { day: "numeric", month: "short", year: "numeric" })}</time>}
       </header>
       {post.text && <p className="pv__text">{post.text}</p>}
-      {moving.map((m, i) => <Moving key={i} m={m} />)}
+      {moving.map((m, i) => (playing ? <Moving key={i} m={m} /> : <Still key={i} m={m} />))}
       {photos.length > 0 && (
         <div className={`pv__photos pv__photos--${Math.min(photos.length, 4)}`}>
           {photos.map((m, i) => (
@@ -48,6 +48,13 @@ export default function PostView({ web, onThumb }: { web: string; onThumb?: (thu
       )}
     </article>
   );
+}
+
+/** A video or gif not playing: its frame, at its shape */
+function Still({ m }: { m: PostMedia }) {
+  const ratio = m.w && m.h ? `${m.w} / ${m.h}` : "16 / 9";
+  if (!m.poster) return <span className="pv__video" style={{ aspectRatio: ratio }} aria-hidden />;
+  return <img className="pv__video" style={{ aspectRatio: ratio }} src={m.poster} alt="" referrerPolicy="no-referrer" />;
 }
 
 /** A video plays X's own best file; if X no longer serves it, our lighter copy. Both loop on their own,

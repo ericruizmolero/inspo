@@ -79,7 +79,7 @@ export default function ProjectPicker({ projects, filed, partly = [], onToggle, 
             disabled={busy}
           />
         </form>
-        <ul className="cr-picker-list" role="group" aria-label={label}>
+        <ul className="cr-picker-list cr-scroll-fade" role="group" aria-label={label}>
           {shown.map((p) => {
             const on = filed.includes(p.id);
             const some = !on && partly.includes(p.id);

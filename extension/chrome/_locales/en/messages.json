@@ -20,8 +20,11 @@
   "save": {
     "message": "Save"
   },
+  "noteLabel": {
+    "message": "Note"
+  },
   "noteHint": {
-    "message": "What caught your eye? A sound, a transition, the nav… (optional)"
+    "message": "What caught your eye? (optional)"
   },
   "saving": {
     "message": "Saving…"
@@ -94,13 +97,7 @@
     "message": "Import your bookmarks"
   },
   "importLead": {
-    "message": "Bring what you already saved elsewhere into $WS$. Each address is saved as if you had pasted it: name, thumbnail and tags come on their own.",
-    "placeholders": {
-      "ws": {
-        "content": "$1",
-        "example": "Studio"
-      }
-    }
+    "message": "Bring what you already saved elsewhere. Each address is saved as if you had pasted it: name, thumbnail and tags come on their own."
   },
   "importConnectFirst": {
     "message": "Connect the extension first, then come back here."
@@ -368,5 +365,174 @@
   },
   "videoPageSaved": {
     "message": "This video plays in pieces, so there was no file to copy: the page and a frame were saved."
+  },
+  "whereTitle": {
+    "message": "Where it goes"
+  },
+  "workspaceLabel": {
+    "message": "Workspace"
+  },
+  "inbox": {
+    "message": "Inbox"
+  },
+  "inboxOption": {
+    "message": "Inbox (no projects yet)"
+  },
+  "whereLoading": {
+    "message": "Looking up the projects of $WS$…",
+    "placeholders": {
+      "ws": {
+        "content": "$1"
+      }
+    }
+  },
+  "whereSum": {
+    "message": "Everything you import lands in $PROJECT$, in $WS$. Pick them before you start.",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whereFailed": {
+    "message": "Couldn't load the projects: $ERR$. Pick the workspace again to retry.",
+    "placeholders": {
+      "err": {
+        "content": "$1"
+      }
+    }
+  },
+  "howMany": {
+    "message": "Which ones"
+  },
+  "latestN": {
+    "message": "The latest $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastWeek": {
+    "message": "From the last week"
+  },
+  "lastMonth": {
+    "message": "From the last month"
+  },
+  "allUpTo": {
+    "message": "All (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "xNewestFirst": {
+    "message": "X lists your bookmarks newest first, so the import starts with the latest ones. A period goes by the post's date."
+  },
+  "limitReached": {
+    "message": "The latest $N$ are in; the rest stays where it was.",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmBar": {
+    "message": "Before importing"
+  },
+  "confirmTitle_x": {
+    "message": "Import from X?"
+  },
+  "confirmTitle_pinterest": {
+    "message": "Import from Pinterest?"
+  },
+  "confirmTitle_browser": {
+    "message": "Import these bookmarks?"
+  },
+  "confirmText": {
+    "message": "$WHAT$ will be saved in $PROJECT$, in $WS$. Each one becomes a reference there.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "project": {
+        "content": "$2"
+      },
+      "ws": {
+        "content": "$3"
+      }
+    }
+  },
+  "confirmGo": {
+    "message": "Import to $PROJECT$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      }
+    }
+  },
+  "changeDestination": {
+    "message": "Change destination"
+  },
+  "whatXLatest": {
+    "message": "Your latest $N$ posts saved on X",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatXWeek": {
+    "message": "The posts you saved on X from the last week"
+  },
+  "whatXMonth": {
+    "message": "The posts you saved on X from the last month"
+  },
+  "whatXAll": {
+    "message": "All the posts you saved on X (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatPinLatest": {
+    "message": "The latest $N$ pins of the board",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatPinAll": {
+    "message": "All the pins of the board (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBrowser": {
+    "message": "$N$ bookmarks from this browser",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "progressWhere": {
+    "message": "Into $PROJECT$, in $WS$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
   }
 }

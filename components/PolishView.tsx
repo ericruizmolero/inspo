@@ -24,9 +24,13 @@ import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo
 import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
 import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
-import { mediaKindOf, videoEmbedOf } from "@/lib/url";
+import { mediaKindOf, postOf, postThumbKind, videoEmbedOf } from "@/lib/url";
 import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
 import { cachedCardImage, type NoteCaption } from "./InspoCard";
+import { PostBox } from "./PostView";
+import LoopVideo from "./LoopVideo";
+import { usePost } from "./post-cache";
+import type { Post } from "@/lib/posts";
 import { Avatar } from "./CommentsPanel";
 import { useT } from "./I18nProvider";
 import SoundControl from "./SoundControl";
@@ -202,7 +206,7 @@ function Flyer({ flight, image, text, onGone }: { flight: Flight; image: string 
   }, []);
   return (
     <div ref={ref} className="polish__fly" aria-hidden style={{ left: flight.x, top: flight.y, width: flight.w, height: flight.h }}>
-      {mediaKindOf(flight.item.web) === "text" ? <div className="polish__text"><b className="t-title-s">{flight.item.name}</b><p className="t-small">{text}</p></div> : <Picture item={flight.item} image={image} />}
+      <Face item={flight.item} image={image} text={text} />
     </div>
   );
 }
@@ -211,17 +215,58 @@ function Flyer({ flight, image, text, onGone }: { flight: Flight; image: string 
  *  whoever closes decided, which is not a vote */
 type Step = { kind: PolishChoice; item: InspoItem; prev?: PolishChoice | null; ruled?: boolean };
 
-/** What a post says, for the line under the card: who wrote it and its words, without its links */
-type Words = { author: string; avatar: string | null; text: string };
-const postWords = new Map<string, Words | null>();
 const NOTE_MAX = 280; // characters of a note that reach the page: two lines show, and a long one is read on its sheet
-const POST_WAIT = 300; // ms a post stays in front before its words are asked for: one going by asks for nothing
-const wordsOf = (text: string) => text.replace(/https?:\/\/\S+/g, "").replace(/\s+/g, " ").trim();
-/** Until the post is read, what its name already says ("Wilson · Ferndesk has been live…", lib/posts.ts postName) */
-const wordsFromName = (name: string): Words | null => {
-  const at = name.indexOf(" · ");
-  return at > 0 ? { author: name.slice(0, at), avatar: null, text: name.slice(at + 3) } : null;
-};
+/** Cards this far from the one in front ask for their post; further round the orbit the name's words do */
+const POST_NEAR = 3;
+
+/** A post's picture is a copy of its own media when it has any (lib/posts.ts: photo-1.jpg, poster-video.jpg); so
+ *  its card knows without reading the post whether it has something to look at or only words */
+const postHasMedia = (image: string | null): image is string => !!image && /\/(photo-\d+|poster-(video|gif))\.\w+(\?.*)?$/.test(image);
+
+/** Until the post is read, what its name already says ("Wilson · Ferndesk has been live…", lib/posts.ts postName),
+ *  as a post with no picture and no date */
+function postFromName(item: InspoItem): Post {
+  const at = item.name.indexOf(" · ");
+  const author = at > 0 ? item.name.slice(0, at) : item.name, text = at > 0 ? item.name.slice(at + 3) : "";
+  return { id: item.web, url: item.web, author, handle: postOf(item.web)?.user ?? "", avatar: null, text, createdAt: null, media: [], savedAt: "" };
+}
+
+/** A post on its card: the same box its sheet shows (PostView's PostBox), read once per session (post-cache.ts).
+ *  Only a card near the front asks for it; the rest show what the name says until they come round */
+function PostCard({ item, near }: { item: InspoItem; near: boolean }) {
+  const read = usePost(near ? item.web : null);
+  // Longer than the card's cap (CSS): it fades out at the foot, as its card on the board does
+  const ref = useRef<HTMLDivElement>(null);
+  const [cut, setCut] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const look = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    look();
+    const ro = new ResizeObserver(look);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+  return <div ref={ref} className={`polish__post${cut ? " is-cut" : ""}`}><PostBox post={read?.post ?? postFromName(item)} playing={false} /></div>;
+}
+
+/** The reference as something to look at: a text is its page of words; a post with a photo or a video is that
+ *  alone (its video loops, muted, on the card in front), and one that is only words is its post as the sheet shows
+ *  it; anything else is its picture. `near` and `front` are for a post: whether to read it, and whether it plays */
+function Face({ item, image, large, text, near = true, front = false }: { item: InspoItem; image: string | null; large?: string | null; text: string; near?: boolean; front?: boolean }) {
+  const { t } = useT();
+  const kind = mediaKindOf(item.web);
+  if (kind === "text") return <div className="polish__text"><span className="polish__text-kind">{t.card.text}</span><b className="t-title-s">{item.name}</b><p className="t-small">{text}</p></div>;
+  if (kind === "post" && !postHasMedia(image)) return <PostCard item={item} near={near} />;
+  // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
+  const loop = kind === "post" && front && image && postThumbKind(image) ? image.replace(/poster-(video|gif)\.\w+(\?.*)?$/, "$1.mp4") : null;
+  return (
+    <>
+      <Picture item={item} image={image} large={large} />
+      {loop && <LoopVideo src={loop} className="polish__loop" />}
+    </>
+  );
+}
 
 export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, active, votes, me, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
   project: Project;
@@ -322,21 +367,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   if (team) for (const list of votes.values()) for (const v of list) if (v.closedAt && v.closedBy && (!closed || v.closedAt > closed.closedAt!)) closed = v;
   const closer = closed ? members.find((m) => m.id === closed!.closedBy)?.name : undefined;
 
-  // The words of the post in front, read once it has stayed there a moment and kept for the session
-  const [, setRead] = useState(0);
-  const post = current && !done && mediaKindOf(current.web) === "post" ? current.web : null;
-  useEffect(() => {
-    if (!post || postWords.has(post)) return;
-    const ctrl = new AbortController();
-    const timer = window.setTimeout(() => {
-      fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web: post }), signal: ctrl.signal })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => { postWords.set(post, d?.post ? { author: String(d.post.author ?? ""), avatar: d.post.avatar ? String(d.post.avatar) : null, text: wordsOf(String(d.post.text ?? "")) } : null); setRead((n) => n + 1); })
-        .catch(() => { /* its name says the start of it */ });
-    }, POST_WAIT);
-    return () => { window.clearTimeout(timer); ctrl.abort(); };
-  }, [post]);
-  const words = post && current ? postWords.get(post) ?? wordsFromName(current.name) : null;
+  // The card in front says what it is itself (Face): the words under it are only what the team said
+  const kind = current ? mediaKindOf(current.web) : null;
   // What the team said about it. A text reference's note is the text itself, already on the card
   const note = current && !done && mediaKindOf(current.web) !== "text" ? noteOf(current) : null;
   // What the team voted on the card in front. Only on a doubt gone through: there this person has already voted
@@ -720,13 +752,14 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   if (ln) {
     for (let k = base - side; k <= base + side; k++) {
       const item = list[mod(k, ln)], node = `${keyOf(item)}#${Math.floor(k / ln)}`;
-      const kind = mediaKindOf(item.web);
+      const kind = mediaKindOf(item.web), image = imageOf(item);
+      // A post that is only words is as tall as what it says (capped in CSS); the rest keep their picture's shape
+      const wordy = kind === "post" && !postHasMedia(image);
       const ratio = kind === "text" ? 1 : clamp(ratioOf(item), 0.5, 1.2);
       cards.push(
-        <div key={node} className="polish__card" data-k={k} data-node={node} style={{ aspectRatio: `1 / ${ratio}` }}>
+        <div key={node} className={`polish__card${wordy ? " is-post" : ""}`} data-k={k} data-node={node} style={wordy ? undefined : { aspectRatio: `1 / ${ratio}` }}>
           <div className="polish__in">
-            {kind === "text" ? <div className="polish__text"><b className="t-title-s">{item.name}</b><p className="t-small">{textOf(item)}</p></div>
-              : <Picture item={item} image={imageOf(item)} large={k === rested ? largeImageOf(item) : null} />}
+            <Face item={item} image={image} large={k === rested ? largeImageOf(item) : null} text={textOf(item)} near={Math.abs(k - base) <= POST_NEAR} front={k === rested} />
             <i className="polish__fog" />
           </div>
         </div>,
@@ -749,14 +782,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
 
       {current && !done && (
         <div className="polish__bar">
-          <div className={`t-small polish__now${words?.author || note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">
-            {words?.author ? (
-              <p className="polish__say">
-                {/* X's own picture, asked for without a referrer as the post's sheet does */}
-                {words.avatar ? <span className="cr-avatar cm-avatar" style={{ width: 18, height: 18 }} aria-hidden><img src={words.avatar} alt="" referrerPolicy="no-referrer" /></span> : <Avatar name={words.author} size={18} />}
-                <span><b>{words.author}</b> {words.text}</span>
-              </p>
-            ) : <b className="polish__name">{current.name}</b>}
+          {/* A post or a text says who and what on its own card: only the rest get their name here */}
+          {(kind !== "post" && kind !== "text") || note || said.length > 0 ? (
+          <div className={`t-small polish__now${note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">
+            {kind !== "post" && kind !== "text" && <b className="polish__name">{current.name}</b>}
             {note && (
               <p className="polish__say polish__say--note">
                 {note.people.length > 1
@@ -779,6 +808,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
               </p>
             )}
           </div>
+          ) : null}
           {/* The two answers on one piece of chrome, each with the key that does the same (Key) and where the card goes */}
           <div className="polish__choice cr-on-chrome">
             <button ref={forgetRef} type="button" className="polish__btn" onClick={forget}>

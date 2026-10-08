@@ -176,6 +176,13 @@
       "when": 1791316444007,
       "tag": "0025_polish_vote",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791472548926,
+      "tag": "0026_team_emails",
+      "breakpoints": true
     }
   ]
 }

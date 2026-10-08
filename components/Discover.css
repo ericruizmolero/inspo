@@ -15,12 +15,18 @@
    must not move when switching sections) */
 .tpls-inner > :is(.disc-head, .disc-bar) { width: 100%; margin: 0; }
 .tpls-inner > .disc-bar { margin: calc(var(--space-5) - var(--tpls-gap)) 0 calc(var(--space-6) - var(--tpls-gap)); }
+/* A few words over the resources: the field at the toolbar size (.cr-input-s, 34, as the directory's own search box
+   has it, .dir-search), the search icon inside at the left, no browser clear button */
+.disc-search { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.disc-search > .cr-icon { position: absolute; left: 10px; color: var(--field-placeholder); pointer-events: none; }
+.disc-search .cr-input { width: 200px; padding-left: 30px; }
+.disc-search .cr-input::-webkit-search-cancel-button { display: none; }
 /* The kinds of resource, or the skills' topics: a secondary Button opens a Menu (.cr-menu); pressed while one is
    chosen or the menu is open. A long list scrolls inside */
 .disc__group { flex-shrink: 0; white-space: nowrap; }
 .disc__group[data-popup-open] { background: var(--paper-pressed); box-shadow: var(--bevel-pressed); }
 .disc__menu { max-height: min(70vh, 520px); overflow-y: auto; }
-@media (max-width: 560px) { .disc-bar .cr-seg { overflow-x: auto; scrollbar-width: none; } .disc-bar .cr-seg::-webkit-scrollbar { display: none; } }
+@media (max-width: 560px) { .disc-bar .cr-seg { overflow-x: auto; scrollbar-width: none; } .disc-bar .cr-seg::-webkit-scrollbar { display: none; } .disc-search { width: 100%; } .disc-search .cr-input { width: 100%; } }
 /* Discover as a list: the directory group by group. The gutter of the scrollbar is kept in every section (as .tpls
    keeps it), so the column never shifts between a short one and a long one */
 .disc-list { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }

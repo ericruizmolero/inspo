@@ -10,6 +10,6 @@ description: Registrar una decisión de diseño o desarrollo de Criterio en el s
    - El título es una frase que dice lo decidido, no el tema ("Sin mono en etiquetas", no "Tipografía de etiquetas").
    - En **Por qué**, cita literal a quien decidió si lo explicó con sus palabras. Lo que sea interpretación tuya, márcalo.
    - En **Decisión**, nombra ficheros, tokens y clases concretas.
-3. **Actualiza la regla**: si cambia un principio, un token, un componente o un patrón, edita también `principios.md`, `fundamentos.md`, `componentes.md`, `patrones.md` o `desarrollo.md`, y enlaza la decisión (`decisiones/<fichero>.md`). Si cambió un valor en `app/globals.css`, la tabla de `fundamentos.md` se corrige en el mismo cambio.
+3. **Actualiza la regla**: si cambia un principio, un token, un componente o un patrón, edita también `principios.md`, la página de `fundamentos/` que toque (`color.md`, `tipografia.md`, `espaciado.md`, `radios-y-sombras.md`, `movimiento.md`, `iconos.md`, `pantalla.md`), `componentes.md`, `botones.md`, `marca.md`, `patrones.md` o `desarrollo.md`, y enlaza la decisión (`decisiones/<fichero>.md`). Si cambió un valor en `app/globals.css`, la tabla de su página de `fundamentos/` se corrige en el mismo cambio.
 4. **Escribe en castellano**, sin rayas (— –) ni puntos medios entre elementos.
 5. Dile al equipo en una línea qué has registrado; `/library/decisiones` lo muestra solo, sin índice a mano.

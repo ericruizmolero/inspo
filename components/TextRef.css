@@ -31,7 +31,8 @@
   display: flex; flex-direction: column; gap: 8px;
   padding: clamp(16px, 7cqw, 22px) clamp(16px, 8cqw, 22px) 0;
   background: var(--surface-raised);
-  border-radius: inherit;
+  /* The tile's own radius: inherited from .tile__media it was none, and the square hairline lost its corners */
+  border-radius: var(--radius-lg);
   box-shadow: inset 0 0 0 1px var(--border);
 }
 .tile__media[style] > .tile__text { aspect-ratio: auto; height: 100%; }

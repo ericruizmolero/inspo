@@ -70,6 +70,11 @@ const MAX_GAP_MS = 90 * 1000;
 
 const ID_RE = /^[a-z0-9]{8,40}$/;
 
+/** The area codes from before projects (2026-09-29), read as the places they were: "library" was the board of
+ *  everything and "design-md" the sheet of a reference. Stored rows keep their code; the panel adds them up here. */
+const LEGACY_AREA: Record<string, string> = { library: "board", "design-md": "sheet" };
+const areaOf = (code: string) => LEGACY_AREA[code] ?? code;
+
 /** "Chrome, macOS", "Safari, iOS (mobile)"… from the user agent */
 export function deviceSummary(ua: string | null | undefined): string | null {
   if (!ua) return null;
@@ -173,9 +178,12 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
   const agg = new Map(perUser.map((r) => [r.userId, r]));
   const sess = new Map(sessions.map((r) => [r.userId, r]));
   const topArea = new Map<string, { area: string; seconds: number }>();
-  for (const r of perUserArea) {
-    const cur = topArea.get(r.userId);
-    if (!cur || Number(r.seconds) > cur.seconds) topArea.set(r.userId, { area: r.area, seconds: Number(r.seconds) });
+  const perUserCanon = new Map<string, number>();
+  for (const r of perUserArea) perUserCanon.set(`${r.userId}\u0000${areaOf(r.area)}`, (perUserCanon.get(`${r.userId}\u0000${areaOf(r.area)}`) ?? 0) + Number(r.seconds));
+  for (const [key, seconds] of perUserCanon) {
+    const [userId, area] = key.split("\u0000");
+    const cur = topArea.get(userId);
+    if (!cur || seconds > cur.seconds) topArea.set(userId, { area, seconds });
   }
   const wsOf = new Map<string, string[]>();
   for (const m of memberships) {
@@ -210,8 +218,14 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
     return { date: s.date, users: Number(d?.users ?? 0), seconds: Number(d?.seconds ?? 0) };
   });
 
-  const areas: ActivityArea[] = byArea.map((r) => ({ area: r.area, seconds: Number(r.seconds), users: Number(r.users) }))
-    .filter((a) => a.seconds > 0).sort((a, b) => b.seconds - a.seconds);
+  // Users per area come from SQL as distinct counts, so two codes that fold into one take the larger of the two
+  const areaMap = new Map<string, ActivityArea>();
+  for (const r of byArea) {
+    const area = areaOf(r.area);
+    const cur = areaMap.get(area) ?? { area, seconds: 0, users: 0 };
+    areaMap.set(area, { area, seconds: cur.seconds + Number(r.seconds), users: Math.max(cur.users, Number(r.users)) });
+  }
+  const areas: ActivityArea[] = [...areaMap.values()].filter((a) => a.seconds > 0).sort((a, b) => b.seconds - a.seconds);
 
   const totalSeconds = list.reduce((n, u) => n + u.seconds, 0);
   const activeInPeriod = list.filter((u) => u.seconds > 0 || (u.lastSeenAt && new Date(u.lastSeenAt) >= since)).length;

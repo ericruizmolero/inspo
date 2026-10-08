@@ -58,6 +58,8 @@
 .cr-field-hint{font-size:var(--fs-small,13px);line-height:var(--lh-small,1.45);color:var(--text-muted,#5A5850)}
 .cr-field-hint.is-error{color:var(--danger)}
 .cr-input{height:44px;box-sizing:border-box;padding:0 12px;border-radius:var(--radius-md,10px);border:var(--field-stroke, 1.5px) solid var(--field-border,#1B1B18);background:var(--field,#FFFFFF);color:var(--field-ink,#1B1B18);font-family:inherit;font-size:var(--fs-ui,15px);box-shadow:var(--sunken,inset 2px 2px 0 rgba(27,27,24,0.12))}
+/* s size (34, small face): the field beside a Button s */
+.cr-input-s{height:34px;padding:0 10px;font-size:var(--fs-small,13px)}
 
 .cr-chip{display:inline-flex;align-items:center;padding:5px 12px;border-radius:var(--radius-pill,999px);border:var(--stroke-control,1.5px) solid var(--control-border,#1B1B18);font-family:var(--font-sans,"Satoshi",sans-serif);font-size:var(--fs-small,13px);color:var(--ink,#1B1B18)}
 .cr-chip-paper{background:var(--paper,#EDE6D6)}
@@ -105,6 +107,9 @@
 .cr-ring-synced{border:2px solid var(--moss-light,#7E9A5C)}
 .cr-ring-new{background:var(--ember,#E8892B);width:8px;height:8px}
 .cr-ring-idle{border:2px solid var(--chrome-muted,#8A847A)}
+/* The gauge: a moss arc (an SVG stroke of 2px, from the top, clockwise) and nothing for the rest */
+.cr-ring-gauge{border:0;color:var(--moss-light,#7E9A5C)}
+.cr-ring-gauge svg{display:block;width:100%;height:100%;overflow:visible}
 
 /* ---- segmented, view switcher, zoom ---- */
 .cr-seg{display:inline-flex;align-items:center;gap:2px;font-family:var(--font-sans,"Satoshi",sans-serif)}
@@ -154,6 +159,11 @@
 .cr-boardcard-mosaic{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:85px;gap:6px;padding:10px;height:200px;box-sizing:border-box;align-content:start;overflow:hidden;background:var(--board-card,#1A1A1A);border:1px solid var(--chrome-border,#262626);border-radius:var(--radius-lg,14px)}
 .cr-boardcard:hover .cr-boardcard-mosaic{border-color:var(--chrome-muted,#8A847A)}
 .cr-boardcard-tile{border-radius:4px}
+/* The masonry: the board's own columns, shortest first, every tile its own height (aspect-ratio set inline), cut at the bottom */
+.cr-boardcard-mosaic-masonry{display:flex;align-items:flex-start}
+.cr-boardcard-col{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:inherit}
+.cr-boardcard-mosaic-masonry .cr-boardcard-tile{display:block;width:100%;overflow:hidden;background:var(--surface-2,#222)}
+.cr-boardcard-mosaic-masonry .cr-boardcard-tile img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
 .cr-boardcard-meta{display:flex;justify-content:space-between;align-items:flex-start;padding:0 2px}
 .cr-boardcard-name{display:block;font-size:var(--fs-ui,15px);font-weight:var(--fw-medium);color:var(--chrome-ink,#EDE6D6)}
 .cr-boardcard-count{display:block;font-size:var(--fs-small,13px);color:var(--chrome-muted,#8A847A);margin-top:2px}
@@ -490,34 +500,40 @@
 .cr-seg-paper .cr-seg-item:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .cr-seg-paper .cr-seg-count{color:inherit;opacity:.7}
 
-/* ---- app: SettingsWindow, a section of Settings or Activity (a property sheet) ---- */
-/* The window at the column's width; bar 40 like the dialogs, body 16/20, footer note left and actions right. Every
-   footer is the same height (a Button m and its padding), with or without a button in it */
-.cr-swin{width:100%;display:flex;flex-direction:column}
-.cr-swin>.cr-window-bar{height:40px;flex:none;padding:0 14px;gap:12px}
-.cr-swin>.cr-window-bar .cr-window-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-.cr-swin-figure{flex:none;font-variant-numeric:tabular-nums;white-space:nowrap}
-.cr-swin-body{flex:1 1 auto;display:flex;flex-direction:column;gap:16px;padding:16px 20px;min-width:0}
+/* ---- app: SettingsWindow, a section of Settings, Activity or Admin, flat on the page ---- */
+/* No frame and no moss bar (Eric, 07-10: the green header was "too much"): a hairline over the section, the name
+   with its figure at the end, the description under the name, the body, and a foot with the note on the left and the
+   actions on the right. Sections sit one under the other on the page ground, 24 over and under each hairline */
+.cr-swin{width:100%;display:flex;flex-direction:column;gap:20px;padding-top:24px;border-top:1px solid var(--border)}
+.cr-swin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:4px 16px;min-width:0}
+.cr-swin-titles{display:flex;flex-direction:column;gap:4px;min-width:0}
+.cr-swin-title{margin:0;color:var(--text);overflow-wrap:anywhere}
 .cr-swin-desc{margin:0;max-width:62ch;color:var(--text-muted)}
-.cr-swin-footer{box-sizing:border-box;min-height:69px;display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:12px 20px;border-top:1px solid var(--border)}
+.cr-swin-figure{flex:none;padding-top:2px;color:var(--text-muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cr-swin-body{flex:1 1 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+.cr-swin-footer{min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
 .cr-swin-note{flex:1 1 240px;min-width:0;color:var(--text-muted)}
 .cr-swin-note:empty{flex-basis:0}
 .cr-swin-note a{color:var(--text);text-underline-offset:3px}
 .cr-swin-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-left:auto}
-/* An empty section says so in the window's reading line, not centred */
+/* An empty section says so in the section's reading line, not centred */
 .cr-swin .cr-empty{align-items:flex-start;text-align:left;padding:0}
 .cr-swin .cr-empty-text{max-width:62ch}
 
 /* ---- app: FieldRow, a setting on one line: label column, control column (all 44), error under the control ---- */
+/* The row is the s size (Eric, 07-10: the paper buttons in Settings "have to be smaller", as in Discover and the
+   Island): Button s, the paper SegmentedControl s, and the field at 34 with the small face (.cr-input-s) */
 .cr-fieldrow{display:grid;grid-template-columns:200px minmax(0,1fr);gap:8px 24px;align-items:start}
-.cr-fieldrow-label{display:flex;flex-direction:column;gap:2px;padding-top:11px;min-width:0;color:var(--text)}
+.cr-fieldrow-label{display:flex;flex-direction:column;gap:2px;padding-top:6px;min-width:0;color:var(--text)}
 .cr-fieldrow-hint{color:var(--text-muted)}
 .cr-fieldrow-control{display:flex;flex-direction:column;gap:6px;min-width:0}
-.cr-fieldrow-line{display:flex;align-items:center;gap:8px;min-height:44px;min-width:0}
+.cr-fieldrow-line{display:flex;align-items:center;gap:8px;min-height:34px;min-width:0}
 .cr-fieldrow-line>:first-child{flex:1 1 auto;min-width:0}
 .cr-fieldrow-line>:not(:first-child){flex:none}
 .cr-fieldrow-line>.cr-switch{flex:none}
 .cr-fieldrow-line>.cr-input{width:100%}
+.cr-fieldrow-line .cr-input,.cr-fieldrow-line .select select{height:34px;padding-right:10px;padding-left:10px;font-size:var(--fs-small,13px)}
+.cr-fieldrow-line .select select{padding-right:30px}
 @media (max-width:560px){
   .cr-fieldrow{grid-template-columns:minmax(0,1fr)}
   .cr-fieldrow-label{padding-top:0}
@@ -532,3 +548,15 @@
 .cr-seg-paper{--liquid-on:var(--paper);--liquid-ring:inset 0 0 0 1px var(--control-border),var(--bevel);--liquid-hover:color-mix(in srgb,var(--field-ink) 8%,transparent);--liquid-ink:var(--ink);--liquid-ink-off:var(--field-placeholder)}
 .cr-seg[data-liquid]>.cr-seg-item.is-active{background:none;box-shadow:none}
 .cr-seg[data-liquid]>.cr-seg-item:hover:not(.is-active){background:none}
+/* app: a list that scrolls inside a menu or a picker fades at the edge where there is more (Eric, 07-10: "si hay
+   scroll hay que poner nubecita"). The two fades follow the scroll itself: at the top only the bottom fades, at the
+   bottom only the top, and a list that does not scroll has none. Where the browser has no scroll timelines (Firefox)
+   the list simply has no fade */
+@property --cr-fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --cr-fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.cr-scroll-fade{--cr-fade-top:0px;--cr-fade-bottom:0px;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 var(--cr-fade-top),#000 calc(100% - var(--cr-fade-bottom)),transparent);mask-image:linear-gradient(to bottom,transparent,#000 var(--cr-fade-top),#000 calc(100% - var(--cr-fade-bottom)),transparent)}
+@supports (animation-timeline: scroll()) {
+  .cr-scroll-fade{animation-name:cr-fade-top,cr-fade-bottom;animation-timing-function:linear;animation-fill-mode:both;animation-timeline:scroll(self);animation-range:0px 28px,calc(100% - 28px) 100%}
+  @keyframes cr-fade-top{from{--cr-fade-top:0px}to{--cr-fade-top:28px}}
+  @keyframes cr-fade-bottom{from{--cr-fade-bottom:28px}to{--cr-fade-bottom:0px}}
+}

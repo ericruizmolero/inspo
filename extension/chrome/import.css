@@ -73,3 +73,30 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
 }
 .counts dt { font-size: var(--fs-label); color: var(--chrome-text-muted); }
 .counts dd { margin: 0; font-family: var(--font-title); font-size: var(--fs-title-l); font-weight: var(--fw-bold); letter-spacing: var(--tr-title-l); color: var(--paper); font-variant-numeric: tabular-nums; }
+
+/* Where it goes: the first card, before any source. Workspace and project are two full fields
+   (the popup's .select), and under them the sentence that names the destination in bold */
+.where__fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 480px) { .where__fields { grid-template-columns: 1fr; } }
+.where .select select:disabled { cursor: default; }
+.where .select:has(select:disabled) { cursor: default; }
+.where__sum { font-size: var(--fs-chrome); line-height: var(--lh-small); color: var(--chrome-text-muted); text-wrap: pretty; }
+.where__sum strong { font-weight: var(--fw-semibold); color: var(--paper); }
+.where__sum:empty { display: none; }
+.import .select { height: 40px; }
+
+/* The confirmation (design system: dialog window): moss bar with the short title, heading in
+   display, the body and a foot with two buttons at most; the backdrop dims the page */
+.dlg { padding: 0; border: 0; background: transparent; max-width: calc(100vw - 32px); }
+.dlg::backdrop { background: rgba(0, 0, 0, 0.6); }
+.dlg__form {
+  display: flex; flex-direction: column; width: 420px; max-width: 100%; overflow: hidden;
+  border-radius: var(--radius-lg); border: var(--stroke-control) solid var(--control-border);
+  background: var(--chrome-panel); color: var(--chrome-text);
+}
+.dlg__bar { display: flex; align-items: center; min-height: 28px; padding: 0 14px; background: var(--moss); color: var(--on-moss); font-size: var(--fs-label); font-weight: var(--fw-semibold); }
+.dlg__body { display: flex; flex-direction: column; gap: 8px; padding: 18px 18px 4px; }
+.dlg__heading { margin: 0; font-family: var(--font-title); font-size: var(--fs-title-m); font-weight: var(--fw-semibold); letter-spacing: var(--tr-title-m); line-height: var(--lh-title-m); color: var(--paper); }
+.dlg__text { font-size: var(--fs-chrome); line-height: var(--lh-small); color: var(--chrome-text-muted); text-wrap: pretty; }
+.dlg__text strong { font-weight: var(--fw-semibold); color: var(--paper); }
+.dlg__foot { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding: 14px 18px 18px; }

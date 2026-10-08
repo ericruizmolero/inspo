@@ -56,7 +56,7 @@
   --font-sans: "Satoshi", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-title: var(--font-sans);
   /* Type: the app's scale (app/globals.css, "Type scale"), only the steps the popup uses */
-  --fs-title-l: 28px; --fs-title-m: 22px; --fs-ui: 15px; --fs-small: 13px; --fs-label: 12px;
+  --fs-title-l: 28px; --fs-title-m: 22px; --fs-ui: 15px; --fs-chrome: 14px; --fs-small: 13px; --fs-label: 12px;
   --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
   --lh-title-l: 1.1; --lh-title-m: 1.2; --lh-ui: 1.4; --lh-small: 1.45;
   --tr-title-l: -0.02em; --tr-title-m: -0.01em; --tr-glyph: -0.04em;
@@ -172,8 +172,13 @@ h1, p { margin: 0; }
 }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
 .input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library) */
-.input--note { height: auto; min-height: 62px; padding: 9px 12px; resize: none; font: inherit; font-size: var(--fs-ui); line-height: var(--lh-ui); }
+/* A field as the system's TextField: the label small and quiet above the well, never inside it (Eric, 08-10:
+   the inline label and the three-line placeholder left the note cut and the project truncated) */
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field__label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--chrome-text-muted); }
+/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library).
+   Two lines of 14 px, the placeholder one of them */
+.input--note { height: auto; min-height: 60px; padding: 9px 12px; resize: none; font: inherit; font-size: var(--fs-chrome); line-height: var(--lh-small); }
 .input--note[hidden] { display: none; }
 
 /* Import row: what is saved elsewhere, one tap away under Save */
@@ -239,19 +244,22 @@ h1, p { margin: 0; }
 }
 .select svg { flex-shrink: 0; color: var(--field-ink); }
 .select select option { color: var(--ink); }
-/* The areas: Chip (design system), paper with an ink border. A ticked area turns moss, the system's
-   colour for libraries and collections, so ember stays the Save button's alone */
+/* Labelled from above (.field): the name of the project reads from the left, at the field's size */
+.select--plain select { text-align: left; font-size: var(--fs-chrome); }
+.select--plain svg { color: var(--chrome-text-muted); }
+/* The areas: the Chip as the app's Add form paints it (.add__area): a 28 px pill, transparent, a quiet
+   grey line and muted text. Only a picked one fills, inverted to paper with ink text, so the dark popup
+   stays dark and ember stays the Save button's alone */
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border-radius: var(--radius-pill);
-  border: var(--stroke-control) solid var(--control-border); background: var(--paper);
-  color: var(--ink); font-size: var(--fs-small); font-weight: var(--fw-medium); cursor: pointer;
-  transition: background 0.12s, color 0.12s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: var(--radius-pill);
+  border: 1px solid var(--chrome-raised); background: transparent;
+  color: var(--chrome-text-muted); font-size: var(--fs-label); font-weight: var(--fw-medium); cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
 }
-.pill:hover { background: var(--paper-light); }
-.pill:active { transform: translateY(1px); }
-/* A picked chip inverts (ink with paper text), as in the app; a paper outline keeps it on the dark popup */
-.pill[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--paper); }
+.pill:hover { color: var(--paper); border-color: var(--chrome-muted); }
+.pill:active { transform: scale(0.96); }
+.pill[aria-pressed="true"] { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 .pill svg { flex-shrink: 0; }
 
 /* Saved: the button stays where it was, sinks in, turns moss (synced, in the library) and says so

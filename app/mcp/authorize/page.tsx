@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import AuthorizePanel from "./AuthorizePanel";
 import AuthWindow from "@/components/AuthWindow";
+import ActivityPing from "@/components/ActivityPing";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
@@ -30,6 +31,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="auth auth--solo">
+      <ActivityPing area="mcp" organizationId={ctx.workspace.id} />
       <div className="auth__card">
         <div className="auth__brand"><Logo size={48} /></div>
         {"fatal" in request ? (

@@ -1,0 +1,14 @@
+---
+title: El dock no se ensancha por la barra de reunir, se recogen los textos
+date: 2026-10-07
+status: vigente
+kind: diseño
+---
+
+**Contexto.** En el tablón de un proyecto, la barra de reunir (`GatherBar`, encima del buscador en el dock de 640 px) mostraba el título "Primero, el tablón", el recuento "7 referencias" y la entradilla "Sube lo que te inspira: webs, imágenes, vídeos." junto a tres miniaturas, "Añadir" y "Ya tengo las referencias". Al texto le quedaban unos 140 px y se cortaba a media palabra ("7 r", "we…"); con huecos de 10 px y menos relleno en "Añadir" le quedan unos 175, y "El tablón 134 referencias" pide 163. La primera propuesta fue ensanchar el dock a 780 px cuando lleva esa barra.
+
+**Decisión.** El dock se queda en 640 px (`.dock` en `app/globals.css`, sin regla `:has(.gather)`). Dentro de la barra se recogen los textos: el título pasa a "El tablón" / "The board", el recuento sigue con palabras ("7 referencias") y la entradilla es una frase corta, "Sube lo que te inspira." / "Add what inspires you." (`gather` en `lib/i18n/es/ui.ts` y `lib/i18n/en/ui.ts`). Los dos botones siguen siendo `Button` de tamaño `m`, a la misma altura; "Añadir" pierde relleno lateral (`.gather__add { padding-inline: 10px }`), los huecos de la fila bajan de 14 a 10 px, el relleno de la barra de 16 a 14 y el hueco del título a 6. Como red: `.gather__title b` y `.gather__lead` acaban en puntos suspensivos si aun así falta sitio, y el número nunca se recorta (`flex: none`) en `components/GatherBar.css`.
+
+**Por qué.** Eric, al ver el dock ancho: "nooo así no me gusta, me gustaba la anchura del cajón de antes solo que había que recoger un poco los textos o poner ...". Y sobre la prioridad: "puntos suspensivos si hace falta, si no pues resolvemos con copy corto". Sobre los botones: "el añadir o ya tengo las referencias pueden ser algo más pequeños igual", y al verlos los dos en s: "igual pueden ser más grandes? el tema es que quepa todo bien pero igual no tan pequeños claro". Y al ver "Añadir" en s: "ahora el botón de añadir no tiene la misma altura que ya tengo referencias cuidado con eso!!". Los dos quedan en m y el sitio sale de los huecos y del relleno de "Añadir" (medido: 175 px para el texto, que pide 163). Interpretación: el ancho del dock es parte de su forma y no se negocia por el contenido; el contenido se adapta al contenedor, primero con copy corto y solo después con elipsis.
+
+**Cómo aplicarlo.** Cuando un texto no quepa en una pieza con ancho fijo (dock, Isla, tarjetas), no se ensancha la pieza: se acorta el texto o se aprietan huecos y rellenos, nunca se mezclan tamaños de botón en una misma fila, y se deja la elipsis como último recurso. Nunca se recorta un número a media palabra. Los textos de este componente se miden con las miniaturas puestas, que en local casi nunca aparecen.

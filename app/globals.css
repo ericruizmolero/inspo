@@ -11,6 +11,7 @@
   /* Brand palette */
   --paper: #EDE6D6;
   --paper-light: #F6F1E6;
+  --paper-white: #FCFAF6; /* Paper theme: the floor; cards, panels and chrome over it are plain white */
   --paper-pressed: #D9CFBA;
   --ink: #1B1B18;
   --board: #0F0F0F;
@@ -115,6 +116,7 @@
   --lh-code: 1.65; /* mono blocks: the raw file, code samples */
   --tr-display: -0.025em; --tr-title-l: -0.02em; --tr-title-m: -0.01em;
   --tr-glyph: -0.04em; /* a single letter or the wordmark drawn large */
+  --fs-badge: 9px; /* the unseen count on the bell's shoulder: a badge, not text */
 
   /* Spacing steps */
   --space-1: 4px;
@@ -243,8 +245,10 @@
   --field-stroke: 1px;
   --field-placeholder: #6E695F;
   --sunken: inset 2px 2px 0 rgba(27,27,24,0.12);
-  --chrome: var(--paper-light);
-  --chrome-panel: var(--paper-light);
+  /* Paper floor is paper-white, far from the brand paper (Eric, 2026-10-07: "haría el fondo más blanco, que tan
+     pastel", then "algo más blanco todavía"); what sits on it is plain white, so cards and chrome keep their lift */
+  --chrome: #FFFFFF;
+  --chrome-panel: #FFFFFF;
   --chrome-raised: var(--disabled);
   --chrome-border: #D9D1BF;
   --chrome-text: #3D3B35;
@@ -252,14 +256,14 @@
   --chrome-muted: #6E695F;
   --chrome-ink: var(--ink);
   --float: 0 20px 50px rgba(27,27,24,0.16);
-  --surface-page: var(--paper);
-  --surface-raised: var(--paper-light);
+  --surface-page: var(--paper-white);
+  --surface-raised: #FFFFFF;
   --text-muted: #5A5850;
   --focus: var(--ink);
 
-  --bg: var(--paper);
-  --panel: var(--paper-light);
-  --surface: var(--paper-light);
+  --bg: var(--paper-white);
+  --panel: #FFFFFF;
+  --surface: #FFFFFF;
   --surface-2: var(--disabled);
   --surface-3: var(--paper-pressed);
   --border: #D9D1BF;
@@ -287,6 +291,18 @@
 
 html { background: var(--bg); color: var(--text); color-scheme: dark; }
 html[data-theme="light"] { color-scheme: light; }
+/* Paper: menus and windows sit on the near-white floor, so they take the white of the panels, not the brand paper
+   (Eric, 2026-10-07, on the workspace menu: "esta card conserva el color más beige que tenemos que cambiar"). Board
+   keeps them as paper: the lit window over the dark floor */
+:root[data-theme="light"] :is(.cr-menu, .cr-window, .modal.modal--window) {
+  --bg: #FFFFFF; --surface-page: #FFFFFF;
+  --panel: var(--paper-white); --surface: var(--paper-white); --surface-raised: var(--paper-white);
+  --surface-2: var(--paper-light); --ib-hover: var(--paper-light);
+  background: #FFFFFF;
+}
+/* Paper: the menu takes the soft line Alberto gave the fields this morning ("softer"), not the ink (Eric: "respetamos
+   el borde propuesto por Alberto"). Windows keep their ink border and bevel: that frame is what makes them a window */
+:root[data-theme="light"] .cr-menu { border-color: var(--border); }
 html[data-theme="light"] ::placeholder { color: var(--muted); opacity: 1; }
 
 body {
@@ -644,6 +660,10 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__switch .cr-seg[data-liquid] > .cr-seg-item:not(.is-active):hover { background: none; }
 .island__tabs[data-liquid] > .island__tab.is-on { background: none; box-shadow: none; }
 .island__tabs[data-liquid] > .island__tab:not(.is-on):not(.island__tab--field):hover { background: none; }
+/* The home is a tab too: the tabs' radius, and no fill of its own, so only Liquid's glass pills show under it
+   (Eric, 2026-10-07: "el hovering pill de la home no es lo mismo que el del resto") */
+.island__tabs > .island__home.cr-iconbtn { border-radius: var(--radius-md); }
+.island__tabs[data-liquid] > .island__home:hover, .island__tabs[data-liquid] > .island__home.is-active { background: none; }
 .island__tabs.liquid > :is(button, a):active { transform: none; }
 @media (forced-colors: active) { .island__tab.is-on { outline: 2px solid Highlight; outline-offset: -2px; } }
 /* A long name stops at 200px; the tab's tooltip keeps it whole */
@@ -663,8 +683,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .island__tab--more { gap: 4px; padding-right: 8px; color: var(--chrome-text-muted); }
 /* On the others the × takes no room: it shows over the ring at the end of the tab while the pointer is there */
 .island__tab--closable { position: relative; }
-.island__tab--closable .island__tab-main { padding-right: 12px; }
-.island__tab--closable .island__tab-x { position: absolute; right: 7px; top: 50%; margin: -12px 0 0; background: var(--chrome); }
+/* The × takes the ring's place without touching the count: the ring's slot (gap 6 + ring 12 + 14 of padding) is
+   as wide as the × (24) plus 4 of air before the digits, and the ember dot fills the same slot as the ring */
+.island__tab--closable .island__tab-main { padding-right: 14px; }
+.island__tab--closable .island__ring.cr-ring-new { margin: 0 2px 0 0; }
+.island__tab--closable .island__tab-x { position: absolute; right: 4px; top: 50%; margin: -12px 0 0; background: var(--chrome); }
 .island__tab--closable:hover .island__ring { visibility: hidden; }
 /* A name typed in place: the system's TextField look (a sunken field with its border) at the tab's height */
 .island__tab.island__tab--field.cr-input {
@@ -673,7 +696,11 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 .island__tab--field.cr-input:focus-visible { outline: 2px solid var(--ib-focus); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
-  .island__ws:hover { background: var(--chrome-raised); color: var(--chrome-ink); }
+  /* The workspace tile and the bar's icon buttons (home, new project) hover with the tabs' glass, not a solid fill
+     (Eric, 2026-10-07: "y el hovering del espacio entonces?"); the open menu keeps the tile lit with the live glass */
+  .island__ws:hover { background: var(--glass-hover); box-shadow: var(--glass-line); color: var(--chrome-ink); }
+  .island__ws[data-popup-open] { background: var(--glass-on); box-shadow: var(--glass-line); color: var(--chrome-ink); }
+  .island > .cr-iconbtn-quiet:hover, .island__tabs > .cr-iconbtn-quiet:not(.island__home):hover, .island__tabs > .cr-iconbtn-quiet[data-popup-open] { background: var(--glass-hover); box-shadow: var(--glass-line); color: var(--chrome-ink); }
   .island__tab:not(.is-on):not(.island__tab--field):hover { background: color-mix(in srgb, var(--chrome-raised) 60%, transparent); color: var(--chrome-ink); }
   .island__tab--closable:hover .island__tab-x { background: color-mix(in srgb, var(--chrome-raised) 60%, var(--chrome)); }
   /* On a tab that already sits on chrome-raised, the hover fill steps back to chrome so it shows */
@@ -706,6 +733,23 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .island__other-text { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .island__other-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .island__other-meta { font-size: var(--fs-small); font-weight: var(--fw-regular); color: var(--text-2); }
+/* The bell: the + button's twin, with a small ember count on its shoulder while there is something unseen */
+.island__bell { position: relative; }
+.island__bell-count { position: absolute; top: 1px; right: 1px; min-width: 14px; height: 14px; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: var(--ember); color: var(--on-ember); font-size: var(--fs-badge); font-weight: var(--fw-semibold); line-height: 14px; text-align: center; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 2px var(--chrome); pointer-events: none; }
+.island__activity.cr-menu { width: 300px; }
+.island__activity-empty { margin: 0; padding: 4px 10px 8px; color: var(--text-2); }
+.island__activity-list { display: flex; flex-direction: column; max-height: min(440px, calc(100dvh - 160px)); overflow-y: auto; overscroll-behavior: contain; }
+/* A line is a Comment of the system laid as a menu row: the face, the words with the name in bold, the quote,
+   then the project and the hour; an ember dot at the end while it is unseen */
+.island__event { display: flex; align-items: flex-start; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--text); text-decoration: none; transition: background-color 120ms ease; }
+.island__event:hover, .island__event:focus-visible { background: var(--surface-2); outline: none; }
+.island__event-face { flex: none; margin-top: 0; }
+.island__event-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.island__event-text { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
+.island__event-text b { font-weight: var(--fw-semibold); color: var(--text); }
+.island__event-quote { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.island__event-meta { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-2); }
+.island__event-new { flex: none; margin-top: 5px; }
 .sidebar__footer-note { font-size: var(--fs-label); color: var(--muted-2); padding: 0 10px; }
 
 /* Menu rows keep the project's quiet icons: muted until hover or selected */
@@ -773,9 +817,14 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__switch .cr-iconbtn:hover { color: var(--chrome-ink); }
 /* A hairline only between two things: none first, none twice (Connectors leaves once both ways are connected) */
 .topbar__switch > .cr-pillbar-sep:first-child, .topbar__switch .cr-pillbar-sep + .cr-pillbar-sep { display: none; }
-/* Docked sections (settings) have no view switcher; their bar keeps only the trigger */
+/* Docked sections (settings, activity, /library) have no view switcher. On desktop their column is always open, so
+   the trigger goes; where the bar would only hold it (Settings, no breadcrumb) the whole bar goes and the page starts
+   with its own heading (Eric, 07-10: a sidebar toggle there "makes no sense") */
 @media (min-width: 801px) {
   .shell:not(.shell--docked) .topbar { height: 68px; }
+  .shell--docked .topbar__trigger { display: none; }
+  .shell--docked .topbar--phone { display: none; }
+  .shell--docked .topbar--phone + .settings { padding-top: 48px; }
   .shell:not(.shell--docked) .topbar__trigger { display: none; }
 }
 /* A narrow desktop window (801 to 1100): the switcher keeps only its icons (and the fill), so the island's project
@@ -972,7 +1021,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .tile__media::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius-lg); pointer-events: none; box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1); }
 :root[data-theme="light"] .tile__media::after { box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.1); }
 .tile__media:has(> .tile__text)::after { content: none; }
-/* What the tile holds when it is not a site: a round play and a thin scrub line on videos, a GIF chip on
+/* What the tile holds when it is not a site: a round play on videos that open elsewhere, a GIF chip on
    animated images. Solid, no blur */
 .tile__play {
   position: absolute; left: 50%; top: 50%; z-index: 1; transform: translate(-50%, -50%);
@@ -981,12 +1030,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   pointer-events: none; transition: opacity 0.2s;
 }
 .tile:hover .tile__play { opacity: 0; }
-.tile__scrub { position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 1; height: 3px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--paper) 35%, transparent); pointer-events: none; }
-.tile__scrub > span { display: block; height: 100%; border-radius: 2px; background: var(--paper); transform: scaleX(0); transform-origin: left; }
-/* The filing actions come up along the bottom under the pointer: the line rises above them */
-.tile__scrub { transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.tile:hover .tile__scrub:has(~ .tile__go) { transform: translateY(-42px); }
-@media (prefers-reduced-motion: reduce) { .tile__scrub { transition: none; } }
 /* A video or gif looping over its poster; the poster keeps the tile's shape and the loop fades in once it plays */
 .tile__loop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
 .tile__loop.is-playing { opacity: 1; }
@@ -1010,35 +1053,29 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .tile__scroll img.is-ready { animation: dm-scroll cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .tile__scroll img.is-ready { animation-play-state: paused; } }
 
-/* No screenshot: type poster tinted per domain (--fb-hue) with the initial as a watermark */
-.tile__fallback {
-  position: relative; aspect-ratio: 4 / 3; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 16px 18px 18px;
-  /* The theme's raised surface with a faint tint of the domain's hue: readable on paper and on board */
-  background:
-    radial-gradient(120% 90% at 0% 0%, hsl(var(--fb-hue) 30% 50% / 0.16), transparent 60%),
-    var(--surface-raised);
+/* No picture: the same page of words as a text (.tile__text, TextRef.css), in two more shapes.
+   A post from X without media reads as the post: its author's face, name and handle, then what it says.
+   A site that gave no og:image nor screenshot: its domain, its name and what it says about itself. Flat,
+   nothing drawn: no watermark letter, no tint (principle 1) */
+/* The post starts at the top of its square like a text does (Eric, 08-10: nothing moves under the pointer, and the
+   action rows over it are fine). No mask on the words (a short post would fade whole): only a post cut by its card
+   (.is-cut, measured in InspoCard.tsx useCut) gets a fade over its last visible line; one that fits reads whole */
+.tile__text--post { gap: 10px; }
+.tile__text--post .tile__text-body { flex: 0 1 auto; -webkit-mask-image: none; mask-image: none; }
+.tile__text--post.is-cut::before {
+  content: ""; position: absolute; inset: auto 0 0; height: 64px; pointer-events: none;
+  background: linear-gradient(transparent, var(--surface-raised) 72%);
 }
-.tile__fallback-mark {
-  position: absolute; right: -0.06em; top: 50%; z-index: 0; transform: translateY(-46%);
-  font-size: clamp(120px, 58cqw, 280px); line-height: 1; letter-spacing: var(--tr-glyph);
-  color: hsl(var(--fb-hue) 30% 55% / 0.12);
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.4s;
-  pointer-events: none; user-select: none;
-}
-.tile:hover .tile__fallback-mark { transform: translate(-2%, -48%); color: hsl(var(--fb-hue) 30% 55% / 0.18); }
-.tile__fallback-top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.tile__fallback-domain { font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile__fallback-type { flex-shrink: 0; font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--text-2); }
-.tile__fallback-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 6px; max-width: 84%; }
-.tile__fallback-rule { display: block; width: 22px; height: 1px; margin-bottom: 4px; background: hsl(var(--fb-hue) 40% 62% / 0.55); }
-/* The name is title-m (.t-title-m on the element) */
-.tile__fallback-name { color: var(--text); text-wrap: balance; overflow-wrap: anywhere; }
-.tile__fallback-note {
-  font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
+.tile__post-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tile__post-head .cr-avatar { flex-shrink: 0; overflow: hidden; }
+.tile__post-head .cr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.tile__post-who { display: flex; flex-direction: column; min-width: 0; font-size: var(--fs-small); line-height: var(--lh-label); }
+.tile__post-who b { color: var(--text); font-weight: var(--fw-semibold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile__post-who span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The post's words, as X breaks them */
+.tile__post-body { white-space: pre-line; }
+/* A page is landscape: 4:3, like its screenshot would have been */
+.tile__text--site { aspect-ratio: 4 / 3; }
 
 /* The touch caption's title and meta: sans, on the page ground */
 .tile__title { font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--text); }
@@ -1130,15 +1167,16 @@ video.vp__media { object-fit: contain; }
 .cm-msg { display: flex; flex-direction: column; gap: 6px; }
 .cm-msg.is-grouped { margin-top: -8px; }
 .cm-msg__head { display: flex; align-items: center; gap: 8px; min-width: 0; }
-/* A comment as the system's Comment: avatar in the person's tone, the author in bold, the words in muted paper */
+/* A comment as the system's Comment: avatar in the person's tone, the author in bold. In the thread every comment's
+   words are in the full text colour, whoever wrote it: muted paper is for the two-line teaser under a card, and
+   the old rule (muted for the others, full for yours and the first) read as the others' being faded (Eric, 08-10) */
 .cm-msg__name { min-width: 0; font-size: var(--fs-ui); font-weight: var(--fw-semibold); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
 /* "You": the system's Chip, at label size beside the name */
 .cm-msg__you.cr-chip { padding: 1px 8px; font-size: var(--fs-label); font-weight: var(--fw-medium); }
 .cm-msg__tag { font-size: var(--fs-label); color: var(--muted); padding: 1px 6px; border-radius: var(--radius-pill); border: 1px solid var(--border); white-space: nowrap; }
 .cm-msg__time { margin-left: auto; font-size: var(--fs-label); color: var(--muted); white-space: nowrap; }
 .cm-msg__row { display: flex; align-items: flex-start; gap: 8px; padding-left: 34px; }
-.cm-msg__body { flex: 1; margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); white-space: pre-wrap; word-break: break-word; text-wrap: pretty; }
-.cm-msg.is-original .cm-msg__body { color: var(--text); }
+.cm-msg__body { flex: 1; margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text); white-space: pre-wrap; word-break: break-word; text-wrap: pretty; }
 /* Link inside a comment: thin underline, outbound arrow and a soft background on hover */
 .cm-link {
   display: inline-flex; align-items: baseline; gap: 3px; max-width: 100%;
@@ -1150,7 +1188,6 @@ video.vp__media { object-fit: contain; }
 .cm-link svg { width: 10px; height: 10px; flex-shrink: 0; align-self: center; opacity: 0.55; }
 .cm-link:hover { background: var(--surface-2); text-decoration-color: var(--text); }
 .cm-link:hover svg { opacity: 1; }
-.cm-msg.is-mine .cm-msg__body { color: var(--text); }
 /* Edit and delete: quiet IconButtons, size xs (.cr-iconbtn), shown while the pointer is on the comment */
 .cm-msg__del, .cm-msg__edit { opacity: 0; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
 .cm-msg:hover :is(.cm-msg__del, .cm-msg__edit), :is(.cm-msg__del, .cm-msg__edit):focus-visible { opacity: 1; }
@@ -1174,6 +1211,8 @@ video.vp__media { object-fit: contain; }
 .cm-edit__foot > span { margin-right: auto; }
 /* The Composer, pinned at the bottom of the aside: avatar, chrome textarea, attach, the keys, Send */
 .cm-composer__hint { font-size: var(--fs-label); color: var(--chrome-muted); }
+/* The help (keys, ⌘V pastes screenshots) is a line under the field, whole: in the bar it was cut and in the way (Eric, 07-10) */
+.cm-composer__keys { margin: 6px 2px 0; line-height: var(--lh-label); }
 .cm-composer__error { font-size: var(--fs-label); color: var(--danger); }
 @media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
 
@@ -1257,12 +1296,16 @@ video.vp__media { object-fit: contain; }
 }
 .tile__note:hover .tile__note-text { color: var(--text); }
 .tile__note-who { font-weight: var(--fw-semibold); color: var(--text); }
-/* Several voices in the thread: the system's AvatarStack, each circle cut out of the next by a ring of page background */
+/* The face sits centred on the FIRST line of the note (13px at 1.3 = 16.9px), not on the top edge of the text:
+   the 20px circle is pulled up by half the difference, so a two-line note reads as face + line, not face between lines.
+   Several voices in the thread: the system's AvatarStack, each circle cut out of the next by a ring of page background */
+.tile__note > .cr-avatar, .tile__note-stack { flex-shrink: 0; margin-top: calc((var(--fs-small) * var(--lh-label) - 20px) / 2); }
 .tile__note .cr-avatar { flex-shrink: 0; }
 .tile__note-stack .cr-avatar { box-shadow: 0 0 0 1.5px var(--bg); }
-/* Replies in the thread: the activity shows at the end of the line, without opening anything */
+/* Replies in the thread: the activity shows at the end of the line, centred on that same first line */
 .tile__note-count {
-  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; margin-left: auto; margin-top: 2px;
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; margin-left: auto;
+  margin-top: calc((var(--fs-small) * var(--lh-label) - var(--fs-label) * var(--lh-label)) / 2);
   color: var(--muted); font-variant-numeric: tabular-nums; font-size: var(--fs-label); line-height: var(--lh-label);
 }
 .tile__note-count svg { width: 12px; height: 12px; }
@@ -1394,14 +1437,18 @@ video.vp__media { object-fit: contain; }
 .add__pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .add__pick u { text-underline-offset: 3px; color: var(--text); }
 .add__pick > .cr-icon { flex-shrink: 0; }
-/* The areas: the dashboard's pills (28 high, 12 px, transparent) instead of the paper Chip; chosen inverts, like the system's Chip */
-.modal .add .add__area.cr-chip {
-  gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--add-line); background: transparent;
-  color: var(--add-quiet); font-size: var(--fs-label); font-weight: var(--fw-medium);
+/* Line pills (.pills--line, Add and Improve with AI): the dashboard's pills (28 high, 12 px, transparent) instead of
+ * the paper Chip. The line is the soft border; chosen is the same glass as the Island's live tab (no border, no white
+ * fill: Eric, 08-10, "los borders que no sean blancos, más minimalistas") */
+.modal .pills--line { gap: 6px; }
+.modal .pills--line .cr-chip {
+  gap: 6px; height: 28px; padding: 0 11px; border: 1px solid var(--border); background: transparent;
+  color: var(--muted); font-size: var(--fs-label); font-weight: var(--fw-medium);
+  transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
 }
-.modal .add .add__area.cr-chip:hover { color: var(--text); border-color: var(--text); }
-.modal .add .add__area.cr-chip.is-pressed { background: var(--text); border-color: var(--text); color: var(--bg); }
-.modal .add .pills { gap: 6px; }
+.modal .pills--line .cr-chip:hover { color: var(--text); border-color: var(--border-strong); }
+.modal .pills--line .cr-chip.is-pressed { background: var(--glass-on); border-color: transparent; color: var(--text); }
+.modal .pills--line .cr-chip-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* A window's footer holding Cancel and the action: both to the right */
 .modal-window__footer > .modal__footer { margin-left: auto; padding-top: 0; }
 .new-team { display: flex; flex-direction: column; gap: 16px; }
@@ -1642,13 +1689,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
    A window shorter than the form scrolls the panel. */
 .auth:not(.auth--solo) { height: 100dvh; grid-template-rows: minmax(0, 1fr); }
 .auth__panel {
-  /* Paper, whatever the theme: the theme-aware roles are set to their Paper values inside the panel */
-  --bg: var(--paper); --surface-page: var(--paper); --surface-raised: var(--paper-light);
-  --panel: var(--paper-light); --surface: var(--paper-light); --surface-2: var(--disabled); --surface-3: var(--paper-pressed);
-  --border: #D9D1BF; --border-strong: var(--disabled-border);
-  --text: var(--ink); --text-muted: #5A5850; --text-2: #5A5850; --muted: #5A5850; --muted-2: var(--disabled-text);
-  --danger: #B3362C; --focus: var(--ink); --focus-ring: var(--ink);
-  background: var(--paper); color: var(--ink); color-scheme: light;
+  /* Follows the theme (Eric, 07-10: "me gustaba más dark mode"): board ground in Board, paper in Paper */
+  background: var(--bg); color: var(--text);
   display: flex; flex-direction: column; gap: 32px;
   padding: 28px 48px 24px;
   min-height: 0; overflow-y: auto;
@@ -1674,21 +1716,41 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .auth-window__who { display: flex; flex-direction: column; min-width: 0; }
 .auth-window__name { font-size: var(--fs-ui); font-weight: var(--fw-semibold); color: var(--text); }
 .auth-window__email { font-size: var(--fs-small); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The form as it was before the system (Eric, 07-10): flat fields and social buttons on the surface with a thin line,
+   no sunken black well and no bevel; the one bevel is the ember CTA. "Last used" is a small quiet pill at the button's end */
+.auth__panel {
+  --field: var(--surface); --field-ink: var(--text); --field-border: var(--border); --field-stroke: 1px;
+  --field-placeholder: var(--muted-2); --sunken: none;
+}
+.auth__panel .btn:not(.btn--primary) {
+  min-height: 46px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text); box-shadow: none; font-size: var(--fs-ui); font-weight: var(--fw-medium);
+}
+.auth__panel .btn:not(.btn--primary):hover { background: var(--surface-2); border-color: var(--border-strong); }
+.auth__panel .btn:not(.btn--primary):active { transform: none; box-shadow: none; }
+.auth__panel .btn--primary.btn--lg { min-height: 46px; font-size: var(--fs-ui); }
+/* Waiting for an email: the CTA goes quiet in the theme's own greys, not the paper "disabled" tone */
+.auth__panel .btn:disabled { background: var(--surface-2); color: var(--muted); border-color: var(--border-strong); box-shadow: none; }
+.auth__top .cr-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); box-shadow: none; font-weight: var(--fw-medium); }
+.auth__top .cr-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .auth__form, .auth__sent { display: flex; flex-direction: column; gap: 14px; animation: pop-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 /* The headline is the page's h1 (display). Invite and consent say longer things (a team's name, an app's name):
    their h1 takes title-l (.t-title-l, AuthWindow.tsx) */
 .auth__lead { margin: 0; color: var(--text); text-wrap: balance; }
-.auth__hint { font-size: var(--fs-body); color: var(--text-muted); margin: 0 0 6px; line-height: var(--lh-body); max-width: 40ch; }
+.auth__hint { font-size: var(--fs-ui); color: var(--text-muted); margin: 0 0 6px; line-height: var(--lh-body); max-width: 40ch; }
 .auth__hint strong { color: var(--text); font-weight: var(--fw-semibold); }
 .auth__hint a { color: var(--text); text-underline-offset: 3px; }
 /* The email is the system's TextField at the hero's size (it lines up with the l Buttons); "Last used" sits at the label's end */
-.auth__field .cr-field-label { display: flex; align-items: center; justify-content: space-between; }
-.auth__field .cr-input { width: 100%; height: 48px; font-size: var(--fs-body); }
+.auth__field .cr-field-label { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-label); color: var(--muted); }
+.auth__field .cr-input { width: 100%; height: 46px; font-size: var(--fs-ui); }
+.auth__field .cr-input:focus-visible { outline: none; border-color: var(--border-strong); background: var(--surface-2); }
 .auth__social { display: flex; flex-direction: column; gap: 8px; }
 /* Social sign-in: secondary Buttons, size l like the hero's CTA under them, the provider's mark on the left */
 .auth__social-btn { position: relative; }
 .auth__social-btn svg { flex-shrink: 0; }
 .auth__social-btn .auth__last { position: absolute; right: 10px; }
+/* Small and quiet, so it never reaches the label: 12 px, one line, surface-2 */
+.auth__last.cr-chip { padding: 3px 7px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font-size: var(--fs-label); line-height: var(--lh-label); font-weight: var(--fw-medium); }
 /* "Last used" is the system's butter Chip; "or with your email" sits between two engraved Separators */
 .auth__or { display: flex; align-items: center; gap: 12px; font-size: var(--fs-small); color: var(--text-muted); margin: 2px 0; }
 .auth__or .cr-sep { flex: 1; margin: 0; }
@@ -1699,7 +1761,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 }
 .auth__alt { align-self: flex-start; margin-left: -14px; }
 /* The foot: who it is for, and the legal pages (privacy, terms) */
-.auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
+.auth__foot { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-label); line-height: var(--lh-small); color: var(--text-muted); }
 .auth__foot a { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .auth__foot a:hover { color: var(--text); }
 /* A phone: the feedback button sits in that corner, so the two legal lines keep clear of it */
@@ -1777,8 +1839,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .settings__meta { font-size: var(--fs-label); color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .settings__aside { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
 .section-nav__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* The docked column on desktop (SectionShell): rows at ui size; the current page is a pressed Button
-   (paper, ink border, the pressed bevel). The group label is a plain 12px muted label */
+/* The docked column on desktop (SectionShell): rows at ui size; the current page is a flat pill, the same glass
+   as the Island's live tab (Eric, 2026-10-07, on Paper: "este active state queda demasiado potente" as a pressed
+   Button with ink border and bevel). The group label is a plain 12px muted label */
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"] {
   height: 36px; padding: 0 10px; gap: 10px;
   border: var(--stroke-control) solid transparent; border-radius: var(--radius-md);
@@ -1786,10 +1849,10 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"]:hover { background: var(--surface-raised); color: var(--text); }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active] {
-  background: var(--paper-pressed); color: var(--ink); font-weight: var(--fw-semibold);
-  border-color: var(--control-border); box-shadow: var(--bevel-pressed);
+  background: var(--glass-on); color: var(--text); font-weight: var(--fw-semibold);
+  border-color: transparent; box-shadow: none;
 }
-.shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active] .nav-item__icon { color: var(--ink); }
+.shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"][data-active] .nav-item__icon { color: var(--text); }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-menu-button"]:focus-visible:not([data-active]) { box-shadow: none; }
 .shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-group-label"] { font-size: var(--fs-label); color: var(--text-muted); }
@@ -1897,9 +1960,10 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .pl-quota.is-full .pl-quota__nums { color: var(--danger); }
 .pl-over a { color: inherit; text-underline-offset: 3px; }
 
-/* Plan windows: the same height in a row (the tagline holds two lines, the features take the rest, the footers
-   line up at the bottom). The current one says so in its footer, where the others have their button */
-.pl-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: stretch; }
+/* Plan columns, first on the page (Eric, 07-10: "más presentes"): the same height in a row (the tagline holds two
+   lines, the features take the rest, the feet line up at the bottom). The current one says so in its foot, where
+   the others have their button */
+.pl-plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; align-items: stretch; }
 .pl-plan .cr-swin-body { gap: 16px; }
 .pl-plan__tagline { margin: 0; min-height: 2lh; color: var(--text-muted); }
 .pl-plan__price { display: flex; align-items: baseline; gap: 8px; color: var(--text); }
@@ -1939,10 +2003,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 /* Panel header: back, title with subtitle and the period on the right */
 /* The period switch (app/admin/PeriodSwitch.tsx): the paper SegmentedControl, the theme picker's cells */
 .ad-period .cr-seg-item { font-variant-numeric: tabular-nums; }
-/* The KPI strip (Overview and Usage): edge to edge of the window's body, cells divided by hairlines. Each cell
-   draws its left and top hairline; the grid sits 1px out so the ones on the outer edge are clipped */
-.ad-kpis { margin: -16px -20px 0; overflow: hidden; }
-.ad-kpis:last-child { margin-bottom: -16px; }
+/* The KPI strip (Overview and Usage): the section's full width, cells divided by hairlines. Each cell draws its
+   left and top hairline; the grid sits 1px out so the ones on the outer edge are clipped */
+.ad-kpis { overflow: hidden; }
 .ad-kpis:not(:last-child) { border-bottom: 1px solid var(--border); }
 .ad-kpis__grid { margin: -1px 0 0 -1px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 .ad-kpi { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
@@ -1983,7 +2046,11 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .area-thumb { flex: none; display: grid; place-items: center; width: 48px; height: 36px; border-radius: var(--radius-s); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); }
 .area-thumb svg { display: block; }
 /* People: a plain table in the window's body, hairlines between rows; it scrolls sideways when it must */
-.ad-table-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+.ad-table-wrap { overflow-x: auto; }
+/* A person's state: a filled success dot when connected (the green dot Eric asked back, 07-10), the idle ring with
+   a session open, muted text alone when off */
+.ad-state { display: inline-flex; align-items: center; gap: 8px; color: var(--text); }
+.ad-state__dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
 .ad-table { width: 100%; border-collapse: collapse; min-width: 760px; }
 .ad-table th { text-align: left; font-weight: inherit; color: var(--text-muted); padding: 0 12px 8px 0; white-space: nowrap; }
 .ad-table td { height: 52px; padding: 6px 12px 6px 0; border-top: 1px solid var(--border); color: var(--text); vertical-align: middle; white-space: nowrap; }
@@ -2263,10 +2330,20 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .zoom-pill .zoom-pill__track { width: 20px; margin-left: -2px; padding: 0; color: var(--chrome-muted); }
 .zoom-pill__track svg { transition: transform 150ms var(--ease-out); }
 .zoom-pill__track.is-open svg { transform: rotate(180deg); transition-duration: 200ms; }
-.sound-tracks.sound-tracks { width: 208px; }
-/* Where the page scrolls with the window (components/SectionShell.tsx) the pill rides its bottom edge: a line of no
-   height stuck there, and the pill in its corner as everywhere else */
-.shell-corner { position: sticky; bottom: 0; z-index: 12; height: 0; margin-top: auto; }
+.sound-tracks.sound-tracks { width: 236px; }
+/* The stations stay put; the tracks scroll in six rows and a half, and the list fades where there is more (.cr-scroll-fade) */
+.sound-tracks__list { max-height: 208px; overflow-y: auto; overscroll-behavior: contain; margin: 0 -4px; padding: 0 4px; }
+/* Where the page scrolls with the window (components/SectionShell.tsx) the pill keeps the corner it has everywhere:
+   the window's own bottom-left, over the docked column (Eric, 07-10: "siempre en un mismo sitio"). A line of no
+   height fixed there, and the pill 16 px in from its walls as on the boards */
+.shell-corner { position: fixed; left: 0; bottom: 0; z-index: 12; height: 0; }
+/* The pill sits over the docked column's bottom-left, so the list keeps room beneath its last row to scroll clear of it
+   (Eric, 07-10: "cuidado que aquí se solapan cosas") */
+.shell--docked [data-slot="sidebar"]:not([data-mobile="true"]) [data-slot="sidebar-content"] {
+  padding-bottom: 88px;
+  /* and the rows fade out before they reach the pill, so none is ever cut by it */
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 124px), transparent calc(100% - 68px));
+}
 
 /* Light or dark, one click (components/ThemeToggle.tsx): the icon is the theme the click leads to. The system's
    IconButton default on the chrome, a 40 circle in the bottom-right corner, 16 px from its walls like the pill of
@@ -2355,10 +2432,23 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 
 /* Body: the stage takes the room, the conversation is a column of 320 down its right */
 .ip-bento.cr-viewer-body { flex: 1; min-height: 0; }
-.ip-stage.cr-viewer-stage { min-height: 0; padding: 16px; gap: 16px; }
+/* The stage is the size container the fitted image measures against (.pn.is-fit img, cqh): it has a definite height
+   (the viewer's, or 70svh on a phone), while the card hugs its content and could not be one */
+.ip-stage.cr-viewer-stage { min-height: 0; padding: 16px; gap: 16px; container-type: size; }
 .ip-card--page.cr-viewer-media { position: relative; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; border: 1px solid var(--chrome-border); }
+/* Only the reference shows, in the middle of the stage: the card ends where it ends instead of leaving a dark
+   band around it (Eric, 07-10 for captures, 08-10 for everything). A long one still scrolls inside it (capped to
+   the stage). While a capture loads, the card holds most of the height so it does not jump */
+.ip-card--page.cr-viewer-media { align-self: center; max-height: 100%; }
+/* (A percentage here would resolve to nothing: the card has no height of its own now, and the page collapsed to a line
+   while the capture of a just-added site loaded. The card's max-height keeps it inside the stage) */
+.ip .pn-page:has(.shimmer) { min-height: 60svh; }
 .ip-card--talk.cr-viewer-aside { width: 380px; min-height: 0; overflow: hidden; border-left-color: var(--chrome-raised); }
-.ip-media { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+/* A post or a video draws itself (the post's own box, the player): the card around it is nothing */
+.ip-card--page.cr-viewer-media:has(> .ip-media), .ip-card--page.cr-viewer-media:has(.pn.is-fit) { background: transparent; border: 0; }
+.ip-media { flex: 0 1 auto; width: 100%; min-height: 0; overflow-y: auto; padding: 0; }
+/* A post reads at a post's width, in the middle */
+.ip-media:has(> .pv) { max-width: 600px; margin: 0 auto; }
 .ip-state.cr-empty { flex: 1; justify-content: center; padding: 40px; text-wrap: balance; }
 /* A text reference: its title is an h2 (title-l) */
 .ip .ip-text__title { color: var(--chrome-ink); }
@@ -2408,10 +2498,13 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .pn-bar__url span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pn-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 /* An image is shown whole, centred in the card at the size it allows (the auto margins give way when it overflows) */
-.pn.is-fit { container-type: size; display: flex; flex-direction: column; }
+/* Inline-size only: with size containment the viewer had no height of its own and, as the ficha's card hugs its
+   content (align-self: center), the whole image collapsed to a 2px line (Eric, 08-10: "algunas imágenes no salen en la ficha") */
+.pn.is-fit { container-type: inline-size; display: flex; flex-direction: column; }
 .pn.is-fit .pn-page { margin: auto; width: fit-content; min-height: 0; }
 .pn.is-fit .pn-page:has(.shimmer) { width: calc(100% - 40px); min-height: 240px; }
-.pn.is-fit .pn-page img { width: auto; max-width: calc(100cqw - 40px); max-height: calc(100cqh - 40px); border-radius: 6px; }
+/* cqw is the viewer's width; cqh the stage's height (its padding taken off). No frame around it: the card paints nothing (above) */
+.pn.is-fit .pn-page img { width: auto; max-width: 100cqw; max-height: calc(100cqh - 32px); border-radius: 6px; }
 .pn-page { position: relative; min-height: 240px; }
 .pn-page img { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; user-select: none; -webkit-user-drag: none; }
 .pn-page img.is-loaded { opacity: 1; }
@@ -2519,10 +2612,13 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
    the pointer comes to the front */
 .cr-menu { --menu-ground: var(--paper); }
 :root:not([data-theme="light"]) .cr-menu { --menu-ground: #1E1E1C; }
+/* Paper menus are white now, so the ring between faces is white too (Eric, 2026-10-07: "el circle tiene que ser
+   mínimo y mismo color que el back") */
+:root[data-theme="light"] .cr-menu { --menu-ground: #FFFFFF; }
 .island__team { display: flex; align-items: center; min-height: 36px; padding: 4px 4px 4px 10px; }
-.island__face { position: relative; display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--menu-ground); box-shadow: 0 0 0 2px var(--menu-ground); cursor: pointer; text-decoration: none; transition: transform 150ms var(--ease-out); }
+.island__face { position: relative; display: grid; place-items: center; min-width: 24px; height: 24px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--menu-ground); box-shadow: 0 0 0 1.5px var(--menu-ground); cursor: pointer; text-decoration: none; transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out); }
 .island__face + .island__face { margin-left: -6px; }
-.island__face:hover, .island__face:focus-visible { z-index: 1; transform: translateY(-2px); }
+.island__face:hover, .island__face:focus-visible { z-index: 1; transform: translateY(-2px) scale(1.08); box-shadow: 0 0 0 1.5px var(--menu-ground), 0 3px 8px rgba(27,27,24,0.22); }
 .island__face--more { padding: 0 7px; background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: var(--fw-medium); font-variant-numeric: tabular-nums; }
 .island__face--more:hover { color: var(--text); }
 .island__team-manage { margin-left: auto; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--text-2); font-size: var(--fs-small); font-weight: var(--fw-medium); text-decoration: none; }
@@ -2545,8 +2641,16 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 }
 .tile:hover .tile__go, .tile__go.is-visible, .tile__go:focus-within { opacity: 1; transform: none; }
 .tile__go-pick { font-variant-numeric: tabular-nums; }
-/* A narrow card keeps the folder and drops the words; the label stays the button's accessible name */
-@container (max-width: 300px) { .tile__go-pick .tile__go-label { display: none; } .tile__go-pick { padding: 0 12px; } }
+/* The row is three strong IconButtons s (32), 6 px apart, the size of .tile__actions up on the right; the folder turns
+   ember once the card is filed, the one colour over the picture. The words live in the caption */
+.tile__go { gap: 6px; }
+/* Down here the three keep the Button's rounded square (--radius-md), as the old "Archivar" had; up on the right
+   they stay round (Eric, 2026-10-07: "los tres de abajo a la izquierda sí que pueden ir en rectángulo/cuadrado
+   como teníamos antes, pero ese tamaño está bien") */
+.tile__go .cr-iconbtn { border-radius: var(--radius-md); }
+/* Strong (retro: paper, ink border, bevel); filed, the folder is ember under the same bevel, like the old primary Button */
+.tile__go .cr-iconbtn.is-filed { background: var(--ember); color: var(--on-ember); }
+.tile__go .cr-iconbtn.is-filed:hover { background: var(--ember-glow); }
 @media (hover: none) { .tile__go { display: none; } }
 
 /* A card taken out of a project, on its way to the Inbox tab of the tab bar (components/fly-to-inbox.ts): the
@@ -2612,3 +2716,17 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

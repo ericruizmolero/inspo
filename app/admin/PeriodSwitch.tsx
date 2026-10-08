@@ -1,5 +1,6 @@
 "use client";
-// The Activity period (7, 30, 90 days): the system's SegmentedControl in its paper tone. Each choice is a
+// The Activity period (7, 30, 90 days): the system's SegmentedControl in its paper tone, in s like every control of
+// Settings, Activity and /admin (decision of 2026-10-07). Each choice is a
 // navigation (?dias=), so the server loads that period.
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -13,6 +14,7 @@ export default function PeriodSwitch({ section, days, options, labels, label }: 
   return (
     <SegmentedControl
       tone="paper"
+      size="s"
       choice
       className="theme-seg ad-period"
       label={label}

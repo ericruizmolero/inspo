@@ -1,6 +1,6 @@
 // Who answers for the service, for the legal pages (/privacy and /terms, text in lib/i18n/<locale>/legal.ts).
-// Until the company's details are filled in here the pages are a draft: they show in development, answer 404
-// in production, and nothing links to them.
+// Until the company's details are filled in here the pages are a draft: they answer everywhere with the pending
+// facts named as such and a draft notice, and the sign-in form links to them (Eric, 2026-10-07: they must be there).
 
 export interface LegalFacts {
   /** Registered name of the company that runs criterio.design */
@@ -26,5 +26,5 @@ export const LEGAL_UPDATED = "2026-10-06";
 /** Every detail the texts name is in */
 export const legalReady = () => !!(LEGAL.entity && LEGAL.taxId && LEGAL.address);
 
-/** Whether the pages answer and the app links to them */
-export const legalShown = () => legalReady() || process.env.NODE_ENV !== "production";
+/** Whether the pages answer and the app links to them: always, draft or not */
+export const legalShown = () => true;

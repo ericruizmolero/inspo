@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import SettingsHeading from "@/components/SettingsHeading";
 import DsMarkdown from "@/components/design-library/DsMarkdown";
 import Decisions from "@/components/design-library/Decisions";
-import { FoundationsSpecimen } from "@/components/design-library/Specimens";
+import { PageSpecimen } from "@/components/design-library/Specimens";
 import Catalog from "@/components/design-library/Catalog";
 import { sectionIcon } from "@/components/section-icons";
 import { getSession } from "@/lib/workspace";
@@ -89,7 +89,7 @@ export default async function DesignLibrarySection({ params }: Props) {
     <>
       <SettingsHeading title={title} lead={lead} aside={aside} />
       {section === "inicio" && <Blocks />}
-      {section === "fundamentos" && <FoundationsSpecimen />}
+      <PageSpecimen slug={section} />
       <div className="ds-page">
         <DsMarkdown blocks={blocks} />
         <Toc blocks={blocks} />

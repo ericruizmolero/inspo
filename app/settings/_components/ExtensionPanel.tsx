@@ -38,8 +38,8 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
         actions={
           <>
             {/* With no browser of theirs connected, the guide (it ends by connecting); after that, connecting another is the common case */}
-            <a className={buttonVariants({ variant: hasMine ? "default" : "primary" })} href="/extension/install">{t.settings.installExt}</a>
-            <a className={buttonVariants({ variant: hasMine ? "primary" : "default" })} href="/extension/connect">{t.team.connectBrowser}</a>
+            <a className={buttonVariants({ variant: hasMine ? "default" : "primary", size: "sm" })} href="/extension/install">{t.settings.installExt}</a>
+            <a className={buttonVariants({ variant: hasMine ? "primary" : "default", size: "sm" })} href="/extension/connect">{t.team.connectBrowser}</a>
           </>
         }>
         {extKeys.length > 0 && (

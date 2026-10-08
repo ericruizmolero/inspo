@@ -20,8 +20,11 @@
   "save": {
     "message": "Guardar"
   },
+  "noteLabel": {
+    "message": "Nota"
+  },
   "noteHint": {
-    "message": "¿Qué te ha llamado la atención? Un sonido, una transición, el menú… (opcional)"
+    "message": "¿Qué te ha llamado la atención? (opcional)"
   },
   "saving": {
     "message": "Guardando…"
@@ -94,13 +97,7 @@
     "message": "Importa tus marcadores"
   },
   "importLead": {
-    "message": "Trae a $WS$ lo que ya tenías guardado en otros sitios. Cada dirección se guarda como si la hubieras pegado: nombre, miniatura y etiquetas llegan solos.",
-    "placeholders": {
-      "ws": {
-        "content": "$1",
-        "example": "Studio"
-      }
-    }
+    "message": "Trae lo que ya tenías guardado en otros sitios. Cada dirección se guarda como si la hubieras pegado: nombre, miniatura y etiquetas llegan solos."
   },
   "importConnectFirst": {
     "message": "Conecta primero la extensión y vuelve aquí."
@@ -368,5 +365,174 @@
   },
   "videoPageSaved": {
     "message": "Este vídeo se reproduce a trozos y no había un fichero que copiar: se ha guardado la página y un fotograma."
+  },
+  "whereTitle": {
+    "message": "Dónde va"
+  },
+  "workspaceLabel": {
+    "message": "Espacio"
+  },
+  "inbox": {
+    "message": "Inbox"
+  },
+  "inboxOption": {
+    "message": "Inbox (aún no hay proyectos)"
+  },
+  "whereLoading": {
+    "message": "Buscando los proyectos de $WS$…",
+    "placeholders": {
+      "ws": {
+        "content": "$1"
+      }
+    }
+  },
+  "whereSum": {
+    "message": "Todo lo que importes irá a $PROJECT$, en $WS$. Elígelos antes de empezar.",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whereFailed": {
+    "message": "No se han podido cargar los proyectos: $ERR$. Vuelve a elegir el espacio para reintentar.",
+    "placeholders": {
+      "err": {
+        "content": "$1"
+      }
+    }
+  },
+  "howMany": {
+    "message": "Cuáles"
+  },
+  "latestN": {
+    "message": "Los últimos $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastWeek": {
+    "message": "Los de la última semana"
+  },
+  "lastMonth": {
+    "message": "Los del último mes"
+  },
+  "allUpTo": {
+    "message": "Todos (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "xNewestFirst": {
+    "message": "X muestra tus guardados del más reciente al más antiguo, así que la importación empieza por los últimos. Un periodo va por la fecha del post."
+  },
+  "limitReached": {
+    "message": "Ya están los últimos $N$; el resto se queda donde estaba.",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmBar": {
+    "message": "Antes de importar"
+  },
+  "confirmTitle_x": {
+    "message": "¿Importar de X?"
+  },
+  "confirmTitle_pinterest": {
+    "message": "¿Importar de Pinterest?"
+  },
+  "confirmTitle_browser": {
+    "message": "¿Importar estos marcadores?"
+  },
+  "confirmText": {
+    "message": "$WHAT$ se guardarán en $PROJECT$, en $WS$. Cada uno pasa a ser una referencia ahí.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "project": {
+        "content": "$2"
+      },
+      "ws": {
+        "content": "$3"
+      }
+    }
+  },
+  "confirmGo": {
+    "message": "Importar a $PROJECT$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      }
+    }
+  },
+  "changeDestination": {
+    "message": "Cambiar el destino"
+  },
+  "whatXLatest": {
+    "message": "Tus últimos $N$ posts guardados en X",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatXWeek": {
+    "message": "Los posts que guardaste en X la última semana"
+  },
+  "whatXMonth": {
+    "message": "Los posts que guardaste en X el último mes"
+  },
+  "whatXAll": {
+    "message": "Todos los posts que guardaste en X (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatPinLatest": {
+    "message": "Los últimos $N$ pines del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatPinAll": {
+    "message": "Todos los pines del tablero (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBrowser": {
+    "message": "$N$ marcadores de este navegador",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "progressWhere": {
+    "message": "A $PROJECT$, en $WS$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
   }
 }

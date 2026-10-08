@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
-import { ownsThumbnail } from "@/lib/items";
+import { ownsAnyThumbnail } from "@/lib/items";
 import { blobPrefix } from "@/lib/thumbnails";
 import { commentPrefix } from "@/lib/comment-files";
 import { DESIGN_MD_PREFIX, whyShotPrefix } from "@/lib/design-store";
@@ -13,7 +13,9 @@ import { openFile, fileUrl, signedFileUrl, isSafeKey } from "@/lib/storage";
 import { brandPrefix } from "@/lib/brand-files";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
-// The active workspace reads its thumbnails, uploaded images, copied videos, comment screenshots and "why" captures;
+// A workspace's thumbnails, uploaded images, copied videos, comment screenshots and "why" captures are read by
+// its members, whichever workspace the session has active: a switch (components/LibraryHost.tsx) shows the new
+// library before the server has heard of it, and its images were asked for in that gap and refused.
 // DESIGN.md images, saved posts from X and Screen Studio videos are public content, shared by everyone signed in.
 // With R2 the answer is a redirect to a signed R2 URL: the bytes, ranges included, come from R2,
 // so a 60 MB video never runs through a function. On disk (development) the file is streamed here.
@@ -25,10 +27,13 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   const key = parts.join("/");
   if (!isSafeKey(key)) return new Response("bad path", { status: 400 });
 
-  const ws = session.workspace.id;
-  const allowed = [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws), DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
-    // A thumbnail stored under another prefix but set on one of this workspace's items
-    || (await ownsThumbnail(ws, fileUrl(key)));
+  // The active workspace first: it answers nearly every request without looking further
+  const mine = [session.workspace, ...session.workspaces.filter((w) => w.id !== session.workspace.id)].map((w) => w.id);
+  const ownPrefixes = (ws: string) => [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws)];
+  const allowed = [DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
+    || mine.some((ws) => ownPrefixes(ws).some((p) => key.startsWith(p)))
+    // A thumbnail stored under another prefix but set on an item of one of their workspaces
+    || (await ownsAnyThumbnail(mine, fileUrl(key)));
   if (!allowed) return new Response("forbidden", { status: 403 });
 
   try {

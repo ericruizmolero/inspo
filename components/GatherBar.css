@@ -3,7 +3,7 @@
    line between them. Stack of thumbs, title in display 700 with the count in chrome-muted, one line under it,
    one secondary action. */
 .gather {
-  display: flex; align-items: center; gap: 14px; width: 100%; box-sizing: border-box; padding: 14px 16px;
+  display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; padding: 14px 14px;
   color: var(--chrome-text);
 }
 /* What is already on the board, as a small stack: it grows with the first references */
@@ -17,13 +17,18 @@
 .gather__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .gather__title, .gather__lead { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The name is title-s (.t-title-s on the element) */
-.gather__title { display: flex; align-items: baseline; gap: 8px; line-height: var(--lh-title-s); }
-.gather__title b { color: var(--chrome-ink); }
-.gather__title span { font-size: var(--fs-small); color: var(--chrome-muted); font-variant-numeric: tabular-nums; }
+.gather__title { display: flex; align-items: baseline; gap: 6px; line-height: var(--lh-title-s); }
+/* The text has ~165px beside the thumbs and the two actions (the dock stays 640: Eric, 07-10), so the texts are
+   short: "The board", the count, one short sentence. If a row is still short, it ends with an ellipsis; the count
+   is whole or not there, never "7 r" */
+.gather__title b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--chrome-ink); }
+.gather__title span { flex: none; font-size: var(--fs-small); color: var(--chrome-muted); font-variant-numeric: tabular-nums; }
 .gather__lead { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--chrome-text-muted); }
-/* The actions are system Buttons at system sizes: "+ Add" quiet s (it reads the chrome's --ib-* tokens), the step
-   out "I have my references" secondary m with arrow-right after it. Only placement and focus live here */
+/* The actions are system Buttons, both m and so the same height (Eric, 07-10: "cuidado con eso"): "+ Add" quiet
+   (it reads the chrome's --ib-* tokens) with less side padding, so the text keeps its ~165px, and the step out
+   "I have my references" secondary with arrow-right after it. Only placement and focus live here */
 .gather .cr-btn { flex: none; }
+.gather .gather__add { padding-inline: 10px; }
 .gather .cr-btn:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
 .gather__go .cr-icon:last-child { transition: transform 0.2s var(--ease-out); }
 .gather__go:hover:not(:disabled) .cr-icon:last-child { transform: translateX(2px); }

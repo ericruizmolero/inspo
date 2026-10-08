@@ -104,7 +104,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
 
       {workspace.kind !== "team" && (
         <SettingsWindow title={t.settings.noTeamTitle} note={t.settings.noTeamHint}
-          actions={<Button variant="primary" onClick={() => setCreating(true)}>{t.ws.createTeam}</Button>} />
+          actions={<Button variant="primary" size="sm" onClick={() => setCreating(true)}>{t.ws.createTeam}</Button>} />
       )}
 
       {workspace.kind === "team" && (
@@ -124,7 +124,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                   <span className="list__sub t-small">{m.email}</span>
                 </span>
                 {canManage && m.userId !== me.id && !m.role.split(",").includes("owner") ? (
-                  <SegmentedControl tone="paper" choice className="list__pick" label={t.team.roleOf(m.name)}
+                  <SegmentedControl tone="paper" size="s" choice className="list__pick" label={t.team.roleOf(m.name)}
                     active={m.role.split(",").includes("admin") ? 1 : 0}
                     onChange={(i) => { if (!busy && ROLES[i] !== (m.role.split(",").includes("admin") ? "admin" : "member")) setMemberRole(m, ROLES[i]); }}
                     items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
@@ -141,11 +141,11 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
           {canManage && (
             <form onSubmit={invite}>
               <FieldRow label={t.team.emailLabel} htmlFor="invite-email"
-                action={<Button variant="primary" type="submit" disabled={busy || !email.trim()}>{t.team.invite}</Button>}>
+                action={<Button variant="primary" size="sm" type="submit" disabled={busy || !email.trim()}>{t.team.invite}</Button>}>
                 <span className="setting-invite">
                   <input id="invite-email" type="email" className="cr-input" placeholder={t.team.emailPlaceholder}
                     value={email} onChange={(e) => setEmail(e.target.value)} required />
-                  <SegmentedControl tone="paper" choice className="theme-seg" label={t.team.role}
+                  <SegmentedControl tone="paper" size="s" choice className="theme-seg" label={t.team.role}
                     active={ROLES.indexOf(role)} onChange={(i) => setRole(ROLES[i])}
                     items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
                 </span>

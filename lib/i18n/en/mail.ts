@@ -60,4 +60,61 @@ export const mail = {
     text: (who: string, email: string, notes: string, path: string, when: string, url: string, markdown: string): string =>
       `${who} (${email}) left ${notes} on ${path} on ${when}.\nPage: ${url}\n\n${markdown}`,
   },
+
+  // ─── Team emails (lib/notify.ts) ───────────────────────────────────────────
+  // Every one of these ends with a line that says why it came and how to stop it: one click, no sign-in.
+  team: {
+    why: (team: string): string => `You get this because you are in ${team} on criterio.design.`,
+    stop: "Stop these emails",
+    stopNote: (href: string, settings: string): string =>
+      `<a href="${href}" style="color:#a3a3a3;text-decoration:underline">Stop these emails</a> with one click, or choose which ones you get in <a href="${settings}" style="color:#a3a3a3;text-decoration:underline">Account</a>.`,
+    stopText: (href: string): string => `Stop these emails (one click, no sign-in):\n${href}`,
+  },
+
+  digest: {
+    subject: (team: string, summary: string): string => `${team}: ${summary}`,
+    title: (team: string): string => `What is new in ${team}`,
+    body: "What the others did since you last looked. One email a day at most, and none when nothing happened or you were already there.",
+    count: {
+      refs: (n: number): string => (n === 1 ? "1 new reference" : `${n} new references`),
+      comments: (n: number): string => (n === 1 ? "1 comment" : `${n} comments`),
+      decisions: (n: number): string => (n === 1 ? "1 decision" : `${n} decisions`),
+      proposals: (n: number): string => (n === 1 ? "1 proposal" : `${n} proposals`),
+      votes: (n: number): string => (n === 1 ? "1 vote" : `${n} votes`),
+      projects: (n: number): string => (n === 1 ? "1 new project" : `${n} new projects`),
+    },
+    more: (n: number): string => `and ${n} more`,
+    cta: "Open the team",
+    note: "",
+  },
+
+  reply: {
+    subject: (who: string): string => `${who} replied to your comment`,
+    title: (who: string): string => `${who} replied to you`,
+    body: (who: string, mine: string, theirs: string): string =>
+      `You wrote:<br><span style="color:#6b6b6b">${mine}</span><br><br>${who} replied:<br><strong style="color:#f2f2f2;font-weight:500">${theirs}</strong>`,
+    cta: "See the reply",
+    note: "Reply to this email to answer directly.",
+    text: (who: string, mine: string, theirs: string, url: string): string => `You wrote: ${mine}\n\n${who} replied: ${theirs}\n\nSee it here:\n${url}`,
+  },
+
+  proposal: {
+    subject: (who: string, accepted: boolean, area: string): string => `${who} ${accepted ? "accepted" : "turned down"} your proposal on ${area}`,
+    title: (accepted: boolean): string => (accepted ? "Your proposal is in" : "Your proposal was turned down"),
+    body: (who: string, accepted: boolean, area: string, project: string, decision: string): string =>
+      `${who} ${accepted ? "accepted" : "turned down"} what you proposed for <strong style="color:#f2f2f2;font-weight:500">${area}</strong> in ${project}:<br><span style="color:#6b6b6b">${decision}</span>`,
+    cta: "Open the system",
+    note: "",
+    text: (who: string, accepted: boolean, area: string, project: string, decision: string, url: string): string =>
+      `${who} ${accepted ? "accepted" : "turned down"} what you proposed for ${area} in ${project}: ${decision}\n\nOpen it here:\n${url}`,
+  },
+
+  paused: {
+    subject: "We have paused your team summaries",
+    title: "Summaries paused",
+    body: "You have not opened criterio.design in a month, so we have stopped sending the daily summary of your teams. Nothing else changes: your references and teams are where you left them.",
+    cta: "Turn it back on",
+    note: "If you prefer the quiet, do nothing.",
+    text: (url: string): string => `You have not opened criterio.design in a month, so we have stopped sending the daily summary of your teams. Turn it back on here:\n${url}`,
+  },
 };

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
 import SectionShell from "@/components/SectionShell";
-import { sidebarOpen } from "@/lib/sidebar-state";
 import { getSession } from "@/lib/workspace";
 import { isAdmin } from "@/lib/activity";
 import { getT } from "@/lib/i18n";
@@ -22,7 +21,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const a = t.admin.sections;
   return (
     <SectionShell
-      defaultOpen={await sidebarOpen()}
       title={t.admin.title}
       base="/admin"
       wide
