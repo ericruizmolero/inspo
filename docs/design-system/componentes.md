@@ -177,6 +177,7 @@ Una ventana con el nombre del proyecto en la barra y dos pasos (Sobre qué es, R
 Barra flotante de escritorio con los proyectos como pestañas, a lo Figma: Inicio (la casa), Descubrir, Inbox, "N más", "+" para proyecto nuevo y, a la izquierda, el avatar del espacio que abre el menú de espacio.
 - El tile de la izquierda (`.island__logo`, 26 px) es `WorkspaceFace` del espacio activo: su logo, o tu foto en el personal; nunca la mascota del producto. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
 - Las pestañas abiertas se guardan por navegador y espacio; el ancho se mide con un `.island__measure` oculto.
+- En un equipo, tras el "+" va la campanita (`TeamBell`, abajo): lo que hicieron los demás esta semana, con el punto ember del sistema mientras haya algo sin ver. En el espacio personal no está.
 - El relleno de la pestaña activa y el del hover son las pastillas de `Liquid`, sin borde: la del hover fluye de una pestaña a otra y la activa aparece en el mismo clic. La casa (`.island__home`) es una pestaña más: misma forma (`--radius-md`) y sin relleno propio, para que su hover y su estado activo sean las mismas pastillas. El tile del espacio (`.island__ws`) y el "+" de proyecto nuevo pasan el ratón con el mismo cristal (`--glass-hover`, y `--glass-on` con su menú abierto), nunca con un relleno sólido. En el menú del espacio, las caras del equipo (`.island__face`) llevan un anillo de 1,5 px del color del propio menú (`--menu-ground`, blanco en Paper) y al pasar el ratón suben con una sombra corta. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
 - La pestaña activa lleva ⌄ (renombrar, borrar) y × (cerrar pestaña); el × ocupa el sitio del anillo de progreso. En las demás pestañas abiertas el × sale al pasar el ratón en el sitio del anillo, con su hueco reservado (24 px más 4 de aire) para que su círculo no pise el contador. → [decisión](decisiones/2026-10-07-el-circulo-del-hover-nunca-pisa-el-texto-vecino.md)
 - Renombrar en el sitio: Enter guarda, Esc cancela. Proyecto nuevo: ⌘/Ctrl+Enter.
@@ -198,6 +199,10 @@ Diálogo cmdk con ⌘K / Ctrl+K: guardar la URL tecleada, añadir referencia, di
 ### Confirmación
 `useConfirm` · `components/useConfirm.tsx` · `AlertDialog`
 `confirm()` con promesa: `const [confirm, dialog] = useConfirm()`. Una `DialogWindow` con `Button` danger cuando destruye. Solo para lo que destruye o saca algo. Con `typed`, la acción espera a que se escriba ese nombre: para lo que se lleva el trabajo de otras personas (eliminar un equipo). → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md)
+
+### Campanita del equipo
+`TeamBell` · `components/TeamBell.tsx` · `.island__bell` · `.island__activity`
+El icono `bell` del sistema como `IconButton` quiet s (el gemelo del "+" de la Isla) con un globito ember en el hombro (`.island__bell-count`, 14 px, `--on-ember`, "99+" como mucho) que dice cuántas cosas hay sin ver; sin nada nuevo, no hay globito. Abre el Menú del sistema (`.cr-menu`, 340 px) con "Lo que ha hecho el equipo": una fila por hecho de los demás, puesta como el `Comment` del sistema (`.island__event`: el `Avatar` de 24 con la foto de la persona o su inicial en su tono de `toneFor`, su nombre en 600 y el resto apagado, la cita del comentario en dos líneas, el proyecto y la hora en `--fs-label`; un punto ember `.cr-ring-new` al final mientras no se haya visto), de la última semana, las más nuevas arriba, cada una un enlace a la referencia, al proyecto o al sistema. Varias referencias o votos de la misma persona en el mismo proyecto son una fila ("Alberto añadió 4 referencias"). Abrirla marca todo como visto; se pregunta al servidor al llegar y cada minuto con la pestaña visible (`teamActivityFeed`), y cuando la respuesta trae más sin ver que la anterior suena `attention` sutil por `cue` (solo con los sonidos encendidos). Vacío: una frase, no un dibujo. Las mismas líneas van en el resumen diario por correo. → [decisión](decisiones/2026-10-08-avisos-del-equipo-campanita-y-resumen-diario.md)
 
 ### Popover
 `Popover` · `components/ui/popover.tsx` · `.pp` · `.pp--menu`
@@ -471,6 +476,7 @@ Póster que solo carga el iframe del proveedor al pulsarlo.
 ### Conversación
 `CommentsPanel` · `components/CommentsPanel.tsx` · `.cm`
 La nota original y los hilos, con respuestas a un nivel. Capturas pegadas con ⌘V, arrastradas o con el clip; lightbox con ← → y Esc. Enter envía, Shift+Enter salta línea.
+- El texto de todos los comentarios va en `--text`, sea de quien sea (`.cm-msg__body`); el papel apagado es solo del avance de dos líneas bajo la tarjeta (`Comment`). → [decisión](decisiones/2026-10-08-todos-los-comentarios-del-hilo-llevan-el-mismo-color-de-texto.md)
 - La variante `drawer` no se usa.
 
 ### Criterio de la referencia
@@ -517,6 +523,10 @@ Aceptar la invitación a un equipo; si el correo no coincide, cierra sesión y v
 ### Extensión
 `InstallGuide` · `ConnectPanel` · `app/extension/`
 Pasos para instalar el zip en `chrome://extensions` y conectar la extensión a un espacio generando su clave.
+
+### Guardar (extensión)
+`extension/chrome/popup.html` · `popup.js` · `popup.css` · `.field` · `.select--plain` · `.pill`
+El popup: la captura de la pestaña como baldosa, el sitio (favicon, título, host) y el formulario de Añadir con los tokens del cromo: Nota, Proyecto y Áreas del sistema, cada uno con su etiqueta pequeña encima (`.field__label`), el placeholder de la nota de una línea y el proyecto a todo el ancho desde la izquierda. Guardar es el único ember; las áreas son pastillas oscuras y solo la elegida se invierte a papel. → [etiqueta encima del campo](decisiones/2026-10-08-el-formulario-del-popup-lleva-la-etiqueta-encima-del-campo.md), [pastillas oscuras](decisiones/2026-10-08-las-areas-del-popup-son-pastillas-oscuras.md)
 
 ### Importar (extensión)
 `extension/chrome/import.html` · `import.js` · `import.css` · `.where` · `.dlg`

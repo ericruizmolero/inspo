@@ -20,6 +20,14 @@ Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack te
 - Lo que suman los votos se lee con `lib/polish-tally.ts` (sin servidor): lo usan la vista, la pestaña y el aviso de la ficha.
 - Quitar una referencia de un tablón a mano borra sus votos allí (`unfileItems`); sacarla al cerrar el pulido los conserva, que son los que dicen quién la olvidó. → [decisión](decisiones/2026-10-06-en-equipo-el-pulido-es-una-votacion-que-se-cierra.md)
 
+## Avisos del equipo
+
+- Una sola lista de hechos (`teamEvents` en `lib/notify.ts`: referencias, proyectos, comentarios, conversación y propuestas de área, decisiones del equipo, votos y cierres del Pulido) alimenta las tres salidas: la campanita de la Isla (`TeamBell`, `teamActivity`), el resumen diario por correo (`sendDigests`, cron `morning`) y los correos al momento (`notifyReply`, `notifyProposalResolved`). Lo propio nunca sale; en un espacio personal no hay nada.
+- Las frases de las líneas viven en `lib/i18n/<locale>/ui.ts` (`teamActivity.line`) y las usan la campanita y el correo; el resto del correo en `mail.ts` (`digest`, `reply`, `proposal`, `paused`, `team`). El idioma es el de quien recibe, nunca el de quien escribe.
+- Reglas para no ser pesados: un resumen al día como mucho; nada si no pasó nada o si el heartbeat (`activity_segment`) dice que la persona ya entró después; el primer resumen cubre solo el día anterior (nunca el histórico) y ninguno más de una semana; al mes sin abrir la app el resumen se apaga solo con un correo que lo dice. Lo único inmediato: la respuesta a un comentario o un pin tuyo y la resolución de una propuesta tuya, con `reply-to` a quien escribió.
+- Apagar y encender: dos interruptores en Cuenta (`user.digest_emails`, `user.reply_emails`), el enlace firmado de un clic al pie de cada correo (`/unsubscribe`) y la cabecera `List-Unsubscribe` para el botón del cliente de correo. Las marcas por persona y equipo van en `member` (`digest_sent_at`, `activity_seen_at`), migración `0026`.
+- Los correos al momento salen tras responder (`inBackground` usa `after` de Next; fuera de una petición, al instante). `npm run check:notifications` comprueba las partes puras y monta los resúmenes de hoy contra la BD local sin enviar nada. → [decisión](decisiones/2026-10-08-avisos-del-equipo-campanita-y-resumen-diario.md)
+
 ## Contenido de terceros y seguridad
 
 Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y políticas públicas están en [Seguridad y políticas](seguridad.md). Lo que afecta a cómo se construye: todo fetch de una URL ajena pasa por `safeFetch`, todo Chromium por `lib/egress-proxy.ts`; un script inline propio lleva el `nonce` y nunca hay manejadores en HTML; una superficie nueva sin sesión pasa las referencias por `staysInside` antes de enseñar una copia; una clave o un servicio nuevo se apunta en el stack y en la política de privacidad en el mismo trabajo.

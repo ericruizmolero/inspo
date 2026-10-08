@@ -58,4 +58,60 @@ export const mail: typeof EnMail = {
     text: (who: string, email: string, notes: string, path: string, when: string, url: string, markdown: string): string =>
       `${who} (${email}) ha dejado ${notes} sobre ${path} el ${when}.\nPágina: ${url}\n\n${markdown}`,
   },
+
+  // ─── Correos de equipo (lib/notify.ts) ─────────────────────────────────────
+  team: {
+    why: (team: string): string => `Lo recibes porque estás en ${team} en criterio.design.`,
+    stop: "Dejar de recibir estos correos",
+    stopNote: (href: string, settings: string): string =>
+      `<a href="${href}" style="color:#a3a3a3;text-decoration:underline">Deja de recibir estos correos</a> con un clic, o elige cuáles te llegan en <a href="${settings}" style="color:#a3a3a3;text-decoration:underline">Cuenta</a>.`,
+    stopText: (href: string): string => `Dejar de recibir estos correos (un clic, sin entrar):\n${href}`,
+  },
+
+  digest: {
+    subject: (team: string, summary: string): string => `${team}: ${summary}`,
+    title: (team: string): string => `Lo nuevo en ${team}`,
+    body: "Lo que hicieron los demás desde la última vez que miraste. Como mucho un correo al día, y ninguno si no pasó nada o ya estabas ahí.",
+    count: {
+      refs: (n: number): string => (n === 1 ? "1 referencia nueva" : `${n} referencias nuevas`),
+      comments: (n: number): string => (n === 1 ? "1 comentario" : `${n} comentarios`),
+      decisions: (n: number): string => (n === 1 ? "1 decisión" : `${n} decisiones`),
+      proposals: (n: number): string => (n === 1 ? "1 propuesta" : `${n} propuestas`),
+      votes: (n: number): string => (n === 1 ? "1 voto" : `${n} votos`),
+      projects: (n: number): string => (n === 1 ? "1 proyecto nuevo" : `${n} proyectos nuevos`),
+    },
+    more: (n: number): string => `y ${n} más`,
+    cta: "Abrir el equipo",
+    note: "",
+  },
+
+  reply: {
+    subject: (who: string): string => `${who} ha respondido a tu comentario`,
+    title: (who: string): string => `${who} te ha respondido`,
+    body: (who: string, mine: string, theirs: string): string =>
+      `Escribiste:<br><span style="color:#6b6b6b">${mine}</span><br><br>${who} responde:<br><strong style="color:#f2f2f2;font-weight:500">${theirs}</strong>`,
+    cta: "Ver la respuesta",
+    note: "Responde a este correo para contestar directamente.",
+    text: (who: string, mine: string, theirs: string, url: string): string => `Escribiste: ${mine}\n\n${who} responde: ${theirs}\n\nMíralo aquí:\n${url}`,
+  },
+
+  proposal: {
+    subject: (who: string, accepted: boolean, area: string): string => `${who} ha ${accepted ? "aceptado" : "descartado"} tu propuesta de ${area}`,
+    title: (accepted: boolean): string => (accepted ? "Tu propuesta ya está dentro" : "Tu propuesta se ha descartado"),
+    body: (who: string, accepted: boolean, area: string, project: string, decision: string): string =>
+      `${who} ha ${accepted ? "aceptado" : "descartado"} lo que propusiste para <strong style="color:#f2f2f2;font-weight:500">${area}</strong> en ${project}:<br><span style="color:#6b6b6b">${decision}</span>`,
+    cta: "Abrir el sistema",
+    note: "",
+    text: (who: string, accepted: boolean, area: string, project: string, decision: string, url: string): string =>
+      `${who} ha ${accepted ? "aceptado" : "descartado"} lo que propusiste para ${area} en ${project}: ${decision}\n\nÁbrelo aquí:\n${url}`,
+  },
+
+  paused: {
+    subject: "Hemos parado los resúmenes de tus equipos",
+    title: "Resúmenes en pausa",
+    body: "Llevas un mes sin abrir criterio.design, así que hemos dejado de mandarte el resumen diario de tus equipos. Nada más cambia: tus referencias y tus equipos siguen donde los dejaste.",
+    cta: "Volver a activarlo",
+    note: "Si prefieres el silencio, no hagas nada.",
+    text: (url: string): string => `Llevas un mes sin abrir criterio.design, así que hemos dejado de mandarte el resumen diario de tus equipos. Vuelve a activarlo aquí:\n${url}`,
+  },
 };

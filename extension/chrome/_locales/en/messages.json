@@ -20,8 +20,11 @@
   "save": {
     "message": "Save"
   },
+  "noteLabel": {
+    "message": "Note"
+  },
   "noteHint": {
-    "message": "What caught your eye? A sound, a transition, the nav… (optional)"
+    "message": "What caught your eye? (optional)"
   },
   "saving": {
     "message": "Saving…"

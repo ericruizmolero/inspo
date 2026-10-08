@@ -34,7 +34,7 @@ const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
 
 /** One email to one or more addresses. `replyTo` replaces the default reply-to address. */
-export async function sendMail(to: string | string[], subject: string, html: string, text: string, opts: { replyTo?: string } = {}): Promise<void> {
+export async function sendMail(to: string | string[], subject: string, html: string, text: string, opts: { replyTo?: string; headers?: Record<string, string> } = {}): Promise<void> {
   const key = process.env.RESEND_API_KEY;
   const recipients = Array.isArray(to) ? to : [to];
   if (!key) {
@@ -48,14 +48,14 @@ export async function sendMail(to: string | string[], subject: string, html: str
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to: recipients, reply_to: opts.replyTo || REPLY_TO, subject, html, text }),
+    body: JSON.stringify({ from: FROM, to: recipients, reply_to: opts.replyTo || REPLY_TO, subject, html, text, ...(opts.headers ? { headers: opts.headers } : {}) }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));
 
-function layout(locale: Locale, title: string, body: string, cta: { label: string; url: string }, note: string) {
+function layout(locale: Locale, title: string, body: string, cta: { label: string; url: string }, note: string, extra: { block?: string; footer?: string } = {}) {
   const t = mailDict(locale);
   const href = esc(cta.url);
   return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(title)}</title>
@@ -67,12 +67,14 @@ function layout(locale: Locale, title: string, body: string, cta: { label: strin
       <tr><td style="padding:0 0 40px;font-family:${FONT};font-size:16px;font-weight:600;letter-spacing:-0.01em;color:#f2f2f2">criterio.design</td></tr>
       <tr><td style="padding:0 0 12px;font-family:${FONT};font-size:24px;line-height:1.2;font-weight:600;letter-spacing:-0.025em;color:#f2f2f2">${esc(title)}</td></tr>
       <tr><td style="padding:0 0 28px;font-family:${FONT};font-size:15px;font-weight:400;line-height:1.55;color:#a3a3a3">${body}</td></tr>
+      ${extra.block ? `<tr><td style="padding:0 0 28px">${extra.block}</td></tr>` : ""}
       <tr><td style="padding:0 0 36px">
         <a href="${href}" style="display:inline-block;background:#f2f2f2;color:#0d0d0d;text-decoration:none;padding:13px 22px;border-radius:999px;font-family:${FONT};font-size:15px;font-weight:500">${esc(cta.label)}</a>
       </td></tr>
       <tr><td style="border-top:1px solid #262626;padding:20px 0 0;font-family:${FONT};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
         ${note} ${t.fallbackNote(href)}
       </td></tr>
+      ${extra.footer ? `<tr><td style="padding:16px 0 0;font-family:${FONT};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">${extra.footer}</td></tr>` : ""}
       <tr><td style="padding:16px 0 0;font-family:${FONT};font-size:12px;font-weight:400;line-height:1.6;color:#6b6b6b">
         ${esc(t.signature)}. ${t.questions(REPLY_TO)}
       </td></tr>
@@ -149,5 +151,66 @@ export function feedbackMail(f: { author: { name: string; email: string }; path:
     subject: t.feedback.subject(who, n, f.path),
     html,
     text: `${t.feedback.text(who, f.author.email, n, f.path, when, f.url, f.markdown)}\n\n${t.signature}`,
+  };
+}
+
+// ─── Team emails (lib/notify.ts) ─────────────────────────────────────────────
+// The digest and the instant replies. Each carries, at its foot, why it came and a one-click link to stop
+// it (no sign-in), and the same link goes in List-Unsubscribe so mail clients show their own button.
+
+export interface TeamMailFoot { team: string; stopUrl: string; settingsUrl: string }
+
+const footerOf = (locale: Locale, f: TeamMailFoot) => `${esc(mailDict(locale).team.why(f.team))} ${mailDict(locale).team.stopNote(esc(f.stopUrl), esc(f.settingsUrl))}`;
+const footerText = (locale: Locale, f: TeamMailFoot) => `${mailDict(locale).team.why(f.team)}\n${mailDict(locale).team.stopText(f.stopUrl)}`;
+/** Headers for a mail client's own unsubscribe button (RFC 8058): the POST goes to the same signed link */
+export const unsubscribeHeaders = (stopUrl: string): Record<string, string> => ({ "List-Unsubscribe": `<${stopUrl}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" });
+
+export interface DigestLine { text: string; url: string; quote?: string }
+export interface DigestGroup { title: string; url: string; lines: DigestLine[]; more: number }
+
+/** The daily digest: what the others did, grouped by project (or the library), each line a link */
+export function digestMail(d: { summary: string; url: string; groups: DigestGroup[] }, foot: TeamMailFoot, locale: Locale) {
+  const t = mailDict(locale);
+  const block = d.groups.map((g) => `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px">
+      <tr><td style="padding:0 0 8px;font-family:${FONT};font-size:13px;font-weight:600;letter-spacing:-0.01em;color:#f2f2f2"><a href="${esc(g.url)}" style="color:#f2f2f2;text-decoration:none">${esc(g.title)}</a></td></tr>
+      ${g.lines.map((l) => `<tr><td style="padding:0 0 8px;font-family:${FONT};font-size:14px;line-height:1.5;color:#d4d4d4"><a href="${esc(l.url)}" style="color:#d4d4d4;text-decoration:none">${esc(l.text)}</a>${l.quote ? `<br><span style="color:#6b6b6b">${esc(l.quote)}</span>` : ""}</td></tr>`).join("")}
+      ${g.more > 0 ? `<tr><td style="padding:0 0 8px;font-family:${FONT};font-size:13px;color:#6b6b6b">${esc(t.digest.more(g.more))}</td></tr>` : ""}
+    </table>`).join("");
+  const text = d.groups.map((g) => `${g.title}\n${g.lines.map((l) => `  ${l.text}${l.quote ? ` \u00ab${l.quote}\u00bb` : ""}\n  ${l.url}`).join("\n")}${g.more > 0 ? `\n  ${t.digest.more(g.more)}` : ""}`).join("\n\n");
+  return {
+    subject: t.digest.subject(foot.team, d.summary),
+    html: layout(locale, t.digest.title(esc(foot.team)), esc(t.digest.body), { label: t.digest.cta, url: d.url }, t.digest.note, { block, footer: footerOf(locale, foot) }),
+    text: `${t.digest.title(foot.team)}\n${t.digest.body}\n\n${text}\n\n${d.url}\n\n${footerText(locale, foot)}\n\n${t.signature}`,
+  };
+}
+
+/** Someone answered one of your comments: their words under yours, and the email replies to them */
+export function replyMail(r: { who: string; mine: string; theirs: string; url: string }, foot: TeamMailFoot, locale: Locale) {
+  const t = mailDict(locale);
+  return {
+    subject: t.reply.subject(r.who),
+    html: layout(locale, t.reply.title(esc(r.who)), t.reply.body(esc(r.who), esc(r.mine), esc(r.theirs)), { label: t.reply.cta, url: r.url }, t.reply.note, { footer: footerOf(locale, foot) }),
+    text: `${t.reply.text(r.who, r.mine, r.theirs, r.url)}\n\n${footerText(locale, foot)}\n\n${t.signature}`,
+  };
+}
+
+/** Someone accepted or turned down a change you proposed to an area */
+export function proposalMail(p: { who: string; accepted: boolean; area: string; project: string; decision: string; url: string }, foot: TeamMailFoot, locale: Locale) {
+  const t = mailDict(locale);
+  return {
+    subject: t.proposal.subject(p.who, p.accepted, p.area),
+    html: layout(locale, t.proposal.title(p.accepted), t.proposal.body(esc(p.who), p.accepted, esc(p.area), esc(p.project), esc(p.decision)), { label: t.proposal.cta, url: p.url }, t.proposal.note, { footer: footerOf(locale, foot) }),
+    text: `${t.proposal.text(p.who, p.accepted, p.area, p.project, p.decision, p.url)}\n\n${footerText(locale, foot)}\n\n${t.signature}`,
+  };
+}
+
+/** A month without opening the app: the digest stops on its own, and this says so once */
+export function pausedMail(url: string, locale: Locale) {
+  const t = mailDict(locale);
+  return {
+    subject: t.paused.subject,
+    html: layout(locale, t.paused.title, esc(t.paused.body), { label: t.paused.cta, url }, t.paused.note),
+    text: `${t.paused.text(url)}\n\n${t.signature}`,
   };
 }

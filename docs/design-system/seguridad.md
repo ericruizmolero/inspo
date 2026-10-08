@@ -4,7 +4,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 
 ## Quién entra y a qué
 
-- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
+- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/unsubscribe`, `/api/unsubscribe`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
 - **El permiso real lo comprueba cada página y cada ruta**: espacio, rol (`owner` y `admin` gestionan; `member` añade) y socio. `requireCtx` en `lib/workspace.ts`. El proxy solo es el "no" rápido.
 - **Sin contraseñas.** Se entra con enlace mágico (caduca a los 10 minutos) o con Google. La sesión dura 30 días y se renueva cada día; la cookie se cachea 5 minutos (`lib/auth.ts`).
 - **Las páginas internas** (`/admin`, `/library`) responden 404 a quien no es socio. Socio = correo en `ADMIN_EMAILS` o fila en `app_admin` (`npm run admin -- <correo>`).
@@ -17,6 +17,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 | La extensión | `Authorization: Bearer crit_…`, una llave por conexión que se enseña una sola vez | `lib/ext-keys.ts`, `app/api/ext/v1/` | Solo el SHA-256. Actúa por la persona en todos sus espacios hasta que se revoca |
 | Un cliente de IA (MCP) | OAuth 2.1 propio: registro dinámico, código con PKCE S256, token de acceso de una hora y de refresco de 60 días rotado en cada uso. Ni implícito ni contraseña | `lib/mcp/oauth.ts`, `lib/mcp/auth.ts`, permiso en `/mcp/authorize` (pide sesión) | Solo el hash, en `mcp_client` y `mcp_grant` |
 | El cron de Vercel | `CRON_SECRET` como bearer; sin la variable, nada entra | `lib/cron-auth.ts` | |
+| El enlace de baja de un correo | HMAC con `BETTER_AUTH_SECRET` sobre persona y tipo; solo apaga, nunca lee ni enseña nada | `lib/notify.ts` | Sin la variable, producción no arranca ese código |
 | Quien tiene un enlace compartido | El token en la ruta `/s/<token>` es la prueba; solo lectura, sin indexar | `lib/share.ts`, tabla `system_share` | El token (aleatorio) |
 
 ## Límites de uso

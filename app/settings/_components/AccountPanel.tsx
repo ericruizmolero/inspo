@@ -9,11 +9,12 @@ import ThemeSwitch from "@/components/ThemeSwitch";
 import LangSwitch from "@/components/LangSwitch";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import { setUiSounds, useUiSounds } from "@/lib/ui-sounds";
+import { setEmailPreference } from "@/app/actions/notifications";
 import { useT, messageOf } from "@/components/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Avatar, FieldRow, SettingsWindow, Switch, toneFor } from "@/components/criterio";
 
-export default function AccountPanel({ user, personal }: { user: SessionUser; personal: Workspace | null }) {
+export default function AccountPanel({ user, personal, emails }: { user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean } }) {
   const personalId = personal?.id ?? null;
   const { t } = useT();
   const sounds = useUiSounds();
@@ -26,6 +27,15 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
   const [photoError, setPhotoError] = useState("");
   const [outError, setOutError] = useState("");
   const [saved, setSaved] = useState(false);
+  // The team emails: switched at once on screen, put back if the save fails
+  const [mail, setMail] = useState(emails);
+  const [mailError, setMailError] = useState("");
+  const setKind = async (kind: "digest" | "replies", on: boolean) => {
+    const before = mail;
+    setMail({ ...mail, [kind]: on }); setMailError("");
+    const res = await setEmailPreference(kind, on);
+    if (!res.ok) { setMail(before); setMailError(res.error); }
+  };
 
   // The name goes on the user and on the personal workspace, which carries the same name
   const saveName = async (e: React.FormEvent) => {
@@ -97,6 +107,15 @@ export default function AccountPanel({ user, personal }: { user: SessionUser; pe
         <FieldRow label={t.settings.language}><LangSwitch /></FieldRow>
         <FieldRow label={t.settings.uiSounds} hint={t.settings.uiSoundsHint}>
           <Switch checked={sounds} onChange={setUiSounds} label={t.settings.uiSounds} />
+        </FieldRow>
+      </SettingsWindow>
+
+      <SettingsWindow title={t.settings.emails} description={t.settings.emailsHint}>
+        <FieldRow label={t.settings.digestEmails} hint={t.settings.digestEmailsHint} error={mailError}>
+          <Switch checked={mail.digest} onChange={(on) => void setKind("digest", on)} label={t.settings.digestEmails} />
+        </FieldRow>
+        <FieldRow label={t.settings.replyEmails} hint={t.settings.replyEmailsHint}>
+          <Switch checked={mail.replies} onChange={(on) => void setKind("replies", on)} label={t.settings.replyEmails} />
         </FieldRow>
       </SettingsWindow>
 

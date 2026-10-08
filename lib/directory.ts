@@ -195,6 +195,17 @@ export const DIRECTORY: DirectoryGroup[] = [
     ],
   },
   {
+    // Native Mac apps, each one a product and a landing worth looking at (from the "Mac Apps Collection" threads)
+    key: "mac",
+    items: [
+      { name: "Droppy", url: "https://getdroppy.app", added: "2026-10-08" },
+      { name: "Wasdy", url: "https://wasdy.app", added: "2026-10-08" },
+      { name: "Shhepit", url: "https://shhepit.app", added: "2026-10-08" },
+      { name: "Moorline", url: "https://moorline.app", added: "2026-10-08" },
+      { name: "Maccelerate", url: "https://maccelerate.app", added: "2026-10-08" },
+    ],
+  },
+  {
     key: "graphics",
     items: [
       { name: "Deck Gallery", url: "https://deck.gallery", added: "2026-10-05" },

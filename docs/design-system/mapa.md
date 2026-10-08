@@ -22,7 +22,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 
 | URL | Acceso | Qué hay |
 | --- | --- | --- |
-| `/settings/account` | Sesión | Nombre, foto, tema, idioma y sonidos |
+| `/settings/account` | Sesión | Nombre, foto, tema, idioma, sonidos y los correos del equipo (resumen diario, respuestas) |
 | `/settings/workspace` | Sesión (editar: quien gestiona) | Nombre y logo del espacio |
 | `/settings/members` | Sesión | Miembros e invitaciones; `?create=1` abre "Crear equipo" |
 | `/settings/plan` | Sesión | Planes primero, luego cuotas, asientos y gasto de IA |
@@ -47,6 +47,7 @@ Se da acceso con `npm run admin -- <correo>`.
 | `/s/[token]` | La marca de un proyecto compartida por enlace, de solo lectura, con criterio.md para copiar o descargar. El token es la prueba; no se indexa |
 | `/extension/privacy` | Privacidad de la extensión, enlazada desde la Chrome Web Store |
 | `/privacy`, `/terms` | Política de privacidad y términos de uso. Borrador: 404 en producción hasta que `lib/legal.ts` tenga los datos de la sociedad |
+| `/unsubscribe?u=&k=&s=` | El enlace de un clic al pie de cada correo del equipo: apaga ese tipo de correo al abrirse, sin sesión (la firma `s` es la prueba, `lib/notify.ts`), y ofrece volver a activarlo. `/api/unsubscribe` recibe el POST del botón "Cancelar suscripción" del cliente de correo (`List-Unsubscribe`) |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
 
 ## Extensión
