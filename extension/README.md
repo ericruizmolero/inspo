@@ -116,6 +116,10 @@ focus, and an import takes minutes). Three kinds of source, one entry each in `S
   (`importedMediaKey`), so importing the same board again saves nothing twice. Up to 1000 items a run,
   10 a request when a batch carries images.
 
+The app's Import dialog (Conectores → Import) can open this page too: it posts `open-import` with
+`what: "x" | "browser"`, `content.js` passes it on and the service worker opens `import.html?source=<what>`
+next to the app's tab, only for a tab of an origin this build may reach (0.7.1 and later).
+
 The page asks which project bookmarks and posts land in (the same field as the popup's form, the one
 this person last added to picked first). A board lands in a project named after it instead: `POST /projects { name }` answers with
 the one an earlier import made, from here or from the app, or makes it (`projectForBoard` in

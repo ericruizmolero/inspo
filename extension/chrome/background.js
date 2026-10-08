@@ -15,6 +15,7 @@ const allowedBase = (base) => {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type === "import-board") { openBoardImport(msg.url, sender); return false; }
+  if (msg?.type === "open-import") { openImport(msg.what, sender); return false; }
   const base = sender.id === chrome.runtime.id && sender.origin ? allowedBase(sender.origin) : null;
   if (msg?.type === "ext-key" && typeof msg.key === "string" && msg.key.startsWith("crit_") && base) {
     chrome.storage.local
@@ -165,6 +166,13 @@ chrome.runtime.onInstalled.addListener(sync);
 chrome.runtime.onStartup.addListener(sync);
 chrome.permissions.onAdded.addListener(sync);
 chrome.permissions.onRemoved.addListener(sync);
+
+/** The app's Import dialog: the import page on X or on the browser's bookmarks, next to the app's tab.
+ *  Only a tab of the app may ask (content.js runs nowhere else). */
+function openImport(what, sender) {
+  if (sender.id !== chrome.runtime.id || !sender.tab || !allowedBase(sender.origin) || (what !== "x" && what !== "browser")) return;
+  chrome.tabs.create({ url: chrome.runtime.getURL(`import.html?source=${what}`), index: sender.tab.index + 1, openerTabId: sender.tab.id });
+}
 
 /** The button's click: the import page, next to the board's tab, importing that board */
 function openBoardImport(url, sender) {
