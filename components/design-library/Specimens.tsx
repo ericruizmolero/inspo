@@ -9,6 +9,7 @@ import { areaIcon } from "@/components/area-icons";
 import { sectionIcon, SECTION_ICON_NAMES } from "@/components/section-icons";
 import Logo from "@/components/Logo";
 import { setTheme as applyTheme } from "@/lib/theme";
+import { audition } from "@/lib/ui-sounds";
 import { SYSTEM_AREAS } from "@/types/system";
 import {
   Avatar, AvatarStack, Balloon, BoardCard, Busy, Button, Card, Checkbox, Chip, Comment, EmptyState, FieldRow, Icon, IconButton, Key, MenuItem,
@@ -126,6 +127,7 @@ export function PageSpecimen({ slug }: { slug: string }) {
     case "espaciado": return <SpaceSpecimen />;
     case "radios-y-sombras": return <RadiiSpecimen />;
     case "movimiento": return <MotionSpecimen />;
+    case "sonido": return <SoundSpecimen />;
     case "iconos": return <IconsSpecimen />;
     case "pantalla": return <ScreenSpecimen />;
     case "botones": return <ButtonsSpecimen />;
@@ -142,6 +144,47 @@ const BRAND = [
   { token: "--ember", name: "Ember", ink: "var(--ink)" },
   { token: "--butter", name: "Butter", ink: "var(--ink)" },
 ];
+
+// The interface's cues as the app plays them (lib/ui-sounds.ts: cuelume, theme press), the ones in use first, each with
+// its moment; then the ones nothing plays. They sound here whatever the person's setting, to be heard.
+const CUES_IN_USE: { label: string; sound: Parameters<typeof audition>[0]; options?: Parameters<typeof audition>[1] }[] = [
+  { label: "Guardar una referencia", sound: "success", options: { emphasis: "subtle" } },
+  { label: "Conservar", sound: "select", options: { direction: "forward" } },
+  { label: "Olvidar, sacar al Inbox", sound: "select", options: { direction: "back" } },
+  { label: "Deshacer", sound: "navigate", options: { direction: "back" } },
+  { label: "Cerrar el pulido", sound: "success" },
+  { label: "Error", sound: "error" },
+  { label: "Algo nuevo del equipo", sound: "attention", options: { emphasis: "subtle" } },
+  { label: "El tornado al girarlo", sound: "tap", options: { emphasis: "subtle" } },
+  { label: "Encender los sonidos", sound: "toggle" },
+];
+const CUES_UNUSED: Parameters<typeof audition>[0][] = ["type", "open", "close", "warning", "loading", "ready", "count"];
+
+function SoundSpecimen() {
+  return (
+    <div className="ds-specimen">
+      <Block title="En la app" aside={<span className="ds-val">cuelume, tema press</span>}>
+        <p className="ds-note">Pulsa para oír cada momento. Aquí suenan aunque tengas los sonidos apagados en Ajustes.</p>
+        <div className="ds-row">
+          {CUES_IN_USE.map((c) => (
+            <Button key={c.label} size="s" onClick={() => audition(c.sound, c.options)}>
+              {c.label} <span className="ds-val">{c.sound}{c.options?.direction === "back" ? " ↓" : c.options?.direction === "forward" ? " ↑" : ""}{c.options?.emphasis === "subtle" ? " · sutil" : ""}</span>
+            </Button>
+          ))}
+        </div>
+      </Block>
+      <Block title="Sin uso" aside={<span className="ds-val">los otros siete</span>}>
+        <p className="ds-note">Existen en el tema y nada los toca: antes de usar uno, su fila en la tabla de abajo.</p>
+        <div className="ds-row ds-row--muted">
+          {CUES_UNUSED.map((n) => <Button key={n} size="s" variant="quiet" onClick={() => audition(n)}>{n}</Button>)}
+        </div>
+      </Block>
+      <Block title="Música">
+        <p className="ds-note">La de verdad: la pastilla de la esquina inferior izquierda de esta misma página. Enciéndela y cambia de emisora desde la flecha.</p>
+      </Block>
+    </div>
+  );
+}
 
 /** The Tokens hub: the system in one glance, the five brand colours with the type and a button on them. */
 function TokensSpecimen() {

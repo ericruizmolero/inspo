@@ -62,6 +62,7 @@ const GLIDE_MS = 150; // time constant of the glide to a card
 const CLOSE_MS = 130; // and of the gap closing when a card leaves the board
 const THROW_FRAMES = 10; // a released drag lands where its speed would take it in this many frames
 const WHEEL_STEP = 1.4; // card gaps of scroll per card
+const TICK_MS = 70; // the least between two ticks of the tornado turning under the hand: a fast spin is a purr, not a rattle
 const DRAG_SLOP = 6; // px before a press is a drag
 const SETTLE_MS = 140; // this long without a scroll, it rests on the nearest card
 const FLY_MS = 640;
@@ -493,7 +494,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   // scroll it rests on the nearest one; and with everything decided it turns on its own
   useEffect(() => {
     const e = eng.current;
-    let raf = 0, last = performance.now();
+    let raf = 0, last = performance.now(), ticked = 0;
     const frame = (t: number) => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(48, t - last), f = dt / 16.67;
@@ -520,7 +521,12 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       const lift = e.done ? 0 : 1;
       if (e.lift !== lift) e.lift = e.still || Math.abs(lift - e.lift) < 0.004 ? lift : e.lift + (lift - e.lift) * (1 - Math.exp(-dt / 220));
       const front = Math.round(e.p);
-      if (front !== e.base) { e.base = front; setBase(front); }
+      if (front !== e.base) {
+        // A card passing the front under the hand (a scroll, a drag) ticks, like a wheel's notch: never when it
+        // glides there on its own after a decision, nor while it turns behind the words once the board is done
+        if ((e.dragging || t - e.scrolled < SETTLE_MS) && !e.done && t - ticked > TICK_MS) { ticked = t; cue("tap", { emphasis: "subtle" }); }
+        e.base = front; setBase(front);
+      }
       paint(e, dt);
     };
     raf = requestAnimationFrame(frame);

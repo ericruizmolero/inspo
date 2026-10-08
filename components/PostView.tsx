@@ -58,22 +58,21 @@ function Still({ m }: { m: PostMedia }) {
 }
 
 /** A video plays X's own best file; if X no longer serves it, our lighter copy. Both loop on their own,
- *  silent, like on X; the controls are there for the sound. A gif loops the same way, without controls.
+ *  silent and without controls, like a gif (Eric, 08-10: no player in the sheet either, as in Polish).
  *  X refuses its files to requests carrying another site's Referer, and <video> can't drop it on its own:
  *  X's file plays inside a tiny frame whose document sends no Referer. Our own copy plays directly. */
 function Moving({ m }: { m: PostMedia }) {
-  const gif = m.kind === "gif";
   const ratio = m.w && m.h ? `${m.w} / ${m.h}` : "16 / 9";
   const poster = m.poster ? m.poster : "";
   const backup = m.backup ? m.backup : "";
   if (!/^https:\/\/video\.twimg\.com\//.test(m.src)) {
     const src = m.src || m.backup || "";
     return <video className="pv__video" style={{ aspectRatio: ratio }} src={src} poster={poster || undefined}
-      autoPlay loop muted {...(gif ? {} : { controls: true })} playsInline />;
+      autoPlay loop muted playsInline />;
   }
   const attr = (v: string) => v.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
   const doc = `<!doctype html><meta name="referrer" content="no-referrer"><style>html,body{margin:0;height:100%;background:#000}video{display:block;width:100%;height:100%;object-fit:contain}</style>`
-    + `<video src="${attr(m.src)}" poster="${attr(poster)}" playsinline autoplay loop muted${gif ? "" : " controls"}></video>`;
+    + `<video src="${attr(m.src)}" poster="${attr(poster)}" playsinline autoplay loop muted></video>`;
   // The backup is wired from here: the frame shares our CSP, which allows no inline handler in it
   const onLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
     const v = e.currentTarget.contentDocument?.querySelector("video");

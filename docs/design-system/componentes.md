@@ -261,7 +261,7 @@ La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el b
 - Zoom (− % +): columnas en los tablones, tamaño del tornado en Pulido; las demás vistas no tienen (`zoom={null}`) y la pastilla es el altavoz solo.
 - Música, tras una línea fina: el altavoz (`.zoom-pill__sound`) enciende y apaga con un clic; mientras suena, la flecha (`.zoom-pill__track`) abre el menú de la música (`.sound-tracks`, un `cr-menu` de 236) y gira con él: 200 ms al abrir, 150 al cerrar (Eric, 06-10: "que gire acompasado"). Arriba, bajo "Emisora", las tres emisoras con tic (Todas, Lo-fi, Instrumental); bajo la línea, las canciones de la sintonizada en una zona de altura fija que hace scroll (`.sound-tracks__list`, 208 px), con la que suena a la vista. Doce pistas en `public/polish/` (lista `TRACKS`, cada una con su emisora), que no se descargan hasta encenderla; entra y sale con fundido y al acabar una sigue la siguiente de la emisora. → [emisoras](decisiones/2026-10-07-la-musica-se-elige-por-emisora-y-la-lista-no-crece.md), [las pistas](decisiones/2026-10-06-la-musica-de-pulido-se-elige-por-nombre.md)
 - Siempre arranca apagada al abrir o recargar la página; solo se recuerda la última canción.
-- El audio es uno para toda la página y no se corta al cambiar de pantalla ni de pestaña del navegador (sigue sonando en segundo plano). Suena solo mientras uno de sus botones está en pantalla.
+- El audio es uno para toda la página y no se corta al cambiar de pantalla ni de pestaña del navegador (sigue sonando en segundo plano). Suena solo mientras uno de sus botones está en pantalla. Pistas, emisoras, volúmenes y fundidos, en [Sonido](fundamentos/sonido.md).
 - En móvil solo Pulido la tiene, arriba bajo la barra.
 
 ## Biblioteca y tablero
@@ -470,7 +470,7 @@ La captura completa para leer con scroll, o la imagen centrada. Brillo mientras 
 
 ### Vista de post de X
 `PostView` · `components/PostView.tsx` · `.pv`
-Autor, @usuario, fecha, texto, fotos, vídeo o gif. El vídeo va en un iframe sin Referer (X devuelve 403 si lo lleva). La caja sola es `PostBox` (`post`, `playing`): la misma que pinta la tarjeta de Pulido, con `playing` falso enseña el fotograma del vídeo en vez de reproducirlo. `PostView` la carga desde `components/post-cache.ts` (`usePost`): el post se pide a `/api/post` una vez por sesión para todas las vistas; mientras llega, un shimmer, y si X ya no lo sirve, "no disponible". → [decisión](decisiones/2026-10-08-en-pulido-la-tarjeta-se-ve-como-en-la-ficha.md)
+Autor, @usuario, fecha, texto, fotos, vídeo o gif. El vídeo va en un iframe sin Referer (X devuelve 403 si lo lleva) y hace bucle mudo sin controles, como un gif y como en Pulido (Eric, 08-10: "en la ficha que tampoco aparezca el reproductor"). La caja sola es `PostBox` (`post`, `playing`): la misma que pinta la tarjeta de Pulido, con `playing` falso enseña el fotograma del vídeo en vez de reproducirlo. `PostView` la carga desde `components/post-cache.ts` (`usePost`): el post se pide a `/api/post` una vez por sesión para todas las vistas; mientras llega, un shimmer, y si X ya no lo sirve, "no disponible". → [decisión](decisiones/2026-10-08-en-pulido-la-tarjeta-se-ve-como-en-la-ficha.md)
 
 ### Página de texto
 `TextPage` · `components/TextPage.tsx` · `.ip-text`
