@@ -159,60 +159,6 @@
       }
     }
   },
-  "importPinterestShort": {
-    "message": "Tablero de Pinterest"
-  },
-  "pinTitle": {
-    "message": "De Pinterest"
-  },
-  "pinLead": {
-    "message": "Pega la dirección de uno de tus tableros. Cada pin se guarda como imagen, secciones incluidas. Para un tablero secreto tienes que tener la sesión de Pinterest iniciada en este navegador."
-  },
-  "pinUrlLabel": {
-    "message": "Dirección del tablero"
-  },
-  "importPinterest": {
-    "message": "Importar de Pinterest"
-  },
-  "pinPermission": {
-    "message": "Chrome pide permiso para leer pinterest.com; solo se usa mientras importa."
-  },
-  "pinPermissionDenied": {
-    "message": "Sin permiso para leer pinterest.com la extensión no puede ver el tablero."
-  },
-  "pinBadUrl": {
-    "message": "Eso no es un tablero. Pega la dirección de un tablero, como pinterest.com/tu-usuario/tablero."
-  },
-  "pinNotFound": {
-    "message": "Pinterest no enseña ese tablero. Si es secreto, inicia sesión en Pinterest en este navegador y vuelve a probar."
-  },
-  "pinFailed": {
-    "message": "Pinterest ha dejado de responder. Prueba otra vez en un rato."
-  },
-  "pinPartial": {
-    "message": "Pinterest dejó de responder a medias: $N$ referencias nuevas guardadas. Vuelve a importar el tablero para traer el resto; lo guardado no se repite.",
-    "placeholders": {
-      "n": {
-        "content": "$1",
-        "example": "48"
-      }
-    }
-  },
-  "pinTabClosed": {
-    "message": "Se cerró la pestaña de Pinterest. Lo encontrado hasta ahora queda guardado."
-  },
-  "pinInjectFailed": {
-    "message": "No se pudo leer la pestaña de Pinterest: $ERR$",
-    "placeholders": {
-      "err": {
-        "content": "$1",
-        "example": "Cannot access contents of the page"
-      }
-    }
-  },
-  "progressPinterest": {
-    "message": "Leyendo los pines del tablero…"
-  },
   "progressBrowser": {
     "message": "Importando marcadores…"
   },
@@ -229,7 +175,7 @@
     "message": "ya estaban"
   },
   "skipped": {
-    "message": "no son webs"
+    "message": "sin importar"
   },
   "failed": {
     "message": "fallidos"
@@ -368,5 +314,253 @@
   },
   "videoPageSaved": {
     "message": "Este vídeo se reproduce a trozos y no había un fichero que copiar: se ha guardado la página y un fotograma."
+  },
+  "boardTitle": {
+    "message": "De un tablero"
+  },
+  "boardLead": {
+    "message": "Pega la dirección de un tablero de Are.na, Pinterest o Cosmos. Entran webs, imágenes y vídeos; textos y archivos se quedan fuera. Todo va a un proyecto nuevo con el nombre del tablero. Para un tablero secreto de Pinterest o un clúster privado de Cosmos tienes que tener la sesión iniciada allí en este navegador."
+  },
+  "boardUrlLabel": {
+    "message": "Dirección del tablero"
+  },
+  "importBoard": {
+    "message": "Importar tablero"
+  },
+  "boardPermission": {
+    "message": "Chrome pide permiso para leer ese sitio. Con él, sus tableros muestran también un botón para importarlos."
+  },
+  "boardPermissionDenied": {
+    "message": "Sin permiso para leer $PLATFORM$ la extensión no puede ver el tablero.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardBadUrl": {
+    "message": "Eso no es un tablero. Pega la dirección de uno, como are.na/tu/canal o pinterest.com/tu/tablero."
+  },
+  "boardNotFound": {
+    "message": "$PLATFORM$ no enseña ese tablero. Si es privado, inicia sesión en $PLATFORM$ en este navegador y vuelve a probar.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardFailed": {
+    "message": "$PLATFORM$ dejó de responder. Vuelve a probar en un rato.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardPartial": {
+    "message": "$PLATFORM$ dejó de responder a medias: $N$ referencias nuevas guardadas. Vuelve a importar el tablero para traer el resto; lo guardado no se repite.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      },
+      "n": {
+        "content": "$2",
+        "example": "12"
+      }
+    }
+  },
+  "boardTabClosed": {
+    "message": "Se cerró la pestaña de $PLATFORM$. Lo encontrado hasta ahora queda guardado.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardInjectFailed": {
+    "message": "No se pudo leer la pestaña de $PLATFORM$: $ERR$",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      },
+      "err": {
+        "content": "$2",
+        "example": "Cannot access contents of the page"
+      }
+    }
+  },
+  "progressBoard": {
+    "message": "Leyendo el tablero de $PLATFORM$…",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "listAnd": {
+    "message": "$A$ y $B$",
+    "placeholders": {
+      "a": {
+        "content": "$1",
+        "example": "38 websites"
+      },
+      "b": {
+        "content": "$2",
+        "example": "12 images"
+      }
+    }
+  },
+  "kind_websiteOne": {
+    "message": "$N$ web",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_websiteMany": {
+    "message": "$N$ webs",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_imageOne": {
+    "message": "$N$ imagen",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_imageMany": {
+    "message": "$N$ imágenes",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_videoOne": {
+    "message": "$N$ vídeo",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_videoMany": {
+    "message": "$N$ vídeos",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultImported": {
+    "message": "Importado: $LIST$.",
+    "placeholders": {
+      "list": {
+        "content": "$1",
+        "example": "38 websites and 12 images"
+      }
+    }
+  },
+  "resultAlready": {
+    "message": "$N$ ya estaban.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultSkippedOne": {
+    "message": "$N$ sin importar ($REASON$).",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      },
+      "reason": {
+        "content": "$2",
+        "example": "text"
+      }
+    }
+  },
+  "resultSkippedMany": {
+    "message": "$N$ sin importar ($LIST$).",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      },
+      "list": {
+        "content": "$2",
+        "example": "38 websites and 12 images"
+      }
+    }
+  },
+  "reason_textOne": {
+    "message": "texto"
+  },
+  "reason_textMany": {
+    "message": "textos"
+  },
+  "reason_fileOne": {
+    "message": "archivo"
+  },
+  "reason_fileMany": {
+    "message": "archivos"
+  },
+  "reason_channelOne": {
+    "message": "canal"
+  },
+  "reason_channelMany": {
+    "message": "canales"
+  },
+  "reason_otherOne": {
+    "message": "otro"
+  },
+  "reason_otherMany": {
+    "message": "otros"
+  },
+  "reason_invalidOne": {
+    "message": "no es dirección web"
+  },
+  "reason_invalidMany": {
+    "message": "no son direcciones web"
+  },
+  "importBoardShort": {
+    "message": "Un tablero"
+  },
+  "importThisBoard": {
+    "message": "Importar este tablero"
+  },
+  "pageButton": {
+    "message": "Importar a Criterio"
+  },
+  "pageButtonLabel": {
+    "message": "Importar este tablero de $PLATFORM$ a Criterio",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
   }
 }

@@ -514,6 +514,8 @@ Aceptar la invitación a un equipo; si el correo no coincide, cierra sesión y v
 `InstallGuide` · `ConnectPanel` · `app/extension/`
 Pasos para instalar el zip en `chrome://extensions` y conectar la extensión a un espacio generando su clave.
 
+La extensión misma vive en `extension/chrome` (detalle en `extension/README.md`): el popup, la página de importar y, en los tableros de Are.na, Pinterest y Cosmos cuyo permiso se ha concedido, la píldora "Import to Criterio" (`board-button.js`) abajo a la derecha, en un Shadow DOM cerrado: papel, borde de tinta y bisel, Archivo, la marca y el anillo ember. Abre la página de importar sobre ese tablero, que lo trae a un proyecto con su nombre y termina diciendo qué entró por tipo y qué se quedó fuera y por qué. → [decisión](decisiones/2026-10-08-la-extension-pone-un-boton-para-importar-un-tablero.md)
+
 ### Error y 404
 `Lost` · `components/Lost.tsx` · `Lost.css` · `.lost` · lo usan `app/not-found.tsx` y `app/error.tsx`
 La cabeza del logotipo flota en el sitio del cero de un "404" grande y tenue (`digits`); en un error va sola y torcida. Debajo, título, una línea de por qué y las salidas como hijos.
