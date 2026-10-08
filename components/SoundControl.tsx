@@ -9,7 +9,6 @@
 // It plays only while one of its buttons is on screen: on a screen without one it fades out, and it comes back in
 // with the next. Another tab of the browser is not away: it keeps playing behind it.
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { Volume2, VolumeX } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icon, MenuItem, MenuLabel, Separator } from "@/components/criterio";
 import { useT } from "./I18nProvider";
@@ -201,7 +200,7 @@ export default function SoundControl() {
       {/* The system's IconButton (quiet, s, a toggle) as its classes: the ref is needed to see it on screen */}
       <button ref={ref} type="button" className={`cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s zoom-pill__sound${on ? " is-active is-on" : ""}`} onClick={toggle}
         aria-pressed={on} aria-label={on ? s.soundOff : s.soundOn} data-tip={on ? s.soundOff : s.soundOn}>
-        {on ? <Volume2 size={16} strokeWidth={2} aria-hidden /> : <VolumeX size={16} strokeWidth={2} aria-hidden />}
+        <Icon name={on ? "volume" : "mute"} size={16} />
       </button>
       {on && (
         <Popover open={open} onOpenChange={setOpen}>

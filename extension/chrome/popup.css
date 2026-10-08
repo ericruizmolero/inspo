@@ -270,9 +270,9 @@ h1, p { margin: 0; }
   box-shadow: var(--bevel-pressed); cursor: default; transform: none;
 }
 .btn.is-done .btn__check { display: inline-flex; }
-.btn.is-done .btn__check path { stroke-dasharray: 12; stroke-dashoffset: 12; animation: check 0.32s cubic-bezier(0.2, 0, 0, 1) 0.05s forwards; }
-@keyframes check { to { stroke-dashoffset: 0; } }
-@media (prefers-reduced-motion: reduce) { .btn.is-done .btn__check path { animation: none; stroke-dashoffset: 0; } }
+.btn.is-done .btn__check svg { clip-path: inset(0 100% 0 0); animation: check 0.32s cubic-bezier(0.2, 0, 0, 1) 0.05s forwards; }
+@keyframes check { to { clip-path: inset(0); } }
+@media (prefers-reduced-motion: reduce) { .btn.is-done .btn__check svg { animation: none; clip-path: none; } }
 
 /* A right-clicked image or video: shown whole, not cut to the 16:10 of a site's tile */
 .app[data-mode="media"] .shot { aspect-ratio: auto; max-height: 260px; display: flex; align-items: center; justify-content: center; }

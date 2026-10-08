@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Busy, Button as CrButton, Chip, Icon, Separator, TextField } from "@/components/criterio";
 import { isLocalPath } from "@/lib/url";
 
-const IcMail = (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <rect x="3" y="5" width="18" height="14" rx="3" /><path d="M3.5 7.5L12 13l8.5-5.5" />
-  </svg>
-);
+const IcMail = <Icon name="mail" size={22} />;
 
 const IcGoogle = (
   <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>

@@ -13,7 +13,7 @@ import { SYSTEM_AREAS } from "@/types/system";
 import {
   Avatar, AvatarStack, Balloon, BoardCard, Busy, Button, Card, Checkbox, Chip, Comment, EmptyState, FieldRow, Icon, IconButton, Key, MenuItem,
   MenuLabel, NoteCard, PillBar, PillBarSep, Progress, PromptInput, ReferenceTile, SegmentedControl, Separator, SettingsWindow, StatusBar, StatusCell,
-  StatusRing, Switch, TextArea, TextField, TipWindow, toneFor, Wordmark, ZoomControl,
+  StatusRing, Switch, TextArea, TextField, TipWindow, toneFor, Wordmark, ZoomControl, ICON_NAMES as ALL_ICONS,
 } from "@/components/criterio";
 import { Dialog, DialogWindow } from "@/components/ui/dialog";
 import "./DesignLibrary.css";
@@ -368,18 +368,17 @@ function MotionSpecimen() {
   );
 }
 
-const ALL_ICONS: IconName[] = ["home", "plus", "minus", "close", "chevron-down", "chevron-left", "chevron-right", "arrow-right", "arrow-up-right", "search", "sun", "mute", "grid", "sparkle", "gauge", "plug", "text", "image", "play", "folder", "compass", "comment", "quote", "check", "trash", "copy"];
 
 function IconsSpecimen() {
   return (
     <div className="ds-specimen">
-      <Block title="Del sistema" aside={<span className="ds-val">24 px, trazo 2</span>}>
+      <Block title="Del sistema" aside={<span className="ds-val">Phosphor, regular</span>}>
         <div className="ds-icons">{ALL_ICONS.map((n) => <span key={n} className="ds-icon"><Icon name={n} size={20} /><span>{n}</span></span>)}</div>
       </Block>
-      <Block title="De área" aside={<span className="ds-val">16 px, trazo 1,5</span>}>
+      <Block title="De área" aside={<span className="ds-val">Phosphor, regular</span>}>
         <div className="ds-icons">{SYSTEM_AREAS.map((a) => <span key={a} className="ds-icon">{areaIcon(a, 20)}<span>{a}</span></span>)}</div>
       </Block>
-      <Block title="De sección" aside={<span className="ds-val">16 px, trazo 1,5</span>}>
+      <Block title="De sección" aside={<span className="ds-val">Phosphor, regular</span>}>
         <div className="ds-icons">{SECTION_ICON_NAMES.map((n) => <span key={n} className="ds-icon">{sectionIcon(n)}<span>{n}</span></span>)}</div>
       </Block>
     </div>

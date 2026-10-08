@@ -39,7 +39,7 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
   box-shadow: var(--sunken);
 }
 .tree input:checked {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 6.3l2.3 2.3L9.5 3.6' stroke='%23EDE6D6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256' fill='%23EDE6D6'%3E%3Cpath d='M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z'/%3E%3C/svg%3E");
 }
 .tree input:disabled { background-color: var(--disabled); border-color: var(--disabled-border); box-shadow: none; cursor: not-allowed; }
 .tree input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

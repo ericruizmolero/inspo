@@ -63,11 +63,7 @@ const TEASER = pick(GUEST_TEASER, 3, SAMPLE);
 // After sign-in it returns to the home page with the directory open (InspoClient reads ?directory=1)
 const LOGIN_HREF = `/login?next=${encodeURIComponent("/?directory=1")}`;
 
-const IcArrow = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 10l6-6M5 4h5v5" />
-  </svg>
-);
+const IcArrow = <Icon name="arrow-up-right" size={14} />;
 
 /** Static thumbnail from public/directory (scripts/directory-shots.ts); if missing, the name's initial. */
 function RecThumb({ name, url }: { name: string; url: string }) {

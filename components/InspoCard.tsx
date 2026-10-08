@@ -162,24 +162,10 @@ interface InspoCardProps {
   };
 }
 
-const IconUpload = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M7 10V2M7 2L4 5M7 2l3 3" /><path d="M2 12h10" />
-  </svg>
-);
-const IconMore = (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden><circle cx="3.5" cy="8" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="12.5" cy="8" r="1.3" /></svg>
-);
-const IconExternal = (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M4 10l6-6M5 4h5v5" />
-  </svg>
-);
-const IconInfo = (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-    <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
-  </svg>
-);
+const IconUpload = <Icon name="upload" size={14} />;
+const IconMore = <Icon name="dots" size={14} />;
+const IconExternal = <Icon name="arrow-up-right" size={13} />;
+const IconInfo = <Icon name="info" size={12} />;
 
 export interface NoteCaption { name: string; image: string | null; body: string; people: { name: string; image: string | null }[]; more: number }
 
@@ -558,7 +544,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onClick={(e) => { e.stopPropagation(); onSelect(e.shiftKey); }} onMouseDown={(e) => e.stopPropagation()}>
               {/* The system's Checkbox box: a sunken field, ink border, an ink tick once picked */}
               <span className="cr-check-box" aria-hidden>
-                <svg width={10} height={8} viewBox="0 0 10 8"><path d="M1 4L4 7L9 1" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+                <Icon name="check" size={10} weight="bold" />
               </span>
             </button>
           )}

@@ -17,7 +17,6 @@ import VoiceSection from "./sections/VoiceSection";
 import ImagerySection from "./sections/ImagerySection";
 import ApplicationsSection from "./sections/ApplicationsSection";
 import AssetsSection from "./sections/AssetsSection";
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { Chip, Icon, IconButton } from "@/components/criterio";
 import "./brand.css";
 
@@ -37,8 +36,8 @@ export function ItemTools<T>({ list, index, onChange, className = "" }: { list: 
   const move = (d: -1 | 1) => { const n = [...list]; const j = index + d; if (j < 0 || j >= n.length) return; [n[index], n[j]] = [n[j], n[index]]; onChange(n); };
   return (
     <span className={`be-tools ${className}`}>
-      {index > 0 && <IconButton icon={<ArrowUp size={14} aria-hidden />} variant="strong" size="xs" onClick={() => move(-1)} label={t.brand.moveUp} />}
-      {index < list.length - 1 && <IconButton icon={<ArrowDown size={14} aria-hidden />} variant="strong" size="xs" onClick={() => move(1)} label={t.brand.moveDown} />}
+      {index > 0 && <IconButton icon="arrow-up" variant="strong" size="xs" onClick={() => move(-1)} label={t.brand.moveUp} />}
+      {index < list.length - 1 && <IconButton icon="arrow-down" variant="strong" size="xs" onClick={() => move(1)} label={t.brand.moveDown} />}
       <IconButton icon="close" variant="strong" size="xs" onClick={() => onChange(list.filter((_, i) => i !== index))} label={t.brand.remove} />
     </span>
   );

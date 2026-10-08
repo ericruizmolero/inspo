@@ -12,16 +12,12 @@ import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
-import { Avatar, Busy, Button as SysButton, IconButton, SegmentedControl, TipWindow, TextArea, toneFor } from "@/components/criterio";
+import { Avatar, Busy, Button as SysButton, Icon, IconButton, SegmentedControl, TipWindow, TextArea, toneFor } from "@/components/criterio";
 import FileMenu from "./FileMenu";
 import "./SystemMarkdown.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
-const IconPin = (
-  <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden>
-    <path d="M2 3.5A1.5 1.5 0 013.5 2h7A1.5 1.5 0 0112 3.5v5a1.5 1.5 0 01-1.5 1.5H6l-3 2.5V10h-.5A1.5 1.5 0 012 8.5z" />
-  </svg>
-);
+const IconPin = <Icon name="comment" size={13} />;
 export const WHY_MAX = 400;
 /** A person's face: the system's Avatar, their picture or their initial on their tone */
 const Face = ({ name, image, size }: { name: string; image: string | null; size: number }) => <Avatar initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} src={image} size={size} />;

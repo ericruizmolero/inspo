@@ -19,7 +19,7 @@ Los valores salen del sistema de diseño Criterio (claude.ai/artifact/RM3rCVaxFN
 | [Espaciado](fundamentos/espaciado.md) | La escala de espacio y la altura única de los controles |
 | [Radios y sombras](fundamentos/radios-y-sombras.md) | Radios, bordes, bisel y las pocas sombras |
 | [Movimiento](fundamentos/movimiento.md) | Curvas, duraciones y keyframes |
-| [Iconos](fundamentos/iconos.md) | Los tres juegos de iconos y su trazo |
+| [Iconos](fundamentos/iconos.md) | Phosphor, el único juego de iconos |
 | [Pantalla, capas y foco](fundamentos/pantalla.md) | Puntos de corte, z-index y el anillo de foco |
 
 ## Reglas que cruzan todas las páginas

@@ -8,7 +8,6 @@ import { useSection } from "../BrandPresentation";
 import { colorCodes, inkOn } from "@/lib/brand-values";
 import { COLOR_GROUPS, HEX_RE, brandId, type BrandColor } from "@/types/brand";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ArrowDown, ArrowUp } from "lucide-react";
 import { IconButton, SegmentedControl } from "@/components/criterio";
 
 function Codes({ hex }: { hex: string }) {
@@ -55,8 +54,8 @@ function ColorForm({ color, isAccent, onChange, onRemove, onAccent, onMove, firs
       <div className="bc-form__foot">
         <button type="button" className={`btn btn--quiet btn--sm bc-form__accent${isAccent ? " is-on" : ""}`} onClick={onAccent} disabled={isAccent} data-tip={s.isAccent}>{isAccent ? s.accent : s.makeAccent}</button>
         <span>
-          {!first && <IconButton icon={<ArrowUp size={14} aria-hidden />} variant="quiet" size="xs" onClick={() => onMove(-1)} label={t.brand.moveUp} />}
-          {!last && <IconButton icon={<ArrowDown size={14} aria-hidden />} variant="quiet" size="xs" onClick={() => onMove(1)} label={t.brand.moveDown} />}
+          {!first && <IconButton icon="arrow-up" variant="quiet" size="xs" onClick={() => onMove(-1)} label={t.brand.moveUp} />}
+          {!last && <IconButton icon="arrow-down" variant="quiet" size="xs" onClick={() => onMove(1)} label={t.brand.moveDown} />}
           <button type="button" className="btn btn--quiet btn--sm is-danger" onClick={onRemove}>{t.brand.remove}</button>
         </span>
       </div>

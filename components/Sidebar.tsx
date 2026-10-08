@@ -22,95 +22,33 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 // ─── Icons: the system's Icon where it has the glyph; the rest drawn in the same hand (16px, 1.5 stroke) ─
 const I = {
-  home: <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" aria-hidden><path d="M2.5 7.2 8 2.75l5.5 4.45V13a.75.75 0 0 1-.75.75H9.75v-3.5h-3.5v3.5H3.25A.75.75 0 0 1 2.5 13z" /></svg>,
-  info: (
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="6" cy="6" r="5" /><path d="M6 5.5V8.5M6 3.6v.1" />
-    </svg>
-  ),
+  home: <Icon name="home" size={15} />,
+  info: <Icon name="info" size={12} />,
   all: <Icon name="grid" size={16} />,
   spark: <Icon name="sparkle" size={16} />,
   // Polish, and nothing else in the app: a solid shine, the one filled icon among strokes
-  gem: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M7 3c.4 2.6 1.9 4.1 4.5 4.5C8.9 7.9 7.4 9.4 7 12c-.4-2.6-1.9-4.1-4.5-4.5C5.1 7.1 6.6 5.6 7 3z" />
-      <circle cx="12.5" cy="3.5" r="1.3" />
-    </svg>
-  ),
-  play: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-      <rect x="2" y="3" width="12" height="10" rx="2" /><path d="M7 6l3 2-3 2z" />
-    </svg>
-  ),
-  bulb: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5.5 11c-1.2-.9-2-2.2-2-3.8a4.5 4.5 0 019 0c0 1.6-.8 2.9-2 3.8" /><path d="M6 13.5h4" />
-    </svg>
-  ),
-  film: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
-      <rect x="2" y="2.5" width="12" height="11" rx="2" /><path d="M5 2.5v11M11 2.5v11M2 8h12" />
-    </svg>
-  ),
-  inbox: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 9l1.6-5.2A1.5 1.5 0 015 2.8h6a1.5 1.5 0 011.4 1L14 9v3.5a1.5 1.5 0 01-1.5 1.5h-9A1.5 1.5 0 012 12.5z" /><path d="M2 9h3.2l.8 1.6h4l.8-1.6H14" />
-    </svg>
-  ),
+  gem: <Icon name="sparkle" size={16} weight="fill" />,
+  play: <Icon name="video" size={16} />,
+  bulb: <Icon name="bulb" size={16} />,
+  film: <Icon name="film" size={16} />,
+  inbox: <Icon name="inbox" size={16} />,
   folder: <Icon name="folder" size={16} />,
-  dots: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-      <circle cx="3" cy="7" r="1.2" /><circle cx="7" cy="7" r="1.2" /><circle cx="11" cy="7" r="1.2" />
-    </svg>
-  ),
-  user: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="8" cy="5.5" r="2.7" /><path d="M2.8 14a5.2 5.2 0 0110.4 0" />
-    </svg>
-  ),
-  users: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <circle cx="6" cy="5.5" r="2.4" /><path d="M1.8 13.5a4.4 4.4 0 018.4 0" /><path d="M10.5 3.3a2.4 2.4 0 010 4.4M12 9.4a4.3 4.3 0 012.3 4.1" />
-    </svg>
-  ),
-  cal: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <rect x="2" y="3" width="12" height="11" rx="2" /><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
-    </svg>
-  ),
+  dots: <Icon name="dots" size={14} />,
+  user: <Icon name="user" size={16} />,
+  users: <Icon name="users" size={16} />,
+  cal: <Icon name="calendar" size={16} />,
   plus: <Icon name="plus" size={14} />,
   search: <Icon name="search" size={16} />,
   x: <Icon name="close" size={12} />,
   arrow: <Icon name="arrow-right" size={14} />,
-  arrowUp: (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M7 11.5v-9M3 6.5l4-4 4 4" />
-    </svg>
-  ),
+  arrowUp: <Icon name="arrow-up" size={14} />,
   check: <Icon name="check" size={14} />,
-  copy: (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M3.6 10.4A1.5 1.5 0 012.5 9V4A1.5 1.5 0 014 2.5h5a1.5 1.5 0 011.4 1.1" />
-    </svg>
-  ),
-  sliders: (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-      <path d="M2.5 4.5h6M11.5 4.5h2M2.5 11.5h2M7.5 11.5h6" /><circle cx="10" cy="4.5" r="1.5" /><circle cx="6" cy="11.5" r="1.5" />
-    </svg>
-  ),
+  copy: <Icon name="copy" size={16} />,
+  sliders: <Icon name="sliders" size={14} />,
   chevron: <Icon name="chevron-down" size={14} />,
   compass: <Icon name="compass" size={16} />,
-  external: (
-    <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 10l6-6M5 4h5v5" />
-    </svg>
-  ),
-  shuffle: (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 4h2.5c1.2 0 2.2.6 2.9 1.6L9.6 10.4c.7 1 1.7 1.6 2.9 1.6H14M2 12h2.5c1.2 0 2.2-.6 2.9-1.6M9.6 5.6c.7-1 1.7-1.6 2.9-1.6H14" />
-      <path d="M12.5 2.5L14 4l-1.5 1.5M12.5 10.5L14 12l-1.5 1.5" />
-    </svg>
-  ),
+  external: <Icon name="arrow-up-right" size={12} />,
+  shuffle: <Icon name="shuffle" size={14} />,
 };
 
 export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading, shortcut }: {

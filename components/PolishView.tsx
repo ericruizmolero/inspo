@@ -19,7 +19,6 @@
 // tornado at once, in to look at the card closer. The zoom is the size of the tornado's em, so it scales as one piece.
 // The pill holds the app's optional music too (components/SoundControl.tsx), as everywhere else.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Undo2 } from "lucide-react";
 import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo";
 import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
 import { fmtDate } from "@/lib/i18n/format";
@@ -820,7 +819,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
               <Key className="polish__key">→</Key>
               <span className="polish__btn-text"><b className="t-ui">{s.keep}</b><small className="t-label">{!team ? s.keepSub : reviewing && canClose ? s.ruleStay : s.voteStay}</small></span>
             </button>
-            <IconButton className="polish__undo" icon={<Undo2 size={18} strokeWidth={2} aria-hidden />} label={s.undo} onClick={undo} disabled={history.length === 0} />
+            <IconButton className="polish__undo" icon="undo" label={s.undo} onClick={undo} disabled={history.length === 0} />
             {/* A team is told what its answer is here: a vote, settled among everyone */}
             {team && (
               <p className="t-label polish__team">

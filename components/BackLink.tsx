@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
+import { Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
 interface Props { href?: string; label?: string }
@@ -24,9 +25,7 @@ export default function BackLink({ href = "/", label }: Props) {
   return (
     <Link href={href} className="back" onClick={onClick} aria-label={t.common.backToLibrary}>
       <span className="back__icon" aria-hidden>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M7.5 2.5L4 6l3.5 3.5" />
-        </svg>
+        <Icon name="chevron-left" size={12} />
       </span>
       <span className="back__label">{text}</span>
     </Link>

@@ -96,7 +96,7 @@ export default function ProjectPicker({ projects, filed, partly = [], onToggle, 
                     </span>
                   )}
                   <span className="cr-check-box" aria-hidden>
-                    {on ? <Icon name="check" size={14} strokeWidth={2.4} /> : some ? <i className="cr-picker-dash" /> : null}
+                    {on ? <Icon name="check" size={14} weight="bold" /> : some ? <i className="cr-picker-dash" /> : null}
                   </span>
                 </button>
               </li>

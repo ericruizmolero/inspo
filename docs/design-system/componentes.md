@@ -221,7 +221,7 @@ Anillo que dice cuánto del sistema de un proyecto está decidido. Aparece en la
 
 ### Iconos de las áreas
 `areaIcon` · `components/area-icons.tsx` · `.area-icon` · muestra: iconos-area
-Los 8 conceptos del sistema (tipografía, color, layout, movimiento, iconografía, logo, imagen, voz) dibujados a mano: 16 px, trazo 1,5, `currentColor`. Donde se nombra un área, su icono va primero.
+Los 8 conceptos del sistema (tipografía, color, layout, movimiento, iconografía, logo, imagen, voz) con un glifo de Phosphor cada uno, `currentColor`. Donde se nombra un área, su icono va primero.
 
 ### Iconos de sección
 `sectionIcon` · `components/section-icons.tsx` · muestra: iconos-seccion

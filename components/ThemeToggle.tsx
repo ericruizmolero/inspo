@@ -5,10 +5,9 @@
 // icons are in the markup and globals.css shows the one for the theme a click leads to (it reads
 // <html data-theme>), so nothing waits for the browser to know the theme. Choosing here is choosing by hand:
 // "System" stays in Settings (ThemeSwitch).
-import { Moon, Sun } from "lucide-react";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { switchTheme } from "@/lib/theme";
-import { IconButton } from "@/components/criterio";
+import { Icon, IconButton } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
 const flip = () => switchTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light");
@@ -16,7 +15,7 @@ const flip = () => switchTheme(document.documentElement.dataset.theme === "light
 /** `row`: a line of the sidebar, with its words; otherwise the floating button */
 export default function ThemeToggle({ row, onPick }: { row?: boolean; onPick?: () => void }) {
   const { t } = useT();
-  const icons = <><Sun className="theme-toggle__sun" size={16} strokeWidth={1.5} aria-hidden /><Moon className="theme-toggle__moon" size={16} strokeWidth={1.5} aria-hidden /></>;
+  const icons = <><Icon name="sun" size={16} className="theme-toggle__sun" /><Icon name="moon" size={16} className="theme-toggle__moon" /></>;
   if (row) {
     return (
       <SidebarMenu>
@@ -31,6 +30,6 @@ export default function ThemeToggle({ row, onPick }: { row?: boolean; onPick?: (
   }
   return (
     <IconButton variant="default" size="m" className="theme-toggle theme-float" onClick={flip} label={t.theme.toggle}
-      icon={<><Sun className="theme-toggle__sun" size={18} strokeWidth={2} aria-hidden /><Moon className="theme-toggle__moon" size={18} strokeWidth={2} aria-hidden /></>} />
+      icon={<><Icon name="sun" size={18} className="theme-toggle__sun" /><Icon name="moon" size={18} className="theme-toggle__moon" /></>} />
   );
 }

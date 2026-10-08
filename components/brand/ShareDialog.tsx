@@ -4,8 +4,7 @@
 import { useEffect, useState } from "react";
 import { useT } from "../I18nProvider";
 import { Dialog, DialogDescription, DialogWindow } from "@/components/ui/dialog";
-import { Busy, Button, Chip, SegmentedControl } from "@/components/criterio";
-import { ArrowUpRight } from "lucide-react";
+import { Busy, Button, Chip, Icon, SegmentedControl } from "@/components/criterio";
 import { loadShares, makeShare, stopShare } from "@/app/actions/share";
 import { timeAgo } from "@/lib/i18n/format";
 import type { ShareLink } from "@/lib/share";
@@ -59,7 +58,7 @@ export default function ShareDialog({ projectId, onClose }: { projectId: string;
                   <span>
                     <Button size="s" onClick={() => void copy(l)}>{copied === l.id ? s.copied : s.copyLink}</Button>
                     {/* The system's strong IconButton, size s, as a link */}
-                    <a className="cr-iconbtn cr-iconbtn-strong cr-iconbtn-s" href={urlOf(l)} target="_blank" rel="noreferrer" aria-label={s.title} data-tip={s.title}><ArrowUpRight size={16} aria-hidden /></a>
+                    <a className="cr-iconbtn cr-iconbtn-strong cr-iconbtn-s" href={urlOf(l)} target="_blank" rel="noreferrer" aria-label={s.title} data-tip={s.title}><Icon name="arrow-up-right" size={16} /></a>
                     <Button variant="quiet" size="s" onClick={() => void stop(l)}>{s.revoke}</Button>
                   </span>
                 </li>

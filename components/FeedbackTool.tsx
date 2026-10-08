@@ -25,7 +25,7 @@ import { usePathname } from "next/navigation";
 import type { Annotation } from "agentation";
 import { feedbackMarkdown, pathOf } from "@/lib/feedback-core";
 import { useT } from "./I18nProvider";
-import { IconButton, StatusRing } from "@/components/criterio";
+import { Icon, IconButton, StatusRing } from "@/components/criterio";
 import { FEEDBACK_LOAD_EVENT, agentationRoot, clearFeedbackMarkers as clearMarkers, enterFeedbackMode as enterMode, exitFeedbackMode as exitMode, flushPendingEnter, hideAgentationBar as hideBar, isFeedbackModeOn as isModeOn } from "./feedback-mode";
 
 // Agentation is most of this tool's weight and only does anything in feedback mode: it loads the
@@ -340,14 +340,6 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
-const IconBubble = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-    <path d="M12 4.5c-4.4 0-8 3-8 6.8 0 2 1 3.8 2.6 5L6 20l4-2c.6.1 1.3.2 2 .2 4.4 0 8-3 8-6.8s-3.6-6.9-8-6.9z" />
-  </svg>
-);
-const IconSend = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 2L6.5 7.5M12 2L8.5 12l-2-4.5L2 5.5z" /></svg>
-);
-const IconCheck = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M2.5 7.5l3 3 6-6" /></svg>
-);
+const IconBubble = () => <Icon name="chat" size={16} />;
+const IconSend = () => <Icon name="send" size={14} />;
+const IconCheck = () => <Icon name="check" size={14} />;

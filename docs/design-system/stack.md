@@ -48,7 +48,7 @@ Lo que cuesta cada acción y cómo cuenta en la cuota está en [Desarrollo](desa
 | Next.js 16 (App Router), React 19, TypeScript 5 | La app entera. Leer `node_modules/next/dist/docs/` antes de tocar nada de Next: esta versión no es la de la memoria | `app/`, `proxy.ts`, `instrumentation.ts` |
 | React Compiler (`babel-plugin-react-compiler`) | Memoiza en el build: no hace falta `useMemo` ni `useCallback` a mano | `reactCompiler` en `next.config.ts` |
 | Tailwind 4 con CSS propio y tokens | Los tokens en `app/globals.css` mandan; Tailwind para utilidades | [Tokens](fundamentos.md) |
-| shadcn (`base-nova`) sobre Base UI, lucide | Piezas base (`components/ui/`) e iconos genéricos; los iconos de área son propios (`components/area-icons.tsx`) | `components.json` |
+| shadcn (`base-nova`) sobre Base UI, Phosphor | Piezas base (`components/ui/`) y todos los iconos (`@phosphor-icons/react/ssr`) | `components.json` |
 | cmdk | La paleta de comandos | `components/ui/command.tsx` |
 | class-variance-authority, clsx, tailwind-merge | Variantes y unión de clases | `components/ui/` |
 | zod 4 | El contrato de salida de cada modelo y de las herramientas MCP | `lib/llm.ts`, `lib/tagger.ts`, `lib/system.ts`, `lib/mcp/tools.ts` |

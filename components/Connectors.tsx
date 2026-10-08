@@ -5,7 +5,6 @@
 // so "connected" here can outlive the connection (Eric, 06-10).
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
-import { Cable } from "lucide-react";
 import { Icon, MenuItem } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -52,7 +51,7 @@ export default function Connectors({ row = false }: { row?: boolean }) {
               {info?.connected && <Icon name="check" size={16} className="cr-menu-check" />}
             </Link>
           )}
-          <MenuItem icon={<Cable className="cr-icon" size={16} strokeWidth={2} aria-hidden />} checked={mcpDone} onClick={() => { setOpen(false); setConnecting(true); }}>
+          <MenuItem icon="cable" checked={mcpDone} onClick={() => { setOpen(false); setConnecting(true); }}>
             {s.open}{mcpDone && <span className="cr-visually-hidden">, {s.connectedOne}</span>}
           </MenuItem>
         </PopoverContent>

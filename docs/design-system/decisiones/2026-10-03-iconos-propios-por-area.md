@@ -1,7 +1,7 @@
 ---
 title: Iconos propios para las 8 áreas
 date: 2026-10-03
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Los nodos del Sistema no tenían icono; las etiquetas de las referencias sí.

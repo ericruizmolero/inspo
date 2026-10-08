@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { videoEmbedOf } from "@/lib/url";
+import { Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
 // A video link played inside the thread. Until it is pressed it is only a frame:
@@ -37,7 +38,7 @@ export default function VideoPlayer({ web, title }: { web: string; title: string
     <button type="button" className="vp vp--poster" onClick={() => setPlaying(true)} aria-label={`${t.card.play}: ${title}`}>
       {!posterFailed && <img className="vp__media" src={poster} alt="" onError={() => setPosterFailed(true)} />}
       <span className="vp__play" aria-hidden>
-        <svg width="18" height="18" viewBox="0 0 14 14" fill="currentColor"><path d="M4 2.5v9a.5.5 0 00.77.42l7-4.5a.5.5 0 000-.84l-7-4.5A.5.5 0 004 2.5z" /></svg>
+        <Icon name="play" size={18} />
       </span>
     </button>
   );

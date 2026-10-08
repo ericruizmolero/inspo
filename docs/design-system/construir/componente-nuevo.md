@@ -4,7 +4,7 @@
 2. **Primitivas**: para diálogos, popovers, sheets y comandos usa `components/ui/` (shadcn `base-nova` sobre Base UI), que ya visten las piezas del sistema (`DialogWindow`, `cr-menu`). Los tooltips son `data-tip` (`TipLayer`), nunca `title` ni el tooltip de shadcn.
 3. **Fichero**: `components/Nombre.tsx` + `components/Nombre.css` importado desde el propio componente, con un prefijo de clase corto y único (`.sysdoc-`, `.ds-`, `.gbar-`). Comprueba que el prefijo no exista ya (`polish-` existe porque `pl-` chocaba con planes).
 4. **Cliente o servidor**: servidor por defecto; `"use client"` solo si hay estado, efectos o eventos.
-5. **Iconos**: lucide para lo genérico; si el concepto es nuestro, dibújalo en la misma mano (16 px, trazo 1,5, `currentColor`) en `area-icons.tsx` o `section-icons.tsx`.
+5. **Iconos**: Phosphor, peso `regular`, a través de `Icon`, `areaIcon` o `sectionIcon`; nunca un `<svg>` a mano.
 6. **Movimiento**: CSS para hover y entradas cortas; transición CSS de `transform` para recolocar muchos elementos; WAAPI para lo que nace de un punto o necesita control. GSAP no está en el proyecto. Siempre con las curvas de los tokens.
 7. **Listas grandes**: ventanea. El React Compiler memoiza solo; no añadas `useMemo`/`memo` a mano salvo que midas que hace falta.
 8. **Acciones**: si el componente añade una acción nueva (archivar, mover, borrar…), añádela también al catálogo del agente en `lib/agent.ts`.

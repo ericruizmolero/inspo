@@ -6,6 +6,8 @@
 // TipWindow and EmptyState take no drawing.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ButtonHTMLAttributes, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref, type TextareaHTMLAttributes } from "react";
+import { ArrowDown, ArrowRight, ArrowUUpLeft, ArrowUp, ArrowUpRight, Bell, CalendarBlank, CaretDown, CaretLeft, CaretRight, Chat, ChatCircle, Check, Compass, Copy, DotsThree, EnvelopeSimple, FileText, FilmStrip, Folder, Gauge, Gear, House, Info, Lightbulb, MagnifyingGlass, Minus, MonitorPlay, Moon, PaperPlaneTilt, PencilSimple, Play, Plug, PlugsConnected, Plus, Pulse, Quotes, Shuffle, SidebarSimple, SlidersHorizontal, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Sun, TextAlignLeft, Trash, Tray, UploadSimple, User, Users, X, Image as ImageIcon } from "@phosphor-icons/react/ssr";
+import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import { Liquid } from "@/components/ui/liquid";
 import "./criterio.css";
 
@@ -27,49 +29,74 @@ export function Wordmark({ size = 24, tone = "ink", className }: { size?: number
 // ─── Icons ─────────────────────────────────────────────────────────────────
 
 const ICONS = {
-  home: "M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z",
-  plus: "M12 5v14M5 12h14",
-  minus: "M5 12h14",
-  close: "M6 6l12 12M18 6L6 18",
-  "chevron-down": "M6 9l6 6 6-6",
-  "chevron-left": "M15 6l-6 6 6 6",
-  "chevron-right": "M9 6l6 6-6 6",
-  "arrow-right": "M5 12h14M13 6l6 6-6 6",
-  "arrow-up-right": "M7 17L17 7M8 7h9v9",
-  search: "M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4",
-  sun: "M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
-  mute: "M11 5L6 9H3v6h3l5 4zM16 9l5 6M21 9l-5 6",
-  grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
-  sparkle: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z",
-  gauge: "M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16zM12 12l4-3",
-  plug: "M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0zM12 16v5",
-  text: "M4 7h16M4 12h16M4 17h10",
-  image: "M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4",
-  play: "M8 5v14l11-7z",
-  folder: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-  compass: "M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM15.5 8.5l-2 5-5 2 2-5z",
-  comment: "M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
-  quote: "M6 8h4v4c0 2.5-1.2 4-3.5 5M14 8h4v4c0 2.5-1.2 4-3.5 5",
-  check: "M5 12l5 5 9-10",
+  home: House,
+  plus: Plus,
+  minus: Minus,
+  close: X,
+  "chevron-down": CaretDown,
+  "chevron-left": CaretLeft,
+  "chevron-right": CaretRight,
+  "arrow-right": ArrowRight,
+  "arrow-up-right": ArrowUpRight,
+  "arrow-up": ArrowUp,
+  "arrow-down": ArrowDown,
+  search: MagnifyingGlass,
+  sun: Sun,
+  moon: Moon,
+  volume: SpeakerHigh,
+  mute: SpeakerSlash,
+  grid: SquaresFour,
+  sparkle: Sparkle,
+  gauge: Gauge,
+  plug: Plug,
+  cable: PlugsConnected,
+  text: TextAlignLeft,
+  image: ImageIcon,
+  play: Play,
+  folder: Folder,
+  compass: Compass,
+  comment: Chat,
+  quote: Quotes,
+  check: Check,
+  undo: ArrowUUpLeft,
+  info: Info,
+  video: MonitorPlay,
+  bulb: Lightbulb,
+  film: FilmStrip,
+  inbox: Tray,
+  dots: DotsThree,
+  user: User,
+  users: Users,
+  calendar: CalendarBlank,
+  sliders: SlidersHorizontal,
+  shuffle: Shuffle,
+  upload: UploadSimple,
+  mail: EnvelopeSimple,
+  gear: Gear,
+  activity: Pulse,
+  swatches: SquaresFour,
+  chat: ChatCircle,
+  send: PaperPlaneTilt,
+  edit: PencilSimple,
+  file: FileText,
+  sidebar: SidebarSimple,
   // app: removing something (a reference, a selection out of a project)
-  trash: "M4 7h16M9.5 7V4.5h5V7M6.5 7l1 12.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5l1-12.5",
+  trash: Trash,
   // app: the team's activity (TeamBell)
-  bell: "M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4",
+  bell: Bell,
   // app: copying something (the feedback as markdown, a link)
-  copy: "M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1",
-} as const;
+  copy: Copy,
+} satisfies Record<string, PhosphorIcon>;
 
 export type IconName = keyof typeof ICONS;
 
-/** Line icons: 24 px grid, 2 px stroke, round caps, currentColor. `play` is the only filled glyph. */
-export function Icon({ name, size = 18, strokeWidth = 2, className }: { name: IconName; size?: number; strokeWidth?: number; className?: string }) {
-  const filled = name === "play";
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke={filled ? "none" : "currentColor"}
-      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" className={cx("cr-icon", className)}>
-      <path d={ICONS[name]} />
-    </svg>
-  );
+/** Every system icon, for the library's Iconos page */
+export const ICON_NAMES = Object.keys(ICONS) as IconName[];
+
+/** Phosphor, regular weight, currentColor. `play` is the only filled glyph. */
+export function Icon({ name, size = 18, weight, className }: { name: IconName; size?: number; weight?: IconWeight; className?: string }) {
+  const Glyph = ICONS[name];
+  return <Glyph size={size} weight={weight ?? (name === "play" ? "fill" : "regular")} aria-hidden focusable="false" className={cx("cr-icon", className)} />;
 }
 
 // ─── Actions ───────────────────────────────────────────────────────────────
@@ -231,7 +258,7 @@ export function Checkbox({ label, checked, defaultChecked, onChange, id, disable
       <input type="checkbox" checked={on} id={id} disabled={disabled}
         onChange={(e) => { if (checked == null) setOwn(e.target.checked); onChange?.(e.target.checked); }} />
       <span className="cr-check-box" aria-hidden>
-        <svg width={10} height={8} viewBox="0 0 10 8"><path d="M1 4L4 7L9 1" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+        <Icon name="check" size={10} weight="bold" />
       </span>
       {label}
     </label>
@@ -300,7 +327,7 @@ export function TipWindow({ title, heading, children, footer, width, onClose, cl
         <span className="cr-window-title">{title}</span>
         {onClose !== false ? (
           <button type="button" className="cr-window-close" aria-label="Close" onClick={onClose || undefined}>
-            <svg width={9} height={9} viewBox="0 0 9 9" aria-hidden><path d="M1.5 1.5L7.5 7.5M7.5 1.5L1.5 7.5" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" /></svg>
+            <Icon name="close" size={10} weight="bold" />
           </button>
         ) : null}
       </header>

@@ -229,7 +229,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
                             <Thumb item={item} image={imageOf(item)} />
                             {/* The system's Checkbox box (the whole item is the button that ticks it) */}
                             <span className={`cr-check-box ${p.check}`} aria-hidden>
-                              <svg width={10} height={8} viewBox="0 0 10 8"><path d="M1 4L4 7L9 1" stroke="currentColor" strokeWidth={2} fill="none" /></svg>
+                              <Icon name="check" size={10} weight="bold" />
                             </span>
                             <span className={`t-ui ${p.name}`}>{item.name}</span>
                             <span className={`t-small ${p.muted} ${p.host}`}>{sourceOf(item.web, t.system.md.kinds, t.card.gif)}</span>

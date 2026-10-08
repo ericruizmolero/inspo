@@ -7,7 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 import { useIsMobile } from "@/hooks/use-mobile"
-import { IconButton, Key } from "@/components/criterio"
+import { Icon, IconButton, Key } from "@/components/criterio"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -280,12 +280,7 @@ function SidebarTrigger({
         onClick?.(event)
         toggleSidebar()
       }}
-      icon={
-        <svg width={size === "s" || size === "xs" ? 16 : 18} height={size === "s" || size === "xs" ? 16 : 18} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-          <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2" />
-          <path d="M6 2.75v10.5" />
-        </svg>
-      }
+      icon={<Icon name="sidebar" size={size === "s" || size === "xs" ? 16 : 18} />}
       {...props}
     />
   )

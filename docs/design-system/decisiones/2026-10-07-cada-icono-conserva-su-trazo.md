@@ -1,7 +1,7 @@
 ---
 title: Cada icono conserva su trazo, sin regla global de grosor
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Para igualar los iconos del sistema (trazo 2 sobre 24 px) con los de área y sección (trazo 1,5 sobre 16 px) se probó una regla global de 1,5 px en pantalla para todos.

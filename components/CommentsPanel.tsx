@@ -11,7 +11,7 @@ import { useT, messageOf } from "./I18nProvider";
 import { mediaKindOf, readableDomain } from "@/lib/url";
 import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
-import { Avatar as SysAvatar, Busy, Button, Chip, EmptyState, IconButton, TextArea, toneFor } from "@/components/criterio";
+import { Avatar as SysAvatar, Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea, toneFor } from "@/components/criterio";
 
 // Side panel for an inspo's comments. The original note from whoever saved it opens the list; then each
 // comment as a thread, oldest first: pinned ones (post-its on the page) carry their number and a way to the
@@ -56,21 +56,11 @@ interface CommentsPanelProps {
   onReply?: (parentId: string, body: string) => Promise<void>;
 }
 
-const IcTrash = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4h9M5.5 4V2.5h3V4M4 4l.6 8h4.8L10 4" /></svg>
-);
-const IcEdit = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2L5 11l-2.5.5L3 9z" /></svg>
-);
-const IcImage = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="1.75" y="2.25" width="10.5" height="9.5" rx="1.5" /><circle cx="5" cy="5.5" r="1" /><path d="M12 9.5L9 6.5l-4 4-1.5-1.5L1.75 11" /></svg>
-);
-const IcArrow = (
-  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l6-6M4 3h5v5" /></svg>
-);
-const IcDoc = (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round"><path d="M3 1.5h5l3 3v8H3z" /><path d="M8 1.5v3h3M5 7.5h4M5 10h4" /></svg>
-);
+const IcTrash = <Icon name="trash" size={14} />;
+const IcEdit = <Icon name="edit" size={14} />;
+const IcImage = <Icon name="image" size={14} />;
+const IcArrow = <Icon name="arrow-up-right" size={11} />;
+const IcDoc = <Icon name="file" size={14} />;
 
 // Stable color per name to tell people apart at a glance
 const HUES = [212, 28, 152, 268, 88, 340, 190, 48];

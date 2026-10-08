@@ -9,7 +9,7 @@ import CreateTeamDialog from "./CreateTeamDialog";
 import { useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Avatar, MenuItem, MenuLabel, Separator, toneFor } from "@/components/criterio";
+import { Avatar, Icon, MenuItem, MenuLabel, Separator, toneFor } from "@/components/criterio";
 
 /** The system's Avatar, out of the accessibility tree: the name always sits beside it */
 function Face({ name, src, square, small, size, className = "" }: { name: string; src?: string | null; square?: boolean; small?: boolean; size?: number; className?: string }) {
@@ -40,15 +40,9 @@ export function UserAvatar({ name, image, small, className = "" }: { name: strin
 
 /** The menu's glyphs the system's Icon does not draw, on its 24 grid with its 2px stroke */
 const I = {
-  swatches: (
-    <svg className="cr-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><circle cx="16.5" cy="16.5" r="3.5" /></svg>
-  ),
-  gear: (
-    <svg className="cr-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="12" cy="12" r="3.2" /><path d="M12 3v2.4M12 18.6V21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M3 12h2.4M18.6 12H21M5.6 18.4l1.7-1.7M16.7 7.3l1.7-1.7" /></svg>
-  ),
-  activity: (
-    <svg className="cr-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3 12.5h4l3-7.5 4.5 13.5 3-6H21" /></svg>
-  ),
+  swatches: <Icon name="swatches" size={16} />,
+  gear: <Icon name="gear" size={16} />,
+  activity: <Icon name="activity" size={16} />,
 };
 
 export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras, onOpen }: {

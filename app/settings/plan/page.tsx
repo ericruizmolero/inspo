@@ -65,7 +65,7 @@ export default async function PlanPage() {
                     : <><span className="t-title-l">{p.priceEur} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
                 </div>
                 <ul className="pl-plan__features">
-                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} strokeWidth={2.5} /></span><span>{f}</span></li>)}
+                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} weight="bold" /></span><span>{f}</span></li>)}
                 </ul>
               </SettingsWindow>
             );
