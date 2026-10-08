@@ -10,6 +10,8 @@ import { useT } from "./I18nProvider";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button, Chip, Icon, IconButton, TextArea } from "@/components/criterio";
+import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
+import { BoardProgress, useBoardImport, type ImportBoard } from "./BoardImport";
 import "./TextRef.css";
 
 export interface NewInspoInput {
@@ -35,11 +37,13 @@ interface AddInspoModalProps {
   project?: string;
   /** What was pasted or dropped on the board: the dialog opens with it in place, waiting for the note */
   initial?: { file?: File; web?: string; text?: string };
+  /** A board pasted (Are.na, Pinterest, Cosmos): what Criterio can save of it comes in, in a project of its own */
+  onImportBoard: ImportBoard;
 }
 
 /** Only the link (or the image) is needed: name, screenshot, tags and collection are inferred.
  *  An image can be chosen, dropped anywhere on the dialog or pasted with ⌘V. */
-export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project, initial }: AddInspoModalProps) {
+export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project, initial, onImportBoard }: AddInspoModalProps) {
   const { t } = useT();
   // Closing plays the dialog out first; whoever opened it unmounts it once it is gone
   const [open, setOpen] = useState(true);
@@ -65,6 +69,14 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
   const clearText = () => { setText(null); setTitle(""); setTimeout(() => urlRef.current?.focus(), 0); };
 
   const web = normalizeWebUrl(raw);
+  // A board instead of a site: the dialog stays open while it comes in, then the user lands in its project
+  const board = !file && !writing ? boardOf(raw) : null;
+  const { step, run } = useBoardImport(onImportBoard);
+  const importBoard = async () => {
+    setError("");
+    const failed = await run(raw);
+    if (failed) setError(failed); else close();
+  };
   const suggested = !file && web ? typeFromUrl(web) : "inspiration";
   const finalType = suggested;
 
@@ -111,6 +123,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
       close();
       return;
     }
+    if (board) { if (!step) importBoard(); return; }
     if (!web) { setError(t.add.notUrl); return; }
     if (isDuplicate?.(web)) { setError(t.add.alreadyInLibrary); return; }
     onSubmit({ web, type: finalType, note: note.trim(), areas });
@@ -151,15 +164,18 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
                 <Input
                   ref={urlRef}
                   value={raw}
+                  disabled={!!step}
                   onChange={(e) => { setRaw(e.target.value); setError(""); }}
                   placeholder={t.add.pasteLink}
                   inputMode="url"
                   autoComplete="off"
                   spellCheck={false}
                 />
-                <p className="modal__hint">{t.add.linkHint}</p>
+                {step ? <BoardProgress step={step} className="board-progress" />
+                  : <p className="modal__hint">{board ? t.board.hint(PLATFORM_NAME[board.platform]) : t.add.linkHint}</p>}
               </div>
               {/* The other two ways in: sunken wells, the field's shape, since an image can be dropped on them */}
+              {!board && <>
               <button type="button" className="add__pick" onClick={() => fileRef.current?.click()}>
                 <Icon name="image" size={16} />
                 <span>{t.add.dropImage} <u>{t.add.chooseFile}</u></span>
@@ -168,20 +184,21 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
                 <Icon name="text" size={16} />
                 <span>{t.add.pickText}</span>
               </button>
+              </>}
             </>
           )}
           <input ref={fileRef} type="file" accept={MEDIA_ACCEPT} hidden onChange={(e) => pick(e.target.files?.[0] ?? null)} />
 
-          <div className="field">
+          {!board && <div className="field">
             <Input
               ref={noteRef}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={writing ? t.add.textNote : t.add.whatYouLiked}
             />
-          </div>
+          </div>}
 
-          {project && !writing && (
+          {project && !writing && !board && (
             <div className="pills pills--line" role="group" aria-label={t.add.areas}>
               {SYSTEM_AREAS.map((a) => (
                 <Chip key={a} pressed={areas.includes(a)} onClick={() => toggleArea(a)}>
@@ -195,7 +212,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
 
           <div className="modal__footer">
             <Button size="s" onClick={close}>{t.common.cancel}</Button>
-            <Button size="s" variant="primary" type="submit" disabled={!canSave}>{t.common.save}</Button>
+            <Button size="s" variant="primary" type="submit" disabled={!canSave || !!step}>{board ? (step ? t.board.importing : t.board.import) : t.common.save}</Button>
           </div>
         </form>
       </DialogContent>

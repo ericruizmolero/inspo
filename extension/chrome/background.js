@@ -2,6 +2,9 @@
 // (which picks it up at criterio.design/extension/install or /connect) and stores it in
 // chrome.storage.local. Everything else (API calls) the popup does directly.
 
+importScripts("boards.js");
+const { BOARDS, boardOf, hostsOf } = globalThis.CriterioBoards;
+
 // Only an origin this build may reach can be the base: the key and every saved page go there
 const allowedBase = (base) => {
   try {
@@ -11,6 +14,8 @@ const allowedBase = (base) => {
 };
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type === "import-board") { openBoardImport(msg.url, sender); return false; }
+  if (msg?.type === "open-import") { openImport(msg.what, sender); return false; }
   const base = sender.id === chrome.runtime.id && sender.origin ? allowedBase(sender.origin) : null;
   if (msg?.type === "ext-key" && typeof msg.key === "string" && msg.key.startsWith("crit_") && base) {
     chrome.storage.local
@@ -130,4 +135,50 @@ async function cut(windowId, spot) {
     for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     return `data:image/jpeg;base64,${btoa(bin)}`;
   } catch { return undefined; } // protected pages: the server fetches the image on its own
+}
+
+// ─── The import button on a board ────────────────────────────────────────────
+// Once the person grants a platform (on the import page or from the popup), board-button.js is
+// registered on its pages: a board there shows "Import to Criterio". Never at install, and gone
+// again when the permission is taken back. The click opens the import page on that board.
+
+const scriptId = (source) => `board-button-${source}`;
+
+/** Each platform's button registered exactly when its hosts are granted, whatever was there before */
+async function syncBoardButtons() {
+  const registered = new Set((await chrome.scripting.getRegisteredContentScripts()).map((s) => s.id));
+  for (const source of Object.keys(BOARDS)) {
+    const id = scriptId(source);
+    const granted = await chrome.permissions.contains({ origins: hostsOf(source) });
+    if (granted && !registered.has(id)) {
+      await chrome.scripting.registerContentScripts([{ id, matches: BOARDS[source].pages, js: ["boards.js", "board-button.js"], runAt: "document_idle" }])
+        .catch((e) => console.error("criterio: button", source, e));
+    } else if (!granted && registered.has(id)) {
+      await chrome.scripting.unregisterContentScripts({ ids: [id] }).catch(() => {});
+    }
+  }
+}
+
+// One sync at a time: two grants in a row would otherwise register the same id twice
+let syncing = Promise.resolve();
+const sync = () => { syncing = syncing.then(syncBoardButtons).catch((e) => console.error("criterio: buttons", e)); };
+chrome.runtime.onInstalled.addListener(sync);
+chrome.runtime.onStartup.addListener(sync);
+chrome.permissions.onAdded.addListener(sync);
+chrome.permissions.onRemoved.addListener(sync);
+
+/** The app's Import dialog: the import page on X or on the browser's bookmarks, next to the app's tab.
+ *  Only a tab of the app may ask (content.js runs nowhere else). */
+function openImport(what, sender) {
+  if (sender.id !== chrome.runtime.id || !sender.tab || !allowedBase(sender.origin) || (what !== "x" && what !== "browser")) return;
+  chrome.tabs.create({ url: chrome.runtime.getURL(`import.html?source=${what}`), index: sender.tab.index + 1, openerTabId: sender.tab.id });
+}
+
+/** The button's click: the import page, next to the board's tab, importing that board */
+function openBoardImport(url, sender) {
+  if (sender.id !== chrome.runtime.id || !sender.tab) return;
+  const board = boardOf(url);
+  if (!board) return;
+  const page = chrome.runtime.getURL(`import.html?source=${board.source}&url=${encodeURIComponent(board.url)}`);
+  chrome.tabs.create({ url: page, index: sender.tab.index + 1, openerTabId: sender.tab.id });
 }

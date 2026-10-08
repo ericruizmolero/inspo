@@ -6,23 +6,30 @@
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
-import { withCtx, getSession, canManage, HttpError } from "@/lib/workspace";
+import { withCtx, getSession, canManage, HttpError, type ActionResult } from "@/lib/workspace";
 import { addItem, deleteItem, deleteItems, deletableIds, setItemNote, editUserTags } from "@/lib/items";
 import { startTagJob } from "@/lib/tag-jobs";
 import { embedItems, staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
-import { createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
+import { createProject, projectForBoard, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
 import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
 import { nameFor } from "@/lib/item-name";
+import { z } from "zod";
+import { addMany, type AddResult, type NewRef } from "@/lib/add-many";
+import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "@/lib/batch-limits";
+import { boardOf, type Platform } from "@/lib/boards/match";
+import { MAX_TEXT, type Entry, type Skipped } from "@/lib/boards/entries";
+import { readBoard, BoardError, type BoardFailure } from "@/lib/boards/read";
+import { allow } from "@/lib/rate-limit";
 import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
-import type { CommentAttachment, CommentAnchor, PolishChoice } from "@/types/inspo";
+import type { CommentAttachment, CommentAnchor, InspoItem, PolishChoice } from "@/types/inspo";
 
 /** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
  *  so a failure leaves it for the worker instead of keeping the old vector. */
@@ -60,6 +67,55 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
     startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
   });
+}
+
+export type BoardRead =
+  | { ok: true; name: string; platform: Platform; entries: Entry[]; skipped: Skipped; capped: boolean }
+  | { ok: false; reason: BoardFailure };
+
+/** What Criterio can save of a board on Are.na, Pinterest or Cosmos, to import with importBatch. Creates nothing. */
+export async function readBoardAction(input: string): Promise<ActionResult<BoardRead>> {
+  return withCtx(async (ctx) => {
+    const ref = boardOf(String(input ?? ""));
+    if (!ref) throw new HttpError(400, (await getErrors()).badUrl);
+    if (!(await allow(`board:${ctx.user.id}`, 10, 10 * 60 * 1000))) throw new HttpError(429, (await getErrors()).tooMany);
+    try {
+      const b = await readBoard(ref);
+      return { ok: true, name: b.name, platform: b.platform, entries: b.entries, skipped: b.skipped, capped: b.capped };
+    } catch (e) {
+      if (!(e instanceof BoardError)) throw e;
+      console.warn("board not read", e.message);
+      return { ok: false, reason: e.reason };
+    }
+  });
+}
+
+const entryTitle = z.string().max(300).optional();
+const BoardBatch = z.array(z.discriminatedUnion("kind", [
+  z.object({ kind: z.enum(["web", "video", "post"]), url: z.string().max(2048), title: entryTitle }),
+  z.object({ kind: z.literal("image"), images: z.array(z.string().max(2048)).min(1).max(3), page: z.string().max(2048), title: entryTitle }),
+  z.object({ kind: z.literal("text"), text: z.string().max(MAX_TEXT), page: z.string().max(2048), title: entryTitle }),
+])).max(MAX_PER_BATCH).refine((b) => b.length <= MAX_IMAGES_PER_BATCH || !b.some((e) => e.kind === "image"));
+
+/** What addMany is given for an entry: its address, or the page an image or a text was found on */
+const refOf = (e: Entry): NewRef =>
+  e.kind === "image" ? { url: e.page, title: e.title, image: e.images }
+  : e.kind === "text" ? { url: e.page, title: e.title, text: e.text }
+  : { url: e.url, title: e.title };
+
+/** One batch of a board's entries (batchesOf in lib/boards/entries.ts), filed in the board's project (boardProject; what was
+ *  already saved goes there too). The results keep the order of the batch. */
+export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
+  return withCtx(async (ctx) => {
+    const batch = BoardBatch.safeParse(entries);
+    if (!batch.success) throw new HttpError(400, (await getErrors()).badBody);
+    return addMany({ workspaceId: ctx.workspace.id, user: ctx.user }, batch.data.map(refOf), { source: "board", projectId: String(projectId) });
+  });
+}
+
+/** The project a board's batches go to: the one already named after the board, made the first time */
+export async function boardProject(name: string) {
+  return withCtx(async (ctx) => projectForBoard(ctx.workspace.id, String(name), ctx.user.id));
 }
 
 // Projects: any member can create, rename and delete them. Deleting one never deletes references.

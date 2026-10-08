@@ -3,7 +3,9 @@
 // the item is still comes from its address (lib/url.ts mediaKindOf → "text").
 // Files: lib/storage.ts, under inspo/<workspace>/text/.
 import "server-only";
-import { putFile, deleteFiles, getFile, keyOf } from "./storage";
+import { createHash } from "node:crypto";
+import { putFile, deleteFiles, getFile, keyOf, fileUrl } from "./storage";
+import { webKeyOf } from "./url";
 import { TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoTags } from "@/types/inspo";
 
@@ -23,9 +25,15 @@ export function ownsTextFile(organizationId: string, url: string): boolean {
 /** The words as they are kept: line breaks stay (a list is a list), the rest is tidied */
 export const cleanText = (v: unknown) => String(v ?? "").replace(/\r\n?/g, "\n").replace(/[^\S\n]+$/gm, "").replace(/\n{3,}/g, "\n\n").trim().slice(0, TEXT_MAX);
 
-/** Saves the words and gives the path that becomes the item's address */
-export async function putText(organizationId: string, text: string): Promise<string> {
-  const key = `${textPrefix(organizationId)}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`;
+/** The key of a text brought in from `page` (a block on Are.na): the same page always gives the same key,
+ *  so importing it again finds the reference it already made */
+const importedTextKey = (organizationId: string, page: string) =>
+  `${textPrefix(organizationId)}from-${createHash("sha1").update(webKeyOf(page)).digest("hex").slice(0, 20)}.md`;
+export const importedTextUrl = (organizationId: string, page: string) => fileUrl(importedTextKey(organizationId, page));
+
+/** Saves the words and gives the path that becomes the item's address. `from` is the page it was brought in from. */
+export async function putText(organizationId: string, text: string, from?: string): Promise<string> {
+  const key = from ? importedTextKey(organizationId, from) : `${textPrefix(organizationId)}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`;
   return putFile(key, Buffer.from(text, "utf-8"), "text/markdown; charset=utf-8");
 }
 

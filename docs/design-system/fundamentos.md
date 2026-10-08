@@ -4,7 +4,7 @@ Los valores del sistema, de dónde salen y dónde vive cada familia. Cada una ti
 
 ## Fuente de verdad
 
-`app/globals.css` (bloques `:root` y `:root[data-theme="light"]`), `app/fonts.ts` y `components/criterio/criterio.css`. Si cambias un valor allí, cámbialo en su página en el mismo commit.
+`app/globals.css` (bloques `:root` y `:root[data-theme="light"]`), `app/fonts.ts` y `components/criterio/criterio.css`; para el sonido, `lib/ui-sounds.ts` y `components/SoundControl.tsx`. Si cambias un valor allí, cámbialo en su página en el mismo commit.
 
 ## Origen
 
@@ -19,6 +19,7 @@ Los valores salen del sistema de diseño Criterio (claude.ai/artifact/RM3rCVaxFN
 | [Espaciado](fundamentos/espaciado.md) | La escala de espacio y la altura única de los controles |
 | [Radios y sombras](fundamentos/radios-y-sombras.md) | Radios, bordes, bisel y las pocas sombras |
 | [Movimiento](fundamentos/movimiento.md) | Curvas, duraciones y keyframes |
+| [Sonido](fundamentos/sonido.md) | Los catorce sonidos de la interfaz y la música: material, dónde suena cada uno y cómo se enciende |
 | [Iconos](fundamentos/iconos.md) | Phosphor, el único juego de iconos |
 | [Pantalla, capas y foco](fundamentos/pantalla.md) | Puntos de corte, z-index y el anillo de foco |
 

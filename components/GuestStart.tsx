@@ -20,6 +20,8 @@ export default function GuestStart() {
   const router = useRouter();
   const { t } = useT();
   const [showDirectory, setShowDirectory] = useState(false);
+  // A board goes the same way: back from login, ?add= sees it is a board and imports it
+  const signIn = (web: string) => router.push(`/login?next=${encodeURIComponent(`/?add=${encodeURIComponent(web)}`)}`);
 
   return (
     <div className="guest">
@@ -32,7 +34,8 @@ export default function GuestStart() {
       </header>
 
       <EmptyStart
-        onAddUrl={async (web) => { router.push(`/login?next=${encodeURIComponent(`/?add=${encodeURIComponent(web)}`)}`); }}
+        onAddUrl={async (web) => { signIn(web); }}
+        onImportBoard={async (input) => { signIn(input.trim()); return null; }}
         onDirectory={() => setShowDirectory(true)}
       />
 

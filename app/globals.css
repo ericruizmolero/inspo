@@ -1449,6 +1449,11 @@ video.vp__media { object-fit: contain; }
 .modal .pills--line .cr-chip:hover { color: var(--text); border-color: var(--border-strong); }
 .modal .pills--line .cr-chip.is-pressed { background: var(--glass-on); border-color: transparent; color: var(--text); }
 .modal .pills--line .cr-chip-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+/* Importing a board (components/BoardImport.tsx): the Progress blocks and the line that says what is happening,
+ * under the paste field of the first run and of Add */
+.board-progress { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; }
+.board-progress .cr-progress { width: 100%; }
+.board-progress__line { margin: 0; font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-2); }
 /* A window's footer holding Cancel and the action: both to the right */
 .modal-window__footer > .modal__footer { margin-left: auto; padding-top: 0; }
 .new-team { display: flex; flex-direction: column; gap: 16px; }
@@ -1517,6 +1522,8 @@ video.vp__media { object-fit: contain; }
 .toast__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .toast__title { font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toast__sub { font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Good news is read whole: what an import brought and what it left out */
+.toast:not(.toast--error) :is(.toast__title, .toast__sub) { white-space: normal; }
 .toast .cr-iconbtn { flex: none; }
 @media (max-width: 640px) {
   .toasts { right: 16px; left: 16px; bottom: 16px; width: auto; }

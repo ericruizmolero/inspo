@@ -34,7 +34,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | URL | Qué hay |
 | --- | --- |
 | `/admin/overview`, `usage`, `people`, `feedback`, `access` | Actividad de toda la app; `?dias=` cambia el periodo. "Dónde pasan el tiempo" nombra los sitios como la interfaz: Inicio, Inbox, Tablón, Pulido, Sistema, Ficha, Búsqueda, Recursos, Ejemplos, Skills, Añadir, Ajustes, Equipo, Planes, Extensión, Actividad, Sistema de diseño y Conector ([decisión](decisiones/2026-10-07-el-panel-de-actividad-nombra-los-sitios-como-la-interfaz.md)) |
-| `/library/…` | Esta librería: Introducción, Fundamentos (Principios, Tokens y una página por familia: color, tipografía, espaciado, radios y sombras, movimiento, iconos, pantalla), Componentes (Botones, Marca, catálogo), Construir y Mantenimiento (técnico, desarrollo, stack, seguridad y políticas, decisiones) |
+| `/library/…` | Esta librería: Introducción, Fundamentos (Principios, Tokens y una página por familia: color, tipografía, espaciado, radios y sombras, movimiento, sonido, iconos, pantalla), Componentes (Botones, Marca, catálogo), Construir y Mantenimiento (técnico, desarrollo, stack, seguridad y políticas, decisiones) |
 
 Se da acceso con `npm run admin -- <correo>`.
 
@@ -57,6 +57,8 @@ Se da acceso con `npm run admin -- <correo>`.
 | `/extension/install` | Sesión | Guía para instalar el zip |
 | `/extension/connect` | Sesión | Conectar la extensión a un espacio |
 | `/extension/download` | Sesión | El zip de la extensión |
+
+Importar no es una ruta: es un diálogo (`ImportDialog`) que se abre desde el menú Conectores, en la barra de arriba y en el menú de móvil. → [decisión](decisiones/2026-10-08-importar-vive-en-conectores-por-defecto.md)
 
 ## Redirecciones antiguas
 

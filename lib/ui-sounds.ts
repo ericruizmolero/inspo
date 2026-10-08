@@ -20,6 +20,12 @@ export function cue(sound: SoundName, options?: PlayOptions) {
   if (read()) play(sound, options);
 }
 
+/** Plays a cue whether or not the person has the sounds on: for the design library's sample, to hear them there. */
+export function audition(sound: SoundName, options?: PlayOptions) {
+  read();
+  play(sound, options);
+}
+
 export function setUiSounds(value: boolean) {
   on = value;
   try { localStorage.setItem(KEY, value ? "on" : "off"); } catch { /* this visit only */ }

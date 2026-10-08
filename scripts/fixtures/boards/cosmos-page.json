@@ -1,0 +1,1510 @@
+{
+ "data": {
+  "clusterConnections": {
+   "meta": {
+    "nextPageCursor": "eyJ2MSI6MTg1LjAsInYyIjo3MjAyMjg5fQ==",
+    "count": 212
+   },
+   "items": [
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 156812015,
+      "shareUrl": "https://www.cosmos.so/e/156812015",
+      "websiteTitle": "MOMENT",
+      "source": {
+       "url": "https://www.moment.so/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/01a0cf0d-f45c-7216-b848-aa47d81e1efa"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 244912534,
+      "shareUrl": "https://www.cosmos.so/e/244912534",
+      "websiteTitle": "PLACEMENT",
+      "source": {
+       "url": "https://www.placement.is/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/01a0cf0e-0d49-7e3a-9e84-7dba7b8c697e"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1568075657,
+      "shareUrl": "https://www.cosmos.so/e/1568075657",
+      "websiteTitle": "GT Mechanik",
+      "source": {
+       "url": "https://gt-mechanik.com/?ref=maxibestof.one"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/01a0ce66-9f4d-76db-9c9f-e82516fd0941.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 828245947,
+      "shareUrl": "https://www.cosmos.so/e/828245947",
+      "websiteTitle": "Vi kvalificerer planlægningen – sammen",
+      "source": {
+       "url": "https://byplanlab.dk/da"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/01a08b33-834f-772f-8779-22e51e2309b0"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 253628790,
+      "shareUrl": "https://www.cosmos.so/e/253628790",
+      "websiteTitle": "Paul Kalkbrenner – Official Website",
+      "source": {
+       "url": "https://www.paulkalkbrenner.net/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/49cc578c-b6d9-4486-bdc9-a4e15e369eb1"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 513506486,
+      "shareUrl": "https://www.cosmos.so/e/513506486",
+      "websiteTitle": "AI in Design Report 2026",
+      "source": {
+       "url": "https://stateofaidesign.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/b10ad232-addd-4788-adcb-d73c92035ebe"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 903345524,
+      "shareUrl": "https://www.cosmos.so/e/903345524",
+      "websiteTitle": "FORMAT",
+      "source": {
+       "url": "https://format.obys.agency/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/01a06c47-1dc6-71c0-8314-bcf25342b86a"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 145441241,
+      "shareUrl": "https://www.cosmos.so/e/145441241",
+      "websiteTitle": "How it works – Automated Architecture",
+      "source": {
+       "url": "https://auar.io/how-it-works"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/1afa83b6-a246-430d-9092-449c765a859b.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1965021775,
+      "shareUrl": "https://www.cosmos.so/e/1965021775",
+      "websiteTitle": "Baker Bleu — Artisan Sourdough Bakery",
+      "source": {
+       "url": "https://bakerbleu.com.au/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/0a560273-f37c-4b4e-9380-1720632032d0"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 67628268,
+      "shareUrl": "https://www.cosmos.so/e/67628268",
+      "websiteTitle": "Coffee Collective",
+      "source": {
+       "url": "https://coffeecollective.dk/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/d6b02c74-e0ba-494a-8852-433eef8364b5"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1607391966,
+      "shareUrl": "https://www.cosmos.so/e/1607391966",
+      "websiteTitle": "Anduril",
+      "source": {
+       "url": "https://www.anduril.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/bb9e877a-8136-487f-a8e7-7f8349910923"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1119160104,
+      "shareUrl": "https://www.cosmos.so/e/1119160104",
+      "websiteTitle": "Work by — Hassco Design©",
+      "source": {
+       "url": "https://itshassco.design/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/0b111c09-7124-4135-9033-43d8af8176a8"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "MediaElementTile",
+      "id": 634717342,
+      "shareUrl": "https://www.cosmos.so/e/634717342",
+      "source": {
+       "url": "https://pomidrink.com.au/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/46de4ef7-ec8b-42f6-987a-1243b0f0b880.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2059645199,
+      "shareUrl": "https://www.cosmos.so/e/2059645199",
+      "websiteTitle": "Product design engineering for startups",
+      "source": {
+       "url": "https://jib.design/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/39673166-6c88-47ab-a86c-4baad8e82822"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 758218591,
+      "shareUrl": "https://www.cosmos.so/e/758218591",
+      "websiteTitle": "wild · Craft, engineered.",
+      "source": {
+       "url": "https://craft.wild.as/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/f96efd3e-8a7c-482a-8609-16da24e59414"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 581264732,
+      "shareUrl": "https://www.cosmos.so/e/581264732",
+      "websiteTitle": "Studio Jud",
+      "source": {
+       "url": "https://studiojud.com/#services"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/0cf3318b-0cc5-4158-8c03-33b4ad67f830"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1067007478,
+      "shareUrl": "https://www.cosmos.so/e/1067007478",
+      "websiteTitle": "Studio Almond | Shopify Plus Experts",
+      "source": {
+       "url": "https://www.almond.studio/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/a2763672-c8bc-46d0-9fc6-d140747d86e9.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1789185697,
+      "shareUrl": "https://www.cosmos.so/e/1789185697",
+      "websiteTitle": "Welcome | Native | Insurance in tune with tech",
+      "source": {
+       "url": "https://www.native.inc/?ref=land-book.com"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/99bf5539-1cf8-446e-9960-470f8dfde06f"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 738666983,
+      "shareUrl": "https://www.cosmos.so/e/738666983",
+      "websiteTitle": "Home | Gentle Systems",
+      "source": {
+       "url": "https://www.gentle.systems/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/b967a660-fd97-43bc-9280-b4e77d5c3635"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 279670604,
+      "shareUrl": "https://www.cosmos.so/e/279670604",
+      "websiteTitle": "KÖPPEN Oral Health",
+      "source": {
+       "url": "https://www.koppen.co/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZXh0bgNhZW0CMTEAc3J0YwZhcHBfaWQMMjU2MjgxMDQwNTU4AAGnj6iQcwWF3oFxrEcXHfC7firxFUbQydDXK2uLDePz18zP-sLLqLW8hTzRwQA_aem_V1apK2vk5dAIBQpfsgKBSQ"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/00417ac2-478a-4238-a3ef-17a61e0d78fd"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1150286053,
+      "shareUrl": "https://www.cosmos.so/e/1150286053",
+      "websiteTitle": "Abe Wynen — Colourist",
+      "source": {
+       "url": "https://www.abewynen.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/b09f2c85-6c51-454a-8992-8b277f573b80.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1749211648,
+      "shareUrl": "https://www.cosmos.so/e/1749211648",
+      "websiteTitle": "New Layer Capital",
+      "source": {
+       "url": "https://nlc.obys.agency/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/c97644c1-88ed-465b-a9ee-66284fba38ac"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 489933271,
+      "shareUrl": "https://www.cosmos.so/e/489933271",
+      "websiteTitle": "Konolee.com",
+      "source": {
+       "url": "https://konolee.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/8c09ca80-93da-4a0b-9474-45e3c14e7684"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 637488710,
+      "shareUrl": "https://www.cosmos.so/e/637488710",
+      "websiteTitle": "Studio Bruch",
+      "source": {
+       "url": "https://studiobruch.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/d1ba9d1e-487b-4177-94d2-1175f7e317fd"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 998929365,
+      "shareUrl": "https://www.cosmos.so/e/998929365",
+      "websiteTitle": "AIM— AI Modernism Of Kharkiv",
+      "source": {
+       "url": "https://aim.obys.agency/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/434e6597-1c66-4bd0-8d3f-bff2aec3c38c"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1122761763,
+      "shareUrl": "https://www.cosmos.so/e/1122761763",
+      "websiteTitle": "Utforska livet i Norden | Djurgården Stockholm | Nordiska museet",
+      "source": {
+       "url": "https://www.nordiskamuseet.se/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/2ebc783c-4b39-4f55-812c-cc8f8a480463"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 945062297,
+      "shareUrl": "https://www.cosmos.so/e/945062297",
+      "websiteTitle": "System",
+      "source": {
+       "url": "https://system.studio/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/196af7b6-f9aa-40a9-8d70-74aac2944077"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 972360862,
+      "shareUrl": "https://www.cosmos.so/e/972360862",
+      "websiteTitle": "Primer Microschools for K-8th Grade | Learn without Limits",
+      "source": {
+       "url": "https://primer.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/72ddd743-5c28-43ce-b4a1-f17f88cce5ee"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1329628780,
+      "shareUrl": "https://www.cosmos.so/e/1329628780",
+      "websiteTitle": "Icebug Webshop – Largest selection of Icebug shoes | Webshop",
+      "source": {
+       "url": "https://www.icebug.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/b171140c-fa07-4caa-8dc9-d5b0dd3114a0"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 583019559,
+      "shareUrl": "https://www.cosmos.so/e/583019559",
+      "websiteTitle": "SSA Home / Architecture and Beyond",
+      "source": {
+       "url": "https://ssaarchitects.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/25e625be-97b8-44e7-9c07-94a4436e4a70.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 641068261,
+      "shareUrl": "https://www.cosmos.so/e/641068261",
+      "websiteTitle": "Estrela Studio",
+      "source": {
+       "url": "https://estrela.studio/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/9ff09f2e-11a1-4679-b2e6-8d3d9ef848d1.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "MediaElementTile",
+      "id": 2108101664,
+      "shareUrl": "https://www.cosmos.so/e/2108101664",
+      "source": {
+       "url": "https://hardsun.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/834e2a40-6350-41e0-93c0-b1692a73ea89"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 569731213,
+      "shareUrl": "https://www.cosmos.so/e/569731213",
+      "websiteTitle": "Brand and Digital Design Partner ",
+      "source": {
+       "url": "https://jacksonalexander.com.au/?ref=designerdailyreport.com"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/09778a2c-5ad6-4310-ac7f-2725f1290e43.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2135846321,
+      "shareUrl": "https://www.cosmos.so/e/2135846321",
+      "websiteTitle": "Hark Capital",
+      "source": {
+       "url": "https://www.harkcap.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/8a38b714-6d21-4c95-9ccf-9f0ea1d95cea"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1429815650,
+      "shareUrl": "https://www.cosmos.so/e/1429815650",
+      "websiteTitle": "Home / Styleframe",
+      "source": {
+       "url": "https://styleframe.de/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/a5c3fec2-eff6-40e7-827a-e8977bb4fa86"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 739082819,
+      "shareUrl": "https://www.cosmos.so/e/739082819",
+      "websiteTitle": "Panter&amp;Tourron",
+      "source": {
+       "url": "https://pantertourron.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/3f1bc08c-8620-4e65-890a-2bae93751bcb"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1098675941,
+      "shareUrl": "https://www.cosmos.so/e/1098675941",
+      "websiteTitle": "raghav agarwal",
+      "source": {
+       "url": "https://www.rghv.ca/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/c976f8da-f522-4013-9faf-867995b7ed66"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 681863481,
+      "shareUrl": "https://www.cosmos.so/e/681863481",
+      "websiteTitle": "ON.energy | The Race is ON for Grid-Safe AI Power",
+      "source": {
+       "url": "https://www.on.energy/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/aeee1279-b65b-44d9-aea6-a1e38c236513"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1807504322,
+      "shareUrl": "https://www.cosmos.so/e/1807504322",
+      "websiteTitle": "Base",
+      "source": {
+       "url": "https://www.base.org/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/633294ee-0100-4d03-a34e-7879c50233c6"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 241118559,
+      "shareUrl": "https://www.cosmos.so/e/241118559",
+      "websiteTitle": "Products",
+      "source": {
+       "url": "https://futurefur.com.au/collections/all"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/5e84fa53-696d-4f54-bad0-f771a85f448c"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1364710033,
+      "shareUrl": "https://www.cosmos.so/e/1364710033",
+      "websiteTitle": "OHM studio",
+      "source": {
+       "url": "https://www.ohm.studio/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/3e3fc209-2818-4705-9e2e-214fa1dc71c1"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 19410134,
+      "shareUrl": "https://www.cosmos.so/e/19410134",
+      "websiteTitle": "Remington Matters | Australian furniture company specialising in design and manufacturing",
+      "source": {
+       "url": "https://remingtonmatters.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/6560fb73-a28a-406b-a0c5-1bed7defaec6"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 600558412,
+      "shareUrl": "https://www.cosmos.so/e/600558412",
+      "websiteTitle": "GESTE™",
+      "source": {
+       "url": "https://geste.co/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/12da0847-a6be-4916-a741-4eaa304d49ea.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1652682581,
+      "shareUrl": "https://www.cosmos.so/e/1652682581",
+      "websiteTitle": "Prodotti - Gufram",
+      "source": {
+       "url": "https://gufram.it/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/153ee443-1cd6-4cec-9149-0fb8e908492e"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 461757578,
+      "shareUrl": "https://www.cosmos.so/e/461757578",
+      "websiteTitle": "BINU BINU Soap House",
+      "source": {
+       "url": "https://www.jjimjil.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/9647a42f-e85f-4e7f-a3a6-65b87a02a797"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1295438619,
+      "shareUrl": "https://www.cosmos.so/e/1295438619",
+      "websiteTitle": "Hausmarkt",
+      "source": {
+       "url": "https://hausmarkt.com.au/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ad0cf0bf-bc67-4e0a-9774-353059fb1803"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 381715235,
+      "shareUrl": "https://www.cosmos.so/e/381715235",
+      "websiteTitle": "Acme Cups | Coffee Cups, Mugs & Flatware",
+      "source": {
+       "url": "https://acmecups.nz/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/f101088a-3e2f-48e8-ba76-a454cc2b6edc"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 500710709,
+      "shareUrl": "https://www.cosmos.so/e/500710709",
+      "websiteTitle": "TV stand | Buy TV stand and designer accessories for flat screen TV",
+      "source": {
+       "url": "https://www.pedestal.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ef9b0183-ac18-478d-86fe-96c8002199c1"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2012882554,
+      "shareUrl": "https://www.cosmos.so/e/2012882554",
+      "websiteTitle": "Forks Plus",
+      "source": {
+       "url": "https://forks.plus/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/4f671c1b-938f-492c-b28b-651e6db957bf"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2076929652,
+      "shareUrl": "https://www.cosmos.so/e/2076929652",
+      "websiteTitle": "+Halle — Behaviour-led design furniture for public spaces",
+      "source": {
+       "url": "https://plushalle.com/?fbclid=PAAabVXRib7sKE7HVIP-Owj0SxU0SX8KG_0Voa8m7QtSo6yOiUvdz-9Wf79RM_aem_AbHJNRiB3jhzJukqhvkBUQzECgYo_AS2TWjsLxk18F2Y_8Wdt0Akl5lvNucjoLKg9Q8"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/0b18e730-9d67-4c31-84fb-a41fb8ffff56"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1435399353,
+      "shareUrl": "https://www.cosmos.so/e/1435399353",
+      "websiteTitle": "Liljewall Arkitekter – Göteborg, Stockholm & Malmö",
+      "source": {
+       "url": "https://www.liljewall.se/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/eb97aeaa-8fd4-4cee-99b9-b201fd9e69d2"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 444321838,
+      "shareUrl": "https://www.cosmos.so/e/444321838",
+      "websiteTitle": "Analogue",
+      "source": {
+       "url": "https://www.analogue.co/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/6b28f928-24d9-4719-8633-617765e8f099"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 837334182,
+      "shareUrl": "https://www.cosmos.so/e/837334182",
+      "websiteTitle": "Berger & Föhr",
+      "source": {
+       "url": "https://bergerfohr.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/6ec2a84c-524a-4215-a3b0-b4f40c859916"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 123006530,
+      "shareUrl": "https://www.cosmos.so/e/123006530",
+      "websiteTitle": "ZETR ",
+      "source": {
+       "url": "https://www.zetr.co/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/6c2d105d-f8aa-40d6-bbd2-2c2a4b395f91"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2014917497,
+      "shareUrl": "https://www.cosmos.so/e/2014917497",
+      "websiteTitle": "Monokel Eyewear",
+      "source": {
+       "url": "https://monokel-eyewear.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/71d791fc-4a93-42d7-8e94-8a5f9fa47836"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 515019886,
+      "shareUrl": "https://www.cosmos.so/e/515019886",
+      "websiteTitle": "Standard Equipment",
+      "source": {
+       "url": "https://www.standardequipment.ca/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/12efe8a4-8ed5-4ffc-8e32-7afb6026a476.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1332336939,
+      "shareUrl": "https://www.cosmos.so/e/1332336939",
+      "websiteTitle": "QUEST",
+      "source": {
+       "url": "https://read.quest/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/e8a9fc42-e35f-400b-bc60-2e4871c2c5a5"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1812728253,
+      "shareUrl": "https://www.cosmos.so/e/1812728253",
+      "websiteTitle": "LOEWE FOUNDATION Craft Prize | Discover the 2024 finalists work",
+      "source": {
+       "url": "https://craftprizeexhibition.loewe.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ed43599b-cc50-4adc-bdd9-488705708aa5"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1803762807,
+      "shareUrl": "https://www.cosmos.so/e/1803762807",
+      "websiteTitle": "Home",
+      "source": {
+       "url": "https://www.hyejaskincare.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/95282e00-2e73-4f8c-82a4-a379e5e5b833"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 579694427,
+      "shareUrl": "https://www.cosmos.so/e/579694427",
+      "websiteTitle": "Klim Type Foundry",
+      "source": {
+       "url": "https://klim.co.nz/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/f45eea10-8809-4e81-86dc-0e1bcbe97ff3"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1291074111,
+      "shareUrl": "https://www.cosmos.so/e/1291074111",
+      "websiteTitle": "MAKING SOFTWARE",
+      "source": {
+       "url": "https://www.makingsoftware.com/?ref=lapaninja"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/860bb543-c336-494d-987e-086489adfe58.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 256059931,
+      "shareUrl": "https://www.cosmos.so/e/256059931",
+      "websiteTitle": "Craft - Unearthing What's Next",
+      "source": {
+       "url": "https://itscraft.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/b4a20856-7e1b-41fc-a982-4dd6d16c5105"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1968369840,
+      "shareUrl": "https://www.cosmos.so/e/1968369840",
+      "websiteTitle": "Goya thin briefcase in soft grained calfskin Black - LOEWE",
+      "source": {
+       "url": "https://www.loewe.com/eur/en/men/bags/portfolio-and-briefcases/goya-thin-briefcase-in-soft-grained-calfskin/337.12.P57-1100.html"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ba60a0bb-8bcd-481f-9492-96ec7ae33e67.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1952215565,
+      "shareUrl": "https://www.cosmos.so/e/1952215565",
+      "websiteTitle": "Adaptive ML",
+      "source": {
+       "url": "https://www.adaptive-ml.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/9e63a488-7792-4ae3-80c8-8ffafd0083da"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 855977821,
+      "shareUrl": "https://www.cosmos.so/e/855977821",
+      "websiteTitle": "The National Museum of Denmark - Explore 9.000 years of history ",
+      "source": {
+       "url": "https://www.nationalmuseet.dk/en"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/9c7a7739-5997-4f32-8633-2ec8681a5a49.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2006277404,
+      "shareUrl": "https://www.cosmos.so/e/2006277404",
+      "websiteTitle": "Real human insights",
+      "source": {
+       "url": "https://mindmarket.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/a726f614-452e-434d-8085-d466848e4aff"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 818168050,
+      "shareUrl": "https://www.cosmos.so/e/818168050",
+      "websiteTitle": "Ax.c | Startup spaces in Quebec's first innovation campus",
+      "source": {
+       "url": "https://espaceaxc.com/en/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/93692888-d509-4155-a9ca-7b44d8b45437"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1390415239,
+      "shareUrl": "https://www.cosmos.so/e/1390415239",
+      "websiteTitle": "Palmer - Explore Palmer's Dinnerware Collections",
+      "source": {
+       "url": "https://www.palmer-dinnerware.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/13cc4e6a-85ef-4581-a45a-f1cfe0c050df"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 66509823,
+      "shareUrl": "https://www.cosmos.so/e/66509823",
+      "websiteTitle": "Get Started | nitex",
+      "source": {
+       "url": "https://nitex.com/get-started"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/a1ec1fbb-f76c-4660-a3b5-8edab7dc8b04.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1456955137,
+      "shareUrl": "https://www.cosmos.so/e/1456955137",
+      "websiteTitle": "Cargokite",
+      "source": {
+       "url": "https://cargokite.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/bb5ba8b1-fed7-488e-a351-8cfa1725e521"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 353851401,
+      "shareUrl": "https://www.cosmos.so/e/353851401",
+      "websiteTitle": "Materialkraft för tid och rum – Fuktab",
+      "source": {
+       "url": "https://www.fuktab.se/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/fa0b9c97-3a0b-4a21-9d0f-c27d47ecf714"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 935168379,
+      "shareUrl": "https://www.cosmos.so/e/935168379",
+      "websiteTitle": "Sanity Market",
+      "source": {
+       "url": "https://sanity.market/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/a8c82444-b64f-4dec-917b-8d9794566cc7"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2038430403,
+      "shareUrl": "https://www.cosmos.so/e/2038430403",
+      "websiteTitle": "Home Page",
+      "source": {
+       "url": "https://urbanplay.com.au/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/4af6342c-7ec6-47b7-b9d3-936761704650"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1013540173,
+      "shareUrl": "https://www.cosmos.so/e/1013540173",
+      "websiteTitle": "Generate MCP servers & SDKs from OpenAPI | Speakeasy",
+      "source": {
+       "url": "https://www.speakeasy.com/?ref=lapaninja"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/07f1862f-4006-4480-bd45-836f7430259e"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 142588219,
+      "shareUrl": "https://www.cosmos.so/e/142588219",
+      "websiteTitle": "AI-Powered Team Matchmaking | Kinhive",
+      "source": {
+       "url": "https://kinhive.com/?ref=maxibestof.one"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/650aee48-490c-496b-9116-3113bdc352e8"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1355237740,
+      "shareUrl": "https://www.cosmos.so/e/1355237740",
+      "websiteTitle": "Manage your Solflare wallet with ease | Solflare",
+      "source": {
+       "url": "https://www.solflare.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/522b4fe5-2b42-4d0c-a021-125a8dfbfd47"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 846349837,
+      "shareUrl": "https://www.cosmos.so/e/846349837",
+      "websiteTitle": "FLORENTINE",
+      "source": {
+       "url": "https://florentinekitchenknives.com/?ref=maxibestof.one"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/d8acee7b-3275-4e37-8829-28b57e0a1ea5"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1281489138,
+      "shareUrl": "https://www.cosmos.so/e/1281489138",
+      "websiteTitle": "The Content Operating System | Sanity",
+      "source": {
+       "url": "https://www.sanity.io/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/893de451-4ea9-4723-9ac1-e7a19d9c0a53"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1745505280,
+      "shareUrl": "https://www.cosmos.so/e/1745505280",
+      "websiteTitle": "Terrain",
+      "source": {
+       "url": "https://www.terrain.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/f0136444-60cd-4a37-a338-94c76fa611b4"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 776219086,
+      "shareUrl": "https://www.cosmos.so/e/776219086",
+      "websiteTitle": "International Tax & Transaction Advisory Firm | Svalner Atlas",
+      "source": {
+       "url": "https://www.svalneratlas.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/40d325f6-6a9b-4079-a206-85343f59a9bd.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 238882670,
+      "shareUrl": "https://www.cosmos.so/e/238882670",
+      "websiteTitle": "PandaPay: Transparent and Caring Payment Solutions",
+      "source": {
+       "url": "https://pandapay.ca/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ac7f1e15-82b5-4962-a05d-ed7fa7c47a7d"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 132941339,
+      "shareUrl": "https://www.cosmos.so/e/132941339",
+      "websiteTitle": "Tempo: The Blockchain Designed for Payments",
+      "source": {
+       "url": "https://tempo.xyz/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/a2892374-0e12-4e1b-972e-f41ae9a4d1c4"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1019409688,
+      "shareUrl": "https://www.cosmos.so/e/1019409688",
+      "websiteTitle": "Real feedback for creative industry job applications | SuperHi.cv",
+      "source": {
+       "url": "https://www.superhi.cv/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ec9adf35-5f86-4052-8b2c-6b03a08c516b"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1280601816,
+      "shareUrl": "https://www.cosmos.so/e/1280601816",
+      "websiteTitle": "Sigma",
+      "source": {
+       "url": "https://www.sigma-global.com/en/index.html"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/6a09038e-e0f3-4378-b3e0-cb196bb01569"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1882419415,
+      "shareUrl": "https://www.cosmos.so/e/1882419415",
+      "websiteTitle": "Stadshem -- hem med historia",
+      "source": {
+       "url": "https://stadshem.se/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/8115c90a-b70f-4e41-a555-b7500892df59"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 35450694,
+      "shareUrl": "https://www.cosmos.so/e/35450694",
+      "websiteTitle": "Telescope",
+      "source": {
+       "url": "https://telescope.fyi/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/22da3624-d94a-461d-ad7d-17af73cfadfd"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 768119034,
+      "shareUrl": "https://www.cosmos.so/e/768119034",
+      "websiteTitle": "Custo: Bringing the world to your doorstep.",
+      "source": {
+       "url": "https://custo.io/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/8df6f814-f890-4f6b-a9bb-b15e290c223e"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 503466756,
+      "shareUrl": "https://www.cosmos.so/e/503466756",
+      "websiteTitle": "The Department of Bed Intentions",
+      "source": {
+       "url": "https://bedintentions.com/?ref=maxibestof.one"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/08a31222-62f2-4fd2-849a-24193cec8de2"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 548544417,
+      "shareUrl": "https://www.cosmos.so/e/548544417",
+      "websiteTitle": "Home",
+      "source": {
+       "url": "https://roundandround.sydney/?ref=maxibestof.one"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/0bb879c6-2b3d-41e3-ac29-5c1e95c5d54a.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 394779777,
+      "shareUrl": "https://www.cosmos.so/e/394779777",
+      "websiteTitle": "Home - Olsson LyckeforsOlsson Lyckefors",
+      "source": {
+       "url": "https://olssonlyckefors.se/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/1c894891-9b91-4905-8512-4f8b8d84edd4"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1217001404,
+      "shareUrl": "https://www.cosmos.so/e/1217001404",
+      "websiteTitle": "TwelveLabs | Home",
+      "source": {
+       "url": "https://www.twelvelabs.io/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/747350ce-3fd5-4c17-b42b-ac5d71add3a8"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 711932161,
+      "shareUrl": "https://www.cosmos.so/e/711932161",
+      "websiteTitle": "Purpose Talent",
+      "source": {
+       "url": "https://www.purposetalent.xyz/?ref=maxibestof.one"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/f2e36fd3-9ef9-4ed6-87c3-4fdd43497a17"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 853357787,
+      "shareUrl": "https://www.cosmos.so/e/853357787",
+      "websiteTitle": "Advance-Copy",
+      "source": {
+       "url": "https://advance-copy.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/3b5f90c9-934a-443a-aca1-676d0f6c2573"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 641234170,
+      "shareUrl": "https://www.cosmos.so/e/641234170",
+      "websiteTitle": "Civ Lab | SF Gov Graph",
+      "source": {
+       "url": "https://sfgov.civlab.org/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/55778de6-c096-43f3-86fe-5f999894cbe1"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 827301243,
+      "shareUrl": "https://www.cosmos.so/e/827301243",
+      "websiteTitle": "Digital Intercourse",
+      "source": {
+       "url": "https://digitalintercourse.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/ba394eca-4693-488b-b586-a93b3e7351a6"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1924315597,
+      "shareUrl": "https://www.cosmos.so/e/1924315597",
+      "websiteTitle": "Swan — AI Virtual Fitting Rooms",
+      "source": {
+       "url": "https://www.swanvision.ai/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/36a82987-95c0-4b1b-ad29-a08436754fca.webp"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 2044089830,
+      "shareUrl": "https://www.cosmos.so/e/2044089830",
+      "websiteTitle": "Lineto.com",
+      "source": {
+       "url": "https://lineto.com/#1-1-tunnel-green"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/783bce36-6b2c-430c-b647-39177ec51dcc"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1617568980,
+      "shareUrl": "https://www.cosmos.so/e/1617568980",
+      "websiteTitle": "ITEM Amsterdam",
+      "source": {
+       "url": "https://item-amsterdam.nl/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/306ae55e-1271-49ed-ae54-27e0e6305dea"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 253371695,
+      "shareUrl": "https://www.cosmos.so/e/253371695",
+      "websiteTitle": "Försäkring för hur vi lever idag | Hedvig",
+      "source": {
+       "url": "https://www.hedvig.com/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/5fed9ed3-66f1-4268-b93c-0b1de1cc68e6"
+      }
+     }
+    },
+    {
+     "element": {
+      "__typename": "WebsiteElementTile",
+      "id": 1009855381,
+      "shareUrl": "https://www.cosmos.so/e/1009855381",
+      "websiteTitle": "Nome. Readymag template",
+      "source": {
+       "url": "https://readymag.com/designs/nomo/"
+      },
+      "media": {
+       "__typename": "StaticImage",
+       "url": "https://cdn.cosmos.so/e41c6e28-b450-4e01-ac6a-9521275f50f6.webp"
+      }
+     }
+    }
+   ]
+  }
+ }
+}

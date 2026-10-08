@@ -34,6 +34,12 @@ export const EMAIL_KINDS: readonly EmailKind[] = ["digest", "replies"];
 const WINDOW_DAYS = 7;
 /** Without opening the app for this long, the digest stops on its own */
 const PAUSE_DAYS = 30;
+/** How far apart digests go by how long the person has been away: in the app these two days, one a day; away up to
+ *  a week, one every three days; longer, one a week. Someone who left while the team kept going gets a handful of
+ *  emails in the month before it pauses, not thirty */
+const GAP_DAYS = (awayDays: number) => (awayDays < 2 ? 1 : awayDays < 7 ? 3 : 7);
+/** The cron does not run at the same second each day: a gap counts as met this much early */
+const GAP_SLACK = 6 * 60 * 60 * 1000;
 /** Lines per group in the digest; the rest is "and N more" */
 const LINES_PER_GROUP = 6;
 /** Lines the bell shows at most */
@@ -302,7 +308,7 @@ export function digestGroups(events: TeamEvent[], locale: Locale, projectNames: 
   return groups.sort((a, b) => (a.title === library ? 1 : 0) - (b.title === library ? 1 : 0));
 }
 
-export interface DigestRun { teams: number; sent: number; paused: number; skipped: number; mails: { to: string; subject: string; text: string }[] }
+export interface DigestRun { teams: number; sent: number; paused: number; skipped: number; /** Held for another day: too soon since their last one for how long they have been away */ spaced: number; mails: { to: string; subject: string; text: string; html: string }[] }
 
 /**
  * The morning run. For every team with more than one person: the events since the earliest member's window,
@@ -310,7 +316,7 @@ export interface DigestRun { teams: number; sent: number; paused: number; skippe
  * `dryRun` builds every email and sends none, and moves no marker (check:notifications).
  */
 export async function sendDigests(now = new Date(), dryRun = false): Promise<DigestRun> {
-  const run: DigestRun = { teams: 0, sent: 0, paused: 0, skipped: 0, mails: [] };
+  const run: DigestRun = { teams: 0, sent: 0, paused: 0, skipped: 0, spaced: 0, mails: [] };
   const S = schema.activitySegment;
   const teams = await db.select({ id: O.id, name: O.name }).from(O).where(eq(O.kind, "team"));
   const floor = new Date(now.getTime() - WINDOW_DAYS * DAY);
@@ -344,10 +350,13 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       if (!theirs.length) { await cover(); run.skipped++; continue; }
       const locale = toLocale(m.language);
       const lastOpened = anywhere.get(m.userId) ?? m.userCreatedAt;
+      // Too soon for someone who has been away: held, and not covered, so what happened waits for the next one
+      const gap = GAP_DAYS((now.getTime() - lastOpened.getTime()) / DAY) * DAY - GAP_SLACK;
+      if (m.coveredAt && now.getTime() - m.coveredAt.getTime() < gap) { run.spaced++; continue; }
       if (lastOpened < pauseBefore) {
         // A month away: the digest stops on its own, with one email that says so and how to turn it back on
         const p = pausedMail(`${baseUrl()}/settings/account`, locale);
-        run.mails.push({ to: m.email, subject: p.subject, text: p.text });
+        run.mails.push({ to: m.email, subject: p.subject, text: p.text, html: p.html });
         if (!dryRun) { await setEmailPref(m.userId, "digest", false); await sendMail(m.email, p.subject, p.html, p.text); }
         await cover(); run.paused++;
         continue;
@@ -357,7 +366,7 @@ export async function sendDigests(now = new Date(), dryRun = false): Promise<Dig
       const foot = footOf(m.userId, "digest", team.name);
       // The button opens where most happened: the first group
       const d = digestMail({ summary: digestSummary(theirs, locale), url: groups[0].url, groups }, foot, locale);
-      run.mails.push({ to: m.email, subject: d.subject, text: d.text });
+      run.mails.push({ to: m.email, subject: d.subject, text: d.text, html: d.html });
       if (!dryRun) await sendMail(m.email, d.subject, d.html, d.text, { headers: unsubscribeHeaders(foot.stopUrl) });
       await cover(); run.sent++;
     }

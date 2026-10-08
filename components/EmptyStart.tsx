@@ -8,6 +8,8 @@ import { useT } from "./I18nProvider";
 import { Button, Card, PromptInput, SegmentedControl } from "@/components/criterio";
 import s from "./EmptyStart.module.css";
 import AddToLibrary from "./AddToLibrary";
+import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
+import { BoardProgress, useBoardImport, type BoardStep, type ImportBoard } from "./BoardImport";
 
 // Always 9 sites (3×3 grid): the most used and the most popular right now, picked by hand
 // with a screenshot that looks perfect. If one leaves the directory, the first site of each
@@ -54,13 +56,17 @@ interface EmptyStartProps {
   onAddUrl: (web: string) => Promise<void>;
   isDuplicate?: (web: string) => boolean;
   onDirectory: () => void;
+  /** A board pasted (Are.na, Pinterest, Cosmos): what Criterio can save of it comes in, in a project of its own */
+  onImportBoard: ImportBoard;
+  /** A board imported on its own (pasted before signing in): its progress shows here */
+  arriving?: BoardStep | null;
 }
 
 /**
  * Workspace with no inspos yet (Refero model): one prompt box to paste a URL, and under it the
  * directory in tabs, where any site goes into the library with one click.
  */
-export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: EmptyStartProps) {
+export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImportBoard, arriving }: EmptyStartProps) {
   const { t } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
@@ -74,7 +80,18 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
     setBusy(true);
     try { await onAddUrl(web); } finally { setBusy(false); }
   };
+  const { step: ownStep, run } = useBoardImport(onImportBoard);
+  const step = ownStep ?? arriving ?? null;
+  const board = boardOf(raw);
+  const importBoard = async () => {
+    setBusy(true);
+    try {
+      const failed = await run(raw);
+      if (failed) setError(failed);
+    } finally { setBusy(false); }
+  };
   const submit = () => {
+    if (board) { importBoard(); return; }
     const web = normalizeWebUrl(raw);
     if (!web) { setError(t.start.notUrl); return; }
     add(web);
@@ -93,10 +110,12 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory }: Empty
         <h1 className={s.title}>{t.start.title}</h1>
         <p className={s.lead}>{t.start.lead}</p>
         <PromptInput className={s.prompt} id="start-url" inputRef={inputRef} value={raw} placeholder={t.start.pasteUrl}
-          label={t.start.firstUrlLabel} sendLabel={busy ? t.start.saving : t.start.save} disabled={busy} busy={busy}
+          label={t.start.firstUrlLabel} sendLabel={board ? (busy ? t.board.importing : t.board.import) : busy ? t.start.saving : t.start.save} disabled={busy || !!arriving} busy={busy || !!arriving}
           onChange={(v) => { setRaw(v); setError(""); }} onSubmit={submit}
           inputProps={{ inputMode: "url", spellCheck: false, "aria-invalid": !!error, "aria-describedby": error ? "start-url-error" : undefined }} />
         {error && <p id="start-url-error" className={s.error} role="alert">{error}</p>}
+        {step ? <BoardProgress step={step} className={`board-progress ${s.board}`} />
+          : board && !error && <p className={s.boardHint}>{t.board.hint(PLATFORM_NAME[board.platform])}</p>}
       </div>
 
       <div className={s.section} data-flip>

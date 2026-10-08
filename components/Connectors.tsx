@@ -1,6 +1,7 @@
 "use client";
-// The ways into criterio from outside, in one place on the top bar: the browser extension and the MCP connector
-// for AI clients. A menu with the two, each ticked once it is connected. The button stays when both are: it is the
+// The ways into criterio from outside, in one place on the top bar: the browser extension, the MCP connector
+// for AI clients, and Import (a board or the bookmarks someone already has). A menu with the three, the first two
+// ticked once connected. The button stays when both are: it is the
 // only place to see the apps let in and cut one off, and an AI client that drops the connector does not tell us,
 // so "connected" here can outlive the connection (Eric, 06-10).
 import { Fragment, useEffect, useState } from "react";
@@ -11,11 +12,14 @@ import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import { useT } from "./I18nProvider";
 import { sectionIcon } from "./section-icons";
 import ConnectDialog from "./ConnectDialog";
+import ImportDialog from "./ImportDialog";
+import type { ImportBoard } from "./BoardImport";
 import { canInstall, useExtension } from "@/hooks/use-extension";
 import { loadConnections } from "@/app/actions/mcp";
 
-/** `row`: a row of the phone sheet (components/Sidebar.tsx) instead of the top bar button; the menu is the same */
-export default function Connectors({ row = false }: { row?: boolean }) {
+/** `row`: a row of the phone sheet (components/Sidebar.tsx) instead of the top bar button; the menu is the same.
+ *  `onImportBoard`: the board import of the library (InspoClient), shared with the first run and Add. */
+export default function Connectors({ row = false, onImportBoard }: { row?: boolean; onImportBoard: ImportBoard }) {
   const { t } = useT();
   const s = t.mcp;
   const { info } = useExtension();
@@ -25,6 +29,7 @@ export default function Connectors({ row = false }: { row?: boolean }) {
   const [apps, setApps] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [importing, setImporting] = useState(false);
   useEffect(() => { if (!connecting) void loadConnections().then((r) => { if (r.ok) setApps(r.data.length); }); }, [connecting]);
   const mcpDone = (apps ?? 0) > 0;
   const Wrap = row ? SidebarMenuItem : Fragment;
@@ -54,9 +59,13 @@ export default function Connectors({ row = false }: { row?: boolean }) {
           <MenuItem icon="cable" checked={mcpDone} onClick={() => { setOpen(false); setConnecting(true); }}>
             {s.open}{mcpDone && <span className="cr-visually-hidden">, {s.connectedOne}</span>}
           </MenuItem>
+          <MenuItem icon="import" onClick={() => { setOpen(false); setImporting(true); }}>
+            {t.imports.open}
+          </MenuItem>
         </PopoverContent>
       </Popover>
       {connecting && <ConnectDialog onClose={() => setConnecting(false)} />}
+      {importing && <ImportDialog onClose={() => setImporting(false)} onImportBoard={onImportBoard} />}
     </Wrap>
   );
 }
