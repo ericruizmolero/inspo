@@ -1033,35 +1033,29 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .tile__scroll img.is-ready { animation: dm-scroll cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .tile__scroll img.is-ready { animation-play-state: paused; } }
 
-/* No screenshot: type poster tinted per domain (--fb-hue) with the initial as a watermark */
-.tile__fallback {
-  position: relative; aspect-ratio: 4 / 3; overflow: hidden;
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 16px 18px 18px;
-  /* The theme's raised surface with a faint tint of the domain's hue: readable on paper and on board */
-  background:
-    radial-gradient(120% 90% at 0% 0%, hsl(var(--fb-hue) 30% 50% / 0.16), transparent 60%),
-    var(--surface-raised);
+/* No picture: the same page of words as a text (.tile__text, TextRef.css), in two more shapes.
+   A post from X without media reads as the post: its author's face, name and handle, then what it says.
+   A site that gave no og:image nor screenshot: its domain, its name and what it says about itself. Flat,
+   nothing drawn: no watermark letter, no tint (principle 1) */
+/* The post starts at the top of its square like a text does (Eric, 08-10: nothing moves under the pointer, and the
+   action rows over it are fine). No mask on the words (a short post would fade whole): only a post cut by its card
+   (.is-cut, measured in InspoCard.tsx useCut) gets a fade over its last visible line; one that fits reads whole */
+.tile__text--post { gap: 10px; }
+.tile__text--post .tile__text-body { flex: 0 1 auto; -webkit-mask-image: none; mask-image: none; }
+.tile__text--post.is-cut::before {
+  content: ""; position: absolute; inset: auto 0 0; height: 64px; pointer-events: none;
+  background: linear-gradient(transparent, var(--surface-raised) 72%);
 }
-.tile__fallback-mark {
-  position: absolute; right: -0.06em; top: 50%; z-index: 0; transform: translateY(-46%);
-  font-size: clamp(120px, 58cqw, 280px); line-height: 1; letter-spacing: -0.04em;
-  color: hsl(var(--fb-hue) 30% 55% / 0.12);
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.4s;
-  pointer-events: none; user-select: none;
-}
-.tile:hover .tile__fallback-mark { transform: translate(-2%, -48%); color: hsl(var(--fb-hue) 30% 55% / 0.18); }
-.tile__fallback-top { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.tile__fallback-domain { font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tile__fallback-type { flex-shrink: 0; font-size: var(--fs-label); font-weight: 500; color: var(--text-2); }
-.tile__fallback-body { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 6px; max-width: 84%; }
-.tile__fallback-rule { display: block; width: 22px; height: 1px; margin-bottom: 4px; background: hsl(var(--fb-hue) 40% 62% / 0.55); }
-/* The name is title-m (.t-title-m on the element) */
-.tile__fallback-name { color: var(--text); text-wrap: balance; overflow-wrap: anywhere; }
-.tile__fallback-note {
-  font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
+.tile__post-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.tile__post-head .cr-avatar { flex-shrink: 0; overflow: hidden; }
+.tile__post-head .cr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.tile__post-who { display: flex; flex-direction: column; min-width: 0; font-size: var(--fs-small); line-height: 1.25; }
+.tile__post-who b { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile__post-who span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The post's words, as X breaks them */
+.tile__post-body { white-space: pre-line; }
+/* A page is landscape: 4:3, like its screenshot would have been */
+.tile__text--site { aspect-ratio: 4 / 3; }
 
 /* The touch caption's title and meta: sans, on the page ground */
 .tile__title { font-size: var(--fs-small); font-weight: 600; color: var(--text); }
@@ -2416,13 +2410,17 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .ip-bento.cr-viewer-body { flex: 1; min-height: 0; }
 .ip-stage.cr-viewer-stage { min-height: 0; padding: 16px; gap: 16px; }
 .ip-card--page.cr-viewer-media { position: relative; min-height: 0; flex-direction: column; align-items: stretch; justify-content: flex-start; border: 1px solid var(--chrome-border); }
-/* A page or an image: the card ends where the capture ends, centred in the stage, instead of leaving a dark band
-   under a short capture (Eric, 07-10). A long page still scrolls inside it (capped to the stage). While the capture
-   loads, the card holds most of the height so it does not jump */
-.ip-card--page.cr-viewer-media:has(> .pn-wrap) { align-self: center; max-height: 100%; }
+/* Only the reference shows, in the middle of the stage: the card ends where it ends instead of leaving a dark
+   band around it (Eric, 07-10 for captures, 08-10 for everything). A long one still scrolls inside it (capped to
+   the stage). While a capture loads, the card holds most of the height so it does not jump */
+.ip-card--page.cr-viewer-media { align-self: center; max-height: 100%; }
 .ip .pn-page:has(.shimmer) { min-height: min(70svh, 100%); }
 .ip-card--talk.cr-viewer-aside { width: 380px; min-height: 0; overflow: hidden; border-left-color: var(--chrome-raised); }
-.ip-media { flex: 1; min-height: 0; overflow-y: auto; padding: 12px; }
+/* A post or a video draws itself (the post's own box, the player): the card around it is nothing */
+.ip-card--page.cr-viewer-media:has(> .ip-media) { background: transparent; border: 0; }
+.ip-media { flex: 0 1 auto; width: 100%; min-height: 0; overflow-y: auto; padding: 0; }
+/* A post reads at a post's width, in the middle */
+.ip-media:has(> .pv) { max-width: 600px; margin: 0 auto; }
 .ip-state.cr-empty { flex: 1; justify-content: center; padding: 40px; text-wrap: balance; }
 /* A text reference: its title is an h2 (title-l) */
 .ip .ip-text__title { color: var(--chrome-ink); }

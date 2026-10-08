@@ -1,7 +1,5 @@
 "use client";
 
-import { hueFor } from "./CommentsPanel";
-
 import { useState, useEffect, useRef } from "react";
 import { InspoItem, InspoTags, Project, TagStatus, type InspoComment } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "@/lib/taxonomy";
@@ -11,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import ProjectPicker from "./ProjectPicker";
 import AreaPicker from "./AreaPicker";
 import type { SystemArea } from "@/types/system";
-import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, readableDomain } from "@/lib/url";
+import { mediaKindOf, videoEmbedOf, isGif, postThumbKind, postOf, readableDomain } from "@/lib/url";
 import LoopVideo from "./LoopVideo";
 import { Avatar, AvatarStack, Busy, Button, Chip, Icon, IconButton, MenuItem, toneFor } from "@/components/criterio";
 import "./TextRef.css";
@@ -32,6 +30,69 @@ function isBlocked(url: string) {
 /** Our private blobs go through the proxy; anything else (local files, a video's frame, blob:) loads as is */
 
 type ImgSource = "idle" | "og" | "shot" | "error";
+
+/** What a post without a picture says, for its card: who wrote it and its words. Read once per session
+ *  from /api/post (the copy lib/posts.ts keeps); until it comes, what its name already says */
+type PostWords = { author: string; handle: string; avatar: string | null; text: string };
+const postWords = new Map<string, PostWords | null>();
+/** The words without their links, with X's own line breaks and no run of blank lines */
+const wordsOf = (text: string) => text.replace(/https?:\/\/\S+/g, "").replace(/[ \t]+/g, " ").replace(/\s*\n\s*/g, "\n").replace(/\n{2,}/g, "\n").trim();
+/** "Wilson · Ferndesk has been live…" (lib/posts.ts postName) read back as author and words */
+function wordsFromName(name: string, handle: string): PostWords {
+  const at = name.indexOf(" · ");
+  return at > 0 ? { author: name.slice(0, at), handle, avatar: null, text: name.slice(at + 3) } : { author: name, handle, avatar: null, text: "" };
+}
+/** The tagger's summary of a post, "Javi (@jconsu) on X · what it says" (lib/tagger.ts postAsSite), read back */
+function wordsFromSummary(summary: string | undefined): PostWords | null {
+  const m = summary?.match(/^(.+?) \(@(\w+)\) on X · ([\s\S]+)$/);
+  return m ? { author: m[1], handle: m[2], avatar: null, text: wordsOf(m[3]) } : null;
+}
+function usePostWords(web: string | null, name: string, summary?: string): PostWords | null {
+  // The words live in state, not only in the map: the React Compiler memoises what a render reads from the map
+  // by `web` alone, so a map filled after the first render would never reach the card
+  const [read, setRead] = useState<{ web: string; words: PostWords | null } | null>(() => (web && postWords.has(web) ? { web, words: postWords.get(web)! } : null));
+  useEffect(() => {
+    if (!web) return;
+    const had = postWords.get(web);
+    if (had !== undefined) { setRead((r) => (r?.web === web ? r : { web, words: had })); return; }
+    const ctrl = new AbortController();
+    fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web }), signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const words: PostWords | null = d?.post ? { author: String(d.post.author ?? ""), handle: String(d.post.handle ?? ""), avatar: d.post.avatar ? String(d.post.avatar) : null, text: wordsOf(String(d.post.text ?? "")) } : null;
+        postWords.set(web, words);
+        setRead({ web, words });
+      })
+      .catch(() => { /* its name says the start of it */ });
+    return () => ctrl.abort();
+  }, [web]);
+  if (!web) return null;
+  return (read?.web === web ? read.words : null) ?? wordsFromSummary(summary) ?? wordsFromName(name, postOf(web)?.user ?? "");
+}
+
+/** Whether a block of words is cut by its box (true only when it needs more height than it has) */
+function useCut(): [React.RefObject<HTMLParagraphElement | null>, boolean] {
+  const ref = useRef<HTMLParagraphElement | null>(null);
+  const [cut, setCut] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const read = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    read();
+    const ro = new ResizeObserver(read);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+  return [ref, cut];
+}
+
+/** The author's face as X serves it (asked for without a referrer, as the post's sheet does); the initial if it fails */
+function PostFace({ name, src }: { name: string; src: string | null }) {
+  const [failed, setFailed] = useState<string | null>(null);
+  const pic = src && failed !== src ? src : null;
+  if (!pic) return <Avatar initials={name.trim().slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} size={28} />;
+  return <span className="cr-avatar" style={{ width: 28, height: 28 }} role="img" aria-label={name}><img src={pic} alt="" width={28} height={28} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(pic)} /></span>;
+}
 
 // Images already resolved per URL: moving cards between columns makes React
 // remount them, and without this everything would download (and flicker) again.
@@ -289,6 +350,18 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   // A text is its own poster: its title, and its first lines where a site's note would go
   const posterNote = kind === "text" ? tags?.summary || item.note : item.note;
   const isError = !useManual && !useDesign && !useFrame && source === "error";
+  // A post with no picture is read for its card (author, face, words); the rest of the time nothing is asked
+  const post = usePostWords(isError && kind === "post" ? item.web : null, item.name, tags?.summary);
+  // A post longer than its card fades at the bottom; one that fits reads whole to its last line
+  const [postBodyRef, postCut] = useCut();
+  // A site with no picture says what it is: the team's note, else what the page says about itself
+  // (tags.summary is "title · description", lib/tagger.ts)
+  const siteWords = (() => {
+    if (item.note) return item.note;
+    const s = tags?.summary ?? "";
+    const at = s.indexOf(" · ");
+    return at > 0 ? s.slice(at + 3) : s && s !== item.name ? s : "";
+  })();
   const isLoaded = useManual ? manual.ready : useDesign ? cover.ready : useFrame ? frameLoaded : !!imgSrc;
 
   // On the board the media's real shape matters: the layout sizes the slot from it.
@@ -315,9 +388,9 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
     return () => { el.removeEventListener("load", onLoad, true); el.removeEventListener("loadeddata", onLoad, true); };
   }, [onMeasure, knownRatio]);
 
-  // No picture at all: the typographic poster is 4:3 (CSS .tile__fallback), a text's page is square
-  // (.tile__text), and the layout hears it
-  const posterRatio = kind === "text" ? 1 : 0.75;
+  // No picture at all: a text's page and a post's are square (.tile__text), a site's is 4:3
+  // (.tile__text--site), and the layout hears it
+  const posterRatio = kind === "text" || kind === "post" ? 1 : 0.75;
   useEffect(() => {
     if (isError && onMeasure && (knownRatio === undefined || Math.abs(knownRatio - posterRatio) > 0.01)) onMeasure(posterRatio);
   }, [isError, onMeasure, knownRatio, posterRatio]);
@@ -536,19 +609,22 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               {posterNote && <p className="tile__text-body">{posterNote}</p>}
             </div>
           )}
-          {isError && kind !== "text" && (
-            // No screenshot: a typographic poster. Subtle stable tint per domain and the initial as a watermark.
-            <div className="tile__fallback" style={{ "--fb-hue": hueFor(domain || item.name) } as React.CSSProperties}>
-              <span className="t-display tile__fallback-mark" aria-hidden>{item.name.trim().slice(0, 1).toUpperCase()}</span>
-              <div className="tile__fallback-top">
-                <span className="tile__fallback-domain">{domain}</span>
-                <span className="tile__fallback-type">{t.labels.type[item.type]}</span>
-              </div>
-              <div className="tile__fallback-body">
-                <i className="tile__fallback-rule" aria-hidden />
-                <span className="t-title-m tile__fallback-name">{item.name}</span>
-                {item.note && <span className="tile__fallback-note">{item.note}</span>}
-              </div>
+          {isError && kind === "post" && post && (
+            // A post from X with nothing to show: the post itself, as its author wrote it (CSS .tile__text--post)
+            <div className={`tile__text tile__text--post${postCut ? " is-cut" : ""}`}>
+              <span className="tile__post-head">
+                <PostFace name={post.author} src={post.avatar} />
+                <span className="tile__post-who"><b>{post.author}</b>{post.handle && <span>@{post.handle}</span>}</span>
+              </span>
+              {post.text && <p ref={postBodyRef} className="tile__text-body tile__post-body">{post.text}</p>}
+            </div>
+          )}
+          {isError && kind !== "text" && kind !== "post" && (
+            // A site with neither og:image nor screenshot: where it is, its name and what it says (CSS .tile__text--site)
+            <div className="tile__text tile__text--site">
+              <span className="tile__text-kind">{domain}</span>
+              <span className="t-title-m tile__text-title">{item.name}</span>
+              {siteWords && <p className="tile__text-body">{siteWords}</p>}
             </div>
           )}
 

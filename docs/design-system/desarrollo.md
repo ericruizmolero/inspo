@@ -51,3 +51,4 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 
 - Medir antes de opinar: sonda con `requestAnimationFrame` + `PerformanceObserver('longtask')` vía `console.warn`; en dev los avisos del navegador llegan a `.next/dev/logs/next-development.log`.
 - La preview de Ship Studio está oculta (sin rAF ni autoplay): para medir, Chrome headless con puppeteer-core.
+- Con el React Compiler, lo que un render lee de un `Map` de módulo (`postWords.get(web)`) queda memoizado por sus entradas visibles (`web`): rellenar el mapa y forzar un render con un contador no repinta. El dato tiene que pasar por `useState` (`usePostWords` en `InspoCard.tsx`, el pie de `PolishView.tsx`).

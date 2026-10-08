@@ -1,7 +1,7 @@
 ---
 title: En la ficha, la tarjeta de la página termina donde termina la captura
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 ---
 

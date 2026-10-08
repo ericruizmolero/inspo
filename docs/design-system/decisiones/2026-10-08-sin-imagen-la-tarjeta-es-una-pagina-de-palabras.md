@@ -1,0 +1,16 @@
+---
+title: Sin imagen, la tarjeta es una página de palabras, no un póster con letra gigante
+date: 2026-10-08
+status: vigente
+kind: diseño
+---
+**Contexto.** Cuando una referencia no tenía ninguna imagen (un post de X sin foto ni vídeo, una web bloqueada como LinkedIn o Instagram, o una captura fallida), la tarjeta del tablón pintaba un póster tipográfico: un tinte por dominio, la inicial del nombre como marca de agua gigante, el dominio arriba, el tipo ("Inspiración") y el nombre recortado a dos líneas. En un tablón con muchos posts de X quedaban un montón de tarjetas oscuras con una letra enorme y casi nada que leer.
+
+**Decisión.** El póster se retira (`.tile__fallback*` fuera de `app/globals.css`, `hueFor` fuera de `InspoCard.tsx`). Toda tarjeta sin imagen es la misma página de palabras que ya era la tarjeta de texto (`.tile__text`, `components/TextRef.css`: `--surface-raised`, una línea `--border`, palabras que se funden bajo el borde), en tres formas:
+- Texto: como estaba. Cuadrada.
+- Post de X sin media (`.tile__text--post`): la cara del autor (la de X, pedida sin referrer, o su inicial en `Avatar`), su nombre en 600 y su @handle apagado, y debajo lo que dice el post con sus saltos de línea y sin enlaces. Cuadrada, con el contenido arriba como en un texto; nada se desplaza al pasar el ratón y que los botones del hover pasen por encima está bien (Eric: "no quiero que se desplace el contenido de la card cuando hago hovering", y luego "subimos el contenido arriba de la card, no pasa nada con el hovering"; el centrado en vertical se probó y se descartó). Sin máscara sobre las palabras (una línea sola se fundía entera): el fundido al pie (`::before`) solo aparece cuando el texto de verdad se sale de la tarjeta (`.is-cut`, medido con un ResizeObserver en `useCut`); un post que cabe se lee entero hasta la última línea (Eric: "aún te queda para rellenar un poco por abajo"). Las palabras se piden a `/api/post` solo cuando esa tarjeta se monta sin imagen y se guardan para la sesión (`postWords` en `InspoCard.tsx`, el mismo patrón que el pie de Pulido); hasta que llegan, se lee lo que ya dice el nombre ("Autor · arranque del texto").
+- Web sin captura (`.tile__text--site`): el dominio donde iba "Texto", el nombre en title-m y, debajo, la nota del equipo o la descripción que la página dice de sí misma (`tags.summary` sin su título). 4:3, la forma que habría tenido su captura.
+
+**Por qué.** Eric, al ver el tablón: "mejoremos los carteles cuando no se puede importar ninguna imagen... ves que quedan feos... sin información". Interpretación: la letra gigante era decoración que no decía nada (principio 1, nada dibujado en las tarjetas), y los datos que faltaban ya existían: el post entero está guardado en Blob y la descripción de la web en sus etiquetas.
+
+**Cómo aplicarlo.** Una tarjeta sin imagen enseña lo que la referencia dice, no un adorno. El borde de la página es `--radius-lg` propio, no heredado: `.tile__media` no tiene radio y un filete cuadrado perdía las esquinas bajo el recorte de la tarjeta. Si aparece otro tipo sin imagen, es otra variante de `.tile__text` (cabecera distinta, mismo fondo, misma letra, mismas palabras que se funden), nunca un póster nuevo. Nada de marcas de agua, tintes por dominio ni etiquetas de tipo dentro de la tarjeta.

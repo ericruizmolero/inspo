@@ -323,7 +323,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const closer = closed ? members.find((m) => m.id === closed!.closedBy)?.name : undefined;
 
   // The words of the post in front, read once it has stayed there a moment and kept for the session
-  const [, setRead] = useState(0);
+  // Through state, not only the map: the React Compiler memoises what a render reads from the map by `post` alone
+  const [read, setRead] = useState<{ web: string; words: Words | null } | null>(null);
   const post = current && !done && mediaKindOf(current.web) === "post" ? current.web : null;
   useEffect(() => {
     if (!post || postWords.has(post)) return;
@@ -331,12 +332,12 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const timer = window.setTimeout(() => {
       fetch("/api/post", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ web: post }), signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d) => { postWords.set(post, d?.post ? { author: String(d.post.author ?? ""), avatar: d.post.avatar ? String(d.post.avatar) : null, text: wordsOf(String(d.post.text ?? "")) } : null); setRead((n) => n + 1); })
+        .then((d) => { const words: Words | null = d?.post ? { author: String(d.post.author ?? ""), avatar: d.post.avatar ? String(d.post.avatar) : null, text: wordsOf(String(d.post.text ?? "")) } : null; postWords.set(post, words); setRead({ web: post, words }); })
         .catch(() => { /* its name says the start of it */ });
     }, POST_WAIT);
     return () => { window.clearTimeout(timer); ctrl.abort(); };
   }, [post]);
-  const words = post && current ? postWords.get(post) ?? wordsFromName(current.name) : null;
+  const words = post && current ? (read?.web === post ? read.words : postWords.get(post)) ?? wordsFromName(current.name) : null;
   // What the team said about it. A text reference's note is the text itself, already on the card
   const note = current && !done && mediaKindOf(current.web) !== "text" ? noteOf(current) : null;
   // What the team voted on the card in front. Only on a doubt gone through: there this person has already voted
