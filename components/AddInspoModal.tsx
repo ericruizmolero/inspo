@@ -199,9 +199,9 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           </div>}
 
           {project && !writing && !board && (
-            <div className="pills" role="group" aria-label={t.add.areas}>
+            <div className="pills pills--line" role="group" aria-label={t.add.areas}>
               {SYSTEM_AREAS.map((a) => (
-                <Chip key={a} className="add__area" pressed={areas.includes(a)} onClick={() => toggleArea(a)}>
+                <Chip key={a} pressed={areas.includes(a)} onClick={() => toggleArea(a)}>
                   {areaIcon(a, 13)}{t.system.areas[a]}
                 </Chip>
               ))}
@@ -211,8 +211,8 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
           {error && <p className="modal__error">{error}</p>}
 
           <div className="modal__footer">
-            <Button onClick={close}>{t.common.cancel}</Button>
-            <Button variant="primary" type="submit" disabled={!canSave || !!step}>{board ? (step ? t.board.importing : t.board.import) : t.common.save}</Button>
+            <Button size="s" onClick={close}>{t.common.cancel}</Button>
+            <Button size="s" variant="primary" type="submit" disabled={!canSave || !!step}>{board ? (step ? t.board.importing : t.board.import) : t.common.save}</Button>
           </div>
         </form>
       </DialogContent>

@@ -1,20 +1,14 @@
 /* Tokens from the Criterio design system. They must match app/globals.css: change them there first,
    then here. The popup is product chrome, so it stays dark whatever the system prefers (like the app's
    tab bar and command bar): chrome ground, paper text, 1px chrome hairlines, beveled paper and ember
-   controls with ink borders. Fonts are bundled in fonts/ so nothing loads from Google. */
+   controls with ink borders. Satoshi is bundled in fonts/ so nothing loads at runtime; the file is not in git
+   (its licence, public repo): `npm run fonts` downloads it before loading or packing the extension. */
 @font-face {
-  font-family: "Archivo";
+  font-family: "Satoshi";
   font-style: normal;
-  font-weight: 400 700;
+  font-weight: 300 900;
   font-display: swap;
-  src: url("fonts/archivo-latin.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Bricolage Grotesque";
-  font-style: normal;
-  font-weight: 700 800;
-  font-display: swap;
-  src: url("fonts/bricolage-grotesque-latin.woff2") format("woff2");
+  src: url("fonts/Satoshi-Variable.woff2") format("woff2");
 }
 
 :root {
@@ -59,8 +53,13 @@
   --radius-xl: 20px;
   --radius-pill: 999px;
 
-  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Bricolage Grotesque", "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-title: var(--font-sans);
+  /* Type: the app's scale (app/globals.css, "Type scale"), only the steps the popup uses */
+  --fs-title-l: 28px; --fs-title-m: 22px; --fs-ui: 15px; --fs-chrome: 14px; --fs-small: 13px; --fs-label: 12px;
+  --fw-regular: 400; --fw-medium: 500; --fw-semibold: 600; --fw-bold: 700;
+  --lh-title-l: 1.1; --lh-title-m: 1.2; --lh-ui: 1.4; --lh-small: 1.45;
+  --tr-title-l: -0.02em; --tr-title-m: -0.01em; --tr-glyph: -0.04em;
   /* On dark chrome the focus ring is ember-glow; error text is the app's dark-theme danger */
   --focus: var(--ember-glow);
   --danger: #E5645A;
@@ -73,7 +72,7 @@ html, body { margin: 0; background: var(--chrome); color: var(--chrome-text); }
 body {
   width: 336px;
   font-family: var(--font-sans);
-  font-size: 13px; line-height: 1.45;
+  font-size: var(--fs-small); line-height: var(--lh-small);
   -webkit-font-smoothing: antialiased;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
@@ -90,15 +89,15 @@ h1, p { margin: 0; }
 .top { display: flex; align-items: center; gap: 8px; min-height: 24px; }
 .logo { width: 22px; height: 22px; flex-shrink: 0; user-select: none; object-fit: contain; }
 .brand {
-  font-family: var(--font-display); font-size: 16px; font-weight: 800;
-  letter-spacing: -0.03em; line-height: 1; color: var(--paper);
+  font-family: var(--font-title); font-size: 16px; font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-glyph); line-height: 1; color: var(--paper);
 }
 /* Workspace switcher: a chrome chip with a native select inside, so it opens the system menu */
 .chip {
   position: relative; margin-left: auto; max-width: 160px; height: 24px; padding: 0 8px 0 10px;
   display: inline-flex; align-items: center; gap: 4px;
   border-radius: var(--radius-pill); border: 1px solid var(--chrome-border); background: var(--chrome-panel);
-  color: var(--chrome-text-muted); font-size: 12px; font-weight: 500; cursor: pointer;
+  color: var(--chrome-text-muted); font-size: var(--fs-label); font-weight: var(--fw-medium); cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
 }
 .chip:hover, .chip:focus-within { color: var(--paper); border-color: var(--chrome-muted); }
@@ -119,10 +118,10 @@ h1, p { margin: 0; }
 /* A view's content block: no box of its own, the popup frame already is one */
 .card { display: flex; flex-direction: column; gap: 12px; }
 .title {
-  font-family: var(--font-display); font-size: 20px; font-weight: 700; line-height: 1.15;
-  letter-spacing: -0.02em; color: var(--paper); text-wrap: balance;
+  font-family: var(--font-title); font-size: var(--fs-title-m); font-weight: var(--fw-semibold); line-height: var(--lh-title-m);
+  letter-spacing: var(--tr-title-m); color: var(--paper); text-wrap: balance;
 }
-.hint { font-size: 12px; line-height: 1.4; color: var(--chrome-text-muted); text-wrap: pretty; }
+.hint { font-size: var(--fs-label); line-height: var(--lh-ui); color: var(--chrome-text-muted); text-wrap: pretty; }
 .hint:empty { display: none; }
 .hint.is-error { color: var(--danger); }
 .hint.is-ok { color: var(--moss-light); }
@@ -135,7 +134,7 @@ h1, p { margin: 0; }
   border-radius: var(--radius-md);
   border: var(--stroke-control) solid var(--control-border);
   background: var(--paper); color: var(--ink);
-  font-size: 15px; font-weight: 600; white-space: nowrap; text-decoration: none;
+  font-size: var(--fs-ui); font-weight: var(--fw-semibold); white-space: nowrap; text-decoration: none;
   box-shadow: var(--bevel);
   transition: background 0.15s, color 0.15s, box-shadow 0.1s, transform 0.1s;
 }
@@ -160,7 +159,7 @@ h1, p { margin: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .link {
   background: none; border: 0; padding: 0; border-radius: var(--radius-sm);
-  color: var(--chrome-text-muted); font-size: 12px; cursor: pointer;
+  color: var(--chrome-text-muted); font-size: var(--fs-label); cursor: pointer;
 }
 .link:hover { color: var(--paper); }
 
@@ -168,24 +167,29 @@ h1, p { margin: 0; }
 .input {
   width: 100%; height: 40px; padding: 0 12px;
   background: var(--field); border: var(--stroke-control) solid var(--field-border); border-radius: var(--radius-md);
-  color: var(--field-ink); font-size: 15px; outline: none;
+  color: var(--field-ink); font-size: var(--fs-ui); outline: none;
   box-shadow: var(--sunken);
 }
 .input::placeholder { color: var(--field-placeholder); opacity: 1; }
 .input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library) */
-.input--note { height: auto; min-height: 62px; padding: 9px 12px; resize: none; font: inherit; font-size: 15px; line-height: 1.4; }
+/* A field as the system's TextField: the label small and quiet above the well, never inside it (Eric, 08-10:
+   the inline label and the three-line placeholder left the note cut and the project truncated) */
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field__label { font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--chrome-text-muted); }
+/* The note: what caught the eye, in the words of whoever saves it (the root of the thread in the library).
+   Two lines of 14 px, the placeholder one of them */
+.input--note { height: auto; min-height: 60px; padding: 9px 12px; resize: none; font: inherit; font-size: var(--fs-chrome); line-height: var(--lh-small); }
 .input--note[hidden] { display: none; }
 
 /* Import row: what is saved elsewhere, one tap away under Save */
 .import-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-top: 2px; }
-.import-row__label { flex-basis: 100%; font-size: 12px; color: var(--chrome-text-muted); }
-.btn--small { min-height: 32px; padding: 0 12px; font-size: 13px; gap: 6px; }
+.import-row__label { flex-basis: 100%; font-size: var(--fs-label); color: var(--chrome-text-muted); }
+.btn--small { min-height: 32px; padding: 0 12px; font-size: var(--fs-small); gap: 6px; }
 .btn--small svg { flex-shrink: 0; }
 
 /* "I already have a key": quiet, folded away under the card */
 .paste summary {
-  list-style: none; font-size: 12px; color: var(--chrome-text-muted); cursor: pointer; width: fit-content;
+  list-style: none; font-size: var(--fs-label); color: var(--chrome-text-muted); cursor: pointer; width: fit-content;
   border-radius: var(--radius-sm);
 }
 .paste summary::-webkit-details-marker { display: none; }
@@ -211,14 +215,14 @@ h1, p { margin: 0; }
 .site__icon img[hidden], .site__icon svg[hidden] { display: none; }
 .site__icon svg { color: var(--chrome-muted); }
 .site__text { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.site__title { font-size: 15px; font-weight: 600; color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.site__host { font-size: 12px; color: var(--chrome-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site__title { font-size: var(--fs-ui); font-weight: var(--fw-semibold); color: var(--paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site__host { font-size: var(--fs-label); color: var(--chrome-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .actions { display: flex; flex-direction: column; gap: 8px; }
 
 /* The foot is a status bar (the app's StatusBar): who is signed in sits in a sunken cell */
 .foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.5); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
 .foot[hidden] { display: none; }
-.foot__who { min-width: 0; padding: 3px 8px; font-size: 12px; color: var(--field-ink); background: var(--field); border: 1px solid var(--field-border); border-radius: var(--radius-sm); box-shadow: var(--sunken); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foot__who { min-width: 0; padding: 3px 8px; font-size: var(--fs-label); color: var(--field-ink); background: var(--field); border: 1px solid var(--field-border); border-radius: var(--radius-sm); box-shadow: var(--sunken); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* The board's add form: the note, then where it lands (the project, the areas of its system) */
 .form { display: flex; flex-direction: column; gap: 10px; }
@@ -232,27 +236,30 @@ h1, p { margin: 0; }
   box-shadow: var(--sunken); color: var(--field-ink); cursor: pointer;
 }
 .select:has(select:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
-.select__label { font-size: 13px; color: var(--field-placeholder); flex-shrink: 0; }
+.select__label { font-size: var(--fs-small); color: var(--field-placeholder); flex-shrink: 0; }
 .select select {
   appearance: none; -webkit-appearance: none; flex: 1; min-width: 0; border: 0; background: none; padding: 0; margin: 0;
-  color: var(--field-ink); font: inherit; font-size: 15px; font-weight: 500; text-align: right; cursor: pointer; outline: none;
+  color: var(--field-ink); font: inherit; font-size: var(--fs-ui); font-weight: var(--fw-medium); text-align: right; cursor: pointer; outline: none;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .select svg { flex-shrink: 0; color: var(--field-ink); }
 .select select option { color: var(--ink); }
-/* The areas: Chip (design system), paper with an ink border. A ticked area turns moss, the system's
-   colour for libraries and collections, so ember stays the Save button's alone */
+/* Labelled from above (.field): the name of the project reads from the left, at the field's size */
+.select--plain select { text-align: left; font-size: var(--fs-chrome); }
+.select--plain svg { color: var(--chrome-text-muted); }
+/* The areas: the Chip as the app's Add form paints it (.add__area): a 28 px pill, transparent, a quiet
+   grey line and muted text. Only a picked one fills, inverted to paper with ink text, so the dark popup
+   stays dark and ember stays the Save button's alone */
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .pill {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border-radius: var(--radius-pill);
-  border: var(--stroke-control) solid var(--control-border); background: var(--paper);
-  color: var(--ink); font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: background 0.12s, color 0.12s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: var(--radius-pill);
+  border: 1px solid var(--chrome-raised); background: transparent;
+  color: var(--chrome-text-muted); font-size: var(--fs-label); font-weight: var(--fw-medium); cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
 }
-.pill:hover { background: var(--paper-light); }
-.pill:active { transform: translateY(1px); }
-/* A picked chip inverts (ink with paper text), as in the app; a paper outline keeps it on the dark popup */
-.pill[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--paper); }
+.pill:hover { color: var(--paper); border-color: var(--chrome-muted); }
+.pill:active { transform: scale(0.96); }
+.pill[aria-pressed="true"] { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 .pill svg { flex-shrink: 0; }
 
 /* Saved: the button stays where it was, sinks in, turns moss (synced, in the library) and says so

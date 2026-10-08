@@ -1,8 +1,8 @@
 /* 404 and error: the mark floating where the zero would be (alone and askew on an error), one line of why, one way out */
 .lost { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px 16px 12vh; text-align: center; animation: pop-in 0.4s var(--ease-out); }
 .lost__hero { display: flex; align-items: center; justify-content: center; gap: 0.08em; margin-bottom: 24px; font-size: clamp(112px, 18vw, 192px); }
-/* The two 4s are drawing, not text: the display face at the hero's size, set on .lost__hero */
-.lost__digit { font-family: var(--font-display); font-weight: 800; letter-spacing: -0.04em; line-height: 0.8; color: color-mix(in srgb, var(--text) 12%, transparent); user-select: none; }
+/* The two 4s are drawing, not text: the display weight at the hero's size, set on .lost__hero */
+.lost__digit { font-family: var(--font-title); font-weight: var(--fw-display); letter-spacing: var(--tr-glyph); line-height: 0.8; color: color-mix(in srgb, var(--text) 12%, transparent); user-select: none; }
 .lost__head { width: 0.62em; height: 0.62em; animation: lost-float 4s ease-in-out infinite alternate; }
 .lost__hero--askew .lost__head { rotate: -9deg; }
 @keyframes lost-float { from { translate: 0 4px; } to { translate: 0 -6px; } }

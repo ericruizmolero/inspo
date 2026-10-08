@@ -20,8 +20,11 @@
   "save": {
     "message": "Guardar"
   },
+  "noteLabel": {
+    "message": "Nota"
+  },
   "noteHint": {
-    "message": "¿Qué te ha llamado la atención? Un sonido, una transición, el menú… (opcional)"
+    "message": "¿Qué te ha llamado la atención? (opcional)"
   },
   "saving": {
     "message": "Guardando…"
@@ -94,13 +97,7 @@
     "message": "Importa tus marcadores"
   },
   "importLead": {
-    "message": "Trae a $WS$ lo que ya tenías guardado en otros sitios. Cada dirección se guarda como si la hubieras pegado: nombre, miniatura y etiquetas llegan solos.",
-    "placeholders": {
-      "ws": {
-        "content": "$1",
-        "example": "Studio"
-      }
-    }
+    "message": "Trae lo que ya tenías guardado en otros sitios. Cada dirección se guarda como si la hubieras pegado: nombre, miniatura y etiquetas llegan solos."
   },
   "importConnectFirst": {
     "message": "Conecta primero la extensión y vuelve aquí."
@@ -319,7 +316,7 @@
     "message": "De un tablero"
   },
   "boardLead": {
-    "message": "Pega la dirección de un tablero de Are.na, Pinterest o Cosmos. Entran webs, imágenes y vídeos; textos y archivos se quedan fuera. Todo va a un proyecto nuevo con el nombre del tablero. Para un tablero secreto de Pinterest o un clúster privado de Cosmos tienes que tener la sesión iniciada allí en este navegador."
+    "message": "Pega la dirección de un tablero de Are.na, Pinterest o Cosmos. Entran webs, imágenes, vídeos y textos; archivos y tableros dentro del tablero se quedan fuera. Todo va al proyecto con el nombre del tablero, el mismo cada vez. Para un tablero secreto de Pinterest o un clúster privado de Cosmos tienes que tener la sesión iniciada allí en este navegador."
   },
   "boardUrlLabel": {
     "message": "Dirección del tablero"
@@ -494,68 +491,55 @@
     "placeholders": {
       "list": {
         "content": "$1",
-        "example": "38 websites and 12 images"
-      }
-    }
-  },
-  "resultAlready": {
-    "message": "$N$ ya estaban.",
-    "placeholders": {
-      "n": {
-        "content": "$1",
-        "example": "12"
+        "example": "12 webs y 3 imágenes"
       }
     }
   },
   "resultSkippedOne": {
-    "message": "$N$ sin importar ($REASON$).",
+    "message": "1 se queda fuera ($WHY$).",
     "placeholders": {
-      "n": {
+      "why": {
         "content": "$1",
-        "example": "12"
-      },
-      "reason": {
-        "content": "$2",
-        "example": "text"
+        "example": "un archivo"
       }
     }
   },
   "resultSkippedMany": {
-    "message": "$N$ sin importar ($LIST$).",
+    "message": "$N$ se quedan fuera ($WHY$).",
     "placeholders": {
       "n": {
         "content": "$1",
-        "example": "12"
+        "example": "3"
       },
-      "list": {
+      "why": {
         "content": "$2",
-        "example": "38 websites and 12 images"
+        "example": "archivos"
       }
     }
   },
   "reason_fileOne": {
-    "message": "archivo"
+    "message": "un archivo"
   },
   "reason_fileMany": {
     "message": "archivos"
   },
   "reason_channelOne": {
-    "message": "canal"
+    "message": "un tablero dentro del tablero"
   },
   "reason_channelMany": {
-    "message": "canales"
+    "message": "tableros dentro del tablero"
   },
   "reason_otherOne": {
-    "message": "otro"
+    "message": "sin nada que guardar"
   },
   "reason_otherMany": {
-    "message": "otros"
+    "message": "sin nada que guardar"
   },
   "reason_invalidOne": {
-    "message": "no es dirección web"
+    "message": "sin dirección web"
   },
   "reason_invalidMany": {
-    "message": "no son direcciones web"
+    "message": "sin dirección web"
   },
   "importBoardShort": {
     "message": "Un tablero"
@@ -572,6 +556,305 @@
       "platform": {
         "content": "$1",
         "example": "Are.na"
+      }
+    }
+  },
+  "whereTitle": {
+    "message": "Dónde va"
+  },
+  "workspaceLabel": {
+    "message": "Espacio"
+  },
+  "inbox": {
+    "message": "Inbox"
+  },
+  "inboxOption": {
+    "message": "Inbox (aún no hay proyectos)"
+  },
+  "whereLoading": {
+    "message": "Buscando los proyectos de $WS$…",
+    "placeholders": {
+      "ws": {
+        "content": "$1"
+      }
+    }
+  },
+  "whereSum": {
+    "message": "Todo lo que importes irá a $PROJECT$, en $WS$. Elígelos antes de empezar.",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whereFailed": {
+    "message": "No se han podido cargar los proyectos: $ERR$. Vuelve a elegir el espacio para reintentar.",
+    "placeholders": {
+      "err": {
+        "content": "$1"
+      }
+    }
+  },
+  "howMany": {
+    "message": "Cuáles"
+  },
+  "latestN": {
+    "message": "Los últimos $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastWeek": {
+    "message": "Los de la última semana"
+  },
+  "lastMonth": {
+    "message": "Los del último mes"
+  },
+  "allUpTo": {
+    "message": "Todos (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "xNewestFirst": {
+    "message": "X muestra tus guardados del más reciente al más antiguo, así que la importación empieza por los últimos. Un periodo va por la fecha del post."
+  },
+  "limitReached": {
+    "message": "Ya están los últimos $N$; el resto se queda donde estaba.",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmBar": {
+    "message": "Antes de importar"
+  },
+  "confirmTitle_x": {
+    "message": "¿Importar de X?"
+  },
+  "confirmTitle_browser": {
+    "message": "¿Importar estos marcadores?"
+  },
+  "confirmText": {
+    "message": "$WHAT$ se guardarán en $PROJECT$, en $WS$. Cada uno pasa a ser una referencia ahí.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "project": {
+        "content": "$2"
+      },
+      "ws": {
+        "content": "$3"
+      }
+    }
+  },
+  "confirmGo": {
+    "message": "Importar a $PROJECT$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      }
+    }
+  },
+  "changeDestination": {
+    "message": "Cambiar el destino"
+  },
+  "whatXLatest": {
+    "message": "Tus últimos $N$ posts guardados en X",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatXWeek": {
+    "message": "Los posts que guardaste en X la última semana"
+  },
+  "whatXMonth": {
+    "message": "Los posts que guardaste en X el último mes"
+  },
+  "whatXAll": {
+    "message": "Todos los posts que guardaste en X (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBrowser": {
+    "message": "$N$ marcadores de este navegador",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "progressWhere": {
+    "message": "A $PROJECT$, en $WS$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "resultAlreadyOne": {
+    "message": "1 ya estaba en tu librería."
+  },
+  "resultAlreadyMany": {
+    "message": "$N$ ya estaban en tu librería.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultAllExistedOne": {
+    "message": "Ya estaba en tu librería."
+  },
+  "resultAllExistedMany": {
+    "message": "Los $N$ ya estaban en tu librería.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultFailedOne": {
+    "message": "1 no se pudo guardar."
+  },
+  "resultFailedMany": {
+    "message": "$N$ no se pudieron guardar.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileOne": {
+    "message": "$N$ archivo",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileMany": {
+    "message": "$N$ archivos",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelOne": {
+    "message": "$N$ tablero dentro del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelMany": {
+    "message": "$N$ tableros dentro del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherOne": {
+    "message": "$N$ sin nada que guardar",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherMany": {
+    "message": "$N$ sin nada que guardar",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidOne": {
+    "message": "$N$ sin dirección web",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidMany": {
+    "message": "$N$ sin dirección web",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "confirmTitle_board": {
+    "message": "¿Importar este tablero?"
+  },
+  "confirmTextBoard": {
+    "message": "$WHAT$ se guardará en el proyecto con el nombre del tablero, en $WS$. Cada cosa será una referencia allí.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whatBoardLatest": {
+    "message": "Las $N$ primeras cosas del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBoardAll": {
+    "message": "Todo lo del tablero (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "boardProjectSoon": {
+    "message": "el proyecto del tablero"
+  },
+  "firstN": {
+    "message": "Los primeros $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
       }
     }
   }

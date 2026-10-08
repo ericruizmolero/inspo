@@ -118,17 +118,28 @@ focus, and an import takes minutes). Three kinds of source, one entry each in `S
 
 The app's Import dialog (Conectores → Import) can open this page too: it posts `open-import` with
 `what: "x" | "browser"`, `content.js` passes it on and the service worker opens `import.html?source=<what>`
-next to the app's tab, only for a tab of an origin this build may reach (0.7.1 and later).
+next to the app's tab, only for a tab of an origin this build may reach (0.7.3 and later).
 
-The page asks which project bookmarks and posts land in (the same field as the popup's form, the one
-this person last added to picked first). A board lands in a project named after it instead: `POST /projects { name }` answers with
-the one an earlier import made, from here or from the app, or makes it (`projectForBoard` in
-`lib/projects.ts`; when the server can't answer, the picked project). What the workspace already had is
-filed in that project too, since a reference can be in several; "Open the project" at the end goes there.
+The page starts with where it all lands: workspace and project as two fields in the open (the one
+this person last added to picked first; the Inbox when the workspace has no project yet), and a
+sentence naming them. The import buttons wait until that is known, and each one opens a confirmation
+that says what is coming and the destination again, with "Change destination" as the way out. A board
+takes the workspace but not the project: it lands in a project named after it, and its confirmation
+says so. `POST /projects { name }` answers with the one an earlier import made, from here or from the
+app, or makes it (`projectForBoard` in `lib/projects.ts`; when the server can't answer, the picked
+project). What the workspace already had is filed in that project too, since a reference can be in
+several; "Open the project" at the end goes there.
+
+X and a board also ask which ones. X: the latest 50, 100, 250 or 500, the last week, the last month,
+or all (up to 1000). The period goes by the post's date (the only date the page sees): posts older
+than the period are skipped, and after 60 older posts in a row the collector is told to stop, since X
+lists bookmarks newest-bookmarked first and a post is always older than its bookmark. A board: the
+first 50 to 500, or everything (up to 1000), which is the default.
 
 The addresses go to `POST /items/batch` in batches of 25, one request at a time, and the page shows the
-counts (found, saved, already here, skipped, failed). A board ends with what came in by kind and what
-stayed out and why: "38 websites, 12 images and 2 texts imported. 3 skipped (file)." The server names, tags and
+counts (found, saved, already here, skipped, failed). A board ends with one line: what was new by kind,
+what was already in the library, what stayed out and why, and what failed: "12 websites and 3 images
+imported. 20 were already in your library. 1 skipped (a board inside the board)." The server names, tags and
 gets the thumbnail of each one after answering, as when a URL is pasted in the app: an import of a few
 hundred bookmarks is done in a few minutes, the cards fill in over the following ones.
 
@@ -138,11 +149,11 @@ Once the person grants a platform (on the import page or from the popup), `backg
 `board-button.js` on its pages with `chrome.scripting.registerContentScripts`, and unregisters it when
 the permission is taken back (`syncBoardButtons`, on install, startup and every permission change).
 Nothing is registered at install. On a board the script draws one pill in the bottom right corner,
-"Import to Criterio" with the mark, in a closed shadow root: paper, ink border and bevel, Archivo from
-`fonts/` (loaded with `FontFace` under a name of its own), the ember focus ring, a fade without the rise
+"Import to Criterio" with the mark, in a closed shadow root: paper, ink border and bevel, Satoshi from
+`fonts/` (loaded with `FontFace` under a name of its own; the system font when the file is missing), the ember focus ring, a fade without the rise
 under reduced motion. These sites change pages without loading, so it looks at the address twice a
 second and leaves when it is not a board. The click asks the service worker to open the import page
-on that board, which starts on its own. The popup on a board offers the same import ("Import this
+on that board, with its confirmation already open. The popup on a board offers the same import ("Import this
 board"); Chrome asks for the platform there, on the click.
 
 ## Workspaces
@@ -156,17 +167,19 @@ remembers it. A workspace the person is not in gets a 403.
 
 The popup and the import page use the Criterio design system: its tokens are copied at the top of
 `popup.css` (keep them equal to `app/globals.css`). The popup is product chrome, so it stays dark in both
-system themes, with beveled paper buttons and the ember Save. Archivo and Bricolage Grotesque are bundled
-in `chrome/fonts` (SIL OFL, source in its README), so nothing loads from Google. The popup shows the tab
-as it will look in the library: the shot, the favicon, the title and the address. The
+system themes, with beveled paper buttons and the ember Save; the area pills stay dark and quiet,
+only a picked one fills with paper. Satoshi, the one typeface, is bundled in `chrome/fonts`, so nothing
+loads at runtime. The file is not in git (its licence, see that folder's README): run `npm run fonts`
+before loading the extension. The popup shows the tab as it will look in the library: the shot, the favicon, the title and the address. The
 icons in `chrome/icons` are `public/logo.png` with the mark's rounded corners; regenerate them from there
 when the mark changes.
 
 ## Try it in Chrome (developer mode)
 
-1. `chrome://extensions` → turn on "Developer mode" (top right).
-2. "Load unpacked" → pick the `extension/chrome` folder.
-3. Pin the extension to the toolbar and open it on any site.
+1. `npm run fonts` at the repo root (downloads Satoshi into `chrome/fonts`; `npm run dev` does it too).
+2. `chrome://extensions` → turn on "Developer mode" (top right).
+3. "Load unpacked" → pick the `extension/chrome` folder.
+4. Pin the extension to the toolbar and open it on any site.
 
 To test against the local server, open "I already have a key" in the popup and set the server to
 `http://localhost:<port>`; create the key at `http://localhost:<port>/extension/connect`.

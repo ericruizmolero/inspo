@@ -12,3 +12,5 @@ supersedes: las capturas de pantalla del catálogo (docs/design-system/capturas,
 **Por qué.** Eric, 07-10: "el sistema de diseño tendremos que rehacerlo entero con este nuevo gran cambio de diseño". Interpretación nuestra: una captura envejece con cada cambio y una muestra viva no, porque es el mismo CSS que pinta la app; y una ficha por componente es lo que un agente necesita para no inventar otro.
 
 **Cómo aplicarlo.** Una pieza nueva del sistema = su ficha en `componentes.md` con `muestra:` + su dibujo en `Specimens.tsx` + `npm run check:design-system` en verde. Nada de imágenes en el catálogo.
+
+**Matiz (07-10, tarde).** Eric, al ver el catálogo: "ten cuidado con cómo están alineadas las cosas". Dentro de la caja de una ficha, cada fila de la muestra va centrada (`.ds-comp__stage .ds-row`), para que una fila que salta de línea quede equilibrada y no pegada a la izquierda; y el nombre de una pestaña del catálogo nunca se parte en dos líneas: la barra se desplaza en horizontal si no cabe.

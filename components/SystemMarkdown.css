@@ -5,28 +5,37 @@
 /* ─── criterio.md in sight (components/SystemMarkdown.tsx): the raw file in a code panel, coloured the way
    an editor colours Markdown. Literal data, so it stays monospace. It follows the theme (Eric, 06-10): the dark
    chrome panel in Board, a white sheet (the field's white, the soft line) in Paper; every colour is a --md-*
-   variable. Headings in moss, quotes in the chrome's muted text: no warm colour in the file, the view keeps its one ember for "Improve with AI". A block is pressed to edit it. ─── */
-.mdv { --md-bg: var(--chrome-panel); --md-ink: var(--chrome-text); --md-dim: var(--chrome-muted); --md-head: var(--moss-light); --md-quote: var(--chrome-text-muted); --md-code: var(--chrome-ink); --md-strong: var(--chrome-ink); --md-line: var(--chrome-border); --md-bar: var(--chrome); --md-danger: var(--danger);
+   variable. Headings in moss and, from ### down, in ember (the --warning ember on Paper: --ember itself is under 3:1 on white); quotes in the chrome's muted text. A block is pressed to edit it. ─── */
+.mdv { --md-bg: var(--chrome-panel); --md-ink: var(--chrome-text); --md-dim: var(--chrome-muted); --md-head: var(--moss-light); --md-head-2: var(--ember-glow); --md-quote: var(--chrome-text-muted); --md-code: var(--chrome-ink); --md-strong: var(--chrome-ink); --md-line: var(--chrome-border); --md-bar: var(--chrome); --md-danger: var(--danger);
+  --md-fill: color-mix(in srgb, var(--chrome-ink) 7%, transparent); --md-fill-2: color-mix(in srgb, var(--chrome-ink) 13%, transparent);
   max-width: 980px; display: flex; flex-direction: column; border-radius: var(--radius-lg); background: var(--md-bg); color: var(--md-ink); border: 1px solid var(--md-line); overflow: hidden; }
 /* The file's bar: the chrome's own controls (ghost on chrome-raised), in the app's sans, over the mono file */
 .mdv-bar { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 10px 0 12px; box-shadow: inset 0 -1px 0 var(--md-line); background: var(--md-bar); font-family: var(--font-sans); font-size: var(--fs-small); }
 .mdv-bar__hint { color: var(--md-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .mdv-bar__tools { margin-left: auto; display: inline-flex; gap: 6px; flex-shrink: 0; }
-/* The bar's actions are the system's Button, secondary size s (btn btn--sm); this only sets what is theirs here */
-/* A mode that is on (Propose, Comment) stays pressed, the way the system's Button shows "pressed" */
-.mdv-btn.is-on { background: var(--paper-pressed); box-shadow: var(--bevel-pressed); transform: translateY(1px); }
+/* The bar's actions are the system's Button, quiet, size s (btn btn--sm btn--quiet): no outline, no paper (Eric,
+   07-10: "no con fondo blanco, algo parecido a como teníamos ayer"). What is theirs here is the resting fill and the
+   ink, in the file's own --md-* tokens so they hold in both themes; a mode that is on (Propose, Comment) keeps the
+   stronger fill */
+.mdv-btn.btn--quiet { background: var(--md-fill); color: var(--md-ink); }
+.mdv-btn.btn--quiet:hover, .mdv-btn.btn--quiet:active, .mdv-btn.btn--quiet.is-on { background: var(--md-fill-2); color: var(--md-strong); }
 .mdv-btn__down { display: inline-flex; transform: rotate(90deg); }
 /* Copy and the other ways the file leaves (components/FileMenu.tsx): one button in two halves */
 .mdv-split { display: inline-flex; gap: 0; }
 .mdv-split .mdv-btn:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
-.mdv-split .mdv-btn--more { width: 32px; padding: 0; justify-content: center; border-left-width: 0; border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.mdv-split { gap: 1px; }
+.mdv-split .mdv-btn--more { width: 32px; padding: 0; justify-content: center; border-radius: 0 var(--radius-md) var(--radius-md) 0; }
 /* The raw file is literal data: mono at the small size, with a code leading (1.65) of its own */
-.mdv-doc { padding: 18px 20px 26px; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: var(--fs-small); line-height: 1.65; }
+.mdv-doc { padding: 18px 20px 26px; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: var(--fs-small); line-height: var(--lh-code); }
 .mdv-line { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.65em; }
-.mdv-h { color: var(--md-head); font-weight: 600; }
+/* Two colours for the headings, as an editor's theme: the file and its areas (# and ##) in moss, the references and
+   what hangs under them (### and deeper) in ember, the file's one warm colour besides "Improve with AI" (Eric, 08-10:
+   "sumale un color más a subtitles"). The marks (#, ##) take the heading's colour, as in the editor */
+.mdv-h { color: var(--md-head); font-weight: var(--fw-semibold); }
+.mdv-h3, .mdv-h4, .mdv-h5, .mdv-h6 { color: var(--md-head-2); }
 .mdv-q { color: var(--md-quote); font-style: italic; }
 .mdv-em { color: var(--md-dim); font-style: italic; }
-.mdv-b { color: var(--md-strong); font-weight: 600; }
+.mdv-b { color: var(--md-strong); font-weight: var(--fw-semibold); }
 .mdv-code { color: var(--md-code); }
 .mdv-link { color: var(--md-code); text-decoration: underline; text-decoration-color: var(--chrome-muted); text-underline-offset: 3px; } .mdv-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .mdv-url { color: var(--md-dim); }
@@ -37,7 +46,7 @@
 
 /* The agent asks instead of guessing: the question and the answers, each one an order */
 .dock__agent-ask { display: flex; flex-direction: column; gap: 8px; }
-.dock__agent-ask p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--dock-ink); font-weight: 500; }
+.dock__agent-ask p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--dock-ink); font-weight: var(--fw-medium); }
 .dock__agent-options { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ─── Templates (components/TemplatesView.tsx): whole systems in the library ─── */
@@ -69,6 +78,6 @@
 
 
 /* Paper: the file panel is light chrome, so the headings take moss (moss-light is under 3:1 on paper-light) */
-:root[data-theme="light"] .mdv { --md-head: var(--moss); --md-danger: var(--danger-deep); }
+:root[data-theme="light"] .mdv { --md-head: var(--moss); --md-head-2: var(--warning); --md-danger: var(--danger-deep); }
 /* Paper: the raw file is a white sheet, the field's white with the soft line, its bar on the same white */
-:root[data-theme="light"] .mdv:not(.mdv--doc) { --md-bg: var(--field); --md-bar: var(--field); --md-line: var(--field-border); --md-ink: var(--chrome-text); --md-strong: var(--text); }
+:root[data-theme="light"] .mdv:not(.mdv--doc) { --md-bg: var(--field); --md-bar: var(--field); --md-line: var(--field-border); --md-ink: var(--chrome-text); --md-strong: var(--text); --md-fill: color-mix(in srgb, var(--text) 6%, transparent); --md-fill-2: color-mix(in srgb, var(--text) 11%, transparent); }

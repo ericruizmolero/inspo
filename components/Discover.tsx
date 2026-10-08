@@ -6,7 +6,7 @@
 // of the content.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DIRECTORY, SKILLS, SKILL_TOPICS, featuredUrls, isNewSite, siteHost, siteShot, type DirectorySite, type SkillTopic } from "@/lib/directory";
+import { DIRECTORY, SKILLS, SKILL_TOPICS, featuredUrls, isNewSite, plain, siteHost, siteShot, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { directory as enDirectory } from "@/lib/i18n/en/directory";
 import { useT } from "./I18nProvider";
@@ -39,6 +39,8 @@ export default function Discover({ section, onSection, templates }: {
   const { t } = useT();
   const [group, setGroup] = useState<string | null>(null);
   const [shelf, setShelf] = useState<Shelf>("all");
+  /** Words typed over the resources: they narrow what the shelf and the kind leave (name, domain, what it is for) */
+  const [query, setQuery] = useState("");
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [topic, setTopic] = useState<SkillTopic | null>(null);
   const [topicsOpen, setTopicsOpen] = useState(false);
@@ -86,24 +88,35 @@ export default function Discover({ section, onSection, templates }: {
         items={keys.map((k) => ({ label: t.discover.shelf[k], count: k === "new" ? fresh : undefined }))} />
     );
   };
+  // A few words over the resources or the skills: the field at the toolbar size, the search icon inside. Escape empties it
+  const search = (placeholder: string) => (
+    <label className="disc-search">
+      <Icon name="search" size={14} />
+      <input className="cr-input cr-input-s" type="search" value={query} aria-label={placeholder} placeholder={placeholder} autoComplete="off"
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Escape" && query) { e.preventDefault(); e.stopPropagation(); setQuery(""); } }} />
+    </label>
+  );
   if (section === "skills") {
-    return <DiscoverSkills sites={SKILLS} topic={topic} shelf={skillShelf} head={head(t.directory.groups.skills.hint, (
+    return <DiscoverSkills sites={SKILLS} topic={topic} shelf={skillShelf} query={query} head={head(t.directory.groups.skills.hint, (
       <>
+        {search(t.discover.skills.search)}
         {shelves(skillShelf, setSkillShelf, FRESH_SKILLS)}
         {picker({ open: topicsOpen, onOpen: setTopicsOpen, value: topic, onPick: setTopic, label: t.discover.skills.topicsLabel,
           options: SKILL_TOPICS.map((k) => ({ key: k, title: t.discover.skills.topics[k] })) })}
       </>
     ))} />;
   }
-  // The kinds of resource wait in a menu
+  // The kinds of resource wait in a menu; a few words find a resource by name, domain or what it is for
   const filters = (
     <>
+      {search(t.discover.search)}
       {shelves(shelf, setShelf, FRESH.length)}
       {picker({ open: groupsOpen, onOpen: setGroupsOpen, value: group, onPick: setGroup, label: t.discover.groups,
         options: DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), hint: t.directory.groups[g.key as GroupKey]?.hint })) })}
     </>
   );
-  return <DiscoverList group={group} shelf={shelf} head={head(t.discover.lead, filters)} />;
+  return <DiscoverList group={group} shelf={shelf} query={query} head={head(t.discover.lead, filters)} />;
 }
 
 /** The list: the directory group by group, in its own order, each with what it is for; one line per site */
@@ -196,13 +209,21 @@ function usePeek() {
   return { node, show, place, hide, warm };
 }
 
-function DiscoverList({ group, shelf, head }: { group: string | null; shelf: Shelf; head: React.ReactNode }) {
+function DiscoverList({ group, shelf, query, head }: { group: string | null; shelf: Shelf; query: string; head: React.ReactNode }) {
   const { t } = useT();
   const peek = usePeek();
   const groups = useMemo(() => {
     const keep = new Set(matching(group, shelf).map((s) => s.url));
-    return DIRECTORY.map((g) => ({ key: g.key, sites: g.items.filter((s) => keep.has(s.url)).map((s) => ({ ...s, group: g.key })) })).filter((g) => g.sites.length);
-  }, [group, shelf]);
+    // Every word typed has to be somewhere in the row: its name, its domain, what it is for, or its group's name
+    const words = plain(query).split(/\s+/).filter(Boolean);
+    const hit = (s: DirectorySite, groupKey: string) => {
+      if (!words.length) return true;
+      const text = t.directory.groups[groupKey as keyof typeof t.directory.groups];
+      const hay = plain([s.name, siteHost(s.url), t.directory.items[s.url] ?? "", text?.title ?? ""].join(" "));
+      return words.every((w) => hay.includes(w));
+    };
+    return DIRECTORY.map((g) => ({ key: g.key, sites: g.items.filter((s) => keep.has(s.url) && hit(s, g.key)).map((s) => ({ ...s, group: g.key })) })).filter((g) => g.sites.length);
+  }, [group, shelf, query, t]);
   return (
     <div className="disc-list" onScroll={peek.hide}>
       {peek.node}

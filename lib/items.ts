@@ -200,10 +200,11 @@ export async function setTagsBulk(organizationId: string, map: TagMap): Promise<
   }
 }
 
-/** Does this thumbnail URL belong to the workspace? (for the image proxy) */
-export async function ownsThumbnail(organizationId: string, thumbnailUrl: string): Promise<boolean> {
+/** Whether any of these workspaces has an item with this thumbnail URL (the image proxy, one query however many workspaces) */
+export async function ownsAnyThumbnail(organizationIds: string[], thumbnailUrl: string): Promise<boolean> {
+  if (!organizationIds.length) return false;
   const [r] = await db.select({ id: T.id }).from(T)
-    .where(and(eq(T.organizationId, organizationId), eq(T.thumbnailUrl, thumbnailUrl))).limit(1);
+    .where(and(inArray(T.organizationId, organizationIds), eq(T.thumbnailUrl, thumbnailUrl))).limit(1);
   return !!r;
 }
 

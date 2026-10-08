@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import SectionShell from "@/components/SectionShell";
-import { sidebarOpen } from "@/lib/sidebar-state";
 import { getCtxOrLogin } from "@/lib/workspace";
 import { getT } from "@/lib/i18n";
 
@@ -15,7 +14,6 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   const s = t.settings.sections;
   return (
     <SectionShell
-      defaultOpen={await sidebarOpen()}
       title={t.settings.title}
       base="/settings"
       crumbs={false}

@@ -3,7 +3,7 @@
    instead of lines. */
 .sdoc { display: flex; align-items: flex-start; gap: 40px; width: 100%; max-width: 1080px; margin: 8px auto 0; }
 .sdoc-toc { position: sticky; top: 0; flex: 0 0 188px; display: flex; flex-direction: column; gap: 1px; padding-top: 4px; }
-.sdoc-toc button { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-ui); font-weight: 500; text-align: left; cursor: pointer; }
+.sdoc-toc button { display: flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 0 10px; border: 0; border-radius: var(--radius-md); background: none; color: var(--text-2); font: inherit; font-size: var(--fs-ui); font-weight: var(--fw-medium); text-align: left; cursor: pointer; }
 .sdoc-toc button:hover { background: var(--surface-raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
 .sdoc-toc__gap { height: 10px; }
 /* Where an area stands, by colour and by shape: backed by references (a moss disc), open and waiting for the team
@@ -16,13 +16,13 @@
 .sdoc-toc button.is-open { color: var(--text-2); }
 /* Proposals waiting under an area: an ember Chip with the count, set small for the list */
 .sdoc-toc__count { margin-left: auto; display: inline-flex; }
-.sdoc-toc__count .cr-chip { justify-content: center; min-width: 22px; box-sizing: border-box; padding: 0 6px; height: 20px; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sdoc-toc__count .cr-chip { justify-content: center; min-width: 22px; box-sizing: border-box; padding: 0 6px; height: 20px; font-size: var(--fs-label); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; }
 .sdoc-toc button em { margin-left: auto; font-style: normal; font-size: var(--fs-small); color: var(--text-2); font-variant-numeric: tabular-nums; }
 .sdoc-toc button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 .sdoc-page { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 44px; padding-bottom: 40px; }
 /* What a proposal says: the decision, its why and what it never does */
-.sdoc-why b, .sdoc-never > b { font-weight: 600; color: var(--text); margin-right: 4px; }
+.sdoc-why b, .sdoc-never > b { font-weight: var(--fw-semibold); color: var(--text); margin-right: 4px; }
 .sdoc-never { font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .sdoc-never ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .sdoc-never li { display: flex; gap: 10px; align-items: baseline; }
@@ -33,7 +33,7 @@
 .sdoc-proposal header { display: flex; align-items: center; gap: 8px; font-size: var(--fs-small); color: var(--text-2); flex-wrap: wrap; }
 /* Waiting for the team: the same ember diamond as the parts list */
 .sdoc-proposal header::before { content: ""; flex-shrink: 0; width: 8px; height: 8px; margin: 0 2px; border-radius: 1.5px; transform: rotate(45deg); background: var(--ember); box-shadow: inset 0 0 0 1px var(--ink); }
-.sdoc-proposal header b { font-weight: 600; color: var(--text); }
+.sdoc-proposal header b { font-weight: var(--fw-semibold); color: var(--text); }
 .sdoc-proposal time { font-size: var(--fs-label); color: var(--text-2); }
 .sdoc-proposal__tools { margin-left: auto; display: inline-flex; gap: 4px; }
 .sdoc-proposal p.sdoc-proposal__reason { font-size: var(--fs-small); color: var(--text-2); }
@@ -59,7 +59,7 @@
 .sdoc-page--md { gap: 12px; }
 .sdoc .mdv { max-width: none; }
 /* The raw file keeps mono with its code leading (1.75 here, more air than a code block) */
-.sdoc .mdv-doc { padding: var(--space-5) 30px 36px; font-size: var(--fs-small); line-height: 1.75; }
+.sdoc .mdv-doc { padding: var(--space-5) 30px 36px; font-size: var(--fs-small); line-height: var(--lh-code); }
 .sdoc .mdv-line { min-height: 1.75em; }
 .sdoc .mdv-h { font-size: var(--fs-ui); }
 .sdoc #sdoc-head .mdv-h { font-size: var(--fs-body); }
@@ -98,7 +98,7 @@
 .mdv-pin { position: absolute; top: 0; z-index: 2; transform: translate(-2px, -100%); display: inline-flex; align-items: center; padding: 2px; border: 0; border-radius: 999px 999px 999px 3px; background: var(--paper-light); text-indent: 0; font-family: var(--font); cursor: pointer; box-shadow: 0 0 0 1px var(--ink), var(--shadow-pop); transition: transform 0.15s var(--ease-out); }
 .mdv-pin:hover, .mdv-pin.is-open { transform: translate(-2px, -100%) scale(1.08); transform-origin: bottom left; }
 .mdv-pin.is-open { background: var(--paper-pressed); box-shadow: 0 0 0 1.5px var(--ink), var(--shadow-pop); }
-.mdv-pin b { margin: 0 6px 0 5px; font-size: var(--fs-label); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mdv-pin b { margin: 0 6px 0 5px; font-size: var(--fs-label); font-weight: var(--fw-semibold); color: var(--ink); font-variant-numeric: tabular-nums; }
 .mdv-line.has-pins { position: relative; }
 /* Its thread, beside it: a TipWindow (paper, the moss bar and its close), the notes and the composer (TextArea) */
 .mdv-pop { position: absolute; z-index: 6; width: 340px; max-width: calc(100% - 16px); text-indent: 0; white-space: normal; }
@@ -108,7 +108,7 @@
 .mdv-pop__note > div { flex: 1; min-width: 0; }
 .mdv-pop__note p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
 .mdv-pop__note p.mdv-pop__meta { display: flex; align-items: center; gap: 8px; min-height: 24px; font-size: var(--fs-label); color: var(--text-2); }
-.mdv-pop__meta b { font-size: var(--fs-small); font-weight: 600; color: var(--ink); }
+.mdv-pop__meta b { font-size: var(--fs-small); font-weight: var(--fw-semibold); color: var(--ink); }
 .mdv-pop__meta .cr-iconbtn { margin-left: auto; opacity: 0; transition: opacity 0.15s; }
 .mdv-pop__note:hover .mdv-pop__meta .cr-iconbtn, .mdv-pop__meta .cr-iconbtn:focus-visible { opacity: 1; }
 @media (hover: none) { .mdv-pop__meta .cr-iconbtn { opacity: 1; } }
@@ -136,16 +136,16 @@
 .sdoc .mdv--doc .mdv-doc { padding: 22px 0 36px; font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-2); }
 .mdv--doc .mdv-mark { font-size: 0; }
 .mdv--doc .mdv-line, .mdv--doc .mdv-eline { min-height: calc(var(--lh-body) * 1em); }
-/* Headings read as the app's headings: # title-l, ## title-m, ### and deeper title-s, all in the display face */
-.mdv--doc .mdv-h { font-family: var(--font-display, var(--font)); color: var(--text); font-weight: 700; font-size: var(--fs-title-s); line-height: var(--lh-title-s); }
-.sdoc .mdv--doc .mdv-h1 { font-size: var(--fs-title-l); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
+/* Headings read as the app's headings: # title-l, ## title-m, ### and deeper title-s, in the title face */
+.mdv--doc .mdv-h { font-family: var(--font-title); color: var(--text); font-weight: var(--fw-title-s); font-size: var(--fs-title-s); line-height: var(--lh-title-s); }
+.sdoc .mdv--doc .mdv-h1 { font-weight: var(--fw-title-l); font-size: var(--fs-title-l); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
 .sdoc .mdv--doc .mdv-h2 { font-size: var(--fs-title-m); line-height: var(--lh-title-m); letter-spacing: var(--tr-title-m); }
 /* The file's title (the head's id outranks the line above) */
 .sdoc .mdv--doc #sdoc-head .mdv-h1 { font-size: var(--fs-title-l); }
 .sdoc .mdv--doc .mdv-h3 { font-size: var(--fs-title-s); line-height: var(--lh-title-s); margin-top: 6px; }
 .mdv--doc .mdv-q { padding-left: 14px; box-shadow: inset 2px 0 0 var(--border-strong); color: var(--text-2); }
 .mdv--doc .mdv-em { color: var(--text-2); font-style: normal; }
-.mdv--doc .mdv-b { color: var(--text); font-weight: 600; }
+.mdv--doc .mdv-b { color: var(--text); font-weight: var(--fw-semibold); }
 .mdv--doc .mdv-li { position: relative; padding-left: calc(20px + var(--d, 0) * 20px) !important; text-indent: 0 !important; }
 .mdv--doc .mdv-li::before { content: ""; position: absolute; left: calc(7px + var(--d, 0) * 20px); top: 0.72em; width: 4px; height: 4px; border-radius: 50%; background: var(--text-2); }
 .mdv--doc .mdv-link { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
@@ -169,8 +169,8 @@
 .mdv--doc .mdv-ref::before { position: static; float: left; left: auto; top: auto; width: var(--ref-w); height: var(--ref-h); margin: 3px var(--ref-gap) 20px calc(-1 * (var(--ref-w) + var(--ref-gap))); border-radius: var(--radius-md); background: var(--pic) top center / cover no-repeat, var(--surface-2); box-shadow: 0 0 0 1px var(--border); }
 .mdv--doc :is(.mdv-ref, .mdv-said--pic) + :not(.mdv-ref, .mdv-said--pic) { margin-top: 20px; }
 /* Its code is a quiet tag and its name the title of the row: the hierarchy comes from weight and colour */
-.mdv--doc .mdv-ref > .mdv-b:first-of-type { margin-right: 2px; font-size: var(--fs-small); font-weight: 500; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.mdv--doc .mdv-ref .mdv-link { font-weight: 600; color: var(--text); text-decoration: none; } .mdv--doc .mdv-ref .mdv-link:hover { text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
+.mdv--doc .mdv-ref > .mdv-b:first-of-type { margin-right: 2px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mdv--doc .mdv-ref .mdv-link { font-weight: var(--fw-semibold); color: var(--text); text-decoration: none; } .mdv--doc .mdv-ref .mdv-link:hover { text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 .mdv--doc .mdv-said { color: var(--text-2); }
 .mdv--doc .mdv-said::before { top: 0.3em; width: 2px; height: calc(100% - 0.6em); border-radius: 1px; background: var(--border-strong); }
 /* Under a reference, the words left on it line up with its text: smaller and quieter, without a rule of their own */
@@ -184,7 +184,7 @@
 .mdv--doc .mdv-tr { min-height: 0; white-space: nowrap; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); font-variant-numeric: tabular-nums; box-shadow: inset 0 -1px 0 var(--border); }
 .mdv--doc .mdv-tr:not(:has(+ .mdv-tr)) { box-shadow: none; }
 .mdv--doc .mdv-td { display: inline-block; box-sizing: border-box; width: var(--w); padding: 9px 16px 9px 0; vertical-align: top; white-space: pre-wrap; overflow-wrap: anywhere; }
-.mdv--doc .mdv-tr:not(.mdv-th) .mdv-td--first { color: var(--text); font-weight: 500; }
+.mdv--doc .mdv-tr:not(.mdv-th) .mdv-td--first { color: var(--text); font-weight: var(--fw-medium); }
 .mdv--doc .mdv-th { font-size: var(--fs-label); color: var(--text-2); box-shadow: inset 0 -1px 0 var(--border-strong); }
 .mdv--doc .mdv-tsep { height: 0; font-size: 0; line-height: 0; overflow: hidden; box-shadow: none; }
 /* A reference's own entry opens with its picture */

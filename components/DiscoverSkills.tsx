@@ -6,7 +6,7 @@
 // ones criterio.md carries too say so. The page's head chooses what is shown: everything, what just came in or the
 // featured ones (FEATURED_SKILLS), and one topic or all of them.
 import { useRef, useState } from "react";
-import { FEATURED_SKILLS, MD_SKILL_TOPIC, SKILL_TOPICS, isNewSite, type DirectorySite, type SkillTopic } from "@/lib/directory";
+import { FEATURED_SKILLS, MD_SKILL_TOPIC, SKILL_TOPICS, isNewSite, plain, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { MD_SKILLS, skillInstall, skillPage } from "@/lib/md-skill-ids";
 import { useT } from "./I18nProvider";
 import { Avatar, Card, Chip, toneFor } from "@/components/criterio";
@@ -16,14 +16,17 @@ const ownerOf = (install: string) => install.match(/github\.com\/([^/\s]+)/)?.[1
 
 interface Skill { owner: string; avatar: string; name: string; what: string; url: string; install: string; topic: SkillTopic; inMd?: boolean; fresh: boolean; featured: boolean }
 
-export default function DiscoverSkills({ sites, topic, shelf, head }: { sites: DirectorySite[]; topic: SkillTopic | null; shelf: "all" | "new" | "featured"; head: React.ReactNode }) {
+export default function DiscoverSkills({ sites, topic, shelf, query, head }: { sites: DirectorySite[]; topic: SkillTopic | null; shelf: "all" | "new" | "featured"; query: string; head: React.ReactNode }) {
   const { t } = useT();
   const own: Skill[] = MD_SKILLS.map((id) => ({ owner: "criterio.design", avatar: "/icon-512.png", ...t.system.skillsList[id], url: skillPage(id), install: skillInstall(id), topic: MD_SKILL_TOPIC[id], fresh: false, featured: FEATURED_SKILLS.includes(id) }));
   const others: Skill[] = sites.filter((s) => s.install).map((s) => {
     const owner = ownerOf(s.install!);
     return { owner, avatar: `https://github.com/${owner}.png?size=64`, name: s.name, what: t.directory.items[s.url] ?? "", url: s.url, install: s.install!, topic: s.topic ?? "interface", inMd: !!s.skill, fresh: isNewSite(s), featured: FEATURED_SKILLS.includes(s.url) };
   });
-  const all = [...own, ...others].filter((s) => shelf === "all" || (shelf === "new" ? s.fresh : s.featured));
+  // Every word typed has to be somewhere on the card: its name, what it does, its author or its install command
+  const words = plain(query).split(/\s+/).filter(Boolean);
+  const hit = (s: Skill) => !words.length || words.every((w) => plain([s.name, s.what, s.owner, s.install].join(" ")).includes(w));
+  const all = [...own, ...others].filter((s) => (shelf === "all" || (shelf === "new" ? s.fresh : s.featured)) && hit(s));
   const groups = SKILL_TOPICS.filter((k) => !topic || k === topic).map((k) => ({ topic: k, skills: all.filter((s) => s.topic === k) })).filter((g) => g.skills.length);
   return (
     <div className="disc-list">

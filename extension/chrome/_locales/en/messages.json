@@ -20,8 +20,11 @@
   "save": {
     "message": "Save"
   },
+  "noteLabel": {
+    "message": "Note"
+  },
   "noteHint": {
-    "message": "What caught your eye? A sound, a transition, the nav… (optional)"
+    "message": "What caught your eye? (optional)"
   },
   "saving": {
     "message": "Saving…"
@@ -94,13 +97,7 @@
     "message": "Import your bookmarks"
   },
   "importLead": {
-    "message": "Bring what you already saved elsewhere into $WS$. Each address is saved as if you had pasted it: name, thumbnail and tags come on their own.",
-    "placeholders": {
-      "ws": {
-        "content": "$1",
-        "example": "Studio"
-      }
-    }
+    "message": "Bring what you already saved elsewhere. Each address is saved as if you had pasted it: name, thumbnail and tags come on their own."
   },
   "importConnectFirst": {
     "message": "Connect the extension first, then come back here."
@@ -319,7 +316,7 @@
     "message": "From a board"
   },
   "boardLead": {
-    "message": "Paste the address of a board on Are.na, Pinterest or Cosmos. Websites, images and videos come in; text and files stay out. It all lands in a new project named after the board. A secret board on Pinterest or a private cluster on Cosmos needs you signed in there in this browser."
+    "message": "Paste the address of a board on Are.na, Pinterest or Cosmos. Websites, images, videos and texts come in; files and boards inside the board stay out. It all lands in the project named after the board, the same one each time. A secret board on Pinterest or a private cluster on Cosmos needs you signed in there in this browser."
   },
   "boardUrlLabel": {
     "message": "Board address"
@@ -494,62 +491,49 @@
     "placeholders": {
       "list": {
         "content": "$1",
-        "example": "38 websites and 12 images"
-      }
-    }
-  },
-  "resultAlready": {
-    "message": "$N$ already here.",
-    "placeholders": {
-      "n": {
-        "content": "$1",
-        "example": "12"
+        "example": "12 websites and 3 images"
       }
     }
   },
   "resultSkippedOne": {
-    "message": "$N$ skipped ($REASON$).",
+    "message": "1 skipped ($WHY$).",
     "placeholders": {
-      "n": {
+      "why": {
         "content": "$1",
-        "example": "12"
-      },
-      "reason": {
-        "content": "$2",
-        "example": "text"
+        "example": "a file"
       }
     }
   },
   "resultSkippedMany": {
-    "message": "$N$ skipped ($LIST$).",
+    "message": "$N$ skipped ($WHY$).",
     "placeholders": {
       "n": {
         "content": "$1",
-        "example": "12"
+        "example": "3"
       },
-      "list": {
+      "why": {
         "content": "$2",
-        "example": "38 websites and 12 images"
+        "example": "files"
       }
     }
   },
   "reason_fileOne": {
-    "message": "file"
+    "message": "a file"
   },
   "reason_fileMany": {
     "message": "files"
   },
   "reason_channelOne": {
-    "message": "channel"
+    "message": "a board inside the board"
   },
   "reason_channelMany": {
-    "message": "channels"
+    "message": "boards inside the board"
   },
   "reason_otherOne": {
-    "message": "other"
+    "message": "nothing to save"
   },
   "reason_otherMany": {
-    "message": "other"
+    "message": "nothing to save"
   },
   "reason_invalidOne": {
     "message": "not a web address"
@@ -572,6 +556,305 @@
       "platform": {
         "content": "$1",
         "example": "Are.na"
+      }
+    }
+  },
+  "whereTitle": {
+    "message": "Where it goes"
+  },
+  "workspaceLabel": {
+    "message": "Workspace"
+  },
+  "inbox": {
+    "message": "Inbox"
+  },
+  "inboxOption": {
+    "message": "Inbox (no projects yet)"
+  },
+  "whereLoading": {
+    "message": "Looking up the projects of $WS$…",
+    "placeholders": {
+      "ws": {
+        "content": "$1"
+      }
+    }
+  },
+  "whereSum": {
+    "message": "Everything you import lands in $PROJECT$, in $WS$. Pick them before you start.",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whereFailed": {
+    "message": "Couldn't load the projects: $ERR$. Pick the workspace again to retry.",
+    "placeholders": {
+      "err": {
+        "content": "$1"
+      }
+    }
+  },
+  "howMany": {
+    "message": "Which ones"
+  },
+  "latestN": {
+    "message": "The latest $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastWeek": {
+    "message": "From the last week"
+  },
+  "lastMonth": {
+    "message": "From the last month"
+  },
+  "allUpTo": {
+    "message": "All (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "xNewestFirst": {
+    "message": "X lists your bookmarks newest first, so the import starts with the latest ones. A period goes by the post's date."
+  },
+  "limitReached": {
+    "message": "The latest $N$ are in; the rest stays where it was.",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmBar": {
+    "message": "Before importing"
+  },
+  "confirmTitle_x": {
+    "message": "Import from X?"
+  },
+  "confirmTitle_browser": {
+    "message": "Import these bookmarks?"
+  },
+  "confirmText": {
+    "message": "$WHAT$ will be saved in $PROJECT$, in $WS$. Each one becomes a reference there.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "project": {
+        "content": "$2"
+      },
+      "ws": {
+        "content": "$3"
+      }
+    }
+  },
+  "confirmGo": {
+    "message": "Import to $PROJECT$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      }
+    }
+  },
+  "changeDestination": {
+    "message": "Change destination"
+  },
+  "whatXLatest": {
+    "message": "Your latest $N$ posts saved on X",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatXWeek": {
+    "message": "The posts you saved on X from the last week"
+  },
+  "whatXMonth": {
+    "message": "The posts you saved on X from the last month"
+  },
+  "whatXAll": {
+    "message": "All the posts you saved on X (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBrowser": {
+    "message": "$N$ bookmarks from this browser",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "progressWhere": {
+    "message": "Into $PROJECT$, in $WS$",
+    "placeholders": {
+      "project": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "resultAlreadyOne": {
+    "message": "1 was already in your library."
+  },
+  "resultAlreadyMany": {
+    "message": "$N$ were already in your library.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultAllExistedOne": {
+    "message": "It was already in your library."
+  },
+  "resultAllExistedMany": {
+    "message": "All $N$ were already in your library.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultFailedOne": {
+    "message": "1 could not be saved."
+  },
+  "resultFailedMany": {
+    "message": "$N$ could not be saved.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileOne": {
+    "message": "$N$ file",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileMany": {
+    "message": "$N$ files",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelOne": {
+    "message": "$N$ board inside the board",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelMany": {
+    "message": "$N$ boards inside the board",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherOne": {
+    "message": "$N$ with nothing to save",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherMany": {
+    "message": "$N$ with nothing to save",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidOne": {
+    "message": "$N$ not a web address",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidMany": {
+    "message": "$N$ not web addresses",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "confirmTitle_board": {
+    "message": "Import this board?"
+  },
+  "confirmTextBoard": {
+    "message": "$WHAT$ will be saved in the project named after the board, in $WS$. Each one becomes a reference there.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whatBoardLatest": {
+    "message": "The first $N$ things on the board",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBoardAll": {
+    "message": "Everything on the board (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "boardProjectSoon": {
+    "message": "the board's project"
+  },
+  "firstN": {
+    "message": "The first $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
       }
     }
   }

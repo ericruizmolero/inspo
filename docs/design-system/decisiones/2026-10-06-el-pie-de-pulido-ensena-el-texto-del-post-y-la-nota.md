@@ -1,7 +1,7 @@
 ---
 title: El pie de Pulido enseña el texto del post y la nota, y cuántas quedan pasa a la pestaña
 date: 2026-10-06
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Bajo la tarjeta de delante había una pastilla de una línea con el nombre de la referencia y "Quedan N". En los guardados de X el nombre es el autor más el arranque del post, cortado a 48 caracteres, y muchas veces la imagen sola no dice por qué se guardó: había que abrir la ficha para decidir. Eric lo planteó como duda ("tengo mi debate de si ayudar con el texto escrito/comentario debajo de la imagen").

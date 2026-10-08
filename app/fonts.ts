@@ -1,18 +1,13 @@
-import { Archivo, Bricolage_Grotesque } from "next/font/google";
+import localFont from "next/font/local";
 
-// Two families, from the Criterio design system. Archivo is the calm base: running text, UI, tabs,
-// buttons, inputs. Bricolage Grotesque is the playful layer: headlines, titles, the wordmark. Never
-// below 16 px and never for running text. No third typeface.
-export const archivo = Archivo({
-  subsets: ["latin", "latin-ext"],
-  style: ["normal", "italic"],
-  variable: "--font-archivo",
-  display: "swap",
-});
-
-export const bricolage = Bricolage_Grotesque({
-  subsets: ["latin", "latin-ext"],
-  axes: ["opsz"],
-  variable: "--font-bricolage",
+// One family, from the Criterio design system: Satoshi for titles, running text, UI, tabs, buttons,
+// inputs and labels. Hierarchy comes from size and weight. The files are self-hosted but not in git
+// (ITF Free Font License, public repo): scripts/fetch-fonts.mjs downloads them before dev and build.
+export const satoshi = localFont({
+  src: [
+    { path: "./fonts/satoshi/Satoshi-Variable.woff2", weight: "300 900", style: "normal" },
+    { path: "./fonts/satoshi/Satoshi-VariableItalic.woff2", weight: "300 900", style: "italic" },
+  ],
+  variable: "--font-satoshi",
   display: "swap",
 });

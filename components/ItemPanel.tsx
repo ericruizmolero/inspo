@@ -5,7 +5,7 @@ import type { InspoItem } from "@/types/inspo";
 import { useT } from "./I18nProvider";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { IconButton, SegmentedControl } from "@/components/criterio";
-import { readableDomain } from "@/lib/url";
+import { mediaKindOf, readableDomain } from "@/lib/url";
 
 // ─── Panel ────────────────────────────────────────────────────────────────────
 // The system's Viewer: one reference over the canvas, which dims behind it; the island and the search dock
@@ -117,6 +117,9 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
   const origin = item.source ?? url;
   const rawHost = origin.replace(/^https?:\/\//, "").split("/")[0];
   const host = readableDomain(rawHost);
+  // Not a site: the link says what it opens, as the card's own link does (InspoCard): the tweet, the video, the image
+  const kind = mediaKindOf(url);
+  const openLabel = kind === "post" ? t.card.openPost : kind === "video" ? t.card.openVideo : t.card.openImage;
   const [iconOk, setIconOk] = useState(true);
   // Another reference in the same panel starts on its page
   useEffect(() => { setIconOk(true); setView("page"); }, [url]);
@@ -143,7 +146,7 @@ export default function ItemPanel({ item, isSite, page, criterio, thread, onClos
                     <BreadcrumbSeparator />
                   </>
                 )}
-                <BreadcrumbItem><a href={origin} target="_blank" rel="noopener noreferrer">{isSite || item.source ? host : t.card.openImage}</a></BreadcrumbItem>
+                <BreadcrumbItem><a href={origin} target="_blank" rel="noopener noreferrer">{isSite || item.source ? host : openLabel}</a></BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>

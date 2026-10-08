@@ -8,23 +8,25 @@ import type { ProjectSystem } from "@/types/system";
 import { normalizeWebUrl } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
-import { boardTiles, useBoardStatus } from "./ProjectChooser";
+import { boardColumns, useBoardStatus } from "./ProjectChooser";
 import { BoardCard, Icon, IconButton, PromptInput } from "@/components/criterio";
 import s from "./EmptyStart.module.css";
 import p from "./ProjectStart.module.css";
 
 const SHOWN = 6;
 
-export default function InboxZero({ projects, systems, items, links, imageOf, isDuplicate, onAddUrl, onUpload, onPick }: {
+export default function InboxZero({ projects, systems, items, links, ratioOf, imageOf, onMeasure, isDuplicate, onAddUrl, onUpload, onPick }: {
   projects: Project[];
   /** Each project's system, for the status ring on its card (left out: the ring waits, muted) */
   systems?: Record<string, ProjectSystem>;
   /** The whole library, newest first */
   items: InspoItem[];
   links: ProjectLinks;
-  /** The old cover's masonry; the BoardCard mosaic crops to fill */
+  /** Height/width of each card on the board: the mini masonry keeps the same shapes */
   ratioOf?: (item: InspoItem) => number;
   imageOf: (item: InspoItem) => string | null;
+  /** The board's measure: a picture's shape, once the mini has loaded it */
+  onMeasure?: (web: string, ratio: number) => void;
   isDuplicate: (web: string) => boolean;
   /** Saves the URL with no project (it lands in the Inbox) */
   onAddUrl: (web: string) => Promise<void>;
@@ -98,7 +100,7 @@ export default function InboxZero({ projects, systems, items, links, imageOf, is
               const status = statusOf(systems?.[project.id], filed);
               return (
                 <BoardCard key={project.id} name={project.name} count={filed.length} countLabel={z.refs(filed.length)}
-                  tiles={boardTiles(filed, imageOf)} status={status.tone} statusLabel={status.label} onClick={() => onPick(project.id)} />
+                  columns={boardColumns(filed, imageOf, ratioOf, onMeasure)} status={status.tone} progress={status.progress} statusLabel={status.label} onClick={() => onPick(project.id)} />
               );
             })}
           </div>

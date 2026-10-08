@@ -1,0 +1,18 @@
+---
+title: Avisos del equipo: campanita en la Isla, resumen diario por correo y respuestas al momento, nunca pesados
+date: 2026-10-08
+status: vigente
+kind: producto
+---
+**Contexto.** Nadie se enteraba de lo que hacían los demás en un equipo si no entraba a mirar. Eric: "comentaste una cosa en el tablón y no me había dado cuenta". Teníamos Resend montado para los enlaces de acceso y las invitaciones, un feed de actividad dentro del Sistema de cada proyecto y el heartbeat por persona (`activity_segment`), pero ningún aviso.
+
+**Decisión.** Tres salidas de una misma lista de hechos (`lib/notify.ts`):
+- **Campanita en la Isla** (`TeamBell`), solo en equipos: lo que hicieron los demás esta semana, con un globito ember con el número mientras haya algo sin ver y un sonido suave cuando entra algo nuevo (Eric: "la campanita tiene que llevar globito pequeño si no has leído cosas, y música si entra algo"); abrirla lo marca todo visto. Las filas llevan la cara de cada persona y su nombre en negrita, como un comentario; la primera versión era solo texto y Eric la devolvió: "el diseño de esto tiene que ser algo más visual, poner fotos de usuarios o algo". Alberto en el grupo de Telegram: "mejor añadir tipo Notion con cosas que ha pasado en el board... que tengas una campanita dentro de criterio y que te permita ver qué ha pasado, si alguien ha comentado o si alguien ha hecho algo". Eric: "buena, lo acompaño con eso".
+- **Resumen diario por correo**, una vez al día (cron `morning`, 04:00 UTC): por equipo, lo que hicieron los demás desde la última vez que la persona miró, agrupado por proyecto, cada línea un enlace. Reglas para que no sea pesado (Eric: "que no sean abusivas las notificaciones"): nada si no pasó nada, nada si ya entraste después (lo dice el heartbeat), nada de lo tuyo, nada en un espacio donde estás solo, el primer resumen cubre solo el día anterior y ninguno más de una semana, y al mes sin abrir la app se apaga solo con un correo que lo dice.
+- **Correos al momento** solo para lo que la gente espera en caliente: una respuesta a tu comentario o a tu pin, y la resolución de una propuesta tuya; el correo responde a quien escribió (`reply-to`).
+
+Apagar y encender es fácil (Eric: "que tengas posibilidad de quitarlas fácil y ponerlas"): dos interruptores en Cuenta ("Resumen diario", "Respuestas"), un enlace firmado de un clic al pie de cada correo (`/unsubscribe`, sin sesión, con "Volver a activarlo") y la cabecera `List-Unsubscribe` para el botón propio de Gmail y compañía. El idioma del correo es el del que lo recibe (Eric: "mira el tema del idioma"); lo que escribió alguien va tal cual.
+
+**Por qué.** Un correo por hecho molesta y acaba en silenciado; uno al día con solo lo que no has visto se lee. La campanita cubre a quien ya está dentro sin necesidad de correo. Vercel Hobby solo admite dos crons, así que el resumen comparte el de las 04:00 con el worker de etiquetas en vez de un tercero.
+
+**Cómo aplicarlo.** Un aviso nuevo (otra acción del equipo) se añade a `teamEvents` y a `teamActivity.line` en los dos idiomas, y sale solo en las tres salidas. Nada de correos sueltos nuevos sin pasar por el pie con la baja de un clic (`footerOf` en `lib/mail.ts`). Nunca un aviso de lo que hizo la propia persona, nunca en un espacio personal. Si una regla de frecuencia cambia, cambia aquí y en `desarrollo.md`.

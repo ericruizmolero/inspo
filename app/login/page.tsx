@@ -11,6 +11,7 @@ import Logo from "@/components/Logo";
 import { isLocalPath } from "@/lib/url";
 import { Button } from "@/components/criterio";
 import { legalShown } from "@/lib/legal";
+import ThemeToggle from "@/components/ThemeToggle";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -107,6 +108,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
         )}
       </aside>
+      {/* The theme is a preference, so it is here before signing in too (Eric, 07-10) */}
+      <ThemeToggle />
     </div>
   );
 }

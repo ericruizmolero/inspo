@@ -24,6 +24,10 @@ export const user = pgTable("user", {
   image: text("image"),
   /** The person's language ("en" | "es"). Decides the language of the emails they get. */
   language: text("language").notNull().default("en"),
+  /** The team emails they get (lib/notify.ts): the daily digest of what the others did, and a reply to one of
+   *  their comments the moment it is written. Each is a switch in Account and a link at the foot of every email */
+  digestEmails: boolean("digest_emails").notNull().default(true),
+  replyEmails: boolean("reply_emails").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 });
@@ -103,6 +107,10 @@ export const member = pgTable("member", {
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   role: text("role").notNull().default("member"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  /** How far the daily digest has covered this workspace for this person (lib/notify.ts). Null: never run */
+  digestSentAt: timestamp("digest_sent_at", { withTimezone: true, mode: "date" }),
+  /** When this person last opened the team's activity (the bell in the Island); what came after is "new" */
+  activitySeenAt: timestamp("activity_seen_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("member_organization_id_idx").on(t.organizationId),
   index("member_user_id_idx").on(t.userId),

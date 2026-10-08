@@ -25,7 +25,19 @@ const PATHS: Record<string, ReactNode> = {
   check: <><circle cx="8" cy="8" r="5.5" /><path d="M5.6 8.2l1.7 1.7 3.2-3.5" /></>,
   code: <path d="M5.5 4.5L2 8l3.5 3.5M10.5 4.5L14 8l-3.5 3.5" />,
   decisions: <><rect x="3" y="2.5" width="10" height="11" rx="2" /><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3" /></>,
+  // The library's token pages
+  color: <><circle cx="8" cy="8" r="5.5" /><path d="M8 2.5a5.5 5.5 0 010 11z" fill="currentColor" stroke="none" /></>,
+  type: <path d="M3 4.5V3h10v1.5M8 3v10M6 13h4" />,
+  spacing: <><path d="M2.5 3v10M13.5 3v10" /><path d="M5 8h6M5 8l1.5-1.5M5 8l1.5 1.5M11 8l-1.5-1.5M11 8l-1.5 1.5" /></>,
+  radius: <path d="M2.5 13.5V8a5.5 5.5 0 015.5-5.5h5.5" />,
+  motion: <><path d="M2.5 12c3-9 8-9 11 0" /><circle cx="13.5" cy="12" r="1.2" fill="currentColor" stroke="none" /></>,
+  icons: <><rect x="2.5" y="2.5" width="4.5" height="4.5" rx="1.2" /><circle cx="11.25" cy="4.75" r="2.25" /><path d="M2.5 13.5l2.25-4 2.25 4z" /><path d="M9.5 9.5h3.5v3.5h-3.5z" /></>,
+  button: <><rect x="1.8" y="4.5" width="12.4" height="7" rx="3.5" /><path d="M5.5 8h5" /></>,
+  brand: <><circle cx="8" cy="9" r="4.5" /><circle cx="6.3" cy="8.5" r=".6" fill="currentColor" stroke="none" /><circle cx="9.7" cy="8.5" r=".6" fill="currentColor" stroke="none" /><circle cx="8" cy="10.8" r=".6" fill="currentColor" stroke="none" /><path d="M6 4.8L4.5 2.5M10 4.8l1.5-2.3" /></>,
 };
+
+/** Every section icon, for the library's Iconos page */
+export const SECTION_ICON_NAMES = Object.keys(PATHS);
 
 export function sectionIcon(name: string) {
   return (

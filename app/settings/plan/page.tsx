@@ -46,6 +46,33 @@ export default async function PlanPage() {
       <SettingsHeading title={t.settings.sections.plan} lead={t.settings.leads.plan} />
 
       <div className="page__body">
+        <div className="pl-plans">
+          {PLANS.map((p) => {
+            const current = p.key === q.plan;
+            return (
+              // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
+              <SettingsWindow key={p.key} title={p.name} className={`pl-plan${current ? " is-current" : ""}`}
+                note={current ? t.plans.current : undefined}
+                actions={current ? undefined : (
+                  <a className={buttonVariants({ variant: p.priceEur > 0 ? "primary" : "default", size: "sm" })} href={mailto(p.name)}>
+                    {p.priceEur > 0 ? t.plans.moveUp(p.name) : t.plans.moveDown(p.name)}
+                  </a>
+                )}>
+                <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
+                <div className="pl-plan__price">
+                  {p.priceEur === 0
+                    ? <span className="t-title-l">{t.plans.free}</span>
+                    : <><span className="t-title-l">{p.priceEur} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
+                </div>
+                <ul className="pl-plan__features">
+                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} strokeWidth={2.5} /></span><span>{f}</span></li>)}
+                </ul>
+              </SettingsWindow>
+            );
+          })}
+        </div>
+        <p className="pl-foot t-small">{t.plans.foot}</p>
+
         <SettingsWindow title={ws.name} description={t.plans.resets(q.planName, resets)}
           note={(overSeats || q.pendingInvites > 0) ? (
             <>
@@ -68,33 +95,6 @@ export default async function PlanPage() {
 
         <UsageCard usage={usage} images={Object.fromEntries(members.map((m) => [m.userId, m.image ?? null]))} />
 
-        <div className="pl-plans">
-          {PLANS.map((p) => {
-            const current = p.key === q.plan;
-            return (
-              // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
-              <SettingsWindow key={p.key} title={p.name} className={`pl-plan${current ? " is-current" : ""}`}
-                note={current ? t.plans.current : undefined}
-                actions={current ? undefined : (
-                  <a className={buttonVariants({ variant: p.priceEur > 0 ? "primary" : "default" })} href={mailto(p.name)}>
-                    {p.priceEur > 0 ? t.plans.moveUp(p.name) : t.plans.moveDown(p.name)}
-                  </a>
-                )}>
-                <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
-                <div className="pl-plan__price">
-                  {p.priceEur === 0
-                    ? <span className="t-title-l">{t.plans.free}</span>
-                    : <><span className="t-title-l">{p.priceEur} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
-                </div>
-                <ul className="pl-plan__features">
-                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} strokeWidth={2.5} /></span><span>{f}</span></li>)}
-                </ul>
-              </SettingsWindow>
-            );
-          })}
-        </div>
-
-        <p className="pl-foot t-small">{t.plans.foot}</p>
       </div>
     </>
   );

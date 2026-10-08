@@ -42,7 +42,7 @@ export function useExtension() {
 }
 
 /** The first version whose import page the app can open (content.js "open-import") */
-export const OPENS_IMPORT_FROM = "0.7.1";
+export const OPENS_IMPORT_FROM = "0.7.3";
 
 /** Asks the extension to open its import page on X or on the browser's bookmarks, in a tab next to this one */
 export function openExtensionImport(what: "x" | "browser") {

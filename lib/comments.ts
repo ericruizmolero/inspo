@@ -7,6 +7,7 @@ import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-
 import type { InspoComment, CommentMap, CommentAttachment, CommentAnchor } from "@/types/inspo";
 import { getErrors } from "./i18n";
 import { HttpError } from "./workspace-core";
+import { inBackground, notifyReply } from "./notify";
 
 const C = schema.inspoComment;
 const U = schema.user;
@@ -81,8 +82,9 @@ export async function addComment(organizationId: string, input: { itemId: string
     .where(and(eq(schema.inspoItem.id, input.itemId), eq(schema.inspoItem.organizationId, organizationId))).limit(1);
   if (!item) throw new HttpError(400, (await getErrors()).itemNotInWorkspace);
   const parentId = typeof input.parentId === "string" && input.parentId ? input.parentId : null;
+  let parent: { parentId: string | null; authorId: string | null; body: string } | undefined;
   if (parentId) {
-    const [parent] = await db.select({ parentId: C.parentId }).from(C)
+    [parent] = await db.select({ parentId: C.parentId, authorId: C.authorId, body: C.body }).from(C)
       .where(and(eq(C.id, parentId), eq(C.organizationId, organizationId), eq(C.itemId, input.itemId))).limit(1);
     if (!parent || parent.parentId) throw new HttpError(400, (await getErrors()).replyGone);
   }
@@ -92,6 +94,11 @@ export async function addComment(organizationId: string, input: { itemId: string
     anchorX: anchor?.x ?? null, anchorY: anchor?.y ?? null, anchorH: anchor?.h ?? null, parentId, createdAt: new Date(), editedAt: null,
   };
   await db.insert(C).values(row);
+  // Whoever wrote the comment answered hears of it by email, once this has answered (lib/notify.ts)
+  if (parent) {
+    const { authorId, body: mine } = parent;
+    inBackground(async () => { await notifyReply(organizationId, { toUserId: authorId, fromUserId: input.authorId, fromName: input.authorName, mine, theirs: body, path: `/i/${encodeURIComponent(input.itemId)}` }); });
+  }
   const [u] = await db.select({ image: U.image }).from(U).where(eq(U.id, input.authorId)).limit(1);
   return toComment({ ...row, authorImage: u?.image ?? null });
 }

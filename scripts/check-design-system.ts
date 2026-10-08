@@ -25,6 +25,7 @@ if (/ · captura: /.test(componentes)) problems.push("componentes.md aún pide c
 const mdFiles = [
   ...readdirSync(ROOT).filter((f) => f.endsWith(".md")).map((f) => path.join(ROOT, f)),
   ...readdirSync(path.join(ROOT, "construir")).filter((f) => f.endsWith(".md")).map((f) => path.join(ROOT, "construir", f)),
+  ...readdirSync(path.join(ROOT, "fundamentos")).filter((f) => f.endsWith(".md")).map((f) => path.join(ROOT, "fundamentos", f)),
   ...readdirSync(path.join(ROOT, "decisiones")).filter((f) => f.endsWith(".md")).map((f) => path.join(ROOT, "decisiones", f)),
 ];
 for (const file of mdFiles) {

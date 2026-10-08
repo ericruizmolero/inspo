@@ -18,6 +18,7 @@ import { PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
 import { Busy, Button, Icon, IconButton, MenuItem, MenuLabel, Separator, StatusRing } from "@/components/criterio";
 import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
+import TeamBell from "./TeamBell";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Liquid, afterPaint } from "@/components/ui/liquid";
@@ -247,14 +248,14 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     afterPaint(() => onSpace(id));
   };
   const filledOf = (id: string) => systems[id]?.areas.filter((a) => a.decision).length ?? 0;
-  // The tab's StatusRing: an ember dot when references came in since the system's last read, a moss ring when
-  // all eight areas are decided, a muted ring before that
+  // The tab's StatusRing: an ember dot when references came in since the system's last read; otherwise a gauge
+  // of the areas decided, moss over muted, closed when all eight are
   const ringOf = (id: string) => {
     const sys = systems[id];
     const unread = sys?.run ? staleness(sys, boardIdsOf[id] ?? []).unread : 0;
     const filled = filledOf(id);
     if (unread > 0) return <StatusRing className="island__ring" tone="new" label={t.system.stale(unread)} />;
-    return <StatusRing className="island__ring" tone={filled >= SYSTEM_AREAS.length ? "synced" : "idle"} label={t.system.filled(filled, SYSTEM_AREAS.length)} />;
+    return <StatusRing className="island__ring" tone={filled >= SYSTEM_AREAS.length ? "synced" : "idle"} progress={filled / SYSTEM_AREAS.length} label={t.system.filled(filled, SYSTEM_AREAS.length)} />;
   };
   const label = (name: string, n: number, id?: string) => <><span className="island__label">{name}</span><span className="island__n">{n}</span>{id && ringOf(id)}</>;
   /** The × that closes a project's tab: the project stays, it only leaves the bar */
@@ -307,8 +308,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
 
       <Liquid as="nav" on=":scope > .is-on" className="island__tabs" ref={tabsRef} aria-label={t.projects.title}>
         {/* Home: every project, as pictures, and where a new one starts */}
-        {/* The system's quiet IconButton, size m, as a link: active on home */}
-        <a href={hrefOf("home")} className={`cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m island__home${space === "home" ? " is-active" : ""}`} aria-current={space === "home" ? "page" : undefined}
+        {/* The system's quiet IconButton, size m, as a link, in the tabs' shape: Liquid's pills paint its hover and its
+            chosen state (is-on), like any other tab, so the home never hovers differently from the rest */}
+        <a href={hrefOf("home")} className={`cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m island__home${space === "home" ? " is-on is-active" : ""}`} aria-current={space === "home" ? "page" : undefined}
           aria-label={t.projects.home} data-tip={t.projects.home} data-fixed onClick={go("home")}><Icon name="home" size={18} /></a>
         {/* Discover opens on its templates; the places to look are one tab away */}
         <a href={hrefOf("templates")} className={`island__tab${inDiscover ? " is-on" : ""}`} aria-current={inDiscover ? "page" : undefined} data-fixed onClick={go("templates")}>
@@ -371,6 +373,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <NewProject onCreate={createNew} onDone={() => setNaming(null)} />
           </PopoverContent>
         </Popover>
+        {/* What the others did, with a dot while there is something unseen: only where there are others */}
+        {workspace.kind === "team" && <TeamBell workspaceId={workspace.id} />}
       </Liquid>
 
       {/* Every project tab and "N more" at their own width, out of sight, for the measure above */}

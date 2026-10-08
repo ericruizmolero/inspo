@@ -11,9 +11,9 @@
 
   // The font has to live in the document for the shadow root to use it; a name of our own, so the page's stays theirs
   try {
-    const archivo = new FontFace("criterio-archivo", `url(${chrome.runtime.getURL("fonts/archivo-latin.woff2")})`, { weight: "400 700" });
-    document.fonts.add(archivo);
-    archivo.load().catch(() => {}); // a page that refuses it gets the system font
+    const satoshi = new FontFace("criterio-satoshi", `url(${chrome.runtime.getURL("fonts/Satoshi-Variable.woff2")})`, { weight: "300 900" });
+    document.fonts.add(satoshi);
+    satoshi.load().catch(() => {}); // a page that refuses it, or a build without the file, gets the system font
   } catch { /* no FontFace */ }
 
   const host = document.createElement("criterio-import");
@@ -28,10 +28,12 @@
         --bevel-pressed: inset 2px 3px 0 rgba(27,27,24,0.22);
         --lift: 0 8px 24px -10px rgba(0,0,0,0.45);
         --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+        --font-sans: "criterio-satoshi", "Satoshi", ui-sans-serif, system-ui, -apple-system, sans-serif;
+        --fs-small: 13px; --fw-medium: 500;
       }
       button {
         display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 8px; margin: 0;
-        font: 500 13px/1 "criterio-archivo", "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
+        font: var(--fw-medium) var(--fs-small)/1 var(--font-sans);
         letter-spacing: 0; color: var(--ink); background: var(--paper); cursor: pointer;
         border: 1.5px solid var(--ink); border-radius: 999px;
         box-shadow: var(--bevel), var(--lift);

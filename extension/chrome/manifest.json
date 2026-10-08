@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "criterio.design",
   "description": "__MSG_extDescription__",
-  "version": "0.7.1",
+  "version": "0.7.3",
   "default_locale": "en",
   "icons": {
     "16": "icons/icon16.png",
@@ -58,7 +58,7 @@
     {
       "resources": [
         "icons/icon48.png",
-        "fonts/archivo-latin.woff2"
+        "fonts/Satoshi-Variable.woff2"
       ],
       "matches": [
         "https://*.pinterest.com/*",

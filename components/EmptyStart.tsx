@@ -30,7 +30,8 @@ const PICKS = (() => {
   const picks = FEATURED.map((u) => ALL.find((r) => r.url === u)).filter((r): r is (typeof ALL)[number] => !!r);
   for (const g of DIRECTORY) {
     if (picks.length >= 9) break;
-    if (g.key === "resources" || picks.some((r) => r.group.key === g.key)) continue;
+    // Tools and Mac apps are not where a project starts looking
+    if (g.key === "resources" || g.key === "mac" || picks.some((r) => r.group.key === g.key)) continue;
     picks.push({ group: g, ...g.items[0] });
   }
   return picks.slice(0, 9);

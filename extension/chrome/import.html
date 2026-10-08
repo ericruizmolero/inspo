@@ -12,10 +12,6 @@
     <header class="top">
       <img class="logo" src="icons/icon48.png" alt="" width="22" height="22" draggable="false" />
       <span class="brand">criterio.design</span>
-      <label class="chip" id="ws-chip" hidden>
-        <select id="ws-select" aria-label="Workspace"></select>
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
-      </label>
     </header>
 
     <!-- No key: connect first -->
@@ -27,25 +23,44 @@
       </div>
     </section>
 
-    <!-- With key: where to import from -->
+    <!-- With key: where it lands, then where to import from -->
     <section class="view" data-view="import">
       <div class="card">
         <h1 class="title" data-i18n="importTitle">Import your bookmarks</h1>
-        <p class="hint" id="import-lead"></p>
-        <!-- Where it all lands: the same field as the popup's form -->
-        <label class="select" id="dest" hidden>
-          <span class="select__label" data-i18n="projectLabel">Project</span>
-          <select id="project-select"></select>
-          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
-        </label>
+        <p class="hint" data-i18n="importLead"></p>
       </div>
+
+      <!-- Where it all lands: picked here, in the open, before any source is touched -->
+      <section class="source where" id="where">
+        <h2 class="source__title" data-i18n="whereTitle">Where it goes</h2>
+        <div class="where__fields">
+          <label class="select">
+            <span class="select__label" data-i18n="workspaceLabel">Workspace</span>
+            <select id="ws-select"></select>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
+          </label>
+          <label class="select">
+            <span class="select__label" data-i18n="projectLabel">Project</span>
+            <select id="project-select"></select>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
+          </label>
+        </div>
+        <p class="where__sum" id="where-sum" aria-live="polite"></p>
+        <p class="hint" id="where-msg"></p>
+      </section>
 
       <section class="source" id="src-x">
         <h2 class="source__title" data-i18n="xTitle">From X</h2>
         <p class="hint" data-i18n="xLead">Opens your bookmarks on x.com in a new tab and scrolls through them; each post found is saved here. Keep that tab open until it finishes. You need to be signed in to X in this browser.</p>
+        <label class="select">
+          <span class="select__label" data-i18n="howMany">How many</span>
+          <select id="x-limit" class="limit" data-periods></select>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
+        </label>
+        <p class="hint" data-i18n="xNewestFirst"></p>
         <p class="hint" id="x-msg"></p>
         <div class="row">
-          <button class="btn" id="btn-x" data-i18n="importX">Import from X</button>
+          <button class="btn" id="btn-x" data-i18n="importX" disabled>Import from X</button>
           <span class="hint" data-i18n="xPermission">Chrome asks for permission to read x.com; it is only used while importing.</span>
         </div>
       </section>
@@ -53,9 +68,14 @@
         <h2 class="source__title" data-i18n="boardTitle">From a board</h2>
         <p class="hint" data-i18n="boardLead">Paste the address of a board on Are.na, Pinterest or Cosmos.</p>
         <input class="input" id="board-url" placeholder="https://www.are.na/you/channel" spellcheck="false" autocomplete="off" data-i18n-label="boardUrlLabel" />
+        <label class="select">
+          <span class="select__label" data-i18n="howMany">How many</span>
+          <select id="board-limit" class="limit" data-all></select>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
+        </label>
         <p class="hint" id="board-msg"></p>
         <div class="row">
-          <button class="btn btn--primary" id="btn-board" data-i18n="importBoard">Import board</button>
+          <button class="btn btn--primary" id="btn-board" data-i18n="importBoard" disabled>Import board</button>
           <span class="hint" data-i18n="boardPermission">Chrome asks to read that site. With it, its boards show a button to import them.</span>
         </div>
       </section>
@@ -76,6 +96,7 @@
     <section class="view" data-view="progress">
       <div class="card">
         <h1 class="title" id="progress-title"></h1>
+        <p class="where__sum" id="progress-where"></p>
         <div class="bar" id="bar"><div class="bar__fill" id="bar-fill"></div></div>
         <dl class="counts">
           <div><dt data-i18n="found">found</dt><dd id="c-found">0</dd></div>
@@ -92,6 +113,21 @@
         </div>
       </div>
     </section>
+
+    <!-- The last word before anything moves: the destination, said again, and the way out to change it -->
+    <dialog class="dlg" id="confirm">
+      <div class="dlg__form">
+        <div class="dlg__bar"><span id="confirm-bar"></span></div>
+        <div class="dlg__body">
+          <h2 class="dlg__heading" id="confirm-heading"></h2>
+          <p class="dlg__text" id="confirm-text"></p>
+        </div>
+        <div class="dlg__foot">
+          <button class="btn" type="button" id="confirm-change" data-i18n="changeDestination">Change destination</button>
+          <button class="btn btn--primary" type="button" id="confirm-go"></button>
+        </div>
+      </div>
+    </dialog>
 
     <footer class="foot" id="foot" hidden>
       <span class="foot__who" id="who"></span>

@@ -234,24 +234,25 @@ export default function SystemView({ project, system, onSystem, board, library, 
     a.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`; a.click(); URL.revokeObjectURL(a.href);
   };
 
-  // The three ways to see the project sit in the page, not on the chrome: the paper tone, which follows the theme
+  // The three ways to see the project sit in the page, not on the chrome: the paper tone, which follows the theme.
+  // The whole row is size s (Eric, 07-10: "más pequeños"): tabs, "Improve with AI" and the "…"
   const VIEWS = ["markdown", "doc", "presentation"] as const;
   const views = (
-    <SegmentedControl tone="paper" label={project.name} className="spage-views" active={VIEWS.indexOf(view)} onChange={(i) => setView(VIEWS[i])}
+    <SegmentedControl tone="paper" size="s" label={project.name} className="spage-views" active={VIEWS.indexOf(view)} onChange={(i) => setView(VIEWS[i])}
       items={VIEWS.map((v) => ({ label: v === "markdown" ? t.doc.markdown : v === "doc" ? t.doc.document : t.brand.views.presentation }))} />
   );
   const actions = (
     <div className="spage-head__actions">
       {!filled && <p className="spage-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>}
       {board.length > 0 ? (
-        <Button variant="primary" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
-          {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={20} /> {t.system.improve}</>}
+        <Button variant="primary" size="sm" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
+          {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}
         </Button>
-      ) : <Button variant="primary" onClick={onOpenBoard}><Icon name="plus" size={20} /> {t.system.addRefs}</Button>}
-      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
+      ) : <Button variant="primary" size="sm" onClick={onOpenBoard}><Icon name="plus" size={16} /> {t.system.addRefs}</Button>}
+      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="sm" onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
       {/* What is asked for now and then stays out of the row: bringing in a brand that exists, the share links */}
       <Popover open={moreOpen} onOpenChange={setMoreOpen}>
-        <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
+        <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>
         <PopoverContent align="end" className="cr-menu spage-more__menu">
           <MenuItem disabled={running} onClick={() => { setMoreOpen(false); setBringing("site"); }}>{t.brand.import.title}</MenuItem>
           <MenuItem onClick={() => { setMoreOpen(false); setSharing(true); }}>{t.brand.share.title}</MenuItem>

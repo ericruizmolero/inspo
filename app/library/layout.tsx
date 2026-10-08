@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { notFound, redirect } from "next/navigation";
 import SectionShell from "@/components/SectionShell";
-import { sidebarOpen } from "@/lib/sidebar-state";
 import { getSession } from "@/lib/workspace";
 import { isAdmin } from "@/lib/activity";
 import { getT } from "@/lib/i18n";
 import { DS_GROUPS, pageTitles } from "@/lib/design-system";
+import ActivityPing from "@/components/ActivityPing";
 import "@/components/design-library/DesignLibrary.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,7 +24,6 @@ export default async function DesignLibraryLayout({ children }: { children: Reac
   const [{ t }, titles] = await Promise.all([getT(), pageTitles()]);
   return (
     <SectionShell
-      defaultOpen={await sidebarOpen()}
       title={t.designLibrary.title}
       base="/library"
       wide
@@ -33,6 +32,7 @@ export default async function DesignLibraryLayout({ children }: { children: Reac
         items: g.pages.map((p) => ({ slug: p.slug, label: titles[p.slug], icon: p.icon })),
       }))}
     >
+      <ActivityPing area="design-system" />
       {children}
     </SectionShell>
   );

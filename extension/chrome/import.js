@@ -3,12 +3,20 @@
 // or Cosmos. Addresses go to the server in batches (POST /api/ext/v1/items/batch); naming,
 // thumbnails and tags happen there, as when a URL is pasted. A tab rather than the popup because
 // the popup closes as soon as it loses focus.
+//
+// Where it all lands (workspace and project) is picked at the top of the page, in the open, and said
+// again in a confirmation before any source is read: an import of hundreds into the wrong project is
+// a chore to undo. Nothing imports until that destination is known. A board is the exception to the
+// project: it lands in the project named after it, in the picked workspace.
 
 const DEFAULT_BASE = "https://criterio.design";
 const API = "/api/ext/v1";
 const BATCH = 25; // what the server accepts per request
 const BATCH_IMAGES = 10; // a batch with images: the server copies each one before it answers
 const MAX_IMPORT = 1000; // per run; the rest waits for another
+const LIMITS = [50, 100, 250, 500]; // "the latest N" choices for X and a board; "all" is MAX_IMPORT
+const PERIODS = { "7d": 7, "30d": 30 }; // "from the last week / month", X only (a pin has no date)
+const PAST_STREAK = 60; // X: this many posts in a row older than the period = the period is behind us
 const X_BOOKMARKS = "https://x.com/i/bookmarks";
 const { BOARDS, boardOf, hostsOf } = globalThis.CriterioBoards;
 
@@ -18,10 +26,19 @@ const app = $("app");
 const setView = (v) => { app.dataset.view = v; };
 const note = (el, text, kind) => { el.textContent = text || ""; el.className = "hint" + (kind ? ` is-${kind}` : ""); };
 const ws = () => state.workspace?.name || t("yourLibrary");
-/** The project picked for this import ({ id, name }), or null: the server then picks the one last worked in */
-const project = () => { const o = $("dest").hidden ? null : $("project-select").selectedOptions[0]; return o?.value ? { id: o.value, name: o.textContent } : null; };
+/** The project picked for this import ({ id, name }), or null: the Inbox, when the workspace has no project yet */
+const project = () => { const o = $("project-select").selectedOptions[0]; return o?.value ? { id: o.value, name: o.textContent } : null; };
+/** The project's name for a sentence, or "Inbox" */
+const projectName = () => project()?.name || t("inbox");
+/** What the person asked for on a source: the latest N, a period (posts dated since that day) or everything (up to MAX_IMPORT) */
+function scopeOf(sel) {
+  const days = PERIODS[sel.value];
+  if (days) { const d = new Date(); d.setDate(d.getDate() - days); return { limit: MAX_IMPORT, since: d.toISOString().slice(0, 10), period: sel.value }; }
+  return { limit: Number(sel.value) || MAX_IMPORT, since: null, period: null };
+}
 
 let state = { key: null, base: DEFAULT_BASE, workspace: null, workspaces: [], user: null };
+let ready = false; // the destination is known: the workspace's projects are loaded
 
 const api = async (path, init = {}) => {
   const res = await fetch(state.base + API + path, {
@@ -42,28 +59,47 @@ async function load() {
   document.documentElement.lang = chrome.i18n.getUILanguage();
   for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
   for (const el of document.querySelectorAll("[data-i18n-label]")) el.setAttribute("aria-label", t(el.dataset.i18nLabel));
+  fillLimits();
   const s = await chrome.storage.local.get(["key", "base", "workspace", "workspaces", "user"]);
   state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
   if (!state.key) { setView("connect"); return; }
-  setChip(); showFoot();
-  $("import-lead").textContent = t("importLead", [ws()]);
+  setWorkspaces(); showFoot();
   setView("import");
   loadProjects();
   await loadTree();
   await opened(new URLSearchParams(location.search));
   api("/me").then((me) => {
+    const changed = me.workspace?.id !== state.workspace?.id;
     state.workspace = me.workspace; state.workspaces = me.workspaces || []; state.user = me.user;
     chrome.storage.local.set({ workspace: me.workspace, workspaces: state.workspaces, user: me.user });
-    setChip(); showFoot(); $("import-lead").textContent = t("importLead", [ws()]);
-  }).catch((e) => note($("browser-msg"), e.message, "error"));
+    setWorkspaces(); showFoot();
+    if (changed) loadProjects();
+  }).catch((e) => note($("where-msg"), e.message, "error"));
 }
 
-function setChip() {
+// "The latest 50 … 500" of X, "the first" of a board, or everything; X also offers the last week and month
+function fillLimits() {
+  const opt = (value, text) => { const o = document.createElement("option"); o.value = value; o.textContent = text; return o; };
+  for (const sel of document.querySelectorAll("select.limit")) {
+    const board = sel.dataset.all != null;
+    const opts = LIMITS.map((n) => opt(String(n), t(board ? "firstN" : "latestN", [String(n)])));
+    if (sel.dataset.periods != null) opts.push(opt("7d", t("lastWeek")), opt("30d", t("lastMonth")));
+    opts.push(opt("", t("allUpTo", [String(MAX_IMPORT)])));
+    sel.replaceChildren(...opts);
+    sel.value = board ? "" : String(LIMITS[1]); // a board brings everything unless asked otherwise
+    sel.addEventListener("change", sayWhere);
+  }
+}
+
+// ─── Where it goes ───────────────────────────────────────────────────────────
+
+function setWorkspaces() {
   const sel = $("ws-select");
   const list = state.workspaces.length ? state.workspaces : state.workspace ? [state.workspace] : [];
   sel.replaceChildren(...list.map((w) => { const o = document.createElement("option"); o.value = w.id; o.textContent = w.name; return o; }));
   if (state.workspace) sel.value = state.workspace.id;
-  $("ws-chip").hidden = list.length === 0;
+  sel.disabled = list.length < 2;
+  sayWhere();
 }
 
 $("ws-select").addEventListener("change", async () => {
@@ -71,26 +107,106 @@ $("ws-select").addEventListener("change", async () => {
   if (!w || w.id === state.workspace?.id) return;
   state.workspace = w;
   await chrome.storage.local.set({ workspace: w });
-  $("import-lead").textContent = t("importLead", [ws()]);
   loadProjects(); // each workspace has its own projects
 });
 
-// The project it all lands in: the workspace's projects, the one this person last added to picked first
+// The project it all lands in: the workspace's projects, the one this person last added to picked
+// first. With none yet, the Inbox. Until this is known the import buttons wait.
+let projectsLoaded = Promise.resolve();
+
 async function loadProjects() {
+  let done;
+  projectsLoaded = new Promise((r) => { done = r; });
+  try { await readProjects(); } finally { done(); }
+}
+
+async function readProjects() {
+  const sel = $("project-select");
+  setReady(false);
+  sel.replaceChildren(); sel.disabled = true;
+  note($("where-msg"), "");
+  sayWhere();
+  const forWs = state.workspace?.id;
   try {
     const r = await api("/projects");
-    const sel = $("project-select");
-    sel.replaceChildren(...r.projects.map((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; return o; }));
+    if (forWs !== state.workspace?.id) return; // the workspace changed meanwhile: that load's answer is on its way
+    const opts = r.projects.map((p) => { const o = document.createElement("option"); o.value = p.id; o.textContent = p.name; return o; });
+    if (!opts.length) { const o = document.createElement("option"); o.value = ""; o.textContent = t("inboxOption"); opts.push(o); }
+    sel.replaceChildren(...opts);
     if (r.active) sel.value = r.active;
-    $("dest").hidden = r.projects.length === 0;
-  } catch { $("dest").hidden = true; } // it still imports, to the project the server picks
+    sel.disabled = r.projects.length === 0;
+    setReady(true);
+  } catch (e) {
+    if (forWs !== state.workspace?.id) return;
+    note($("where-msg"), t("whereFailed", [e.message]), "error");
+  }
+  sayWhere();
 }
+
+function setReady(on) {
+  ready = on;
+  $("btn-x").disabled = !on;
+  $("btn-board").disabled = !on;
+  updateSelected();
+}
+
+/** The sentence under the fields: "Everything you import lands in Project, in Workspace." */
+function sayWhere() {
+  const el = $("where-sum");
+  if (!ready) { el.textContent = t("whereLoading", [ws()]); return; }
+  el.replaceChildren(...sentence(t("whereSum", [projectName(), ws()]), [projectName(), ws()]));
+}
+
+/** A sentence with some of its words in bold: the destination's names stand out from the rest */
+function sentence(text, bold) {
+  const out = [];
+  let rest = text;
+  while (rest) {
+    let at = -1, word = "";
+    for (const b of bold) { const i = b ? rest.indexOf(b) : -1; if (i !== -1 && (at === -1 || i < at)) { at = i; word = b; } }
+    if (at === -1) { out.push(rest); break; }
+    if (at) out.push(rest.slice(0, at));
+    const s = document.createElement("strong"); s.textContent = word; out.push(s);
+    rest = rest.slice(at + word.length);
+  }
+  return out;
+}
+
+$("project-select").addEventListener("change", sayWhere);
 
 function showFoot() { $("foot").hidden = false; $("who").textContent = state.user?.email || state.workspace?.name || ""; }
 
 $("btn-connect").addEventListener("click", async () => {
   await chrome.tabs.create({ url: `${state.base || DEFAULT_BASE}/extension/connect` });
 });
+
+// ─── The confirmation ────────────────────────────────────────────────────────
+// Before any source is read: what is about to come in and, in bold, where it lands. "Change
+// destination" goes back to the fields; "Import to <project>" starts.
+
+function confirmImport(source, what) {
+  return new Promise((resolve) => {
+    const dlg = $("confirm");
+    const board = !!BOARDS[source];
+    $("confirm-bar").textContent = t("confirmBar");
+    $("confirm-heading").textContent = t(board ? "confirmTitle_board" : `confirmTitle_${source}`);
+    $("confirm-text").replaceChildren(...(board
+      ? sentence(t("confirmTextBoard", [what, ws()]), [ws()])
+      : sentence(t("confirmText", [what, projectName(), ws()]), [projectName(), ws()])));
+    $("confirm-go").textContent = board ? t("importBoard") : t("confirmGo", [projectName()]);
+    const settle = (go) => {
+      $("confirm-go").removeEventListener("click", onGo); $("confirm-change").removeEventListener("click", onChange); dlg.removeEventListener("cancel", onCancel);
+      if (dlg.open) dlg.close();
+      // Back to the fields: once the browser has given focus back to the button that opened the dialog
+      if (!go) setTimeout(() => { $("where").scrollIntoView({ block: "start", behavior: "smooth" }); $("project-select").focus(); }, 0);
+      resolve(go);
+    };
+    const onGo = () => settle(true), onChange = () => settle(false), onCancel = (e) => { e.preventDefault(); settle(false); }; // Esc = change
+    $("confirm-go").addEventListener("click", onGo); $("confirm-change").addEventListener("click", onChange); dlg.addEventListener("cancel", onCancel);
+    dlg.showModal();
+    $("confirm-go").focus();
+  });
+}
 
 // ─── The browser's bookmarks ─────────────────────────────────────────────────
 // Folders as nested checkboxes; a folder's count is every web page under it, subfolders included.
@@ -152,12 +268,13 @@ function selectedBookmarks() {
 function updateSelected() {
   const n = selectedBookmarks().length;
   $("selected-count").textContent = n ? t("selectedCount", [String(n)]) : "";
-  $("btn-browser").disabled = n === 0;
+  $("btn-browser").disabled = n === 0 || !ready;
 }
 
 $("btn-browser").addEventListener("click", async () => {
   let items = selectedBookmarks();
   if (!items.length) return;
+  if (!(await confirmImport("browser", t("whatBrowser", [String(Math.min(items.length, MAX_IMPORT))])))) return;
   let capNote = "";
   if (items.length > MAX_IMPORT) { capNote = t("tooMany", [String(MAX_IMPORT)]); items = items.slice(0, MAX_IMPORT); }
   const run = startRun("browser", t("progressBrowser"));
@@ -183,6 +300,14 @@ const SOURCES = {
 
 let collectTabId = null; // the tab a collector runs in
 
+/** "The latest 100 posts", "the posts from the last week" or "all your posts (up to 1000)": what the confirmation says is coming */
+function whatOf(sel, key) {
+  const { limit, period } = scopeOf(sel);
+  if (period === "7d") return t(`${key}Week`);
+  if (period === "30d") return t(`${key}Month`);
+  return limit < MAX_IMPORT ? t(`${key}Latest`, [String(limit)]) : t(`${key}All`, [String(MAX_IMPORT)]);
+}
+
 /** Opens `url` in a tab, injects `files` once it has loaded and hands the tab to the run */
 async function collectIn(run, url, files, active, onFail) {
   const tab = await chrome.tabs.create({ url, active });
@@ -204,17 +329,18 @@ async function collectIn(run, url, files, active, onFail) {
 
 $("btn-x").addEventListener("click", async () => {
   note($("x-msg"), "");
+  if (!(await confirmImport("x", whatOf($("x-limit"), "whatX")))) return;
   let granted = false;
   try { granted = await chrome.permissions.request({ origins: ["https://x.com/*"] }); } catch (e) { note($("x-msg"), e.message, "error"); return; }
   if (!granted) { note($("x-msg"), t("xPermissionDenied"), "error"); return; }
-  const run = startRun("x");
+  const run = startRun("x", scopeOf($("x-limit")));
   await collectIn(run, X_BOOKMARKS, ["x-collect.js"], true, (e) => run.finish(t("xInjectFailed", [e.message])));
 });
 
 // ─── A board on Are.na, Pinterest or Cosmos ──────────────────────────────────
 // Asks for the platform's hosts (optional permissions; with them its board pages also get the
 // import button, see background.js), opens the board in a tab behind this one and injects its
-// collector. Everything lands in a project named after the board.
+// collector. Everything lands in the project named after the board, in the picked workspace.
 
 /** Starts importing the board at `raw`; false (and says why) when it can't */
 async function importBoard(raw, { ask = true } = {}) {
@@ -224,11 +350,12 @@ async function importBoard(raw, { ask = true } = {}) {
   const { name, collector } = BOARDS[found.source];
   const origins = hostsOf(found.source);
   let granted = await chrome.permissions.contains({ origins });
+  if (granted || ask) { if (!(await confirmImport(found.source, whatOf($("board-limit"), "whatBoard")))) return false; }
   if (!granted && ask) {
     try { granted = await chrome.permissions.request({ origins }); } catch (e) { note($("board-msg"), e.message, "error"); return false; }
   }
   if (!granted) { note($("board-msg"), t("boardPermissionDenied", [name]), "error"); return false; }
-  const run = startRun(found.source);
+  const run = startRun(found.source, scopeOf($("board-limit")));
   run.boardUrl = found.url;
   await collectIn(run, found.url, ["boards.js", "board-collect.js", collector], false, (e) => { closeCollector(run); run.finish(t("boardInjectFailed", [name, e.message]), "error"); });
   return true;
@@ -253,7 +380,8 @@ async function opened(params) {
     $("board-url").value = boardOf(url)?.url || "";
     // Once: reloading this page must not import the board again
     history.replaceState(null, "", location.pathname);
-    if ($("board-url").value && await importBoard(url, { ask: false })) return;
+    await projectsLoaded; // the confirmation names the workspace it lands in
+    if ($("board-url").value && ready && await importBoard(url, { ask: false })) return;
     note($("board-msg"), "");
   }
   const section = $(`src-${BOARDS[source] ? "board" : source}`);
@@ -268,13 +396,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const src = SOURCES[current.source];
   if (current.source === "x" && msg?.type === "x-found") {
     current.add(msg.items);
-    sendResponse({ stop: current.stopped });
+    sendResponse({ stop: current.stopped || current.capped });
   } else if (current.source === "x" && msg?.type === "x-done") {
     if (msg.reason === "logged-out") current.finish(t("xNotLoggedIn"), "error");
     else current.noMore();
   } else if (src.board && msg?.type === "board-found") {
     if (msg.name !== undefined) current.named(msg.name);
-    if (msg.total) current.total = Math.min(msg.total, MAX_IMPORT);
+    if (msg.total) current.total = Math.min(msg.total, current.limit);
     current.skip(msg.skipped);
     current.add(msg.items);
     sendResponse({ stop: current.stopped || current.capped });
@@ -311,10 +439,10 @@ const VIDEO_HOSTS = /(^|\.)(youtube\.com|youtu\.be|vimeo\.com|loom\.com)$/i; // 
 /** What an item becomes once saved: its words, its image, a video by address, or a website */
 const kindOf = (it) => { if (it.text) return "text"; if (it.image) return "image"; try { return VIDEO_HOSTS.test(new URL(it.url).hostname) ? "video" : "website"; } catch { return "website"; } };
 
-function startRun(source) {
+function startRun(source, scope = { limit: MAX_IMPORT, since: null }) {
   const src = SOURCES[source];
   const run = {
-    source, project: src.board ? null : project(), tabId: null, total: 0, queue: [], seen: new Set(), sending: false, more: true, stopped: false, capped: false, partial: false, ended: false,
+    source, project: src.board ? null : project(), workspace: ws(), limit: scope.limit, since: scope.since, older: 0, tabId: null, total: 0, queue: [], seen: new Set(), sending: false, more: true, stopped: false, capped: false, partial: false, ended: false,
     // A board waits for its project before the first batch
     ready: !src.board, naming: false, boardUrl: "",
     counts: { found: 0, added: 0, existed: 0, invalid: 0, error: 0 },
@@ -324,8 +452,21 @@ function startRun(source) {
       if (this.ended) return;
       for (const it of items) {
         if (this.seen.has(it.url)) continue;
-        // A board of thousands: this run takes the first ones, the collector is told to stop
-        if (src.board && this.counts.found >= MAX_IMPORT) { this.capped = true; note($("progress-msg"), t("tooMany", [String(MAX_IMPORT)])); break; }
+        // The latest N asked for are in (or a board of thousands hit the cap): the collector is told to stop
+        if (!src.counted && this.counts.found >= this.limit) {
+          this.capped = true;
+          note($("progress-msg"), this.limit < MAX_IMPORT ? t("limitReached", [String(this.limit)]) : t("tooMany", [String(MAX_IMPORT)]));
+          break;
+        }
+        // A period: a post dated before it is skipped. X lists bookmarks newest-bookmarked first, and a
+        // post is always bookmarked after it was written, so a long streak of older posts means the
+        // period is behind us and the collector can stop.
+        if (this.since && it.date && it.date < this.since) {
+          this.seen.add(it.url);
+          if (++this.older >= PAST_STREAK) { this.capped = true; break; }
+          continue;
+        }
+        this.older = 0;
         this.seen.add(it.url); this.queue.push(it); this.counts.found++;
       }
       paint(this); this.pump();
@@ -345,6 +486,7 @@ function startRun(source) {
       try { this.project = await boardProject(name || this.boardUrl); }
       catch { this.project = project(); } // still imported, into the picked project
       this.ready = true;
+      sayProgressWhere(this);
       this.pump();
     },
     // A board that never said its name (it failed first) has nothing waiting for a project
@@ -384,9 +526,9 @@ function startRun(source) {
       paint(this, true);
       if (message) note($("progress-msg"), message, kind);
       else if (this.partial) note($("progress-msg"), t("boardPartial", [src.board.name, String(this.counts.added)]));
-      else if (src.board && (this.counts.added || this.counts.invalid)) note($("progress-msg"), boardResult(this), "ok");
-      else if (this.counts.added) note($("progress-msg"), this.project ? t("doneSavedIn", [String(this.counts.added), this.project.name]) : t("doneSaved", [String(this.counts.added), ws()]), "ok");
-      else if (this.counts.found) note($("progress-msg"), this.project ? t("nothingNewIn", [ws(), this.project.name]) : t("nothingNew", [ws()]), "ok");
+      else if (src.board && this.counts.found + this.counts.invalid) note($("progress-msg"), boardResult(this), this.counts.error && !this.counts.added ? "error" : "ok");
+      else if (this.counts.added) note($("progress-msg"), this.project ? t("doneSavedIn", [String(this.counts.added), this.project.name]) : t("doneSaved", [String(this.counts.added), this.workspace]), "ok");
+      else if (this.counts.found) note($("progress-msg"), this.project ? t("nothingNewIn", [this.workspace, this.project.name]) : t("nothingNew", [this.workspace]), "ok");
       else note($("progress-msg"), t("nothingFound"));
       $("btn-stop").hidden = true;
       // The project it went to when there is one; the app's own landing otherwise
@@ -397,6 +539,7 @@ function startRun(source) {
   };
   current = run;
   $("progress-title").textContent = src.title();
+  sayProgressWhere(run);
   note($("progress-msg"), "");
   $("btn-stop").hidden = false; $("btn-open").hidden = true; $("btn-again").hidden = true;
   $("bar").classList.toggle("is-indeterminate", !src.counted);
@@ -406,18 +549,28 @@ function startRun(source) {
   return run;
 }
 
-/** "38 websites, 12 images and 2 texts imported. 3 skipped (file)." */
+/** "Into Project, in Workspace" under the progress title. A board's project is named once the board says its name. */
+function sayProgressWhere(run) {
+  const board = !!SOURCES[run.source].board;
+  const name = run.project?.name || t(board ? "boardProjectSoon" : "inbox");
+  $("progress-where").replaceChildren(...sentence(t("progressWhere", [name, run.workspace]), run.project || !board ? [name, run.workspace] : [run.workspace]));
+}
+
+/** What a board did, item by item: what was new by kind, what was already there, what stayed out and why, what failed.
+ *  "12 websites and 3 images imported. 20 were already in your library. 1 skipped (a board inside the board)." */
 function boardResult(run) {
   const list = (parts) => (parts.length > 1 ? t("listAnd", [parts.slice(0, -1).join(", "), parts.at(-1)]) : parts[0] || "");
-  const count = (key, n) => t(n === 1 ? `${key}One` : `${key}Many`, [String(n)]);
-  const kinds = Object.entries(run.kinds).filter(([, n]) => n).map(([k, n]) => count(`kind_${k}`, n));
+  const plural = (key, n, subs = [String(n)]) => t(`${key}${n === 1 ? "One" : "Many"}`, subs);
+  const kinds = Object.entries(run.kinds).filter(([, n]) => n).map(([k, n]) => plural(`kind_${k}`, n));
+  const { existed, error } = run.counts;
   const lines = [];
   if (kinds.length) lines.push(t("resultImported", [list(kinds)]));
-  if (run.counts.existed) lines.push(t("resultAlready", [String(run.counts.existed)]));
+  if (existed) lines.push(plural(kinds.length ? "resultAlready" : "resultAllExisted", existed));
   const reasons = Object.entries(run.reasons).filter(([, n]) => n);
-  const why = (k, n) => t(`reason_${k}${n === 1 ? "One" : "Many"}`);
-  if (reasons.length === 1) lines.push(t("resultSkippedOne", [String(reasons[0][1]), why(...reasons[0])]));
-  else if (reasons.length > 1) lines.push(t("resultSkippedMany", [String(run.counts.invalid), reasons.map(([k, n]) => `${n} ${why(k, n)}`).join(", ")]));
+  const left = reasons.reduce((n, [, k]) => n + k, 0);
+  const why = reasons.length === 1 ? plural(`reason_${reasons[0][0]}`, left, []) : reasons.map(([k, n]) => plural(`reasonN_${k}`, n)).join(", ");
+  if (left) lines.push(left === 1 ? t("resultSkippedOne", [why]) : t("resultSkippedMany", [String(left), why]));
+  if (error) lines.push(plural("resultFailed", error));
   return lines.join(" ");
 }
 
@@ -434,8 +587,10 @@ function paint(run, done = false) {
   const sent = run.counts.added + run.counts.existed + run.counts.error + (run.reasons.invalid || 0);
   const src = SOURCES[run.source];
   // How far along: of what was found, or of what the board says it holds while it is still being read.
-  // X never says how many there are: its bar only fills at the end.
-  const of = done || src.counted ? run.counts.found : src.board ? Math.max(run.total - (run.counts.invalid - (run.reasons.invalid || 0)), run.counts.found) : 0;
+  // X never says how many there are: its bar only fills at the end, unless the latest N were asked for.
+  const of = done || src.counted ? run.counts.found
+    : src.board ? Math.max(run.total - (run.counts.invalid - (run.reasons.invalid || 0)), run.counts.found)
+    : run.limit < MAX_IMPORT ? run.limit : 0;
   if (of || done) {
     $("bar").classList.remove("is-indeterminate");
     $("bar-fill").style.width = of ? `${Math.min(100, Math.round((sent / of) * 100))}%` : done ? "100%" : "0%";
@@ -447,4 +602,4 @@ $("btn-again").addEventListener("click", () => { current = null; collectTabId = 
 
 chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && changes.key) load(); });
 
-load().catch((e) => { setView("connect"); note($("browser-msg"), e.message, "error"); });
+load().catch((e) => { setView("connect"); note($("where-msg"), e.message, "error"); });
