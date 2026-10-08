@@ -8,8 +8,8 @@ kind: producto
 
 **Decisión.**
 - Un registro, `extension/chrome/boards.js`, dice qué direcciones son un tablero en cada plataforma, qué permisos se piden (el sitio y su API) y qué colector lo lee (`arena-collect.js`, `pinterest-collect.js`, `cosmos-collect.js`). Lo usan la página de importar, el popup, el service worker y el botón. Todos los colectores hablan con un solo formato (`board-found` y `board-done`, en `board-collect.js`).
-- Entra todo lo que Criterio sabe guardar: webs, imágenes (copiadas, con la página de origen en `source`) y vídeos por dirección. Se quedan fuera textos, archivos y canales, y el final lo dice por tipo: "38 websites and 12 images imported. 3 skipped (text)."
-- Lo importado va a un proyecto con el nombre del tablero; si ya existe de una importación anterior, se reutiliza.
+- Entra todo lo que Criterio sabe guardar, con la misma regla que pegar un tablero en la web ([importar un tablero trae todo lo que Criterio sabe guardar](2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)): webs, imágenes (copiadas, con la página de origen en `source`), vídeos por dirección y textos (sus palabras, con la página del bloque o del elemento en `source`). Se quedan fuera archivos y canales, y el final lo dice por tipo: "38 websites, 12 images and 2 texts imported. 3 skipped (file)."
+- Lo importado va a un proyecto con el nombre del tablero; si ya existe de una importación anterior, se reutiliza. Lo decide el servidor (`projectForBoard`, `lib/projects.ts`, por `POST /api/ext/v1/projects`), el mismo que usa la web: importar desde la extensión y desde la web llena el mismo proyecto.
 - El botón (`board-button.js`) es una píldora de papel con bisel abajo a la derecha, "Import to Criterio" con la marca, en un Shadow DOM cerrado. Solo aparece en un tablero y solo después de que la persona conceda esa plataforma (`chrome.scripting.registerContentScripts`), nunca al instalar. El popup, sobre un tablero, ofrece lo mismo ("Import this board").
 - Los nombres de las plataformas solo dicen de dónde viene algo; sin logos, también en el popup, que ya no lleva los de X y Pinterest.
 

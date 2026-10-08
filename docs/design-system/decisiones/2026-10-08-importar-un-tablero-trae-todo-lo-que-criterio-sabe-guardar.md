@@ -13,6 +13,7 @@ kind: producto
 - Una imagen o un texto se copia al espacio con la página de la plataforma en `source` (`addMany`, `lib/add-many.ts`), y `staysInside` (`lib/url.ts`) ya cubre Are.na y Cosmos: un enlace compartido no entrega la copia. Importar dos veces no duplica: la imagen y el texto se guardan en una ruta que decide su página.
 - Hasta 500 cosas. Se mandan en lotes de 25, o de 10 si llevan imágenes (`lib/batch-limits.ts`, lo mismo que la extensión). El aviso final dice qué entró por tipo y qué se quedó fuera y por qué: "19 websites, 3 images, 9 videos, 1 text imported." y "1 skipped (1 board inside the board)."
 - Un vídeo de Cosmos o de Pinterest no se copia como vídeo: entra su portada. Copiar vídeos de hasta 100 MB por lotes no compensa ahora.
+- El proyecto del tablero es el que ya lleva su nombre, o uno nuevo la primera vez (`projectForBoard`, `lib/projects.ts`): importar el mismo tablero otra vez lo llena, no hace otro. La extensión importa los mismos tableros desde la propia página, con la misma regla y el mismo proyecto ([la extensión pone un botón para importar un tablero](2026-10-08-la-extension-pone-un-boton-para-importar-un-tablero.md)).
 
 **Por qué.** Alberto: "I don't want to only import webs, also all the assets we support that are in the board." Interpretación mía: un tablero es una mezcla, y quien lo importa espera verlo entero en Criterio. Dejar fuera las imágenes vaciaba los tableros de Pinterest y Cosmos, que son sobre todo imágenes.
 

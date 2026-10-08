@@ -89,12 +89,13 @@ focus, and an import takes minutes). Three kinds of source, one entry each in `S
   (the site and its API, optional, granted on the click) and the collector that reads it. The page opens
   the board in a tab behind it and injects `boards.js`, `board-collect.js` and the platform's collector,
   and closes that tab at the end. Every collector reports through `board-collect.js` with one shape:
-  `{ type: "board-found", name?, total?, items: [{ url, title?, image? }], skipped: { [reason]: n } }`
+  `{ type: "board-found", name?, total?, items: [{ url, title?, image?, text? }], skipped: { [reason]: n } }`
   for each page it reads (`name` and `total` ride on the first), then `{ type: "board-done", reason, name }`.
   None of the three is scrolled or clicked, and none is an official API except Are.na's:
   - `arena-collect.js` reads `api.are.na/v3/channels/<slug>/contents`, 100 blocks a page, at most 30
     requests a minute. A Link is its site, Media (a video by address) its address, an Image its file
-    with the block's page (`are.na/block/<id>`) as where it came from. The API refuses a request that
+    and a Text its words, with the block's page (`are.na/block/<id>`) as where it came from. Attachments
+    and channels inside the channel are skipped and counted. The API refuses a request that
     carries the session, so a private channel reads as not found.
   - `pinterest-collect.js` asks Pinterest for the board's pins as the board's own page does
     (`/resource/BoardResource/get/`, `BoardFeedResource`, `BoardSectionsResource` and
@@ -108,21 +109,22 @@ focus, and an import takes minutes). Three kinds of source, one entry each in `S
     for its elements with the page's own `GetClusterElements` query, trimmed, with the session so a
     private cluster works. A website, a product or a website still being read (`BaseElementTile`) is its
     site; an image or a video is its file (a video, its cover) with the element's page
-    (`cosmos.so/e/<id>`) as where it came from. Text is skipped. If Cosmos changes it, `QUERY` is what to fix.
+    (`cosmos.so/e/<id>`) as where it came from; a text is its words, with the same page. If Cosmos changes
+    it, `QUERY` is what to fix.
 
   Each image is copied by the server into the workspace's media folder under a key made from its page
   (`importedMediaKey`), so importing the same board again saves nothing twice. Up to 1000 items a run,
   10 a request when a batch carries images.
 
 The page asks which project bookmarks and posts land in (the same field as the popup's form, the one
-this person last added to picked first). A board lands in a project named after it instead: the one
-already there from an earlier import, or a new one (`POST /projects`; when the server can't make it, the
-picked project). What the workspace already had is
+this person last added to picked first). A board lands in a project named after it instead: `POST /projects { name }` answers with
+the one an earlier import made, from here or from the app, or makes it (`projectForBoard` in
+`lib/projects.ts`; when the server can't answer, the picked project). What the workspace already had is
 filed in that project too, since a reference can be in several; "Open the project" at the end goes there.
 
 The addresses go to `POST /items/batch` in batches of 25, one request at a time, and the page shows the
 counts (found, saved, already here, skipped, failed). A board ends with what came in by kind and what
-stayed out and why: "38 websites and 12 images imported. 3 skipped (text)." The server names, tags and
+stayed out and why: "38 websites, 12 images and 2 texts imported. 3 skipped (file)." The server names, tags and
 gets the thumbnail of each one after answering, as when a URL is pasted in the app: an import of a few
 hundred bookmarks is done in a few minutes, the cards fill in over the following ones.
 
