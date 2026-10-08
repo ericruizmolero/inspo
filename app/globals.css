@@ -1468,7 +1468,7 @@ video.vp__media { object-fit: contain; }
 .toast__title { font-size: var(--fs-small); font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .toast__sub { font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Good news is read whole: what an import brought and what it left out */
-.toast:not(.toast--error) .toast__sub { white-space: normal; }
+.toast:not(.toast--error) :is(.toast__title, .toast__sub) { white-space: normal; }
 .toast .cr-iconbtn { flex: none; }
 @media (max-width: 640px) {
   .toasts { right: 16px; left: 16px; bottom: 16px; width: auto; }

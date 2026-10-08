@@ -734,20 +734,18 @@ export default function InspoClient({
     if (!project) return t.projects.saveFailed;
     const total = board.entries.length;
     const imported = noneImported();
+    const added: InspoItem[] = [];
+    const ids: string[] = [];
     let done = 0, failed = 0;
     onStep({ phase: "saving", done, total });
     for (const batch of batchesOf(board.entries)) {
       const r = await importBatch(project.id, batch).catch((e) => ({ ok: false as const, error: String(e) }));
       if (r.ok) {
-        const { results, added } = r.data;
-        const ids: string[] = [];
-        results.forEach((x, i) => {
+        r.data.results.forEach((x, i) => {
           if (x.id && (x.status === "added" || x.status === "existed")) { ids.push(x.id); imported[batch[i].kind]++; }
           else if (x.status === "error" || x.status === "invalid") failed++;
         });
-        setItems((prev) => { const known = new Set(prev.map((x) => x.id)); return [...added.filter((a) => !known.has(a.id)), ...prev]; });
-        setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...new Set([...(next[id] ?? []), project.id])]; return next; });
-        for (const a of added) watch(a.web);
+        added.push(...r.data.added);
       } else {
         console.warn("board batch not saved", r.error);
         failed += batch.length;
@@ -755,6 +753,10 @@ export default function InspoClient({
       done += batch.length;
       onStep({ phase: "saving", done, total });
     }
+    // All at once at the end: the first item on screen would take the first run's canvas, and its progress, away
+    setItems((prev) => { const known = new Set(prev.map((x) => x.id)); return [...added.filter((a) => !known.has(a.id)), ...prev]; });
+    setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...new Set([...(next[id] ?? []), project.id])]; return next; });
+    for (const a of added) watch(a.web);
     setSpace(project.id);
     setToast({ ok: true, ...importSummary(t, { imported, skipped: board.skipped, failed, capped: board.capped }) });
     return null;
