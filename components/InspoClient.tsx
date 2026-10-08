@@ -1,6 +1,10 @@
 "use client";
 
-import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, votePolish, closeProjectPolish, restoreToBoard } from "@/app/actions/library";
+import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, votePolish, closeProjectPolish, restoreToBoard, readBoardAction, importBatch, boardProject } from "@/app/actions/library";
+import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
+import { batchesOf } from "@/lib/boards/entries";
+import { noneImported, type BoardStep, type ImportBoard } from "./BoardImport";
+import { importSummary } from "@/lib/boards/summary";
 import { votesByItem, finishedOf, forgottenBy, openVotes } from "@/lib/polish-tally";
 import { authClient } from "@/lib/auth-client";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
@@ -493,7 +497,7 @@ export default function InspoClient({
       e.preventDefault();
       const file = mediaFileFrom(e.dataTransfer);
       if (file) open({ file });
-      else setAddError({ title: t.errors.imagesOnly, detail: "" });
+      else setToast({ title: t.errors.imagesOnly, detail: "" });
     };
     document.addEventListener("paste", onPaste);
     document.addEventListener("dragover", onDragOver);
@@ -512,13 +516,14 @@ export default function InspoClient({
   // ─── Add by URL only ─────────────────────────────────────────────────────────
   // The card appears instantly with the domain; the server gets the real name
   // from the site itself and replaces it. If it fails, it's removed with a notice up top.
-  const [addError, setAddError] = useState<{ title: string; detail: string } | null>(null);
+  // A notice up top: what failed, or (ok) what an import brought
+  const [toast, setToast] = useState<{ title: string; detail: string; ok?: boolean } | null>(null);
   useEffect(() => {
-    if (!addError) return;
-    cue("error");
-    const t = setTimeout(() => setAddError(null), 6000);
+    if (!toast) return;
+    cue(toast.ok ? "success" : "error");
+    const t = setTimeout(() => setToast(null), 6000);
     return () => clearTimeout(t);
-  }, [addError]);
+  }, [toast]);
   const isDuplicate = useCallback((web: string) => {
     const key = webKeyOf(web);
     return items.some((i) => webKeyOf(i.web) === key);
@@ -566,7 +571,7 @@ export default function InspoClient({
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setAddError({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
+      setToast({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }, [user, watch, importPost]);
@@ -600,7 +605,7 @@ export default function InspoClient({
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setAddError({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
+      setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
       return null;
     } finally {
       // The card already swapped to the uploaded file; give it a moment before dropping the local copy
@@ -632,7 +637,7 @@ export default function InspoClient({
       return item;
     } catch (e) {
       setItems((prev) => prev.filter((i) => i !== temp));
-      setAddError({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
+      setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
       return null;
     }
   }, [user, watch, refreshSystem, t]);
@@ -646,6 +651,8 @@ export default function InspoClient({
   // And if it comes back with ?directory=1 (pressed "sign in" from the guest directory), Discover opens on its resources.
   const router = useRouter();
   const autoAdded = useRef(false);
+  // A board that came back from login: the first-run canvas shows its progress
+  const [arrivingBoard, setArrivingBoard] = useState<BoardStep | null>(null);
   useEffect(() => {
     if (autoAdded.current) return;
     const params = new URLSearchParams(window.location.search);
@@ -663,7 +670,14 @@ export default function InspoClient({
     try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* no storage */ }
     if (done === web || !/^https?:\/\//.test(web) || isDuplicate(web)) return;
     try { sessionStorage.setItem(DONE_KEY, web); } catch { /* no storage */ }
-    void addByUrl({ web, type: typeFromUrl(web), note: "" });
+    // A board pasted before signing in is imported; what goes wrong is said in the notice up top
+    if (boardOf(web)) {
+      void importBoard(web, setArrivingBoard).then((failed) => {
+        setArrivingBoard(null);
+        if (failed) setToast({ title: t.app.saveFailed, detail: failed });
+      });
+    }
+    else void addByUrl({ web, type: typeFromUrl(web), note: "" });
     // mount only: the address bar URL doesn't change later
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -679,18 +693,69 @@ export default function InspoClient({
       setThumbMap((prev) => { if (!(item.web in prev)) return prev; const next = { ...prev }; delete next[item.web]; return next; });
     } catch (e) {
       setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev]));
-      setAddError({ title: t.app.removeFailed, detail: e instanceof Error ? e.message : String(e) });
+      setToast({ title: t.app.removeFailed, detail: e instanceof Error ? e.message : String(e) });
     }
   }, []);
 
   // Projects change on screen first; if the server says no, they go back with a notice
-  const projectFailed = (e: unknown) => setAddError({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) });
+  const projectFailed = (e: unknown) => setToast({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) });
   const createProject = useCallback(async (name: string): Promise<Project | null> => {
     const r = await newProject(name).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { projectFailed(new Error(r.error)); return null; }
     setProjects((prev) => [...prev, r.data]);
     return r.data;
   }, []);
+
+  // ─── Import a board ──────────────────────────────────────────────────────────
+  // A board pasted from Are.na, Pinterest or Cosmos: everything on it Criterio can save (websites, images, videos,
+  // posts, texts) comes in batches into the project named after it, made the first time, and the user lands there. Nothing is created if
+  // the board cannot be read or has nothing to save.
+  const importBoard = useCallback<ImportBoard>(async (input, onStep) => {
+    const ref = boardOf(input);
+    if (!ref) return t.add.notUrl;
+    const platform = PLATFORM_NAME[ref.platform];
+    onStep({ phase: "reading", platform: ref.platform });
+    const read = await readBoardAction(input).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!read.ok) return read.error;
+    const board = read.data;
+    if (!board.ok) return board.reason === "private" ? t.board.private : board.reason === "not-found" ? t.board.notFound : t.board.unavailable(platform);
+    if (!board.entries.length) return t.board.none;
+    // The board's project: the same one each time this board is imported, here or from the extension
+    const made = await boardProject(board.name).catch((e) => ({ ok: false as const, error: String(e) }));
+    if (!made.ok) return made.error;
+    const project = made.data;
+    setProjects((prev) => (prev.some((p) => p.id === project.id) ? prev : [...prev, project]));
+    const total = board.entries.length;
+    const imported = noneImported();
+    const added: InspoItem[] = [];
+    const ids: string[] = [];
+    let done = 0, failed = 0, existed = 0, invalid = 0;
+    onStep({ phase: "saving", done, total });
+    for (const batch of batchesOf(board.entries)) {
+      const r = await importBatch(project.id, batch).catch((e) => ({ ok: false as const, error: String(e) }));
+      if (r.ok) {
+        r.data.results.forEach((x, i) => {
+          if (x.id && x.status === "added") { ids.push(x.id); imported[batch[i].kind]++; }
+          else if (x.id && x.status === "existed") { ids.push(x.id); existed++; }
+          else if (x.status === "invalid") invalid++;
+          else failed++;
+        });
+        added.push(...r.data.added);
+      } else {
+        console.warn("board batch not saved", r.error);
+        failed += batch.length;
+      }
+      done += batch.length;
+      onStep({ phase: "saving", done, total });
+    }
+    // All at once at the end: the first item on screen would take the first run's canvas, and its progress, away
+    setItems((prev) => { const known = new Set(prev.map((x) => x.id)); return [...added.filter((a) => !known.has(a.id)), ...prev]; });
+    setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...new Set([...(next[id] ?? []), project.id])]; return next; });
+    for (const a of added) watch(a.web);
+    setSpace(project.id);
+    setToast({ ok: true, ...importSummary(t, { imported, existed, skipped: { ...board.skipped, invalid }, failed, capped: board.capped }) });
+    return null;
+  }, [t, watch, setSpace]);
   const renameProject = useCallback(async (id: string, name: string) => {
     const before = projects.find((p) => p.id === id);
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
@@ -1078,6 +1143,7 @@ export default function InspoClient({
     onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: openDirectory,
     space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
+    onImportBoard: importBoard,
   };
 
   // ─── Board ──────────────────────────────────────────────────────────────────
@@ -1340,7 +1406,7 @@ export default function InspoClient({
     const r = await removeInspos([...ids]).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) {
       setItems((prev) => [...gone.filter((g) => !prev.some((i) => i.id === g.id)), ...prev]);
-      setAddError({ title: t.app.removeFailed, detail: r.error });
+      setToast({ title: t.app.removeFailed, detail: r.error });
       return;
     }
     const webs = new Set(gone.map((i) => i.web));
@@ -1590,13 +1656,13 @@ export default function InspoClient({
           libraryName={workspace.name}
         />
       )}
-      {addError && (
+      {toast && (
         <div className="toasts toasts--top" role="alert">
           {/* A small paper window (the TipWindow's ground, ink border and bevel): the red dot, what failed, and close */}
-          <div className="cr-window toast toast--error" onClick={() => setAddError(null)}>
+          <div className={`cr-window toast${toast.ok ? "" : " toast--error"}`} onClick={() => setToast(null)}>
             <span className="toast__dot" aria-hidden />
-            <span className="toast__text"><span className="toast__title">{addError.title}</span><span className="toast__sub">{addError.detail}</span></span>
-            <IconButton icon="close" variant="strong" size="xs" label={t.toast.dismiss} onClick={(e) => { e.stopPropagation(); setAddError(null); }} />
+            <span className="toast__text"><span className="toast__title">{toast.title}</span><span className="toast__sub">{toast.detail}</span></span>
+            <IconButton icon="close" variant="strong" size="xs" label={t.toast.dismiss} onClick={(e) => { e.stopPropagation(); setToast(null); }} />
           </div>
         </div>
       )}
@@ -1629,6 +1695,7 @@ export default function InspoClient({
           onSubmit={(input) => { if (input.file) addByUpload({ ...input, file: input.file }); else if (input.text) addByText({ ...input, text: input.text }); else addByUrl(input); }}
           isDuplicate={isDuplicate}
           project={currentProject?.name}
+          onImportBoard={importBoard}
         />
       )}
 
@@ -1685,8 +1752,8 @@ export default function InspoClient({
                   <PillBarSep />
                 </>
               )}
-              {/* The ways in from outside (the extension, an AI client over MCP), beside the other way of adding */}
-              <Connectors />
+              {/* The ways in from outside (the extension, an AI client over MCP, Import), beside the other way of adding */}
+              <Connectors onImportBoard={importBoard} />
               <PillBarSep />
               <IconButton icon="plus" label={t.app.add} variant="quiet" className="topbar__add" onClick={() => setShowAdd(true)} />
             </PillBar>
@@ -1717,6 +1784,8 @@ export default function InspoClient({
             onAddUrl={async (web) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
             isDuplicate={isDuplicate}
             onDirectory={openDirectory}
+            onImportBoard={importBoard}
+            arriving={arrivingBoard}
           />
         ) : currentProject && projectView === "system" ? (
           <SystemView

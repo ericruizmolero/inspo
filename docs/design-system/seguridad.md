@@ -54,7 +54,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 - Todo pertenece a un espacio (`workspace`), y las consultas filtran por él. La propiedad de una tarjeta es `createdBy`, nunca el nombre de quien la guardó.
 - Borrar en cascada: al borrar una referencia se van sus ficheros, su hilo y sus votos (`npm run check:postgres` lo comprueba).
-- Lo que viene de X o de Pinterest (`staysInside`, `lib/url.ts`) no se enseña sin sesión; cada copia guarda su página en `inspo_item.source` y todo lo que la cita enlaza al original. → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
+- Lo que viene de X, Pinterest, Are.na o Cosmos (`staysInside`, `lib/url.ts`: un post, o una imagen, vídeo o texto cuya página está en una de esas plataformas) no se enseña sin sesión; cada copia guarda su página en `inspo_item.source` y todo lo que la cita enlaza al original. → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
 - Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista; `--prod --apply` toca producción) y borra la referencia y sus copias en todos los espacios.
 - Las claves de la BD de producción, la de escritura de R2 y la de Resend nunca van en un `.env.local`: la app local escribiría en producción. Las credenciales entre socios van por canal privado. `.env*` y `prod.env` están en `.gitignore`.
 - Lo que se manda a un modelo: la captura y el texto de una web para etiquetarla, las notas y el hilo de un proyecto para su sistema. Ningún proveedor entrena con ello (es lo que promete la política de privacidad, y la lista de proveedores de `lib/i18n/<locale>/legal.ts` tiene que coincidir con el [stack](stack.md)).

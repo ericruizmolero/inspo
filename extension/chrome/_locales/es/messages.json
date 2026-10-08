@@ -156,60 +156,6 @@
       }
     }
   },
-  "importPinterestShort": {
-    "message": "Tablero de Pinterest"
-  },
-  "pinTitle": {
-    "message": "De Pinterest"
-  },
-  "pinLead": {
-    "message": "Pega la dirección de uno de tus tableros. Cada pin se guarda como imagen, secciones incluidas. Para un tablero secreto tienes que tener la sesión de Pinterest iniciada en este navegador."
-  },
-  "pinUrlLabel": {
-    "message": "Dirección del tablero"
-  },
-  "importPinterest": {
-    "message": "Importar de Pinterest"
-  },
-  "pinPermission": {
-    "message": "Chrome pide permiso para leer pinterest.com; solo se usa mientras importa."
-  },
-  "pinPermissionDenied": {
-    "message": "Sin permiso para leer pinterest.com la extensión no puede ver el tablero."
-  },
-  "pinBadUrl": {
-    "message": "Eso no es un tablero. Pega la dirección de un tablero, como pinterest.com/tu-usuario/tablero."
-  },
-  "pinNotFound": {
-    "message": "Pinterest no enseña ese tablero. Si es secreto, inicia sesión en Pinterest en este navegador y vuelve a probar."
-  },
-  "pinFailed": {
-    "message": "Pinterest ha dejado de responder. Prueba otra vez en un rato."
-  },
-  "pinPartial": {
-    "message": "Pinterest dejó de responder a medias: $N$ referencias nuevas guardadas. Vuelve a importar el tablero para traer el resto; lo guardado no se repite.",
-    "placeholders": {
-      "n": {
-        "content": "$1",
-        "example": "48"
-      }
-    }
-  },
-  "pinTabClosed": {
-    "message": "Se cerró la pestaña de Pinterest. Lo encontrado hasta ahora queda guardado."
-  },
-  "pinInjectFailed": {
-    "message": "No se pudo leer la pestaña de Pinterest: $ERR$",
-    "placeholders": {
-      "err": {
-        "content": "$1",
-        "example": "Cannot access contents of the page"
-      }
-    }
-  },
-  "progressPinterest": {
-    "message": "Leyendo los pines del tablero…"
-  },
   "progressBrowser": {
     "message": "Importando marcadores…"
   },
@@ -226,7 +172,7 @@
     "message": "ya estaban"
   },
   "skipped": {
-    "message": "no son webs"
+    "message": "sin importar"
   },
   "failed": {
     "message": "fallidos"
@@ -366,6 +312,253 @@
   "videoPageSaved": {
     "message": "Este vídeo se reproduce a trozos y no había un fichero que copiar: se ha guardado la página y un fotograma."
   },
+  "boardTitle": {
+    "message": "De un tablero"
+  },
+  "boardLead": {
+    "message": "Pega la dirección de un tablero de Are.na, Pinterest o Cosmos. Entran webs, imágenes, vídeos y textos; archivos y tableros dentro del tablero se quedan fuera. Todo va al proyecto con el nombre del tablero, el mismo cada vez. Para un tablero secreto de Pinterest o un clúster privado de Cosmos tienes que tener la sesión iniciada allí en este navegador."
+  },
+  "boardUrlLabel": {
+    "message": "Dirección del tablero"
+  },
+  "importBoard": {
+    "message": "Importar tablero"
+  },
+  "boardPermission": {
+    "message": "Chrome pide permiso para leer ese sitio. Con él, sus tableros muestran también un botón para importarlos."
+  },
+  "boardPermissionDenied": {
+    "message": "Sin permiso para leer $PLATFORM$ la extensión no puede ver el tablero.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardBadUrl": {
+    "message": "Eso no es un tablero. Pega la dirección de uno, como are.na/tu/canal o pinterest.com/tu/tablero."
+  },
+  "boardNotFound": {
+    "message": "$PLATFORM$ no enseña ese tablero. Si es privado, inicia sesión en $PLATFORM$ en este navegador y vuelve a probar.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardFailed": {
+    "message": "$PLATFORM$ dejó de responder. Vuelve a probar en un rato.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardPartial": {
+    "message": "$PLATFORM$ dejó de responder a medias: $N$ referencias nuevas guardadas. Vuelve a importar el tablero para traer el resto; lo guardado no se repite.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      },
+      "n": {
+        "content": "$2",
+        "example": "12"
+      }
+    }
+  },
+  "boardTabClosed": {
+    "message": "Se cerró la pestaña de $PLATFORM$. Lo encontrado hasta ahora queda guardado.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardInjectFailed": {
+    "message": "No se pudo leer la pestaña de $PLATFORM$: $ERR$",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      },
+      "err": {
+        "content": "$2",
+        "example": "Cannot access contents of the page"
+      }
+    }
+  },
+  "progressBoard": {
+    "message": "Leyendo el tablero de $PLATFORM$…",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "listAnd": {
+    "message": "$A$ y $B$",
+    "placeholders": {
+      "a": {
+        "content": "$1",
+        "example": "38 websites"
+      },
+      "b": {
+        "content": "$2",
+        "example": "12 images"
+      }
+    }
+  },
+  "kind_websiteOne": {
+    "message": "$N$ web",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_websiteMany": {
+    "message": "$N$ webs",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_imageOne": {
+    "message": "$N$ imagen",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_imageMany": {
+    "message": "$N$ imágenes",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_videoOne": {
+    "message": "$N$ vídeo",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_videoMany": {
+    "message": "$N$ vídeos",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_textOne": {
+    "message": "$N$ texto",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_textMany": {
+    "message": "$N$ textos",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultImported": {
+    "message": "Importado: $LIST$.",
+    "placeholders": {
+      "list": {
+        "content": "$1",
+        "example": "12 webs y 3 imágenes"
+      }
+    }
+  },
+  "resultSkippedOne": {
+    "message": "1 se queda fuera ($WHY$).",
+    "placeholders": {
+      "why": {
+        "content": "$1",
+        "example": "un archivo"
+      }
+    }
+  },
+  "resultSkippedMany": {
+    "message": "$N$ se quedan fuera ($WHY$).",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      },
+      "why": {
+        "content": "$2",
+        "example": "archivos"
+      }
+    }
+  },
+  "reason_fileOne": {
+    "message": "un archivo"
+  },
+  "reason_fileMany": {
+    "message": "archivos"
+  },
+  "reason_channelOne": {
+    "message": "un tablero dentro del tablero"
+  },
+  "reason_channelMany": {
+    "message": "tableros dentro del tablero"
+  },
+  "reason_otherOne": {
+    "message": "sin nada que guardar"
+  },
+  "reason_otherMany": {
+    "message": "sin nada que guardar"
+  },
+  "reason_invalidOne": {
+    "message": "sin dirección web"
+  },
+  "reason_invalidMany": {
+    "message": "sin dirección web"
+  },
+  "importBoardShort": {
+    "message": "Un tablero"
+  },
+  "importThisBoard": {
+    "message": "Importar este tablero"
+  },
+  "pageButton": {
+    "message": "Importar a Criterio"
+  },
+  "pageButtonLabel": {
+    "message": "Importar este tablero de $PLATFORM$ a Criterio",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
   "whereTitle": {
     "message": "Dónde va"
   },
@@ -387,7 +580,7 @@
     }
   },
   "whereSum": {
-    "message": "Todo lo que importes irá a $PROJECT$, en $WS$. Elígelos antes de empezar.",
+    "message": "Los marcadores y los posts irán a $PROJECT$, en $WS$. Un tablero va al proyecto con su nombre, en el mismo espacio.",
     "placeholders": {
       "project": {
         "content": "$1"
@@ -447,9 +640,6 @@
   "confirmTitle_x": {
     "message": "¿Importar de X?"
   },
-  "confirmTitle_pinterest": {
-    "message": "¿Importar de Pinterest?"
-  },
   "confirmTitle_browser": {
     "message": "¿Importar estos marcadores?"
   },
@@ -500,22 +690,6 @@
       }
     }
   },
-  "whatPinLatest": {
-    "message": "Los últimos $N$ pines del tablero",
-    "placeholders": {
-      "n": {
-        "content": "$1"
-      }
-    }
-  },
-  "whatPinAll": {
-    "message": "Todos los pines del tablero (hasta $N$)",
-    "placeholders": {
-      "n": {
-        "content": "$1"
-      }
-    }
-  },
   "whatBrowser": {
     "message": "$N$ marcadores de este navegador",
     "placeholders": {
@@ -532,6 +706,155 @@
       },
       "ws": {
         "content": "$2"
+      }
+    }
+  },
+  "resultAlreadyOne": {
+    "message": "1 ya estaba en tu librería."
+  },
+  "resultAlreadyMany": {
+    "message": "$N$ ya estaban en tu librería.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultAllExistedOne": {
+    "message": "Ya estaba en tu librería."
+  },
+  "resultAllExistedMany": {
+    "message": "Los $N$ ya estaban en tu librería.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultFailedOne": {
+    "message": "1 no se pudo guardar."
+  },
+  "resultFailedMany": {
+    "message": "$N$ no se pudieron guardar.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileOne": {
+    "message": "$N$ archivo",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileMany": {
+    "message": "$N$ archivos",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelOne": {
+    "message": "$N$ tablero dentro del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelMany": {
+    "message": "$N$ tableros dentro del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherOne": {
+    "message": "$N$ sin nada que guardar",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherMany": {
+    "message": "$N$ sin nada que guardar",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidOne": {
+    "message": "$N$ sin dirección web",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidMany": {
+    "message": "$N$ sin dirección web",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "confirmTitle_board": {
+    "message": "¿Importar este tablero?"
+  },
+  "confirmTextBoard": {
+    "message": "$WHAT$ se guardará en el proyecto con el nombre del tablero, en $WS$. Cada cosa será una referencia allí.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whatBoardLatest": {
+    "message": "Las $N$ primeras cosas del tablero",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBoardAll": {
+    "message": "Todo lo del tablero (hasta $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "boardProjectSoon": {
+    "message": "el proyecto del tablero"
+  },
+  "firstN": {
+    "message": "Los primeros $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
       }
     }
   }

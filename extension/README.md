@@ -38,6 +38,7 @@ call goes with `Authorization: Bearer crit_…` to the versioned routes under `/
 | `POST /items/batch` | Saves up to 25 `{ url, title }` at once, into `projectId` (the import page); with `image`, the item is that image |
 | `POST /media` | Saves one image or video from the right-click menu |
 | `GET /projects` | The projects to save to, and the one picked first |
+| `POST /projects` | Creates `{ name }` and answers `{ project: { id, name } }`: the project a board lands in |
 
 Keys are listed and revoked in **Settings → Extension**. A key stops working on its own if the person leaves the
 workspace. The database only stores the key's SHA-256.
@@ -67,10 +68,11 @@ eye, the project (`GET /projects` lists them and says which one this person last
 first) and the areas of its system. `lib/ext-file.ts` files the item there and hangs it under each area
 ticked. After saving, the button turns into "Saved" with a check, and the form folds away.
 
-## Importing bookmarks
+## Importing bookmarks and boards
 
-"Import bookmarks" in the popup's footer opens `import.html` in a tab of its own (the popup closes as
-soon as it loses focus, and an import takes minutes). Three sources:
+The popup's import row opens `import.html` in a tab of its own (the popup closes as soon as it loses
+focus, and an import takes minutes). Three kinds of source, one entry each in `SOURCES` in
+`import.js`:
 
 - **This browser**: the bookmark folders (`bookmarks` permission), ticked by folder; only `http(s)`
   addresses go.
@@ -81,37 +83,78 @@ soon as it loses focus, and an import takes minutes). Three sources:
   new, when the import page says stop, or when that page is gone. If the person is not signed in to X
   it reports `logged-out`. There is no official API involved: if X changes its markup, this selector
   is what to fix.
-- **Pinterest**: the address of a board, pasted (or already written in, when the popup was opened on
-  Pinterest). Chrome asks for `https://*.pinterest.com/*` (optional, granted on the click), the page
-  opens the board in a tab behind it and injects `pinterest-collect.js`, which closes when it is done.
-  The collector does not scroll: it asks Pinterest for the board's pins as the board's own page does
-  (`/resource/BoardResource/get/`, `BoardFeedResource`, `BoardSectionsResource` and
-  `BoardSectionPinsResource`, 25 pins a page, with the `X-Pinterest-PWS-Handler` header Pinterest
-  wants), so it gets exactly what is on the board, sections included, and not the "more ideas" the
-  page shows under it. A public board needs no session; a secret one needs the person signed in to
-  Pinterest in that browser. Each pin goes on as `{ url: the pin, title, image: [...] }`: the image at
-  1200 px when the original is wider than 1600 (the board shows the file itself), the original
-  otherwise and always for a GIF. The server copies it into the workspace's media folder under a key
-  made from the pin's address (`importedMediaKey`), so importing the same board again saves nothing
-  twice. A video or a pin of several pages is saved as its cover. Up to 1000 pins a run, 10 a request.
-  These are not an official API: if Pinterest changes them, `call()` in the collector is what to fix.
+- **A board on Are.na, Pinterest or Cosmos**: its address, pasted, or already there when the import
+  started from the board itself (the button on the page, or the popup on that tab). `boards.js` is the
+  one place that knows the three platforms: which addresses are a board, the hosts Chrome is asked for
+  (the site and its API, optional, granted on the click) and the collector that reads it. The page opens
+  the board in a tab behind it and injects `boards.js`, `board-collect.js` and the platform's collector,
+  and closes that tab at the end. Every collector reports through `board-collect.js` with one shape:
+  `{ type: "board-found", name?, total?, items: [{ url, title?, image?, text? }], skipped: { [reason]: n } }`
+  for each page it reads (`name` and `total` ride on the first), then `{ type: "board-done", reason, name }`.
+  None of the three is scrolled or clicked, and none is an official API except Are.na's:
+  - `arena-collect.js` reads `api.are.na/v3/channels/<slug>/contents`, 100 blocks a page, at most 30
+    requests a minute. A Link is its site, Media (a video by address) its address, an Image its file
+    and a Text its words, with the block's page (`are.na/block/<id>`) as where it came from. Attachments
+    and channels inside the channel are skipped and counted. The API refuses a request that
+    carries the session, so a private channel reads as not found.
+  - `pinterest-collect.js` asks Pinterest for the board's pins as the board's own page does
+    (`/resource/BoardResource/get/`, `BoardFeedResource`, `BoardSectionsResource` and
+    `BoardSectionPinsResource`, 25 pins a page, with the `X-Pinterest-PWS-Handler` header Pinterest
+    wants), so it gets exactly what is on the board, sections included, and not the "more ideas" the
+    page shows under it. A secret board needs the person signed in to Pinterest in that browser. A pin
+    that links to a site is that site. An uploaded pin is its image, `{ url: the pin, title, image: [...] }`:
+    at 1200 px when the original is wider than 1600, the original otherwise and always for a GIF; a
+    video or a pin of several pages is its cover. If Pinterest changes these, `call()` is what to fix.
+  - `cosmos-collect.js` takes the cluster's number from the page and asks `api.cosmos.so/graphql`
+    for its elements with the page's own `GetClusterElements` query, trimmed, with the session so a
+    private cluster works. A website, a product or a website still being read (`BaseElementTile`) is its
+    site; an image or a video is its file (a video, its cover) with the element's page
+    (`cosmos.so/e/<id>`) as where it came from; a text is its words, with the same page. If Cosmos changes
+    it, `QUERY` is what to fix.
+
+  Each image is copied by the server into the workspace's media folder under a key made from its page
+  (`importedMediaKey`), so importing the same board again saves nothing twice. Up to 1000 items a run,
+  10 a request when a batch carries images.
+
+The app's Import dialog (Conectores → Import) can open this page too: it posts `open-import` with
+`what: "x" | "browser"`, `content.js` passes it on and the service worker opens `import.html?source=<what>`
+next to the app's tab, only for a tab of an origin this build may reach (0.7.3 and later).
 
 The page starts with where it all lands: workspace and project as two fields in the open (the one
 this person last added to picked first; the Inbox when the workspace has no project yet), and a
 sentence naming them. The import buttons wait until that is known, and each one opens a confirmation
-that says what is coming and the destination again, with "Change destination" as the way out. What
-the workspace already had is filed in that project too, since a reference can be in several; "Open
-the project" at the end goes there.
+that says what is coming and the destination again, with "Change destination" as the way out. A board
+takes the workspace but not the project: it lands in a project named after it, and its confirmation
+says so. `POST /projects { name }` answers with the one an earlier import made, from here or from the
+app, or makes it (`projectForBoard` in `lib/projects.ts`; when the server can't answer, the picked
+project). What the workspace already had is filed in that project too, since a reference can be in
+several; "Open the project" at the end goes there.
 
-X and Pinterest also ask which ones: the latest 50, 100, 250 or 500, or all (up to 1000). X adds
-the last week and the last month, by the post's date (the only date the page sees; a pin has none):
-posts older than the period are skipped, and after 60 older posts in a row the collector is told to
-stop, since X lists bookmarks newest-bookmarked first and a post is always older than its bookmark.
+X and a board also ask which ones. X: the latest 50, 100, 250 or 500, the last week, the last month,
+or all (up to 1000). The period goes by the post's date (the only date the page sees): posts older
+than the period are skipped, and after 60 older posts in a row the collector is told to stop, since X
+lists bookmarks newest-bookmarked first and a post is always older than its bookmark. A board: the
+first 50 to 500, or everything (up to 1000), which is the default.
 
-Either way the addresses go to `POST /items/batch` in batches of 25, one request at a time, and the
-page shows the counts (found, saved, already here, not web pages, failed). The server names, tags and
+The addresses go to `POST /items/batch` in batches of 25, one request at a time, and the page shows the
+counts (found, saved, already here, skipped, failed). A board ends with one line: what was new by kind,
+what was already in the library, what stayed out and why, and what failed: "12 websites and 3 images
+imported. 20 were already in your library. 1 skipped (a board inside the board)." The server names, tags and
 gets the thumbnail of each one after answering, as when a URL is pasted in the app: an import of a few
 hundred bookmarks is done in a few minutes, the cards fill in over the following ones.
+
+## The button on a board
+
+Once the person grants a platform (on the import page or from the popup), `background.js` registers
+`board-button.js` on its pages with `chrome.scripting.registerContentScripts`, and unregisters it when
+the permission is taken back (`syncBoardButtons`, on install, startup and every permission change).
+Nothing is registered at install. On a board the script draws one pill in the bottom right corner,
+"Import to Criterio" with the mark, in a closed shadow root: paper, ink border and bevel, Satoshi from
+`fonts/` (loaded with `FontFace` under a name of its own; the system font when the file is missing), the ember focus ring, a fade without the rise
+under reduced motion. These sites change pages without loading, so it looks at the address twice a
+second and leaves when it is not a board. The click asks the service worker to open the import page
+on that board, with its confirmation already open. The popup on a board offers the same import ("Import this
+board"); Chrome asks for the platform there, on the click.
 
 ## Workspaces
 

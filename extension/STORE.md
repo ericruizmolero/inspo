@@ -47,7 +47,7 @@ para el alta ni para la ficha.
 ## Pestaña "Privacy practices"
 
 - **Single purpose:** "Save the current tab (address, title and a screenshot) to the user's
-  criterio.design library, and import the user's existing bookmarks into it."
+  criterio.design library, and import the user's existing bookmarks and boards into it."
 - **Justificación de permisos:**
   - `activeTab`: read the current tab's URL and title and capture its visible area when the
     user clicks the extension.
@@ -60,9 +60,15 @@ para el alta ni para la ficha.
   - `scripting` + optional `https://x.com/*`: when the user presses "Import from X", scroll
     through their own bookmarks page on x.com and read the addresses of the saved posts.
     Requested at that moment with `chrome.permissions.request`, never at install.
-  - optional `https://*.pinterest.com/*`: when the user presses "Import from Pinterest", open
-    the board they pasted in a background tab and read its pins (address, title, image) from
-    there, with the same `scripting` permission. Requested at that moment, never at install.
+  - optional `https://*.pinterest.com/*`, `https://www.are.na/*`, `https://are.na/*`,
+    `https://api.are.na/*`, `https://www.cosmos.so/*`, `https://cosmos.so/*`, `https://api.cosmos.so/*`:
+    when the user imports a board from one of these sites (pasting its address, or from the popup
+    on that board), open the board in a background tab and read its items (address, title, image)
+    from there, with the same `scripting` permission. Requested at that moment, one site at a time,
+    never at install. With the site granted, a content script registered at that moment
+    (`chrome.scripting.registerContentScripts`) shows an "Import to Criterio" button on that
+    site's board pages; it reads only the page's address, and is removed if the permission is.
+  - `web_accessible_resources` (the icon and one font, on those sites only): what the button draws.
 - **Remote code:** No.
 - **Uso de datos:** marcar "Website content" (la captura y el título) y "Web history" NO
   (no se guarda historial; solo la página que el usuario guarda a propósito). Los tres

@@ -156,60 +156,6 @@
       }
     }
   },
-  "importPinterestShort": {
-    "message": "Pinterest board"
-  },
-  "pinTitle": {
-    "message": "From Pinterest"
-  },
-  "pinLead": {
-    "message": "Paste the address of one of your boards. Each of its pins is saved as an image, sections included. A secret board needs you signed in to Pinterest in this browser."
-  },
-  "pinUrlLabel": {
-    "message": "Board address"
-  },
-  "importPinterest": {
-    "message": "Import from Pinterest"
-  },
-  "pinPermission": {
-    "message": "Chrome asks for permission to read pinterest.com; it is only used while importing."
-  },
-  "pinPermissionDenied": {
-    "message": "Without permission to read pinterest.com the extension cannot see the board."
-  },
-  "pinBadUrl": {
-    "message": "That is not a board. Paste the address of a board, like pinterest.com/you/board."
-  },
-  "pinNotFound": {
-    "message": "Pinterest does not show that board. If it is secret, sign in to Pinterest in this browser and try again."
-  },
-  "pinFailed": {
-    "message": "Pinterest stopped answering. Try again in a while."
-  },
-  "pinPartial": {
-    "message": "Pinterest stopped answering halfway: $N$ new references saved. Import the board again to bring the rest; what is saved is not repeated.",
-    "placeholders": {
-      "n": {
-        "content": "$1",
-        "example": "48"
-      }
-    }
-  },
-  "pinTabClosed": {
-    "message": "The Pinterest tab was closed. What was found so far is saved."
-  },
-  "pinInjectFailed": {
-    "message": "Could not read the Pinterest tab: $ERR$",
-    "placeholders": {
-      "err": {
-        "content": "$1",
-        "example": "Cannot access contents of the page"
-      }
-    }
-  },
-  "progressPinterest": {
-    "message": "Reading the board's pins…"
-  },
   "progressBrowser": {
     "message": "Importing bookmarks…"
   },
@@ -226,7 +172,7 @@
     "message": "already here"
   },
   "skipped": {
-    "message": "not web pages"
+    "message": "skipped"
   },
   "failed": {
     "message": "failed"
@@ -366,6 +312,253 @@
   "videoPageSaved": {
     "message": "This video plays in pieces, so there was no file to copy: the page and a frame were saved."
   },
+  "boardTitle": {
+    "message": "From a board"
+  },
+  "boardLead": {
+    "message": "Paste the address of a board on Are.na, Pinterest or Cosmos. Websites, images, videos and texts come in; files and boards inside the board stay out. It all lands in the project named after the board, the same one each time. A secret board on Pinterest or a private cluster on Cosmos needs you signed in there in this browser."
+  },
+  "boardUrlLabel": {
+    "message": "Board address"
+  },
+  "importBoard": {
+    "message": "Import board"
+  },
+  "boardPermission": {
+    "message": "Chrome asks to read that site. With it, its boards also show a button to import them."
+  },
+  "boardPermissionDenied": {
+    "message": "Without permission to read $PLATFORM$ the extension can't see the board.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardBadUrl": {
+    "message": "That is not a board. Paste the address of one, like are.na/you/channel or pinterest.com/you/board."
+  },
+  "boardNotFound": {
+    "message": "$PLATFORM$ does not show that board. If it is private, sign in to $PLATFORM$ in this browser and try again.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardFailed": {
+    "message": "$PLATFORM$ stopped answering. Try again in a while.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardPartial": {
+    "message": "$PLATFORM$ stopped answering halfway: $N$ new references saved. Import the board again to bring the rest; what is saved is not repeated.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      },
+      "n": {
+        "content": "$2",
+        "example": "12"
+      }
+    }
+  },
+  "boardTabClosed": {
+    "message": "The $PLATFORM$ tab was closed. What was found so far is saved.",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "boardInjectFailed": {
+    "message": "Could not read the $PLATFORM$ tab: $ERR$",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      },
+      "err": {
+        "content": "$2",
+        "example": "Cannot access contents of the page"
+      }
+    }
+  },
+  "progressBoard": {
+    "message": "Reading the board on $PLATFORM$…",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
+  "listAnd": {
+    "message": "$A$ and $B$",
+    "placeholders": {
+      "a": {
+        "content": "$1",
+        "example": "38 websites"
+      },
+      "b": {
+        "content": "$2",
+        "example": "12 images"
+      }
+    }
+  },
+  "kind_websiteOne": {
+    "message": "$N$ website",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_websiteMany": {
+    "message": "$N$ websites",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_imageOne": {
+    "message": "$N$ image",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_imageMany": {
+    "message": "$N$ images",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_videoOne": {
+    "message": "$N$ video",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_videoMany": {
+    "message": "$N$ videos",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_textOne": {
+    "message": "$N$ text",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_textMany": {
+    "message": "$N$ texts",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultImported": {
+    "message": "$LIST$ imported.",
+    "placeholders": {
+      "list": {
+        "content": "$1",
+        "example": "12 websites and 3 images"
+      }
+    }
+  },
+  "resultSkippedOne": {
+    "message": "1 skipped ($WHY$).",
+    "placeholders": {
+      "why": {
+        "content": "$1",
+        "example": "a file"
+      }
+    }
+  },
+  "resultSkippedMany": {
+    "message": "$N$ skipped ($WHY$).",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "3"
+      },
+      "why": {
+        "content": "$2",
+        "example": "files"
+      }
+    }
+  },
+  "reason_fileOne": {
+    "message": "a file"
+  },
+  "reason_fileMany": {
+    "message": "files"
+  },
+  "reason_channelOne": {
+    "message": "a board inside the board"
+  },
+  "reason_channelMany": {
+    "message": "boards inside the board"
+  },
+  "reason_otherOne": {
+    "message": "nothing to save"
+  },
+  "reason_otherMany": {
+    "message": "nothing to save"
+  },
+  "reason_invalidOne": {
+    "message": "not a web address"
+  },
+  "reason_invalidMany": {
+    "message": "not web addresses"
+  },
+  "importBoardShort": {
+    "message": "A board"
+  },
+  "importThisBoard": {
+    "message": "Import this board"
+  },
+  "pageButton": {
+    "message": "Import to Criterio"
+  },
+  "pageButtonLabel": {
+    "message": "Import this $PLATFORM$ board to Criterio",
+    "placeholders": {
+      "platform": {
+        "content": "$1",
+        "example": "Are.na"
+      }
+    }
+  },
   "whereTitle": {
     "message": "Where it goes"
   },
@@ -387,7 +580,7 @@
     }
   },
   "whereSum": {
-    "message": "Everything you import lands in $PROJECT$, in $WS$. Pick them before you start.",
+    "message": "Bookmarks and posts land in $PROJECT$, in $WS$. A board goes to the project named after it, in the same workspace.",
     "placeholders": {
       "project": {
         "content": "$1"
@@ -447,9 +640,6 @@
   "confirmTitle_x": {
     "message": "Import from X?"
   },
-  "confirmTitle_pinterest": {
-    "message": "Import from Pinterest?"
-  },
   "confirmTitle_browser": {
     "message": "Import these bookmarks?"
   },
@@ -500,22 +690,6 @@
       }
     }
   },
-  "whatPinLatest": {
-    "message": "The latest $N$ pins of the board",
-    "placeholders": {
-      "n": {
-        "content": "$1"
-      }
-    }
-  },
-  "whatPinAll": {
-    "message": "All the pins of the board (up to $N$)",
-    "placeholders": {
-      "n": {
-        "content": "$1"
-      }
-    }
-  },
   "whatBrowser": {
     "message": "$N$ bookmarks from this browser",
     "placeholders": {
@@ -532,6 +706,155 @@
       },
       "ws": {
         "content": "$2"
+      }
+    }
+  },
+  "resultAlreadyOne": {
+    "message": "1 was already in your library."
+  },
+  "resultAlreadyMany": {
+    "message": "$N$ were already in your library.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultAllExistedOne": {
+    "message": "It was already in your library."
+  },
+  "resultAllExistedMany": {
+    "message": "All $N$ were already in your library.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "resultFailedOne": {
+    "message": "1 could not be saved."
+  },
+  "resultFailedMany": {
+    "message": "$N$ could not be saved.",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileOne": {
+    "message": "$N$ file",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_fileMany": {
+    "message": "$N$ files",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelOne": {
+    "message": "$N$ board inside the board",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_channelMany": {
+    "message": "$N$ boards inside the board",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherOne": {
+    "message": "$N$ with nothing to save",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_otherMany": {
+    "message": "$N$ with nothing to save",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidOne": {
+    "message": "$N$ not a web address",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "reasonN_invalidMany": {
+    "message": "$N$ not web addresses",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "confirmTitle_board": {
+    "message": "Import this board?"
+  },
+  "confirmTextBoard": {
+    "message": "$WHAT$ will be saved in the project named after the board, in $WS$. Each one becomes a reference there.",
+    "placeholders": {
+      "what": {
+        "content": "$1"
+      },
+      "ws": {
+        "content": "$2"
+      }
+    }
+  },
+  "whatBoardLatest": {
+    "message": "The first $N$ things on the board",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "whatBoardAll": {
+    "message": "Everything on the board (up to $N$)",
+    "placeholders": {
+      "n": {
+        "content": "$1"
+      }
+    }
+  },
+  "boardProjectSoon": {
+    "message": "the board's project"
+  },
+  "firstN": {
+    "message": "The first $N$",
+    "placeholders": {
+      "n": {
+        "content": "$1"
       }
     }
   }

@@ -64,19 +64,19 @@
           <span class="hint" data-i18n="xPermission">Chrome asks for permission to read x.com; it is only used while importing.</span>
         </div>
       </section>
-      <section class="source" id="src-pinterest">
-        <h2 class="source__title" data-i18n="pinTitle">From Pinterest</h2>
-        <p class="hint" data-i18n="pinLead">Paste the address of one of your boards. Each of its pins is saved as an image, sections included. A secret board needs you signed in to Pinterest in this browser.</p>
-        <input class="input" id="pin-url" placeholder="https://www.pinterest.com/you/board/" spellcheck="false" autocomplete="off" data-i18n-label="pinUrlLabel" />
+      <section class="source" id="src-board">
+        <h2 class="source__title" data-i18n="boardTitle">From a board</h2>
+        <p class="hint" data-i18n="boardLead">Paste the address of a board on Are.na, Pinterest or Cosmos.</p>
+        <input class="input" id="board-url" placeholder="https://www.are.na/you/channel" spellcheck="false" autocomplete="off" data-i18n-label="boardUrlLabel" />
         <label class="select">
           <span class="select__label" data-i18n="howMany">How many</span>
-          <select id="pin-limit" class="limit"></select>
+          <select id="board-limit" class="limit" data-all></select>
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg>
         </label>
-        <p class="hint" id="pin-msg"></p>
+        <p class="hint" id="board-msg"></p>
         <div class="row">
-          <button class="btn btn--primary" id="btn-pin" data-i18n="importPinterest" disabled>Import from Pinterest</button>
-          <span class="hint" data-i18n="pinPermission">Chrome asks for permission to read pinterest.com; it is only used while importing.</span>
+          <button class="btn btn--primary" id="btn-board" data-i18n="importBoard" disabled>Import board</button>
+          <span class="hint" data-i18n="boardPermission">Chrome asks to read that site. With it, its boards show a button to import them.</span>
         </div>
       </section>
       <section class="source" id="src-browser">
@@ -102,7 +102,7 @@
           <div><dt data-i18n="found">found</dt><dd id="c-found">0</dd></div>
           <div><dt data-i18n="saved">saved</dt><dd id="c-added">0</dd></div>
           <div><dt data-i18n="already">already here</dt><dd id="c-existed">0</dd></div>
-          <div><dt data-i18n="skipped">not web pages</dt><dd id="c-invalid">0</dd></div>
+          <div><dt data-i18n="skipped">skipped</dt><dd id="c-invalid">0</dd></div>
           <div><dt data-i18n="failed">failed</dt><dd id="c-error">0</dd></div>
         </dl>
         <p class="hint" id="progress-msg"></p>
@@ -133,6 +133,7 @@
       <span class="foot__who" id="who"></span>
     </footer>
   </main>
+  <script src="boards.js"></script>
   <script src="import.js"></script>
 </body>
 </html>

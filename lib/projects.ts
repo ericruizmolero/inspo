@@ -42,6 +42,16 @@ export async function createProject(organizationId: string, name: string, userId
   return { id: row.id, name: row.name };
 }
 
+/** Where a board imported from Are.na, Pinterest or Cosmos lands: the project named after it, made the first time.
+ *  Importing the same board again (from the app or from the extension) fills the same project, oldest first if a
+ *  person made two by hand. The name is compared as it is stored, cleaned and cut to MAX_NAME. */
+export async function projectForBoard(organizationId: string, name: string, userId: string): Promise<Project> {
+  const n = await cleanName(name);
+  const [had] = await db.select({ id: P.id, name: P.name }).from(P)
+    .where(and(eq(P.organizationId, organizationId), eq(P.name, n), isNull(P.template))).orderBy(asc(P.createdAt)).limit(1);
+  return had ?? createProject(organizationId, n, userId);
+}
+
 /** The team has its references: from now on the project opens on its system */
 export async function startProject(organizationId: string, id: string): Promise<void> {
   await db.update(P).set({ startedAt: new Date() }).where(and(eq(P.organizationId, organizationId), eq(P.id, id), isNull(P.startedAt)));

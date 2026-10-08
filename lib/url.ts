@@ -124,14 +124,16 @@ export function postOf(web: string): { user: string; id: string } | null {
   } catch { return null; }
 }
 
-const PIN_HOST = /(^|\.)(pinterest\.[a-z.]{2,6}|pin\.it)$/i;
-/** Brought from X or Pinterest: a post, or an image whose page is a pin. Our copy of what it shows stays inside
- *  the workspace: a share link names it and points at where it lives, and never hands the copy out. */
+/** Platforms whose saved things we copy on import: a pin, a block on Are.na, an element on Cosmos */
+const BOARD_HOST = /(^|\.)(pinterest\.[a-z.]{2,6}|pin\.it|are\.na|cosmos\.so)$/i;
+/** Brought from X, Pinterest, Are.na or Cosmos: a post, or an image, video or text whose page is on one of them.
+ *  Our copy of what it shows stays inside the workspace: a share link names it and points at where it lives,
+ *  and never hands the copy out. */
 export function staysInside(item: { web: string; source?: string | null }): boolean {
   if (postOf(item.web)) return true;
   try {
     const host = new URL(item.source || item.web).hostname;
-    return PIN_HOST.test(host) || POST_HOST.test(host);
+    return BOARD_HOST.test(host) || POST_HOST.test(host);
   } catch { return false; }
 }
 

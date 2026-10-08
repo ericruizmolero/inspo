@@ -312,6 +312,7 @@ Las 8 áreas, marcadas donde la referencia ya cuenta.
 ### Añadir referencia
 `AddInspoModal` · `components/AddInspoModal.tsx` · `.add`
 Pegar enlace, subir, soltar o pegar con ⌘V una imagen, o pegar texto (varias líneas = referencia de texto). Dentro de un proyecto deja elegir áreas. Se abre con N, el "+" o la paleta.
+- Si lo pegado es un tablero de Are.na, Pinterest o Cosmos (`boardOf`, `lib/boards/match.ts`), el botón pasa a "Importar tablero", se van las otras entradas, la nota y las áreas, y la pista dice qué trae. Al importar, el campo se apaga y debajo sale `BoardProgress` (`components/BoardImport.tsx`, `.board-progress`): el `Progress` de bloques y la línea de lo que pasa ("Leyendo tu tablero de Are.na", "Guardando, 10 de 32"). El diálogo se cierra al terminar y el usuario aterriza en el proyecto del tablero. → [decisión](decisiones/2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)
 - El modal plano (`DialogContent` con `.modal__header`), no la ventana moss; el guiño retro es el marco de tinta y los botones con bisel. Dentro, el formulario empaquetado: campos de 44 sin pozo (en Board, `--surface-2`), 12 px entre piezas, las otras dos entradas (`.add__pick`) como recuadros discontinuos transparentes y las áreas como pastillas de línea (`.pills--line`: 28 de alto, transparentes, la elegida en cristal). Dos grises en todo el interior (`--add-line`, `--add-quiet`). → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md)
 
 ### Buscador y barra del agente
@@ -363,6 +364,7 @@ Caja para pegar enlace o imagen, la frase de intención editable y la biblioteca
 ### Primer arranque
 `EmptyStart` · `components/EmptyStart.tsx`
 Caja de prompt para pegar una URL y, debajo, un directorio de 9 sitios en pestañas, cada uno con "Añadir".
+- La caja también acepta un tablero de Are.na, Pinterest o Cosmos: la pista de debajo (`.boardHint`) dice que trae webs, imágenes, vídeos y textos a un proyecto propio, y al importar sale `BoardProgress` del ancho de la caja (`.board`). Lo importado se pinta de una vez al terminar: si entrara lote a lote, la primera referencia se llevaría el primer arranque y su progreso. Al acabar, el aviso de arriba (`.toast`, sin `--error`, con título y detalle que saltan de línea) dice qué entró por tipo y qué se quedó fuera y por qué. Un tablero pegado sin sesión vuelve del login por `?add=` y se importa igual. → [decisión](decisiones/2026-10-08-importar-un-tablero-trae-todo-lo-que-criterio-sabe-guardar.md)
 
 ### Descubrir: ejemplos, recursos y skills
 `Discover` · `TemplatesView` · `DiscoverSkills` · `components/Discover.tsx` · `.disc` · `.tplc` · `.disc-skill`
@@ -408,6 +410,11 @@ Un enlace de solo lectura con la presentación y el criterio.md para copiar o de
 ### Conectores
 `Connectors` · `components/Connectors.tsx` · `.connectors__menu`
 Un botón en la barra superior (icono `Plug`) con las dos formas de entrar desde fuera, de la cuenta y no del proyecto: la extensión de Chrome (instalarla o conectarla) y Conectar MCP (icono `Cable`). Con `row` es una fila del menú de móvil con el mismo menú. Cada fila con su tic cuando está conectada. El botón se queda siempre, también con las dos conectadas: es el único sitio donde ver las apps que tienen acceso y desconectar una. Sustituye al aviso "Instalar extensión". → [decisión](decisiones/2026-10-06-conectores-se-queda-siempre-en-la-barra.md)
+- Una tercera fila, **Importar** (icono `Import` de Lucide, sin tic), abre `ImportDialog`. Sitio por defecto, pendiente de Alberto. → [decisión](decisiones/2026-10-08-importar-vive-en-conectores-por-defecto.md)
+
+### Importar
+`ImportDialog` · `components/ImportDialog.tsx` · `components/ImportDialog.css` · `.impd`
+Se abre desde la fila "Importar" del menú Conectores, ventana como `ConnectDialog`: "Trae lo que ya tenías guardado". Arriba, un tablero de Are.na, Pinterest o Cosmos: campo, botón primario "Importar tablero" y debajo la pista, el error o `BoardProgress`. Corre el mismo flujo que el primer arranque y Añadir (`useBoardImport`, `components/BoardImport.tsx`) y se cierra al terminar, con el usuario en el proyecto del tablero. Debajo, Marcadores: con la extensión conectada (0.7.3 o más), "Importar de X" e "Importar marcadores del navegador" abren su página de importar (`openExtensionImport`, `hooks/use-extension.ts`); si no, el paso que falta (instalar, conectar, actualizar). Una línea avisa del botón "Importar a Criterio" que la extensión pone en los tableros. Plataformas solo con su nombre, sin logos. → [decisión](decisiones/2026-10-08-importar-vive-en-conectores-por-defecto.md)
 
 ### Conectar tu IA
 `ConnectDialog` · `components/ConnectDialog.tsx` · `components/ConnectDialog.css` · `.mcpc`
@@ -530,7 +537,9 @@ El popup: la captura de la pestaña como baldosa, el sitio (favicon, título, ho
 
 ### Importar (extensión)
 `extension/chrome/import.html` · `import.js` · `import.css` · `.where` · `.dlg`
-La pestaña de importar de la extensión, con los tokens del popup. Empieza por la tarjeta "Dónde va": Espacio y Proyecto como dos campos `.select` a la vista y la frase que nombra el destino en negrita (`.where__sum`); sin proyectos, el Inbox. Los botones de importar esperan a que el destino esté cargado. Cada fuente abre una ventana de diálogo (`<dialog>.dlg`: barra moss, título en display, qué entra y dónde en negrita, pie con "Cambiar el destino" e "Importar a Proyecto"), y la vista de progreso repite el destino bajo el título. X y Pinterest llevan el campo "Cuáles" (los últimos 50 a 500 o todos; X también la última semana o el último mes, por la fecha del post). → [decisión](decisiones/2026-10-08-importar-dice-el-destino-y-lo-confirma-antes.md)
+La pestaña de importar de la extensión, con los tokens del popup. Empieza por la tarjeta "Dónde va": Espacio y Proyecto como dos campos `.select` a la vista y la frase que nombra el destino en negrita (`.where__sum`); sin proyectos, el Inbox. Los botones de importar esperan a que el destino esté cargado. Cada fuente abre una ventana de diálogo (`<dialog>.dlg`: barra moss, título en display, qué entra y dónde en negrita, pie con "Cambiar el destino" e "Importar a Proyecto"), y la vista de progreso repite el destino bajo el título. X y los tableros llevan el campo "Cuáles" (X: los últimos 50 a 500, la última semana, el último mes o todos; un tablero: los primeros 50 a 500 o todo, que es lo que viene marcado). Un tablero no usa el Proyecto elegido: va al proyecto con su nombre, en el Espacio elegido, y su diálogo lo dice; al terminar, la línea separa lo nuevo por tipo, lo que ya estaba en la librería, lo que se quedó fuera y por qué, y lo que falló. → [decisión](decisiones/2026-10-08-importar-dice-el-destino-y-lo-confirma-antes.md)
+
+La extensión misma vive en `extension/chrome` (detalle en `extension/README.md`): el popup, la página de importar y, en los tableros de Are.na, Pinterest y Cosmos cuyo permiso se ha concedido, la píldora "Import to Criterio" (`board-button.js`) abajo a la derecha, en un Shadow DOM cerrado: papel, borde de tinta y bisel, Satoshi, la marca y el anillo ember. Abre la página de importar sobre ese tablero, que lo trae a un proyecto con su nombre y termina diciendo qué entró por tipo y qué se quedó fuera y por qué. → [decisión](decisiones/2026-10-08-la-extension-pone-un-boton-para-importar-un-tablero.md)
 
 ### Error y 404
 `Lost` · `components/Lost.tsx` · `Lost.css` · `.lost` · lo usan `app/not-found.tsx` y `app/error.tsx`
