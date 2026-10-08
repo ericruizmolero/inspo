@@ -733,7 +733,7 @@ export const ui: typeof EnUi = {
     addFirstNote: "Añade la primera nota",
     openImage: "Abrir la imagen",
     openOriginal: "Abrir el original",
-    openPost: "Abrir el post",
+    openPost: "Abrir el tuit",
     postUnavailable: "X no ha dado este post (borrado, privado o X lo está bloqueando).",
     openVideo: "Abrir el vídeo",
     image: "Imagen",
