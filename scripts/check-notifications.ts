@@ -51,7 +51,7 @@ async function main() {
 
   // The real thing, dry: what the cron would send this morning
   const run = await sendDigests(new Date(), true);
-  console.log(`teams ${run.teams}, would send ${run.sent}, pause ${run.paused}, skip ${run.skipped}`);
+  console.log(`teams ${run.teams}, would send ${run.sent}, pause ${run.paused}, skip ${run.skipped}, hold ${run.spaced}`);
   for (const m of run.mails) console.log(`\n→ ${m.to}\n${m.subject}\n${m.text}`);
   console.log("\ncheck:notifications ok");
 }
