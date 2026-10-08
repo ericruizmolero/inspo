@@ -21,12 +21,12 @@
 .mdv-split .mdv-btn:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
 .mdv-split .mdv-btn--more { width: 32px; padding: 0; justify-content: center; border-left-width: 0; border-radius: 0 var(--radius-md) var(--radius-md) 0; }
 /* The raw file is literal data: mono at the small size, with a code leading (1.65) of its own */
-.mdv-doc { padding: 18px 20px 26px; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: var(--fs-small); line-height: 1.65; }
+.mdv-doc { padding: 18px 20px 26px; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: var(--fs-small); line-height: var(--lh-code); }
 .mdv-line { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.65em; }
-.mdv-h { color: var(--md-head); font-weight: 600; }
+.mdv-h { color: var(--md-head); font-weight: var(--fw-semibold); }
 .mdv-q { color: var(--md-quote); font-style: italic; }
 .mdv-em { color: var(--md-dim); font-style: italic; }
-.mdv-b { color: var(--md-strong); font-weight: 600; }
+.mdv-b { color: var(--md-strong); font-weight: var(--fw-semibold); }
 .mdv-code { color: var(--md-code); }
 .mdv-link { color: var(--md-code); text-decoration: underline; text-decoration-color: var(--chrome-muted); text-underline-offset: 3px; } .mdv-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .mdv-url { color: var(--md-dim); }
@@ -37,7 +37,7 @@
 
 /* The agent asks instead of guessing: the question and the answers, each one an order */
 .dock__agent-ask { display: flex; flex-direction: column; gap: 8px; }
-.dock__agent-ask p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--dock-ink); font-weight: 500; }
+.dock__agent-ask p { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-ui); color: var(--dock-ink); font-weight: var(--fw-medium); }
 .dock__agent-options { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ─── Templates (components/TemplatesView.tsx): whole systems in the library ─── */

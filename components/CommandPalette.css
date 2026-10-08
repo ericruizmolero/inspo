@@ -16,7 +16,7 @@
 .cmdk-dialog .cmdk-input__field::placeholder { color: var(--field-placeholder); opacity: 1; }
 .cmdk-dialog .cmdk-list.cr-listbox { flex: 1 1 auto; min-height: 0; padding: 4px; }
 .cmdk-dialog .cmdk-empty { color: var(--field-placeholder); }
-.cmdk-dialog .cmdk-group [cmdk-group-heading] { padding: 8px 10px 4px; font-size: var(--fs-label); font-weight: 500; color: var(--field-placeholder); }
+.cmdk-dialog .cmdk-group [cmdk-group-heading] { padding: 8px 10px 4px; font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--field-placeholder); }
 .cmdk-dialog .cmdk-item.cr-listbox-item { height: auto; min-height: 36px; padding: 6px 10px; border-radius: var(--radius-sm); font-size: var(--fs-ui); color: var(--field-ink); }
 .cmdk-dialog .cmdk-item__icon { color: var(--field-placeholder); }
 .cmdk-dialog .cmdk-item[data-selected="true"] .cmdk-item__icon { color: var(--field-ink); }

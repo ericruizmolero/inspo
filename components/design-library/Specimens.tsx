@@ -29,13 +29,13 @@ const COLORS: { group: string; tokens: string[] }[] = [
   { group: "Cristal (solo las pastillas de la Isla y del selector)", tokens: ["--glass-hover", "--glass-on"] },
   { group: "Estados", tokens: ["--danger", "--success", "--warning"] },
 ];
-// The strict scale (fundamentos.md): display 40 / 28 / 20 / 16 in Bricolage, sans 17 / 15 / 13 / 12 in Archivo. Nothing else.
+// The strict scale (fundamentos.md), all in Satoshi: titles 40 / 28 / 22 / 18, text 17 / 15 / 13 / 12. Nothing else.
 // Each row is drawn with its own .t-* class, and the size is read from its --fs-* token, so this is the live scale
 const TYPE = [
-  { name: "display", weight: 800, el: "h1", label: "Título de página y titular" },
+  { name: "display", weight: 700, el: "h1", label: "Título de página y titular" },
   { name: "title-l", weight: 700, el: "h2", label: "Título de bloque y de ventana grande" },
-  { name: "title-m", weight: 700, el: "h3", label: "Título de tarjeta y de ventana" },
-  { name: "title-s", weight: 700, el: "h4 a h6", label: "Globo; el display nunca más pequeño" },
+  { name: "title-m", weight: 600, el: "h3", label: "Título de tarjeta y de ventana" },
+  { name: "title-s", weight: 600, el: "h4 a h6", label: "Globo y barra de ventana; un punto sobre body" },
   { name: "body", weight: 400, label: "Texto corrido y entradilla" },
   { name: "ui", weight: 500, label: "Pestañas, botones, campos" },
   { name: "small", weight: 400, label: "Notas, cuentas, ayudas" },
@@ -119,7 +119,7 @@ function Ease({ name, value, ms }: { name: string; value: string; ms: number }) 
 
 /** The tokens page: colour, type, radii, bevel, spacing, motion and the chrome. The components live in the catalogue. */
 export function FoundationsSpecimen() {
-  const all = [...COLORS.flatMap((c) => c.tokens), ...RADII, ...SHADOWS, ...SPACES, ...EASES.map((e) => e.token), ...TYPE.map((r) => `--fs-${r.name}`), "--font-sans", "--font-display"];
+  const all = [...COLORS.flatMap((c) => c.tokens), ...RADII, ...SHADOWS, ...SPACES, ...EASES.map((e) => e.token), ...TYPE.map((r) => `--fs-${r.name}`), "--font-sans", "--font-title"];
   const v = useTokens(all);
   return (
     <div className="ds-specimen">
@@ -141,7 +141,7 @@ export function FoundationsSpecimen() {
       </Block>
 
       <Block title="Tipografía">
-        <p className="ds-note">Bricolage Grotesque (display, 700 y 800) para titulares y títulos, nunca por debajo de 16 px ni en texto corrido. Archivo para todo lo demás. Sin monoespaciada salvo datos literales. Un solo sitio: el elemento da el nivel y la clase solo cambia el aspecto.</p>
+        <p className="ds-note">Una sola familia: Satoshi, para títulos, texto e interfaz. La jerarquía la dan el tamaño y el peso; los títulos no pasan de 700. Sin monoespaciada salvo datos literales. Un solo sitio: el elemento da el nivel y la clase solo cambia el aspecto.</p>
         <div className="ds-type">
           {TYPE.map((r) => (
             <div key={r.name} className="ds-type__row">

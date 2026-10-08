@@ -116,17 +116,18 @@ remembers it. A workspace the person is not in gets a 403.
 
 The popup and the import page use the Criterio design system: its tokens are copied at the top of
 `popup.css` (keep them equal to `app/globals.css`). The popup is product chrome, so it stays dark in both
-system themes, with beveled paper buttons and the ember Save. Archivo and Bricolage Grotesque are bundled
-in `chrome/fonts` (SIL OFL, source in its README), so nothing loads from Google. The popup shows the tab
-as it will look in the library: the shot, the favicon, the title and the address. The
+system themes, with beveled paper buttons and the ember Save. Satoshi, the one typeface, is bundled in
+`chrome/fonts`, so nothing loads at runtime. The file is not in git (its licence, see that folder's
+README): run `npm run fonts` before loading the extension. The popup shows the tab as it will look in the library: the shot, the favicon, the title and the address. The
 icons in `chrome/icons` are `public/logo.png` with the mark's rounded corners; regenerate them from there
 when the mark changes.
 
 ## Try it in Chrome (developer mode)
 
-1. `chrome://extensions` → turn on "Developer mode" (top right).
-2. "Load unpacked" → pick the `extension/chrome` folder.
-3. Pin the extension to the toolbar and open it on any site.
+1. `npm run fonts` at the repo root (downloads Satoshi into `chrome/fonts`; `npm run dev` does it too).
+2. `chrome://extensions` → turn on "Developer mode" (top right).
+3. "Load unpacked" → pick the `extension/chrome` folder.
+4. Pin the extension to the toolbar and open it on any site.
 
 To test against the local server, open "I already have a key" in the popup and set the server to
 `http://localhost:<port>`; create the key at `http://localhost:<port>/extension/connect`.

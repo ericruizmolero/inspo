@@ -34,9 +34,9 @@
 .disc-row { display: flex; align-items: baseline; gap: 12px; min-width: 0; padding: 12px 8px; color: var(--text-2); text-decoration: none; font-size: var(--fs-ui); transition: background 0.15s, color 0.15s; }
 .disc-row:hover { background: var(--surface-raised); color: var(--text); }
 .disc-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: var(--radius-sm); }
-.disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; color: var(--text); }
+.disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: var(--fw-semibold); color: var(--text); }
 /* "New": the system's paper Chip, set small for the row */
-.disc-row__new.cr-chip, .disc-skill__inmd .cr-chip { flex-shrink: 0; align-self: center; padding: 1px 8px; font-size: var(--fs-label); font-weight: 600; }
+.disc-row__new.cr-chip, .disc-skill__inmd .cr-chip { flex-shrink: 0; align-self: center; padding: 1px 8px; font-size: var(--fs-label); font-weight: var(--fw-semibold); }
 .disc-row__new { margin-left: -6px; }
 .disc-row__text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-2); }
 .disc-row:hover .disc-row__text { color: var(--text); }
@@ -72,7 +72,7 @@
   font: inherit; text-align: left; cursor: pointer; transition: border-color 150ms ease, color 150ms ease;
 }
 .disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); }
-.disc-skill__install span { flex-shrink: 0; padding: 0 8px; height: 24px; line-height: 24px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: 500; transition: background-color 150ms ease, color 150ms ease; }
+.disc-skill__install span { flex-shrink: 0; padding: 0 8px; height: 24px; line-height: 24px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: var(--fw-medium); transition: background-color 150ms ease, color 150ms ease; }
 @media (hover: hover) { .disc-skill__install:hover { border-color: var(--border-strong); color: var(--text-2); } .disc-skill__install:hover span { background: var(--surface-3); color: var(--text); } }
 .disc-skill__install:active span { background: var(--surface-3); color: var(--text); }
 .disc-skill__install.is-copied span { background: var(--moss); color: var(--on-moss); }

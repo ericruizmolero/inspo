@@ -25,7 +25,7 @@
 /* The eight areas, above the file: the system's Chip, chrome, as a toggle; pressed = the reference brings to it */
 .rfc-areas { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .rfc-areas__label { margin-right: 4px; color: var(--chrome-text-muted); }
-.rfc-area.cr-chip { gap: 6px; font-weight: 500; }
+.rfc-area.cr-chip { gap: 6px; font-weight: var(--fw-medium); }
 .rfc-area.cr-chip.is-pressed { background: var(--chrome-ink); border-color: var(--chrome-ink); color: var(--chrome); }
 .rfc-area:focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
 .rfc-area:disabled { cursor: progress; }
