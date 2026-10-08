@@ -18,6 +18,7 @@ import { PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
 import { Busy, Button, Icon, IconButton, MenuItem, MenuLabel, Separator, StatusRing } from "@/components/criterio";
 import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
+import TeamBell from "./TeamBell";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Liquid, afterPaint } from "@/components/ui/liquid";
@@ -372,6 +373,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <NewProject onCreate={createNew} onDone={() => setNaming(null)} />
           </PopoverContent>
         </Popover>
+        {/* What the others did, with a dot while there is something unseen: only where there are others */}
+        {workspace.kind === "team" && <TeamBell workspaceId={workspace.id} />}
       </Liquid>
 
       {/* Every project tab and "N more" at their own width, out of sight, for the measure above */}

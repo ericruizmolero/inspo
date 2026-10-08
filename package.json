@@ -27,6 +27,7 @@
     "check:system": "tsx --conditions=react-server scripts/check-system.ts",
     "check:brand": "tsx --conditions=react-server scripts/check-brand.ts",
     "check:mcp": "tsx --conditions=react-server scripts/check-mcp.ts",
+    "check:notifications": "tsx --conditions=react-server scripts/check-notifications.ts",
     "takedown": "tsx --conditions=react-server scripts/takedown.ts",
     "seed:dump": "tsx --conditions=react-server scripts/seed.ts dump",
     "db:init": "tsx --conditions=react-server scripts/seed.ts init",

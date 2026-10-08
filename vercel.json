@@ -5,6 +5,6 @@
   "buildCommand": "npm run db:migrate && npm run build",
   "crons": [
     { "path": "/api/cron/usage-check", "schedule": "0 23 * * *" },
-    { "path": "/api/cron/tag-pending", "schedule": "0 4 * * *" }
+    { "path": "/api/cron/morning", "schedule": "0 4 * * *" }
   ]
 }

@@ -53,6 +53,8 @@ const ICONS = {
   check: "M5 12l5 5 9-10",
   // app: removing something (a reference, a selection out of a project)
   trash: "M4 7h16M9.5 7V4.5h5V7M6.5 7l1 12.5a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5l1-12.5",
+  // app: the team's activity (TeamBell)
+  bell: "M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4",
   // app: copying something (the feedback as markdown, a link)
   copy: "M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1",
 } as const;
