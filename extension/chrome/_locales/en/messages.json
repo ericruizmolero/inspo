@@ -580,7 +580,7 @@
     }
   },
   "whereSum": {
-    "message": "Everything you import lands in $PROJECT$, in $WS$. Pick them before you start.",
+    "message": "Bookmarks and posts land in $PROJECT$, in $WS$. A board goes to the project named after it, in the same workspace.",
     "placeholders": {
       "project": {
         "content": "$1"

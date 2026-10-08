@@ -580,7 +580,7 @@
     }
   },
   "whereSum": {
-    "message": "Todo lo que importes irá a $PROJECT$, en $WS$. Elígelos antes de empezar.",
+    "message": "Los marcadores y los posts irán a $PROJECT$, en $WS$. Un tablero va al proyecto con su nombre, en el mismo espacio.",
     "placeholders": {
       "project": {
         "content": "$1"
