@@ -30,13 +30,13 @@ const COLORS: { group: string; tokens: string[] }[] = [
   { group: "Cristal (solo las pastillas de la Isla y del selector)", tokens: ["--glass-hover", "--glass-on"] },
   { group: "Estados", tokens: ["--danger", "--success", "--warning"] },
 ];
-// The strict scale (fundamentos.md): display 40 / 28 / 20 / 16 in Bricolage, sans 17 / 15 / 13 / 12 in Archivo. Nothing else.
+// The strict scale (fundamentos.md), all in Satoshi: titles 40 / 28 / 22 / 18, text 17 / 15 / 13 / 12. Nothing else.
 // Each row is drawn with its own .t-* class, and the size is read from its --fs-* token, so this is the live scale
 const TYPE = [
-  { name: "display", weight: 800, el: "h1", label: "Título de página y titular" },
+  { name: "display", weight: 700, el: "h1", label: "Título de página y titular" },
   { name: "title-l", weight: 700, el: "h2", label: "Título de bloque y de ventana grande" },
-  { name: "title-m", weight: 700, el: "h3", label: "Título de tarjeta y de ventana" },
-  { name: "title-s", weight: 700, el: "h4 a h6", label: "Globo; el display nunca más pequeño" },
+  { name: "title-m", weight: 600, el: "h3", label: "Título de tarjeta y de ventana" },
+  { name: "title-s", weight: 600, el: "h4 a h6", label: "Globo y barra de ventana; un punto sobre body" },
   { name: "body", weight: 400, label: "Texto corrido y entradilla" },
   { name: "ui", weight: 500, label: "Pestañas, botones, campos" },
   { name: "small", weight: 400, label: "Notas, cuentas, ayudas" },
@@ -252,8 +252,7 @@ function ColorSpecimen() {
 }
 
 const FAMILIES = [
-  { name: "Bricolage Grotesque", token: "--font-display", cls: "ds-family__sample--display", weights: "700 y 800", role: "Titulares y títulos. Nunca por debajo de 16 px ni en texto corrido." },
-  { name: "Archivo", token: "--font-sans", cls: "ds-family__sample--sans", weights: "400 y 500", role: "La base: texto corrido, interfaz, botones, campos." },
+  { name: "Satoshi", token: "--font-sans", cls: "ds-family__sample--sans", weights: "400 a 700", role: "La única familia: títulos, texto corrido, interfaz, botones, campos. Los títulos la toman por --font-title." },
   { name: "Monoespaciada", token: "--font-mono", cls: "ds-family__sample--mono", weights: "400", role: "Solo datos literales: hex, código, el fichero crudo." },
 ];
 

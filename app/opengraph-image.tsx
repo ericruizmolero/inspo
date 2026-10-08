@@ -3,9 +3,9 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 
 // Card shown when sharing a link (WhatsApp, Slack, X, iMessage…). 1200×630.
-// The Criterio system: board ground, paper text, Bricolage Grotesque 800 for the title, Archivo for the
-// rest, and one ember thing (one card in the collage). Fonts are fetched as TTF from Google Fonts (Satori
-// does not read woff2).
+// The Criterio system: board ground, paper text, Satoshi 700 for the title and 400 for the rest, and one
+// ember thing (one card in the collage). Satori reads TTF and not variable fonts, so it gets the two static
+// files scripts/fetch-fonts.mjs downloads next to the app's variable ones.
 //
 // Always in English, the default language: the image is static and whoever requests it
 // (WhatsApp, Slack, a search engine) does not send the language cookie.
@@ -29,25 +29,17 @@ const COLS: { offset: number; tiles: number[] }[] = [
 ];
 const EMBER_TILE = "2-1";
 
-// Without a browser User-Agent, Google Fonts answers with TTF URLs
-async function googleFont(family: string, weight: number): Promise<ArrayBuffer> {
-  const css = await (await fetch(`https://fonts.googleapis.com/css2?family=${family.replace(/ /g, "+")}:wght@${weight}`)).text();
-  const url = css.match(/src: url\((.+?)\)/)?.[1];
-  if (!url) throw new Error(`${family}: no font URL in the Google Fonts CSS`);
-  return (await fetch(url)).arrayBuffer();
-}
-
 export default async function Image() {
   const [display, body, mark] = await Promise.all([
-    googleFont("Bricolage Grotesque", 800),
-    googleFont("Archivo", 400),
+    readFile(join(process.cwd(), "app/fonts/satoshi/Satoshi-Bold.ttf")),
+    readFile(join(process.cwd(), "app/fonts/satoshi/Satoshi-Regular.ttf")),
     readFile(join(process.cwd(), "app/icon.png")),
   ]);
   const logo = `data:image/png;base64,${mark.toString("base64")}`;
 
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", background: BOARD, color: PAPER, position: "relative", overflow: "hidden", fontFamily: "Archivo" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", background: BOARD, color: PAPER, position: "relative", overflow: "hidden", fontFamily: "Satoshi" }}>
         {/* The collage on the right: flat cards with a hairline, no shadow */}
         <div style={{ position: "absolute", left: 640, top: -40, display: "flex", gap: 18 }}>
           {COLS.map((c, i) => (
@@ -64,7 +56,7 @@ export default async function Image() {
         {/* Text */}
         <div style={{ position: "absolute", left: 72, top: 72, bottom: 72, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <img src={logo} width={160} height={160} />
-          <div style={{ display: "flex", flexDirection: "column", fontFamily: "Bricolage Grotesque", fontWeight: 800, fontSize: 64, lineHeight: 1, letterSpacing: "-2px", color: PAPER }}>
+          <div style={{ display: "flex", flexDirection: "column", fontWeight: 700, fontSize: 64, lineHeight: 1.05, letterSpacing: "-1.6px", color: PAPER }}>
             <span>What inspires your team,</span>
             <span>all in one place.</span>
           </div>
@@ -78,8 +70,8 @@ export default async function Image() {
     {
       ...size,
       fonts: [
-        { name: "Bricolage Grotesque", data: display, weight: 800, style: "normal" },
-        { name: "Archivo", data: body, weight: 400, style: "normal" },
+        { name: "Satoshi", data: display, weight: 700, style: "normal" },
+        { name: "Satoshi", data: body, weight: 400, style: "normal" },
       ],
     },
   );

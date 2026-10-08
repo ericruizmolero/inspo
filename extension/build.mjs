@@ -1,12 +1,14 @@
 // Packs extension/chrome for the Chrome Web Store: same files, minus the localhost entries
 // that only serve local testing. Output: extension/dist/criterio-design-<version>.zip
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, "chrome");
+// Satoshi is not in git (its licence): without it the popup would fall back to the system font
+if (!existsSync(join(src, "fonts", "Satoshi-Variable.woff2"))) throw new Error("Satoshi is missing: run `npm run fonts` first");
 const manifest = JSON.parse(readFileSync(join(src, "manifest.json"), "utf8"));
 const notLocal = (s) => !/^https?:\/\/localhost\b/.test(s);
 manifest.host_permissions = manifest.host_permissions.filter(notLocal);

@@ -510,6 +510,9 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
   try {
     const page = await browser.newPage();
     await guardPage(page);
+    // Reduced motion: sites that hold the page behind an intro or reveal it on scroll show everything at once.
+    // Light: the same capture on any machine, not the dark mode of the Mac that runs it.
+    await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }, { name: "prefers-color-scheme", value: "light" }]);
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await page.setUserAgent(UA);
     await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9,es;q=0.8" });

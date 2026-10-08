@@ -14,13 +14,13 @@
 .imp__group { display: flex; flex-direction: column; gap: 8px; margin: 0; }
 /* A group's label (.t-label on the element) */
 .imp__label { margin: 0; color: var(--text); }
-.imp__label small { font-size: inherit; font-weight: 400; color: var(--imp-quiet); }
+.imp__label small { font-size: inherit; font-weight: var(--fw-regular); color: var(--imp-quiet); }
 /* An aim: the row toggles, the system's Switch at its end */
 .imp__aims { display: flex; flex-direction: column; gap: 2px; margin: 0 -10px; }
 .imp-aim { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: var(--radius-md); color: var(--text); cursor: pointer; }
 .imp-aim:hover { background: var(--surface-2); }
 .imp-aim__text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.imp-aim__text b { font-size: var(--fs-ui); font-weight: 500; }
+.imp-aim__text b { font-size: var(--fs-ui); font-weight: var(--fw-medium); }
 .imp-aim__text span { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 /* What to expect: quiet text over a line, read once; no card of its own */
 .imp__expect { padding-top: 16px; border-top: 1px solid var(--border); }

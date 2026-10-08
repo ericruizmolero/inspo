@@ -21,7 +21,7 @@
 .ds-colors__row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
 .ds-swatch { display: flex; flex-direction: column; gap: 4px; padding: 6px 6px 10px; border-radius: var(--radius-md); background: var(--surface-raised); border: 1px solid var(--border); }
 .ds-swatch__chip { height: 64px; border-radius: var(--radius-sm, 6px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 12%, transparent); }
-.ds-swatch__name { font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 500; padding: 0 4px; color: var(--text); }
+.ds-swatch__name { font-family: var(--font-mono); font-size: var(--fs-label); font-weight: var(--fw-medium); padding: 0 4px; color: var(--text); }
 .ds-swatch .ds-val { padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Type */
@@ -45,7 +45,7 @@
 .ds-eases { display: flex; flex-direction: column; gap: 6px; }
 .ds-ease { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-raised); color: var(--text); text-align: left; transition: border-color 0.15s; }
 .ds-ease:hover { border-color: var(--text-muted); }
-.ds-ease__name { font-family: var(--font-mono); font-size: var(--fs-label); font-weight: 500; }
+.ds-ease__name { font-family: var(--font-mono); font-size: var(--fs-label); font-weight: var(--fw-medium); }
 .ds-ease__track { position: relative; height: 10px; border-radius: 5px; background: var(--field); border: 1px solid var(--field-border); box-shadow: var(--sunken); }
 .ds-ease__dot { position: absolute; left: 0; top: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--ember); border: var(--stroke-control) solid var(--control-border); }
 .ds-ease .ds-val { text-align: right; }
@@ -83,15 +83,15 @@
 .ds-md p, .ds-md ul, .ds-md ol { margin: 0; }
 .ds-md ul, .ds-md ol { padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .ds-md li::marker { color: var(--text-muted); }
-.ds-md strong { color: var(--text); font-weight: 600; }
+.ds-md strong { color: var(--text); font-weight: var(--fw-semibold); }
 .ds-md a { color: var(--text); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--text) 35%, transparent); text-underline-offset: 3px; }
 .ds-md a:hover { text-decoration-color: var(--text); }
 .ds-md code { font-family: var(--font-mono); font-size: 0.82em; padding: 1px 5px; border-radius: 5px; background: var(--surface-raised); border: 1px solid var(--border); color: var(--text); }
 .ds-md pre { margin: 0; padding: 14px 16px; border-radius: var(--radius-md); background: var(--surface-raised); border: 1px solid var(--border); overflow-x: auto; }
-.ds-md pre code { padding: 0; border: 0; background: none; font-size: var(--fs-small); line-height: 1.6; } /* code leading */
+.ds-md pre code { padding: 0; border: 0; background: none; font-size: var(--fs-small); line-height: var(--lh-code); }
 .ds-md__table { overflow-x: auto; border-radius: var(--radius-md); background: var(--surface-raised); border: 1px solid var(--border); }
 .ds-md table { width: 100%; border-collapse: collapse; font-size: var(--fs-ui); }
-.ds-md th { text-align: left; font-weight: 600; color: var(--text); padding: 10px 14px; }
+.ds-md th { text-align: left; font-weight: var(--fw-semibold); color: var(--text); padding: 10px 14px; }
 .ds-md td { padding: 9px 14px; vertical-align: top; border-top: 1px solid var(--border); }
 
 /* Decision log */
@@ -180,17 +180,16 @@
 .ds-pairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
 .ds-pair { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: var(--radius-lg); }
 .ds-pair--line { box-shadow: inset 0 0 0 1px var(--border); }
-.ds-pair__text { font-size: var(--fs-ui); font-weight: 500; }
+.ds-pair__text { font-size: var(--fs-ui); font-weight: var(--fw-medium); }
 .ds-pair__label { margin-top: 10px; font-size: var(--fs-label); opacity: 0.75; }
 
 /* Type families */
 .ds-families { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
 .ds-family { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: var(--radius-lg); background: var(--surface-raised); border: 1px solid var(--border); color: var(--text); }
-.ds-family__sample { font-size: 40px; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ds-family__sample--display { font-family: var(--font-display); font-weight: 800; }
-.ds-family__sample--sans { font-family: var(--font-sans); font-weight: 500; }
-.ds-family__sample--mono { font-family: var(--font-mono); font-weight: 400; font-size: 32px; }
-.ds-family__name { font-weight: 600; }
+.ds-family__sample { font-size: var(--fs-display); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-family__sample--sans { font-family: var(--font-sans); font-weight: var(--fw-medium); }
+.ds-family__sample--mono { font-family: var(--font-mono); font-weight: var(--fw-regular); font-size: var(--fs-title-l); }
+.ds-family__name { font-weight: var(--fw-semibold); }
 .ds-family__role { font-size: var(--fs-small); color: var(--text-muted); }
 
 /* Control heights, next to a ruler */
@@ -220,8 +219,8 @@
 .ds-breaks__mark { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--text-muted); }
 .ds-breaks__mark .ds-val { position: absolute; top: calc(100% + 4px); left: -1px; transform: translateX(-50%); white-space: nowrap; }
 .ds-breaks__mark.is-app { border-left: 2px solid var(--ember); }
-.ds-breaks__mark.is-app .ds-val { color: var(--text); font-weight: 600; }
-.ds-breaks__zone { position: absolute; top: 8px; left: 0; padding: 0 10px; font-size: var(--fs-label); font-weight: 500; color: var(--text-muted); }
+.ds-breaks__mark.is-app .ds-val { color: var(--text); font-weight: var(--fw-semibold); }
+.ds-breaks__zone { position: absolute; top: 8px; left: 0; padding: 0 10px; font-size: var(--fs-label); font-weight: var(--fw-medium); color: var(--text-muted); }
 .ds-breaks__zone--desk { left: auto; }
 
 /* Layers as a stair */

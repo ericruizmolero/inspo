@@ -4,7 +4,7 @@
 .sb__chip--target .sb__chip-label { display: inline-flex; align-items: baseline; gap: 5px; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb__chip--target small { font-size: var(--fs-label); color: var(--chrome-muted); }
 .sb__target-img { width: 34px; height: 22px; border-radius: var(--radius-pill); object-fit: cover; object-position: top; flex-shrink: 0; }
-.sb__target-img--blank { display: grid; place-items: center; background: var(--chrome-raised); color: var(--chrome-ink); font-size: var(--fs-label); font-weight: 600; }
+.sb__target-img--blank { display: grid; place-items: center; background: var(--chrome-raised); color: var(--chrome-ink); font-size: var(--fs-label); font-weight: var(--fw-semibold); }
 
 /* What can be done with it, in the system's Menu that hangs from the bar: each one a secondary Button, size s */
 .sb--dock .sb__menu.sb__quick { gap: 4px; padding: 4px 8px 10px; }

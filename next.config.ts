@@ -52,10 +52,10 @@ const nextConfig: NextConfig = {
     // A template's result page is captured the first time anyone asks for it
     "/api/templates/*/page": CHROMIUM_BIN,
     // Share card: reads the TTF fonts with readFile, which tracing doesn't see
-    "/opengraph-image": ["./app/fonts/*.ttf"],
+    "/opengraph-image": ["./app/fonts/satoshi/*.ttf"],
     // Login showcase: reads the folder with readdir, which tracing doesn't see
     "/login": ["./public/showcase/*"],
-    "/twitter-image": ["./app/fonts/*.ttf"],
+    "/twitter-image": ["./app/fonts/satoshi/*.ttf"],
     // The extension zip is built at build time, but a regeneration at request time would read the folder again
     "/extension/download": ["./extension/chrome/**/*"],
     // Built-in templates: their folders are read with readFile the first time a workspace lists its templates

@@ -243,7 +243,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   );
   const actions = (
     <div className="spage-head__actions">
-      {!filled && <p className="spage-muted">{board.length ? (running ? t.system.running : t.system.runHint(board.length)) : t.system.noBoard}</p>}
+      {!filled && !running && <p className="spage-muted">{board.length ? t.system.runHint(board.length) : t.system.noBoard}</p>}
       {board.length > 0 ? (
         <Button variant="primary" size="sm" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
           {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}

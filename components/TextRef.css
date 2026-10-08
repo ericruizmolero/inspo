@@ -7,7 +7,7 @@
 /* The panel's page: the words whole, set to be read */
 .ip-text { flex: 1; min-height: 0; overflow-y: auto; padding: clamp(24px, 5vw, 56px) clamp(20px, 5vw, 64px); }
 .ip-text__page { max-width: 68ch; margin: 0 auto; }
-.ip-text__kind { font-size: var(--fs-small); font-weight: 500; color: var(--text-2); }
+.ip-text__kind { font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--text-2); }
 /* The title is an h2 (title-l) */
 .ip-text__title { margin: 6px 0 24px; color: var(--text-strong); text-wrap: balance; }
 .ip-text__body { font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }

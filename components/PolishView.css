@@ -39,7 +39,7 @@
 .polish__text b { font-size: 1.3em; color: var(--text); text-wrap: balance; }
 .polish__text p { flex: 1; min-height: 0; margin: 0; overflow: hidden; font-size: 0.8em; color: var(--text-2); white-space: pre-wrap; }
 
-.polish__text-kind { font-size: 0.6em; font-weight: 500; color: var(--muted); }
+.polish__text-kind { font-size: 0.6em; font-weight: var(--fw-medium); color: var(--muted); }
 
 /* A post: the box its sheet shows (PostView's .pv), on the card, so a post looks the one way everywhere. The card
    is as tall as the post, up to a cap, past which it fades out at the foot as on the board; its type is sized in the

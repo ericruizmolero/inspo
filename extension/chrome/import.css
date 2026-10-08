@@ -2,13 +2,13 @@
    the Criterio design system tokens, fonts, buttons and fields come from there (they must match
    app/globals.css). Here: the product ground (board), flat cards with a hairline, the folder
    checkboxes and the segmented progress. Dark in both system themes, like the popup. */
-body.page { width: auto; min-height: 100vh; background: var(--board); font-size: 15px; }
+body.page { width: auto; min-height: 100vh; background: var(--board); font-size: var(--fs-ui); }
 .app.import { max-width: 560px; margin: 0 auto; padding: 32px 20px 48px; gap: 22px; }
 .app[data-view="import"] .view[data-view="import"],
 .app[data-view="progress"] .view[data-view="progress"] { display: flex; }
 .import .view { gap: 18px; }
-.import .title { font-size: 28px; letter-spacing: -0.03em; }
-.import .hint { font-size: 13px; }
+.import .title { font-family: var(--font-title); font-size: var(--fs-title-l); font-weight: var(--fw-bold); line-height: var(--lh-title-l); letter-spacing: var(--tr-title-l); }
+.import .hint { font-size: var(--fs-small); }
 
 /* Card (design system): flat, no shadow, a 1px hairline */
 .source {
@@ -16,8 +16,8 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
   border-radius: var(--radius-lg); background: var(--board-card); border: 1px solid var(--chrome-border);
 }
 .source__title {
-  margin: 0; font-family: var(--font-display); font-size: 20px; font-weight: 700;
-  letter-spacing: -0.02em; line-height: 1.2; color: var(--paper);
+  margin: 0; font-family: var(--font-title); font-size: var(--fs-title-m); font-weight: var(--fw-semibold);
+  letter-spacing: var(--tr-title-m); line-height: var(--lh-title-m); color: var(--paper);
 }
 .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 4px; }
 .row .hint { flex: 1; min-width: 160px; }
@@ -44,7 +44,7 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
 .tree input:disabled { background-color: var(--disabled); border-color: var(--disabled-border); box-shadow: none; cursor: not-allowed; }
 .tree input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .tree .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tree .count { font-size: 12px; color: var(--chrome-text-muted); font-variant-numeric: tabular-nums; }
+.tree .count { font-size: var(--fs-label); color: var(--chrome-text-muted); font-variant-numeric: tabular-nums; }
 .tree li.is-empty > label { color: var(--chrome-muted); cursor: default; }
 .tree li.is-empty > label:hover { background: none; }
 
@@ -71,8 +71,8 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
   display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
   border-radius: var(--radius-md); background: var(--board-card); border: 1px solid var(--chrome-border);
 }
-.counts dt { font-size: 12px; color: var(--chrome-text-muted); }
-.counts dd { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--paper); font-variant-numeric: tabular-nums; }
+.counts dt { font-size: var(--fs-label); color: var(--chrome-text-muted); }
+.counts dd { margin: 0; font-family: var(--font-title); font-size: var(--fs-title-l); font-weight: var(--fw-bold); letter-spacing: var(--tr-title-l); color: var(--paper); font-variant-numeric: tabular-nums; }
 
 /* Where it goes: the first card, before any source. Workspace and project are two full fields
    (the popup's .select), and under them the sentence that names the destination in bold */
@@ -80,8 +80,8 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
 @media (max-width: 480px) { .where__fields { grid-template-columns: 1fr; } }
 .where .select select:disabled { cursor: default; }
 .where .select:has(select:disabled) { cursor: default; }
-.where__sum { font-size: 14px; line-height: 1.45; color: var(--chrome-text-muted); text-wrap: pretty; }
-.where__sum strong { font-weight: 600; color: var(--paper); }
+.where__sum { font-size: var(--fs-chrome); line-height: var(--lh-small); color: var(--chrome-text-muted); text-wrap: pretty; }
+.where__sum strong { font-weight: var(--fw-semibold); color: var(--paper); }
 .where__sum:empty { display: none; }
 .import .select { height: 40px; }
 
@@ -94,9 +94,9 @@ body.page { width: auto; min-height: 100vh; background: var(--board); font-size:
   border-radius: var(--radius-lg); border: var(--stroke-control) solid var(--control-border);
   background: var(--chrome-panel); color: var(--chrome-text);
 }
-.dlg__bar { display: flex; align-items: center; min-height: 28px; padding: 0 14px; background: var(--moss); color: var(--on-moss); font-size: 12px; font-weight: 600; }
+.dlg__bar { display: flex; align-items: center; min-height: 28px; padding: 0 14px; background: var(--moss); color: var(--on-moss); font-size: var(--fs-label); font-weight: var(--fw-semibold); }
 .dlg__body { display: flex; flex-direction: column; gap: 8px; padding: 18px 18px 4px; }
-.dlg__heading { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: var(--paper); }
-.dlg__text { font-size: 14px; line-height: 1.45; color: var(--chrome-text-muted); text-wrap: pretty; }
-.dlg__text strong { font-weight: 600; color: var(--paper); }
+.dlg__heading { margin: 0; font-family: var(--font-title); font-size: var(--fs-title-m); font-weight: var(--fw-semibold); letter-spacing: var(--tr-title-m); line-height: var(--lh-title-m); color: var(--paper); }
+.dlg__text { font-size: var(--fs-chrome); line-height: var(--lh-small); color: var(--chrome-text-muted); text-wrap: pretty; }
+.dlg__text strong { font-weight: var(--fw-semibold); color: var(--paper); }
 .dlg__foot { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding: 14px 18px 18px; }

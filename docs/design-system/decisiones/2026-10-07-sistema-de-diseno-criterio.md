@@ -8,7 +8,7 @@ supersedes: una sola fuente Inter (2026-09-23), superficies de cristal (2026-10-
 **Contexto.** Alberto hizo el sistema de diseño de Criterio como artefacto (claude.ai/artifact/RM3rCVaxFN4rg8E6XofybK): marca, tokens, componentes y una criatura de tres ojos como personaje. La app seguía con Inter, neutros cálidos, barras de cristal y botones sin borde.
 
 **Decisión.** Toda la plataforma (la app web y la extensión de Chrome) usa los tokens y los componentes del sistema:
-- Tipos: Archivo para todo (`--font-sans`, `--font`) y Bricolage Grotesque 700/800 para titulares (`--font-display`, `h1`, `h2`), en `app/fonts.ts`. Nunca display por debajo de 16 px ni en texto corrido.
+- Tipos: Archivo para todo (`--font-sans`, `--font`) y Bricolage Grotesque 700/800 para titulares (`--font-display`, `h1`, `h2`), en `app/fonts.ts`. Nunca display por debajo de 16 px ni en texto corrido. *Sustituido el 2026-10-08: Bricolage se retira y Archivo hace también los títulos.* → [una sola familia](2026-10-08-archivo-es-la-unica-familia-y-la-escala-se-reajusta.md)
 - Color: `--paper`, `--ink`, `--board`, `--board-card` (el `card` del sistema; `--card` es de shadcn), `--moss`, `--ember`, `--butter` y los `--chrome-*`. Tema oscuro = Board, tema claro = Paper. Los nombres viejos (`--bg`, `--panel`, `--surface`, `--text`…) apuntan a los del sistema en `app/globals.css`.
 - El botón primario es ember (`Button` primary, `.cr-btn-primary`, `.btn--primary`), uno por vista.
 - Controles con el guiño a 2000: borde de tinta `--stroke-control`, `--bevel`, `--bevel-pressed`; campos y casillas `--sunken` sobre `--field`. Tarjetas planas, sin sombra; solo flota la barra de comandos (`--float`).

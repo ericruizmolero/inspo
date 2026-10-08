@@ -15,7 +15,7 @@ Los valores salen del sistema de diseño Criterio (claude.ai/artifact/RM3rCVaxFN
 | Página | Qué hay |
 | --- | --- |
 | [Color](fundamentos/color.md) | Paleta de marca, roles que siguen al tema, campos, cromo y estados |
-| [Tipografía](fundamentos/tipografia.md) | Las dos familias y la escala de ocho pasos |
+| [Tipografía](fundamentos/tipografia.md) | La familia (Satoshi) y la escala de ocho pasos |
 | [Espaciado](fundamentos/espaciado.md) | La escala de espacio y la altura única de los controles |
 | [Radios y sombras](fundamentos/radios-y-sombras.md) | Radios, bordes, bisel y las pocas sombras |
 | [Movimiento](fundamentos/movimiento.md) | Curvas, duraciones y keyframes |

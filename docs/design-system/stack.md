@@ -23,7 +23,7 @@ Todo lo que hace funcionar criterio.design: qué es cada pieza, dónde se usa en
 | Comentarios sobre la app | **Agentation** (barra de anotaciones) | `components/FeedbackTool.tsx`, `lib/feedback.ts`, `/api/feedback`; se guarda en `feedback_note` y se envía por correo | Con la app | Solo para quien tiene sesión; límite de 10 envíos por hora y persona |
 | Código | **GitHub**, `ericruizmolero/inspo`, rama `main` | Ship Studio como entorno de trabajo (`.claude/launch.json`, preview en localhost) | Cuenta de Eric; los socios colaboran por PR e issues | No hay CI: las comprobaciones son `npx tsc --noEmit` y los `npm run check:*` a mano, antes de fusionar. La fusión la hace una persona |
 
-Terceros que carga el navegador sin pasar por nosotros: el icono de una web viene del servicio de favicons de Google (`s2`). Las tipografías de la app (Archivo y Bricolage Grotesque) se descargan en el build con `next/font/google` y se sirven desde nuestro origen; las de las referencias pasan por `/api/system/font` (`lib/ref-fonts.ts`, `lib/font-proxy.ts`).
+Terceros que carga el navegador sin pasar por nosotros: el icono de una web viene del servicio de favicons de Google (`s2`). La tipografía de la app (Satoshi) la descarga de Fontshare `scripts/fetch-fonts.mjs` antes del build, sin pasar por git por su licencia, y se sirve desde nuestro origen con `next/font/local`; las de las referencias pasan por `/api/system/font` (`lib/ref-fonts.ts`, `lib/font-proxy.ts`).
 
 ## Modelos
 
