@@ -314,8 +314,8 @@ function closeCollector(run) {
 let current = null;
 
 const VIDEO_HOSTS = /(^|\.)(youtube\.com|youtu\.be|vimeo\.com|loom\.com)$/i; // as lib/url.ts
-/** What an item becomes once saved: its image, a video by address, or a website */
-const kindOf = (it) => { if (it.image) return "image"; try { return VIDEO_HOSTS.test(new URL(it.url).hostname) ? "video" : "website"; } catch { return "website"; } };
+/** What an item becomes once saved: its words, its image, a video by address, or a website */
+const kindOf = (it) => { if (it.text) return "text"; if (it.image) return "image"; try { return VIDEO_HOSTS.test(new URL(it.url).hostname) ? "video" : "website"; } catch { return "website"; } };
 
 function startRun(source) {
   const src = SOURCES[source];
@@ -324,7 +324,7 @@ function startRun(source) {
     // A board waits for its project before the first batch
     ready: !src.board, naming: false, boardUrl: "",
     counts: { found: 0, added: 0, existed: 0, invalid: 0, error: 0 },
-    kinds: { website: 0, image: 0, video: 0 },
+    kinds: { website: 0, image: 0, video: 0, text: 0 },
     reasons: {},
     add(items) {
       if (this.ended) return;
@@ -412,7 +412,7 @@ function startRun(source) {
   return run;
 }
 
-/** "38 websites and 12 images imported. 3 skipped (text)." */
+/** "38 websites, 12 images and 2 texts imported. 3 skipped (file)." */
 function boardResult(run) {
   const list = (parts) => (parts.length > 1 ? t("listAnd", [parts.slice(0, -1).join(", "), parts.at(-1)]) : parts[0] || "");
   const count = (key, n) => t(n === 1 ? `${key}One` : `${key}Many`, [String(n)]);

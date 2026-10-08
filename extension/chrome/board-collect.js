@@ -2,7 +2,7 @@
 // collector (arena-collect.js, pinterest-collect.js, cosmos-collect.js) into a tab of the board,
 // after the person grants that platform. The collector reads the board with the person's session
 // and calls `found` with each page of items; this file talks to the import page:
-//   { type: "board-found", name?, total?, items: [{ url, title?, image? }], skipped: { [reason]: n } }
+//   { type: "board-found", name?, total?, items: [{ url, title?, image?, text? }], skipped: { [reason]: n } }
 //   { type: "board-done", reason, name }
 // `name` and `total` ride on the first board-found: the import page names the project before the
 // first batch. It stops at the end, when the import page says so ("board-stop"), or when that page

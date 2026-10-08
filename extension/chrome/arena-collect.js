@@ -1,7 +1,7 @@
 // Reads a channel on Are.na from inside it (board-collect.js talks to the import page), through
 // Are.na's public API (api.are.na/v3, 30 requests a minute). A Link is its site, Media (a video or a
-// song by address) is its address, an Image is its file with the block's page as where it came
-// from. Text, attachments and channels inside the channel are skipped and counted.
+// song by address) is its address, an Image is its file and a Text its words, each with the block's
+// page as where it came from. Attachments and channels inside the channel are skipped and counted.
 // The API refuses a request that carries the session (no credentialed CORS), so a private channel
 // reads as not found.
 window.__criterioBoard(async ({ found, stopped, named, sleep }) => {
@@ -29,7 +29,8 @@ window.__criterioBoard(async ({ found, stopped, named, sleep }) => {
   if (!channel.ok || !channel.data) return [401, 403, 404].includes(channel.status) ? "not-found" : "error";
   named(channel.data.title);
 
-  const SKIP = { Text: "text", Attachment: "file", Channel: "channel" };
+  const SKIP = { Attachment: "file", Channel: "channel" };
+  const MAX_TEXT = 40000; // what a text reference holds (lib/boards/entries.ts)
   const itemOf = (b) => {
     const title = typeof b.title === "string" ? b.title.trim().slice(0, 200) : "";
     const url = b.source?.url;
@@ -38,6 +39,8 @@ window.__criterioBoard(async ({ found, stopped, named, sleep }) => {
       const image = [b.image?.src, b.image?.large?.src].filter(Boolean);
       if (image.length) return { url: `https://www.are.na/block/${b.id}`, title, image };
     }
+    const words = b.type === "Text" && typeof b.content?.markdown === "string" ? b.content.markdown.trim() : "";
+    if (words) return { url: `https://www.are.na/block/${b.id}`, title, text: words.slice(0, MAX_TEXT) };
     return null;
   };
 

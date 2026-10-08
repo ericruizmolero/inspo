@@ -6,7 +6,7 @@
 // The query is the page's own: if Cosmos changes it, QUERY is what to fix.
 window.__criterioBoard(async ({ found, stopped, named, sleep }) => {
   const GRAPHQL = "https://api.cosmos.so/graphql";
-  const QUERY = "query GetClusterElements($clusterId:ClusterId$pageCursor:String$pageSize:Int){clusterConnections(clusterId:$clusterId meta:{pageSize:$pageSize pageCursor:$pageCursor}){items{element{__typename id shareUrl source{url}...on MediaElementTile{generatedCaption{text}media{...M}}...on WebsiteElementTile{websiteTitle:title}...on ProductElementTile{productTitle:name}}}meta{nextPageCursor count}}}fragment M on Media{__typename url ...on Video{thumbnail{url}}}";
+  const QUERY = "query GetClusterElements($clusterId:ClusterId$pageCursor:String$pageSize:Int){clusterConnections(clusterId:$clusterId meta:{pageSize:$pageSize pageCursor:$pageCursor}){items{element{__typename id shareUrl source{url}...on MediaElementTile{generatedCaption{text}media{...M}}...on WebsiteElementTile{websiteTitle:title}...on ProductElementTile{productTitle:name}...on TextElementTile{text}}}meta{nextPageCursor count}}}fragment M on Media{__typename url ...on Video{thumbnail{url}}}";
   const PAGE_SIZE = 50;
   const PAUSE_MS = 400;
   const MAX_PAGES = 200;
@@ -48,6 +48,7 @@ window.__criterioBoard(async ({ found, stopped, named, sleep }) => {
       // The caption, else the site it was found on: the name says where it comes from
       if (file && e.shareUrl) return { url: e.shareUrl, title: e.generatedCaption?.text?.trim() || host(url), image: [file] };
     }
+    if (e.__typename === "TextElementTile" && e.shareUrl && typeof e.text === "string" && e.text.trim()) return { url: e.shareUrl, text: e.text.trim().slice(0, 40000) };
     // A website Cosmos has not finished reading comes as a BaseElementTile: its address is all there is
     if (e.__typename === "BaseElementTile" && url) return { url };
     return null;
@@ -65,7 +66,7 @@ window.__criterioBoard(async ({ found, stopped, named, sleep }) => {
       seen++;
       const it = itemOf(e);
       if (it) items.push(it);
-      else { const why = e.__typename === "TextElementTile" ? "text" : "other"; skipped[why] = (skipped[why] || 0) + 1; }
+      else { const why = "other"; skipped[why] = (skipped[why] || 0) + 1; }
     }
     await found({ items, skipped, total: page.meta?.count });
     cursor = page.meta?.nextPageCursor;

@@ -471,6 +471,24 @@
       }
     }
   },
+  "kind_textOne": {
+    "message": "$N$ text",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
+  "kind_textMany": {
+    "message": "$N$ texts",
+    "placeholders": {
+      "n": {
+        "content": "$1",
+        "example": "12"
+      }
+    }
+  },
   "resultImported": {
     "message": "$LIST$ imported.",
     "placeholders": {
@@ -514,12 +532,6 @@
         "example": "38 websites and 12 images"
       }
     }
-  },
-  "reason_textOne": {
-    "message": "text"
-  },
-  "reason_textMany": {
-    "message": "text"
   },
   "reason_fileOne": {
     "message": "file"
