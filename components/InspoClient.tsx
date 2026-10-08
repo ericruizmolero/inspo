@@ -1151,6 +1151,7 @@ export default function InspoClient({
     onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: openDirectory,
     space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
+    onImportBoard: importBoard,
   };
 
   // ─── Board ──────────────────────────────────────────────────────────────────
@@ -1750,8 +1751,8 @@ export default function InspoClient({
                   <PillBarSep />
                 </>
               )}
-              {/* The ways in from outside (the extension, an AI client over MCP), beside the other way of adding */}
-              <Connectors />
+              {/* The ways in from outside (the extension, an AI client over MCP, Import), beside the other way of adding */}
+              <Connectors onImportBoard={importBoard} />
               <PillBarSep />
               <IconButton icon="plus" label={t.app.add} variant="quiet" className="topbar__add" onClick={() => setShowAdd(true)} />
             </PillBar>

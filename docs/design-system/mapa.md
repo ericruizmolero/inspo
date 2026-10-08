@@ -57,6 +57,8 @@ Se da acceso con `npm run admin -- <correo>`.
 | `/extension/connect` | Sesión | Conectar la extensión a un espacio |
 | `/extension/download` | Sesión | El zip de la extensión |
 
+Importar no es una ruta: es un diálogo (`ImportDialog`) que se abre desde el menú Conectores, en la barra de arriba y en el menú de móvil. → [decisión](decisiones/2026-10-08-importar-vive-en-conectores-por-defecto.md)
+
 ## Redirecciones antiguas
 
 `/equipo` → `/settings/members`, `/planes` → `/settings/plan`, `/invitacion/:id` → `/invite/:id` (`next.config.ts`). No borrarlas: hay correos enviados con esos enlaces.

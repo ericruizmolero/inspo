@@ -41,6 +41,14 @@ export function useExtension() {
   return { info, received, handKey };
 }
 
+/** The first version whose import page the app can open (content.js "open-import") */
+export const OPENS_IMPORT_FROM = "0.7.1";
+
+/** Asks the extension to open its import page on X or on the browser's bookmarks, in a tab next to this one */
+export function openExtensionImport(what: "x" | "browser") {
+  window.postMessage({ source: FROM_PAGE, type: "open-import", what }, window.location.origin);
+}
+
 // The extension answers within a few milliseconds of the page loading; past this it is not there
 const ABSENT_AFTER_MS = 1500;
 

@@ -401,6 +401,11 @@ Un enlace de solo lectura con la presentación y el criterio.md para copiar o de
 ### Conectores
 `Connectors` · `components/Connectors.tsx` · `.connectors__menu`
 Un botón en la barra superior (icono `Plug`) con las dos formas de entrar desde fuera, de la cuenta y no del proyecto: la extensión de Chrome (instalarla o conectarla) y Conectar MCP (icono `Cable`). Con `row` es una fila del menú de móvil con el mismo menú. Cada fila con su tic cuando está conectada. El botón se queda siempre, también con las dos conectadas: es el único sitio donde ver las apps que tienen acceso y desconectar una. Sustituye al aviso "Instalar extensión". → [decisión](decisiones/2026-10-06-conectores-se-queda-siempre-en-la-barra.md)
+- Una tercera fila, **Importar** (icono `Import` de Lucide, sin tic), abre `ImportDialog`. Sitio por defecto, pendiente de Alberto. → [decisión](decisiones/2026-10-08-importar-vive-en-conectores-por-defecto.md)
+
+### Importar
+`ImportDialog` · `components/ImportDialog.tsx` · `components/ImportDialog.css` · `.impd`
+Se abre desde la fila "Importar" del menú Conectores, ventana como `ConnectDialog`: "Trae lo que ya tenías guardado". Arriba, un tablero de Are.na, Pinterest o Cosmos: campo, botón primario "Importar tablero" y debajo la pista, el error o `BoardProgress`. Corre el mismo flujo que el primer arranque y Añadir (`useBoardImport`, `components/BoardImport.tsx`) y se cierra al terminar, con el usuario en el proyecto del tablero. Debajo, Marcadores: con la extensión conectada (0.7.1 o más), "Importar de X" e "Importar marcadores del navegador" abren su página de importar (`openExtensionImport`, `hooks/use-extension.ts`); si no, el paso que falta (instalar, conectar, actualizar). Una línea avisa del botón "Importar a Criterio" que la extensión pone en los tableros. Plataformas solo con su nombre, sin logos. → [decisión](decisiones/2026-10-08-importar-vive-en-conectores-por-defecto.md)
 
 ### Conectar tu IA
 `ConnectDialog` · `components/ConnectDialog.tsx` · `components/ConnectDialog.css` · `.mcpc`
