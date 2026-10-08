@@ -55,7 +55,7 @@ interface EmptyStartProps {
   onAddUrl: (web: string) => Promise<void>;
   isDuplicate?: (web: string) => boolean;
   onDirectory: () => void;
-  /** A board pasted (Are.na, Pinterest, Cosmos): its websites come in, in a project of their own */
+  /** A board pasted (Are.na, Pinterest, Cosmos): what Criterio can save of it comes in, in a project of its own */
   onImportBoard: ImportBoard;
   /** A board imported on its own (pasted before signing in): its progress shows here */
   arriving?: BoardStep | null;

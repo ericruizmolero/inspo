@@ -4,9 +4,11 @@
 import "server-only";
 import { safeFetch } from "@/lib/safe-fetch";
 import { pinterestBoardOf, type BoardRef, type Platform, type RefOf } from "./match";
-import { arenaChannel, arenaPage, BadAnswer, collect, cosmosCluster, cosmosPage, pinterestBoard, pinterestPage, type Page, type Web } from "./parse";
+import { arenaChannel, arenaPage, BadAnswer, collect, cosmosCluster, cosmosPage, pinterestBoard, pinterestPage, type Page } from "./parse";
+import type { Entry, Skipped } from "./entries";
 
-export type Board = { platform: Platform; url: string; name: string; webs: Web[]; skipped: number; capped: boolean };
+/** A board read: what of it Criterio can save, and what stays out and why */
+export type Board = { platform: Platform; url: string; name: string; entries: Entry[]; skipped: Skipped; capped: boolean };
 
 export type BoardFailure = "private" | "not-found" | "unavailable";
 export class BoardError extends Error {
@@ -18,7 +20,7 @@ interface Reader<R extends BoardRef> { read(ref: R): Promise<Board> }
 /** Pinterest and Cosmos answer a browser; Are.na's API turns one away (403) and answers a named client */
 const BROWSER = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36";
 const TIMEOUT_MS = 15_000;
-/** Pages read at most per board, whatever the cap: a board of images never ends otherwise */
+/** Pages read at most per board, whatever the cap */
 const MAX_PAGES = 40;
 
 /** GET or POST, JSON or text, with the platform's status turned into a BoardError */
@@ -136,7 +138,7 @@ const cosmos: Reader<RefOf<"cosmos">> = {
 
 const READERS: { [P in Platform]: Reader<RefOf<P>> } = { arena, pinterest, cosmos };
 
-/** The board's websites. Throws BoardError: private, not found, or the platform not answering (or answering
+/** The board's entries. Throws BoardError: private, not found, or the platform not answering (or answering
  *  something we do not understand). */
 export async function readBoard(ref: BoardRef): Promise<Board> {
   try {

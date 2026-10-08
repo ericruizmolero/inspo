@@ -1,12 +1,8 @@
 {
-"resource_response": {
-"status": "success",
-"data": {
-"id": "181692234905713960",
-"name": "Site of the Day",
-"url": "/awwwards/site-of-the-day/",
-"privacy": "public",
-"pin_count": 3578
-}
-}
+ "resource_response": {
+  "data": {
+   "id": "59883938734401152",
+   "name": "Illustration"
+  }
+ }
 }

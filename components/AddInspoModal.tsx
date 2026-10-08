@@ -37,7 +37,7 @@ interface AddInspoModalProps {
   project?: string;
   /** What was pasted or dropped on the board: the dialog opens with it in place, waiting for the note */
   initial?: { file?: File; web?: string; text?: string };
-  /** A board pasted (Are.na, Pinterest, Cosmos): its websites come in, in a project of their own */
+  /** A board pasted (Are.na, Pinterest, Cosmos): what Criterio can save of it comes in, in a project of its own */
   onImportBoard: ImportBoard;
 }
 

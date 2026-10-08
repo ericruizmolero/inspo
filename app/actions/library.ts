@@ -18,8 +18,11 @@ import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
 import { nameFor } from "@/lib/item-name";
-import { addMany, MAX_PER_BATCH, type AddResult } from "@/lib/add-many";
+import { z } from "zod";
+import { addMany, type AddResult, type NewRef } from "@/lib/add-many";
+import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "@/lib/batch-limits";
 import { boardOf, type Platform } from "@/lib/boards/match";
+import { MAX_TEXT, type Entry, type Skipped } from "@/lib/boards/entries";
 import { readBoard, BoardError, type BoardFailure } from "@/lib/boards/read";
 import { allow } from "@/lib/rate-limit";
 import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
@@ -67,10 +70,10 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
 }
 
 export type BoardRead =
-  | { ok: true; name: string; platform: Platform; urls: string[]; skipped: number; capped: boolean }
+  | { ok: true; name: string; platform: Platform; entries: Entry[]; skipped: Skipped; capped: boolean }
   | { ok: false; reason: BoardFailure };
 
-/** The websites of a board on Are.na, Pinterest or Cosmos, to import with importBatch. Creates nothing. */
+/** What Criterio can save of a board on Are.na, Pinterest or Cosmos, to import with importBatch. Creates nothing. */
 export async function readBoardAction(input: string): Promise<ActionResult<BoardRead>> {
   return withCtx(async (ctx) => {
     const ref = boardOf(String(input ?? ""));
@@ -78,7 +81,7 @@ export async function readBoardAction(input: string): Promise<ActionResult<Board
     if (!(await allow(`board:${ctx.user.id}`, 10, 10 * 60 * 1000))) throw new HttpError(429, (await getErrors()).tooMany);
     try {
       const b = await readBoard(ref);
-      return { ok: true, name: b.name, platform: b.platform, urls: b.webs.map((w) => w.url), skipped: b.skipped, capped: b.capped };
+      return { ok: true, name: b.name, platform: b.platform, entries: b.entries, skipped: b.skipped, capped: b.capped };
     } catch (e) {
       if (!(e instanceof BoardError)) throw e;
       console.warn("board not read", e.message);
@@ -87,11 +90,26 @@ export async function readBoardAction(input: string): Promise<ActionResult<Board
   });
 }
 
-/** One batch of a board's websites, filed in the project made for it (what was already saved goes there too) */
-export async function importBatch(projectId: string, urls: string[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
+const entryTitle = z.string().max(300).optional();
+const BoardBatch = z.array(z.discriminatedUnion("kind", [
+  z.object({ kind: z.enum(["web", "video", "post"]), url: z.string().max(2048), title: entryTitle }),
+  z.object({ kind: z.literal("image"), images: z.array(z.string().max(2048)).min(1).max(3), page: z.string().max(2048), title: entryTitle }),
+  z.object({ kind: z.literal("text"), text: z.string().max(MAX_TEXT), page: z.string().max(2048), title: entryTitle }),
+])).max(MAX_PER_BATCH).refine((b) => b.length <= MAX_IMAGES_PER_BATCH || !b.some((e) => e.kind === "image"));
+
+/** What addMany is given for an entry: its address, or the page an image or a text was found on */
+const refOf = (e: Entry): NewRef =>
+  e.kind === "image" ? { url: e.page, title: e.title, image: e.images }
+  : e.kind === "text" ? { url: e.page, title: e.title, text: e.text }
+  : { url: e.url, title: e.title };
+
+/** One batch of a board's entries (batchesOf in lib/boards/entries.ts), filed in the project made for it (what was
+ *  already saved goes there too). The results keep the order of the batch. */
+export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
   return withCtx(async (ctx) => {
-    if (!Array.isArray(urls) || urls.length > MAX_PER_BATCH) throw new HttpError(400, (await getErrors()).badBody);
-    return addMany({ workspaceId: ctx.workspace.id, user: ctx.user }, urls.map((url) => ({ url: String(url) })), { source: "board", projectId: String(projectId) });
+    const batch = BoardBatch.safeParse(entries);
+    if (!batch.success) throw new HttpError(400, (await getErrors()).badBody);
+    return addMany({ workspaceId: ctx.workspace.id, user: ctx.user }, batch.data.map(refOf), { source: "board", projectId: String(projectId) });
   });
 }
 

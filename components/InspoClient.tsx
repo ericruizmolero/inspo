@@ -2,7 +2,8 @@
 
 import { addInspo, addImage, removeInspo, removeInspos, postComment as postCommentAction, removeComment, editNote as editNoteAction, workspaceOfItem, newProject, editProject, removeProject, markProjectStarted, setFiled, votePolish, closeProjectPolish, restoreToBoard, readBoardAction, importBatch } from "@/app/actions/library";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
-import type { BoardStep, ImportBoard } from "./BoardImport";
+import { batchesOf } from "@/lib/boards/entries";
+import { importSummary, noneImported, type BoardStep, type ImportBoard } from "./BoardImport";
 import { votesByItem, finishedOf, forgottenBy, openVotes } from "@/lib/polish-tally";
 import { authClient } from "@/lib/auth-client";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
@@ -124,8 +125,6 @@ const TAG_POLL_MS = 4000;
 const TAG_WATCH_MS = 5 * 60 * 1000;
 /** While the board is seen, it asks every 15 s whether its workspace changed somewhere else */
 const NEW_POLL_MS = 15_000;
-// A board comes in this many websites per request: importBatch takes up to MAX_PER_BATCH (lib/add-many.ts)
-const IMPORT_BATCH = 25;
 
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
@@ -718,9 +717,9 @@ export default function InspoClient({
   }, []);
 
   // ─── Import a board ──────────────────────────────────────────────────────────
-  // A board pasted from Are.na, Pinterest or Cosmos: its websites (only those: an image gives no DESIGN.md) come
-  // in batches into a project named after it, and the user lands there. Nothing is created if the board cannot
-  // be read or has no websites.
+  // A board pasted from Are.na, Pinterest or Cosmos: everything on it Criterio can save (websites, images, videos,
+  // posts, texts) comes in batches into a project named after it, and the user lands there. Nothing is created if
+  // the board cannot be read or has nothing to save.
   const importBoard = useCallback<ImportBoard>(async (input, onStep) => {
     const ref = boardOf(input);
     if (!ref) return t.add.notUrl;
@@ -730,27 +729,34 @@ export default function InspoClient({
     if (!read.ok) return read.error;
     const board = read.data;
     if (!board.ok) return board.reason === "private" ? t.board.private : board.reason === "not-found" ? t.board.notFound : t.board.unavailable(platform);
-    if (!board.urls.length) return t.board.none;
+    if (!board.entries.length) return t.board.none;
     const project = await createProject(board.name);
     if (!project) return t.projects.saveFailed;
-    const total = board.urls.length;
-    let imported = 0;
-    onStep({ phase: "saving", done: 0, total });
-    for (let i = 0; i < total; i += IMPORT_BATCH) {
-      const r = await importBatch(project.id, board.urls.slice(i, i + IMPORT_BATCH)).catch((e) => ({ ok: false as const, error: String(e) }));
+    const total = board.entries.length;
+    const imported = noneImported();
+    let done = 0, failed = 0;
+    onStep({ phase: "saving", done, total });
+    for (const batch of batchesOf(board.entries)) {
+      const r = await importBatch(project.id, batch).catch((e) => ({ ok: false as const, error: String(e) }));
       if (r.ok) {
         const { results, added } = r.data;
-        const ids = results.filter((x) => x.id && (x.status === "added" || x.status === "existed")).map((x) => x.id!);
-        imported += ids.length;
+        const ids: string[] = [];
+        results.forEach((x, i) => {
+          if (x.id && (x.status === "added" || x.status === "existed")) { ids.push(x.id); imported[batch[i].kind]++; }
+          else if (x.status === "error" || x.status === "invalid") failed++;
+        });
         setItems((prev) => { const known = new Set(prev.map((x) => x.id)); return [...added.filter((a) => !known.has(a.id)), ...prev]; });
         setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...new Set([...(next[id] ?? []), project.id])]; return next; });
         for (const a of added) watch(a.web);
-      } else console.warn("board batch not saved", r.error);
-      onStep({ phase: "saving", done: Math.min(i + IMPORT_BATCH, total), total });
+      } else {
+        console.warn("board batch not saved", r.error);
+        failed += batch.length;
+      }
+      done += batch.length;
+      onStep({ phase: "saving", done, total });
     }
     setSpace(project.id);
-    const left = [board.skipped ? t.board.skipped(board.skipped) : "", board.capped ? t.board.capped : ""].filter(Boolean).join(". ");
-    setToast({ ok: true, title: t.board.imported(imported), detail: left });
+    setToast({ ok: true, ...importSummary(t, { imported, skipped: board.skipped, failed, capped: board.capped }) });
     return null;
   }, [t, createProject, watch, setSpace]);
   const renameProject = useCallback(async (id: string, name: string) => {

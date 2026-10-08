@@ -2,11 +2,14 @@
 // what of a board comes in. The parsers run on answers saved from each platform (scripts/fixtures/boards).
 // Not a test framework: assert.
 //   npm run check:boards           pure checks, no network
-//   npm run check:boards -- --live also reads three real boards and prints their counts
+//   npm run check:boards -- --live also reads real boards and prints what they bring, by kind
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { boardOf } from "../lib/boards/match";
-import { arenaChannel, arenaPage, collect, cosmosCluster, cosmosPage, MAX_WEBS, pinterestBoard, pinterestPage, BadAnswer, type Page } from "../lib/boards/parse";
+import { arenaChannel, arenaPage, collect, cosmosCluster, cosmosPage, entryOf, pinterestBoard, pinterestPage, BadAnswer, type Page } from "../lib/boards/parse";
+import { batchesOf, KINDS, MAX_ENTRIES, noneSkipped, type Entry } from "../lib/boards/entries";
+import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "../lib/batch-limits";
+import { staysInside } from "../lib/url";
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/boards/${name}`, import.meta.url), "utf8");
 const json = (name: string): unknown => JSON.parse(fixture(name));
@@ -39,86 +42,142 @@ for (const raw of [
 ]) assert.equal(boardOf(raw), null, raw);
 
 // ── Parsers on saved answers ───────────────────────────────────────────────
-assert.deepEqual(arenaChannel(json("arena-channel.json")), { name: "Interesting Web Design and UX" });
-const arena = arenaPage(json("arena-contents.json"));
-assert.equal(arena.webs.length, 39, "a Link block is a website");
-assert.equal(arena.skipped, 1, "the Text block is skipped");
-assert.equal(arena.more, true);
-assert.deepEqual(arena.webs[0], { url: "https://bencho.dev/blocks/step-player", title: "Bencho - UI interactive blocks" });
+/** How many entries of each kind */
+const kinds = (entries: Entry[]) => Object.fromEntries(KINDS.map((k) => [k, entries.filter((e) => e.kind === k).length]));
 
-assert.deepEqual(pinterestBoard(json("pinterest-board.json")), { id: "181692234905713960", name: "Site of the Day" });
+assert.deepEqual(arenaChannel(json("arena-channel.json")), { name: "Arena Influences" });
+const arena = arenaPage(json("arena-contents.json"));
+assert.equal(arena.found.length, 96, "Link, Embed, Image and Text blocks are found");
+assert.deepEqual(arena.skipped, { file: 2, board: 2 }, "a PDF and a channel inside the channel stay out");
+assert.equal(arena.more, true);
+
+assert.deepEqual(pinterestBoard(json("pinterest-board.json")), { id: "59883938734401152", name: "Illustration" });
 const pinPage = pinterestPage(json("pinterest-feed.json"));
-assert.equal(pinPage.webs.length, 29, "a pin with a link is a candidate website");
-assert.equal(pinPage.skipped, 11, "an uploaded pin (link null) is skipped");
-assert.equal(pinPage.bookmark, "Y2JVSG81V2sxcmNHRlpWM1J");
+assert.equal(pinPage.found.length, 100, "every pin is found; the story is not a pin");
+assert.ok(pinPage.found.every((f) => /^https:\/\/www\.pinterest\.com\/pin\/\d+\/$/.test(f.page) && f.images.length), "a pin is its page and its images");
+assert.ok(pinterestPage(json("pinterest-feed.json")).found.some((f) => f.images[0]?.includes("/1200x/")), "a wide original is asked for at 1200 px");
+assert.ok(pinPage.bookmark?.startsWith("Y2JZakk0ZUUx"));
 assert.equal(pinterestPage({ resource_response: { data: [], bookmark: "-end-" } }).bookmark, null, "-end- ends the board");
 
 assert.deepEqual(cosmosCluster(fixture("cosmos-cluster.html")), { id: 1082975211, name: "World Wide Web" });
 assert.equal(cosmosCluster("<html>no cluster here</html>"), null);
 const cos = cosmosPage(json("cosmos-page.json"));
-assert.equal(cos.webs.length, 38, "a WebsiteElementTile is a website");
-assert.equal(cos.skipped, 2, "media tiles are skipped");
+assert.equal(cos.found.length, 100);
 assert.equal(cos.cursor, "eyJ2MSI6MTg1LjAsInYyIjo3MjAyMjg5fQ==");
+const motion = cosmosPage(json("cosmos-motion.json"));
+assert.equal(motion.found.length, 22);
+assert.equal(motion.cursor, null);
+assert.ok(motion.found.every((f) => /^https:\/\/www\.cosmos\.so\/e\/\d+$/.test(f.page) && !f.link), "a media tile is its image, on its Cosmos page");
+assert.ok(motion.found.every((f) => f.images.length === 1 && !/\.mp4$/.test(f.images[0])), "a video tile is its cover, never its file");
+const base = cosmosPage({ data: { clusterConnections: { meta: {}, items: [
+  { element: { __typename: "BaseElementTile", id: 1225489700, source: { url: "https://euphemia.com/" }, product: null } },
+  { element: { __typename: "SomethingNew", id: 2 } },
+] } } });
+assert.deepEqual(base.found, [{ page: "https://www.cosmos.so/e/1225489700", link: "https://euphemia.com/", images: [] }], "a tile still capturing is its site");
+assert.deepEqual(base.skipped, { empty: 1 });
 
 // An answer we do not understand is the platform not answering, never a half-read board
 assert.throws(() => arenaPage({ data: "nope" }), BadAnswer);
 assert.throws(() => pinterestBoard({ resource_response: {} }), BadAnswer);
 assert.throws(() => cosmosPage({ errors: [{ message: "x" }] }), BadAnswer);
 
-// ── collect: pages -> the board's websites ─────────────────────────────────
-async function main() {
-  // Instagram links on the Pinterest page are not sites of their own: 29 candidates, 3 of them Instagram
-  const fromPin = await collect([pinPage]);
-  assert.equal(fromPin.webs.length, 26);
-  assert.equal(fromPin.skipped, 11 + 3);
-  assert.ok(fromPin.webs.every((w) => !/instagram\.com/.test(w.url)));
+// ── entryOf: what Criterio makes of one item ───────────────────────────────
+const page = "https://www.are.na/block/1";
+assert.deepEqual(entryOf({ page, link: "https://Linear.app/", title: "Linear", images: ["https://img/1.png"] }), { kind: "web", url: "https://linear.app", title: "Linear" });
+assert.deepEqual(entryOf({ page, link: "https://youtu.be/aIQOozd0kqE", images: [] }), { kind: "video", url: "https://youtu.be/aIQOozd0kqE", title: undefined });
+assert.deepEqual(entryOf({ page, link: "https://twitter.com/TheTedNelson/status/963634699418685440", images: [] }),
+  { kind: "post", url: "https://x.com/TheTedNelson/status/963634699418685440", title: undefined });
+assert.deepEqual(entryOf({ page, link: "https://cdn.example.com/shot.PNG", images: ["https://img/1.png"] }),
+  { kind: "image", images: ["https://cdn.example.com/shot.PNG", "https://img/1.png"], page, title: undefined }, "a link to an image file is that image");
+assert.deepEqual(entryOf({ page, link: "https://www.instagram.com/p/abc/", images: ["https://img/1.png"] }),
+  { kind: "image", images: ["https://img/1.png"], page, title: undefined }, "a link with no page of its own is the item's image");
+assert.deepEqual(entryOf({ page, link: "https://www.instagram.com/p/abc/", images: [] }), { kind: "web", url: "https://www.instagram.com/p/abc", title: undefined }, "or the address, with no image");
+assert.deepEqual(entryOf({ page, images: [], title: "  A   quote ", text: "  Any fact becomes important.  " }), { kind: "text", text: "Any fact becomes important.", page, title: "A quote" });
+assert.equal(entryOf({ page, images: [], text: "   " }), "empty");
+assert.equal(entryOf({ page, link: "javascript:alert(1)", images: [] }), "empty");
 
-  const odd: Page = { skipped: 2, webs: [
-    { url: "https://Linear.app/", title: "Linear" },
-    { url: "https://linear.app" }, // the same site again: once, and not skipped
-    { url: "not a url at all" },
-    { url: "javascript:alert(1)" },
-    { url: "https://cdn.example.com/shot.PNG" },
-    { url: "https://www.youtube.com/watch?v=abc" },
-    { url: "https://x.com/someone/status/123" },
+// ── collect: pages -> the board's entries ──────────────────────────────────
+async function main() {
+  const fromArena = await collect([arena]);
+  assert.deepEqual(kinds(fromArena.entries), { web: 21, image: 45, video: 6, post: 1, text: 23 }, "everything on the channel Criterio can hold");
+  assert.deepEqual(fromArena.skipped, { file: 2, board: 2, empty: 0 });
+  const arenaImage = fromArena.entries.find((e) => e.kind === "image");
+  assert.ok(arenaImage?.kind === "image" && /^https:\/\/www\.are\.na\/block\/\d+$/.test(arenaImage.page) && arenaImage.images.length === 2, "an image keeps its block as its page, original first");
+
+  const fromPin = await collect([pinPage]);
+  assert.deepEqual(kinds(fromPin.entries), { web: 88, image: 6, video: 0, post: 0, text: 0 }, "a pin with a link is its site (94 pins, 88 sites), an uploaded pin its image");
+  assert.deepEqual(fromPin.skipped, noneSkipped());
+
+  const fromCosmos = await collect([cos, motion]);
+  assert.deepEqual(kinds(fromCosmos.entries), { web: 98, image: 24, video: 0, post: 0, text: 0 });
+
+  // The same thing twice comes in once: an address by its key, an image by its file, a text by its page
+  const twice: Page = { skipped: {}, found: [
+    { page: "https://www.are.na/block/1", link: "https://linear.app/", images: [] },
+    { page: "https://www.are.na/block/2", link: "https://Linear.app", images: [] },
+    { page: "https://www.are.na/block/3", images: ["https://img/a.png"] },
+    { page: "https://www.are.na/block/4", images: ["https://img/a.png", "https://img/b.png"] },
+    { page: "https://www.are.na/block/5", images: [], text: "one" },
+    { page: "https://www.are.na/block/5", images: [], text: "one" },
   ] };
-  const got = await collect([odd]);
-  assert.deepEqual(got.webs, [{ url: "https://linear.app", title: "Linear" }]);
-  assert.equal(got.skipped, 2 + 5);
-  assert.equal(got.capped, false);
+  assert.deepEqual(kinds((await collect([twice])).entries), { web: 1, image: 1, video: 0, post: 0, text: 1 });
 
   // The cap stops reading: the page after it is never asked for
   let asked = 0;
   async function* many(): AsyncGenerator<Page> {
     for (let p = 0; p < 10; p++) {
       asked++;
-      yield { skipped: 0, webs: Array.from({ length: 100 }, (_, i) => ({ url: `https://site-${p}-${i}.com` })) };
+      yield { skipped: {}, found: Array.from({ length: 100 }, (_, i) => ({ page: `https://www.are.na/block/${p}-${i}`, link: `https://site-${p}-${i}.com`, images: [] })) };
     }
   }
   const big = await collect(many());
-  assert.equal(big.webs.length, MAX_WEBS);
+  assert.equal(big.entries.length, MAX_ENTRIES);
   assert.equal(big.capped, true);
   assert.equal(asked, 6, "five full pages, and the sixth shows there is more");
-  const exact = await collect([{ skipped: 0, webs: Array.from({ length: MAX_WEBS }, (_, i) => ({ url: `https://s${i}.com` })) }]);
+  const exact = await collect([{ skipped: {}, found: Array.from({ length: MAX_ENTRIES }, (_, i) => ({ page: `p${i}`, images: [`https://img/${i}.png`] })) }]);
   assert.equal(exact.capped, false, "exactly the cap is not capped");
+
+  // ── batchesOf: what one request carries ─────────────────────────────────
+  const web = (i: number): Entry => ({ kind: "web", url: `https://s${i}.com` });
+  const image = (i: number): Entry => ({ kind: "image", images: [`https://img/${i}.png`], page: `https://www.are.na/block/${i}` });
+  const sizes = (list: Entry[]) => batchesOf(list).map((b) => b.length);
+  assert.deepEqual(sizes(Array.from({ length: 60 }, (_, i) => web(i))), [MAX_PER_BATCH, MAX_PER_BATCH, 10]);
+  assert.deepEqual(sizes(Array.from({ length: 23 }, (_, i) => image(i))), [MAX_IMAGES_PER_BATCH, MAX_IMAGES_PER_BATCH, 3]);
+  assert.deepEqual(sizes([...Array.from({ length: 12 }, (_, i) => web(i)), image(0), web(99)]), [12, 2], "an image closes a batch that is already full for images");
+  const mixed = [...fromArena.entries, ...fromPin.entries];
+  const batches = batchesOf(mixed);
+  assert.deepEqual(batches.flat(), mixed, "every entry once, in order");
+  assert.ok(batches.every((b) => b.length <= (b.some((e) => e.kind === "image") ? MAX_IMAGES_PER_BATCH : MAX_PER_BATCH)), "no batch over its limit");
+
+  // ── staysInside: copies from a board are never handed out ───────────────
+  assert.equal(staysInside({ web: "/api/files/inspo/w/media/from-1.png", source: "https://www.are.na/block/1" }), true);
+  assert.equal(staysInside({ web: "/api/files/inspo/w/media/from-1.png", source: "https://www.cosmos.so/e/1" }), true);
+  assert.equal(staysInside({ web: "/api/files/inspo/w/text/from-1.md", source: "https://www.are.na/block/1" }), true);
+  assert.equal(staysInside({ web: "/api/files/inspo/w/media/from-1.png", source: "https://www.pinterest.com/pin/1/" }), true);
+  assert.equal(staysInside({ web: "https://linear.app" }), false);
+  assert.equal(staysInside({ web: "/api/files/inspo/w/media/1.png", source: "https://notcosmos.so/e/1" }), false);
 
   console.log("boards: pure checks pass");
 
   if (!process.argv.includes("--live")) return;
   const { readBoard } = await import("../lib/boards/read");
   for (const url of [
+    "https://www.are.na/chad-mazzola/arena-influences",
     "https://www.are.na/daniel-baer/interesting-web-design-and-ux",
     "https://www.pinterest.com/awwwards/site-of-the-day/",
+    "https://www.pinterest.com/behance/illustration/",
     "https://pin.it/4ZsUd0Ewh",
     "https://www.cosmos.so/matthew3000/world-wide-web",
+    "https://www.cosmos.so/matthew3000/motion",
   ]) {
     const ref = boardOf(url);
     assert.ok(ref, url);
     const t = Date.now();
     try {
       const b = await readBoard(ref);
-      console.log(`${b.platform.padEnd(9)} "${b.name}": ${b.webs.length} websites, ${b.skipped} skipped, capped ${b.capped} (${Date.now() - t} ms) ${url}`);
-      console.log(`          first: ${b.webs.slice(0, 2).map((w) => w.url).join("  ")}`);
+      const by = Object.entries(kinds(b.entries)).filter(([, n]) => n).map(([k, n]) => `${n} ${k}`).join(", ");
+      const out = Object.entries(b.skipped).filter(([, n]) => n).map(([k, n]) => `${n} ${k}`).join(", ") || "none";
+      console.log(`${b.platform.padEnd(9)} "${b.name}": ${by}. skipped: ${out}. capped ${b.capped} (${Date.now() - t} ms) ${url}`);
     } catch (e) {
       console.log(`${ref.platform.padEnd(9)} FAILED ${url}: ${e instanceof Error ? e.message : e}`);
     }

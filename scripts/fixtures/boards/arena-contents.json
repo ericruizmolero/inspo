@@ -1,526 +1,1292 @@
 {
-"meta": {
-"current_page": 1,
-"next_page": 2,
-"prev_page": null,
-"per_page": 100,
-"total_pages": 6,
-"total_count": 511,
-"has_more_pages": true
-},
-"data": [
-{
-"id": 50822604,
-"type": "Link",
-"title": "Bencho - UI interactive blocks",
-"source": {
-"url": "https://bencho.dev/blocks/step-player",
-"title": "Bencho - UI interactive blocks",
-"provider": {
-"name": "bencho.dev",
-"url": "https://bencho.dev"
-}
-}
-},
-{
-"id": 34886195,
-"type": "Link",
-"title": "Interactions by Nitish Khagwal",
-"source": {
-"url": "https://khagwal.com/interactions/",
-"title": "Interactions by Nitish Khagwal",
-"provider": {
-"name": "khagwal.com",
-"url": "https://khagwal.com"
-}
-}
-},
-{
-"id": 50666551,
-"type": "Link",
-"title": "Official Website | _J.L-A.L_",
-"source": {
-"url": "https://j-la-l.com/",
-"title": "Official Website | _J.L-A.L_",
-"provider": {
-"name": "j-la-l.com",
-"url": "https://j-la-l.com"
-}
-}
-},
-{
-"id": 50593141,
-"type": "Link",
-"title": "Play Grounds Studio",
-"source": {
-"url": "https://www.play-grounds.studio/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&p=joy-objects%7Ehope-world",
-"title": "Play Grounds Studio",
-"provider": {
-"name": "www.play-grounds.studio",
-"url": "https://www.play-grounds.studio"
-}
-}
-},
-{
-"id": 50490240,
-"type": "Link",
-"title": "Conversation Taking Place (CTP. TP. P.) founded by Immo Schneider is a design and creative studio in Berlin.",
-"source": {
-"url": "https://conversation-taking-place.com/",
-"title": "Conversation Taking Place (CTP. TP. P.) founded by Immo Schneider is a design and creative studio in Berlin.",
-"provider": {
-"name": "conversation-taking-place.com",
-"url": "https://conversation-taking-place.com"
-}
-}
-},
-{
-"id": 50443122,
-"type": "Link",
-"title": "Jason Bradley \u2014 Jason Bradley",
-"source": {
-"url": "https://jasonbradley.co/",
-"title": "Jason Bradley \u2014 Jason Bradley",
-"provider": {
-"name": "jasonbradley.co",
-"url": "https://jasonbradley.co"
-}
-}
-},
-{
-"id": 50305356,
-"type": "Link",
-"title": "Lambert | Lambert",
-"source": {
-"url": "https://lambert-lambert.com/",
-"title": "Lambert | Lambert",
-"provider": {
-"name": "lambert-lambert.com",
-"url": "https://lambert-lambert.com"
-}
-}
-},
-{
-"id": 50305197,
-"type": "Link",
-"title": "System 0 | Arc\u2019teryx",
-"source": {
-"url": "https://arcteryx.com/us/en/explore/system0/",
-"title": "System 0 | Arc\u2019teryx",
-"provider": {
-"name": "arcteryx.com",
-"url": "https://arcteryx.com"
-}
-}
-},
-{
-"id": 49655400,
-"type": "Link",
-"title": "Matthias Gschwendtner",
-"source": {
-"url": "https://www.matthiasgschwendtner.com/",
-"title": "Matthias Gschwendtner",
-"provider": {
-"name": "www.matthiasgschwendtner.com",
-"url": "https://www.matthiasgschwendtner.com"
-}
-}
-},
-{
-"id": 49424085,
-"type": "Link",
-"title": "United Flags of Fashion",
-"source": {
-"url": "https://uff.cfda.com/",
-"title": "United Flags of Fashion",
-"provider": {
-"name": "uff.cfda.com",
-"url": "https://uff.cfda.com"
-}
-}
-},
-{
-"id": 49250474,
-"type": "Link",
-"title": "General",
-"source": {
-"url": "https://anonymousgallery.com/all",
-"title": "General",
-"provider": {
-"name": "anonymousgallery.com",
-"url": "https://anonymousgallery.com"
-}
-}
-},
-{
-"id": 48192794,
-"type": "Link",
-"title": "Yuri Roga",
-"source": {
-"url": "https://yuriroga.com/",
-"title": "Yuri Roga",
-"provider": {
-"name": "yuriroga.com",
-"url": "https://yuriroga.com"
-}
-}
-},
-{
-"id": 47516527,
-"type": "Link",
-"title": "MYTH Magazine",
-"source": {
-"url": "https://mythmagazine.com/",
-"title": "MYTH Magazine",
-"provider": {
-"name": "mythmagazine.com",
-"url": "https://mythmagazine.com"
-}
-}
-},
-{
-"id": 46562742,
-"type": "Link",
-"title": "Heim+Viladrich",
-"source": {
-"url": "https://heimviladrich.com/",
-"title": "Heim+Viladrich",
-"provider": {
-"name": "heimviladrich.com",
-"url": "https://heimviladrich.com"
-}
-}
-},
-{
-"id": 45556416,
-"type": "Link",
-"title": "LE\u00d3N ROMERO",
-"source": {
-"url": "https://www.leonromero.work/",
-"title": "LE\u00d3N ROMERO",
-"provider": {
-"name": "www.leonromero.work",
-"url": "https://www.leonromero.work"
-}
-}
-},
-{
-"id": 45203974,
-"type": "Link",
-"title": "Oneohtrix Point Never",
-"source": {
-"url": "https://pointnever.com/",
-"title": "Oneohtrix Point Never",
-"provider": {
-"name": "pointnever.com",
-"url": "https://pointnever.com"
-}
-}
-},
-{
-"id": 45078963,
-"type": "Link",
-"title": "Front page",
-"source": {
-"url": "https://mapsmuseum.com/en/",
-"title": "Front page",
-"provider": {
-"name": "mapsmuseum.com",
-"url": "https://mapsmuseum.com"
-}
-}
-},
-{
-"id": 45067214,
-"type": "Link",
-"title": "Official Business \u2014 Design and web development for creative brands.",
-"source": {
-"url": "https://www.official.business/",
-"title": "Official Business \u2014 Design and web development for creative brands.",
-"provider": {
-"name": "www.official.business",
-"url": "https://www.official.business"
-}
-}
-},
-{
-"id": 44965428,
-"type": "Link",
-"title": "PW\u2013Magazine",
-"source": {
-"url": "https://www.pw-magazine.com/?ref=siteinspire",
-"title": "PW\u2013Magazine",
-"provider": {
-"name": "www.pw-magazine.com",
-"url": "https://www.pw-magazine.com"
-}
-}
-},
-{
-"id": 44756578,
-"type": "Link",
-"title": "67 \u2026 Leander Herzog, Likes, 2026",
-"source": {
-"url": "https://leanderherzog.ch/2026/likes/?fbclid=PAQ0xDSwQxMHJleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAafwTliJpqteCodGkX0KFBKsYicpe9mXtyrhJIYmi23G2_E3eRgjAhW3YfKg2Q_aem_kKrr9-TmFckGxEi2IyFNAQ",
-"title": "67 \u2026 Leander Herzog, Likes, 2026",
-"provider": {
-"name": "leanderherzog.ch",
-"url": "https://leanderherzog.ch"
-}
-}
-},
-{
-"id": 44500939,
-"type": "Link",
-"title": "CACTUS DIGITALE",
-"source": {
-"url": "https://cactusdigitale.com/",
-"title": "CACTUS DIGITALE",
-"provider": {
-"name": "cactusdigitale.com",
-"url": "https://cactusdigitale.com"
-}
-}
-},
-{
-"id": 44301611,
-"type": "Link",
-"title": "IXAGON",
-"source": {
-"url": "https://ixagon.io/",
-"title": "IXAGON",
-"provider": {
-"name": "ixagon.io",
-"url": "https://ixagon.io"
-}
-}
-},
-{
-"id": 43519013,
-"type": "Link",
-"title": "Home - See You Later",
-"source": {
-"url": "https://seeyoulater.la/?ref=browsingmode.com",
-"title": "Home - See You Later",
-"provider": {
-"name": "seeyoulater.la",
-"url": "https://seeyoulater.la"
-}
-}
-},
-{
-"id": 42411073,
-"type": "Text",
-"title": "HFBK Graduates 2025",
-"source": null
-},
-{
-"id": 42378218,
-"type": "Link",
-"title": "Oliver Millar",
-"source": {
-"url": "https://olivermillar.com/",
-"title": "Oliver Millar",
-"provider": {
-"name": "olivermillar.com",
-"url": "https://olivermillar.com"
-}
-}
-},
-{
-"id": 42332899,
-"type": "Link",
-"title": "Leila \u010ci\u010di\u0107 - Home",
-"source": {
-"url": "https://www.leilacicic.com/",
-"title": "Leila \u010ci\u010di\u0107 - Home",
-"provider": {
-"name": "www.leilacicic.com",
-"url": "https://www.leilacicic.com"
-}
-}
-},
-{
-"id": 42182807,
-"type": "Link",
-"title": "Haus der Kunst M\u00fcnchen",
-"source": {
-"url": "https://www.hausderkunst.de/",
-"title": "Haus der Kunst M\u00fcnchen",
-"provider": {
-"name": "www.hausderkunst.de",
-"url": "https://www.hausderkunst.de"
-}
-}
-},
-{
-"id": 41925475,
-"type": "Link",
-"title": "area",
-"source": {
-"url": "https://enjoythearea.com",
-"title": "area",
-"provider": {
-"name": "enjoythearea.com",
-"url": "https://enjoythearea.com"
-}
-}
-},
-{
-"id": 41875348,
-"type": "Link",
-"title": "elisabreyerarchive.com",
-"source": {
-"url": "https://www.elisabreyerarchive.com/",
-"title": "elisabreyerarchive.com",
-"provider": {
-"name": "www.elisabreyerarchive.com",
-"url": "https://www.elisabreyerarchive.com"
-}
-}
-},
-{
-"id": 41703703,
-"type": "Link",
-"title": "Works - FormaFantasma",
-"source": {
-"url": "https://formafantasma.com/works#filter=product",
-"title": "Works - FormaFantasma",
-"provider": {
-"name": "formafantasma.com",
-"url": "https://formafantasma.com"
-}
-}
-},
-{
-"id": 41596131,
-"type": "Link",
-"title": "Verified Seller",
-"source": {
-"url": "https://verifiedseller.net/",
-"title": "Verified Seller",
-"provider": {
-"name": "verifiedseller.net",
-"url": "https://verifiedseller.net"
-}
-}
-},
-{
-"id": 41434930,
-"type": "Link",
-"title": "Elsa Hanneke",
-"source": {
-"url": "https://elsa.works/",
-"title": "Elsa Hanneke",
-"provider": {
-"name": "elsa.works",
-"url": "https://elsa.works"
-}
-}
-},
-{
-"id": 41145442,
-"type": "Link",
-"title": "Judith Kakon",
-"source": {
-"url": "https://judithkakon.com",
-"title": "Judith Kakon",
-"provider": {
-"name": "judithkakon.com",
-"url": "https://judithkakon.com"
-}
-}
-},
-{
-"id": 41189399,
-"type": "Link",
-"title": "HIC | an archive of architectures and other things",
-"source": {
-"url": "https://hicarquitectura.com/",
-"title": "HIC | an archive of architectures and other things",
-"provider": {
-"name": "hicarquitectura.com",
-"url": "https://hicarquitectura.com"
-}
-}
-},
-{
-"id": 40843524,
-"type": "Link",
-"title": "[ CINEDEPT ] A Full-Service Creative Production Co.",
-"source": {
-"url": "https://cinedept.com/",
-"title": "[ CINEDEPT ] A Full-Service Creative Production Co.",
-"provider": {
-"name": "cinedept.com",
-"url": "https://cinedept.com"
-}
-}
-},
-{
-"id": 40478363,
-"type": "Link",
-"title": "Ainsley's Work",
-"source": {
-"url": "https://ainsleyromero.com/",
-"title": "Ainsley's Work",
-"provider": {
-"name": "ainsleyromero.com",
-"url": "https://ainsleyromero.com"
-}
-}
-},
-{
-"id": 40449816,
-"type": "Link",
-"title": "ericyue",
-"source": {
-"url": "https://ericyue.com/",
-"title": "ericyue",
-"provider": {
-"name": "ericyue.com",
-"url": "https://ericyue.com"
-}
-}
-},
-{
-"id": 40367195,
-"type": "Link",
-"title": "Collection | B\u00e9cane",
-"source": {
-"url": "https://www.becaneparis.com/",
-"title": "Collection | B\u00e9cane",
-"provider": {
-"name": "www.becaneparis.com",
-"url": "https://www.becaneparis.com"
-}
-}
-},
-{
-"id": 40107327,
-"type": "Link",
-"title": "Special Projects \u2013 SPA",
-"source": {
-"url": "https://www.specialproduction.agency/special-projects",
-"title": "Special Projects \u2013 SPA",
-"provider": {
-"name": "www.specialproduction.agency",
-"url": "https://www.specialproduction.agency"
-}
-}
-},
-{
-"id": 39964486,
-"type": "Link",
-"title": "On the Impulse to Notate",
-"source": {
-"url": "https://notations.xyz/text",
-"title": "On the Impulse to Notate",
-"provider": {
-"name": "notations.xyz",
-"url": "https://notations.xyz"
-}
-}
-}
-]
+ "meta": {
+  "current_page": 1,
+  "next_page": 2,
+  "prev_page": null,
+  "per_page": 100,
+  "total_pages": 2,
+  "total_count": 128,
+  "has_more_pages": true
+ },
+ "data": [
+  {
+   "id": 9613792,
+   "type": "Image",
+   "title": "Sitterwerk, Dynamic Order, 2006",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/9613792/original_08c351c5d78860d9bdb194cd6b4a7dd6.jpg?1606117715",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI5NjEzNzkyL29yaWdpbmFsXzA4YzM1MWM1ZDc4ODYwZDliZGIxOTRjZDZiNGE3ZGQ2LmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 29774986,
+   "type": "Image",
+   "title": "AN ACCUMULATION OF INFORMATION TAKEN FROM HERE TO THERE (1970)",
+   "source": {
+    "url": "https://gallery98.org/2022/group-show-with-lawrence-weiner-joseph-kosuth-alighiero-boetti-on-kawara-and-others-card-sperone-westwater-gallery-2012/"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/29774986/original_7c82b61a80fddb4f99555926decae37d.jpg?1722644975",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyOTc3NDk4Ni9vcmlnaW5hbF83YzgyYjYxYTgwZmRkYjRmOTk1NTU5MjZkZWNhZTM3ZC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 5086629,
+   "type": "Image",
+   "title": "58ad3851-5588-46dd-b152-59ffc80812f6.jpg",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/5086629/original_e34b0288a1e29ff998e6907e7d9f6fe8.jpg?1569270100",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI1MDg2NjI5L29yaWdpbmFsX2UzNGIwMjg4YTFlMjlmZjk5OGU2OTA3ZTdkOWY2ZmU4LmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 4929062,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "“Any fact becomes important when it’s connected to another.” \n\n― Umberto Eco, *Foucault’s Pendulum*"
+   }
+  },
+  {
+   "id": 1829595,
+   "type": "Link",
+   "title": "Joan Watson",
+   "source": {
+    "url": "https://www.mica.edu/About_MICA/People/Faculty/Faculty_List_by_Last_Name/Joan_Watson.html"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1829595/original_df7291cd8148a8b2272cea7c583d3304?1519946559",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxODI5NTk1L29yaWdpbmFsX2RmNzI5MWNkODE0OGE4YjIyNzJjZWE3YzU4M2QzMzA0IiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 2824521,
+   "type": "Link",
+   "title": "Community Memory - Wikipedia",
+   "source": {
+    "url": "https://en.wikipedia.org/wiki/Community_Memory"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/2824521/original_b395a961c6e9ad27e1394bafd884fecc.png?1538756823",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyODI0NTIxL29yaWdpbmFsX2IzOTVhOTYxYzZlOWFkMjdlMTM5NGJhZmQ4ODRmZWNjLnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 1453989,
+   "type": "Text",
+   "title": "Ambient communities of knowledge",
+   "source": null,
+   "content": {
+    "markdown": "In summary, rather than learning by replicating the performance of others or by acquiring knowledge transmitted in instruction, we suggest that learning occurs through centripetal participation in the learning curriculum of the ambient community. Because the place of knowledge is within a community of practice, questions of learning must be addressed within the developmental cycles of that community, a recommendation which creates a diagnostic tool for distinguishing among communities of practice."
+   }
+  },
+  {
+   "id": 1763670,
+   "type": "Text",
+   "title": "From the first issue of WIRED",
+   "source": {
+    "url": "https://www.wired.com/story/announcing-wired-paywall/"
+   },
+   "content": {
+    "markdown": "“in the age of information overload, THE ULTIMATE LUXURY IS MEANING AND CONTEXT.”\n–  Louis Rossetto"
+   }
+  },
+  {
+   "id": 1761997,
+   "type": "Link",
+   "title": null,
+   "source": {
+    "url": "https://twitter.com/TheTedNelson/status/963634699418685440"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1761997/original_3bed424201aaa763bd5b311e2ac9583b?1518620492",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxNzYxOTk3L29yaWdpbmFsXzNiZWQ0MjQyMDFhYWE3NjNiZDViMzExZTJhYzk1ODNiIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 2175982,
+   "type": "Image",
+   "title": "Paul Ford",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/2175982/original_0a8da472fc1d1d47a2552efe8ae27a17.png?1526322046",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyMTc1OTgyL29yaWdpbmFsXzBhOGRhNDcyZmMxZDFkNDdhMjU1MmVmZThhZTI3YTE3LnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 27845,
+   "type": "Image",
+   "title": "Bits & Pieces - Version 2",
+   "source": {
+    "url": "http://www.flickr.com/photos/jmoravec/5189988909/"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/27845/original_05e30559ef858a937f677721982e24f8.jpg?1342816110",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyNzg0NS9vcmlnaW5hbF8wNWUzMDU1OWVmODU4YTkzN2Y2Nzc3MjE5ODJlMjRmOC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 535795,
+   "type": "Link",
+   "title": "Commonplace book",
+   "source": {
+    "url": "https://en.wikipedia.org/wiki/Commonplace_book"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/535795/original_3b94a823e88dbd401b7fef33d4822ec9?1454509264",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI1MzU3OTUvb3JpZ2luYWxfM2I5NGE4MjNlODhkYmQ0MDFiN2ZlZjMzZDQ4MjJlYzkiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 996783,
+   "type": "Link",
+   "title": "Working memory - Wikipedia",
+   "source": {
+    "url": "https://en.wikipedia.org/wiki/Working_memory"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/996783/original_bb660fa55bf92d5a0c9861b8852a3d3b?1493326055",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI5OTY3ODMvb3JpZ2luYWxfYmI2NjBmYTU1YmY5MmQ1YTBjOTg2MWI4ODUyYTNkM2IiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 996762,
+   "type": "Image",
+   "title": "First Papers of Surrealism, Installation View",
+   "source": {
+    "url": "https://s-media-cache-ak0.pinimg.com/originals/82/1e/f0/821ef00a4ab796c17346deadaf0da36f.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/996762/original_02b0b55d7d45b9018f0b0289aeabca18.jpg?1493325115",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI5OTY3NjIvb3JpZ2luYWxfMDJiMGI1NWQ3ZDQ1YjkwMThmMGIwMjg5YWVhYmNhMTguanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 854486,
+   "type": "Image",
+   "title": "Pablo Picasso, Constellation Drawings, 1924",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/854486/original_0a25ce7437e8388f2a465df7d7593e86.jpg?1485471036",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI4NTQ0ODYvb3JpZ2luYWxfMGEyNWNlNzQzN2U4Mzg4ZjJhNDY1ZGY3ZDc1OTNlODYuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 1154772,
+   "type": "Link",
+   "title": "The Usefulness of Useless Knowledge annotated/explained version",
+   "source": {
+    "url": "http://fermatslibrary.com/s/the-usefulness-of-useless-knowledge"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1154772/original_b3cf4f8d65cff12c9b2dcb6e0cfe29f3?1501180674",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMTU0NzcyL29yaWdpbmFsX2IzY2Y0ZjhkNjVjZmYxMmM5YjJkY2I2ZTBjZmUyOWYzIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 841357,
+   "type": "Image",
+   "title": "Sol_LeWitt_1973_All_ifs_ands_or_buts_connected_by_green_lines-alta1.jpg",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/841357/original_7fab5caf7ddd477ac167130f99b520f5.jpg?1484859254",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI4NDEzNTcvb3JpZ2luYWxfN2ZhYjVjYWY3ZGRkNDc3YWMxNjcxMzBmOTliNTIwZjUuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 736354,
+   "type": "Image",
+   "title": null,
+   "source": {
+    "url": "https://pbs.twimg.com/media/CuusW66UAAA84a1.jpg:large"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/736354/original_e107ba89ce14c3eec2650511a22db2a9?1476473900",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI3MzYzNTQvb3JpZ2luYWxfZTEwN2JhODljZTE0YzNlZWMyNjUwNTExYTIyZGIyYTkiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 731300,
+   "type": "Image",
+   "title": "Mark Lombardi, George W. Bush, Harken Energy, and Jackson Stephens, c. 1979–90",
+   "source": {
+    "url": "http://bombmagazine.org/article/2587/mark-lombardi"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/731300/original_861ad7d5ba25110535ff829b9d832276.jpg?1476057214",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI3MzEzMDAvb3JpZ2luYWxfODYxYWQ3ZDViYTI1MTEwNTM1ZmY4MjliOWQ4MzIyNzYuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 399146,
+   "type": "Embed",
+   "title": "Stanley Kubricks Boxes",
+   "source": {
+    "url": "https://vimeo.com/78314194"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/399146/original_0e1abfbc42628bb6f2e436deef4af1f2?1435933261",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIzOTkxNDYvb3JpZ2luYWxfMGUxYWJmYmM0MjYyOGJiNmYyZTQzNmRlZWY0YWYxZjIiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 717590,
+   "type": "Image",
+   "title": "Introducing-HyperCard.jpg",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/717590/original_2430836fb056bcd02a802b8fa11655c2.jpg?1474845522",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI3MTc1OTAvb3JpZ2luYWxfMjQzMDgzNmZiMDU2YmNkMDJhODAyYjhmYTExNjU1YzIuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 1236138,
+   "type": "Text",
+   "title": "Ta-Nehisi Coates, Between the World and Me",
+   "source": null,
+   "content": {
+    "markdown": "“I was made for the library, not the classroom. The classroom was a jail of other people’s interests. The library was open, unending, free.”\n\n— Ta-Nehisi Coates, *Between the World and Me*"
+   }
+  },
+  {
+   "id": 682916,
+   "type": "Image",
+   "title": null,
+   "source": {
+    "url": "http://www.nytimes.com/2011/07/19/science/19tierney.html?_r=0"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/682916/original_93b802ed0346465b103fec4990e8035b.jpg?1471655304",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI2ODI5MTYvb3JpZ2luYWxfOTNiODAyZWQwMzQ2NDY1YjEwM2ZlYzQ5OTBlODAzNWIuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 546355,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "\"Creativity is just connecting things. When you ask creative people how they did something, they feel a little guilty because they didn’t really do it, they just saw something. It seemed obvious to them after a while.\""
+   }
+  },
+  {
+   "id": 529716,
+   "type": "Embed",
+   "title": "Glass Domain - Interlock (1991 detroit)",
+   "source": {
+    "url": "https://www.youtube.com/watch?v=Rc45ATlYtCs"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/529716/original_9f37ed0c8acfcd229a399191e9d34b49?1453765248",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI1Mjk3MTYvb3JpZ2luYWxfOWYzN2VkMGM4YWNmY2QyMjlhMzk5MTkxZTlkMzRiNDkiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 428352,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "\"...the street finds its own uses for things\" \n\n-- William Gibson, *Burning Chrome*"
+   }
+  },
+  {
+   "id": 409888,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "\"The owner of the memex, let us say, is interested in the origin and properties of the bow and arrow. Specifically he is studying why the short Turkish bow was apparently superior to the English long bow in the skirmishes of the Crusades. He has dozens of possibly pertinent books and articles in his memex. First he runs through an encyclopedia, finds an interesting but sketchy article, leaves it projected. Next, in a history, he finds another pertinent item, and ties the two together. Thus he goes, building a trail of many items. Occasionally he inserts a comment of his own, either linking it into the main trail or joining it by a side trail to a particular item. When it becomes evident that the elastic properties of available materials had a great deal to do with the bow, he branches off on a side trail which takes him through textbooks on elasticity and tables of physical constants. He inserts a page of longhand analysis of his own. Thus he builds a trail of his interest through the maze of materials available to him.\"\n\n– Douglas Engelbart, 1968"
+   }
+  },
+  {
+   "id": 243625,
+   "type": "Image",
+   "title": "Feynman Diagram",
+   "source": {
+    "url": "http://qph.cr.quoracdn.com/main-qimg-f726427fc94a39bd1307f642e7dfd45e"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/243625/original_e1bb127589ad935b756c586718e1fcda?1402418102",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyNDM2MjUvb3JpZ2luYWxfZTFiYjEyNzU4OWFkOTM1Yjc1NmM1ODY3MThlMWZjZGEiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 47769,
+   "type": "Image",
+   "title": "Voyager Golden Record",
+   "source": {
+    "url": "http://upload.wikimedia.org/wikipedia/commons/5/56/The_Sounds_of_Earth_Record_Cover_-_GPN-2000-001978.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47769/original_2749ced02ed3b53a8e9aa3021bfe9337.jpg?1351008517",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0Nzc2OS9vcmlnaW5hbF8yNzQ5Y2VkMDJlZDNiNTNhOGU5YWEzMDIxYmZlOTMzNy5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 522,
+   "type": "Text",
+   "title": "Bohm Dialogue",
+   "source": null,
+   "content": {
+    "markdown": "To address societal problems during his later years, Bohm wrote a proposal for a solution that has become known as \"Bohm Dialogue\", in which equal status and \"free space\" form the most important prerequisites of communication and the appreciation of differing personal beliefs. He suggested that if these Dialogue groups were experienced on a sufficiently wide scale, they could help overcome the isolation and fragmentation Bohm observed was inherent in society.\n\n> Bohm Dialogue (also known as Bohmian Dialogue or \"Dialogue in the Spirit of David Bohm\") is a freely-flowing group conversation that makes an attempt, utilizing a theoretical understanding of the way thoughts relate to universal reality, to more effectively investigate the crises that face society, and indeed the whole of human nature and consciousness."
+   }
+  },
+  {
+   "id": 155090,
+   "type": "Image",
+   "title": "tlit-FlyingIslandDocuments-Linkable.png",
+   "source": {
+    "url": "http://transliterature.org/index_files/tlit-FlyingIslandDocuments,Linkable.png"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/155090/original_2cde2565341ba7e06f12fd9e5884e589.png?1380203463",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxNTUwOTAvb3JpZ2luYWxfMmNkZTI1NjUzNDFiYTdlMDZmMTJmZDllNTg4NGU1ODkucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 291544,
+   "type": "Link",
+   "title": "Semantic Networks",
+   "source": {
+    "url": "http://www.jfsowa.com/pubs/semnet.htm"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/291544/original_e9524e8fcdcb53b4907f7ddca8015ed0?1413325502",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyOTE1NDQvb3JpZ2luYWxfZTk1MjRlOGZjZGNiNTNiNDkwN2Y3ZGRjYTgwMTVlZDAiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 932,
+   "type": "Image",
+   "title": "Xanadu Hypertext Project",
+   "source": {
+    "url": "http://xanadu.com.au/ted/XUsurvey/PTF2CLO8.JPG"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/932/original_PTF2CLO8.JPG?1313178366",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI5MzIvb3JpZ2luYWxfUFRGMkNMTzguSlBHIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 12664,
+   "type": "Image",
+   "title": null,
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/12664/original_original_1356b79c9dc4182cc2ed967cc8636d74.gif?1334701430",
+    "large": {
+     "src": "https://d2w9rnfcy7mm78.cloudfront.net/12664/original_original_1356b79c9dc4182cc2ed967cc8636d74.gif?1334701430"
+    }
+   }
+  },
+  {
+   "id": 258588,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "\"And here we might discern the nature of virtuality. I heap endless scorn on the idea that the organization of information resembles the world or seeks to model the world. Rather, the system is not simply about something, it is something. It is a machine that has deterritorialized certain elements of the world and that functions as a machine hooked into all sorts of other machines – physiological, affective, social, bureaucratic, etc. – functioning like a factory so as to produce certain effects. Software releases pure events and separates them from their happening. It proceeds by selection and isolation. In proceeding in this way, like any good factory, it produces something new through subtraction and becomes an entity that itself acts in the world.\"\n\n– http://delinear.info/delinearinfo/2"
+   }
+  },
+  {
+   "id": 86531,
+   "type": "Image",
+   "title": "120-600x800.jpg",
+   "source": {
+    "url": "http://www.architizer.com/blog/wp-content/uploads/2013/03/120-600x800.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/86531/original_104086def2264ad01dc77ccb6f892c11.jpg?1363124144",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI4NjUzMS9vcmlnaW5hbF8xMDQwODZkZWYyMjY0YWQwMWRjNzdjY2I2Zjg5MmMxMS5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 137005,
+   "type": "Embed",
+   "title": "Arpanet ‎- Wireless Internet [Full Album]",
+   "source": {
+    "url": "http://youtu.be/aIQOozd0kqE"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/137005/original_23588ec19b67aff0492caf8ce79a6e39?1375645743",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMzcwMDUvb3JpZ2luYWxfMjM1ODhlYzE5YjY3YWZmMDQ5MmNhZjhjZTc5YTZlMzkiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 240995,
+   "type": "Link",
+   "title": "Voyager - The Interstellar Mission",
+   "source": {
+    "url": "http://voyager.jpl.nasa.gov/spacecraft/music.html"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/240995/original_e2a6a2978c9e0a506e3e31d0056a37c9?1401495966",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyNDA5OTUvb3JpZ2luYWxfZTJhNmEyOTc4YzllMGE1MDZlM2UzMWQwMDU2YTM3YzkiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 251442,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "“The starting-point of critical elaboration is the consciousness of what one really is, and is ‘knowing thyself’ as a product of the historical processes to date, which has deposited in you an infinity of traces, without leaving an inventory, therefore it is imperative at the outset to compile such an inventory.” – Antonio Gramsci, Prison Notebooks"
+   }
+  },
+  {
+   "id": 231521,
+   "type": "Link",
+   "title": "Open Knowledge",
+   "source": {
+    "url": "https://okfn.org/opendata/"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/231521/original_a3153728721466209e1250c11b2b12a8?1398347245",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyMzE1MjEvb3JpZ2luYWxfYTMxNTM3Mjg3MjE0NjYyMDllMTI1MGMxMWIyYjEyYTgiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 154263,
+   "type": "Image",
+   "title": "Robert Johnson",
+   "source": {
+    "url": "http://db-artmag.com/cms/upload/64/feature/globe/johnson.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/154263/original_df008f6f1d101ba5171e3c40d3019989.jpg?1379988982",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxNTQyNjMvb3JpZ2luYWxfZGYwMDhmNmYxZDEwMWJhNTE3MWUzYzQwZDMwMTk5ODkuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 101962,
+   "type": "Link",
+   "title": "Zuihitsu - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Zuihitsu"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/101962/original_493f0909427c70c42f6967fe6104dd9c?1366769728",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMDE5NjIvb3JpZ2luYWxfNDkzZjA5MDk0MjdjNzBjNDJmNjk2N2ZlNjEwNGRkOWMiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 136194,
+   "type": "Link",
+   "title": "Home | The Public School",
+   "source": {
+    "url": "http://thepublicschool.org/"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/136194/original_b2cb7d0f8a9e17a49ae636b92675a647?1375304682",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMzYxOTQvb3JpZ2luYWxfYjJjYjdkMGY4YTllMTdhNDlhZTYzNmI5MjY3NWE2NDciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 135484,
+   "type": "Text",
+   "title": "Page 35",
+   "source": null,
+   "content": {
+    "markdown": "Principle of cartography and decalcomania: a rhizome is not amenable to any structural or generative model. It is a stranger to any idea of genetic axis or deep structure ... The rhizome is altogether different, *a map and not a tracing* ... What distinguishes the map from the tracing is that it is entirely orientated towards an experimentation in contact with the real ... The map is open and connectable in all of its dimensions; it is detachable, reversible, susceptible to constant modification. It can be torn, reversed, adapted to any kind of mounting, reworked by an individual, group, or social formation. It can be drawn on a wall, conceived of as a work of art, constructed as political action or meditation.\n"
+   }
+  },
+  {
+   "id": 126349,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "\"The protean nature of the computer is such that it can act like a machine or like a language to be shaped and exploited. It is a medium that can dynamically simulate the details of any other medium, including media that cannot exist physically. It is not a tool, although it can act like many tools. It is the first metamedium, and as such it has degrees of freedom for representation and expression never before encountered and as yet barely investigated.\"\n\n - Alan Kay (1984)"
+   }
+  },
+  {
+   "id": 101977,
+   "type": "Link",
+   "title": "Commonplace book - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Commonplace_book"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/101977/original_ef4a8a9e6763474f49063a5135c0fc0f?1366770021",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMDE5Nzcvb3JpZ2luYWxfZWY0YThhOWU2NzYzNDc0ZjQ5MDYzYTUxMzVjMGZjMGYiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 110318,
+   "type": "Image",
+   "title": "Ikebana",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/110318/original_b7d217487b77ee645e9b1bbe1e274fa3.jpg?1369077098",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMTAzMTgvb3JpZ2luYWxfYjdkMjE3NDg3Yjc3ZWU2NDVlOWIxYmJlMWUyNzRmYTMuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 110448,
+   "type": "Text",
+   "title": "Gertrude Stein",
+   "source": null,
+   "content": {
+    "markdown": "There are many that I know and they know it. They are all\nof them repeating and I hear it. I love it and I tell it. I love\nit and now I will write it. This is now a history of my love\nof it. I hear it and I love it and I write it. They repeat it.\nThey live it and I see it and I hear it. They live it and I hear\nit and I see it and I love it and now and always I will write\nit. There are many kinds of men and women and I know\nit. They repeat it and I hear it and I love it. This is now a\nhistory of the way they do it. This is now a history of the\nway I love it.\nGertrude Stein,The Making of Americans,"
+   }
+  },
+  {
+   "id": 106300,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "“A life is everywhere, in all the moments that a given living subject goes through and that are measured by given lived objects: an immanent life carrying with it the events or singularities that are merely actualized in subjects and objects. This indefinite life does not itself have moments, close as they may be one to another, but only between-times, between-moments; it doesn’t just come about or come after but offers the immensity of an empty time where one sees the event yet to come and already happened…”\n\n- Gilles Deleuze, “Immanence: A Life”"
+   }
+  },
+  {
+   "id": 291545,
+   "type": "Image",
+   "title": "neuralnt.gif",
+   "source": {
+    "url": "http://www.jfsowa.com/figs/neuralnt.gif"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/291545/original_20cc08b209c80be5441584c55446b95b.gif?1413325609",
+    "large": {
+     "src": "https://d2w9rnfcy7mm78.cloudfront.net/291545/original_20cc08b209c80be5441584c55446b95b.gif?1413325609"
+    }
+   }
+  },
+  {
+   "id": 84410,
+   "type": "Link",
+   "title": "Desire path - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Desire_path"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/84410/original_074477c11de6966ae1d56b031ca53d0b?1362631482",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI4NDQxMC9vcmlnaW5hbF8wNzQ0NzdjMTFkZTY5NjZhZTFkNTZiMDMxY2E1M2QwYiIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 42910,
+   "type": "Image",
+   "title": "Robert Mapplethorpe, Two Tulips, 1984.",
+   "source": {
+    "url": "http://25.media.tumblr.com/tumblr_mb7wopjdNf1qbo39mo1_500.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/42910/original_0848996c52fc69ec4c13c1b896c7c13e.jpg?1349144014",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0MjkxMC9vcmlnaW5hbF8wODQ4OTk2YzUyZmM2OWVjNGMxM2MxYjg5NmM3YzEzZS5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 109488,
+   "type": "Link",
+   "title": "True Structure: ZigZag®",
+   "source": {
+    "url": "http://xanadu.com/zigzag/"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/109488/original_dc40425a71e30b5e9d460761abef8dab?1368881727",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMDk0ODgvb3JpZ2luYWxfZGM0MDQyNWE3MWUzMGI1ZTlkNDYwNzYxYWJlZjhkYWIiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 58732,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "\"PowerPoint is just simulated acetate overhead slides, and to me, that is a kind of a moral crime.\" - [Alan Kay](http://www.drdobbs.com/architecture-and-design/interview-with-alan-kay/240003442?pgno=2)"
+   }
+  },
+  {
+   "id": 36128,
+   "type": "Image",
+   "title": null,
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/36128/original_088e49b1e9c91b41415202bab2f8820f.gif?1346678446",
+    "large": {
+     "src": "https://d2w9rnfcy7mm78.cloudfront.net/36128/original_088e49b1e9c91b41415202bab2f8820f.gif?1346678446"
+    }
+   }
+  },
+  {
+   "id": 47069,
+   "type": "Attachment",
+   "title": "The Cognitive Style of PowerPoint",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47069/original_92936c3ca9bdf4f020121110-2-1t133wd.jpg?1352564212",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0NzA2OS9vcmlnaW5hbF85MjkzNmMzY2E5YmRmNGYwMjAxMjExMTAtMi0xdDEzM3dkLmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   },
+   "attachment": {
+    "filename": "The_Cognitive_Style_of_PowerPoint.pdf",
+    "content_type": "application/pdf"
+   }
+  },
+  {
+   "id": 4042,
+   "type": "Image",
+   "title": null,
+   "source": {
+    "url": "http://static.damonzucconi.com/_capture/cn/wldw2kr34kckk.png"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/4042/original_b98a61b8238c74362125d1801cc59dff.png?1325633248",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0MDQyL29yaWdpbmFsX2I5OGE2MWI4MjM4Yzc0MzYyMTI1ZDE4MDFjYzU5ZGZmLnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 110416,
+   "type": "Image",
+   "title": "Mark Grotjahn - Untitled (Face for Greece 843), 2009",
+   "source": {
+    "url": "http://4.bp.blogspot.com/__-KUP2UMQt8/S8Dvqa-QcLI/AAAAAAAABQQ/s74FkNv8a_k/s1600/12.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/110416/original_c53715ffabadcac83247dceca88ded1c.jpg?1369084100",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMTA0MTYvb3JpZ2luYWxfYzUzNzE1ZmZhYmFkY2FjODMyNDdkY2VjYTg4ZGVkMWMuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 30362,
+   "type": "Text",
+   "title": "Voyager Spacecraft Statement by the President.",
+   "source": null,
+   "content": {
+    "markdown": "\"This Voyager spacecraft was constructed by the United States of America. We are a community of 240 million human beings among the more than 4 billion who inhabit the planet Earth. We human beings are still divided into nation states, but these states are rapidly becoming a single global civilization.\n\nWe cast this message into the cosmos. It is likely to survive a billion years into our future, when our civilization is profoundly altered and the surface of the Earth may be vastly changed. Of the 200 billion stars in the Milky Way galaxy, some--perhaps many--may have inhabited planets and spacefaring civilizations. If one such civilization intercepts Voyager and can understand these recorded contents, here is our message:\n\nThis is a present from a small distant world, a token of our sounds, our science, our images, our music, our thoughts, and our feelings. We are attempting to survive our time so we may live into yours. We hope someday, having solved the problems we face, to join a community of galactic civilizations. This record represents our hope and our determination, and our good will in a vast and awesome universe.\"\n\n—Jimmy Carter, *July 29, 1977*"
+   }
+  },
+  {
+   "id": 7532,
+   "type": "Image",
+   "title": "A swarm of ancient stars",
+   "source": {
+    "url": "http://upload.wikimedia.org/wikipedia/commons/6/6a/A_Swarm_of_Ancient_Stars_-_GPN-2000-000930.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/7532/original_08383a7a79805ccf16432dc3c38d8686.jpg?1331142617",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI3NTMyL29yaWdpbmFsXzA4MzgzYTdhNzk4MDVjY2YxNjQzMmRjM2MzOGQ4Njg2LmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 97046,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "# “You never change things by fighting existing reality. To change something, build a new model that makes the existing model obsolete.” - Buckminster Fuller"
+   }
+  },
+  {
+   "id": 47775,
+   "type": "Image",
+   "title": "Swarm Behavior",
+   "source": {
+    "url": "http://upload.wikimedia.org/wikipedia/commons/5/5e/Auklet_flock_Shumagins_1986.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47775/original_ccf7faa236dc8f4e2df0193e0594b869.jpg?1351008794",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0Nzc3NS9vcmlnaW5hbF9jY2Y3ZmFhMjM2ZGM4ZjRlMmRmMDE5M2UwNTk0Yjg2OS5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 52397,
+   "type": "Image",
+   "title": "The Earliest Dated European Document Printed by Movable Type (October 22, 1454)",
+   "source": {
+    "url": "http://25.media.tumblr.com/tumblr_mdfa3n03lm1qahuhjo1_500.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/52397/original_5e1d6ca3231cdc31a41517e1d4949d5d.jpg?1352908977",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI1MjM5Ny9vcmlnaW5hbF81ZTFkNmNhMzIzMWNkYzMxYTQxNTE3ZTFkNDk0OWQ1ZC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 10225,
+   "type": "Text",
+   "title": null,
+   "source": null,
+   "content": {
+    "markdown": "“It’s not where you take things from — it’s where you take them to.” - [J.L.G.](http://en.wikipedia.org/wiki/Jean_Luc_Godard)"
+   }
+  },
+  {
+   "id": 47339,
+   "type": "Text",
+   "title": "Michel Foucault Quote",
+   "source": null,
+   "content": {
+    "markdown": "“What strikes me is the fact that in our society, art has become something which is related only to objects and not to individuals, or to life. That art is something which is specialized or which is done by experts who are artists. But couldn't everyone's life become a work of art? Why should the lamp or the house be an art object, but not our life?” \n― Michel Foucault"
+   }
+  },
+  {
+   "id": 9530,
+   "type": "Channel",
+   "title": "Adam Curtis",
+   "source": null
+  },
+  {
+   "id": 47784,
+   "type": "Image",
+   "title": "Charles Willson Peale (The Artist in His Museum)",
+   "source": {
+    "url": "http://upload.wikimedia.org/wikipedia/commons/c/c8/C_W_Peale_-_The_Artist_in_His_Museum.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47784/original_ea25cce6987287f03e7591c9eab37e95.jpg?1351009128",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0Nzc4NC9vcmlnaW5hbF9lYTI1Y2NlNjk4NzI4N2YwM2U3NTkxYzllYWIzN2U5NS5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 3435,
+   "type": "Image",
+   "title": "Dome Cookbook",
+   "source": {
+    "url": "http://www.moma.org/interactives/exhibitions/2011/AccesstoTools/images/Shelter%20and%20Land%20Use/Dome%20Cookbook%20cover.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/3435/original_8a50d9d26c40ef9c94ecdd7560ae5f7a.jpg?1321478608",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIzNDM1L29yaWdpbmFsXzhhNTBkOWQyNmM0MGVmOWM5NGVjZGQ3NTYwYWU1ZjdhLmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 38929,
+   "type": "Image",
+   "title": null,
+   "source": {
+    "url": "http://24.media.tumblr.com/tumblr_mak41wxHv91qbpdcto1_r1_500.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/38929/original_7cb93dcb51e37118feb5634196a9de81.jpg?1348093979",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIzODkyOS9vcmlnaW5hbF83Y2I5M2RjYjUxZTM3MTE4ZmViNTYzNDE5NmE5ZGU4MS5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 47785,
+   "type": "Attachment",
+   "title": "Seth Price, Dispersion",
+   "source": {
+    "url": "http://www.distributedhistory.com/Dispersion08.pdf"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47785/original_3399a82bd3003dd720121110-2-dtdks0.jpg?1352564310",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0Nzc4NS9vcmlnaW5hbF8zMzk5YTgyYmQzMDAzZGQ3MjAxMjExMTAtMi1kdGRrczAuanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   },
+   "attachment": {
+    "filename": "Dispersion08.pdf",
+    "content_type": "application/pdf"
+   }
+  },
+  {
+   "id": 312965,
+   "type": "Link",
+   "title": "VVORK",
+   "source": {
+    "url": "http://vvork.com"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/312965/original_4d6c3cd76e6ad7beee550698d9eac46a?1418050939",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIzMTI5NjUvb3JpZ2luYWxfNGQ2YzNjZDc2ZTZhZDdiZWVlNTUwNjk4ZDllYWM0NmEiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 47135,
+   "type": "Image",
+   "title": "The Museum of the Void",
+   "source": {
+    "url": "http://25.media.tumblr.com/tumblr_m8j8fquzDW1qzh8q0o1_1280.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47135/original_31c089e9154c4954dfb98962c0626a72.jpg?1350662060",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0NzEzNS9vcmlnaW5hbF8zMWMwODllOTE1NGM0OTU0ZGZiOTg5NjJjMDYyNmE3Mi5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 38418,
+   "type": "Link",
+   "title": "NLS (computer system) - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/NLS_(computer_system)"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/38418/original_744a2214beafe5a368a205001af27ec0.png?1347891335",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIzODQxOC9vcmlnaW5hbF83NDRhMjIxNGJlYWZlNWEzNjhhMjA1MDAxYWYyN2VjMC5wbmciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 1829,
+   "type": "Image",
+   "title": "convergent evolution",
+   "source": null,
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1829/original_Picture%2018.png?1314916808",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxODI5L29yaWdpbmFsX1BpY3R1cmUgMTgucG5nIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  },
+  {
+   "id": 10982,
+   "type": "Link",
+   "title": "Web portal - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Web_portal"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/10982/original_e3fc41c713f2253bf60fffaaa15a644a.png?1338580418",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMDk4Mi9vcmlnaW5hbF9lM2ZjNDFjNzEzZjIyNTNiZjYwZmZmYWFhMTVhNjQ0YS5wbmciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 40998,
+   "type": "Link",
+   "title": "Voices In My Head. MindVox: The Overture",
+   "source": {
+    "url": "http://www.textfiles.com/history/mindvox"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/40998/original_dbeff895bc89f0d152bdeab063eca698.png?1348600721",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0MDk5OC9vcmlnaW5hbF9kYmVmZjg5NWJjODlmMGQxNTJiZGVhYjA2M2VjYTY5OC5wbmciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 6989,
+   "type": "Link",
+   "title": "Mixtape - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Mixtape"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/6989/original_983fc1026ac2c0ba9edb7595af340f35.png?1338580399",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI2OTg5L29yaWdpbmFsXzk4M2ZjMTAyNmFjMmMwYmE5ZWRiNzU5NWFmMzQwZjM1LnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 6885,
+   "type": "Link",
+   "title": "Gopher (protocol) - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Gopher_(protocol)"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/6885/original_52f3d1f4d8496306356b3bbbb83e6618.png?1338580408",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI2ODg1L29yaWdpbmFsXzUyZjNkMWY0ZDg0OTYzMDYzNTZiM2JiYmI4M2U2NjE4LnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 2116,
+   "type": "Image",
+   "title": "Club Internet",
+   "source": {
+    "url": "http://harmvandendorpel.com/images/hughpocock.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/2116/original_e2443a02afe6e09b7f1fc748603f2301.jpg?1315434425",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyMTE2L29yaWdpbmFsX2UyNDQzYTAyYWZlNmUwOWI3ZjFmYzc0ODYwM2YyMzAxLmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 3224,
+   "type": "Image",
+   "title": "dreamless.org",
+   "source": {
+    "url": "http://web.archive.org/web/20000816013205im_/http://www.dreamless.org/dreamless.gif"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/3224/original_9df2bee0d91940b5e62a8e4c73598071.gif?1319214239",
+    "large": {
+     "src": "https://d2w9rnfcy7mm78.cloudfront.net/3224/original_9df2bee0d91940b5e62a8e4c73598071.gif?1319214239"
+    }
+   }
+  },
+  {
+   "id": 4545,
+   "type": "Embed",
+   "title": "Jaron Lanier @ CalArts",
+   "source": {
+    "url": "https://www.youtube.com/watch?feature=player_embedded&v=vInXNqK_eIk#!"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/4545/original_hqdefault.jpg?1326483994",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0NTQ1L29yaWdpbmFsX2hxZGVmYXVsdC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 2242,
+   "type": "Embed",
+   "title": "You Light Up My Life",
+   "source": {
+    "url": "http://youtu.be/Agl4IvNnQPo"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/2242/original_hqdefault.jpg?1326482385",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyMjQyL29yaWdpbmFsX2hxZGVmYXVsdC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 1879,
+   "type": "Image",
+   "title": "Skynet becomes self aware on August 29th, 1997",
+   "source": {
+    "url": "http://www.411mania.com/siteimages/skynet_98105.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1879/original_bfe0c75fac85f3bbc6f51e457f903a7c.jpg?1314991475",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxODc5L29yaWdpbmFsX2JmZTBjNzVmYWM4NWYzYmJjNmY1MWU0NTdmOTAzYTdjLmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 5106,
+   "type": "Image",
+   "title": "Webring",
+   "source": {
+    "url": "http://blog.dreamhost.com/wp-content/uploads/2009/04/webring1.png"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/5106/original_25ca1b244c9c27b31915886e8a43c91c.png?1327071328",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI1MTA2L29yaWdpbmFsXzI1Y2ExYjI0NGM5YzI3YjMxOTE1ODg2ZThhNDNjOTFjLnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 13534,
+   "type": "Image",
+   "title": null,
+   "source": {
+    "url": "http://www.parc.com/content/news/media-library/historical_smalltalk_gui_6.14x7.22_parc.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/13534/original_d93163dfe7aed66e068d8316050b0c43.jpg?1334951851",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxMzUzNC9vcmlnaW5hbF9kOTMxNjNkZmU3YWVkNjZlMDY4ZDgzMTYwNTBiMGM0My5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 1633,
+   "type": "Text",
+   "title": "Why the Impossible Happens More Often",
+   "source": null,
+   "content": {
+    "markdown": "[http://www.kk.org/thetechnium/archives/2011/08/why\\_the\\_impossi.php](http://www.kk.org/thetechnium/archives/2011/08/why_the_impossi.php)\n\n> In a word: emergence. As far as I can tell the impossible things that happen now are in every case manifestations of a new, bigger level of organization. They are the result of large-scale collaboration, or immense collections of information, or global structures, or gigantic real-time social interactions. Just as a tissue is a new, bigger level of organization for a bunch of individual cells, these new social structures are a new bigger level for individual humans. And in both cases the new level breeds emergence. New behaviors emerge from the new level that were impossible at the lower level. Tissue can do things that cells can't. The collectivist organizations of wikipedia, Linux, the web can do things that industrialized humans could not."
+   }
+  },
+  {
+   "id": 1453,
+   "type": "Image",
+   "title": "Timewave Zero",
+   "source": {
+    "url": "http://files.abovetopsecret.com/images/member/6ac143c9abc7.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1453/original_6ac143c9abc7.jpg?1313776636",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxNDUzL29yaWdpbmFsXzZhYzE0M2M5YWJjNy5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 3842,
+   "type": "Text",
+   "title": "Desire Trail",
+   "source": null,
+   "content": {
+    "markdown": "A **desire path** (also known as a **desire line** or **social trail**) is a path developed by erosion caused by footfall. The path usually represents the shortest or most easily navigated route between an origin and destination. The width and amount of erosion of the line represents the amount of demand.\n\nDesire paths can usually be found as shortcuts where constructed pathways take a circuitous route.\n\nThey are manifested on the surface of the earth in certain cases, e.g., as dirt pathways created by people walking through a field, when the original movement by individuals helps clear a path, thereby encouraging more travel. Explorers may tread a path through foliage or grass, leaving a trail \"of least resistance\" for followers."
+   }
+  },
+  {
+   "id": 7035,
+   "type": "Link",
+   "title": "Stigmergy - Wikipedia, the free encyclopedia",
+   "source": {
+    "url": "http://en.wikipedia.org/wiki/Stigmergy"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/7035/original_ec9316026eec55d040979a7cf1d231ed.png?1338580398",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI3MDM1L29yaWdpbmFsX2VjOTMxNjAyNmVlYzU1ZDA0MDk3OWE3Y2YxZDIzMWVkLnBuZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 46563,
+   "type": "Image",
+   "title": "Wanderer Above the Sea of Fog, Caspar David Friedrich",
+   "source": {
+    "url": "http://4.bp.blogspot.com/-lgVLmUDoVNI/UHHEni_y0lI/AAAAAAAAAxc/mBdTSbiIB4Y/s1600/caspar-david-friedrich-wanderer-above-the-sea-of-fog.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/46563/original_aa88200348d3a163d2b605e5904c0b94.jpg?1350328563",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0NjU2My9vcmlnaW5hbF9hYTg4MjAwMzQ4ZDNhMTYzZDJiNjA1ZTU5MDRjMGI5NC5qcGciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 544,
+   "type": "Text",
+   "title": "Make Opinionated Software",
+   "source": null,
+   "content": {
+    "markdown": "**Your app should take sides**\n\nSome people argue software should be agnostic. They say it's arrogant for developers to limit features or ignore feature requests. They say software should always be as flexible as possible.\n\nWe think that's bullshit. The best software has a vision. The best software takes sides. When someone uses software, they're not just looking for features, they're looking for an approach. They're looking for a vision. Decide what your vision is and run with it.\n\nAnd remember, if they don't like your vision there are plenty of other visions out there for people. Don't go chasing people you'll never make happy.\n\nA great example is the original wiki design. Ward Cunningham and friends deliberately stripped the wiki of many features that were considered integral to document collaboration in the past. Instead of attributing each change of the document to a certain person, they removed much of the visual representation of ownership. They made the content ego-less and time-less. They decided it wasn't important who wrote the content or when it was written. And that has made all the difference. This decision fostered a shared sense of community and was a key ingredient in the success of Wikipedia.\n\nOur apps have followed a similar path. They don't try to be all things to all people. They have an attitude. They seek out customers who are actually partners. They speak to people who share our vision. You're either on the bus or off the bus.\n\n[http://gettingreal.37signals.com/ch04\\_Make\\_Opinionated\\_Software.php](http://gettingreal.37signals.com/ch04_Make_Opinionated_Software.php)"
+   }
+  },
+  {
+   "id": 47770,
+   "type": "Link",
+   "title": "The WELL - the birthplace of the online community movement.",
+   "source": {
+    "url": "http://www.well.com/"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/47770/original_c712ecf067e83d39f41799d76815e58f.png?1351008590",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI0Nzc3MC9vcmlnaW5hbF9jNzEyZWNmMDY3ZTgzZDM5ZjQxNzk5ZDc2ODE1ZTU4Zi5wbmciLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   },
+   "content": null
+  },
+  {
+   "id": 1923,
+   "type": "Image",
+   "title": "About the Crypt of Civilization",
+   "source": {
+    "url": "http://upload.wikimedia.org/wikipedia/en/a/a0/Crypt_of_civilization.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1923/original_73ba021b7df41454da911d48f142f5a5.jpg?1315147737",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxOTIzL29yaWdpbmFsXzczYmEwMjFiN2RmNDE0NTRkYTkxMWQ0OGYxNDJmNWE1LmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 2557,
+   "type": "Text",
+   "title": "Thomas Jefferson on Ideas",
+   "source": null,
+   "content": {
+    "markdown": "> If nature has made any one thing less susceptible than all others of exclusive property, it is the action of the thinking power called an idea, which an individual may exclusively possess as long as he keeps it to himself; but the moment it is divulged, it forces itself into the possession of every one, and the receiver cannot dispossess himself of it. Its peculiar character, too, is that no one possesses the less, because every other possesses the whole of it. He who receives an idea from me, receives instruction himself without lessening mine; as he who lights his taper at mine, receives light without darkening me.\n>\n> That ideas should freely spread from one to another over the globe, for the moral and mutual instruction of man, and improvement of his condition, seems to have been peculiarly and benevolently designed by nature, when she made them, like fire, expansible over all space, without lessening their density in any point, and like the air in which we breathe, move, and have our physical being, incapable of confinement or exclusive appropriation.\n\n-Thomas Jefferson"
+   }
+  },
+  {
+   "id": 1770,
+   "type": "Image",
+   "title": "Montessori School classroom",
+   "source": {
+    "url": "https://img.skitch.com/20110901-8scp15rq6jpehjt3qtp4fap6u9.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1770/original_3abb6bf18f806c9165ab7096ffa0d737.jpg?1314889813",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxNzcwL29yaWdpbmFsXzNhYmI2YmYxOGY4MDZjOTE2NWFiNzA5NmZmYTBkNzM3LmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 1865,
+   "type": "Image",
+   "title": "Folk Taxonomy",
+   "source": {
+    "url": "http://www.jrcanda.com/cd1cows.gif"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1865/original_d3c3d0cfcb2f0dcbc1989d0e8094e36f.gif?1314981294",
+    "large": {
+     "src": "https://d2w9rnfcy7mm78.cloudfront.net/1865/original_d3c3d0cfcb2f0dcbc1989d0e8094e36f.gif?1314981294"
+    }
+   }
+  },
+  {
+   "id": 15828,
+   "type": "Channel",
+   "title": "As We May Think",
+   "source": null
+  },
+  {
+   "id": 280852,
+   "type": "Embed",
+   "title": "Vannevar Bush",
+   "source": {
+    "url": "https://www.youtube.com/watch?v=iAUC7Q8C6m8"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/280852/original_35448883f5c0fbb714977ffe6e8f9332?1411254686",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIyODA4NTIvb3JpZ2luYWxfMzU0NDg4ODNmNWMwZmJiNzE0OTc3ZmZlNmU4ZjkzMzIiLCJlZGl0cyI6eyJyZXNpemUiOnsid2lkdGgiOjE4MDAsImhlaWdodCI6MTgwMCwiZml0IjoiaW5zaWRlIiwid2l0aG91dEVubGFyZ2VtZW50Ijp0cnVlfSwid2VicCI6eyJxdWFsaXR5Ijo3NX0sImpwZWciOnsicXVhbGl0eSI6NzV9LCJyb3RhdGUiOm51bGx9fQ=="
+    }
+   }
+  },
+  {
+   "id": 1882,
+   "type": "Image",
+   "title": "As We May Think, Vannevar Bush 1945",
+   "source": {
+    "url": "http://2.bp.blogspot.com/_KJuODGKJyWQ/TCA3_-g4kvI/AAAAAAAAAiA/jzv-vHtiCnQ/s1600/MEMEX0L.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/1882/original_a6b962a5366d60491989b39873d08785.jpg?1330233435",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiIxODgyL29yaWdpbmFsX2E2Yjk2MmE1MzY2ZDYwNDkxOTg5YjM5ODczZDA4Nzg1LmpwZyIsImVkaXRzIjp7InJlc2l6ZSI6eyJ3aWR0aCI6MTgwMCwiaGVpZ2h0IjoxODAwLCJmaXQiOiJpbnNpZGUiLCJ3aXRob3V0RW5sYXJnZW1lbnQiOnRydWV9LCJ3ZWJwIjp7InF1YWxpdHkiOjc1fSwianBlZyI6eyJxdWFsaXR5Ijo3NX0sInJvdGF0ZSI6bnVsbH19"
+    }
+   }
+  },
+  {
+   "id": 654,
+   "type": "Image",
+   "title": "Sapient",
+   "source": {
+    "url": "http://edge.sapient.com/assets/images/SapientLogo.jpg"
+   },
+   "image": {
+    "src": "https://d2w9rnfcy7mm78.cloudfront.net/654/original_SapientLogo.jpg?1311789720",
+    "large": {
+     "src": "https://images.are.na/eyJidWNrZXQiOiJhcmVuYV9pbWFnZXMiLCJrZXkiOiI2NTQvb3JpZ2luYWxfU2FwaWVudExvZ28uanBnIiwiZWRpdHMiOnsicmVzaXplIjp7IndpZHRoIjoxODAwLCJoZWlnaHQiOjE4MDAsImZpdCI6Imluc2lkZSIsIndpdGhvdXRFbmxhcmdlbWVudCI6dHJ1ZX0sIndlYnAiOnsicXVhbGl0eSI6NzV9LCJqcGVnIjp7InF1YWxpdHkiOjc1fSwicm90YXRlIjpudWxsfX0="
+    }
+   }
+  }
+ ]
 }
