@@ -34,6 +34,9 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "designmd",
     items: [
+      { name: "DesignMD.ai", url: "https://designmd.ai", added: "2026-10-08" },
+      { name: "Kage", url: "https://kage.design", added: "2026-10-08" },
+      { name: "Vibe Prompts", url: "https://vibeprompts.dev", added: "2026-10-08" },
       { name: "Refero Styles", url: "https://styles.refero.design" },
       { name: "Inspo MCP", url: "https://inspomcp.dev" },
       { name: "DesignMD.me", url: "https://designmd.me" },
@@ -98,6 +101,8 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "sections",
     items: [
+      { name: "The Component Gallery", url: "https://component.gallery", added: "2026-10-08" },
+      { name: "Pricing Pages", url: "https://pricingpages.design", added: "2026-10-08" },
       { name: "Details", url: "https://www.details.so", added: "2026-10-06" },
       { name: "Supahero", url: "https://supahero.io" },
       { name: "Navbar Gallery", url: "https://navbar.gallery" },
@@ -111,6 +116,14 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "code",
     items: [
+      { name: "shadcn/ui", url: "https://ui.shadcn.com", added: "2026-10-08" },
+      { name: "Aceternity UI", url: "https://ui.aceternity.com", added: "2026-10-08" },
+      { name: "Magic UI", url: "https://magicui.design", added: "2026-10-08" },
+      { name: "Motion Primitives", url: "https://motion-primitives.com", added: "2026-10-08" },
+      { name: "Shadcnblocks", url: "https://www.shadcnblocks.com", added: "2026-10-08" },
+      { name: "SmoothUI", url: "https://smoothui.dev", added: "2026-10-08" },
+      { name: "Uiverse", url: "https://uiverse.io", added: "2026-10-08" },
+      { name: "Glass UI (Samasante)", url: "https://glass.samasante.com", added: "2026-10-08" },
       { name: "Reverse UI", url: "https://reverseui.com", added: "2026-10-04" },
       { name: "Cult UI", url: "https://www.cult-ui.com", added: "2026-10-04" },
       { name: "Originkit", url: "https://www.originkit.dev" },
@@ -127,6 +140,9 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "motion",
     items: [
+      { name: "Kinetics (Colorion)", url: "https://kinetics.colorion.co", added: "2026-10-08" },
+      { name: "Microkit", url: "https://microkit.co", added: "2026-10-08" },
+      { name: "Anime.js", url: "https://animejs.com", added: "2026-10-08" },
       { name: "60fps", url: "https://60fps.design" },
       { name: "Detail", url: "https://detail.design", added: "2026-10-04" },
       { name: "Scrolltide", url: "https://scrolltide.co", added: "2026-10-05" },
@@ -138,8 +154,19 @@ export const DIRECTORY: DirectoryGroup[] = [
     ],
   },
   {
+    key: "shaders",
+    items: [
+      { name: "Three.js", url: "https://threejs.org", added: "2026-10-08" },
+      { name: "Shadertoy", url: "https://www.shadertoy.com", added: "2026-10-08" },
+      { name: "The Book of Shaders", url: "https://thebookofshaders.com", added: "2026-10-08" },
+      { name: "Three.js Journey", url: "https://threejs-journey.com", added: "2026-10-08" },
+    ],
+  },
+  {
     key: "resources",
     items: [
+      { name: "Kitbitz", url: "https://kitbitz.art", added: "2026-10-08" },
+      { name: "3dicons", url: "https://3dicons.co", added: "2026-10-08" },
       { name: "Design Bookmark", url: "https://designbookmark.com", added: "2026-10-05" },
       { name: "SearchSystem", url: "https://searchsystem.co", added: "2026-10-04" },
       { name: "Logo To Use", url: "https://logotouse.com" },

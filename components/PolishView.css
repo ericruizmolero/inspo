@@ -57,6 +57,8 @@
 /* The card is what is pressed (it opens the sheet) and dragged: nothing in the post takes the pointer */
 .polish .pv a, .polish .pv iframe, .polish .pv video { pointer-events: none; }
 .polish .pv__photos img { pointer-events: none; }
+/* A post's video or gif loops, muted, over its frame on the card in front (LoopVideo): no controls, no line */
+.polish__in .polish__loop { pointer-events: none; }
 
 /* A decided card on its way to its tab: a copy, over everything in the view */
 .polish__fly {

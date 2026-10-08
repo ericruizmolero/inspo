@@ -24,10 +24,11 @@ import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo
 import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
 import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
-import { mediaKindOf, postOf, videoEmbedOf } from "@/lib/url";
+import { mediaKindOf, postOf, postThumbKind, videoEmbedOf } from "@/lib/url";
 import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
 import { cachedCardImage, type NoteCaption } from "./InspoCard";
 import { PostBox } from "./PostView";
+import LoopVideo from "./LoopVideo";
 import { usePost } from "./post-cache";
 import type { Post } from "@/lib/posts";
 import { Avatar } from "./CommentsPanel";
@@ -218,6 +219,10 @@ const NOTE_MAX = 280; // characters of a note that reach the page: two lines sho
 /** Cards this far from the one in front ask for their post; further round the orbit the name's words do */
 const POST_NEAR = 3;
 
+/** A post's picture is a copy of its own media when it has any (lib/posts.ts: photo-1.jpg, poster-video.jpg); so
+ *  its card knows without reading the post whether it has something to look at or only words */
+const postHasMedia = (image: string | null): image is string => !!image && /\/(photo-\d+|poster-(video|gif))\.\w+(\?.*)?$/.test(image);
+
 /** Until the post is read, what its name already says ("Wilson · Ferndesk has been live…", lib/posts.ts postName),
  *  as a post with no picture and no date */
 function postFromName(item: InspoItem): Post {
@@ -228,7 +233,7 @@ function postFromName(item: InspoItem): Post {
 
 /** A post on its card: the same box its sheet shows (PostView's PostBox), read once per session (post-cache.ts).
  *  Only a card near the front asks for it; the rest show what the name says until they come round */
-function PostCard({ item, near, playing }: { item: InspoItem; near: boolean; playing: boolean }) {
+function PostCard({ item, near }: { item: InspoItem; near: boolean }) {
   const read = usePost(near ? item.web : null);
   // Longer than the card's cap (CSS): it fades out at the foot, as its card on the board does
   const ref = useRef<HTMLDivElement>(null);
@@ -242,17 +247,25 @@ function PostCard({ item, near, playing }: { item: InspoItem; near: boolean; pla
     ro.observe(el);
     return () => ro.disconnect();
   });
-  return <div ref={ref} className={`polish__post${cut ? " is-cut" : ""}`}><PostBox post={read?.post ?? postFromName(item)} playing={playing} /></div>;
+  return <div ref={ref} className={`polish__post${cut ? " is-cut" : ""}`}><PostBox post={read?.post ?? postFromName(item)} playing={false} /></div>;
 }
 
-/** The reference as its sheet shows it (ItemPanel): a text is its page of words, a post is its post, anything else
- *  its picture. `near` and `front` are only for a post: whether to read it, and whether its video plays */
+/** The reference as something to look at: a text is its page of words; a post with a photo or a video is that
+ *  alone (its video loops, muted, on the card in front), and one that is only words is its post as the sheet shows
+ *  it; anything else is its picture. `near` and `front` are for a post: whether to read it, and whether it plays */
 function Face({ item, image, large, text, near = true, front = false }: { item: InspoItem; image: string | null; large?: string | null; text: string; near?: boolean; front?: boolean }) {
   const { t } = useT();
   const kind = mediaKindOf(item.web);
   if (kind === "text") return <div className="polish__text"><span className="polish__text-kind">{t.card.text}</span><b className="t-title-s">{item.name}</b><p className="t-small">{text}</p></div>;
-  if (kind === "post") return <PostCard item={item} near={near} playing={front} />;
-  return <Picture item={item} image={image} large={large} />;
+  if (kind === "post" && !postHasMedia(image)) return <PostCard item={item} near={near} />;
+  // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
+  const loop = kind === "post" && front && image && postThumbKind(image) ? image.replace(/poster-(video|gif)\.\w+(\?.*)?$/, "$1.mp4") : null;
+  return (
+    <>
+      <Picture item={item} image={image} large={large} />
+      {loop && <LoopVideo src={loop} className="polish__loop" />}
+    </>
+  );
 }
 
 export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, active, votes, me, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
@@ -739,13 +752,14 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   if (ln) {
     for (let k = base - side; k <= base + side; k++) {
       const item = list[mod(k, ln)], node = `${keyOf(item)}#${Math.floor(k / ln)}`;
-      const kind = mediaKindOf(item.web);
-      // A post is as tall as what it says (capped in CSS); the rest keep their picture's shape
+      const kind = mediaKindOf(item.web), image = imageOf(item);
+      // A post that is only words is as tall as what it says (capped in CSS); the rest keep their picture's shape
+      const wordy = kind === "post" && !postHasMedia(image);
       const ratio = kind === "text" ? 1 : clamp(ratioOf(item), 0.5, 1.2);
       cards.push(
-        <div key={node} className={`polish__card${kind === "post" ? " is-post" : ""}`} data-k={k} data-node={node} style={kind === "post" ? undefined : { aspectRatio: `1 / ${ratio}` }}>
+        <div key={node} className={`polish__card${wordy ? " is-post" : ""}`} data-k={k} data-node={node} style={wordy ? undefined : { aspectRatio: `1 / ${ratio}` }}>
           <div className="polish__in">
-            <Face item={item} image={imageOf(item)} large={k === rested ? largeImageOf(item) : null} text={textOf(item)} near={Math.abs(k - base) <= POST_NEAR} front={k === rested} />
+            <Face item={item} image={image} large={k === rested ? largeImageOf(item) : null} text={textOf(item)} near={Math.abs(k - base) <= POST_NEAR} front={k === rested} />
             <i className="polish__fog" />
           </div>
         </div>,

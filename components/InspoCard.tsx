@@ -250,8 +250,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const suppressClick = useRef(false);
-  // The video's scrub line: whichever loop plays moves it (LoopVideo writes its transform, no render)
-  const scrubRef = useRef<HTMLSpanElement>(null);
 
   const useManual = !!manualThumbnail && !manualFailed;
   const [frameLoaded, setFrameLoaded] = useState(false);
@@ -541,7 +539,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             </>
           )}
 
-          {loopSrc && <LoopVideo src={loopSrc} className="tile__img tile__loop" progressRef={scrubRef} />}
+          {loopSrc && <LoopVideo src={loopSrc} className="tile__img tile__loop" />}
 
           {useFrame && (
             // A video file: its first frame, still. It plays in the thread.
@@ -553,7 +551,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               onError={() => setFrameFailed(true)}
             />
           )}
-          {hoverSrc && hovering && <LoopVideo src={hoverSrc} className="tile__img tile__loop" progressRef={scrubRef} />}
+          {hoverSrc && hovering && <LoopVideo src={hoverSrc} className="tile__img tile__loop" />}
 
           {onSelect && (
             <button type="button" className="tile__select" aria-pressed={selected} aria-label={t.select.select}
@@ -565,7 +563,6 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
             </button>
           )}
           {plays && !loopSrc && isLoaded && <span className="tile__play" aria-hidden><Icon name="play" size={18} /></span>}
-          {plays && isLoaded && <span className="tile__scrub" aria-hidden><span ref={scrubRef} /></span>}
           {gifChip && isLoaded && score === undefined && <Chip tone="chrome" className="tile__badge">{t.card.gif}</Chip>}
 
           {!useManual && !useDesign && !useFrame && imgSrc && (

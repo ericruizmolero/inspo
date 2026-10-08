@@ -995,7 +995,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .tile__media::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: var(--radius-lg); pointer-events: none; box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1); }
 :root[data-theme="light"] .tile__media::after { box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.1); }
 .tile__media:has(> .tile__text)::after { content: none; }
-/* What the tile holds when it is not a site: a round play and a thin scrub line on videos, a GIF chip on
+/* What the tile holds when it is not a site: a round play on videos that open elsewhere, a GIF chip on
    animated images. Solid, no blur */
 .tile__play {
   position: absolute; left: 50%; top: 50%; z-index: 1; transform: translate(-50%, -50%);
@@ -1004,12 +1004,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   pointer-events: none; transition: opacity 0.2s;
 }
 .tile:hover .tile__play { opacity: 0; }
-.tile__scrub { position: absolute; left: 12px; right: 12px; bottom: 10px; z-index: 1; height: 3px; border-radius: 2px; overflow: hidden; background: color-mix(in srgb, var(--paper) 35%, transparent); pointer-events: none; }
-.tile__scrub > span { display: block; height: 100%; border-radius: 2px; background: var(--paper); transform: scaleX(0); transform-origin: left; }
-/* The filing actions come up along the bottom under the pointer: the line rises above them */
-.tile__scrub { transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.tile:hover .tile__scrub:has(~ .tile__go) { transform: translateY(-42px); }
-@media (prefers-reduced-motion: reduce) { .tile__scrub { transition: none; } }
 /* A video or gif looping over its poster; the poster keeps the tile's shape and the loop fades in once it plays */
 .tile__loop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
 .tile__loop.is-playing { opacity: 1; }
