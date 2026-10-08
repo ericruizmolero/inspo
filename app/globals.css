@@ -2414,7 +2414,9 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
    band around it (Eric, 07-10 for captures, 08-10 for everything). A long one still scrolls inside it (capped to
    the stage). While a capture loads, the card holds most of the height so it does not jump */
 .ip-card--page.cr-viewer-media { align-self: center; max-height: 100%; }
-.ip .pn-page:has(.shimmer) { min-height: min(70svh, 100%); }
+/* (A percentage here would resolve to nothing: the card has no height of its own now, and the page collapsed to a line
+   while the capture of a just-added site loaded. The card's max-height keeps it inside the stage) */
+.ip .pn-page:has(.shimmer) { min-height: 60svh; }
 .ip-card--talk.cr-viewer-aside { width: 380px; min-height: 0; overflow: hidden; border-left-color: var(--chrome-raised); }
 /* A post or a video draws itself (the post's own box, the player): the card around it is nothing */
 .ip-card--page.cr-viewer-media:has(> .ip-media) { background: transparent; border: 0; }

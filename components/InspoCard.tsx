@@ -208,16 +208,18 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const video = kind === "video" ? videoEmbedOf(item.web) : null;
   const manualThumbnail = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
   const videoFile = video?.provider === "file" && !manualThumbnail;
-  // A screen recording loops on its card, over its frame, while the card is on screen
-  const loopSrc = video?.loops && !uploadedThumb ? video.src : null;
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
-  // Any other recording of ours plays under the pointer, muted, over its frame or thumbnail.
-  // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
-  const hoverSrc = loopSrc ? null
-    : video?.provider === "file" || video?.loops ? video.src
+  // Every recording of ours loops on its card, muted, while the card is on screen: a stored file, a screen
+  // recording, a post's video or gif (its copy sits next to its frame, lib/posts.ts: poster-video.jpg → video.mp4).
+  // YouTube and Vimeo keep their frame and play in the thread. A chosen thumbnail stays the picture, and the
+  // recording plays under the pointer only (Eric, 08-10: no button, it plays on its own)
+  const ownSrc = video?.provider === "file" || video?.loops ? video.src
     : postKind ? uploadedThumb!.replace(/poster-(video|gif)\.\w+$/, "$1.mp4")
     : null;
+  const chosen = !!uploadedThumb && kind !== "post";
+  const loopSrc = ownSrc && !chosen ? ownSrc : null;
+  const hoverSrc = ownSrc && chosen ? ownSrc : null;
   const plays = kind === "video" || postKind === "video";
   const gifChip = (kind === "image" && isGif(item.web)) || postKind === "gif";
   const [source, setSource] = useState<ImgSource>(() => kind === "text" || isBlocked(item.web) ? "error" : imgCache.get(item.web)?.source ?? "idle");
