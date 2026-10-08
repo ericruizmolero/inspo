@@ -2415,7 +2415,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .ip .pn-page:has(.shimmer) { min-height: 60svh; }
 .ip-card--talk.cr-viewer-aside { width: 380px; min-height: 0; overflow: hidden; border-left-color: var(--chrome-raised); }
 /* A post or a video draws itself (the post's own box, the player): the card around it is nothing */
-.ip-card--page.cr-viewer-media:has(> .ip-media) { background: transparent; border: 0; }
+.ip-card--page.cr-viewer-media:has(> .ip-media), .ip-card--page.cr-viewer-media:has(.pn.is-fit) { background: transparent; border: 0; }
 .ip-media { flex: 0 1 auto; width: 100%; min-height: 0; overflow-y: auto; padding: 0; }
 /* A post reads at a post's width, in the middle */
 .ip-media:has(> .pv) { max-width: 600px; margin: 0 auto; }
@@ -2473,8 +2473,8 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .pn.is-fit { container-type: inline-size; display: flex; flex-direction: column; }
 .pn.is-fit .pn-page { margin: auto; width: fit-content; min-height: 0; }
 .pn.is-fit .pn-page:has(.shimmer) { width: calc(100% - 40px); min-height: 240px; }
-/* cqw is the viewer's width; cqh the stage's height (its padding, the card's border and a margin taken off) */
-.pn.is-fit .pn-page img { width: auto; max-width: calc(100cqw - 40px); max-height: calc(100cqh - 74px); border-radius: 6px; }
+/* cqw is the viewer's width; cqh the stage's height (its padding taken off). No frame around it: the card paints nothing (above) */
+.pn.is-fit .pn-page img { width: auto; max-width: 100cqw; max-height: calc(100cqh - 32px); border-radius: 6px; }
 .pn-page { position: relative; min-height: 240px; }
 .pn-page img { display: block; width: 100%; height: auto; opacity: 0; transition: opacity 0.3s; user-select: none; -webkit-user-drag: none; }
 .pn-page img.is-loaded { opacity: 1; }
