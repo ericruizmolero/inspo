@@ -142,6 +142,7 @@ async function loadTab() {
   $("tab-title").textContent = cur?.title || url;
   $("tab-host").textContent = ok ? shortUrl(url) : t("notWebsite");
   setFavicon(cur?.favIconUrl);
+  showBoardOffer();
   resetSave(!ok);
   $("form").hidden = !ok;
   if (!ok) { note($("tab-msg"), t("onlyHttp"), null); return; }
@@ -274,12 +275,21 @@ $("btn-disconnect").addEventListener("click", () => disconnect(true));
 const openImport = (source) => async () => { await chrome.tabs.create({ url: chrome.runtime.getURL(`import.html?source=${source}`) }); window.close(); };
 $("btn-import-x").addEventListener("click", openImport("x"));
 $("btn-import-browser").addEventListener("click", openImport("browser"));
-// On Pinterest already: the board in this tab is the one the import page offers
-$("btn-import-pinterest").addEventListener("click", () => {
-  let on = false;
-  try { on = /(^|\.)pinterest\.[a-z.]+$/.test(new URL(tab?.url || "").hostname); } catch { /* not a page */ }
-  return openImport(on ? `pinterest&url=${encodeURIComponent(tab.url)}` : "pinterest")();
+// On a board of Are.na, Pinterest or Cosmos: "Import this board". Chrome asks for that platform here,
+// on the click, and the import page starts on its own; without a board it opens on the address field.
+const { BOARDS, boardOf, hostsOf } = globalThis.CriterioBoards;
+const tabBoard = () => (tab?.url ? boardOf(tab.url) : null);
+$("btn-import-board").addEventListener("click", async () => {
+  const board = tabBoard();
+  if (!board) return openImport("board")();
+  try { await chrome.permissions.request({ origins: hostsOf(board.source) }); } catch { /* the import page asks again */ }
+  return openImport(`${board.source}&url=${encodeURIComponent(board.url)}`)();
 });
+function showBoardOffer() {
+  const board = tabBoard();
+  $("btn-import-board").textContent = t(board ? "importThisBoard" : "importBoardShort");
+  $("btn-import-board").title = board ? BOARDS[board.source].name : "";
+}
 
 // If the key arrives while the popup is open (connect tab), it refreshes itself
 chrome.storage.onChanged.addListener((changes, area) => { if (area === "local" && changes.key) load(); });
