@@ -22,7 +22,8 @@ export default function ImproveModal({ system, onRun, onClose }: {
   // Every area can be improved, the ones the team decided too: there the decision stands and its telling gets better
   const team = system.areas.filter((a) => a.source === "team").length;
   const [aims, setAims] = useState<Set<ImproveAim>>(() => new Set(IMPROVE_AIMS));
-  const [areas, setAreas] = useState<Set<SystemArea>>(() => new Set(SYSTEM_AREAS));
+  // None chosen to start with: the person says where the pass goes (Eric, 08-10), or "all" in one press
+  const [areas, setAreas] = useState<Set<SystemArea>>(() => new Set());
   const [note, setNote] = useState("");
   const toggle = <T,>(set: Set<T>, v: T) => { const next = new Set(set); if (!next.delete(v)) next.add(v); return next; };
   const all = areas.size === SYSTEM_AREAS.length;
