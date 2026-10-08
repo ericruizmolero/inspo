@@ -173,7 +173,7 @@ export const ui = {
     sections: { label: "What to discover", sites: "Resources", templates: "Examples", skills: "Skills" },
     lead: "Where to look, picked by hand.",
     skills: {
-      copy: "Copy", copied: "Copied", topicsLabel: "Topics", none: "No skills here",
+      copy: "Copy", copied: "Copied", topicsLabel: "Topics", none: "No skills here", search: "Search skills",
       topics: { foundations: "Typography, color and layout", motion: "Motion", assets: "Icons, logo and imagery", voice: "Voice", interface: "Interface and components", review: "Review and accessibility" },
     },
     inCriterio: "In criterio.md",
@@ -182,6 +182,7 @@ export const ui = {
     shelves: "What to see",
     shelf: { all: "Everything", new: "Just in", featured: "Featured" },
     groups: "Kinds of resource",
+    search: "Search resources",
     all: "All",
     none: "No resources here",
   },

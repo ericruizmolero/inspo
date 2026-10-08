@@ -12,6 +12,9 @@ import type { MdSkill } from "@/lib/md-skill-ids";
 export const SKILL_TOPICS = ["foundations", "motion", "assets", "voice", "interface", "review"] as const;
 export type SkillTopic = (typeof SKILL_TOPICS)[number];
 
+/** Lowercase, without accents, for looking through the directory: "diseño" finds "Diseno" and the other way round */
+export const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
 export interface DirectorySite {
   name: string;
   url: string;

@@ -171,7 +171,7 @@ export const ui: typeof EnUi = {
     sections: { label: "Qu\u00e9 descubrir", sites: "Recursos", templates: "Ejemplos", skills: "Skills" },
     lead: "D\u00f3nde mirar, elegido a mano.",
     skills: {
-      copy: "Copiar", copied: "Copiado", topicsLabel: "Temas", none: "Ninguna skill aquí",
+      copy: "Copiar", copied: "Copiado", topicsLabel: "Temas", none: "Ninguna skill aquí", search: "Buscar skills",
       topics: { foundations: "Tipografía, color y layout", motion: "Movimiento", assets: "Iconos, logo e imagen", voice: "Voz", interface: "Interfaz y componentes", review: "Revisión y accesibilidad" },
     },
     inCriterio: "En criterio.md",
@@ -180,6 +180,7 @@ export const ui: typeof EnUi = {
     shelves: "Qu\u00e9 ver",
     shelf: { all: "Todo", new: "Reci\u00e9n llegados", featured: "Destacados" },
     groups: "Tipos de recurso",
+    search: "Buscar recursos",
     all: "Todo",
     none: "Ning\u00fan recurso aqu\u00ed",
   },
