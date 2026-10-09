@@ -6,6 +6,7 @@
 // references already in the library are picked in a well and brought in from the footer. The Inbox comes first:
 // filling a project is how the Inbox gets emptied. As soon as the project has something, the grid replaces this.
 import { useMemo, useRef, useEffect, useState } from "react";
+import Clouds from "@/components/Clouds";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { normalizeWebUrl, readableDomain, mediaKindOf, isGif, type MediaKind } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
@@ -274,6 +275,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
       </section>
     </div>
     </div>
+    <Clouds />
     {dragging && <div className={p.drop} aria-hidden><span className="t-title-l">{w.startDrop}</span></div>}
     </>
   );

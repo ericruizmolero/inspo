@@ -277,11 +277,18 @@ La app: barra superior (Isla, logo, acciones), selector Tablón / Pulido / Siste
 Lo que el agente hizo, con deshacer; sus preguntas con opciones; y lo destructivo pendiente con Hazlo / Déjalo.
 
 ### Tablero
+`Clouds` · `components/Clouds.tsx` · `.cloud`
+Las nubecitas de toda vista que hace scroll bajo las barras: dos bandas del color del fondo (`--bg`, así siguen al tema) en los bordes, degradado en cuatro paradas (100, 82, 36 y 0 por ciento) para que no se vea el filo. Cada una solo donde hay más: la de arriba en cuanto la vista ha hecho scroll (`.is-on`, 220 ms), la de abajo hasta que la vista llega a su final (`.is-off`); con `always` las dos fijas (Pulido). Miden la banda que ocupan las barras (`--fade`: 64 arriba por la Isla, 72 abajo como suelo para la pastilla, 112 con el dock) más una cola de 40 y 32 px. Sin puntero.
+- Junto a un scroller absoluto (`mode="sibling"`, el de serie): se pintan justo después de él en el mismo contenedor y pintan por orden del DOM, sin z propio, bajo cualquier barra. Así en el tablón (`Grid`), Descubrir (`.disc-list`, también la de skills), Ejemplos (`.tpls`), Inicio (`.chooser`), los dos inicios vacíos (`EmptyStart`, `ProjectStart`) y Sistema (`.spage`). El scroller es el hermano anterior o el `scroller` que se le pasa; vigila su scroll, su tamaño y sus hijos para saber si queda más.
+- Donde la página scrollea con la ventana (`mode="window"`, `SectionShell`: ajustes, librería): cada nube se pega al borde dentro del flujo (`.cloud--sticky`, z 5), la de arriba como primer hijo de la columna con una banda corta (24 + 40, ahí no flota ninguna barra) y la de abajo como último; la columna mide al menos una pantalla y la página crece para que la de abajo llegue siempre al borde.
+- No están (todavía) en los paneles con scroll propio: la ficha de referencia, el hilo de comentarios y las hojas.
+→ [decisión](decisiones/2026-10-09-el-tablon-se-funde-con-su-fondo-bajo-las-barras.md)
+
 `Grid` · `components/Grid.tsx` · `.board`
 Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y solo se montan las tarjetas cercanas a la pantalla.
 - Zoom por columnas: `ZoomPill` (`components/ZoomPill.tsx`, `.zoom-pill`: − % +), colocada por `.board-zoom` en la esquina inferior izquierda, a 16 px de cada pared; pellizco o ⌘/Ctrl+rueda. Abre un paso más lejos que el 100 %. Pulido usa la misma pastilla en la misma esquina.
 - La pastilla lleva también la música (`SoundControl`, ver Pastilla de la esquina), en cualquier tablón.
-- Nubecitas (`.board-fade`, hermanas del scroller): el tablón se funde con su propio fondo (`--bg`) bajo el dock, siempre, y bajo la Isla en cuanto ha hecho scroll (`.is-on`, 220 ms). Cada una mide la banda que ocupan las barras (`--fade`, las márgenes que recibe Grid) más una cola, en cuatro paradas; sin z propio y sin puntero. No se montan mientras el tablón está debajo de Pulido. → [decisión](decisiones/2026-10-09-el-tablon-se-funde-con-su-fondo-bajo-las-barras.md)
+- Nubecitas: las de `Clouds`, con las márgenes del tablón (64 arriba, 112 abajo con dock, 24 sin él). No se montan mientras el tablón está debajo de Pulido, que trae las suyas.
 - Las tarjetas se deslizan a su nuevo sitio con una transición CSS de `transform`.
 - Cada tarjeta pide la copia de captura que necesita: 288, 720 o 1440 px.
 
@@ -331,7 +338,7 @@ Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis re
 ### Pulido
 `PolishView` · `components/PolishView.tsx` · `components/PolishView.css` · `.polish`
 La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir del tablón, en un slider con forma de tornado 3D; la tarjeta de delante ocupa más sitio y es la que se decide. → [la fase](decisiones/2026-10-06-vuelve-pulido-como-fase-entre-tablon-y-sistema.md), [cómo se decide](decisiones/2026-10-06-en-pulido-la-tarjeta-decidida-vuela-a-su-pestana.md)
-- Niebla arriba y abajo: las mismas nubecitas del tablón (`.board-fade`, 64 y 112 px), las dos siempre encendidas porque las tarjetas giran bajo la Isla y la barra; `z-index: 4` en `PolishView.css`. → [decisión](decisiones/2026-10-09-el-tablon-se-funde-con-su-fondo-bajo-las-barras.md)
+- Niebla arriba y abajo: `Clouds` con `always` (64 y 112 px), las dos siempre encendidas porque las tarjetas giran bajo la Isla y la barra sin scroll; `z-index: 4` en `PolishView.css`, sobre el cielo y bajo la barra.
 - La matemática es la del "3D cards tornado" de Osmo Supply, en `requestAnimationFrame` y sin GSAP; sus parámetros son las constantes del principio del fichero. Ventaneado: solo se montan las tarjetas cercanas a la pantalla (unas 33 en un tablero de 134).
 - Es un slider manual, siempre: se mueve con la rueda, arrastrando o al decidir, y descansa sobre una tarjeta. Cada vez que se entra, la tarjeta de delante es otra, al azar entre las pendientes (`lastFront`). La de delante es una más del tornado, más grande (`FRONT_W` frente a `CARD_W`) y con las vecinas un poco apartadas (`SPREAD`); en reposo carga su captura grande. Clic en ella abre su ficha, sola: sin flechas ni anterior y siguiente, porque el slider aquí es el tornado (`panelAt` en `InspoClient.tsx`); clic en otra la trae delante. → [decisión](decisiones/2026-10-06-en-pulido-la-ficha-se-abre-sola.md)
 - Cada tarjeta enseña la referencia como su ficha (`Face`): una web, una imagen o un vídeo, su captura o fotograma (`Picture`); un texto, su página de palabras con la etiqueta "Texto", el título y las primeras líneas (`.polish__text`); un post de X con foto, vídeo o gif, solo su media a toda la tarjeta (en la de delante el vídeo hace bucle mudo, sin controles ni barra, `LoopVideo`); un post que es solo palabras, la misma caja que la ficha (`PostBox` de `PostView.tsx`: avatar, autor, @usuario, fecha, texto), tan alta como el post hasta 36 em y fundida al pie si se corta (`.polish__post.is-cut`). El post se lee una vez por sesión (`components/post-cache.ts`) y solo lo piden las tarjetas a `POST_NEAR` puestos de la de delante; mientras llega se lee lo que ya dice el nombre. → [decisión](decisiones/2026-10-08-en-pulido-la-tarjeta-se-ve-como-en-la-ficha.md)
@@ -498,6 +505,8 @@ La entrada de la referencia dentro del criterio.md del proyecto, editable, y las
 ### Marco de sección
 `SectionShell` · `components/SectionShell.tsx` · `.settings`
 El marco de Ajustes, Actividad y esta librería: columna fija con grupos e iconos (siempre abierta en escritorio, sin botón de plegar ni ⌘B; en móvil, una hoja que abre el botón de la barra), migas donde hay (`crumbs`; en Ajustes no, y entonces la barra superior solo existe en móvil y la página empieza en su `h1`), sin entrada de feedback al pie, y contenido a 800 px (1040 con `wide`). → [decisión](decisiones/2026-10-07-ajustes-planos-sin-barra-moss-ni-sidebar-plegable.md)
+- Nubecitas `Clouds` en modo ventana: la de arriba como primer hijo de la columna (banda corta) y la de abajo como último; la columna mide al menos una pantalla y `.page` crece.
+
 
 ### Encabezado de sección
 `SettingsHeading` · `components/SettingsHeading.tsx` · `.settings__heading`

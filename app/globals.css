@@ -581,7 +581,8 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    the page scrolls, and the top bar is a band of its own over it */
 .shell--docked { height: auto; overflow: visible; overflow-x: clip; }
 .shell--docked [data-slot="sidebar-gap"] { transition: none; }
-.shell--docked .content { height: auto; overflow: visible; }
+.shell--docked .content { height: auto; min-height: 100svh; overflow: visible; }
+.shell--docked .content > .page { flex: 1 0 auto; }
 .shell--docked .topbar {
   position: sticky; pointer-events: auto;
   background: var(--bg);
@@ -2276,21 +2277,30 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   background-color: var(--bg);
 }
 .board__world { position: relative; width: 100%; }
-/* The clouds (Eric, 09-10: "nubecita del color de background"): the board fades into its own background where the
-   bars float over it. The bottom one is always there, under the dock and the corner pill; the top one comes in
-   once the board has scrolled under the Island, and goes when it is back at the top. Each is as tall as the inset
-   the bars take (--fade, from Grid) plus a tail, eased in four stops so no edge shows. They paint over the
-   scroller by order alone (no z of their own) and under every bar, and never take the pointer. */
-.board-fade { position: absolute; left: 0; right: 0; pointer-events: none; }
-.board-fade--bottom {
-  bottom: 0; height: calc(max(var(--fade, 160px), 72px) + 32px); /* a floor for boards with no dock: the pill alone */
+/* The clouds (components/Clouds.tsx; Eric, 09-10: "nubecita del color de background", "casi que en todas partes"):
+   a view fades into its own background where the bars float over it. Each shows where there is more beyond it:
+   the bottom one under the dock or the corner pill until the view reaches its end (.is-off), the top one once the
+   view has scrolled under the Island (.is-on); both always where the content turns under the bars by itself (Polish). Each is as tall as the band the bars take (--fade, from
+   the view) plus a tail, eased in four stops so no edge shows. Beside an absolute scroller they paint over it by
+   order alone (no z of their own) and under every bar; they never take the pointer. */
+.cloud { position: absolute; left: 0; right: 0; pointer-events: none; }
+.cloud--bottom {
+  bottom: 0; height: calc(max(var(--fade, 72px), 72px) + 32px); /* the floor: the pill alone */
+  transition: opacity 220ms var(--ease-out);
   background: linear-gradient(to top, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 32%, color-mix(in srgb, var(--bg) 36%, transparent) 66%, transparent 100%);
 }
-.board-fade--top {
-  top: 0; height: calc(var(--fade, 72px) + 40px); opacity: 0; transition: opacity 220ms var(--ease-out);
+.cloud--top {
+  top: 0; height: calc(var(--fade, 64px) + 40px); opacity: 0; transition: opacity 220ms var(--ease-out);
   background: linear-gradient(to bottom, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 32%, color-mix(in srgb, var(--bg) 36%, transparent) 66%, transparent 100%);
 }
-.board-fade--top.is-on { opacity: 1; }
+.cloud--top.is-on { opacity: 1; }
+.cloud--bottom.is-off { opacity: 0; }
+/* Where the page scrolls with the window (components/SectionShell.tsx) each cloud sticks inside the column's flow
+   and takes no room: the top one is its first child, the bottom one its last, and the column is at least a screen
+   tall so the bottom one always meets the window's edge. In the band of layers inside a view (5). */
+.cloud--sticky { position: sticky; left: auto; right: auto; width: 100%; flex-shrink: 0; z-index: 5; }
+.cloud--top.cloud--sticky { top: 0; margin-bottom: calc(-1 * (var(--fade, 64px) + 40px)); }
+.cloud--bottom.cloud--sticky { bottom: 0; margin-top: calc(-1 * (max(var(--fade, 72px), 72px) + 32px)); }
 /* A tile moves by transform only. When the layout changes (a search, the island, a zoom), the cards that
    stay glide to their new place: a transition (not keyframes), so a key pressed mid-way retargets from where
    the card is. The island's curve, so a card and the island that pushed it land together. */

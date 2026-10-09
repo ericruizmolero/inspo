@@ -10,6 +10,7 @@
 // number for the screen, cards about as wide as a page drawn at a quarter.
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import Clouds from "@/components/Clouds";
 import { EASE_OUT, EASE_WIND, MORPH_MS, coverWhileFlying, ghostsOut, peekHandoff, takeHandoff } from "./view-morph";
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
@@ -154,13 +155,10 @@ export default memo(function Grid({ under = false, items, ratioOf, hasNote, inse
   // The scroller's position, refreshed once it has moved a quarter of a screen: with a screen of overscan
   // either way, a wheel's flick never re-renders and never meets a hole.
   const [win, setWin] = useState<{ lo: number; hi: number } | null>(null);
-  // Whether the board has left its top: the cloud under the Island only shows then
-  const [scrolled, setScrolled] = useState(false);
   const update = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const vh = el.clientHeight, top = el.scrollTop;
-    setScrolled(top > 4);
     const lo = top - vh * OVERSCAN, hi = top + vh * (1 + OVERSCAN);
     setWin((cur) => (cur && Math.abs(cur.lo - lo) < vh / 4 && Math.abs(cur.hi - hi) < vh / 4 ? cur : { lo, hi }));
   }, []);
@@ -346,11 +344,8 @@ export default memo(function Grid({ under = false, items, ratioOf, hasNote, inse
       </div>
 
       {/* The clouds: the board fades into its own background under the dock, and under the Island once it has
-          scrolled, so the bars rest on calm ground and no card is cut by the edge. Outside the scroller, no pointer */}
-      {!under && <>
-        <div className={`board-fade board-fade--top${scrolled ? " is-on" : ""}`} style={{ "--fade": `${insets.top}px` } as React.CSSProperties} aria-hidden />
-        <div className="board-fade board-fade--bottom" style={{ "--fade": `${insets.bottom}px` } as React.CSSProperties} aria-hidden />
-      </>}
+          scrolled (components/Clouds.tsx). Polish brings its own while the board is under it */}
+      {!under && <Clouds scroller={scrollRef} top={insets.top} bottom={insets.bottom} />}
 
       {/* Outside the scroller, so it stays in its corner while the board moves */}
       {/* The corner pill: the system's chrome pill with the zoom (minus, %, plus) and the music after a hairline */}

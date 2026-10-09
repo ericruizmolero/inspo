@@ -2,6 +2,7 @@
 // The first screen inside a workspace: what are you making? One box to name a project and land on its
 // system, empty and waiting; under it, the ones the team already has, each shown by its own board.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import Clouds from "@/components/Clouds";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
@@ -145,6 +146,7 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
   };
   const named = !!name.trim();
   return (
+    <>
     <div className="chooser">
       <div className="chooser__inner">
         <h1 className="cr-hello chooser__title">{projects.length ? t.chooser.titleSome : t.chooser.titleNone}</h1>
@@ -176,5 +178,7 @@ export default function ProjectChooser({ projects, systems, items, links, ratioO
         )}
       </div>
     </div>
+    <Clouds />
+    </>
   );
 }

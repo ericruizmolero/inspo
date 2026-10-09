@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Clouds from "@/components/Clouds";
 import { normalizeWebUrl } from "@/lib/url";
 import { DIRECTORY, DIRECTORY_TOTAL, siteShot } from "@/lib/directory";
 import { Icons } from "./Sidebar";
@@ -104,6 +105,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
     ...DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), n: g.items.length }))];
 
   return (
+    <>
     <div className={s.scroll}>
     <section className={s.wrap}>
       <div className={s.head} data-flip>
@@ -147,5 +149,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
       </div>
     </section>
     </div>
+    <Clouds />
+    </>
   );
 }
