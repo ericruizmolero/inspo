@@ -871,6 +871,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         <div ref={stageRef} className="polish__stage">{cards}</div>
       </div>
       <div className="polish__veil" aria-hidden />
+      {/* The same clouds as the board (.board-fade, app/globals.css): the cards turn under the Island and under the
+          bar, so the view fades into its background at both edges, always (Eric, 09-10: "en pulido también") */}
+      <div className="board-fade board-fade--top is-on" style={{ "--fade": "64px" } as React.CSSProperties} aria-hidden />
+      <div className="board-fade board-fade--bottom" style={{ "--fade": "112px" } as React.CSSProperties} aria-hidden />
       {flights.map((f) => (
         <Flyer key={f.id} flight={f} image={imageOf(f.item)} text={textOf(f.item)} onGone={() => setFlights((all) => all.filter((x) => x.id !== f.id))} />
       ))}

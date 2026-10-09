@@ -8,7 +8,7 @@ Dónde corta la app, en qué orden se apilan las cosas y cómo se ve el foco.
 | --- | --- |
 | `max-width: 800px` | **El corte de la app.** Móvil: la Isla se oculta y aparece el sidebar en hoja; `useIsMobile` corta en 801 |
 | `max-width: 560px`, `640px` | Ajustes de piezas en pantallas estrechas; el display baja a 28 |
-| `max-width: 900px`, `1100px` | Columnas de páginas anchas (ajustes, sistema); de 801 a 1100 el selector de vista va solo con iconos |
+| `max-width: 900px`, `1100px`, `1200px` | Columnas de páginas anchas (ajustes, sistema); de 801 a 1200 el selector de vista va solo con iconos |
 | `prefers-reduced-motion` | Quitar movimiento y dejar el fundido |
 | `hover: hover` / `hover: none` | Lo que solo aparece al pasar el ratón tiene alternativa táctil, en la misma caja y de una línea (pie de tarjeta, "…" del menú) |
 | `max-height: 500px` | Un teléfono tumbado: la ficha ocupa casi todo el alto |

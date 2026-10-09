@@ -706,8 +706,20 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   /* On a tab that already sits on chrome-raised, the hover fill steps back to chrome so it shows */
   .island__tab .cr-iconbtn:hover { background: var(--chrome); color: var(--chrome-ink); }
 }
-/* Every project tab at its own width, out of sight: Island.tsx reads it to decide how many fit */
-.island__measure { position: absolute; top: 0; left: 0; display: flex; gap: 4px; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
+/* When the room is short anyway (the measure ran before the fonts, or the right-hand pill just grew), the
+   selected project's tab gives way instead of sliding under the view switcher (2026-10-09). Island.tsx gives it
+   its natural width (its copy in the measure) and a floor; between the two, its name shortens first, with an
+   ellipsis and a few letters kept, then its count; the ring, the ⌄ and the × keep their room and their targets.
+   Only that tab: it is the one that always keeps its place, so it is the one that can be short */
+.island__tabs > .island__tab.is-on.island__tab--split { flex-shrink: 1; }
+.island__tabs > .island__tab.is-on .island__tab-main { flex: 1 1 auto; min-width: 0; }
+.island__tabs > .island__tab.is-on .island__label { flex-shrink: 100; min-width: 56px; }
+/* The factors stay above 1 in sum, or flex scales the space down with them and nothing gives */
+.island__tabs > .island__tab.is-on .island__n { flex-shrink: 1; min-width: 0; overflow: hidden; }
+.island__tabs > .island__tab.is-on :is(.island__ring, .island__tab-more, .island__tab-x) { flex-shrink: 0; }
+/* Every project tab at its own width, out of sight: Island.tsx reads it to decide how many fit. max-content: the
+   copies never shrink with the island, or the measure would follow the room it is meant to decide */
+.island__measure { position: absolute; top: 0; left: 0; display: flex; gap: 4px; width: max-content; height: 0; overflow: hidden; visibility: hidden; pointer-events: none; }
 /* The menus that hang from the tab bar (the workspace menu, a tab's options, "N more", the new project) are the
    system's Menu (.cr-menu): a paper window in both themes. What is theirs alone: */
 /* The workspace menu hangs from the logo tile; on a phone it spans the sidebar card it hangs from */
@@ -827,9 +839,9 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   .shell--docked .topbar--phone + .settings { padding-top: 48px; }
   .shell:not(.shell--docked) .topbar__trigger { display: none; }
 }
-/* A narrow desktop window (801 to 1100): the switcher keeps only its icons (and the fill), so the island's project
+/* A narrow desktop window (801 to 1200): the switcher keeps only its icons (and the fill), so the island's project
    tabs keep their names instead of being pushed under it */
-@media (min-width: 801px) and (max-width: 1100px) {
+@media (min-width: 801px) and (max-width: 1200px) { /* 1200 since 09-10: with five open tabs and a team, 1100 to 1200 pushed the + and the bell under the switcher */
   .topbar__switch .topbar__mode-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .topbar__switch .cr-seg-item { padding: 0 10px; }
 }
@@ -2257,6 +2269,21 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   background-color: var(--bg);
 }
 .board__world { position: relative; width: 100%; }
+/* The clouds (Eric, 09-10: "nubecita del color de background"): the board fades into its own background where the
+   bars float over it. The bottom one is always there, under the dock and the corner pill; the top one comes in
+   once the board has scrolled under the Island, and goes when it is back at the top. Each is as tall as the inset
+   the bars take (--fade, from Grid) plus a tail, eased in four stops so no edge shows. They paint over the
+   scroller by order alone (no z of their own) and under every bar, and never take the pointer. */
+.board-fade { position: absolute; left: 0; right: 0; pointer-events: none; }
+.board-fade--bottom {
+  bottom: 0; height: calc(max(var(--fade, 160px), 72px) + 32px); /* a floor for boards with no dock: the pill alone */
+  background: linear-gradient(to top, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 32%, color-mix(in srgb, var(--bg) 36%, transparent) 66%, transparent 100%);
+}
+.board-fade--top {
+  top: 0; height: calc(var(--fade, 72px) + 40px); opacity: 0; transition: opacity 220ms var(--ease-out);
+  background: linear-gradient(to bottom, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 32%, color-mix(in srgb, var(--bg) 36%, transparent) 66%, transparent 100%);
+}
+.board-fade--top.is-on { opacity: 1; }
 /* A tile moves by transform only. When the layout changes (a search, the island, a zoom), the cards that
    stay glide to their new place: a transition (not keyframes), so a key pressed mid-way retargets from where
    the card is. The island's curve, so a card and the island that pushed it land together. */
@@ -2730,17 +2757,3 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   .tile.is-selecting:active { transform: none; }
   .selbar.is-closing { transform: translateX(-50%); }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

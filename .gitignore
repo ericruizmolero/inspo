@@ -71,3 +71,6 @@ extension/dist/
 # licence forbids sharing the files through a public repository
 /app/fonts/satoshi/
 /extension/chrome/fonts/Satoshi-*.woff2
+
+# Söhne test fonts (Klim Test Font Licence: internal evaluation only, never shipped, never shared)
+/app/fonts/soehne-test/
