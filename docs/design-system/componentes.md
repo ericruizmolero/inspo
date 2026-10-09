@@ -138,7 +138,7 @@ Una referencia de texto: etiqueta del tipo, título en display y el cuerpo que s
 
 ### Vacío
 `EmptyState` · `.cr-empty` · muestra: vacio
-Lo que dice un sitio vacío: un título corto, una o dos frases y `suggestions` como chips de cromo que rellenan el paso siguiente (`onSuggest`). Sin dibujo (`art` queda libre). Lo usan los comentarios, la ficha, Pulido, Ajustes y Actividad.
+Lo que dice un sitio vacío: un título corto, una o dos frases y `suggestions` como chips de cromo que rellenan el paso siguiente (`onSuggest`). Sin dibujo salvo que el vacío espere a personas concretas: entonces `art` lleva sus caras (la conversación). Lo usan los comentarios, la ficha, Pulido, Ajustes y Actividad. → [las caras del equipo en la conversación vacía](decisiones/2026-10-09-el-vacio-de-comentarios-lleva-las-caras-del-equipo.md)
 
 ### Control de zoom
 `ZoomControl` · `.cr-zoom` · muestra: zoom
@@ -176,7 +176,7 @@ Una ventana con el nombre del proyecto en la barra y dos pasos (Sobre qué es, R
 `Island` · `components/Island.tsx` · `.island`
 Barra flotante de escritorio con los proyectos como pestañas, a lo Figma: Inicio (la casa), Descubrir, Inbox, "N más", "+" para proyecto nuevo y, a la izquierda, el avatar del espacio que abre el menú de espacio.
 - El tile de la izquierda (`.island__logo`, 26 px) es `WorkspaceFace` del espacio activo: su logo, o tu foto en el personal; nunca la mascota del producto. → [decisión](decisiones/2026-10-07-el-tile-de-la-isla-muestra-el-espacio-no-la-mascota.md)
-- Las pestañas abiertas se guardan por navegador y espacio; el ancho se mide con un `.island__measure` oculto.
+- Las pestañas abiertas se guardan por navegador y espacio; el ancho se mide con un `.island__measure` oculto. Se vuelve a medir en cada render, cuando cambia de tamaño la barra o cualquier cosa que comparta barra con ella (la píldora de la derecha crece sola: Conectores, las caras de Pulido) y cuando terminan de cargar las fuentes web: la primera medida se hace con la fuente de reserva, y con Satoshi/Söhne cada pestaña es más ancha (09-10: el conmutador de vistas pisaba la última pestaña de proyecto). Y si aun así falta sitio, cede la pestaña del proyecto activo: su nombre se recorta con puntos suspensivos (es la única que siempre se queda, así que es la única que puede ser corta); las demás nunca encogen y las copias de `.island__measure` tampoco (`width: max-content`), o la medida seguiría al hueco que debe decidir.
 - En un equipo, tras el "+" va la campanita (`TeamBell`, abajo): lo que hicieron los demás esta semana, con el punto ember del sistema mientras haya algo sin ver. En el espacio personal no está.
 - El relleno de la pestaña activa y el del hover son las pastillas de `Liquid`, sin borde: la del hover fluye de una pestaña a otra y la activa aparece en el mismo clic. La casa (`.island__home`) es una pestaña más: misma forma (`--radius-md`) y sin relleno propio, para que su hover y su estado activo sean las mismas pastillas. El tile del espacio (`.island__ws`) y el "+" de proyecto nuevo pasan el ratón con el mismo cristal (`--glass-hover`, y `--glass-on` con su menú abierto), nunca con un relleno sólido. En el menú del espacio, las caras del equipo (`.island__face`) llevan un anillo de 1,5 px del color del propio menú (`--menu-ground`, blanco en Paper) y al pasar el ratón suben con una sombra corta. → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md)
 - La pestaña activa lleva ⌄ (renombrar, borrar) y × (cerrar pestaña); el × ocupa el sitio del anillo de progreso. En las demás pestañas abiertas el × sale al pasar el ratón en el sitio del anillo, con su hueco reservado (24 px más 4 de aire) para que su círculo no pise el contador. → [decisión](decisiones/2026-10-07-el-circulo-del-hover-nunca-pisa-el-texto-vecino.md)
@@ -477,6 +477,7 @@ Póster que solo carga el iframe del proveedor al pulsarlo.
 `CommentsPanel` · `components/CommentsPanel.tsx` · `.cm`
 La nota original y los hilos, con respuestas a un nivel. Capturas pegadas con ⌘V, arrastradas o con el clip; lightbox con ← → y Esc. Enter envía, Shift+Enter salta línea.
 - El texto de todos los comentarios va en `--text`, sea de quien sea (`.cm-msg__body`); el papel apagado es solo del avance de dos líneas bajo la tarjeta (`Comment`). → [decisión](decisiones/2026-10-08-todos-los-comentarios-del-hilo-llevan-el-mismo-color-de-texto.md)
+- Vacía, enseña quién la va a leer: bajo la frase y antes de las sugerencias, hasta tres filas fantasma (`.cm-empty__ghosts`) con el `Avatar` real de cada persona a 20 (quien mira primero) y una barra apagada, la segunda fila entrada 24 px, cada una con `pop-in` 90 ms tras la anterior; la frase es una sola y no repite los nombres. → [decisión](decisiones/2026-10-09-el-vacio-de-comentarios-lleva-las-caras-del-equipo.md)
 - La variante `drawer` no se usa.
 
 ### Criterio de la referencia

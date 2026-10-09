@@ -1159,6 +1159,16 @@ video.vp__media { object-fit: contain; }
 .pv__photos--1 img { object-fit: contain; background: var(--scrim-strong); }
 /* No answer yet: the system's EmptyState, no art, with the things one might say as chrome chips */
 .cm-empty.cr-empty { flex: 1; justify-content: center; padding: 24px 4px; }
+/* The team as ghost rows under the sentence, before the suggestions: a small real face and one muted bar per row,
+   the middle row stepped in (Eric, 09-10: "debajo del subtitle", "minimalista"). Each row pops in a beat after the last. */
+.cm-empty .cr-empty-title, .cm-empty .cr-empty-text { order: -1; }
+.cm-empty__ghosts { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 200px; margin: 10px 0 2px; }
+.cm-empty__ghost { display: flex; align-items: center; gap: 8px; opacity: 0; animation: pop-in 0.4s var(--ease-out) forwards; }
+.cm-empty__ghost:nth-child(2) { padding-left: 24px; }
+.cm-empty__ghost .cm-avatar { opacity: 0.8; }
+.cm-empty__bars { flex: 1; display: flex; }
+.cm-empty__bars span { display: block; height: 6px; border-radius: var(--radius-pill); background: var(--chrome-raised); }
+@media (prefers-reduced-motion: reduce) { .cm-empty__ghost { animation: none; opacity: 1; } }
 .cm-panel .cr-empty-title { color: var(--chrome-ink); }
 .cm-panel .cr-empty-text { color: var(--chrome-text-muted); }
 .cm-panel .cr-chip-chrome { transition: border-color 150ms ease, color 150ms ease; }

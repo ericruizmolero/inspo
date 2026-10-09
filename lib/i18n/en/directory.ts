@@ -39,6 +39,7 @@ export const directory = {
     "https://smoothui.dev": "Animated components built on Motion and GSAP.",
     "https://uiverse.io": "Thousands of open source UI elements in CSS and Tailwind, made by the community.",
     "https://glass.samasante.com": "Glass refraction components: liquid glass for the web.",
+    "https://dqnamo.com/kitchen": "Interface studies by dqnamo: a tactile button, hold to confirm, a cassette player, a ticket. Each one a small lesson in detail.",
     "https://kinetics.colorion.co": "150+ motion effects, each with its React code and a prompt.",
     "https://microkit.co": "Micro-interactions, ready to drop in.",
     "https://animejs.com": "A lightweight animation engine for the web, with a playground.",
