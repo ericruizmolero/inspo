@@ -36,7 +36,7 @@
 .polish__fog { position: absolute; inset: 0; z-index: 3; background: var(--bg); opacity: 0; pointer-events: none; }
 /* Only when everything is decided does a veil of the page come over it, for the words */
 /* The clouds sit over the sky (its cards keep their z inside the stage's 3D context) and under the bar (6) and the pill (12) */
-.polish > .board-fade { z-index: 4; }
+.polish > .cloud { z-index: 4; }
 .polish__veil { position: absolute; inset: 0; pointer-events: none; background: var(--bg); opacity: 0; transition: opacity 600ms var(--ease-out); }
 .polish.is-done .polish__veil { opacity: 0.6; }
 

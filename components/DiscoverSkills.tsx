@@ -6,6 +6,7 @@
 // ones criterio.md carries too say so. The page's head chooses what is shown: everything, what just came in or the
 // featured ones (FEATURED_SKILLS), and one topic or all of them.
 import { useRef, useState } from "react";
+import Clouds from "@/components/Clouds";
 import { FEATURED_SKILLS, MD_SKILL_TOPIC, SKILL_TOPICS, isNewSite, plain, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { MD_SKILLS, skillInstall, skillPage } from "@/lib/md-skill-ids";
 import { useT } from "./I18nProvider";
@@ -29,6 +30,7 @@ export default function DiscoverSkills({ sites, topic, shelf, query, head }: { s
   const all = [...own, ...others].filter((s) => (shelf === "all" || (shelf === "new" ? s.fresh : s.featured)) && hit(s));
   const groups = SKILL_TOPICS.filter((k) => !topic || k === topic).map((k) => ({ topic: k, skills: all.filter((s) => s.topic === k) })).filter((g) => g.skills.length);
   return (
+    <>
     <div className="disc-list">
       {head}
       {groups.map((g) => (
@@ -41,6 +43,8 @@ export default function DiscoverSkills({ sites, topic, shelf, query, head }: { s
       ))}
       {!groups.length && <p className="disc-list__none">{t.discover.skills.none}</p>}
     </div>
+    <Clouds />
+    </>
   );
 }
 

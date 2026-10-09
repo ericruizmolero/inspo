@@ -5,6 +5,7 @@
 // skills for agents, a list of their own with its topics in the same menu. The three share one head, in the column
 // of the content.
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import Clouds from "@/components/Clouds";
 import { createPortal } from "react-dom";
 import { DIRECTORY, SKILLS, SKILL_TOPICS, featuredUrls, isNewSite, plain, siteHost, siteShot, type DirectorySite, type SkillTopic } from "@/lib/directory";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -225,6 +226,7 @@ function DiscoverList({ group, shelf, query, head }: { group: string | null; she
     return DIRECTORY.map((g) => ({ key: g.key, sites: g.items.filter((s) => keep.has(s.url) && hit(s, g.key)).map((s) => ({ ...s, group: g.key })) })).filter((g) => g.sites.length);
   }, [group, shelf, query, t]);
   return (
+    <>
     <div className="disc-list" onScroll={peek.hide}>
       {peek.node}
       {head}
@@ -252,5 +254,7 @@ function DiscoverList({ group, shelf, query, head }: { group: string | null; she
       })}
       {!groups.length && <p className="disc-list__none">{t.discover.none}</p>}
     </div>
+    <Clouds />
+    </>
   );
 }

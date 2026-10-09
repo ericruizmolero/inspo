@@ -20,7 +20,7 @@ El móvil hereda el escritorio vista por vista: el menú de móvil repite la Isl
 | z | Qué |
 | --- | --- |
 | 0 a 3 | Decoración dentro de tarjetas (badges, botones inferiores, tooltips de tarjeta) |
-| 5 a 6 | Capas dentro de una vista (barras sticky, zonas de soltar, popover de pin) |
+| 5 a 6 | Capas dentro de una vista (barras sticky, zonas de soltar, popover de pin, las nubecitas pegadas de las páginas con scroll de ventana) |
 | 12 | Pastilla de la esquina (zoom y música) y botón de tema |
 | 20 | Barra superior (`.topbar`, Isla) y barra de invitado |
 | 25 | Dock (buscador y agente) |

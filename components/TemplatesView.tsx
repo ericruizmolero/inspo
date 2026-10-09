@@ -4,6 +4,7 @@
 // carries the recipe of the work. Using one starts a project with that system as proposals and the recipe.
 // The library shows them as cards, each with what the work ended as; a card opens its criterio.md.
 import { useEffect, useMemo, useRef, useState } from "react";
+import Clouds from "@/components/Clouds";
 import type { Project } from "@/types/inspo";
 import { type SystemArea, type TemplateCard } from "@/types/system";
 import { removeTemplate, startFromTemplate } from "@/app/actions/templates";
@@ -233,6 +234,7 @@ export default function TemplatesView({ workspaceId, head, onStarted }: {
     if (r.ok) { setList((l) => { const next = (l ?? []).filter((x) => x.id !== tpl.id); remember(workspaceId, next); return next; }); go(null); } else setError(r.error);
   };
   return (
+    <>
     <div className="tpls" ref={scroller}>
       <div className="tpls-inner">
         {open ? (
@@ -252,5 +254,7 @@ export default function TemplatesView({ workspaceId, head, onStarted }: {
         )}
       </div>
     </div>
+    <Clouds />
+    </>
   );
 }

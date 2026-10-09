@@ -3,6 +3,7 @@
 // area (components/SystemDoc.tsx). The model reads the board into it ("Improve with AI"); the team writes over it.
 // Beside it, the brand as a presentation (components/brand/BrandPresentation.tsx): the same values drawn.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Clouds from "@/components/Clouds";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
@@ -262,6 +263,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   );
 
   return (
+    <>
     <div className={`spage is-${view}`} aria-busy={!system}>
       <div className="spage-inner">
         <header className="spage-head">
@@ -298,6 +300,8 @@ export default function SystemView({ project, system, onSystem, board, library, 
         )}
       </div>
     </div>
+    <Clouds />
+    </>
   );
 }
 

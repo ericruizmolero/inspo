@@ -3,6 +3,7 @@
 // always open on desktop (no trigger, no ⌘B: Eric, 07-10, a toggle there "makes no sense"), a sheet on a phone opened
 // from the top bar. The server layout passes labels and icons.
 import Link from "next/link";
+import Clouds from "@/components/Clouds";
 import { useSelectedLayoutSegment } from "next/navigation";
 import type { ReactNode } from "react";
 import { useT } from "./I18nProvider";
@@ -98,6 +99,9 @@ export default function SectionShell({ title, base, groups, wide = false, crumbs
     <SidebarProvider className="shell shell--docked" open onOpenChange={() => {}}>
       <Nav title={title} base={base} groups={groups} />
       <SidebarInset className="content">
+        {/* The page scrolls with the window: the clouds stick to its edges, the top one first in the column (a
+            short band: no bar floats over these pages), the bottom one last (components/Clouds.tsx) */}
+        <Clouds mode="window" only="top" top={24} />
         <header className={`topbar${crumbs ? "" : " topbar--phone"}`}>
           <span className="topbar__trigger"><Trigger /></span>
           <Logo size={24} className="settings__logo" />
@@ -108,6 +112,7 @@ export default function SectionShell({ title, base, groups, wide = false, crumbs
         <div className={`page settings${wide ? " settings--wide" : ""}`} data-feedback-entry="">{children}</div>
         {/* The music, in the corner it has across the app: the window's bottom-left */}
         <div className="shell-corner"><ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill></div>
+        <Clouds mode="window" only="bottom" />
       </SidebarInset>
     </SidebarProvider>
   );
