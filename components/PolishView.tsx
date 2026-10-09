@@ -491,7 +491,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const reads = e.nodes.map((nd) => ({ nd, w: nd.el.offsetWidth, h: nd.el.offsetHeight }));
     /** The pose, flat and facing the screen, that covers a box of the board exactly */
     const flat = (shot: Shot, w: number, h: number) => `translate3d(${(shot.x + shot.w / 2 - cx).toFixed(2)}px,${(shot.y + shot.h / 2 - cy).toFixed(2)}px,0px) rotateY(0deg) translateZ(0px) scale(${(shot.w / w).toFixed(4)}, ${(shot.h / h).toFixed(4)})`;
-    const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 8) * MORPH_STEP_MS, easing: EASE_OUT, fill: "backwards" });
+    const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 6) * MORPH_STEP_MS, easing: EASE_OUT, fill: "backwards" });
+    // Depth comes to every card at once, over the second half, whatever its own delay: sharp while they fly, then the
+    // tornado's blur and fog settle over all of them together
+    const look: KeyframeAnimationOptions = { duration: MORPH_MS * 0.5, delay: MORPH_MS * 0.5, easing: EASE_OUT, fill: "backwards" };
     const used = new Set<string>();
     for (const { nd, w, h } of reads) {
       const key = nd.key.slice(0, nd.key.lastIndexOf("#")), rel = nd.k - e.p, end = pose(e, rel);
@@ -499,13 +502,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       if (shot && w && h) {
         used.add(key);
         const box = nd.el.querySelector<HTMLElement>(".polish__in");
-        if (box) { box.style.animation = "none"; coverWhileFlying(box, shot, MORPH_MS + Math.min(Math.abs(rel), 8) * MORPH_STEP_MS); }
-        nd.el.animate([
-          { transform: flat(shot, w, h), filter: "blur(0px)" },
-          { filter: "blur(0px)", offset: 0.6 },
-          { transform: end.transform, filter: `blur(${end.blur}px)` },
-        ], timing(rel));
-        nd.fog.animate([{ opacity: 0 }, { opacity: 0, offset: 0.6 }, { opacity: end.fog }], timing(rel));
+        if (box) { box.style.animation = "none"; coverWhileFlying(box, shot, MORPH_MS + Math.min(Math.abs(rel), 6) * MORPH_STEP_MS); }
+        nd.el.animate([{ transform: flat(shot, w, h) }, { transform: end.transform }], timing(rel));
+        nd.el.animate([{ filter: "blur(0px)" }, { filter: `blur(${end.blur}px)` }], look);
+        nd.fog.animate([{ opacity: 0 }, { opacity: end.fog }], look);
       } else if (nd.shown) {
         const from = pose(e, rel + Math.sign(rel || 1) * MORPH_ROUND);
         nd.el.animate([{ transform: from.transform }, { transform: end.transform }], timing(rel));

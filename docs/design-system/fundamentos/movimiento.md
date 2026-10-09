@@ -19,7 +19,7 @@
 | Tomar el foco en un campo | 350 ms con `--ease-out`; el anillo está siempre (transparente) y se funde su color, en `.input`, `.cr-input` y `.cr-prompt` → [decisión](../decisiones/2026-10-07-los-campos-toman-el-foco-en-350-ms.md) |
 | Cambio de tema | Fundido de la página entera en 600 ms con `--ease-in-out` (`switchTheme` en `lib/theme.ts`) → [decisión](../decisiones/2026-10-06-boton-de-tema-flotante-en-la-esquina.md) |
 | Relleno de pestañas y segmentados | Líquido: la pastilla fluye de opción en opción (`components/ui/liquid.tsx`) → [decisión](../decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md) |
-| Tablón ↔ Pulido | Las tarjetas vuelan de una vista a la otra: 900 ms con `--ease-out`, 24 ms de escalón por tarjeta desde la de delante, solo `transform` y `opacity` (`components/view-morph.ts`) → [decisión](../decisiones/2026-10-09-las-tarjetas-vuelan-entre-el-tablon-y-el-tornado.md) |
+| Tablón ↔ Pulido | Las tarjetas arrancan en el mismo clic y vuelan de una vista a la otra: 900 ms con `--ease-out`, 16 ms de escalón por tarjeta desde la de delante, desenfoque y niebla a la vez para todas en la segunda mitad, solo `transform`, `filter` y `opacity` (`components/view-morph.ts`) → [decisión](../decisiones/2026-10-09-las-tarjetas-vuelan-entre-el-tablon-y-el-tornado.md) |
 
 ## Keyframes
 

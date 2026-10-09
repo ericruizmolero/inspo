@@ -9,13 +9,17 @@ export const MORPH_MS = 900;
 /** How long what fades takes: the copies of cards the new view has no place for, and the covers once landed */
 export const GHOST_MS = 420;
 /** Delay per card step from the front: the front settles first, the far ones a beat later */
-export const MORPH_STEP_MS = 24;
+export const MORPH_STEP_MS = 16;
+/** How far towards the middle of the screen, and how much smaller, a board card has got by the end of its departure */
+const DEPART_DRIFT = 0.08, DEPART_SCALE = 0.985;
 export const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
 
 export interface Shot { x: number; y: number; w: number; h: number; radius: string; image: string | null }
 type View = "board" | "polish";
 export interface Handoff { shots: Map<string, Shot>; /** The card that was facing the screen, leaving Polish */ front?: string }
-let pending: { from: View; at: number; hand: Handoff } | null = null;
+/** What the view leaving left behind: measured at the click (Polish, whose cards stand still) or when the other view
+ *  takes it (the board, whose cards are already on their way), and the departure to call off once taken */
+let pending: { from: View; at: number; hand: Handoff | null; measure: () => Handoff; cancel: () => void } | null = null;
 
 const stillMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const onScreen = (r: DOMRect) => r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth && r.width > 0;
@@ -26,23 +30,39 @@ const pictureOf = (box: HTMLElement) => {
   return imgs.at(-1)?.currentSrc ?? box.querySelector<HTMLVideoElement>("video")?.poster ?? null;
 };
 const shotOf = (box: HTMLElement, r: DOMRect): Shot => ({ x: r.left, y: r.top, w: r.width, h: r.height, radius: getComputedStyle(box).borderRadius, image: pictureOf(box) });
+const boardTiles = () => Array.from(document.querySelectorAll<HTMLElement>(".board-tile[data-key]"), (tile) => ({ key: tile.dataset.key!, inner: (tile.firstElementChild as HTMLElement | null) ?? tile }));
 
-/** Before the board leaves: where each card on screen is */
-export function snapshotBoard() {
+/** The board, as Polish is asked for: its cards set off at once, lifting a little towards the middle of the screen
+ *  (the wind takes them), and are measured where they have got to when the tornado is there to take them */
+export function leaveBoard() {
   if (stillMotion()) { pending = null; return; }
-  const shots = new Map<string, Shot>();
-  for (const tile of document.querySelectorAll<HTMLElement>(".board-tile[data-key]")) {
-    const inner = (tile.firstElementChild as HTMLElement | null) ?? tile;
+  if (pending?.from === "board" && performance.now() - pending.at < 400) return;
+  pending?.cancel();
+  const cx = window.innerWidth / 2, cy = window.innerHeight / 2, flights: Animation[] = [];
+  for (const { inner } of boardTiles()) {
     const r = inner.getBoundingClientRect();
-    if (onScreen(r)) shots.set(tile.dataset.key!, shotOf(inner.querySelector<HTMLElement>(".tile__media") ?? inner, r));
+    if (!onScreen(r)) continue;
+    const dx = (cx - (r.left + r.width / 2)) * DEPART_DRIFT, dy = (cy - (r.top + r.height / 2)) * DEPART_DRIFT;
+    flights.push(inner.animate([{ transform: "translate3d(0,0,0) scale(1)" }, { transform: `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0) scale(${DEPART_SCALE})` }], { duration: MORPH_MS, easing: EASE_OUT, fill: "forwards" }));
   }
-  pending = { from: "board", at: performance.now(), hand: { shots } };
+  const measure = () => {
+    const shots = new Map<string, Shot>();
+    for (const { key, inner } of boardTiles()) {
+      const r = inner.getBoundingClientRect();
+      if (onScreen(r)) shots.set(key, shotOf(inner.querySelector<HTMLElement>(".tile__media") ?? inner, r));
+    }
+    return { shots };
+  };
+  pending = { from: "board", at: performance.now(), hand: null, measure, cancel: () => { for (const f of flights) f.cancel(); } };
 }
 
-/** Before the tornado leaves: the box each of its cards projects on the screen */
-export function snapshotPolish() {
+/** Polish, as the board is asked for: its cards come into focus at once (the wind takes them), and are measured
+ *  now, where they stand, since the tornado does not move for it */
+export function leavePolish() {
   if (stillMotion()) { pending = null; return; }
-  const shots = new Map<string, Shot>();
+  if (pending?.from === "polish" && performance.now() - pending.at < 400) return;
+  pending?.cancel();
+  const shots = new Map<string, Shot>(), flights: Animation[] = [];
   let front: string | undefined;
   for (const card of document.querySelectorAll<HTMLElement>(".polish__card[data-node]")) {
     if (card.style.visibility === "hidden") continue;
@@ -52,18 +72,25 @@ export function snapshotPolish() {
     if (!onScreen(r)) continue;
     shots.set(key, shotOf(card.querySelector<HTMLElement>(".polish__in") ?? card, r));
     if (card.hasAttribute("data-front")) front = key;
+    flights.push(card.animate([{ filter: card.style.filter || "blur(0px)" }, { filter: "blur(0px)" }], { duration: MORPH_MS * 0.5, easing: EASE_OUT, fill: "forwards" }));
+    const fog = card.querySelector<HTMLElement>(".polish__fog");
+    if (fog) flights.push(fog.animate([{ opacity: fog.style.opacity || "0" }, { opacity: 0 }], { duration: MORPH_MS * 0.5, easing: EASE_OUT, fill: "forwards" }));
   }
-  pending = { from: "polish", at: performance.now(), hand: { shots, front } };
+  const hand = { shots, front };
+  pending = { from: "polish", at: performance.now(), hand, measure: () => hand, cancel: () => { for (const f of flights) f.cancel(); } };
 }
 
 /** What the other view left, if it is still warm: to look at (the new view may open round the same card) */
 export function peekHandoff(from: View): Handoff | null {
   const p = pending;
-  return p && p.from === from && performance.now() - p.at < FRESH_MS && !stillMotion() ? p.hand : null;
+  if (!p || p.from !== from || performance.now() - p.at > FRESH_MS || stillMotion()) return null;
+  p.hand ??= p.measure();
+  return p.hand;
 }
-/** The view that has just mounted takes what the other left, once */
+/** The view that has just mounted takes what the other left, once; the departure is over, the flight goes on from it */
 export function takeHandoff(from: View): Handoff | null {
   const hand = peekHandoff(from);
+  pending?.cancel();
   pending = null;
   return hand;
 }

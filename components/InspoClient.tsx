@@ -35,7 +35,7 @@ import TextPage from "./TextPage";
 import { addText, saveText, renameText } from "@/app/actions/text";
 import { useTextBodies } from "@/hooks/use-text-bodies";
 import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
-import { snapshotBoard, snapshotPolish } from "./view-morph";
+import { leaveBoard, leavePolish } from "./view-morph";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import { cue } from "@/lib/ui-sounds";
@@ -294,12 +294,16 @@ export default function InspoClient({
     lastView.current = projectView;
   }, [projectView]);
   useEffect(() => { if (currentProject) void import("./PolishView"); }, [currentProject]);
+  /** Between the board and Polish the cards go from one to the other: the view leaving sets off at the click, before
+   *  anything is rendered, and the view arriving takes them from where they have got to (components/view-morph.ts) */
+  const leaveView = useCallback((v: "system" | "polish" | "board") => {
+    if (projectView === "board" && v === "polish") leaveBoard();
+    else if (projectView === "polish" && v === "board") leavePolish();
+  }, [projectView]);
   const setProjectView = useCallback((v: "system" | "polish" | "board") => {
-    // Between the board and Polish the cards go from one to the other: the view leaving is measured first
-    if (projectView === "board" && v === "polish") snapshotBoard();
-    else if (projectView === "polish" && v === "board") snapshotPolish();
+    leaveView(v);
     setParams({ view: v === defaultView ? "" : v });
-  }, [setParams, defaultView, projectView]);
+  }, [setParams, defaultView, leaveView]);
   // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
   // typed or chipped there waits in the URL without narrowing anything
   const searchHere = (!!currentProject && projectView === "board") || space === "inbox";
@@ -1672,7 +1676,7 @@ export default function InspoClient({
                   {/* Board, Polish, System: the system's SegmentedControl. The view is set a frame after the click
                       (afterPaint): a view of the project is a heavy render, and the tab answers first */}
                   <SegmentedControl className="topbar__modes" label={t.system.button} active={PROJECT_VIEWS.indexOf(projectView)}
-                    onChange={(i) => afterPaint(() => setProjectView(PROJECT_VIEWS[i]))}
+                    onChange={(i) => { leaveView(PROJECT_VIEWS[i]); afterPaint(() => setProjectView(PROJECT_VIEWS[i])); }}
                     items={[
                       { icon: "grid", label: <span className="topbar__mode-label">{t.system.modeBoard}</span> },
                       { icon: "sparkle", label: <>
