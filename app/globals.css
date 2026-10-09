@@ -2669,6 +2669,10 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   position: fixed; z-index: 30; overflow: hidden; border-radius: var(--radius-lg); background: var(--surface-2) center top / cover no-repeat;
   box-shadow: var(--shadow-pop); pointer-events: none; will-change: transform, opacity;
 }
+/* A copy of a card the view that left had, fading where it stood (components/view-morph.ts): no shadow, it is not lifted */
+.tile-fly--ghost { box-shadow: none; }
+/* The picture a card showed in the view that left, over it while it flies between the board and Polish */
+.morph-cover { position: absolute; inset: 0; z-index: 2; background: var(--surface-2) center top / cover no-repeat; pointer-events: none; }
 
 /* Selecting several cards (SelectBar): the system's Checkbox box top left on hover (a sunken white field, an ink
    border), the ink tick once picked; picked cards wear a ring. The button is the 28px target around the 20px box */

@@ -16,6 +16,10 @@
    A little above the middle: the answers take the bottom */
 .polish__card { position: absolute; top: 46%; left: 50%; width: 30em; translate: -50% -50%; backface-visibility: visible; will-change: transform, filter; cursor: pointer; }
 .polish__sky.is-grabbing .polish__card { cursor: grabbing; }
+/* A copy of a board card going round the orbit and out of sight as the board turns into the tornado (the morph in
+   PolishView.tsx): the same card box, in the same 3D stage, with the picture it was showing */
+.polish__ghost { pointer-events: none; }
+.polish__ghost-in { position: absolute; inset: 0; border-radius: 1.5em; background: var(--surface-2) center top / cover no-repeat; box-shadow: 0 0 0 1px var(--border); }
 .polish__in {
   position: absolute; inset: 0; overflow: hidden; border-radius: 1.5em; background: var(--surface-2); box-shadow: 0 0 0 1px var(--border);
   animation: polish-in 480ms var(--ease-out) backwards;
