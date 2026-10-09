@@ -13,6 +13,9 @@ export const MORPH_STEP_MS = 16;
 /** How far towards the middle of the screen, and how much smaller, a board card has got by the end of its departure */
 const DEPART_DRIFT = 0.08, DEPART_SCALE = 0.985;
 export const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+/** The flight itself: the wind takes a card at a walking pace, carries it fastest a quarter of the way in, and sets
+ *  it down over the second half. (`--ease-out` has 80% of the travel over in the first 200 ms, the rest is standing.) */
+export const EASE_WIND = "cubic-bezier(0.3, 0.2, 0.1, 1)";
 
 export interface Shot { x: number; y: number; w: number; h: number; radius: string; image: string | null }
 type View = "board" | "polish";

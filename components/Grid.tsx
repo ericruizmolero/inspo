@@ -10,7 +10,7 @@
 // number for the screen, cards about as wide as a page drawn at a quarter.
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { EASE_OUT, MORPH_MS, coverWhileFlying, ghostsOut, peekHandoff, takeHandoff } from "./view-morph";
+import { EASE_OUT, EASE_WIND, MORPH_MS, coverWhileFlying, ghostsOut, peekHandoff, takeHandoff } from "./view-morph";
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
 import { useT } from "./I18nProvider";
@@ -305,7 +305,7 @@ export default memo(function Grid({ under = false, items, ratioOf, hasNote, inse
         inner.animate([
           { transform: `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0) scale(${(shot.w / r.width).toFixed(4)}, ${(shot.h / r.height).toFixed(4)})` },
           { transform: "translate3d(0, 0, 0) scale(1, 1)" },
-        ], { duration: MORPH_MS, easing: EASE_OUT });
+        ], { duration: MORPH_MS, easing: EASE_WIND });
       } else {
         inner.animate([{ opacity: 0, transform: "scale(0.96)" }, { opacity: 1, transform: "scale(1)" }], { duration: MORPH_MS * 0.6, delay: MORPH_MS * 0.3, easing: EASE_OUT, fill: "backwards" });
       }

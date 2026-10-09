@@ -24,7 +24,7 @@ import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo
 import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
 import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
-import { GHOST_MS, MORPH_MS, MORPH_STEP_MS, coverWhileFlying, peekHandoff, takeHandoff, type Shot } from "./view-morph";
+import { EASE_WIND, GHOST_MS, MORPH_MS, MORPH_STEP_MS, coverWhileFlying, peekHandoff, takeHandoff, type Shot } from "./view-morph";
 import { mediaKindOf, postOf, postThumbKind, videoEmbedOf } from "@/lib/url";
 import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
 import { cachedCardImage, type NoteCaption } from "./InspoCard";
@@ -63,7 +63,8 @@ const GLIDE_MS = 150; // time constant of the glide to a card
 const CLOSE_MS = 130; // and of the gap closing when a card leaves the board
 const THROW_FRAMES = 10; // a released drag lands where its speed would take it in this many frames
 const WHEEL_STEP = 1.4; // card gaps of scroll per card
-const MORPH_ROUND = 1; // card steps further round the orbit a card comes in from, arriving from the board (components/view-morph.ts)
+const NO_FADE = { animation: "none" } as const, BAR_WAITS = { animationDelay: `${MORPH_MS * 0.5}ms` } as const;
+const MORPH_ROUND = 1.5; // card steps further round the orbit a card comes in from, arriving from the board (components/view-morph.ts)
 const TICK_MS = 70; // the least between two ticks of the tornado turning under the hand: a fast spin is a purr, not a rattle
 const DRAG_SLOP = 6; // px before a press is a drag
 const SETTLE_MS = 140; // this long without a scroll, it rests on the nearest card
@@ -397,6 +398,9 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const press = (el: HTMLElement | null) => el?.animate([{ transform: "scale(0.96)" }, { transform: "scale(1)" }], { duration: 220, easing: EASE_OUT });
 
   // Before the first paint: only what is still undecided turns
+  /** Coming from the board, while the flight lasts: the cards mounted meanwhile have no fade of their own (`quiet`),
+   *  the flight brings them in, and the answers wait until the cards have landed */
+  const arriving = useRef(false), quiet = useRef(new Set<string>());
   useLayoutEffect(() => {
     // What this browser remembered as kept, from before votes were saved on the server: handed over as keep votes, once
     let stored: string[] = [];
@@ -411,6 +415,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     // round it on the orbit (components/view-morph.ts)
     const open = items.filter((i) => !myVote(i) && !was.has(keyOf(i))).map(keyOf);
     const seen = peekHandoff("board")?.shots;
+    arriving.current = !!seen;
     const shown = seen ? open.filter((k) => seen.has(k)) : [];
     const pool = shown.length ? shown : open;
     let pick = Math.floor(Math.random() * pool.length);
@@ -486,15 +491,19 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     if (morphed.current || !e.nodes.length || !stage || Math.round(e.p) !== base) return;
     morphed.current = true;
     const shots = takeHandoff("board")?.shots;
+    setTimeout(() => { arriving.current = false; }, MORPH_MS + 200);
     if (!shots || e.still || !ln) return;
     const sr = stage.getBoundingClientRect(), cx = sr.left + sr.width / 2, cy = sr.top + sr.height * 0.46, cardW = FRONT_W * e.em;
     const reads = e.nodes.map((nd) => ({ nd, w: nd.el.offsetWidth, h: nd.el.offsetHeight }));
     /** The pose, flat and facing the screen, that covers a box of the board exactly */
     const flat = (shot: Shot, w: number, h: number) => `translate3d(${(shot.x + shot.w / 2 - cx).toFixed(2)}px,${(shot.y + shot.h / 2 - cy).toFixed(2)}px,0px) rotateY(0deg) translateZ(0px) scale(${(shot.w / w).toFixed(4)}, ${(shot.h / h).toFixed(4)})`;
-    const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 6) * MORPH_STEP_MS, easing: EASE_OUT, fill: "backwards" });
-    // Depth comes to every card at once, over the second half, whatever its own delay: sharp while they fly, then the
-    // tornado's blur and fog settle over all of them together
-    const look: KeyframeAnimationOptions = { duration: MORPH_MS * 0.5, delay: MORPH_MS * 0.5, easing: EASE_OUT, fill: "backwards" };
+    const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 6) * MORPH_STEP_MS, easing: EASE_WIND, fill: "backwards" });
+    // Depth comes to every card at once, on the flight's own clock, whatever its own delay: the tornado's blur and fog
+    // settle over all of them together as they land (left for after the landing, they read as a second change). The
+    // cards the board was not showing come in over the first half, all together too (each on its own clock, the far
+    // ones read as late, as if something had failed)
+    const look: KeyframeAnimationOptions = { duration: MORPH_MS, easing: EASE_WIND, fill: "backwards" };
+    const rise: KeyframeAnimationOptions = { duration: MORPH_MS * 0.5, easing: EASE_OUT, fill: "backwards" };
     const used = new Set<string>();
     for (const { nd, w, h } of reads) {
       const key = nd.key.slice(0, nd.key.lastIndexOf("#")), rel = nd.k - e.p, end = pose(e, rel);
@@ -502,14 +511,15 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       if (shot && w && h) {
         used.add(key);
         const box = nd.el.querySelector<HTMLElement>(".polish__in");
-        if (box) { box.style.animation = "none"; coverWhileFlying(box, shot, MORPH_MS + Math.min(Math.abs(rel), 6) * MORPH_STEP_MS); }
+        if (box) coverWhileFlying(box, shot, MORPH_MS + Math.min(Math.abs(rel), 6) * MORPH_STEP_MS);
         nd.el.animate([{ transform: flat(shot, w, h) }, { transform: end.transform }], timing(rel));
-        nd.el.animate([{ filter: "blur(0px)" }, { filter: `blur(${end.blur}px)` }], look);
-        nd.fog.animate([{ opacity: 0 }, { opacity: end.fog }], look);
       } else if (nd.shown) {
         const from = pose(e, rel + Math.sign(rel || 1) * MORPH_ROUND);
         nd.el.animate([{ transform: from.transform }, { transform: end.transform }], timing(rel));
-      }
+        nd.el.animate([{ opacity: 0 }, { opacity: 1 }], rise);
+      } else continue;
+      nd.el.animate([{ filter: "blur(0px)" }, { filter: `blur(${end.blur}px)` }], look);
+      nd.fog.animate([{ opacity: 0 }, { opacity: end.fog }], look);
     }
     // The board's other cards: the undecided have a place round the orbit out of sight, the decided none; either way
     // a copy fades where it stood, drawing in a little (copies flying off to their place read as cards shooting away)
@@ -840,9 +850,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       // A post that is only words is as tall as what it says (capped in CSS); the rest keep their picture's shape
       const wordy = kind === "post" && !postHasMedia(image);
       const ratio = kind === "text" ? 1 : clamp(ratioOf(item), 0.5, 1.2);
+      if (arriving.current) quiet.current.add(node);
       cards.push(
         <div key={node} className={`polish__card${wordy ? " is-post" : ""}`} data-k={k} data-node={node} data-front={k === base ? "" : undefined} style={wordy ? undefined : { aspectRatio: `1 / ${ratio}` }}>
-          <div className="polish__in">
+          <div className="polish__in" style={quiet.current.has(node) ? NO_FADE : undefined}>
             <Face item={item} image={image} large={k === rested ? largeImageOf(item) : null} text={textOf(item)} near={Math.abs(k - base) <= POST_NEAR} front={k === rested} />
             <i className="polish__fog" />
           </div>
@@ -865,7 +876,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       ))}
 
       {current && !done && (
-        <div className="polish__bar">
+        <div className="polish__bar" style={arriving.current ? BAR_WAITS : undefined}>
           {/* A post or a text says who and what on its own card: only the rest get their name here */}
           {(kind !== "post" && kind !== "text") || note || said.length > 0 ? (
           <div className={`t-small polish__now${note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">
