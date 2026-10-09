@@ -39,6 +39,7 @@ import TextPage from "./TextPage";
 import { addText, saveText, renameText } from "@/app/actions/text";
 import { useTextBodies } from "@/hooks/use-text-bodies";
 import Grid, { DEFAULT_ZOOM, type GridHandle, type ShotLevel } from "./Grid";
+import { leaveBoard, leavePolish } from "./view-morph";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import { cue } from "@/lib/ui-sounds";
@@ -290,7 +291,23 @@ export default function InspoClient({
   const defaultView = "board" as const;
   const viewParam = sp.get("view");
   const projectView: "system" | "polish" | "board" = !currentProject ? "board" : viewParam === "board" || viewParam === "polish" || viewParam === "system" ? viewParam : defaultView;
-  const setProjectView = useCallback((v: "system" | "polish" | "board") => setParams({ view: v === defaultView ? "" : v }), [setParams, defaultView]);
+  // Back from Polish, the board takes the tornado's cards (components/view-morph.ts); its chunk is warm before it is asked for
+  const lastView = useRef(projectView);
+  useLayoutEffect(() => {
+    if (lastView.current === "polish" && projectView === "board") gridRef.current?.receive();
+    lastView.current = projectView;
+  }, [projectView]);
+  useEffect(() => { if (currentProject) void import("./PolishView"); }, [currentProject]);
+  /** Between the board and Polish the cards go from one to the other: the view leaving sets off at the click, before
+   *  anything is rendered, and the view arriving takes them from where they have got to (components/view-morph.ts) */
+  const leaveView = useCallback((v: "system" | "polish" | "board") => {
+    if (projectView === "board" && v === "polish") leaveBoard();
+    else if (projectView === "polish" && v === "board") leavePolish();
+  }, [projectView]);
+  const setProjectView = useCallback((v: "system" | "polish" | "board") => {
+    leaveView(v);
+    setParams({ view: v === defaultView ? "" : v });
+  }, [setParams, defaultView, leaveView]);
   // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
   // typed or chipped there waits in the URL without narrowing anything
   const searchHere = (!!currentProject && projectView === "board") || space === "inbox";
@@ -1726,7 +1743,7 @@ export default function InspoClient({
                   {/* Board, Polish, System: the system's SegmentedControl. The view is set a frame after the click
                       (afterPaint): a view of the project is a heavy render, and the tab answers first */}
                   <SegmentedControl className="topbar__modes" label={t.system.button} active={PROJECT_VIEWS.indexOf(projectView)}
-                    onChange={(i) => afterPaint(() => setProjectView(PROJECT_VIEWS[i]))}
+                    onChange={(i) => { leaveView(PROJECT_VIEWS[i]); afterPaint(() => setProjectView(PROJECT_VIEWS[i])); }}
                     items={[
                       { icon: "grid", label: <span className="topbar__mode-label">{t.system.modeBoard}</span> },
                       { icon: "sparkle", label: <>
@@ -1822,30 +1839,7 @@ export default function InspoClient({
               return addByUrl({ web, type: typeFromUrl(web), note: "" });
             }}
           />
-        ) : currentProject && projectView === "polish" ? (
-          // Between the board and the system: the board goes by card by card, and each one stays or goes back to the Inbox
-          <PolishView
-            key={currentProject.id}
-            project={currentProject}
-            items={boardItems}
-            imageOf={smallImageOf}
-            largeImageOf={(item) => thumbMap[item.web] ?? pageShots[item.web]?.topUrl ?? smallImageOf(item)}
-            ratioOf={ratioOf}
-            textOf={(item) => (item.id ? textBodies[item.id] : "") || item.note}
-            noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
-            active={!panelItem && !showAdd}
-            votes={polishVotes}
-            me={user.id}
-            members={members}
-            canClose={canManage}
-            onVote={(voted, vote) => castVote(currentProject.id, voted, vote)}
-            onClose={(resolve) => closePolishOf(currentProject.id, resolve)}
-            onRestore={(item) => restoreToProject(item, currentProject.id)}
-            onOpenItem={(item) => openItem(item)}
-            onBoard={() => setProjectView("board")}
-            onSystem={startSystem}
-          />
-        ) : spaceItems.length === 0 && currentProject ? (
+        ) : spaceItems.length === 0 && currentProject && projectView !== "polish" ? (
           // An empty project is a starting point: paste a site, or bring references from the library
           <ProjectStart
             key={currentProject.id}
@@ -1887,7 +1881,10 @@ export default function InspoClient({
           />
         ) : (
           <>
+            {/* The board stays mounted under Polish, inert: coming back is instant, and the cards fly from the
+                tornado onto a board already laid out (components/view-morph.ts) */}
             <Grid
+              under={!!currentProject && projectView === "polish"}
               items={boardItems}
               ratioOf={ratioOf}
               hasNote={hasNote}
@@ -1899,11 +1896,35 @@ export default function InspoClient({
               handleRef={gridRef}
               renderCard={renderCard}
             />
-            {filtered.length === 0 && (
+            {filtered.length === 0 && projectView !== "polish" && (
               <EmptyState className="empty empty--over" title={t.app.nothingHere}>
                 <span>{searchBusy ? t.app.searchingShort : t.app.tryAnother}</span>
                 <CrButton className="empty__reset" onClick={resetFilters}>{t.app.seeEverything}</CrButton>
               </EmptyState>
+            )}
+            {currentProject && projectView === "polish" && (
+            // Between the board and the system: the board goes by card by card, and each one stays or goes back to the Inbox
+            <PolishView
+              key={currentProject.id}
+              project={currentProject}
+              items={boardItems}
+              imageOf={smallImageOf}
+              largeImageOf={(item) => thumbMap[item.web] ?? pageShots[item.web]?.topUrl ?? smallImageOf(item)}
+              ratioOf={ratioOf}
+              textOf={(item) => (item.id ? textBodies[item.id] : "") || item.note}
+              noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
+              active={!panelItem && !showAdd}
+              votes={polishVotes}
+              me={user.id}
+              members={members}
+              canClose={canManage}
+              onVote={(voted, vote) => castVote(currentProject.id, voted, vote)}
+              onClose={(resolve) => closePolishOf(currentProject.id, resolve)}
+              onRestore={(item) => restoreToProject(item, currentProject.id)}
+              onOpenItem={(item) => openItem(item)}
+              onBoard={() => setProjectView("board")}
+              onSystem={startSystem}
+            />
             )}
           </>
         )}

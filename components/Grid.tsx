@@ -10,6 +10,7 @@
 // number for the screen, cards about as wide as a page drawn at a quarter.
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { EASE_OUT, EASE_WIND, MORPH_MS, coverWhileFlying, ghostsOut, peekHandoff, takeHandoff } from "./view-morph";
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
 import { useT } from "./I18nProvider";
@@ -65,6 +66,8 @@ const seen = new Set<string>();
 export interface GridHandle {
   /** Bring a card into view, clear of the bars and the dock */
   focus: (key: string) => void;
+  /** Take the cards Polish left as it closed over the board: they fly onto it (components/view-morph.ts) */
+  receive: () => void;
 }
 
 interface Slot { item: InspoItem; key: string; x: number; y: number; w: number; h: number }
@@ -87,7 +90,9 @@ function layoutBoard(items: InspoItem[], ratioOf: (item: InspoItem) => number, c
   return { slots, byKey, height: Math.max(padTop, ...bottoms) - GAP, col };
 }
 
-export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+export default memo(function Grid({ under = false, items, ratioOf, hasNote, insets, zoom, onZoom, fitKey, focusKey, renderCard, handleRef }: {
+  /** Under Polish: kept laid out but inert, out of reach and without its corner */
+  under?: boolean;
   /** The cards to lay out: the whole space, or the search's results in the order they rank */
   items: InspoItem[];
   /** Height/width of what each card shows, known before it loads (the page's height from the index, or a measurement) */
@@ -107,6 +112,8 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
 }) {
   const { t } = useT();
   const scrollRef = useRef<HTMLDivElement>(null);
+  /** The flight from Polish: done for this arrival, and the board already scrolled round the card that was in front */
+  const morphed = useRef(false), placed = useRef(false);
   const [width, setWidth] = useState(0);
   const [touch, setTouch] = useState(false);
   useLayoutEffect(() => {
@@ -147,10 +154,13 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
   // The scroller's position, refreshed once it has moved a quarter of a screen: with a screen of overscan
   // either way, a wheel's flick never re-renders and never meets a hole.
   const [win, setWin] = useState<{ lo: number; hi: number } | null>(null);
+  // Whether the board has left its top: the cloud under the Island only shows then
+  const [scrolled, setScrolled] = useState(false);
   const update = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     const vh = el.clientHeight, top = el.scrollTop;
+    setScrolled(top > 4);
     const lo = top - vh * OVERSCAN, hi = top + vh * (1 + OVERSCAN);
     setWin((cur) => (cur && Math.abs(cur.lo - lo) < vh / 4 && Math.abs(cur.hi - hi) < vh / 4 ? cur : { lo, hi }));
   }, []);
@@ -222,7 +232,10 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
     if (s.y >= top && s.y + s.h <= bottom) return;
     el.scrollTo({ top: Math.max(0, s.y - ins.top - PAD), behavior: "smooth" });
   }, []);
-  useEffect(() => { if (handleRef) handleRef.current = { focus }; }, [handleRef, focus]);
+  // A render of its own for the flight to run in, once the refs are reset
+  const [, setArriving] = useState(0);
+  const receive = useCallback(() => { morphed.current = false; placed.current = false; setArriving((n) => n + 1); }, []);
+  useEffect(() => { if (handleRef) handleRef.current = { focus, receive }; }, [handleRef, focus, receive]);
   const lastFocus = useRef<string | null>(null);
   useEffect(() => {
     const open = focusKey && focusKey !== lastFocus.current;
@@ -253,9 +266,60 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
     setTimeout(() => { for (const k of keys) seen.add(k); }, ENTER_CAP_MS + 400);
   }, [visible]);
 
+  // ─── Coming from Polish ─────────────────────────────────────────────────────
+  // The tornado's cards were measured as it left (components/view-morph.ts). The board opens round the card that
+  // was in front, at the height it had on the screen, so the cards round it on the orbit are the ones on screen;
+  // then each card that was on the orbit flies from the box it projected there to its place on the board, the rest
+  // fade in, and copies of the orbit's cards with no place on screen fade where they stood. Read all, then write all.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (morphed.current || under || !visible.length || !layout || !el) return;
+    const hand = peekHandoff("polish");
+    if (!hand) { morphed.current = true; return; }
+    if (!placed.current) {
+      placed.current = true;
+      const slot = hand.front ? layout.byKey.get(hand.front) : undefined, shot = hand.front ? hand.shots.get(hand.front) : undefined;
+      if (slot && shot) {
+        const er = el.getBoundingClientRect(), vh = el.clientHeight;
+        const top = Math.max(0, Math.min(el.scrollHeight - vh, slot.y + slot.h / 2 - (shot.y + shot.h / 2 - er.top)));
+        if (Math.abs(top - el.scrollTop) > 1) {
+          el.scrollTop = top;
+          // A window further away is another render, with the cards round there: the flight waits for it
+          const lo = top - vh * OVERSCAN, hi = top + vh * (1 + OVERSCAN);
+          if (!win || Math.abs(win.lo - lo) >= vh / 4 || Math.abs(win.hi - hi) >= vh / 4) { update(); return; }
+        }
+      }
+    }
+    morphed.current = true;
+    const { shots } = takeHandoff("polish") ?? hand;
+    const reads = Array.from(el.querySelectorAll<HTMLElement>(".board-tile[data-key]"), (tile) => {
+      const inner = (tile.firstElementChild as HTMLElement | null) ?? tile;
+      return { inner, key: tile.dataset.key!, r: inner.getBoundingClientRect() };
+    });
+    const used = new Set<string>();
+    for (const { inner, key, r } of reads) {
+      if (r.bottom < 0 || r.top > window.innerHeight || !r.width) continue;
+      const shot = shots.get(key);
+      if (shot) {
+        used.add(key);
+        const media = inner.querySelector<HTMLElement>(".tile__media");
+        if (media) coverWhileFlying(media, shot, MORPH_MS);
+        const dx = shot.x + shot.w / 2 - (r.left + r.width / 2), dy = shot.y + shot.h / 2 - (r.top + r.height / 2);
+        inner.animate([
+          { transform: `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0) scale(${(shot.w / r.width).toFixed(4)}, ${(shot.h / r.height).toFixed(4)})` },
+          { transform: "translate3d(0, 0, 0) scale(1, 1)" },
+        ], { duration: MORPH_MS, easing: EASE_WIND });
+      } else {
+        inner.animate([{ opacity: 0, transform: "scale(0.96)" }, { opacity: 1, transform: "scale(1)" }], { duration: MORPH_MS * 0.6, delay: MORPH_MS * 0.3, easing: EASE_OUT, fill: "backwards" });
+      }
+    }
+    // The orbit's other cards have their place off screen: a copy of each fades where it stood
+    ghostsOut(Array.from(shots, ([k, from]) => (used.has(k) ? null : from)).filter((m) => !!m));
+  });
+
   return (
     <>
-      <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined}>
+      <div ref={scrollRef} className="board" data-bare={bare ? "" : undefined} inert={under || undefined} aria-hidden={under || undefined}>
         <div className="board__world" style={{ height: layout ? layout.height + padBottom : "100%" }}>
           {visible.map((s) => {
             const enter = seen.has(s.key) ? undefined : entrance.current?.get(s.key);
@@ -265,6 +329,7 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
               <div
                 key={s.item.web}
                 className="board-tile"
+                data-key={s.key}
                 data-enter={enter !== undefined ? "" : undefined}
                 data-arrive={arrive !== undefined ? "" : undefined}
                 style={{
@@ -280,9 +345,16 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
         </div>
       </div>
 
+      {/* The clouds: the board fades into its own background under the dock, and under the Island once it has
+          scrolled, so the bars rest on calm ground and no card is cut by the edge. Outside the scroller, no pointer */}
+      {!under && <>
+        <div className={`board-fade board-fade--top${scrolled ? " is-on" : ""}`} style={{ "--fade": `${insets.top}px` } as React.CSSProperties} aria-hidden />
+        <div className="board-fade board-fade--bottom" style={{ "--fade": `${insets.bottom}px` } as React.CSSProperties} aria-hidden />
+      </>}
+
       {/* Outside the scroller, so it stays in its corner while the board moves */}
       {/* The corner pill: the system's chrome pill with the zoom (minus, %, plus) and the music after a hairline */}
-      <ZoomPill
+      {!under && <ZoomPill
         className="board-zoom"
         zoom={{
           pct,
@@ -295,7 +367,7 @@ export default memo(function Grid({ items, ratioOf, hasNote, insets, zoom, onZoo
         }}
       >
         <SoundControl />
-      </ZoomPill>
+      </ZoomPill>}
     </>
   );
 });

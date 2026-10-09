@@ -16,6 +16,10 @@
    A little above the middle: the answers take the bottom */
 .polish__card { position: absolute; top: 46%; left: 50%; width: 30em; translate: -50% -50%; backface-visibility: visible; will-change: transform, filter; cursor: pointer; }
 .polish__sky.is-grabbing .polish__card { cursor: grabbing; }
+/* A copy of a board card going round the orbit and out of sight as the board turns into the tornado (the morph in
+   PolishView.tsx): the same card box, in the same 3D stage, with the picture it was showing */
+.polish__ghost { pointer-events: none; }
+.polish__ghost-in { position: absolute; inset: 0; border-radius: 1.5em; background: var(--surface-2) center top / cover no-repeat; box-shadow: 0 0 0 1px var(--border); }
 .polish__in {
   position: absolute; inset: 0; overflow: hidden; border-radius: 1.5em; background: var(--surface-2); box-shadow: 0 0 0 1px var(--border);
   animation: polish-in 480ms var(--ease-out) backwards;
@@ -26,9 +30,13 @@
 .polish__in .polish__hi { position: absolute; inset: 0; }
 /* The initial is display (.t-display); its size is the tornado's em, so it scales with the card (see .polish__text) */
 .polish .polish__initial { display: grid; place-items: center; width: 100%; height: 100%; font-size: 8em; color: var(--muted-2); }
-/* Depth: a card further round the orbit sinks into the page's own colour, so it works in both themes */
-.polish__fog { position: absolute; inset: 0; background: var(--bg); opacity: 0; pointer-events: none; }
+/* Depth: a card further round the orbit sinks into the page's own colour, so it works in both themes. Over everything
+   in the card, the picture it brings from the board while it flies included (.morph-cover, z-index 2): the fog has to
+   be seen coming in during the flight, not once that picture has faded */
+.polish__fog { position: absolute; inset: 0; z-index: 3; background: var(--bg); opacity: 0; pointer-events: none; }
 /* Only when everything is decided does a veil of the page come over it, for the words */
+/* The clouds sit over the sky (its cards keep their z inside the stage's 3D context) and under the bar (6) and the pill (12) */
+.polish > .board-fade { z-index: 4; }
 .polish__veil { position: absolute; inset: 0; pointer-events: none; background: var(--bg); opacity: 0; transition: opacity 600ms var(--ease-out); }
 .polish.is-done .polish__veil { opacity: 0.6; }
 

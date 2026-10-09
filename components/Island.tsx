@@ -33,6 +33,9 @@ const MAX_FACES = 7;
 const GAP = 4;
 /** A name past this many characters is cut by the tab's max-width: the tooltip keeps it whole */
 const LONG_NAME = 24;
+/** The selected tab can give up room down to this (a few letters of its name, its ring, its ⌄ and ×) when the
+    island is short of it anyway: a measure that ran before the fonts, or a right-hand pill that just grew */
+const SHORT_TAB = 150;
 
 /** A project's name typed in place (new or rename): Enter saves, Esc or leaving it empty drops it */
 function NameTab({ initial = "", onSubmit, onCancel }: { initial?: string; onSubmit: (name: string) => void; onCancel: () => void }) {
@@ -120,6 +123,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   const [moreOpen, setMoreOpen] = useState(false);
   // How many project tabs fit, measured; null until the first layout
   const [fit, setFit] = useState<number | null>(null);
+  // The selected tab's own width, from its copy in the measure: the real one takes it and can shrink below it
+  const [activeWidth, setActiveWidth] = useState<number | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLElement>(null);
   const sizesRef = useRef<HTMLDivElement>(null);
@@ -208,17 +213,27 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     // The selected project always keeps its tab: it is where you are
     if (n === 0 && projects.some((p) => p.id === space)) n = 1;
     setFit((f) => (f === n ? f : n));
+    const own = sizes.querySelector<HTMLElement>(`[data-id="${CSS.escape(space)}"]`)?.offsetWidth ?? null;
+    setActiveWidth((w) => (w === own ? w : own));
   };
   const measureRef = useRef(measure);
   measureRef.current = measure;
-  // After every render (a project renamed, the view switcher changing beside the bar) and on every resize of the bar
+  // After every render (a project renamed, the view switcher changing beside the bar), on every resize of the bar or
+  // of what else sits in it (the right-hand pill grows on its own: Connectors, the faces in Polish), and once the
+  // web fonts are in: the first layout measures with the fallback font, and Satoshi/Söhne set every tab wider
+  // (2026-10-09: the switcher sat over the last project tab after the fonts swapped in)
   useLayoutEffect(() => measureRef.current());
   useLayoutEffect(() => {
-    const bar = root.current?.parentElement;
-    if (!bar) return;
+    const el = root.current, bar = el?.parentElement;
+    if (!el || !bar) return;
     const ro = new ResizeObserver(() => measureRef.current());
     ro.observe(bar);
-    return () => ro.disconnect();
+    for (const c of bar.children) if (c !== el) ro.observe(c);
+    const fonts = typeof document !== "undefined" ? document.fonts : undefined;
+    const onFonts = () => measureRef.current();
+    fonts?.addEventListener("loadingdone", onFonts);
+    void fonts?.ready.then(onFonts);
+    return () => { ro.disconnect(); fonts?.removeEventListener("loadingdone", onFonts); };
   }, []);
 
   // The tabs keep the order they were opened in (muscle memory); only which ones show follows the room
@@ -323,7 +338,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} />
         ) : p.id === space ? (
           // The selected project: its name goes to it, its ⌄ renames or deletes it
-          <span key={p.id} className="island__tab is-on island__tab--split">
+          <span key={p.id} className="island__tab is-on island__tab--split"
+            style={activeWidth ? { width: activeWidth, minWidth: Math.min(activeWidth, SHORT_TAB) } : undefined}>
             <a href={hrefOf(p.id)} className="island__tab-main" aria-current="page"
               data-tip={p.name.length > LONG_NAME ? p.name : undefined} onClick={go(p.id)}>
               {label(p.name, counts.byProject[p.id] ?? 0, p.id)}

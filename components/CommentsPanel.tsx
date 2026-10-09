@@ -365,6 +365,12 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   const cancelEdit = () => { setEditing(null); setEditError(null); };
 
   const others = memberNames.filter((n) => n && n !== user.name);
+  // The empty conversation shows who will read it: up to three ghost rows with the team's real faces (you first)
+  // and one muted bar each, the middle one indented, so the invitation looks like the thread it is about to become
+  const ghosts = [user.name || user.email, ...others].slice(0, 3).map((n, i) => ({
+    name: n, image: n === user.name ? user.image ?? null : memberImages[n] ?? null,
+    w1: ["78%", "60%", "88%"][i],
+  }));
 
   // An uploaded image is not a site: its link opens the file itself, which is also the picture on top
   const kind = mediaKindOf(item.web);
@@ -500,6 +506,16 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           {total === 0 && (
             <EmptyState
               className="cm-empty"
+              art={
+                <div className="cm-empty__ghosts" aria-hidden>
+                  {ghosts.map((g, i) => (
+                    <div key={g.name} className="cm-empty__ghost" style={{ animationDelay: `${i * 90}ms` }}>
+                      <Avatar name={g.name} image={g.image} size={20} />
+                      <span className="cm-empty__bars"><span style={{ width: g.w1 }} /></span>
+                    </div>
+                  ))}
+                </div>
+              }
               title={originals.length ? t.comments.inviteTitle : t.comments.emptyTitle}
               suggestions={[...(kind === "web" ? t.comments.prompts : t.comments.promptsMedia)]}
               onSuggest={(p) => { setDraft(p + " "); textareaRef.current?.focus(); }}

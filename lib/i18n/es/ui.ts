@@ -1029,8 +1029,9 @@ export const ui: typeof EnUi = {
     openSite: "Abrir la web",
     emptyTitle: "Todavía no hay conversación",
     inviteTitle: "¿Y tú qué ves aquí?",
-    emptyAlone: "Apunta qué te ha gustado y por qué, o pega una captura. Queda guardado con la referencia.",
-    emptyWithOthers: (names: string, many: boolean) => `Di qué te ha gustado de esta referencia o pega una captura. ${names} lo ${many ? "verán" : "verá"} aquí.`,
+    emptyAlone: "Apunta qué te ha gustado o pega una captura.",
+    // The faces above already say who will read it: the names stay out of the sentence (Eric, 09-10: "menos textos")
+    emptyWithOthers: (_names: string, _many: boolean) => "Di qué te ha gustado o pega una captura.",
     prompts: ["Me gusta el hero", "Ojo a la tipografía", "¿Lo usamos de referencia?", "El scroll es muy fino"],
     promptsMedia: ["Me gusta la composición", "Ojo a la tipografía", "¿Lo usamos de referencia?", "Me quedo con el color"],
     you: "tú",

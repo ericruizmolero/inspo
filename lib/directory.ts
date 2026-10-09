@@ -143,6 +143,7 @@ export const DIRECTORY: DirectoryGroup[] = [
   {
     key: "motion",
     items: [
+      { name: "dqnamo's Kitchen", url: "https://dqnamo.com/kitchen", added: "2026-10-09" },
       { name: "Kinetics (Colorion)", url: "https://kinetics.colorion.co", added: "2026-10-08" },
       { name: "Microkit", url: "https://microkit.co", added: "2026-10-08" },
       { name: "Anime.js", url: "https://animejs.com", added: "2026-10-08" },

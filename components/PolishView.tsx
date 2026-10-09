@@ -23,6 +23,7 @@ import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo
 import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
 import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
+import { EASE_WIND, GHOST_MS, MORPH_MS, MORPH_STEP_MS, coverWhileFlying, peekHandoff, takeHandoff, type Shot } from "./view-morph";
 import { mediaKindOf, postOf, postThumbKind, videoEmbedOf } from "@/lib/url";
 import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
 import { cachedCardImage, type NoteCaption } from "./InspoCard";
@@ -61,6 +62,8 @@ const GLIDE_MS = 150; // time constant of the glide to a card
 const CLOSE_MS = 130; // and of the gap closing when a card leaves the board
 const THROW_FRAMES = 10; // a released drag lands where its speed would take it in this many frames
 const WHEEL_STEP = 1.4; // card gaps of scroll per card
+const NO_FADE = { animation: "none" } as const, BAR_WAITS = { animationDelay: `${MORPH_MS * 0.5}ms` } as const;
+const MORPH_ROUND = 1.5; // card steps further round the orbit a card comes in from, arriving from the board (components/view-morph.ts)
 const TICK_MS = 70; // the least between two ticks of the tornado turning under the hand: a fast spin is a purr, not a rattle
 const DRAG_SLOP = 6; // px before a press is a drag
 const SETTLE_MS = 140; // this long without a scroll, it rests on the nearest card
@@ -122,11 +125,30 @@ interface Engine {
   nodes: CardNode[];
 }
 
+/** Where a card stands `rel` card steps from the front: its transform, how far it has sunk into the page (fog),
+ *  its blur in half pixels, its depth order, and how much of it is left at the screen's edge (0: out of sight) */
+function pose(e: Engine, rel: number) {
+  const cardH = CARD_H * e.em, gap = cardH * Y_SPACING, radius = ORBIT * e.em;
+  const fadeStart = e.h / 2 + cardH * EDGE_OFFSET, fadeLen = cardH * EDGE_SCALE, rest = CARD_W / FRONT_W;
+  // The card facing the screen comes forward and grows; the ones either side of it stand a little further off
+  const front = smooth(clamp(1 - Math.abs(rel), 0, 1)) * e.lift;
+  const at = rel + SPREAD * clamp(rel, -1, 1) * e.lift;
+  const y = at * gap;
+  const edge = easeInOut(clamp((fadeStart - Math.abs(y)) / fadeLen, 0, 1));
+  const deg = at * ANGLE, rad = (deg * Math.PI) / 180, cos = Math.cos(rad);
+  const scale = edge * (rest + front * (FRONT_SCALE - rest));
+  const transform = `translate3d(${(Math.sin(rad) * radius).toFixed(2)}px,${y.toFixed(2)}px,${((cos - 1) * radius).toFixed(2)}px) rotateY(${deg.toFixed(3)}deg) translateZ(${(front * FRONT_PUSH * e.em).toFixed(2)}px) scale(${scale.toFixed(4)})`;
+  const back = (1 - cos) / 2;
+  const fog = Math.min(0.9, back * BACK_FOG + (1 - front) * SIDE_FOG);
+  // (with the board done the whole tornado is out of focus as one picture, in CSS: no card needs its own)
+  const blur = e.done ? 0 : Math.round(((1 - front) * NEAR_BLUR + back * BACK_BLUR) * e.em * 2) / 2;
+  const z = Math.round((cos + 1) * 500 + front * 100);
+  return { transform, fog, blur, z, edge };
+}
+
 /** One frame: every mounted card to its place on the orbit */
 function paint(e: Engine, dt: number) {
-  const cardH = CARD_H * e.em, gap = cardH * Y_SPACING, radius = ORBIT * e.em;
-  const fadeStart = e.h / 2 + cardH * EDGE_OFFSET, fadeLen = cardH * EDGE_SCALE;
-  const decay = Math.exp(-dt / CLOSE_MS), rest = CARD_W / FRONT_W;
+  const decay = Math.exp(-dt / CLOSE_MS);
   for (const nd of e.nodes) {
     if (nd.off) {
       nd.off *= decay;
@@ -134,27 +156,17 @@ function paint(e: Engine, dt: number) {
     }
     const rel = nd.k - e.p + nd.off;
     nd.rel = rel;
-    // The card facing the screen comes forward and grows; the ones either side of it stand a little further off
-    const front = smooth(clamp(1 - Math.abs(rel), 0, 1)) * e.lift;
-    const at = rel + SPREAD * clamp(rel, -1, 1) * e.lift;
-    const y = at * gap;
-    const edge = easeInOut(clamp((fadeStart - Math.abs(y)) / fadeLen, 0, 1));
-    if (edge < 0.001) {
+    const p = pose(e, rel);
+    if (p.edge < 0.001) {
       if (nd.shown) { nd.el.style.visibility = "hidden"; nd.shown = false; }
       continue;
     }
     if (!nd.shown) { nd.el.style.visibility = ""; nd.shown = true; }
-    const deg = at * ANGLE, rad = (deg * Math.PI) / 180, cos = Math.cos(rad);
-    const scale = edge * (rest + front * (FRONT_SCALE - rest));
-    nd.el.style.transform = `translate3d(${(Math.sin(rad) * radius).toFixed(2)}px,${y.toFixed(2)}px,${((cos - 1) * radius).toFixed(2)}px) rotateY(${deg.toFixed(3)}deg) translateZ(${(front * FRONT_PUSH * e.em).toFixed(2)}px) scale(${scale.toFixed(4)})`;
-    const back = (1 - cos) / 2;
-    nd.fog.style.opacity = Math.min(0.9, back * BACK_FOG + (1 - front) * SIDE_FOG).toFixed(3);
+    nd.el.style.transform = p.transform;
+    nd.fog.style.opacity = p.fog.toFixed(3);
     // Blur in half pixels: the card is only drawn again when it crosses a step
-    // (with the board done the whole tornado is out of focus as one picture, in CSS: no card needs its own)
-    const blur = e.done ? 0 : Math.round(((1 - front) * NEAR_BLUR + back * BACK_BLUR) * e.em * 2) / 2;
-    if (blur !== nd.blur) { nd.blur = blur; nd.el.style.filter = blur ? `blur(${blur}px)` : ""; }
-    const zi = Math.round((cos + 1) * 500 + front * 100);
-    if (zi !== nd.z) { nd.z = zi; nd.el.style.zIndex = String(zi); }
+    if (p.blur !== nd.blur) { nd.blur = p.blur; nd.el.style.filter = p.blur ? `blur(${p.blur}px)` : ""; }
+    if (p.z !== nd.z) { nd.z = p.z; nd.el.style.zIndex = String(p.z); }
   }
 }
 
@@ -385,6 +397,9 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
   const press = (el: HTMLElement | null) => el?.animate([{ transform: "scale(0.96)" }, { transform: "scale(1)" }], { duration: 220, easing: EASE_OUT });
 
   // Before the first paint: only what is still undecided turns
+  /** Coming from the board, while the flight lasts: the cards mounted meanwhile have no fade of their own (`quiet`),
+   *  the flight brings them in, and the answers wait until the cards have landed */
+  const arriving = useRef(false), quiet = useRef(new Set<string>());
   useLayoutEffect(() => {
     // What this browser remembered as kept, from before votes were saved on the server: handed over as keep votes, once
     let stored: string[] = [];
@@ -394,10 +409,17 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     if (old.length) void onVote(old, "keep");
     const e = eng.current;
     e.still = stillMotion();
-    // A different card in front every time the view opens: one of the undecided, at random, never the last one's
+    // A different card in front every time the view opens: one of the undecided, at random, never the last one's.
+    // Coming from the board, one of those the board was showing: the cards on screen are then the ones that settle
+    // round it on the orbit (components/view-morph.ts)
     const open = items.filter((i) => !myVote(i) && !was.has(keyOf(i))).map(keyOf);
-    let at = Math.floor(Math.random() * open.length);
-    if (open.length > 1 && open[at] === lastFront.get(project.id)) at = (at + 1) % open.length;
+    const seen = peekHandoff("board")?.shots;
+    arriving.current = !!seen;
+    const shown = seen ? open.filter((k) => seen.has(k)) : [];
+    const pool = shown.length ? shown : open;
+    let pick = Math.floor(Math.random() * pool.length);
+    if (pool.length > 1 && pool[pick] === lastFront.get(project.id)) pick = (pick + 1) % pool.length;
+    const at = pool.length ? open.indexOf(pool[pick]) : 0;
     if (open.length) lastFront.set(project.id, open[at]);
     e.v = 0;
     e.p = e.target = e.base = at;
@@ -452,6 +474,72 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       return { el, fog: el.querySelector<HTMLElement>(".polish__fog") ?? el, key, k, off, rel: k - e.p + off, z: same ? old.z : -1, blur: same ? old.blur : -1, shown: same ? old.shown : true };
     });
     paint(e, 0);
+  });
+
+  // ─── Coming from the board ──────────────────────────────────────────────────
+  // The board's cards were measured as it left (components/view-morph.ts). On the first paint with cards, every card
+  // the board was showing settles into its own place on the orbit: the ones with a place on screen fly there flat
+  // and sharp (blur and fog come in on the last stretch); the ones whose place is further round the orbit go round
+  // it and out of sight, as copies in the same 3D stage; the ones already decided, which the tornado no longer
+  // turns, fade where they stood. The orbit's cards the board was not showing come in along the orbit from further
+  // round it. The front settles first, the far ones a beat later. Read all, then write all.
+  const morphed = useRef(false);
+  useLayoutEffect(() => {
+    const e = eng.current, stage = stageRef.current;
+    // Not before the cards drawn are the ones round the card coming to the front (the first render has the ones round 0)
+    if (morphed.current || !e.nodes.length || !stage || Math.round(e.p) !== base) return;
+    morphed.current = true;
+    const shots = takeHandoff("board")?.shots;
+    setTimeout(() => { arriving.current = false; }, MORPH_MS + 200);
+    if (!shots || e.still || !ln) return;
+    const sr = stage.getBoundingClientRect(), cx = sr.left + sr.width / 2, cy = sr.top + sr.height * 0.46, cardW = FRONT_W * e.em;
+    const reads = e.nodes.map((nd) => ({ nd, w: nd.el.offsetWidth, h: nd.el.offsetHeight }));
+    /** The pose, flat and facing the screen, that covers a box of the board exactly */
+    const flat = (shot: Shot, w: number, h: number) => `translate3d(${(shot.x + shot.w / 2 - cx).toFixed(2)}px,${(shot.y + shot.h / 2 - cy).toFixed(2)}px,0px) rotateY(0deg) translateZ(0px) scale(${(shot.w / w).toFixed(4)}, ${(shot.h / h).toFixed(4)})`;
+    const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 6) * MORPH_STEP_MS, easing: EASE_WIND, fill: "backwards" });
+    // Depth comes to every card at once, on the flight's own clock, whatever its own delay: the tornado's blur and fog
+    // settle over all of them together as they land (left for after the landing, they read as a second change). The
+    // cards the board was not showing come in over the first half, all together too (each on its own clock, the far
+    // ones read as late, as if something had failed)
+    const look: KeyframeAnimationOptions = { duration: MORPH_MS, easing: EASE_WIND, fill: "backwards" };
+    const rise: KeyframeAnimationOptions = { duration: MORPH_MS * 0.5, easing: EASE_OUT, fill: "backwards" };
+    const used = new Set<string>();
+    for (const { nd, w, h } of reads) {
+      const key = nd.key.slice(0, nd.key.lastIndexOf("#")), rel = nd.k - e.p, end = pose(e, rel);
+      const shot = used.has(key) ? undefined : shots.get(key);
+      if (shot && w && h) {
+        used.add(key);
+        const box = nd.el.querySelector<HTMLElement>(".polish__in");
+        if (box) coverWhileFlying(box, shot, MORPH_MS + Math.min(Math.abs(rel), 6) * MORPH_STEP_MS);
+        nd.el.animate([{ transform: flat(shot, w, h) }, { transform: end.transform }], timing(rel));
+      } else if (nd.shown) {
+        const from = pose(e, rel + Math.sign(rel || 1) * MORPH_ROUND);
+        nd.el.animate([{ transform: from.transform }, { transform: end.transform }], timing(rel));
+        nd.el.animate([{ opacity: 0 }, { opacity: 1 }], rise);
+      } else continue;
+      nd.el.animate([{ filter: "blur(0px)" }, { filter: `blur(${end.blur}px)` }], look);
+      nd.fog.animate([{ opacity: 0 }, { opacity: end.fog }], look);
+    }
+    // The board's other cards: the undecided have a place round the orbit out of sight, the decided none; either way
+    // a copy fades where it stood, drawing in a little (copies flying off to their place read as cards shooting away)
+    const ghosts: HTMLElement[] = [];
+    for (const [key, shot] of shots) {
+      if (used.has(key)) continue;
+      const g = document.createElement("div");
+      g.className = "polish__card polish__ghost";
+      g.setAttribute("aria-hidden", "true");
+      g.style.aspectRatio = `${shot.w} / ${shot.h}`;
+      const sheet = document.createElement("i");
+      sheet.className = "polish__ghost-in";
+      if (shot.image) sheet.style.backgroundImage = `url("${shot.image.replace(/"/g, "%22")}")`;
+      g.append(sheet);
+      ghosts.push(g);
+      const start = flat(shot, cardW, (cardW * shot.h) / shot.w);
+      const a = g.animate([{ transform: start, opacity: 1 }, { transform: `${start} scale(0.94)`, opacity: 0 }], { duration: GHOST_MS, easing: EASE_OUT, fill: "forwards" });
+      const gone = () => g.remove();
+      void a.finished.then(gone, gone);
+    }
+    stage.append(...ghosts);
   });
 
   // The size of things: the em the cards are drawn in, and how many fit either side of the screen
@@ -761,9 +849,10 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
       // A post that is only words is as tall as what it says (capped in CSS); the rest keep their picture's shape
       const wordy = kind === "post" && !postHasMedia(image);
       const ratio = kind === "text" ? 1 : clamp(ratioOf(item), 0.5, 1.2);
+      if (arriving.current) quiet.current.add(node);
       cards.push(
-        <div key={node} className={`polish__card${wordy ? " is-post" : ""}`} data-k={k} data-node={node} style={wordy ? undefined : { aspectRatio: `1 / ${ratio}` }}>
-          <div className="polish__in">
+        <div key={node} className={`polish__card${wordy ? " is-post" : ""}`} data-k={k} data-node={node} data-front={k === base ? "" : undefined} style={wordy ? undefined : { aspectRatio: `1 / ${ratio}` }}>
+          <div className="polish__in" style={quiet.current.has(node) ? NO_FADE : undefined}>
             <Face item={item} image={image} large={k === rested ? largeImageOf(item) : null} text={textOf(item)} near={Math.abs(k - base) <= POST_NEAR} front={k === rested} />
             <i className="polish__fog" />
           </div>
@@ -781,12 +870,16 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
         <div ref={stageRef} className="polish__stage">{cards}</div>
       </div>
       <div className="polish__veil" aria-hidden />
+      {/* The same clouds as the board (.board-fade, app/globals.css): the cards turn under the Island and under the
+          bar, so the view fades into its background at both edges, always (Eric, 09-10: "en pulido también") */}
+      <div className="board-fade board-fade--top is-on" style={{ "--fade": "64px" } as React.CSSProperties} aria-hidden />
+      <div className="board-fade board-fade--bottom" style={{ "--fade": "112px" } as React.CSSProperties} aria-hidden />
       {flights.map((f) => (
         <Flyer key={f.id} flight={f} image={imageOf(f.item)} text={textOf(f.item)} onGone={() => setFlights((all) => all.filter((x) => x.id !== f.id))} />
       ))}
 
       {current && !done && (
-        <div className="polish__bar">
+        <div className="polish__bar" style={arriving.current ? BAR_WAITS : undefined}>
           {/* A post or a text says who and what on its own card: only the rest get their name here */}
           {(kind !== "post" && kind !== "text") || note || said.length > 0 ? (
           <div className={`t-small polish__now${note || said.length ? " has-words" : ""}`} role="status" aria-live="polite">

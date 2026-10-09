@@ -38,6 +38,7 @@ export const directory: typeof EnDirectory = {
     "https://smoothui.dev": "Componentes animados sobre Motion y GSAP.",
     "https://uiverse.io": "Miles de elementos de UI open source en CSS y Tailwind, hechos por la comunidad.",
     "https://glass.samasante.com": "Componentes de refracción de cristal: liquid glass para la web.",
+    "https://dqnamo.com/kitchen": "Estudios de interfaz de dqnamo: un botón táctil, mantener para confirmar, un reproductor de cassette, un ticket. Cada uno una pequeña lección de detalle.",
     "https://kinetics.colorion.co": "Más de 150 efectos de movimiento, cada uno con su código en React y un prompt.",
     "https://microkit.co": "Microinteracciones listas para usar.",
     "https://animejs.com": "Motor de animación ligero para la web, con playground.",

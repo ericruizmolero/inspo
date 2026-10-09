@@ -1033,8 +1033,9 @@ export const ui = {
     openSite: "Open the site",
     emptyTitle: "No conversation yet",
     inviteTitle: "What do you see in it?",
-    emptyAlone: "Note what caught your eye and why, or paste a screenshot. It stays with the reference.",
-    emptyWithOthers: (names: string, many: boolean): string => `Say what you liked about this reference, or paste a screenshot. ${names} will see it here.`,
+    emptyAlone: "Note what caught your eye, or paste a screenshot.",
+    // The faces above already say who will read it: the names stay out of the sentence (Eric, 09-10: "menos textos")
+    emptyWithOthers: (_names: string, _many: boolean): string => "Say what you liked, or paste a screenshot.",
     prompts: ["I like the hero", "Look at the type", "Do we use this as a reference?", "The scroll is lovely"],
     promptsMedia: ["I like the composition", "Look at the type", "Do we use this as a reference?", "I would keep the colour"],
     you: "you",
