@@ -74,6 +74,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run db:migrate
+      # The isolation suite (tests/isolation): no .env.local, no R2 or model keys; storage and outside calls are mocked
+      - run: npm test
       - run: npm run check:seats
       - run: npm run check:access
       - run: npm run check:locale
