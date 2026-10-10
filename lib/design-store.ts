@@ -115,9 +115,10 @@ async function dropReplaced(before: DesignMdEntry | null, after: DesignMdEntry) 
     .filter((u): u is string => !!u && !now.has(u)).map(keyOf).filter((k): k is string => !!k && k.startsWith(DESIGN_MD_PREFIX)));
 }
 
-/** Writes the row the site had under a lock and returns the one it replaced, so two saves of one site each
- *  delete only the images their own write took out of use */
-async function upsert(entry: DesignMdEntry): Promise<DesignMdEntry | null> {
+/** Writes the site's row under a lock and returns the one it replaced, so two saves of one site each delete only
+ *  the images their own write took out of use. The images themselves are the caller's: saveDesignMd stores
+ *  them first, scripts/migrate-r2-indexes.ts brings entries whose images are already there. */
+export async function upsertDesignDoc(entry: DesignMdEntry): Promise<DesignMdEntry | null> {
   const row = rowOf(entry);
   return db.transaction(async (tx) => {
     const [before] = await tx.select().from(D).where(eq(D.webKey, row.webKey)).for("update");
@@ -140,7 +141,7 @@ export async function saveDesignMd(entry: DesignMdEntry, images: DesignImages): 
   entry.logoSvgUrl = images.logoSvg && svgIsSafe(images.logoSvg) ? await saveImage(key, "-logo", Buffer.from(images.logoSvg), "svg") : undefined;
 
   // The images this generation replaced, once nothing points at them
-  await dropReplaced(await upsert(entry), entry);
+  await dropReplaced(await upsertDesignDoc(entry), entry);
   return entry;
 }
 

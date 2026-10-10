@@ -70,19 +70,25 @@ export async function getPageShot(url: string): Promise<PageShot | null> {
   return row ? shotOf(row) : null;
 }
 
+/** Writes the site's row under a lock and returns the one it replaced, so two captures of one site each delete
+ *  only the files their own write took out of use. The files are the caller's (scripts/migrate-r2-indexes.ts
+ *  brings captures whose files are already there). */
+export async function upsertPageShot(url: string, shot: PageShot): Promise<PageShot | null> {
+  const row: typeof S.$inferInsert = { webKey: webKeyOf(url), url: normalizeWebUrl(url) ?? url, ...shot, color: shot.color ?? null, updatedAt: new Date() };
+  return db.transaction(async (tx) => {
+    const [before] = await tx.select().from(S).where(eq(S.webKey, row.webKey)).for("update");
+    await tx.insert(S).values(row).onConflictDoUpdate({ target: S.webKey, set: row });
+    return before ? shotOf(before) : null;
+  });
+}
+
 /** Stores a full-page capture and its board copies as the site's row, and drops the files of the one it replaces */
 export async function savePageShot(url: string, key: string, full: Buffer): Promise<PageShot> {
   const t = Date.now();
   const shotUrl = await putFile(`${PAGES_PREFIX}${key}-${t}.jpg`, full, "image/jpeg");
   const copies = await makeCanvasCopies(`${PAGES_PREFIX}${key}`, full);
   const shot: PageShot = { shotUrl, ...copies };
-  const row: typeof S.$inferInsert = { webKey: webKeyOf(url), url: normalizeWebUrl(url) ?? url, ...shot, color: shot.color ?? null, updatedAt: new Date() };
-  // The row changes hands under a lock: two captures of one site each delete only the files their own write replaced
-  const before = await db.transaction(async (tx) => {
-    const [b] = await tx.select().from(S).where(eq(S.webKey, row.webKey)).for("update");
-    await tx.insert(S).values(row).onConflictDoUpdate({ target: S.webKey, set: row });
-    return b ?? null;
-  });
+  const before = await upsertPageShot(url, shot);
   if (before) {
     const now = new Set([shot.shotUrl, shot.topUrl, shot.tileUrl, shot.thumbUrl]);
     await deleteFiles([before.shotUrl, before.topUrl, before.tileUrl, before.thumbUrl]
