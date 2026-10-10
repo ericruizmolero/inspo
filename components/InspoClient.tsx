@@ -11,7 +11,7 @@ import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject, type SetStateAction } from "react";
-import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks, DesignIndexEntry, PageShot, PolishVote, PolishChoice, type ItemsPage, type Pulse } from "@/types/inspo";
+import { InspoItem, TagMap, TagStatus, InspoTags, CommentAttachment, InspoComment, Project, ProjectLinks, DesignIndexEntry, PageShot, PolishVote, PolishChoice, type ItemsPage, type Pulse } from "@/types/inspo";
 import { applyPage, applyPulse, type Mirror } from "@/lib/library-mirror";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
@@ -933,21 +933,9 @@ export default function InspoClient({
   }, []);
 
   // ─── Comments ──────────────────────────────────────────────────────────────
-  const loadComments = useCallback(async () => {
-    try {
-      const res = await fetch("/api/comments");
-      // keepSame: a thread nobody wrote in keeps its array, so its card and the system view stay put
-      if (res.ok) { const next = (await res.json()) as CommentMap; setCommentMap((prev) => keepSame(prev, next)); }
-    } catch { /* offline: retried on the next cycle */ }
-  }, []);
+  // Each page brings the threads of its references, and the pulse what others write or delete afterwards
   // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
-  // With the thread in view, refresh every 20 s to see what others write
-  useEffect(() => {
-    if (!panelItem) return;
-    const t = setInterval(loadComments, 20000);
-    return () => clearInterval(t);
-  }, [panelItem, loadComments]);
   const postComment = async (itemId: string, body: string, attachments: CommentAttachment[], parentId?: string) => {
     const r = await postCommentAction(itemId, body, attachments, parentId);
     if (!r.ok) throw new Error(r.error);

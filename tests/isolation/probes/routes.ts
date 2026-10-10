@@ -38,17 +38,6 @@ const refusedTool = async (fx: Fixture, name: string, args: Record<string, unkno
 
 export const routes: Record<string, Surface> = {
   // ─── Library ────────────────────────────────────────────────────────────────
-  "route:app/api/comments/route.ts#GET": {
-    probe: async (fx) => {
-      const { GET } = await import("@/app/api/comments/route");
-      asB(fx);
-      const res = await GET();
-      expect(res.status, "B's own comments load").toBe(200);
-      expectNoSecret(fx, await res.json(), "B's comments carry none of A's");
-      asB(fx, fx.a.team);
-      expectNoSecret(fx, await (await GET()).text(), "a session naming A's team as active falls back to B's own");
-    },
-  },
   "route:app/api/library/route.ts#GET": {
     probe: async (fx) => {
       const { GET } = await import("@/app/api/library/route");
