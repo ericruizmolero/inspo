@@ -306,6 +306,7 @@ La miniatura en su forma real: web (og:image o captura), imagen, vídeo en bucle
 `SelectBar` · `components/SelectBar.tsx` · `.selbar`
 Varias referencias a la vez: ⌘ o ⇧-clic en una tarjeta (o su círculo) y la barra ocupa el sitio del dock, sobre el mismo cromo (`--chrome-panel`).
 - Cuenta, "Seleccionar todo" (lo que hay en el tablero a la vista; desaparece cuando ya está todo) y Listo.
+- Las acciones son `Button` quiet de talla s, con icono de 16; también los selectores de proyecto y Quitar, que no pueden ser `Button` y llevan las clases `cr-btn cr-btn-quiet cr-btn-s`. Listo es el único secundario.
 - En la librería y el Inbox: Añadir a proyecto y Borrar. Borrar pide confirmación con el número de referencias y se lleva también sus comentarios y ficheros. Si la selección lleva referencias de otra persona y quien borra no gestiona el espacio, no se borra a medias: se rechaza entera con un mensaje. → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 - Dentro de un proyecto: Mover y Quitar (vuelven al Inbox, no se borran).
 
