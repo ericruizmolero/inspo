@@ -7,7 +7,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { SystemArea } from "@/types/system";
 import { DECISION_MAX, NEVER_MAX } from "@/types/system";
-import { neverMd, type CriterioBlock } from "@/lib/criterio-md";
+import { neverMd, parseAreaText, type CriterioBlock } from "@/lib/criterio-md";
 import { useT } from "./I18nProvider";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
@@ -24,16 +24,7 @@ const Face = ({ name, image, size }: { name: string; image: string | null; size:
 /** The part of an area's block a person writes: the decision, the why under its bold label, and the never list */
 const rawOf = (b: AreaBlock) => [b.decision, b.why ? `**${b.whyLabel}:** ${b.why}` : "", b.never ? neverMd(b) : ""].filter(Boolean).join("\n\n");
 export const rawAreaText = rawOf;
-const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-export function parseAreaText(text: string, whyLabel: string, neverLabel: string): { decision: string; why: string; never: string } { return parse(text, whyLabel, neverLabel); }
-function parse(text: string, whyLabel: string, neverLabel: string): { decision: string; why: string; never: string } {
-  const n = new RegExp(`^\\*\\*${esc(neverLabel)}:\\*\\*[ \\t]*`, "m").exec(text);
-  const before = n ? text.slice(0, n.index) : text;
-  const never = n ? text.slice(n.index + n[0].length).split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n") : "";
-  const w = new RegExp(`^\\*\\*${esc(whyLabel)}:\\*\\*[ \\t]*`, "m").exec(before);
-  if (!w) return { decision: before.trim(), why: "", never };
-  return { decision: before.slice(0, w.index).trim(), why: before.slice(w.index + w[0].length).trim(), never };
-}
+const parse = parseAreaText;
 
 /** A long address, as the panel shows it: its host and its last part (the file copied or downloaded has it whole) */
 function shortUrl(url: string): string {

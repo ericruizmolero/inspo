@@ -4,6 +4,7 @@
 //
 // Anything with variables inside is a function, not a template with placeholders.
 import { taxonomy } from "./taxonomy";
+import type { UseMdKeys } from "../../criterio-md";
 export const ui = {
   settings: {
     language: "Language",
@@ -784,6 +785,26 @@ export const ui = {
       support: "Backed by",
       supportOf: (signal: string, n: number, of: number): string => `${signal}, in ${n} of ${of} references`,
       signals: taxonomy.signal as Record<string, string>,
+      version: (n: number): string => `System v${n}`,
+      required: "required",
+      guidance: "guidance",
+      use: {
+        heading: "How to use this file",
+        lines: ({ never, evidence, tokens, refs, required, guidance, client }: UseMdKeys): string[] => [
+          "> For the agent that reads this file: what binds, what guides, and what to do when they clash.",
+          "",
+          `1. **Required.** The brand's values, where the file has them (the palette and its hex codes, the typefaces, the type scale, the ${tokens} section), and every ${never} line. They are marked \`(${required})\`, as in \`**${never}** (${required}):\`. Use the values exactly as written. Never break a ${never} line.`,
+          "2. **Direction.** Each area's decision. Follow it and adapt it to the task; never contradict it. A value a decision names (a hex, a family, a size) is used as written. A decision the team made outranks one proposed from the board.",
+          `3. **Guidance.** The references under each area, marked \`**${evidence} (n)** (${guidance}):\`, and the ${refs} at the end are inspiration to read the intent from, never something to copy: not their layout, copy, images or logos. ${client ? `Only the client's site, ${client}, is the brand: its copy, typefaces and logo rule.` : "No reference is the brand."}`,
+          "4. **Open or not covered.** Where an area is open, or the file says nothing about what you need, ask the person. Never fill the gap with a default.",
+          `5. **Conflicts.** ${never} lines, then the brand's values, then a decision the team made, then a proposed one, then the references. Tell the person about the clash.`,
+        ],
+      },
+      clientCopy: "Voice samples, from the client's site",
+      measured: {
+        label: "Measured", themes: { light: "light theme", dark: "dark theme" }, density: "density",
+        colors: "Colours", families: "Typefaces", radius: "Radius", pixels: "Pixel colours",
+      },
       brand: {
         values: "Values", intro: "The brand", tokens: "Tokens", tokensIntro: "The values above as CSS variables. Paste them into the project's main stylesheet.",
         name: "Name", role: "Role", accent: "accent",

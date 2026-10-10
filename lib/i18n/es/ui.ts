@@ -1,5 +1,6 @@
 // Spanish. Typed against lib/i18n/en/ui.ts: a missing key does not compile.
 import { taxonomy } from "./taxonomy";
+import type { UseMdKeys } from "../../criterio-md";
 import type { ui as EnUi } from "../en/ui";
 
 export const ui: typeof EnUi = {
@@ -780,6 +781,26 @@ export const ui: typeof EnUi = {
       support: "Lo sostiene",
       supportOf: (signal: string, n: number, of: number): string => `${signal}, en ${n} de ${of} referencias`,
       signals: taxonomy.signal as Record<string, string>,
+      version: (n: number): string => `Sistema v${n}`,
+      required: "obligatorio",
+      guidance: "orientativo",
+      use: {
+        heading: "Cómo usar este archivo",
+        lines: ({ never, evidence, tokens, refs, required, guidance, client }: UseMdKeys): string[] => [
+          "> Para el agente que lee este archivo: qué obliga, qué orienta y qué hacer cuando chocan.",
+          "",
+          `1. **Obligatorio.** Los valores de la marca, donde el archivo los tenga (la paleta y sus hex, las fuentes, la escala tipográfica, la sección ${tokens}), y cada línea de ${never}. Van marcados \`(${required})\`, como en \`**${never}** (${required}):\`. Usa los valores tal cual están escritos. No rompas nunca una línea de ${never}.`,
+          "2. **Dirección.** La decisión de cada área. Síguela y adáptala a la tarea; no la contradigas. Un valor que nombre una decisión (un hex, una familia, un tamaño) se usa tal cual. Una decisión del equipo pesa más que una propuesta desde el tablero.",
+          `3. **Orientación.** Las referencias de cada área, marcadas \`**${evidence} (n)** (${guidance}):\`, y las ${refs} del final son inspiración para leer la intención, nunca algo que copiar: ni su maquetación, ni su texto, ni sus imágenes, ni sus logos. ${client ? `Solo la web del cliente, ${client}, es la marca: su copy, sus fuentes y su logo mandan.` : "Ninguna referencia es la marca."}`,
+          "4. **Abierto o sin cubrir.** Donde un área esté abierta, o el archivo no diga nada de lo que necesitas, pregunta a la persona. No rellenes el hueco con un valor por defecto.",
+          `5. **Conflictos.** Primero las líneas de ${never}, luego los valores de la marca, luego una decisión del equipo, luego una propuesta, luego las referencias. Avisa a la persona del choque.`,
+        ],
+      },
+      clientCopy: "Muestras de voz, de la web del cliente",
+      measured: {
+        label: "Medido", themes: { light: "tema claro", dark: "tema oscuro" }, density: "densidad",
+        colors: "Colores", families: "Fuentes", radius: "Radios", pixels: "Colores en píxeles",
+      },
       brand: {
         values: "Valores", intro: "La marca", tokens: "Tokens", tokensIntro: "Los valores de arriba como variables CSS. Pégalos en la hoja de estilos principal del proyecto.",
         name: "Nombre", role: "Uso", accent: "acento",

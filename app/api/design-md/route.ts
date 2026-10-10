@@ -3,6 +3,7 @@ import { normalizeWebUrl, mediaKindOf } from "@/lib/url";
 import { extractDesign } from "@/lib/design-extract";
 import { generateDesignMd } from "@/lib/design-md";
 import { getDesignMd, saveDesignMd } from "@/lib/design-store";
+import { keptCopy } from "@/lib/ref-measured";
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise";
@@ -86,7 +87,7 @@ export async function GET(req: NextRequest) {
       ctrl.signal.throwIfAborted();
 
       const entry = await saveDesignMd(
-        { url, markdown, spec, generatedAt: new Date().toISOString(), model, icons, fontFiles },
+        { url, markdown, spec, generatedAt: new Date().toISOString(), model, icons, fontFiles, copy: keptCopy(tokens.copy) },
         { fullShot, cover, scroll, logo, logoSvg }
       );
 

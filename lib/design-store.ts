@@ -6,6 +6,7 @@ import { createHash } from "crypto";
 import { makeCanvasCopies, colorOfStored } from "./page-shots";
 
 import type { DesignSpec } from "@/types/design";
+import type { SiteCopy } from "./ref-measured";
 import { svgIsSafe } from "./brand-files";
 import { log } from "./log";
 
@@ -27,6 +28,7 @@ export interface DesignMdEntry {
   color?: string;             // the page's most common colour, painted on the canvas before the image
   icons?: string[];           // up to 8 of the site's icons as standalone svg markup
   fontFiles?: { family: string; formats: string[] }[]; // the file format each @font-face family is served in
+  copy?: SiteCopy;            // the headline, headings and buttons, for criterio.md's voice samples (missing in old entries)
 }
 
 export interface DesignImages { fullShot: Buffer; cover: Buffer; scroll: Buffer; logo?: Buffer | null; logoSvg?: string | null }

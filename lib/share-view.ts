@@ -3,12 +3,14 @@
 // stored file the page points at goes through the link's own file route (/s/<token>/f/<key>), which serves only
 // the files this view names.
 import "server-only";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getSystem } from "./system";
 import { loadWorkspaceData } from "./items";
 import { listComments } from "./comments";
-import { designMdIndexFor, DESIGN_MD_PREFIX } from "./design-store";
+import { designMdIndexFor, getDesignMd, DESIGN_MD_PREFIX, type DesignMdIndex } from "./design-store";
+import { clientCopyOf, refMeasuredOf, type ProjectMeasures, type RefMeasured } from "./ref-measured";
+import type { InspoColor } from "@/types/inspo";
 import { pageShotsFor, PAGES_PREFIX } from "./page-shots";
 import { readText } from "./text-refs";
 import { systemActivity } from "./area-comments";
@@ -16,7 +18,7 @@ import { keyOf } from "./storage";
 import { dictOf, type Locale } from "./i18n";
 import { refInfoOf } from "./ref-info";
 import { blocksToMd, criterioBlocks, type CriterioBlock, type RefInfo } from "./criterio-md";
-import { mediaKindOf, staysInside } from "./url";
+import { mediaKindOf, normalizeWebUrl, staysInside } from "./url";
 import { projectBrandPrefix, brandKeyAllowed, keysIn } from "./brand-files";
 import type { ShareMode } from "./share";
 import type { SystemArea } from "@/types/system";
@@ -24,6 +26,7 @@ import type { BrandRef } from "@/components/brand/context";
 
 const P = schema.project;
 const PI = schema.projectItem;
+const T = schema.inspoItem;
 
 export interface ShareView {
   name: string;
@@ -96,13 +99,41 @@ export async function loadShareView(organizationId: string, projectId: string, m
     return [i.id!, { ...info, web, ...(texts[i.id!] ? { text: texts[i.id!]! } : {}) }];
   }));
   const client = project.brief?.clientItemId ? items.find((i) => i.id === project.brief!.clientItemId) : null;
+  const { measured, clientCopy } = await measuresOf(items.map((i) => ({ id: i.id!, web: i.web, colors: data.tagMap[i.web]?.colors })), designIndex, client?.id ?? null);
+  for (const [id, m] of Object.entries(measured)) infos[id].measured = m;
   const blocks = criterioBlocks({
     project: project.name, system, items: infos, labels: t.system.areas as Record<SystemArea, string>, strings: t.system.md,
     client: client ? { name: client.name, web: client.web } : null, about: project.brief?.about || null, brief: project.brief,
     board: boardIds, talk: activity?.notes ?? {}, origin, skills: (system.doc?.skills ?? "").split(",").filter(Boolean), locale,
-    brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${at(key)}`; },
+    brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${at(key)}`; }, clientCopy,
   });
   return { name: project.name, system, refs, markdown: blocksToMd(blocks), blocks, keys };
+}
+
+async function measuresOf(items: { id: string; web: string; colors?: InspoColor[] }[], index: DesignMdIndex, clientId: string | null): Promise<ProjectMeasures> {
+  const sheets = new Map(await Promise.all(items
+    .filter((i) => mediaKindOf(i.web) === "web" && (normalizeWebUrl(i.web) ?? i.web) in index)
+    .map(async (i) => [i.id, await getDesignMd(i.web)] as const)));
+  const measured: Record<string, RefMeasured> = {};
+  for (const i of items) {
+    const m = refMeasuredOf(sheets.get(i.id)?.spec ?? null, i.colors);
+    if (m) measured[i.id] = m;
+  }
+  return { measured, clientCopy: clientId ? clientCopyOf(sheets.get(clientId) ?? null) : [] };
+}
+
+/** The same measures for the team's own copy of the file, which the app builds in the browser (components/SystemView.tsx) */
+export async function loadProjectMeasures(organizationId: string, projectId: string): Promise<ProjectMeasures | null> {
+  const [project] = await db.select({ brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
+  if (!project) return null;
+  const system = await getSystem(organizationId, projectId);
+  const board = db.select({ id: T.id }).from(PI).innerJoin(T, eq(T.id, PI.itemId)).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId)));
+  // Evidence can point at a reference that left the board: the file still names it
+  const cited = [...new Set(system.areas.flatMap((a) => a.evidence.map((e) => e.itemId)))];
+  const rows = await db.select({ id: T.id, web: T.web, tags: T.tagsJson }).from(T)
+    .where(and(eq(T.organizationId, organizationId), cited.length ? or(inArray(T.id, board), inArray(T.id, cited)) : inArray(T.id, board)));
+  const index = await designMdIndexFor(organizationId, new Set(rows.map((r) => r.web)));
+  return measuresOf(rows.map((r) => ({ id: r.id, web: r.web, colors: r.tags?.colors })), index, project.brief?.clientItemId ?? null);
 }
 
 /** Whether a key may be served through a link of this project, beyond the ones its view names */

@@ -8,6 +8,7 @@ import Clouds from "@/components/Clouds";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
+import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
 import ImproveModal from "./ImproveModal";
 import BriefPanel from "./BriefPanel";
@@ -194,17 +195,30 @@ export default function SystemView({ project, system, onSystem, board, library, 
     const r = await saveDocPart(project.id, "skills", next.length ? next.join(",") : null);
     if (r.ok) setSystem(r.data); else setError(r.error);
   };
+  // What each reference measured and the client's own words, read on the server so the file says what a share link's does
+  const [measures, setMeasures] = useState<ProjectMeasures>({ measured: {}, clientCopy: [] });
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/system/measured?projectId=${encodeURIComponent(project.id)}`)
+      .then((res) => (res.ok ? res.json() as Promise<ProjectMeasures> : null))
+      .then((m) => { if (alive && m) setMeasures(m); }, () => { /* the file is whole without them */ });
+    return () => { alive = false; };
+  }, [project.id, board.length, project.clientItemId]);
   // criterio.md in blocks: the file to copy or download, and the Markdown view, where a block is edited in place.
   // It carries the whole project: what it is, each area with its references and what was said, and every reference once
   const blocks = useMemo(() => criterioBlocks({
     project: project.name, system: sys,
-    items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
+    items: Object.fromEntries(library.filter((i) => i.id).map((i) => {
+      const info: RefInfo = refInfo ? refInfo(i) : { name: i.name, web: i.web };
+      return [i.id!, measures.measured[i.id!] ? { ...info, measured: measures.measured[i.id!] } : info];
+    })),
+    clientCopy: measures.clientCopy,
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
     about: project.intent, brief: project.brief, board: boardIds, talk: activity?.notes,
     origin: typeof window === "undefined" ? "" : window.location.origin,
     skills: skillsOn, locale, brand: sys.brand,
-  }), [sys, project.name, project.intent, project.brief, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale]);
+  }), [sys, project.name, project.intent, project.brief, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale, measures]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);

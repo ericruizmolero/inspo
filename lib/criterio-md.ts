@@ -15,6 +15,7 @@ import { hostOf, readableDomain } from "@/lib/url";
 import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
 import type { BrandSpec } from "@/types/brand";
 import { readBrief, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
+import type { RefMeasured } from "@/lib/ref-measured";
 
 /** A reference as the file tells it: what it is, who brought it and what the team said about it */
 export interface RefInfo {
@@ -33,6 +34,8 @@ export interface RefInfo {
   tags?: string[];
   /** What the team said about it, oldest first: the note it was saved with, then its thread */
   said?: { who: string; text: string; /** The pictures attached to the comment: what its words point at */ images?: string[] }[];
+  /** What its DESIGN.md and its saved palette measured */
+  measured?: RefMeasured;
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
 export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected"; /** The AI client it came from over MCP, when it was not written in the app */ via?: string } }
@@ -66,6 +69,8 @@ export interface CriterioMdInput {
   mode?: "full" | "clean";
   /** A stored file's whole address (a logo), as this reader can open it */
   fileHref?: (key: string) => string;
+  /** The client's own words, read off its site (headline, headings, buttons): the voice samples when the brief has none */
+  clientCopy?: string[];
   strings: {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
     project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string;
@@ -75,8 +80,16 @@ export interface CriterioMdInput {
     support: string; supportOf: (signal: string, n: number, of: number) => string; signals: Record<string, string>;
     brand: BrandMdStrings;
     brief: BriefMdStrings;
+    version: (n: number) => string;
+    required: string; guidance: string;
+    use: { heading: string; lines: (k: UseMdKeys) => string[] };
+    clientCopy: string;
+    measured: { label: string; themes: Record<"light" | "dark", string>; density: string; colors: string; families: string; radius: string; pixels: string };
   };
 }
+
+/** The file's own labels, for the "use" section to name the marks as the file writes them */
+export interface UseMdKeys { never: string; evidence: string; tokens: string; refs: string; required: string; guidance: string; client: string | null }
 
 export interface BriefMdStrings {
   heading: string; draft: string;
@@ -118,6 +131,8 @@ export type CriterioBlock =
   /** A part the app writes whole: what the project is, and the references one by one */
   | {
     kind: "section"; id: string; heading: string; lines: string[]; edited?: boolean;
+    /** Written after the heading in the file only ("required"), never in the heading the team types over */
+    mark?: string;
     /** Content only: the same lines, text by text, so the app can let each one's words be typed in place
      *  (`intro` first, then every text's `head` and `body` and a blank line) */
     texts?: { intro: string[]; items: { itemId: string; head: string[]; body: string[] }[] };
@@ -128,7 +143,9 @@ export type CriterioBlock =
     decision: string; why: string;
     /** What the area must never do, one rule per line */
     never: string;
-    whyLabel: string; neverLabel: string; openText: string;
+    whyLabel: string; neverLabel: string; openText: string; evidenceLabel: string;
+    /** The words the file marks rules and references with. The Markdown view leaves them out, so they never reach a stored text */
+    marks?: { required: string; guidance: string };
     /** The status, the references behind the decision with what the team said of each, and the area's conversation, as lines of the file */
     meta: string[];
     /** The team rewrote the status and references by hand */
@@ -147,7 +164,19 @@ const lowerHeadings = (text: string) => text.split("\n").map((l) => l.replace(/^
 // The other way, for a text typed over in the file: lib/text-headings.ts (the board needs it without this whole module)
 const quote = (s: string, max = 280) => { const t = one(s); return `\u00ab${t.length > max ? `${t.slice(0, max - 1).replace(/\s+\S*$/, "")}\u2026` : t}\u00bb`; };
 
-export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref }: CriterioMdInput): CriterioBlock[] {
+/** What a reference measured, as a few lines under its entry: the theme and density, then colours, typefaces, radii and pixel shares */
+function measuredLines(m: RefMeasured | undefined, s: CriterioMdInput["strings"]["measured"]): string[] {
+  if (!m) return [];
+  const glance = [m.theme ? s.themes[m.theme] : "", m.density ? `${s.density} ${m.density}` : ""].filter(Boolean).join(" · ");
+  const out = [`- **${s.label}:**${glance ? ` ${glance}` : ""}`];
+  if (m.colors?.length) out.push(`  - ${s.colors}: ${m.colors.map((c) => `\`${c.hex}\` ${c.name} (${c.group})`).join(", ")}`);
+  if (m.families?.length) out.push(`  - ${s.families}: ${m.families.map((f) => `${f.family} (${[f.role, f.weights.join(" ")].filter(Boolean).join(", ")})`).join("; ")}`);
+  if (m.radius?.length) out.push(`  - ${s.radius}: ${m.radius.map((r) => `${r.element} ${r.value}`).join(", ")}`);
+  if (m.pixels?.length) out.push(`  - ${s.pixels}: ${m.pixels.map((p) => `\`${p.hex}\` ${Math.round(p.share * 100)}%`).join(", ")}`);
+  return out;
+}
+
+export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref, clientCopy = [] }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
   // Clean: what each reference is stays; who saved it and what the team said of it do not
   const clean = mode === "clean";
@@ -176,10 +205,15 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const title = (id: string, fallback: string) => doc[`title:${id}`] || fallback;
   // A section the app writes whole (a skill's, the brand's), typed over by hand: it stays as the team left it until they bring the app's back
   const byHandOr = (id: string, lines: string[]) => ({ lines: doc[id] ? doc[id].split("\n") : lines, edited: !!doc[id] });
-  const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
+  const version = system.run?.version ? ` · ${strings.version(system.run.version)}` : "";
+  const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}${version}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
+  const useLines = strings.use.lines({ never: strings.never, evidence: strings.evidence, tokens: strings.brand.tokens, refs: strings.refs, required: strings.required, guidance: strings.guidance, client: client?.name ?? null });
+  blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
-  const briefed = briefLines(brief, strings.brief);
+  // A brief with no copy pasted in borrows the client's own words, as its site says them
+  const heard = readBrief(brief)?.voiceSamples.length ? [] : clientCopy.map(one).filter(Boolean);
+  const briefed = [...briefLines(brief, strings.brief), ...(heard.length ? [`- **${strings.clientCopy}:**`, "", ...heard.flatMap((t, i) => [...(i ? [""] : []), `  > ${t}`])] : [])];
   if (briefed.length) blocks.push({ kind: "section", id: "brief", heading: title("brief", strings.brief.heading), lines: briefed });
   // The project's content: each text the team pasted, whole and as given, under its title. It is material to
   // place, not a reference to read a look from, so it sits with what the project is and not in the appendix
@@ -216,7 +250,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
-    const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, never: a?.never ?? "" };
+    const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, evidenceLabel: strings.evidence, marks: { required: strings.required, guidance: strings.guidance }, never: a?.never ?? "" };
     const meta: string[] = [];
     if (a?.decision) {
       const level = confidenceOf(a);
@@ -275,6 +309,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
       for (const b of brings) out.push(`  - ${labels[b.area]}${b.take ? `: ${b.take}` : ""}`);
     } else out.push(`- **${strings.brings}:** _${strings.noArea}_`);
     if (it.tags?.length) out.push(`- **${strings.tags}:** ${it.tags.join(", ")}`);
+    out.push(...measuredLines(it.measured, strings.measured));
     return out;
   };
   // How to build it with the tools the team switched on, after the decisions it builds and before the appendix
@@ -282,7 +317,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   for (const s of skillSections(system, skills, locale)) blocks.push({ kind: "section", ...s, heading: title(s.id, s.heading), lines: doc[s.id] ? doc[s.id].split("\n") : s.lines, edited: !!doc[s.id] });
   // The values as variables, ready to paste into a project
   const css = brand ? brandCssLines(brand, project) : [];
-  if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
+  if (css.length) blocks.push({ kind: "section", id: "brand-tokens", heading: title("brand-tokens", strings.brand.tokens), mark: strings.required, ...byHandOr("brand-tokens", [`> ${strings.brand.tokensIntro}`, "", ...css]) });
   // Every reference once, with what it is, what was said of it and what it brings to each area
   // (a text is already whole under Content)
   const refs = board.filter((id) => items[id] && items[id].kind !== "text");
@@ -344,8 +379,22 @@ export function readAreaMeta(text: string, strings: { decided: string; proposed:
   return { status, refs };
 }
 
-/** An area's never list: one rule a line under its bold label */
-export const neverMd = (b: { never: string; neverLabel: string }) => [`**${b.neverLabel}:**`, ...b.never.split("\n").filter(Boolean).map((l) => `- ${l}`)].join("\n");
+/** An area's never list: one rule a line under its bold label. `mark` is the file's "(required)": the Markdown view
+ *  types over the list without it, so its parser never meets it */
+export const neverMd = (b: { never: string; neverLabel: string }, mark?: string) => [mark ? `**${b.neverLabel}** (${mark}):` : `**${b.neverLabel}:**`, ...b.never.split("\n").filter(Boolean).map((l) => `- ${l}`)].join("\n");
+
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** An area's text as a person types it in the Markdown view, read back: the decision, the why under its bold label and
+ *  the never list. The never label is read also as the copied file marks it ("**Never** (required):"), pasted back in */
+export function parseAreaText(text: string, whyLabel: string, neverLabel: string): { decision: string; why: string; never: string } {
+  const n = new RegExp(`^\\*\\*${escRe(neverLabel)}(?::\\*\\*|\\*\\* \\([^)\\n]*\\):)[ \\t]*`, "m").exec(text);
+  const before = n ? text.slice(0, n.index) : text;
+  const never = n ? text.slice(n.index + n[0].length).split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n") : "";
+  const w = new RegExp(`^\\*\\*${escRe(whyLabel)}:\\*\\*[ \\t]*`, "m").exec(before);
+  if (!w) return { decision: before.trim(), why: "", never };
+  return { decision: before.slice(0, w.index).trim(), why: before.slice(w.index + w[0].length).trim(), never };
+}
 
 /** The file, from its blocks */
 export function blocksToMd(blocks: CriterioBlock[]): string {
@@ -354,14 +403,16 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
   for (const b of blocks) {
     if (b.kind === "head") { for (const line of b.lines) p(line); p(); continue; }
     if (b.kind === "summary") { p(`## ${b.heading}`); p(); p(b.text); p(); continue; }
-    if (b.kind === "section") { p(`## ${b.heading}`); p(); for (const line of b.lines) p(line); p(); continue; }
+    if (b.kind === "section") { p(`## ${b.heading}${b.mark ? ` (${b.mark})` : ""}`); p(); for (const line of b.lines) p(line); p(); continue; }
     p(`## ${b.heading}`);
     p();
     if (!b.decision) { p(`_${b.openText}_`); p(); }
     else { p(b.decision); p(); if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); } }
-    if (b.never) { p(neverMd(b)); p(); }
-    if (b.tokens?.length) { for (const line of b.tokens) p(line); p(); }
-    if (b.meta.length) { for (const line of b.meta) p(line); p(); }
+    if (b.never) { p(neverMd(b, b.marks?.required)); p(); }
+    if (b.tokens?.length) { b.tokens.forEach((line, i) => p(i === 0 && b.marks ? `${line} (${b.marks.required})` : line)); p(); }
+    // The references' line as the app writes it, or as the team left it: "- **References (3):**"
+    const cites = new RegExp(`^- \\*\\*${escRe(b.evidenceLabel)} \\((\\d+)\\):\\*\\*$`);
+    if (b.meta.length) { for (const line of b.meta) p(b.marks ? line.replace(cites, `- **${b.evidenceLabel} ($1)** (${b.marks.guidance}):`) : line); p(); }
     if (b.support?.length) { for (const x of b.support) p(x.line); p(); }
   }
   return L.join("\n");

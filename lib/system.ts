@@ -617,7 +617,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
 
     const now = new Date();
     await ensureHead(input.organizationId, input.projectId, now);
-    const run: SystemRun = { itemIds: refs.map((r) => r.itemId), stamp, model: res.model, at: now.toISOString(), ...(snapshot.omitted ? { omitted: snapshot.omitted } : {}) };
+    const run: SystemRun = { itemIds: refs.map((r) => r.itemId), stamp, model: res.model, version: PROMPTS.system.version, at: now.toISOString(), ...(snapshot.omitted ? { omitted: snapshot.omitted } : {}) };
     await db.update(S).set({ summary: out.summary.trim().slice(0, 1200), runJson: run, updatedAt: now })
       .where(and(eq(S.organizationId, input.organizationId), eq(S.projectId, input.projectId)));
 

@@ -85,6 +85,8 @@ export interface SystemRun {
   /** Fingerprint of the words the model read (notes, threads, briefs): a change makes the run stale */
   stamp: string;
   model: string;
+  /** The system prompt's version (lib/prompts.ts); runs before it was kept lack it */
+  version?: number;
   /** ISO */
   at: string;
   /** References on the board the run left out (MAX_BOARD in lib/system.ts); runs before it was kept lack it */
@@ -115,7 +117,7 @@ export const IMPROVE_NOTE_MAX = 400;
 /** The scope of a pass asked for by hand: what to work on, in which areas, and anything the team adds in words */
 export interface SystemFocus { aims: ImproveAim[]; areas: SystemArea[]; note?: string }
 
-export const DOC_PARTS = ["head", "refs", "skills", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
+export const DOC_PARTS = ["head", "use", "refs", "skills", ...SYSTEM_AREAS.map((a) => `meta:${a}`)];
 /** Those, and one reference's entry under References ("ref:<item id>"), rewritten from the reference's panel; a heading
  *  ("title:<block id>"), a skill's or the brand's section ("skill:<id>", "brand-…"), the Content intro and a text's
  *  who-said-what ("texthead:<item id>") */
