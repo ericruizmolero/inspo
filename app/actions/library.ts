@@ -22,6 +22,7 @@ import { addMany, type AddResult, type NewRef } from "@/lib/add-many";
 import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "@/lib/batch-limits";
 import { boardOf, type Platform } from "@/lib/boards/match";
 import { MAX_TEXT, type Entry, type Skipped } from "@/lib/boards/entries";
+import { assertRoom } from "@/lib/quota";
 import { readBoard, BoardError, type BoardFailure } from "@/lib/boards/read";
 import { allow } from "@/lib/rate-limit";
 import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
@@ -48,6 +49,8 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
   return withCtx(async (ctx) => {
     const web = normalizeWebUrl(input.web ?? "");
     if (!web) throw new HttpError(400, (await getErrors()).badUrl);
+    // Before naming it, which reads the site
+    await assertRoom(ctx.workspace, { items: 1 });
     const item = await addItem(ctx.workspace.id, {
       name: input.name?.trim() || await nameFor(web),
       web,
@@ -98,7 +101,7 @@ const refOf = (e: Entry): NewRef =>
 
 /** One batch of a board's entries (batchesOf in lib/boards/entries.ts), filed in the board's project (boardProject; what was
  *  already saved goes there too). The results keep the order of the batch. */
-export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
+export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[]; full: string | null }>> {
   return withCtx(async (ctx) => {
     const batch = BoardBatch.safeParse(entries);
     if (!batch.success) throw new HttpError(400, (await getErrors()).badBody);

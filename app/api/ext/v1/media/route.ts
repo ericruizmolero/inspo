@@ -21,7 +21,8 @@ import { normalizeWebUrl, mediaKindOf, typeFromUrl } from "@/lib/url";
 import { taggerEnabled } from "@/lib/tagger";
 import { enqueue } from "@/lib/jobs";
 import { getErrors } from "@/lib/i18n";
-import { HttpError } from "@/lib/workspace-core";
+import { HttpError, httpErrorResponse } from "@/lib/workspace-core";
+import { assertRoom } from "@/lib/quota";
 import type { ExtCtx } from "@/lib/ext-keys";
 import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "@/lib/log";
@@ -62,12 +63,14 @@ export async function POST(req: NextRequest) {
   const frame = fromDataUrl(body.frame, MAX_FRAME_BYTES);
 
   try {
+    // Every way below ends in a new reference: no file is copied for one that would not fit
+    await assertRoom(ctx.workspace, { items: 1 });
     if (body.kind === "image") {
       const src = body.src ?? "";
       const image = src.startsWith("data:") ? fromDataUrl(src, MAX_MEDIA_BYTES) : await fetchFile(src, page, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES);
       const file = image ?? frame;
       if (!file) return Response.json({ error: errors.imageFailed }, { status: 422 });
-      const url = await putFile(newMediaKey(ctx.workspace.id, file.type), file.body, file.type);
+      const url = await putFile(newMediaKey(ctx.workspace.id, file.type), file.body, file.type, ctx.workspace.id);
       const host = page ? new URL(page).hostname.replace(/^www\./, "") : "";
       const item = await addItem(ctx.workspace.id, {
         name: clip(body.alt, 48) || clip(body.title, 48) || host || "Image",
@@ -90,7 +93,7 @@ export async function POST(req: NextRequest) {
       // 1. Its file, copied
       const file = await fetchFile(body.src ?? "", page, (t) => t in VIDEO_TYPES, MAX_VIDEO_BYTES);
       if (file) {
-        const url = await putFile(newVideoKey(ctx.workspace.id, file.type), file.body, file.type);
+        const url = await putFile(newVideoKey(ctx.workspace.id, file.type), file.body, file.type, ctx.workspace.id);
         const item = await addItem(ctx.workspace.id, { name: name || "Video", web: url, source: page, type: "videos", note, author, createdBy: ctx.user.id });
         await saveFrame(url);
         await settle(ctx, item, body.projectId, body.areas);
@@ -118,7 +121,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: errors.missingData }, { status: 400 });
   } catch (err) {
     // Our own messages go back as they are; anything else (a driver, the database) stays in the log
-    if (err instanceof HttpError) return Response.json({ error: err.message }, { status: err.status });
+    if (err instanceof HttpError) return httpErrorResponse(err);
     void recordFailure("action", "media from the extension", err);
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }

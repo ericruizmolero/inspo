@@ -12,7 +12,8 @@ import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
 import { taggerEnabled } from "@/lib/tagger";
 import { enqueue } from "@/lib/jobs";
 import { getErrors } from "@/lib/i18n";
-import { HttpError } from "@/lib/workspace-core";
+import { HttpError, httpErrorResponse } from "@/lib/workspace-core";
+import { assertRoom, quotaBlock } from "@/lib/quota";
 import { log, recordFailure } from "@/lib/log";
 
 export const maxDuration = 300; // importing a post (copying its video) runs in after(), once the response is sent
@@ -40,6 +41,8 @@ export async function POST(req: NextRequest) {
   const existing = await findByWeb(ctx.workspace.id, web);
   if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing) });
 
+  const blocked = await quotaBlock(assertRoom(ctx.workspace, { items: 1 }));
+  if (blocked) return blocked;
   // Name: a post's author and words, a video's title, the site's og:site_name or <title> with a time limit; if missing, the tab title
   const name = await nameFor(web, body.title);
 
@@ -76,9 +79,9 @@ export async function POST(req: NextRequest) {
 
     return Response.json({ ok: true, existed: false, item });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (!(err instanceof HttpError)) void recordFailure("action", "save from the extension", err);
     // The status comes from the error, not from the message: the text is translated
-    return Response.json({ error: err instanceof HttpError ? msg : (await getErrors()).unexpected }, { status: err instanceof HttpError ? err.status : 500 });
+    if (err instanceof HttpError) return httpErrorResponse(err);
+    void recordFailure("action", "save from the extension", err);
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

@@ -24,6 +24,7 @@ import { enqueue, enqueueEmbed } from "../jobs";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
 import { putFile } from "../storage";
+import { assertRoom } from "../quota";
 import { cleanText, putText, readText, textTags, deleteTextFile, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
 import { saveBrief } from "../brief";
@@ -206,6 +207,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
     // No title given: its first line, without Markdown's marks
     const title = oneLine(input.title, TEXT_TITLE_MAX) || oneLine(text.split("\n").find((l) => l.trim())?.replace(/^[#>\-*\s]+/, "").replace(/[*_`]/g, ""), TEXT_TITLE_MAX);
     if (!text || !title) throw new HttpError(400, "The text is empty.");
+    await assertRoom(project.workspace, { items: 1 });
     const url = await putText(org, text);
     try {
       const item = await addItem(org, { ...base, name: title, web: url, type: "inspiration" });
@@ -222,9 +224,11 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
     const web = normalizeWebUrl(input.url!);
     if (!web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);
     // A picture's own address: the picture is copied, so the board shows it whatever its site does later
-    const image = IMAGE_FILE.test(new URL(web).pathname) ? await fetchFile(web, undefined, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES) : null;
+    const isImage = IMAGE_FILE.test(new URL(web).pathname);
+    if (isImage) await assertRoom(project.workspace, { items: 1 });
+    const image = isImage ? await fetchFile(web, undefined, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES) : null;
     if (image) {
-      const url = await putFile(newMediaKey(org, image.type), image.body, image.type);
+      const url = await putFile(newMediaKey(org, image.type), image.body, image.type, org);
       const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", web: url, thumbnailUrl: url, source: web, type: "inspiration" });
       itemId = item.id!; name = item.name;
       if (taggerEnabled()) void enqueue({ kind: "tag", organizationId: org, itemId, userId: author.id });
@@ -236,6 +240,8 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
         if (note) await addComment(org, { itemId, authorId: author.id, authorName: author.name, body: note });
       }
       else {
+        // Only a new reference needs room: one already in the library is still filed in the project
+        await assertRoom(project.workspace, { items: 1 });
         const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || await nameFor(web), web, type: typeFromUrl(web) });
         itemId = item.id!; name = item.name;
         // As when a URL is pasted in the app: a post on X is imported, and the AI tags what was saved

@@ -6,7 +6,7 @@ import { and, desc, eq, gt, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
 import { ITEM_COLUMNS, shapeRows, type ItemRow } from "./items";
 import { loadProjects } from "./projects";
-import { TEMPLATE_AUTHOR } from "./template-seed";
+import { TEMPLATE_AUTHOR } from "./sample-items";
 import type { ItemsBundle, ItemsPage, ProjectLinks } from "@/types/inspo";
 import { loadSystemSummaries } from "./system";
 import { isAdmin } from "./activity";

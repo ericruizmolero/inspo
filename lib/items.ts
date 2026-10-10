@@ -9,6 +9,7 @@ import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
 import { collectItemFiles, dropUnusedFiles } from "./item-files";
 import { statusOf } from "./tag-jobs";
+import { assertRoomIn } from "./quota";
 import { cleanTag, MAX_ADDED } from "./taxonomy";
 
 const T = schema.inspoItem;
@@ -135,6 +136,8 @@ export interface NewItem {
   via?: string | null;
   /** The page a copied image or video was found on */
   source?: string | null;
+  /** A template's reference (lib/template-seed.ts): Criterio's, so the plan's cap does not apply */
+  sample?: boolean;
 }
 
 export async function addItem(organizationId: string, input: NewItem): Promise<InspoItem> {
@@ -142,6 +145,7 @@ export async function addItem(organizationId: string, input: NewItem): Promise<I
   if (!web || web.length > 2048) throw new HttpError(400, (await getErrors()).badBody);
   const existing = await findByWeb(organizationId, web);
   if (existing) throw new HttpError(409, (await getErrors()).urlAlreadyHere);
+  if (!input.sample) await assertRoomIn(organizationId, { items: 1 });
   const now = new Date();
   const row: typeof T.$inferInsert = {
     id: newId(),

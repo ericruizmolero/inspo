@@ -20,6 +20,8 @@ import { taggerEnabled } from "@/lib/tagger";
 import { enqueue, enqueueEmbed } from "@/lib/jobs";
 import { PER_WORKSPACE } from "@/lib/tag-jobs";
 import { HttpError } from "@/lib/workspace-core";
+import { fullMessage, planIn, roomOf } from "@/lib/quota";
+import { planOf } from "@/lib/plans";
 import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "./log";
 
@@ -31,7 +33,8 @@ const FINISH_AT_ONCE = 3;
 /** Addresses of the same image tried in turn (the size wanted first, then what there is) */
 const MAX_IMAGE_TRIES = 3;
 
-export type AddStatus = "added" | "existed" | "invalid" | "error";
+/** "full": left out because the plan has no more room (references or storage) */
+export type AddStatus = "added" | "existed" | "invalid" | "error" | "full";
 export interface AddResult { url: string; status: AddStatus; id?: string }
 
 /** One thing to save, at `url`. `image` makes the item that image, found on the page at `url`; `text` makes it
@@ -67,10 +70,18 @@ const imagesOf = (image: unknown): string[] =>
  * With `projectId`, what is new goes there and so does what the workspace already had (a reference can be in
  * several projects). Without it, only what is new is filed, in the project this person was working in.
  * `source` names the import in the logs ("pinterest", "arena", "bookmarks").
+ * Past the plan's room, what is new comes in up to the cap and the rest is "full": `full` is then what the person reads.
  */
-export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[] }> {
+export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[]; full: string | null }> {
   const { source } = opts;
   const author = user.name || user.email;
+  const plan = planOf(await planIn(workspaceId));
+  // References left before the cap, taken before the work that makes one: five run at once, and a count
+  // per add would let all five through the last free place. The bytes are checked by putFile, file by file
+  let slots = (await roomOf({ id: workspaceId, plan: plan.key })).items;
+  let full: string | null = null;
+  const take = () => { if (slots === null) return true; if (slots <= 0) return false; slots--; return true; };
+  const giveBack = () => { if (slots !== null) slots++; };
 
   // The same address twice in one batch is saved once
   const seen = new Set<string>();
@@ -82,6 +93,8 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     if (!web) return { url: raw, status: "invalid" };
     if (seen.has(web)) return { url: raw, status: "existed" };
     seen.add(web);
+    let took = false;
+    const leftOut = async (): Promise<AddResult> => { full ??= await fullMessage(plan, "items"); return { url: raw, status: "full" }; };
     try {
       const dateIso = dateOf(it.date);
       const words = it.text === undefined ? "" : cleanText(it.text);
@@ -89,6 +102,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
         const at = importedTextUrl(workspaceId, web);
         const had = await findByWeb(workspaceId, at);
         if (had) return { url: raw, status: "existed", id: had.id };
+        if (!(took = take())) return leftOut();
         const stored = await putText(workspaceId, words, web);
         const firstLine = words.split("\n").find((l) => l.trim())?.replace(/^[#>\-*\s]+/, "").replace(/[*_`]/g, "");
         try {
@@ -109,10 +123,11 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
       if (images.length) {
         const had = await findByWebs(workspaceId, importedMediaUrls(workspaceId, web));
         if (had) return { url: raw, status: "existed", id: had.id };
+        if (!(took = take())) return leftOut();
         let file: Awaited<ReturnType<typeof fetchFile>> = null;
         for (const src of images) { file = await fetchFile(src, web, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES); if (file) break; }
-        if (!file) return { url: raw, status: "error" };
-        const stored = await putFile(importedMediaKey(workspaceId, web, file.type), file.body, file.type);
+        if (!file) { giveBack(); return { url: raw, status: "error" }; }
+        const stored = await putFile(importedMediaKey(workspaceId, web, file.type), file.body, file.type, workspaceId);
         const item = await addItem(workspaceId, {
           name: clip(it.title, 48) || new URL(web).hostname.replace(/^www\./, ""),
           web: stored, thumbnailUrl: stored, source: web, type: "inspiration", author, createdBy: user.id, dateIso,
@@ -122,14 +137,18 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
       }
       const existing = await findByWeb(workspaceId, web);
       if (existing) return { url: raw, status: "existed", id: existing.id };
+      if (!(took = take())) return leftOut();
       const name = await nameFor(web, it.title);
       const item = await addItem(workspaceId, { name, web, type: typeFromUrl(web), author, createdBy: user.id, dateIso });
       added.push(item);
       if (dateIso) dated.add(web);
       return { url: raw, status: "added", id: item.id };
     } catch (err) {
+      if (took) giveBack();
       // 409: saved by someone else between the lookup and the insert
       if (err instanceof HttpError && err.status === 409) return { url: raw, status: "existed" };
+      // 402: the plan is full, of references (someone else saved meanwhile) or of storage (this file did not fit)
+      if (err instanceof HttpError && err.status === 402) { full ??= err.message; return { url: raw, status: "full" }; }
       void recordFailure("action", `add many (${source})`, err, { ref: web });
       return { url: raw, status: "error" };
     }
@@ -175,5 +194,5 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     }));
   }
 
-  return { results, added };
+  return { results, added, full };
 }

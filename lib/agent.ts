@@ -15,6 +15,7 @@ import { llm, LlmError } from "./llm";
 import { prompt } from "./prompts";
 import { billOf, recordUsage, type UsageCtx } from "./usage";
 import { addItem, deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
+import { assertRoom } from "./quota";
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems } from "./projects";
@@ -391,6 +392,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         case "add_url": {
           const web = normalizeWebUrl(a.url);
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
+          await assertRoom(ctx.workspace, { items: 1 });
           const item = await addItem(org, { name: await nameFor(web), web, type: typeFromUrl(web), author: author.name, createdBy: author.id });
           if (a.project && item.id) { await fileItems(org, a.project, [item.id], author.id); line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
           if (item.id && taggerEnabled()) void enqueue({ kind: "tag", organizationId: org, itemId: item.id, userId: author.id });

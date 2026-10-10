@@ -782,15 +782,18 @@ export default function InspoClient({
     const imported = noneImported();
     const added: InspoItem[] = [];
     const ids: string[] = [];
-    let done = 0, failed = 0, existed = 0, invalid = 0;
+    let done = 0, failed = 0, existed = 0, invalid = 0, full = 0;
     onStep({ phase: "saving", done, total });
     for (const batch of batchesOf(board.entries)) {
+      // The plan ran out of room: the rest is not sent, it is said
+      if (full) { full += batch.length; done += batch.length; continue; }
       const r = await importBatch(project.id, batch).catch((e) => ({ ok: false as const, error: String(e) }));
       if (r.ok) {
         r.data.results.forEach((x, i) => {
           if (x.id && x.status === "added") { ids.push(x.id); imported[batch[i].kind]++; }
           else if (x.id && x.status === "existed") { ids.push(x.id); existed++; }
           else if (x.status === "invalid") invalid++;
+          else if (x.status === "full") full++;
           else failed++;
         });
         added.push(...r.data.added);
@@ -806,7 +809,7 @@ export default function InspoClient({
     setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...new Set([...(next[id] ?? []), project.id])]; return next; });
     for (const a of added) watch(a.web);
     setSpace(project.id);
-    setToast({ ok: true, ...importSummary(t, { imported, existed, skipped: { ...board.skipped, invalid }, failed, capped: board.capped }) });
+    setToast({ ok: true, ...importSummary(t, { imported, existed, skipped: { ...board.skipped, invalid }, failed, capped: board.capped, full }) });
     return null;
   }, [t, watch, setSpace]);
   const renameProject = useCallback(async (id: string, name: string) => {
