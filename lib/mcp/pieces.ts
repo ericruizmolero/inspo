@@ -100,7 +100,8 @@ export type CriterioSection = (typeof CRITERIO_SECTIONS)[number];
 
 /**
  * criterio.md as the team reads it, in the person's language. "decisions" leaves out the long tail (every
- * reference's own entry and the texts, whole); an area's name gives that area alone.
+ * reference's own entry and the texts, whole); an area's name gives that area, under the file's head and its
+ * "how to use" rules, so a single area still says what binds and what only guides.
  */
 export async function readCriterio(ctx: McpCtx, origin: string, ref: string, section: CriterioSection = "all") {
   const project = await resolveProject(ctx, ref);
@@ -109,7 +110,7 @@ export async function readCriterio(ctx: McpCtx, origin: string, ref: string, sec
   if (section === "all") return view.markdown;
   const blocks = view.blocks.filter((b) => section === "decisions"
     ? b.kind !== "section" || !["refs", "content"].includes(b.id)
-    : b.kind === "area" && b.area === section);
+    : b.kind === "head" || (b.kind === "section" && b.id === "use") || (b.kind === "area" && b.area === section));
   return blocksToMd(blocks);
 }
 

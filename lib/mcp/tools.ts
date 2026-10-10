@@ -39,7 +39,8 @@ export const TOOLS: Tool[] = [
     description: [
       "A project's criterio.md: the design criteria its team decided, as Markdown. Eight areas (typography, color, layout, motion, iconography, logo, imagery, voice), each with its decision, why, what it must never do, and the references (R1, R2…) behind it; then the project's texts and every reference.",
       "Read it before designing, writing or reviewing anything for the project, and follow it: a decided area is a rule. Where an area is open, ask the person instead of inventing.",
-      'section: "all" (default) is the whole file and can be long; "decisions" is the same without the long lists at the end (enough to design with); an area\'s name gives that area alone.',
+      "The file opens with \"How to use this file\": what is required (the brand's values and every Never line), what is direction (each area's decision) and what is only guidance (the references, which are never copied). Follow it.",
+      'section: "all" (default) is the whole file and can be long; "decisions" is the same without the long lists at the end (enough to design with); an area\'s name gives that area under the file\'s head and its "How to use this file" rules, the cheapest read when a task touches few areas.',
     ].join("\n"),
     input: z.object({ project: Project, section: z.enum(CRITERIO_SECTIONS).optional().describe('"all" (default), "decisions", or one area.') }),
     annotations: { readOnlyHint: true },
