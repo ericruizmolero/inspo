@@ -11,7 +11,7 @@ import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
-import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, CommentAnchor, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot, PolishVote, PolishChoice } from "@/types/inspo";
+import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot, PolishVote, PolishChoice } from "@/types/inspo";
 import type { ThumbnailMap } from "@/lib/thumbnails";
 import type { LibraryData } from "@/lib/library";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
@@ -918,8 +918,8 @@ export default function InspoClient({
     const t = setInterval(loadComments, 20000);
     return () => clearInterval(t);
   }, [panelItem, loadComments]);
-  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor, parentId?: string) => {
-    const r = await postCommentAction(itemId, body, attachments, anchor, parentId);
+  const postComment = async (itemId: string, body: string, attachments: CommentAttachment[], parentId?: string) => {
+    const r = await postCommentAction(itemId, body, attachments, parentId);
     if (!r.ok) throw new Error(r.error);
     setCommentMap((prev) => ({ ...prev, [itemId]: [...(prev[itemId] ?? []), r.data] }));
   };
@@ -1658,7 +1658,7 @@ export default function InspoClient({
               onDelete={(id) => deleteComment(panelItem.id!, id)}
               onPostThumb={(thumb) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))}
               onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
-              onReply={(parentId, body) => postComment(panelItem.id!, body, [], undefined, parentId)}
+              onReply={(parentId, body) => postComment(panelItem.id!, body, [], parentId)}
               notice={panelForgotten.length > 0 && panelForgotten.map(({ project, names }) => (
                 <p key={project.id} className="cm-notice">
                   <span>{t.polish.forgottenIn(project.name, names)}</span>

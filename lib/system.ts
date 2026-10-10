@@ -24,7 +24,7 @@ import { AUTO_REF, recordUsage, type UsageCtx } from "./usage";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
-import type { PolishBrief } from "@/types/polish";
+import type { Brief } from "@/types/brief";
 import { readBrand } from "@/types/brand";
 import { projectGuides } from "./brand-guides";
 import { log } from "./log";
@@ -49,7 +49,7 @@ const AREA_SET = new Set<string>(SYSTEM_AREAS);
 // ─── Read ────────────────────────────────────────────────────────────────────
 
 async function projectRow(organizationId: string, projectId: string) {
-  const [row] = await db.select({ id: P.id, name: P.name, polish: P.polish }).from(P)
+  const [row] = await db.select({ id: P.id, name: P.name, brief: P.brief }).from(P)
     .where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
   if (!row) throw new HttpError(404, (await getErrors()).projectNotFound);
   return row;
@@ -313,12 +313,12 @@ export async function boardStamp(organizationId: string, projectId: string): Pro
 }
 
 /** The board as the model reads it, with the client's current site marked when the project is a redesign */
-function markClient(refs: BoardRef[], brief: PolishBrief | null | undefined) {
+function markClient(refs: BoardRef[], brief: Brief | null | undefined) {
   const id = brief?.clientItemId;
   return refs.map((r) => (id && r.itemId === id ? { ...r.ref, client_site: true } : r.ref));
 }
 
-function briefForModel(b: PolishBrief | null | undefined) {
+function briefForModel(b: Brief | null | undefined) {
   if (!b) return null;
   return { about: b.about || null, audience_note: b.audienceNote || null, tone: b.tone.length ? b.tone : null, avoid: b.avoid || null, first_five_seconds: b.firstSeconds || null };
 }
@@ -444,9 +444,9 @@ const standing = current.areas.map((a) => ({
     }));
     const text = [
       `Project: ${project.name}`,
-      `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+      `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
       `System as it stands (JSON): ${JSON.stringify(standing)}`,
-      `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
+      `References on the board (JSON): ${JSON.stringify(markClient(refs, project.brief))}`,
       guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
       focusForModel(input.focus, current.areas.filter((a) => a.source === "team").map((a) => a.area)),
     ].filter(Boolean).join("\n\n");
@@ -562,11 +562,11 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     `Project: ${project.name}`,
     `Area to settle: ${area}`,
     standing.never ? `The team ruled these out for this area, never propose them (one per line):\n${standing.never}` : "",
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
     `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
     only ? `The team picked these references for this area, on purpose: build the directions from them alone.` : "",
-    `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
+    `References on the board (JSON): ${JSON.stringify(markClient(refs, project.brief))}`,
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
@@ -721,9 +721,9 @@ export async function startAreaAsk(input: StartInput): Promise<AreaStartAsk> {
     `Project: ${project.name}`,
     `The empty area: ${area}`,
     current.areas.find((x) => x.area === area)?.never ? `Ruled out by the team for this area, never offer them:\n${current.areas.find((x) => x.area === area)!.never}` : "",
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
     `In a paragraph: ${current.summary || "(not written yet)"}`,
-    project.polish?.brief?.clientItemId ? `This project is a REDESIGN of the client's current site (${String(refs.find((r) => r.itemId === project.polish!.brief!.clientItemId)?.ref.url ?? "on the board")}): for typography, logo and voice the answers take what that site already uses, never something new.` : "",
+    project.brief?.clientItemId ? `This project is a REDESIGN of the client's current site (${String(refs.find((r) => r.itemId === project.brief!.clientItemId)?.ref.url ?? "on the board")}): for typography, logo and voice the answers take what that site already uses, never something new.` : "",
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
     `What the team said about the references on the board (JSON): ${JSON.stringify(refs.map((r) => { const x = r.ref as Record<string, unknown>; return { name: x.name, notes: x.curator_notes ?? undefined, team_comments: x.team_comments }; }))}`,
   ].join("\n\n");
@@ -923,10 +923,10 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
   const want = input.itemIds?.length ? new Set(input.itemIds) : null;
   const rows = rowsAll.filter(({ row }) => (want ? want.has(row.id) : !filed.has(row.id))).slice(0, 240);
   if (!rows.length) return [];
-  const projects = await db.select({ id: P.id, name: P.name, polish: P.polish }).from(P).where(and(eq(P.organizationId, org), isNull(P.template))).orderBy(asc(P.createdAt));
+  const projects = await db.select({ id: P.id, name: P.name, brief: P.brief }).from(P).where(and(eq(P.organizationId, org), isNull(P.template))).orderBy(asc(P.createdAt));
   const systems = await loadSystems(org);
   const pcodes = new Map(projects.map((p, i) => [`p${i + 1}`, p.id]));
-  const projectsText = projects.map((p, i) => ({ id: `p${i + 1}`, name: p.name, brief: briefForModel(p.polish?.brief), system: systems[p.id]?.summary || undefined,
+  const projectsText = projects.map((p, i) => ({ id: `p${i + 1}`, name: p.name, brief: briefForModel(p.brief), system: systems[p.id]?.summary || undefined,
     decided: systems[p.id]?.areas.filter((a) => a.decision).map((a) => ({ area: a.area, decision: a.decision })) }));
   // The batches run at once: a batch takes one to three minutes, the inbox has several
   const batches: typeof rows[] = [];
@@ -1014,11 +1014,11 @@ export async function curateArea(input: { organizationId: string; projectId: str
   const text = [
     `Project: ${project.name}`,
     `Area: ${area}`,
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.polish?.brief))}`,
+    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
     `The area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, why: standing.why, source: standing.source } : null)}`,
     input.keep && Object.keys(input.keep).length ? `The team already settled some candidates, keep these verdicts exactly (JSON): ${JSON.stringify(input.keep)}` : "",
     `Candidates (JSON): ${JSON.stringify(candidates.map((c) => ({ id: c.id, label: c.label, detail: c.detail, refs: c.refs.map((id) => codeOf.get(id) ?? id), ...c.visual })))}`,
-    `References on the board (JSON): ${JSON.stringify(markClient(refs, project.polish?.brief))}`,
+    `References on the board (JSON): ${JSON.stringify(markClient(refs, project.brief))}`,
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {

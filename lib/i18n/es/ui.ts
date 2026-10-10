@@ -718,7 +718,6 @@ export const ui: typeof EnUi = {
       what: "Qu\u00e9 es",
       savedBy: "Guardada por",
       said: "Lo que dijo el equipo",
-      pinned: "sobre un punto de la p\u00e1gina",
       attached: "imagen adjunta",
       brings: "Aporta a",
       noArea: "Ning\u00fan \u00e1rea todav\u00eda: el sistema a\u00fan no la ha le\u00eddo",

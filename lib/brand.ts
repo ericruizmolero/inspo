@@ -126,7 +126,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
   const job = (async () => {
     const { organizationId, projectId } = input;
     const [[project], system, brand, client, board] = await Promise.all([
-      db.select({ name: P.name, polish: P.polish }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1),
+      db.select({ name: P.name, brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1),
       getSystem(organizationId, projectId), getBrand(organizationId, projectId), projectClient(organizationId, projectId), boardOf(organizationId, projectId),
     ]);
     if (!project) throw new HttpError(404, (await getErrors()).projectNotFound);
@@ -152,7 +152,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     const current = { intro: brand.intro, color: brand.color.items.map((c) => ({ name: c.name, hex: c.hex, role: c.role, group: c.group })), faces: brand.typography.faces.map((f) => ({ family: f.family, role: f.role })), voice: brand.voice };
     const text = [
       `Brand: ${project.name}`,
-      `Brief: ${JSON.stringify({ about: project.polish?.brief?.about || null, tone: project.polish?.brief?.tone ?? null, avoid: project.polish?.brief?.avoid || null })}`,
+      `Brief: ${JSON.stringify({ about: project.brief?.about || null, tone: project.brief?.tone ?? null, avoid: project.brief?.avoid || null })}`,
       `system (JSON): ${JSON.stringify({ summary: system.summary, areas: system.areas.filter((a) => a.decision || a.never).map((a) => ({ area: a.area, decision: a.decision || undefined, why: a.why || undefined, never: a.never ? a.never.split("\n") : undefined })) })}`,
       `measured (JSON): ${JSON.stringify(measured)}`,
       clientSpec ? `client_site (JSON): ${JSON.stringify({ web: client!.web, theme: clientSpec.theme, colors: clientSpec.colors, fonts: clientSpec.fonts.map((f) => ({ family: f.family, role: f.role, weights: f.weights })), scale: clientSpec.typeScale, motion: clientSpec.motion, glance: clientSpec.brief })}` : null,

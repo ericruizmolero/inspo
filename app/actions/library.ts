@@ -30,7 +30,7 @@ import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { log, recordFailure } from "@/lib/log";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
-import type { CommentAttachment, CommentAnchor, InspoItem, PolishChoice } from "@/types/inspo";
+import type { CommentAttachment, InspoItem, PolishChoice } from "@/types/inspo";
 
 /** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
  *  so a failure leaves it for the worker instead of keeping the old vector. */
@@ -221,10 +221,10 @@ export async function removeInspos(ids: string[]) {
 }
 
 /** Attachments are uploaded first via /api/comments/upload; only their URLs arrive here.
- *  With an anchor it is a post-it pinned on the page; with a parent, a reply to that comment. */
-export async function postComment(itemId: string, body: string, attachments: CommentAttachment[], anchor?: CommentAnchor, parentId?: string) {
+ *  With a parent, a reply to that comment. */
+export async function postComment(itemId: string, body: string, attachments: CommentAttachment[], parentId?: string) {
   return withCtx(async (ctx) => {
-    const comment = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments, anchor, parentId });
+    const comment = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments, parentId });
     // The thread is searchable
     if (comment.body.trim()) await reembed(String(itemId));
     return comment;

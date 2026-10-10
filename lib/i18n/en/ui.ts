@@ -722,7 +722,6 @@ export const ui = {
       what: "What it is",
       savedBy: "Saved by",
       said: "What the team said",
-      pinned: "on a point of the page",
       attached: "attached image",
       brings: "Brings to",
       noArea: "No area yet: the system has not read it",

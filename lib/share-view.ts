@@ -43,7 +43,7 @@ export interface ShareView {
  */
 export async function loadShareView(organizationId: string, projectId: string, mode: ShareMode, locale: Locale, base: string | null, origin: string): Promise<ShareView | null> {
   const at = (key: string) => (base === null ? `/api/files/${key}` : `${base}/f/${key}`);
-  const [project] = await db.select({ name: P.name, polish: P.polish }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
+  const [project] = await db.select({ name: P.name, brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
   if (!project) return null;
   const rows = await db.select({ itemId: PI.itemId }).from(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
   const boardIds = rows.map((r) => r.itemId);
@@ -95,10 +95,10 @@ export async function loadShareView(organizationId: string, projectId: string, m
     const web = mediaKindOf(i.web) === "image" && !i.source ? `${origin}${through(i.web)}` : i.web;
     return [i.id!, { ...info, web, ...(texts[i.id!] ? { text: texts[i.id!]! } : {}) }];
   }));
-  const client = project.polish?.brief?.clientItemId ? items.find((i) => i.id === project.polish!.brief!.clientItemId) : null;
+  const client = project.brief?.clientItemId ? items.find((i) => i.id === project.brief!.clientItemId) : null;
   const blocks = criterioBlocks({
     project: project.name, system, items: infos, labels: t.system.areas as Record<SystemArea, string>, strings: t.system.md,
-    client: client ? { name: client.name, web: client.web } : null, about: project.polish?.brief?.about || null,
+    client: client ? { name: client.name, web: client.web } : null, about: project.brief?.about || null,
     board: boardIds, talk: activity?.notes ?? {}, origin, skills: (system.doc?.skills ?? "").split(",").filter(Boolean), locale,
     brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${at(key)}`; },
   });

@@ -241,7 +241,7 @@ async function context(ctx: Ctx, scope: AgentScope) {
     loadSystems(org),
     db.select({ row: T }).from(T).where(eq(T.organizationId, org)).orderBy(desc(T.createdAt)),
   ]);
-  const briefs = new Map((await db.select({ id: P.id, polish: P.polish }).from(P).where(eq(P.organizationId, org))).map((r) => [r.id, r.polish?.brief ?? null]));
+  const briefs = new Map((await db.select({ id: P.id, brief: P.brief }).from(P).where(eq(P.organizationId, org))).map((r) => [r.id, r.brief ?? null]));
   const current = scope.projectId && projects.some((p) => p.id === scope.projectId) ? scope.projectId : null;
   // The current board first, then the open and visible ones, then the rest, newest first
   const visible = new Set(scope.visibleIds ?? []);

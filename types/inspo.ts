@@ -127,20 +127,11 @@ export interface InspoComment {
   authorImage: string | null;
   body: string;
   attachments: CommentAttachment[];
-  /** Pinned at a place on the page: a post-it (lib/db/schema.ts inspoComment). None: about the whole
-   *  reference, or a reply */
-  anchor?: CommentAnchor;
   /** The comment this one answers (one level: a reply never has replies) */
   parentId?: string;
   /** ISO */
   createdAt: string;
 }
-
-/** x and y as 0..1 of the page image; h the page height (in 1440px-wide pixels) when it was pinned */
-export interface CommentAnchor { x: number; y: number; h: number }
-
-/** Where each reference sits on each space's canvas: { space: { itemId: { x, y } } } */
-export type CanvasPositions = Record<string, Record<string, { x: number; y: number }>>;
 
 export type CommentMap = Record<string, InspoComment[]>;
 

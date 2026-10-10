@@ -22,7 +22,7 @@ export function refInfoOf(item: InspoItem, tags: InspoTags | undefined, comments
     // Replies stay in the thread: the file carries what was said about the reference itself
     // A comment made with a picture keeps it: the words alone would not say what they point at
     ...(comments ?? []).filter((c) => (c.body.trim() || c.attachments?.length) && !c.parentId)
-      .map((c) => ({ who: c.authorName, text: c.body.trim(), ...(c.anchor ? { pin: true } : {}), ...(c.attachments?.length ? { images: c.attachments.map((a) => a.url) } : {}) })),
+      .map((c) => ({ who: c.authorName, text: c.body.trim(), ...(c.attachments?.length ? { images: c.attachments.map((a) => a.url) } : {}) })),
   ];
   return {
     name: item.name, web: item.web, ...(item.source ? { source: item.source } : {}), kind: mediaKindOf(item.web), by: item.via ? t.mcp.byVia(item.addedBy, item.via) : item.addedBy, date: dayOf(item.date),

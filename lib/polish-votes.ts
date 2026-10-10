@@ -7,7 +7,6 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError } from "./workspace-core";
-import { dropFromSpace } from "./canvas";
 import { fileItems } from "./projects";
 import type { PolishChoice, PolishVote } from "@/types/inspo";
 
@@ -35,7 +34,6 @@ async function onBoard(organizationId: string, projectId: string, itemIds: strin
 async function leaveBoard(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
   if (!itemIds.length) return;
   await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
-  await dropFromSpace(organizationId, projectId, itemIds);
 }
 
 async function isSolo(organizationId: string): Promise<boolean> {

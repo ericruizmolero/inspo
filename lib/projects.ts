@@ -6,7 +6,6 @@ import { db, schema } from "./db";
 import { getErrors } from "./i18n";
 import { HttpError, newId } from "./workspace-core";
 import type { Project, ProjectLinks } from "@/types/inspo";
-import { dropSpace, dropFromSpace } from "./canvas";
 import { deleteProjectBrandFiles, projectBrandPrefix } from "./brand-files";
 
 const P = schema.project;
@@ -27,7 +26,7 @@ async function cleanName(name: string): Promise<string> {
  */
 export async function loadProjects(organizationId: string): Promise<{ projects: Project[]; links: ProjectLinks }> {
   const [projects, rows] = await Promise.all([
-    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.polish}->'brief'->>'about'`, clientItemId: sql<string | null>`${P.polish}->'brief'->>'clientItemId'`, hasRecipe: sql<boolean>`${P.recipe} <> ''`, started: sql<boolean>`${P.startedAt} is not null` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
+    db.select({ id: P.id, name: P.name, intent: sql<string | null>`${P.brief}->>'about'`, clientItemId: sql<string | null>`${P.brief}->>'clientItemId'`, hasRecipe: sql<boolean>`${P.recipe} <> ''`, started: sql<boolean>`${P.startedAt} is not null` }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template))).orderBy(asc(P.createdAt)),
     db.select({ projectId: PI.projectId, itemId: PI.itemId }).from(PI).where(eq(PI.organizationId, organizationId)),
   ]);
   const links: ProjectLinks = {};
@@ -74,7 +73,6 @@ export async function startedProject(organizationId: string, id: string, userId:
 
 export async function deleteProject(organizationId: string, id: string): Promise<void> {
   await db.delete(P).where(and(eq(P.organizationId, organizationId), eq(P.id, id)));
-  await dropSpace(organizationId, id);
   // The brand's files go too, unless a project started from this one (a template) still shows them
   const prefix = projectBrandPrefix(organizationId, id);
   const [still] = await db.select({ id: schema.projectSystem.projectId }).from(schema.projectSystem)
@@ -115,7 +113,6 @@ export async function fileItems(organizationId: string, projectId: string, itemI
 export async function unfileItems(organizationId: string, projectId: string, itemIds: string[]): Promise<void> {
   if (!itemIds.length) return;
   await db.delete(PI).where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId), inArray(PI.itemId, itemIds)));
-  await dropFromSpace(organizationId, projectId, itemIds);
   // Taken off by hand, not by the polish: what was voted about it there goes with it (lib/polish-votes.ts)
   const V = schema.polishVote;
   await db.delete(V).where(and(eq(V.organizationId, organizationId), eq(V.projectId, projectId), inArray(V.itemId, itemIds)));

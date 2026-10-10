@@ -5,7 +5,7 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, integer, bigint, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
-import type { PolishState, Why } from "@/types/polish";
+import type { Brief } from "@/types/brief";
 import { OUTPUT_LANGUAGES } from "../output-language";
 
 /** CHECK that a text column holds one of these values */
@@ -204,8 +204,8 @@ export const project = pgTable("project", {
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
-  /** Polish: the brief, the decisions taken on the board and the last run of the games (types/polish.ts) */
-  polish: jsonb("polish").$type<PolishState>(),
+  /** The team's words about the project, and the client's site for a redesign (types/brief.ts, lib/brief.ts) */
+  brief: jsonb("brief").$type<Brief>(),
   /** Set when this is a template, not a project: where the work started and where it ended (types/system.ts ProjectTemplate) */
   template: jsonb("template").$type<unknown>(),
   /** The recipe: how the work was done, as a Markdown document an agent can follow (the process of a template) */
@@ -228,8 +228,6 @@ export const projectItem = pgTable("project_item", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   /** Set when the reference leaves the board but stays with the project (Polish: "lo que no pesa"); null on the board */
   archivedAt: timestamp("archived_at", { withTimezone: true, mode: "date" }),
-  /** What the team takes from this reference for this project: the "why" (types/polish.ts) */
-  why: jsonb("why").$type<Why>(),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.itemId] }),
   index("project_item_org_idx").on(t.organizationId),
@@ -255,25 +253,6 @@ export const polishVote = pgTable("polish_vote", {
   primaryKey({ columns: [t.projectId, t.itemId, t.userId] }),
   index("polish_vote_org_idx").on(t.organizationId),
   oneOf("polish_vote_vote_check", t.vote, ["keep", "forget"]),
-]);
-
-// ─── Canvas ──────────────────────────────────────────────────────────────────
-// Where each reference sits on a space's canvas, in canvas units (a tile is 360 wide).
-// The space is "all", "inbox" or a project id: plain text, so a project's rows are removed
-// by hand when it goes (lib/canvas.ts). A reference with no row is placed automatically.
-
-export const canvasPosition = pgTable("canvas_position", {
-  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-  space: text("space").notNull(),
-  itemId: text("item_id").notNull().references(() => inspoItem.id, { onDelete: "cascade" }),
-  x: real("x").notNull(),
-  y: real("y").notNull(),
-  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
-  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
-}, (t) => [
-  primaryKey({ columns: [t.organizationId, t.space, t.itemId] }),
-  index("canvas_position_item_idx").on(t.itemId),
-  index("canvas_position_updated_by_idx").on(t.updatedBy),
 ]);
 
 // ─── DESIGN.md revisions ─────────────────────────────────────────────────────
@@ -327,9 +306,8 @@ export const designWhy = pgTable("design_why", {
 ]);
 
 // ─── Comments per inspo ──────────────────────────────────────────────────────
-// One kind of thing: a comment on a reference. Pinned (anchor set) it is a post-it at a place on the page;
-// without an anchor it is about the whole reference. Either can have replies, one level deep (a reply has
-// a parent_id, no anchor and no replies of its own). The item's original note stays in inspo_item and
+// One kind of thing: a comment on a reference, about the whole reference. It can have replies, one level
+// deep (a reply has a parent_id and no replies of its own). The item's original note stays in inspo_item and
 // opens the list.
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
@@ -344,24 +322,15 @@ export const inspoComment = pgTable("inspo_comment", {
   body: text("body").notNull(),
   /** Attached screenshots: JSON `[{ url, w, h, name }]` (private Blob URLs, or /public paths locally) */
   attachments: jsonb("attachments").$type<CommentAttachmentRow[]>().notNull().default([]),
-  /** The comment this one answers. Null: a comment of its own (pinned or about the whole reference) */
+  /** The comment this one answers. Null: a comment of its own, about the whole reference */
   parentId: text("parent_id").references((): AnyPgColumn => inspoComment.id, { onDelete: "cascade" }),
-  /** A post-it pinned on the page: x and y as 0..1 of the image box, and the page height (in 1440px-wide
-   *  pixels) when it was pinned, so the pin keeps its place if a new capture changes the page's height.
-   *  All three null: a comment about the whole reference, or a reply. */
-  anchorX: real("anchor_x"),
-  anchorY: real("anchor_y"),
-  anchorH: integer("anchor_h"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),
-  check("inspo_comment_anchor_check", sql`(${t.anchorX} is null) = (${t.anchorY} is null) and (${t.anchorX} is null) = (${t.anchorH} is null)`),
   // Deleting an item cascades here by item_id alone, which the index above cannot serve
   index("inspo_comment_item_id_idx").on(t.itemId),
   index("inspo_comment_author_id_idx").on(t.authorId),
-  // A reply sits under its comment, never on the page
-  check("inspo_comment_reply_check", sql`${t.parentId} is null or ${t.anchorX} is null`),
   index("inspo_comment_parent_id_idx").on(t.parentId),
 ]);
 

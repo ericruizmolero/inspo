@@ -101,8 +101,8 @@ export async function getBrand(organizationId: string, projectId: string): Promi
 
 /** A redesign: the reference that is the client's current site, when the brief names one */
 export async function projectClient(organizationId: string, projectId: string): Promise<{ itemId: string; web: string; name: string } | null> {
-  const [row] = await db.select({ polish: P.polish }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
-  const id = (row?.polish as { brief?: { clientItemId?: string | null } } | null)?.brief?.clientItemId;
+  const [row] = await db.select({ brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1);
+  const id = row?.brief?.clientItemId;
   if (!id) return null;
   const T = schema.inspoItem;
   const [item] = await db.select({ id: T.id, web: T.web, name: T.name }).from(T).where(and(eq(T.organizationId, organizationId), eq(T.id, id))).limit(1);

@@ -80,15 +80,14 @@ export async function embedItems(ids: string[]): Promise<number> {
   const [rows, thread] = await Promise.all([
     db.select({ id: T.id, organizationId: T.organizationId, name: T.name, web: T.web, note: T.note, subNote: T.subNote, tagsJson: T.tagsJson, tagsUser: T.tagsUser })
       .from(T).where(inArray(T.id, ids)),
-    db.select({ id: C.id, itemId: C.itemId, parentId: C.parentId, authorName: C.authorName, body: C.body, createdAt: C.createdAt, anchorX: C.anchorX, anchorY: C.anchorY })
+    db.select({ id: C.id, itemId: C.itemId, parentId: C.parentId, authorName: C.authorName, body: C.body, createdAt: C.createdAt })
       .from(C).where(inArray(C.itemId, ids)),
   ]);
-  // Each item's comments as threads (where each is pinned, its replies), the same words the prompts read
+  // Each item's comments as threads (each with its replies), the same words the prompts read
   const byItem = new Map<string, CommentRowLike[]>();
   for (const c of thread) {
     byItem.set(c.itemId, [...(byItem.get(c.itemId) ?? []), {
       id: c.id, parentId: c.parentId, author: c.authorName, body: c.body, at: c.createdAt,
-      anchor: c.anchorX !== null && c.anchorY !== null ? { x: c.anchorX, y: c.anchorY } : null,
     }]);
   }
   const said = new Map([...byItem].map(([id, rows]) => [id, threadLines(rows)]));

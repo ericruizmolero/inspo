@@ -11,4 +11,4 @@ supersedes: Canvas infinito (PR #56)
 
 **Por qué.** Se queda todo lo bueno del canvas (buscador por capas, isla, auto-tags) sin la sensación de perderse.
 
-**Cómo aplicarlo.** Nada de lienzos infinitos para colecciones. `lib/canvas.ts` y `canvas_position` están pendientes de limpiar.
+**Cómo aplicarlo.** Nada de lienzos infinitos para colecciones. `lib/canvas.ts` y `canvas_position` se borraron el 10/10 (migración `0028`).

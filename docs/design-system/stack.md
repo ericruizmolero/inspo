@@ -36,7 +36,7 @@ Todos por OpenRouter. El modelo de cada acción se cambia con su variable, sin t
 | Último intento de un trabajo de etiquetas | `TAG_FALLBACK_MODEL` | `mistralai/mistral-small-3.2-24b-instruct` | `lib/tagger.ts` |
 | Sistema de un proyecto (proponer, curar, opciones) | `SYSTEM_MODEL`, esfuerzo en `SYSTEM_EFFORT` | `deepseek/deepseek-v4.1-flash`, `medium` | `lib/system.ts`, `lib/brand.ts` |
 | Arranque de un proyecto | `START_MODEL` | `anthropic/claude-haiku-4.5` | `lib/system.ts` |
-| Explicar, revisar y planear (DESIGN.md, retirado de la interfaz) | `DESIGN_WHY_MODEL`, `DESIGN_REVISE_MODEL`, `DESIGN_MD_MODEL` | `anthropic/claude-sonnet-5`, `deepseek/deepseek-v4.1-flash` | `lib/design-why.ts`, `lib/design-revise.ts`, `lib/design-md.ts` |
+| DESIGN.md de una web (lo pide la importación de marca) | `DESIGN_MD_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/design-md.ts` |
 | Vectores de búsqueda | `EMBED_MODEL` | `baai/bge-m3` | `lib/embed.ts` |
 | Prototipo del loop (scripts, fuera de la app) | `LOOP_CHEAP_MODEL`, `LOOP_SMART_MODEL` | DeepSeek, Sonnet | `scripts/loop/` |
 

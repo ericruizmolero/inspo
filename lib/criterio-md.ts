@@ -31,7 +31,7 @@ export interface RefInfo {
   /** Its style, sector and traits, as words */
   tags?: string[];
   /** What the team said about it, oldest first: the note it was saved with, then its thread */
-  said?: { who: string; text: string; pin?: boolean; /** The pictures attached to the comment: what its words point at */ images?: string[] }[];
+  said?: { who: string; text: string; /** The pictures attached to the comment: what its words point at */ images?: string[] }[];
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
 export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected"; /** The AI client it came from over MCP, when it was not written in the app */ via?: string } }
@@ -65,7 +65,7 @@ export interface CriterioMdInput {
   fileHref?: (key: string) => string;
   strings: {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
-    project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string; pinned: string;
+    project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string;
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
     proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
     brand: BrandMdStrings;
@@ -183,7 +183,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
       for (const e of a.evidence) {
         meta.push(`  - ${cite(e.itemId)}${e.take ? `. ${strings.take}: ${e.take}` : ""}`);
         // The words behind it, next to what it brings: why the team saved it
-        for (const w of (items[e.itemId]?.said ?? []).slice(0, 3)) meta.push(`    - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${told(w, 220)}`);
+        for (const w of (items[e.itemId]?.said ?? []).slice(0, 3)) meta.push(`    - ${w.who}: ${told(w, 220)}`);
       }
     }
     const lines = talk[key] ?? [];
@@ -216,7 +216,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     if (it.by) out.push(`- **${byLabel}:** ${it.by}${it.date ? ` · ${it.date}` : ""}`);
     if (it.said?.length) {
       out.push(`- **${strings.said}:**`);
-      for (const w of it.said) out.push(`  - ${w.who}${w.pin ? `, ${strings.pinned}` : ""}: ${told(w, 600)}`);
+      for (const w of it.said) out.push(`  - ${w.who}: ${told(w, 600)}`);
     }
     const brings = system.areas.flatMap((a) => a.evidence.filter((e) => e.itemId === id).map((e) => ({ area: a.area, take: e.take })));
     if (brings.length) {

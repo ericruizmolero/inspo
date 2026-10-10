@@ -1,10 +1,10 @@
-// Comments per inspo, always scoped to a workspace. A comment is pinned (a post-it, with an anchor) or about
-// the whole reference; either can have replies, one level deep.
+// Comments per inspo, always scoped to a workspace. A comment is about the whole reference and can have
+// replies, one level deep.
 import { and, asc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
 import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-files";
-import type { InspoComment, CommentMap, CommentAttachment, CommentAnchor } from "@/types/inspo";
+import type { InspoComment, CommentMap, CommentAttachment } from "@/types/inspo";
 import { getErrors } from "./i18n";
 import { HttpError } from "./workspace-core";
 import { inBackground, notifyReply } from "./notify";
@@ -15,29 +15,19 @@ const U = schema.user;
 const select = {
   id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName,
   body: C.body, attachments: C.attachments, createdAt: C.createdAt, authorImage: U.image,
-  anchorX: C.anchorX, anchorY: C.anchorY, anchorH: C.anchorH, parentId: C.parentId,
+  parentId: C.parentId,
 };
 type Row = {
   id: string; itemId: string; authorId: string | null; authorName: string; body: string; attachments: CommentAttachment[]; createdAt: Date; authorImage: string | null;
-  anchorX: number | null; anchorY: number | null; anchorH: number | null; parentId: string | null;
+  parentId: string | null;
 };
 
 const toComment = (r: Row): InspoComment => ({
   id: r.id, itemId: r.itemId, authorId: r.authorId, authorName: r.authorName,
   authorImage: r.authorImage ?? null, body: r.body, attachments: Array.isArray(r.attachments) ? r.attachments : [],
-  ...(r.anchorX !== null && r.anchorY !== null && r.anchorH !== null ? { anchor: { x: r.anchorX, y: r.anchorY, h: r.anchorH } } : {}),
   ...(r.parentId ? { parentId: r.parentId } : {}),
   createdAt: r.createdAt.toISOString(),
 });
-
-/** A pin inside the page, or none: anything else is dropped rather than refused */
-function cleanAnchor(input: unknown): CommentAnchor | null {
-  if (!input || typeof input !== "object") return null;
-  const a = input as Record<string, unknown>;
-  const x = Number(a.x), y = Number(a.y), h = Math.round(Number(a.h));
-  if (![x, y, h].every(Number.isFinite)) return null;
-  return { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)), h: Math.max(1, Math.min(20000, h)) };
-}
 
 /** Only attachments uploaded by this workspace, with sane dimensions, are kept. */
 function cleanAttachments(organizationId: string, input: unknown): CommentAttachment[] {
@@ -73,8 +63,8 @@ export async function listItemComments(organizationId: string, itemId: string): 
 }
 
 /** A new comment, or with `parentId` a reply to one. A reply goes under a comment of the same reference that
- *  is not itself a reply, and never carries an anchor. */
-export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string; attachments?: unknown; anchor?: unknown; parentId?: unknown }): Promise<InspoComment> {
+ *  is not itself a reply. */
+export async function addComment(organizationId: string, input: { itemId: string; authorId: string; authorName: string; body: string; attachments?: unknown; parentId?: unknown }): Promise<InspoComment> {
   const body = input.body.trim();
   const attachments = cleanAttachments(organizationId, input.attachments);
   if (!body && !attachments.length) throw new HttpError(400, (await getErrors()).emptyComment);
@@ -88,10 +78,9 @@ export async function addComment(organizationId: string, input: { itemId: string
       .where(and(eq(C.id, parentId), eq(C.organizationId, organizationId), eq(C.itemId, input.itemId))).limit(1);
     if (!parent || parent.parentId) throw new HttpError(400, (await getErrors()).replyGone);
   }
-  const anchor = parentId ? null : cleanAnchor(input.anchor);
   const row = {
     id: newId(), organizationId, itemId: input.itemId, authorId: input.authorId, authorName: input.authorName, body: body.slice(0, 4000), attachments,
-    anchorX: anchor?.x ?? null, anchorY: anchor?.y ?? null, anchorH: anchor?.h ?? null, parentId, createdAt: new Date(), editedAt: null,
+    parentId, createdAt: new Date(), editedAt: null,
   };
   await db.insert(C).values(row);
   // Whoever wrote the comment answered hears of it by email, once this has answered (lib/notify.ts)

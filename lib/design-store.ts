@@ -71,11 +71,6 @@ export async function getDesignMd(url: string): Promise<DesignMdEntry | null> {
 /** Prefix of a workspace's "why it's here" captures (the file route allows it for that workspace) */
 export const whyShotPrefix = (organizationId: string) => `inspo/design-why/${organizationId}/`;
 
-/** Saves one capture of the site (image, video or sound) for this workspace's "why". Returns its path. */
-export async function saveWhyAsset(organizationId: string, url: string, id: string, data: Buffer, mime: string, ext: string): Promise<string> {
-  return putFile(`${whyShotPrefix(organizationId)}${keyFor(url)}-${id}-${Date.now()}.${ext}`, data, mime);
-}
-
 /** The full-page screenshot saved with the DESIGN.md (for models that need to look), or null. */
 export async function getDesignScreenshot(url: string): Promise<Buffer | null> {
   const entry = await getDesignMd(url);
