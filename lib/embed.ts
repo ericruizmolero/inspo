@@ -74,14 +74,14 @@ export function itemText(r: { name: string; web: string; note: string; subNote: 
 
 // ─── Making the vectors ──────────────────────────────────────────────────────
 
-/** Embeds these items now, in one call per batch. Their usage is billed to their workspaces. */
-export async function embedItems(ids: string[]): Promise<number> {
+/** Embeds the workspace's items among `ids` now, in one call per batch, billed to the workspace. Others' ids are skipped. */
+export async function embedItems(organizationId: string, ids: string[]): Promise<number> {
   if (!ids.length || !embedEnabled()) return 0;
   const [rows, thread] = await Promise.all([
-    db.select({ id: T.id, organizationId: T.organizationId, name: T.name, web: T.web, note: T.note, subNote: T.subNote, tagsJson: T.tagsJson, tagsUser: T.tagsUser })
-      .from(T).where(inArray(T.id, ids)),
+    db.select({ id: T.id, name: T.name, web: T.web, note: T.note, subNote: T.subNote, tagsJson: T.tagsJson, tagsUser: T.tagsUser })
+      .from(T).where(and(eq(T.organizationId, organizationId), inArray(T.id, ids))),
     db.select({ id: C.id, itemId: C.itemId, parentId: C.parentId, authorName: C.authorName, body: C.body, createdAt: C.createdAt })
-      .from(C).where(inArray(C.itemId, ids)),
+      .from(C).where(and(eq(C.organizationId, organizationId), inArray(C.itemId, ids))),
   ]);
   // Each item's comments as threads (each with its replies), the same words the prompts read
   const byItem = new Map<string, CommentRowLike[]>();
@@ -101,24 +101,18 @@ export async function embedItems(ids: string[]): Promise<number> {
     await db.execute(sql`
       update ${T} set embedding = v.embedding, embedding_at = now()
       from (values ${sql.join(values, sql`, `)}) as v(id, embedding)
-      where ${T.id} = v.id`);
+      where ${T.id} = v.id and ${T.organizationId} = ${organizationId}`);
     done += batch.length;
-    // One row per workspace in the batch, its share of the call
-    const per = new Map<string, number>();
-    for (const r of batch) per.set(r.organizationId, (per.get(r.organizationId) ?? 0) + 1);
-    for (const [organizationId, n] of per) {
-      void recordUsage({ organizationId }, {
-        action: "embed", model: res.model, units: n, inputTokens: Math.round((res.tokens * n) / batch.length),
-        costUsd: res.costUsd === null ? null : (res.costUsd * n) / batch.length, provider: res.provider, requestId: res.id,
-      });
-    }
+    void recordUsage({ organizationId }, {
+      action: "embed", model: res.model, units: batch.length, inputTokens: res.tokens, costUsd: res.costUsd, provider: res.provider, requestId: res.id,
+    });
   }
   return done;
 }
 
 /** Its words changed (tags, a note, the thread): the vector is cleared, and its job makes it again */
-export async function staleEmbedding(itemId: string): Promise<void> {
-  await db.update(T).set({ embedding: null }).where(eq(T.id, itemId));
+export async function staleEmbedding(organizationId: string, itemId: string): Promise<void> {
+  await db.update(T).set({ embedding: null }).where(and(eq(T.organizationId, organizationId), eq(T.id, itemId)));
 }
 
 // ─── Searching ───────────────────────────────────────────────────────────────

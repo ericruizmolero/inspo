@@ -30,7 +30,7 @@ const HANDLERS: Handlers = {
     if (taggerEnabled()) await runTagJob(job);
   },
   async embed(job) {
-    await embedItems(job.itemIds);
+    await embedItems(job.organizationId, job.itemIds);
   },
   async shot(job) {
     try { await getOrCaptureShot(job.url); }
@@ -62,10 +62,10 @@ export async function sweep(): Promise<{ workspaces: number; embeds: number }> {
   const jobs = open.flatMap((organizationId) => Array.from({ length: PER_WORKSPACE }, () => ({ kind: "tag" as const, organizationId })));
   for (let i = 0; i < jobs.length; i += SWEEP_AT_ONCE) await enqueue(jobs.slice(i, i + SWEEP_AT_ONCE), { delaySeconds: i / SWEEP_AT_ONCE * 5 });
   // Tagged first, so the vector carries the tags
-  const missing = await db.select({ id: T.id }).from(T)
+  const missing = await db.select({ id: T.id, organizationId: T.organizationId }).from(T)
     .where(and(isNull(T.embedding), eq(T.tagStatus, "done")))
     .orderBy(sql`${T.createdAt} desc`).limit(SWEEP_EMBEDS);
-  await enqueueEmbed(missing.map((r) => r.id));
+  for (const [organizationId, rows] of Map.groupBy(missing, (r) => r.organizationId)) await enqueueEmbed(organizationId, rows.map((r) => r.id));
   await scheduleSweep();
   return { workspaces: open.length, embeds: missing.length };
 }
