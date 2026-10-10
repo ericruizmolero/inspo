@@ -52,12 +52,13 @@ export function applyBundle(m: Mirror, b: ItemsBundle, comments: InspoComment[],
     tagJobs: mergeJobs(m.tagJobs, b.items.map((i) => i.web), b.tagJobs),
     pageShots: mergeMap(m.pageShots, b.pageShots),
     designMdIndex: mergeMap(m.designMdIndex, b.designMdIndex),
+    signed: mergeMap(m.signed, b.signed),
     comments: mergeComments(m.comments, comments, gone.comments, gone.items),
   };
 }
 
 const NONE: ReadonlySet<string> = new Set();
-const EMPTY: ItemsBundle = { items: [], thumbnailMap: {}, tagMap: {}, tagJobs: {}, pageShots: {}, designMdIndex: {} };
+const EMPTY: ItemsBundle = { items: [], thumbnailMap: {}, tagMap: {}, tagJobs: {}, pageShots: {}, designMdIndex: {}, signed: {} };
 
 /** The pulse's changes folded in */
 export const applyPulse = (m: Mirror, p: Pulse): Mirror =>

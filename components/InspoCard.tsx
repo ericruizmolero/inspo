@@ -115,6 +115,9 @@ interface InspoCardProps {
   score?: number;
   reason?: string;
   manualThumbnail?: string;
+  /** The thumbnail it shows (the one given, or the uploaded image itself) as a signed bucket link: tried first, and
+   *  the path through the app once if it fails (a link that expired) */
+  signedThumbnail?: string;
   onUpload: (file: File) => Promise<void>;
   onRemoveThumbnail: () => Promise<void>;
   /** Opens the reference in its panel (the page with its post-its, and its thread) */
@@ -123,6 +126,8 @@ interface InspoCardProps {
   /** The same picture through the app, tried once if designCover fails (a signed link that expired) */
   designCoverFallback?: string;
   designScroll?: string;  // long strip that scrolls on hover
+  /** The strip through the app, if designScroll is a signed link that fails */
+  designScrollFallback?: string;
   commentCount?: number;  // replies in the thread (not counting the original note)
   /** What whoever saved it highlighted (the note), or failing that the first reply: shown under the tile */
   caption?: NoteCaption | null;
@@ -187,12 +192,14 @@ export function captionFor(item: InspoItem, comments: InspoComment[] | undefined
   return { ...root, people, more: comments?.length ?? 0 };
 }
 
-export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
+export default function InspoCard({ item, tags, tagJob, score, reason, manualThumbnail: uploadedThumb, signedThumbnail, onUpload, onRemoveThumbnail, onOpen, designCover: coverSrc, designCoverFallback, designScroll: scrollSrc, designScrollFallback, commentCount = 0, caption, onComments, onDelete, onTakeOut, spaceName, projects, projectIds = [], onToggleProject, onCreateProject, backs = [], onToggleArea, areasIn, board, selected = false, selecting = false, onSelect }: InspoCardProps) {
   const { t } = useT();
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
   const video = kind === "video" ? videoEmbedOf(item.web) : null;
-  const manualThumbnail = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
+  const thumbPath = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
+  const [thumbRetry, setThumbRetry] = useState(false);
+  const manualThumbnail = signedThumbnail && !thumbRetry ? signedThumbnail : thumbPath;
   const videoFile = video?.provider === "file" && !manualThumbnail;
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;
@@ -216,6 +223,8 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   const [manualFailed, setManualFailed] = useState(false);
   const [coverFailed, setCoverFailed] = useState(false);
   const [coverRetry, setCoverRetry] = useState(false);
+  const [scrollRetry, setScrollRetry] = useState(false);
+  const designScroll = scrollRetry && designScrollFallback ? designScrollFallback : scrollSrc;
   // On the board the cover is never blank: another copy already decoded stands in while the one it
   // wants loads, and a copy shown before is drawn at once (hooks/use-decoded-src.ts, lib/shown-images.ts)
   const decodedCover = useDecodedSrc(coverSrc, board?.alternates);
@@ -495,7 +504,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
               src={manualThumbnail}
               alt={item.name}
               onLoad={manual.onLoad}
-              onError={() => setManualFailed(true)}
+              onError={() => { if (manualThumbnail !== thumbPath) setThumbRetry(true); else setManualFailed(true); }}
             />
           )}
 
@@ -517,6 +526,7 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
                     src={designScroll}
                     alt=""
                     onLoad={onScrollLoad}
+                    onError={designScrollFallback && !scrollRetry ? () => setScrollRetry(true) : undefined}
                     className={scrollDist > 0 ? "is-ready" : ""}
                     style={{ "--dm-scroll": `-${scrollDist}px`, animationDuration: `${Math.max(4, Math.round(scrollDist / 170))}s` } as React.CSSProperties}
                   />

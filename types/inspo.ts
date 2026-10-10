@@ -168,6 +168,9 @@ export interface ItemsBundle {
   /** Each site's stored full-page screenshot (lib/page-shots.ts) */
   pageShots: Record<string, PageShot>;
   designMdIndex: DesignIndex;
+  /** Signed bucket links for the board's thumbnails, uploaded images and DESIGN.md pictures, keyed by the stored
+   *  path (/api/files/…), which stays the fallback when a link expires. Empty on disk */
+  signed: Record<string, string>;
 }
 
 /** One page of the library, newest first, with the threads of its references. `cursor` asks for the next; null: the last */

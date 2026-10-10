@@ -193,9 +193,9 @@ export default function InspoClient({
   // all at once (lib/library-mirror.ts). Each part keeps its own name and setter
   const [mirror, setMirror] = useState<Mirror>(() => ({
     items: first.items, thumbnailMap: first.thumbnailMap, tagMap: first.tagMap, tagJobs: first.tagJobs,
-    pageShots: first.pageShots, designMdIndex: first.designMdIndex, comments: first.comments,
+    pageShots: first.pageShots, designMdIndex: first.designMdIndex, signed: first.signed, comments: first.comments,
   }));
-  const { items, thumbnailMap: thumbMap, tagMap, tagJobs, pageShots, designMdIndex, comments: commentMap } = mirror;
+  const { items, thumbnailMap: thumbMap, tagMap, tagJobs, pageShots, designMdIndex, signed, comments: commentMap } = mirror;
   const setters = useMemo(() => {
     const part = <K extends keyof Mirror>(k: K) => (up: SetStateAction<Mirror[K]>) => setMirror((m) => {
       const v = typeof up === "function" ? (up as (prev: Mirror[K]) => Mirror[K])(m[k]) : up;
@@ -1307,9 +1307,10 @@ export default function InspoClient({
   }, [tagMap, commentMap, t, textBodies]);
   // A small picture of any reference, wherever one is shown outside the board: the thumbnail someone gave it, the
   // DESIGN.md cover, or the stored copy of its page (so a reference without a DESIGN.md is not a blank)
-  const smallImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null, [thumbMap, designMdIndex, pageShots]);
+  const signedOf = useCallback((u: string | null) => (u && signed[u]) || u, [signed]);
+  const smallImageOf = useCallback((i: InspoItem) => signedOf(thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null), [signedOf, thumbMap, designMdIndex, pageShots]);
   // The same choice a card makes on the board, at the smallest stored size: a project's cover is its board from afar
-  const miniImageOf = useCallback((i: InspoItem) => thumbMap[i.web] ?? pageShots[i.web]?.thumbUrl ?? designMdIndex[i.web]?.coverUrl ?? null, [thumbMap, designMdIndex, pageShots]);
+  const miniImageOf = useCallback((i: InspoItem) => signedOf(thumbMap[i.web] ?? pageShots[i.web]?.thumbUrl ?? designMdIndex[i.web]?.coverUrl ?? null), [signedOf, thumbMap, designMdIndex, pageShots]);
   // The zoom: one step out of 100% unless the person left it elsewhere. Read before the first paint (a layout effect),
   // so the server's markup matches and the board, which draws nothing until measured, opens at the kept zoom.
   const [zoom, setZoomState] = useState(DEFAULT_ZOOM);
@@ -1659,7 +1660,10 @@ export default function InspoClient({
       comments={item.id ? commentMap[item.id] : undefined}
       authorImage={authorImages[item.addedBy]}
       manualThumbnail={thumbMap[item.web]}
+      signedThumbnail={signed[thumbMap[item.web] ?? item.web]}
       designMd={designMdIndex[item.web]}
+      signedCover={signed[designMdIndex[item.web]?.coverUrl ?? ""]}
+      signedScroll={signed[designMdIndex[item.web]?.scrollUrl ?? ""]}
       shot={pageShots[item.web]}
       projects={projects}
       projectIds={item.id ? links[item.id] : undefined}
@@ -1674,7 +1678,7 @@ export default function InspoClient({
       takeOutOf={currentProject?.id}
       actions={gridActions}
     />
-  ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user]);
+  ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user]);
 
   return (
     <SidebarProvider defaultOpen={false} className="shell">
@@ -1963,7 +1967,7 @@ export default function InspoClient({
               project={currentProject}
               items={boardItems}
               imageOf={smallImageOf}
-              largeImageOf={(item) => thumbMap[item.web] ?? pageShots[item.web]?.topUrl ?? smallImageOf(item)}
+              largeImageOf={(item) => signedOf(thumbMap[item.web] ?? pageShots[item.web]?.topUrl ?? null) ?? smallImageOf(item)}
               ratioOf={ratioOf}
               textOf={(item) => (item.id ? textBodies[item.id] : "") || item.note}
               noteOf={(item) => captionFor(item, item.id ? commentMap[item.id] : undefined, authorImages[item.addedBy])}
@@ -2161,7 +2165,7 @@ interface GridActions {
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, designMd, shot, projects, projectIds, backs, areasIn, selected, selecting, deletable, spaceName, takeOutOf, actions }: {
+const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, deletable, spaceName, takeOutOf, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
@@ -2169,6 +2173,8 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   areasIn?: Record<string, SystemArea[]>;
   comments: InspoComment[] | undefined; authorImage: string | undefined;
   manualThumbnail: string | undefined; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
+  /** The signed bucket links of the thumbnail it shows and of the DESIGN.md pictures, when the library sent them */
+  signedThumbnail: string | undefined; signedCover: string | undefined; signedScroll: string | undefined;
   projects: Project[]; projectIds: string[] | undefined;
   selected: boolean; selecting: boolean;
   /** Whether this person may delete the card: theirs, or they manage the workspace */
@@ -2185,7 +2191,7 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
   // The page's top, at the size it is seen: a site someone gave a thumbnail keeps that thumbnail
   const showsPage = !manualThumbnail && !!shot;
   const key = level === "thumb" ? "thumbUrl" : level === "tile" ? "tileUrl" : "topUrl";
-  const page = showsPage ? shot![key] : designMd?.coverUrl;
+  const page = showsPage ? shot![key] : signedCover ?? designMd?.coverUrl;
   // The same page at the other sizes: whichever is already decoded stands in while this one loads
   const alternates = useMemo(() => (shot ? [shot.tileUrl, shot.thumbUrl, shot.topUrl] : undefined), [shot]);
   const open = () => act().openItem(item);
@@ -2205,12 +2211,14 @@ const Card = memo(function Card({ item, level, ratio, tags, tagJob, score, reaso
       onTakeOut={item.id && takeOutOf ? () => act().toggleFiled(item, takeOutOf, false) : undefined}
       spaceName={spaceName}
       manualThumbnail={manualThumbnail}
+      signedThumbnail={signedThumbnail}
       onUpload={(file) => { act().handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
       onRemoveThumbnail={() => { act().handleThumbnailRemove(item.web); return Promise.resolve(); }}
       onOpen={open}
       designCover={page}
-      designCoverFallback={showsPage ? shot!.paths?.[key] : undefined}
-      designScroll={designMd?.scrollUrl}
+      designCoverFallback={showsPage ? shot!.paths?.[key] : signedCover && designMd?.coverUrl}
+      designScroll={signedScroll ?? designMd?.scrollUrl}
+      designScrollFallback={signedScroll && designMd?.scrollUrl}
       projects={item.id ? projects : undefined}
       projectIds={projectIds}
       onToggleProject={(projectId, on) => act().toggleFiled(item, projectId, on)}

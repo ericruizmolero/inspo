@@ -51,7 +51,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 ## Lo que servimos de otros
 
 - Un fichero ajeno que sale por nuestro origen (`/api/og`, las fuentes en `lib/font-proxy.ts`) va con un tipo fijo (imagen rasterizada o fuente), `nosniff` y `Content-Security-Policy: default-src 'none'; sandbox`: un SVG o un HTML de otro en criterio.design correría con la sesión de quien lo abre.
-- Los ficheros de un espacio (`/api/files/inspo/<ws>/…`) se sirven a cualquier miembro de ese espacio, no solo al que lo tiene activo en la sesión; con R2 la ruta redirige a una URL firmada que dura una hora.
+- Los ficheros de un espacio (`/api/files/inspo/<ws>/…`) se sirven a cualquier miembro de ese espacio, no solo al que lo tiene activo en la sesión; con R2 la ruta redirige a una URL firmada que dura una hora. Las imágenes del tablero no pasan por ella: la página de la biblioteca y el pulso traen en `signed` los enlaces firmados de las miniaturas, las imágenes subidas y el DESIGN.md de sus propias filas, válidos una hora o más, y la ruta queda como reserva. → [decisión](decisiones/2026-10-10-las-imagenes-del-tablero-llegan-firmadas.md)
 - Una web solo se enseña como imagen (captura guardada), nunca se renderiza en vivo: la vista "En vivo" con iframe se retiró el 2026-10-06 por seguridad. → [Mapa](mapa.md)
 
 ## Datos
