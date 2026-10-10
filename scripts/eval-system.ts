@@ -103,7 +103,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
   const row: Row = { at: new Date().toISOString(), fixture: fx.slug, model: model || own, systemPrompt: SYSTEM_PROMPT_ID, brandPrompt: BRAND_PROMPT_ID, judge: judge ? JUDGE_MODEL : null };
   const language = toOutputLanguage(fx.language);
   // The fixtures froze an older "measured": built again from the frozen sites, as the code builds it now (pixels were not frozen)
-  const system: SystemSnapshot = { ...fx.system, refs: fx.system.refs.map((r) => r.kind === "text" ? r : { ...r, measured: measuredSummary(fx.sites[String(r.id)]?.spec ?? null, undefined) }) };
+  const system: SystemSnapshot = { ...fx.system, omitted: fx.system.omitted ?? 0, refs: fx.system.refs.map((r) => r.kind === "text" ? r : { ...r, measured: measuredSummary(fx.sites[String(r.id)]?.spec ?? null, undefined) }) };
 
   try {
     const sysReq = systemRequest(system, { language });

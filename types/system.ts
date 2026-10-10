@@ -76,6 +76,8 @@ export interface SystemRun {
   model: string;
   /** ISO */
   at: string;
+  /** References on the board the run left out (MAX_BOARD in lib/system.ts); runs before it was kept lack it */
+  omitted?: number;
 }
 
 export interface ProjectSystem {

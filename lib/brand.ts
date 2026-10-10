@@ -18,7 +18,7 @@ import type { OutputLanguage } from "./output-language";
 import { prompt, PROMPTS } from "./prompts";
 import { getSystem } from "./system";
 import { getDesignMd } from "./design-store";
-import { guideTexts } from "./brand-guides";
+import { guideCutLine, guideTexts, type GuideCut } from "./brand-guides";
 import { mediaKindOf } from "./url";
 import { familyKey } from "./font-names";
 import { resolveFace } from "./brand-fonts";
@@ -36,6 +36,8 @@ const T = schema.inspoItem;
 
 /** References measured per area: enough to read values from, not the whole board */
 const PER_AREA = 6;
+/** Pictures named to the model, for imagery.refs */
+const MAX_PICTURES = 80;
 
 // ─── What the model reads ────────────────────────────────────────────────────
 
@@ -130,9 +132,13 @@ export interface BrandSnapshot {
   measured: Record<string, unknown[]>;
   clientSite: Record<string, unknown> | null;
   guides: string[];
+  /** What the guides lost to READ_MAX; absent when nothing */
+  guidesCut?: GuideCut;
   keep: Record<string, unknown>;
   current: Record<string, unknown>;
   pictures: { id?: string; name: string; kind: string }[];
+  /** Pictures on the board past MAX_PICTURES; absent when none */
+  picturesOmitted?: number;
 }
 
 /** Per area, the references behind its decision (by code) with what their sites measured */
@@ -163,9 +169,11 @@ export function brandRequest(s: BrandSnapshot, language?: OutputLanguage): LlmIn
     `measured (JSON): ${JSON.stringify(s.measured)}`,
     s.clientSite ? `client_site (JSON): ${JSON.stringify(s.clientSite)}` : null,
     s.guides.length ? `guide (the team's own guidelines, verbatim):\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
+    s.guides.length ? guideCutLine(s.guidesCut) : null,
     Object.keys(s.keep).length ? `keep (JSON): ${JSON.stringify(s.keep)}` : null,
     `current (JSON): ${JSON.stringify(s.current)}`,
     `pictures on the board (JSON): ${JSON.stringify(s.pictures)}`,
+    s.picturesOmitted ? `${s.picturesOmitted} more pictures on the board were left out of this list; it is not every picture the team saved.` : null,
   ].filter(Boolean).join("\n\n");
   return { ...prompt("brand", { system: PROMPT, text, language }), schema: BrandOutSchema };
 }
@@ -186,7 +194,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       getSystem(organizationId, projectId), getBrand(organizationId, projectId), projectClient(organizationId, projectId), boardOf(organizationId, projectId),
     ]);
     if (!project) throw new HttpError(404, (await getErrors()).projectNotFound);
-    const [guides, chained] = await Promise.all([guideTexts(brand), input.auto ? brandChain(organizationId, projectId).then((c) => autoBrandPass(true, { ...c, now: new Date() })) : false]);
+    const [{ texts: guides, cut: guidesCut }, chained] = await Promise.all([guideTexts(brand), input.auto ? brandChain(organizationId, projectId).then((c) => autoBrandPass(true, { ...c, now: new Date() })) : false]);
     const auto = chained || brandStale(brand);
     if (!system.areas.some((a) => a.decision) && !client && !guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
 
@@ -200,6 +208,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     const wanted = [...new Set(areas.flatMap((a) => a.evidence.slice(0, PER_AREA).map((e) => e.ref)))];
     const sites = new Map(await Promise.all(wanted.map(async (c) => [c, { name: rowOf.get(c)!.name, spec: await specOf(rowOf.get(c)!.web) }] as const)));
     const clientSpec = client ? await specOf(client.web) : null;
+    const pictures = board.filter((r) => mediaKindOf(r.web) !== "text");
 
     const snapshot: BrandSnapshot = {
       name: project.name,
@@ -208,9 +217,11 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       measured: measuredOf(areas, sites),
       clientSite: client && clientSpec ? clientSiteOf(client.web, clientSpec) : null,
       guides,
+      ...(guidesCut ? { guidesCut } : {}),
       keep: Object.fromEntries((Object.keys(brand.meta) as BrandSection[]).filter((k) => !runMayWrite(brand, k) && !input.force?.includes(k)).map((k) => [k, brand[k]])),
       current: { intro: brand.intro, color: brand.color.items.map((c) => ({ name: c.name, hex: c.hex, role: c.role, group: c.group })), faces: brand.typography.faces.map((f) => ({ family: f.family, role: f.role })), voice: brand.voice },
-      pictures: board.filter((r) => mediaKindOf(r.web) !== "text").map((r) => ({ id: code.get(r.id), name: r.name, kind: mediaKindOf(r.web) })).slice(0, 80),
+      pictures: pictures.slice(0, MAX_PICTURES).map((r) => ({ id: code.get(r.id), name: r.name, kind: mediaKindOf(r.web) })),
+      ...(pictures.length > MAX_PICTURES ? { picturesOmitted: pictures.length - MAX_PICTURES } : {}),
     };
 
     let res: Awaited<ReturnType<typeof llm>>;

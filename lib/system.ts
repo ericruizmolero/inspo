@@ -29,7 +29,7 @@ import { areaCandidates } from "./candidates";
 import type { Brief } from "@/types/brief";
 import { briefForModel, briefPrompt } from "./brief";
 import { readBrand } from "@/types/brand";
-import { projectGuides } from "./brand-guides";
+import { guideCutLine, projectGuides, type GuideCut } from "./brand-guides";
 import { log } from "./log";
 
 const P = schema.project;
@@ -273,23 +273,42 @@ interface BoardRef {
   ref: Record<string, unknown>;
 }
 
+/** The board cut to MAX_BOARD: what the team filed under an area and the client's site first, then what the team wrote
+ *  about (a note, a comment, a highlight), then the newest. What is kept stays in board order */
+async function cutBoard<R extends { row: typeof T.$inferSelect; at: Date }>(organizationId: string, projectId: string, all: R[], commented: Set<string>): Promise<R[]> {
+  const W = schema.designWhy;
+  const webs = [...new Set(all.map(({ row }) => row.web))];
+  const [[project], areas, whys] = await Promise.all([
+    db.select({ brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1),
+    db.select({ evidence: A.evidence }).from(A).where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId))),
+    db.select({ url: W.url, why: W.whyJson }).from(W).where(and(eq(W.organizationId, organizationId), inArray(W.url, webs))),
+  ]);
+  const first = new Set([project?.brief?.clientItemId, ...areas.flatMap((a) => (Array.isArray(a.evidence) ? (a.evidence as SystemEvidence[]) : []).filter((e) => e.pinned).map((e) => e.itemId))]);
+  const pointed = new Set(whys.filter((w) => (w.why as DesignWhy | null)?.highlights?.length).map((w) => w.url));
+  const rank = ({ row }: R) => first.has(row.id) ? 0 : row.note.trim() || row.subNote?.trim() || commented.has(row.id) || pointed.has(row.web) ? 1 : 2;
+  const keep = new Set([...all].sort((a, b) => rank(a) - rank(b) || b.at.getTime() - a.at.getTime()).slice(0, MAX_BOARD).map(({ row }) => row.id));
+  return all.filter(({ row }) => keep.has(row.id));
+}
+
 /**
  * Everything known about each reference, the team's words first. The stamp fingerprints the words,
- * so a new note or comment reads as a stale run even when no reference was added.
+ * so a new note or comment reads as a stale run even when no reference was added. A reference's code is its place
+ * on the whole board (as lib/brand.ts names it), so the cut never renumbers one.
  */
-async function loadBoard(organizationId: string, projectId: string): Promise<{ refs: BoardRef[]; stamp: string }> {
+async function loadBoard(organizationId: string, projectId: string): Promise<{ refs: BoardRef[]; stamp: string; omitted: number }> {
   const rows = await db.select({ row: T, at: PI.createdAt }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
     .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
-  const board = rows.slice(0, MAX_BOARD);
-  const ids = board.map(({ row }) => row.id);
-  const threads = ids.length
+  const all = rows.map((r, i) => ({ ...r, code: `r${i + 1}` }));
+  const threads = all.length
     ? await db.select({ itemId: C.itemId, author: C.authorName, body: C.body, attachments: C.attachments }).from(C)
-        .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, ids))).orderBy(C.createdAt)
+        .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, all.map(({ row }) => row.id)))).orderBy(C.createdAt)
     : [];
   const byItem = new Map<string, string[]>();
   // The model reads no pictures here: a comment made with a screenshot says so, so its words ("these 3D…") are
   // read as pointing at something on the reference and not as a line on their own
   for (const c of threads) byItem.set(c.itemId, [...(byItem.get(c.itemId) ?? []), `${c.author}: ${c.body.trim().slice(0, 300)}${c.attachments?.length ? " (said with a screenshot attached, pointing at that part of the reference)" : ""}`]);
+  const board = all.length > MAX_BOARD ? await cutBoard(organizationId, projectId, all, new Set(byItem.keys())) : all;
+  const ids = board.map(({ row }) => row.id);
 
   // DESIGN.md sheets and "why it's here", only the ones that exist; never generated here
   const index = await getDesignMdIndex();
@@ -299,30 +318,32 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
     return { spec: entry?.spec ?? null, why: (why?.why as DesignWhy | undefined) ?? null };
   }));
 
-  const refs: BoardRef[] = board.map(({ row }, i) => {
+  const refs: BoardRef[] = board.map(({ row, code }, i) => {
     const item = rowToItem(row);
-    const comments = (byItem.get(row.id) ?? []).slice(-COMMENTS_PER_REF);
+    const said = byItem.get(row.id) ?? [];
+    const comments = said.slice(-COMMENTS_PER_REF);
+    const omitted = said.length - comments.length || undefined;
     const { spec, why } = sheets[i];
     const pointed = why?.highlights?.map((h) => ({ quote: h.quote, by: h.author, values: h.values?.length ? h.values : undefined, take: h.note || undefined })) ?? [];
     const base = summarize(item, row.tagsJson ?? undefined);
     return {
-      code: `r${i + 1}`,
+      code,
       itemId: row.id,
       words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
       // A pasted text is the project's content: the model gets its title and first lines, nothing to read a look from
       ref: mediaKindOf(row.web) === "text" ? {
-        id: `r${i + 1}`, kind: "text", name: base.name, curator_notes: base.curator_notes, excerpt: base.page,
-        team_comments: comments.length ? comments : undefined,
+        id: code, kind: "text", name: base.name, curator_notes: base.curator_notes, excerpt: base.page,
+        team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
       } : {
-        id: `r${i + 1}`, kind: mediaKindOf(row.web), ...base,
-        team_comments: comments.length ? comments : undefined,
+        id: code, kind: mediaKindOf(row.web), ...base,
+        team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
         team_pointed_at: pointed.length ? pointed : undefined,
         measured: measuredSummary(spec, row.tagsJson?.colors),
       },
     };
   });
   const stamp = createHash("sha1").update(JSON.stringify({ ids, w: refs.map((r) => r.words), m: PROMPTS.system.model, v: PROMPTS.system.version })).digest("hex").slice(0, 20);
-  return { refs, stamp };
+  return { refs, stamp, omitted: all.length - board.length };
 }
 
 /** The current board's stamp, so the client can tell a stale run without running */
@@ -357,6 +378,7 @@ References the team saved for this project: websites, images, posts. Each comes 
 - "measured": glance (one line per aspect) and layout, read from a website's live page; colors (name, hex, group: its palette, brand and accent first), families (family, role, weights), radius, density and theme, from the same page; pixels, the colours of the saved picture or page with their share of it (0 to 1), which images and posts have too.
 - The team's words say WHY a reference is here: that is where a decision starts. The measured values say WHAT it does: use them to make a decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - hex and families in "measured" are real values: a decision that uses one cites it literally, as given. Never round a hex or rename a family.
+- "team_comments" are the latest ones; "team_comments_omitted" counts the older ones left out.
 - Ids: use them exactly as given, never invent one.`;
 
 const CLIENT_SITE = `- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), its typefaces (as its stylesheets name them), its logo and its figures are the source of truth. Carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.`;
@@ -437,13 +459,17 @@ export interface SystemSnapshot {
   standing: { area: SystemArea; status: string; decision?: string; confidence?: number; evidence?: { ref: string; take?: string; filed_by_team?: boolean }[]; never?: string[] }[];
   /** The board as the model reads it, the client's site marked */
   refs: Record<string, unknown>[];
+  /** References on the board left out of this reading (MAX_BOARD) */
+  omitted: number;
   guides: string[];
+  /** What the guides lost to READ_MAX; absent when nothing */
+  guidesCut?: GuideCut;
 }
 
 /** The system pass's input as the database has it now */
 export async function loadSnapshot(organizationId: string, projectId: string): Promise<{ snapshot: SystemSnapshot; refs: BoardRef[]; stamp: string; current: ProjectSystem }> {
   const project = await projectRow(organizationId, projectId);
-  const [{ refs, stamp }, current, guides] = await Promise.all([loadBoard(organizationId, projectId), getSystem(organizationId, projectId), projectGuides(organizationId, projectId)]);
+  const [{ refs, stamp, omitted }, current, guides] = await Promise.all([loadBoard(organizationId, projectId), getSystem(organizationId, projectId), projectGuides(organizationId, projectId)]);
   const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
   const snapshot: SystemSnapshot = {
     name: project.name,
@@ -457,7 +483,9 @@ export async function loadSnapshot(organizationId: string, projectId: string): P
       never: a.never ? a.never.split("\n") : undefined,
     })),
     refs: markClient(refs, project.brief),
-    guides,
+    omitted,
+    guides: guides.texts,
+    ...(guides.cut ? { guidesCut: guides.cut } : {}),
   };
   return { snapshot, refs, stamp, current };
 }
@@ -472,7 +500,9 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
     briefPrompt(s.brief),
     `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
     `References on the board (JSON): ${JSON.stringify(s.refs)}`,
+    s.omitted ? `${s.omitted} references on the board were left out of this reading; what you see is not everything the team saved.` : null,
     s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
+    s.guides.length ? guideCutLine(s.guidesCut) : null,
     focusForModel(o.focus, s.standing.filter((a) => a.status === "team").map((a) => a.area)),
   ].filter(Boolean).join("\n\n");
   return { ...prompt("system", { system: SYSTEM, text, language: o.language }), schema: SystemOutSchema };
@@ -508,11 +538,11 @@ export function runSystem(input: { organizationId: string; projectId: string; us
     // Awaited: a brand pass asked for right after this one looks for this row (autoBrandPass)
     await recordUsage(input.usage, { action: "system", ...billOf(res), ref: `${auto ? AUTO_REF : ""}project:${input.projectId}` });
     const out = SystemOutSchema.parse(JSON.parse(res.text));
-    log.info("system.built", { ref: input.projectId, refs: refs.length, areasFilled: out.areas.filter((a) => a.decision.trim()).length, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
+    log.info("system.built", { ref: input.projectId, refs: refs.length, omitted: snapshot.omitted, areasFilled: out.areas.filter((a) => a.decision.trim()).length, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
 
     const now = new Date();
     await ensureHead(input.organizationId, input.projectId, now);
-    const run: SystemRun = { itemIds: refs.map((r) => r.itemId), stamp, model: res.model, at: now.toISOString() };
+    const run: SystemRun = { itemIds: refs.map((r) => r.itemId), stamp, model: res.model, at: now.toISOString(), ...(snapshot.omitted ? { omitted: snapshot.omitted } : {}) };
     await db.update(S).set({ summary: out.summary.trim().slice(0, 1200), runJson: run, updatedAt: now })
       .where(and(eq(S.organizationId, input.organizationId), eq(S.projectId, input.projectId)));
 
