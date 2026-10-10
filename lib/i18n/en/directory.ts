@@ -172,7 +172,7 @@ export const directory = {
     "https://type-01.com": "Type and design culture: fonts, studios and interviews.",
     "https://aessestudio.tumblr.com": "Aesse studio's Tumblr of graphic references. An endless moodboard.",
     "https://claudetype.com": "A French foundry with real character, Kalice among them. The specimens are immaculate.",
-    "https://klim.co.nz": "Söhne, Tiempos, Family. Savvia's fonts come from here; the specimens are a lesson.",
+    "https://klim.co.nz": "Söhne, Tiempos, Family. The specimens are a lesson.",
     "https://pangrampangram.com": "A foundry all over current sites. Free trial weights for laying things out.",
     "https://www.grillitype.com": "GT America, GT Sectra, GT Flexa. Interactive specimens that play with the font.",
     "https://abcdinamo.com": "A Berlin foundry, experimental and playful. A site with a lot of personality.",

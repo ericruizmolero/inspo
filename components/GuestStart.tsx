@@ -26,10 +26,7 @@ export default function GuestStart() {
   return (
     <div className="guest">
       <header className="guest__bar">
-        <span className="guest__brand">
-          <Logo />
-          <span>savvia.studio</span>
-        </span>
+        <Logo />
         <Button size="s" href="/login">{t.common.signIn}</Button>
       </header>
 
