@@ -31,6 +31,7 @@ import { briefForModel, briefPrompt } from "./brief";
 import { readBrand } from "@/types/brand";
 import { guideCutLine, projectGuides, type GuideCut } from "./brand-guides";
 import { log } from "./log";
+import { areaMemory, type AreaMemory } from "./area-comments";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -438,6 +439,14 @@ const CONFIDENCE = `- confidence, 0 to 100: how many references agree, and how c
 const SIGNALS_RULE = `- signals: 0 to 2 keys from SIGNALS ACROSS THE BOARD, of that area only, that back the decision. Name them for an area the team decided too, even though its text comes back unchanged. None when no counted signal backs the decision, and none for an empty area.
 - confidence, 0 to 100: how far the board backs the decision, grounded in the counts. One passing mention, or a signal 1 reference shows, is 25 to 40. A signal a quarter of the board or more shows, or two or three references that agree with concrete values, is 60 to 80. The team saying it in so many words, plus a signal most of the board shows or measured values, is 85 or more. Without the tally (no signals on the board), go by how many references agree and how concrete the evidence is.`;
 
+/** What the team said and decided about an area (areaMemory) weighs in every pass that decides one */
+const MEMORY = `- An area may carry what the team said and decided about it. "rejected" are proposals the team said no to, with who said no: never propose one of them again, nor anything equivalent in other words or values, whatever the board says now. Only the team brings one back, by deciding it.
+- "said" is the team speaking about the area, the latest lines of its conversation as "Name: text" ("saidOmitted" counts the older ones left out). It weighs like the team's words on the board: when a decision follows from a line of it, the why says so, naming who said it.
+- "rewritten" shows how the team corrects you: a decision of yours ("model") and what a person made of it ("team"). Follow the criterio of the team's version in that area and in similar ones, and never go back to yours.`;
+
+/** One area's memory as the per-area passes read it; nothing when the team has said and decided nothing there */
+const memoryLine = (m: AreaMemory | undefined) => m ? `What the team said and decided about this area (JSON): ${JSON.stringify(m)}` : "";
+
 const STYLE = `- Never write ids (r1, p2) or candidate codes in the text: name the reference or the value instead.
 - No markdown, no dashes as punctuation. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
 
@@ -456,6 +465,7 @@ THE SYSTEM AS IT STANDS
 RULES
 ${CLIENT_SITE}
 ${DECISION}
+${MEMORY}
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
 - Be faithful to what the team brought. The board speaks to an area only when: the team's words (a note, a comment, what they pointed at) are about it; a reference was filed under it ("filed_by_team"); or a reference is that area's own material (a type specimen or a foundry for typography, a palette for color, a logo for logo, an animation or a clip of an interaction for motion, an icon set for iconography, a photo or an illustration for imagery, pasted copy for voice). A website saved without words decides no area on its own: its measured brief only makes concrete an area something above already opened. Two saved websites are not eight decided areas.
 - "why" is the criterio behind the decision: why this and not the rest, in 1 or 2 sentences (at most 40 words), rooted in the brief and the team's words. Empty when the area is empty.
@@ -506,7 +516,7 @@ export interface SystemSnapshot {
   name: string;
   brief: Partial<Brief> | null;
   /** The system as it stands, its references named by their code on the board */
-  standing: { area: SystemArea; status: string; decision?: string; confidence?: number; evidence?: { ref: string; take?: string; filed_by_team?: boolean }[]; never?: string[] }[];
+  standing: ({ area: SystemArea; status: string; decision?: string; confidence?: number; evidence?: { ref: string; take?: string; filed_by_team?: boolean }[]; never?: string[] } & AreaMemory)[];
   /** The board as the model reads it, the client's site marked */
   refs: Record<string, unknown>[];
   /** References on the board left out of this reading (MAX_BOARD) */
@@ -521,7 +531,7 @@ export interface SystemSnapshot {
 /** The system pass's input as the database has it now */
 export async function loadSnapshot(organizationId: string, projectId: string): Promise<{ snapshot: SystemSnapshot; refs: BoardRef[]; stamp: string; current: ProjectSystem }> {
   const project = await projectRow(organizationId, projectId);
-  const [{ refs, stamp, omitted }, current, guides] = await Promise.all([loadBoard(organizationId, projectId), getSystem(organizationId, projectId), projectGuides(organizationId, projectId)]);
+  const [{ refs, stamp, omitted }, current, guides, memory] = await Promise.all([loadBoard(organizationId, projectId), getSystem(organizationId, projectId), projectGuides(organizationId, projectId), areaMemory(organizationId, projectId)]);
   const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
   const snapshot: SystemSnapshot = {
     name: project.name,
@@ -533,6 +543,7 @@ export async function loadSnapshot(organizationId: string, projectId: string): P
       confidence: a.decision ? a.confidence : undefined,
       evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take || undefined, filed_by_team: e.pinned || undefined })) : undefined,
       never: a.never ? a.never.split("\n") : undefined,
+      ...memory[a.area],
     })),
     refs: markClient(refs, project.brief),
     omitted,
@@ -678,6 +689,7 @@ ${CLIENT_SITE}
 - Directions come from the board, not from taste. Two references that pull different ways make two directions. If the board supports only one, return it alone, plus a second only if the team's words make another plausible.
 - Directions differ in substance (a serif headline vs a grotesque one; a monochrome palette vs one accent; dense bento vs an airy single column), never only in wording.
 ${DECISION}
+${MEMORY}
 - "why": one sentence of at most 24 words saying what the project would feel like if it goes this way. No verdict, no advice.
 ${EVIDENCE(20)}
 - Order the directions from best supported to least.
@@ -697,7 +709,7 @@ export interface AreaOption { decision: string; why: string; evidence: SystemEvi
 export async function proposeOptions(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; language?: OutputLanguage; onlyItemIds?: string[] }): Promise<AreaOption[]> {
   const area = await cleanArea(input.area);
   const project = await projectRow(input.organizationId, input.projectId);
-  const [{ refs: all }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+  const [{ refs: all }, current, memory] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId), areaMemory(input.organizationId, input.projectId)]);
   // The team may hand-pick the references this area should be decided from
   const only = input.onlyItemIds?.length ? new Set(input.onlyItemIds) : null;
   const refs = only ? all.filter((r) => only.has(r.itemId)) : all;
@@ -710,6 +722,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     `Project: ${project.name}`,
     `Area to settle: ${area}`,
     standing.never ? `The team ruled these out for this area, never propose them (one per line):\n${standing.never}` : "",
+    memoryLine(memory[area]),
     briefPrompt(project.brief),
     `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
@@ -1137,6 +1150,7 @@ ${CLIENT_SITE}
 - Every candidate gets "keep" (true or false) and a "reason" of at most 16 words: what it brings to this project, or why it goes.
 - Judge against the brief and the team's words first, then against coherence: one or two families, one palette logic, one easing. Keeping everything is not deciding. Keeping nothing is right only when nothing fits.
 ${DECISION} Build it from what you kept, with the concrete values the candidates carry.
+${MEMORY}
 - "why": the criterio, in 1 or 2 sentences (at most 40 words): why this and not the rest, rooted in the brief and what the team said. The team reads this part twice.
 ${CONFIDENCE}
 - Ids: use them exactly as given in "id", never invent one.
@@ -1152,7 +1166,7 @@ const CurateSchema = z.object({
 export async function curateArea(input: { organizationId: string; projectId: string; area: string; usage: UsageCtx; language?: OutputLanguage; keep?: Record<string, boolean> }): Promise<ProjectSystem> {
   const area = await cleanArea(input.area);
   const project = await projectRow(input.organizationId, input.projectId);
-  const [visuals, { refs }, current] = await Promise.all([boardVisuals(input.organizationId, input.projectId), loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
+  const [visuals, { refs }, current, memory] = await Promise.all([boardVisuals(input.organizationId, input.projectId), loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId), areaMemory(input.organizationId, input.projectId)]);
   const candidates = areaCandidates(area, visuals);
   if (!candidates.length) throw new HttpError(400, (await getErrors()).systemNoCandidates);
   const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
@@ -1162,6 +1176,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
     `Area: ${area}`,
     briefPrompt(project.brief),
     `The area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, why: standing.why, source: standing.source } : null)}`,
+    memoryLine(memory[area]),
     input.keep && Object.keys(input.keep).length ? `The team already settled some candidates, keep these verdicts exactly (JSON): ${JSON.stringify(input.keep)}` : "",
     `Candidates (JSON): ${JSON.stringify(candidates.map((c) => ({ id: c.id, label: c.label, detail: c.detail, refs: c.refs.map((id) => codeOf.get(id) ?? id), ...c.visual })))}`,
     `References on the board (JSON): ${JSON.stringify(markClient(refs, project.brief))}`,
