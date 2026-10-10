@@ -7,7 +7,8 @@ import { pgTable, text, integer, bigint, real, boolean, timestamp, jsonb, index,
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { Brief } from "@/types/brief";
 import { OUTPUT_LANGUAGES } from "../output-language";
-import { LOCALES } from "../i18n/locale";
+import { LOCALES, type Locale } from "../i18n/locale";
+import type { PlanKey } from "../plans";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -158,10 +159,10 @@ export const waitlistEntry = pgTable("waitlist_entry", {
   tools: text("tools"),
   website: text("website"),
   note: text("note"),
-  locale: text("locale").notNull().default("en"),
+  locale: text("locale").$type<Locale>().notNull().default("en"),
   /** landing | login | referral:<code> | utm_* */
   source: text("source").notNull(),
-  status: text("status").notNull().default("pending"),
+  status: text("status").$type<WaitlistStatus>().notNull().default("pending"),
   /** Higher goes first when a wave is picked by hand */
   priority: integer("priority").notNull().default(0),
   inviteId: text("invite_id").references(() => accessInvite.id, { onDelete: "set null" }),
@@ -187,7 +188,7 @@ export const accessInvite = pgTable("access_invite", {
   wave: text("wave"),
   maxUses: integer("max_uses").notNull().default(1),
   uses: integer("uses").notNull().default(0),
-  grantsPlan: text("grants_plan"),
+  grantsPlan: text("grants_plan").$type<PlanKey>(),
   grantsUntil: timestamp("grants_until", { withTimezone: true, mode: "date" }),
   expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }),
   revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),

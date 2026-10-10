@@ -74,6 +74,7 @@ jobs:
       - run: npm ci
       - run: npm run db:migrate
       - run: npm run check:seats
+      - run: npm run check:access
       - run: npm run check:locale
       - run: npm run check:url-keys
       - run: npm run check:notifications

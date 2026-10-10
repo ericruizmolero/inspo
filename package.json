@@ -20,6 +20,7 @@
     "apple:secret": "tsx --conditions=react-server scripts/apple-secret.ts",
     "admin": "tsx --conditions=react-server scripts/set-admin.ts",
     "check:seats": "tsx --conditions=react-server scripts/check-seats.ts",
+    "check:access": "tsx --conditions=react-server scripts/check-access.ts",
     "check:invites": "tsx --conditions=react-server scripts/check-invite-flow.ts",
     "check:locale": "tsx --conditions=react-server scripts/check-locale.ts",
     "check:design": "tsx --conditions=react-server scripts/check-design.ts",
