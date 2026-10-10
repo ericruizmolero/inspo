@@ -24,14 +24,13 @@ import type { InspoItem, PolishChoice, PolishVote, Project } from "@/types/inspo
 import { finishedOf, openVotes, outcomeOf } from "@/lib/polish-tally";
 import { fmtDate } from "@/lib/i18n/format";
 import { keyOf } from "@/lib/board";
-import { EASE_WIND, GHOST_MS, MORPH_MS, MORPH_STEP_MS, coverWhileFlying, peekHandoff, takeHandoff, type Shot } from "./view-morph";
-import { mediaKindOf, postOf, postThumbKind, videoEmbedOf } from "@/lib/url";
+import { MORPH_MS, peekHandoff, takeHandoff } from "./view-morph";
+import { mediaKindOf } from "@/lib/url";
 import { Busy, Button, EmptyState, IconButton, Key } from "@/components/criterio";
-import { cachedCardImage, type NoteCaption } from "./InspoCard";
-import { PostBox } from "./PostView";
-import LoopVideo from "./LoopVideo";
-import { usePost } from "./post-cache";
-import type { Post } from "@/lib/posts";
+import type { NoteCaption } from "./InspoCard";
+import { AUTO_SPEED, ANGLE, CARD_H, EASE_OUT, EDGE_OFFSET, EDGE_SCALE, ORBIT, SCROLL_EASE, Y_SPACING, clamp, mod, nearest, paint, settleFromBoard, stillMotion, type Engine } from "./polish-tornado";
+import { Face, Picture, postHasMedia } from "./PolishFace";
+import Flyer, { FLY_MS, LAND, LANDING, bump, type Flight } from "./PolishFlyer";
 import PersonAvatar from "./PersonAvatar";
 import { useT } from "./I18nProvider";
 import SoundControl from "./SoundControl";
@@ -39,37 +38,14 @@ import ZoomPill from "./ZoomPill";
 import { cue } from "@/lib/ui-sounds";
 import "./PolishView.css";
 
-// The tornado, in Osmo's own terms
-const ANGLE = 30; // degrees between one card and the next
-const Y_SPACING = 0.3; // how far down the next card sits, in card heights
-const EDGE_OFFSET = 2; // card heights past the screen's edge before a card starts to shrink
-const EDGE_SCALE = 0.5; // card heights it takes to shrink to nothing
-const ORBIT = 35; // radius of the orbit, in em
-const AUTO_SPEED = 0.00325; // cards per frame it turns at on its own
-const SCROLL_EASE = 0.1; // how fast it picks its own speed up again
-const BACK_FOG = 0.5; // how far the cards at the back sink into the page: nearly all the way
-const BACK_BLUR = 0.6; // em of blur at the very back
-const CARD_H = 15; // em: the nominal card the spacing is counted in (Osmo's is 22.5 tall; a board is mostly sites, 16:10)
-// Ours: the card facing the screen takes more room, and its neighbours step aside
-const CARD_W = 18; // em: a card's width on the orbit
-const FRONT_W = 30; // em: its width facing the screen. Cards are laid out at this width (.polish__card) and drawn smaller on the orbit, so the one in front is sharp
-const FRONT_PUSH = 6; // em it comes towards the eye
-const FRONT_SCALE = 1 - FRONT_PUSH / 75; // what undoes the perspective's own enlargement (the stage's is 75em)
-const SPREAD = 0.5; // card steps its neighbours move away
-const SIDE_FOG = 0.46; // the others, well into the page: with the blur, what says which card is being decided
-const NEAR_BLUR = 0.42; // em of blur on the nearest of the others: only the card in front is in focus, and the rest read as out of it at a glance
 // How it stops and goes
 const GLIDE_MS = 150; // time constant of the glide to a card
-const CLOSE_MS = 130; // and of the gap closing when a card leaves the board
 const THROW_FRAMES = 10; // a released drag lands where its speed would take it in this many frames
 const WHEEL_STEP = 1.4; // card gaps of scroll per card
 const NO_FADE = { animation: "none" } as const, BAR_WAITS = { animationDelay: `${MORPH_MS * 0.5}ms` } as const;
-const MORPH_ROUND = 1.5; // card steps further round the orbit a card comes in from, arriving from the board (components/view-morph.ts)
 const TICK_MS = 70; // the least between two ticks of the tornado turning under the hand: a fast spin is a purr, not a rattle
 const DRAG_SLOP = 6; // px before a press is a drag
 const SETTLE_MS = 140; // this long without a scroll, it rests on the nearest card
-const FLY_MS = 640;
-const LAND = 0.8; // the part of the flight after which the card is on its tab: the tab bumps, and a forgotten card is taken out of the project then, so the Inbox counts it as it arrives
 // The zoom: how big the tornado's em is drawn, 1 being its own size
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 1.5;
@@ -77,25 +53,12 @@ const ZOOM_STOPS = [0.5, 0.65, 0.8, 1, 1.25, 1.5]; // where the buttons stop; a 
 const ZOOM_MS = 110; // time constant of the glide from one size to another
 const PINCH_GAIN = 0.01; // how much a pixel of pinch (or of ctrl + wheel) zooms
 const PINCH_MAX = 24; // and the most one event counts for: a mouse wheel's notch is a step, not a jump
-const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
-const EASE_FLY = "cubic-bezier(0.55, 0, 0.25, 1)";
-/** Where a decided card lands: the tab that stands for the place it goes to */
-const LANDING = { inbox: '.island a[href*="in=inbox"]', board: '.topbar__modes [role="tab"]', polish: '.topbar__modes [role="tab"]:nth-of-type(2)' } as const;
-/** The tab a card landed on takes it with a small bump */
-const bump = (tab: HTMLElement) => tab.animate([{ transform: "scale(1)" }, { transform: "scale(1.16)" }, { transform: "scale(1)" }], { duration: 380, easing: EASE_OUT });
 
 /** The card each project's view last opened on, so the next time it opens on another */
 const lastFront = new Map<string, string>();
 const KEPT_KEY = (projectId: string) => `inspo:polish-kept:${projectId}`;
 const ZOOM_KEY = "inspo:polish-zoom";
 
-const mod = (a: number, n: number) => ((a % n) + n) % n;
-const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
-const easeInOut = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2); // power2.inOut
-const smooth = (x: number) => x * x * (3 - 2 * x);
-/** The position nearest to `p` where the card at `index` of a board of `n` sits */
-const nearest = (index: number, p: number, n: number) => index + n * Math.round((p - index) / n);
-const stillMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const pctOf = (zoom: number) => Math.round(zoom * 100);
 /** The zoom kept from the last visit, the same for every project */
 function keptZoom(): number {
@@ -106,124 +69,6 @@ function keptZoom(): number {
   return 1;
 }
 
-interface CardNode { el: HTMLElement; fog: HTMLElement; key: string; k: number; off: number; rel: number; z: number; blur: number; shown: boolean }
-interface Engine {
-  /** Which position of the tornado faces the screen (a card every whole number), its speed in cards per frame, and
-   *  the card it is gliding to, if any */
-  p: number; v: number; target: number | null;
-  /** The way it turns on its own: the way it was last pushed */
-  dir: 1 | -1;
-  dragging: boolean;
-  /** When the last scroll was: a moment later it rests on the nearest card */
-  scrolled: number;
-  /** How much room the card in front takes: 1 while there is something to decide, 0 once the board is done */
-  lift: number; done: boolean;
-  still: boolean; em: number; h: number; base: number;
-  /** The zoom on screen and the one it is gliding to; `em` is the stage's own em (`baseEm`) times the first */
-  zoom: number; zoomTo: number; baseEm: number;
-  /** The position it last came to rest on: that card gets its bigger picture */
-  rested: number | null;
-  nodes: CardNode[];
-}
-
-/** Where a card stands `rel` card steps from the front: its transform, how far it has sunk into the page (fog),
- *  its blur in half pixels, its depth order, and how much of it is left at the screen's edge (0: out of sight) */
-function pose(e: Engine, rel: number) {
-  const cardH = CARD_H * e.em, gap = cardH * Y_SPACING, radius = ORBIT * e.em;
-  const fadeStart = e.h / 2 + cardH * EDGE_OFFSET, fadeLen = cardH * EDGE_SCALE, rest = CARD_W / FRONT_W;
-  // The card facing the screen comes forward and grows; the ones either side of it stand a little further off
-  const front = smooth(clamp(1 - Math.abs(rel), 0, 1)) * e.lift;
-  const at = rel + SPREAD * clamp(rel, -1, 1) * e.lift;
-  const y = at * gap;
-  const edge = easeInOut(clamp((fadeStart - Math.abs(y)) / fadeLen, 0, 1));
-  const deg = at * ANGLE, rad = (deg * Math.PI) / 180, cos = Math.cos(rad);
-  const scale = edge * (rest + front * (FRONT_SCALE - rest));
-  const transform = `translate3d(${(Math.sin(rad) * radius).toFixed(2)}px,${y.toFixed(2)}px,${((cos - 1) * radius).toFixed(2)}px) rotateY(${deg.toFixed(3)}deg) translateZ(${(front * FRONT_PUSH * e.em).toFixed(2)}px) scale(${scale.toFixed(4)})`;
-  const back = (1 - cos) / 2;
-  const fog = Math.min(0.9, back * BACK_FOG + (1 - front) * SIDE_FOG);
-  // (with the board done the whole tornado is out of focus as one picture, in CSS: no card needs its own)
-  const blur = e.done ? 0 : Math.round(((1 - front) * NEAR_BLUR + back * BACK_BLUR) * e.em * 2) / 2;
-  const z = Math.round((cos + 1) * 500 + front * 100);
-  return { transform, fog, blur, z, edge };
-}
-
-/** One frame: every mounted card to its place on the orbit */
-function paint(e: Engine, dt: number) {
-  const decay = Math.exp(-dt / CLOSE_MS);
-  for (const nd of e.nodes) {
-    if (nd.off) {
-      nd.off *= decay;
-      if (Math.abs(nd.off) < 0.002) nd.off = 0;
-    }
-    const rel = nd.k - e.p + nd.off;
-    nd.rel = rel;
-    const p = pose(e, rel);
-    if (p.edge < 0.001) {
-      if (nd.shown) { nd.el.style.visibility = "hidden"; nd.shown = false; }
-      continue;
-    }
-    if (!nd.shown) { nd.el.style.visibility = ""; nd.shown = true; }
-    nd.el.style.transform = p.transform;
-    nd.fog.style.opacity = p.fog.toFixed(3);
-    // Blur in half pixels: the card is only drawn again when it crosses a step
-    if (p.blur !== nd.blur) { nd.blur = p.blur; nd.el.style.filter = p.blur ? `blur(${p.blur}px)` : ""; }
-    if (p.z !== nd.z) { nd.z = p.z; nd.el.style.zIndex = String(p.z); }
-  }
-}
-
-/** The reference's picture, with the fallbacks a small thumbnail has (components/Thumb.tsx), or its initial */
-function Picture({ item, image, large }: { item: InspoItem; image: string | null; /** A bigger copy, laid over it once it loads (the card in front) */ large?: string | null }) {
-  const [at, setAt] = useState(0);
-  const [noLarge, setNoLarge] = useState(false);
-  const embed = mediaKindOf(item.web) === "video" ? videoEmbedOf(item.web) : null;
-  const srcs = [image, embed?.poster, cachedCardImage(item.web), `/api/og?url=${encodeURIComponent(item.web)}`].filter((x): x is string => !!x);
-  const src = srcs[at];
-  if (!src) return <span className="t-display polish__initial" aria-hidden>{item.name.slice(0, 1).toUpperCase()}</span>;
-  return (
-    <>
-      <img key={src} src={src} alt="" draggable={false} decoding="async" onError={() => setAt((i) => i + 1)} />
-      {large && large !== src && !noLarge && <img key={large} className="polish__hi" src={large} alt="" draggable={false} decoding="async" onError={() => setNoLarge(true)} />}
-    </>
-  );
-}
-
-type Flight = { id: number; item: InspoItem; to: keyof typeof LANDING; x: number; y: number; w: number; h: number };
-
-/** A decided card on its way: a copy of it, from where it stood to the tab of the place it goes to (the board for
- *  one kept, the Inbox for one forgotten, Polish itself for a vote), which takes it with a small bump. The card
- *  itself has already left the tornado */
-function Flyer({ flight, image, text, onGone }: { flight: Flight; image: string | null; text: string; onGone: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let anim: Animation;
-    if (stillMotion()) anim = el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, fill: "forwards" });
-    else {
-      // Where the tab is not on screen (the island on a phone), to the corner the menu opens from
-      const tab = document.querySelector<HTMLElement>(LANDING[flight.to]);
-      const to = tab && tab.offsetParent ? tab.getBoundingClientRect() : null;
-      const r = el.getBoundingClientRect();
-      const dx = (to ? to.left + to.width / 2 : 32) - (r.left + r.width / 2), dy = (to ? to.top + to.height / 2 : 28) - (r.top + r.height / 2);
-      const landed = `translate3d(${dx.toFixed(1)}px, ${dy.toFixed(1)}px, 0) rotate(${flight.to === "inbox" ? -8 : 8}deg) scale(${Math.max(0.03, 28 / r.width).toFixed(3)})`;
-      anim = el.animate([
-        { transform: "translate3d(0, 0, 0) rotate(0deg) scale(1)", opacity: 1 },
-        { transform: landed, opacity: 1, offset: 0.9 },
-        { transform: landed, opacity: 0 },
-      ], { duration: FLY_MS, easing: EASE_FLY, fill: "forwards" });
-      if (to && tab) window.setTimeout(() => bump(tab), FLY_MS * LAND);
-    }
-    void anim.finished.then(onGone, onGone);
-    // Once, when it mounts: it only exists to leave
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <div ref={ref} className="polish__fly" aria-hidden style={{ left: flight.x, top: flight.y, width: flight.w, height: flight.h }}>
-      <Face item={flight.item} image={image} text={text} />
-    </div>
-  );
-}
-
 /** One answer, to take back: `prev` is this person's vote before it (a doubt voted again); `ruled` is a doubt
  *  whoever closes decided, which is not a vote */
 type Step = { kind: PolishChoice; item: InspoItem; prev?: PolishChoice | null; ruled?: boolean };
@@ -231,55 +76,6 @@ type Step = { kind: PolishChoice; item: InspoItem; prev?: PolishChoice | null; r
 const NOTE_MAX = 280; // characters of a note that reach the page: two lines show, and a long one is read on its sheet
 /** Cards this far from the one in front ask for their post; further round the orbit the name's words do */
 const POST_NEAR = 3;
-
-/** A post's picture is a copy of its own media when it has any (lib/posts.ts: photo-1.jpg, poster-video.jpg); so
- *  its card knows without reading the post whether it has something to look at or only words */
-const postHasMedia = (image: string | null): image is string => !!image && /\/(photo-\d+|poster-(video|gif))\.\w+(\?.*)?$/.test(image);
-
-/** Until the post is read, what its name already says ("Wilson · Ferndesk has been live…", lib/posts.ts postName),
- *  as a post with no picture and no date */
-function postFromName(item: InspoItem): Post {
-  const at = item.name.indexOf(" · ");
-  const author = at > 0 ? item.name.slice(0, at) : item.name, text = at > 0 ? item.name.slice(at + 3) : "";
-  return { id: item.web, url: item.web, author, handle: postOf(item.web)?.user ?? "", avatar: null, text, createdAt: null, media: [], savedAt: "" };
-}
-
-/** A post on its card: the same box its sheet shows (PostView's PostBox), read once per session (post-cache.ts).
- *  Only a card near the front asks for it; the rest show what the name says until they come round */
-function PostCard({ item, near }: { item: InspoItem; near: boolean }) {
-  const read = usePost(near ? item.web : null);
-  // Longer than the card's cap (CSS): it fades out at the foot, as its card on the board does
-  const ref = useRef<HTMLDivElement>(null);
-  const [cut, setCut] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const look = () => setCut(el.scrollHeight > el.clientHeight + 1);
-    look();
-    const ro = new ResizeObserver(look);
-    ro.observe(el);
-    return () => ro.disconnect();
-  });
-  return <div ref={ref} className={`polish__post${cut ? " is-cut" : ""}`}><PostBox post={read?.post ?? postFromName(item)} playing={false} /></div>;
-}
-
-/** The reference as something to look at: a text is its page of words; a post with a photo or a video is that
- *  alone (its video loops, muted, on the card in front), and one that is only words is its post as the sheet shows
- *  it; anything else is its picture. `near` and `front` are for a post: whether to read it, and whether it plays */
-function Face({ item, image, large, text, near = true, front = false }: { item: InspoItem; image: string | null; large?: string | null; text: string; near?: boolean; front?: boolean }) {
-  const { t } = useT();
-  const kind = mediaKindOf(item.web);
-  if (kind === "text") return <div className="polish__text"><span className="polish__text-kind">{t.card.text}</span><b className="t-title-s">{item.name}</b><p className="t-small">{text}</p></div>;
-  if (kind === "post" && !postHasMedia(image)) return <PostCard item={item} near={near} />;
-  // A post's copy of its video or gif sits next to its frame (lib/posts.ts): poster-video.jpg → video.mp4
-  const loop = kind === "post" && front && image && postThumbKind(image) ? image.replace(/poster-(video|gif)\.\w+(\?.*)?$/, "$1.mp4") : null;
-  return (
-    <>
-      <Picture item={item} image={image} large={large} />
-      {loop && <LoopVideo src={loop} className="polish__loop" />}
-    </>
-  );
-}
 
 export default function PolishView({ project, items, imageOf, largeImageOf, ratioOf, textOf, noteOf, active, votes, me, members, canClose, onVote, onClose, onRestore, onOpenItem, onBoard, onSystem }: {
   project: Project;
@@ -493,54 +289,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     const shots = takeHandoff("board")?.shots;
     setTimeout(() => { arriving.current = false; }, MORPH_MS + 200);
     if (!shots || e.still || !ln) return;
-    const sr = stage.getBoundingClientRect(), cx = sr.left + sr.width / 2, cy = sr.top + sr.height * 0.46, cardW = FRONT_W * e.em;
-    const reads = e.nodes.map((nd) => ({ nd, w: nd.el.offsetWidth, h: nd.el.offsetHeight }));
-    /** The pose, flat and facing the screen, that covers a box of the board exactly */
-    const flat = (shot: Shot, w: number, h: number) => `translate3d(${(shot.x + shot.w / 2 - cx).toFixed(2)}px,${(shot.y + shot.h / 2 - cy).toFixed(2)}px,0px) rotateY(0deg) translateZ(0px) scale(${(shot.w / w).toFixed(4)}, ${(shot.h / h).toFixed(4)})`;
-    const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 6) * MORPH_STEP_MS, easing: EASE_WIND, fill: "backwards" });
-    // Depth comes to every card at once, on the flight's own clock, whatever its own delay: the tornado's blur and fog
-    // settle over all of them together as they land (left for after the landing, they read as a second change). The
-    // cards the board was not showing come in over the first half, all together too (each on its own clock, the far
-    // ones read as late, as if something had failed)
-    const look: KeyframeAnimationOptions = { duration: MORPH_MS, easing: EASE_WIND, fill: "backwards" };
-    const rise: KeyframeAnimationOptions = { duration: MORPH_MS * 0.5, easing: EASE_OUT, fill: "backwards" };
-    const used = new Set<string>();
-    for (const { nd, w, h } of reads) {
-      const key = nd.key.slice(0, nd.key.lastIndexOf("#")), rel = nd.k - e.p, end = pose(e, rel);
-      const shot = used.has(key) ? undefined : shots.get(key);
-      if (shot && w && h) {
-        used.add(key);
-        const box = nd.el.querySelector<HTMLElement>(".polish__in");
-        if (box) coverWhileFlying(box, shot, MORPH_MS + Math.min(Math.abs(rel), 6) * MORPH_STEP_MS);
-        nd.el.animate([{ transform: flat(shot, w, h) }, { transform: end.transform }], timing(rel));
-      } else if (nd.shown) {
-        const from = pose(e, rel + Math.sign(rel || 1) * MORPH_ROUND);
-        nd.el.animate([{ transform: from.transform }, { transform: end.transform }], timing(rel));
-        nd.el.animate([{ opacity: 0 }, { opacity: 1 }], rise);
-      } else continue;
-      nd.el.animate([{ filter: "blur(0px)" }, { filter: `blur(${end.blur}px)` }], look);
-      nd.fog.animate([{ opacity: 0 }, { opacity: end.fog }], look);
-    }
-    // The board's other cards: the undecided have a place round the orbit out of sight, the decided none; either way
-    // a copy fades where it stood, drawing in a little (copies flying off to their place read as cards shooting away)
-    const ghosts: HTMLElement[] = [];
-    for (const [key, shot] of shots) {
-      if (used.has(key)) continue;
-      const g = document.createElement("div");
-      g.className = "polish__card polish__ghost";
-      g.setAttribute("aria-hidden", "true");
-      g.style.aspectRatio = `${shot.w} / ${shot.h}`;
-      const sheet = document.createElement("i");
-      sheet.className = "polish__ghost-in";
-      if (shot.image) sheet.style.backgroundImage = `url("${shot.image.replace(/"/g, "%22")}")`;
-      g.append(sheet);
-      ghosts.push(g);
-      const start = flat(shot, cardW, (cardW * shot.h) / shot.w);
-      const a = g.animate([{ transform: start, opacity: 1 }, { transform: `${start} scale(0.94)`, opacity: 0 }], { duration: GHOST_MS, easing: EASE_OUT, fill: "forwards" });
-      const gone = () => g.remove();
-      void a.finished.then(gone, gone);
-    }
-    stage.append(...ghosts);
+    settleFromBoard(e, stage, shots);
   });
 
   // The size of things: the em the cards are drawn in, and how many fit either side of the screen
