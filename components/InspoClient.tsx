@@ -123,7 +123,7 @@ export default function InspoClient({
   initialPolishVotes?: PolishVote[];
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
-  /** What the views around each project's system read of it, by project id (lib/system.ts loadSystemSummaries) */
+  /** What the views around each project's system read of it, by project id (lib/system/areas.ts loadSystemSummaries) */
   initialSummaries?: Record<string, SystemSummary>;
   aiEnabled?: boolean;
   user: SessionUser;

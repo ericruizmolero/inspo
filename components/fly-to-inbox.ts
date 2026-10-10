@@ -1,6 +1,6 @@
 // A card taken out of a project on the board leaves the way a forgotten one does in Polish: a copy of it flies
 // from where it stands to the Inbox tab of the island, which takes it with a small bump. The same flight as
-// PolishView's Flyer (its numbers are these), drawn here without React because the card is about to unmount.
+// PolishFlyer.tsx (its numbers are these), drawn here without React because the card is about to unmount.
 
 const FLY_MS = 640;
 /** The part of the flight after which the card is on the tab: the tab bumps and the card leaves the project then */
