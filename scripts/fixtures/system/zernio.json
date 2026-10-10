@@ -76,6 +76,17 @@
      "Inventar colores fuera de la paleta",
      "Un segundo acento: el naranja #EB3514 es el único",
      "El bloque de código oscuro del hero de la web original: pasa a ventana clara"
+    ],
+    "said": [
+     "Eric: El blanco puro y la tinta #312421 son de la web vieja; la v2 va en cálido.",
+     "Eric: La tinta del texto es #17130F, el casi negro cálido de la marca madre; no la cambiéis."
+    ],
+    "rejected": [
+     {
+      "decision": "Fondo blanco puro #FFFFFF en toda la página y tinta #312421, los valores que mide la web original.",
+      "why": "Son los colores medidos de la web de partida.",
+      "by": "Eric"
+     }
     ]
    },
    {
