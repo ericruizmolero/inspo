@@ -13,5 +13,5 @@ export async function GET(req: NextRequest) {
   if (!projectId) return Response.json({ error: "projectId" }, { status: 400 });
   const measures = await loadProjectMeasures(ctx.workspace.id, projectId);
   if (!measures) return Response.json({ error: "project" }, { status: 404 });
-  return Response.json(measures, { headers: { "Cache-Control": "private, max-age=60" } });
+  return Response.json(measures, { headers: { "Cache-Control": "no-store" } });
 }
