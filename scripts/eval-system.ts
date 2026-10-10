@@ -13,6 +13,11 @@
 //   npm run eval:system -- --models a/b,c/d --runs 2   → other models for both passes, each fixture twice
 //   npm run eval:system -- --only zernio --no-judge    → one fixture, hard checks only
 //   npm run eval:system -- --table                     → the table, no calls
+// The brief's draft (lib/brief-draft.ts) has its own cases in scripts/fixtures/brief: a client's site as the draft
+// reads it, frozen. Hard checks only (every field filled and well formed, the voice samples copied verbatim), one
+// row each in scripts/evals/brief.jsonl. A fraction of a cent a case.
+//   npm run eval:system -- --draft                                → every draft case, on the brief task's model
+//   npm run eval:system -- --draft --freeze <url> <slug> [lang]  → freezes a site as a draft case (needs the database for its DESIGN.md)
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { promises as fs } from "fs";
@@ -217,7 +222,71 @@ async function readRows(): Promise<Row[]> {
   return text.split("\n").filter(Boolean).map((l) => JSON.parse(l) as Row);
 }
 
+// ─── The brief's draft ──────────────────────────────────────────────────────────────────────────
+
+const DRAFT_FIXTURES = "scripts/fixtures/brief";
+const DRAFT_RESULTS = "scripts/evals/brief.jsonl";
+
+interface DraftFixture { slug: string; language: string; frozenAt: string; sources: import("../lib/brief-draft").DraftSources }
+
+async function freezeDraft(web: string, slug: string, language = "es") {
+  const { fetchSiteText } = await import("../lib/extract");
+  const { getDesignMd } = await import("../lib/design-store");
+  const site = await fetchSiteText(web);
+  if (!site) throw new Error(`${web} did not answer`);
+  const design = await getDesignMd(web).catch(() => null);
+  const fx: DraftFixture = { slug, language, frozenAt: new Date().toISOString(), sources: { web, site, designMd: design?.markdown ?? null, tagsSector: null, guides: [] } };
+  await fs.mkdir(DRAFT_FIXTURES, { recursive: true });
+  await fs.writeFile(path.join(DRAFT_FIXTURES, `${slug}.json`), JSON.stringify(fx, null, 1) + "\n");
+  console.log(`Frozen ${web} as ${slug}${design ? ", with its DESIGN.md" : ", no DESIGN.md in the database"}`);
+}
+
+async function draftEval() {
+  const { llm } = await import("../lib/llm");
+  const { draftRequest, readDraft, DRAFT_PROMPT_ID } = await import("../lib/brief-draft");
+  const { SECTORS } = await import("../lib/taxonomy");
+  const { isMarketTag } = await import("../types/brief");
+  const { toOutputLanguage } = await import("../lib/output-language");
+  const only = arg("only");
+  const files = (await fs.readdir(DRAFT_FIXTURES).catch(() => [])).filter((f) => f.endsWith(".json")).sort();
+  const set = (await Promise.all(files.map(async (f) => JSON.parse(await fs.readFile(path.join(DRAFT_FIXTURES, f), "utf8")) as DraftFixture))).filter((f) => !only || f.slug === only);
+  if (!set.length) throw new Error(`No draft cases in ${DRAFT_FIXTURES}: npm run eval:system -- --draft --freeze <url> <slug>`);
+  const squash = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+  for (const fx of set) {
+    const req = draftRequest(fx.sources, toOutputLanguage(fx.language))!;
+    const at = new Date().toISOString();
+    try {
+      const res = await llm({ ...req, fallback: null });
+      const d = readDraft(res.text, fx.sources.tagsSector);
+      const source = squash(JSON.stringify([fx.sources.site, fx.sources.guides]).replace(/\\"/g, '"'));
+      const failed = Object.entries({
+        sector: d.sector === null || SECTORS.some((s) => s.key === d.sector),
+        product: d.product.what.length > 0,
+        markets: d.markets.length > 0 && d.markets.every(isMarketTag),
+        traits: d.traits.length === 3,
+        voiceSamples: d.voiceSamples.length > 0 && d.voiceSamples.every((v) => source.includes(squash(v))),
+      }).filter(([, ok]) => !ok).map(([k]) => k);
+      const row = { at, fixture: fx.slug, model: res.model, prompt: DRAFT_PROMPT_ID, failed, costUsd: res.costUsd, tokens: [res.usage.input, res.usage.output], ms: res.ms, draft: d };
+      await fs.appendFile(DRAFT_RESULTS, JSON.stringify(row) + "\n");
+      console.log(`${failed.length ? "✗" : "✓"} ${fx.slug} · ${res.model} · $${(res.costUsd ?? 0).toFixed(5)} · ${(res.ms / 1000).toFixed(1)}s${failed.length ? ` · not filled or not well formed: ${failed.join(", ")}` : ""}`);
+      console.log(JSON.stringify(d, null, 1));
+    } catch (e) {
+      const error = (e instanceof Error ? e.message : String(e)).slice(0, 300);
+      await fs.appendFile(DRAFT_RESULTS, JSON.stringify({ at, fixture: fx.slug, prompt: DRAFT_PROMPT_ID, error }) + "\n");
+      console.log(`✗ ${fx.slug}: ${error}`);
+    }
+  }
+}
+
 async function main() {
+  if (flag("draft")) {
+    const i = args.indexOf("--freeze");
+    if (i >= 0) await freezeDraft(args[i + 1], args[i + 2], args[i + 3]?.startsWith("--") ? undefined : args[i + 3]);
+    else await draftEval();
+    const { pool } = await import("../lib/db");
+    await pool.end().catch(() => {});
+    return;
+  }
   const { SYSTEM_PROMPT_ID } = await import("../lib/system");
   if (!flag("table")) {
     const { llmEnabled } = await import("../lib/llm");

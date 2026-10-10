@@ -1,0 +1,84 @@
+{
+ "slug": "zernio",
+ "language": "en",
+ "frozenAt": "2026-10-10T19:07:56.327Z",
+ "sources": {
+  "web": "https://zernio.com",
+  "site": {
+   "title": "Zernio - Marketing Infrastructure for Agents",
+   "description": "Marketing infrastructure for agents: social, ads, inbox, WhatsApp, SMS and calls behind one API key. MCP server included, free up to 2 accounts.",
+   "siteName": "Zernio",
+   "lang": "en",
+   "headings": [
+    "Marketing infrastructure for agents",
+    "Marketing infrastructure",
+    "One integration for every channel. Official APIs only",
+    "Unified Social Media API",
+    "Everything social, not just posting",
+    "Advertising API",
+    "Run campaigns without seven ad managers",
+    "Communication API",
+    "Infrastructure for your voice agents and chatbots",
+    "Phone Numbers",
+    "Calls, SMS, and WhatsApp, all on one number",
+    "Customer stories"
+   ],
+   "textSample": "Big news: meet the new Zernio → See our live stats Marketing infrastructure for agents Give your product or agent a way to reach customers anywhere. Skip months of platform approvals and go live today. Start for free Continue with Google Works with Claude Code Cursor Codex OpenClaw Grok bot Hermes Copy setup prompt Join 200,000+ of the world&#x27;s most ambitious developers and builders Marketing infrastructure One integration for every channel. Official APIs only We&#x27;ve done the platform reviews, so you don&#x27;t have to. One integration covers social, blogs, messaging, voice, and ads. Platform changes, token rotations, and rate limits are ours to absorb. POST /v1/posts Launch day! Published August 12, 2026 at 11:21 Instagram Reel published View LinkedIn Post published View TikTok Video published View POST /v1/posts posts_create · 5 accounts const { data : post } = await zernio.posts.createPost({ body : { content : &#x27;Launch day!&#x27; , mediaItems : [{ type : &#x27;video&#x27; , url : videoUrl }], platforms : [ { platform : &#x27;instagram&#x27; , accountId : &#x27;acc_xxx&#x27; }, { platform : &#x27;linkedin&#x27; , accountId : &#x27;acc_yyy&#x27; }, { platform : &#x27;tiktok&#x27; , accountId : &#x27;acc_zzz&#x27; }, ], publishNow : true , }, }); Launch day! Published August 12, 2026 at 11:21 Instagram Reel published View LinkedIn Post published View TikTok Video published View Social Post, schedule, reply to comments and DMs, pull the analytics. Sixteen networks,",
+   "hreflang": [],
+   "currencies": [
+    "USD"
+   ],
+   "meta": {
+    "publisher": "Zernio",
+    "handle": "@paletmiki",
+    "kind": "Organization",
+    "keywords": [
+     "marketing infrastructure",
+     "marketing api for ai agents",
+     "ai agent marketing api",
+     "social media api",
+     "social media posting api",
+     "social media scheduling api",
+     "messaging api",
+     "whatsapp api",
+     "whatsapp business api",
+     "unified messaging api",
+     "instagram dm api",
+     "multi-platform social api",
+     "twitter api",
+     "instagram api",
+     "tiktok api",
+     "linkedin api",
+     "facebook api",
+     "youtube api",
+     "threads api",
+     "pinterest api"
+    ],
+    "place": "Palamós, ES"
+   },
+   "signals": {
+    "themeColor": "#EB3514",
+    "fonts": [],
+    "colors": [
+     "#9514eb",
+     "#ed4956",
+     "#ee1d52",
+     "#fe2c55",
+     "#1d1d1d",
+     "#0a66c2",
+     "#1877f2",
+     "#f33e58",
+     "#262626",
+     "#ff0033"
+    ],
+    "hasCanvas": false,
+    "hasVideo": true,
+    "imageCount": 149,
+    "platform": "next.js"
+   }
+  },
+  "designMd": null,
+  "tagsSector": null,
+  "guides": []
+ }
+}
