@@ -49,7 +49,8 @@
     "tags:bakeoff": "tsx --conditions=react-server scripts/tag-bakeoff.ts",
     "embed:bakeoff": "tsx --conditions=react-server scripts/embed-bakeoff.ts",
     "eval:freeze": "tsx --conditions=react-server scripts/eval-freeze.ts",
-    "eval:system": "tsx --conditions=react-server scripts/eval-system.ts"
+    "eval:system": "tsx --conditions=react-server scripts/eval-system.ts",
+    "eval:criterio": "tsx --conditions=react-server scripts/eval-criterio.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",

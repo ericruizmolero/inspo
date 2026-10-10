@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multiverse Computing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #15181C; --bg-1: #1B1F24; --bg-2: #22272D; --bg-3: #2A3037;
+    --ink-0: #F8FAFC; --ink-1: #C9CED5; --ink-2: #8E959E;
+    --line: rgba(248, 250, 252, 0.12); --line-strong: rgba(248, 250, 252, 0.22);
+    --red: #F01438; --red-text: #FF5C77; --red-tint: rgba(240, 20, 56, 0.14);
+    --r: 6px; --r-s: 2px;
+    --gutter: clamp(20px, 4vw, 64px);
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg-0); color: var(--ink-1); font: 400 17px/1.55 "Schibsted Grotesk", sans-serif; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 0 var(--gutter); }
+  header { border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .name { color: var(--ink-0); font-weight: 600; }
+  nav a { color: var(--ink-1); text-decoration: none; margin-left: 28px; font-size: 15px; }
+  .kicker { font: 500 13px/1 "JetBrains Mono", monospace; color: var(--ink-2); text-transform: uppercase; letter-spacing: .06em; }
+  h1, h2 { color: var(--ink-0); font-weight: 600; text-transform: lowercase; text-wrap: balance; }
+  h1 { font-size: clamp(44px, 6vw, 88px); line-height: 1.02; letter-spacing: -0.02em; margin: 20px 0 24px; }
+  h2 { font-size: clamp(30px, 3.4vw, 48px); line-height: 1.08; margin: 16px 0 20px; }
+  .hero { min-height: 88dvh; display: flex; align-items: center; padding: 96px 0; }
+  .hero h1 { animation: land 900ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  @keyframes land { from { transform: translateY(-24px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .lede { max-width: 640px; font-size: 20px; color: var(--ink-1); }
+  .actions { display: flex; gap: 16px; margin-top: 36px; }
+  .cta { display: inline-block; padding: 14px 22px; border-radius: var(--r); background: var(--red); color: var(--ink-0); font-weight: 500; text-decoration: none; }
+  .cta-2 { display: inline-block; padding: 14px 22px; border-radius: var(--r); border: 1px solid var(--line-strong); color: var(--ink-0); text-decoration: none; }
+  section.alt { background: var(--bg-1); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  section.block { padding: 120px 0; }
+  .sheet { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 0; margin-top: 48px; }
+  .cell { padding: 32px; border-right: 1px dashed var(--line-strong); }
+  .cell:last-child { border-right: 0; }
+  .cell h3 { color: var(--ink-0); font-size: 20px; font-weight: 500; margin: 12px 0 8px; text-transform: lowercase; }
+  .cell p { color: var(--ink-2); font-size: 16px; }
+  .tag { display: inline-block; padding: 4px 8px; border-radius: var(--r-s); background: var(--red-tint); color: var(--red-text); font: 500 12px/1 "JetBrains Mono", monospace; }
+  .center { text-align: center; }
+  .center .lede { margin: 0 auto; }
+  footer { border-top: 1px solid var(--line); padding: 48px 0; color: var(--ink-2); font-size: 14px; }
+  @media (max-width: 720px) { h1, h2 { text-wrap: pretty; } .sheet { grid-template-columns: 1fr; } .cell { border-right: 0; border-bottom: 1px dashed var(--line-strong); } }
+  @media (prefers-reduced-motion: reduce) { .hero h1 { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <span class="name">Multiverse Computing</span>
+    <nav><a href="#products">Products</a><a href="#company">Company</a><a href="#contact">Contact</a></nav>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <p class="kicker">Efficient AI</p>
+      <h1>Pioneering the Era of Efficient and Sovereign AI</h1>
+      <p class="lede">We empower organizations to run secure, production-ready AI with tailored solutions, reducing compute costs and retaining full control across cloud, data centers and edge.</p>
+      <div class="actions">
+        <a class="cta" href="#contact">Talk to us</a>
+        <a class="cta-2" href="#products">See the models</a>
+      </div>
+    </div>
+  </section>
+  <section class="alt block" id="products">
+    <div class="wrap">
+      <p class="kicker">Products</p>
+      <h2>Models that run where your data lives</h2>
+      <div class="sheet">
+        <div class="cell"><span class="tag">Cloud</span><h3>Compressed models</h3><p>The same answers from smaller models, on the hardware you already run.</p></div>
+        <div class="cell"><span class="tag">Data center</span><h3>Private deployment</h3><p>Models that stay inside your perimeter, under your control.</p></div>
+        <div class="cell"><span class="tag">Edge</span><h3>On device</h3><p>AI that keeps working where the network does not reach.</p></div>
+      </div>
+    </div>
+  </section>
+  <section class="block center" id="contact">
+    <div class="wrap">
+      <p class="kicker">Contact</p>
+      <h2>Run AI on your own terms</h2>
+      <p class="lede">Tell us where your models need to run and we will show you how.</p>
+      <div class="actions" style="justify-content: center"><a class="cta" href="mailto:hello@example.com">Talk to us</a></div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">Multiverse Computing</div>
+</footer>
+</body>
+</html>

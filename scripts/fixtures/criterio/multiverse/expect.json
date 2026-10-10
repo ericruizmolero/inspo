@@ -1,0 +1,32 @@
+{
+  "project": "Rediseño de home · Multiverse Computing",
+  "language": "es",
+  "task": "Una landing de una sola página para la home de Multiverse Computing, en un único archivo HTML con su CSS dentro.",
+  "palette": ["#15181C", "#1B1F24", "#22272D", "#2A3037", "#F8FAFC", "#C9CED5", "#8E959E", "#F01438", "#FF5C77", "#A6ADB5"],
+  "neutrals": true,
+  "families": ["Schibsted Grotesk", "JetBrains Mono"],
+  "never": {
+    "typography": ["Inter, Roboto, Arial o Space Grotesk por defecto", "Una mono que no sea la de la marca del cliente"],
+    "color": ["Un segundo tema", "Un footer de otro color que la página", "Fotos de prensa o de stock fuera de paleta", "Retratos en el rojo de marca: van en los grises de la página, techo #A6ADB5"],
+    "layout": ["Tarjetas SaaS separadas con gap donde la información es una rejilla", "Píxeles fijos para algo que sangra fuera del gutter", "Interpolar hacia auto (flex-basis, height, width)", "Clases en el marcado sin regla CSS detrás, o id duplicados"],
+    "motion": ["Rebotes de cualquier tipo: elastic, back, overshoot, squash-and-stretch", "Caídas con ease-out cuando se pide peso: frenan como una pluma", "Bucles decorativos, incluida una línea de escaneo", "Hover en lo que no se pulsa o en lo que ya está abierto", "Cambiar el color del CTA al hover, o icono en los CTA secundarios", "Animar box-shadow o left en bucle"],
+    "iconography": ["Glifos inventados para un producto que ya tiene logotipo", "El mismo icono en todas las piezas de un bloque", "Iconos genéricos en un círculo gris como única ilustración"],
+    "logo": ["Barras que imitan el isotipo", "El isotipo completo a tamaño pequeño: sus franjas bajan del píxel"],
+    "imagery": ["Caras planas de un color con contorno negro de 1px", "Ilustraciones como dibujo de líneas", "Dos ilustraciones que cuentan lo mismo con el mismo objeto", "Retratos «a trazo» hechos por código cuando la referencia es una pintura"],
+    "voice": ["Fechas o cifras inventadas", "Un producto «coming soon» en un sitio y «early access» en otro"]
+  },
+  "notCopy": [
+    { "code": "R5", "name": "Mistral AI", "headline": "The most powerful AI platform for enterprises", "hexes": ["#de3210", "#f5952b", "#fbfbf7"] },
+    { "code": "R8", "name": "Linear", "headline": "The system for product development" },
+    { "code": "R9", "name": "SandboxAQ", "headline": "Transforming the World with AI and Advanced Computing" },
+    { "code": "R10", "name": "Quantinuum", "headline": "Accelerating Quantum Computing" },
+    { "code": "R12", "name": "IBM Design Language", "headline": "404" },
+    { "code": "R4", "name": "Mockup de Foundry del cliente", "headline": "laptop on a green background", "hexes": ["#13272f", "#1a3d45"] }
+  ],
+  "planted": {
+    "area": "motion",
+    "never": "Rebotes de cualquier tipo: elastic, back, overshoot, squash-and-stretch",
+    "where": ".hero h1 { animation: land 900ms cubic-bezier(0.34, 1.56, 0.64, 1) }: a back ease that overshoots",
+    "words": ["cubic-bezier(0.34, 1.56", "1.56", "overshoot", "rebote", "back", "bounce"]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "note": "design_with_criterio and review_against_criterio in Spanish as lib/mcp/prompts.ts had them at a9a5360, before #95: the 'before' side of npm run eval:criterio. {project}, {task} and {what} are filled in by the eval.",
+  "design_with_criterio": [
+    "El proyecto de Criterio es \"{project}\".",
+    "Quiero hacer esto: {task}",
+    "",
+    "1. Llama a read_criterio para el proyecto (con la sección \"decisions\" basta para empezar; lee el archivo entero si necesitas una referencia o un texto completo).",
+    "2. Trabaja desde ahí. Cada área decidida es una regla: síguela sin suavizarla. Lo que un área dice que nunca debe hacerse, no lo hagas.",
+    "3. Donde un área esté abierta, o el criterio no cubra algo que necesitas, para y pregúntame. No rellenes el hueco con un valor por defecto.",
+    "4. Mientras trabajas, di en pocas palabras qué decisión sigue cada elección.",
+    "5. Cuando te diga que está terminado, ofréceme proponer con propose_decision lo que hayamos decidido por el camino y el criterio aún no dijera."
+  ],
+  "review_against_criterio": [
+    "El proyecto de Criterio es \"{project}\".",
+    "Revisa esto: {what}",
+    "",
+    "1. Llama a read_criterio para el proyecto y lee cada área decidida, con lo que cada una dice que nunca debe hacerse.",
+    "2. Mira lo real (el código, la página renderizada, el archivo), no una descripción.",
+    "3. Responde área por área, solo en las áreas que el trabajo toca:",
+    "   - Cumple: lo que coincide con la decisión, en una línea.",
+    "   - Rompe: lo que va en contra, citando la frase del criterio que rompe y señalando dónde (archivo y línea, elemento, valor). Di cómo arreglarlo en una línea.",
+    "   - Sin cubrir: lo que el trabajo ha tenido que decidir y el criterio no dice.",
+    "4. Termina con los tres cambios que más importan.",
+    "",
+    "No cambies el trabajo ni escribas nada en Criterio en esta revisión. Si algo de \"sin cubrir\" merece decidirse, dilo y ofréceme mandarlo con propose_decision."
+  ]
+}
