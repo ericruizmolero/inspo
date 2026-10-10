@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { Fragment, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
@@ -45,6 +45,24 @@ const I = {
   activity: <Icon name="activity" size={16} />,
 };
 
+/**
+ * The switcher's list in runs: the workspaces one plan pays for sit together under its account's name when the person
+ * sees two or more of them; the rest run on unlabelled, as they always did. The order is listWorkspaces', personal
+ * first, and a plan's group takes the place of its first workspace.
+ */
+function byAccount(list: Workspace[]): { account: string | null; list: Workspace[] }[] {
+  const byId = new Map<string, Workspace[]>();
+  for (const w of list) byId.set(w.billingAccountId, [...(byId.get(w.billingAccountId) ?? []), w]);
+  const runs: { account: string | null; list: Workspace[] }[] = [];
+  for (const group of byId.values()) {
+    const last = runs.at(-1);
+    if (group.length > 1) runs.push({ account: group[0].billingAccountName, list: group });
+    else if (last && !last.account) last.list.push(group[0]);
+    else runs.push({ account: null, list: group });
+  }
+  return runs;
+}
+
 export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = false, trigger, triggerClassName, triggerLabel, extras, onOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin?: boolean;
   /** What opens the menu, in place of the workspace card (the island's avatar); the menu then hangs from it */
@@ -80,8 +98,15 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     router.refresh();
   };
 
-  const personal = workspaces.filter((w) => w.kind === "personal");
-  const teams = workspaces.filter((w) => w.kind === "team");
+  const row = (w: Workspace) => w.kind === "personal" ? (
+    <MenuItem key={w.id} icon={<WorkspaceFace workspace={w} user={user} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
+      {w.name} <span className="ws__item-kind">{t.ws.personal}</span>
+    </MenuItem>
+  ) : (
+    <MenuItem key={w.id} icon={<WorkspaceAvatar workspace={w} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
+      {w.name}
+    </MenuItem>
+  );
 
   return (
     <div className={trigger ? "ws ws--inline" : "ws"} ref={ref}>
@@ -108,15 +133,12 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
       <PopoverContent className={trigger ? "cr-menu ws__menu ws__menu--inline" : "cr-menu ws__menu"} anchor={trigger ? undefined : ref}
         collisionAvoidance={{ side: "none", align: "shift", fallbackAxisSide: "none" }}>
           <MenuLabel>{t.ws.workspaces}</MenuLabel>
-          {personal.map((w) => (
-            <MenuItem key={w.id} icon={<WorkspaceFace workspace={w} user={user} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
-              {w.name} <span className="ws__item-kind">{t.ws.personal}</span>
-            </MenuItem>
-          ))}
-          {teams.map((w) => (
-            <MenuItem key={w.id} icon={<WorkspaceAvatar workspace={w} small />} checked={w.id === workspace.id} onClick={() => switchTo(w.id)} disabled={busy}>
-              {w.name}
-            </MenuItem>
+          {byAccount(workspaces).map((seg, i) => (
+            <Fragment key={seg.account ?? seg.list[0].id}>
+              {i > 0 && <Separator />}
+              {seg.account && <MenuLabel>{seg.account}</MenuLabel>}
+              {seg.list.map(row)}
+            </Fragment>
           ))}
           <MenuItem icon="plus" className="is-muted" onClick={() => { setOpen(false); setCreating(true); }}>{t.ws.createTeam}</MenuItem>
 
