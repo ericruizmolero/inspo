@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { uploadMediaFile, newMediaKey, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/lib/media";
-import { uploadUrl, fileUrl } from "@/lib/storage";
+import { uploadUrl, fileUrl, recordFile } from "@/lib/storage";
+import { assertRoom } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
-import { HttpError } from "@/lib/workspace-core";
+import { HttpError, httpErrorResponse } from "@/lib/workspace-core";
 import { recordFailure } from "@/lib/log";
 
 // Uploads an image that will be an inspo of its own. Two ways in (lib/media-client.ts):
@@ -22,8 +23,12 @@ export async function POST(req: NextRequest) {
       if (!type || !MEDIA_TYPES.has(type)) return Response.json({ error: errors.imagesOnly }, { status: 415 });
       if (!Number.isInteger(size) || size! <= 0) return Response.json({ error: errors.missingFile }, { status: 400 });
       if (size! > MAX_MEDIA_BYTES) return Response.json({ error: errors.mediaTooHeavy }, { status: 413 });
+      // The image becomes a reference: there must be room for both. R2 refuses a body of any other size than the
+      // one signed, so it is recorded here, the one step the browser cannot skip
+      await assertRoom(ctx.workspace, { items: 1, bytes: size! });
       const key = newMediaKey(ctx.workspace.id, type);
       const put = await uploadUrl(key, type, size!);
+      if (put) await recordFile(key, ctx.workspace.id, size!);
       return Response.json({ url: fileUrl(key), put }, { status: 201 });
     }
 
@@ -31,9 +36,11 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof File)) return Response.json({ error: errors.missingFile }, { status: 400 });
     if (!MEDIA_TYPES.has(file.type)) return Response.json({ error: errors.imagesOnly }, { status: 415 });
     if (file.size > MAX_MEDIA_BYTES) return Response.json({ error: errors.mediaTooHeavy }, { status: 413 });
+    await assertRoom(ctx.workspace, { items: 1 });
     return Response.json({ url: await uploadMediaFile(ctx.workspace.id, file) }, { status: 201 });
   } catch (e) {
-    if (!(e instanceof HttpError)) void recordFailure("storage", "image upload", e);
-    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
+    if (e instanceof HttpError) return httpErrorResponse(e);
+    void recordFailure("storage", "image upload", e);
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

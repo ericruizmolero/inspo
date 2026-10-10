@@ -12,6 +12,9 @@ import {
   S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { inArray } from "drizzle-orm";
+import { db, schema } from "./db";
+import { assertRoomIn } from "./quota";
 import { log, recordFailure } from "./log";
 
 export const FILES_BASE = "/api/files/";
@@ -34,7 +37,7 @@ export function isSafeKey(key: string): boolean {
 export interface StoredFile { body: Buffer; contentType: string; size: number }
 /** A file as a stream, for serving: `range` is set (and the status is 206) when part of it was asked for */
 export interface OpenedFile { stream: ReadableStream<Uint8Array>; contentType: string; size: number; range?: string }
-export interface Listed { key: string; uploadedAt: Date }
+export interface Listed { key: string; uploadedAt: Date; size: number }
 /** A signed address on R2: `maxAge` is how long, in seconds, it can still be cached */
 export interface SignedGet { url: string; maxAge: number }
 
@@ -104,7 +107,7 @@ function r2(): Driver {
       let token: string | undefined;
       do {
         const r = await s3.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix, ContinuationToken: token }));
-        for (const o of r.Contents ?? []) if (o.Key) out.push({ key: o.Key, uploadedAt: o.LastModified ?? new Date(0) });
+        for (const o of r.Contents ?? []) if (o.Key) out.push({ key: o.Key, uploadedAt: o.LastModified ?? new Date(0), size: o.Size ?? 0 });
         token = r.IsTruncated ? r.NextContinuationToken : undefined;
       } while (token);
       return out;
@@ -217,7 +220,7 @@ function disk(): Driver {
           if (st.isDirectory()) await walk(full);
           else {
             const key = path.relative(ROOT, full).split(path.sep).join("/");
-            if (key.startsWith(prefix)) out.push({ key, uploadedAt: st.mtime });
+            if (key.startsWith(prefix)) out.push({ key, uploadedAt: st.mtime, size: st.size });
           }
         }
       };
@@ -234,10 +237,22 @@ export const usingR2 = () => !!(process.env.R2_BUCKET && process.env.R2_ACCESS_K
 let driver: Driver | null = null;
 const d = () => (driver ??= usingR2() ? r2() : disk());
 
-/** Stores a file and returns the path to save in the database */
-export async function putFile(key: string, body: Buffer, contentType: string): Promise<string> {
+/**
+ * Stores a file and returns the path to save in the database. `owner` is the workspace whose own file it is: the
+ * file must fit in its plan's storage (HttpError 402 before anything is written) and its size is recorded. A shared
+ * cache keyed by address (a screenshot, a post's copy) has no owner.
+ */
+export async function putFile(key: string, body: Buffer, contentType: string, owner?: string): Promise<string> {
+  if (owner) await assertRoomIn(owner, { bytes: body.length }, key);
   await d().put(key, body, contentType);
+  if (owner) await recordFile(key, owner, body.length);
   return fileUrl(key);
+}
+
+/** The size of a workspace's file, written or about to be (a signed upload is signed for exactly this size) */
+export async function recordFile(key: string, organizationId: string, bytes: number): Promise<void> {
+  const F = schema.storedFile;
+  await db.insert(F).values({ key, organizationId, bytes }).onConflictDoUpdate({ target: F.key, set: { organizationId, bytes } });
 }
 export const getFile = (key: string, range?: string) => d().get(key, range);
 /** For serving: streams the file (or the asked range) without holding it in memory */
@@ -250,10 +265,13 @@ export const uploadUrl = (key: string, contentType: string, size: number): Promi
   d().signPut?.(key, contentType, size) ?? Promise.resolve(null);
 export const listFiles = (prefix: string) => d().list(prefix);
 
-/** Deletes files by key. Never throws: an orphan file blocks nothing. */
+/** Deletes files by key, and their sizes with them. Never throws: an orphan file blocks nothing. */
 export async function deleteFiles(keys: string[]): Promise<void> {
   if (!keys.length) return;
-  try { await d().del(keys); } catch (err) { void recordFailure("storage", "delete files", err, { ref: keys[0] }); }
+  try {
+    await d().del(keys);
+    await db.delete(schema.storedFile).where(inArray(schema.storedFile.key, keys));
+  } catch (err) { void recordFailure("storage", "delete files", err, { ref: keys[0] }); }
 }
 
 export async function getJson<T>(key: string): Promise<T | null> {

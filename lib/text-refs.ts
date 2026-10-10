@@ -35,14 +35,14 @@ export const importedTextUrl = (organizationId: string, page: string) => fileUrl
 /** Saves the words and gives the path that becomes the item's address. `from` is the page it was brought in from. */
 export async function putText(organizationId: string, text: string, from?: string): Promise<string> {
   const key = from ? importedTextKey(organizationId, from) : `${textPrefix(organizationId)}${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`;
-  return putFile(key, Buffer.from(text, "utf-8"), "text/markdown; charset=utf-8");
+  return putFile(key, Buffer.from(text, "utf-8"), "text/markdown; charset=utf-8", organizationId);
 }
 
 /** Writes the words over a saved text: the same file, so the item keeps its address */
-export async function rewriteText(url: string, text: string): Promise<void> {
+export async function rewriteText(organizationId: string, url: string, text: string): Promise<void> {
   const key = keyOf(url);
   if (!key) throw new Error("not a stored text");
-  await putFile(key, Buffer.from(text, "utf-8"), "text/markdown; charset=utf-8");
+  await putFile(key, Buffer.from(text, "utf-8"), "text/markdown; charset=utf-8", organizationId);
 }
 
 /** The words of a saved text; null if the file can't be read */

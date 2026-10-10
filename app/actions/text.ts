@@ -9,6 +9,7 @@ import { cleanText, putText, readText, rewriteText, textTags, deleteTextFile, ow
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
 import { recordFailure } from "@/lib/log";
+import { assertRoom } from "@/lib/quota";
 
 /** A pasted text becomes a card: its words go to a file, whose path is the item's address.
  *  Added from inside a project, it is filed there too. Its "tags" are its first lines: no model reads it here. */
@@ -17,6 +18,7 @@ export async function addText(input: { title: string; text: string; note?: strin
     const text = cleanText(input.text);
     const title = String(input.title ?? "").replace(/\s+/g, " ").trim().slice(0, TEXT_TITLE_MAX);
     if (!text || !title) throw new HttpError(400, (await getErrors()).badBody);
+    await assertRoom(ctx.workspace, { items: 1 });
     const url = await putText(ctx.workspace.id, text);
     try {
       const item = await addItem(ctx.workspace.id, {
@@ -44,7 +46,7 @@ export async function saveText(itemId: string, text: string) {
     const T = schema.inspoItem;
     const [row] = await db.select({ id: T.id, web: T.web }).from(T).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, String(itemId)))).limit(1);
     if (!next || !row || !ownsTextFile(ctx.workspace.id, row.web)) throw new HttpError(400, (await getErrors()).badBody);
-    await rewriteText(row.web, next);
+    await rewriteText(ctx.workspace.id, row.web, next);
     const tags = await textTags(row.web);
     await setTags(ctx.workspace.id, row.web, tags);
     void enqueueEmbed([row.id]);

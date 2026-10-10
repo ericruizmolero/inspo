@@ -11,7 +11,7 @@ export const blobPrefix = (organizationId: string) => `inspo/${organizationId}/t
 export async function uploadThumbnail(organizationId: string, filename: string, file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
   const safe = filename.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80) || "thumb.jpg";
-  return putFile(`${blobPrefix(organizationId)}${Date.now()}-${safe}`, buffer, file.type || "image/jpeg");
+  return putFile(`${blobPrefix(organizationId)}${Date.now()}-${safe}`, buffer, file.type || "image/jpeg", organizationId);
 }
 
 /** Is this stored path a thumbnail from this workspace? An uploaded image is its own item's thumbnail. */

@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
-import { uploadUrl, putFile } from "@/lib/storage";
+import { uploadUrl, putFile, recordFile } from "@/lib/storage";
+import { assertRoom } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { MAX_BRAND_BYTES, brandTypeFor, isPurpose, newBrandKey } from "@/lib/brand-files";
 import { db, schema } from "@/lib/db";
 import { and, eq } from "drizzle-orm";
-import { HttpError } from "@/lib/workspace-core";
+import { HttpError, httpErrorResponse } from "@/lib/workspace-core";
 import { recordFailure } from "@/lib/log";
 
 // Uploads a file of a project's brand: a logo, a font, a picture, a file to hand out. Two ways in, as /api/media:
@@ -34,12 +35,19 @@ export async function POST(req: NextRequest) {
   if (size > MAX_BRAND_BYTES) return Response.json({ error: errors.brandFileTooBig }, { status: 413 });
   const key = newBrandKey(ctx.workspace.id, projectId, purpose, name);
   try {
-    if (body) return Response.json({ key, type, put: await uploadUrl(key, type, size) }, { status: 201 });
+    if (body) {
+      // Signed for exactly this size: recorded when the address is handed out, which the browser cannot skip
+      await assertRoom(ctx.workspace, { bytes: size });
+      const put = await uploadUrl(key, type, size);
+      if (put) await recordFile(key, ctx.workspace.id, size);
+      return Response.json({ key, type, put }, { status: 201 });
+    }
     if (!(file instanceof File)) return Response.json({ error: errors.missingFile }, { status: 400 });
-    await putFile(key, Buffer.from(await file.arrayBuffer()), type);
+    await putFile(key, Buffer.from(await file.arrayBuffer()), type, ctx.workspace.id);
     return Response.json({ key, type }, { status: 201 });
   } catch (e) {
-    if (!(e instanceof HttpError)) void recordFailure("storage", "brand upload", e);
-    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
+    if (e instanceof HttpError) return httpErrorResponse(e);
+    void recordFailure("storage", "brand upload", e);
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

@@ -51,7 +51,13 @@ vi.mock("@/lib/storage", async (importOriginal) => {
   return {
     ...real,
     usingR2: () => false,
-    putFile: async (key: string, body: Buffer, contentType: string) => { files.set(key, { body, contentType }); return real.fileUrl(key); },
+    // Only the bytes are faked: a workspace's file still has to fit in its plan and still gets its row
+    putFile: async (key: string, body: Buffer, contentType: string, owner?: string) => {
+      if (owner) await (await import("@/lib/quota")).assertRoomIn(owner, { bytes: body.length }, key);
+      files.set(key, { body, contentType });
+      if (owner) await real.recordFile(key, owner, body.length);
+      return real.fileUrl(key);
+    },
     getFile: get,
     openFile: async (key: string) => {
       const f = await get(key);
@@ -60,8 +66,13 @@ vi.mock("@/lib/storage", async (importOriginal) => {
     fileExists: async (key: string) => files.has(key),
     signedFileUrl: async () => null,
     uploadUrl: async () => null,
-    listFiles: async (prefix: string) => [...files.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key, uploadedAt: new Date() })),
-    deleteFiles: async (keys: string[]) => { for (const k of keys) files.delete(k); },
+    listFiles: async (prefix: string) => [...files.entries()].filter(([k]) => k.startsWith(prefix)).map(([key, f]) => ({ key, uploadedAt: new Date(), size: f.body.byteLength })),
+    deleteFiles: async (keys: string[]) => {
+      for (const k of keys) files.delete(k);
+      const { db, schema } = await import("@/lib/db");
+      const { inArray } = await import("drizzle-orm");
+      if (keys.length) await db.delete(schema.storedFile).where(inArray(schema.storedFile.key, keys));
+    },
     getJson: async (key: string) => { const f = await get(key); return f ? JSON.parse(f.body.toString("utf8")) : null; },
     putJson: async (key: string, data: unknown) => { files.set(key, { body: Buffer.from(JSON.stringify(data)), contentType: "application/json" }); },
   };

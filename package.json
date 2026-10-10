@@ -46,6 +46,7 @@
     "db:pull": "tsx --conditions=react-server scripts/seed.ts pull",
     "move:blob-to-r2": "tsx --conditions=react-server scripts/move-blob-to-r2.ts",
     "migrate:r2-indexes": "tsx --conditions=react-server scripts/migrate-r2-indexes.ts",
+    "backfill:file-bytes": "tsx --conditions=react-server scripts/backfill-file-bytes.ts",
     "db:copy-turso": "tsx --conditions=react-server scripts/copy-turso.ts",
     "files:pull": "tsx scripts/pull-files.ts",
     "shots:pages": "tsx --conditions=react-server scripts/capture-pages.ts",

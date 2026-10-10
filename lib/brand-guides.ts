@@ -42,6 +42,6 @@ export async function projectGuides(organizationId: string, projectId: string): 
 /** Stores a pasted guide; returns its key */
 export async function storeGuide(organizationId: string, projectId: string, text: string): Promise<string> {
   const key = `${projectBrandPrefix(organizationId, projectId)}guide-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.md`;
-  await putFile(key, Buffer.from(text.slice(0, GUIDE_MAX), "utf8"), "text/markdown; charset=utf-8");
+  await putFile(key, Buffer.from(text.slice(0, GUIDE_MAX), "utf8"), "text/markdown; charset=utf-8", organizationId);
   return key;
 }
