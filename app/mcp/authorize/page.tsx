@@ -5,7 +5,6 @@ import { getCtxOrLogin } from "@/lib/workspace";
 import { getT } from "@/lib/i18n";
 import { originOfHeaders } from "@/lib/mcp/auth";
 import { readAuthRequest } from "@/lib/mcp/oauth";
-import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import AuthorizePanel from "./AuthorizePanel";
 import AuthWindow from "@/components/AuthWindow";
@@ -37,8 +36,8 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Pr
         {"fatal" in request ? (
           <AuthWindow title={t.mcp.pageTitle} heading={t.mcp.cannot} status={t.invite.signedInAs(ctx.user.email)}
             footer={back
-              ? <a href={back} rel="noreferrer" className={buttonVariants()}>{t.mcp.backTo(new URL(back).host)}</a>
-              : <Link href="/" className={buttonVariants()}>{t.mcp.goToApp}</Link>}>
+              ? <a href={back} rel="noreferrer" className="cr-btn cr-btn-secondary cr-btn-m">{t.mcp.backTo(new URL(back).host)}</a>
+              : <Link href="/" className="cr-btn cr-btn-secondary cr-btn-m">{t.mcp.goToApp}</Link>}>
             <p className="auth__hint">{!request.fatal ? t.mcp.badRequest : request.reason === "redirect" ? t.mcp.badRedirect : t.mcp.badClient}</p>
           </AuthWindow>
         ) : (

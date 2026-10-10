@@ -78,7 +78,7 @@ export default function ImagerySection() {
             <h3 className="t-label brand-k">{s.examples}</h3>
             {mode === "edit" && (
               <span className="bim-head__tools">
-                <button type="button" className="btn btn--sm" onClick={() => setPicking(true)}>{s.pick}</button>
+                <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" onClick={() => setPicking(true)}>{s.pick}</button>
                 {pics.length < MAX && <FileSlot purpose="image" accept="image/png,image/jpeg,image/webp" has={false} onFile={(f) => set({ files: [...img.files, f].slice(0, MAX) })} className="bmo-upload" />}
               </span>
             )}

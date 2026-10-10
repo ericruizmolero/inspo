@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { useT } from "@/components/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Avatar, toneFor } from "@/components/criterio";
+import { Avatar, Button, toneFor } from "@/components/criterio";
 import AuthWindow from "@/components/AuthWindow";
 
 export default function AcceptInvitation({ id, teamName, inviterName, inviterEmail, inviterImage, youAre }: {

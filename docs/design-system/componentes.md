@@ -7,18 +7,18 @@ Cada pieza de la app con su nombre en castellano (el que usamos al hablar), su n
 Los componentes del sistema de diseño Criterio (`components/criterio/index.tsx`, `components/criterio/criterio.css`, clases `cr-*`), portados de su bundle y ampliados aquí: una ficha por export. Antes de dibujar algo, búscalo en esta pestaña; lo que la app tenía antes con la misma función (`.btn`, `.input`, `.pill`, `components/ui/button.tsx`) es la misma pieza con el nombre viejo y está en la ficha de la nueva. La criatura solo es el logotipo: `Creature`, `Profile` y `Sprite` siguen fuera. → [decisión](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
 
 ### Botón
-`Button` · `components/criterio/index.tsx` · `.cr-btn` · `components/ui/button.tsx` · `.btn` · muestra: botones
+`Button` · `components/criterio/index.tsx` · `.cr-btn` · muestra: botones
 Grueso, con borde de tinta y bisel; al pulsar se hunde (`--bevel-pressed` y 1 px abajo). `primary` (ember) es la acción para la que existe la vista, una por vista, y lo que ya era primario no se baja; `secondary` (papel, la variante por defecto) todo lo demás, también Cancelar y Ahora no; `dark` (tinta) una segunda acción fuerte sobre papel; `quiet` sin borde, bisel ni relleno hasta el hover, para acciones pequeñas dentro de barras y paneles, casi siempre con icono; `danger` (`--danger-deep`) solo para confirmar algo que destruye. → [lo que era primario](decisiones/2026-10-07-lo-que-era-primario-sigue-siendo-primario.md)
 - Tallas: s 34 (globos, ventanas y sus pies, barras de herramientas, menús, la tarjeta del tablero), m 44 (la normal en producto: páginas y vistas), l 52 (héroes). En una misma barra, todos en la misma talla. Sin excepciones locales de alto, relleno, letra o radio; solo dos: el botón partido junta sus esquinas y el botón dentro de un campo (`.cr-textbox-bar`) lleva radio 6.
 - `icon` delante, `iconEnd` detrás ("Ya tengo mis referencias" lleva la flecha); `pressed` lo deja hundido; `href` lo vuelve un enlace.
-- `Button` de `components/ui/button.tsx` (Base UI) es la misma pieza con las clases globales `.btn`, `.btn--primary`, `.btn--dark`, `.btn--quiet` (`ghost` es su nombre viejo), `.btn--danger`, `.btn--sm`, `.btn--lg` y `block`: lo usan los componentes anteriores al sistema. Lo nuevo va en el `Button` del sistema.
+- Es el único botón de texto. Cuando el botón tiene que ser otro elemento (un `PopoverTrigger`, un `Link` de Next, un `<a>` con `download` o `target`, un `<label>` de fichero), ese elemento lleva las clases del sistema: `cr-btn cr-btn-{variante} cr-btn-{talla}`. `.btn`, sus variantes y `components/ui/button.tsx` ya no existen.
 - Etiquetas en sentence case, verbo primero, cortas. Desactivado: relleno `--disabled`, texto `--disabled-text`, borde `--disabled-border`, sin bisel.
 
 ### Botón de icono
 `IconButton` · `.cr-iconbtn` · muestra: boton-icono
 El único botón de solo icono de la app: siempre redondo, un icono y su `label`, que es también el tooltip (`data-tip`). Tres variantes: quiet (sin relleno hasta el hover, dentro de barras), default (relleno con línea fina, acciones sueltas), strong (papel, borde de tinta y bisel, la más importante de su fila). Tallas xs 24, s 32, m 40, l 48, con iconos de 14, 16, 18 y 20. `active` marca el sitio actual; con `toggle` es un interruptor (el sonido) y `active` se anuncia como pulsado. → [decisión](decisiones/2026-10-07-un-solo-boton-de-icono-redondo.md)
 - En una tarjeta del tablero, s como mucho. Sobre el cromo, el contenedor lleva `cr-on-chrome` y los botones leen los tokens del cromo.
-- Los nombres viejos siguen funcionando (`ghost` = quiet, `chrome` y `round` = default, `raised` = strong). `.btn-icon` de `globals.css` y la variante `icon` de `ui/button.tsx` son la versión anterior, sin uso.
+- Los nombres viejos siguen funcionando (`ghost` = quiet, `chrome` y `round` = default, `raised` = strong).
 
 ### Control segmentado
 `SegmentedControl` · `SegmentItem` · `.cr-seg` · `components/ui/liquid.tsx` · muestra: segmentado
@@ -528,7 +528,7 @@ Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a logi
 ### Acceso
 `LoginForm` · `components/LoginForm.tsx` · `.auth`
 Enlace mágico, Google, Apple y X, recordando el último método. Al lado, el collage fijo de `public/showcase/`, curado a mano. La página mide lo que la ventana (`.auth:not(.auth--solo)`, `100dvh`): el pie (`.auth__foot`), con la aceptación de Términos y Privacidad (siempre: `legalShown()` ya no oculta nada), se lee sin scroll; si la ventana es más baja que el formulario, hace scroll el panel. → [decisión](decisiones/2026-10-06-el-login-mide-la-ventana-y-su-pie-se-ve-sin-scroll.md)
-- El panel sigue el tema (oscuro en Board, papel en Paper), ya no fuerza Paper. El formulario es plano, como antes del sistema: campo y botones sociales de 46 sobre la superficie con línea de 1 px, sin pozo negro ni bisel (`.auth__panel` redefine los tokens de campo y `.btn`); el único bisel es el CTA ember. "Último usado" es una pastilla pequeña de 12 px en `--surface-2`, pegada al final del botón, que no alcanza el texto. Pista a 15, etiqueta y pie a 12. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
+- El panel sigue el tema (oscuro en Board, papel en Paper), ya no fuerza Paper. El formulario es plano, como antes del sistema: campo y botones sociales de 46 sobre la superficie con línea de 1 px, sin pozo negro ni bisel (`.auth__panel` redefine los tokens de campo y los botones sociales, `.auth__social-btn`); el único bisel es el CTA ember. "Último usado" es una pastilla pequeña de 12 px en `--surface-2`, pegada al final del botón, que no alcanza el texto. Pista a 15, etiqueta y pie a 12. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
 
 ### Documento legal
 `LegalDoc` · `components/LegalDoc.tsx` · `.legal`

@@ -39,4 +39,4 @@ El único botón de solo icono de la app es `IconButton`: siempre redondo, un ic
 - Etiquetas en sentence case, verbo primero, cortas ("Sí, borrar", "Ya tengo las referencias").
 - `icon` delante, `iconEnd` detrás (la flecha de seguir va detrás).
 - Lo destructivo pide confirmación en un diálogo con secundario y danger ("Déjalo" / "Sí, borrar").
-- Lo que la app tenía antes (`.btn`, `components/ui/button.tsx`) es la misma pieza con el nombre viejo; lo nuevo va en `Button` del sistema. El comando de instalar una skill no es un botón de papel: es un dato literal, en mono. → [decisión](decisiones/2026-10-07-el-comando-de-instalar-una-skill-no-es-un-boton-de-papel.md)
+- Todo botón de texto es `Button` del sistema. Si tiene que ser otro elemento (un `PopoverTrigger`, un `Link`, un `<a>` con `download`), lleva sus clases: `cr-btn cr-btn-{variante} cr-btn-{talla}`. El comando de instalar una skill no es un botón de papel: es un dato literal, en mono. → [decisión](decisiones/2026-10-07-el-comando-de-instalar-una-skill-no-es-un-boton-de-papel.md)

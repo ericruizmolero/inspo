@@ -52,11 +52,11 @@ function ColorForm({ color, isAccent, onChange, onRemove, onAccent, onMove, firs
         </div>
       </div>
       <div className="bc-form__foot">
-        <button type="button" className={`btn btn--quiet btn--sm bc-form__accent${isAccent ? " is-on" : ""}`} onClick={onAccent} disabled={isAccent} data-tip={s.isAccent}>{isAccent ? s.accent : s.makeAccent}</button>
+        <button type="button" className={`cr-btn cr-btn-quiet cr-btn-s bc-form__accent${isAccent ? " is-on" : ""}`} onClick={onAccent} disabled={isAccent} data-tip={s.isAccent}>{isAccent ? s.accent : s.makeAccent}</button>
         <span>
           {!first && <IconButton icon="arrow-up" variant="quiet" size="xs" onClick={() => onMove(-1)} label={t.brand.moveUp} />}
           {!last && <IconButton icon="arrow-down" variant="quiet" size="xs" onClick={() => onMove(1)} label={t.brand.moveDown} />}
-          <button type="button" className="btn btn--quiet btn--sm is-danger" onClick={onRemove}>{t.brand.remove}</button>
+          <button type="button" className="cr-btn cr-btn-quiet cr-btn-s is-danger" onClick={onRemove}>{t.brand.remove}</button>
         </span>
       </div>
     </div>

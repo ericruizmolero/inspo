@@ -47,7 +47,7 @@ export function ItemTools<T>({ list, index, onChange, className = "" }: { list: 
 export function AddButton({ label, onClick, className = "" }: { label: string; onClick: () => void; className?: string }) {
   const { mode } = useBrand();
   if (mode !== "edit") return null;
-  return <button type="button" className={`btn btn--quiet be-add ${className}`} onClick={onClick}><Icon name="plus" size={20} />{label}</button>;
+  return <button type="button" className={`cr-btn cr-btn-quiet cr-btn-m be-add ${className}`} onClick={onClick}><Icon name="plus" size={20} />{label}</button>;
 }
 
 /** A section: its rule (brand · section, n / total), its heading, its lede; who wrote it, in the app */

@@ -261,7 +261,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
   const sendButton = (
     <button
       type="button"
-      className="btn btn--sm fb-btn--send"
+      className="cr-btn cr-btn-secondary cr-btn-s fb-btn--send"
       data-state={state}
       onClick={send}
       disabled={state === "sending" || state === "sent"}
@@ -305,7 +305,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
               <p className="fb-panel__lead">{t.feedback.count(count)}</p>
               <div className="fb-panel__actions">
                 {sendButton}
-                <button type="button" className="btn btn--sm" onClick={clear} disabled={state === "sending" || state === "sent"}>{t.feedback.clear}</button>
+                <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" onClick={clear} disabled={state === "sending" || state === "sent"}>{t.feedback.clear}</button>
               </div>
             </>
           )}
@@ -341,5 +341,5 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 const IconBubble = () => <Icon name="chat" size={16} />;
-const IconSend = () => <Icon name="send" size={14} />;
-const IconCheck = () => <Icon name="check" size={14} />;
+const IconSend = () => <Icon name="send" size={16} />;
+const IconCheck = () => <Icon name="check" size={16} />;

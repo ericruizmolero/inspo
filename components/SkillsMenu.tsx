@@ -10,7 +10,7 @@ export default function SkillsMenu({ on, onToggle }: { on: string[]; onToggle: (
   const { t } = useT();
   return (
     <Popover>
-      <PopoverTrigger className={`btn btn--sm btn--quiet mdv-btn sys-skills__trigger${on.length ? " is-on" : ""}`} data-tip={t.system.skillsHint}>
+      <PopoverTrigger className={`cr-btn cr-btn-quiet cr-btn-s mdv-btn sys-skills__trigger${on.length ? " is-on" : ""}`} data-tip={t.system.skillsHint}>
         {t.system.skills}{on.length > 0 && <span className="sys-skills__n">{on.length}</span>}
       </PopoverTrigger>
       {/* The system's Menu: a paper window; each skill a row with the system's Switch. A click anywhere on the row

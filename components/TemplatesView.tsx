@@ -176,7 +176,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
           {tpl.template.about && <p className="tpl-about">{tpl.template.about}</p>}
         </div>
         <div className="tpl-head__actions">
-          <button type="button" className="btn btn--primary" disabled={busy} onClick={() => void use()} data-tip={s.useHint}>{busy ? <Busy label={s.use} /> : <Icon name="plus" size={20} />} {s.use}</button>
+          <button type="button" className="cr-btn cr-btn-primary cr-btn-m" disabled={busy} onClick={() => void use()} data-tip={s.useHint}>{busy ? <Busy label={s.use} /> : <Icon name="plus" size={20} />} {s.use}</button>
         </div>
       </header>
 
@@ -188,7 +188,7 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
       {tpl.template.to && <Result id={tpl.id} url={tpl.template.to} video={tpl.template.video} poster={posterOf(tpl)} />}
 
       <div className="tpl-files">
-        {!tpl.template.builtin && <button type="button" className="btn" onClick={async () => { if (await confirm({ title: s.deleteAsk(tpl.name), action: s.delete, danger: true })) void onDelete(tpl); }}>{s.delete}</button>}
+        {!tpl.template.builtin && <button type="button" className="cr-btn cr-btn-secondary cr-btn-m" onClick={async () => { if (await confirm({ title: s.deleteAsk(tpl.name), action: s.delete, danger: true })) void onDelete(tpl); }}>{s.delete}</button>}
       </div>
       {confirmDialog}
     </article>
@@ -239,7 +239,7 @@ export default function TemplatesView({ workspaceId, head, onStarted }: {
       <div className="tpls-inner">
         {open ? (
           <>
-            <button type="button" className="btn btn--quiet tpls-back" onClick={() => go(null)}><Icon name="chevron-left" size={20} />{s.title}</button>
+            <button type="button" className="cr-btn cr-btn-quiet cr-btn-m tpls-back" onClick={() => go(null)}><Icon name="chevron-left" size={20} />{s.title}</button>
             {error && <p className="sysv-error" role="alert">{error}</p>}
             <Template tpl={open} onUse={use} onDelete={del} />
           </>

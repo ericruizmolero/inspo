@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { useT } from "@/components/I18nProvider";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/criterio";
 
 /** Sign out of this account and return to login with the invitation as the destination. */
 export default function SwitchAccount({ next }: { next: string }) {

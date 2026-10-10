@@ -29,7 +29,7 @@ export default function FileMenu({ markdown, projectName, onDownload }: { markdo
 
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setReady(null); setFailed(false); } }}>
-      <PopoverTrigger className="btn btn--sm btn--quiet mdv-btn mdv-btn--more" aria-label={s.more} data-tip={open ? undefined : s.more}><Icon name="chevron-down" size={16} /></PopoverTrigger>
+      <PopoverTrigger className="cr-btn cr-btn-quiet cr-btn-s mdv-btn mdv-btn--more" aria-label={s.more} data-tip={open ? undefined : s.more}><Icon name="chevron-down" size={16} /></PopoverTrigger>
       {/* The system's Menu: a paper window; the chats are a second group under an engraved line */}
       <PopoverContent align="end" className="cr-menu sys-skills">
         <MenuItem onClick={() => { setOpen(false); onDownload(); }}>{s.download}</MenuItem>

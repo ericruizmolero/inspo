@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import type { SessionUser } from "@/lib/workspace-core";
 import { useT } from "@/components/I18nProvider";
 import { fmtDate } from "@/lib/i18n/format";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button, Chip, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
-import { Chip, SettingsWindow } from "@/components/criterio";
 
 interface ExtKey { id: string; prefix: string; name: string; userId: string; userName: string; createdAt: string; lastUsedAt: string | null }
 
@@ -38,8 +37,8 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
         actions={
           <>
             {/* With no browser of theirs connected, the guide (it ends by connecting); after that, connecting another is the common case */}
-            <a className={buttonVariants({ variant: hasMine ? "default" : "primary", size: "sm" })} href="/extension/install">{t.settings.installExt}</a>
-            <a className={buttonVariants({ variant: hasMine ? "primary" : "default", size: "sm" })} href="/extension/connect">{t.team.connectBrowser}</a>
+            <Button variant={hasMine ? "secondary" : "primary"} size="s" href="/extension/install">{t.settings.installExt}</Button>
+            <Button variant={hasMine ? "primary" : "secondary"} size="s" href="/extension/connect">{t.team.connectBrowser}</Button>
           </>
         }>
         {extKeys.length > 0 && (
@@ -52,7 +51,7 @@ export default function ExtensionPanel({ me, canManage, extKeys }: { me: Session
                     <span className="list__name t-ui"><span className="list__text">{k.name || t.team.browser}</span>{mine && <Chip className="list__you t-label">{t.team.yours}</Chip>}</span>
                     <span className="list__sub t-small"><span>{k.prefix}…</span><span>{k.userName}</span><span>{k.lastUsedAt ? t.team.keyUsed(fmtDate(k.lastUsedAt, locale, { day: "numeric", month: "short", year: "numeric" })) : t.team.keyUnused}</span></span>
                   </span>
-                  {(mine || canManage) && <Button variant="quiet" size="sm" onClick={() => revokeKey(k)} disabled={busy}>{t.team.revoke}</Button>}
+                  {(mine || canManage) && <Button variant="quiet" size="s" onClick={() => revokeKey(k)} disabled={busy}>{t.team.revoke}</Button>}
                 </li>
               );
             })}

@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { answerMcpAuth } from "@/app/actions/mcp";
 import { useT } from "@/components/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/criterio";
+import { Button, Chip } from "@/components/criterio";
 import AuthWindow from "@/components/AuthWindow";
 
 /** The question itself: which app asks, what it will be able to do, and the two answers. The answer is checked

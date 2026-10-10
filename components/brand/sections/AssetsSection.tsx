@@ -40,7 +40,7 @@ export default function AssetsSection() {
   const link = (href: string, file: string) => <a className={QUIET} href={href} download={file}>{s.download}</a>;
   return (
     <div className="bas">
-      {zipHref && <a className="btn bas-zip" href={zipHref}>{s.zip}<span aria-hidden>↓</span></a>}
+      {zipHref && <a className="cr-btn cr-btn-secondary cr-btn-m bas-zip" href={zipHref}>{s.zip}<span aria-hidden>↓</span></a>}
       <div className="bas-cols">
         <div>
           <h3 className="t-label brand-k">{s.tokens}</h3>

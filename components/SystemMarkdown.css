@@ -13,12 +13,12 @@
 .mdv-bar { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 10px 0 12px; box-shadow: inset 0 -1px 0 var(--md-line); background: var(--md-bar); font-family: var(--font-sans); font-size: var(--fs-small); }
 .mdv-bar__hint { color: var(--md-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .mdv-bar__tools { margin-left: auto; display: inline-flex; gap: 6px; flex-shrink: 0; }
-/* The bar's actions are the system's Button, quiet, size s (btn btn--sm btn--quiet): no outline, no paper (Eric,
+/* The bar's actions are the system's Button, quiet, size s: no outline, no paper (Eric,
    07-10: "no con fondo blanco, algo parecido a como teníamos ayer"). What is theirs here is the resting fill and the
    ink, in the file's own --md-* tokens so they hold in both themes; a mode that is on (Propose, Comment) keeps the
    stronger fill */
-.mdv-btn.btn--quiet { background: var(--md-fill); color: var(--md-ink); }
-.mdv-btn.btn--quiet:hover, .mdv-btn.btn--quiet:active, .mdv-btn.btn--quiet.is-on { background: var(--md-fill-2); color: var(--md-strong); }
+.mdv-btn.cr-btn-quiet { background: var(--md-fill); color: var(--md-ink); }
+.mdv-btn.cr-btn-quiet:hover, .mdv-btn.cr-btn-quiet:active, .mdv-btn.cr-btn-quiet.is-on { background: var(--md-fill-2); color: var(--md-strong); }
 .mdv-btn__down { display: inline-flex; transform: rotate(90deg); }
 /* Copy and the other ways the file leaves (components/FileMenu.tsx): one button in two halves */
 .mdv-split { display: inline-flex; gap: 0; }
@@ -71,7 +71,7 @@
 .tpl-page:hover .tpl-page__full { opacity: 1; animation: dm-scroll cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
 @media (prefers-reduced-motion: reduce) { .tpl-page:hover .tpl-page__full { animation: none; } }
 .tpl-files { display: flex; gap: 6px; flex-wrap: wrap; }
-.tpl-files .btn { margin-left: auto; }
+.tpl-files .cr-btn { margin-left: auto; }
 /* criterio.md and receta.md as two files on the same panel: the system's SegmentedControl (chrome on the panel, paper
    in the document look), and a quiet Button to add the recipe when there is none */
 .mdv-files { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }

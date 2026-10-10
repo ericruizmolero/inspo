@@ -55,7 +55,6 @@ import { preloadTemplates } from "./templates-cache";
 import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
-import { Button } from "@/components/ui/button";
 import PersonAvatar from "./PersonAvatar";
 import { afterPaint } from "@/components/ui/liquid";
 import { useConfirm } from "./useConfirm";
@@ -2059,7 +2058,7 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
           {agent.done.map((d, i) => d.kind === "guide" || d.kind === "ask" ? null : (
             <li key={i} className={`${d.ok ? "" : "is-failed"}${d.undone ? " is-undone" : ""}`}>{d.ok ? Icons.check : Icons.x}
               <span>{d.ok ? line(d) : d.error}{d.ok && (d.kind === "decide" || d.kind === "organize") && d.text ? <small className="dock__agent-sub">{d.text}</small> : null}</span>
-              {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <button type="button" className="btn btn--quiet btn--sm dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</button> : null}
+              {d.undone ? <small className="dock__agent-undone">{t.agent.undone}</small> : d.undo?.length ? <CrButton variant="quiet" size="s" className="dock__agent-undo" disabled={agent.busy} onClick={() => onUndo(i)}>{t.agent.undo}</CrButton> : null}
             </li>
           ))}
         </ul>
@@ -2068,14 +2067,14 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
         <div key={`q${i}`} className="dock__agent-ask">
           <p>{q.text}</p>
           <div className="dock__agent-options">
-            {q.options!.map((o) => <button key={o.label} type="button" className="btn btn--sm" disabled={agent.busy} data-tip={o.order} onClick={() => onAsk(o.order)}>{o.label}</button>)}
+            {q.options!.map((o) => <CrButton key={o.label} size="s" disabled={agent.busy} data-tip={o.order} onClick={() => onAsk(o.order)}>{o.label}</CrButton>)}
           </div>
         </div>
       ))}
       {guides.map((g, i) => (
         <div key={`g${i}`} className="dock__agent-guide">
           <p>{g.text}</p>
-          {g.topic && g.topic !== "other" && g.topic !== "export_md" && <a className="btn btn--sm btn--primary" href="/extension/connect" target="_blank" rel="noreferrer">{t.agent.guides[g.topic]} {Icons.arrow}</a>}
+          {g.topic && g.topic !== "other" && g.topic !== "export_md" && <a className="cr-btn cr-btn-primary cr-btn-s" href="/extension/connect" target="_blank" rel="noreferrer">{t.agent.guides[g.topic]} <Icon name="arrow-right" size={16} /></a>}
         </div>
       ))}
       {agent.pending.length > 0 && (
@@ -2083,8 +2082,8 @@ function AgentCard({ agent, projects, onConfirm, onCancel, onClose, onUndo, onAs
           <span className="dock__agent-pending-title">{t.agent.pendingTitle(agent.pending.length)}</span>
           <ul>{agent.pending.map((a, i) => <li key={i}>{will(a)}</li>)}</ul>
           <div className="dock__agent-actions">
-            <Button variant="primary" size="sm" disabled={agent.busy} onClick={onConfirm}>{agent.busy ? <Busy label={t.agent.thinking} /> : Icons.check} {t.agent.confirm}</Button>
-            <Button size="sm" disabled={agent.busy} onClick={onCancel}>{t.agent.cancel}</Button>
+            <CrButton variant="primary" size="s" disabled={agent.busy} onClick={onConfirm}>{agent.busy ? <Busy label={t.agent.thinking} /> : <Icon name="check" size={16} />} {t.agent.confirm}</CrButton>
+            <CrButton size="s" disabled={agent.busy} onClick={onCancel}>{t.agent.cancel}</CrButton>
           </div>
         </div>
       )}

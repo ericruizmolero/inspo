@@ -7,7 +7,6 @@ import { getSession } from "@/lib/workspace";
 import AcceptInvitation from "./AcceptInvitation";
 import SwitchAccount from "./SwitchAccount";
 import { getT } from "@/lib/i18n";
-import { buttonVariants } from "@/components/ui/button";
 import Logo from "@/components/Logo";
 import AuthWindow from "@/components/AuthWindow";
 
@@ -54,7 +53,7 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
             heading={t.invite.cannotAccept}
             status={t.invite.signedInAs(session.user.email)}
             footer={<>
-              <Link href="/" className={buttonVariants()}>{t.invite.goToApp}</Link>
+              <Link href="/" className="cr-btn cr-btn-secondary cr-btn-m">{t.invite.goToApp}</Link>
               {/* A mismatched email was a dead end: now the account can be switched */}
               {mismatch ? <SwitchAccount next={path} /> : null}
             </>}

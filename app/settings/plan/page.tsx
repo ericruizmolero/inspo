@@ -8,8 +8,7 @@ import UsageCard from "../_components/UsageCard";
 import { quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT } from "@/lib/plans";
 import { getT, fmtDate, type Dict } from "@/lib/i18n";
-import { buttonVariants } from "@/components/ui/button";
-import { Icon, Progress, SettingsWindow } from "@/components/criterio";
+import { Button, Icon, Progress, SettingsWindow } from "@/components/criterio";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -54,9 +53,9 @@ export default async function PlanPage() {
               <SettingsWindow key={p.key} title={p.name} className={`pl-plan${current ? " is-current" : ""}`}
                 note={current ? t.plans.current : undefined}
                 actions={current ? undefined : (
-                  <a className={buttonVariants({ variant: p.priceEur > 0 ? "primary" : "default", size: "sm" })} href={mailto(p.name)}>
+                  <Button variant={p.priceEur > 0 ? "primary" : "secondary"} size="s" href={mailto(p.name)}>
                     {p.priceEur > 0 ? t.plans.moveUp(p.name) : t.plans.moveDown(p.name)}
-                  </a>
+                  </Button>
                 )}>
                 <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
                 <div className="pl-plan__price">

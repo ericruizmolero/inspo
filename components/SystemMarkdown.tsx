@@ -9,7 +9,6 @@ import type { SystemArea } from "@/types/system";
 import { DECISION_MAX, NEVER_MAX } from "@/types/system";
 import { neverMd, type CriterioBlock } from "@/lib/criterio-md";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
 import { loadRecipe, saveRecipe } from "@/app/actions/templates";
 import { timeAgo } from "@/lib/i18n/format";
 import { Avatar, Busy, Button as SysButton, Icon, IconButton, SegmentedControl, TipWindow, TextArea, toneFor } from "@/components/criterio";
@@ -17,7 +16,7 @@ import FileMenu from "./FileMenu";
 import "./SystemMarkdown.css";
 
 type AreaBlock = Extract<CriterioBlock, { kind: "area" }>;
-const IconPin = <Icon name="comment" size={13} />;
+const IconPin = <Icon name="comment" size={16} />;
 export const WHY_MAX = 400;
 /** A person's face: the system's Avatar, their picture or their initial on their tone */
 const Face = ({ name, image, size }: { name: string; image: string | null; size: number }) => <Avatar initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} src={image} size={size} />;
@@ -499,9 +498,9 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
         {tabs}
         <span className="mdv-bar__hint">{s.recipeHint}</span>
         <span className="mdv-bar__tools">
-          <button type="button" className="btn btn--sm btn--quiet mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}>{recipeCopied ? Icons.check : Icons.copy} {recipeCopied ? t.system.copied : s.copy}</button>
-          <button type="button" className="btn btn--sm btn--quiet mdv-btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([recipe ?? ""], { type: "text/markdown" })); a.download = `${projectName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-receta.md`; a.click(); URL.revokeObjectURL(a.href); }}><i className="mdv-btn__down">{Icons.arrow}</i> .md</button>
-          {!readOnly && <label className="btn btn--sm btn--quiet mdv-btn" data-tip={s.replaceRecipe} aria-label={s.replaceRecipe}>{Icons.shuffle}<input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
+          <button type="button" className="cr-btn cr-btn-quiet cr-btn-s mdv-btn" onClick={() => { void navigator.clipboard.writeText(recipe ?? "").then(() => { setRecipeCopied(true); setTimeout(() => setRecipeCopied(false), 1500); }, () => {}); }}><Icon name={recipeCopied ? "check" : "copy"} size={16} /> {recipeCopied ? t.system.copied : s.copy}</button>
+          <button type="button" className="cr-btn cr-btn-quiet cr-btn-s mdv-btn" onClick={() => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([recipe ?? ""], { type: "text/markdown" })); a.download = `${projectName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-receta.md`; a.click(); URL.revokeObjectURL(a.href); }}><i className="mdv-btn__down"><Icon name="arrow-right" size={16} /></i> .md</button>
+          {!readOnly && <label className="cr-btn cr-btn-quiet cr-btn-s mdv-btn" data-tip={s.replaceRecipe} aria-label={s.replaceRecipe}><Icon name="shuffle" size={16} /><input type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden onChange={(e) => void upload(e.target.files?.[0])} /></label>}
         </span>
       </header>
       {recipe === null ? <div className="mdv-doc"><Busy label={s.loadingRecipe} /></div> : <div className="mdv-doc">{recipe.split("\n").map((line, i) => <Line key={i} text={line} />)}</div>}
@@ -514,11 +513,11 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
         {tabs}
         <span className="mdv-bar__hint">{readOnly ? s.readOnlyHint : onPin ? (commenting ? t.doc.hintComment : proposing ? t.doc.hintPropose : t.doc.hint) : s.hint}</span>
         <span className="mdv-bar__tools">
-          {onPropose && !readOnly && <button type="button" className={`btn btn--sm btn--quiet mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} data-tip={t.doc.proposeToolHint} onClick={() => { setProposing((x) => !x); setCommenting(false); setPop(null); }}>{t.doc.proposeTool}</button>}
-          {onPin && !readOnly && <button type="button" className={`btn btn--sm btn--quiet mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} data-tip={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setProposing(false); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
+          {onPropose && !readOnly && <button type="button" className={`cr-btn cr-btn-quiet cr-btn-s mdv-btn mdv-btn--propose${proposing ? " is-on" : ""}`} aria-pressed={proposing} data-tip={t.doc.proposeToolHint} onClick={() => { setProposing((x) => !x); setCommenting(false); setPop(null); }}>{t.doc.proposeTool}</button>}
+          {onPin && !readOnly && <button type="button" className={`cr-btn cr-btn-quiet cr-btn-s mdv-btn mdv-btn--comment${commenting ? " is-on" : ""}`} aria-pressed={commenting} data-tip={t.doc.commentHint} onClick={() => { setCommenting((c) => !c); setProposing(false); setPop(null); }}>{IconPin} {t.doc.commentTool}</button>}
           {fileTools}
           <span className="mdv-split">
-            <button type="button" className="btn btn--sm btn--quiet mdv-btn" onClick={onCopy}>{copied ? Icons.check : Icons.copy} {copied ? t.system.copied : s.copy}</button>
+            <button type="button" className="cr-btn cr-btn-quiet cr-btn-s mdv-btn" onClick={onCopy}><Icon name={copied ? "check" : "copy"} size={16} /> {copied ? t.system.copied : s.copy}</button>
             <FileMenu markdown={markdown} projectName={projectName} onDownload={onDownload} />
           </span>
         </span>

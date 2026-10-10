@@ -7,10 +7,9 @@ import { authClient } from "@/lib/auth-client";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { useT, messageOf } from "@/components/I18nProvider";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Avatar, Button, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
-import { Avatar, FieldRow, SettingsWindow, toneFor } from "@/components/criterio";
 import PersonAvatar from "@/components/PersonAvatar";
 
 export default function WorkspacePanel({ workspace, workspaces, me, canManage }: { workspace: Workspace; workspaces: Workspace[]; me: SessionUser; canManage: boolean }) {
@@ -29,7 +28,7 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
     return (
       <div className="page__body">
         <SettingsWindow title={t.settings.personalSpace} note={t.settings.personalSpaceHint}
-          actions={<Link className={buttonVariants({ size: "sm" })} href="/settings/account">{t.settings.goToAccount}</Link>} />
+          actions={<Link className="cr-btn cr-btn-secondary cr-btn-s" href="/settings/account">{t.settings.goToAccount}</Link>} />
         <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
     );
@@ -69,7 +68,7 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
         <form onSubmit={rename}>
           <FieldRow label={t.settings.name} hint={t.settings.teamNameHint} htmlFor="team-name" error={nameError}
             action={canManage && (
-              <Button variant="primary" size="sm" type="submit" disabled={busy || !name.trim() || name.trim() === workspace.name}>
+              <Button variant="primary" size="s" type="submit" disabled={busy || !name.trim() || name.trim() === workspace.name}>
                 {saved ? t.settings.saved : t.settings.save}
               </Button>
             )}>
@@ -80,8 +79,8 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
         <FieldRow label={t.ws.logo} hint={t.settings.logoHint} error={logoError}>
           <span className="setting-photo">
             <Avatar initials={workspace.name.slice(0, 1).toUpperCase()} name={workspace.name} tone={toneFor(workspace.name)} src={workspace.logo} size={44} square />
-            {canManage && <Button size="sm" onClick={() => logoRef.current?.click()} disabled={busy}>{workspace.logo ? t.ws.change : t.ws.add}</Button>}
-            {canManage && workspace.logo && <Button variant="quiet" size="sm" onClick={() => setLogo(null)} disabled={busy}>{t.ws.remove}</Button>}
+            {canManage && <Button size="s" onClick={() => logoRef.current?.click()} disabled={busy}>{workspace.logo ? t.ws.change : t.ws.add}</Button>}
+            {canManage && workspace.logo && <Button variant="quiet" size="s" onClick={() => setLogo(null)} disabled={busy}>{t.ws.remove}</Button>}
             <input ref={logoRef} type="file" accept="image/*" hidden onChange={onLogoFile} />
           </span>
         </FieldRow>
@@ -146,8 +145,8 @@ function Spaces({ workspace, workspaces, me }: { workspace: Workspace; workspace
               </span>
               {/* The danger red waits for the confirm step, which also asks for the name typed */}
               {w.kind === "team" && (w.role === "owner"
-                ? <Button variant="quiet" size="sm" onClick={() => remove(w)} disabled={busy}>{t.settings.deleteSpace}</Button>
-                : <Button variant="quiet" size="sm" onClick={() => leave(w)} disabled={busy}>{t.team.leaveTeam}</Button>)}
+                ? <Button variant="quiet" size="s" onClick={() => remove(w)} disabled={busy}>{t.settings.deleteSpace}</Button>
+                : <Button variant="quiet" size="s" onClick={() => leave(w)} disabled={busy}>{t.team.leaveTeam}</Button>)}
             </li>
           );
         })}

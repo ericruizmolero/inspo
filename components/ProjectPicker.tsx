@@ -10,8 +10,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useT } from "./I18nProvider";
 import { Busy, Icon } from "@/components/criterio";
 
-export const IconFolder = <Icon name="folder" size={16} />;
-
 export default function ProjectPicker({ projects, filed, partly = [], onToggle, onCreate, onOpenChange, className, label, children, areasIn, side, closeOnPick }: {
   projects: Project[];
   /** Ids of the projects this reference is already in (with several selected: the ones all of them are in) */

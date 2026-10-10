@@ -14,7 +14,6 @@ import { readAreaMeta } from "@/lib/criterio-md";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
-import { Icons } from "./Sidebar";
 import { areaIcon } from "./area-icons";
 import { Avatar, Chip, Icon, toneFor } from "@/components/criterio";
 import "./SystemDoc.css";
@@ -198,8 +197,8 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
         <span><b>{n.who}</b> {n.proposal!.via ? t.mcp.proposesVia(n.proposal!.via) : s.proposes}</span>
         <time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
         <span className="sdoc-proposal__tools">
-          <button type="button" className="btn btn--sm" disabled={working} onClick={() => void answer(n, true)}>{Icons.check} {s.accept}</button>
-          <button type="button" className="btn btn--sm" disabled={working} onClick={() => void answer(n, false)}>{n.mine ? s.withdraw : s.reject}</button>
+          <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} onClick={() => void answer(n, true)}><Icon name="check" size={16} /> {s.accept}</button>
+          <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} onClick={() => void answer(n, false)}>{n.mine ? s.withdraw : s.reject}</button>
         </span>
       </header>
       <p className="sdoc-decision">{n.proposal!.decision}</p>

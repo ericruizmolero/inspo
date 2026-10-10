@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/criterio"
 import { cn } from "@/lib/utils"
 
 // Same frame as Dialog (.modal-backdrop viewport, .modal popup). An alert dialog does not close on an
@@ -40,11 +40,11 @@ function AlertDialogDescription({ className, ...props }: AlertDialogPrimitive.De
 
 // Both at the system's size s ("sm" in this older Button): the footer of a window (design system, Tallas)
 function AlertDialogCancel({ ...props }: AlertDialogPrimitive.Close.Props) {
-  return <AlertDialogPrimitive.Close data-slot="alert-dialog-cancel" render={<Button size="sm" />} {...props} />
+  return <AlertDialogPrimitive.Close data-slot="alert-dialog-cancel" render={<Button size="s" />} {...props} />
 }
 
 function AlertDialogAction({ ...props }: React.ComponentProps<typeof Button>) {
-  return <Button data-slot="alert-dialog-action" variant="primary" size="sm" {...props} />
+  return <Button data-slot="alert-dialog-action" variant="primary" size="s" {...props} />
 }
 
 export { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle }

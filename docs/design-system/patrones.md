@@ -6,7 +6,7 @@ Cómo resolvemos problemas que se repiten. Cada patrón enlaza la decisión que 
 
 | Caso | Herramienta | Ejemplo |
 | --- | --- | --- |
-| Hover, pulsar, entradas cortas | CSS con las curvas de los tokens | `.btn:active { scale(0.96) }`, `pop-in` |
+| Hover, pulsar, entradas cortas | CSS con las curvas de los tokens | `.cr-iconbtn:active { scale(0.96) }`, `pop-in` |
 | Muchas piezas que cambian de sitio | Transición CSS de `transform` sobre posiciones calculadas | Tarjetas del tablero (`Grid.tsx`) |
 | Una pieza que nace de un punto | WAAPI (`el.animate`) | La ficha crece desde donde se pulsó (`ItemPanel.tsx`) |
 | El hover de un grupo de pestañas, que pasa de una a otra | WAAPI: una pastilla aparte, de la posición medida a la nueva, con `transform` muestreado para que un borde llegue antes que el otro. La elegida no se anima | `Liquid` (`components/ui/liquid.tsx`) → [decisión](decisiones/2026-10-06-el-relleno-de-las-pestanas-es-liquido.md) |

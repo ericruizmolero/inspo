@@ -3,8 +3,7 @@
 import { createKey } from "@/app/actions/ext-keys";
 import { useEffect, useState } from "react";
 import { useT } from "@/components/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/criterio";
+import { Button, TextField } from "@/components/criterio";
 import AuthWindow from "@/components/AuthWindow";
 import { browserName, useExtension } from "@/hooks/use-extension";
 
@@ -51,7 +50,7 @@ export default function ConnectPanel({ currentId, youAre }: { currentId: string;
             <p className="auth__hint">{info ? t.ext.handingOver : t.ext.notDetected}</p>
             <div className="ext-key">
               <code>{result.key}</code>
-              <Button variant="default" size="sm" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</Button>
+              <Button size="s" onClick={copy}>{copied ? t.ext.copiedKey : t.common.copy}</Button>
             </div>
             <p className="auth__hint">{t.ext.onlyOnce}</p>
           </>

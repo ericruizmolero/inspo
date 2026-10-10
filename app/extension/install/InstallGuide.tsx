@@ -4,9 +4,8 @@ import { createKey } from "@/app/actions/ext-keys";
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useT } from "@/components/I18nProvider";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { browserName, canInstall, isOlder, useExtension } from "@/hooks/use-extension";
-import { Button as CrButton, Card, StatusRing } from "@/components/criterio";
+import { Button, Card, StatusRing } from "@/components/criterio";
 
 // Web pages cannot link to chrome:// addresses, so it is shown to be copied. Arc, Edge and
 // Brave take the same address and send it to their own.
@@ -78,7 +77,7 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
         <Card tone="butter" className="steps__notice" title={g.update.title(latest)}>
           <p>{g.update.body(info.version)}</p>
           {/* One ember per view: while the connect step still waits, its button is the primary one */}
-          <a className={buttonVariants({ variant: "primary", size: "sm" })} href={ZIP} download>{g.download.action}</a>
+          <a className="cr-btn cr-btn-primary cr-btn-s" href={ZIP} download>{g.download.action}</a>
         </Card>
       )}
 
@@ -88,7 +87,7 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
             <>
               <p className="steps__text">{g.download.body}</p>
               <div className="steps__actions">
-                <a className={buttonVariants({ variant: downloaded ? "default" : "primary" })} href={ZIP} download onClick={() => setDownloaded(true)}>
+                <a className={`cr-btn cr-btn-${downloaded ? "secondary" : "primary"} cr-btn-m`} href={ZIP} download onClick={() => setDownloaded(true)}>
                   {downloaded ? g.download.again : g.download.action}
                 </a>
                 <span className="steps__meta">{g.version(latest)}</span>
@@ -106,14 +105,14 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
                   {g.load.open}
                   <span className="steps__address">
                     <span>{EXTENSIONS_URL}</span>
-                    <Button size="sm" onClick={() => copy("address", EXTENSIONS_URL)} aria-label={g.load.copyAddress}>{copied === "address" ? t.common.copied : t.common.copy}</Button>
+                    <Button size="s" onClick={() => copy("address", EXTENSIONS_URL)} aria-label={g.load.copyAddress}>{copied === "address" ? t.common.copied : t.common.copy}</Button>
                   </span>
                 </li>
                 <li>{g.load.devMode}</li>
                 <li>{g.load.unpacked}</li>
               </ol>
               <p className="steps__text">
-                {g.load.after} <CrButton variant="quiet" size="s" className="steps__link" onClick={() => window.location.reload()}>{g.load.reload}</CrButton>
+                {g.load.after} <Button variant="quiet" size="s" className="steps__link" onClick={() => window.location.reload()}>{g.load.reload}</Button>
               </p>
             </>
           )}
@@ -131,13 +130,13 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
                   <p className="steps__text">{t.ext.notDetected}</p>
                   <div className="ext-key">
                     <code>{key}</code>
-                    <Button size="sm" onClick={() => copy("key", key)}>{copied === "key" ? t.ext.copiedKey : t.common.copy}</Button>
+                    <Button size="s" onClick={() => copy("key", key)}>{copied === "key" ? t.ext.copiedKey : t.common.copy}</Button>
                   </div>
                   <p className="card-note">{t.ext.onlyOnce}</p>
                 </>
               ) : (
                 <div className="steps__actions">
-                  <Button variant={installed ? "primary" : "default"} onClick={connect} disabled={!installed || busy || !!key}>
+                  <Button variant={installed ? "primary" : "secondary"} onClick={connect} disabled={!installed || busy || !!key}>
                     {busy || key ? g.connect.connecting : t.team.connectBrowser}
                   </Button>
                   {!installed && <span className="steps__meta">{g.connect.waiting}</span>}
@@ -151,7 +150,7 @@ export default function InstallGuide({ currentId, latest }: { currentId: string;
           <p className="steps__text">{g.save.body}</p>
           {connected && (
             <div className="steps__actions">
-              <Link className={buttonVariants({ variant: "default" })} href="/">{g.save.action}</Link>
+              <Link className="cr-btn cr-btn-secondary cr-btn-m" href="/">{g.save.action}</Link>
             </div>
           )}
         </Step>

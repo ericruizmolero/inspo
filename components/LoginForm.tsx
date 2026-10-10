@@ -4,15 +4,14 @@ import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import type { SocialProvider } from "@/lib/auth";
 import { useT } from "./I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Busy, Button as CrButton, Chip, Icon, Separator, TextField } from "@/components/criterio";
+import { Busy, Button, Chip, Icon, Separator, TextField } from "@/components/criterio";
 import { isLocalPath } from "@/lib/url";
 import { joinWaitlistFromLogin } from "@/app/actions/access";
 
 const IcMail = <Icon name="mail" size={22} />;
 
 const IcGoogle = (
-  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
+  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden>
     <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.7-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.8z" />
     <path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.2v3.1C3.2 21.3 7.3 24 12 24z" />
     <path fill="#FBBC05" d="M5.3 14.3c-.5-1.5-.5-3.1 0-4.6V6.6H1.2a12 12 0 000 10.8l4.1-3.1z" />
@@ -20,12 +19,12 @@ const IcGoogle = (
   </svg>
 );
 const IcApple = (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
     <path d="M16.4 12.7c0-2.5 2.1-3.7 2.2-3.8-1.2-1.7-3-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.8 1.3 10.3.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8s2 .8 3.4.8c1.4 0 2.3-1.3 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9 0 0-2.7-1-2.7-4.3zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 0-2.2.7-3 1.5-.6.7-1.2 1.9-1.1 3.1 1.2.1 2.3-.6 3.1-1.4z" />
   </svg>
 );
 const IcX = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
     <path d="M18.2 2h3.4l-7.4 8.5L23 22h-6.8l-5.3-7-6.1 7H1.4l7.9-9.1L1 2h7l4.8 6.4L18.2 2zm-1.2 18h1.9L7.1 3.9H5.1L17 20z" />
   </svg>
 );
@@ -112,16 +111,16 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
           : <>
               <p className="auth__hint">{t.login.noLinkBefore}<strong>{email.trim()}</strong>{t.login.noLinkAfter}</p>
               {waitlistError && <p className="modal__error">{waitlistError}</p>}
-              <CrButton size="s" disabled={waitlist === "joining"} onClick={async () => {
+              <Button size="s" disabled={waitlist === "joining"} onClick={async () => {
                 setWaitlist("joining"); setWaitlistError("");
                 const r = await joinWaitlistFromLogin(email).catch(() => null);
                 if (r?.ok) { setWaitlist("joined"); return; }
                 setWaitlist("idle"); setWaitlistError(r?.error ?? t.login.joinFailed);
               }}>
                 {waitlist === "joining" ? <><Busy label={t.login.joining} /> {t.login.joining}</> : t.login.joinWaitlist}
-              </CrButton>
+              </Button>
             </>)}
-        <CrButton variant="quiet" size="s" className="auth__alt" onClick={() => { setSent(false); setWaitlist("idle"); }}>{t.login.useAnotherEmail}</CrButton>
+        <Button variant="quiet" size="s" className="auth__alt" onClick={() => { setSent(false); setWaitlist("idle"); }}>{t.login.useAnotherEmail}</Button>
       </div>
     );
   }
@@ -136,7 +135,7 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
             {providers.map((p) => (
               <Button
                 key={p}
-                size="lg"
+                size="l"
                 className={`auth__social-btn auth__social-btn--${p}`}
                 disabled={loading || social !== null}
                 aria-busy={social === p}
@@ -164,15 +163,15 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
         required
       />
       {error && <p className="modal__error">{error}</p>}
-      <Button variant="primary" size="lg" block type="submit" disabled={loading || social !== null || !email.trim()}>
+      <Button variant="primary" size="l" type="submit" disabled={loading || social !== null || !email.trim()}>
         {loading
           ? <><Busy label={t.login.sending} /> {t.login.sending}</>
           : <>{t.login.sendLink} <Icon name="arrow-right" size={20} /></>}
       </Button>
       {devEmail && (
-        <CrButton variant="quiet" size="s" className="auth__dev" href={devLoginHref(isLocalPath(next) ? next : "/")}>
+        <Button variant="quiet" size="s" className="auth__dev" href={devLoginHref(isLocalPath(next) ? next : "/")}>
           {t.login.devLogin(devEmail)}
-        </CrButton>
+        </Button>
       )}
     </form>
   );

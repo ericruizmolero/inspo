@@ -3,7 +3,7 @@
 // In the library and the Inbox it files the selection in a project or deletes it for good; inside a project it
 // moves it to another one or takes it out. "Select all" takes the whole board on screen (⌘A does the same).
 import type { Project } from "@/types/inspo";
-import ProjectPicker, { IconFolder } from "./ProjectPicker";
+import ProjectPicker from "./ProjectPicker";
 import { useT } from "./I18nProvider";
 import { Button, Icon, Separator } from "@/components/criterio";
 import "./SelectBar.css";
@@ -41,18 +41,18 @@ export default function SelectBar({ count, total, closing, onClosed, projects, f
       <Separator vertical className="selbar__sep" />
       {current ? (
         <ProjectPicker projects={projects.filter((p) => p.id !== current.id)} filed={[]} onToggle={(id) => onMove(id)} onCreate={onCreate}
-          side="top" closeOnPick className="btn btn--quiet selbar__btn" label={s.moveTo}>
-          {IconFolder}<span>{s.move}</span>
+          side="top" closeOnPick className="cr-btn cr-btn-quiet cr-btn-m selbar__btn" label={s.moveTo}>
+          <Icon name="folder" size={20} /><span>{s.move}</span>
         </ProjectPicker>
       ) : (
         <ProjectPicker projects={projects} filed={filed} partly={partly} onToggle={onFile} onCreate={onCreate}
-          side="top" className="btn btn--quiet selbar__btn" label={s.addTo}>
-          {IconFolder}<span>{s.add}</span>
+          side="top" className="cr-btn cr-btn-quiet cr-btn-m selbar__btn" label={s.addTo}>
+          <Icon name="folder" size={20} /><span>{s.add}</span>
         </ProjectPicker>
       )}
       {current && (
-        <button type="button" className="btn btn--quiet selbar__btn" onClick={onRemove} aria-label={s.removeFrom(current.name)} data-tip={s.removeFrom(current.name)}>
-          <Icon name="trash" size={16} />
+        <button type="button" className="cr-btn cr-btn-quiet cr-btn-m selbar__btn" onClick={onRemove} aria-label={s.removeFrom(current.name)} data-tip={s.removeFrom(current.name)}>
+          <Icon name="trash" size={20} />
           <span>{s.remove}</span>
         </button>
       )}

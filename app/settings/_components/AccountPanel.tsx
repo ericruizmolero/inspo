@@ -11,8 +11,7 @@ import OutputLanguageSwitch from "@/components/OutputLanguageSwitch";
 import { setUiSounds, useUiSounds } from "@/lib/ui-sounds";
 import { setEmailPreference } from "@/app/actions/notifications";
 import { useT, messageOf } from "@/components/I18nProvider";
-import { Button } from "@/components/ui/button";
-import { Avatar, FieldRow, SettingsWindow, Switch, toneFor } from "@/components/criterio";
+import { Avatar, Button, FieldRow, SettingsWindow, Switch, toneFor } from "@/components/criterio";
 
 export default function AccountPanel({ user, personal, emails }: { user: SessionUser; personal: Workspace | null; emails: { digest: boolean; replies: boolean } }) {
   const personalId = personal?.id ?? null;
@@ -79,17 +78,17 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
         <FieldRow label={t.settings.photo} error={photoError}>
           <span className="setting-photo">
             <Avatar initials={user.name.slice(0, 1).toUpperCase()} name={user.name} tone={toneFor(user.name)} src={user.image} size={44} />
-            <Button size="sm" onClick={() => photoRef.current?.click()} disabled={busy}>
+            <Button size="s" onClick={() => photoRef.current?.click()} disabled={busy}>
               {user.image ? t.ws.changePhoto : t.ws.addPhoto}
             </Button>
-            {user.image && <Button variant="quiet" size="sm" onClick={() => setPhoto(null)} disabled={busy}>{t.ws.removePhoto}</Button>}
+            {user.image && <Button variant="quiet" size="s" onClick={() => setPhoto(null)} disabled={busy}>{t.ws.removePhoto}</Button>}
             <input ref={photoRef} type="file" accept="image/*" hidden onChange={onPhotoFile} />
           </span>
         </FieldRow>
         <form onSubmit={saveName}>
           <FieldRow label={t.settings.name} htmlFor="account-name" error={nameError}
             action={
-              <Button variant="primary" size="sm" type="submit" disabled={busy || !name.trim() || name.trim() === user.name}>
+              <Button variant="primary" size="s" type="submit" disabled={busy || !name.trim() || name.trim() === user.name}>
                 {saved ? t.settings.saved : t.settings.save}
               </Button>
             }>
@@ -128,7 +127,7 @@ export default function AccountPanel({ user, personal, emails }: { user: Session
       )}
 
       <SettingsWindow title={t.settings.session} note={t.settings.sessionHint}
-        actions={<Button size="sm" onClick={signOut}>{t.ws.signOut}</Button>} />
+        actions={<Button size="s" onClick={signOut}>{t.ws.signOut}</Button>} />
     </div>
   );
 }

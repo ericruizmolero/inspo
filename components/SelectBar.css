@@ -19,7 +19,7 @@
    Done the one secondary. An open picker keeps its trigger lit */
 .selbar__btn[data-popup-open] { background: var(--ib-hover); }
 .selbar__done { margin-left: 2px; }
-.selbar .btn:focus-visible, .selbar .cr-btn:focus-visible { outline-color: var(--ember-glow); }
+.selbar .cr-btn:focus-visible { outline-color: var(--ember-glow); }
 /* With "Select all" and "Delete" the labels no longer fit under the app's mobile cut: icons only there */
 @media (max-width: 800px) {
   .selbar__btn span { display: none; }

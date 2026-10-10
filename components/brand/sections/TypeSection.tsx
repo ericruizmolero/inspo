@@ -31,7 +31,7 @@ function FindFace({ initial, onFound, label }: { initial: string; onFound: (f: P
   return (
     <form className="bt-find" onSubmit={(e) => { e.preventDefault(); void go(); }}>
       <label><span>{t.brand.type.family}</span><input className="input" value={family} onChange={(e) => setFamily(e.currentTarget.value)} maxLength={80} autoFocus /></label>
-      <button type="submit" className="btn btn--sm" disabled={busy || !family.trim()}>{busy ? <><Busy label={t.brand.type.finding} /> {t.brand.type.finding}</> : label}</button>
+      <button type="submit" className="cr-btn cr-btn-secondary cr-btn-s" disabled={busy || !family.trim()}>{busy ? <><Busy label={t.brand.type.finding} /> {t.brand.type.finding}</> : label}</button>
     </form>
   );
 }
@@ -139,7 +139,7 @@ export default function TypeSection() {
       {type.faces.map((f, i) => <Face key={f.id} face={f} i={i} />)}
       {mode === "edit" && type.faces.length < 4 && (
         <Popover open={adding} onOpenChange={setAdding}>
-          <PopoverTrigger className="btn btn--quiet be-add"><Icon name="plus" size={20} />{s.addFace}</PopoverTrigger>
+          <PopoverTrigger className="cr-btn cr-btn-quiet cr-btn-m be-add"><Icon name="plus" size={20} />{s.addFace}</PopoverTrigger>
           <PopoverContent className="be-pop" align="start">
             <FindFace initial="" label={s.findFace} onFound={(f) => { set({ faces: [...type.faces, { id: brandId(), role: type.faces.some((x) => x.role === "display") ? "text" : "display", note: "", ...f }] }); setAdding(false); }} />
           </PopoverContent>

@@ -17,9 +17,8 @@ import SystemDoc from "./SystemDoc";
 import { Thumb } from "./Thumb";
 import { useSystemActivity } from "./useSystemActivity";
 import type { NoteCaption } from "./InspoCard";
-import { Button } from "@/components/ui/button";
+import { Busy, Button, Chip, Icon, MenuItem, SegmentedControl } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Busy, Chip, Icon, MenuItem, SegmentedControl } from "@/components/criterio";
 import BrandPresentation from "./brand/BrandPresentation";
 import { useBrandEditor } from "./brand/useBrandEditor";
 import { useBrandFonts } from "./brand/useBrandFonts";
@@ -246,11 +245,11 @@ export default function SystemView({ project, system, onSystem, board, library, 
     <div className="spage-head__actions">
       {!filled && !running && <p className="spage-muted">{board.length ? t.system.runHint(board.length) : t.system.noBoard}</p>}
       {board.length > 0 ? (
-        <Button variant="primary" size="sm" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
+        <Button variant="primary" size="s" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
           {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}
         </Button>
-      ) : <Button variant="primary" size="sm" onClick={onOpenBoard}><Icon name="plus" size={16} /> {t.system.addRefs}</Button>}
-      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="sm" onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
+      ) : <Button variant="primary" size="s" onClick={onOpenBoard}><Icon name="plus" size={16} /> {t.system.addRefs}</Button>}
+      {view === "presentation" && filled > 0 && !sys.brand?.run && !running && <Button size="s" onClick={() => void fillBrand()} data-tip={t.brand.fillHint}>{t.brand.fill}</Button>}
       {/* What is asked for now and then stays out of the row: bringing in a brand that exists, the share links */}
       <Popover open={moreOpen} onOpenChange={setMoreOpen}>
         <PopoverTrigger className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-s spage-more" aria-label={t.card.more} data-tip={t.card.more}>{Icons.dots}</PopoverTrigger>

@@ -365,7 +365,7 @@
 .bv-pair > .be-tools { top: -4px; right: 0; }
 .bm-durations li > .be-tools, .bt-step__more .be-tools { opacity: 0.55; }
 .bm-durations li:hover > .be-tools, .bt-step:hover .be-tools { opacity: 1; }
-/* "+ Add …": a quiet Button with the plus (.btn .btn--quiet); the app's other edit actions are secondary Buttons */
+/* "+ Add …": a quiet Button with the plus; the app's other edit actions are secondary Buttons */
 .be-add { align-self: flex-start; margin-top: 14px; }
 .be-num { display: inline-flex; align-items: baseline; gap: 1px; }
 .be-num input { width: 4.2em; padding: 0 2px; border: 0; border-bottom: 1px dashed var(--border-strong); background: none; font: inherit; color: inherit; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
@@ -375,7 +375,7 @@
 .be-slot.is-busy { opacity: 0.6; }
 .be-slot__bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; padding: 12px 14px; opacity: 0; transition: opacity 0.15s; }
 .be-slot:hover .be-slot__bar, .be-slot:not(.has-file) .be-slot__bar, .be-slot__bar:focus-within { opacity: 1; }
-/* Over the user's own panels (light or dark): secondary Buttons, size s (.btn .btn--sm), which read on either */
+/* Over the user's own panels (light or dark): secondary Buttons, size s, which read on either */
 .be-slot__error { position: absolute; left: 14px; right: 14px; bottom: 52px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--surface-raised); border: 1px solid var(--border); font-family: var(--font-sans); font-size: var(--fs-small); color: var(--danger); }
 
 /* Popovers and dialogs, in the app's own panel */
@@ -392,7 +392,7 @@
 .bc-form__weights .cr-seg-item { flex: 1; justify-content: center; }
 .bc-form__weights .cr-seg-item i { display: block; background: currentColor; border-radius: 2px; }
 .bc-form__foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 4px; }
-/* Make accent and Remove: quiet Buttons, size s (.btn .btn--quiet .btn--sm; Remove with .is-danger) */
+/* Make accent and Remove: quiet Buttons, size s (Remove with .is-danger) */
 .bc-form__accent.is-on { color: var(--success) !important; }
 .bmo-pick__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; max-height: 60vh; overflow-y: auto; }
 .bmo-pick__grid button { position: relative; display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 0; border: 0; background: none; color: var(--text-2); font-size: var(--fs-label); text-align: left; cursor: pointer; }
@@ -482,5 +482,5 @@
 .bshare__list code { font-family: var(--font-mono); font-size: var(--fs-label); color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bshare__mode.cr-chip { padding: 1px 8px; font-size: var(--fs-label); font-weight: 500; }
 .bshare__list li > span { display: inline-flex; gap: 4px; flex-shrink: 0; }
-/* Copy link: a secondary Button, size s; revoke: a quiet one (.btn.is-danger), beside the strong IconButton */
+/* Copy link: a secondary Button, size s; revoke: a quiet one, beside the strong IconButton */
 @media (max-width: 560px) { .bshare__list li { flex-direction: column; align-items: flex-start; } }

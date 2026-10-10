@@ -402,53 +402,6 @@ p { text-wrap: pretty; }
   animation: shimmer 1.6s infinite;
 }
 
-/* ─── Buttons ─────────────────────────────────────────────────────────────── */
-/* Button (design system): chunky and beveled, the main nod to 2000. Ink border, light on the top-left
-   edge, shade on the bottom-right; pressed sinks in. Secondary (paper) by default; primary (ember) is the
-   one action the view is for; dark (ink) for a second strong action on paper. */
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: none;
-  min-height: 44px; padding: 0 18px;
-  border-radius: var(--radius-md);
-  border: var(--stroke-control) solid var(--control-border);
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-sans); font-size: var(--fs-ui); font-weight: var(--fw-semibold); /* 600: the Button's own weight */
-  white-space: nowrap; text-decoration: none;
-  box-shadow: var(--bevel);
-  transition: background-color 150ms ease, color 150ms ease, box-shadow 100ms ease, transform 100ms ease;
-}
-.btn svg { width: 20px; height: 20px; flex-shrink: 0; }
-.btn:hover { background: var(--paper-light); }
-.btn:active, .btn.is-pressed { background: var(--paper-pressed); box-shadow: var(--bevel-pressed); transform: translateY(1px); }
-.btn:disabled {
-  background: var(--disabled); color: var(--disabled-text); border-color: var(--disabled-border);
-  box-shadow: none; cursor: not-allowed; transform: none;
-}
-.btn--primary { background: var(--ember); color: var(--on-ember); }
-.btn--primary:hover { background: var(--ember-glow); }
-.btn--primary:active { background: var(--ember); }
-.btn--dark { background: var(--ink); color: var(--paper); box-shadow: var(--bevel-dark); }
-.btn--dark:hover { background: #2B2B26; }
-.btn--dark:active { background: var(--ink); }
-/* Danger: the primary's shape in deep red, only for the confirm step of something destructive */
-.btn--danger { background: var(--danger-deep); color: var(--paper); box-shadow: var(--bevel-dark); }
-.btn--danger:hover { background: #C2453A; }
-.btn--danger:active { background: var(--danger-deep); }
-/* Quiet (the system's): no border, no bevel, no fill until hover. Small inline actions inside bars and panels,
-   usually with an icon. Inside the chrome it reads the chrome's tokens (--ib-*). .btn--ghost is its old name */
-.btn--quiet, .btn--ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--ib-fg-strong, var(--text)); }
-.btn--quiet:hover, .btn--ghost:hover,
-.btn--quiet:active, .btn--ghost:active, .btn--quiet.is-pressed, .btn--ghost.is-pressed { background: var(--ib-hover, var(--surface-2)); box-shadow: none; transform: none; }
-.btn--quiet:disabled, .btn--ghost:disabled { background: transparent; border-color: transparent; }
-/* Sizes: m 44 (default), s 34, l 52. Icons 20 in m and l, 16 in s */
-.btn--sm { min-height: 34px; padding: 0 14px; font-size: var(--fs-small); }
-.btn--sm svg { width: 16px; height: 16px; }
-/* l is 16, the system's own size for Button l (the title-s size, in the sans) */
-.btn--lg { min-height: 52px; padding: 0 24px; font-size: var(--fs-body); }
-.btn--block { width: 100%; }
-.btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-
 /* ─── Liquid (components/ui/liquid.tsx): a group of tabs whose hover flows ───
    A faint pill follows the pointer from tab to tab, stretching towards the next; the chosen tab's fill is a pill
    too, set on the tab at once. The tabs sit over both and keep the colours of their own control; until the pill is
@@ -471,20 +424,6 @@ p { text-wrap: pretty; }
 .liquid__pill--hover.is-cut { transition: none; }
 @media (hover: none) { .liquid__pill--hover { display: none; } }
 
-/* IconButton (design system), quiet, size s: a 32 circle, no fill or border until hover. The same look as
-   <IconButton variant="quiet" size="s"> (.cr-iconbtn), for Button variant="icon" and DialogClose renders.
-   Always with an aria-label. On a raised surface (a dialog) the hover fill steps to surface-2 so it shows */
-.btn-icon {
-  display: inline-flex; align-items: center; justify-content: center; flex: none; box-sizing: border-box;
-  width: 32px; height: 32px; padding: 0;
-  border-radius: var(--radius-pill); border: var(--stroke-control) solid transparent; background: transparent;
-  color: var(--ib-fg, var(--text)); cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease, transform 120ms var(--ease-out);
-}
-.btn-icon:hover { background: var(--ib-hover, var(--surface-raised)); }
-.btn-icon:active:not(:disabled) { transform: scale(0.96); }
-.btn-icon:disabled { opacity: 0.45; cursor: not-allowed; transform: none; background: transparent; }
-.btn-icon:focus-visible { outline: 2px solid var(--ib-focus, var(--focus)); outline-offset: 2px; }
 .modal { --ib-hover: var(--surface-2); }
 
 /* ─── Inputs ──────────────────────────────────────────────────────────────── */
@@ -804,7 +743,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .topbar__trigger [data-slot="sidebar-trigger"]:hover { background: var(--chrome); border-color: var(--chrome-muted); color: var(--chrome-ink); }
 .topbar__trigger [data-slot="sidebar-trigger"]:focus-visible { outline-color: var(--ember-glow); }
 /* In Settings, Activity and /library (the docked shell) the header sits on the page, not over the board: the
-   trigger is the plain .btn-icon (quiet, size s) and follows the theme */
+   trigger is the quiet IconButton, size s, and follows the theme */
 .shell--docked .topbar__trigger { --focus-ring: var(--focus); }
 .shell--docked .topbar__trigger [data-slot="sidebar-trigger"] { width: 32px; height: 32px; background: transparent; border-color: transparent; color: var(--text); }
 .shell--docked .topbar__trigger [data-slot="sidebar-trigger"]:hover { background: var(--surface-raised); }
@@ -915,7 +854,7 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   --focus-ring: var(--ember-glow);
 }
-.dock .btn:focus-visible { outline-color: var(--ember-glow); }
+.dock__agent .cr-btn:focus-visible { outline-color: var(--ember-glow); }
 .dock__bar {
   position: relative; width: 100%; box-sizing: border-box;
   background: var(--chrome-panel); color: var(--chrome-text);
@@ -973,8 +912,8 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 }
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
-  .dir-row__add, .dir-add, .chip, .btn-icon, .sb__field { transition: none; }
-  .chip:active, .btn-icon:active:not(:disabled), .dir-add:active, .board-zoom .cr-zoom-value:active, .zoom-pill button:active { transform: none; }
+  .dir-row__add, .dir-add, .chip, .sb__field { transition: none; }
+  .chip:active, .dir-add:active, .board-zoom .cr-zoom-value:active, .zoom-pill button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -1097,7 +1036,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .cm-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 /* Above the thread: what happened to the reference somewhere else (a closed polish forgot it), and the way back */
 .cm-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-small); line-height: var(--lh-small); }
-.cm-notice .btn { flex-shrink: 0; }
 .cm-shot { display: block; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: var(--radius-m); overflow: hidden; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
 .cm-shot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .cm-shot:hover img { transform: scale(1.02); }
@@ -1184,7 +1122,7 @@ video.vp__media { object-fit: contain; }
 /* One comment and its replies. Replies hang from the comment on a rule that starts under its avatar (26/2). */
 .cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
 .cm-replies { display: flex; flex-direction: column; gap: 10px; margin-left: 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--border-strong); }
-/* Reply: a quiet Button, size s (.btn .btn--quiet .btn--sm) */
+/* Reply: a quiet Button, size s */
 .cm-reply-btn { align-self: flex-start; margin-left: 26px; }
 .cm-thread__foot { display: flex; align-items: center; gap: 4px; margin-left: 26px; }
 .cm-thread__foot .cm-reply-btn { margin-left: 0; }
@@ -1373,8 +1311,6 @@ video.vp__media { object-fit: contain; }
 .confirm__title { margin: 0; color: var(--text); }
 .confirm__text { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 /* Old name of the danger Button */
-.btn.is-danger-solid { background: var(--danger-deep); color: var(--paper); box-shadow: var(--bevel-dark); }
-.btn.is-danger-solid:hover { background: #C2453A; }
 .modal--lg { max-width: 820px; }
 
 .modal__header {
@@ -1595,7 +1531,7 @@ video.vp__media { object-fit: contain; }
 
 .dir-list { list-style: none; margin: 0; padding: 10px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .dir-item { position: relative; min-width: 0; }
-/* Save a directory site into the library: the system's secondary Button, size s (.btn .btn--sm); once added it is
+/* Save a directory site into the library: the system's secondary Button, size s; once added it is
    disabled, the system's disabled look */
 .dir-row.dir-row--add { padding-right: 12px; align-items: center; }
 .dir-row__link { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; color: inherit; text-decoration: none; border-radius: var(--radius-sm); }
@@ -1701,15 +1637,15 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   --field: var(--surface); --field-ink: var(--text); --field-border: var(--border); --field-stroke: 1px;
   --field-placeholder: var(--muted-2); --sunken: none;
 }
-.auth__panel .btn:not(.btn--primary) {
+.auth__panel .cr-btn.auth__social-btn {
   min-height: 46px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
   background: var(--surface); color: var(--text); box-shadow: none; font-size: var(--fs-ui); font-weight: var(--fw-medium);
 }
-.auth__panel .btn:not(.btn--primary):hover { background: var(--surface-2); border-color: var(--border-strong); }
-.auth__panel .btn:not(.btn--primary):active { transform: none; box-shadow: none; }
-.auth__panel .btn--primary.btn--lg { min-height: 46px; font-size: var(--fs-ui); }
+.auth__panel .cr-btn.auth__social-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.auth__panel .cr-btn.auth__social-btn:active { transform: none; box-shadow: none; }
+.auth__panel .cr-btn-primary.cr-btn-l { min-height: 46px; font-size: var(--fs-ui); }
 /* Waiting for an email: the CTA goes quiet in the theme's own greys, not the paper "disabled" tone */
-.auth__panel .btn:disabled { background: var(--surface-2); color: var(--muted); border-color: var(--border-strong); box-shadow: none; }
+.auth__panel .cr-btn:disabled { background: var(--surface-2); color: var(--muted); border-color: var(--border-strong); box-shadow: none; }
 .auth__top .cr-btn { border: 1px solid var(--border); background: var(--surface); color: var(--text); box-shadow: none; font-weight: var(--fw-medium); }
 .auth__top .cr-btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
 .auth__form, .auth__sent { display: flex; flex-direction: column; gap: 14px; animation: pop-in 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -1860,8 +1796,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .select select:disabled { background: var(--disabled); color: var(--disabled-text); border-color: var(--disabled-border); box-shadow: none; cursor: default; }
 .select svg { position: absolute; right: 12px; color: var(--field-ink); pointer-events: none; }
 .select:has(select:disabled) svg { color: var(--disabled-text); }
-.btn.is-danger { color: var(--danger); }
-.btn.is-danger:hover { border-color: var(--danger); }
+.cr-btn.is-danger { color: var(--danger); }
+.cr-btn.is-danger:hover { border-color: var(--danger); }
 @media (max-width: 800px) {
   .settings { padding-top: 20px; }
   .settings__logo { display: block; }
@@ -2099,7 +2035,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   animation: fb-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .fb-dock.is-dragging { animation: none; cursor: grabbing; }
-.fb-dock.is-dragging .fb-pill, .fb-dock.is-dragging .btn { cursor: grabbing; transition: none; transform: none; pointer-events: none; }
+.fb-dock.is-dragging .fb-pill, .fb-dock.is-dragging .cr-btn { cursor: grabbing; transition: none; transform: none; pointer-events: none; }
 /* Chrome: dark in both themes, paper text, the chrome hairline. No glass, no shadow */
 /* The pill is the system's chrome PillBar (.cr-pillbar: chrome ground and hairline, follows the theme) */
 .fb-pill.cr-pillbar {
@@ -2120,7 +2056,7 @@ body:has([data-feedback-entry]) .fb-dock:not(.has-notes) { display: none; }
 .fb-pill:hover { background: var(--chrome-raised); border-color: var(--chrome-muted); }
 .fb-pill:active { transform: scale(0.97); }
 .fb-pill svg { color: var(--chrome-text); }
-:is(.fb-pill, .fb-dock .btn):focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
+:is(.fb-pill, .fb-dock .cr-btn):focus-visible { outline: 2px solid var(--ember-glow); outline-offset: 2px; }
 
 /* Open: a small card that says what to do */
 /* Open: the system's TipWindow (.cr-window: paper, moss bar with the title and an ember StatusRing, a strong xs close) */
@@ -2156,7 +2092,7 @@ body:has([data-feedback-entry]) .fb-dock:not(.has-notes) { display: none; }
 .fb-panel__actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .fb-panel__hint { margin: 12px 0 0; font-size: var(--fs-label); color: var(--text-muted); }
 
-/* Send and Clear are the system's secondary Button, size s (.btn .btn--sm): the tool sits on every page, so it
+/* Send and Clear are the system's secondary Button, size s: the tool sits on every page, so it
    never takes the page's one ember. Send says how it went in its fill */
 .fb-panel .fb-btn--send { flex: 1; }
 .fb-btn--send[data-state="sent"] { background: var(--moss); color: var(--on-moss); }
@@ -2204,7 +2140,7 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .steps__item.is-next .steps__text, .steps__item.is-next .steps__list { color: var(--text-muted); }
 /* chrome://extensions is literal: mono, in a sunken white field with the copy button inside */
 .steps__address { display: flex; align-items: center; gap: 10px; width: fit-content; max-width: 100%; margin: 6px 0 2px; padding: 4px 4px 4px 12px; border-radius: var(--radius-md); background: var(--field); color: var(--field-ink); border: var(--field-stroke, 1.5px) solid var(--field-border); box-shadow: var(--sunken); font-family: var(--font-mono); font-size: var(--fs-small); }
-.steps__address .btn { font-family: var(--font-sans); }
+.steps__address .cr-btn { font-family: var(--font-sans); }
 .steps__actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
 .steps__meta { font-size: var(--fs-small); color: var(--text-muted); }
 .steps__text .steps__link { margin-left: 2px; vertical-align: baseline; }

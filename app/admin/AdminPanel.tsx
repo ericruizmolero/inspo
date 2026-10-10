@@ -13,8 +13,7 @@ import type { SignupModeState } from "@/lib/access";
 import { fmtDate, fmtDateTime as fmtDT, fmtUsd as usd } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarStack, Busy, Chip, EmptyState, FieldRow, IconButton, Progress, SettingsWindow, StatusRing, Switch, toneFor } from "@/components/criterio";
+import { Avatar, AvatarStack, Busy, Button, Chip, EmptyState, FieldRow, IconButton, Progress, SettingsWindow, StatusRing, Switch, toneFor } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 
 // ─── Formatting ─────────────────────────────────────────────────────────────
@@ -206,14 +205,14 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
               </span>
             </span>
             {!a.fixed && a.email !== me.toLowerCase() && (
-              <Button variant="quiet" size="sm" onClick={() => remove(a)} disabled={busy}>{t.admin.remove}</Button>
+              <Button variant="quiet" size="s" onClick={() => remove(a)} disabled={busy}>{t.admin.remove}</Button>
             )}
           </li>
         ))}
       </ul>
       <form onSubmit={add}>
         <FieldRow label={t.team.emailLabel} htmlFor="grant-email" error={error}
-          action={<Button variant="primary" size="sm" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</Button>}>
+          action={<Button variant="primary" size="s" type="submit" disabled={busy || !email.trim()}>{t.admin.grant}</Button>}>
           <input id="grant-email" type="email" className="cr-input" placeholder={t.admin.partnerEmail} value={email}
             onChange={(e) => setEmail(e.target.value)} required aria-invalid={error ? true : undefined} />
         </FieldRow>
@@ -321,7 +320,7 @@ function FeedbackBatchView({ batch, now, onDelete, onResolve }: { batch: Feedbac
         ))}
       </ol>
       {batch.notes.length > 3 && (
-        <Button variant="quiet" size="sm" className="list__more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{open ? t.admin.seeLess : t.admin.seeAllNotes(batch.notes.length)}</Button>
+        <Button variant="quiet" size="s" className="list__more" aria-expanded={open} onClick={() => setOpen((v) => !v)}>{open ? t.admin.seeLess : t.admin.seeAllNotes(batch.notes.length)}</Button>
       )}
     </li>
   );
@@ -362,7 +361,7 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
         </ul>
       )}
       {all.length > 8 && (
-        <Button variant="quiet" size="sm" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+        <Button variant="quiet" size="s" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
           {showAll ? t.admin.seeLess : t.admin.seeAll(all.length)}
         </Button>
       )}
@@ -657,7 +656,7 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
             </table>
           </div>
           {data.users.length > 25 && (
-            <Button variant="quiet" size="sm" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
+            <Button variant="quiet" size="s" className="list__more" aria-expanded={showAll} onClick={() => setShowAll((v) => !v)}>
               {showAll ? t.admin.seeLess : t.admin.seeAll(data.users.length)}
             </Button>
           )}
@@ -681,7 +680,7 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
             </ul>
           )}
           {data.logins.length > 8 && (
-            <Button variant="quiet" size="sm" className="list__more" aria-expanded={showAllLogins} onClick={() => setShowAllLogins((v) => !v)}>
+            <Button variant="quiet" size="s" className="list__more" aria-expanded={showAllLogins} onClick={() => setShowAllLogins((v) => !v)}>
               {showAllLogins ? t.admin.seeLess : t.admin.seeAll(data.logins.length)}
             </Button>
           )}

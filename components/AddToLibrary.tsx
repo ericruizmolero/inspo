@@ -1,7 +1,7 @@
 "use client";
 
 // Its own file: the empty board shows it, and importing it from DirectoryModal brought the whole modal along
-import { Icons } from "./Sidebar";
+import { Icon } from "@/components/criterio";
 import { useT } from "./I18nProvider";
 
 /** Saves a directory site into the library. Once it is there, it says so and stays still. */
@@ -10,9 +10,9 @@ export default function AddToLibrary({ url, name, onAdd, added, className = "" }
 }) {
   const { t } = useT();
   return (
-    <button type="button" className={`btn btn--sm dir-add${added ? " is-added" : ""} ${className}`} disabled={added}
+    <button type="button" className={`cr-btn cr-btn-secondary cr-btn-s dir-add${added ? " is-added" : ""} ${className}`} disabled={added}
       onClick={() => onAdd(url)} aria-label={added ? t.directory.addedLabel(name) : t.directory.addLabel(name)}>
-      {added ? Icons.check : Icons.plus}<span>{added ? t.directory.added : t.directory.add}</span>
+      <Icon name={added ? "check" : "plus"} size={16} /><span>{added ? t.directory.added : t.directory.add}</span>
     </button>
   );
 }

@@ -8,9 +8,8 @@ import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "@/components/CreateTeamDialog";
 import { useT } from "@/components/I18nProvider";
 import { fmtDate } from "@/lib/i18n/format";
-import { Button } from "@/components/ui/button";
+import { Button, Chip, FieldRow, SegmentedControl, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
-import { Chip, FieldRow, SegmentedControl, SettingsWindow } from "@/components/criterio";
 import PersonAvatar from "@/components/PersonAvatar";
 
 const ROLES = ["member", "admin"] as const;
@@ -95,7 +94,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
   const note = error
     ? <span className="cr-field-hint is-error" role="alert">{error}</span>
     : msg
-      ? <span className="setting-ok" role="status">{msg}{lastLink && <Button variant="quiet" size="sm" onClick={() => copy(lastLink, "last")}>{copied === "last" ? t.team.linkCopied : t.team.copyLink}</Button>}</span>
+      ? <span className="setting-ok" role="status">{msg}{lastLink && <Button variant="quiet" size="s" onClick={() => copy(lastLink, "last")}>{copied === "last" ? t.team.linkCopied : t.team.copyLink}</Button>}</span>
       : undefined;
 
   return (
@@ -104,7 +103,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
 
       {workspace.kind !== "team" && (
         <SettingsWindow title={t.settings.noTeamTitle} note={t.settings.noTeamHint}
-          actions={<Button variant="primary" size="sm" onClick={() => setCreating(true)}>{t.ws.createTeam}</Button>} />
+          actions={<Button variant="primary" size="s" onClick={() => setCreating(true)}>{t.ws.createTeam}</Button>} />
       )}
 
       {workspace.kind === "team" && (
@@ -132,7 +131,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                   <span className="list__meta t-small">{roleOf(m.role)}</span>
                 )}
                 {canManage && m.userId !== me.id && (
-                  <Button variant="quiet" size="sm" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
+                  <Button variant="quiet" size="s" onClick={() => removeMember(m)} disabled={busy}>{t.team.remove}</Button>
                 )}
               </li>
             ))}
@@ -141,7 +140,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
           {canManage && (
             <form onSubmit={invite}>
               <FieldRow label={t.team.emailLabel} htmlFor="invite-email"
-                action={<Button variant="primary" size="sm" type="submit" disabled={busy || !email.trim()}>{t.team.invite}</Button>}>
+                action={<Button variant="primary" size="s" type="submit" disabled={busy || !email.trim()}>{t.team.invite}</Button>}>
                 <span className="setting-invite">
                   <input id="invite-email" type="email" className="cr-input" placeholder={t.team.emailPlaceholder}
                     value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -165,11 +164,11 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                   <span className="list__sub t-small"><span>{roleOf(i.role)}</span><span>{t.team.expires(fmtDate(i.expiresAt, locale, { day: "numeric", month: "short", year: "numeric" }))}</span></span>
                 </span>
                 <span className="list__actions">
-                  <Button variant="quiet" size="sm" onClick={() => copy(linkOf(i.id), i.id)} disabled={busy}>
+                  <Button variant="quiet" size="s" onClick={() => copy(linkOf(i.id), i.id)} disabled={busy}>
                     {copied === i.id ? t.common.copied : t.team.copyLink}
                   </Button>
-                  {canManage && <Button variant="quiet" size="sm" onClick={() => resend(i)} disabled={busy}>{t.team.resend}</Button>}
-                  {canManage && <Button variant="quiet" size="sm" onClick={() => cancelInvite(i.id)} disabled={busy}>{t.common.cancel}</Button>}
+                  {canManage && <Button variant="quiet" size="s" onClick={() => resend(i)} disabled={busy}>{t.team.resend}</Button>}
+                  {canManage && <Button variant="quiet" size="s" onClick={() => cancelInvite(i.id)} disabled={busy}>{t.common.cancel}</Button>}
                 </span>
               </li>
             ))}
