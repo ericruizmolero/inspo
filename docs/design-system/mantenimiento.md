@@ -26,7 +26,7 @@ Código que existe pero no se ve. No construir encima sin una decisión nueva.
 | `lib/canvas.ts` y la tabla `canvas_position` | Del canvas infinito, sustituido por `Grid` |
 | `lib/design-md`, `/api/design-md`, rutas de "En vivo" | DESIGN.md retirado; las portadas antiguas aún pintan tarjetas |
 | Columna `anchor` de comentarios | De los post-its retirados |
-| "savvia.studio" en `GuestStart` y un comentario a `LoginGate` en `LoginForm` | Restos del nombre y de una versión anterior del login |
+| Un comentario a `LoginGate` en `LoginForm` | Resto de una versión anterior del login |
 | Dos sistemas de botón: `.btn` y sus variantes en `globals.css` (los usa `components/ui/button.tsx` y una docena de componentes) y `Button` del sistema (`cr-btn`) | Misma pinta, dos CSS; lo nuevo va en `Button` del sistema y lo viejo se migra al tocarlo |
 | `.btn-icon` (`globals.css`) y la variante `icon` de `ui/button.tsx` | Sustituidos por `IconButton`; ya no los pinta nadie |
 | `.input` y `.pill` en `globals.css` | Dos usos cada uno; `TextField` y `Chip` del sistema los sustituyen |

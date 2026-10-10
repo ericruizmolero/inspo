@@ -60,10 +60,7 @@ export default async function Image() {
             <span>What inspires your team,</span>
             <span>all in one place.</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 28, fontSize: 24, color: MUTED }}>
-            <span>criterio.design</span>
-            <span>by Savvia</span>
-          </div>
+          <div style={{ display: "flex", fontSize: 24, color: MUTED }}>criterio.design</div>
         </div>
       </div>
     ),

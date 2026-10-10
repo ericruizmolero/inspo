@@ -1,7 +1,7 @@
 import type { mail as EnMail } from "../en/mail";
 
 export const mail: typeof EnMail = {
-  signature: "criterio.design es la librería de inspiración de Savvia \u00b7 savvia.studio",
+  signature: "criterio.design, la biblioteca de inspiración de tu equipo",
   fallbackNote: (href: string): string => `Si el botón no funciona, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">abre este enlace</a>.`,
   questions: (email: string): string => `Si tienes dudas, escríbenos a <a href="mailto:${email}" style="color:#a3a3a3;text-decoration:underline">${email}</a>.`,
 

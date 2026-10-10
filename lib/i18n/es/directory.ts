@@ -171,7 +171,7 @@ export const directory: typeof EnDirectory = {
     "https://type-01.com": "Tipografía y cultura de diseño: fuentes, estudios y entrevistas.",
     "https://aessestudio.tumblr.com": "Tumblr de referencias gráficas del estudio Aesse. Moodboard infinito.",
     "https://claudetype.com": "Fundición francesa de tipografías con carácter, como Kalice. Specimens muy cuidados.",
-    "https://klim.co.nz": "Söhne, Tiempos, Family. De aquí salen las fuentes de Savvia; los specimens son una lección.",
+    "https://klim.co.nz": "Söhne, Tiempos, Family. Los specimens son una lección.",
     "https://pangrampangram.com": "Fundición muy usada en webs actuales. Pesos de prueba gratis para maquetar.",
     "https://www.grillitype.com": "GT America, GT Sectra, GT Flexa. Specimens interactivos que juegan con la fuente.",
     "https://abcdinamo.com": "Fundición de Berlín, experimental y juguetona. Web con mucha personalidad.",

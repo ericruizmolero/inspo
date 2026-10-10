@@ -524,7 +524,7 @@ Cifras, gráficos de columnas en SVG, personas, feedback y accesos. `AreaThumb` 
 
 ### Portada de invitado
 `GuestStart` · `components/GuestStart.tsx` · `.guest__bar`
-Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a login con la URL como destino. Aún dice "savvia.studio" en la barra.
+Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a login con la URL como destino. La barra lleva solo el logo, sin nombre.
 
 ### Acceso
 `LoginForm` · `components/LoginForm.tsx` · `.auth`

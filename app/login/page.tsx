@@ -58,10 +58,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="auth">
       <section className="auth__panel">
         <header className="auth__top">
-          <span className="auth__brand">
-            <Logo size={36} />
-            <span className="auth__by">savvia.studio</span>
-          </span>
+          <Logo size={36} />
           <Button size="s" icon="chevron-left" href="/">{t.common.back}</Button>
         </header>
 

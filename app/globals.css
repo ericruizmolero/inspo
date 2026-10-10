@@ -1727,7 +1727,6 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 }
 .auth__top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .auth__brand { display: flex; align-items: center; gap: 10px; }
-.auth__by { font-size: var(--fs-small); color: var(--text-muted); }
 .auth__card { flex: 1; display: flex; flex-direction: column; justify-content: center; width: 100%; max-width: 400px; }
 /* Invite and MCP consent: a single centered column, without the login collage, on the theme's ground */
 .auth--solo { grid-template-columns: 1fr; place-items: center; padding: 32px 20px; }
@@ -1845,8 +1844,6 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 24px; background: var(--bg); border-bottom: 1px solid var(--border);
 }
-.guest__brand { display: flex; align-items: center; gap: 10px; }
-.guest__brand span { font-size: var(--fs-label); color: var(--muted); }
 @media (max-width: 560px) { .guest__bar { padding: 12px 16px; } }
 
 .page { max-width: 640px; margin: 0 auto; padding: 24px 16px 64px; display: flex; flex-direction: column; gap: 20px; }

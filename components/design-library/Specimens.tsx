@@ -741,7 +741,7 @@ const SAMPLES: Record<string, () => ReactNode> = {
   comentario: () => <Card className="ds-sys__card"><Comment author="Eric" initials="E">Este azul se parece demasiado al de Windows.</Comment></Card>,
   "tarjeta-tablero": () => (
     <div className="ds-row ds-row--top">
-      <BoardCard name="Landing Savvia" count={24} countLabel="24 referencias" status="synced" statusLabel="Al día" tiles={["#4F6B3A", "#E8892B", "#FBF1C7", "#1B1B18", "#7E9A5C", "#EDE6D6"]} className="ds-sys__board" />
+      <BoardCard name="Landing primavera" count={24} countLabel="24 referencias" status="synced" statusLabel="Al día" tiles={["#4F6B3A", "#E8892B", "#FBF1C7", "#1B1B18", "#7E9A5C", "#EDE6D6"]} className="ds-sys__board" />
       <BoardCard name="Tipografía 2027" count={3} countLabel="3 referencias" status="new" statusLabel="Algo nuevo" tiles={["#1A1A1A", "#D9CFBA", "#F6A848"]} className="ds-sys__board" />
     </div>
   ),

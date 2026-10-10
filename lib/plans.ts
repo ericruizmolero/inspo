@@ -41,4 +41,4 @@ export function planOf(key: string | null | undefined): Plan {
 export const isPlanKey = (k: string): k is PlanKey => PLANS.some((p) => p.key === k);
 
 /** Contact email to change plan while there's no gateway */
-export const PLANS_CONTACT = "hola@savvia.studio";
+export const PLANS_CONTACT = "hola@criterio.design";

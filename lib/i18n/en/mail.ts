@@ -3,7 +3,7 @@
 // The rule: an email goes out in the language of WHO RECEIVES IT, not who triggers it.
 // Who decides in each case is in localeForEmail (lib/mail.ts).
 export const mail = {
-  signature: "criterio.design is the inspiration library of Savvia \u00b7 savvia.studio",
+  signature: "criterio.design, your team's inspiration library",
   fallbackNote: (href: string): string => `If the button does not work, <a href="${href}" style="color:#a3a3a3;text-decoration:underline">open this link</a>.`,
   questions: (email: string): string => `If you have questions, write to <a href="mailto:${email}" style="color:#a3a3a3;text-decoration:underline">${email}</a>.`,
 

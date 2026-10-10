@@ -26,10 +26,9 @@ export async function localeForEmail(email: string, fallback: Locale = DEFAULT_L
   return row ? toLocale(row.language) : fallback;
 }
 
-// Sender and reply-to address. inspo@ isn't a mailbox, so replies go to hola@,
-// which does exist: Gmail penalizes senders you can't reply to.
-const FROM = process.env.MAIL_FROM || "criterio.design <inspo@savvia.studio>";
-const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@savvia.studio";
+// hola@ is a real mailbox: Gmail penalizes senders you can't reply to.
+const FROM = process.env.MAIL_FROM || "Criterio <hola@criterio.design>";
+const REPLY_TO = process.env.MAIL_REPLY_TO || "hola@criterio.design";
 
 // Inter from Google Fonts. Apple Mail, iOS Mail and Outlook mac load it; Gmail ignores web fonts and falls back to the system stack.
 const FONT = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif";
