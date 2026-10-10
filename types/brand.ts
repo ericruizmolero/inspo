@@ -64,6 +64,8 @@ export const BrandColorSchema = z.object({
   group: z.enum(COLOR_GROUPS),
   /** How much of the brand it covers, 1 to 4: the tile's size on the presentation */
   weight: z.number().int().min(1).max(4),
+  /** The model wrote it far from every measured hex (lib/brand.ts toSections); an edit by hand drops it */
+  unmeasured: z.boolean().optional(),
 });
 export type BrandColor = z.infer<typeof BrandColorSchema>;
 export const ColorSchema = z.object({

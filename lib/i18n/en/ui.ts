@@ -1719,7 +1719,7 @@ export const ui = {
       add: "Add a color", name: "Name", hex: "Hex", role: "Role", group: "Group", size: "Size on the page",
       groups: { brand: "Brand", accent: "Accent", neutral: "Neutral", semantic: "Semantic" },
       accent: "Accent", makeAccent: "Use as the accent", isAccent: "The page marks things with this color",
-      copy: "Copy", copied: "Copied",
+      copy: "Copy", copied: "Copied", unmeasured: "Not from a measured value",
     },
     type: {
       uploadFont: "Upload its font files", uploaded: (list: string): string => `Uploaded: ${list}`,

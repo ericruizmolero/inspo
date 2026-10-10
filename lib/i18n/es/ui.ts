@@ -1715,7 +1715,7 @@ export const ui: typeof EnUi = {
       add: "Añadir un color", name: "Nombre", hex: "Hex", role: "Uso", group: "Grupo", size: "Tamaño en la página",
       groups: { brand: "Marca", accent: "Acento", neutral: "Neutro", semantic: "Semántico" },
       accent: "Acento", makeAccent: "Usar como acento", isAccent: "La página marca las cosas con este color",
-      copy: "Copiar", copied: "Copiado",
+      copy: "Copiar", copied: "Copiado", unmeasured: "No sale de lo medido",
     },
     type: {
       uploadFont: "Subir sus archivos de fuente", uploaded: (list: string): string => `Subidas: ${list}`,

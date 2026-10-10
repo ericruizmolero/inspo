@@ -74,7 +74,9 @@ function Tile({ c, i, list }: { c: BrandColor; i: number; list: BrandColor[] }) 
   const replace = (items: BrandColor[]) => set({ items });
   const inner = (
     <>
-      <span className="bc-name">{c.name}{isAccent && <i className="bc-dot" style={{ background: ink }} data-tip={t.brand.color.isAccent} aria-label={t.brand.color.isAccent} />}</span>
+      <span className="bc-name">{c.name}{isAccent && <i className="bc-dot" style={{ background: ink }} data-tip={t.brand.color.isAccent} aria-label={t.brand.color.isAccent} />}
+        {/* Only for the team: a share is the brand as it stands, not the doubts about it */}
+        {c.unmeasured && mode === "edit" && <i className="bc-dot bc-dot--ring" data-tip={t.brand.color.unmeasured} aria-label={t.brand.color.unmeasured} />}</span>
       {c.role && <span className="bc-role">{c.role}</span>}
       <Codes hex={c.hex} />
       {copied && <span className="bc-copied">{t.brand.color.copied}</span>}
@@ -94,7 +96,7 @@ function Tile({ c, i, list }: { c: BrandColor; i: number; list: BrandColor[] }) 
       <PopoverTrigger className={`bc-tile bc-tile--w${c.weight}`} style={style}>{inner}</PopoverTrigger>
       <PopoverContent className="be-pop" align="start">
         <ColorForm key={c.id + c.hex} color={c} isAccent={isAccent} first={i === 0} last={i === list.length - 1}
-          onChange={(next) => replace(list.map((x) => (x.id === c.id ? next : x)))}
+          onChange={(next) => replace(list.map((x) => (x.id === c.id ? { ...next, unmeasured: undefined } : x)))}
           onRemove={() => { setOpen(false); set({ items: list.filter((x) => x.id !== c.id), accentId: isAccent ? null : color.accentId }); }}
           onAccent={() => set({ accentId: c.id })}
           onMove={(d) => { const n = [...list]; const j = i + d; [n[i], n[j]] = [n[j], n[i]]; replace(n); }} />

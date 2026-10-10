@@ -56,6 +56,30 @@ export function withContrast(hex: string, bg: string, min = 3): string {
   return rgbToHex(rgb);
 }
 
+/** A colour in CIELAB (D65): distances there follow the eye, distances in RGB do not */
+export function hexToLab(hex: string): [number, number, number] {
+  const [r, g, b] = hexToRgb(hex).map((v) => { const c = v / 255; return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; });
+  const xyz = [(0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047, 0.2126 * r + 0.7152 * g + 0.0722 * b, (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883];
+  const [x, y, z] = xyz.map((t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116));
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+
+/** CIE76 delta E: about 2.3 is the smallest difference an eye notices */
+export function deltaE(a: string, b: string): number {
+  const [p, q] = [hexToLab(a), hexToLab(b)];
+  return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+}
+
+// Under 10 a colour reads as the measured one nudged (a tint step, a rounding, a cleaner neutral); past it a person
+// sees another colour, so it did not come from what was measured
+const MEASURED_DELTA = 10;
+
+/** Whether a colour stands far from every measured one; with nothing measured, every colour does */
+export const unmeasured = (hex: string, measured: string[]) => !measured.some((m) => deltaE(hex, m) <= MEASURED_DELTA);
+
+/** Every hex written in a text, as #RRGGBB, each once */
+export const hexesIn = (text: string) => [...new Set([...text.matchAll(/#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})\b/gi)].map((m) => rgbToHex(hexToRgb(m[0]))))];
+
 /** Whether a colour has hue (a brand colour) or is a grey, a near black or a near white */
 export const hasHue = (hex: string) => { const [r, g, b] = hexToRgb(hex).map((v) => v / 255); return Math.max(r, g, b) - Math.min(r, g, b) > 0.18; };
 

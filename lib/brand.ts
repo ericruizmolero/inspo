@@ -22,7 +22,7 @@ import { guideCutLine, guideTexts, type GuideCut } from "./brand-guides";
 import { mediaKindOf } from "./url";
 import { familyKey } from "./font-names";
 import { resolveFace } from "./brand-fonts";
-import { clampBezier, HEX_RE_LOOSE } from "./brand-values";
+import { clampBezier, hexesIn, HEX_RE_LOOSE, unmeasured } from "./brand-values";
 import { getBrand, projectClient, writeBrandSections } from "./brand-store";
 import { briefPrompt } from "./brief";
 import { brandId, runMayWrite, type BrandFace, type BrandSection, type BrandSections, type BrandSpec } from "@/types/brand";
@@ -233,9 +233,11 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     }
     void recordUsage(input.usage, { action: "brand", ...billOf(res), ref: `${auto ? AUTO_REF : ""}project:${projectId}` });
     const out = BrandOutSchema.parse(JSON.parse(res.text));
-    const sections = await toSections(out, brand, client?.web ?? null, byCode);
+    // What the pass could have taken a hex from; a team that writes "#EB3514" in a decision or a never line decided it
+    const measured = hexesIn([JSON.stringify(snapshot.measured), JSON.stringify(snapshot.clientSite), ...guides, ...system.areas.flatMap((a) => [a.decision, a.never])].join("\n"));
+    const sections = await toSections(out, brand, client?.web ?? null, byCode, measured);
     const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model, version: PROMPTS.brand.version } });
-    log.info("brand.built", { ref: projectId, sections: written, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
+    log.info("brand.built", { ref: projectId, sections: written, unmeasured: written.includes("color") ? sections.color!.items.filter((c) => c.unmeasured).length : 0, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
     return getSystem(organizationId, projectId);
   })();
   inflight.set(key, job);
@@ -246,13 +248,17 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
 const clean = (s: string, max: number) => s.replace(/\s+/g, " ").replace(/\s*[–—]\s*/g, ", ").trim().slice(0, max);
 const round = (n: number, step: number) => Math.round(n / step) * step;
 
-/** The model's answer as sections, checked: real hex, curves CSS accepts, faces looked up where they load from */
-async function toSections(out: Out, brand: BrandSpec, clientWeb: string | null, byCode: Map<string, string>): Promise<Partial<BrandSections>> {
-  const items = out.color.items.filter((c) => HEX_RE_LOOSE.test(c.hex)).slice(0, 12).map((c) => ({
-    id: brand.color.items.find((x) => x.name.toLowerCase() === c.name.toLowerCase())?.id ?? brandId(),
-    name: clean(c.name, 40), hex: `#${c.hex.replace("#", "").slice(0, 6)}`.toUpperCase(), role: clean(c.role, 200), group: c.group,
-    weight: Math.min(4, Math.max(1, Math.round(c.weight))),
-  }));
+/** The model's answer as sections, checked: real hex (marked when far from every measured one), curves CSS accepts,
+ *  faces looked up where they load from */
+async function toSections(out: Out, brand: BrandSpec, clientWeb: string | null, byCode: Map<string, string>, measured: string[]): Promise<Partial<BrandSections>> {
+  const items = out.color.items.filter((c) => HEX_RE_LOOSE.test(c.hex)).slice(0, 12).map((c) => {
+    const hex = `#${c.hex.replace("#", "").slice(0, 6)}`.toUpperCase();
+    return {
+      id: brand.color.items.find((x) => x.name.toLowerCase() === c.name.toLowerCase())?.id ?? brandId(),
+      name: clean(c.name, 40), hex, role: clean(c.role, 200), group: c.group,
+      weight: Math.min(4, Math.max(1, Math.round(c.weight))), ...(unmeasured(hex, measured) ? { unmeasured: true } : {}),
+    };
+  });
   const accent = items.find((c) => c.name.toLowerCase() === out.color.accent.toLowerCase()) ?? items.find((c) => c.group === "accent") ?? items.find((c) => c.group === "brand");
 
   // A face keeps its id (and what was found about it) while its family stays
