@@ -640,7 +640,7 @@ export const ui = {
         platforms: "Where does it live?",
         stack: "What is it built with?",
         a11y: "Accessibility level",
-        keep: "What of the current brand stays as it is?",
+        keep: "Which parts of the current brand stay untouched?",
         voiceSamples: "Real copy from the brand",
         sector: "Sector",
       },
