@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SettingsHeading from "@/components/SettingsHeading";
 import ActivityPing from "@/components/ActivityPing";
-import { getCtxOrLogin, listMembers } from "@/lib/workspace";
+import { accountOf, accountWorkspaces, canManage, getCtxOrLogin, listMembers, type Ctx } from "@/lib/workspace";
 import { usageSummary } from "@/lib/usage";
 import UsageCard from "../_components/UsageCard";
-import { quotaStatus } from "@/lib/quota";
-import { PLANS, PLANS_CONTACT } from "@/lib/plans";
+import PlanWorkspaces from "../_components/PlanWorkspaces";
+import { countMembers, quotaStatus } from "@/lib/quota";
+import { PLANS, PLANS_CONTACT, planOf } from "@/lib/plans";
 import { fmtGb } from "@/lib/room";
 import { getT, fmtDate, type Dict } from "@/lib/i18n";
 import { Button, Icon, Progress, SettingsWindow } from "@/components/criterio";
@@ -32,10 +33,31 @@ function Line({ label, used, limit, t, seats, nums }: { label: string; used: num
   );
 }
 
+/** The plan's workspaces for whoever pays, every one; for an admin of one of them, only those they are in, so one
+ *  client never reads another's name. The teams of theirs another plan pays for, to move here. */
+async function planWorkspaces(ctx: Ctx) {
+  const ws = ctx.workspace;
+  const account = (await accountOf(ws.id))!;
+  const owner = account.ownerUserId === ctx.user.id;
+  if (!owner && !canManage(ws.role)) return null;
+  const mine = new Set(ctx.workspaces.map((w) => w.id));
+  const all = await accountWorkspaces(account.id);
+  const movable = owner ? ctx.workspaces.filter((w) => w.kind === "team" && w.role === "owner" && w.billingAccountId !== account.id) : [];
+  const people = await Promise.all(movable.map((w) => countMembers(w.id)));
+  return {
+    owner, accountName: account.name,
+    // A personal space wears its person until it has a logo, as in the switcher
+    rows: (owner ? all : all.filter((w) => mine.has(w.id))).map(({ id, name, logo, kind, people }) =>
+      ({ id, name, people, logo: logo ?? (kind === "personal" && mine.has(id) ? ctx.user.image ?? null : null) })),
+    movable: movable.map((w, i) => ({ id: w.id, name: w.name, logo: w.logo, people: people[i] })),
+  };
+}
+
 export default async function PlanPage() {
   const [ctx, { locale, t }] = await Promise.all([getCtxOrLogin("/settings/plan"), getT()]);
   const ws = ctx.workspace;
-  const [q, usage, members] = await Promise.all([quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id)]);
+  const [q, usage, members, account] = await Promise.all([quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id), planWorkspaces(ctx)]);
+  const agency = planOf("agency");
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
   const overSeats = q.members.limit !== null && q.members.used > q.members.limit;
   const mailto = (plan: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(plan, ws.name))}`;
@@ -73,7 +95,8 @@ export default async function PlanPage() {
         </div>
         <p className="pl-foot t-small">{t.plans.foot}</p>
 
-        <SettingsWindow title={ws.name} description={t.plans.resets(q.planName, resets)}
+        <SettingsWindow title={ws.name}
+          description={q.workspaces.used > 1 ? <>{t.plans.resets(q.planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(q.planName, resets)}
           note={(overSeats || q.pendingInvites > 0) ? (
             <>
               {overSeats && (
@@ -95,6 +118,11 @@ export default async function PlanPage() {
               nums={q.storage.limit === null ? t.plans.storageNoLimit(fmtGb(q.storage.used, locale)) : t.plans.storageOf(fmtGb(q.storage.used, locale), fmtGb(q.storage.limit, locale))} />
           </div>
         </SettingsWindow>
+
+        {account && (
+          <PlanWorkspaces currentId={ws.id} accountName={account.accountName} planName={q.planName} limit={q.workspaces.limit} used={q.workspaces.used}
+            agency={{ name: agency.name, workspaces: agency.workspaces }} rows={account.rows} movable={account.movable} owner={account.owner} />
+        )}
 
         <UsageCard usage={usage} images={Object.fromEntries(members.map((m) => [m.userId, m.image ?? null]))} />
 
