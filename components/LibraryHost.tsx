@@ -6,7 +6,7 @@
 // reloading the page; what the server sends on a later navigation takes over again.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { WorkspaceSwitchContext } from "./workspace-switch";
+import { ActiveWorkspace, WorkspaceSwitchContext } from "./workspace-switch";
 import { authClient } from "@/lib/auth-client";
 import type { LibraryData } from "@/lib/library";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
@@ -83,6 +83,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
 
   return (
     <WorkspaceSwitchContext.Provider value={switcher}>
+      <ActiveWorkspace id={shown.workspace.id} />
       <InspoClient
         key={`${shown.workspace.id}:${round}`}
         items={shown.items}
