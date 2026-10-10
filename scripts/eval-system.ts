@@ -46,6 +46,8 @@ interface Row {
   scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number; /** "expected" by area, so a change aimed at one area is read there */ byArea?: Partial<Record<SystemArea, number>> };
   /** The two passes; the judge is billed apart, so a model's cost reads clean */
   costUsd?: number;
+  /** [in, out] of each pass: what a cost moved by */
+  tokens?: { system: [number, number]; brand: [number, number] };
   judgeUsd?: number;
   ms?: number;
 }
@@ -142,6 +144,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
     };
     row.costUsd = (sysRes.costUsd ?? 0) + (brandRes.costUsd ?? 0);
     row.ms = sysRes.ms + brandRes.ms;
+    row.tokens = { system: [sysRes.usage.input, sysRes.usage.output], brand: [brandRes.usage.input, brandRes.usage.output] };
 
     let verdict: z.infer<typeof JudgeSchema> | null = null;
     if (judge) {
