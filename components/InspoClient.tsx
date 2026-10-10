@@ -52,7 +52,7 @@ import ProjectChooser from "./ProjectChooser";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
 import WorkspaceMenu from "./WorkspaceMenu";
 import { preloadTemplates } from "./templates-cache";
-import { useActivity } from "./useActivity";
+import { useActivity, type Beat } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import PersonAvatar from "./PersonAvatar";
@@ -428,6 +428,10 @@ export default function InspoClient({
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const lookRef = useRef({ stamp, since, bell });
+  // The bell reads its feed when this moves (components/TeamBell.tsx)
+  const [bellNews, setBellNews] = useState(bell);
+  // The presence heartbeat rides on the pulse (components/useActivity.ts); set below, where the area is known
+  const beatRef = useRef<() => Beat | null>(() => null);
   /** What this tab learned was deleted: a page read before the delete must not bring it back */
   const goneRef = useRef({ items: new Set<string>(), comments: new Set<string>() });
   useEffect(() => {
@@ -438,7 +442,7 @@ export default function InspoClient({
       if (itemsRef.current.some((i) => !i.id)) return;
       busy = true;
       try {
-        const res = await fetch("/api/pulse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ws: workspace.id, ...lookRef.current }) });
+        const res = await fetch("/api/pulse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ws: workspace.id, ...lookRef.current, beat: beatRef.current() }) });
         if (!res.ok) return;
         const d = (await res.json()) as Pulse;
         // Away longer than deletions are remembered (lib/pulse.ts TOMBSTONE_DAYS): only a fresh library is sure
@@ -446,6 +450,7 @@ export default function InspoClient({
         // A save of this tab started while the answer was on its way: the next look asks again from the same point
         if (itemsRef.current.some((i) => !i.id)) return;
         lookRef.current = { stamp: d.stamp, since: d.since, bell: d.bell ?? lookRef.current.bell };
+        if (d.bell !== undefined) setBellNews(d.bell);
         for (const id of d.gone?.items ?? []) goneRef.current.items.add(id);
         for (const id of d.gone?.comments ?? []) goneRef.current.comments.add(id);
         const known = new Set(itemsRef.current.map((i) => i.id));
@@ -1343,7 +1348,7 @@ export default function InspoClient({
     : space === "inbox" ? "inbox"
     : space === "home" ? "home"
     : "board";
-  useActivity(area, workspace.id);
+  beatRef.current = useActivity(area, workspace.id, { carried: true });
 
   // The cards' handlers, behind one stable ref: a card only re-renders when its own data changes
   const gridActions = useRef<GridActions>(null!);
@@ -1764,7 +1769,7 @@ export default function InspoClient({
             <SidebarTrigger aria-label={t.app.menu} />
           </span>
           <Island user={user} workspace={workspace} workspaces={workspaces} isAdmin={isAdmin}
-            items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace}
+            items={items} links={links} projects={projects} systems={systems} space={space} onSpace={setSpace} bellNews={bellNews}
             onCreateProject={createProject} onRenameProject={renameProject} onDeleteProject={deleteProject}
             members={members} onPerson={(name) => {
               // What someone saved is looked at inside a project: the open one, or the one being worked in

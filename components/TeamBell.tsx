@@ -2,7 +2,8 @@
 // The bell in the Island: what the team did this week, newest first, each line with the person's face. A small
 // ember count on the bell's shoulder while there is something unseen, and a soft cue when something new arrives
 // (through lib/ui-sounds.ts, so it only sounds for whoever turned the sounds on). Only in a team workspace.
-// Asked for once a minute while the tab is visible (lib/notify.ts teamActivity); opening it marks everything seen.
+// Read on arrival and whenever the board's pulse says the team's newest news moved (lib/notify.ts latestTeamEvent);
+// opening it marks everything seen.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { teamActivityFeed, teamActivitySeen } from "@/app/actions/notifications";
 import type { TeamActivity } from "@/lib/notify";
@@ -11,9 +12,7 @@ import { Avatar, Icon, MenuLabel, toneFor } from "@/components/criterio";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
 
-const EVERY_MS = 60_000;
-
-export default function TeamBell({ workspaceId }: { workspaceId: string }) {
+export default function TeamBell({ workspaceId, news }: { workspaceId: string; news: string }) {
   const { t, locale } = useT();
   const [open, setOpen] = useState(false);
   const [feed, setFeed] = useState<TeamActivity | null>(null);
@@ -28,16 +27,12 @@ export default function TeamBell({ workspaceId }: { workspaceId: string }) {
     setFeed(res.data);
   }, []);
 
-  // Once on arrival and then every minute, only while the tab is visible; the workspace changing starts over
+  // The workspace changing starts over
   useEffect(() => {
     setFeed(null);
     known.current = null;
-    void load();
-    const tick = () => { if (document.visibilityState === "visible") void load(); };
-    const id = setInterval(tick, EVERY_MS);
-    document.addEventListener("visibilitychange", tick);
-    return () => { clearInterval(id); document.removeEventListener("visibilitychange", tick); };
-  }, [load, workspaceId]);
+  }, [workspaceId]);
+  useEffect(() => { void load(); }, [load, workspaceId, news]);
 
   const onOpenChange = (o: boolean) => {
     setOpen(o);

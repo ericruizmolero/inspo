@@ -95,12 +95,14 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
   );
 }
 
-export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace,
+export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
   onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota, onMenuOpen }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
   systems?: Record<string, SystemSummary>;
+  /** When the team's newest news happened (the pulse): the bell reads its feed again when it moves */
+  bellNews?: string;
   /** The team, listed in the workspace menu; picking someone filters by what they saved */
   members?: { name: string; image: string | null }[];
   onPerson?: (name: string) => void;
@@ -389,7 +391,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           </PopoverContent>
         </Popover>
         {/* What the others did, with a dot while there is something unseen: only where there are others */}
-        {workspace.kind === "team" && <TeamBell workspaceId={workspace.id} />}
+        {workspace.kind === "team" && <TeamBell workspaceId={workspace.id} news={bellNews} />}
       </Liquid>
 
       {/* Every project tab and "N more" at their own width, out of sight, for the measure above */}
