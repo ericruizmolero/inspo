@@ -295,121 +295,162 @@
     "kind": "web",
     "name": "Zernio · web original",
     "url": "https://zernio.com",
-    "collection": "inspiration",
     "curator_notes": "El punto de partida: estética mono, etiquetas en caja naranja, listado plano de plataformas, bloque de código oscuro zernio.ts, logos de partners, cards de precio y calculadora. Se usó como fuente de copy y contenido.",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Zernio - Marketing Infrastructure for Agents · Marketing infrastructure for agents: social, ads, inbox, WhatsApp, SMS and calls behind one API key. MCP server included, free up to 2 accounts.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark",
+     "color": "light-one-accent, color-blocking",
+     "voice": "terse-confident, benefit-led",
+     "layout": "split-screen, generous-whitespace",
+     "imagery": "ui-screenshots, abstract-graphics",
+     "typography": "grotesk-neutral, oversized-headlines",
+     "iconography": "filled-icons, contained-icons"
+    }
    },
    {
     "id": "r2",
     "kind": "web",
     "name": "Zernio · home v2",
     "url": "https://zernio.treseiscero.app",
-    "collection": "inspiration",
     "curator_notes": "Donde acabó el trabajo: todo lo anterior consolidado más hero con conmutador Código / Esquema, calculadora de precios, casos con cursor custom, FAQ animada y seguridad.",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Zernio - Social Media & Messaging API for Developers & AI Agents · Unified social media & messaging API: post, schedule, message and engage across 16 platforms with one REST call. Free up to 2 accounts, then usage-based per account. MCP server for AI agents.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "signals": {
+     "logo": "symbol-wordmark, one-colour-logo",
+     "color": "light-one-accent",
+     "voice": "benefit-led, terse-confident",
+     "layout": "generous-whitespace, full-bleed-sections",
+     "motion": "still-quiet",
+     "imagery": "ui-screenshots",
+     "typography": "grotesk-neutral, oversized-headlines",
+     "iconography": "filled-icons, contained-icons"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f2ef",
+       "share": 0.63
+      },
+      {
+       "hex": "#312421",
+       "share": 0.25
+      },
+      {
+       "hex": "#fefefb",
+       "share": 0.06
+      },
+      {
+       "hex": "#dcd3ce",
+       "share": 0.03
+      }
+     ]
+    }
    },
    {
     "id": "r3",
     "kind": "web",
     "name": "Late",
     "url": "https://getlate.dev",
-    "collection": "inspiration",
     "curator_notes": "El nombre anterior. La home lo cuenta con una sola frase: \"Late is now Zernio. Zero breaking changes.\"",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Zernio - Marketing Infrastructure for Agents · Marketing infrastructure for agents: social, ads, inbox, WhatsApp, SMS and calls behind one API key. MCP server included, free up to 2 accounts.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark, sans-wordmark",
+     "color": "light-one-accent",
+     "voice": "terse-confident, technical-precise",
+     "layout": "centered-column, generous-whitespace",
+     "motion": "still-quiet",
+     "imagery": "ui-screenshots",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons"
+    }
    },
    {
     "id": "r4",
     "kind": "web",
     "name": "Zernio MCP",
     "url": "https://mcp.zernio.com",
-    "collection": "inspiration",
     "curator_notes": "El servidor MCP con 300+ tools que cuenta la sección Agents; su dirección aparece en un chip con iconos orbitando.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Tool",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark",
+     "color": "monochrome",
+     "layout": "centered-column, generous-whitespace",
+     "imagery": "abstract-graphics",
+     "typography": "mono-accents"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.95
+      }
+     ]
+    }
    },
    {
     "id": "r5",
     "kind": "web",
     "name": "Instrument Sans",
     "url": "https://fonts.google.com/specimen/Instrument+Sans",
-    "collection": "inspiration",
     "curator_notes": "La sans de todo el texto, de 400 a 700.",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Instrument Sans - Google Fonts · Instrument Sans is a font designed for the Instrument brand. It's a variable sans-serif which balances an abundance of precision with subtle notes of playfulnes",
+    "sector": "Tool",
+    "style": "Minimal",
+    "signals": {
+     "logo": "symbol-wordmark",
+     "color": "light-one-accent",
+     "voice": "terse-confident, benefit-led",
+     "layout": "centered-column, generous-whitespace",
+     "motion": "still-quiet",
+     "imagery": "flat-illustration, ui-screenshots",
+     "typography": "grotesk-neutral, oversized-headlines",
+     "iconography": "line-icons, contained-icons"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#dee2e5",
+       "share": 0.89
+      },
+      {
+       "hex": "#c4d3de",
+       "share": 0.09
+      }
+     ]
+    }
    },
    {
     "id": "r6",
     "kind": "web",
     "name": "JetBrains Mono",
     "url": "https://www.jetbrains.com/lp/mono",
-    "collection": "inspiration",
     "curator_notes": "La mono de la web del propio cliente: para cifras, kickers, etiquetas y specs, con tabular-nums.",
     "page": "JetBrains Mono: A free and open source typeface for developers | JetBrains: Developer Tools for Professionals and Teams · Try JetBrains Mono in your IDE. Its simple forms and attention to every detail make coding a nice experience for developers’ eyes, no matter which IDE you choose.",
-    "look": "A clean, minimal design focused on typography. Features a dark background with light text and prominent sans-serif and monospaced fonts. Demonstrates code snippets and UI mockups showcasing the typeface's use in IDEs. Sections highlight key features and benefits with icons and card-based layouts.",
     "sector": "Tool",
     "style": "Minimal",
-    "traits": [
-     "Typography"
-    ],
-    "colours": [],
-    "sections": [
-     "hero",
-     "features",
-     "comparison",
-     "cta"
-    ],
-    "elements": [
-     "code",
-     "mockups",
-     "icons",
-     "cards",
-     "badges"
-    ],
-    "type": [
-     "sans",
-     "mono",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "developer font",
-     "coding typeface",
-     "monospaced",
-     "programming",
-     "readability",
-     "open source",
-     "free font",
-     "jetbrains",
-     "ligatures"
-    ],
-    "made_by": [
-     "JetBrains: Developer Tools for Professionals and Teams",
-     "@jetbrains"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "symbol-wordmark, sans-wordmark",
+     "color": "light-one-accent",
+     "voice": "technical-precise, benefit-led",
+     "layout": "generous-whitespace, centered-column",
+     "motion": "still-quiet",
+     "imagery": "ui-screenshots, abstract-graphics",
+     "typography": "mono-accents, geometric-sans",
+     "iconography": "line-icons"
+    },
+    "measured": {
+     "css_families": [
+      "Jet Brains Mono",
+      "JetBrains Sans"
+     ]
+    }
    },
    {
     "id": "r7",
@@ -422,160 +463,477 @@
     "id": "r8",
     "kind": "image",
     "name": "Mega-menú",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-mega-menu.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-mega-menu.jpg",
     "curator_notes": "Sale de una referencia de header con desplegable a columnas (encabezado, link de color y descripción gris) y una columna lateral \"Más\" con tarjeta promo. Aquí Platform, Use cases y Developers, con rail \"More\" y la promo de Open Analytics.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal"
    },
    {
     "id": "r9",
     "kind": "image",
     "name": "Hero A · Código",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-hero-codigo.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-hero-codigo.jpg",
     "curator_notes": "El bloque de código de la web original (oscuro, \"15 channels\") convertido en una ventana clara que se escribe sola, con 3 pasos y el resultado \"200 OK\". Se comparó en paralelo con el hero Esquema (Zernio Hero Options) y en la v2 conviven con un conmutador A/B.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark",
+     "color": "light-one-accent",
+     "voice": "terse-confident",
+     "layout": "centered-column, generous-whitespace",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons"
+    }
    },
    {
     "id": "r10",
     "kind": "image",
     "name": "Hero B · Esquema",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-hero-esquema.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-hero-esquema.jpg",
     "curator_notes": "Sale de una referencia de diagrama de pipeline: pills mono a la izquierda, nodo central con etapas INGEST, REDUCE, NORMALIZE y ROUTE, destinos a la derecha y glow detrás. Aquí, \"Twenty-three APIs in. One API out.\": 6 entradas, el mark como nodo central y 6 salidas, con tokens que viajan por las curvas y chips AUTH · NORMALIZE · FAN-OUT · RETRY.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal",
+    "signals": {
+     "layout": "centered-column, generous-whitespace",
+     "typography": "grotesk-neutral, caps-labels"
+    }
    },
    {
     "id": "r11",
     "kind": "image",
     "name": "Channels: tabs y pila 3D",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-channels-pila-3d.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-channels-pila-3d.jpg",
     "curator_notes": "Del listado plano de plataformas de la web original a tabs por categoría (Social 12, Messaging 4, Ad networks 7) con grid de tiles; luego tabs por canal con panel de detalle, por una referencia de \"tabs más panel con gráfico a la derecha\"; después una rueda de tarjetas, que acabó en la pila 3D vertical.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark",
+     "color": "cool-neutrals",
+     "voice": "terse-confident",
+     "layout": "generous-whitespace",
+     "motion": "still-quiet",
+     "imagery": "3d-renders",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons"
+    }
    },
    {
     "id": "r12",
     "kind": "image",
     "name": "The Shift",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-the-shift.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-the-shift.jpg",
     "curator_notes": "Sale de una referencia \"Meet a new approach\": foto o vídeo a sangre que funde a oscuro y grid 3×2 de cards con borde discontinuo e ilustraciones mínimas. Aquí, vídeo de fondo con tinte naranja y 6 cards (Channels, Inbox, Ads, Webhooks, Analytics, API); al hacer scroll gana inset de 56px y radio de 40px y se despega como una tarjeta.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal",
+    "signals": {
+     "color": "monochrome",
+     "voice": "manifesto",
+     "layout": "centered-column, generous-whitespace",
+     "typography": "grotesk-neutral, oversized-headlines"
+    }
    },
    {
     "id": "r13",
     "kind": "image",
     "name": "Agents: dock",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-agents-dock.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-agents-dock.jpg",
     "curator_notes": "Sale de una referencia de dock: cápsula vertical con slot \"YOUR AGENT HERE\" y logo de marca, logos que entran en el slot y 3 cards debajo (orquestación, chat de agente, órbita de iconos). Aquí los tiles de canales encajan de uno en uno en el slot naranja del mark, con las cards \"Real tool calls\", \"Read and reply to the inbox\" y \"Claude, Cursor or your CLI\".",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal"
    },
    {
     "id": "r14",
     "kind": "image",
     "name": "Customers: caso destacado",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-customers-caso.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-customers-caso.jpg",
     "curator_notes": "Sale de una referencia \"Take their word for it\": card oscura grande con logo, cita, autor y foto a la derecha, y 2 testimonios debajo. Aquí rota cada 7s entre Plinng, HeyMark y Vibiz, con cursor custom \"Read case study\" al hover y \"Show more\" para el resto de testimonios.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal"
    },
    {
     "id": "r15",
     "kind": "image",
     "name": "How it works",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-how-it-works.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-how-it-works.jpg",
     "curator_notes": "Los 3 pasos y su copy son los de la web original, rediseñados con el sistema nuevo: pasos clicables y un escenario con autoplay de 4,2s por paso (la clave escribiéndose, las cuentas conectándose, las llamadas en cascada).",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal",
+    "signals": {
+     "voice": "terse-confident",
+     "layout": "centered-column, generous-whitespace",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons, contained-icons"
+    }
    },
    {
     "id": "r16",
     "kind": "image",
     "name": "Pricing y calculadora",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-pricing-calculadora.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-pricing-calculadora.jpg",
     "curator_notes": "Copy de la web original (Self-serve $0, Enterprise Custom, slider logarítmico 1 a 10k) rediseñado con el sistema nuevo: calculadora con desglose por tramos.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark",
+     "color": "light-one-accent",
+     "layout": "centered-column, generous-whitespace",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons, contained-icons"
+    }
    },
    {
     "id": "r17",
     "kind": "image",
     "name": "Security",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-security.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-security.jpg",
     "curator_notes": "Sale de una referencia de sellos GDPR (círculo de estrellas) y AICPA SOC con titular centrado y una línea vertical que baja. Aquí, sellos dibujados en SVG naranja, chips de compliance en mono y la línea que baja hacia el CTA final.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal"
    },
    {
     "id": "r18",
     "kind": "image",
     "name": "Final CTA",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-final-cta.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-final-cta.jpg",
     "curator_notes": "Sale de varias capturas de una referencia con grid de líneas punteadas a toda anchura, caja central, 3 logos que rotan con transición vertical y dos botones. Aquí las líneas se dibujan al entrar y los slots de logos de clientes cambian cada 4,2s.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "signals": {
+     "logo": "wordmark",
+     "color": "light-one-accent",
+     "voice": "benefit-led",
+     "layout": "centered-column, generous-whitespace",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "contained-icons"
+    }
    },
    {
     "id": "r19",
     "kind": "image",
     "name": "Footer con la marca 3D",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-footer-marca-3d.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-zernio-footer-marca-3d.jpg",
     "curator_notes": "Sale de referencias de footer con logo, 5 columnas de links de color y el símbolo de la marca en contorno o 3D en la esquina. Se probaron el wordmark en contorno, en emboss y deboss, como marca de agua con degradado y en bandas (de una referencia de logotipo gigante a líneas horizontales); quedó footer plano y el mark de Zernio apilado en 3D girando.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "sector": "Other",
+    "style": "Minimal",
+    "signals": {
+     "logo": "symbol-only, one-colour-logo",
+     "color": "monochrome",
+     "layout": "centered-column, generous-whitespace",
+     "motion": "still-quiet"
+    }
    }
   ],
-  "guides": []
+  "omitted": 0,
+  "guides": [],
+  "signals": {
+   "of": 19,
+   "areas": {
+    "typography": [
+     {
+      "signal": "grotesk-neutral",
+      "refs": [
+       "r1",
+       "r2",
+       "r3",
+       "r5",
+       "r9",
+       "r10",
+       "r11",
+       "r12",
+       "r15",
+       "r16",
+       "r18"
+      ]
+     },
+     {
+      "signal": "caps-labels",
+      "refs": [
+       "r3",
+       "r9",
+       "r10",
+       "r11",
+       "r15",
+       "r16",
+       "r18"
+      ]
+     },
+     {
+      "signal": "oversized-headlines",
+      "refs": [
+       "r1",
+       "r2",
+       "r5",
+       "r12"
+      ]
+     },
+     {
+      "signal": "mono-accents",
+      "refs": [
+       "r4",
+       "r6"
+      ]
+     },
+     {
+      "signal": "geometric-sans",
+      "refs": [
+       "r6"
+      ]
+     }
+    ],
+    "color": [
+     {
+      "signal": "light-one-accent",
+      "refs": [
+       "r1",
+       "r2",
+       "r3",
+       "r5",
+       "r6",
+       "r9",
+       "r16",
+       "r18"
+      ]
+     },
+     {
+      "signal": "monochrome",
+      "refs": [
+       "r4",
+       "r12",
+       "r19"
+      ]
+     },
+     {
+      "signal": "color-blocking",
+      "refs": [
+       "r1"
+      ]
+     },
+     {
+      "signal": "cool-neutrals",
+      "refs": [
+       "r11"
+      ]
+     }
+    ],
+    "layout": [
+     {
+      "signal": "generous-whitespace",
+      "refs": [
+       "r1",
+       "r2",
+       "r3",
+       "r4",
+       "r5",
+       "r6",
+       "r9",
+       "r10",
+       "r11",
+       "r12",
+       "r15",
+       "r16",
+       "r18",
+       "r19"
+      ]
+     },
+     {
+      "signal": "centered-column",
+      "refs": [
+       "r3",
+       "r4",
+       "r5",
+       "r6",
+       "r9",
+       "r10",
+       "r12",
+       "r15",
+       "r16",
+       "r18",
+       "r19"
+      ]
+     },
+     {
+      "signal": "split-screen",
+      "refs": [
+       "r1"
+      ]
+     },
+     {
+      "signal": "full-bleed-sections",
+      "refs": [
+       "r2"
+      ]
+     }
+    ],
+    "motion": [
+     {
+      "signal": "still-quiet",
+      "refs": [
+       "r2",
+       "r3",
+       "r5",
+       "r6",
+       "r11",
+       "r19"
+      ]
+     }
+    ],
+    "iconography": [
+     {
+      "signal": "line-icons",
+      "refs": [
+       "r3",
+       "r5",
+       "r6",
+       "r9",
+       "r11",
+       "r15",
+       "r16"
+      ]
+     },
+     {
+      "signal": "contained-icons",
+      "refs": [
+       "r1",
+       "r2",
+       "r5",
+       "r15",
+       "r16",
+       "r18"
+      ]
+     },
+     {
+      "signal": "filled-icons",
+      "refs": [
+       "r1",
+       "r2"
+      ]
+     }
+    ],
+    "logo": [
+     {
+      "signal": "wordmark",
+      "refs": [
+       "r1",
+       "r3",
+       "r4",
+       "r9",
+       "r11",
+       "r16",
+       "r18"
+      ]
+     },
+     {
+      "signal": "symbol-wordmark",
+      "refs": [
+       "r2",
+       "r5",
+       "r6"
+      ]
+     },
+     {
+      "signal": "one-colour-logo",
+      "refs": [
+       "r2",
+       "r19"
+      ]
+     },
+     {
+      "signal": "sans-wordmark",
+      "refs": [
+       "r3",
+       "r6"
+      ]
+     },
+     {
+      "signal": "symbol-only",
+      "refs": [
+       "r19"
+      ]
+     }
+    ],
+    "imagery": [
+     {
+      "signal": "ui-screenshots",
+      "refs": [
+       "r1",
+       "r2",
+       "r3",
+       "r5",
+       "r6"
+      ]
+     },
+     {
+      "signal": "abstract-graphics",
+      "refs": [
+       "r1",
+       "r4",
+       "r6"
+      ]
+     },
+     {
+      "signal": "flat-illustration",
+      "refs": [
+       "r5"
+      ]
+     },
+     {
+      "signal": "3d-renders",
+      "refs": [
+       "r11"
+      ]
+     }
+    ],
+    "voice": [
+     {
+      "signal": "terse-confident",
+      "refs": [
+       "r1",
+       "r2",
+       "r3",
+       "r5",
+       "r9",
+       "r11",
+       "r15"
+      ]
+     },
+     {
+      "signal": "benefit-led",
+      "refs": [
+       "r1",
+       "r2",
+       "r5",
+       "r6",
+       "r18"
+      ]
+     },
+     {
+      "signal": "technical-precise",
+      "refs": [
+       "r3",
+       "r6"
+      ]
+     },
+     {
+      "signal": "manifesto",
+      "refs": [
+       "r12"
+      ]
+     }
+    ]
+   }
+  }
  },
  "sites": {},
  "clientSite": null,

@@ -214,768 +214,699 @@
     "kind": "web",
     "name": "Multiverse Computing",
     "url": "https://multiversecomputing.com",
-    "collection": "inspiration",
     "curator_notes": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
     "page": "Multiverse Computing - Pioneering the Era of Efficient and Sovereign AI · We empower organizations to run secure, production-ready AI with tailored solutions — reducing compute costs and retaining full control across cloud, data centers and edge environments",
-    "look": "A dark, minimal website with a prominent headline about AI. It features bold, sans-serif typography and a subtle geometric background shape. The color palette is dark with accents of red and white, and a row of client logos appears at the bottom.",
     "sector": "Product / SaaS",
     "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Dark",
-     "Colourful"
-    ],
-    "colours": [
-     "black",
-     "grey",
-     "pink",
-     "green"
-    ],
-    "sections": [
-     "nav",
-     "hero",
-     "logos",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "shapes",
-     "mockups",
-     "badges",
-     "cards",
-     "icons",
-     "form"
-    ],
-    "type": [
-     "sans",
-     "display",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "ai",
-     "machine learning",
-     "deep learning",
-     "quantum computing",
-     "tech",
-     "software",
-     "startup",
-     "big tech",
-     "cryptography"
-    ],
-    "made_by": [
-     "Multiverse Computing"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "symbol-wordmark",
+     "color": "dark-one-accent",
+     "layout": "centered-column, generous-whitespace",
+     "imagery": "abstract-graphics",
+     "typography": "grotesk-neutral, caps-labels"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#12151a",
+       "share": 0.82
+      },
+      {
+       "hex": "#453a43",
+       "share": 0.08
+      },
+      {
+       "hex": "#8d6b76",
+       "share": 0.05
+      },
+      {
+       "hex": "#07ae59",
+       "share": 0.05
+      }
+     ]
+    }
    },
    {
     "id": "r2",
     "kind": "web",
     "name": "Multiverse · rediseño",
     "url": "https://multiversecomputing.treseiscero.app",
-    "collection": "inspiration",
     "curator_notes": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
     "page": "Multiverse Computing — Pioneering the era of efficient & secure AI · We empower organizations to run secure, production-ready AI with tailored solutions, reducing compute costs and retaining full control across cloud, data centers and edge environments. Quasar 438B, CompactifAI, Foundry and Sentinel",
-    "look": "A dark-themed, minimal website focused on AI. Features a large, central typography headline, a 3D sphere graphic in the hero section, and isometric illustrations for features. Uses stark white and red for accents against a dark background, with clear sans-serif typography and some subtle 3D elements.",
     "sector": "Product / SaaS",
     "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Dark",
-     "3D / WebGL",
-     "Colourful"
-    ],
-    "colours": [
-     "black",
-     "grey"
-    ],
-    "sections": [
-     "hero",
-     "features",
-     "stats",
-     "work",
-     "blog",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "3d-object",
-     "mockups",
-     "icons",
-     "badges",
-     "code",
-     "charts",
-     "shapes",
-     "cards"
-    ],
-    "type": [
-     "sans",
-     "display",
-     "oversized",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy",
-     "long-scroll"
-    ],
-    "keywords": [
-     "ai",
-     "artificial intelligence",
-     "machine learning",
-     "cloud computing",
-     "data center",
-     "edge computing",
-     "optimization",
-     "quantum computing"
-    ],
-    "made_by": [
-     "Multiverse Computing"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "symbol-wordmark",
+     "color": "dark-one-accent, gradient-led",
+     "voice": "terse-confident, manifesto",
+     "layout": "centered-column, full-bleed-sections",
+     "motion": "still-quiet",
+     "imagery": "abstract-graphics, ui-screenshots",
+     "typography": "grotesk-neutral, oversized-headlines"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#171a1f",
+       "share": 0.96
+      },
+      {
+       "hex": "#525358",
+       "share": 0.04
+      }
+     ],
+     "css_families": [
+      "Schibsted Grotesk"
+     ]
+    }
    },
    {
     "id": "r3",
     "kind": "image",
     "name": "Hero del rediseño",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-hero-resultado.png",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-multiverse-hero-resultado.png",
     "curator_notes": "El hero terminado: titular en Schibsted, cifras en JetBrains Mono y el rojo solo en lo que actúa.",
     "page": null,
-    "look": "A dark, minimal product landing page featuring oversized, bold white sans-serif typography. Red abstract shapes and accents add a pop of color. The layout is clean and airy, with key statistics and call-to-action buttons presented clearly.",
-    "sector": "Product / SaaS",
-    "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Dark",
-     "Colourful"
-    ],
-    "colours": [
-     "black",
-     "grey",
-     "red"
-    ],
-    "sections": [
-     "hero",
-     "nav",
-     "cta"
-    ],
-    "elements": [
-     "shapes",
-     "badges",
-     "form",
-     "mockups"
-    ],
-    "type": [
-     "sans",
-     "display",
-     "oversized",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "ai",
-     "large language model",
-     "compact model",
-     "tensor networks",
-     "machine learning",
-     "tech demo",
-     "ai deployment"
-    ]
+    "sector": "Other",
+    "style": "Minimal"
    },
    {
     "id": "r4",
     "kind": "image",
     "name": "Quasar 438B, nota de prensa",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-cliente-prensa-quasar.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-multiverse-cliente-prensa-quasar.jpg",
     "curator_notes": "Pieza del propio cliente con el isotipo de bandas: de aquí sale la variante de 9 bandas que va impresa en cada ilustración.",
     "page": null,
-    "look": "A clean, light UI featuring concentric pink and white rings radiating from the center. Large, dark sans-serif typography announces 'Quasar 438B' above a minimalist circular icon with layered pink ellipses. A subtitle describes the product's purpose for enterprise agents and coding.",
-    "sector": "Product / SaaS",
-    "style": "Minimal",
-    "traits": [
-     "Typography"
-    ],
-    "colours": [
-     "pink",
-     "white"
-    ],
-    "sections": [
-     "hero"
-    ],
-    "elements": [
-     "shapes",
-     "gradient",
-     "icons"
-    ],
-    "type": [
-     "sans",
-     "oversized"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "ai model",
-     "new product",
-     "flagship",
-     "enterprise",
-     "coding",
-     "reasoning",
-     "tech announcement"
-    ]
+    "sector": "Other",
+    "style": "Editorial",
+    "signals": {
+     "logo": "wordmark",
+     "color": "monochrome",
+     "voice": "formal-corporate",
+     "layout": "editorial-columns, centered-column",
+     "typography": "serif-text, serif-display"
+    }
    },
    {
     "id": "r5",
     "kind": "image",
     "name": "Retrato pintado del equipo",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-retrato-pintado.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-multiverse-retrato-pintado.jpg",
     "curator_notes": "Retrato pintado en los rojos de la marca, sin contorno y con el borde deshecho. Salió de la referencia del retrato de Adriano Olivetti.",
     "page": null,
-    "look": "A striking, watercolor-style illustration of a man with a beard, wearing a suit jacket over a collared shirt. The artwork uses a limited palette of deep reds and pinks, with a textured, painterly effect and a rough, feathered bottom edge. It is set against a plain white background, emphasizing the portrait itself.",
     "sector": "Other",
     "style": "Minimal",
-    "traits": [
-     "Illustration",
-     "Colourful",
-     "Monochrome"
-    ],
-    "colours": [
-     "teal",
-     "red",
-     "pink",
-     "white"
-    ],
-    "sections": [
-     "hero",
-     "team"
-    ],
-    "elements": [
-     "illustration",
-     "grain"
-    ],
-    "type": [
-     "sans"
-    ],
-    "layout": [
-     "centered"
-    ],
-    "keywords": [
-     "watercolor portrait",
-     "business headshot",
-     "red tones",
-     "textured",
-     "hand-painted",
-     "beard",
-     "studio portrait"
-    ]
+    "signals": {
+     "voice": "warm-personal",
+     "layout": "centered-column, card-based",
+     "imagery": "hand-drawn-illustration",
+     "typography": "quiet-small-type"
+    }
    },
    {
     "id": "r6",
     "kind": "image",
     "name": "Mockup de Foundry del cliente",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-cliente-mockup-foundry.jpg",
-    "collection": "inspiration",
+    "url": "/api/files/inspo/1acc30c23a2443a181246f7c/media/template-multiverse-cliente-mockup-foundry.jpg",
     "curator_notes": "Lo que el cliente tenía: portátil sobre fondo verde, fuera de paleta. Es lo que no se repite; las imágenes pasan a ilustración propia.",
     "page": null,
-    "look": "A clean, modern product dashboard displayed on a laptop screen. The interface features a prominent red header with white text, a left-hand sidebar navigation, and a main content area divided into cards. It utilizes a predominantly white and light grey color scheme with red accents, incorporating icons and charts.",
-    "sector": "Product / SaaS",
-    "style": "Minimal",
-    "traits": [
-     "Grid / bento",
-     "Colourful"
-    ],
-    "colours": [
-     "black",
-     "teal",
-     "white",
-     "grey",
-     "red"
-    ],
-    "sections": [
-     "nav",
-     "hero",
-     "features",
-     "work",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "mockups",
-     "cards",
-     "icons",
-     "badges",
-     "form",
-     "charts"
-    ],
-    "type": [
-     "sans",
-     "caps"
-    ],
-    "layout": [
-     "airy",
-     "sidebar"
-    ],
-    "keywords": [
-     "cloud platform",
-     "ai infrastructure",
-     "gpu clusters",
-     "serverless",
-     "dashboard",
-     "ui",
-     "data analytics"
-    ]
+    "sector": "Other",
+    "style": "Minimal"
    },
    {
     "id": "r7",
     "kind": "web",
     "name": "Mistral AI",
     "url": "https://mistral.ai",
-    "collection": "inspiration",
     "curator_notes": "Andoni pasó tres capturas de su sección de bloques: rejilla de celdas unidas y cantos rectos, como una hoja.",
-    "page": "Frontier AI LLMs, assistants, agents, services | Mistral · The most powerful AI platform for enterprises. Customize, fine-tune, and deploy AI assistants, autonomous agents, and multimodal AI with open models.",
-    "look": "A minimal, airy layout with a split screen. The left side features bold, oversized sans-serif typography and abstract, colorful geometric shapes in a grid. The right side has clean, concise text and a featured news section. A prominent cookie consent banner overlays the content.",
-    "sector": "Product / SaaS",
+    "page": "Mistral | #1 in Sovereign AI: Frontier Open Models You Own · Frontier open-weight models you own and control. Customize with Forge, deploy with Studio, run on-prem, your VPC, or our cloud.",
+    "sector": "Studio / agency",
     "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Colourful"
-    ],
-    "colours": [
-     "white",
-     "red",
-     "grey",
-     "orange"
-    ],
-    "sections": [
-     "hero",
-     "nav",
-     "features",
-     "blog",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "badges",
-     "shapes",
-     "mockups",
-     "illustration",
-     "cards",
-     "form"
-    ],
-    "type": [
-     "sans",
-     "display",
-     "oversized",
-     "caps"
-    ],
-    "layout": [
-     "split",
-     "airy",
-     "full-bleed"
-    ],
-    "keywords": [
-     "ai",
-     "large language models",
-     "computational linguistics",
-     "creative coding",
-     "generative art",
-     "abstract shapes",
-     "bold typography",
-     "cookie consent"
-    ],
-    "made_by": [
-     "Mistral"
-    ],
-    "declared_type": "Organization",
-    "own_keywords": [],
-    "place": "Paris, FR"
+    "signals": {
+     "logo": "wordmark",
+     "color": "saturated-multi, gradient-led",
+     "layout": "split-screen, full-bleed-sections",
+     "imagery": "flat-illustration, abstract-graphics",
+     "typography": "grotesk-neutral, oversized-headlines",
+     "iconography": "line-icons, contained-icons"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#fbfbf7",
+       "share": 0.72
+      },
+      {
+       "hex": "#de3210",
+       "share": 0.17
+      },
+      {
+       "hex": "#c1b6b1",
+       "share": 0.05
+      },
+      {
+       "hex": "#f5952b",
+       "share": 0.05
+      }
+     ]
+    }
    },
    {
     "id": "r8",
     "kind": "web",
     "name": "Schibsted Grotesk",
     "url": "https://fonts.google.com/specimen/Schibsted+Grotesk",
-    "collection": "inspiration",
     "curator_notes": "La fuente de todo el texto, en 400, 500 y 600 con itálica 400. Titulares en caja baja.",
     "page": "Schibsted Grotesk - Google Fonts · Schibsted Grotesk is a digital-first font family crafted for user interfaces. Taking visual cues from Schibsted's proud history of printed media as well as our",
-    "look": "A clean, minimal interface showcasing the Schibsted Grotesk typeface. Features include sans-serif, condensed, and all-caps styles, presented through mockups and typography examples. The layout is airy and centered, emphasizing the font's digital-first design and legibility for UI applications. Subtle badges and icons are used.",
     "sector": "Tool",
     "style": "Minimal",
-    "traits": [
-     "Typography"
-    ],
-    "colours": [],
-    "sections": [
-     "hero",
-     "nav",
-     "work",
-     "features",
-     "cta"
-    ],
-    "elements": [
-     "mockups",
-     "icons",
-     "cards",
-     "badges"
-    ],
-    "type": [
-     "sans",
-     "condensed",
-     "caps"
-    ],
-    "layout": [
-     "airy",
-     "centered"
-    ],
-    "keywords": [
-     "typeface",
-     "font specimen",
-     "ui font",
-     "grotesk",
-     "sans-serif",
-     "digital",
-     "print",
-     "legibility",
-     "open source",
-     "google fonts"
-    ],
-    "made_by": [
-     "Google Fonts",
-     "@googlefonts"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "symbol-wordmark",
+     "color": "dark-one-accent",
+     "voice": "terse-confident",
+     "layout": "centered-column, generous-whitespace",
+     "motion": "still-quiet",
+     "imagery": "abstract-graphics",
+     "typography": "grotesk-neutral, condensed-display",
+     "iconography": "line-icons, geometric-pictograms"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#131313",
+       "share": 0.77
+      },
+      {
+       "hex": "#616365",
+       "share": 0.13
+      },
+      {
+       "hex": "#9ebce9",
+       "share": 0.1
+      }
+     ]
+    }
    },
    {
     "id": "r9",
     "kind": "web",
     "name": "JetBrains Mono",
     "url": "https://www.jetbrains.com/lp/mono",
-    "collection": "inspiration",
     "curator_notes": "La mono de la web del propio cliente: para cifras, kickers, etiquetas y specs, con tabular-nums.",
     "page": "JetBrains Mono: A free and open source typeface for developers | JetBrains: Developer Tools for Professionals and Teams · Try JetBrains Mono in your IDE. Its simple forms and attention to every detail make coding a nice experience for developers’ eyes, no matter which IDE you choose.",
-    "look": "A clean, minimal design focused on typography. Features a dark background with light text and prominent sans-serif and monospaced fonts. Demonstrates code snippets and UI mockups showcasing the typeface's use in IDEs. Sections highlight key features and benefits with icons and card-based layouts.",
     "sector": "Tool",
     "style": "Minimal",
-    "traits": [
-     "Typography"
-    ],
-    "colours": [],
-    "sections": [
-     "hero",
-     "features",
-     "comparison",
-     "cta"
-    ],
-    "elements": [
-     "code",
-     "mockups",
-     "icons",
-     "cards",
-     "badges"
-    ],
-    "type": [
-     "sans",
-     "mono",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "developer font",
-     "coding typeface",
-     "monospaced",
-     "programming",
-     "readability",
-     "open source",
-     "free font",
-     "jetbrains",
-     "ligatures"
-    ],
-    "made_by": [
-     "JetBrains: Developer Tools for Professionals and Teams",
-     "@jetbrains"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "symbol-wordmark, sans-wordmark",
+     "color": "light-one-accent",
+     "voice": "technical-precise, benefit-led",
+     "layout": "generous-whitespace, centered-column",
+     "motion": "still-quiet",
+     "imagery": "ui-screenshots, abstract-graphics",
+     "typography": "mono-accents, geometric-sans",
+     "iconography": "line-icons"
+    },
+    "measured": {
+     "css_families": [
+      "Jet Brains Mono",
+      "JetBrains Sans"
+     ]
+    }
    },
    {
     "id": "r10",
     "kind": "web",
     "name": "Linear",
     "url": "https://linear.app",
-    "collection": "inspiration",
     "curator_notes": "Un solo tema oscuro hecho de grises fríos escalonados y hairlines: el mismo ritmo de fondos alternos.",
     "page": "Linear – The system for product development · Purpose-built for planning and building products with AI agents.",
-    "look": "A dark, minimal interface with a focus on clean typography and clear information hierarchy. Features sections with cards and mockups. The layout is airy and centered, emphasizing functionality over elaborate visuals. Uses sans-serif fonts and some caps for headings.",
     "sector": "Product / SaaS",
     "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Dark",
-     "Grid / bento"
-    ],
-    "colours": [],
-    "sections": [
-     "nav",
-     "hero",
-     "features",
-     "work",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "cards",
-     "icons",
-     "mockups",
-     "form",
-     "badges",
-     "shapes"
-    ],
-    "type": [
-     "sans",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy",
-     "full-bleed"
-    ],
-    "keywords": [
-     "product development",
-     "task management",
-     "ai features",
-     "team collaboration",
-     "software tool",
-     "app launch",
-     "github integration",
-     "sprint planning"
-    ],
-    "made_by": [
-     "@linear"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "symbol-wordmark",
+     "color": "light-one-accent",
+     "voice": "terse-confident, benefit-led",
+     "layout": "centered-column, generous-whitespace",
+     "motion": "ui-states, still-quiet",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons, contained-icons"
+    }
    },
    {
     "id": "r11",
     "kind": "web",
     "name": "SandboxAQ",
     "url": "https://www.sandboxaq.com",
-    "collection": "inspiration",
     "curator_notes": "Deep tech de IA y cuántica contada con cifras y sin épica, el registro que pide el copy.",
     "page": "Transforming the World with AI and Advanced Computing | SandboxAQ · SandboxAQ leverages the compound effects of AI and advanced computing to address some of the biggest challenges impacting society. SandboxAQ technologies include AI simulation, cryptography management for cybersecurity, and AI sensi",
-    "look": "The page uses a clean, professional design with a focus on technology and AI. The color palette is likely conservative, with emphasis on typography and clear information presentation. The layout is structured to guide the user through services and solutions, featuring cards and forms for interaction.",
     "sector": "Product / SaaS",
     "style": "Corporate",
-    "traits": [],
-    "colours": [],
-    "sections": [
-     "nav",
-     "hero",
-     "features",
-     "cta",
-     "contact"
-    ],
-    "elements": [
-     "icons",
-     "form",
-     "cards"
-    ],
-    "type": [
-     "sans"
-    ],
-    "layout": [
-     "centered"
-    ],
-    "keywords": [
-     "ai",
-     "large quantitative models",
-     "lqms",
-     "llms",
-     "drug discovery",
-     "material science",
-     "cybersecurity",
-     "quantum computing"
-    ],
-    "made_by": [
-     "SandboxAQ"
-    ],
-    "declared_type": "Organization",
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "wordmark, sans-wordmark",
+     "color": "light-one-accent",
+     "voice": "terse-confident, benefit-led",
+     "layout": "centered-column, full-bleed-sections",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "filled-icons, contained-icons"
+    }
    },
    {
     "id": "r12",
     "kind": "web",
     "name": "Quantinuum",
     "url": "https://www.quantinuum.com",
-    "collection": "inspiration",
     "curator_notes": "Copy técnico de cuántica que se lee: frases de posicionamiento cortas, una idea por bloque.",
     "page": "Quantinuum | Accelerating Quantum Computing · Our trapped ion quantum computers and software solutions are the highest performing in the industry, enabling our users to solve industry&#x27;s most complex problems.",
-    "look": "The page focuses on presenting advanced quantum computing hardware and software solutions. It uses a clean, professional design with clear headings and detailed text descriptions. Key metrics and product information are highlighted, suggesting a focus on technical specifications and business applications. The overall impression is one of innovation and high performance.",
     "sector": "Product / SaaS",
     "style": "Corporate",
-    "traits": [
-     "Typography"
-    ],
-    "colours": [],
-    "sections": [
-     "hero",
-     "nav",
-     "features",
-     "stats",
-     "products",
-     "work",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "icons",
-     "cards",
-     "form",
-     "charts"
-    ],
-    "type": [
-     "sans",
-     "caps"
-    ],
-    "layout": [
-     "centered"
-    ],
-    "keywords": [
-     "quantum computing",
-     "trapped ion",
-     "qrng",
-     "encryption",
-     "chemistry simulation",
-     "hardware as a service",
-     "roadmap",
-     "innovation"
-    ]
+    "signals": {
+     "logo": "symbol-wordmark, one-colour-logo",
+     "color": "light-one-accent",
+     "voice": "terse-confident, benefit-led",
+     "layout": "strict-grid, card-based",
+     "imagery": "abstract-graphics, ui-screenshots",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons, contained-icons"
+    }
    },
    {
     "id": "r13",
     "kind": "web",
     "name": "GSAP Eases",
     "url": "https://gsap.com/docs/v3/Eases",
-    "collection": "inspiration",
     "curator_notes": "El visor de curvas: power2.in para lo que cae con gravedad, y lo de debajo que cede 3,2px y vuelve.",
     "page": "Easing | GSAP | Docs & Learning · Easing is the primary way to change the timing of your tweens. Simply changing the ease can adjust the entire feel and personality of your animation. There are infinite eases that you can use in GSAP so we created the visualizer below to help you choose exactly the ",
-    "look": "Clean documentation site with a strong focus on typography and code examples. Features a prominent navigation and an interactive ease visualizer, suggesting a focus on detailed technical explanations and utility for developers. The palette is likely subdued with clear emphasis on readability and functional design elements.",
     "sector": "Tool",
     "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Motion"
-    ],
-    "colours": [],
-    "sections": [
-     "nav",
-     "features",
-     "work",
-     "blog",
-     "newsletter",
-     "contact",
-     "footer"
-    ],
-    "elements": [
-     "code",
-     "charts",
-     "form",
-     "tabs"
-    ],
-    "type": [
-     "sans",
-     "mono",
-     "display",
-     "caps"
-    ],
-    "layout": [
-     "airy",
-     "centered"
-    ],
-    "keywords": [
-     "javascript animation",
-     "animation easing",
-     "visualizer",
-     "tweening",
-     "timing functions",
-     "web animation",
-     "developer documentation",
-     "docusaurus"
-    ],
-    "made_by": [],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
+    "signals": {
+     "logo": "wordmark",
+     "color": "dark-one-accent",
+     "voice": "terse-confident",
+     "layout": "split-screen, full-bleed-sections",
+     "motion": "ui-states, still-quiet",
+     "imagery": "abstract-graphics, ui-screenshots",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons, contained-icons"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#0f1110",
+       "share": 0.97
+      }
+     ]
+    }
    },
    {
     "id": "r14",
     "kind": "web",
     "name": "IBM Design Language · iconos",
     "url": "https://www.ibm.com/design/language/iconography/ui-icons",
-    "collection": "inspiration",
     "curator_notes": "Iconos con reglas propias de trazo y retícula. Aquí ni eso: cada producto lleva su símbolo real recortado de su logotipo.",
     "page": null,
-    "look": "A minimalist 404 error page with generous white space. It features IBM's branding in the header and footer, a prominent '404' graphic with a stylized circle, a search bar, and a list of helpful links. The color palette is restricted to blue and white.",
     "sector": "Other",
     "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Monochrome"
-    ],
-    "colours": [
-     "green",
-     "white",
-     "blue"
-    ],
-    "sections": [
-     "nav",
-     "footer"
-    ],
-    "elements": [
-     "icons",
-     "form"
-    ],
-    "type": [
-     "sans"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "404 error page",
-     "technical page",
-     "search bar",
-     "navigation links",
-     "white space",
-     "minimalist error page",
-     "ibm branding"
-    ]
+    "signals": {
+     "logo": "wordmark",
+     "color": "light-one-accent",
+     "voice": "benefit-led",
+     "layout": "centered-column, generous-whitespace",
+     "motion": "still-quiet",
+     "imagery": "abstract-graphics",
+     "typography": "grotesk-neutral, caps-labels",
+     "iconography": "line-icons"
+    },
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.48
+      },
+      {
+       "hex": "#f0f1f2",
+       "share": 0.44
+      },
+      {
+       "hex": "#c2ccdb",
+       "share": 0.08
+      }
+     ]
+    }
    }
   ],
-  "guides": []
+  "omitted": 0,
+  "guides": [],
+  "signals": {
+   "of": 14,
+   "areas": {
+    "typography": [
+     {
+      "signal": "grotesk-neutral",
+      "refs": [
+       "r1",
+       "r2",
+       "r7",
+       "r8",
+       "r10",
+       "r11",
+       "r12",
+       "r13",
+       "r14"
+      ]
+     },
+     {
+      "signal": "caps-labels",
+      "refs": [
+       "r1",
+       "r10",
+       "r11",
+       "r12",
+       "r13",
+       "r14"
+      ]
+     },
+     {
+      "signal": "oversized-headlines",
+      "refs": [
+       "r2",
+       "r7"
+      ]
+     },
+     {
+      "signal": "serif-text",
+      "refs": [
+       "r4"
+      ]
+     },
+     {
+      "signal": "serif-display",
+      "refs": [
+       "r4"
+      ]
+     },
+     {
+      "signal": "quiet-small-type",
+      "refs": [
+       "r5"
+      ]
+     },
+     {
+      "signal": "condensed-display",
+      "refs": [
+       "r8"
+      ]
+     },
+     {
+      "signal": "mono-accents",
+      "refs": [
+       "r9"
+      ]
+     },
+     {
+      "signal": "geometric-sans",
+      "refs": [
+       "r9"
+      ]
+     }
+    ],
+    "color": [
+     {
+      "signal": "light-one-accent",
+      "refs": [
+       "r9",
+       "r10",
+       "r11",
+       "r12",
+       "r14"
+      ]
+     },
+     {
+      "signal": "dark-one-accent",
+      "refs": [
+       "r1",
+       "r2",
+       "r8",
+       "r13"
+      ]
+     },
+     {
+      "signal": "gradient-led",
+      "refs": [
+       "r2",
+       "r7"
+      ]
+     },
+     {
+      "signal": "monochrome",
+      "refs": [
+       "r4"
+      ]
+     },
+     {
+      "signal": "saturated-multi",
+      "refs": [
+       "r7"
+      ]
+     }
+    ],
+    "layout": [
+     {
+      "signal": "centered-column",
+      "refs": [
+       "r1",
+       "r2",
+       "r4",
+       "r5",
+       "r8",
+       "r9",
+       "r10",
+       "r11",
+       "r14"
+      ]
+     },
+     {
+      "signal": "generous-whitespace",
+      "refs": [
+       "r1",
+       "r8",
+       "r9",
+       "r10",
+       "r14"
+      ]
+     },
+     {
+      "signal": "full-bleed-sections",
+      "refs": [
+       "r2",
+       "r7",
+       "r11",
+       "r13"
+      ]
+     },
+     {
+      "signal": "card-based",
+      "refs": [
+       "r5",
+       "r12"
+      ]
+     },
+     {
+      "signal": "split-screen",
+      "refs": [
+       "r7",
+       "r13"
+      ]
+     },
+     {
+      "signal": "editorial-columns",
+      "refs": [
+       "r4"
+      ]
+     },
+     {
+      "signal": "strict-grid",
+      "refs": [
+       "r12"
+      ]
+     }
+    ],
+    "motion": [
+     {
+      "signal": "still-quiet",
+      "refs": [
+       "r2",
+       "r8",
+       "r9",
+       "r10",
+       "r13",
+       "r14"
+      ]
+     },
+     {
+      "signal": "ui-states",
+      "refs": [
+       "r10",
+       "r13"
+      ]
+     }
+    ],
+    "iconography": [
+     {
+      "signal": "line-icons",
+      "refs": [
+       "r7",
+       "r8",
+       "r9",
+       "r10",
+       "r12",
+       "r13",
+       "r14"
+      ]
+     },
+     {
+      "signal": "contained-icons",
+      "refs": [
+       "r7",
+       "r10",
+       "r11",
+       "r12",
+       "r13"
+      ]
+     },
+     {
+      "signal": "geometric-pictograms",
+      "refs": [
+       "r8"
+      ]
+     },
+     {
+      "signal": "filled-icons",
+      "refs": [
+       "r11"
+      ]
+     }
+    ],
+    "logo": [
+     {
+      "signal": "symbol-wordmark",
+      "refs": [
+       "r1",
+       "r2",
+       "r8",
+       "r9",
+       "r10",
+       "r12"
+      ]
+     },
+     {
+      "signal": "wordmark",
+      "refs": [
+       "r4",
+       "r7",
+       "r11",
+       "r13",
+       "r14"
+      ]
+     },
+     {
+      "signal": "sans-wordmark",
+      "refs": [
+       "r9",
+       "r11"
+      ]
+     },
+     {
+      "signal": "one-colour-logo",
+      "refs": [
+       "r12"
+      ]
+     }
+    ],
+    "imagery": [
+     {
+      "signal": "abstract-graphics",
+      "refs": [
+       "r1",
+       "r2",
+       "r7",
+       "r8",
+       "r9",
+       "r12",
+       "r13",
+       "r14"
+      ]
+     },
+     {
+      "signal": "ui-screenshots",
+      "refs": [
+       "r2",
+       "r9",
+       "r12",
+       "r13"
+      ]
+     },
+     {
+      "signal": "hand-drawn-illustration",
+      "refs": [
+       "r5"
+      ]
+     },
+     {
+      "signal": "flat-illustration",
+      "refs": [
+       "r7"
+      ]
+     }
+    ],
+    "voice": [
+     {
+      "signal": "terse-confident",
+      "refs": [
+       "r2",
+       "r8",
+       "r10",
+       "r11",
+       "r12",
+       "r13"
+      ]
+     },
+     {
+      "signal": "benefit-led",
+      "refs": [
+       "r9",
+       "r10",
+       "r11",
+       "r12",
+       "r14"
+      ]
+     },
+     {
+      "signal": "manifesto",
+      "refs": [
+       "r2"
+      ]
+     },
+     {
+      "signal": "formal-corporate",
+      "refs": [
+       "r4"
+      ]
+     },
+     {
+      "signal": "warm-personal",
+      "refs": [
+       "r5"
+      ]
+     },
+     {
+      "signal": "technical-precise",
+      "refs": [
+       "r9"
+      ]
+     }
+    ]
+   }
+  }
  },
  "sites": {},
  "clientSite": null,
