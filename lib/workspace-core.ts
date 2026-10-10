@@ -80,9 +80,10 @@ export async function setAccountPlan(accountId: string, plan: PlanKey): Promise<
 
 /** The workspaces an account pays for, oldest first, with how many people each has */
 export async function accountWorkspaces(accountId: string) {
-  const O = schema.organization;
-  return db.select({ id: O.id, name: O.name, kind: O.kind, people: sql<number>`(select count(*)::int from ${schema.member} where ${schema.member.organizationId} = ${O.id})` })
-    .from(O).where(eq(O.billingAccountId, accountId)).orderBy(asc(O.createdAt));
+  const O = schema.organization, M = schema.member;
+  return db.select({ id: O.id, name: O.name, logo: O.logo, kind: O.kind, people: sql<number>`count(${M.id})::int` })
+    .from(O).leftJoin(M, eq(M.organizationId, O.id))
+    .where(eq(O.billingAccountId, accountId)).groupBy(O.id).orderBy(asc(O.createdAt));
 }
 
 /** Deletes an account left without workspaces, unless Stripe knows it: that one is kept for its invoices */

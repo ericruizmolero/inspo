@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { db, schema } from "@/lib/db";
-import { accountOf, ensurePersonalWorkspace, listWorkspaces, newId } from "@/lib/workspace-core";
+import { accountOf, accountWorkspaces, ensurePersonalWorkspace, listWorkspaces, newId } from "@/lib/workspace-core";
 import { countWorkspaces, quotaStatus } from "@/lib/quota";
 import { createWorkspaceInAccount, moveWorkspaceToAccount } from "@/app/actions/billing";
 import { actAs, type Actor } from "./harness";
@@ -66,6 +66,8 @@ test("an Agency account creates three client workspaces on its one plan, and the
   expect(q.ai, "the third workspace sees what the other two spent, and nothing of another account").toEqual({ used: 5, limit: 2000 });
   expect(q.workspaces, "the personal space and three clients, of 10").toEqual({ used: 4, limit: 10 });
   expect(q.members, "seats still count per workspace").toEqual({ used: 1, limit: 15 });
+  expect((await accountWorkspaces(account.id)).map((w) => [w.name, w.people]), "Settings, Plan lists the four, each with its one person")
+    .toEqual([[agency.name, 1], ["Client A", 1], ["Client B", 1], ["Client C", 1]]);
 });
 
 test("a plan of one workspace refuses a second, and nothing is created", async () => {
