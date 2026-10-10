@@ -40,6 +40,8 @@ export async function addComment(team: Team, itemId: string, body: string, at = 
 }
 
 export async function cleanupTeam(team: Team) {
+  // AI spend outlives its workspace (migration 0038): dropped while it still names the team
+  await db.delete(schema.aiUsage).where(like(schema.aiUsage.organizationId, `${team.tag}%`));
   await db.delete(schema.organization).where(like(schema.organization.id, `${team.tag}%`));
   await db.delete(schema.user).where(like(schema.user.id, `${team.tag}%`));
   await db.delete(schema.libraryTombstone).where(like(schema.libraryTombstone.organizationId, `${team.tag}%`));
