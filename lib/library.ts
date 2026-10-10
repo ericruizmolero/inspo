@@ -9,7 +9,7 @@ import { ITEM_COLUMNS, shapeRows, type ItemRow } from "./items";
 import { loadProjects } from "./projects";
 import { TEMPLATE_AUTHOR } from "./template-seed";
 import type { ItemsBundle, ItemsPage, ProjectLinks } from "@/types/inspo";
-import { loadSystems } from "./system";
+import { loadSystemSummaries } from "./system";
 import { isAdmin } from "./activity";
 import { quotaStatus } from "./quota";
 import { listCommentsOf } from "./comments";
@@ -30,7 +30,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   const [first, board, systems, members, admin, quota, bell] = await Promise.all([
     loadPage(ws.id, null),
     boardState(ws.id),
-    loadSystems(ws.id),
+    loadSystemSummaries(ws.id),
     listMembers(ws.id),
     isAdmin(user.email),
     quotaStatus(ws),
@@ -43,7 +43,7 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
     first,
     initialProjects: board.projects,
     initialProjectLinks: board.links,
-    initialSystems: systems,
+    initialSummaries: systems,
     members: members.map((m) => ({ id: m.userId, name: m.name, image: m.image ?? null })),
     initialPolishVotes: board.votes,
     isAdmin: admin,

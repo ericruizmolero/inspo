@@ -46,7 +46,7 @@ import { cue } from "@/lib/ui-sounds";
 import { keyOf, DEFAULT_RATIO, BOARD_MAX_RATIO } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
-import { SYSTEM_AREAS, staleness, type ProjectSystem, type SystemArea } from "@/types/system";
+import { SYSTEM_AREAS, filledOf, summaryOf, unreadOf, type ProjectSystem, type SystemArea, type SystemSummary } from "@/types/system";
 import type { AgentAction, AgentDone, AgentPatch, AgentReply, AgentTurn } from "@/lib/agent";
 import ProjectChooser from "./ProjectChooser";
 import { assignSystemArea, loadSystem } from "@/app/actions/system";
@@ -156,7 +156,7 @@ export default function InspoClient({
   bell,
   initialProjects = [],
   initialProjectLinks = {},
-  initialSystems = {},
+  initialSummaries = {},
   aiEnabled = false,
   user,
   workspace,
@@ -178,8 +178,8 @@ export default function InspoClient({
   initialPolishVotes?: PolishVote[];
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
-  /** Each project's system, by project id (lib/system.ts) */
-  initialSystems?: Record<string, ProjectSystem>;
+  /** What the views around each project's system read of it, by project id (lib/system.ts loadSystemSummaries) */
+  initialSummaries?: Record<string, SystemSummary>;
   aiEnabled?: boolean;
   user: SessionUser;
   workspace: Workspace;
@@ -270,22 +270,28 @@ export default function InspoClient({
   });
   // The systems, alive: filing a reference into a project that has started its system re-reads the
   // board a moment later (one cheap model call), so the system never lags behind the board
-  const [systems, setSystems] = useState(initialSystems);
+  // Two maps: every project's summary, which the tabs, the chooser and the cards read; and the whole system of the
+  // projects whose system or sheet was opened. A whole system written anywhere updates both
+  const [systems, setSystems] = useState(initialSummaries);
+  const [fullSystems, setFullSystems] = useState<Record<string, ProjectSystem>>({});
   const systemsRef = useRef(systems);
   systemsRef.current = systems;
   const systemTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const setSystem = useCallback((projectId: string, system: ProjectSystem) => {
+    setFullSystems((prev) => ({ ...prev, [projectId]: system }));
+    setSystems((prev) => ({ ...prev, [projectId]: summaryOf(system) }));
+  }, []);
   const refreshSystem = useCallback((projectId: string) => {
-    if (!systemsRef.current[projectId]?.run) return;  // the team has not read the board yet: nothing to keep alive
+    if (!systemsRef.current[projectId]?.read) return;  // the team has not read the board yet: nothing to keep alive
     clearTimeout(systemTimers.current[projectId]);
     systemTimers.current[projectId] = setTimeout(async () => {
       try {
         const res = await fetch("/api/system", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ projectId, auto: true }) });
         const json = await res.json().catch(() => ({})) as ProjectSystem & { error?: string };
-        if (res.ok && !json.error) setSystems((prev) => ({ ...prev, [projectId]: json }));
+        if (res.ok && !json.error) setSystem(projectId, json);
       } catch { /* the modal shows the board as unread; the next read catches up */ }
     }, 2500);
-  }, []);
-  const setSystem = useCallback((projectId: string, system: ProjectSystem) => setSystems((prev) => ({ ...prev, [projectId]: system })), []);
+  }, [setSystem]);
   const inParam = sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
   // ?in=home is the chooser asked for (the island's house); the bare address lands on the last project (below)
@@ -321,25 +327,25 @@ export default function InspoClient({
   // Which areas of the current project's system each reference backs (for the card's "to the system")
   const backsByItem = useMemo(() => {
     const m = new Map<string, SystemArea[]>();
-    for (const a of currentSystem?.areas ?? []) for (const e of a.evidence) m.set(e.itemId, [...(m.get(e.itemId) ?? []), a.area]);
+    for (const a of currentSystem?.areas ?? []) for (const id of a.evidence) m.set(id, [...(m.get(id) ?? []), a.area]);
     return m;
   }, [currentSystem]);
   const backsOf = useCallback((id: string) => backsByItem.get(id) ?? EMPTY_AREAS, [backsByItem]);
   // The same in every project: which areas each reference backs, project by project (the folder button's areas)
   const areasByItem = useMemo(() => {
     const m = new Map<string, Record<string, SystemArea[]>>();
-    for (const [pid, sys] of Object.entries(systems)) for (const a of sys?.areas ?? []) for (const e of a.evidence) {
-      const rec = m.get(e.itemId) ?? {};
+    for (const [pid, sys] of Object.entries(systems)) for (const a of sys?.areas ?? []) for (const id of a.evidence) {
+      const rec = m.get(id) ?? {};
       rec[pid] = [...(rec[pid] ?? []), a.area];
-      m.set(e.itemId, rec);
+      m.set(id, rec);
     }
     return m;
   }, [systems]);
-  const systemFilled = currentSystem ? currentSystem.areas.filter((a) => a.decision).length : 0;
+  const systemFilled = filledOf(currentSystem ?? undefined);
   const systemStale = useMemo(() => {
-    if (!currentProject || !currentSystem?.run) return 0;
+    if (!currentProject || !currentSystem?.read) return 0;
     const boardIds = items.filter((i) => i.id && links[i.id]?.includes(currentProject.id)).map((i) => i.id!);
-    return staleness(currentSystem, boardIds).unread;
+    return unreadOf(currentSystem, boardIds);
   }, [currentProject, currentSystem, items, links]);
   // An asked-for system view stays with the project it was asked in: the next one opens on its own default
   const setSpace = useCallback((v: string) => setParams({
@@ -1530,7 +1536,7 @@ export default function InspoClient({
   const applyAgentPatch = useCallback((patch: AgentPatch) => {
     if (patch.projects) setProjects(patch.projects);
     if (patch.links) setLinks(patch.links);
-    if (patch.systems) setSystems((prev) => ({ ...prev, ...patch.systems }));
+    for (const [id, sys] of Object.entries(patch.systems ?? {})) setSystem(id, sys);
     if (patch.added?.length) setItems((prev) => [...patch.added!.filter((a) => !prev.some((i) => i.id === a.id)), ...prev]);
     if (patch.removed?.length) { const gone = new Set(patch.removed); setItems((prev) => prev.filter((i) => !i.id || !gone.has(i.id))); }
   }, []);
@@ -1625,6 +1631,15 @@ export default function InspoClient({
   const panelProject = panelItem?.id && mediaKindOf(panelItem.web) !== "text"
     ? (currentProject && links[panelItem.id]?.includes(currentProject.id) ? currentProject : projects.find((p) => links[panelItem.id!]?.includes(p.id))) ?? null
     : null;
+  // The system view and the sheet's criterio read the whole system: asked for once, when its project or a sheet in
+  // it opens, so the system view opens on it instead of on empty areas
+  const wantSystem = [currentProject?.id, panelProject?.id].find((id): id is string => !!id && !fullSystems[id]) ?? null;
+  useEffect(() => {
+    if (!wantSystem) return;
+    let alive = true;
+    loadSystem(wantSystem).then((r) => { if (alive && r.ok) setSystem(wantSystem, r.data.system); }).catch(() => { /* opened without it; the system view reads it on its own */ });
+    return () => { alive = false; };
+  }, [wantSystem, setSystem]);
   const panelBoardIds = useMemo(() => panelProject ? items.filter((i) => i.id && links[i.id]?.includes(panelProject.id)).map((i) => i.id!).reverse() : [],
     [panelProject, items, links]);
   // To a part of the system from the panel: the panel's own entry in the history becomes the system's, so Back
@@ -1676,8 +1691,8 @@ export default function InspoClient({
           item={panelItem}
           isSite={hasOwnPage(panelItem.web)}
           page={panelItem.id ? panelPage : null}
-          criterio={panelItem.id && panelProject && systems[panelProject.id] ? (
-            <RefCriterio item={panelItem} project={panelProject} system={systems[panelProject.id]} library={items} boardIds={panelBoardIds}
+          criterio={panelItem.id && panelProject && fullSystems[panelProject.id] ? (
+            <RefCriterio item={panelItem} project={panelProject} system={fullSystems[panelProject.id]} library={items} boardIds={panelBoardIds}
               refInfo={refInfo} onSystem={setSystem} onGo={goToSystem} />
           ) : undefined}
           thread={panelItem.id ? (
@@ -1845,7 +1860,7 @@ export default function InspoClient({
           <SystemView
             key={currentProject.id}
             project={currentProject}
-            system={systems[currentProject.id] ?? null}
+            system={fullSystems[currentProject.id] ?? null}
             onSystem={(sys) => setSystem(currentProject.id, sys)}
             board={spaceItems}
             library={items}

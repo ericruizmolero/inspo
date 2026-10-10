@@ -4,7 +4,7 @@
 // prompt box as an empty project, so what turns up next and has no home yet starts here.
 import { useMemo, useRef, useState } from "react";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import type { ProjectSystem } from "@/types/system";
+import type { SystemSummary } from "@/types/system";
 import { normalizeWebUrl } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
@@ -18,7 +18,7 @@ const SHOWN = 6;
 export default function InboxZero({ projects, systems, items, links, ratioOf, imageOf, onMeasure, isDuplicate, onAddUrl, onUpload, onPick }: {
   projects: Project[];
   /** Each project's system, for the status ring on its card (left out: the ring waits, muted) */
-  systems?: Record<string, ProjectSystem>;
+  systems?: Record<string, SystemSummary>;
   /** The whole library, newest first */
   items: InspoItem[];
   links: ProjectLinks;

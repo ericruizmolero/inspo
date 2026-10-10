@@ -5,7 +5,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Clouds from "@/components/Clouds";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
+import { SYSTEM_AREAS, filledOf, unreadOf, type SystemSummary } from "@/types/system";
 import { useT } from "./I18nProvider";
 import { BoardCard, PromptInput, type BoardTile } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
@@ -96,10 +96,10 @@ export function boardColumns(items: InspoItem[], imageOf: (item: InspoItem) => s
  *  is a gauge of the areas decided (moss over muted), closed when all eight are. The label says which */
 export function useBoardStatus() {
   const { t } = useT();
-  return (system: ProjectSystem | undefined, filed: InspoItem[]): { tone: "synced" | "new" | "idle"; progress: number; label: string } => {
-    const filled = system?.areas.filter((a) => a.decision).length ?? 0;
+  return (system: SystemSummary | undefined, filed: InspoItem[]): { tone: "synced" | "new" | "idle"; progress: number; label: string } => {
+    const filled = filledOf(system);
     const progress = filled / SYSTEM_AREAS.length;
-    const unread = system?.run ? staleness(system, filed.flatMap((i) => (i.id ? [i.id] : []))).unread : 0;
+    const unread = unreadOf(system, filed.flatMap((i) => (i.id ? [i.id] : [])));
     if (unread > 0) return { tone: "new", progress, label: t.system.stale(unread) };
     return { tone: filled === SYSTEM_AREAS.length ? "synced" : "idle", progress, label: t.system.filled(filled, SYSTEM_AREAS.length) };
   };
@@ -109,7 +109,7 @@ const NONE: InspoItem[] = [];
 
 export default function ProjectChooser({ projects, systems, items, links, ratioOf, imageOf, onMeasure, onPick, onCreate }: {
   projects: Project[];
-  systems: Record<string, ProjectSystem>;
+  systems: Record<string, SystemSummary>;
   items: InspoItem[];
   links: ProjectLinks;
   /** Height/width of each card on the board: the mini masonry keeps the same shapes */

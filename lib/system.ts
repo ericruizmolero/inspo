@@ -5,7 +5,7 @@
 // One run costs a fraction of a cent (DeepSeek, the DESIGN.md model), so a run per change is fine.
 import "server-only";
 import { createHash } from "crypto";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
@@ -25,7 +25,7 @@ import { getWhy } from "./design-why";
 import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { autoSystemToday } from "./quota";
 import { BRIEF_KEYS, type DesignBrief, type DesignSpec, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type AreaSupport, type CandidateVerdict } from "@/types/system";
+import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type AreaSupport, type CandidateVerdict, type SystemSummary } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { Brief } from "@/types/brief";
 import { briefForModel, briefPrompt } from "./brief";
@@ -122,7 +122,28 @@ export async function setDocPart(organizationId: string, projectId: string, part
   return getSystem(organizationId, projectId);
 }
 
-/** The systems of every project in the workspace, for the sidebar (how full each one is). */
+/** What the library needs of every project's system (types/system.ts SystemSummary), selecting only that: the
+ *  run's read ids, each area's decided flag and evidence ids. Never the file, the brand, the curation or the takes */
+export async function loadSystemSummaries(organizationId: string): Promise<Record<string, SystemSummary>> {
+  const ids = (await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)))).map((r) => r.id);
+  if (!ids.length) return {};
+  const [heads, rows] = await Promise.all([
+    db.select({ projectId: S.projectId, itemIds: sql<string[] | null>`${S.runJson}->'itemIds'`, omitted: sql<number | null>`(${S.runJson}->>'omitted')::int` })
+      .from(S).where(and(eq(S.organizationId, organizationId), inArray(S.projectId, ids), sql`${S.runJson} is not null`)),
+    db.select({ projectId: A.projectId, area: A.area, decided: sql<boolean>`${A.decision} <> ''`, evidence: sql<string[]>`coalesce(jsonb_path_query_array(${A.evidence}, '$[*].itemId'), '[]'::jsonb)` })
+      .from(A).where(and(eq(A.organizationId, organizationId), inArray(A.projectId, ids))),
+  ]);
+  const out: Record<string, SystemSummary> = {};
+  for (const id of ids) out[id] = { projectId: id, areas: SYSTEM_AREAS.map((area) => ({ area, decided: false, evidence: [] })), read: null };
+  for (const h of heads) out[h.projectId].read = { itemIds: Array.isArray(h.itemIds) ? h.itemIds : [], omitted: h.omitted ?? 0 };
+  for (const r of rows) {
+    const i = SYSTEM_AREAS.indexOf(r.area as SystemArea);
+    if (i >= 0) out[r.projectId].areas[i] = { area: r.area as SystemArea, decided: r.decided, evidence: r.evidence };
+  }
+  return out;
+}
+
+/** The whole systems of every project in the workspace: the agent and the MCP read them all */
 export async function loadSystems(organizationId: string): Promise<Record<string, ProjectSystem>> {
   const ids = (await db.select({ id: P.id }).from(P).where(and(eq(P.organizationId, organizationId), isNull(P.template)))).map((r) => r.id);
   if (!ids.length) return {};

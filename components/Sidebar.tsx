@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import { SYSTEM_AREAS, type ProjectSystem } from "@/types/system";
+import { SYSTEM_AREAS, filledOf, type SystemSummary } from "@/types/system";
 import { useT } from "./I18nProvider";
 import { fmtCount } from "@/lib/i18n/format";
 import FeedbackEntry from "./FeedbackEntry";
@@ -90,7 +90,7 @@ export interface SidebarProps {
   projects: Project[];
   links: ProjectLinks;
   /** Each project's system, for the ring that says how much of it is decided */
-  systems?: Record<string, ProjectSystem>;
+  systems?: Record<string, SystemSummary>;
   onCreateProject: (name: string) => Promise<Project | null>;
   /** A board pasted in Import (Conectores): the same import as the first run and Add */
   onImportBoard: ImportBoard;
@@ -234,7 +234,7 @@ function SidebarNav({ quota, items, onPick,
                 <NameField key={p.id} initial={p.name} placeholder={t.projects.namePlaceholder}
                   onSubmit={(name) => { setNaming(null); onRenameProject(p.id, name); }} onCancel={() => setNaming(null)} />
               ) : (
-                <ProjectRow key={p.id} project={p} count={counts.byProject[p.id] ?? 0} filled={systems[p.id]?.areas.filter((a) => a.decision).length ?? 0} active={space === p.id}
+                <ProjectRow key={p.id} project={p} count={counts.byProject[p.id] ?? 0} filled={filledOf(systems[p.id])} active={space === p.id}
                   onClick={pick(() => onSpace(p.id))}
                   onRename={() => setNaming(p.id)} onDelete={() => onDeleteProject(p)} />
               ))}

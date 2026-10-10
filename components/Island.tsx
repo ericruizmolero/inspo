@@ -11,7 +11,7 @@ import Link from "next/link";
 import { saveProjectBrief } from "@/app/actions/brief";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
-import { SYSTEM_AREAS, staleness, type ProjectSystem } from "@/types/system";
+import { SYSTEM_AREAS, filledOf as filledIn, unreadOf, type SystemSummary } from "@/types/system";
 import { parseDate } from "@/lib/search-query";
 import WorkspaceMenu, { UserAvatar, WorkspaceFace } from "./WorkspaceMenu";
 import { PlanMeter, useSpaceCounts, type QuotaView } from "./Sidebar";
@@ -100,7 +100,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
-  systems?: Record<string, ProjectSystem>;
+  systems?: Record<string, SystemSummary>;
   /** The team, listed in the workspace menu; picking someone filters by what they saved */
   members?: { name: string; image: string | null }[];
   onPerson?: (name: string) => void;
@@ -262,12 +262,11 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     // The tab's fill is painted first: opening a space is a heavy render, and the tab would not answer until it ended
     afterPaint(() => onSpace(id));
   };
-  const filledOf = (id: string) => systems[id]?.areas.filter((a) => a.decision).length ?? 0;
+  const filledOf = (id: string) => filledIn(systems[id]);
   // The tab's StatusRing: an ember dot when references came in since the system's last read; otherwise a gauge
   // of the areas decided, moss over muted, closed when all eight are
   const ringOf = (id: string) => {
-    const sys = systems[id];
-    const unread = sys?.run ? staleness(sys, boardIdsOf[id] ?? []).unread : 0;
+    const unread = unreadOf(systems[id], boardIdsOf[id] ?? []);
     const filled = filledOf(id);
     if (unread > 0) return <StatusRing className="island__ring" tone="new" label={t.system.stale(unread)} />;
     return <StatusRing className="island__ring" tone={filled >= SYSTEM_AREAS.length ? "synced" : "idle"} progress={filled / SYSTEM_AREAS.length} label={t.system.filled(filled, SYSTEM_AREAS.length)} />;

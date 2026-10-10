@@ -148,12 +148,31 @@ export function emptySystem(projectId: string): ProjectSystem {
   };
 }
 
-/** How the board moved since the run: references it never read, and whether it reads something else now */
-export function staleness(system: ProjectSystem, boardIds: string[], stamp?: string): { unread: number; wordsChanged: boolean } {
-  if (!system.run) return { unread: boardIds.length, wordsChanged: false };
-  const read = new Set(system.run.itemIds);
+/** What the views around the system read of each project's: the tabs' and the chooser's fill and unread dot, the
+ *  cards' areas. The library sends these for every project (lib/system.ts loadSystemSummaries); the whole
+ *  ProjectSystem is read when the project's system or a reference's sheet opens */
+export interface SystemSummary {
+  projectId: string;
+  /** In SYSTEM_AREAS order: whether the area holds a decision, and the ids of the references behind it */
+  areas: { area: SystemArea; decided: boolean; evidence: string[] }[];
+  /** What the last run read and what it left out on purpose; null before the first run */
+  read: { itemIds: string[]; omitted: number } | null;
+}
+
+export const summaryOf = (s: ProjectSystem): SystemSummary => ({
+  projectId: s.projectId,
+  areas: s.areas.map((a) => ({ area: a.area, decided: !!a.decision, evidence: a.evidence.map((e) => e.itemId) })),
+  read: s.run ? { itemIds: s.run.itemIds, omitted: s.run.omitted ?? 0 } : null,
+});
+
+export const filledOf = (s: SystemSummary | undefined) => s?.areas.filter((a) => a.decided).length ?? 0;
+
+/** References on the board the last run never read: 0 before the first run, which has nothing to compare */
+export function unreadOf(s: SystemSummary | undefined, boardIds: string[]): number {
+  if (!s?.read) return 0;
+  const read = new Set(s.read.itemIds);
   // What the run left out on purpose (the board's cut) is not news
-  return { unread: Math.max(0, boardIds.filter((id) => !read.has(id)).length - (system.run.omitted ?? 0)), wordsChanged: !!stamp && stamp !== system.run.stamp };
+  return Math.max(0, boardIds.filter((id) => !read.has(id)).length - s.read.omitted);
 }
 
 /** A template: a whole system (eight areas with decision, why and never, the paragraph) and the recipe of the
