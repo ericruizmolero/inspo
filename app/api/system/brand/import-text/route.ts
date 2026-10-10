@@ -6,6 +6,7 @@ import { db, schema } from "@/lib/db";
 import { GUIDE_MAX, storeGuide } from "@/lib/brand-guides";
 import { writeBrandSections } from "@/lib/brand-store";
 import { getSystem } from "@/lib/system";
+import { draftBriefAfter } from "@/lib/brief-draft";
 
 // POST { projectId, text, label? } → the system, with the guide kept among the brand's sources. The next passes (the
 // system's and the brand's) read it as the brand's own word; the client runs them right after.
@@ -23,5 +24,6 @@ export async function POST(req: NextRequest) {
   const key = await storeGuide(ctx.workspace.id, projectId, text.slice(0, GUIDE_MAX));
   const label = (String(body.label ?? "").trim() || text.split("\n").find((l) => l.trim())!.replace(/^#+\s*/, "")).slice(0, 80);
   await writeBrandSections(ctx.workspace.id, projectId, {}, "import", { source: { kind: "text", label, key, at: new Date().toISOString(), by: ctx.user.name } });
+  draftBriefAfter(ctx, projectId);
   return Response.json(await getSystem(ctx.workspace.id, projectId));
 }

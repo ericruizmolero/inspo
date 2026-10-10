@@ -33,6 +33,9 @@ export const PROMPTS = {
   curate: { model: env("CURATE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 3, language: SYSTEM_FIELDS },
   /** The inbox's references filed into projects */
   triage: { model: env("TRIAGE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 16000, version: 2, language: SYSTEM_FIELDS },
+  /** The brief's draft from the client's site or an imported document (lib/brief-draft.ts): it runs by itself on
+   *  saving, so little reasoning and a short answer */
+  brief: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"product.what" and every trait' },
   /** The brand's values from the areas (lib/brand.ts) */
   brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 4, language: "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line" },
   /** The agent's plan for a request (lib/agent.ts) */

@@ -15,6 +15,9 @@ export type KeepPart = (typeof KEEP_PARTS)[number];
 /** The fields a model may draft from the client's site or an imported document */
 export const DRAFT_FIELDS = ["sector", "product", "markets", "traits", "keep", "voiceSamples"] as const;
 export type DraftField = (typeof DRAFT_FIELDS)[number];
+/** Whether a draftable field says anything */
+export const draftFilled = (b: Pick<Brief, DraftField>, k: DraftField) =>
+  k === "sector" ? !!b.sector : k === "product" ? !!(b.product.what || b.product.price) : b[k].length > 0;
 
 export interface Brief {
   /** What the project is and for whom, in the team's words: the one question asked */

@@ -36,6 +36,7 @@ Todos por OpenRouter. Cada tarea tiene una fila en `lib/prompts.ts` (modelo, res
 | Etiquetar una referencia (visión) | `TAG_MODEL` | `google/gemini-2.5-flash-lite` | `lib/tagger.ts` |
 | Reserva de las etiquetas: cada llamada que falla y el último intento de un trabajo | `TAG_FALLBACK_MODEL` | `mistralai/mistral-small-3.2-24b-instruct` | `lib/tagger.ts` |
 | Leer el tablero en el sistema | `SYSTEM_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
+| Borrador del brief desde la web del cliente o un documento | `SYSTEM_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/brief-draft.ts` |
 | Otras opciones para un área | `OPTIONS_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
 | Curar la evidencia de un área | `CURATE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
 | Repartir la bandeja en proyectos | `TRIAGE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
