@@ -325,6 +325,13 @@ export const system: Record<string, Surface> = {
       expect(await mixed.json(), "A's reference named on B's board").toEqual({ faces: {} });
     },
   },
+  "route:app/api/system/measured/route.ts#GET": {
+    probe: async (fx) => {
+      const { GET } = await import("@/app/api/system/measured/route");
+      asB(fx);
+      for (const id of [fx.a.project, fx.a.hidden]) await expectDenied(fx, await GET(request(`/api/system/measured?projectId=${id}`)), `the measures of A's ${id}`);
+    },
+  },
   "route:app/api/system/font/route.ts#GET": {
     exempt: "proxies one font file of a public site; the URL must carry a token signed by the server and no workspace row is read",
   },
