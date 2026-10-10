@@ -201,6 +201,72 @@ export async function systemActivity(organizationId: string, projectId: string, 
   return { lines: lines.filter((l) => l.kind !== "reading" || l === lastReading).slice(0, ACTIVITY_LINES), talk, notes: said };
 }
 
+// ─── What the next pass reads ────────────────────────────────────────────────────────────────────
+// The model passes (lib/system.ts) read, per area, what the team said in its conversation, the proposals it
+// said no to and the model's decisions a person rewrote, so a rejected proposal does not come back reworded.
+
+/** What the team said and decided about one area, for the next pass to read */
+export interface AreaMemory {
+  /** The latest lines of the area's own conversation, oldest first, "Name: text", each cut to ~300 chars */
+  said?: string[];
+  /** Older lines left out of `said` */
+  saidOmitted?: number;
+  /** Proposals the team said no to, latest 5: the text it would have had, why it was proposed, who said no */
+  rejected?: { decision: string; why?: string; by?: string }[];
+  /** Model decisions a person rewrote, latest 2: what the model wrote and what the team made of it */
+  rewritten?: { model: string; team: string }[];
+}
+
+const SAID = 8;
+const SAID_MAX = 300;
+const REJECTED = 5;
+const REWRITTEN = 2;
+const REWRITE_MAX = 400;
+const cut = (s: string, max: number) => { const t = s.replace(/\s+/g, " ").trim(); return t.length > max ? `${t.slice(0, max - 1)}…` : t; };
+
+export async function areaMemory(organizationId: string, projectId: string): Promise<Partial<Record<SystemArea, AreaMemory>>> {
+  const R = schema.systemAreaRevision;
+  const [notes, revs] = await Promise.all([
+    db.select({ area: A.area, authorName: A.authorName, body: A.body, about: A.about })
+      .from(A).where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId), inArray(A.area, [...SYSTEM_AREAS]))).orderBy(asc(A.createdAt)),
+    db.select({ area: R.area, decision: R.decision, source: R.source })
+      .from(R).where(and(eq(R.organizationId, organizationId), eq(R.projectId, projectId))).orderBy(asc(R.createdAt)),
+  ]);
+  const said: Record<string, string[]> = {};
+  const rejected: Record<string, NonNullable<AreaMemory["rejected"]>> = {};
+  const rewritten: Record<string, NonNullable<AreaMemory["rewritten"]>> = {};
+  for (const n of notes) {
+    const about = cleanAbout(n.about);
+    // An open or accepted proposal is already on the board or waiting there; only a no is news to the model
+    if (about && "proposal" in about) {
+      const p = about.proposal;
+      if (p.state === "rejected") (rejected[n.area] ??= []).push({ decision: p.decision, ...(p.why ? { why: p.why } : {}), ...(p.resolvedBy ? { by: p.resolvedBy } : {}) });
+      continue;
+    }
+    (said[n.area] ??= []).push(`${n.authorName}: ${cut(n.body, SAID_MAX)}`);
+  }
+  const last = new Map<string, { decision: string; source: string }>();
+  for (const r of revs) {
+    const before = last.get(r.area);
+    if (before?.source === "model" && r.source === "team" && before.decision && r.decision && before.decision !== r.decision) {
+      (rewritten[r.area] ??= []).push({ model: cut(before.decision, REWRITE_MAX), team: cut(r.decision, REWRITE_MAX) });
+    }
+    last.set(r.area, r);
+  }
+  const out: Partial<Record<SystemArea, AreaMemory>> = {};
+  for (const area of SYSTEM_AREAS) {
+    const lines = said[area] ?? [];
+    const m: AreaMemory = {
+      ...(lines.length ? { said: lines.slice(-SAID) } : {}),
+      ...(lines.length > SAID ? { saidOmitted: lines.length - SAID } : {}),
+      ...(rejected[area] ? { rejected: rejected[area].slice(-REJECTED) } : {}),
+      ...(rewritten[area] ? { rewritten: rewritten[area].slice(-REWRITTEN) } : {}),
+    };
+    if (Object.keys(m).length) out[area] = m;
+  }
+  return out;
+}
+
 // ─── Proposals ───────────────────────────────────────────────────────────────────────────────────
 // A proposal is a line of an area's conversation that carries the text the area would have. Anyone in the
 // workspace says yes (the area takes it, as a decision of the team) or no; either way the line stays, with
