@@ -41,9 +41,11 @@ vi.mock("next/navigation", async () => {
 
 vi.mock("@/lib/storage", async (importOriginal) => {
   const real = await importOriginal<typeof import("@/lib/storage")>();
-  const { files } = await import("./harness");
+  const { files, storage } = await import("./harness");
   const get = async (key: string) => {
+    // What the bucket held when asked, arriving a round trip later
     const f = files.get(key);
+    if (storage.readMs) await new Promise((r) => setTimeout(r, storage.readMs));
     return f ? { body: f.body, contentType: f.contentType, size: f.body.byteLength } : null;
   };
   return {
@@ -60,7 +62,7 @@ vi.mock("@/lib/storage", async (importOriginal) => {
     uploadUrl: async () => null,
     listFiles: async (prefix: string) => [...files.keys()].filter((k) => k.startsWith(prefix)).map((key) => ({ key, uploadedAt: new Date() })),
     deleteFiles: async (keys: string[]) => { for (const k of keys) files.delete(k); },
-    getJson: async (key: string) => { const f = files.get(key); return f ? JSON.parse(f.body.toString("utf8")) : null; },
+    getJson: async (key: string) => { const f = await get(key); return f ? JSON.parse(f.body.toString("utf8")) : null; },
     putJson: async (key: string, data: unknown) => { files.set(key, { body: Buffer.from(JSON.stringify(data)), contentType: "application/json" }); },
   };
 });
