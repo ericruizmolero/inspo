@@ -16,7 +16,8 @@ import { AUTO_REF, autoBrandPass, billOf, recordUsage, type UsageCtx } from "./u
 import { brandChain } from "./quota";
 import type { OutputLanguage } from "./output-language";
 import { prompt, PROMPTS } from "./prompts";
-import { getSystem } from "./system";
+import { getSystem, PASS_CLAIM, passBusy } from "./system";
+import { once } from "./capture-claim";
 import { getDesignMd } from "./design-store";
 import { guideCutLine, guideTexts, type GuideCut } from "./brand-guides";
 import { mediaKindOf } from "./url";
@@ -181,14 +182,9 @@ export function brandRequest(s: BrandSnapshot, language?: OutputLanguage): LlmIn
 /** Values a run of an older brand prompt wrote: the next pass redoes them, free. A run from before versions is v1 */
 export const brandStale = (brand: BrandSpec) => !!brand.run && (brand.run.version ?? 1) !== PROMPTS.brand.version;
 
-const inflight = new Map<string, Promise<ProjectSystem>>();
-
-export function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[]; /** The client calls this pass chained to a system pass; autoBrandPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
-  const key = `${input.organizationId}|${input.projectId}`;
-  const running = inflight.get(key);
-  if (running) return running;
-  const job = (async () => {
-    const { organizationId, projectId } = input;
+export async function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[]; /** The client calls this pass chained to a system pass; autoBrandPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
+  const { organizationId, projectId } = input;
+  return (await once(`brand:${organizationId}|${projectId}`, PASS_CLAIM, async () => {
     const [[project], system, brand, client, board] = await Promise.all([
       db.select({ name: P.name, brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), eq(P.id, projectId))).limit(1),
       getSystem(organizationId, projectId), getBrand(organizationId, projectId), projectClient(organizationId, projectId), boardOf(organizationId, projectId),
@@ -239,10 +235,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model, version: PROMPTS.brand.version } });
     log.info("brand.built", { ref: projectId, sections: written, unmeasured: written.includes("color") ? sections.color!.items.filter((c) => c.unmeasured).length : 0, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
     return getSystem(organizationId, projectId);
-  })();
-  inflight.set(key, job);
-  job.finally(() => inflight.delete(key)).catch(() => {}); // the caller gets the job's error
-  return job;
+  }, () => getSystem(organizationId, projectId))) ?? passBusy();
 }
 
 const clean = (s: string, max: number) => s.replace(/\s+/g, " ").replace(/\s*[–—]\s*/g, ", ").trim().slice(0, max);

@@ -383,8 +383,8 @@ export const pageShot = pgTable("page_shot", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 });
 
-/** Who is generating or capturing a site right now, across instances (lib/capture-claim.ts): one row per
- *  "design:<web_key>" or "page:<web_key>" while it runs. A row older than the work's limit was lost and can be taken */
+/** Who is generating or capturing a site, or running a project's pass, right now, across instances (lib/capture-claim.ts):
+ *  one row per "design:<web_key>", "page:<web_key>", "system:<org>|<project>" or "brand:<org>|<project>" while it runs. A row older than the work's limit was lost and can be taken */
 export const captureClaim = pgTable("capture_claim", {
   key: text("key").primaryKey(),
   claimedAt: timestamp("claimed_at", { withTimezone: true, mode: "date" }).notNull(),

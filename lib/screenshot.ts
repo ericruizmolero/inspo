@@ -160,7 +160,7 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
 }
 
 // A site that failed is not tried again for a while. The browser's own cache on the 204 is not enough:
-// a client that ignores it would hold the only Chromium slot with sites that hang for 20 s each
+// a client that ignores it would hold the only Chromium slot with sites that hang for 20 s each. Per instance, as the slot is
 const FAILED_FOR_MS = 15 * 60 * 1000;
 const failedAt = new Map<string, number>();
 

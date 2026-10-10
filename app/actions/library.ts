@@ -278,7 +278,6 @@ export async function editTags(itemId: string, change: { add?: string; remove?: 
     });
     if (!user) throw new HttpError(404, (await getErrors()).urlNotInWorkspace);
     void enqueueEmbed([String(itemId)]);
-    (await import("@/lib/jev")).clearSearchCache();
     return user;
   });
 }

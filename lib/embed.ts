@@ -123,6 +123,7 @@ export async function staleEmbedding(itemId: string): Promise<void> {
 
 // ─── Searching ───────────────────────────────────────────────────────────────
 
+// Per instance: the same text always gives the same vector, so a hit is right anywhere and a miss costs one embedding
 const queryCache = new Map<string, number[]>();
 const QUERY_CACHE_MAX = 500;
 

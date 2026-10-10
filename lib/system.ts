@@ -8,6 +8,7 @@ import { createHash } from "crypto";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
+import { once } from "./capture-claim";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
 import type { OutputLanguage } from "./output-language";
@@ -604,18 +605,23 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
   return { ...prompt("system", { system: SYSTEM, text, language: o.language }), schema: SystemOutSchema };
 }
 
-// One run per project at a time: two tabs must not pay twice for the same board
-const inflight = new Map<string, Promise<ProjectSystem>>();
+// One pass per project at a time, across instances (lib/capture-claim.ts): two tabs must not pay twice for the
+// same board. The others wait for the claim to go and answer with what that pass wrote. A claim left by a function
+// cut off goes stale at the routes' maxDuration (90 s); a request waits a margin short of it.
+export const PASS_CLAIM = { staleMs: 90_000, waitMs: 70_000 };
+
+/** A pass that `once` did not run because another one outlasted the wait */
+export async function passBusy(): Promise<never> {
+  throw new HttpError(503, (await getErrors()).unexpected);
+}
 
 /**
  * Reads the board and writes the system: the model's proposal for every area the team has not
  * decided, the summary and the run. Always costs (little): the client asks when the run is stale.
  */
-export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus; /** The client calls this pass automatic; autoSystemPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
-  const key = `${input.organizationId}|${input.projectId}`;
-  const running = inflight.get(key);
-  if (running) return running;
-  const job = (async () => {
+export async function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus; /** The client calls this pass automatic; autoSystemPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
+  const key = `system:${input.organizationId}|${input.projectId}`;
+  return (await once(key, PASS_CLAIM, async () => {
     const { snapshot, refs, stamp, current } = await loadSnapshot(input.organizationId, input.projectId);
     if (!refs.length && !snapshot.guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
     const asked = !!input.auto && !input.focus;
@@ -686,10 +692,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       await writeArea(input.organizationId, input.projectId, next, { id: null, name: res.model }, now);
     }
     return getSystem(input.organizationId, input.projectId);
-  })();
-  inflight.set(key, job);
-  job.finally(() => inflight.delete(key)).catch(() => {}); // the caller gets the job's error
-  return job;
+  }, () => getSystem(input.organizationId, input.projectId))) ?? passBusy();
 }
 
 // ─── Polish an area: the directions the board allows, for the team to pick ──────────────────────

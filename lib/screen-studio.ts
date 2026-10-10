@@ -26,6 +26,7 @@ async function copy(remote: string, key: string, type: string, maxBytes: number)
   return true;
 }
 
+// Per instance: a copy on another instance at the same time writes the same files under the same keys
 const inflight = new Map<string, Promise<boolean>>();
 
 /** Whether we have the share's video and frame, copying them the first time. False if the page gives neither */

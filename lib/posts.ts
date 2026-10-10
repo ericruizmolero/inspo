@@ -166,6 +166,7 @@ export async function getStoredPost(id: string): Promise<Post | null> {
   try { return await getJson<Post>(`${POSTS_PREFIX}${id}/post.json`); } catch (err) { log.warn("storage.read_failed", { ref: id, err }); return null; }
 }
 
+// Per instance: an import on another instance at the same time writes the same files under the same keys
 const inflight = new Map<string, Promise<Post | null>>();
 
 /** The saved post, importing it the first time (copies included). null if X doesn't give it. */

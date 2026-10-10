@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { loadWorkspaceData } from "@/lib/items";
-import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch } from "@/lib/jev";
+import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch, searchKey } from "@/lib/jev";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
@@ -26,16 +26,16 @@ export async function POST(req: NextRequest) {
   const wanted = new Set((Array.isArray(webs) ? webs : []).slice(0, MAX_RERANK).map(String));
   if (!wanted.size) return Response.json({ scores: {} });
 
-  const key = `${ctx.workspace.id}|${query.toLowerCase()}|${[...wanted].sort().join(",")}`;
-  const hit = getCachedSearch(key);
-  if (hit) return Response.json({ scores: hit, cached: true });
-
-  const blocked = await quotaBlock(assertQuota(ctx.workspace, "jev_search"));
-  if (blocked) return blocked;
-
   try {
     // Only the candidates: never the whole workspace for 20 rows
     const { items: candidates, tagMap } = await loadWorkspaceData(ctx.workspace.id, [...wanted]);
+    const key = searchKey(ctx.workspace.id, query, candidates, tagMap);
+    const hit = getCachedSearch(key);
+    if (hit) return Response.json({ scores: hit, cached: true });
+
+    const blocked = await quotaBlock(assertQuota(ctx.workspace, "jev_search"));
+    if (blocked) return blocked;
+
     const scores = await matchQuery(query, candidates, tagMap, { organizationId: ctx.workspace.id, userId: ctx.user.id });
     setCachedSearch(key, scores);
     return Response.json({ scores });

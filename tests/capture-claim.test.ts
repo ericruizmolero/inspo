@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, expect, test } from "vitest";
 import { db, schema } from "@/lib/db";
-import { claim, release, waitFor } from "@/lib/capture-claim";
+import { claim, once, release, waitFor } from "@/lib/capture-claim";
 
 const key = `test:${randomBytes(4).toString("hex")}`;
 
@@ -27,4 +27,17 @@ test("waitFor answers with the first value read, or null once the time passes", 
   expect(value).toBe("ready");
   expect(reads).toBe(3);
   expect(await waitFor(async () => null, Date.now() + 50, 10), "nothing arrived in time").toBeNull();
+});
+
+test("once: a caller that finds the key held waits for it and reads, or gives up with null", async () => {
+  await release(key);
+  const limits = { staleMs: 60_000, waitMs: 2_000 };
+  let runs = 0;
+  const work = async () => { runs++; await new Promise((r) => setTimeout(r, 200)); return "ran"; };
+  const both = await Promise.all([once(key, limits, work, async () => "read"), once(key, limits, work, async () => "read")]);
+  expect(both.sort(), "one runs, the other reads what it left").toEqual(["ran", "read"]);
+  expect(runs).toBe(1);
+  expect(await claim(key, 60_000), "the runner released it").toBe(true);
+  expect(await once(key, { staleMs: 60_000, waitMs: 50 }, work, async () => "read"), "held past the wait").toBeNull();
+  expect(runs, "a caller that gave up never ran").toBe(1);
 });

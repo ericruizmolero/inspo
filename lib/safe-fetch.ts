@@ -25,7 +25,7 @@ export function isPrivateIp(ip: string): boolean {
   return PRIVATE.check(ip, isIP(ip) === 6 ? "ipv6" : "ipv4");
 }
 
-// One page load asks for the same few hosts dozens of times
+// One page load asks for the same few hosts dozens of times. Per instance and a minute, as a resolver caches
 const answers = new Map<string, { ok: boolean; at: number }>();
 const TTL_MS = 60_000;
 

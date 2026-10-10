@@ -1,5 +1,5 @@
-// Two servers at once. The app runs on several instances, and a DESIGN.md generation or a page capture on any of
-// them writes to a store they all share. Each test loads the module twice with the registry reset in between, so
+// Two servers at once. The app runs on several instances, and a DESIGN.md generation, a page capture or a project's
+// pass on any of them writes to a store they all share. Each test loads the module twice with the registry reset in between, so
 // the two copies share nothing in memory, only storage and the database, as two instances do.
 import { randomBytes } from "node:crypto";
 import { NextRequest } from "next/server";
@@ -13,7 +13,7 @@ import type { GenerateResult } from "@/lib/design-md";
 import type { DesignSpec } from "@/types/design";
 
 const shared = vi.hoisted(() => ({
-  calls: { extract: 0, generate: 0, usage: 0 },
+  calls: { extract: 0, generate: 0, usage: 0, llm: 0 },
   jpeg: async () => (await import("sharp")).default({ create: { width: 8, height: 8, channels: 3, background: "#336699" } }).jpeg().toBuffer(),
 }));
 const { calls, jpeg } = shared;
@@ -31,6 +31,16 @@ vi.mock("@/lib/design-md", () => ({
   generateDesignMd: async (): Promise<GenerateResult> => {
     calls.generate++;
     return { spec: {} as DesignSpec, markdown: "# Site", model: "test/model", provider: null, requestId: null, costUsd: 0.01, ms: 1, usage: { input: 1, output: 1, cacheRead: 0, reasoning: 0 }, fallbackFrom: null, prompt: "design_md@1" };
+  },
+}));
+vi.mock("@/lib/llm", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  llm: async () => {
+    calls.llm++;
+    // The second request arrives while the model is still reading the board
+    await new Promise((r) => setTimeout(r, 150));
+    const text = JSON.stringify({ summary: "A calm board.", areas: [{ area: "color", decision: "Warm neutrals.", why: "", confidence: 60, evidence: [], signals: [] }] });
+    return { text, model: "test/model", provider: null, id: null, usage: { input: 1, output: 1, cacheRead: 0, reasoning: 0 }, costUsd: 0.01, ms: 1, fallbackFrom: null, prompt: "system@1" };
   },
 }));
 vi.mock("@/lib/usage", async (importOriginal) => ({ ...(await importOriginal<object>()), recordUsage: async () => { calls.usage++; } }));
@@ -61,6 +71,10 @@ beforeAll(async () => {
   ]);
   const web = site("same");
   await db.insert(schema.inspoItem).values({ id: `${tag}-item`, organizationId: `${tag}-team`, name: "Same", web, webKey: webKeyOf(web), date: now.toISOString().slice(0, 10), author: owner.name, createdBy: owner.id, tagStatus: "done", createdAt: now, updatedAt: now });
+  await db.insert(schema.project).values({ id: `${tag}-project`, organizationId: `${tag}-team`, name: "Board", createdBy: owner.id, createdAt: now, updatedAt: now });
+  const pinned = site("board");
+  await db.insert(schema.inspoItem).values({ id: `${tag}-board`, organizationId: `${tag}-team`, name: "Board", web: pinned, webKey: webKeyOf(pinned), date: now.toISOString().slice(0, 10), author: owner.name, createdBy: owner.id, tagStatus: "done", createdAt: now, updatedAt: now });
+  await db.insert(schema.projectItem).values({ projectId: `${tag}-project`, itemId: `${tag}-board`, organizationId: `${tag}-team`, addedBy: owner.id, createdAt: now });
   process.env.OPENROUTER_API_KEY = "test";
   storage.readMs = 30;
 });
@@ -111,4 +125,17 @@ test("the same site asked from two instances is read, generated and charged once
   expect(calls.extract, "the site is read once").toBe(1);
   expect(calls.generate, "the model is called once").toBe(1);
   expect(calls.usage, "the workspace is charged once").toBe(1);
+});
+
+test("Improve with AI asked from two instances on one project reads the board once and is charged once", async () => {
+  const [r1, r2] = await twice(() => import("@/app/api/system/route"));
+  actAs(owner);
+  const usage = calls.usage;
+  const ask = () => new NextRequest("http://localhost/api/system", { method: "POST", body: JSON.stringify({ projectId: `${tag}-project`, focus: { aims: ["copy"], areas: ["color"] } }) });
+  const [res1, res2] = await Promise.all([r1.POST(ask()), r2.POST(ask())]);
+  expect([res1.status, res2.status], "both get the system").toEqual([200, 200]);
+  expect(calls.llm, "the model is called once").toBe(1);
+  expect(calls.usage - usage, "the workspace is charged once").toBe(1);
+  const [a, b] = await Promise.all([res1.json(), res2.json()]);
+  expect(b.areas.find((x: { area: string }) => x.area === "color")?.decision, "the one that waited answers with what the pass wrote").toBe(a.areas.find((x: { area: string }) => x.area === "color")?.decision);
 });

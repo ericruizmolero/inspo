@@ -1,5 +1,6 @@
 // Jev (Typesafe AI): search. Server only. Tagging is lib/tagger.ts.
 import "server-only";
+import { createHash } from "node:crypto";
 import { TypeSafeClient, noul } from "@typesafe-ai/sdk";
 import { InspoItem, InspoTags } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "./taxonomy";
@@ -26,7 +27,8 @@ export const activeTags = (t: InspoTags | undefined) =>
 
 // ─── Smart search ─────────────────────────────────────────────────────────────
 
-// In-memory cache per query. Cleared on tagging, because tags are part of the state.
+// In memory, per instance: keyed by the query and what the model reads of each candidate (searchKey), a hit is
+// right on any instance however the tags changed since, and a miss costs one more Jev reading
 const searchCache = new Map<string, { at: number; scores: Record<string, number> }>();
 const SEARCH_TTL = 10 * 60 * 1000;
 const SEARCH_MAX = 200;
@@ -39,7 +41,11 @@ export function setCachedSearch(key: string, scores: Record<string, number>) {
   if (searchCache.size >= SEARCH_MAX) searchCache.delete(searchCache.keys().next().value!);
   searchCache.set(key, { at: Date.now(), scores });
 }
-export const clearSearchCache = () => searchCache.clear();
+/** The cache key of a search: the workspace, the query and what the model reads of each candidate */
+export function searchKey(organizationId: string, query: string, items: InspoItem[], tagMap: Record<string, InspoTags>): string {
+  const read = items.map((it) => summarize(it, tagMap[it.web])).sort((a, b) => a.url.localeCompare(b.url));
+  return `${organizationId}|${query.toLowerCase()}|${createHash("sha256").update(JSON.stringify(read)).digest("hex")}`;
+}
 
 const BATCH = 12;
 const CONCURRENCY = 6;
