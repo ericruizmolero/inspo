@@ -18,18 +18,6 @@ Código que existe pero no se ve. No construir encima sin una decisión nueva.
 
 | Qué | Por qué sigue |
 | --- | --- |
-| Prop `onOpen` de `SystemDoc` | Se pasa pero nunca se llama |
-| Variante `drawer` de `CommentsPanel` | Solo se usa `column` |
-| `ui/tooltip.tsx`, `ui/skeleton.tsx` y varios exports de `ui/sidebar` | Vinieron con shadcn; nadie los pinta |
-| Atajo "/" de `SearchBox` | Nadie pasa la prop `shortcut` |
-| CSS que quizá quedó huérfano en `globals.css` (`.sysn-*`, `.sysv-*`, `.card-item`) | Del mar de nodos y del masonry anterior; comprobar antes de borrar |
-| `lib/canvas.ts` y la tabla `canvas_position` | Del canvas infinito, sustituido por `Grid` |
-| `lib/design-md`, `/api/design-md`, rutas de "En vivo" | DESIGN.md retirado; las portadas antiguas aún pintan tarjetas |
-| Columna `anchor` de comentarios | De los post-its retirados |
-| Un comentario a `LoginGate` en `LoginForm` | Resto de una versión anterior del login |
-| Dos sistemas de botón: `.btn` y sus variantes en `globals.css` (los usa `components/ui/button.tsx` y una docena de componentes) y `Button` del sistema (`cr-btn`) | Misma pinta, dos CSS; lo nuevo va en `Button` del sistema y lo viejo se migra al tocarlo |
-| `.btn-icon` (`globals.css`) y la variante `icon` de `ui/button.tsx` | Sustituidos por `IconButton`; ya no los pinta nadie |
-| `.input` y `.pill` en `globals.css` | Dos usos cada uno; `TextField` y `Chip` del sistema los sustituyen |
-| `Avatar` y `hueFor` de `CommentsPanel.tsx` | Un segundo avatar al margen de `Avatar` y `toneFor` del sistema (tonos moss, butter, ember); unificar |
-| Alias de tokens viejos (`--bg`, `--panel`, `--surface*`, `--text-2`, `--dock-*`) | Apuntan a los tokens del sistema; lo nuevo usa los nombres del sistema y los alias se retiran cuando no quede CSS que los lea |
-| `cr-tabbar`, `cr-tab`, `cr-cmdbar`, `cr-composer`, `cr-art` en `criterio.css` | Portados del bundle del sistema sin uso en la app (la Isla, el dock y el compositor tienen su propio CSS) |
+| Nombres viejos `--bg`, `--panel`, `--text-2` y `--surface`, `--surface-2`, `--surface-3` | No son alias puros: Board y la barra lateral del móvil los redefinen con otros valores, y `--surface*` no tiene nombre en el sistema (→ [Tokens](fundamentos.md)). Renombrarlos cambia la pinta; se retiran cuando no quede CSS que los lea |
+| Tablas `design_why` y `design_revision` | Ya nadie las escribe (las rutas `why` y `revisions` se borraron el 10/10), pero el sistema lee los porqués guardados y `/api/design-md` superpone las revisiones guardadas |
+| Unas 38 clases de `globals.css` sin uso literal (`topbar__*`, `picker-*`, `field__label`, `pn-bar*`, `ws__user`, `modal--sm`…) | Algunas se montan con plantillas (`cm-atts--${n}`, `pv__photos--${n}`, `cr-btn-${size}`); comprobar cada una antes de borrar |
