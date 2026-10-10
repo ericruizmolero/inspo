@@ -26,13 +26,15 @@ export const familyKey = (name: string) => familyBase(name).toLowerCase().replac
 /** Icon and widget fonts are not the typography of a site */
 export const NOT_TYPE = /icon|awesome|glyph|material symbols|material icons|swiper|slick|video-?js|katex|dashicons|icomoon|fontello|feather|remixicon|bootstrap-icons|lucide|emoji|webflow-icons|wf-icons|revicons|eicons|flexslider|photoswipe|plyr/i;
 const SYSTEM_STACK = /^(-apple-system|blinkmacsystemfont|segoe ui|ui-|system-ui|sans-serif|serif|monospace|inherit|initial|var\()/i;
+/** What a CSS minifier or a font loader leaves where a name should be: "Ff(", "4d688c08a8903c63", "Google Symbols Subset Tofu" */
+const NOT_A_NAME = /[^\p{L}\p{N} .'&-]|\b[0-9a-f]{8,}\b|symbols|subset|tofu|fallback/iu;
 
 /** The families a page's CSS names, as typefaces: each once, by its base name, without icon fonts or the system stack */
 export function typeFamilies(names: string[]): string[] {
   const seen = new Set<string>();
   return names.filter((n) => !SYSTEM_STACK.test(n.trim())).map((n) => familyBase(n)).filter((f) => {
     const k = familyKey(f);
-    if (!k || seen.has(k) || NOT_TYPE.test(f)) return false;
+    if (!k || seen.has(k) || NOT_TYPE.test(f) || NOT_A_NAME.test(f)) return false;
     seen.add(k);
     return true;
   });
