@@ -193,8 +193,8 @@ export interface BrandSpec extends BrandSections {
   v: 1;
   meta: Partial<Record<BrandSection, SectionMeta>>;
   sources: BrandSource[];
-  /** The model's last pass over the values */
-  run: { at: string; model: string } | null;
+  /** The model's last pass over the values. `version`: the brand prompt's (lib/prompts.ts), missing before versions */
+  run: { at: string; model: string; version?: number } | null;
 }
 
 // ─── Empty ───────────────────────────────────────────────────────────────────

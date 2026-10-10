@@ -1,6 +1,6 @@
 // Scores the system and brand prompts on the golden set (scripts/fixtures/system, frozen with npm run eval:freeze).
 // Each pass runs the real prompts of lib/system.ts and lib/brand.ts on a fixture, with no fallback model, then:
-//   hard checks: evidence ids that exist, hex and families found in what was measured;
+//   hard checks: evidence ids that exist, hex and families found in what was measured, areas written in the fixture's language;
 //   a judge model: specificity, the team's words, coherence, how close each area is to what the team decided,
 //   and the "never" lines broken (a line names what it protects, "the orange #EB3514 is the only accent", so
 //   finding its words in a decision proves nothing: reading it does);
@@ -8,8 +8,8 @@
 // Each pass appends one row to scripts/evals/system.jsonl, keyed by prompt version and model, and the command
 // ends with the table of every row so far. What the models wrote goes to .data/evals/ to read.
 // No database: only OpenRouter, a few cents a pass with the judge.
-//   npm run eval:system                                → every fixture, SYSTEM_MODEL, once
-//   npm run eval:system -- --models a/b,c/d --runs 2   → other models, each fixture twice
+//   npm run eval:system                                → every fixture, each pass on its own model (lib/prompts.ts), once
+//   npm run eval:system -- --models a/b,c/d --runs 2   → other models for both passes, each fixture twice
 //   npm run eval:system -- --only zernio --no-judge    → one fixture, hard checks only
 //   npm run eval:system -- --table                     → the table, no calls
 import { config as loadEnv } from "dotenv";
@@ -42,7 +42,7 @@ interface Row {
   brandPrompt: string;
   judge: string | null;
   error?: string;
-  checks?: { evidence: [number, number]; hex: [number, number]; families: [number, number] };
+  checks?: { evidence: [number, number]; hex: [number, number]; families: [number, number]; language?: [number, number] };
   scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number };
   /** The two passes; the judge is billed apart, so a model's cost reads clean */
   costUsd?: number;
@@ -90,18 +90,22 @@ async function fixtures(): Promise<EvalFixture[]> {
   return all.filter((f) => !only || f.slug === only);
 }
 
+/** `model` "": each pass on its own task's model */
 async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row> {
   const { llm } = await import("../lib/llm");
   const { systemRequest, SystemOutSchema, SYSTEM_PROMPT_ID } = await import("../lib/system");
   const { brandRequest, measuredOf, BrandOutSchema, BRAND_PROMPT_ID } = await import("../lib/brand");
   const { emptyBrand } = await import("../types/brand");
-  const { toOutputLanguage } = await import("../lib/output-language");
-  const row: Row = { at: new Date().toISOString(), fixture: fx.slug, model, systemPrompt: SYSTEM_PROMPT_ID, brandPrompt: BRAND_PROMPT_ID, judge: judge ? JUDGE_MODEL : null };
+  const { toOutputLanguage, writtenIn } = await import("../lib/output-language");
+  const { PROMPTS } = await import("../lib/prompts");
+  const own = PROMPTS.system.model === PROMPTS.brand.model ? PROMPTS.system.model : `${PROMPTS.system.model} · ${PROMPTS.brand.model}`;
+  const pick = model ? { model } : {};
+  const row: Row = { at: new Date().toISOString(), fixture: fx.slug, model: model || own, systemPrompt: SYSTEM_PROMPT_ID, brandPrompt: BRAND_PROMPT_ID, judge: judge ? JUDGE_MODEL : null };
   const language = toOutputLanguage(fx.language);
 
   try {
     const sysReq = systemRequest(fx.system, { language });
-    const sysRes = await llm({ ...sysReq, model, fallback: null });
+    const sysRes = await llm({ ...sysReq, ...pick, fallback: null });
     const sys = SystemOutSchema.parse(JSON.parse(sysRes.text));
 
     const nevers = new Map(fx.system.standing.map((a) => [a.area, a.never ?? []]));
@@ -117,7 +121,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
       current: { intro: empty.intro, color: [], faces: [], voice: empty.voice },
       pictures: fx.system.refs.filter((r) => r.kind !== "text").map((r) => ({ id: String(r.id), name: String(r.name ?? ""), kind: String(r.kind) })).slice(0, 80),
     }, language);
-    const brandRes = await llm({ ...brandReq, model, fallback: null });
+    const brandRes = await llm({ ...brandReq, ...pick, fallback: null });
     const brand = BrandOutSchema.parse(JSON.parse(brandRes.text));
 
     // Hard checks: every number is [bad, total]
@@ -132,6 +136,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
       evidence: [cited.filter((ok) => !ok).length, cited.length],
       hex: [[...used].filter((h) => !known.has(h)).length, used.size],
       families: [families.filter((f) => !source.includes(flat(f))).length, families.length],
+      language: (() => { const read = sys.areas.map((a) => writtenIn(`${a.decision} ${a.why}`, language)).filter((x) => x !== null); return [read.filter((x) => !x).length, read.length]; })(),
     };
     row.costUsd = (sysRes.costUsd ?? 0) + (brandRes.costUsd ?? 0);
     row.ms = sysRes.ms + brandRes.ms;
@@ -154,7 +159,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
       row.scores = { specificity: verdict.specificity, teamWords: verdict.team_words, coherence: verdict.coherence, expected: expected.length ? expected.reduce((n, e) => n + e.score, 0) / expected.length : null, neverBroken: verdict.never_broken.length };
     }
 
-    const out = path.join(OUTPUTS, SYSTEM_PROMPT_ID, model.replace(/[^a-z0-9.-]+/gi, "_"), `${fx.slug}-${row.at.replace(/[:.]/g, "-")}.json`);
+    const out = path.join(OUTPUTS, SYSTEM_PROMPT_ID, row.model.replace(/[^a-z0-9.-]+/gi, "_"), `${fx.slug}-${row.at.replace(/[:.]/g, "-")}.json`);
     await fs.mkdir(path.dirname(out), { recursive: true });
     await fs.writeFile(out, JSON.stringify({ row, system: sys, brand, verdict }, null, 1));
   } catch (e) {
@@ -173,14 +178,14 @@ function table(rows: Row[], current: string) {
     const k = `${r.systemPrompt}|${r.brandPrompt}|${r.model}`;
     groups.set(k, [...(groups.get(k) ?? []), r]);
   }
-  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "specific", "team words", "coherent", "expected", "never broken", "$ / pass", "judge $", "s / pass"];
+  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "never broken", "$ / pass", "judge $", "s / pass"];
   const body = [...groups.values()].sort((a, b) => a.at(-1)!.at.localeCompare(b.at(-1)!.at)).map((g) => {
     const ok = g.filter((r) => r.checks);
     const scored = ok.filter((r) => r.scores);
     const s = (f: (x: NonNullable<Row["scores"]>) => number | null) => fixed(mean(scored.map((r) => f(r.scores!)).filter((x): x is number => x !== null)));
     return [
       `${g[0].systemPrompt === current ? "* " : ""}${g[0].systemPrompt} · ${g[0].brandPrompt}`, g[0].model, String(g.length), String(g.length - ok.length),
-      okRate(ok.map((r) => r.checks!.evidence)), okRate(ok.map((r) => r.checks!.hex)), okRate(ok.map((r) => r.checks!.families)),
+      okRate(ok.map((r) => r.checks!.evidence)), okRate(ok.map((r) => r.checks!.hex)), okRate(ok.map((r) => r.checks!.families)), okRate(ok.flatMap((r) => r.checks!.language ? [r.checks!.language] : [])),
       s((x) => x.specificity), s((x) => x.teamWords), s((x) => x.coherence), s((x) => x.expected), s((x) => x.neverBroken),
       fixed(mean(ok.map((r) => r.costUsd ?? 0)), 4), fixed(mean(scored.flatMap((r) => r.judgeUsd ?? [])), 4), fixed(mean(ok.map((r) => (r.ms ?? 0) / 1000))),
     ];
@@ -197,16 +202,16 @@ async function readRows(): Promise<Row[]> {
 }
 
 async function main() {
-  const { SYSTEM_MODEL, SYSTEM_PROMPT_ID } = await import("../lib/system");
+  const { SYSTEM_PROMPT_ID } = await import("../lib/system");
   if (!flag("table")) {
     const { llmEnabled } = await import("../lib/llm");
     if (!llmEnabled()) throw new Error("OPENROUTER_API_KEY is not set");
-    const models = (arg("models") ?? SYSTEM_MODEL).split(",").map((m) => m.trim()).filter(Boolean);
+    const models = arg("models")?.split(",").map((m) => m.trim()).filter(Boolean) ?? [""];
     const runs = Number(arg("runs")) || 1;
     const set = await fixtures();
     if (!set.length) throw new Error(`No fixtures in ${FIXTURES}: npm run eval:freeze -- <project id> <slug>`);
     const jobs = set.flatMap((fx) => models.flatMap((m) => Array.from({ length: runs }, () => [fx, m] as const)));
-    console.log(`${jobs.length} passes: ${set.map((f) => f.slug).join(", ")} × ${models.join(", ")}${runs > 1 ? ` × ${runs}` : ""}`);
+    console.log(`${jobs.length} passes: ${set.map((f) => f.slug).join(", ")} × ${models.map((m) => m || "own models").join(", ")}${runs > 1 ? ` × ${runs}` : ""}`);
     await fs.mkdir(path.dirname(RESULTS), { recursive: true });
     let next = 0;
     await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, async () => {
@@ -214,7 +219,7 @@ async function main() {
         const [fx, model] = jobs[next++];
         const row = await pass(fx, model, !flag("no-judge"));
         await fs.appendFile(RESULTS, JSON.stringify(row) + "\n");
-        console.log(row.error ? `  ✗ ${fx.slug} · ${model}: ${row.error}` : `  ✓ ${fx.slug} · ${model} · $${row.costUsd!.toFixed(4)}${row.judgeUsd !== undefined ? ` + judge $${row.judgeUsd.toFixed(4)}` : ""} · ${(row.ms! / 1000).toFixed(0)}s`);
+        console.log(row.error ? `  ✗ ${fx.slug} · ${row.model}: ${row.error}` : `  ✓ ${fx.slug} · ${row.model} · $${row.costUsd!.toFixed(4)}${row.judgeUsd !== undefined ? ` + judge $${row.judgeUsd.toFixed(4)}` : ""} · ${(row.ms! / 1000).toFixed(0)}s`);
       }
     }));
   }

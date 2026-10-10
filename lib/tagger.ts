@@ -7,7 +7,8 @@ import "server-only";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
-import { llm, llmEnabled, type LlmResult } from "./llm";
+import { llm, llmEnabled, type LlmInput, type LlmResult } from "./llm";
+import { prompt } from "./prompts";
 import { fetchSiteText, videoTitleWithin, type SiteText } from "./extract";
 import { getStoredPost, ensurePost, postThumb } from "./posts";
 import { readMediaFile } from "./media";
@@ -24,12 +25,6 @@ import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, TAXONOMY_VERSI
 import type { InspoItem, InspoTags } from "@/types/inspo";
 import { log } from "./log";
 
-/** Picked with `npm run tags:bakeoff` (October 2026): ~$0.0004 an item, the fewest invented tags of four
- *  cheap models. Any OpenRouter model that takes images and strict JSON will do. */
-export const TAG_MODEL = process.env.TAG_MODEL || "google/gemini-2.5-flash-lite";
-/** The last try of a job that keeps failing goes to another model: Gemini stops mid-answer on some pages,
- *  every time. Second in the bake-off, ~$0.0002 an item. */
-export const TAG_FALLBACK_MODEL = process.env.TAG_FALLBACK_MODEL || "mistralai/mistral-small-3.2-24b-instruct";
 export const taggerEnabled = llmEnabled;
 
 const CAPTURE_TIMEOUT_MS = 60_000;
@@ -214,10 +209,10 @@ export async function inputsOf(web: string, { capture = true } = {}): Promise<Ta
 }
 
 /** One model call over prepared inputs. Returns the tags and the call's bill. */
-export async function tagWith(item: InspoItem, { image, site }: TagInputs, model = TAG_MODEL, fallback: string | null = TAG_FALLBACK_MODEL): Promise<{ tags: InspoTags } & LlmResult> {
+export async function tagWith(item: InspoItem, { image, site }: TagInputs, over: Partial<Pick<LlmInput, "model" | "fallback">> = {}): Promise<{ tags: InspoTags } & LlmResult> {
   const [colours, res] = await Promise.all([
     image ? paletteOf(image).catch(() => null) : null,
-    llm({ model, system: SYSTEM, text: promptText(item, site, !!image), image, schema: TagSchema, maxTokens: 1500, fallback }),
+    llm({ ...prompt("tag", { system: SYSTEM, text: promptText(item, site, !!image), image, schema: TagSchema }), ...over }),
   ]);
   const out = TagSchema.parse(JSON.parse(res.text)) as TagOutput;
   const uniq = (a: string[]) => [...new Set(a)];
@@ -244,12 +239,12 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, model
 }
 
 /** Tags one item. Throws when the model fails, so the item stays pending and is tried again. */
-export async function tagItem(item: InspoItem, usage: UsageCtx, model = TAG_MODEL): Promise<InspoTags> {
+export async function tagItem(item: InspoItem, usage: UsageCtx, model?: string): Promise<InspoTags> {
   // A pasted text has no look: its first lines stand in for tags, with no model call
   if (mediaKindOf(item.web) === "text") return textTags(item.web);
   const copy = await tagsElsewhere(usage.organizationId, item.web);
   if (copy) return copy;
-  const r = await tagWith(item, await inputsOf(item.web), model);
+  const r = await tagWith(item, await inputsOf(item.web), model ? { model } : {});
   void recordUsage(usage, { action: "auto_tag", ...billOf(r), ref: item.web });
   return r.tags;
 }

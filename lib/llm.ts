@@ -25,6 +25,8 @@ export interface LlmInput {
   signal?: AbortSignal;
   /** The model that answers when `model` fails. null: no fallback (an eval measures the model itself) */
   fallback?: string | null;
+  /** The task and version that built this call (lib/prompts.ts), handed back on the result for ai_usage */
+  prompt?: string;
 }
 
 export interface LlmResult {
@@ -38,6 +40,8 @@ export interface LlmResult {
   ms: number;
   /** The model asked for when another one answered (FALLBACK_MODEL); null when the first choice did */
   fallbackFrom: string | null;
+  /** The input's `prompt`; null for a call no task built (a script's own) */
+  prompt: string | null;
 }
 
 export class LlmError extends Error {
@@ -63,7 +67,7 @@ export async function llm(i: LlmInput): Promise<LlmResult> {
     if (!model || (n === 1 && !dropped(last)) || (n === 2 && model === i.model)) continue;
     try {
       const r = await call({ ...i, model });
-      return { ...r, costUsd: r.costUsd === null ? null : r.costUsd + wasted, fallbackFrom: n === 2 ? i.model : null };
+      return { ...r, costUsd: r.costUsd === null ? null : r.costUsd + wasted, fallbackFrom: n === 2 ? i.model : null, prompt: i.prompt ?? null };
     } catch (e) {
       if (i.signal?.aborted) throw e;
       void recordFailure("ai", model, e);
@@ -77,7 +81,7 @@ export async function llm(i: LlmInput): Promise<LlmResult> {
   throw last;
 }
 
-async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom">> {
+async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom" | "prompt">> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY is not set");
 

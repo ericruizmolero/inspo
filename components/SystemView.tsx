@@ -148,7 +148,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
     try { await post("/api/system/brand", { projectId: project.id }); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setRunning(false); setPhase(null); }
   };
 
-  // Fresh on open. A project with references and no reading reads itself
+  // Fresh on open. A project with references and no reading reads itself; a brand an older prompt drew is drawn again, free
   useEffect(() => {
     let alive = true;
     loadSystem(project.id).then((r) => {
@@ -156,6 +156,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
       if (!r.ok) { setError(r.error); if (!system) setSystem(emptySystem(project.id)); return; }
       setSystem(r.data.system);
       if (!r.data.system.run && r.data.board.itemIds.length) void run();
+      else if (r.data.brandStale) void fillBrand();
     });
     return () => { alive = false; };
   }, [project.id, board.length]); // eslint-disable-line react-hooks/exhaustive-deps

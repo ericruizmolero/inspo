@@ -111,10 +111,9 @@ Nothing is required. Each key switches one thing on:
 | `DEV_LOGIN_EMAIL` | Sign in without the email step |
 | `PULL_DATABASE_URL` | `npm run db:pull` (read-only Neon role) |
 | `OPENROUTER_API_KEY` | DESIGN.md, explain, revisions, tags and search translation (every model call) |
-| `TAG_MODEL` | Optional. Tagging model, default `google/gemini-2.5-flash-lite` (`npm run tags:bakeoff` compares others) |
-| `TAG_FALLBACK_MODEL` | Optional. Model for a job's last try, default `mistralai/mistral-small-3.2-24b-instruct` |
-| `LLM_FALLBACK_MODEL` | Optional. Model that answers when a call fails, default `anthropic/claude-haiku-5.5` |
-| `QUERY_MODEL` | Optional. Model that turns a search into English, default `TAG_MODEL` |
+| `SYSTEM_MODEL`, `OPTIONS_MODEL`, `START_MODEL`, `CURATE_MODEL`, `TRIAGE_MODEL`, `BRAND_MODEL`, `AGENT_MODEL`, `TAG_MODEL`, `DESIGN_MD_MODEL` | Optional. One model per task, each on its own; defaults in `lib/prompts.ts` |
+| `TAG_FALLBACK_MODEL` | Optional. Model for a tagging call that fails and a job's last try, default `mistralai/mistral-small-3.2-24b-instruct` |
+| `LLM_FALLBACK_MODEL` | Optional. Model that answers when any other call fails, default `anthropic/claude-haiku-5.5` |
 | `CRON_SECRET` | Vercel Cron: the tagging worker (`/api/cron/tag-pending`, once a day on Hobby) and the usage check |
 | `TYPESAFE_API_KEY` | Jev: AI search and polish |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |

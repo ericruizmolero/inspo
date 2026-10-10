@@ -2,9 +2,8 @@ import type { DesignTokens } from "./design-extract";
 import { GeneratedSpecSchema, stripDashes, renderDesignMd, type DesignSpec } from "@/types/design";
 import { getErrors } from "./i18n";
 import { llm, LlmError } from "./llm";
+import { prompt } from "./prompts";
 import { HttpError } from "./workspace-core";
-
-export const DESIGN_MD_MODEL = process.env.DESIGN_MD_MODEL || "deepseek/deepseek-v4.1-flash";
 
 export const SYSTEM = `You extract the design system of a real website and turn it into a structured spec, in the style of styles.refero.design.
 
@@ -86,26 +85,24 @@ export interface GenerateResult {
   ms: number;
   usage: { input: number; output: number; cacheRead: number; reasoning: number };
   fallbackFrom: string | null;
+  prompt: string | null;
 }
 
 export async function generateDesignMd(
-  tokens: DesignTokens, screenshot: Buffer, signal?: AbortSignal, model = DESIGN_MD_MODEL,
+  tokens: DesignTokens, screenshot: Buffer, signal?: AbortSignal, /** A script's own pick; the app uses the task's */ model?: string,
 ): Promise<GenerateResult> {
   const date = new Date().toISOString().slice(0, 10);
 
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({
-      model,
+    const req = prompt("design_md", {
       system: SYSTEM,
       image: screenshot,
       text: `Source URL: ${tokens.finalUrl}\nDate: ${date}\n\nMeasured tokens (JSON):\n${JSON.stringify(tokens)}`,
       schema: GeneratedSpecSchema,
-      // Trap 2 (#5): reasoning eats the budget on long answers, so leave plenty of room
-      maxTokens: 32000,
-      effort: (process.env.DESIGN_MD_EFFORT as "low" | "medium" | "high") || "medium",
       signal,
     });
+    res = await llm(model ? { ...req, model } : req);
   } catch (err) {
     if (signal?.aborted || !(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
@@ -120,6 +117,7 @@ export async function generateDesignMd(
     provider: res.provider,
     requestId: res.id,
     fallbackFrom: res.fallbackFrom,
+    prompt: res.prompt,
     costUsd: res.costUsd,
     ms: res.ms,
     usage: res.usage,

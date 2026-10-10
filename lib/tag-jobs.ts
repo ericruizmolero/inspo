@@ -11,7 +11,8 @@ import "server-only";
 import { and, desc, eq, gte, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
 import { ITEM_COLUMNS, rowToItem, type ItemRow } from "./items";
-import { tagItem, TAG_FALLBACK_MODEL, TAG_MODEL } from "./tagger";
+import { tagItem } from "./tagger";
+import { PROMPTS } from "./prompts";
 import { LlmError } from "./llm";
 import { embedItems } from "./embed";
 import { log, recordFailure } from "./log";
@@ -73,7 +74,7 @@ async function claim(organizationId: string, itemId?: string): Promise<Row | "bu
 async function run(row: Row, userId: string | null): Promise<InspoTags | null | "throttled"> {
   try {
     // The last try goes to another model (claim already counted this one)
-    const model = row.tagAttempts >= MAX_ATTEMPTS ? TAG_FALLBACK_MODEL : TAG_MODEL;
+    const model = row.tagAttempts >= MAX_ATTEMPTS ? PROMPTS.tag.fallback : undefined;
     // Billed to whoever started it, else to whoever saved the item
     const tags = await tagItem(rowToItem(row), { organizationId: row.organizationId, userId: userId ?? row.createdBy }, model);
     // New tags, new meaning: the vector is made now, or by the worker if this fails

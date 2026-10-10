@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
       const t0 = Date.now();
       const { tokens, screenshot, fullShot, cover, scroll, logo, logoSvg, icons, fontFiles } = await extractDesign(url, ctrl.signal);
       const t1 = Date.now();
-      const { spec, markdown, model, usage, costUsd, provider, requestId, fallbackFrom } = await generateDesignMd(tokens, screenshot, ctrl.signal);
+      const { spec, markdown, model, usage, costUsd, provider, requestId, fallbackFrom, prompt } = await generateDesignMd(tokens, screenshot, ctrl.signal);
       const t2 = Date.now();
       ctrl.signal.throwIfAborted();
 
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
       );
 
       log.info("design_md.built", { ref: url, extractMs: t1 - t0, model, modelMs: t2 - t1, tokensIn: usage.input, tokensOut: usage.output });
-      void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, provider, requestId, fallbackFrom, ref: url });
+      void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, provider, requestId, fallbackFrom, promptVersion: prompt, ref: url });
 
       // If the workspace had revisions, the regeneration becomes the current version and stays in the history
       let revisions = await listRevisions(ctx.workspace.id, url);

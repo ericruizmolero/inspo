@@ -1,6 +1,6 @@
 // Retry and fallback check for lib/llm.ts, with OpenRouter stubbed: no call leaves the machine.
 // A dropped call is tried once more, an unfinished one goes to the fallback model, a refused account goes nowhere,
-// and the usage row says when the fallback answered. Writes to the LOCAL database and cleans up what it creates.
+// and the usage row says when the fallback answered and which prompt version asked. Writes to the LOCAL database and cleans up what it creates.
 //   npm run check:llm
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -10,6 +10,7 @@ import { db, pool, schema } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
 import { FALLBACK_MODEL, llm, LlmError } from "../lib/llm";
 import { billOf, recordUsage } from "../lib/usage";
+import { prompt, promptId } from "../lib/prompts";
 
 const TAG = `llmcheck-${crypto.randomUUID().slice(0, 8)}`;
 const MODEL = `${TAG}/model`;
@@ -80,12 +81,13 @@ async function main() {
   const org = { id: TAG };
   await db.insert(schema.organization).values({ id: TAG, name: "check", slug: TAG, createdAt: new Date() });
   stub({ status: 200, finish: "length" }, { status: 200 });
-  const r = await ask();
+  const r = await llm({ ...prompt("brand", { system: "s", text: "t" }), model: MODEL, fallback: FALLBACK_MODEL });
   globalThis.fetch = realFetch;
   await recordUsage({ organizationId: org.id }, { action: "system", ...billOf(r), ref: TAG });
   const [row] = await db.select().from(schema.aiUsage).where(eq(schema.aiUsage.ref, TAG));
   assert.equal(row?.fallbackFrom, MODEL, "ai_usage says the fallback answered, and for which model");
   assert.equal(row?.model, FALLBACK_MODEL);
+  assert.equal(row?.promptVersion, promptId("brand"), "ai_usage says which prompt version made the call");
 
   await db.delete(schema.organization).where(eq(schema.organization.id, TAG));
   // Give the failure rows recordFailure writes without waiting a moment to land, then drop them

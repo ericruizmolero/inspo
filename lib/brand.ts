@@ -14,8 +14,9 @@ import { getErrors } from "./i18n";
 import { llm, LlmError, type LlmInput } from "./llm";
 import { AUTO_REF, autoBrandPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { brandChain } from "./quota";
-import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
-import { SYSTEM_MODEL, getSystem } from "./system";
+import type { OutputLanguage } from "./output-language";
+import { prompt, PROMPTS } from "./prompts";
+import { getSystem } from "./system";
 import { getDesignMd } from "./design-store";
 import { guideTexts } from "./brand-guides";
 import { mediaKindOf } from "./url";
@@ -149,7 +150,7 @@ export function measuredOf(areas: { area: SystemArea; evidence: { ref: string; t
 export const clientSiteOf = (web: string, spec: DesignSpec) => ({ web, theme: spec.theme, colors: spec.colors, fonts: spec.fonts.map((f) => ({ family: f.family, role: f.role, weights: f.weights })), scale: spec.typeScale, motion: spec.motion, glance: spec.brief });
 
 /** Names the prompt an eval scored (see SYSTEM_PROMPT_ID) */
-export const BRAND_PROMPT_ID = `v1-${createHash("sha1").update(PROMPT).digest("hex").slice(0, 7)}`;
+export const BRAND_PROMPT_ID = `v${PROMPTS.brand.version}-${createHash("sha1").update(PROMPT).digest("hex").slice(0, 7)}`;
 
 /** The brand pass as one model call */
 export function brandRequest(s: BrandSnapshot, language?: OutputLanguage): LlmInput & { schema: typeof BrandOutSchema } {
@@ -164,13 +165,11 @@ export function brandRequest(s: BrandSnapshot, language?: OutputLanguage): LlmIn
     `current (JSON): ${JSON.stringify(s.current)}`,
     `pictures on the board (JSON): ${JSON.stringify(s.pictures)}`,
   ].filter(Boolean).join("\n\n");
-  return {
-    model: SYSTEM_MODEL,
-    system: `${PROMPT}\n\n${languageRule(language ?? DEFAULT_OUTPUT_LANGUAGE, "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line")}`,
-    text, schema: BrandOutSchema, maxTokens: 12000,
-    effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
-  };
+  return { ...prompt("brand", { system: PROMPT, text, language }), schema: BrandOutSchema };
 }
+
+/** Values a run of an older brand prompt wrote: the next pass redoes them, free. A run from before versions is v1 */
+export const brandStale = (brand: BrandSpec) => !!brand.run && (brand.run.version ?? 1) !== PROMPTS.brand.version;
 
 const inflight = new Map<string, Promise<ProjectSystem>>();
 
@@ -185,7 +184,8 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       getSystem(organizationId, projectId), getBrand(organizationId, projectId), projectClient(organizationId, projectId), boardOf(organizationId, projectId),
     ]);
     if (!project) throw new HttpError(404, (await getErrors()).projectNotFound);
-    const [guides, auto] = await Promise.all([guideTexts(brand), input.auto ? brandChain(organizationId, projectId).then((c) => autoBrandPass(true, { ...c, now: new Date() })) : false]);
+    const [guides, chained] = await Promise.all([guideTexts(brand), input.auto ? brandChain(organizationId, projectId).then((c) => autoBrandPass(true, { ...c, now: new Date() })) : false]);
+    const auto = chained || brandStale(brand);
     if (!system.areas.some((a) => a.decision) && !client && !guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
 
     // Codes for the board, as the system run names them
@@ -221,7 +221,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     void recordUsage(input.usage, { action: "brand", ...billOf(res), ref: `${auto ? AUTO_REF : ""}project:${projectId}` });
     const out = BrandOutSchema.parse(JSON.parse(res.text));
     const sections = await toSections(out, brand, client?.web ?? null, byCode);
-    const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model } });
+    const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model, version: PROMPTS.brand.version } });
     log.info("brand.built", { ref: projectId, sections: written, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
     return getSystem(organizationId, projectId);
   })();

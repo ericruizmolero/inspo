@@ -10,8 +10,9 @@ import { z } from "zod";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
+import type { OutputLanguage } from "./output-language";
 import { llm, LlmError, type LlmInput } from "./llm";
+import { prompt, PROMPTS } from "./prompts";
 import { summarize } from "./jev";
 import { embedEnabled, nearest, queryVector } from "./embed";
 import { viewOf } from "./taxonomy";
@@ -38,9 +39,6 @@ const S = schema.projectSystem;
 const A = schema.systemArea;
 const R = schema.systemAreaRevision;
 
-export const SYSTEM_MODEL = process.env.SYSTEM_MODEL || process.env.DESIGN_MD_MODEL || "deepseek/deepseek-v4.1-flash";
-/** Bumps when the prompt or the output shape changes, so an old run reads as stale */
-const PROMPT_VERSION = 2;
 /** References read per run; beyond this the board is cut, not refused */
 const MAX_BOARD = 120;
 /** Thread comments sent per reference: the latest ones, each cut to 300 characters */
@@ -303,7 +301,7 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
       },
     };
   });
-  const stamp = createHash("sha1").update(JSON.stringify({ ids, w: refs.map((r) => r.words), m: SYSTEM_MODEL, v: PROMPT_VERSION })).digest("hex").slice(0, 20);
+  const stamp = createHash("sha1").update(JSON.stringify({ ids, w: refs.map((r) => r.words), m: PROMPTS.system.model, v: PROMPTS.system.version })).digest("hex").slice(0, 20);
   return { refs, stamp };
 }
 
@@ -379,8 +377,6 @@ ${EVIDENCE(20)}
 - Never count references in the text.
 ${STYLE}`;
 
-/** What the team reads on screen, in the workspace's language */
-const languageOf = (lang: OutputLanguage | undefined) => languageRule(lang ?? DEFAULT_OUTPUT_LANGUAGE, "every decision, why, take, reason, question, option and summary");
 
 export const SystemOutSchema = z.object({
   summary: z.string(),
@@ -450,7 +446,7 @@ export async function loadSnapshot(organizationId: string, projectId: string): P
 }
 
 /** Names the prompt an eval scored: the version and a fingerprint, so an edit nobody numbered still reads as another prompt */
-export const SYSTEM_PROMPT_ID = `v${PROMPT_VERSION}-${createHash("sha1").update(SYSTEM).digest("hex").slice(0, 7)}`;
+export const SYSTEM_PROMPT_ID = `v${PROMPTS.system.version}-${createHash("sha1").update(SYSTEM).digest("hex").slice(0, 7)}`;
 
 /** The system pass as one model call */
 export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage; focus?: SystemFocus } = {}): LlmInput & { schema: typeof SystemOutSchema } {
@@ -462,15 +458,7 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
     s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
     focusForModel(o.focus, s.standing.filter((a) => a.status === "team").map((a) => a.area)),
   ].filter(Boolean).join("\n\n");
-  return {
-    model: SYSTEM_MODEL,
-    system: `${SYSTEM}\n\n${languageOf(o.language)}`,
-    text,
-    schema: SystemOutSchema,
-    // Reasoning counts against the budget: room for it, the answer itself is short
-    maxTokens: 16000,
-    effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
-  };
+  return { ...prompt("system", { system: SYSTEM, text, language: o.language }), schema: SystemOutSchema };
 }
 
 // One run per project at a time: two tabs must not pay twice for the same board
@@ -605,7 +593,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: SYSTEM_MODEL, system: `${OPTIONS_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: OptionsSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
+    res = await llm(prompt("options", { system: OPTIONS_SYSTEM, text, schema: OptionsSchema, language: input.language }));
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
@@ -646,6 +634,7 @@ RETURN
   - "why": at most 20 words on what the project would feel like.
 
 RULES
+- Every sentence you write, in the language LANGUAGE names.
 ${STYLE}`;
 
 const StartAskSchema = z.object({
@@ -659,14 +648,11 @@ export interface AreaStartAsk { say: string; question: string; options: { label:
 
 // A person is waiting in front of an empty area: the question is short and wants an answer in a few seconds, so it
 // goes to a quick model that does not stop to reason (the system's own takes 15 to 45 s for the same few lines)
-const START_MODEL = process.env.START_MODEL || "anthropic/claude-haiku-4.5";
-
 type StartInput = { organizationId: string; projectId: string; area: string; usage: UsageCtx; language?: OutputLanguage };
-const startLanguage = (language?: OutputLanguage) => `${languageOf(language)} Every sentence you write, in that language.`;
 async function startCall<S extends z.ZodTypeAny>(input: StartInput, part: string, system: string, text: string, schema: S): Promise<z.infer<S>> {
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: START_MODEL, system: `${system}\n\n${startLanguage(input.language)}`, text, schema, maxTokens: 3000 });
+    res = await llm(prompt("start", { system, text, schema, language: input.language }));
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
@@ -970,7 +956,7 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
     const codes = new Map(batch.map(({ row }, i) => [`r${i + 1}`, row.id]));
     const refs = batch.map(({ row }, i) => ({ id: `r${i + 1}`, kind: mediaKindOf(row.web), ...summarize(rowToItem(row), row.tagsJson ?? undefined) }));
     const text = `Projects (JSON): ${JSON.stringify(projectsText)}\n\nUnfiled references (JSON): ${JSON.stringify(refs)}`;
-    const res = await llm({ model: SYSTEM_MODEL, system: `${TRIAGE_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: TriageSchema, maxTokens: 16000, effort: "low" });
+    const res = await llm(prompt("triage", { system: TRIAGE_SYSTEM, text, schema: TriageSchema, language: input.language }));
     void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `inbox triage ${batch.length}` });
     const parsed = TriageSchema.parse(JSON.parse(res.text));
     const out: TriageProposal[] = [];
@@ -1057,7 +1043,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: SYSTEM_MODEL, system: `${CURATE_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: CurateSchema, maxTokens: 12000, effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium" });
+    res = await llm(prompt("curate", { system: CURATE_SYSTEM, text, schema: CurateSchema, language: input.language }));
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);

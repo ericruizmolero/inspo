@@ -434,6 +434,8 @@ export const aiUsage = pgTable("ai_usage", {
   requestId: text("request_id"),
   /** The model the call asked for when it failed and FALLBACK_MODEL answered (lib/llm.ts); null when it answered itself */
   fallbackFrom: text("fallback_from"),
+  /** The prompt's task and version that made the call, "brand@1" (lib/prompts.ts); null for a call with no prompt (Jev, vectors) */
+  promptVersion: text("prompt_version"),
   /** URL, query… whatever helps explain the row */
   ref: text("ref"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),

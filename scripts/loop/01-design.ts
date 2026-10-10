@@ -20,7 +20,7 @@ async function main() {
     const t0 = Date.now();
     const { tokens, screenshot } = await extractDesign(r.web);
     const out = await generateDesignMd(tokens, screenshot, undefined, MODELS.cheap);
-    await record("design", r.key, { text: "", model: out.model, provider: out.provider, id: out.requestId, usage: out.usage, costUsd: out.costUsd, ms: out.ms, fallbackFrom: out.fallbackFrom });
+    await record("design", r.key, { text: "", model: out.model, provider: out.provider, id: out.requestId, usage: out.usage, costUsd: out.costUsd, ms: out.ms, fallbackFrom: out.fallbackFrom, prompt: out.prompt });
     const data: DesignFile = { ref: r.key, web: r.web, finalUrl: tokens.finalUrl, model: out.model, costUsd: out.costUsd, spec: out.spec, generatedAt: new Date().toISOString() };
     await writeJson(file, data);
     await writeText(dir("design", `${r.key}.md`), out.markdown);

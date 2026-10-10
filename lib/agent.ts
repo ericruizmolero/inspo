@@ -11,8 +11,9 @@ import { db, schema } from "./db";
 import { HttpError, canManage } from "./workspace-core";
 import type { Ctx } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
+import { DEFAULT_OUTPUT_LANGUAGE, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
+import { prompt } from "./prompts";
 import { billOf, recordUsage, type UsageCtx } from "./usage";
 import { addItem, deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
 import { nameFor } from "./item-name";
@@ -22,7 +23,7 @@ import { saveBrief, setClientBrand } from "./brief";
 import { addComment } from "./comments";
 import { startTagJob } from "./tag-jobs";
 import { taggerEnabled } from "./tagger";
-import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
+import { loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { log } from "./log";
@@ -442,7 +443,7 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
   ].filter(Boolean).join("\n\n");
   let res: Awaited<ReturnType<typeof llm>>;
   try {
-    res = await llm({ model: SYSTEM_MODEL, system: `${PLAN_SYSTEM}\n\n${languageRule(language, '"say", every decision, why, "never" rule, brief, question, label and guide text')}`, text: body, schema: PlanSchema, maxTokens: 6000, effort: "low" });
+    res = await llm(prompt("agent", { system: PLAN_SYSTEM, text: body, schema: PlanSchema, language }));
   } catch (err) {
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);

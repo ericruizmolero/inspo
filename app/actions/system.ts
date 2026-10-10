@@ -3,6 +3,7 @@
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
 import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, setAreaEvidence, setVerdict, setAreaNever, setDocPart, setSummary } from "@/lib/system";
+import { brandStale } from "@/lib/brand";
 import type { SystemArea } from "@/types/system";
 import type { SystemEvidence } from "@/types/system";
 
@@ -10,7 +11,7 @@ export async function loadSystem(projectId: string) {
   return withCtx(async (ctx) => {
     const id = String(projectId);
     const [system, board, history] = await Promise.all([getSystem(ctx.workspace.id, id), boardStamp(ctx.workspace.id, id), areaHistory(ctx.workspace.id, id)]);
-    return { system, board, history };
+    return { system, board, history, brandStale: !!system.brand && brandStale(system.brand) };
   });
 }
 

@@ -30,13 +30,15 @@ export interface UsageInput {
   provider?: string | null;
   requestId?: string | null;
   fallbackFrom?: string | null;
+  /** The prompt's task and version, "brand@1" (lib/prompts.ts) */
+  promptVersion?: string | null;
   ref?: string | null;
 }
 
 /** A model call's bill, as a usage row takes it */
 export const billOf = (r: Omit<LlmResult, "text" | "ms">) => ({
   model: r.model, inputTokens: r.usage.input, outputTokens: r.usage.output, cacheReadTokens: r.usage.cacheRead,
-  costUsd: r.costUsd, provider: r.provider, requestId: r.id, fallbackFrom: r.fallbackFrom,
+  costUsd: r.costUsd, provider: r.provider, requestId: r.id, fallbackFrom: r.fallbackFrom, promptVersion: r.prompt,
 });
 
 /**
@@ -61,7 +63,7 @@ async function writeUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Prom
       id: newId(), organizationId: ctx.organizationId, userId: ctx.userId ?? null,
       action: u.action, model: u.model, inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead,
       units, costMicros: Math.round(cost * 1e6), costSource: real ? "real" : "estimated",
-      provider: u.provider ?? null, requestId: u.requestId ?? null, fallbackFrom: u.fallbackFrom ?? null,
+      provider: u.provider ?? null, requestId: u.requestId ?? null, fallbackFrom: u.fallbackFrom ?? null, promptVersion: u.promptVersion ?? null,
       ref: u.ref?.slice(0, 300) ?? null, createdAt: new Date(),
     });
   } catch (e) {

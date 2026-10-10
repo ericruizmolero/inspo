@@ -28,17 +28,22 @@ Terceros que carga el navegador sin pasar por nosotros: el icono de una web vien
 
 ## Modelos
 
-Todos por OpenRouter. El modelo de cada acción se cambia con su variable, sin tocar código; el prompt, subiendo su `PROMPT_VERSION`. Para el sistema y la marca, antes de cambiar ninguno de los dos, `npm run eval:system` (→ [Desarrollo](desarrollo.md#ia)).
+Todos por OpenRouter. Cada tarea tiene una fila en `lib/prompts.ts` (modelo, reserva, esfuerzo, tokens, versión e idioma) y su propia variable de modelo, sin cadenas: cambiar una no toca otra. El prompt cambia subiendo su `version` en esa tabla. Para el sistema y la marca, antes de cambiar ninguno de los dos, `npm run eval:system` (→ [Desarrollo](desarrollo.md#ia)).
 
 | Acción | Variable | Por defecto | Dónde |
 | --- | --- | --- | --- |
 | Etiquetar una referencia (visión) | `TAG_MODEL` | `google/gemini-2.5-flash-lite` | `lib/tagger.ts` |
 | Reserva de las etiquetas: cada llamada que falla y el último intento de un trabajo | `TAG_FALLBACK_MODEL` | `mistralai/mistral-small-3.2-24b-instruct` | `lib/tagger.ts` |
-| Sistema de un proyecto (proponer, curar, opciones) | `SYSTEM_MODEL`, esfuerzo en `SYSTEM_EFFORT` | `deepseek/deepseek-v4.1-flash`, `medium` | `lib/system.ts`, `lib/brand.ts` |
+| Leer el tablero en el sistema | `SYSTEM_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
+| Otras opciones para un área | `OPTIONS_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
+| Curar la evidencia de un área | `CURATE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
+| Repartir la bandeja en proyectos | `TRIAGE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
+| Arranque de un área vacía | `START_MODEL` | `anthropic/claude-haiku-4.5` | `lib/system.ts` |
+| Valores de la marca | `BRAND_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/brand.ts` |
+| Plan del agente | `AGENT_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/agent.ts` |
+| DESIGN.md de una web (lo pide la importación de marca) | `DESIGN_MD_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/design-md.ts` |
 | Reserva de cualquier llamada que falla (la de etiquetas tiene la suya) | `LLM_FALLBACK_MODEL` | `anthropic/claude-haiku-5.5` | `lib/llm.ts` |
 | Juez de las evals (script) | `EVAL_JUDGE_MODEL` | `anthropic/claude-sonnet-5.5` | `scripts/eval-system.ts` |
-| Arranque de un proyecto | `START_MODEL` | `anthropic/claude-haiku-4.5` | `lib/system.ts` |
-| DESIGN.md de una web (lo pide la importación de marca) | `DESIGN_MD_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/design-md.ts` |
 | Vectores de búsqueda | `EMBED_MODEL` | `baai/bge-m3` | `lib/embed.ts` |
 | Prototipo del loop (scripts, fuera de la app) | `LOOP_CHEAP_MODEL`, `LOOP_SMART_MODEL` | DeepSeek, Sonnet | `scripts/loop/` |
 
