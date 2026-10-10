@@ -46,6 +46,7 @@ jobs:
       - run: npm run check:design-system
       - run: npm run check:usage
       - run: npm run check:boards
+      - run: npm run check:support
 
   db-checks:
     runs-on: ubuntu-latest
