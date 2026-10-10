@@ -11,7 +11,8 @@ import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { llm, LlmError } from "./llm";
-import { AUTO_REF, recordUsage, type UsageCtx } from "./usage";
+import { AUTO_REF, autoBrandPass, recordUsage, type UsageCtx } from "./usage";
+import { brandChain } from "./quota";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { SYSTEM_MODEL, getSystem } from "./system";
 import { getDesignMd } from "./design-store";
@@ -119,7 +120,7 @@ STYLE
 
 const inflight = new Map<string, Promise<ProjectSystem>>();
 
-export function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[]; /** Chained to a system pass: it does not count as an AI action */ auto?: boolean }): Promise<ProjectSystem> {
+export function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[]; /** The client calls this pass chained to a system pass; autoBrandPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
   const key = `${input.organizationId}|${input.projectId}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -130,7 +131,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       getSystem(organizationId, projectId), getBrand(organizationId, projectId), projectClient(organizationId, projectId), boardOf(organizationId, projectId),
     ]);
     if (!project) throw new HttpError(404, (await getErrors()).projectNotFound);
-    const guides = await guideTexts(brand);
+    const [guides, auto] = await Promise.all([guideTexts(brand), input.auto ? brandChain(organizationId, projectId).then((c) => autoBrandPass(true, { ...c, now: new Date() })) : false]);
     if (!system.areas.some((a) => a.decision) && !client && !guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
 
     // Codes for the board, as the system run names them
@@ -174,7 +175,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
-    void recordUsage(input.usage, { action: "brand", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${input.auto ? AUTO_REF : ""}project:${projectId}` });
+    void recordUsage(input.usage, { action: "brand", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${auto ? AUTO_REF : ""}project:${projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));
     const sections = await toSections(out, brand, client?.web ?? null, byCode);
     const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model } });

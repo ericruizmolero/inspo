@@ -1,6 +1,6 @@
 // Monthly quotas per plan, counted on ai_usage. Server only.
 import "server-only";
-import { and, eq, gt, gte, inArray, isNull, lt, notLike, or, sql } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNull, lt, max, notLike, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
 import { AUTO_REF, type UsageAction } from "./usage-core";
@@ -62,6 +62,28 @@ async function countAi(organizationId: string): Promise<number> {
     .where(and(eq(U.organizationId, organizationId), inArray(U.action, AI_ACTIONS), gte(U.createdAt, monthStart()),
       or(isNull(U.ref), notLike(U.ref, `${AUTO_REF}%`))));
   return Number(r?.n ?? 0);
+}
+
+/** Automatic re-reads of this project's board since 00:00 UTC */
+export async function autoSystemToday(organizationId: string, projectId: string): Promise<number> {
+  const U = schema.aiUsage;
+  const midnight = new Date(); midnight.setUTCHours(0, 0, 0, 0);
+  const [r] = await db.select({ n: sql<number>`count(*)` }).from(U)
+    .where(and(eq(U.organizationId, organizationId), eq(U.action, "system"), eq(U.ref, `${AUTO_REF}project:${projectId}`), gte(U.createdAt, midnight)));
+  return Number(r?.n ?? 0);
+}
+
+/** The project's last counted system pass and its last brand pass, to tell a chained brand pass */
+export async function brandChain(organizationId: string, projectId: string): Promise<{ systemAt: Date | null; brandAt: Date | null }> {
+  const U = schema.aiUsage;
+  const last = async (action: UsageAction, refs: string[]) => {
+    const [r] = await db.select({ at: max(U.createdAt) }).from(U)
+      .where(and(eq(U.organizationId, organizationId), eq(U.action, action), inArray(U.ref, refs)));
+    return r?.at ?? null;
+  };
+  const ref = `project:${projectId}`;
+  const [systemAt, brandAt] = await Promise.all([last("system", [ref]), last("brand", [ref, `${AUTO_REF}${ref}`])]);
+  return { systemAt, brandAt };
 }
 
 export async function countMembers(organizationId: string): Promise<number> {

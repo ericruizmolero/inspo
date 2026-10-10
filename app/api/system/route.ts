@@ -13,8 +13,8 @@ export const maxDuration = 90;
 // POST { projectId, focus? } → the project's system after a fresh read of its board (one model call).
 // Always costs (a fraction of a cent): the client asks when the run is stale or on request.
 // `focus` is the scope of a pass asked for by hand ("Improve with AI"): what to work on, in which areas, a note.
-// `auto` is the board's own re-read after a reference is filed: it stops once the month's AI actions are spent,
-// like every pass, but it does not count as one.
+// `auto` asks for the board's own re-read after a reference is filed: it stops once the month's AI actions are spent,
+// like every pass, and runSystem decides from the board whether it counts (autoSystemPass).
 export async function POST(req: NextRequest) {
   if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
   const ctx = await requireCtx();

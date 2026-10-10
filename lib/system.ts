@@ -20,7 +20,8 @@ import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
 import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
-import { AUTO_REF, recordUsage, type UsageCtx } from "./usage";
+import { AUTO_REF, autoSystemPass, recordUsage, type UsageCtx } from "./usage";
+import { autoSystemToday } from "./quota";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
@@ -422,7 +423,7 @@ const inflight = new Map<string, Promise<ProjectSystem>>();
  * Reads the board and writes the system: the model's proposal for every area the team has not
  * decided, the summary and the run. Always costs (little): the client asks when the run is stale.
  */
-export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus; /** Nobody asked for this pass by hand: it does not count as an AI action */ auto?: boolean }): Promise<ProjectSystem> {
+export function runSystem(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; focus?: SystemFocus; /** The client calls this pass automatic; autoSystemPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
   const key = `${input.organizationId}|${input.projectId}`;
   const running = inflight.get(key);
   if (running) return running;
@@ -430,6 +431,8 @@ export function runSystem(input: { organizationId: string; projectId: string; us
     const project = await projectRow(input.organizationId, input.projectId);
     const [{ refs, stamp }, current, guides] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId), projectGuides(input.organizationId, input.projectId)]);
     if (!refs.length && !guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
+    const asked = !!input.auto && !input.focus;
+    const auto = autoSystemPass(asked, { lastStamp: current.run?.stamp ?? null, stamp, autoToday: asked ? await autoSystemToday(input.organizationId, input.projectId) : 0 });
 
     const codes = new Map(refs.map((r) => [r.code, r.itemId]));
     const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
@@ -466,7 +469,8 @@ const standing = current.areas.map((a) => ({
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
-    void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${input.auto ? AUTO_REF : ""}project:${input.projectId}` });
+    // Awaited: a brand pass asked for right after this one looks for this row (autoBrandPass)
+    await recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${auto ? AUTO_REF : ""}project:${input.projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));
     log.info("system.built", { ref: input.projectId, refs: refs.length, areasFilled: out.areas.filter((a) => a.decision.trim()).length, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
 

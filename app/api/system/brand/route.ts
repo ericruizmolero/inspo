@@ -12,7 +12,7 @@ export const maxDuration = 90;
 
 // POST { projectId, force? } → the project's system with its brand values read again from the decisions (one model
 // call). The client calls it right after a system run, with `auto`: that pass is part of the one the person
-// asked for and does not count as another AI action. `force` names sections the team asked to have redone even
+// asked for and does not count as another AI action, once runBrand sees that system run (autoBrandPass). `force` names sections the team asked to have redone even
 // though they set them by hand.
 export async function POST(req: NextRequest) {
   if (!llmEnabled()) return Response.json({ error: (await getErrors()).noModelKey }, { status: 503 });
