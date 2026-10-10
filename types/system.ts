@@ -139,7 +139,8 @@ export function emptySystem(projectId: string): ProjectSystem {
 export function staleness(system: ProjectSystem, boardIds: string[], stamp?: string): { unread: number; wordsChanged: boolean } {
   if (!system.run) return { unread: boardIds.length, wordsChanged: false };
   const read = new Set(system.run.itemIds);
-  return { unread: boardIds.filter((id) => !read.has(id)).length, wordsChanged: !!stamp && stamp !== system.run.stamp };
+  // What the run left out on purpose (the board's cut) is not news
+  return { unread: Math.max(0, boardIds.filter((id) => !read.has(id)).length - (system.run.omitted ?? 0)), wordsChanged: !!stamp && stamp !== system.run.stamp };
 }
 
 /** A template: a whole system (eight areas with decision, why and never, the paragraph) and the recipe of the

@@ -270,6 +270,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           <div className="spage-head__text">
             <h1 className="spage-title">{project.name}</h1>
             {onClient && clientItem && <ClientChip client={clientItem} imageOf={imageOf} onPick={onClient} />}
+            {!!sys.run?.omitted && <p className="spage-muted spage-omitted">{t.system.omitted(sys.run.itemIds.length, sys.run.itemIds.length + sys.run.omitted)}</p>}
           </div>
           <div className="spage-bar">{views}{actions}</div>
         </header>

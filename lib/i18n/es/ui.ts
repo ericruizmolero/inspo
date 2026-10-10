@@ -492,6 +492,7 @@ export const ui: typeof EnUi = {
     runHint: (n: number): string => `${n} referencias en el tabl\u00f3n. El modelo propone una decisi\u00f3n por \u00e1rea a partir de tus notas, comentarios y fichas; t\u00fa confirmas. Una fracci\u00f3n de c\u00e9ntimo.`,
     stale: (n: number): string => (n === 1 ? "1 referencia a\u00f1adida desde la \u00faltima lectura." : `${n} referencias a\u00f1adidas desde la \u00faltima lectura.`),
     staleWords: "Las notas han cambiado desde la \u00faltima lectura.",
+    omitted: (read: number, total: number): string => `${read} de ${total} referencias le\u00eddas; ${total - read === 1 ? "la restante qued\u00f3 fuera" : `las ${total - read} restantes quedaron fuera`} de esta lectura`,
     noBoard: "Para rellenar estos ocho escenarios, importa inspiraci\u00f3n: webs, recortes, v\u00eddeos, GIFs, sonidos. Cada pieza ir\u00e1 al nodo que le corresponda.",
     summaryTitle: "En un p\u00e1rrafo",
     edit: "Editar",

@@ -496,6 +496,7 @@ export const ui = {
     runHint: (n: number): string => `${n} references on the board. The model proposes a decision per area from your notes, comments and sheets; you confirm. A fraction of a cent.`,
     stale: (n: number): string => (n === 1 ? "1 reference added since the last read." : `${n} references added since the last read.`),
     staleWords: "The notes changed since the last read.",
+    omitted: (read: number, total: number): string => `${read} of ${total} references read; ${total - read === 1 ? "the other one was" : `the other ${total - read} were`} left out of this reading`,
     noBoard: "To fill these eight areas, bring inspiration: sites, clippings, videos, GIFs, sounds. Each piece goes to the node it belongs to.",
     summaryTitle: "In one paragraph",
     edit: "Edit",
