@@ -8,7 +8,7 @@ import { log } from "@/lib/log";
 
 // POST { segmentId, visitId, area, path, organizationId? } → { ok: true }
 // Client presence heartbeat (components/useActivity.ts). Arrives every 20 s with the
-// tab visible and on area change or close; also via sendBeacon, which is why
+// tab visible (the board's comes inside /api/pulse instead) and on area change or close; also via sendBeacon, which is why
 // plain text is accepted as well as JSON.
 export async function POST(req: NextRequest) {
   const s = await getSession();

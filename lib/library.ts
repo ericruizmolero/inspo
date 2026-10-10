@@ -4,7 +4,6 @@
 import "server-only";
 import { and, desc, eq, gt, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
-import { listMembers } from "./workspace";
 import { ITEM_COLUMNS, shapeRows, type ItemRow } from "./items";
 import { loadProjects } from "./projects";
 import { TEMPLATE_AUTHOR } from "./template-seed";
@@ -17,7 +16,7 @@ import { listVotes } from "./polish-votes";
 import { latestTeamEvent } from "./notify";
 import { designDocsFor } from "./design-store";
 import { pageShotsFor, signCanvasCopies } from "./page-shots";
-import { HttpError, type SessionUser, type Workspace } from "./workspace-core";
+import { HttpError, listMembers, type SessionUser, type Workspace } from "./workspace-core";
 
 const T = schema.inspoItem, PI = schema.projectItem, P = schema.project;
 
