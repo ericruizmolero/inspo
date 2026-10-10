@@ -304,7 +304,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
             onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
-            onAbout={async (text) => { await onBrief({ about: text }); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
+            onAbout={async (text) => { if (!(await onBrief({ about: text }))) throw new Error("brief not saved"); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
             busy={busy} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
             onSave={async (area, next) => {
