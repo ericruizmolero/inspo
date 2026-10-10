@@ -5,6 +5,7 @@ import { deleteItems } from "@/lib/items";
 import { loadPage, PAGE, readStamp } from "@/lib/library";
 import { applyPage, applyPulse, type Mirror } from "@/lib/library-mirror";
 import { pulse } from "@/lib/pulse";
+import { latestTeamEvent } from "@/lib/notify";
 import { addComment, addItems, cleanupTeam, seedTeam, type Team } from "./seed";
 
 let team: Team;
@@ -66,6 +67,19 @@ test("a new comment arrives, and a row inside the overlap merged twice gives the
   expect(twice.comments).toBe(once.comments);
   expect(once.items.filter((i) => i.id === a)).toHaveLength(1);
   expect(once.comments[a].map((x) => x.id)).toEqual([c]);
+});
+
+test("the bell moves on what someone else does, and not on one's own", async () => {
+  const bell = await latestTeamEvent(team.ws.id, team.user.id);
+  const ask = { ...(await readStamp(team.ws.id)), bell };
+  await addItems(team, 1, { from: 600 });
+  expect((await pulse(team.user, team.ws, ask)).bell, "one's own reference is no news").toBeUndefined();
+  const mate = `${team.tag}-mate`;
+  await db.insert(schema.user).values({ id: mate, name: "mate", email: `${mate}@example.test`, emailVerified: true, createdAt: new Date(), updatedAt: new Date() });
+  await db.insert(schema.inspoComment).values({ id: `${team.tag}-c-mate`, organizationId: team.ws.id, itemId: `${team.tag}-600`, authorId: mate, authorName: "mate", body: "look", createdAt: new Date() });
+  const out = await pulse(team.user, team.ws, ask);
+  expect(out.bell).toBeDefined();
+  expect(out.bell).not.toBe(bell);
 });
 
 test("a look older than the tombstones are kept asks for a reload", async () => {
