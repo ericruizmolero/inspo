@@ -622,7 +622,7 @@ export const ui: typeof EnUi = {
       title: "Brief",
       lead: "Solo hace falta la primera pregunta. El resto ayuda a cada pasada de la IA y entra en criterio.md seg\u00fan lo escribes.",
       draft: "borrador",
-      draftHint: "Lo escribi\u00f3 la IA a partir de la web del cliente. Ed\u00edtalo y pasa a ser vuestro.",
+      draftHint: "Donde pone borrador, lo escribi\u00f3 la IA a partir de la web del cliente. Ed\u00edtalo y pasa a ser vuestro.",
       questions: {
         about: "\u00bfQu\u00e9 es el proyecto y para qui\u00e9n?",
         clientItemId: "\u00bfYa tiene web?",
@@ -651,6 +651,7 @@ export const ui: typeof EnUi = {
       sectorNone: "Ninguno encaja",
       badMarket: "Usa una etiqueta de idioma como es-ES o en-GB",
       badUrl: "Eso no es una direcci\u00f3n web",
+      required: "Esta no puede quedar vac\u00eda. Se queda la \u00faltima respuesta guardada hasta que escribas otra.",
       full: (n: number): string => `${n} como mucho`,
     },
     views: { label: "C\u00f3mo ver el sistema", bento: "Bento", markdown: "Markdown" },

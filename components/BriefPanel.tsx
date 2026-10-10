@@ -63,16 +63,14 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
   // One save at a time: saveBrief reads the stored brief and writes it back whole, so two in flight could lose one
   const queue = useRef<Promise<unknown>>(Promise.resolve());
 
-  /** `adopt` takes the field back as the server cleaned it; a text being typed keeps what is in the box */
-  const save = <K extends Editable>(key: K, value: Brief[K], adopt = true) => {
+  // The panel's value stays the truth: every control already hands over what readBrief keeps, and a reply taken back
+  // would undo a newer save of the same field still in the queue
+  const save = <K extends Editable>(key: K, value: Brief[K]) => {
     setBrief((b) => ({ ...b, [key]: value, drafted: b.drafted.filter((d) => d !== key) }));
     setStatus("saving");
-    queue.current = queue.current.then(async () => {
-      const saved = await onSave({ [key]: value } as Partial<Brief>);
-      if (!saved) { setStatus(null); return; }
-      setBrief((b) => ({ ...b, drafted: saved.drafted, ...(adopt ? { [key]: saved[key] } : {}) }));
-      setStatus("saved");
-    });
+    queue.current = queue.current
+      .then(() => onSave({ [key]: value } as Partial<Brief>))
+      .then((saved) => setStatus(saved ? "saved" : null), () => setStatus(null));
   };
 
   const field = (f: Field) => {
@@ -80,14 +78,14 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
       case "text":
       case "long":
         return <TextBox value={brief[f.key]} long={f.kind === "long"} max={BRIEF_TEXT_MAX}
-          onCommit={(v) => { if (v || !f.required) save(f.key, v, false); }} />;
+          required={f.required} onCommit={(v) => save(f.key, v)} />;
       case "client":
         return <p className="brf__client">{client ? <>{t.system.client.redesignOf} <b>{client}</b></> : s.noClient}</p>;
       case "product":
         return (
           <>
             <TextBox label={s.questions.product} value={brief.product.what} max={BRIEF_TEXT_MAX} placeholder={s.productPlaceholder}
-              onCommit={(what) => save("product", { ...brief.product, what }, false)} />
+              onCommit={(what) => save("product", { ...brief.product, what })} />
             <div className="pills pills--line">
               {PRICE_RANGES.map((p) => (
                 <Chip key={p} pressed={brief.product.price === p}
@@ -103,10 +101,10 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
           bad={s.badMarket} onChange={(v) => save(f.key, v)} />;
       case "urls":
         return <Tags label={s.questions.competitors} values={brief.competitors} max={BRIEF_LIMITS.competitors} len={BRIEF_LIMITS.url} placeholder={s.urlPlaceholder}
-          parse={normalizeWebUrl} show={(u) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+          parse={(v) => { const u = normalizeWebUrl(v); return u && u.length <= BRIEF_LIMITS.url ? u : null; }} show={(u) => u.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
           bad={s.badUrl} onChange={(v) => save("competitors", v)} />;
       case "texts":
-        return <Samples values={brief.voiceSamples} onChange={(v) => save("voiceSamples", v, false)} />;
+        return <Samples values={brief.voiceSamples} onChange={(v) => save("voiceSamples", v)} />;
       case "chips": {
         const keys: readonly string[] = CHIPS[f.key];
         const names: Record<string, string> = f.key === "platforms" ? md.platformNames : md.keepNames;
@@ -142,13 +140,14 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
       <DialogContent className="brf">
         <div className="modal__header">
           <DialogTitle className="t-title-s">{s.title}</DialogTitle>
-          {status && <span className="brf__status" role="status">{status === "saving" ? t.doc.saving : t.doc.saved}</span>}
+          <span className="brf__status" role="status">{status && (status === "saving" ? t.doc.saving : t.doc.saved)}</span>
           <DialogClose render={<IconButton icon="close" variant="default" size="s" label={t.common.close} />} />
         </div>
         <div className="modal__body brf__body">
           <DialogDescription className="brf__lead">{s.lead}</DialogDescription>
+          {brief.drafted.length > 0 && <p className="brf__hint">{s.draftHint}</p>}
           {FIELDS.map((f) => (
-            <Row key={f.key} label={s.questions[f.key]} single={SINGLE.has(f.kind)} draft={brief.drafted.includes(f.key as DraftField) ? s.draft : null} draftHint={s.draftHint}>
+            <Row key={f.key} label={s.questions[f.key]} single={SINGLE.has(f.kind)} draft={brief.drafted.includes(f.key as DraftField) ? s.draft : null}>
               {field(f)}
             </Row>
           ))}
@@ -159,23 +158,27 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
 }
 
 /** A question and its control. One box is a label; chips are a group, where a label would press the first chip */
-function Row({ label, single, draft, draftHint, children }: { label: string; single: boolean; draft: string | null; draftHint: string; children: React.ReactNode }) {
+function Row({ label, single, draft, children }: { label: string; single: boolean; draft: string | null; children: React.ReactNode }) {
   const id = useId();
-  const head = <span id={id} className="t-label brf__label">{label}{draft && <small className="brf__draft" data-tip={draftHint}>{draft}</small>}</span>;
+  const head = <span id={id} className="t-label brf__label">{label}{draft && <small className="brf__draft">{draft}</small>}</span>;
   return single
     ? <label className="brf__row">{head}{children}</label>
     : <div className="brf__row" role="group" aria-labelledby={id}>{head}{children}</div>;
 }
 
-/** Saved after a pause in typing, on leaving the box or with ⌘Enter, like the blocks of criterio.md */
-function TextBox({ label, value, long, max, placeholder, onCommit }: { label?: string; value: string; long?: boolean; max: number; placeholder?: string; onCommit: (v: string) => void }) {
+/** Saved after a pause in typing, on leaving the box or with ⌘Enter, like the blocks of criterio.md. A required box
+ *  left empty saves nothing and says so */
+function TextBox({ label, value, long, max, placeholder, required, onCommit }: { label?: string; value: string; long?: boolean; max: number; placeholder?: string; required?: boolean; onCommit: (v: string) => void }) {
+  const { t } = useT();
   const [text, setText] = useState(value);
   const sent = useRef(value);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const hint = useId();
+  const empty = required && !text.trim();
   const flush = (raw: string) => {
     clearTimeout(timer.current);
     const v = raw.trim();
-    if (v === sent.current.trim()) return;
+    if (v === sent.current.trim() || (required && !v)) return;
     sent.current = v;
     onCommit(v);
   };
@@ -185,16 +188,23 @@ function TextBox({ label, value, long, max, placeholder, onCommit }: { label?: s
   useEffect(() => () => last.current(), []);
   const props = {
     value: text, maxLength: max, placeholder, "aria-label": label,
+    "aria-required": required, "aria-invalid": empty || undefined, "aria-describedby": empty ? hint : undefined,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setText(e.target.value); clearTimeout(timer.current); timer.current = setTimeout(() => last.current(), DEBOUNCE);
     },
     onBlur: () => flush(text),
     onKeyDown: (e: KeyboardEvent) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey || !long)) { e.preventDefault(); flush(text); } },
   };
-  return long ? <TextArea rows={2} {...props} /> : <input className="cr-input" {...props} />;
+  return (
+    <>
+      {long ? <TextArea rows={2} {...props} /> : <input className="cr-input" {...props} />}
+      {empty && <span id={hint} className="cr-field-hint is-error">{t.system.briefPanel.required}</span>}
+    </>
+  );
 }
 
-/** Words or addresses as chips: typed and added with Enter, or picked from the suggestions */
+/** Words or addresses as chips: typed and added with Enter or a comma, or picked from the suggestions. Leaving the box
+ *  keeps the text in it unsaved, so a half word is never added by accident */
 function Tags({ label, values, max, len, suggest = [], placeholder, parse, show = (v) => v, bad, onChange }: {
   label: string; values: string[]; max: number; len: number; suggest?: readonly string[]; placeholder: string;
   /** The value as kept, or null when it is not one */
@@ -207,6 +217,7 @@ function Tags({ label, values, max, len, suggest = [], placeholder, parse, show 
   const [draft, setDraft] = useState("");
   const [error, setError] = useState(false);
   const id = useId();
+  const fullId = useId();
   const full = values.length >= max;
   const add = (raw: string) => {
     const v = raw.trim() ? parse(raw.trim()) : "";
@@ -218,17 +229,18 @@ function Tags({ label, values, max, len, suggest = [], placeholder, parse, show 
   return (
     <>
       {(values.length > 0 || (!full && open.length > 0)) && (
-        <div className="pills pills--line">
+        // Picking a suggestion keeps the cursor in the box
+        <div className="pills pills--line" onMouseDown={(e) => e.preventDefault()}>
           {values.map((v) => <Chip key={v} pressed removeLabel={`${t.common.delete} ${show(v)}`} onRemove={() => onChange(values.filter((x) => x !== v))}>{show(v)}</Chip>)}
           {!full && open.map((x) => <Chip key={x} onClick={() => add(x)}><Icon name="plus" size={12} />{x}</Chip>)}
         </div>
       )}
-      {full ? <p className="brf__hint">{t.system.briefPanel.full(max)}</p> : (
-        <input className="cr-input" aria-label={label} value={draft} maxLength={len} placeholder={placeholder} aria-invalid={error || undefined} aria-describedby={error ? id : undefined}
-          onChange={(e) => { setDraft(e.target.value); setError(false); }}
-          onBlur={() => add(draft)}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(draft); } }} />
-      )}
+      {/* Read-only when full, not gone: the box that just took the last one keeps the focus */}
+      <input className="cr-input" aria-label={label} value={full ? "" : draft} maxLength={len} placeholder={full ? undefined : placeholder} readOnly={full}
+        aria-invalid={error || undefined} aria-describedby={full ? fullId : error ? id : undefined}
+        onChange={(e) => { setDraft(e.target.value); setError(false); }}
+        onKeyDown={(e) => { if (!full && (e.key === "Enter" || e.key === ",")) { e.preventDefault(); add(draft); } }} />
+      {full && <p id={fullId} className="brf__hint">{t.system.briefPanel.full(max)}</p>}
       {error && <p id={id} className="cr-field-hint is-error">{bad}</p>}
     </>
   );

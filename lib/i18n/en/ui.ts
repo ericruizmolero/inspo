@@ -626,7 +626,7 @@ export const ui = {
       title: "Brief",
       lead: "Only the first question is needed. The rest helps every pass of the AI and goes into criterio.md as you write it.",
       draft: "draft",
-      draftHint: "The AI wrote this from the client's site. Edit it and it is yours.",
+      draftHint: "Where it says draft, the AI wrote it from the client's site. Edit it and it is yours.",
       questions: {
         about: "What is the project and who is it for?",
         clientItemId: "Does it have a site already?",
@@ -655,6 +655,7 @@ export const ui = {
       sectorNone: "None fits",
       badMarket: "Use a language tag such as es-ES or en-GB",
       badUrl: "That is not a web address",
+      required: "This one cannot be empty. The last saved answer stays until you write another.",
       full: (n: number): string => `${n} at most`,
     },
     views: { label: "How to see the system", bento: "Bento", markdown: "Markdown" },
