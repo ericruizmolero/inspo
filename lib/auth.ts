@@ -4,7 +4,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { magicLink, organization, lastLoginMethod } from "better-auth/plugins";
 import { APIError, createAuthMiddleware, getIP, isAPIError } from "better-auth/api";
-import { memberLimitMessage, memberRank } from "./quota";
+import { memberLimitMessage, memberRank, newTeamRefusal } from "./quota";
 import { nextCookies } from "better-auth/next-js";
 import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
@@ -218,8 +218,11 @@ export const auth = betterAuth({
         }
       },
       organizationHooks: {
-        // A new team writes in its creator's language until someone changes it
+        // A new team writes in its creator's language until someone changes it. The personal space never comes
+        // through here (ensurePersonalWorkspace writes it), so this is always a team, and one free workspace each
         async beforeCreateOrganization({ organization: org, user }) {
+          const refused = await newTeamRefusal(user.id);
+          if (refused) throw new APIError("FORBIDDEN", { message: refused });
           return { data: { ...org, outputLanguage: toOutputLanguage((user as { language?: unknown }).language) } };
         },
         // Plan seat quota: checked on invite and on accept.
