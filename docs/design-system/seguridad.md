@@ -30,6 +30,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 - `tests/rate-limits.test.ts` golpea cada una de estas rutas desde dos instancias a la vez y comprueba el 429 justo después del límite. → [límites por minuto](decisiones/2026-10-10-la-extension-el-mcp-y-su-oauth-tienen-limite-por-minuto-en-postgres.md)
 - Cada intento de entrada fallido queda en el log como `login_failed` con ruta, motivo e IP.
 - La cuota del plan cuenta acciones de IA por mes (`assertQuota` antes de cada llamada a un modelo, `recordUsage` después). → [el plan cuenta acciones de IA](decisiones/2026-10-06-el-plan-cuenta-acciones-de-ia.md)
+- El plan gratis guarda 200 referencias y 1 GB (`assertRoom`, 402 en cada camino que guarda), y crear un equipo pide ser dueño de un workspace de pago (`beforeCreateOrganization`): un workspace gratis por persona. → [decisión](decisiones/2026-10-10-el-plan-gratis-guarda-200-referencias-1-gb-y-un-workspace.md)
 
 ## Cabeceras
 

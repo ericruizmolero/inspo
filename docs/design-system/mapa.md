@@ -26,7 +26,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/settings/account` | Sesión | Nombre, foto, tema, idioma, sonidos y los correos del equipo (resumen diario, respuestas) |
 | `/settings/workspace` | Sesión (editar: quien gestiona) | Nombre y logo del espacio, idioma del modelo, Exportar (el propietario baja el JSON de `/api/workspace/export`) y Tus espacios (salir o eliminar) |
 | `/settings/members` | Sesión | Miembros e invitaciones; `?create=1` abre "Crear equipo" |
-| `/settings/plan` | Sesión | Planes primero, luego cuotas, asientos y gasto de IA |
+| `/settings/plan` | Sesión | Planes primero, luego cuotas, asientos, referencias y almacenamiento ("143 de 200", "0,4 de 1 GB") y gasto de IA |
 | `/settings/extension` | Sesión | Claves de la extensión |
 | `/settings/feedback` | Sesión | El feedback que ha mandado la persona |
 
