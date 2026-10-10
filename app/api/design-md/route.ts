@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
-import { normalizeWebUrl, mediaKindOf } from "@/lib/url";
+import { normalizeWebUrl, mediaKindOf, webKeyOf } from "@/lib/url";
 import { extractDesign } from "@/lib/design-extract";
 import { generateDesignMd } from "@/lib/design-md";
-import { getDesignMd, saveDesignMd } from "@/lib/design-store";
+import { getDesignMd, saveDesignMd, type DesignMdEntry } from "@/lib/design-store";
 import { keptCopy } from "@/lib/ref-measured";
+import { claim, release } from "@/lib/capture-claim";
 import { requireCtx, isResponse, canManage } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise";
@@ -14,27 +15,22 @@ import { log } from "@/lib/log";
 
 export const maxDuration = 300;
 
-// One generation per URL at a time (avoids double clicks / duplicate tabs).
-// Each has its own AbortController: it stops on DELETE ?url=… or when the last
-// client waiting on it closes the connection (closing the tab, "Stop" in the toast).
-interface Job { promise: Promise<Response>; ctrl: AbortController; waiters: number }
-const inflight = new Map<string, Job>();
+// One generation per site at a time, across instances (lib/capture-claim.ts): whoever claims the site generates,
+// the others poll for the row and answer from it, as the cached path does. A claim left by a function that was cut
+// off goes stale at maxDuration; a request waits up to a margin short of its own.
+const CLAIM_STALE_MS = maxDuration * 1000;
+const WAIT_MS = maxDuration * 1000 - 20_000;
+const POLL_MS = 1500;
+
+// The generations running on this instance, by workspace and URL. Each has its own AbortController: it stops on
+// DELETE ?url=… or when the client that started it closes the connection (closing the tab).
+const running = new Map<string, AbortController>();
 
 async function CANCELLED() {
   return Response.json({ error: (await getErrors()).generationStopped, cancelled: true }, { status: 499 });
 }
 
-// Counts one more client waiting for the result; if all leave, the job is aborted.
-function attach(job: Job, req: NextRequest): Promise<Response> {
-  job.waiters++;
-  const leave = () => { if (--job.waiters <= 0) job.ctrl.abort(); };
-  req.signal.addEventListener("abort", leave, { once: true });
-  return job.promise.then((res) => {
-    req.signal.removeEventListener("abort", leave);
-    return res.clone();
-  });
-}
-
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // The DESIGN.md cache is global per URL (derived only from the public site),
 // but each workspace only sees/generates the URLs it has saved.
@@ -58,26 +54,39 @@ export async function GET(req: NextRequest) {
     return Response.json({ error: (await getErrors()).adminsCanRegenerate }, { status: 403 });
   }
 
-  if (!force) {
-    const cached = await getDesignMd(url);
-    if (cached) return Response.json({ ...(await overlayRevision(ctx.workspace.id, cached)), cached: true });
-  }
+  const askedAt = Date.now();
+  // The doc that answers this request: with force, only one generated after it was asked for
+  const fresh = (doc: DesignMdEntry | null) => doc && (!force || Date.parse(doc.generatedAt) >= askedAt) ? doc : null;
+  const cached = async (doc: DesignMdEntry) => Response.json({ ...(await overlayRevision(ctx.workspace.id, doc)), cached: true });
+
+  const have = fresh(await getDesignMd(url));
+  if (have) return cached(have);
 
   if (!process.env.OPENROUTER_API_KEY) {
     return Response.json({ error: (await getErrors()).noModelKey }, { status: 500 });
   }
 
-  // One job per workspace and URL: the job answers with this workspace's revisions and counts against its quota
-  const key = `${ctx.workspace.id}|${url}`;
-  const existing = inflight.get(key);
-  if (existing) return attach(existing, req);
+  const key = `design:${webKeyOf(url)}`;
+  while (!(await claim(key, CLAIM_STALE_MS))) {
+    const doc = fresh(await getDesignMd(url));
+    if (doc) return cached(doc);
+    if (Date.now() - askedAt >= WAIT_MS || req.signal.aborted) return Response.json({ error: (await getErrors()).unexpected }, { status: 503 });
+    await sleep(POLL_MS);
+  }
+  try {
+    // Claimed right after another instance saved and released: theirs is the answer
+    const doc = fresh(await getDesignMd(url));
+    if (doc) return cached(doc);
 
-  // Monthly plan quota: only real generations count (the cache is free)
-  const blocked = await quotaBlock(assertQuota(ctx.workspace, "ai"));
-  if (blocked) return blocked;
+    // Monthly plan quota: only real generations count (the cache is free)
+    const blocked = await quotaBlock(assertQuota(ctx.workspace, "ai"));
+    if (blocked) return blocked;
 
-  const ctrl = new AbortController();
-  const promise = (async () => {
+    const runKey = `${ctx.workspace.id}|${url}`;
+    const ctrl = new AbortController();
+    const stop = () => ctrl.abort();
+    req.signal.addEventListener("abort", stop, { once: true });
+    running.set(runKey, ctrl);
     try {
       const t0 = Date.now();
       const { tokens, screenshot, fullShot, cover, scroll, logo, logoSvg, icons, fontFiles } = await extractDesign(url, ctrl.signal);
@@ -112,13 +121,12 @@ export async function GET(req: NextRequest) {
       log.error("design_md.failed", { ref: url, err });
       return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
     } finally {
-      inflight.delete(key);
+      running.delete(runKey);
+      req.signal.removeEventListener("abort", stop);
     }
-  })();
-
-  const job: Job = { promise, ctrl, waiters: 0 };
-  inflight.set(key, job);
-  return attach(job, req);
+  } finally {
+    await release(key);
+  }
 }
 
 // DELETE ?url=… → stops the running generation for that URL (if there is one on this instance)
@@ -127,7 +135,7 @@ export async function DELETE(req: NextRequest) {
   if (isResponse(ctx)) return ctx;
   const url = normalizeWebUrl(req.nextUrl.searchParams.get("url") ?? "");
   if (!url) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
-  const job = inflight.get(`${ctx.workspace.id}|${url}`);
-  if (job) job.ctrl.abort();
+  const job = running.get(`${ctx.workspace.id}|${url}`);
+  job?.abort();
   return Response.json({ stopped: !!job });
 }

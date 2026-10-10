@@ -2,7 +2,7 @@ import { createHash } from "crypto";
 import { promises as fs } from "fs";
 import puppeteer, { Browser } from "puppeteer-core";
 import { webKeyOf } from "./url";
-import { getFile, fileExists, putFile } from "./storage";
+import { getFile, fileExists, putFile, keyOf } from "./storage";
 import { gatedLaunch, QueueFull } from "./browser-gate";
 import type { PageShot } from "@/types/inspo";
 import { guardPage } from "./safe-fetch";
@@ -184,12 +184,34 @@ export async function getOrCaptureShot(url: string, beforeCapture?: () => Promis
 }
 
 // ─── Whole page ──────────────────────────────────────────────────────────────
-// Sites without a DESIGN.md get a full-page capture of their own, once (lib/page-shots.ts).
+// Sites without a DESIGN.md get a full-page capture of their own, once (lib/page-shots.ts). Once across
+// instances too (lib/capture-claim.ts): the one that claims the site captures, the others wait for its row.
+// A capture takes well under the claim's limit; a waiter gives up inside the tagger's budget (lib/tagger.ts).
+const PAGE_CLAIM_STALE_MS = 120_000;
+const PAGE_WAIT_MS = 45_000;
+
+/** The capture another instance is making, once its row is there, or null when it does not come in time */
+async function pageCapturedElsewhere(url: string): Promise<PageShot | null> {
+  const { getPageShot } = await import("./page-shots");
+  const { waitFor } = await import("./capture-claim");
+  return waitFor(() => getPageShot(url), Date.now() + PAGE_WAIT_MS);
+}
 
 /** Captures the whole page and stores it with its canvas copies */
 export async function capturePage(url: string): Promise<PageShot> {
-  const { savePageShot } = await import("./page-shots");
-  return savePageShot(url, shotKey(url), await captureHero(url, true));
+  const { claim, release } = await import("./capture-claim");
+  const key = `page:${webKeyOf(url)}`;
+  if (!(await claim(key, PAGE_CLAIM_STALE_MS))) {
+    const shot = await pageCapturedElsewhere(url);
+    if (shot) return shot;
+    throw new Error("page capture running elsewhere");
+  }
+  try {
+    const { savePageShot } = await import("./page-shots");
+    return await savePageShot(url, shotKey(url), await captureHero(url, true));
+  } finally {
+    await release(key);
+  }
 }
 
 /**
@@ -197,17 +219,29 @@ export async function capturePage(url: string): Promise<PageShot> {
  * first screen cut from it when there is none yet. Returns the whole page (for the tagger).
  */
 export async function captureNewPage(url: string): Promise<Buffer> {
-  const full = await captureHero(url, true);
-  const { savePageShot } = await import("./page-shots");
-  const sharp = (await import("sharp")).default;
-  await Promise.all([
-    savePageShot(url, shotKey(url), full),
-    hasStoredShot(url).then(async (has) => {
-      if (has) return;
-      const { width = VIEWPORT.width, height = VIEWPORT.height } = await sharp(full).metadata();
-      const top = await sharp(full).extract({ left: 0, top: 0, width, height: Math.min(height, VIEWPORT.height) }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
-      await storeShot(url, top);
-    }),
-  ]);
-  return full;
+  const { claim, release } = await import("./capture-claim");
+  const key = `page:${webKeyOf(url)}`;
+  if (!(await claim(key, PAGE_CLAIM_STALE_MS))) {
+    const shot = await pageCapturedElsewhere(url);
+    const stored = shot && (await getFile(keyOf(shot.shotUrl) ?? "").catch(() => null));
+    if (stored) return stored.body;
+    throw new Error("page capture running elsewhere");
+  }
+  try {
+    const full = await captureHero(url, true);
+    const { savePageShot } = await import("./page-shots");
+    const sharp = (await import("sharp")).default;
+    await Promise.all([
+      savePageShot(url, shotKey(url), full),
+      hasStoredShot(url).then(async (has) => {
+        if (has) return;
+        const { width = VIEWPORT.width, height = VIEWPORT.height } = await sharp(full).metadata();
+        const top = await sharp(full).extract({ left: 0, top: 0, width, height: Math.min(height, VIEWPORT.height) }).jpeg({ quality: JPEG_QUALITY }).toBuffer();
+        await storeShot(url, top);
+      }),
+    ]);
+    return full;
+  } finally {
+    await release(key);
+  }
 }
