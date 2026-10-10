@@ -9,7 +9,7 @@ import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { BRAND_SECTIONS, SECTION_SCHEMAS, readBrand, type BrandSection, type BrandSections, type BrandSource, type BrandSpec, type BrandSrc } from "@/types/brand";
 import type { ProjectSystem } from "@/types/system";
-import { getSystem } from "./system";
+import { getSystem } from "./system/areas";
 import { brandKeyAllowed, keysIn } from "./brand-files";
 import { log } from "./log";
 

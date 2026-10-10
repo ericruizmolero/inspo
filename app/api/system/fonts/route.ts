@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
-import { boardVisuals } from "@/lib/system";
+import { boardVisuals } from "@/lib/system/board";
 import { refFaces, type RefFace } from "@/lib/ref-fonts";
 import { mediaKindOf } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";

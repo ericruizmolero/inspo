@@ -2,7 +2,7 @@
 // the tally of a board, the support a run stores for the signals it names, and the line the file writes.
 //   npx tsx --conditions=react-server scripts/check-support.ts
 import assert from "node:assert/strict";
-import { signalTally, supportOf } from "../lib/system";
+import { signalTally, supportOf } from "../lib/system/board";
 import { blocksToMd, criterioBlocks, readAreaMeta } from "../lib/criterio-md";
 import { emptySystem, SYSTEM_AREAS, type SystemArea } from "../types/system";
 import en from "../lib/i18n/en";

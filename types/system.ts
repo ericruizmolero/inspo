@@ -89,7 +89,7 @@ export interface SystemRun {
   version?: number;
   /** ISO */
   at: string;
-  /** References on the board the run left out (MAX_BOARD in lib/system.ts); runs before it was kept lack it */
+  /** References on the board the run left out (MAX_BOARD in lib/system/board.ts); runs before it was kept lack it */
   omitted?: number;
 }
 
@@ -149,7 +149,7 @@ export function emptySystem(projectId: string): ProjectSystem {
 }
 
 /** What the views around the system read of each project's: the tabs' and the chooser's fill and unread dot, the
- *  cards' areas. The library sends these for every project (lib/system.ts loadSystemSummaries); the whole
+ *  cards' areas. The library sends these for every project (lib/system/areas.ts loadSystemSummaries); the whole
  *  ProjectSystem is read when the project's system or a reference's sheet opens */
 export interface SystemSummary {
   projectId: string;

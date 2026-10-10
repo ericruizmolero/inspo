@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { db, pool, schema } from "@/lib/db";
-import { getSystem, loadSystemSummaries } from "@/lib/system";
+import { getSystem, loadSystemSummaries } from "@/lib/system/areas";
 import { summaryOf } from "@/types/system";
 import { addItems, cleanupTeam, seedTeam, type Team } from "./seed";
 

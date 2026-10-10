@@ -1,6 +1,6 @@
 // What the board offers for one area, read from the material of its references: the families found,
 // the palettes, the easings, the captures, the lines of copy. Pure: the same code renders the table.
-import type { RefVisual } from "./system";
+import type { RefVisual } from "./system/board";
 import type { AreaCandidate, SystemArea } from "@/types/system";
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "x";

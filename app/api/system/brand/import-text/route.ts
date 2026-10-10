@@ -5,7 +5,7 @@ import { getErrors } from "@/lib/i18n";
 import { db, schema } from "@/lib/db";
 import { GUIDE_MAX, storeGuide } from "@/lib/brand-guides";
 import { writeBrandSections } from "@/lib/brand-store";
-import { getSystem } from "@/lib/system";
+import { getSystem } from "@/lib/system/areas";
 
 // POST { projectId, text, label? } → the system, with the guide kept among the brand's sources. The next passes (the
 // system's and the brand's) read it as the brand's own word; the client runs them right after.

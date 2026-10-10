@@ -202,7 +202,7 @@ export async function systemActivity(organizationId: string, projectId: string, 
 }
 
 // ─── What the next pass reads ────────────────────────────────────────────────────────────────────
-// The model passes (lib/system.ts) read, per area, what the team said in its conversation, the proposals it
+// The model passes (lib/system/) read, per area, what the team said in its conversation, the proposals it
 // said no to and the model's decisions a person rewrote, so a rejected proposal does not come back reworded.
 
 /** What the team said and decided about one area, for the next pass to read */
@@ -276,7 +276,7 @@ export async function resolveProposal(organizationId: string, id: string, accept
   const [row] = await db.select().from(A).where(and(eq(A.organizationId, organizationId), eq(A.id, String(id)))).limit(1);
   const about = cleanAbout(row?.about);
   if (!row || !about || !("proposal" in about) || about.proposal.state !== "open") throw new HttpError(400, (await getErrors()).badBody);
-  const { decideArea, setAreaNever, getSystem } = await import("./system");
+  const { decideArea, setAreaNever, getSystem } = await import("./system/areas");
   if (accept) {
     await decideArea(organizationId, row.projectId, row.area, { decision: about.proposal.decision, why: about.proposal.why }, user);
     const current = (await getSystem(organizationId, row.projectId)).areas.find((a) => a.area === row.area);

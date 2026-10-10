@@ -4,7 +4,7 @@ import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { ilike } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { getSystem } from "../lib/system";
+import { getSystem } from "../lib/system/areas";
 import { skillSections, MD_SKILLS } from "../lib/md-skills";
 
 async function main() {

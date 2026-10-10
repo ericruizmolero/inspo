@@ -5,7 +5,7 @@
 import "server-only";
 import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { db, schema } from "./db";
-import { getSystem } from "./system";
+import { getSystem } from "./system/areas";
 import { loadWorkspaceData } from "./items";
 import { listComments } from "./comments";
 import { designDocsFor, getDesignMd, DESIGN_MD_PREFIX } from "./design-store";
