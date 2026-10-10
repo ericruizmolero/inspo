@@ -14,5 +14,8 @@ export async function GET(req: NextRequest) {
   }
   const digests = await sendDigests().catch((e) => { console.error("digest:", e instanceof Error ? e.message : e); return null; });
   const tagging = await tagPending(req).then((r) => r.json()).catch((e) => ({ error: e instanceof Error ? e.message : String(e) }));
+  // BetterStack's heartbeat: a morning with no ping, or a failed one, alerts. That is how a dead cron shows
+  const beat = process.env.BETTERSTACK_HEARTBEAT_URL;
+  if (beat) await fetch(digests && !("error" in tagging) ? beat : `${beat}/fail`, { method: "POST" }).catch(() => {});
   return Response.json({ digests: digests && { teams: digests.teams, sent: digests.sent, paused: digests.paused, skipped: digests.skipped, spaced: digests.spaced }, tagging });
 }

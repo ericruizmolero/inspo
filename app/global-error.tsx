@@ -1,5 +1,7 @@
 "use client";
 // The root layout itself failed: no I18nProvider or styles, so the language comes from the browser.
+import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { satoshi } from "./fonts";
 
 // The three strings it needs, copied from common in lib/i18n/*/ui.ts: importing the dictionaries
@@ -9,7 +11,8 @@ const TEXT = {
   es: { errorTitle: "Algo se ha roto", errorBody: "Esta página no ha cargado. Vuelve a intentarlo en un momento.", retry: "Volver a intentarlo" },
 };
 
-export default function GlobalError({ unstable_retry }: { error: Error & { digest?: string }; unstable_retry: () => void }) {
+export default function GlobalError({ error, unstable_retry }: { error: Error & { digest?: string }; unstable_retry: () => void }) {
+  useEffect(() => { Sentry.captureException(error); }, [error]);
   const t = typeof navigator !== "undefined" && navigator.language.startsWith("es") ? TEXT.es : TEXT.en;
   return (
     <html>

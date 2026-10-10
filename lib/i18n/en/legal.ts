@@ -52,6 +52,7 @@ export const legal = {
           "Neon: the database, in Frankfurt.",
           "Cloudflare: file storage.",
           "Resend: the emails we send you.",
+          "Better Stack: error reports and uptime checks. A report holds the error and the page, never your email or what you wrote.",
           "OpenRouter, Typesafe and the model providers behind them: the AI features.",
           "Google, Apple and X: only if you sign in with them.",
         ],

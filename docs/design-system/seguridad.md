@@ -4,7 +4,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 
 ## Quién entra y a qué
 
-- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/unsubscribe`, `/api/unsubscribe`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
+- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/unsubscribe`, `/api/unsubscribe`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/api/health` (las comprobaciones de Better Stack: solo dicen ok y tiempos), `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
 - **El permiso real lo comprueba cada página y cada ruta**: espacio, rol (`owner` y `admin` gestionan; `member` añade) y socio. `requireCtx` en `lib/workspace.ts`. El proxy solo es el "no" rápido.
 - **Sin contraseñas.** Se entra con enlace mágico (caduca a los 10 minutos) o con Google. La sesión dura 30 días y se renueva cada día; la cookie se cachea 5 minutos (`lib/auth.ts`).
 - **Las páginas internas** (`/admin`, `/library`) responden 404 a quien no es socio. Socio = correo en `ADMIN_EMAILS` o fila en `app_admin` (`npm run admin -- <correo>`).
@@ -57,6 +57,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 - Lo que viene de X, Pinterest, Are.na o Cosmos (`staysInside`, `lib/url.ts`: un post, o una imagen, vídeo o texto cuya página está en una de esas plataformas) no se enseña sin sesión; cada copia guarda su página en `inspo_item.source` y todo lo que la cita enlaza al original. → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
 - Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista; `--prod --apply` toca producción) y borra la referencia y sus copias en todos los espacios.
 - Las claves de la BD de producción, la de escritura de R2 y la de Resend nunca van en un `.env.local`: la app local escribiría en producción. Las credenciales entre socios van por canal privado. `.env*` y `prod.env` están en `.gitignore`.
+- Un informe de error (Better Stack, `lib/error-reports.ts`) no lleva quién es la persona ni lo que escribió: se quitan el cuerpo de la petición (feedback, notas, comentarios), cookies, cabeceras, la query y los mensajes de consola, y cualquier correo o firma de URL de R2 que quede se tapa. Un dato nuevo que pueda acabar en un error pasa por ahí.
 - Lo que se manda a un modelo: la captura y el texto de una web para etiquetarla, las notas y el hilo de un proyecto para su sistema. Ningún proveedor entrena con ello (es lo que promete la política de privacidad, y la lista de proveedores de `lib/i18n/<locale>/legal.ts` tiene que coincidir con el [stack](stack.md)).
 
 ## La extensión
@@ -82,5 +83,6 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 - Rellenar `LEGAL` y que lo revise un abogado.
 - Apuntar bajo qué cuenta están Cloudflare, Neon, OpenRouter y Typesafe; mover `web-proxy` al equipo de Vercel.
+- Better Stack: crear la cuenta, poner `NEXT_PUBLIC_SENTRY_DSN` y `BETTERSTACK_HEARTBEAT_URL` en Vercel, los monitores y la página de estado.
 - `ANTHROPIC_API_KEY` en Vercel sin uso: borrarla o usarla.
 - Vercel en Hobby y Neon en Free: cambiar antes del primer cobro.
