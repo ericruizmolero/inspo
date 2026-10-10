@@ -857,5 +857,11 @@
         "content": "$1"
       }
     }
+  },
+  "signupInviteOnly": {
+    "message": "¿Aún sin cuenta? Por ahora, las cuentas se abren por invitación: conecta para apuntarte a la lista."
+  },
+  "signupOpen": {
+    "message": "¿Aún sin cuenta? Al conectar se crea."
   }
 }

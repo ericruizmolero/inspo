@@ -50,7 +50,7 @@ async function load() {
   if (pending) { await chrome.storage.session.remove("pending"); if (Date.now() - pending.at < 120_000) media = pending; }
   const s = await chrome.storage.local.get(["key", "base", "workspace", "workspaces", "user"]);
   state = { key: s.key || null, base: s.base || DEFAULT_BASE, workspace: s.workspace || null, workspaces: s.workspaces || [], user: s.user || null };
-  if (!state.key) { setView("connect"); return; }
+  if (!state.key) { setView("connect"); showSignupMode(); return; }
   setChip();
   showFoot();
   setView("tab");
@@ -246,6 +246,13 @@ async function disconnect(tellServer = true) {
   resetSave(false);
   note($("connect-msg"), tellServer ? t("disconnected") : t("keyInvalid"), null);
   setView("connect");
+}
+
+// Signed out: whether a new account needs an invitation right now (/api/access/mode, the flag set in /admin)
+async function showSignupMode() {
+  if ($("connect-msg").textContent) return;
+  const r = await fetch(`${state.base}/api/access/mode`).then((res) => res.json()).catch(() => null);
+  if (r?.mode && !$("connect-msg").textContent) note($("connect-msg"), t(r.mode === "invite" ? "signupInviteOnly" : "signupOpen"), null);
 }
 
 $("btn-connect").addEventListener("click", async () => {

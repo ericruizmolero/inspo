@@ -857,5 +857,11 @@
         "content": "$1"
       }
     }
+  },
+  "signupInviteOnly": {
+    "message": "No account yet? For now, accounts open by invitation: connect to join the waitlist."
+  },
+  "signupOpen": {
+    "message": "No account yet? Connecting creates one."
   }
 }

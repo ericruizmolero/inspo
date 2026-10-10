@@ -12,6 +12,9 @@ import { isLocalPath } from "@/lib/url";
 import { Button } from "@/components/criterio";
 import { legalShown } from "@/lib/legal";
 import ThemeToggle from "@/components/ThemeToggle";
+import { cookies } from "next/headers";
+import { codeIsUsable, getSignupMode } from "@/lib/access";
+import { INVITE_COOKIE } from "@/lib/invite-cookie";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,14 +34,19 @@ function loginError(code: string | undefined, t: Dict): string | undefined {
     case "account_not_linked": case "email_doesn't_match": return t.login.errors.notLinked;
     case "email_not_found": return t.login.errors.noEmail;
     case "signup_disabled": return t.login.errors.signupDisabled;
+    case "invite_only": return t.login.errors.inviteOnly;
     default: return t.login.errors.generic;
   }
 }
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
-  const { next, error } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; invite?: string }> }) {
+  const { next, error, invite } = await searchParams;
   const { t } = await getT();
   if (await getSession()) redirect(isLocalPath(next) ? next : "/");
+  // The signup gate (lib/access.ts). The code comes on the URL the first time and from the cookie after (proxy.ts)
+  const inviteOnly = (await getSignupMode()) === "invite";
+  const code = invite?.trim() || (await cookies()).get(INVITE_COOKIE)?.value;
+  const invited = inviteOnly && !!code && (await codeIsUsable(code));
   // Someone arriving from an invitation needs to know what they are joining and with which email
   const fromInvitation = (next ?? "").startsWith("/invite/");
   // If they come from the start canvas with a URL (?next=/?add=…), the headline says so
@@ -65,8 +73,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="auth__card">
           <LoginForm
             next={next}
-            lead={lines(fromInvitation ? t.login.leadInvitation : pendingDomain ? t.login.leadPending(pendingDomain) : t.login.leadDefault)}
-            hint={fromInvitation ? t.login.hintInvitation : pendingDomain ? t.login.hintPending : t.login.hintDefault}
+            lead={lines(fromInvitation ? t.login.leadInvitation : invited ? t.login.leadInvited : pendingDomain ? t.login.leadPending(pendingDomain) : t.login.leadDefault)}
+            hint={fromInvitation ? t.login.hintInvitation : invited ? t.login.hintInvited : inviteOnly ? t.login.hintInviteOnly : pendingDomain ? t.login.hintPending : t.login.hintDefault}
+            offerWaitlist={inviteOnly && !invited && !fromInvitation}
             initialError={loginError(error, t)}
             devEmail={DEV_LOGIN_EMAIL || undefined}
             providers={SOCIAL_PROVIDERS}
@@ -74,7 +83,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
 
         <footer className="auth__foot">
-          <span>{t.login.firstTime}</span>
+          <span>{inviteOnly && !invited ? t.login.firstTimeInviteOnly : t.login.firstTime}</span>
           {legalShown() && (
             <span>
               {t.legal.accept[0]}<Link href="/terms">{t.legal.accept[1]}</Link>{t.legal.accept[2]}<Link href="/privacy">{t.legal.accept[3]}</Link>{t.legal.accept[4]}

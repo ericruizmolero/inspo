@@ -1,6 +1,6 @@
 "use client";
 
-import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback } from "@/app/actions/admin";
+import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback, setSignupMode } from "@/app/actions/admin";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AreaThumb from "./AreaThumb";
@@ -9,11 +9,12 @@ import { type UsageOverview } from "@/lib/usage-core";
 import { batchMarkdown, type FeedbackBatch, type FeedbackOverview } from "@/lib/feedback-core";
 import { useT } from "@/components/I18nProvider";
 import type { FailureRow } from "@/lib/log";
+import type { SignupModeState } from "@/lib/access";
 import { fmtDate, fmtDateTime as fmtDT, fmtUsd as usd } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarStack, Busy, Chip, EmptyState, FieldRow, IconButton, Progress, SettingsWindow, StatusRing, toneFor } from "@/components/criterio";
+import { Avatar, AvatarStack, Busy, Chip, EmptyState, FieldRow, IconButton, Progress, SettingsWindow, StatusRing, Switch, toneFor } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 
 // ─── Formatting ─────────────────────────────────────────────────────────────
@@ -221,6 +222,36 @@ function AccessPanel({ initial, me }: { initial: AdminEntry[]; me: string }) {
   );
 }
 
+// ─── Who can create an account ──────────────────────────────────────────────
+
+function SignupPanel({ initial }: { initial: SignupModeState }) {
+  const { locale, t } = useT();
+  const [confirm, confirmDialog] = useConfirm();
+  const [state, setState] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const change = async (inviteOnly: boolean) => {
+    const ask = inviteOnly ? { title: t.admin.signupCloseConfirm, action: t.admin.signupClose } : { title: t.admin.signupOpenConfirm, action: t.admin.signupOpen, danger: true };
+    if (!(await confirm(ask))) return;
+    setBusy(true); setError("");
+    const r = await setSignupMode(inviteOnly ? "invite" : "open").catch(() => null);
+    setBusy(false);
+    if (!r?.ok) { setError(r?.error ?? t.admin.signupFailed); return; }
+    setState(r.data);
+  };
+
+  return (
+    <SettingsWindow title={t.admin.signupTitle} description={t.admin.signupHint}
+      note={state.updatedAt ? t.admin.signupChanged(state.updatedBy ?? "", fmtDT(state.updatedAt, locale)) : t.admin.signupDefault}>
+      {confirmDialog}
+      <FieldRow label={t.admin.signupInviteOnly} hint={state.mode === "invite" ? t.admin.signupInviteHint : t.admin.signupOpenHint} error={error}>
+        <Switch checked={state.mode === "invite"} onChange={(on) => void change(on)} label={t.admin.signupInviteOnly} disabled={busy} />
+      </FieldRow>
+    </SettingsWindow>
+  );
+}
+
 // ─── Toolbar feedback (Agentation) ───────────────────────────────────────────
 
 function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
@@ -417,8 +448,8 @@ function Bar({ share }: { share: number }) {
 export type AdminSection = "overview" | "usage" | "people" | "feedback" | "failures" | "access";
 
 // One section of the Activity area. Each page loads only the data its section shows.
-export default function AdminPanel({ section, data, usage, feedback, failures, admins, me }: {
-  section: AdminSection; data: ActivityOverview; usage?: UsageOverview; feedback?: FeedbackOverview; failures?: FailureRow[]; admins?: AdminEntry[]; me: string;
+export default function AdminPanel({ section, data, usage, feedback, failures, admins, signup, me }: {
+  section: AdminSection; data: ActivityOverview; usage?: UsageOverview; feedback?: FeedbackOverview; failures?: FailureRow[]; admins?: AdminEntry[]; signup?: SignupModeState; me: string;
 }) {
   const { locale, t } = useT();
   const fmtUsd = (n: number) => usd(n, locale);
@@ -661,6 +692,7 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
       {section === "feedback" && feedback && <FeedbackPanel feedback={feedback} now={now} />}
 
       {section === "failures" && failures && <FailuresPanel failures={failures} days={data.days} now={now} />}
+      {section === "access" && signup && <SignupPanel initial={signup} />}
       {section === "access" && admins && <AccessPanel initial={admins} me={me} />}
     </div>
   );

@@ -16,7 +16,7 @@ const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false })
  * Signed-out home page: the same start canvas a new user sees, without the sidebar.
  * Pasting a URL goes to /login carrying the URL; back from the link, the site saves itself (?add=).
  */
-export default function GuestStart() {
+export default function GuestStart({ inviteOnly }: { inviteOnly: boolean }) {
   const router = useRouter();
   const { t } = useT();
   const [showDirectory, setShowDirectory] = useState(false);
@@ -27,6 +27,7 @@ export default function GuestStart() {
     <div className="guest">
       <header className="guest__bar">
         <Logo />
+        {inviteOnly && <span className="guest__note t-small">{t.login.inviteOnlyShort}</span>}
         <Button size="s" href="/login">{t.common.signIn}</Button>
       </header>
 

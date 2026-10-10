@@ -9,6 +9,7 @@ import { sendMail, adminAccessMail, localeForEmail } from "@/lib/mail";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 import { log } from "@/lib/log";
+import { setSignupMode as storeSignupMode, signupModeState, type SignupMode } from "@/lib/access";
 
 type Admin = NonNullable<Awaited<ReturnType<typeof getSession>>>;
 
@@ -49,6 +50,16 @@ export async function revokeAccess(email: string) {
     if (!e) throw new HttpError(400, (await getErrors()).missingEmail);
     if (e === s.user.email.toLowerCase()) throw new HttpError(400, (await getErrors()).cannotRemoveSelf);
     await removeAdmin(e);
+  });
+}
+
+/** The signup gate: invite-only or open to anyone. Takes effect within 30 seconds, no deploy. */
+export async function setSignupMode(mode: SignupMode) {
+  return asAdmin(async (s) => {
+    if (mode !== "invite" && mode !== "open") throw new HttpError(400, (await getErrors()).badBody);
+    await storeSignupMode(mode, s.user.id);
+    log.info("admin.signup_mode", { mode, by: s.user.email });
+    return signupModeState();
   });
 }
 

@@ -8,6 +8,7 @@ import { usageOverview } from "@/lib/usage";
 import { feedbackOverview } from "@/lib/feedback";
 import { listFailures } from "@/lib/log";
 import { getT } from "@/lib/i18n";
+import { signupModeState } from "@/lib/access";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
 import UpdatedAt from "../UpdatedAt";
 import PeriodSwitch from "../PeriodSwitch";
@@ -32,12 +33,13 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
   if (!s || !(await isAdmin(s.user.email))) notFound();
 
   // Each section loads only what it shows; the overview data also drives "updated at" and the minute refresh
-  const [data, usage, feedback, failures, admins] = await Promise.all([
+  const [data, usage, feedback, failures, admins, signup] = await Promise.all([
     activityOverview(days),
     section === "usage" ? usageOverview(days) : undefined,
     section === "feedback" ? feedbackOverview(days) : undefined,
     section === "failures" ? listFailures(days) : undefined,
     section === "access" ? listAdmins() : undefined,
+    section === "access" ? signupModeState() : undefined,
   ]);
 
   const lead = section === "overview" ? t.admin.headSub(days) : section === "access" ? t.admin.leads.access : t.admin.leads[section](days);
@@ -52,7 +54,7 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
     <>
       <ActivityPing area="admin" />
       <SettingsHeading title={t.admin.sections[section]} lead={lead} aside={period || undefined} />
-      <AdminPanel section={section} data={data} usage={usage} feedback={feedback} failures={failures} admins={admins} me={s!.user.email} />
+      <AdminPanel section={section} data={data} usage={usage} feedback={feedback} failures={failures} admins={admins} signup={signup} me={s!.user.email} />
     </>
   );
 }

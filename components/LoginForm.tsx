@@ -7,6 +7,7 @@ import { useT } from "./I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Busy, Button as CrButton, Chip, Icon, Separator, TextField } from "@/components/criterio";
 import { isLocalPath } from "@/lib/url";
+import { joinWaitlistFromLogin } from "@/app/actions/access";
 
 const IcMail = <Icon name="mail" size={22} />;
 
@@ -43,8 +44,10 @@ const devLoginHref = (next: string) => `/api/dev-login?next=${encodeURIComponent
  * - `lead`/`hint`: headline and help; if not given, the generic ones are used.
  * - `providers`: Google / Apple / X buttons to render (those with keys on the server).
  */
-export default function LoginForm({ next, initialError, lead, hint, autoFocus = true, devEmail, providers = [] }: {
+export default function LoginForm({ next, initialError, lead, hint, autoFocus = true, devEmail, providers = [], offerWaitlist = false }: {
   next?: string; initialError?: string; lead?: React.ReactNode; hint?: React.ReactNode; autoFocus?: boolean;
+  /** Signup gate on: after sending, the waitlist for an address that gets no link. Shown to everyone, so it tells nobody who has an account */
+  offerWaitlist?: boolean;
   /** Development only: email that signs in without going through the inbox (DEV_LOGIN_EMAIL) */
   devEmail?: string;
   providers?: SocialProvider[];
@@ -55,6 +58,8 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
   const [loading, setLoading] = useState(false);
   const [social, setSocial] = useState<SocialProvider | null>(null);
   const [error, setError] = useState(initialError ?? "");
+  const [waitlist, setWaitlist] = useState<"idle" | "joining" | "joined">("idle");
+  const [waitlistError, setWaitlistError] = useState("");
   // Cookie the lastLoginMethod plugin sets on sign-in: "google" | "apple" | "twitter" | "magic-link"
   const [lastUsed, setLastUsed] = useState<string | null>(null);
   useEffect(() => setLastUsed(authClient.getLastUsedLoginMethod()), []);
@@ -102,7 +107,21 @@ export default function LoginForm({ next, initialError, lead, hint, autoFocus = 
         <span className="auth__sent-icon">{IcMail}</span>
         <h1 className="auth__lead">{t.login.checkInbox}</h1>
         <p className="auth__hint">{t.login.sentToBefore}<strong>{email.trim()}</strong>{t.login.sentToAfter}</p>
-        <CrButton variant="quiet" size="s" className="auth__alt" onClick={() => setSent(false)}>{t.login.useAnotherEmail}</CrButton>
+        {offerWaitlist && (waitlist === "joined"
+          ? <p className="auth__hint" role="status">{t.login.joined}</p>
+          : <>
+              <p className="auth__hint">{t.login.noLinkBefore}<strong>{email.trim()}</strong>{t.login.noLinkAfter}</p>
+              {waitlistError && <p className="modal__error">{waitlistError}</p>}
+              <CrButton size="s" disabled={waitlist === "joining"} onClick={async () => {
+                setWaitlist("joining"); setWaitlistError("");
+                const r = await joinWaitlistFromLogin(email).catch(() => null);
+                if (r?.ok) { setWaitlist("joined"); return; }
+                setWaitlist("idle"); setWaitlistError(r?.error ?? t.login.joinFailed);
+              }}>
+                {waitlist === "joining" ? <><Busy label={t.login.joining} /> {t.login.joining}</> : t.login.joinWaitlist}
+              </CrButton>
+            </>)}
+        <CrButton variant="quiet" size="s" className="auth__alt" onClick={() => { setSent(false); setWaitlist("idle"); }}>{t.login.useAnotherEmail}</CrButton>
       </div>
     );
   }
