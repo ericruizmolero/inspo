@@ -2296,7 +2296,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
    The system's Viewer (.cr-viewer, components/criterio): one reference over the canvas, which dims behind it.
    It sits under the island and the search dock (z 18, below the top bar's 20 and the dock's 25), which keep
    their place, and it stops above the dock. Product chrome: dark in both themes, so inside it the theme-aware
-   names take their Board values (the comments drawer and the lightbox share them). Header with the source,
+   names take their Board values (the comments column and the lightbox share them). Header with the source,
    stage with the reference on its card and a round step either side, aside of 320 with the conversation. */
 :root:not([data-theme="light"]) :is(.ip, .cm-panel, .cm-lightbox) {
   color-scheme: dark;
