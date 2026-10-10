@@ -32,6 +32,8 @@ const MASKS: Record<string, (r: Row) => Row> = {
   waitlist_entry: (r) => ({ ...r, email: maskEmail(r.email), name: null, website: null }),
   access_invite: (r) => ({ ...r, email: maskEmail(r.email) }),
 };
+// Each environment keeps its own: a copy of production must not close the signup gate locally
+const NOT_COPIED = new Set(["app_setting"]);
 
 async function tables() {
   const { schema } = await import("../lib/db");
@@ -42,7 +44,7 @@ async function tables() {
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
     schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
     schema.systemShare, schema.rateLimit, schema.mcpClient, schema.mcpGrant,
-    schema.polishVote, schema.failure,
+    schema.polishVote, schema.failure, schema.appSetting,
   ];
   // A table added to the schema but not to this list would vanish from every dump without a word
   const all = (Object.values(schema) as unknown[]).filter((v): v is PgTable => v instanceof PgTable);
@@ -67,7 +69,7 @@ async function dump(from?: string) {
     const skipped = Object.values(cols).filter((c) => !have.has(c.name)).map((c) => c.name);
     if (skipped.length) console.log(`${name}: not in the source yet, left to defaults: ${skipped.join(", ")}`);
     const rows: Row[] = await db.select(shared).from(table);
-    out.tables[name] = MASKS[name] ? rows.map(MASKS[name]) : rows;
+    out.tables[name] = NOT_COPIED.has(name) ? [] : MASKS[name] ? rows.map(MASKS[name]) : rows;
     console.log(`${name.padEnd(18)} ${String(out.tables[name].length).padStart(6)}`);
   }
   await fs.mkdir(path.dirname(FILE), { recursive: true });

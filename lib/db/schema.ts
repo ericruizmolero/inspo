@@ -197,6 +197,19 @@ export const accessInvite = pgTable("access_invite", {
   oneOf("access_invite_grants_plan_check", t.grantsPlan, PLANS.map((p) => p.key)),
 ]);
 
+export const SIGNUP_MODES = ["invite", "open"] as const;
+export type SignupMode = (typeof SIGNUP_MODES)[number];
+
+/** Settings changed from /admin without a deploy. Today only `signup_mode` (lib/access.ts) */
+export const appSetting = pgTable("app_setting", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  check("app_setting_signup_mode_check", sql`${t.key} <> 'signup_mode' or ${t.value} in (${sql.raw(SIGNUP_MODES.map((m) => `'${m}'`).join(", "))})`),
+]);
+
 // ─── Inspo ───────────────────────────────────────────────────────────────────
 
 export const inspoItem = pgTable("inspo_item", {
