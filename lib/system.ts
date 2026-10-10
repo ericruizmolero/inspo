@@ -20,6 +20,7 @@ import type { InspoColor, InspoTags } from "@/types/inspo";
 import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
 import { getDesignMd, getDesignMdIndex } from "./design-store";
+import { refMeasuredOf } from "./ref-measured";
 import { getWhy } from "./design-why";
 import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { autoSystemToday } from "./quota";
@@ -250,22 +251,16 @@ export async function releaseArea(organizationId: string, projectId: string, are
 
 // ─── The board, as the model reads it ────────────────────────────────────────
 
-const GROUP_ORDER = ["brand", "accent", "neutral", "semantic"];
-
 /** What a reference measured, as the system pass reads it: the DESIGN.md's glance and real values, and the share of each
  *  colour in its saved palette (which images and posts have too). Undefined when nothing was measured */
 export function measuredSummary(spec: DesignSpec | null, pixels: InspoColor[] | undefined): Record<string, unknown> | undefined {
   const b = spec?.brief;
   const glance = b ? Object.fromEntries(BRIEF_KEYS.filter((k) => k !== "framework" && b[k]).map((k) => [k, b[k]])) as Partial<DesignBrief> : {};
+  const m = refMeasuredOf(spec, pixels);
   const out: Record<string, unknown> = {
     glance: Object.keys(glance).length ? glance : undefined,
     layout: spec?.layout || undefined,
-    colors: spec?.colors.length ? [...spec.colors].sort((x, y) => GROUP_ORDER.indexOf(x.group) - GROUP_ORDER.indexOf(y.group)).slice(0, 5).map(({ name, hex, group }) => ({ name, hex, group })) : undefined,
-    pixels: pixels?.length ? [...pixels].sort((x, y) => y.share - x.share).slice(0, 5).map(({ hex, share }) => ({ hex, share: Math.round(share * 100) / 100 })) : undefined,
-    families: spec?.fonts.length ? spec.fonts.map(({ family, role, weights }) => ({ family, role, weights })) : undefined,
-    radius: spec?.radii.length ? spec.radii.slice(0, 3) : undefined,
-    density: spec?.spacing?.density,
-    theme: spec?.theme,
+    colors: m?.colors, pixels: m?.pixels, families: m?.families, radius: m?.radius, density: m?.density, theme: m?.theme,
   };
   const kept = Object.fromEntries(Object.entries(out).filter(([, v]) => v !== undefined));
   return Object.keys(kept).length ? kept : undefined;
