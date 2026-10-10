@@ -4,12 +4,11 @@
 // Tagging is the exception: an add starts its item's job after answering (lib/tag-jobs.ts), so it runs
 // whatever the browser does next. The library pages give their actions the time for it (maxDuration).
 import { cookies } from "next/headers";
-import { after } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError, type ActionResult } from "@/lib/workspace";
 import { addItem, deleteItem, deleteItems, deletableIds, setItemNote, editUserTags } from "@/lib/items";
-import { startTagJob } from "@/lib/tag-jobs";
-import { embedItems, staleEmbedding } from "@/lib/embed";
+import { enqueue, enqueueEmbed } from "@/lib/jobs";
+import { staleEmbedding } from "@/lib/embed";
 import { taggerEnabled } from "@/lib/tagger";
 import { createProject, projectForBoard, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
 import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
@@ -32,22 +31,15 @@ import { log, recordFailure } from "@/lib/log";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment, InspoItem, PolishChoice } from "@/types/inspo";
 
-/** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
- *  so a failure leaves it for the worker instead of keeping the old vector. */
-function embedAfter(itemId: string) {
-  after(() => embedItems([itemId]).catch((err) => log.warn("embed.deferred", { ref: itemId, err })));
-}
-
 /** Its thread changed, which lives in another table: the vector is cleared first, then made again */
 async function reembed(itemId: string) {
   await staleEmbedding(itemId);
-  embedAfter(itemId);
+  void enqueueEmbed([itemId]);
 }
 
-/** Gathers the new item's tags once the add has answered (then the workspace's next pending ones).
- *  The worker retries it if this run fails. */
+/** Gathers the new item's tags in its own job (lib/tag-jobs.ts) */
 function startTagging(organizationId: string, itemId: string | undefined, userId: string) {
-  if (itemId && taggerEnabled()) after(() => startTagJob(organizationId, itemId, userId));
+  if (itemId && taggerEnabled()) void enqueue({ kind: "tag", organizationId, itemId, userId });
 }
 
 /** Only the URL is required: name and collection are inferred if missing.
@@ -249,7 +241,7 @@ export async function editNote(itemId: string, field: "note" | "subNote", text: 
     const item = await setItemNote(ctx.workspace.id, String(itemId), field, String(text ?? ""), ctx.user, canManage(ctx.workspace.role));
     if (item === null) throw new HttpError(404, errors.cardGone);
     if (item === false) throw new HttpError(403, errors.cannotEditNote);
-    embedAfter(String(itemId));
+    void enqueueEmbed([String(itemId)]);
     return item;
   });
 }
@@ -285,7 +277,7 @@ export async function editTags(itemId: string, change: { add?: string; remove?: 
       remove: typeof change.remove === "string" ? change.remove : undefined,
     });
     if (!user) throw new HttpError(404, (await getErrors()).urlNotInWorkspace);
-    embedAfter(String(itemId));
+    void enqueueEmbed([String(itemId)]);
     (await import("@/lib/jev")).clearSearchCache();
     return user;
   });

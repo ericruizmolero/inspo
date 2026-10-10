@@ -3,10 +3,10 @@
 // Each item is one vector: its name, site, tags (as everyone sees them), metadata, notes and thread,
 // embedded by a multilingual model, so "web tranquila con serif" finds what was tagged in English.
 // The vector is made when tagging ends and remade whenever its words change (tags edited, a note, a
-// comment): those set it to null and the worker (app/api/cron/tag-pending) fills every null, in batches.
+// comment): those set it to null and send its job (lib/jobs.ts); the sweep sends again any null left.
 // A search embeds the query once (cached) and asks Postgres (pgvector) for the nearest items.
 import "server-only";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { viewOf, FACETS } from "./taxonomy";
 import { hostOf } from "./url";
@@ -116,15 +116,7 @@ export async function embedItems(ids: string[]): Promise<number> {
   return done;
 }
 
-/** Items whose vector is missing or stale (null), tagged first so the vector carries the tags */
-export async function embedPending(limit = 200): Promise<number> {
-  const rows = await db.select({ id: T.id }).from(T)
-    .where(and(isNull(T.embedding), eq(T.tagStatus, "done")))
-    .orderBy(sql`${T.createdAt} desc`).limit(limit);
-  return embedItems(rows.map((r) => r.id));
-}
-
-/** Its words changed (tags, a note, the thread): the vector is made again, now or by the worker */
+/** Its words changed (tags, a note, the thread): the vector is cleared, and its job makes it again */
 export async function staleEmbedding(itemId: string): Promise<void> {
   await db.update(T).set({ embedding: null }).where(eq(T.id, itemId));
 }

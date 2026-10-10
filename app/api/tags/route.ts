@@ -1,15 +1,16 @@
-import { NextRequest, after } from "next/server";
+import { NextRequest } from "next/server";
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@/lib/db";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb, tagsOfRow } from "@/lib/items";
 import { taggerEnabled } from "@/lib/tagger";
-import { resetTagJob, startTagJob, statusOf } from "@/lib/tag-jobs";
+import { resetTagJob, statusOf } from "@/lib/tag-jobs";
+import { enqueue } from "@/lib/jobs";
 import { assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import type { InspoTags, TagStatus } from "@/types/inspo";
 
-export const maxDuration = 300;
+export const maxDuration = 30;
 
 // Tagging is a job per item (lib/tag-jobs.ts): adding anything starts it on the server.
 // GET ?web=…&web=… → how those jobs are going: { jobs: { [web]: status }, tags: { [web]: tags } }.
@@ -48,6 +49,6 @@ export async function POST(req: NextRequest) {
     if (await findByWeb(ctx.workspace.id, web)) return Response.json({ error: (await getErrors()).tooMany }, { status: 429 });
     return Response.json({ error: (await getErrors()).urlNotInWorkspace }, { status: 404 });
   }
-  after(() => startTagJob(ctx.workspace.id, id, ctx.user.id));
+  void enqueue({ kind: "tag", organizationId: ctx.workspace.id, itemId: id, userId: ctx.user.id });
   return Response.json({ status: "pending" }, { status: 202 });
 }

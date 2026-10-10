@@ -20,8 +20,7 @@ import { nameFor } from "../item-name";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf, nameFromFile } from "../url";
 import { ensurePost, postThumb } from "../posts";
 import { taggerEnabled } from "../tagger";
-import { startTagJob } from "../tag-jobs";
-import { embedItems } from "../embed";
+import { enqueue, enqueueEmbed } from "../jobs";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
 import { putFile } from "../storage";
@@ -30,7 +29,6 @@ import { addAreaComment, systemActivity } from "../area-comments";
 import { saveBrief } from "../brief";
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, type SystemArea } from "@/types/system";
 import type { McpCtx } from "./auth";
-import { log } from "../log";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -218,7 +216,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
       throw e;
     }
     const id = itemId;
-    after(() => embedItems([id]).catch((err) => log.warn("embed.deferred", { ref: id, err })));
+    void enqueueEmbed([id]);
   } else {
     const web = normalizeWebUrl(input.url!);
     if (!web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);
@@ -228,7 +226,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
       const url = await putFile(newMediaKey(org, image.type), image.body, image.type);
       const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", web: url, thumbnailUrl: url, source: web, type: "inspiration" });
       itemId = item.id!; name = item.name;
-      if (taggerEnabled()) after(() => startTagJob(org, itemId, author.id));
+      if (taggerEnabled()) void enqueue({ kind: "tag", organizationId: org, itemId, userId: author.id });
     } else {
       const existing = await findByWeb(org, web);
       if (existing) {
@@ -244,7 +242,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
         if (isPost || taggerEnabled()) {
           after(async () => {
             if (isPost) { const post = await ensurePost(web); const thumb = post && postThumb(post); if (thumb) await setThumbnail(org, web, thumb); }
-            if (taggerEnabled()) await startTagJob(org, itemId, author.id);
+            if (taggerEnabled()) await enqueue({ kind: "tag", organizationId: org, itemId, userId: author.id });
           });
         }
       }

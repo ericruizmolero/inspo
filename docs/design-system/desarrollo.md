@@ -85,6 +85,12 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 - Un `catch` que se traga el error lleva un comentario con el porqué. Si no hay porqué, se registra.
 - Para seguir un "no me ha funcionado": el correo da la persona, `/admin/failures` da la hora y el identificador, y el identificador lleva a los logs.
 
+## Trabajos en segundo plano
+
+- Lo que tarda y no hace falta para responder (etiquetar, el vector de búsqueda, una captura) se manda con `enqueue()` de `lib/jobs.ts`, nunca con `after()`. `after()` comparte la `maxDuration` de la ruta y se corta a medias; un trabajo de la cola tiene su propia función. `after()` queda para lo corto: guardar un uso, un fallo, un aviso.
+- Un tipo de trabajo nuevo es una entrada en `Job` (`lib/jobs.ts`) y otra en `HANDLERS` (`lib/job-run.ts`). Para que vuelva a intentarse más tarde, el manejador lanza `RetryLater(segundos)`; cualquier otro error se reintenta a 1, 2, 4, 8 y 15 minutos y a la sexta entrega se guarda en `failure` y se suelta.
+- La entrega es al menos una vez: un trabajo tiene que poder correr dos veces sin daño. Los de etiquetas lo consiguen con su fila y el candado por espacio (`lib/tag-jobs.ts`).
+
 ## Flujo de trabajo
 
 - Se revisa en **localhost** (la preview de Ship Studio). No subir tras cada cambio; a producción solo cuando se pide, directo.

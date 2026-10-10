@@ -1,21 +1,24 @@
 // The tagging job of each item, kept in its own row (inspo_item.tag_status …). Server only.
 //
-// Adding anything creates the job (the column defaults to "pending") and starts it after the response
-// (after(), in the add itself, not in the browser). Jobs are claimed under a lock per workspace, so one
-// workspace never runs more than PER_WORKSPACE at once: a big import doesn't open 300 browsers, and the
-// rest stay pending. A run that finishes takes the workspace's next pending job (startTagJob), so an
-// import keeps moving without waiting; the worker (app/api/cron/tag-pending, once a day) takes the rest:
-// failures with tries left, runs lost with their server (older than STALE_MS), and every item again
-// when TAXONOMY_VERSION changes.
+// Adding anything creates the job (the column defaults to "pending") and sends it to the queue (lib/jobs.ts),
+// which runs it in its own function. Jobs are claimed under a lock per workspace, so one workspace never runs
+// more than PER_WORKSPACE at once: a big import doesn't open 300 browsers, and the rest stay pending. A job
+// that finishes sends the workspace's next one, so an import keeps moving PER_WORKSPACE at a time; a failure
+// with tries left is delivered again after its pause. The sweep (lib/job-run.ts, every few minutes) sends again
+// whatever no job carries: runs lost with their server (older than STALE_MS), messages lost on the way, and
+// every item again when TAXONOMY_VERSION changes.
 import "server-only";
-import { and, desc, eq, gte, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql, type SQL } from "drizzle-orm";
 import { db, schema } from "./db";
 import { ITEM_COLUMNS, rowToItem, type ItemRow } from "./items";
 import { tagItem } from "./tagger";
 import { PROMPTS } from "./prompts";
 import { LlmError } from "./llm";
 import { embedItems } from "./embed";
+import { enqueue, enqueueEmbed } from "./jobs";
 import { log, recordFailure } from "./log";
+import { assertSeatsOk } from "./quota";
+import type { PlanKey } from "./plans";
 import { TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoTags, TagStatus } from "@/types/inspo";
 
@@ -25,24 +28,24 @@ type Row = ItemRow;
 export const MAX_ATTEMPTS = 3;
 /** Jobs one workspace runs at once */
 export const PER_WORKSPACE = 5;
-/** Longer than the longest route that runs a job (maxDuration 300 s) */
+/** Longer than the route that runs a job (app/api/queue/jobs, maxDuration 300 s) */
 const STALE_MS = 6 * 60 * 1000;
-/** A failure waits this long before its next try: a site that is down now may answer later */
-const RETRY_AFTER_MS = 2 * 60 * 1000;
-/** A run stops taking new jobs this long after it started: the last one still fits in 300 s
- *  (a whole-page capture is capped at 60 s, the model call takes a few) */
-export const RUN_BUDGET_MS = 200_000;
+/** A failure waits before its next try, longer each time: a site that is down now may answer later */
+const RETRY_AFTER_S = 2 * 60;
+export const retryAfterS = (attempts: number) => RETRY_AFTER_S * 4 ** Math.max(attempts - 1, 0);
+/** A rate-limited provider is asked again after this */
+const THROTTLED_FOR_S = 2 * 60;
 
-/** Rows a run may take: new, failed with tries left (after a pause), lost mid-run, or tagged with another
- *  taxonomy. Each branch has an index (inspo_item_tag_status_idx, inspo_item_tags_version_idx), so the
- *  worker's sweep reads the few rows to do, not every row's tags. The version is written as < or >, not <>:
- *  an index can answer a range and can't answer "not equal". */
+/** Rows a run may take: new, failed with tries left (after its pause, retryAfterS), lost mid-run, or tagged with an
+ *  older taxonomy. Each branch has an index (inspo_item_tag_status_idx, inspo_item_tags_version_idx), so the
+ *  sweep reads the few rows to do, not every row's tags. Never a newer taxonomy: the jobs of the deployment
+ *  before keep running a while after a deploy, and would tag back with the old one what the new one tagged. */
 const tagsVersion = sql`coalesce((${T.tagsJson}->>'v')::int, 0)`;
 const claimable = (): SQL => sql`(
   ${T.tagStatus} = 'pending'
-  or (${T.tagStatus} = 'failed' and ${T.tagAttempts} < ${MAX_ATTEMPTS} and ${T.tagStartedAt} < ${new Date(Date.now() - RETRY_AFTER_MS)})
+  or (${T.tagStatus} = 'failed' and ${T.tagAttempts} < ${MAX_ATTEMPTS} and ${T.tagStartedAt} < now() - make_interval(secs => ${RETRY_AFTER_S} * power(4, greatest(${T.tagAttempts} - 1, 0))))
   or (${T.tagStatus} = 'running' and ${T.tagStartedAt} < ${new Date(Date.now() - STALE_MS)})
-  or (${T.tagStatus} = 'done' and (${tagsVersion} < ${TAXONOMY_VERSION} or ${tagsVersion} > ${TAXONOMY_VERSION}))
+  or (${T.tagStatus} = 'done' and ${tagsVersion} < ${TAXONOMY_VERSION})
 )`;
 
 /**
@@ -68,8 +71,8 @@ async function claim(organizationId: string, itemId?: string): Promise<Row | "bu
 
 /**
  * Tags a claimed row and writes the result. Never throws: a failure is written to the row.
- * "throttled": the model's provider is rate limiting. That try doesn't count, the job waits RETRY_AFTER_MS,
- * and whoever is running jobs should stop taking more for now.
+ * "throttled": the model's provider is rate limiting. That try doesn't count, the job waits THROTTLED_FOR_S,
+ * and the workspace's next job waits with it.
  */
 async function run(row: Row, userId: string | null): Promise<InspoTags | null | "throttled"> {
   try {
@@ -77,9 +80,9 @@ async function run(row: Row, userId: string | null): Promise<InspoTags | null | 
     const model = row.tagAttempts >= MAX_ATTEMPTS ? PROMPTS.tag.fallback : undefined;
     // Billed to whoever started it, else to whoever saved the item
     const tags = await tagItem(rowToItem(row), { organizationId: row.organizationId, userId: userId ?? row.createdBy }, model);
-    // New tags, new meaning: the vector is made now, or by the worker if this fails
+    // New tags, new meaning: the vector is made now, or by its own job if this fails
     await db.update(T).set({ tagsJson: tags, tagStatus: "done", tagError: null, embedding: null, updatedAt: new Date() }).where(eq(T.id, row.id));
-    await embedItems([row.id]).catch((err) => log.warn("embed.deferred", { ref: row.id, err }));
+    await embedItems([row.id]).catch(async (err) => { log.warn("embed.deferred", { ref: row.id, err }); await enqueueEmbed([row.id]); });
     (await import("./jev")).clearSearchCache();
     return tags;
   } catch (e) {
@@ -92,35 +95,26 @@ async function run(row: Row, userId: string | null): Promise<InspoTags | null | 
       tagStatus: "failed", tagError: msg.slice(0, 500),
       ...(throttled ? { tagAttempts: sql`greatest(${T.tagAttempts} - 1, 0)` } : {}),
     }).where(eq(T.id, row.id))
-      // The row stays "running" until the worker takes it as lost (STALE_MS)
+      // The row stays "running" until the sweep takes it as lost (STALE_MS)
       .catch((err) => log.error("job.tag.not_marked", { ref: row.id, err }));
     return throttled ? "throttled" : null;
   }
 }
 
-/** Runs the workspace's next job: "none" when it has nothing left, "busy" when it has no room right now,
- *  "throttled" when the model's provider asks to slow down */
-export async function runNextJob(organizationId: string): Promise<"done" | "failed" | "none" | "busy" | "throttled"> {
-  const row = await claim(organizationId);
-  if (typeof row === "string") return row;
-  const r = await run(row, null);
-  return r === "throttled" ? r : r ? "done" : "failed";
-}
-
 /**
- * What an add (or "try again") starts after answering: this item's job, then the workspace's next pending
- * ones until the run's budget is spent. With the workspace full, it leaves the item pending: a run
- * already going, or the worker, takes it.
+ * One tag job, as the queue delivers it: that item (or the workspace's next one waiting), then the
+ * workspace's next one sent on. A full workspace leaves the item pending: one of the jobs filling it sends
+ * the next when it ends. A failure with tries left sends its item's own job for after its pause; a throttled
+ * provider holds the workspace's line until then. Returns that pause in seconds, or null.
  */
-export async function startTagJob(organizationId: string, itemId: string, userId: string | null): Promise<void> {
-  const deadline = Date.now() + RUN_BUDGET_MS;
-  const row = await claim(organizationId, itemId);
-  if (typeof row !== "string" && (await run(row, userId)) === "throttled") return;
-  // A full workspace is already being worked through by the runs that filled it; a throttled provider waits
-  while (Date.now() < deadline) {
-    const r = await runNextJob(organizationId);
-    if (r === "none" || r === "busy" || r === "throttled") break;
-  }
+export async function runTagJob(job: { organizationId: string; itemId?: string; userId?: string | null }): Promise<number | null> {
+  const row = await claim(job.organizationId, job.itemId);
+  if (typeof row === "string") return null;
+  const r = await run(row, job.userId ?? null);
+  const again = r === "throttled" ? THROTTLED_FOR_S : r === null && row.tagAttempts < MAX_ATTEMPTS ? retryAfterS(row.tagAttempts) + 5 : null;
+  if (again !== null) await enqueue({ kind: "tag", organizationId: job.organizationId, itemId: row.id, userId: job.userId }, { delaySeconds: again });
+  if (r !== "throttled") await enqueue({ kind: "tag", organizationId: job.organizationId });
+  return again;
 }
 
 /** Puts a job back in line with its tries reset (the "try again" button). Returns the item id, or null.
@@ -134,12 +128,39 @@ export async function resetTagJob(organizationId: string, web: string): Promise<
   return row?.id ?? null;
 }
 
-/** Workspaces with jobs to take, with their plan for the seats check */
-export async function workspacesWithJobs(limit: number) {
-  return db.selectDistinct({ organizationId: T.organizationId, plan: schema.organization.plan }).from(T)
+/** Workspaces with jobs to take that may take them: one over its seats gets no AI until it fixes it, as in the app */
+export async function openWorkspacesWithJobs(limit: number): Promise<string[]> {
+  const found = await db.selectDistinct({ organizationId: T.organizationId, plan: schema.organization.plan }).from(T)
     .innerJoin(schema.organization, eq(schema.organization.id, T.organizationId))
     .where(claimable())
     .limit(limit);
+  const open = await Promise.all(found.map((w) =>
+    assertSeatsOk({ id: w.organizationId, plan: w.plan as PlanKey }).then(() => w.organizationId, () => null)));
+  return open.filter((id): id is string => !!id);
+}
+
+/** How the jobs are going, for /api/health/deep. `stalled`: workspaces that may run jobs, with one waiting
+ *  longer than STALLED_AFTER_MIN and none started in that time. A long import moving through its line is not
+ *  stalled; jobs that stopped running while every page still loads are. */
+export const STALLED_AFTER_MIN = 15;
+export async function jobStats() {
+  const n = (where: SQL) => sql<number>`count(*) filter (where ${where})::int`;
+  const [counts] = await db.select({
+    pending: n(sql`${T.tagStatus} = 'pending'`),
+    running: n(sql`${T.tagStatus} = 'running'`),
+    retrying: n(sql`${T.tagStatus} = 'failed' and ${T.tagAttempts} < ${MAX_ATTEMPTS}`),
+    failed: n(sql`${T.tagStatus} = 'failed' and ${T.tagAttempts} >= ${MAX_ATTEMPTS}`),
+    unembedded: n(sql`${T.embedding} is null and ${T.tagStatus} = 'done'`),
+  }).from(T);
+  const open = await openWorkspacesWithJobs(100);
+  const minutesSince = (at: SQL) => sql<number | null>`extract(epoch from now() - ${at}) / 60`;
+  const waiting = open.length ? await db.select({
+    oldest: minutesSince(sql`min(coalesce(${T.tagStartedAt}, ${T.createdAt})) filter (where ${claimable()})`),
+    lastStarted: minutesSince(sql`max(${T.tagStartedAt})`),
+  }).from(T).where(inArray(T.organizationId, open)).groupBy(T.organizationId) : [];
+  const stalled = waiting.filter((w) => (w.oldest ?? 0) > STALLED_AFTER_MIN && (w.lastStarted ?? Infinity) > STALLED_AFTER_MIN).length;
+  const oldest = Math.max(0, ...waiting.map((w) => Number(w.oldest ?? 0)));
+  return { ...counts, oldestWaitingMin: Math.round(oldest), stalled };
 }
 
 /** What the client shows for a job that is not done: still gathering, or given up. An item tagged with an

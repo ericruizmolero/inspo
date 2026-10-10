@@ -6,7 +6,7 @@ import { requireExtCtx } from "@/lib/ext-keys";
 import { addMany, MAX_PER_BATCH, type NewRef } from "@/lib/add-many";
 import { getErrors } from "@/lib/i18n";
 
-export const maxDuration = 120; // posts are copied and items tagged in after(), once the response is sent
+export const maxDuration = 120; // posts are copied in after(), once the response is sent
 
 // POST { items: [{ url, title?, date?, image?, text? }], source?, projectId? } → { ok, results: [{ url, status, id? }] }
 // `image` (an address, or a few to try in turn) makes the item that image, found on the page at `url`:

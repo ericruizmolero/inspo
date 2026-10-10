@@ -114,7 +114,7 @@ Nothing is required. Each key switches one thing on:
 | `SYSTEM_MODEL`, `OPTIONS_MODEL`, `START_MODEL`, `CURATE_MODEL`, `TRIAGE_MODEL`, `BRAND_MODEL`, `AGENT_MODEL`, `TAG_MODEL`, `DESIGN_MD_MODEL` | Optional. One model per task, each on its own; defaults in `lib/prompts.ts` |
 | `TAG_FALLBACK_MODEL` | Optional. Model for a tagging call that fails and a job's last try, default `mistralai/mistral-small-3.2-24b-instruct` |
 | `LLM_FALLBACK_MODEL` | Optional. Model that answers when any other call fails, default `anthropic/claude-haiku-5.5` |
-| `CRON_SECRET` | Vercel Cron: the tagging worker (`/api/cron/tag-pending`, once a day on Hobby) and the usage check |
+| `CRON_SECRET` | Vercel Cron (the morning run and the usage check), and the jobs' sweep (`/api/cron/sweep`, every 5 minutes through the queue) |
 | `TYPESAFE_API_KEY` | Jev: AI search and polish |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | The Google button. The OAuth client needs `http://localhost:3000/api/auth/callback/google` as a redirect URI |
 | `CHROME_EXECUTABLE_PATH` | Only if Chrome isn't in `/Applications` |

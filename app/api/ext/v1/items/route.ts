@@ -10,12 +10,12 @@ import { nameFor } from "@/lib/item-name";
 import { ensurePost, postThumb } from "@/lib/posts";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
 import { taggerEnabled } from "@/lib/tagger";
-import { startTagJob } from "@/lib/tag-jobs";
+import { enqueue } from "@/lib/jobs";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 import { log, recordFailure } from "@/lib/log";
 
-export const maxDuration = 300; // tagging (with a whole-page capture) and importing a post (copying its video) run in after(), once the response is sent
+export const maxDuration = 300; // importing a post (copying its video) runs in after(), once the response is sent
 
 const MAX_SHOT_BYTES = 3 * 1024 * 1024;
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           const thumb = post && postThumb(post);
           if (thumb) await setThumbnail(ctx.workspace.id, web, thumb);
         }
-        if (taggerEnabled() && item.id) await startTagJob(ctx.workspace.id, item.id, ctx.user.id);
+        if (taggerEnabled() && item.id) await enqueue({ kind: "tag", organizationId: ctx.workspace.id, itemId: item.id, userId: ctx.user.id });
       });
     }
 

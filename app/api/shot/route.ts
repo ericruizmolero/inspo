@@ -1,11 +1,18 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
-import { getOrCaptureShot } from "@/lib/screenshot";
+import { getOrCaptureShot, getStoredShot, hasStoredShot, shotKey } from "@/lib/screenshot";
+import { enqueue, onVercel } from "@/lib/jobs";
 import { allow } from "@/lib/rate-limit";
 import { log } from "@/lib/log";
 
-export const maxDuration = 90; // Chromium cold start + 20 s load + capture
+export const maxDuration = 90;
+
+/** How long the answer waits for the capture's job (Chromium cold start + 20 s load + capture) */
+const WAIT_MS = 75_000;
+const POLL_MS = 2_500;
+/** One capture of a site per this long, whoever asks: a site that failed is not tried on every card load */
+const ONCE_PER_S = 15 * 60;
 
 const TTL = 60 * 60 * 24 * 30; // 30 days
 
@@ -21,10 +28,24 @@ export async function GET(req: NextRequest) {
   if (!(await findByWeb(ctx.workspace.id, url))) return new Response("url not in workspace", { status: 403 });
 
   try {
-    // Captures per workspace: Chromium is one slot shared by every team (lib/browser-gate.ts)
-    const jpeg = await getOrCaptureShot(url, async () => {
+    // On Vercel the capture runs in its own job (lib/jobs.ts), never in this function: this one only waits for the file
+    let jpeg = await getStoredShot(url);
+    if (!jpeg) {
+      // Captures per workspace: each one is a browser
       if (!(await allow(`shot:${ctx.workspace.id}`, 60, 10 * 60 * 1000))) throw new Error("capture limit");
-    });
+      // Off Vercel there is no queue: a job would only start once this answers, so the capture runs here
+      if (!onVercel()) jpeg = await getOrCaptureShot(url);
+      else {
+        await enqueue({ kind: "shot", url }, { idempotencyKey: `shot:${Math.floor(Date.now() / 1000 / ONCE_PER_S)}:${shotKey(url)}` });
+        let stored = false;
+        for (const end = Date.now() + WAIT_MS; !stored && Date.now() < end;) {
+          await new Promise((r) => setTimeout(r, POLL_MS));
+          stored = await hasStoredShot(url);
+        }
+        jpeg = stored ? await getStoredShot(url) : null;
+      }
+      if (!jpeg) throw new Error("no capture in time");
+    }
     return new Response(new Uint8Array(jpeg), {
       headers: {
         "Content-Type": "image/jpeg",

@@ -14,11 +14,11 @@ import { putFile } from "@/lib/storage";
 import { fetchFile } from "@/lib/remote-file";
 import { ensurePost, postThumb, postDay } from "@/lib/posts";
 import { cleanText, deleteTextFile, importedTextUrl, putText, textTags, TEXT_TITLE_MAX } from "@/lib/text-refs";
-import { embedItems } from "@/lib/embed";
 import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
 import { MAX_PER_BATCH } from "@/lib/batch-limits";
 import { taggerEnabled } from "@/lib/tagger";
-import { startTagJob } from "@/lib/tag-jobs";
+import { enqueue, enqueueEmbed } from "@/lib/jobs";
+import { PER_WORKSPACE } from "@/lib/tag-jobs";
 import { HttpError } from "@/lib/workspace-core";
 import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "./log";
@@ -26,7 +26,7 @@ import { log, recordFailure } from "./log";
 export { MAX_PER_BATCH };
 /** Sites read at once while naming (each read has its own time limit) */
 const NAME_AT_ONCE = 5;
-/** Posts imported and items tagged at once, after the response */
+/** Posts imported at once, after the response */
 const FINISH_AT_ONCE = 3;
 /** Addresses of the same image tried in turn (the size wanted first, then what there is) */
 const MAX_IMAGE_TRIES = 3;
@@ -150,25 +150,28 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     if (projectId) await fileItems(workspaceId, projectId, ids, user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: projectId }));
   }
 
-  // Posts on X get their copies and picture; then the AI tags, as when a URL is pasted in the app.
   // A text is not tagged (its first lines are its tags, set above): it only gets its meaning vector.
-  const texts = added.filter((i) => mediaKindOf(i.web) === "text").map((i) => i.id).filter((x): x is string => !!x);
-  if (texts.length) after(() => embedItems(texts).catch((err) => log.warn("embed.deferred", { ref: texts[0], count: texts.length, err })));
-  const others = added.filter((i) => mediaKindOf(i.web) !== "text");
-  if (others.length && (taggerEnabled() || others.some((i) => mediaKindOf(i.web) === "post"))) {
-    after(() => eachLimit(others, FINISH_AT_ONCE, async (item) => {
+  // The rest is tagged as a pasted URL is, each in its own job (lib/tag-jobs.ts); a post on X first gets
+  // its copies and picture, and its job is sent once it has them.
+  const idsOf = (list: InspoItem[]) => list.map((i) => i.id).filter((x): x is string => !!x);
+  const texts = added.filter((i) => mediaKindOf(i.web) === "text");
+  const posts = added.filter((i) => mediaKindOf(i.web) === "post");
+  const others = added.filter((i) => !texts.includes(i) && !posts.includes(i));
+  void enqueueEmbed(idsOf(texts));
+  const tag = (ids: string[]) => taggerEnabled() ? enqueue(ids.map((itemId) => ({ kind: "tag" as const, organizationId: workspaceId, itemId, userId: user.id }))) : Promise.resolve();
+  // A few start the workspace's line; each one that ends sends the next, so the rest wait in their rows
+  void tag(idsOf(others).slice(0, PER_WORKSPACE));
+  if (posts.length) {
+    after(() => eachLimit(posts, FINISH_AT_ONCE, async (item) => {
       try {
-        if (mediaKindOf(item.web) === "post") {
-          const post = await ensurePost(item.web);
-          const thumb = post && postThumb(post);
-          if (thumb) await setThumbnail(workspaceId, item.web, thumb);
-          // A post that came without a date lands on the day it was published, not on today
-          const day = !dated.has(item.web) && post ? postDay(post) : undefined;
-          if (day) await setItemDate(workspaceId, item.web, day);
-        }
-        // Tagged as a pasted URL is: its job, which keeps the workspace to a few at once (lib/tag-jobs.ts)
-        if (taggerEnabled() && item.id) await startTagJob(workspaceId, item.id, user.id);
+        const post = await ensurePost(item.web);
+        const thumb = post && postThumb(post);
+        if (thumb) await setThumbnail(workspaceId, item.web, thumb);
+        // A post that came without a date lands on the day it was published, not on today
+        const day = !dated.has(item.web) && post ? postDay(post) : undefined;
+        if (day) await setItemDate(workspaceId, item.web, day);
       } catch (err) { log.warn("add_many.finish_failed", { source, ref: item.web, err }); }
+      await tag(idsOf([item]));
     }));
   }
 

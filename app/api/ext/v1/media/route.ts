@@ -19,7 +19,7 @@ import { nameFor } from "@/lib/item-name";
 import { ensurePost, postThumb } from "@/lib/posts";
 import { normalizeWebUrl, mediaKindOf, typeFromUrl } from "@/lib/url";
 import { taggerEnabled } from "@/lib/tagger";
-import { startTagJob } from "@/lib/tag-jobs";
+import { enqueue } from "@/lib/jobs";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 import type { ExtCtx } from "@/lib/ext-keys";
@@ -41,7 +41,7 @@ function fromDataUrl(dataUrl: string | undefined, maxBytes: number): { body: Buf
 /** Files the new item on the board picked in the popup (with its areas), and tags it once answered */
 async function settle(ctx: ExtCtx, item: InspoItem, projectId: unknown, areas: unknown) {
   await fileFromExt(ctx, item.id, projectId, cleanAreas(areas));
-  if (taggerEnabled() && item.id) after(() => startTagJob(ctx.workspace.id, item.id!, ctx.user.id));
+  if (taggerEnabled() && item.id) void enqueue({ kind: "tag", organizationId: ctx.workspace.id, itemId: item.id, userId: ctx.user.id });
 }
 
 const clip = (s: unknown, n: number) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, n).trim() : "");

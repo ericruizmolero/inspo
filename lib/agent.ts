@@ -4,7 +4,6 @@
 // nothing to undo runs at once; deleting waits for a confirmation. What the app cannot do on its own
 // (importing from a browser) comes back as a guide: how to do it and where.
 import "server-only";
-import { after } from "next/server";
 import { z } from "zod";
 import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -21,7 +20,7 @@ import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems } from "./projects";
 import { saveBrief, setClientBrand } from "./brief";
 import { addComment } from "./comments";
-import { startTagJob } from "./tag-jobs";
+import { enqueue } from "./jobs";
 import { taggerEnabled } from "./tagger";
 import { loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
@@ -393,7 +392,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
           const item = await addItem(org, { name: await nameFor(web), web, type: typeFromUrl(web), author: author.name, createdBy: author.id });
           if (a.project && item.id) { await fileItems(org, a.project, [item.id], author.id); line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
-          if (item.id && taggerEnabled()) { const id = item.id; after(() => startTagJob(org, id, author.id).catch((err) => log.warn("job.tag.not_started", { ref: id, err }))); }
+          if (item.id && taggerEnabled()) void enqueue({ kind: "tag", organizationId: org, itemId: item.id, userId: author.id });
           (patch.added ??= []).push(item); line.name = item.name; if (item.id) line.items = [item.id]; break;
         }
         case "note": {

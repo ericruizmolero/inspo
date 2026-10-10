@@ -4,7 +4,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 
 ## Quién entra y a qué
 
-- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/unsubscribe`, `/api/unsubscribe`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/api/health` (las comprobaciones de Better Stack: solo dicen ok y tiempos), `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
+- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/unsubscribe`, `/api/unsubscribe`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/api/queue/` (las entregas de Vercel Queues; esas rutas no tienen URL pública), `/api/health` (las comprobaciones de Better Stack: dicen ok, tiempos y cuántos trabajos esperan), `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
 - **El permiso real lo comprueba cada página y cada ruta**: espacio, rol (`owner` y `admin` gestionan; `member` añade) y socio. `requireCtx` en `lib/workspace.ts`. El proxy solo es el "no" rápido.
 - **Sin contraseñas.** Se entra con enlace mágico (caduca a los 10 minutos) o con Google. La sesión dura 30 días y se renueva cada día; la cookie se cachea 5 minutos (`lib/auth.ts`).
 - **Las páginas internas** (`/admin`, `/library`) responden 404 a quien no es socio. Socio = correo en `ADMIN_EMAILS` o fila en `app_admin` (`npm run admin -- <correo>`).
