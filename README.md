@@ -273,4 +273,4 @@ cached per URL (global), but only those for URLs saved in the active workspace a
 - **No login locally**: with `DEV_LOGIN_EMAIL=you@email` in `.env.local` you sign in automatically as that user
   (real session via `/api/dev-login`, ignored in production). To test login again, remove the variable and sign out.
 - **Browser extension**: in `extension/` (its own README). It signs in with a per-user key (`/api/ext/`, `lib/ext-keys.ts`).
-- **Screenshots and DESIGN.md**: one Chromium at a time per instance (`lib/browser-gate.ts`, `CHROME_CONCURRENCY` raises it).
+- **Screenshots and DESIGN.md**: one Chromium at a time per instance (`lib/browser.ts`, `CHROME_CONCURRENCY` raises it).

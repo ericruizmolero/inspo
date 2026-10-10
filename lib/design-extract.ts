@@ -1,8 +1,5 @@
-import puppeteer, { type Browser, type Page } from "puppeteer-core";
-import { gatedLaunch } from "./browser-gate";
-import fs from "fs";
-import { guardPage } from "./safe-fetch";
-import { egressArgs } from "./egress-proxy";
+import type { Page } from "puppeteer-core";
+import { withPage } from "./browser";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -94,34 +91,6 @@ export interface ExtractResult {
 }
 
 export interface FontFile { family: string; formats: string[] }
-
-// ─── Browser ─────────────────────────────────────────────────────────────────
-
-const MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-
-/** A Chromium for extraction and the probe, behind the shared gate (lib/browser-gate.ts). */
-export const launch = (): Promise<Browser> => gatedLaunch(launchChromium);
-
-async function launchChromium(): Promise<Browser> {
-  const local = process.env.CHROME_PATH || (process.platform === "darwin" && fs.existsSync(MAC_CHROME) ? MAC_CHROME : null);
-
-  if (local && !process.env.VERCEL) {
-    return puppeteer.launch({
-      executablePath: local,
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required", ...(await egressArgs())],
-    });
-  }
-
-  const chromium = (await import("@sparticuz/chromium")).default;
-  chromium.setGraphicsMode = false;
-  return puppeteer.launch({
-    executablePath: await chromium.executablePath(),
-    args: [...chromium.args, "--hide-scrollbars", "--autoplay-policy=no-user-gesture-required", ...(await egressArgs())],
-    headless: true,
-    defaultViewport: { width: 1440, height: 900 },
-  });
-}
 
 // ─── Script that runs inside the page ────────────────────────────────────────
 // Kept as a string so Next doesn't transform it and puppeteer runs it as is.
@@ -503,16 +472,7 @@ function fontFormats(blocks: string[]): FontFile[] {
 // `signal`: if the user stops generation, Chromium closes right away and no more
 // time or screenshots are spent. Any pending step fails and the route translates it.
 export async function extractDesign(url: string, signal?: AbortSignal): Promise<ExtractResult> {
-  signal?.throwIfAborted();
-  const browser = await launch();
-  const onAbort = () => { void browser.close().catch(() => {}); }; // the run's own error reports the abort
-  signal?.addEventListener("abort", onAbort, { once: true });
-  try {
-    const page = await browser.newPage();
-    await guardPage(page);
-    // Reduced motion: sites that hold the page behind an intro or reveal it on scroll show everything at once.
-    // Light: the same capture on any machine, not the dark mode of the Mac that runs it.
-    await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }, { name: "prefers-color-scheme", value: "light" }]);
+  return withPage("extract", async (page) => {
     await page.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await page.setUserAgent(UA);
     await page.setExtraHTTPHeaders({ "Accept-Language": "en-US,en;q=0.9,es;q=0.8" });
@@ -574,10 +534,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     signal?.throwIfAborted();
     const fontFiles = fontFormats(await fontFaceRules(page));
     return { tokens, screenshot, fullShot, cover, scroll, logo, icons: oklchToHex(iconSvgs), logoSvg: logoSvg ? oklchToHex(logoSvg) : null, fontFiles };
-  } finally {
-    signal?.removeEventListener("abort", onAbort);
-    await browser.close().catch(() => {}); // cleanup: a crashed browser has nothing to close
-  }
+  }, signal);
 }
 
 // Tailwind v4 sites report computed colors as oklch(). Models convert them in their

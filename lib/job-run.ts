@@ -5,7 +5,7 @@ import { db, schema } from "./db";
 import { taggerEnabled } from "./tagger";
 import { embedItems } from "./embed";
 import { getOrCaptureShot } from "./screenshot";
-import { QueueFull } from "./browser-gate";
+import { QueueFull } from "./browser";
 import { openWorkspacesWithJobs, PER_WORKSPACE, runTagJob } from "./tag-jobs";
 import { enqueue, enqueueEmbed, scheduleSweep, EMBED_BATCH, type Job } from "./jobs";
 

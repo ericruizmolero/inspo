@@ -1,15 +1,9 @@
 import { createHash } from "crypto";
-import { promises as fs } from "fs";
-import puppeteer, { Browser } from "puppeteer-core";
 import { webKeyOf } from "./url";
 import { getFile, fileExists, putFile, keyOf } from "./storage";
-import { gatedLaunch, QueueFull } from "./browser-gate";
+import { withPage, QueueFull } from "./browser";
 import type { PageShot } from "@/types/inspo";
-import { guardPage } from "./safe-fetch";
-import { egressArgs } from "./egress-proxy";
 import { log, recordFailure } from "./log";
-
-const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
 const VIEWPORT = { width: 1440, height: 900 };
 const GOTO_TIMEOUT_MS = 20000;
@@ -40,54 +34,6 @@ async function storeShot(url: string, jpeg: Buffer): Promise<void> {
   await putFile(shotFile(url), jpeg, "image/jpeg");
 }
 
-// ─── Browser ─────────────────────────────────────────────────────────────────
-
-const LOCAL_CHROME_CANDIDATES = [
-  process.env.CHROME_EXECUTABLE_PATH,
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-  "/usr/bin/google-chrome",
-  "/usr/bin/chromium",
-].filter(Boolean) as string[];
-
-// On Vercel, executablePath() unpacks Chromium into /tmp the first time. If two
-// requests ask at once, one runs the binary while the other is still writing it
-// and the spawn fails with ETXTBSY. A single promise is shared per instance.
-let serverlessChromePath: Promise<string> | null = null;
-async function serverlessExecutablePath(): Promise<string> {
-  if (!serverlessChromePath) {
-    serverlessChromePath = import("@sparticuz/chromium")
-      .then((m) => m.default.executablePath())
-      .catch((e) => { serverlessChromePath = null; throw e; });
-  }
-  return serverlessChromePath;
-}
-
-async function launchBrowser(): Promise<Browser> {
-  if (IS_SERVERLESS) {
-    const chromium = (await import("@sparticuz/chromium")).default;
-    return puppeteer.launch({
-      args: [...chromium.args, ...(await egressArgs())],
-      defaultViewport: VIEWPORT,
-      executablePath: await serverlessExecutablePath(),
-      headless: true,
-    });
-  }
-
-  for (const candidate of LOCAL_CHROME_CANDIDATES) {
-    try {
-      await fs.access(candidate);
-      return puppeteer.launch({
-        executablePath: candidate,
-        defaultViewport: VIEWPORT,
-        headless: true,
-        args: ["--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars", ...(await egressArgs())],
-      });
-    } catch { /* try next */ }
-  }
-  throw new Error("No local Chrome found. Set CHROME_EXECUTABLE_PATH.");
-}
-
 // Hide the usual consent / cookie layers so the hero is what we capture.
 const HIDE_CSS = `
   [id*="cookie" i], [class*="cookie" i], [id*="consent" i], [class*="consent" i],
@@ -100,62 +46,54 @@ const ACCEPT_TEXTS = ["aceptar", "accept", "agree", "allow", "ok", "got it", "en
 
 /** The first screen of the site; with `full`, the whole page (up to 6000px tall), scrolled once so lazy parts load */
 export async function captureHero(url: string, full = false): Promise<Buffer> {
-  let browser: Browser | null = null;
   try {
-    // Waits for a free slot in the shared gate (lib/browser-gate.ts)
-    browser = await gatedLaunch(launchBrowser);
-    const page = await browser.newPage();
-    await guardPage(page);
-    // Reduced motion: sites that hold the page behind an intro or reveal it on scroll show everything at once.
-    // Light: the same capture on any machine, not the dark mode of the Mac that runs it.
-    await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }, { name: "prefers-color-scheme", value: "light" }]);
-    await page.setUserAgent(
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 InspoBot/1.0"
-    );
-    await page.setExtraHTTPHeaders({ "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" });
+    return await withPage("shot", async (page) => {
+      await page.setUserAgent(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36 InspoBot/1.0"
+      );
+      await page.setExtraHTTPHeaders({ "Accept-Language": "es-ES,es;q=0.9,en;q=0.8" });
 
-    try {
-      await page.goto(url, { waitUntil: "networkidle2", timeout: GOTO_TIMEOUT_MS });
-    } catch {
-      // Sites with long-polling never go idle; capture whatever is there.
-    }
+      try {
+        await page.goto(url, { waitUntil: "networkidle2", timeout: GOTO_TIMEOUT_MS });
+      } catch {
+        // Sites with long-polling never go idle; capture whatever is there.
+      }
 
-    // The tweaks below are best effort: a page that refuses one is still captured
-    await page.addStyleTag({ content: HIDE_CSS }).catch(() => {});
+      // The tweaks below are best effort: a page that refuses one is still captured
+      await page.addStyleTag({ content: HIDE_CSS }).catch(() => {});
 
-    // Click a consent button if one is still visible.
-    await page.evaluate((texts) => {
-      const els = Array.from(document.querySelectorAll<HTMLElement>("button, a[role=button], [role=button]"));
-      const hit = els.find((el) => {
-        const t = (el.innerText || "").trim().toLowerCase();
-        return t.length < 24 && texts.some((x) => t === x || t.startsWith(x + " "));
-      });
-      hit?.click();
-    }, ACCEPT_TEXTS).catch(() => {}); // best effort
+      // Click a consent button if one is still visible.
+      await page.evaluate((texts) => {
+        const els = Array.from(document.querySelectorAll<HTMLElement>("button, a[role=button], [role=button]"));
+        const hit = els.find((el) => {
+          const t = (el.innerText || "").trim().toLowerCase();
+          return t.length < 24 && texts.some((x) => t === x || t.startsWith(x + " "));
+        });
+        hit?.click();
+      }, ACCEPT_TEXTS).catch(() => {}); // best effort
 
-    await page.evaluate(() => (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready).catch(() => {}); // best effort
-    await new Promise((r) => setTimeout(r, SETTLE_MS));
+      await page.evaluate(() => (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready).catch(() => {}); // best effort
+      await new Promise((r) => setTimeout(r, SETTLE_MS));
 
-    if (full) {
-      await page.evaluate(`(async () => {
-        const h = document.documentElement.scrollHeight;
-        for (let y = 0; y < Math.min(h, ${MAX_PAGE_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
-        window.scrollTo(0, 0);
-      })()`).catch(() => {}); // best effort: the lazy images that loaded are enough
-      await new Promise((r) => setTimeout(r, 600));
-      const h = (await page.evaluate("document.documentElement.scrollHeight").catch(() => VIEWPORT.height)) as number;
-      const height = Math.max(VIEWPORT.height, Math.min(Number(h) || VIEWPORT.height, MAX_PAGE_H));
-      const jpeg = await page.screenshot({ type: "jpeg", quality: 62, clip: { x: 0, y: 0, width: VIEWPORT.width, height }, captureBeyondViewport: true });
+      if (full) {
+        await page.evaluate(`(async () => {
+          const h = document.documentElement.scrollHeight;
+          for (let y = 0; y < Math.min(h, ${MAX_PAGE_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
+          window.scrollTo(0, 0);
+        })()`).catch(() => {}); // best effort: the lazy images that loaded are enough
+        await new Promise((r) => setTimeout(r, 600));
+        const h = (await page.evaluate("document.documentElement.scrollHeight").catch(() => VIEWPORT.height)) as number;
+        const height = Math.max(VIEWPORT.height, Math.min(Number(h) || VIEWPORT.height, MAX_PAGE_H));
+        const jpeg = await page.screenshot({ type: "jpeg", quality: 62, clip: { x: 0, y: 0, width: VIEWPORT.width, height }, captureBeyondViewport: true });
+        return Buffer.from(jpeg);
+      }
+      const jpeg = await page.screenshot({ type: "jpeg", quality: JPEG_QUALITY, fullPage: false });
       return Buffer.from(jpeg);
-    }
-    const jpeg = await page.screenshot({ type: "jpeg", quality: JPEG_QUALITY, fullPage: false });
-    return Buffer.from(jpeg);
+    });
   } catch (e) {
     // A full queue is not the site's fault: it is tried again later
     if (!(e instanceof QueueFull)) void recordFailure("shot", new URL(url).hostname, e, { ref: url });
     throw e;
-  } finally {
-    await browser?.close().catch(() => {}); // cleanup: a crashed browser has nothing to close
   }
 }
 

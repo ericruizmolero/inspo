@@ -58,7 +58,7 @@ Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack te
 
 ## Contenido de terceros y seguridad
 
-Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y políticas públicas están en [Seguridad y políticas](seguridad.md). Lo que afecta a cómo se construye: todo fetch de una URL ajena pasa por `safeFetch`, todo Chromium por `lib/egress-proxy.ts`; un script inline propio lleva el `nonce` y nunca hay manejadores en HTML; una superficie nueva sin sesión pasa las referencias por `staysInside` antes de enseñar una copia; una clave o un servicio nuevo se apunta en el stack y en la política de privacidad en el mismo trabajo.
+Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y políticas públicas están en [Seguridad y políticas](seguridad.md). Lo que afecta a cómo se construye: todo fetch de una URL ajena pasa por `safeFetch`, todo Chromium se abre con `withPage` (`lib/browser.ts`, que lo pone en la cola y lo cierra) y sale por `lib/egress-proxy.ts`; un script inline propio lleva el `nonce` y nunca hay manejadores en HTML; una superficie nueva sin sesión pasa las referencias por `staysInside` antes de enseñar una copia; una clave o un servicio nuevo se apunta en el stack y en la política de privacidad en el mismo trabajo.
 
 ## Idiomas
 
