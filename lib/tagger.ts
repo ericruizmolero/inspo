@@ -11,18 +11,17 @@ import { llm, llmEnabled, type LlmInput, type LlmResult } from "./llm";
 import { prompt } from "./prompts";
 import { fetchSiteText, videoTitleWithin, type SiteText } from "./extract";
 import { getStoredPost, ensurePost, postThumb } from "./posts";
-import { readMediaFile } from "./media";
 import { textTags } from "./text-refs";
-import { getDesignScreenshot } from "./design-store";
+import { getDesignMd } from "./design-store";
 import { getPageIndex } from "./page-shots";
-import { captureNewPage, getStoredShot } from "./screenshot";
+import { captureNewPage, getStoredShot, hasStoredShot, shotFile } from "./screenshot";
 import { getFile, keyOf } from "./storage";
 import { paletteOf } from "./palette";
 import { imageMeta, metaLines, postMeta } from "./meta";
 import { mediaKindOf, normalizeWebUrl, postOf, webKeyOf } from "./url";
 import { billOf, recordUsage, type UsageCtx } from "./usage";
 import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, TAXONOMY_VERSION } from "./taxonomy";
-import type { InspoItem, InspoTags } from "@/types/inspo";
+import type { InspoItem, InspoLook, InspoTags } from "@/types/inspo";
 import { log } from "./log";
 
 export const taggerEnabled = llmEnabled;
@@ -40,6 +39,14 @@ const SKIP = ["youtube.com", "youtu.be", "vimeo.com", "x.com", "twitter.com", "i
 const keys = <T extends { key: string }>(terms: T[]) => terms.map((t) => t.key) as [string, ...string[]];
 const list = (terms: { key: string; description: string }[]) => terms.map((t) => `- ${t.key}: ${t.description}`).join("\n");
 
+const words = (n: number) => `one sentence of at most ${n} words, "" when the picture shows nothing for it`;
+const LookSchema = z.object({
+  imagery: z.string().describe(words(25)),
+  typography: z.string().describe(words(25)),
+  color: z.string().describe(words(25)),
+  logo: z.string().describe(words(25)),
+});
+
 const TagSchema = z.object({
   sector: z.enum(keys(SECTORS)),
   style: z.enum(keys(STYLES)),
@@ -51,10 +58,19 @@ const TagSchema = z.object({
   layout: z.array(z.enum(keys(LAYOUT))),
   keywords: z.array(z.string()).describe("5 to 10 lowercase English words or short phrases a designer would search for"),
   visual: z.string().describe("40 to 60 words, plain English prose"),
+  look: LookSchema,
 });
 type TagOutput = z.infer<typeof TagSchema>;
 
 const FIT = { weak: 0.5, clear: 0.75, strong: 1 } as const;
+
+const lookOf = (l: z.infer<typeof LookSchema>): InspoLook => ({ imagery: l.imagery.trim(), typography: l.typography.trim(), color: l.color.trim(), logo: l.logo.trim() });
+
+const LOOK = `- LOOK: what the picture shows, area by area, each one sentence of at most 25 words, and "" when the picture shows nothing for that area. Literal: only what is visible, no praise ("elegant", "striking"), no guess at intent.
+  - imagery: the kind (photo, illustration, 3D, screen capture), its light, colour grade, crop and texture.
+  - typography: what the letters look like: serif or sans, contrast, weight, case, tracking. Name a family only when you are certain of it.
+  - color: how colour is used: the ground, the ink, the accent and its job.
+  - logo: the mark, if one is visible: wordmark, symbol or monogram, and how it is drawn.`;
 
 export const SYSTEM = `You tag saved design references (websites, images, posts) for a designer's inspiration library. The tags power search and filters, so be literal and precise: tag only what is visible in the image or stated in the page text.
 
@@ -88,7 +104,8 @@ ${list(LAYOUT)}
 
 FREE TEXT (always in English: it feeds search, whatever the page's language)
 - KEYWORDS: 5 to 10 lowercase search words for what makes this reference worth saving and is not already covered by the lists: the subject, the mood, a specific technique, the industry ("coffee roaster", "swiss grid", "risograph texture", "pastel", "car configurator"). No generic words like "website", "design" or "modern". Never a person or brand name: names are kept apart.
-- VISUAL: 40 to 60 words of plain prose on what the page looks like: colours, type, imagery, layout, mood.`;
+- VISUAL: 40 to 60 words of plain prose on what the page looks like: colours, type, imagery, layout, mood.
+${LOOK}`;
 
 // ─── Inputs ──────────────────────────────────────────────────────────────────
 
@@ -99,38 +116,49 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   });
 }
 
-const readUrl = async (u: string | undefined) => {
-  const k = u ? keyOf(u) : null;
-  return k ? (await getFile(k).catch((err) => { log.warn("storage.read_failed", { ref: k, err }); return null; }))?.body ?? null : null;
-};
+const readKey = async (k: string | null) => k ? (await getFile(k).catch((err) => { log.warn("storage.read_failed", { ref: k, err }); return null; }))?.body ?? null : null;
+const keyOfUrl = (u: string | null | undefined) => u ? keyOf(u) : null;
 
-/** The whole page of a site: a stored capture first (DESIGN.md, then the canvas's), else one new capture. */
-async function pageImage(web: string, capture: boolean): Promise<Buffer | null> {
-  const stored = (await getDesignScreenshot(web)) ?? (await readUrl((await getPageIndex())[normalizeWebUrl(web) ?? web]?.shotUrl));
+/** A site whose capture shows a design, not a login wall or a player */
+function capturable(web: string): boolean {
+  try { const host = new URL(web).hostname.replace(/^www\./, ""); return !SKIP.some((d) => host === d || host.endsWith(`.${d}`)); } catch { return false; }
+}
+
+/** The stored whole page of a site: the DESIGN.md's capture, then the canvas's */
+async function pageKey(web: string): Promise<string | null> {
+  return keyOfUrl((await getDesignMd(web))?.screenshotUrl) ?? keyOfUrl((await getPageIndex())[normalizeWebUrl(web) ?? web]?.shotUrl);
+}
+
+/** Where the picture the model looks at is stored: what `capture: false` reads. A site with no whole page stored
+ *  falls back to the card's first screen, if /api/shot made one. null: nothing stored, or nothing to look at */
+export async function pictureKey(web: string): Promise<string | null> {
+  const kind = mediaKindOf(web);
+  if (kind === "image") return keyOf(web);
+  if (kind === "post") { const post = await getStoredPost(postOf(web)?.id ?? ""); return keyOfUrl(post && postThumb(post)); }
+  if (kind !== "web" || !capturable(web)) return null;
+  return (await pageKey(web)) ?? ((await hasStoredShot(web)) ? shotFile(web) : null);
+}
+
+/** A stored picture (pictureKey) as the model gets it. Only reads */
+export async function pictureAt(key: string | null): Promise<Buffer | null> {
+  const image = await readKey(key);
+  return image ? forModel(image).catch(() => null) : null;
+}
+
+/** The picture the model looks at. With `capture`, a site with no page stored is captured and a post imported */
+async function imageOf(web: string, capture: boolean): Promise<Buffer | null> {
+  const kind = mediaKindOf(web);
+  if (!capture || kind === "image") return readKey(await pictureKey(web));
+  if (kind === "post") { const post = await ensurePost(web); return readKey(keyOfUrl(post && postThumb(post))); }
+  if (kind !== "web" || !capturable(web)) return null;
+  const stored = await readKey(await pageKey(web));
   if (stored) return stored;
-  if (!capture) return getStoredShot(web);
   try {
     return await withTimeout(captureNewPage(web), CAPTURE_TIMEOUT_MS, "capture");
   } catch (e) {
     log.warn("tagger.no_capture", { ref: web, err: e });
     return getStoredShot(web); // the card's first screen, if /api/shot made one
   }
-}
-
-/** The picture the model looks at, by kind of item. null: it tags from the words alone. */
-async function imageOf(web: string, capture: boolean): Promise<Buffer | null> {
-  const kind = mediaKindOf(web);
-  if (kind === "image") return (await readMediaFile(web))?.data ?? null;
-  if (kind === "post") {
-    const post = capture ? await ensurePost(web) : await getStoredPost(postOf(web)?.id ?? "");
-    const thumb = post && postThumb(post);
-    return thumb ? (await readMediaFile(thumb))?.data ?? null : null;
-  }
-  if (kind === "video") return null;
-  let host = "";
-  try { host = new URL(web).hostname.replace(/^www\./, ""); } catch { return null; }
-  if (SKIP.some((d) => host === d || host.endsWith(`.${d}`))) return null;
-  return pageImage(web, capture);
 }
 
 /** A saved post read as a page: author as title, its words as text */
@@ -222,6 +250,7 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, over:
     tags: Object.fromEntries(TAGS.map((t) => [t.key, out.traits.includes(t.key) ? 1 : 0])),
     summary: [site?.title, site?.description].filter(Boolean).join(" · ").slice(0, 300),
     visual: out.visual.trim() || undefined,
+    look: image ? lookOf(out.look) : undefined,
     colors: colours?.colors ?? [],
     palette: colours?.palette ?? [],
     theme: colours?.theme,
@@ -236,6 +265,16 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, over:
     v: TAXONOMY_VERSION,
   };
   return { tags, ...res };
+}
+
+const LookOnly = z.object({ look: LookSchema });
+const LOOK_SYSTEM = `You describe the picture of a saved design reference (a website, an image, a post) for a designer's inspiration library, always in English, whatever the page's language. The page text and metadata only help you read what you see.
+${LOOK}`;
+
+/** Only the look of an item that has a picture, on the tag task's model: for tags made before it (npm run tags:look) */
+export async function lookWith(item: InspoItem, { image, site }: TagInputs & { image: Buffer }): Promise<{ look: InspoLook } & LlmResult> {
+  const res = await llm(prompt("tag", { system: LOOK_SYSTEM, text: promptText(item, site, true), image, schema: LookOnly }));
+  return { look: lookOf(LookOnly.parse(JSON.parse(res.text)).look), ...res };
 }
 
 /** Tags one item. Throws when the model fails, so the item stays pending and is tried again. */

@@ -325,7 +325,7 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
     const omitted = said.length - comments.length || undefined;
     const { spec, why } = sheets[i];
     const pointed = why?.highlights?.map((h) => ({ quote: h.quote, by: h.author, values: h.values?.length ? h.values : undefined, take: h.note || undefined })) ?? [];
-    const base = summarize(item, row.tagsJson ?? undefined);
+    const base = summarize(item, row.tagsJson ?? undefined, { byArea: true });
     return {
       code,
       itemId: row.id,
@@ -375,6 +375,7 @@ const AREAS = `THE EIGHT AREAS
 
 const BOARD = `THE BOARD
 References the team saved for this project: websites, images, posts. Each comes with a short id (r1, r2…), the note of whoever saved it, the team's comments, what the team pointed at on it, and what was measured from it.
+- "look" is a short description of the saved picture or page; "look_by_area", when there, is what that picture shows for imagery, typography, color and logo, one literal line each, read by a model from the picture. Like "measured", it says WHAT a reference does, never WHY it is here.
 - "measured": glance (one line per aspect) and layout, read from a website's live page; colors (name, hex, group: its palette, brand and accent first), families (family, role, weights), radius, density and theme, from the same page; pixels, the colours of the saved picture or page with their share of it (0 to 1), which images and posts have too.
 - The team's words say WHY a reference is here: that is where a decision starts. The measured values say WHAT it does: use them to make a decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - hex and families in "measured" are real values: a decision that uses one cites it literally, as given. Never round a hex or rename a family.

@@ -57,6 +57,9 @@ export interface InspoMeta {
   copyright?: string;
 }
 
+/** One sentence per area of what the picture shows; "" when it shows nothing for that area */
+export interface InspoLook { imagery: string; typography: string; color: string; logo: string }
+
 export interface InspoTags {
   /** Sector (a SECTORS key) */
   sector: string;
@@ -70,6 +73,8 @@ export interface InspoTags {
   summary: string;
   /** Visual description of the screenshot (empty if there was none) */
   visual?: string;
+  /** What the picture shows, area by area; missing on tags made before it */
+  look?: InspoLook;
   // v3: missing on older tags
   /** Main colours read from the pixels, largest first */
   colors?: InspoColor[];

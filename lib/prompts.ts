@@ -24,9 +24,9 @@ const SYSTEM_FIELDS = "every decision, why, take, reason, question, option and s
 
 export const PROMPTS = {
   /** Reads the board into the eight areas (lib/system.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
-  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 4, language: SYSTEM_FIELDS },
+  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 5, language: SYSTEM_FIELDS },
   /** Other directions for one area */
-  options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 3, language: SYSTEM_FIELDS },
+  options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 4, language: SYSTEM_FIELDS },
   /** The question that starts an empty area: a person is waiting, so a quick model that does not stop to reason */
   start: { model: env("START_MODEL", "anthropic/claude-haiku-4.5"), fallback: FALLBACK_MODEL, maxTokens: 3000, version: 2, language: SYSTEM_FIELDS },
   /** One area's evidence picked again */
@@ -41,7 +41,7 @@ export const PROMPTS = {
    *  ~$0.0004 an item, the fewest invented tags of four cheap models; any model that takes images and strict JSON will do.
    *  The fallback, second in the bake-off at ~$0.0002 an item, also takes a job's last try (lib/tag-jobs.ts): Gemini
    *  stops mid-answer on some pages, every time */
-  tag: { model: env("TAG_MODEL", "google/gemini-2.5-flash-lite"), fallback: env("TAG_FALLBACK_MODEL", "mistralai/mistral-small-3.2-24b-instruct"), maxTokens: 1500, version: 1, language: null },
+  tag: { model: env("TAG_MODEL", "google/gemini-2.5-flash-lite"), fallback: env("TAG_FALLBACK_MODEL", "mistralai/mistral-small-3.2-24b-instruct"), maxTokens: 1500, version: 2, language: null },
   /** A site's DESIGN.md: one per URL serves every workspace, so always English (its "es" lines are part of the shape).
    *  Trap 2 (#5): reasoning eats the budget on long answers, so plenty of room */
   design_md: { model: env("DESIGN_MD_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 32000, version: 1, language: null },

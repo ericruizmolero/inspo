@@ -25,7 +25,7 @@ export function shotKey(url: string): string {
   return createHash("sha1").update(webKeyOf(url)).digest("hex");
 }
 
-const shotFile = (url: string) => `inspo/shots/${shotKey(url)}.jpg`;
+export const shotFile = (url: string) => `inspo/shots/${shotKey(url)}.jpg`;
 
 export async function getStoredShot(url: string): Promise<Buffer | null> {
   try { return (await getFile(shotFile(url)))?.body ?? null; } catch (err) { log.warn("shot.stored_unreadable", { ref: url, err }); return null; }

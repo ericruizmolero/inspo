@@ -44,6 +44,7 @@
     "files:pull": "tsx scripts/pull-files.ts",
     "shots:pages": "tsx --conditions=react-server scripts/capture-pages.ts",
     "tags:bakeoff": "tsx --conditions=react-server scripts/tag-bakeoff.ts",
+    "tags:look": "tsx --conditions=react-server scripts/tags-look.ts",
     "embed:bakeoff": "tsx --conditions=react-server scripts/embed-bakeoff.ts",
     "eval:freeze": "tsx --conditions=react-server scripts/eval-freeze.ts",
     "eval:system": "tsx --conditions=react-server scripts/eval-system.ts"

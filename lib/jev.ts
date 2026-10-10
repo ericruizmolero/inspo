@@ -44,8 +44,11 @@ export const clearSearchCache = () => searchCache.clear();
 const BATCH = 12;
 const CONCURRENCY = 6;
 
-export function summarize(item: InspoItem, t: InspoTags | undefined) {
+/** `byArea`: also what the picture shows area by area, for the passes that decide those areas. Search and triage
+ *  go without it: it doubles what each reference weighs and they match or file, they do not decide a look */
+export function summarize(item: InspoItem, t: InspoTags | undefined, { byArea = false } = {}) {
   const v = viewOf(t);
+  const areas = byArea && t?.look ? Object.fromEntries(Object.entries(t.look).filter(([, s]) => s)) : {};
   return {
     name: item.name,
     url: item.web,
@@ -53,6 +56,7 @@ export function summarize(item: InspoItem, t: InspoTags | undefined) {
     curator_notes: [item.note, item.subNote].filter(Boolean).join(" — ") || null,
     page: t?.summary || null,
     look: t?.visual ? t.visual.slice(0, 400) : null,
+    ...(Object.keys(areas).length ? { look_by_area: areas } : {}),
     // The model is spoken to in English, labels included
     sector: t ? en.taxonomy.sector[t.sector as keyof typeof en.taxonomy.sector] ?? t.sector : null,
     style: t ? en.taxonomy.style[t.style as keyof typeof en.taxonomy.style] ?? t.style : null,
