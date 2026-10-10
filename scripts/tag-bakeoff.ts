@@ -47,7 +47,7 @@ async function main() {
     const inputs = await inputsOf(item.web, { capture: false });
     const cells = await Promise.all(MODELS.map(async (model) => {
       try {
-        const r = await tagWith(item, inputs, model);
+        const r = await tagWith(item, inputs, model, null);
         const t = totals[model]; t.usd += r.costUsd ?? 0; t.ms += r.ms; t.ok++;
         const tg = r.tags;
         const lists = [

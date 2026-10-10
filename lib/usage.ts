@@ -8,6 +8,7 @@ import { newId } from "./items";
 import { dayOf, daySlots, tzOffsetSeconds } from "./days";
 import { type UsageAction, type UsageOverview } from "./usage-core";
 import { log } from "./log";
+import type { LlmResult } from "./llm";
 
 export * from "./usage-core";
 
@@ -28,8 +29,15 @@ export interface UsageInput {
   costUsd?: number | null;
   provider?: string | null;
   requestId?: string | null;
+  fallbackFrom?: string | null;
   ref?: string | null;
 }
+
+/** A model call's bill, as a usage row takes it */
+export const billOf = (r: Omit<LlmResult, "text" | "ms">) => ({
+  model: r.model, inputTokens: r.usage.input, outputTokens: r.usage.output, cacheReadTokens: r.usage.cacheRead,
+  costUsd: r.costUsd, provider: r.provider, requestId: r.id, fallbackFrom: r.fallbackFrom,
+});
 
 /**
  * Saves a usage row. Never throws: losing a row beats breaking the call.
@@ -53,7 +61,7 @@ async function writeUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Prom
       id: newId(), organizationId: ctx.organizationId, userId: ctx.userId ?? null,
       action: u.action, model: u.model, inputTokens: input, outputTokens: output, cacheReadTokens: cacheRead,
       units, costMicros: Math.round(cost * 1e6), costSource: real ? "real" : "estimated",
-      provider: u.provider ?? null, requestId: u.requestId ?? null,
+      provider: u.provider ?? null, requestId: u.requestId ?? null, fallbackFrom: u.fallbackFrom ?? null,
       ref: u.ref?.slice(0, 300) ?? null, createdAt: new Date(),
     });
   } catch (e) {

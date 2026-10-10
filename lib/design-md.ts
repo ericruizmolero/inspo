@@ -85,6 +85,7 @@ export interface GenerateResult {
   costUsd: number | null;
   ms: number;
   usage: { input: number; output: number; cacheRead: number; reasoning: number };
+  fallbackFrom: string | null;
 }
 
 export async function generateDesignMd(
@@ -118,6 +119,7 @@ export async function generateDesignMd(
     model: res.model,
     provider: res.provider,
     requestId: res.id,
+    fallbackFrom: res.fallbackFrom,
     costUsd: res.costUsd,
     ms: res.ms,
     usage: res.usage,

@@ -7,7 +7,7 @@ import "server-only";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
-import { llm, llmEnabled } from "./llm";
+import { llm, llmEnabled, type LlmResult } from "./llm";
 import { fetchSiteText, videoTitleWithin, type SiteText } from "./extract";
 import { getStoredPost, ensurePost, postThumb } from "./posts";
 import { readMediaFile } from "./media";
@@ -19,7 +19,7 @@ import { getFile, keyOf } from "./storage";
 import { paletteOf } from "./palette";
 import { imageMeta, metaLines, postMeta } from "./meta";
 import { mediaKindOf, normalizeWebUrl, postOf, webKeyOf } from "./url";
-import { recordUsage, type UsageCtx } from "./usage";
+import { billOf, recordUsage, type UsageCtx } from "./usage";
 import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoItem, InspoTags } from "@/types/inspo";
 import { log } from "./log";
@@ -199,16 +199,6 @@ async function tagsElsewhere(organizationId: string, web: string): Promise<Inspo
   return r?.tags ?? null;
 }
 
-/** Cheap models drop a call now and then (a provider error mid-answer): one more try before giving up */
-async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
-  try { return await fn(); }
-  catch (e) {
-    log.warn("tagger.retrying", { err: e });
-    await new Promise((r) => setTimeout(r, 1500));
-    return fn();
-  }
-}
-
 export interface TagInputs { image: Buffer | null; site: SiteText | null }
 
 /** What the model gets for an item: its picture (already sized for the model) and its words.
@@ -224,10 +214,10 @@ export async function inputsOf(web: string, { capture = true } = {}): Promise<Ta
 }
 
 /** One model call over prepared inputs. Returns the tags and the call's bill. */
-export async function tagWith(item: InspoItem, { image, site }: TagInputs, model = TAG_MODEL): Promise<{ tags: InspoTags; costUsd: number | null; ms: number; usage: { input: number; output: number; cacheRead: number }; provider: string | null; id: string | null; model: string }> {
+export async function tagWith(item: InspoItem, { image, site }: TagInputs, model = TAG_MODEL, fallback: string | null = TAG_FALLBACK_MODEL): Promise<{ tags: InspoTags } & LlmResult> {
   const [colours, res] = await Promise.all([
     image ? paletteOf(image).catch(() => null) : null,
-    withRetry(() => llm({ model, system: SYSTEM, text: promptText(item, site, !!image), image, schema: TagSchema, maxTokens: 1500 })),
+    llm({ model, system: SYSTEM, text: promptText(item, site, !!image), image, schema: TagSchema, maxTokens: 1500, fallback }),
   ]);
   const out = TagSchema.parse(JSON.parse(res.text)) as TagOutput;
   const uniq = (a: string[]) => [...new Set(a)];
@@ -250,7 +240,7 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, model
     at: new Date().toISOString(),
     v: TAXONOMY_VERSION,
   };
-  return { tags, costUsd: res.costUsd, ms: res.ms, usage: res.usage, provider: res.provider, id: res.id, model: res.model };
+  return { tags, ...res };
 }
 
 /** Tags one item. Throws when the model fails, so the item stays pending and is tried again. */
@@ -260,6 +250,6 @@ export async function tagItem(item: InspoItem, usage: UsageCtx, model = TAG_MODE
   const copy = await tagsElsewhere(usage.organizationId, item.web);
   if (copy) return copy;
   const r = await tagWith(item, await inputsOf(item.web), model);
-  void recordUsage(usage, { action: "auto_tag", model: r.model, inputTokens: r.usage.input, outputTokens: r.usage.output, cacheReadTokens: r.usage.cacheRead, costUsd: r.costUsd, provider: r.provider, requestId: r.id, ref: item.web });
+  void recordUsage(usage, { action: "auto_tag", ...billOf(r), ref: item.web });
   return r.tags;
 }

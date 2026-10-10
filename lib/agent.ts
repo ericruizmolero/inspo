@@ -13,7 +13,7 @@ import type { Ctx } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { llm, LlmError } from "./llm";
-import { recordUsage, type UsageCtx } from "./usage";
+import { billOf, recordUsage, type UsageCtx } from "./usage";
 import { addItem, deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
 import { nameFor } from "./item-name";
 import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
@@ -447,7 +447,7 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
-  void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `agent ${c.refs.length} refs` });
+  void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `agent ${c.refs.length} refs` });
   const plan = PlanSchema.parse(JSON.parse(res.text));
   const resolved = plan.actions.map((a) => resolveIn(c.codes, a)).filter((a): a is AgentAction => !!a).slice(0, 20);
   const now = resolved.filter((a) => !DANGEROUS.has(a.kind));

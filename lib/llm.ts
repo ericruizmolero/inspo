@@ -8,6 +8,9 @@ const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
 export const llmEnabled = () => !!process.env.OPENROUTER_API_KEY;
 
+/** Answers a call when its own model fails twice: another provider, so one outage does not take both */
+export const FALLBACK_MODEL = process.env.LLM_FALLBACK_MODEL || "anthropic/claude-haiku-5.5";
+
 export interface LlmInput {
   model: string;
   system: string;
@@ -20,6 +23,8 @@ export interface LlmInput {
   maxTokens: number;
   effort?: "low" | "medium" | "high";
   signal?: AbortSignal;
+  /** The model that answers when `model` fails. null: no fallback (an eval measures the model itself) */
+  fallback?: string | null;
 }
 
 export interface LlmResult {
@@ -31,24 +36,48 @@ export interface LlmResult {
   /** USD billed by OpenRouter. null means it did not come back: logged, never guessed. */
   costUsd: number | null;
   ms: number;
+  /** The model asked for when another one answered (FALLBACK_MODEL); null when the first choice did */
+  fallbackFrom: string | null;
 }
 
 export class LlmError extends Error {
-  /** `status`: the HTTP status when OpenRouter refused the call (429: rate limited) */
-  constructor(message: string, readonly finishReason: string | null = null, readonly raw = "", readonly status: number | null = null) { super(message); }
+  /** `status`: the HTTP status when OpenRouter refused the call (429: rate limited). `costUsd`: what an unfinished answer was billed */
+  constructor(message: string, readonly finishReason: string | null = null, readonly raw = "", readonly status: number | null = null, readonly costUsd = 0) { super(message); }
 }
 
-/** One call. A failure is stored (lib/log.ts) and thrown; a call the caller aborted is neither a failure nor stored */
+/** A provider hiccup (dropped connection, 429, 5xx) is worth the same model again; an unfinished answer is not */
+const dropped = (e: unknown) => e instanceof LlmError ? !e.finishReason && (e.status === null || e.status === 408 || e.status === 429 || e.status >= 500) : true;
+/** What another model may answer: anything but the account itself refused (bad key, no credit), which fails every model */
+const recoverable = (e: unknown) => !(e instanceof LlmError) || (e.status !== 401 && e.status !== 402);
+
+/**
+ * One call: the model, once more if the call was dropped, then the fallback model. Every failure is stored
+ * (lib/log.ts), recovered or not; a call the caller aborted is neither a failure nor stored. An unfinished
+ * answer is billed, so its cost is added to the one that answers.
+ */
 export async function llm(i: LlmInput): Promise<LlmResult> {
-  try {
-    return await call(i);
-  } catch (e) {
-    if (!i.signal?.aborted) void recordFailure("ai", i.model, e);
-    throw e;
+  const fallback = i.fallback === undefined ? FALLBACK_MODEL : i.fallback;
+  let wasted = 0;
+  let last: unknown;
+  for (const [n, model] of [i.model, i.model, fallback].entries()) {
+    if (!model || (n === 1 && !dropped(last)) || (n === 2 && model === i.model)) continue;
+    try {
+      const r = await call({ ...i, model });
+      return { ...r, costUsd: r.costUsd === null ? null : r.costUsd + wasted, fallbackFrom: n === 2 ? i.model : null };
+    } catch (e) {
+      if (i.signal?.aborted) throw e;
+      void recordFailure("ai", model, e);
+      if (!recoverable(e)) throw e;
+      if (e instanceof LlmError) wasted += e.costUsd;
+      log.warn("llm.attempt_failed", { model, attempt: n + 1, err: e });
+      last = e;
+      if (n === 0 && dropped(e)) await new Promise((r) => setTimeout(r, 1500));
+    }
   }
+  throw last;
 }
 
-async function call(i: LlmInput): Promise<LlmResult> {
+async function call(i: LlmInput): Promise<Omit<LlmResult, "fallbackFrom">> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY is not set");
 
@@ -94,7 +123,7 @@ async function call(i: LlmInput): Promise<LlmResult> {
     const u = json.usage;
     // Never the text itself: a model answer can quote what a person wrote
     log.error("llm.unfinished", { model: i.model, provider: json.provider, finish, chars: text.length, output: u?.completion_tokens, reasoning: u?.completion_tokens_details?.reasoning_tokens });
-    throw new LlmError(`${i.model} did not finish (finish_reason=${finish ?? "unknown"})`, finish, text);
+    throw new LlmError(`${i.model} did not finish (finish_reason=${finish ?? "unknown"})`, finish ?? "unknown", text, res.status, typeof u?.cost === "number" ? u.cost : 0);
   }
 
   const u = json.usage ?? {};

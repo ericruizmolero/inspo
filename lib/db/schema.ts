@@ -432,6 +432,8 @@ export const aiUsage = pgTable("ai_usage", {
   provider: text("provider"),
   /** OpenRouter call id, to match it against their log */
   requestId: text("request_id"),
+  /** The model the call asked for when it failed and FALLBACK_MODEL answered (lib/llm.ts); null when it answered itself */
+  fallbackFrom: text("fallback_from"),
   /** URL, query… whatever helps explain the row */
   ref: text("ref"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),

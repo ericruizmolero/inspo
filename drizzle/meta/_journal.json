@@ -218,6 +218,13 @@
       "when": 1791638720836,
       "tag": "0031_signup_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791639612547,
+      "tag": "0032_ai_usage_fallback_from",
+      "breakpoints": true
     }
   ]
 }
