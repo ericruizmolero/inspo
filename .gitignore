@@ -46,18 +46,10 @@ next-env.d.ts
 # Design references (local only)
 /refs/
 
-# Server-side hero screenshots (dev cache)
-/public/shots/
-
 # Working handoff files
 HANDOFF-*.md
 .data
 
-# DESIGN.md cache (dev)
-/public/design-md/
-public/design-why/
-/public/comments/
-/public/media/
 /public/posts/
 prod.env
 

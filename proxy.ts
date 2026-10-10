@@ -97,8 +97,8 @@ export const config = {
   // opengraph-image and twitter-image: WhatsApp and friends request the share card without a session
   // showcase/: the fixed images beside /login, shown signed out
   // logo.png: the header logo, on the signed-out home and /login too
-  // polish/: what Polish bundles (its optional track, the old tone covers), plain static files
+  // polish/: the tracks of Polish's sound control, plain static files
   // icon.png: the page's <link rel="icon"> points at it; favicon services (Google's, which Claude uses for the
   // connector's logo) fetch it with no session
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|thumbs/|design-md/|shots/|fonts/|directory/|showcase/|polish/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|directory/|showcase/|polish/).*)"],
 };
