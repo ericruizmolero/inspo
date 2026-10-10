@@ -267,6 +267,13 @@
       "when": 1791658438480,
       "tag": "0038_ai_usage_outlives_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791659848911,
+      "tag": "0039_stored_file",
+      "breakpoints": true
     }
   ]
 }

@@ -828,3 +828,15 @@ export const mcpGrant = pgTable("mcp_grant", {
   index("mcp_grant_user_idx").on(t.userId),
   index("mcp_grant_client_idx").on(t.clientId),
 ]);
+
+/** One file a workspace owns in storage (lib/storage.ts) and its size: storage used is their sum, which the plan
+ *  caps. Shared caches keyed by address (screenshots, page captures, posts) are nobody's and have no row.
+ *  putFile writes it, deleteFiles removes it, scripts/backfill-file-bytes.ts fills it for files older than it. */
+export const storedFile = pgTable("stored_file", {
+  key: text("key").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  bytes: bigint("bytes", { mode: "number" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  index("stored_file_org_idx").on(t.organizationId),
+]);
