@@ -4,7 +4,7 @@
 // /api/system/font: a site's fonts rarely carry CORS headers, and ours is the origin that asks.
 import { createHmac, timingSafeEqual } from "crypto";
 import { isPublicHttpUrl, BROWSER_UA } from "./extract";
-import { familyBase, familyKey } from "./font-names";
+import { familyBase, familyKey, NOT_TYPE } from "./font-names";
 import { safeFetch } from "./safe-fetch";
 
 export interface RefFace {
@@ -25,8 +25,6 @@ const CSS_MAX = 3 * 1024 * 1024;
 const MAX_SHEETS = 16;
 const MAX_FACES = 90;
 const TTL_MS = 6 * 60 * 60 * 1000;
-/** Icon and widget fonts are not the typography of a site */
-const NOT_TYPE = /icon|awesome|glyph|material symbols|material icons|swiper|slick|video-?js|katex|dashicons|icomoon|fontello|feather|remixicon|bootstrap-icons|lucide|emoji|webflow-icons|wf-icons|revicons|eicons|flexslider|photoswipe|plyr/i;
 
 // ─── Token ───────────────────────────────────────────────────────────────────
 // The font route fetches a URL it is handed: the signature proves this server found that URL in a
