@@ -61,6 +61,7 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 - Tras cambiar de rama o si la CSS parece vieja: `rm -rf .next`. Matar el dev server por puerto, nunca `pkill -f "next dev"`.
 - Commits con el estilo de la casa: una frase que describe lo que ahora hace la app ("A tab's × takes the ring's place instead of sitting on it"), en inglés, sin prefijos tipo `feat:`.
 - PRs: la fusión la hace una persona del equipo.
+- CI (`.github/workflows/ci.yml`), en cada PR y push a `main`, tres jobs: `types-and-build` (`next typegen`, `tsc --noEmit`, `npm run build` con valores falsos de Better Auth), `checks` (`check:design`, `check:design-system`, `check:usage`, `check:boards`) y `db-checks` (migraciones en un Postgres con pgvector vacío, luego `check:seats`, `check:locale`, `check:url-keys`, `check:notifications`, `check:postgres`). Sin claves de R2, modelos ni correo: un check que las pida no entra. Los jobs se vuelven obligatorios cuando un admin del repo (Eric) añade en GitHub una regla para `main` que los exija por nombre; renombrar un job rompe esa regla.
 
 ## Rendimiento
 
