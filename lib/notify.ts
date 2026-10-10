@@ -205,6 +205,23 @@ export async function teamEvents(organizationId: string, since: Date): Promise<T
   return out.sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
+/** When the newest event by someone else in teamEvents happened, as text ("" when there is none): the bell's
+ *  news in one query, which the open board asks every 15 s (lib/pulse.ts). It reads the same rows as teamEvents,
+ *  so a new kind of event goes in both. */
+export async function latestTeamEvent(organizationId: string, userId: string): Promise<string> {
+  const o = organizationId, u = userId;
+  const { rows } = await db.execute<{ at: string | null }>(sql`select greatest(
+    (select max(created_at) from inspo_item where organization_id = ${o} and created_by is distinct from ${u}),
+    (select max(created_at) from project where organization_id = ${o} and template is null and created_by is distinct from ${u}),
+    (select max(created_at) from inspo_comment where organization_id = ${o} and author_id is distinct from ${u} and btrim(body) <> ''),
+    (select max(created_at) from system_area_comment where organization_id = ${o} and author_id is distinct from ${u}),
+    (select max(created_at) from system_area_revision where organization_id = ${o} and source = 'team' and author_id is distinct from ${u}),
+    (select max(updated_at) from polish_vote where organization_id = ${o} and user_id is distinct from ${u}),
+    (select max(closed_at) from polish_vote where organization_id = ${o} and closed_by is distinct from ${u})
+  )::text as at`);
+  return rows[0]?.at ?? "";
+}
+
 /** A line as the bell and the digest show it: the words, where it goes, and the comment quoted */
 export interface ActivityLine { text: string; path: string; quote?: string; at: string; who: string; image: string | null; projectId: string | null }
 

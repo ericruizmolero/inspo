@@ -156,3 +156,43 @@ export interface PageShot {
   paths?: { topUrl: string; tileUrl: string; thumbUrl: string };
 }
 export type DesignIndex = Record<string, DesignIndexEntry>;
+
+// ─── The library, as the client mirrors it (lib/library.ts, lib/pulse.ts) ───
+/** References and what the board draws for each, keyed by address: a page of the library, or what changed */
+export interface ItemsBundle {
+  items: InspoItem[];
+  thumbnailMap: Record<string, string>;
+  tagMap: TagMap;
+  /** Items whose tagging job isn't done (lib/tag-jobs.ts) */
+  tagJobs: Record<string, TagStatus>;
+  /** Each site's stored full-page screenshot (lib/page-shots.ts) */
+  pageShots: Record<string, PageShot>;
+  designMdIndex: DesignIndex;
+}
+
+/** One page of the library, newest first, with the threads of its references. `cursor` asks for the next; null: the last */
+export interface ItemsPage extends ItemsBundle {
+  comments: CommentMap;
+  cursor: string | null;
+}
+
+/** The pulse's answer. Nothing changed: only `stamp` and `since`, the cursor to send next time */
+export interface Pulse {
+  stamp: string;
+  /** ISO: when the server read the stamp */
+  since: string;
+  /** The last look is older than the tombstones are kept: what was deleted meanwhile is unknown, the library loads again */
+  reload?: true;
+  /** References added or changed since, in the page's shape */
+  changed?: ItemsBundle;
+  /** Comments written or edited since */
+  comments?: InspoComment[];
+  /** Ids deleted since */
+  gone?: { items: string[]; comments: string[] };
+  /** Each of these whole, only when it changed */
+  projects?: Project[];
+  links?: ProjectLinks;
+  votes?: PolishVote[];
+  /** When the bell's newest news happened, only when it moved: the bell then reads its feed */
+  bell?: string;
+}

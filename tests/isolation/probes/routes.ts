@@ -59,11 +59,32 @@ export const routes: Record<string, Surface> = {
       expectNoSecret(fx, await own.text(), "B's library holds none of A's");
     },
   },
-  "route:app/api/library/changes/route.ts#GET": {
+  "route:app/api/library/page/route.ts#GET": {
     probe: async (fx) => {
-      const { GET } = await import("@/app/api/library/changes/route");
+      const { GET } = await import("@/app/api/library/page/route");
+      // A cursor past everything: the page after it starts from the newest reference
+      const top = Buffer.from(JSON.stringify(["9999-12-31", "9999-12-31 00:00:00+00", "~"])).toString("base64url");
       asB(fx);
-      await expectDenied(fx, await GET(request(`/api/library/changes?ws=${fx.a.team}`)), "B asks for A's changes");
+      await expectDenied(fx, await GET(request(`/api/library/page?ws=${fx.a.team}&cursor=${top}`)), "B asks for a page of A's library");
+      const own = await GET(request(`/api/library/page?ws=${fx.b.team}&cursor=${top}`));
+      expect(own.status, "B's own page loads").toBe(200);
+      expectNoSecret(fx, await own.text(), "B's page holds none of A's");
+      asB(fx, fx.a.team);
+      await expectDenied(fx, await GET(request(`/api/library/page?ws=${fx.a.team}&cursor=${top}`)), "a session naming A's team as active is still refused A's pages");
+    },
+  },
+  "route:app/api/pulse/route.ts#POST": {
+    probe: async (fx) => {
+      const { POST } = await import("@/app/api/pulse/route");
+      // A look from an hour ago: everything written since comes back
+      const ask = { stamp: "", since: new Date(Date.now() - 60 * 60 * 1000).toISOString(), bell: "x", beat: { segmentId: "a".repeat(24), visitId: "b".repeat(24), area: "board", path: "/" } };
+      asB(fx);
+      await expectDenied(fx, await POST(request("/api/pulse", { method: "POST", body: { ...ask, ws: fx.a.team } })), "B asks for A's changes");
+      const own = await POST(request("/api/pulse", { method: "POST", body: { ...ask, ws: fx.b.team } }));
+      expect(own.status, "B's own pulse answers").toBe(200);
+      expectNoSecret(fx, await own.text(), "B's changes carry none of A's");
+      asB(fx, fx.a.team);
+      await expectDenied(fx, await POST(request("/api/pulse", { method: "POST", body: { ...ask, ws: fx.a.team } })), "a session naming A's team as active is still refused A's changes");
     },
   },
   "route:app/api/tags/route.ts#GET": {

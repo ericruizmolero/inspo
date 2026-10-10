@@ -72,7 +72,11 @@ export const tagsOfRow = (r: Pick<Row, "tagsJson" | "tagsUser">): InspoTags | nu
 
 /** Items + thumbnail map + tag map + the tagging jobs not done, in a single query. With `webs`, only those. */
 export async function loadWorkspaceData(organizationId: string, webs?: string[]) {
-  const rows = await listRows(organizationId, webs);
+  return shapeRows(await listRows(organizationId, webs));
+}
+
+/** Rows as the client keeps them: the items, and by address their thumbnail, tags and tagging job */
+export function shapeRows(rows: Row[]) {
   const items = rows.map(rowToItem);
   const thumbnailMap: ThumbnailMap = {};
   const tagMap: TagMap = {};

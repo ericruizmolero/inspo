@@ -2,7 +2,7 @@
 
 // Switching workspace is instant: the other workspaces' libraries are loaded in the background once a
 // switch looks likely (the pointer on the workspace menu, the menu or ⌘K opening), so a switch only swaps
-// what is on screen. Never on a plain page view: each one is a whole library load on the server. The server is told afterwards (the session's active workspace), without
+// what is on screen. Each holds its first page: the rest arrives once it is the one shown (InspoClient). Never on a plain page view: each one is a whole library load on the server. The server is told afterwards (the session's active workspace), without
 // reloading the page; what the server sends on a later navigation takes over again.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -85,11 +85,10 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
       <ActiveWorkspace id={shown.workspace.id} />
       <InspoClient
         key={`${shown.workspace.id}:${round}`}
-        items={shown.items}
+        first={shown.first}
         stamp={shown.stamp}
-        initialThumbnailMap={shown.initialThumbnailMap}
-        initialTagMap={shown.initialTagMap}
-        initialTagJobs={shown.initialTagJobs}
+        since={shown.since}
+        bell={shown.bell}
         initialProjects={shown.initialProjects}
         initialProjectLinks={shown.initialProjectLinks}
         initialSystems={shown.initialSystems}
@@ -100,10 +99,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
         members={shown.members}
         isAdmin={shown.isAdmin}
         initialQuota={shown.initialQuota}
-        initialComments={shown.initialComments}
         initialPolishVotes={shown.initialPolishVotes}
-        initialDesignMdIndex={shown.initialDesignMdIndex}
-        initialPageShots={shown.initialPageShots}
       />
     </WorkspaceSwitchContext.Provider>
   );

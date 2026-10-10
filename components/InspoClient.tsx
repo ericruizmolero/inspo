@@ -10,10 +10,10 @@ import { setActiveWorkspace } from "./workspace-switch";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject } from "react";
-import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks, DesignIndex, DesignIndexEntry, PageShot, PolishVote, PolishChoice } from "@/types/inspo";
+import { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback, useDeferredValue, memo, type RefObject, type SetStateAction } from "react";
+import { InspoItem, TagMap, TagStatus, InspoTags, CommentMap, CommentAttachment, InspoComment, Project, ProjectLinks, DesignIndexEntry, PageShot, PolishVote, PolishChoice, type ItemsPage, type Pulse } from "@/types/inspo";
+import { applyPage, applyPulse, type Mirror } from "@/lib/library-mirror";
 import type { ThumbnailMap } from "@/lib/thumbnails";
-import type { LibraryData } from "@/lib/library";
 import { COLORS, viewOf, FACETS } from "@/lib/taxonomy";
 import { filtersFromParams, filterKey, LEGACY_PARAMS, filterTest, localScores, queryWords, rankText, isDescriptive, textIndex, vocabulary, norm, newestFirst, type Filter } from "@/lib/search-query";
 import Sidebar, { Icons, type QuotaView } from "./Sidebar";
@@ -114,7 +114,7 @@ async function compressImage(file: File, maxPx = 1400, quality = 0.85, type: "im
 const TAG_POLL_MS = 4000;
 const TAG_WATCH_MS = 5 * 60 * 1000;
 /** While the board is seen, it asks every 15 s whether its workspace changed somewhere else */
-const NEW_POLL_MS = 15_000;
+const PULSE_MS = 15_000;
 
 const DESKTOP_MIN = 801;
 /** Measured height/width of media whose page height the index doesn't give (images, og:images, video frames) */
@@ -150,11 +150,10 @@ const JEV_WAIT_MS = 700;
 const JEV_TOP = 20;
 
 export default function InspoClient({
-  items: initialItems,
+  first,
   stamp,
-  initialThumbnailMap = {},
-  initialTagMap = {},
-  initialTagJobs = {},
+  since,
+  bell,
   initialProjects = [],
   initialProjectLinks = {},
   initialSystems = {},
@@ -165,23 +164,18 @@ export default function InspoClient({
   members = [],
   isAdmin = false,
   initialQuota = null,
-  initialComments = {},
   initialPolishVotes = [],
-  initialDesignMdIndex = {},
-  initialPageShots = {},
 }: {
-  items: InspoItem[];
-  /** What the library looked like when the server read it (lib/library.ts libraryStamp) */
+  /** The library's newest page; the rest is asked for as soon as the board is up (lib/library.ts loadPage) */
+  first: ItemsPage;
+  /** What the library looked like when the server read it, and when (lib/library.ts readStamp): the pulse's cursor */
   stamp: string;
+  since: string;
+  /** The bell's newest news when the library was read (lib/notify.ts latestTeamEvent) */
+  bell: string;
   initialQuota?: QuotaView | null;
-  initialComments?: CommentMap;
   /** Every polish vote of the workspace's projects (lib/polish-votes.ts) */
   initialPolishVotes?: PolishVote[];
-  initialDesignMdIndex?: DesignIndex;
-  initialThumbnailMap?: ThumbnailMap;
-  initialTagMap?: TagMap;
-  /** Items whose tagging job isn't done (lib/tag-jobs.ts) */
-  initialTagJobs?: Record<string, TagStatus>;
   initialProjects?: Project[];
   initialProjectLinks?: ProjectLinks;
   /** Each project's system, by project id (lib/system.ts) */
@@ -193,11 +187,23 @@ export default function InspoClient({
   members?: { id: string; name: string; image: string | null }[];
   /** Can see the activity panel (/admin) */
   isAdmin?: boolean;
-  /** Each site's stored full-page screenshot (lib/page-shots.ts): what the board draws */
-  initialPageShots?: Record<string, PageShot>;
 }) {
   const { t, locale } = useT();
-  const [items, setItems] = useState(initialItems);
+  // The library's references and what the board draws for each, in one state: a page or the pulse's changes fold in
+  // all at once (lib/library-mirror.ts). Each part keeps its own name and setter
+  const [mirror, setMirror] = useState<Mirror>(() => ({
+    items: first.items, thumbnailMap: first.thumbnailMap, tagMap: first.tagMap, tagJobs: first.tagJobs,
+    pageShots: first.pageShots, designMdIndex: first.designMdIndex, comments: first.comments,
+  }));
+  const { items, thumbnailMap: thumbMap, tagMap, tagJobs, pageShots, designMdIndex, comments: commentMap } = mirror;
+  const setters = useMemo(() => {
+    const part = <K extends keyof Mirror>(k: K) => (up: SetStateAction<Mirror[K]>) => setMirror((m) => {
+      const v = typeof up === "function" ? (up as (prev: Mirror[K]) => Mirror[K])(m[k]) : up;
+      return Object.is(v, m[k]) ? m : { ...m, [k]: v };
+    });
+    return { items: part("items"), thumbMap: part("thumbnailMap"), tagMap: part("tagMap"), tagJobs: part("tagJobs"), pageShots: part("pageShots"), commentMap: part("comments") };
+  }, []);
+  const { items: setItems, thumbMap: setThumbMap, tagMap: setTagMap, tagJobs: setTagJobs, pageShots: setPageShots, commentMap: setCommentMap } = setters;
   // The search lives in the URL (?f=person:Eric&f=tag:c:blue&q=serif): a search can be shared and Back
   // undoes a chip. Older links (?type= ?author= ?tags=…) are read as chips. history.pushState/replaceState
   // sync with useSearchParams without a navigation.
@@ -373,15 +379,12 @@ export default function InspoClient({
     : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))
     : items.filter((i) => !!i.id && !!links[i.id]?.includes(space)),
   [items, links, space]);
-  const [thumbMap, setThumbMap] = useState<ThumbnailMap>(initialThumbnailMap);
 
   // ─── Tags ───────────────────────────────────────────────────────────────────
-  const [tagMap, setTagMap] = useState<TagMap>(initialTagMap);
 
   // ─── Tags: one job per item, on the server ──────────────────────────────────
   // Every add starts its item's job (lib/tag-jobs.ts), whatever the tab does next. Here: which items are
   // still gathering, and asking how they go for the ones added or retried in this tab.
-  const [tagJobs, setTagJobs] = useState<Record<string, TagStatus>>(initialTagJobs);
   const [watching, setWatching] = useState<Record<string, number>>({}); // web → when it started
   const watch = useCallback((web: string) => {
     setTagJobs((prev) => ({ ...prev, [web]: "pending" }));
@@ -414,54 +417,77 @@ export default function InspoClient({
 
   // ─── Changed somewhere else ─────────────────────────────────────────────────
   // The extension, another tab or a teammate: what they add, delete, edit or file shows up here without a
-  // reload. The board asks when it comes back into view and every 15 s while it is seen; a hidden tab asks
-  // nothing. Nothing changed: a few bytes. Something did: the whole library, taken in where it stands.
+  // reload. The board asks (/api/pulse) when it comes back into view and every 15 s while it is seen; a hidden tab
+  // asks nothing. Nothing changed: a few bytes. Something did: those rows only, folded in where they stand.
   const itemsRef = useRef(items);
   itemsRef.current = items;
-  const stampRef = useRef(stamp);
+  const lookRef = useRef({ stamp, since, bell });
+  /** What this tab learned was deleted: a page read before the delete must not bring it back */
+  const goneRef = useRef({ items: new Set<string>(), comments: new Set<string>() });
   useEffect(() => {
-    let busy = false, last = 0;
+    let busy = false;
     const look = async () => {
-      if (busy || document.visibilityState !== "visible" || Date.now() - last < 2000) return;
+      if (busy || document.visibilityState !== "visible") return;
       // A save of this tab is on its way: its card swaps in on its own, so the next look waits for it
       if (itemsRef.current.some((i) => !i.id)) return;
-      busy = true; last = Date.now();
+      busy = true;
       try {
-        const res = await fetch(`/api/library/changes?ws=${encodeURIComponent(workspace.id)}&stamp=${encodeURIComponent(stampRef.current)}`);
+        const res = await fetch("/api/pulse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ws: workspace.id, ...lookRef.current }) });
         if (!res.ok) return;
-        const d = (await res.json()) as Partial<LibraryData> & { stamp: string };
-        stampRef.current = d.stamp;
-        // Same stamp, or a save of this tab started while the answer was on its way
-        if (!d.items || itemsRef.current.some((i) => !i.id)) return;
+        const d = (await res.json()) as Pulse;
+        // Away longer than deletions are remembered (lib/pulse.ts TOMBSTONE_DAYS): only a fresh library is sure
+        if (d.reload) { window.location.reload(); return; }
+        // A save of this tab started while the answer was on its way: the next look asks again from the same point
+        if (itemsRef.current.some((i) => !i.id)) return;
+        lookRef.current = { stamp: d.stamp, since: d.since, bell: d.bell ?? lookRef.current.bell };
+        for (const id of d.gone?.items ?? []) goneRef.current.items.add(id);
+        for (const id of d.gone?.comments ?? []) goneRef.current.comments.add(id);
         const known = new Set(itemsRef.current.map((i) => i.id));
-        // keepSame (lib/keep-same.ts): only what changed is new, so only its cards render again
-        const fresh = d.items;
-        setItems((prev) => keepSame(prev, fresh));
-        setProjects((prev) => keepSame(prev, d.initialProjects ?? []));
-        setLinks((prev) => keepSame(prev, d.initialProjectLinks ?? {}));
-        setVotes((prev) => keepSame(prev, withVoteWrites.current(d.initialPolishVotes ?? [])));
-        // Merged: what this tab fetched on its own (a post's picture, a capture) stays until the server has it too
-        setThumbMap((prev) => keepSame(prev, { ...prev, ...d.initialThumbnailMap }));
-        setTagMap((prev) => keepSame(prev, { ...prev, ...d.initialTagMap }));
-        setPageShots((prev) => keepSame(prev, { ...prev, ...d.initialPageShots }));
-        setTagJobs((prev) => keepSame(prev, d.initialTagJobs ?? {}));
+        setMirror((m) => applyPulse(m, d));
+        if (d.projects) { const next = d.projects; setProjects((prev) => keepSame(prev, next)); }
+        if (d.links) { const next = d.links; setLinks((prev) => keepSame(prev, next)); }
+        if (d.votes) { const next = d.votes; setVotes((prev) => keepSame(prev, withVoteWrites.current(next))); }
         // A new card whose tags are still on their way fills in as soon as they arrive, not on the next look
-        for (const i of d.items) {
-          const job = d.initialTagJobs?.[i.web];
+        for (const i of d.changed?.items ?? []) {
+          const job = d.changed?.tagJobs[i.web];
           if (!known.has(i.id) && (job === "pending" || job === "running")) watch(i.web);
         }
       } catch { /* the next look catches up */ }
       finally { busy = false; }
     };
-    const id = setInterval(look, NEW_POLL_MS);
+    const id = setInterval(look, PULSE_MS);
     document.addEventListener("visibilitychange", look);
-    window.addEventListener("focus", look);
     return () => {
       clearInterval(id);
       document.removeEventListener("visibilitychange", look);
-      window.removeEventListener("focus", look);
     };
   }, [workspace.id, watch]);
+
+  // The rest of the library, a page after another as soon as the board is up. Search, chips, the Inbox and the
+  // boards filter what is here in memory, so they need every reference: the pages are not waiting for a scroll
+  const [filling, setFilling] = useState(!!first.cursor);
+  useEffect(() => {
+    let cursor = first.cursor, alive = true, tries = 0;
+    if (!cursor) return;
+    void (async () => {
+      while (cursor && alive) {
+        try {
+          const res = await fetch(`/api/library/page?ws=${encodeURIComponent(workspace.id)}&cursor=${encodeURIComponent(cursor)}`);
+          if (!res.ok) throw new Error(String(res.status));
+          const page = (await res.json()) as ItemsPage;
+          if (!alive) return;
+          setMirror((m) => applyPage(m, page, goneRef.current));
+          cursor = page.cursor; tries = 0;
+        } catch {
+          // A page that keeps failing leaves the library where it got to; a reload starts over
+          if (++tries >= 3) break;
+          await new Promise((r) => setTimeout(r, 2000 * tries));
+        }
+      }
+      if (alive) setFilling(false);
+    })();
+    return () => { alive = false; };
+  }, [first.cursor, workspace.id]);
 
   const [showAdd, setShowAdd] = useState(false);
   // What was pasted or dropped on the board: the add dialog opens with it in place
@@ -901,7 +927,6 @@ export default function InspoClient({
   }, []);
 
   // ─── Comments ──────────────────────────────────────────────────────────────
-  const [commentMap, setCommentMap] = useState<CommentMap>(initialComments);
   const loadComments = useCallback(async () => {
     try {
       const res = await fetch("/api/comments");
@@ -937,9 +962,6 @@ export default function InspoClient({
     const r = await removeComment(id).catch(() => null);
     if (r?.ok) setCommentMap((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? []).filter((c) => c.id !== id && c.parentId !== id) }));
   };
-  // The DESIGN.md made before they stopped being made: their covers still draw the cards
-  const [designMdIndex] = useState<DesignIndex>(initialDesignMdIndex);
-  const [pageShots, setPageShots] = useState<Record<string, PageShot>>(initialPageShots);
 
   // Any workspace member can change thumbnails; the server checks the session.
   const handleThumbnailUpload = async (webUrl: string, file: File) => {
@@ -1024,6 +1046,7 @@ export default function InspoClient({
   // The path decides what is open: Back or Forward move between the library and a reference,
   // and a shared /i/<id> link opens that reference when the library loads
   const pathname = usePathname();
+  const awaitedRef = useRef<string | null>(null);
   useEffect(() => {
     const id = pathname.match(/^\/i\/([^/]+)/)?.[1];
     if (!id) {
@@ -1033,14 +1056,29 @@ export default function InspoClient({
     if (panelItemRef.current?.id === id) return;
     const item = items.find((i) => i.id === id);
     if (item) { openItem(item); return; }
-    // Not in this workspace: if it is in another one of mine, switch to it; the library remounts and opens it
+    // Its page may still be on its way: it opens when it arrives (below)
+    if (filling) { awaitedRef.current = id; return; }
+    lookElsewhere(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
+  }, [pathname]);
+  useEffect(() => {
+    const id = awaitedRef.current;
+    if (!id) return;
+    const item = items.find((i) => i.id === id);
+    if (!item && filling) return;
+    awaitedRef.current = null;
+    if (window.location.pathname !== `/i/${id}`) return;
+    if (item) openItem(item); else lookElsewhere(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs as the pages arrive
+  }, [items, filling]);
+  /** Not in this workspace: if it is in another one of mine, switch to it; the library remounts and opens it */
+  function lookElsewhere(id: string) {
     workspaceOfItem(id).then(async (r) => {
       if (!r.ok || !r.data || r.data === workspace.id) return;
       await setActiveWorkspace(r.data);
       router.refresh();
     }).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
-  }, [pathname]);
+  }
 
   // "Who": only workspace members who added something. Legacy sheet labels
   // ("Both" = no known author) aren't offered as a filter; those sites stay under "all".

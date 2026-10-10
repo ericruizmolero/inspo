@@ -1,6 +1,6 @@
 // Comments per inspo, always scoped to a workspace. A comment is about the whole reference and can have
 // replies, one level deep.
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { newId } from "./items";
 import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-files";
@@ -46,13 +46,30 @@ function cleanAttachments(organizationId: string, input: unknown): CommentAttach
   return out;
 }
 
-/** All workspace comments grouped by item (small volume, one query). */
+/** All workspace comments grouped by item: the shared view of a whole workspace (lib/share-view.ts) */
 export async function listComments(organizationId: string): Promise<CommentMap> {
   const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
     .where(eq(C.organizationId, organizationId)).orderBy(asc(C.createdAt));
   const map: CommentMap = {};
   for (const r of rows) (map[r.itemId] ??= []).push(toComment(r));
   return map;
+}
+
+/** The threads of these items, grouped by item: what the library sends with each page of references */
+export async function listCommentsOf(organizationId: string, itemIds: string[]): Promise<CommentMap> {
+  if (!itemIds.length) return {};
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+    .where(and(eq(C.organizationId, organizationId), inArray(C.itemId, itemIds))).orderBy(asc(C.createdAt));
+  const map: CommentMap = {};
+  for (const r of rows) (map[r.itemId] ??= []).push(toComment(r));
+  return map;
+}
+
+/** Comments written or edited after `after`, oldest first (lib/pulse.ts) */
+export async function commentsSince(organizationId: string, after: Date): Promise<InspoComment[]> {
+  const rows = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+    .where(and(eq(C.organizationId, organizationId), sql`coalesce(${C.editedAt}, ${C.createdAt}) > ${after}`)).orderBy(asc(C.createdAt));
+  return rows.map(toComment);
 }
 
 /** The thread of one item, oldest first. */
