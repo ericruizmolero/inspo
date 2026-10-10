@@ -99,7 +99,7 @@ FREE TEXT (always in English: it feeds search, whatever the page's language)
 - VISUAL: 40 to 60 words of plain prose on what the page looks like: colours, type, imagery, layout, mood.
 
 AREAS: what the reference shows for each area of a design system
-For each area it clearly shows, 1 or 2 keys from that area's list only, and EVIDENCE: at most 20 English words naming what is visible (the font's look or its name from the CSS, colours as hex or names, sizes, a few of its words). Skip an area you cannot see: no entry beats a guess. Usually 3 to 6 areas.
+For each area it clearly shows, 1 key from that area's list, and a second only when it is as plain to see as the first. Each key must agree with your own evidence: a serif key only when you see serifs, a motion key only when the picture shows it. EVIDENCE: at most 20 English words naming what is visible (the font's name from the CSS or its look, colours as hex or names, sizes, a few of its words); never repeat the key's description. Skip an area you cannot see: no entry beats a guess. Usually 3 to 6 areas.
 ${SYSTEM_AREAS.map((a) => `${a.toUpperCase()}:\n${list(SIGNALS[a])}`).join("\n")}`;
 
 // ─── Inputs ──────────────────────────────────────────────────────────────────

@@ -59,7 +59,7 @@ export const taxonomy: typeof EnTaxonomy = {
     dense: "Denso", airy: "Aireado", "long-scroll": "Scroll largo", sidebar: "Barra lateral",
   },
   signal: {
-    "display-serif-high-contrast": "Serif de display de alto contraste", "serif-text": "Serif de lectura", "geometric-sans": "Sans geométrica",
+    "serif-display": "Serif de display", "serif-text": "Serif de lectura", "geometric-sans": "Sans geométrica",
     "grotesk-neutral": "Grotesca neutra", "humanist-sans": "Sans humanista", "condensed-display": "Display condensada",
     "mono-accents": "Acentos en mono", "oversized-headlines": "Titulares enormes", "quiet-small-type": "Tipo pequeño y tranquilo",
     "single-family": "Una sola familia", "serif-sans-pair": "Pareja serif y sans", "script-lettering": "Caligrafía o lettering", "caps-labels": "Etiquetas en mayúsculas",

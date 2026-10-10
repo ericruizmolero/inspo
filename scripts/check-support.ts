@@ -9,11 +9,11 @@ import en from "../lib/i18n/en";
 
 const refs = Array.from({ length: 40 }, (_, i) => ({
   code: `r${i + 1}`,
-  signals: (i < 12 ? { typography: ["geometric-sans"], color: ["dark-one-accent"] } : i < 15 ? { typography: ["display-serif-high-contrast"] } : {}) as Partial<Record<SystemArea, string[]>>,
+  signals: (i < 12 ? { typography: ["geometric-sans"], color: ["dark-one-accent"] } : i < 15 ? { typography: ["serif-display"] } : {}) as Partial<Record<SystemArea, string[]>>,
 }));
 const tally = signalTally(refs);
 assert.equal(tally.of, 40);
-assert.deepEqual(tally.areas.typography?.map((x) => [x.signal, x.refs.length]), [["geometric-sans", 12], ["display-serif-high-contrast", 3]]);
+assert.deepEqual(tally.areas.typography?.map((x) => [x.signal, x.refs.length]), [["geometric-sans", 12], ["serif-display", 3]]);
 assert.equal(tally.areas.layout, undefined, "an area no reference shows is not in the tally");
 
 const idOf = new Map(refs.map((r, i) => [r.code, `item${i + 1}`]));

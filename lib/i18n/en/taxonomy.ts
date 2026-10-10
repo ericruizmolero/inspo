@@ -63,7 +63,7 @@ export const taxonomy = {
     dense: "Dense", airy: "Airy", "long-scroll": "Long scroll", sidebar: "Sidebar",
   },
   signal: {
-    "display-serif-high-contrast": "High-contrast display serif", "serif-text": "Serif for reading", "geometric-sans": "Geometric sans",
+    "serif-display": "Display serif", "serif-text": "Serif for reading", "geometric-sans": "Geometric sans",
     "grotesk-neutral": "Neutral grotesque", "humanist-sans": "Humanist sans", "condensed-display": "Condensed display",
     "mono-accents": "Mono accents", "oversized-headlines": "Oversized headlines", "quiet-small-type": "Small, quiet type",
     "single-family": "One family", "serif-sans-pair": "Serif and sans pair", "script-lettering": "Script or lettering", "caps-labels": "All-caps labels",

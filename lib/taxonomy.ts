@@ -158,7 +158,7 @@ export const LAYOUT: Term[] = [
 
 export const SIGNALS: Record<SystemArea, Term[]> = {
   typography: [
-    { key: "display-serif-high-contrast", description: "Headlines in a high-contrast display serif" },
+    { key: "serif-display", description: "Headlines in a display serif: letters with serifs, often thick and thin strokes (Didone, Tiempos-like)" },
     { key: "serif-text", description: "A serif for body or reading text" },
     { key: "geometric-sans", description: "Geometric sans: round o, even strokes (Futura-like)" },
     { key: "grotesk-neutral", description: "Neutral grotesque sans (Helvetica, Inter-like) as the main voice" },
