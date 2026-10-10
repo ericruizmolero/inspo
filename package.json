@@ -38,6 +38,8 @@
     "check:notifications": "tsx --conditions=react-server scripts/check-notifications.ts",
     "bench:library": "tsx --conditions=react-server scripts/bench-library.ts",
     "check:jobs": "tsx --conditions=react-server scripts/check-jobs.ts",
+    "check:workspace-delete": "tsx --conditions=react-server scripts/check-workspace-delete.ts",
+    "workspace:delete": "tsx --conditions=react-server scripts/delete-workspace.ts",
     "takedown": "tsx --conditions=react-server scripts/takedown.ts",
     "seed:dump": "tsx --conditions=react-server scripts/seed.ts dump",
     "db:init": "tsx --conditions=react-server scripts/seed.ts init",
