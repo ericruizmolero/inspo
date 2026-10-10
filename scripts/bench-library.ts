@@ -94,6 +94,8 @@ async function main() {
     await plan("pulse (changed items)", sql`select id from inspo_item where organization_id = ${ws.id} and updated_at > now() - interval '20 seconds'`);
     await plan("search quota", sql`select count(distinct lower(trim(ref))) from ai_usage where organization_id = ${ws.id} and action = 'jev_search' and created_at >= date_trunc('month', now())`);
   } finally {
+    // Spend outlives its workspace (migration 0038): dropped first, while it still names the bench's
+    await db.execute(sql`delete from ai_usage where organization_id like ${`${tag}-%`}`);
     await db.execute(sql`delete from organization where id like ${`${tag}-%`}`);
     await db.execute(sql`delete from "user" where id = ${user.id}`);
     await db.execute(sql`delete from library_tombstone where organization_id like ${`${tag}-%`}`);

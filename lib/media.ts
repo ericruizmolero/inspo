@@ -43,7 +43,7 @@ export const importedMediaUrls = (organizationId: string, page: string) =>
 
 export async function uploadMediaFile(organizationId: string, file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
-  return putFile(newMediaKey(organizationId, file.type), buffer, file.type);
+  return putFile(newMediaKey(organizationId, file.type), buffer, file.type, organizationId);
 }
 
 /** Delete an uploaded image or a copied video without failing: an orphan file blocks nothing. */

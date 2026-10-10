@@ -487,10 +487,15 @@ export const libraryTombstone = pgTable("library_tombstone", {
 // ─── AI usage ────────────────────────────────────────────────────────────────
 // One row per model call (Claude or Jev), with its estimated cost in USD
 // at the rate current when written (lib/usage.ts). The basis for SaaS pricing.
+// Deleting a workspace keeps its rows for the accounts: organization_id goes null and organization_name
+// keeps the name, written by a BEFORE DELETE trigger on organization (migration 0038), whatever path deletes it.
 
 export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
-  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** Null once the workspace is deleted */
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+  /** The workspace's name when it was deleted; null while it exists (its name is in organization) */
+  organizationName: text("organization_name"),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
   /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish | auto_tag | query_en | embed | system */
   action: text("action").notNull(),
@@ -822,4 +827,16 @@ export const mcpGrant = pgTable("mcp_grant", {
   index("mcp_grant_prev_refresh_idx").on(t.prevRefreshHash),
   index("mcp_grant_user_idx").on(t.userId),
   index("mcp_grant_client_idx").on(t.clientId),
+]);
+
+/** One file a workspace owns in storage (lib/storage.ts) and its size: storage used is their sum, which the plan
+ *  caps. Shared caches keyed by address (screenshots, page captures, posts) are nobody's and have no row.
+ *  putFile writes it, deleteFiles removes it, scripts/backfill-file-bytes.ts fills it for files older than it. */
+export const storedFile = pgTable("stored_file", {
+  key: text("key").primaryKey(),
+  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  bytes: bigint("bytes", { mode: "number" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  index("stored_file_org_idx").on(t.organizationId),
 ]);

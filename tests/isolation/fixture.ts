@@ -145,9 +145,12 @@ export async function cleanup(tag: string) {
   if (ids.length) {
     const spaces = await db.select({ id: schema.member.organizationId }).from(schema.member).where(inArray(schema.member.userId, ids));
     const orgs = [...new Set(spaces.map((s) => s.id))];
+    // AI spend outlives its workspace (migration 0038): dropped while it still names the run's
+    if (orgs.length) await db.delete(schema.aiUsage).where(inArray(schema.aiUsage.organizationId, orgs));
     if (orgs.length) await db.delete(schema.organization).where(inArray(schema.organization.id, orgs));
     await db.delete(schema.user).where(inArray(schema.user.id, ids));
   }
+  await db.delete(schema.aiUsage).where(like(schema.aiUsage.organizationId, `${tag}%`));
   await db.delete(schema.organization).where(like(schema.organization.id, `${tag}%`));
   // What the deletes above left behind (migration 0036's triggers)
   await db.delete(schema.libraryTombstone).where(like(schema.libraryTombstone.organizationId, `${tag}%`));

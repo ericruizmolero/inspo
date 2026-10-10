@@ -1,6 +1,7 @@
 // Files that hang off items: the manual thumbnail and the screenshots attached to comments.
 // The database cascades delete the rows, but storage knows nothing about them, so whoever
-// deletes items or a workspace collects the file URLs first and drops them afterwards.
+// deletes items collects the file URLs first and drops them afterwards. A whole workspace goes by
+// storage prefix instead (lib/workspace-delete.ts).
 import "server-only";
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
@@ -10,16 +11,16 @@ import { log } from "./log";
 
 export interface ItemFiles { thumbnails: string[]; attachments: string[] }
 
-/** File URLs of these items (all the workspace's items when `itemIds` is omitted). */
-export async function collectItemFiles(organizationId: string, itemIds?: string[]): Promise<ItemFiles> {
+/** File URLs of these items */
+export async function collectItemFiles(organizationId: string, itemIds: string[]): Promise<ItemFiles> {
   const T = schema.inspoItem, C = schema.inspoComment;
-  if (itemIds && !itemIds.length) return { thumbnails: [], attachments: [] };
+  if (!itemIds.length) return { thumbnails: [], attachments: [] };
   const [thumbs, comments] = await Promise.all([
     db.select({ url: T.thumbnailUrl }).from(T).where(and(
-      eq(T.organizationId, organizationId), isNotNull(T.thumbnailUrl), itemIds ? inArray(T.id, itemIds) : undefined,
+      eq(T.organizationId, organizationId), isNotNull(T.thumbnailUrl), inArray(T.id, itemIds),
     )),
     db.select({ attachments: C.attachments }).from(C).where(and(
-      eq(C.organizationId, organizationId), itemIds ? inArray(C.itemId, itemIds) : undefined,
+      eq(C.organizationId, organizationId), inArray(C.itemId, itemIds),
     )),
   ]);
   return {

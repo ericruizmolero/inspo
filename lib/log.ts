@@ -75,7 +75,8 @@ export function recordFailure(kind: FailureKind, what: string, err: unknown, ext
     await db.insert(schema.failure).values({
       id: newId(), kind, what: what.slice(0, 200), message: error, stack: stack ?? null,
       requestId: req.requestId ?? null,
-      userId: who.userId ?? req.userId ?? null, organizationId: who.organizationId ?? req.organizationId ?? null,
+      // An explicit null organizationId means none: a deleted workspace's id would fail the foreign key
+      userId: who.userId ?? req.userId ?? null, organizationId: "organizationId" in who ? who.organizationId ?? null : req.organizationId ?? null,
       ref: ref ? redact(ref).slice(0, 300) : (req.route ?? null), createdAt: new Date(),
     });
   })().catch((e) => write("warn", "failure.not_stored", { kind, what, ...errorFields(e) }));

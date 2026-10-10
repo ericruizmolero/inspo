@@ -47,10 +47,17 @@ const invite = (cookie: string, orgId: string, email: string) =>
 const accept = (cookie: string, invitationId: string) =>
   post("/api/auth/organization/accept-invitation", cookie, { invitationId });
 
-let orgId = "";
+let orgId = "", paidId = "";
 
 async function main() {
   const owner = await login(mail("owner"));
+  // One free workspace each: with only free ones, a new team is refused, with a paid one it is allowed
+  const refused = await post("/api/auth/organization/create", owner, { name: TAG, slug: TAG });
+  assert.equal(refused.status, 403, `a second free workspace was created: ${JSON.stringify(refused.body)}`);
+  const [me] = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, mail("owner")));
+  paidId = newId();
+  await db.insert(schema.organization).values({ id: paidId, name: `${TAG}-paid`, slug: `${TAG}-paid`, createdAt: new Date(), kind: "team", plan: "studio" });
+  await db.insert(schema.member).values({ id: newId(), organizationId: paidId, userId: me.id, role: "owner", createdAt: new Date() });
   const created = await post("/api/auth/organization/create", owner, { name: TAG, slug: TAG });
   orgId = created.body.id as string;
   assert.ok(orgId, `team was not created: ${JSON.stringify(created.body)}`);
@@ -106,6 +113,6 @@ async function main() {
 main()
   .catch((e) => { console.error("✗", e instanceof Error ? e.message : e); process.exitCode = 1; })
   .finally(async () => {
-    if (orgId) await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
+    for (const id of [orgId, paidId]) if (id) await db.delete(schema.organization).where(eq(schema.organization.id, id));
     await db.delete(schema.user).where(inArray(schema.user.email, PEOPLE.map(mail)));
   });

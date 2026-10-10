@@ -18,7 +18,7 @@ export async function uploadCommentFile(organizationId: string, file: File): Pro
   const buffer = Buffer.from(await file.arrayBuffer());
   const ext = ({ "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" } as Record<string, string>)[file.type] ?? "jpg";
   const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  return putFile(`${commentPrefix(organizationId)}${name}`, buffer, file.type);
+  return putFile(`${commentPrefix(organizationId)}${name}`, buffer, file.type, organizationId);
 }
 
 /** Delete without failing: orphan attachments block nothing. */

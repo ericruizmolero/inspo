@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { deleteTeam } from "@/app/actions/workspace";
 import { fileToSquareDataURL } from "@/lib/image-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { useT, messageOf } from "@/components/I18nProvider";
@@ -29,6 +30,7 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
       <div className="page__body">
         <SettingsWindow title={t.settings.personalSpace} note={t.settings.personalSpaceHint}
           actions={<Link className="cr-btn cr-btn-secondary cr-btn-s" href="/settings/account">{t.settings.goToAccount}</Link>} />
+        <ExportData workspace={workspace} />
         <Spaces workspace={workspace} workspaces={workspaces} me={me} />
       </div>
     );
@@ -94,8 +96,22 @@ export default function WorkspacePanel({ workspace, workspaces, me, canManage }:
         </FieldRow>
       </SettingsWindow>
 
+      <ExportData workspace={workspace} />
       <Spaces workspace={workspace} workspaces={workspaces} me={me} />
     </div>
+  );
+}
+
+/** The open space as one JSON file (app/api/workspace/export). Members see why the button does nothing for them */
+function ExportData({ workspace }: { workspace: Workspace }) {
+  const { t } = useT();
+  const owner = workspace.role === "owner";
+  return (
+    <SettingsWindow title={t.settings.exportData} description={t.settings.exportDataHint(workspace.name)}
+      note={!owner ? t.settings.exportDataOwner : undefined}
+      actions={owner
+        ? <a className="cr-btn cr-btn-secondary cr-btn-s" href={`/api/workspace/export?id=${encodeURIComponent(workspace.id)}`} download>{t.settings.exportDataAction}</a>
+        : <Button size="s" disabled>{t.settings.exportDataAction}</Button>} />
   );
 }
 
@@ -121,9 +137,9 @@ function Spaces({ workspace, workspaces, me }: { workspace: Workspace; workspace
   const remove = async (w: Workspace) => {
     if (!(await confirm({ title: t.settings.deleteSpaceConfirm(w.name), description: t.settings.deleteSpaceHint, action: t.settings.deleteSpaceAction, danger: true, typed: w.name }))) return;
     setBusy(true); setError("");
-    const { error: err } = await authClient.organization.delete({ organizationId: w.id });
+    const res = await deleteTeam(w.id).catch(() => null);
     setBusy(false);
-    if (err) { setError(err.message ?? t.settings.deleteSpaceFailed); return; }
+    if (!res?.ok) { setError(res?.error ?? t.settings.deleteSpaceFailed); return; }
     after(w.id);
   };
 

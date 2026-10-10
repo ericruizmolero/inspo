@@ -110,12 +110,10 @@ async function main() {
     const slots = daySlots(2, off);
     assert.deepEqual(rows.map((r) => [Number(r.day), r.n]), [[slots[0].day, 1], [slots[1].day, 2]], "yesterday 1, today 2");
   } finally {
-    // Also checks the cascade from a workspace: this removes the usage rows
+    await db.delete(schema.aiUsage).where(eq(schema.aiUsage.organizationId, orgId));
     await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
     await db.delete(schema.user).where(eq(schema.user.id, userId));
   }
-  const [orphans] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.aiUsage).where(eq(schema.aiUsage.organizationId, orgId));
-  assert.equal(orphans.n, 0, "workspace delete cascades");
   console.log("check:postgres ok");
 }
 

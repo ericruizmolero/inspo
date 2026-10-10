@@ -3,7 +3,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "../db";
 import { HttpError } from "../workspace-core";
-import { getErrors } from "../i18n";
+import { getErrors, getT } from "../i18n";
 import type { OutputLanguage } from "../output-language";
 import { llm, LlmError } from "../llm";
 import { prompt } from "../prompts";
@@ -14,6 +14,7 @@ import { rowToItem } from "../items";
 import { billOf, recordUsage, type UsageCtx } from "../usage";
 import { DECISION_MAX, type SystemArea, type SystemEvidence } from "@/types/system";
 import { briefPrompt } from "../brief";
+import { A11Y_LEVELS, readBrief } from "@/types/brief";
 import { log } from "../log";
 import { areaMemory } from "../area-comments";
 import { cleanArea, getSystem, projectRow } from "./areas";
@@ -97,7 +98,15 @@ const StartAskSchema = z.object({
 });
 
 export interface AreaStartRefs { board: { itemId: string; why: string }[]; library: { itemId: string; why: string }[] }
-export interface AreaStartAsk { say: string; question: string; options: { label: string; decision: string; why: string }[] }
+export interface AreaStartAsk {
+  say: string; question: string; options: { label: string; decision: string; why: string }[];
+  /** The answer saves this brief field (saveProjectBrief) instead of deciding the area: the option's decision is the
+   *  value, and with no options the answer is free text */
+  brief?: BriefAsk;
+}
+/** The brief field an area asks for first, while it is empty, and never again once it is set: one question at a time */
+type BriefAsk = "a11y" | "neverSay";
+const BRIEF_ASKS: Partial<Record<SystemArea, BriefAsk>> = { color: "a11y", voice: "neverSay" };
 
 // A person is waiting in front of an empty area: the question is short and wants an answer in a few seconds, so it
 // goes to a quick model that does not stop to reason (the system's own takes 15 to 45 s for the same few lines)
@@ -189,6 +198,13 @@ export async function startAreaRefs(input: Omit<StartInput, "usage" | "language"
 export async function startAreaAsk(input: StartInput): Promise<AreaStartAsk> {
   const area = await cleanArea(input.area);
   const project = await projectRow(input.organizationId, input.projectId);
+  const field = BRIEF_ASKS[area];
+  if (field && !readBrief(project.brief)?.[field]) {
+    const q = (await getT()).t.system.briefAsk;
+    return field === "a11y"
+      ? { brief: field, say: q.a11y.say, question: q.a11y.question, options: A11Y_LEVELS.map((l) => ({ label: `WCAG ${l}`, decision: l, why: q.a11y.why[l] })) }
+      : { brief: field, say: q.neverSay.say, question: q.neverSay.question, options: [] };
+  }
   const [{ refs }, current] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId)]);
   const others = current.areas.filter((a) => a.area !== area && a.decision).map((a) => ({ area: a.area, status: a.source, decision: a.decision }));
   const text = [

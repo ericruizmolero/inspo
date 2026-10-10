@@ -29,7 +29,7 @@ export async function saveText(itemId: string, text: string) {
     const T = schema.inspoItem;
     const [row] = await db.select({ id: T.id, web: T.web }).from(T).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, String(itemId)))).limit(1);
     if (!next || !row || !ownsTextFile(ctx.workspace.id, row.web)) throw new HttpError(400, (await getErrors()).badBody);
-    await rewriteText(row.web, next);
+    await rewriteText(ctx.workspace.id, row.web, next);
     const tags = await textTags(row.web);
     await setTags(ctx.workspace.id, row.web, tags);
     void enqueueEmbed(ctx.workspace.id, [row.id]);

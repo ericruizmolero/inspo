@@ -19,6 +19,7 @@ import { addReference } from "./add";
 import { hostOf, mediaKindOf, normalizeWebUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems } from "./projects";
 import { saveBrief, setClientBrand } from "./brief";
+import { draftBriefAfter } from "./brief-draft";
 import { addComment } from "./comments";
 import { loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, setAreaNever, getSystem } from "./system/areas";
 import { runSystem } from "./system/run";
@@ -387,7 +388,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           if (!canManage(ctx.workspace.role) && !(await startedProject(org, a.project, author.id))) throw new HttpError(403, (await getErrors()).projectNotYours);
           await deleteProject(org, a.project); projectsTouched = true; systemsTouched = true; break;
         case "brief": await saveBrief(org, a.project, { about: a.about.trim() }, author.id); line.project = names.get(a.project); line.text = a.about; break;
-        case "client": await setClientBrand(org, a.project, a.item, author.id); line.project = names.get(a.project); line.on = !!a.item; line.items = a.item ? [a.item] : []; projectsTouched = true; break;
+        case "client": await setClientBrand(org, a.project, a.item, author.id); if (a.item) draftBriefAfter(ctx, a.project); line.project = names.get(a.project); line.on = !!a.item; line.items = a.item ? [a.item] : []; projectsTouched = true; break;
         case "add_url": {
           const web = normalizeWebUrl(a.url);
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);

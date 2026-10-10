@@ -22,10 +22,9 @@ import { typeFromUrl } from "./url";
 import { textPrefix, textTags } from "./text-refs";
 import type { ProjectTemplate } from "@/types/system";
 import { log } from "./log";
+import { TEMPLATE_AUTHOR } from "./sample-items";
 
 const P = schema.project, S = schema.projectSystem, A = schema.systemArea, PI = schema.projectItem;
-/** Who "saved" a template's references: nobody of the workspace. They are the template's until a project is cloned from it */
-export const TEMPLATE_AUTHOR = "Criterio";
 const TYPES: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" };
 
 interface TemplateSpec {
@@ -69,7 +68,7 @@ export async function loadTemplateFolder(dir: string, organizationId: string, op
     const found = await findByWeb(organizationId, web);
     const itemId = found?.id ?? (await addItem(organizationId, {
       name: ref.name, web, note: ref.note, type: ref.file || ref.text ? "inspiration" : typeFromUrl(web),
-      author: TEMPLATE_AUTHOR, createdBy: authorId, thumbnailUrl: ref.file ? web : null,
+      author: TEMPLATE_AUTHOR, createdBy: authorId, thumbnailUrl: ref.file ? web : null, sample: true,
     })).id!;
     // A text has no look to tag: its first lines are what the card and the models read
     if (ref.text && !found) await setTags(organizationId, web, await textTags(web));

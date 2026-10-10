@@ -121,8 +121,8 @@ export async function usageOverview(days = 30): Promise<UsageOverview> {
       .from(U).where(where).groupBy(U.action),
     db.select({ userId: U.userId, name: sql<string | null>`max(${P.name})`, email: sql<string | null>`max(${P.email})`, image: sql<string | null>`max(${P.image})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
       .from(U).leftJoin(P, eq(U.userId, P.id)).where(where).groupBy(U.userId),
-    db.select({ id: U.organizationId, name: sql<string | null>`max(${O.name})`, kind: sql<string | null>`max(${O.kind})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
-      .from(U).leftJoin(O, eq(U.organizationId, O.id)).where(where).groupBy(U.organizationId),
+    db.select({ id: U.organizationId, name: sql<string | null>`coalesce(max(${O.name}), ${U.organizationName})`, kind: sql<string | null>`max(${O.kind})`, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
+      .from(U).leftJoin(O, eq(U.organizationId, O.id)).where(where).groupBy(U.organizationId, U.organizationName),
     db.select({ day: dayExpr, calls: sql<number>`count(*)`, micros: sql<number>`sum(${U.costMicros})` })
       .from(U).where(where).groupBy(dayExpr),
   ]);

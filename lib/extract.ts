@@ -37,6 +37,9 @@ export interface SiteText {
   lang: string;
   headings: string[];
   textSample: string;
+  /** The page's language versions (link rel=alternate hreflang) and the currencies its prices are in: the brief's markets */
+  hreflang?: string[];
+  currencies?: string[];
   /** Author, publisher, keywords… from its meta tags and JSON-LD (lib/meta.ts) */
   meta?: InspoMeta;
   signals: {
@@ -109,8 +112,14 @@ export function parseSiteText(html: string): SiteText {
     /youtube\.com|ytimg/i.test(html) ? "youtube" :
     /vimeo/i.test(html) ? "vimeo" : null;
 
+  const hreflang = uniq([...html.matchAll(/<link[^>]+hreflang=["']([^"']+)["']/gi)].map((m) => m[1]).filter((l) => l.toLowerCase() !== "x-default"), 12);
+  const currencies = uniq([
+    ...[...html.matchAll(/"priceCurrency"\s*:\s*"([A-Z]{3})"/g)].map((m) => m[1]),
+    ...[...html.matchAll(/price:currency["'][^>]*content=["']([A-Z]{3})["']/gi)].map((m) => m[1].toUpperCase()),
+  ], 4);
+
   return {
-    title, description, siteName, lang, headings, textSample,
+    title, description, siteName, lang, headings, textSample, hreflang, currencies,
     meta: pageMeta(html),
     signals: {
       themeColor: meta(html, "name", "theme-color") || null,

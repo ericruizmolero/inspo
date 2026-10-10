@@ -20,6 +20,7 @@ import { normalizeWebUrl, mediaKindOf, nameFromFile } from "../url";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
 import { putFile } from "../storage";
+import { assertRoom } from "../quota";
 import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
 import { saveBrief } from "../brief";
@@ -205,9 +206,11 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
     const web = normalizeWebUrl(input.url!);
     if (!web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);
     // A picture's own address: the picture is copied, so the board shows it whatever its site does later
-    const image = IMAGE_FILE.test(new URL(web).pathname) ? await fetchFile(web, undefined, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES) : null;
+    const isImage = IMAGE_FILE.test(new URL(web).pathname);
+    if (isImage) await assertRoom(project.workspace, { items: 1 });
+    const image = isImage ? await fetchFile(web, undefined, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES) : null;
     piece = image
-      ? { kind: "image", url: await putFile(newMediaKey(org, image.type), image.body, image.type), name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", source: web }
+      ? { kind: "image", url: await putFile(newMediaKey(org, image.type), image.body, image.type, org), name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", source: web }
       : { kind: "url", web, name: oneLine(input.title, 80) };
   }
   // As when a URL is pasted in the app: a post on X is imported, and the AI tags what was saved, once answered

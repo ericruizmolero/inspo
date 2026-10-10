@@ -86,7 +86,7 @@ const refOf = (e: Entry): NewRef =>
 
 /** One batch of a board's entries (batchesOf in lib/boards/entries.ts), filed in the board's project (boardProject; what was
  *  already saved goes there too). The results keep the order of the batch. */
-export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[] }>> {
+export async function importBatch(projectId: string, entries: Entry[]): Promise<ActionResult<{ results: AddResult[]; added: InspoItem[]; full: string | null }>> {
   return withCtx(async (ctx) => {
     const batch = BoardBatch.safeParse(entries);
     if (!batch.success) throw new HttpError(400, (await getErrors()).badBody);

@@ -5,9 +5,12 @@
 // a text's file, names a site, files the reference and sends its jobs, the same for every door. Where the doors
 // differ (whether a post on X is imported, whether the tag job waits for the answer, what a project that went away
 // does) the door says so in its call, so the difference is read here and not found by comparing routes.
+// The plan's cap (lib/quota.ts) is checked before the work that costs: here before a site is read or a text's
+// file is written, and by the door before a picture or a video is copied, since that happens before it calls.
 import "server-only";
 import { after } from "next/server";
 import { addItem, findByWeb, rowToItem, setTags, setThumbnail } from "./items";
+import { assertRoomIn } from "./quota";
 import { activeProjectFor, fileItems } from "./projects";
 import { assignEvidence } from "./system/areas";
 import { nameFor } from "./item-name";
@@ -38,7 +41,12 @@ export type Piece =
 
 export interface Who { id: string; name?: string | null; email: string }
 
-export interface SaveOpts { note?: string; subNote?: string; via?: string | null; dateIso?: string }
+export interface SaveOpts {
+  note?: string; subNote?: string; via?: string | null; dateIso?: string;
+  /** The door took the room already (addMany shares what is left among its batch): nothing is counted before the
+   *  work, and addItem still refuses when the cap was reached meanwhile */
+  room?: "taken";
+}
 
 /** Where the reference is filed once saved. Nothing filed when there is no project to file it in */
 export interface Filing {
@@ -73,13 +81,17 @@ export const cleanAreas = (v: unknown): SystemArea[] =>
   Array.isArray(v) ? [...new Set(v.filter((a): a is SystemArea => (SYSTEM_AREAS as readonly string[]).includes(a)))] : [];
 
 /** The row, and a text's file. A site already here comes back as it is (`existed`); a stored picture or video
- *  is always new. Throws the 409 of lib/items.ts when the same site is saved by two requests at once. */
+ *  is always new. Throws the 409 of lib/items.ts when the same site is saved by two requests at once, and its
+ *  402 when the plan has no room for one more. */
 export async function saveReference(organizationId: string, piece: Piece, by: Who, opts: SaveOpts = {}): Promise<Saved> {
   const base = { author: by.name || by.email, createdBy: by.id, note: opts.note, subNote: opts.subNote, via: opts.via, dateIso: opts.dateIso };
+  // Only a new reference needs room: one already in the library comes back as it is
+  const room = async () => { if (opts.room !== "taken") await assertRoomIn(organizationId, { items: 1 }); };
   switch (piece.kind) {
     case "url": {
       const existing = await findByWeb(organizationId, piece.web);
       if (existing) return { item: rowToItem(existing), existed: true };
+      await room();
       const name = piece.name || await nameFor(piece.web, piece.title);
       return { item: await addItem(organizationId, { ...base, name, web: piece.web, type: piece.type || typeFromUrl(piece.web) }), existed: false };
     }
@@ -92,6 +104,7 @@ export async function saveReference(organizationId: string, piece: Piece, by: Wh
         const had = await findByWeb(organizationId, importedTextUrl(organizationId, piece.at));
         if (had) return { item: rowToItem(had), existed: true };
       }
+      await room();
       const url = await putText(organizationId, piece.text, piece.at);
       try {
         const item = await addItem(organizationId, { ...base, name: piece.title, web: url, source: piece.at, type: "inspiration" });

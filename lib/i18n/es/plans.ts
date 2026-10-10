@@ -4,7 +4,7 @@ export const plans: typeof EnPlans = {
   solo: {
     tagline: "Para tu librería personal.",
     features: [
-      "Inspos ilimitados",
+      "Hasta 200 referencias y 1 GB",
       "Etiquetas automáticas",
       "30 acciones de IA al mes",
       "30 búsquedas IA distintas al mes",

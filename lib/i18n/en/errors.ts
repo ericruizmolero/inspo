@@ -63,6 +63,7 @@ export const errors = {
   systemEmptyBoard: "Add a reference to the project before building its system",
   urlAlreadyHere: "That URL is already in this workspace",
   urlNotInWorkspace: "That URL is not in the workspace",
+  ownerOnly: "Only the workspace's owner can do this",
   workspaceAdminsCan: "Only workspace admins can do this",
   personalSpaceStays: "Your personal space cannot be deleted",
   cardsNotYours: "You can only delete what you saved. A team admin deletes the rest.",

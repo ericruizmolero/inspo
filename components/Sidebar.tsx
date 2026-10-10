@@ -8,6 +8,7 @@ import { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { SYSTEM_AREAS, filledOf, type SystemSummary } from "@/types/system";
 import { useT } from "./I18nProvider";
 import { fmtCount } from "@/lib/i18n/format";
+import { fmtGb } from "@/lib/room";
 import FeedbackEntry from "./FeedbackEntry";
 import ThemeToggle from "./ThemeToggle";
 import Connectors from "./Connectors";
@@ -71,6 +72,9 @@ export interface QuotaView {
   /** AI actions this month: what people asked of the model */
   ai: { used: number; limit: number | null };
   searches: { used: number; limit: number | null };
+  /** References in the library and bytes of its files: the plan caps both, not by month */
+  items: { used: number; limit: number | null };
+  storage: { used: number; limit: number | null };
 }
 
 export interface SidebarProps {
@@ -182,17 +186,23 @@ export function useSpaceCounts(items: InspoItem[], links: ProjectLinks) {
   }, [items, links]);
 }
 
-/** This month's DESIGN.md quota: the only thing that runs out. Links to /settings/plan. */
-export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head and bar only, without the note under them */ compact?: boolean }) {
+/** The plan in a few lines: this month's AI actions with their bar, and what the library holds (references and
+ *  storage) against the plan's cap. Links to /settings/plan. */
+export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar and library, without the note under them */ compact?: boolean }) {
   const { t, locale } = useT();
   const { used, limit } = quota.ai;
-  const full = limit !== null && used >= limit;
+  const aiFull = limit !== null && used >= limit;
+  const { items, storage } = quota;
+  const libraryFull = (items.limit !== null && items.used >= items.limit) || (storage.limit !== null && storage.used >= storage.limit);
+  const refs = items.limit === null ? fmtCount(items.used, locale) : `${fmtCount(items.used, locale)}/${fmtCount(items.limit, locale)}`;
+  const gb = storage.limit === null ? `${fmtGb(storage.used, locale)} GB` : `${fmtGb(storage.used, locale)}/${fmtGb(storage.limit, locale)} GB`;
   return (
-    <Link href="/settings/plan" className={`sidebar__plan${full ? " is-full" : ""}`} title={t.sidebar.seePlans}>
+    <Link href="/settings/plan" className={`sidebar__plan${aiFull || libraryFull ? " is-full" : ""}`} title={t.sidebar.seePlans}>
       <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${fmtCount(used, locale)} ${t.sidebar.ai}` : `${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`}</span></span>
       {/* The system's Progress: segmented ember blocks in a sunken field */}
       {limit !== null && <Progress value={used} max={limit} segments={20} label={`${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`} className="sidebar__plan-progress" />}
-      {!compact && <span className="sidebar__plan-note">{full ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>}
+      <span className="sidebar__plan-head"><span>{t.sidebar.library}</span><span>{refs} · {gb}</span></span>
+      {!compact && <span className="sidebar__plan-note">{libraryFull ? t.sidebar.libraryFull : aiFull ? t.sidebar.quotaSpent : limit === null ? t.sidebar.noLimit : t.sidebar.thisMonth}</span>}
     </Link>
   );
 }

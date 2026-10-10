@@ -63,6 +63,7 @@ export const errors: typeof EnErrors = {
   systemEmptyBoard: "Añade una referencia al proyecto antes de construir su sistema",
   urlAlreadyHere: "Esa URL ya está en este workspace",
   urlNotInWorkspace: "Esa URL no está en el workspace",
+  ownerOnly: "Solo puede hacerlo el propietario del espacio",
   workspaceAdminsCan: "Solo los administradores del workspace pueden hacer esto",
   personalSpaceStays: "Tu espacio personal no se puede eliminar",
   cardsNotYours: "Solo puedes borrar lo que has guardado tú. Lo demás lo borra un admin del equipo.",

@@ -161,9 +161,9 @@ async function main() {
   assert.equal(staysInside({ web: "/api/files/inspo/w/media/1.png", source: "https://notcosmos.so/e/1" }), false);
 
   // ── importSummary: new is new, the rest is said apart ───────────────────
-  type Some = { imported?: Partial<ImportTally["imported"]>; skipped?: Partial<ImportTally["skipped"]>; existed?: number; failed?: number };
+  type Some = { imported?: Partial<ImportTally["imported"]>; skipped?: Partial<ImportTally["skipped"]>; existed?: number; failed?: number; full?: number };
   const tally = (o: Some): ImportTally => ({
-    existed: 0, failed: 0, capped: false, ...o,
+    existed: 0, failed: 0, capped: false, full: 0, ...o,
     imported: { web: 0, image: 0, video: 0, post: 0, text: 0, ...o.imported },
     skipped: { ...noneSkipped(), invalid: 0, ...o.skipped },
   });
@@ -178,6 +178,9 @@ async function main() {
   assert.equal(line(es, { imported: { web: 12, image: 3 }, existed: 20, skipped: { board: 1 } }),
     "Importado: 12 webs y 3 imágenes. 20 ya estaban en tu librería. 1 se queda fuera (un tablero dentro del tablero).");
   assert.equal(line(es, { existed: 1 }), "Ya estaba en tu librería.");
+  assert.equal(line(en, { imported: { web: 3 }, full: 7 }),
+    "3 websites imported. 7 left out: your plan has no more room. Move up a plan in /planes to bring them in.", "an import past the cap says how many stayed out");
+  assert.equal(line(es, { full: 1 }), "No ha entrado nada. 1 se queda fuera: tu plan no tiene más sitio. Amplía el plan en /planes para traerla.");
 
   console.log("boards: pure checks pass");
 

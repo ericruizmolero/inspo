@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { uploadCommentFile, deleteCommentFiles, ownsCommentFile, ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES } from "@/lib/comment-files";
 import { getErrors } from "@/lib/i18n";
-import { HttpError } from "@/lib/workspace-core";
+import { HttpError, httpErrorResponse } from "@/lib/workspace-core";
 import { recordFailure } from "@/lib/log";
 
 
@@ -20,8 +20,9 @@ export async function POST(req: NextRequest) {
     const url = await uploadCommentFile(ctx.workspace.id, file);
     return Response.json({ url }, { status: 201 });
   } catch (e) {
-    if (!(e instanceof HttpError)) void recordFailure("storage", "comment attachment upload", e);
-    return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
+    if (e instanceof HttpError) return httpErrorResponse(e);
+    void recordFailure("storage", "comment attachment upload", e);
+    return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }
 

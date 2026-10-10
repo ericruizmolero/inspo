@@ -505,11 +505,18 @@ function startRun(source, scope = { limit: MAX_IMPORT, since: null }) {
       try {
         const r = await api("/items/batch", { method: "POST", body: JSON.stringify({ items: batch, source: this.source, projectId: this.project?.id }) });
         (r.results || []).forEach((res, i) => {
+          if (res.status === "full") return;
           const status = res.status in this.counts ? res.status : "error";
           this.counts[status]++;
           if (status === "added") this.kinds[kindOf(batch[i])]++;
           if (status === "invalid") this.reasons.invalid = (this.reasons.invalid || 0) + 1;
         });
+        // The plan has no more room: what came in stays, the rest is not sent, and the server says why
+        if (r.full) {
+          this.stopped = true; this.more = false; this.queue.length = 0; this.sending = false;
+          this.finish(r.full, "error");
+          return;
+        }
       } catch (e) {
         this.counts.error += batch.length;
         note($("progress-msg"), e.message, "error");
