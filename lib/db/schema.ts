@@ -8,7 +8,7 @@ import type { InspoTags, UserTags } from "@/types/inspo";
 import type { Brief } from "@/types/brief";
 import { OUTPUT_LANGUAGES } from "../output-language";
 import { LOCALES, type Locale } from "../i18n/locale";
-import type { PlanKey } from "../plans";
+import { PLANS, type PlanKey } from "../plans";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -194,7 +194,7 @@ export const accessInvite = pgTable("access_invite", {
 }, (t) => [
   index("access_invite_created_by_idx").on(t.createdBy),
   check("access_invite_uses_check", sql`${t.uses} >= 0 and ${t.uses} <= ${t.maxUses}`),
-  oneOf("access_invite_grants_plan_check", t.grantsPlan, ["solo", "studio", "agency"]),
+  oneOf("access_invite_grants_plan_check", t.grantsPlan, PLANS.map((p) => p.key)),
 ]);
 
 // ─── Inspo ───────────────────────────────────────────────────────────────────
