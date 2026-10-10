@@ -616,6 +616,8 @@ export const systemArea = pgTable("system_area", {
   never: text("never").notNull().default(""),
   /** The agent's curation of the candidates the board offers for this area: kept or discarded, each with its reason (types/system.ts AreaCuration) */
   curationJson: jsonb("curation_json").$type<unknown>(),
+  /** The signals behind the decision and the references that show them: [{ signal, itemIds, of }] (types/system.ts AreaSupport) */
+  support: jsonb("support").$type<unknown>().notNull().default([]),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   primaryKey({ columns: [t.projectId, t.area] }),

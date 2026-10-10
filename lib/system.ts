@@ -15,7 +15,7 @@ import { llm, LlmError, type LlmInput } from "./llm";
 import { prompt, PROMPTS } from "./prompts";
 import { summarize } from "./jev";
 import { embedEnabled, nearest, queryVector } from "./embed";
-import { viewOf } from "./taxonomy";
+import { SIGNAL_AREA, TAXONOMY_VERSION, viewOf } from "./taxonomy";
 import type { InspoColor, InspoTags } from "@/types/inspo";
 import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
@@ -24,7 +24,7 @@ import { getWhy } from "./design-why";
 import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { autoSystemToday } from "./quota";
 import { BRIEF_KEYS, type DesignBrief, type DesignSpec, type DesignWhy } from "@/types/design";
-import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
+import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type AreaSupport, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { Brief } from "@/types/brief";
 import { briefForModel, briefPrompt } from "./brief";
@@ -67,6 +67,7 @@ const areaState = (r: AreaRow): SystemAreaState => ({
   why: r.why ?? "",
   never: r.never ?? "",
   curation: (r.curationJson as AreaCuration | null) ?? null,
+  support: Array.isArray(r.support) ? (r.support as AreaSupport[]) : [],
   updatedAt: r.updatedAt.toISOString(),
 });
 
@@ -145,15 +146,18 @@ async function ensureHead(organizationId: string, projectId: string, now: Date):
   await db.insert(S).values({ projectId, organizationId, summary: "", runJson: null, createdAt: now, updatedAt: now }).onConflictDoNothing();
 }
 
-type AreaWrite = Omit<SystemAreaState, "updatedAt" | "why" | "curation" | "never"> & { why?: string; curation?: AreaCuration | null };
+/** `support` left out: it stays as it was. An area emptied loses it */
+type AreaWrite = Omit<SystemAreaState, "updatedAt" | "why" | "curation" | "never" | "support"> & { why?: string; curation?: AreaCuration | null; support?: AreaSupport[] };
 
 async function writeArea(organizationId: string, projectId: string, next: AreaWrite, author: { id: string | null; name: string }, now: Date): Promise<void> {
   const why = (next.why ?? "").trim().slice(0, 400);
   const set: Record<string, unknown> = { decision: next.decision, confidence: next.confidence, evidence: next.evidence, source: next.source, decidedBy: next.decidedBy, why, updatedAt: now };
   if (next.curation !== undefined) set.curationJson = next.curation;
+  const support = next.decision ? next.support : [];
+  if (support !== undefined) set.support = support;
   await db.insert(A).values({
     projectId, organizationId, area: next.area, decision: next.decision, confidence: next.confidence, evidence: next.evidence,
-    source: next.source, decidedBy: next.decidedBy, why, curationJson: next.curation ?? null, updatedAt: now,
+    source: next.source, decidedBy: next.decidedBy, why, curationJson: next.curation ?? null, support: support ?? [], updatedAt: now,
   }).onConflictDoUpdate({ target: [A.projectId, A.area], set });
   if (next.source) {
     await db.insert(R).values({
@@ -223,7 +227,7 @@ export async function copySystem(organizationId: string, fromProjectId: string, 
     if (!a.decision && !a.never) continue;
     const source = a.decision ? as : null;
     const confidence = a.decision ? (as === "team" ? 100 : 70) : 0;
-    const row = { decision: a.decision, confidence, evidence: [], source, decidedBy: as === "team" && a.decision ? author.id : null, why: a.why, never: a.never, curationJson: null, updatedAt: now };
+    const row = { decision: a.decision, confidence, evidence: [], source, decidedBy: as === "team" && a.decision ? author.id : null, why: a.why, never: a.never, curationJson: null, support: [], updatedAt: now };
     await db.insert(A).values({ projectId: toProjectId, organizationId, area: a.area, ...row })
       .onConflictDoUpdate({ target: [A.projectId, A.area], set: row });
     if (a.decision) await db.insert(R).values({ id: newId(), projectId: toProjectId, organizationId, area: a.area, decision: a.decision, confidence, evidence: [], source: as, why: a.why, authorId: author.id, authorName: author.name, createdAt: now });
@@ -271,6 +275,37 @@ interface BoardRef {
   itemId: string;
   words: string[];
   ref: Record<string, unknown>;
+  /** The tagger's signals on it, by area (v5 tags); empty before */
+  signals: Partial<Record<SystemArea, string[]>>;
+}
+
+/** How many references of the board show each signal, by area, most shown first: what a decision's confidence
+ *  and its support are counted from. `refs` are board codes, so a frozen snapshot carries it too */
+export interface SignalTally {
+  of: number;
+  areas: Partial<Record<SystemArea, { signal: string; refs: string[] }[]>>;
+}
+
+export function signalTally(refs: Pick<BoardRef, "code" | "signals">[]): SignalTally {
+  const areas: SignalTally["areas"] = {};
+  for (const area of SYSTEM_AREAS) {
+    const by = new Map<string, string[]>();
+    for (const r of refs) for (const k of r.signals[area] ?? []) by.set(k, [...(by.get(k) ?? []), r.code]);
+    if (by.size) areas[area] = [...by].map(([signal, codes]) => ({ signal, refs: codes })).sort((a, b) => b.refs.length - a.refs.length);
+  }
+  return { of: refs.length, areas };
+}
+
+/** A reference's v5 tags as the system reads them: per area its signal keys, and what was measured (measuredSummary),
+ *  plus the families its CSS names when no sheet measured any. They stand in for the prose look and the facet lists */
+export function signalsOf(t: InspoTags, spec: DesignSpec | null): { signals?: Record<string, string>; measured?: Record<string, unknown> } {
+  const areas = Object.entries(t.areas ?? {}) as [SystemArea, { signals: string[] }][];
+  const sheet = measuredSummary(spec, t.colors);
+  const css = !sheet?.families && t.fonts?.length ? { css_families: t.fonts.slice(0, 4) } : null;
+  return {
+    signals: areas.length ? Object.fromEntries(areas.map(([area, a]) => [area, a.signals.join(", ")])) : undefined,
+    measured: sheet || css ? { ...sheet, ...css } : undefined,
+  };
 }
 
 /** The board cut to MAX_BOARD: what the team filed under an area and the client's site first, then what the team wrote
@@ -326,14 +361,25 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
     const { spec, why } = sheets[i];
     const pointed = why?.highlights?.map((h) => ({ quote: h.quote, by: h.author, values: h.values?.length ? h.values : undefined, take: h.note || undefined })) ?? [];
     const base = summarize(item, row.tagsJson ?? undefined);
+    const tags = row.tagsJson && row.tagsJson.v >= TAXONOMY_VERSION ? row.tagsJson : null;
+    const v5 = tags ? signalsOf(tags, spec) : null;
     return {
       code,
       itemId: row.id,
+      signals: Object.fromEntries(Object.entries(tags?.areas ?? {}).map(([area, a]) => [area, a!.signals])),
       words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
       // A pasted text is the project's content: the model gets its title and first lines, nothing to read a look from
       ref: mediaKindOf(row.web) === "text" ? {
         id: code, kind: "text", name: base.name, curator_notes: base.curator_notes, excerpt: base.page,
         team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
+      } : v5 ? {
+        // v5: the signal keys stand in for the prose look and the facet lists (fewer tokens, and countable)
+        id: code, kind: mediaKindOf(row.web), name: base.name, url: base.url, curator_notes: base.curator_notes, page: base.page,
+        sector: base.sector, style: base.style,
+        team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
+        team_pointed_at: pointed.length ? pointed : undefined,
+        signals: v5.signals,
+        measured: v5.measured,
       } : {
         id: code, kind: mediaKindOf(row.web), ...base,
         team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
@@ -374,8 +420,8 @@ const AREAS = `THE EIGHT AREAS
 - voice: how the copy sounds.`;
 
 const BOARD = `THE BOARD
-References the team saved for this project: websites, images, posts. Each comes with a short id (r1, r2…), the note of whoever saved it, the team's comments, what the team pointed at on it, and what was measured from it.
-- "measured": glance (one line per aspect) and layout, read from a website's live page; colors (name, hex, group: its palette, brand and accent first), families (family, role, weights), radius, density and theme, from the same page; pixels, the colours of the saved picture or page with their share of it (0 to 1), which images and posts have too.
+References the team saved for this project: websites, images, posts. Each comes with a short id (r1, r2…), the note of whoever saved it, the team's comments, what the team pointed at on it, and what was measured from it. Most also carry "signals": per area, keys of a shared vocabulary for what the reference shows (a model read its picture).
+- "measured": glance (one line per aspect) and layout, read from a website's live page; colors (name, hex, group: its palette, brand and accent first), families (family, role, weights), radius, density and theme, from the same page; pixels, the colours of the saved picture or page with their share of it (0 to 1), which images and posts have too; css_families, the families its stylesheets name, when no sheet measured them.
 - The team's words say WHY a reference is here: that is where a decision starts. The measured values say WHAT it does: use them to make a decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
 - hex and families in "measured" are real values: a decision that uses one cites it literally, as given. Never round a hex or rename a family.
 - "team_comments" are the latest ones; "team_comments_omitted" counts the older ones left out.
@@ -388,6 +434,10 @@ const DECISION = `- A decision is an instruction an agent can execute for THIS p
 const EVIDENCE = (words: number) => `- Evidence names the references behind a decision by id, each with a "take": what to take from it for this area, as one instruction of at most ${words} words. Only references that speak to that area. A photo or an illustration has no values: its take names the treatment to copy.`;
 
 const CONFIDENCE = `- confidence, 0 to 100: how many references agree, and how concrete and explicit the evidence is. One passing mention is 25 to 40. Two or three references that agree, with concrete values, is 60 to 80. The team saying it in so many words, plus measured values, is 85 or more.`;
+
+/** The system pass reads the board's tally: the confidence and the signals it names are counted, not guessed */
+const SIGNALS_RULE = `- signals: 0 to 2 keys from SIGNALS ACROSS THE BOARD, of that area only, that back the decision. None when the decision rests on the team's words alone, and none for an empty area.
+- confidence, 0 to 100: how far the board backs the decision, grounded in the counts. One passing mention, or a signal 1 reference shows, is 25 to 40. A signal a quarter of the board or more shows, or two or three references that agree with concrete values, is 60 to 80. The team saying it in so many words, plus a signal most of the board shows or measured values, is 85 or more. Without the tally (no signals on the board), go by how many references agree and how concrete the evidence is.`;
 
 const STYLE = `- Never write ids (r1, p2) or candidate codes in the text: name the reference or the value instead.
 - No markdown, no dashes as punctuation. Font names, hex values, CSS values and verbatim quotes stay exactly as given.`;
@@ -410,7 +460,7 @@ ${DECISION}
 - An area the board says nothing about stays EMPTY: decision "", confidence 0, no evidence. Never fill an area from general taste. Empty areas are useful: they show the team what is still open.
 - Be faithful to what the team brought. The board speaks to an area only when: the team's words (a note, a comment, what they pointed at) are about it; a reference was filed under it ("filed_by_team"); or a reference is that area's own material (a type specimen or a foundry for typography, a palette for color, a logo for logo, an animation or a clip of an interaction for motion, an icon set for iconography, a photo or an illustration for imagery, pasted copy for voice). A website saved without words decides no area on its own: its measured brief only makes concrete an area something above already opened. Two saved websites are not eight decided areas.
 - "why" is the criterio behind the decision: why this and not the rest, in 1 or 2 sentences (at most 40 words), rooted in the brief and the team's words. Empty when the area is empty.
-${CONFIDENCE}
+${SIGNALS_RULE}
 ${EVIDENCE(20)}
 - The summary is the project's criterio in one paragraph (at most 90 words): what it is, who it speaks to, the few decisions that define its look. An agent that reads only this paragraph should already design in the right direction. Empty string if the board is empty.
 - Never count references in the text.
@@ -425,6 +475,7 @@ export const SystemOutSchema = z.object({
     why: z.string(),
     confidence: z.number().int().min(0).max(100),
     evidence: z.array(z.object({ ref: z.string(), take: z.string() })),
+    signals: z.array(z.enum(Object.keys(SIGNAL_AREA) as [string, ...string[]])),
   })),
 });
 
@@ -464,6 +515,8 @@ export interface SystemSnapshot {
   guides: string[];
   /** What the guides lost to READ_MAX; absent when nothing */
   guidesCut?: GuideCut;
+  /** The board's signals counted (signalTally); missing on a board frozen before v5 tags */
+  signals?: SignalTally;
 }
 
 /** The system pass's input as the database has it now */
@@ -486,12 +539,28 @@ export async function loadSnapshot(organizationId: string, projectId: string): P
     omitted,
     guides: guides.texts,
     ...(guides.cut ? { guidesCut: guides.cut } : {}),
+    signals: signalTally(refs),
   };
   return { snapshot, refs, stamp, current };
 }
 
 /** Names the prompt an eval scored: the version and a fingerprint, so an edit nobody numbered still reads as another prompt */
 export const SYSTEM_PROMPT_ID = `v${PROMPTS.system.version}-${createHash("sha1").update(SYSTEM).digest("hex").slice(0, 7)}`;
+
+/** The tally as the model reads it: per area, each signal and in how many of the board's references it shows */
+function tallyForModel(t: SignalTally | undefined): string | null {
+  const rows = SYSTEM_AREAS.flatMap((area) => t?.areas[area]?.length ? [`- ${area}: ${t.areas[area]!.map((x) => `${x.signal} in ${x.refs.length} of ${t.of}`).join(", ")}`] : []);
+  return rows.length ? `SIGNALS ACROSS THE BOARD: per area, how many of the ${t!.of} references show each signal\n${rows.join("\n")}` : null;
+}
+
+/** The signals a run named for an area, as stored: only that area's keys the board shows, each with its references */
+export function supportOf(area: SystemArea, named: string[], tally: SignalTally | undefined, idOf: Map<string, string>): AreaSupport[] {
+  const counted = tally?.areas[area] ?? [];
+  return [...new Set(named)].filter((k) => SIGNAL_AREA[k] === area).slice(0, 2).flatMap((signal) => {
+    const itemIds = (counted.find((x) => x.signal === signal)?.refs ?? []).map((c) => idOf.get(c)).filter((id): id is string => !!id);
+    return itemIds.length ? [{ signal, itemIds, of: tally!.of }] : [];
+  });
+}
 
 /** The system pass as one model call */
 export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage; focus?: SystemFocus } = {}): LlmInput & { schema: typeof SystemOutSchema } {
@@ -501,6 +570,7 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
     `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
     `References on the board (JSON): ${JSON.stringify(s.refs)}`,
     s.omitted ? `${s.omitted} references on the board were left out of this reading; what you see is not everything the team saved.` : null,
+    tallyForModel(s.signals),
     s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
     s.guides.length ? guideCutLine(s.guidesCut) : null,
     focusForModel(o.focus, s.standing.filter((a) => a.status === "team").map((a) => a.area)),
@@ -571,12 +641,14 @@ export function runSystem(input: { organizationId: string; projectId: string; us
         evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
       }
       // An improved decision of the team is still the team's: same author, same standing, better told
+      // A decision of the team keeps the support it had; a proposal is backed by what this run counted
       const next: AreaWrite = own
         ? { area: cur.area, decision, confidence: cur.confidence, evidence, source: "team", decidedBy: cur.decidedBy, why: got?.why || cur.why }
         : decision
-        ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null, why: got?.why ?? "" }
+        ? { area: cur.area, decision, confidence: Math.max(1, got?.confidence ?? 0), evidence, source: "model", decidedBy: null, why: got?.why ?? "", support: supportOf(cur.area, got?.signals ?? [], snapshot.signals, codes) }
         : { area: cur.area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null, why: "" };
-      const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence) && (next.why ?? "") === cur.why;
+      const same = next.decision === cur.decision && next.confidence === cur.confidence && JSON.stringify(next.evidence) === JSON.stringify(cur.evidence) && (next.why ?? "") === cur.why
+        && (next.support === undefined || JSON.stringify(next.support) === JSON.stringify(cur.support));
       if (same && (cur.decision || cur.updatedAt !== emptySystem(input.projectId).areas[0].updatedAt)) continue;
       await writeArea(input.organizationId, input.projectId, next, { id: null, name: res.model }, now);
     }

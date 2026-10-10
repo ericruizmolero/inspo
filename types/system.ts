@@ -18,6 +18,15 @@ export interface SystemEvidence {
 
 export type SystemSource = "model" | "team";
 
+/** A signal of the tagger's vocabulary (lib/taxonomy.ts SIGNALS) behind a decision, and the board's references
+ *  that show it: "in 12 of 40" is itemIds.length of `of`. Written by the run that made the decision */
+export interface AreaSupport {
+  signal: string;
+  itemIds: string[];
+  /** References on the board when it was counted */
+  of: number;
+}
+
 export interface SystemAreaState {
   area: SystemArea;
   /** The decision as it stands; empty = not decided yet */
@@ -34,6 +43,8 @@ export interface SystemAreaState {
   never: string;
   /** The agent's curation of what the board offers for this area, for the team to review */
   curation: AreaCuration | null;
+  /** How many references show the signals behind the decision. Empty when the area is, or when no signal backs it */
+  support: AreaSupport[];
   /** ISO */
   updatedAt: string;
 }
@@ -129,7 +140,7 @@ export function emptySystem(projectId: string): ProjectSystem {
   return {
     projectId,
     summary: "",
-    areas: SYSTEM_AREAS.map((area) => ({ area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "", never: "", curation: null, updatedAt: now })),
+    areas: SYSTEM_AREAS.map((area) => ({ area, decision: "", confidence: 0, evidence: [], source: null, decidedBy: null, why: "", never: "", curation: null, support: [], updatedAt: now })),
     run: null,
     updatedAt: null,
   };

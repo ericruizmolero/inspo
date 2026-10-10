@@ -1,0 +1,1 @@
+ALTER TABLE "system_area" ADD COLUMN "support" jsonb DEFAULT '[]'::jsonb NOT NULL;

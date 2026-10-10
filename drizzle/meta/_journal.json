@@ -232,6 +232,13 @@
       "when": 1791640563666,
       "tag": "0033_ai_usage_prompt_version",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791642692049,
+      "tag": "0034_area_support",
+      "breakpoints": true
     }
   ]
 }
