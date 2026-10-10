@@ -373,7 +373,6 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
         id: code, kind: "text", name: base.name, curator_notes: base.curator_notes, excerpt: base.page,
         team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
       } : v5 ? {
-        // v5: the signal keys stand in for the prose look and the facet lists (fewer tokens, and countable)
         id: code, kind: mediaKindOf(row.web), name: base.name, url: base.url, curator_notes: base.curator_notes, page: base.page,
         sector: base.sector, style: base.style,
         team_comments: comments.length ? comments : undefined, team_comments_omitted: omitted,
@@ -648,7 +647,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
         evidence.push({ itemId, take: e.take.trim().slice(0, 200) });
       }
       // An improved decision of the team is still the team's: same author, same standing, better told
-      // A decision of the team keeps the support it had; a proposal is backed by what this run counted
+      // A proposal is backed by what this run counted
       const next: AreaWrite = own
         ? { area: cur.area, decision, confidence: cur.confidence, evidence, source: "team", decidedBy: cur.decidedBy, why: got?.why || cur.why }
         : decision
