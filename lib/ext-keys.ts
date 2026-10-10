@@ -3,7 +3,8 @@
 // SHA-256. A key acts for the person who created it, in every workspace they belong to (the extension
 // switches between them with X-Workspace), until it is revoked.
 import "server-only";
-import { createHash, randomBytes } from "crypto";
+import { randomBytes } from "crypto";
+import { sha256 } from "./hash";
 import { and, eq, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { isMember, listWorkspaces, newId, type SessionUser, type Workspace } from "./workspace-core";
@@ -16,8 +17,6 @@ const T = schema.extKey;
 export const KEY_PREFIX = "crit_";
 /** How often lastUsedAt is written (no need for one write per request) */
 const TOUCH_EVERY_MS = 5 * 60 * 1000;
-
-const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 export interface ExtKeyRow {
   id: string; prefix: string; name: string; userId: string; organizationId: string;

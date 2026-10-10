@@ -12,6 +12,7 @@ import { and, desc, eq, gt, isNotNull, isNull, or } from "drizzle-orm";
 import { db, schema } from "../db";
 import { newId } from "../workspace-core";
 import { log } from "../log";
+import { sha256 } from "../hash";
 
 const C = schema.mcpClient;
 const G = schema.mcpGrant;
@@ -28,7 +29,6 @@ export const ACCESS_PREFIX = "crit_at_";
 const REFRESH_PREFIX = "crit_rt_";
 const CODE_PREFIX = "crit_ac_";
 
-const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 const secret = (prefix: string) => prefix + randomBytes(32).toString("base64url");
 const same = (a: string, b: string) => a.length === b.length && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 
