@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  types-and-build:
+    runs-on: ubuntu-latest
+    env:
+      # Fake values, public on purpose. The build passes without them, but Better Auth then
+      # logs an error per worker, which would bury the real cause of a red build.
+      BETTER_AUTH_SECRET: d8a79e1f814e09c3f4603a6ee68819f4242ed4412ebb574ffcc8c0172208b789
+      BETTER_AUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # PageProps and RouteContext are global types that Next generates; tsc can't see them until then
+      - run: npx next typegen
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check:design
+      - run: npm run check:design-system
+      - run: npm run check:usage
+      - run: npm run check:boards
+
+  db-checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # Migration 0006 creates the vector extension, which the stock postgres image lacks
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: criterio_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres@localhost:5432/criterio_ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run db:migrate
+      - run: npm run check:seats
+      - run: npm run check:locale
+      - run: npm run check:url-keys
+      - run: npm run check:notifications
+      - run: npm run check:postgres

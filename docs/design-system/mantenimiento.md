@@ -9,7 +9,7 @@ Qué tocar y en qué orden cuando cambia algo de base.
 3. **Textos**: en `lib/i18n/en` y `lib/i18n/es` a la vez.
 4. **Base de datos**: cambiar `lib/db/schema.ts`, `npm run db:generate`, revisar el SQL en `drizzle/`. La migración corre en el build de Vercel: si falla, no se despliega. Añadir la tabla nueva a `scripts/seed.ts` (padres primero) y, si lleva contenido de un espacio, a `scripts/copy-workspace.ts` (copia referencias, proyectos, comentarios y ficheros de un workspace a otro en producción; sin `--apply` solo cuenta).
 5. **Decisiones**: un fichero en `docs/design-system/decisiones/` por cada una.
-6. **Comprobar**: `npx tsc --noEmit` siempre; `npm run build` si tocaste configuración, rutas o `next.config.ts`; los `npm run check:*` del área que tocaste (`check:system`, `check:locale`, `check:usage`…); si tocaste `docs/design-system/` o `components/criterio/`, `npm run check:design-system` (muestras, fichas, enlaces y decisiones).
+6. **Comprobar**: la CI corre en cada PR `npx tsc --noEmit`, `npm run build` y los `check:*` que no piden servidor ni datos reales (→ [Desarrollo](desarrollo.md#flujo-de-trabajo)). A mano, antes de subir, los del área que tocaste que la CI no corre: `check:system` (llama a un modelo y pide un proyecto real), `check:brand` (pide un workspace de `db:pull`), `check:invites` y `check:mcp` (piden el dev server y una sesión). Si tocaste `docs/design-system/` o `components/criterio/`, `npm run check:design-system` antes de subir: la CI también lo corre, pero tarda más en avisar.
 7. **Desplegar**: push a `main` despliega producción (Vercel, Frankfurt); cada PR tiene su preview con su rama de Neon. La fusión del PR la hace una persona.
 
 ## Pendiente de limpiar
