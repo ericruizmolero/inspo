@@ -1,6 +1,7 @@
 // Adds what the picture shows, area by area (tags_json.look), to the tags made before the tagger wrote it. One call
 // per address on the tag task's model, over the picture the tagger already reads: no browser, nothing written to
-// storage, only tags_json.look in the LOCAL database. Items that already have a look are skipped, so it can run again.
+// storage, only tags_json.look in the LOCAL database. A built-in template's image no storage here holds is read from its
+// file in the repo. Items that already have a look are skipped, so it can run again.
 //   npm run tags:look                          → every item of the local database that lacks one
 //   npm run tags:look -- --project <id> --limit 20
 import { config as loadEnv } from "dotenv";
@@ -13,7 +14,8 @@ async function main() {
   if (!/127\.0\.0\.1|localhost/.test(process.env.DATABASE_URL ?? "postgres://postgres@127.0.0.1:5432/criterio")) throw new Error("tags:look only writes the local database");
   const { and, eq, inArray, isNotNull, sql } = await import("drizzle-orm");
   const { db, pool, schema } = await import("../lib/db");
-  const { inputsOf, lookWith } = await import("../lib/tagger");
+  const { forModel, inputsOf, lookWith, pictureKey } = await import("../lib/tagger");
+  const { builtinTemplateFile } = await import("../lib/template-seed");
   const { rowToItem } = await import("../lib/items");
   const { mediaKindOf } = await import("../lib/url");
   const { llmEnabled } = await import("../lib/llm");
@@ -37,8 +39,11 @@ async function main() {
       const item = rowToItem(group[0]);
       try {
         const inputs = await inputsOf(item.web, { capture: false });
-        if (!inputs.image) { noPicture++; console.log(`  · ${item.name}: no stored picture`); continue; }
-        const r = await lookWith(item, { ...inputs, image: inputs.image });
+        // A built-in template's image in a local workspace: its file in the repo, as no storage here may hold it
+        const file = inputs.image ? null : builtinTemplateFile((await pictureKey(item.web)) ?? "");
+        const image = inputs.image ?? (file ? await forModel(file) : null);
+        if (!image) { noPicture++; console.log(`  · ${item.name}: no stored picture`); continue; }
+        const r = await lookWith(item, { ...inputs, image });
         usd += r.costUsd ?? 0;
         await db.update(T).set({ tagsJson: sql`jsonb_set(${T.tagsJson}, '{look}', ${JSON.stringify(r.look)}::jsonb)` }).where(inArray(T.id, group.map((g) => g.id)));
         done++;

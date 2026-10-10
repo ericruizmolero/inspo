@@ -184,7 +184,7 @@ async function textOf(web: string): Promise<SiteText | null> {
 }
 
 /** The image as the model gets it: 768 wide, the top five screens, JPEG. Also gives a GIF's first frame. */
-async function forModel(image: Buffer): Promise<Buffer> {
+export async function forModel(image: Buffer): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
   const resized = await sharp(image).resize({ width: MODEL_W, withoutEnlargement: true }).toBuffer({ resolveWithObject: true });
   const { width, height } = resized.info;

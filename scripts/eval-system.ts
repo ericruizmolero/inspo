@@ -1,5 +1,7 @@
 // Scores the system and brand prompts on the golden set (scripts/fixtures/system, frozen with npm run eval:freeze).
-// Each pass runs the real prompts of lib/system.ts and lib/brand.ts on a fixture, with no fallback model, then:
+// Each pass runs the real prompts of lib/system.ts and lib/brand.ts on a fixture, with no fallback model. With the
+// sheet (the default), the look pass first reads the fixture's frozen pictures side by side (read only, from storage)
+// and the system pass gets what it saw, as runSystem does; its cost is kept apart. Then:
 //   hard checks: evidence ids that exist, hex and families found in what was measured, areas written in the fixture's language;
 //   a judge model: specificity, the team's words, coherence, how close each area is to what the team decided,
 //   and the "never" lines broken (a line names what it protects, "the orange #EB3514 is the only accent", so
@@ -11,6 +13,7 @@
 //   npm run eval:system                                → every fixture, each pass on its own model (lib/prompts.ts), once
 //   npm run eval:system -- --models a/b,c/d --runs 2   → other models for both passes, each fixture twice
 //   npm run eval:system -- --only zernio --no-judge    → one fixture, hard checks only
+//   npm run eval:system -- --no-sheet                  → without the look pass
 //   npm run eval:system -- --table                     → the table, no calls
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -32,6 +35,8 @@ export interface EvalFixture {
   clientSite: Record<string, unknown> | null;
   /** What the team expects of an area, in its own words */
   expect: Partial<Record<SystemArea, string>>;
+  /** The pictures the contact sheet shows, in its order, as storage keys (lib/system.ts sheetRefs) */
+  pictures?: { code: string; key: string }[];
 }
 
 interface Row {
@@ -41,12 +46,16 @@ interface Row {
   systemPrompt: string;
   brandPrompt: string;
   judge: string | null;
+  /** The look pass ran and the system pass read what it saw; absent on rows from before it */
+  sheet?: boolean;
   error?: string;
   checks?: { evidence: [number, number]; hex: [number, number]; families: [number, number]; language?: [number, number] };
   scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number };
   /** The two passes; the judge is billed apart, so a model's cost reads clean */
   costUsd?: number;
   judgeUsd?: number;
+  /** The look pass, apart from the two passes */
+  lookUsd?: number;
   ms?: number;
 }
 
@@ -91,21 +100,34 @@ async function fixtures(): Promise<EvalFixture[]> {
 }
 
 /** `model` "": each pass on its own task's model */
-async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row> {
+async function pass(fx: EvalFixture, model: string, judge: boolean, sheet: boolean): Promise<Row> {
   const { llm } = await import("../lib/llm");
-  const { systemRequest, measuredSummary, SystemOutSchema, SYSTEM_PROMPT_ID } = await import("../lib/system");
+  const { systemRequest, seeBoard, SystemOutSchema, SYSTEM_PROMPT_ID } = await import("../lib/system");
+  const { forModel, pictureAt } = await import("../lib/tagger");
+  const { builtinTemplateFile } = await import("../lib/template-seed");
+  // As tags:look reads them: a built-in template's image no storage here holds comes from its file in the repo
+  const picture = async (key: string) => { const stored = await pictureAt(key); const file = stored ? null : builtinTemplateFile(key); return stored ?? (file ? forModel(file) : null); };
   const { brandRequest, measuredOf, BrandOutSchema, BRAND_PROMPT_ID } = await import("../lib/brand");
   const { emptyBrand } = await import("../types/brand");
   const { toOutputLanguage, writtenIn } = await import("../lib/output-language");
   const { PROMPTS } = await import("../lib/prompts");
   const own = PROMPTS.system.model === PROMPTS.brand.model ? PROMPTS.system.model : `${PROMPTS.system.model} · ${PROMPTS.brand.model}`;
   const pick = model ? { model } : {};
-  const row: Row = { at: new Date().toISOString(), fixture: fx.slug, model: model || own, systemPrompt: SYSTEM_PROMPT_ID, brandPrompt: BRAND_PROMPT_ID, judge: judge ? JUDGE_MODEL : null };
+  const row: Row = { at: new Date().toISOString(), fixture: fx.slug, model: model || own, systemPrompt: SYSTEM_PROMPT_ID, brandPrompt: BRAND_PROMPT_ID, judge: judge ? JUDGE_MODEL : null, sheet };
   const language = toOutputLanguage(fx.language);
-  // The fixtures froze an older "measured": built again from the frozen sites, as the code builds it now (pixels were not frozen)
-  const system: SystemSnapshot = { ...fx.system, omitted: fx.system.omitted ?? 0, refs: fx.system.refs.map((r) => r.kind === "text" ? r : { ...r, measured: measuredSummary(fx.sites[String(r.id)]?.spec ?? null, undefined) }) };
+  const system: SystemSnapshot = { ...fx.system, omitted: fx.system.omitted ?? 0 };
 
   try {
+    if (sheet) {
+      const read = await Promise.all((fx.pictures ?? []).map(async ({ code, key }) => ({ code, image: await picture(key) })));
+      const seen = await seeBoard(read.filter((p): p is { code: string; image: Buffer } => !!p.image), { fallback: null });
+      row.lookUsd = seen?.res.costUsd ?? 0;
+      if (seen) {
+        system.seen = seen.seen;
+        await fs.mkdir(OUTPUTS, { recursive: true });
+        await fs.writeFile(path.join(OUTPUTS, `${fx.slug}-sheet.jpg`), seen.sheet);
+      }
+    }
     const sysReq = systemRequest(system, { language });
     const sysRes = await llm({ ...sysReq, ...pick, fallback: null });
     const sys = SystemOutSchema.parse(JSON.parse(sysRes.text));
@@ -163,7 +185,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
 
     const out = path.join(OUTPUTS, SYSTEM_PROMPT_ID, row.model.replace(/[^a-z0-9.-]+/gi, "_"), `${fx.slug}-${row.at.replace(/[:.]/g, "-")}.json`);
     await fs.mkdir(path.dirname(out), { recursive: true });
-    await fs.writeFile(out, JSON.stringify({ row, system: sys, brand, verdict }, null, 1));
+    await fs.writeFile(out, JSON.stringify({ row, seen: system.seen, system: sys, brand, verdict }, null, 1));
   } catch (e) {
     row.error = (e instanceof Error ? e.message : String(e)).slice(0, 300);
   }
@@ -177,25 +199,25 @@ const fixed = (n: number, d = 1) => Number.isNaN(n) ? "–" : n.toFixed(d);
 function table(rows: Row[], current: string) {
   const groups = new Map<string, Row[]>();
   for (const r of rows) {
-    const k = `${r.systemPrompt}|${r.brandPrompt}|${r.model}`;
+    const k = `${r.systemPrompt}|${r.brandPrompt}|${r.model}|${!!r.sheet}`;
     groups.set(k, [...(groups.get(k) ?? []), r]);
   }
-  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "never broken", "$ / pass", "judge $", "s / pass"];
+  const head = ["prompt (system · brand)", "model", "sheet", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "never broken", "$ / pass", "look $", "judge $", "s / pass"];
   const body = [...groups.values()].sort((a, b) => a.at(-1)!.at.localeCompare(b.at(-1)!.at)).map((g) => {
     const ok = g.filter((r) => r.checks);
     const scored = ok.filter((r) => r.scores);
     const s = (f: (x: NonNullable<Row["scores"]>) => number | null) => fixed(mean(scored.map((r) => f(r.scores!)).filter((x): x is number => x !== null)));
     return [
-      `${g[0].systemPrompt === current ? "* " : ""}${g[0].systemPrompt} · ${g[0].brandPrompt}`, g[0].model, String(g.length), String(g.length - ok.length),
+      `${g[0].systemPrompt === current ? "* " : ""}${g[0].systemPrompt} · ${g[0].brandPrompt}`, g[0].model, g[0].sheet ? "yes" : "no", String(g.length), String(g.length - ok.length),
       okRate(ok.map((r) => r.checks!.evidence)), okRate(ok.map((r) => r.checks!.hex)), okRate(ok.map((r) => r.checks!.families)), okRate(ok.flatMap((r) => r.checks!.language ? [r.checks!.language] : [])),
       s((x) => x.specificity), s((x) => x.teamWords), s((x) => x.coherence), s((x) => x.expected), s((x) => x.neverBroken),
-      fixed(mean(ok.map((r) => r.costUsd ?? 0)), 4), fixed(mean(scored.flatMap((r) => r.judgeUsd ?? [])), 4), fixed(mean(ok.map((r) => (r.ms ?? 0) / 1000))),
+      fixed(mean(ok.map((r) => r.costUsd ?? 0)), 4), fixed(mean(ok.flatMap((r) => r.lookUsd ?? [])), 4), fixed(mean(scored.flatMap((r) => r.judgeUsd ?? [])), 4), fixed(mean(ok.map((r) => (r.ms ?? 0) / 1000))),
     ];
   });
   const widths = head.map((h, i) => Math.max(h.length, ...body.map((r) => r[i].length)));
-  const line = (cells: string[]) => cells.map((c, i) => (i < 2 ? c.padEnd(widths[i]) : c.padStart(widths[i]))).join("  ");
+  const line = (cells: string[]) => cells.map((c, i) => (i < 3 ? c.padEnd(widths[i]) : c.padStart(widths[i]))).join("  ");
   console.log(`\n${line(head)}\n${widths.map((w) => "─".repeat(w)).join("  ")}\n${body.map(line).join("\n")}`);
-  console.log("\nChecks: the share that passed. Judge: 1 to 5, and never lines broken per pass. $ / pass: the two passes; judge $: the judge on top. * the prompt in the code now.");
+  console.log("\nChecks: the share that passed. Judge: 1 to 5, and never lines broken per pass. $ / pass: the two passes; look $: the look pass on top, when the sheet ran; judge $: the judge on top. * the prompt in the code now.");
 }
 
 async function readRows(): Promise<Row[]> {
@@ -219,9 +241,9 @@ async function main() {
     await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, async () => {
       while (next < jobs.length) {
         const [fx, model] = jobs[next++];
-        const row = await pass(fx, model, !flag("no-judge"));
+        const row = await pass(fx, model, !flag("no-judge"), !flag("no-sheet"));
         await fs.appendFile(RESULTS, JSON.stringify(row) + "\n");
-        console.log(row.error ? `  ✗ ${fx.slug} · ${row.model}: ${row.error}` : `  ✓ ${fx.slug} · ${row.model} · $${row.costUsd!.toFixed(4)}${row.judgeUsd !== undefined ? ` + judge $${row.judgeUsd.toFixed(4)}` : ""} · ${(row.ms! / 1000).toFixed(0)}s`);
+        console.log(row.error ? `  ✗ ${fx.slug} · ${row.model}: ${row.error}` : `  ✓ ${fx.slug} · ${row.model}${row.sheet ? ` · look $${(row.lookUsd ?? 0).toFixed(4)}` : ""} · $${row.costUsd!.toFixed(4)}${row.judgeUsd !== undefined ? ` + judge $${row.judgeUsd.toFixed(4)}` : ""} · ${(row.ms! / 1000).toFixed(0)}s`);
       }
     }));
   }

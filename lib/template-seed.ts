@@ -117,6 +117,19 @@ function builtinFolders(): string[] {
     return readdirSync(BUILTIN_ROOT, { withFileTypes: true }).filter((d) => d.isDirectory() && existsSync(join(BUILTIN_ROOT, d.name, "system.json"))).map((d) => d.name).sort();
   } catch { return []; }
 }
+/** The repo's file behind a built-in template's image, from the storage key loading it wrote. For the scripts: a
+ *  local workspace's template images may be in no storage they can read. null: not one of those images */
+export function builtinTemplateFile(key: string): Buffer | null {
+  const name = key.split("/").pop() ?? "";
+  for (const folder of builtinFolders()) {
+    const ref = (readTemplateSpec(join(BUILTIN_ROOT, folder)).board ?? []).find((r) => {
+      const ext = r.file ? extname(r.file).toLowerCase() : "";
+      return r.file && name === `template-${folder}-${basename(r.file, ext)}${ext}`;
+    });
+    if (ref?.file) return readFileSync(join(BUILTIN_ROOT, folder, ref.file));
+  }
+  return null;
+}
 /** The same id for the same workspace and folder, so two servers loading it at once write one template */
 const builtinId = (organizationId: string, folder: string) => createHash("sha1").update(`${organizationId}:template:${folder}`).digest("hex").slice(0, 24);
 
