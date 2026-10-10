@@ -467,6 +467,10 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
     return p.decision.length > DECISION_MAX ? `${p.decision.length}/${DECISION_MAX}` : p.why.length > WHY_MAX ? `${b.whyLabel.toLowerCase()} ${p.why.length}/${WHY_MAX}` : p.never.length > NEVER_MAX ? `${b.neverLabel.toLowerCase()} ${p.never.length}/${NEVER_MAX}` : "";
   };
 
+  // The support lines opened to their references, by "<area>:<signal line>"
+  const [opened, setOpened] = useState<Set<string>>(() => new Set());
+  const toggle = (key: string) => setOpened((o) => { const n = new Set(o); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+
   const [file, setFile] = useState<"criterio" | "recipe">("criterio");
   const [recipe, setRecipe] = useState<string | null>(null);
   const [recipeCopied, setRecipeCopied] = useState(false);
@@ -594,6 +598,20 @@ export default function SystemMarkdown({ fileTools, blocks, busy, onSave, onCopy
               {/* Its status and its references: the app's, or what the team wrote over them */}
               {/* With nothing yet, an empty line to type the first reference into */}
               {(b.meta.length > 0 || (metaEdit && !readOnly && !commenting)) && <><Line text="" />{metaEdit ? written(b.area, b.meta.join("\n"), t.doc.noRefs, whole, { ...metaEdit, onLeave: true }) : lines(b.area, b.meta, whole, false)}</>}
+              {/* How many references show the signals behind it: the app's line, never typed over, opened to those references */}
+              {b.support?.length ? <><Line text="" />{b.support.map((x) => {
+                const key = `${b.area}:${x.line}`;
+                const open = opened.has(key);
+                return (
+                  <div key={key} className={`mdv-support${open ? " is-open" : ""}`}>
+                    <div className="mdv-support__row">
+                      {lines(b.area, [x.line], whole, false)}
+                      {x.refs.length > 0 && <IconButton icon="chevron-down" variant="quiet" size="xs" className="mdv-support__toggle" label={open ? s.supportClose : s.supportOpen} aria-expanded={open} onClick={() => toggle(key)} />}
+                    </div>
+                    {open && lines(b.area, x.refs, whole, false)}
+                  </div>
+                );
+              })}</> : null}
               {after && <div className="mdv-team">{after(b)}</div>}
               <Line text="" />
             </div>

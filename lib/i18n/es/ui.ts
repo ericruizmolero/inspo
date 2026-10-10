@@ -617,6 +617,8 @@ export const ui: typeof EnUi = {
     },
     views: { label: "C\u00f3mo ver el sistema", bento: "Bento", markdown: "Markdown" },
     mdView: {
+      supportOpen: "Ver las referencias",
+      supportClose: "Ocultar las referencias",
       readOnlyHint: "Un ejemplo no se edita: clónalo como proyecto para trabajar sobre él.",
       recipeHint: "C\u00f3mo se hizo: el proceso que una IA puede seguir para repetirlo. Sube un .md para a\u00f1adirlo o cambiarlo.",
       replaceRecipe: "Cambiar por otro .md",
@@ -736,6 +738,9 @@ export const ui: typeof EnUi = {
       on: (what: string): string => `sobre ${what}`,
       proposes: "propone",
       states: { open: "pendiente", accepted: "aceptada", rejected: "descartada" },
+      support: "Lo sostiene",
+      supportOf: (signal: string, n: number, of: number): string => `${signal}, en ${n} de ${of} referencias`,
+      signals: taxonomy.signal as Record<string, string>,
       brand: {
         values: "Valores", intro: "La marca", tokens: "Tokens", tokensIntro: "Los valores de arriba como variables CSS. Pégalos en la hoja de estilos principal del proyecto.",
         name: "Nombre", role: "Uso", accent: "acento",

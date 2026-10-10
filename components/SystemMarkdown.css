@@ -40,6 +40,11 @@
 .mdv-link { color: var(--md-code); text-decoration: underline; text-decoration-color: var(--chrome-muted); text-underline-offset: 3px; } .mdv-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .mdv-url { color: var(--md-dim); }
 .mdv-block { transition: opacity 0.2s; } .mdv-block.is-busy { opacity: 0.5; }
+/* An area's support: the app's line with a round quiet toggle at its end that opens the references under it */
+.mdv-support__row { display: flex; align-items: flex-start; gap: 6px; }
+.mdv-support__row > .mdv-line { flex: 1; min-width: 0; }
+.mdv-support__toggle { flex-shrink: 0; margin-top: 1px; color: var(--md-dim); transition: transform 0.2s var(--ease-out); }
+.mdv-support.is-open .mdv-support__toggle { transform: rotate(180deg); }
 .mdv-tools { margin-left: auto; display: inline-flex; gap: 2px; opacity: 0; transition: opacity 0.15s; font-family: var(--font); }
 .mdv-block--area:hover .mdv-tools, .mdv-block--area:focus-within .mdv-tools { opacity: 1; }
 @media (hover: none) { .mdv-tools { opacity: 1; } }

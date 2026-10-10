@@ -621,6 +621,8 @@ export const ui = {
     },
     views: { label: "How to see the system", bento: "Bento", markdown: "Markdown" },
     mdView: {
+      supportOpen: "Show the references",
+      supportClose: "Hide the references",
       readOnlyHint: "An example is not edited: clone it as a project to work on it.",
       recipeHint: "How it was made: the process an AI can follow to do it again. Upload a .md to add or change it.",
       replaceRecipe: "Replace with another .md",
@@ -740,6 +742,9 @@ export const ui = {
       on: (what: string): string => `on ${what}`,
       proposes: "proposes",
       states: { open: "pending", accepted: "accepted", rejected: "turned down" },
+      support: "Backed by",
+      supportOf: (signal: string, n: number, of: number): string => `${signal}, in ${n} of ${of} references`,
+      signals: taxonomy.signal as Record<string, string>,
       brand: {
         values: "Values", intro: "The brand", tokens: "Tokens", tokensIntro: "The values above as CSS variables. Paste them into the project's main stylesheet.",
         name: "Name", role: "Role", accent: "accent",

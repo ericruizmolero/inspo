@@ -30,6 +30,7 @@
     "check:boards": "tsx --conditions=react-server scripts/check-boards.ts",
     "check:postgres": "tsx --conditions=react-server scripts/check-postgres.ts",
     "check:system": "tsx --conditions=react-server scripts/check-system.ts",
+    "check:support": "tsx --conditions=react-server scripts/check-support.ts",
     "check:llm": "tsx --conditions=react-server scripts/check-llm.ts",
     "check:brand": "tsx --conditions=react-server scripts/check-brand.ts",
     "check:mcp": "tsx --conditions=react-server scripts/check-mcp.ts",

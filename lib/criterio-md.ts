@@ -71,6 +71,8 @@ export interface CriterioMdInput {
     project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string;
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
     proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
+    /** The signals behind a decision (lib/taxonomy.ts SIGNALS), by key, in the reader's language */
+    support: string; supportOf: (signal: string, n: number, of: number) => string; signals: Record<string, string>;
     brand: BrandMdStrings;
     brief: BriefMdStrings;
   };
@@ -133,6 +135,9 @@ export type CriterioBlock =
     metaEdited?: boolean;
     /** The brand's values for this area (a palette, a scale, the curves), as lines. Written by the presentation, read only here */
     tokens?: string[];
+    /** How many references show each signal behind the decision: the line the file says it in, and the lines that
+     *  cite those references, which the app opens under it. Written by the app from the run, never typed over */
+    support?: { line: string; refs: string[] }[];
   };
 
 const one = (s: string) => s.replace(/\s+/g, " ").trim();
@@ -238,7 +243,14 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
     }
     const byHand = doc[`meta:${key}`];
     const tokens = brand ? brandTokenLines(key, brand, strings.brand, { href, cite: (id) => cite(id) }) : [];
-    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}) });
+    // Codes in the line, so an agent reading the file finds them under References; only references the file knows
+    const support = a?.decision ? a.support.map((x) => {
+      const at = (id: string) => (code.has(id) ? board.indexOf(id) : Infinity);
+      const ids = x.itemIds.filter((id) => items[id]).sort((p, q) => at(p) - at(q));
+      const codes = ids.map((id) => code.get(id)).filter(Boolean);
+      return { line: `- **${strings.support}:** ${strings.supportOf(strings.signals[x.signal] ?? x.signal, x.itemIds.length, x.of)}${codes.length ? ` (${codes.join(", ")})` : ""}`, refs: ids.map((id) => `  - ${cite(id)}`) };
+    }) : [];
+    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}), ...(support.length ? { support } : {}) });
   }
   /** One reference's entry: what it is, who brought it, what was said of it and what it brings to each area */
   const refLines = (id: string, byLabel: string): string[] => {
@@ -350,6 +362,7 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
     if (b.never) { p(neverMd(b)); p(); }
     if (b.tokens?.length) { for (const line of b.tokens) p(line); p(); }
     if (b.meta.length) { for (const line of b.meta) p(line); p(); }
+    if (b.support?.length) { for (const x of b.support) p(x.line); p(); }
   }
   return L.join("\n");
 }
