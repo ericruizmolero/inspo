@@ -407,4 +407,28 @@ export const actions: Record<string, Surface> = {
       expect(await itemRow(fx.a.item), "A's reference still there").toBeTruthy();
     },
   },
+
+  // The account is the active workspace's, from the session: B can only ever add to B's own
+  "action:app/actions/billing.ts#createWorkspaceInAccount": {
+    probe: async (fx) => {
+      const { createWorkspaceInAccount } = await import("@/app/actions/billing");
+      const accountOfA = (await db.select({ id: schema.organization.billingAccountId }).from(schema.organization).where(eq(schema.organization.id, fx.a.team)))[0].id;
+      const inA = () => db.select({ id: schema.organization.id }).from(schema.organization).where(eq(schema.organization.billingAccountId, accountOfA));
+      const before = await inA();
+      asB(fx);
+      expectNoSecret(fx, await createWorkspaceInAccount("B's client"), "B creates a workspace");
+      expect(await inA(), "nothing lands in A's account").toEqual(before);
+    },
+  },
+
+  "action:app/actions/billing.ts#moveWorkspaceToAccount": {
+    probe: async (fx) => {
+      const { moveWorkspaceToAccount } = await import("@/app/actions/billing");
+      const team = () => db.select().from(schema.organization).where(eq(schema.organization.id, fx.a.team));
+      const before = await team();
+      asB(fx);
+      expectRefused(fx, await moveWorkspaceToAccount(fx.a.team), "B cannot move A's team into B's account");
+      expect(await team(), "A's team stays on its account").toEqual(before);
+    },
+  },
 };
