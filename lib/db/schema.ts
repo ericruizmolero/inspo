@@ -7,6 +7,7 @@ import { pgTable, text, integer, bigint, real, boolean, timestamp, jsonb, index,
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { Brief } from "@/types/brief";
 import { OUTPUT_LANGUAGES } from "../output-language";
+import { LOCALES } from "../i18n/locale";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -28,6 +29,10 @@ export const user = pgTable("user", {
    *  their comments the moment it is written. Each is a switch in Account and a link at the foot of every email */
   digestEmails: boolean("digest_emails").notNull().default(true),
   replyEmails: boolean("reply_emails").notNull().default(true),
+  /** The invite the account was created with (lib/access.ts). Null for accounts from before the waitlist */
+  accessInviteId: text("access_invite_id").references((): AnyPgColumn => accessInvite.id, { onDelete: "set null" }),
+  /** Invites this person can still hand out */
+  invitesLeft: integer("invites_left").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 });
@@ -134,6 +139,63 @@ export const invitation = pgTable("invitation", {
   index("invitation_inviter_id_idx").on(t.inviterId),
   check("invitation_role_check", sql`${t.role} ~ ${ROLE_LIST}`),
   oneOf("invitation_status_check", t.status, ["pending", "accepted", "rejected", "canceled"]),
+]);
+
+// ─── Access ──────────────────────────────────────────────────────────────────
+// Who waits for an account and the codes that let one be created (lib/access.ts). Not Better Auth's
+// `invitation`, which brings someone into a team.
+
+export const WAITLIST_STATUSES = ["pending", "invited", "joined", "removed"] as const;
+export type WaitlistStatus = (typeof WAITLIST_STATUSES)[number];
+
+export const waitlistEntry = pgTable("waitlist_entry", {
+  id: text("id").primaryKey(),
+  /** Trimmed and lowercase */
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  role: text("role"),
+  teamSize: text("team_size"),
+  tools: text("tools"),
+  website: text("website"),
+  note: text("note"),
+  locale: text("locale").notNull().default("en"),
+  /** landing | login | referral:<code> | utm_* */
+  source: text("source").notNull(),
+  status: text("status").notNull().default("pending"),
+  /** Higher goes first when a wave is picked by hand */
+  priority: integer("priority").notNull().default(0),
+  inviteId: text("invite_id").references(() => accessInvite.id, { onDelete: "set null" }),
+  /** When they agreed to be written to (GDPR) */
+  consentAt: timestamp("consent_at", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  invitedAt: timestamp("invited_at", { withTimezone: true, mode: "date" }),
+  joinedAt: timestamp("joined_at", { withTimezone: true, mode: "date" }),
+}, (t) => [
+  index("waitlist_entry_queue_idx").on(t.status, t.priority, t.createdAt),
+  oneOf("waitlist_entry_status_check", t.status, WAITLIST_STATUSES),
+  oneOf("waitlist_entry_locale_check", t.locale, LOCALES),
+]);
+
+export const accessInvite = pgTable("access_invite", {
+  id: text("id").primaryKey(),
+  /** SHA-256 of the code; the code itself is shown once, when it is made */
+  codeHash: text("code_hash").notNull().unique(),
+  /** Only this person can redeem it. Null: anyone with the link */
+  email: text("email"),
+  /** Null: handed out by the team from /admin */
+  createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+  wave: text("wave"),
+  maxUses: integer("max_uses").notNull().default(1),
+  uses: integer("uses").notNull().default(0),
+  grantsPlan: text("grants_plan"),
+  grantsUntil: timestamp("grants_until", { withTimezone: true, mode: "date" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "date" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("access_invite_created_by_idx").on(t.createdBy),
+  check("access_invite_uses_check", sql`${t.uses} >= 0 and ${t.uses} <= ${t.maxUses}`),
+  oneOf("access_invite_grants_plan_check", t.grantsPlan, ["solo", "studio", "agency"]),
 ]);
 
 // ─── Inspo ───────────────────────────────────────────────────────────────────
