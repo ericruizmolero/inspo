@@ -145,7 +145,7 @@ export type CriterioBlock =
     never: string;
     whyLabel: string; neverLabel: string; openText: string; evidenceLabel: string;
     /** The words the file marks rules and references with. The Markdown view leaves them out, so they never reach a stored text */
-    marks?: { required: string; guidance: string };
+    marks?: { required: string; guidance: string; /** The tokens' line that titles the brand's values ("**Values**"), or -1 */ valuesAt: number };
     /** The status, the references behind the decision with what the team said of each, and the area's conversation, as lines of the file */
     meta: string[];
     /** The team rewrote the status and references by hand */
@@ -250,7 +250,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   if (introLines.length) blocks.push({ kind: "section", id: "brand-intro", heading: title("brand-intro", strings.brand.intro), ...byHandOr("brand-intro", introLines) });
   for (const key of SYSTEM_AREAS) {
     const a = system.areas.find((x) => x.area === key);
-    const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, evidenceLabel: strings.evidence, marks: { required: strings.required, guidance: strings.guidance }, never: a?.never ?? "" };
+    const base = { kind: "area" as const, area: key, heading: title(key, labels[key]), whyLabel: strings.why, neverLabel: strings.never, openText: strings.open, evidenceLabel: strings.evidence, never: a?.never ?? "" };
     const meta: string[] = [];
     if (a?.decision) {
       const level = confidenceOf(a);
@@ -284,7 +284,10 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
       const codes = ids.map((id) => code.get(id)).filter(Boolean);
       return { line: `- **${strings.support}:** ${strings.supportOf(strings.signals[x.signal] ?? x.signal, x.itemIds.length, x.of)}${codes.length ? ` (${codes.join(", ")})` : ""}`, refs: ids.map((id) => `  - ${cite(id)}`) };
     }) : [];
-    blocks.push({ ...base, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}), ...(support.length ? { support } : {}) });
+    // The values' first title is marked required; the imagery's examples are references, so they never are
+    const valuesAt = tokens.findIndex((l) => /^\*\*[^*]+\*\*$/.test(l) && l !== `**${strings.brand.examples}**`);
+    const marks = { required: strings.required, guidance: strings.guidance, valuesAt };
+    blocks.push({ ...base, marks, decision: a?.decision ?? "", why: a?.decision ? a.why : "", meta: byHand ? byHand.split("\n") : meta, metaEdited: !!byHand, ...(tokens.length ? { tokens } : {}), ...(support.length ? { support } : {}) });
   }
   /** One reference's entry: what it is, who brought it, what was said of it and what it brings to each area */
   const refLines = (id: string, byLabel: string): string[] => {
@@ -409,7 +412,7 @@ export function blocksToMd(blocks: CriterioBlock[]): string {
     if (!b.decision) { p(`_${b.openText}_`); p(); }
     else { p(b.decision); p(); if (b.why) { p(`**${b.whyLabel}:** ${b.why}`); p(); } }
     if (b.never) { p(neverMd(b, b.marks?.required)); p(); }
-    if (b.tokens?.length) { b.tokens.forEach((line, i) => p(i === 0 && b.marks ? `${line} (${b.marks.required})` : line)); p(); }
+    if (b.tokens?.length) { b.tokens.forEach((line, i) => p(i === b.marks?.valuesAt ? `${line} (${b.marks.required})` : line)); p(); }
     // The references' line as the app writes it, or as the team left it: "- **References (3):**"
     const cites = new RegExp(`^- \\*\\*${escRe(b.evidenceLabel)} \\((\\d+)\\):\\*\\*$`);
     if (b.meta.length) { for (const line of b.meta) p(b.marks ? line.replace(cites, `- **${b.evidenceLabel} ($1)** (${b.marks.guidance}):`) : line); p(); }
