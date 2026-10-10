@@ -225,8 +225,6 @@ export const ui: typeof EnUi = {
     shuffle: "Ver otras",
     shuffleHint: (n: number): string => `Otras ${n} webs del directorio`,
     search: "Buscar",
-    searchAi: "Describe lo que buscas",
-    clear: "Limpiar",
     all: "Todo",
     colors: "Color",
     seePlans: "Ver planes",

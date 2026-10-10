@@ -1,6 +1,6 @@
 "use client";
 
-import { Busy, Icon, Key, MenuItem, Progress, Separator } from "@/components/criterio";
+import { Icon, MenuItem, Progress, Separator } from "@/components/criterio";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
@@ -12,8 +12,6 @@ import FeedbackEntry from "./FeedbackEntry";
 import ThemeToggle from "./ThemeToggle";
 import Connectors from "./Connectors";
 import type { ImportBoard } from "./BoardImport";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
@@ -51,50 +49,6 @@ const I = {
   external: <Icon name="arrow-up-right" size={12} />,
   shuffle: <Icon name="shuffle" size={14} />,
 };
-
-export function SearchBox({ value, onChange, className = "", autoFocus, ai, aiLoading, shortcut }: {
-  value: string; onChange: (v: string) => void; className?: string; autoFocus?: boolean;
-  ai?: boolean; aiLoading?: boolean;
-  /** "/" focuses this box from anywhere in the page */
-  shortcut?: boolean;
-}) {
-  const { t } = useT();
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (!shortcut) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable)) return;
-      e.preventDefault();
-      ref.current?.focus();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [shortcut]);
-  return (
-    <div className={`search ${className}${ai ? " is-ai" : ""}`}>
-      <span className="search__icon">{aiLoading ? <Busy label={t.sidebar.searchAi} /> : ai ? I.spark : I.search}</span>
-      <Input
-        ref={ref}
-        type="text"
-        value={value}
-        autoFocus={autoFocus}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Escape" && value) { e.preventDefault(); onChange(""); } }}
-        placeholder={ai ? t.sidebar.searchAi : t.sidebar.search}
-      />
-      <div className="search__right">
-        {shortcut && !value && <Key className="search__kbd">/</Key>}
-        {value && (
-          <Button variant="icon" className="search__clear" onClick={() => onChange("")} aria-label={t.sidebar.clear}>
-            {I.x}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }: {
   icon: React.ReactNode; label: string; count?: number; active: boolean; onClick: () => void; title?: string;
@@ -176,7 +130,7 @@ function NameField({ initial = "", placeholder, onSubmit, onCancel }: {
 
 /** One project in the sidebar: goes to it; its "…" (on hover) renames or deletes it. */
 /** How much of the project's system is decided: a ring that fills area by area */
-export function FillRing({ filled, total }: { filled: number; total: number }) {
+function FillRing({ filled, total }: { filled: number; total: number }) {
   const { t } = useT();
   const r = 4.5, c = 2 * Math.PI * r;
   return (
@@ -245,7 +199,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head and b
 
 /** Everything under the workspace: add, the whole library, the projects, the directory and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
-export function SidebarNav({ quota, items, onPick,
+function SidebarNav({ quota, items, onPick,
   space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject, onImportBoard }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;

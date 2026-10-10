@@ -227,8 +227,6 @@ export const ui = {
     shuffle: "Shuffle",
     shuffleHint: (n: number): string => `${n} other sites from the directory`,
     search: "Search",
-    searchAi: "Describe what you are after",
-    clear: "Clear",
     all: "Everything",
     colors: "Colour",
     seePlans: "See plans",

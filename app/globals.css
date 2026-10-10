@@ -516,12 +516,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field__label { font-size: var(--fs-small); color: var(--text-2); }
 
-/* ─── Search ──────────────────────────────────────────────────────────────── */
-.search { position: relative; display: flex; align-items: center; }
-.search__icon { position: absolute; left: 12px; color: var(--muted); pointer-events: none; display: flex; }
-.search .input { padding-left: 36px; padding-right: 32px; height: 40px; border-radius: 12px; }
-.search__clear { position: absolute; right: 6px; }
-
 /* ─── Shell: shadcn SidebarProvider + Sidebar + SidebarInset ─────────────── */
 /* Scroll of the filter list, with fades at the edges only where content hides */
 .sidebar__scrollwrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -875,21 +869,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
 .nav-item--sub .nav-item { padding-left: 28px; }
 .topbar__logo { display: none; }
 /* The top bar keeps the workspace and the actions; the search lives in the dock at the bottom */
-/* Quiet at rest (Eric: the bar shouted): no fill, a hairline border, muted icon; the fill comes with hover and focus */
-.topbar .search.is-ai .input {
-  height: 36px; border-radius: 10px;
-  background: var(--bg); border-color: var(--border);
-  font-size: var(--fs-small);
-}
-.topbar .search.is-ai .input::placeholder { color: var(--muted-2); }
-@media (hover: hover) { .topbar .search.is-ai .input:hover { background: var(--surface); } }
-.topbar .search.is-ai .input:focus { background: var(--surface); border-color: var(--border-strong); }
-.topbar .search.is-ai .search__icon { color: var(--muted-2); }
-.topbar .search.is-ai:focus-within .search__icon { color: var(--muted); }
-/* The "/" that focuses a search is the system's Key, but flat as it was before the system came in: no paper
-   fill nor bevel, only a muted glyph with a thin line, so it does not compete with the field (Eric, 07-10) */
-.search__kbd.cr-key { flex: none; background: none; color: var(--muted-2); border-color: var(--border); box-shadow: none; }
-.sb--dock .search__kbd.cr-key { color: var(--chrome-muted); border-color: var(--chrome-border); }
 
 /* ─── The search bar (components/SearchBar.tsx) ──────────────────────────────
    One field that grows with its chips. It lives in the command bar (.dock__bar): dark chrome in both themes,
@@ -1002,7 +981,6 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
   .topbar { height: 56px; gap: 8px; padding: 0 12px; }
   .topbar__view { display: none; }
   .topbar__logo { display: block; }
-  .search__kbd { display: none; }
   .sb__gathering { display: none; }
   .sb__input { font-size: var(--fs-body); } /* iOS zooms into fields under 16px: the body step (17) clears it */
 }
@@ -1551,12 +1529,6 @@ video.vp__media { object-fit: contain; }
 .chip__count { font-size: var(--fs-label); color: var(--muted); font-variant-numeric: tabular-nums; }
 .chip.is-active .chip__count { color: var(--bg); opacity: 0.6; }
 
-.search__right { position: absolute; right: 8px; display: flex; align-items: center; gap: 4px; }
-.search__clear { position: static; width: 24px; height: 24px; }
-.search .input { padding-right: 80px; }
-.search .input { padding-right: 40px; }
-.search.is-ai .input { border-color: var(--border-strong); }
-.search.is-ai .search__icon { color: var(--text); }
 
 
 
