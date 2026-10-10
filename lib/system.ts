@@ -436,7 +436,7 @@ const EVIDENCE = (words: number) => `- Evidence names the references behind a de
 const CONFIDENCE = `- confidence, 0 to 100: how many references agree, and how concrete and explicit the evidence is. One passing mention is 25 to 40. Two or three references that agree, with concrete values, is 60 to 80. The team saying it in so many words, plus measured values, is 85 or more.`;
 
 /** The system pass reads the board's tally: the confidence and the signals it names are counted, not guessed */
-const SIGNALS_RULE = `- signals: 0 to 2 keys from SIGNALS ACROSS THE BOARD, of that area only, that back the decision. None when the decision rests on the team's words alone, and none for an empty area.
+const SIGNALS_RULE = `- signals: 0 to 2 keys from SIGNALS ACROSS THE BOARD, of that area only, that back the decision. Name them for an area the team decided too, even though its text comes back unchanged. None when no counted signal backs the decision, and none for an empty area.
 - confidence, 0 to 100: how far the board backs the decision, grounded in the counts. One passing mention, or a signal 1 reference shows, is 25 to 40. A signal a quarter of the board or more shows, or two or three references that agree with concrete values, is 60 to 80. The team saying it in so many words, plus a signal most of the board shows or measured values, is 85 or more. Without the tally (no signals on the board), go by how many references agree and how concrete the evidence is.`;
 
 const STYLE = `- Never write ids (r1, p2) or candidate codes in the text: name the reference or the value instead.
@@ -621,8 +621,15 @@ export function runSystem(input: { organizationId: string; projectId: string; us
       if (input.focus && !input.focus.areas.includes(cur.area)) continue;  // out of this pass's scope: as it was
       // The team's word stands, unless the team itself asked for this area to be improved ("Improve with AI")
       const own = cur.source === "team";
-      if (own && !input.focus) continue;
       const got = byArea.get(cur.area);
+      if (own && !input.focus) {
+        // Its words stand; how many references back it is the app's count, so the run keeps it current
+        const support = supportOf(cur.area, got?.signals ?? [], snapshot.signals, codes);
+        if (cur.decision && JSON.stringify(support) !== JSON.stringify(cur.support)) {
+          await db.update(A).set({ support }).where(and(eq(A.organizationId, input.organizationId), eq(A.projectId, input.projectId), eq(A.area, cur.area)));
+        }
+        continue;
+      }
       // A decision of the team keeps its paragraphs; a proposal is one run of text
       const decision = own ? cleanDecision(got?.decision) : (got?.decision ?? "").trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
       if (own && !decision) continue;  // never emptied by a pass
