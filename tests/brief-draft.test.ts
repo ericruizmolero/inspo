@@ -1,5 +1,5 @@
-// The brief drafts itself (#128): a draft never writes over what the team wrote, and a drafted field is replaced by
-// the next draft. The model and the client's site are the edge: the
+// The brief drafts itself (#128): a draft never writes over what the team wrote, a drafted field is replaced by the
+// next draft, and Color and Voice ask for their brief field once. The model and the client's site are the edge: the
 // model answers a fixed draft, and any other call to it fails the test.
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
@@ -23,6 +23,7 @@ vi.mock("@/lib/extract", async (importOriginal) => ({
 const { db, pool, schema } = await import("@/lib/db");
 const { draftBrief, mergeDraft } = await import("@/lib/brief-draft");
 const { saveBrief } = await import("@/lib/brief");
+const { startAreaAsk } = await import("@/lib/system");
 const { readBrief } = await import("@/types/brief");
 const { addItems, cleanupTeam, seedTeam } = await import("./library/seed");
 
@@ -80,4 +81,16 @@ test("a draft fills the empty fields, a re-draft keeps what the team wrote and r
 
   await draftBrief(ctx(), project);
   expect(await stored()).toEqual(second);
+});
+
+test("Color asks for the accessibility level and Voice for what the brand never says while each is empty, and never once set", async () => {
+  const color = await startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "color", usage: { organizationId: team.ws.id } });
+  expect(color.brief).toBe("a11y");
+  expect(color.options.map((o) => o.decision)).toEqual(["AA", "AAA"]);
+  const voice = await startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "voice", usage: { organizationId: team.ws.id } });
+  expect(voice).toMatchObject({ brief: "neverSay", options: [] });
+
+  await saveBrief(team.ws.id, project, { a11y: "AAA", neverSay: "Barato" }, team.user.id);
+  await expect(startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "color", usage: { organizationId: team.ws.id } })).rejects.toThrow("model called for start@");
+  await expect(startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "voice", usage: { organizationId: team.ws.id } })).rejects.toThrow("model called for start@");
 });
