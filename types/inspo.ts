@@ -1,3 +1,5 @@
+import type { SystemArea } from "./system";
+
 export interface InspoItem {
   /** database id (missing only on transient objects) */
   id?: string;
@@ -57,6 +59,8 @@ export interface InspoMeta {
   copyright?: string;
 }
 
+export interface AreaSignals { signals: string[]; evidence: string }
+
 export interface InspoTags {
   /** Sector (a SECTORS key) */
   sector: string;
@@ -90,6 +94,10 @@ export interface InspoTags {
   model?: string;
   /** The item's own metadata (v4) */
   meta?: InspoMeta;
+  /** v5: per area of the system it shows, 1 or 2 SIGNALS keys and what was seen (at most 20 English words). Only the areas visible on it */
+  areas?: Partial<Record<SystemArea, AreaSignals>>;
+  /** v5: the families the page's CSS names, cleaned (lib/font-names.ts) */
+  fonts?: string[];
   /** The workspace's own edits (inspo_item.tags_user), attached when the item is loaded */
   user?: UserTags;
   /** ISO date of when it was tagged */

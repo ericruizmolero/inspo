@@ -6,8 +6,9 @@
 // changing it changes how the tagger classifies.
 
 import type { InspoTags, UserTags } from "@/types/inspo";
+import type { SystemArea } from "@/types/system";
 
-export const TAXONOMY_VERSION = 4; // v4: the item's own metadata (lib/meta.ts). v3: one cheap vision call over the whole page, colours from the pixels
+export const TAXONOMY_VERSION = 5; // v5: signals per area of the system (SIGNALS) and the page's fonts, for the system to count. v4: the item's own metadata (lib/meta.ts). v3: one cheap vision call over the whole page, colours from the pixels
 
 /** Threshold above which a boolean tag counts as applied */
 export const TAG_THRESHOLD = 0.6;
@@ -149,6 +150,120 @@ export const LAYOUT: Term[] = [
   { key: "long-scroll", description: "A long page with many sections" },
   { key: "sidebar",     description: "A persistent sidebar" },
 ];
+
+// ─── v5 signals: what a reference shows for each area of the system ─────────────
+// A closed vocabulary per area, so two references with the same trait get the same key and the system can
+// count them ("in 12 of 40") by grouping keys, with no model pass to group free words. Keys are unique across
+// areas. The tagger picks 1 or 2 per area it can see, with the visible specifics as evidence.
+
+export const SIGNALS: Record<SystemArea, Term[]> = {
+  typography: [
+    { key: "display-serif-high-contrast", description: "Headlines in a high-contrast display serif" },
+    { key: "serif-text", description: "A serif for body or reading text" },
+    { key: "geometric-sans", description: "Geometric sans: round o, even strokes (Futura-like)" },
+    { key: "grotesk-neutral", description: "Neutral grotesque sans (Helvetica, Inter-like) as the main voice" },
+    { key: "humanist-sans", description: "Humanist sans: open, calligraphic, warm" },
+    { key: "condensed-display", description: "Condensed or compressed display headlines" },
+    { key: "mono-accents", description: "Monospaced type for labels, numbers or small accents" },
+    { key: "oversized-headlines", description: "Huge headlines filling the width or the first screen" },
+    { key: "quiet-small-type", description: "Small, quiet type; hierarchy by weight or space, not size" },
+    { key: "single-family", description: "One family does everything" },
+    { key: "serif-sans-pair", description: "A serif and a sans paired with clear roles" },
+    { key: "script-lettering", description: "Script, handwritten or hand-lettered type" },
+    { key: "caps-labels", description: "All-caps labels, eyebrows or navigation as a system" },
+  ],
+  color: [
+    { key: "dark-one-accent", description: "Dark ground with a single bright accent" },
+    { key: "light-one-accent", description: "Light ground with a single accent colour" },
+    { key: "monochrome", description: "Black, white and greys, no hue" },
+    { key: "warm-neutrals", description: "Warm neutral grounds: cream, beige, sand" },
+    { key: "cool-neutrals", description: "Cool greys and off-whites" },
+    { key: "pastel", description: "Soft pastel colours" },
+    { key: "saturated-multi", description: "Several saturated colours together" },
+    { key: "earthy", description: "Earthy tones: olive, terracotta, ochre, brown" },
+    { key: "gradient-led", description: "Gradients carry the colour (grounds, glows, mesh)" },
+    { key: "color-blocking", description: "Large flat blocks of strong colour, section by section" },
+    { key: "duotone", description: "Two colours only, used as a pair" },
+  ],
+  layout: [
+    { key: "strict-grid", description: "A visible, strict column grid" },
+    { key: "bento-grid", description: "Bento: tiles of mixed sizes" },
+    { key: "editorial-columns", description: "Magazine layout: text columns, varied blocks" },
+    { key: "asymmetric-broken", description: "Asymmetric or broken grid, overlapping elements" },
+    { key: "centered-column", description: "One centred column, narrow measure" },
+    { key: "split-screen", description: "Split screen: text one side, visual the other" },
+    { key: "full-bleed-sections", description: "Full-bleed images or colour sections edge to edge" },
+    { key: "generous-whitespace", description: "Generous whitespace, few elements per screen" },
+    { key: "dense-information", description: "Dense: much content packed tight" },
+    { key: "card-based", description: "Repeated cards as the main unit" },
+    { key: "sharp-corners", description: "Square corners, no radius" },
+    { key: "rounded-soft", description: "Large radii, soft rounded shapes" },
+    { key: "app-shell", description: "A persistent sidebar or app-like shell" },
+  ],
+  motion: [
+    { key: "scroll-storytelling", description: "A long page told section by section, scroll-driven" },
+    { key: "marquee-ticker", description: "Scrolling marquee or ticker" },
+    { key: "webgl-3d", description: "A 3D or WebGL scene" },
+    { key: "video-hero", description: "A video or animated hero" },
+    { key: "kinetic-type", description: "Animated or kinetic type" },
+    { key: "custom-cursor", description: "A custom cursor" },
+    { key: "carousel-slider", description: "Carousels or sliders" },
+    { key: "ui-states", description: "Visible interface states: toggles, tabs, hovers, animated buttons" },
+    { key: "still-quiet", description: "Still and quiet: nothing suggests motion" },
+  ],
+  iconography: [
+    { key: "line-icons", description: "Thin outline icons" },
+    { key: "filled-icons", description: "Solid filled icons" },
+    { key: "duotone-icons", description: "Two-tone icons" },
+    { key: "illustrated-icons", description: "Small illustrations or 3D icons in place of glyphs" },
+    { key: "emoji-icons", description: "Emoji used as icons" },
+    { key: "geometric-pictograms", description: "Geometric pictograms, signage-like" },
+    { key: "contained-icons", description: "Icons in coloured squares or circles" },
+    { key: "arrows-only", description: "No icon set: arrows or simple marks only" },
+  ],
+  logo: [
+    { key: "wordmark", description: "A wordmark: the name set in type" },
+    { key: "symbol-wordmark", description: "A symbol beside the name" },
+    { key: "symbol-only", description: "A symbol alone" },
+    { key: "monogram", description: "A monogram or initials" },
+    { key: "custom-lettering", description: "Custom-drawn or modified lettering" },
+    { key: "serif-wordmark", description: "A wordmark in a serif" },
+    { key: "sans-wordmark", description: "A wordmark in a sans" },
+    { key: "oversized-logo", description: "The logo set huge, as a graphic" },
+    { key: "one-colour-logo", description: "The logo in one ink" },
+  ],
+  imagery: [
+    { key: "documentary-photo", description: "Candid photos of real people and places" },
+    { key: "studio-product-photo", description: "Clean studio product photos" },
+    { key: "editorial-portraits", description: "Editorial portraits" },
+    { key: "black-white-photo", description: "Black and white photography" },
+    { key: "flat-illustration", description: "Flat vector illustration" },
+    { key: "hand-drawn-illustration", description: "Hand-drawn or textured illustration" },
+    { key: "3d-renders", description: "3D renders" },
+    { key: "ui-screenshots", description: "Product UI screenshots or device mockups" },
+    { key: "abstract-graphics", description: "Abstract shapes, patterns or generative graphics" },
+    { key: "collage-cutouts", description: "Collage, cut-outs, layered images" },
+    { key: "grain-texture", description: "Grain, noise or print texture" },
+    { key: "small-framed-images", description: "Small framed images as detail, not as hero" },
+  ],
+  voice: [
+    { key: "terse-confident", description: "Short, confident lines, few words" },
+    { key: "playful-witty", description: "Playful and witty" },
+    { key: "technical-precise", description: "Technical and precise: numbers, specs" },
+    { key: "warm-personal", description: "Warm, first person, personal" },
+    { key: "manifesto", description: "Manifesto statements, big claims" },
+    { key: "long-form-editorial", description: "Long-form editorial writing" },
+    { key: "formal-corporate", description: "Formal, corporate" },
+    { key: "benefit-led", description: "Benefit-led marketing copy with clear calls to action" },
+    { key: "casual-lowercase", description: "Casual, lowercase, internet-native" },
+    { key: "poetic", description: "Poetic and evocative, mood over information" },
+  ],
+};
+
+/** The area a signal key belongs to */
+export const SIGNAL_AREA: Record<string, SystemArea> = Object.fromEntries(
+  (Object.entries(SIGNALS) as [SystemArea, Term[]][]).flatMap(([area, terms]) => terms.map((t) => [t.key, area])),
+);
 
 /** The filterable facets beyond sector/style/traits, with their prefix in ?tags= */
 export const FACETS = [

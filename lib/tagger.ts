@@ -1,6 +1,6 @@
 // Tags an item with one call to a cheap vision model, over the whole page. Server only.
 //
-// What it costs, per item: one model call (image + a few hundred words in, ~250 out). The colours
+// What it costs, per item: one model call (image + a few hundred words in, a few hundred out). The colours
 // come from the pixels (lib/palette.ts) and cost nothing. A site already tagged in another workspace
 // is copied, not tagged again: curator notes never reach the prompt, so tags belong to the URL.
 import "server-only";
@@ -21,8 +21,10 @@ import { paletteOf } from "./palette";
 import { imageMeta, metaLines, postMeta } from "./meta";
 import { mediaKindOf, normalizeWebUrl, postOf, webKeyOf } from "./url";
 import { billOf, recordUsage, type UsageCtx } from "./usage";
-import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, TAXONOMY_VERSION } from "./taxonomy";
-import type { InspoItem, InspoTags } from "@/types/inspo";
+import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, SIGNALS, SIGNAL_AREA, TAXONOMY_VERSION } from "./taxonomy";
+import { typeFamilies } from "./font-names";
+import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
+import type { AreaSignals, InspoItem, InspoTags } from "@/types/inspo";
 import { log } from "./log";
 
 export const taggerEnabled = llmEnabled;
@@ -51,6 +53,12 @@ const TagSchema = z.object({
   layout: z.array(z.enum(keys(LAYOUT))),
   keywords: z.array(z.string()).describe("5 to 10 lowercase English words or short phrases a designer would search for"),
   visual: z.string().describe("40 to 60 words, plain English prose"),
+  // An array, not an object keyed by area: strict JSON schemas want every key of an object, and most areas are not visible
+  areas: z.array(z.object({
+    area: z.enum(SYSTEM_AREAS),
+    signals: z.array(z.enum(Object.keys(SIGNAL_AREA) as [string, ...string[]])),
+    evidence: z.string(),
+  })).describe("Only the areas the reference clearly shows"),
 });
 type TagOutput = z.infer<typeof TagSchema>;
 
@@ -88,7 +96,11 @@ ${list(LAYOUT)}
 
 FREE TEXT (always in English: it feeds search, whatever the page's language)
 - KEYWORDS: 5 to 10 lowercase search words for what makes this reference worth saving and is not already covered by the lists: the subject, the mood, a specific technique, the industry ("coffee roaster", "swiss grid", "risograph texture", "pastel", "car configurator"). No generic words like "website", "design" or "modern". Never a person or brand name: names are kept apart.
-- VISUAL: 40 to 60 words of plain prose on what the page looks like: colours, type, imagery, layout, mood.`;
+- VISUAL: 40 to 60 words of plain prose on what the page looks like: colours, type, imagery, layout, mood.
+
+AREAS: what the reference shows for each area of a design system
+For each area it clearly shows, 1 or 2 keys from that area's list only, and EVIDENCE: at most 20 English words naming what is visible (the font's look or its name from the CSS, colours as hex or names, sizes, a few of its words). Skip an area you cannot see: no entry beats a guess. Usually 3 to 6 areas.
+${SYSTEM_AREAS.map((a) => `${a.toUpperCase()}:\n${list(SIGNALS[a])}`).join("\n")}`;
 
 // ─── Inputs ──────────────────────────────────────────────────────────────────
 
@@ -216,6 +228,7 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, over:
   ]);
   const out = TagSchema.parse(JSON.parse(res.text)) as TagOutput;
   const uniq = (a: string[]) => [...new Set(a)];
+  const fonts = typeFamilies(site?.signals.fonts ?? []);
   const tags: InspoTags = {
     sector: out.sector, sectorP: 1,
     style: out.style, styleP: FIT[out.style_fit],
@@ -232,10 +245,24 @@ export async function tagWith(item: InspoItem, { image, site }: TagInputs, over:
     keywords: uniq(out.keywords.map((k) => k.trim().toLowerCase()).filter((k) => k && k.length < 40)).slice(0, 10),
     model: res.model,
     meta: site?.meta,
+    areas: areasOf(out.areas),
+    fonts: fonts.length ? fonts : undefined,
     at: new Date().toISOString(),
     v: TAXONOMY_VERSION,
   };
   return { tags, ...res };
+}
+
+/** The model's areas as stored: each signal in its own area's list (a key from another area is dropped), 2 at most,
+ *  the evidence cut to 20 words. An area named twice keeps its first entry */
+function areasOf(list: TagOutput["areas"]): Partial<Record<SystemArea, AreaSignals>> | undefined {
+  const out: Partial<Record<SystemArea, AreaSignals>> = {};
+  for (const a of list) {
+    const signals = [...new Set(a.signals.filter((k) => SIGNAL_AREA[k] === a.area))].slice(0, 2);
+    if (out[a.area] || !signals.length) continue;
+    out[a.area] = { signals, evidence: a.evidence.trim().split(/\s+/).slice(0, 20).join(" ") };
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** Tags one item. Throws when the model fails, so the item stays pending and is tried again. */

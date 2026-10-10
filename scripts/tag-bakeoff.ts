@@ -55,10 +55,12 @@ async function main() {
           ["traits", Object.keys(tg.tags).filter((k) => tg.tags[k] >= 0.6)],
           ...FACETS.filter((f) => f.field !== "palette").map((f) => [f.field, tg[f.field] ?? []] as const),
           ["keywords", tg.keywords ?? []],
+          ["fonts", tg.fonts ?? []],
         ] as [string, string[]][];
+        const areas = Object.entries(tg.areas ?? {}).map(([area, a]) => `<div class="area"><b>${area}</b> ${a!.signals.map((x) => `<span class="tag sig">${esc(x)}</span>`).join(" ")} <i>${esc(a!.evidence)}</i></div>`).join("");
         return `<td><div class="meta">$${(r.costUsd ?? 0).toFixed(5)} · ${(r.ms / 1000).toFixed(1)}s · ${r.usage.input}/${r.usage.output} tok</div>
           ${lists.map(([k, v]) => `<div><b>${k}</b> ${v.map((x) => `<span class="tag">${esc(x)}</span>`).join(" ")}</div>`).join("")}
-          <p>${esc(tg.visual ?? "")}</p></td>`;
+          ${areas}<p>${esc(tg.visual ?? "")}</p></td>`;
       } catch (e) {
         totals[model].failed++;
         return `<td class="err">${esc(e instanceof Error ? e.message : String(e))}</td>`;
@@ -82,7 +84,7 @@ table{border-collapse:collapse;width:100%}td,th{border-top:1px solid #e7e5e4;pad
 th{position:sticky;top:0;background:#fafaf9}.pic{width:260px}.pic img{width:260px;max-height:640px;object-fit:cover;object-position:top;border:1px solid #e7e5e4}
 .meta{color:#78716c;font-weight:400;font-size:12px}.tag{display:inline-block;background:#f5f5f4;border-radius:4px;padding:0 5px;margin:1px 0}
 .pal{display:flex;height:14px;margin:6px 0 2px;border-radius:4px;overflow:hidden}.sw{flex-basis:0}.fam{color:#78716c;margin-bottom:6px}
-.err{color:#b91c1c}.noimg{color:#a8a29e}b{font-weight:600;margin-right:4px}p{color:#57534e}
+.area{margin-top:4px}.sig{background:#e7f0e4}.area i{color:#57534e}.err{color:#b91c1c}.noimg{color:#a8a29e}b{font-weight:600;margin-right:4px}p{color:#57534e}
 </style>
 <h1>Tag bake-off</h1><p>${picked.length} items, same inputs for every model. Cost is what OpenRouter billed.</p>
 <table><tr><th>Item</th>${head}</tr>${blocks.join("")}</table>`;
