@@ -26,5 +26,5 @@ Los valores salen del sistema de diseño Criterio (claude.ai/artifact/RM3rCVaxFN
 ## Reglas que cruzan todas las páginas
 
 - Nunca valores sueltos para UI: tokens o `color-mix()` con tokens. Un valor nuevo entra en `globals.css` y en su página, nunca en el CSS de un componente.
-- Los alias de shadcn (`--primary` = ember, `--card`, `--sidebar-*`…) y los nombres viejos (`--bg`, `--panel`, `--surface*`, `--text-2`, `--dock-*`) apuntan a los tokens del sistema. Lo nuevo usa los nombres del sistema; los alias se retiran cuando no quede CSS que los lea.
+- Los alias de shadcn (`--primary` = ember, `--card`, `--sidebar-*`…) apuntan a los tokens del sistema. Los nombres viejos `--bg`, `--panel` y `--text-2` no son alias puros: las ventanas y menús en Board y la barra lateral del móvil los redefinen con valores distintos de `--surface-page`, `--surface-raised` y `--text-muted`. `--surface`, `--surface-2` y `--surface-3` no tienen nombre en el sistema. Lo nuevo usa los nombres del sistema; los viejos se retiran cuando no quede CSS que los lea.
 - Dos temas, Board (oscuro) y Paper (claro), desde los mismos tokens. Lo que se diseña se mira en los dos.

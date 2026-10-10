@@ -2457,34 +2457,23 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 /* What are you making? (the home): its rules live in components/ProjectChooser.css */
 
 /* ─── Product chrome (design system): the tab bar, the view switcher, the command bar, the zoom pill and the
-   theme button are solid chrome that follows the theme, with a hairline. No glass, no blur. The --dock-* names
-   map onto the chrome tokens so every bar follows them. ─── */
+   theme button are solid chrome that follows the theme, with a hairline. No glass, no blur. ─── */
 :root {
-  --dock-ink: var(--chrome-ink); --dock-ink-2: var(--chrome-text); --dock-muted: var(--chrome-muted);
-  --dock-surface: var(--chrome);
-  --dock-surface-pop: var(--chrome-panel);
-  --dock-hover: var(--chrome-raised);
-  --dock-chip: var(--chrome-raised);
-  --dock-fill: var(--chrome-raised);
-  --dock-line: var(--chrome-border);
-  --dock-danger: #FF8A80;
   /* The liquid glass of the top chrome's pills (hover and the live one): a translucent light over the chrome,
      blurred, with a line of light on top. Back from before the system (Eric, 07-10); the bars themselves stay solid */
   --glass-hover: rgba(255, 255, 255, 0.08);
   --glass-on: rgba(255, 255, 255, 0.14);
   --glass-line: inset 0 1px 0 rgba(255, 255, 255, 0.09);
   --glass-blur: blur(20px) saturate(1.5);
-  --dock-shadow: none;
-  --dock-blur: none;
 }
 /* The dock's glass from before is switched off here; the tab bar, the view switcher and the zoom never had any */
 .sb--dock .sb__menu, .sb--dock .sb__field, .sb--dock .sb__field:hover, .sb--dock:focus-within .sb__field {
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 /* The search dock's field reads white text too */
-.sb--dock .sb__field input { color: var(--dock-ink); }
-.sb--dock .sb__field input::placeholder { color: var(--dock-muted); }
-.sb--dock .sb__field svg { color: var(--dock-muted); }
+.sb--dock .sb__field input { color: var(--chrome-ink); }
+.sb--dock .sb__field input::placeholder { color: var(--chrome-muted); }
+.sb--dock .sb__field svg { color: var(--chrome-muted); }
 /* The dock's field: the placeholder trims instead of running under the status and the shortcut */
 .sb--dock .sb__input { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb--dock .sb__right { flex-shrink: 0; }

@@ -35,7 +35,7 @@ Dos temas: **Board** (oscuro, el suelo del producto) y **Paper** (claro). La pal
 | `--chrome-text` / `--chrome-text-muted` / `--chrome-muted` | `#D8D0C0` / `#B8B1A3` / `#8A847A` | `#3D3B35` / `#5A5850` / `#6E695F` | Texto sobre cromo |
 | `--glass-hover` / `--glass-on` | `rgba(255,255,255,.08)` / `.14` | `rgba(0,0,0,.045)` / `.07` | Pastillas de hover y activa de la Isla y del selector (con `--glass-blur` y `--glass-line`) |
 
-El cromo es sólido: sin cristal ni desenfoque en barras ni superficies. El cristal (`--glass-*`) es solo de las pastillas de hover y activa de la Isla y del selector. Los `--dock-*` viejos apuntan a `--chrome*`. → [el cromo sigue al tema](../decisiones/2026-10-07-el-cromo-sigue-al-tema.md), [cromo de arriba](../decisiones/2026-10-07-el-cromo-de-arriba-vuelve-a-44-y-sus-pastillas-a-cristal.md)
+El cromo es sólido: sin cristal ni desenfoque en barras ni superficies. El cristal (`--glass-*`) es solo de las pastillas de hover y activa de la Isla y del selector. → [el cromo sigue al tema](../decisiones/2026-10-07-el-cromo-sigue-al-tema.md), [cromo de arriba](../decisiones/2026-10-07-el-cromo-de-arriba-vuelve-a-44-y-sus-pastillas-a-cristal.md)
 
 ## Roles que siguen al tema
 
