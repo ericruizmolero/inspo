@@ -15,6 +15,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=discover`, `/?in=templates` | Descubrir: recursos y ejemplos |
 | `/?in=<proyecto>` | Un proyecto: tablero hasta "Ya tengo mis referencias", luego Sistema |
 | `&view=board` / `&view=system` | Fuerza tablero o Sistema dentro del proyecto |
+| `&view=system&brief=1` | Sistema con el panel Brief abierto; el panel se abre y la URL suelta `brief` (lo usa ⌘K → "Abrir el brief") |
 | `?add=<url>` | Abre "Añadir" con esa URL (viene del login de invitado) |
 | `/i/[id]` | La biblioteca con la ficha de una referencia abierta (enlace para compartir) |
 

@@ -193,7 +193,7 @@ Popover para cambiar de espacio (al instante dentro de la biblioteca), crear equ
 
 ### Paleta de comandos
 `CommandPalette` · `components/CommandPalette.tsx` · `.cp`
-Diálogo cmdk con ⌘K / Ctrl+K: guardar la URL tecleada, añadir referencia, directorio, feedback, abrir referencias, cambiar de espacio, ajustes, actividad y sistema de diseño.
+Diálogo cmdk con ⌘K / Ctrl+K: guardar la URL tecleada, abrir el brief del proyecto abierto (solo con uno abierto), añadir referencia, directorio, feedback, abrir referencias, cambiar de espacio, ajustes, actividad y sistema de diseño.
 - Se carga en diferido y se monta tras el primer uso.
 
 ### Confirmación
@@ -463,7 +463,7 @@ Antes de la pasada del modelo se elige el objetivo (ordenar, afinar la escritura
 
 ### Brief del proyecto
 `BriefPanel` · `components/BriefPanel.tsx` · `components/BriefPanel.css` · `.brf`
-Todos los campos del brief en un sitio, para quien quiera rellenarlo de una vez. Se abre con "Brief" en la fila de la vista Sistema. Es el modal plano con el formulario empaquetado, como Mejorar con IA: `.modal__header` con el título y el cierre, campos sin pozo (en Board, `--surface-2`) con el foco en el borde, Chips en `.pills--line`. → [el brief pide una frase](decisiones/2026-10-10-el-brief-pide-una-frase-y-el-resto-se-rellena-solo.md)
+Todos los campos del brief en un sitio, para quien quiera rellenarlo de una vez. Se abre con "Brief" en la fila de la vista Sistema, o desde cualquier vista del proyecto con ⌘K → "Abrir el brief" (`?view=system&brief=1`). Es el modal plano con el formulario empaquetado, como Mejorar con IA: `.modal__header` con el título y el cierre, campos sin pozo (en Board, `--surface-2`) con el foco en el borde, Chips en `.pills--line`. → [el brief pide una frase](decisiones/2026-10-10-el-brief-pide-una-frase-y-el-resto-se-rellena-solo.md)
 - El orden y las preguntas son los de la tabla de esa decisión, y salen de una sola lista (`FIELDS`) tipada contra `keyof Brief`: cada campo dice su tipo (texto, texto largo, palabras, webs, precio, chips fijos, nivel, sector) y se pinta por tipo. Un campo nuevo del brief entra en la tabla, luego en `types/brief.ts` y luego en esa lista.
 - Cada campo se guarda solo (`saveProjectBrief` con `{ [campo]: valor }`), al dejar de teclear, al salir o con ⌘Enter; los chips al pulsarlos. Así solo el campo tocado sale de `drafted`. Los guardados van en cola: el servidor lee y reescribe el brief entero.
 - Lo que escribió el modelo y nadie ha tocado lleva "borrador" junto a la pregunta, en el gris de "opcional", hasta que se edita.

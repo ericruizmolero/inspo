@@ -121,6 +121,7 @@ export const ui = {
     addUrl: (url: string): string => `Save ${url}`,
     addInspo: "Add an inspiration",
     openDirectory: "Open the directory",
+    openBrief: "Open the brief",
     switchTo: (name: string): string => `Switch to ${name}`,
     openSite: "Opens the site",
   },

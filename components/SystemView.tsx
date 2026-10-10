@@ -3,6 +3,7 @@
 // area (components/SystemDoc.tsx). The model reads the board into it ("Improve with AI"); the team writes over it.
 // Beside it, the brand as a presentation (components/brand/BrandPresentation.tsx): the same values drawn.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Clouds from "@/components/Clouds";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
@@ -210,6 +211,15 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [sharing, setSharing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
+  // ⌘K → Brief asks with ?brief=1, also while this view is already open, so it is read on every change
+  const briefParam = useSearchParams().get("brief");
+  useEffect(() => {
+    if (briefParam !== "1") return;
+    setBriefOpen(true);
+    const p = new URLSearchParams(window.location.search);
+    p.delete("brief");
+    window.history.replaceState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+  }, [briefParam]);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const b = p.get("bring");

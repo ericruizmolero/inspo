@@ -119,6 +119,7 @@ export const ui: typeof EnUi = {
     addUrl: (url: string): string => `Guardar ${url}`,
     addInspo: "Añadir una inspo",
     openDirectory: "Abrir el directorio",
+    openBrief: "Abrir el brief",
     switchTo: (name: string): string => `Cambiar a ${name}`,
     openSite: "Abre la web",
   },

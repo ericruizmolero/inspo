@@ -1689,6 +1689,7 @@ export default function InspoClient({
         workspaces={workspaces}
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
+        onBrief={currentProject ? () => setParams({ view: "system", brief: "1" }) : undefined}
         onAddUrl={(web) => {
           // Already saved: show it instead of saving it twice (found on the board; opened where there is no search)
           if (isDuplicate(web)) {
