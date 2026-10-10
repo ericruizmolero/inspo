@@ -4,6 +4,7 @@ import { sendDigests } from "@/lib/notify";
 import { log, pruneFailures, recordFailure } from "@/lib/log";
 import { sweep } from "@/lib/job-run";
 import { pruneRateLimits } from "@/lib/rate-limit";
+import { pruneTombstones } from "@/lib/pulse";
 
 export const maxDuration = 300;
 
@@ -18,8 +19,9 @@ export async function GET(req: NextRequest) {
   const jobs = await sweep().catch((err) => { log.error("cron.sweep_failed", { err }); return { error: err instanceof Error ? err.message : String(err) }; });
   const pruned = await pruneFailures().catch((err) => { log.error("cron.prune_failures", { err }); return null; });
   const limits = await pruneRateLimits().catch((err) => { log.error("cron.prune_rate_limits", { err }); return null; });
+  const tombstones = await pruneTombstones().catch((err) => { log.error("cron.prune_tombstones", { err }); return null; });
   // BetterStack's heartbeat: a morning with no ping, or a failed one, alerts. That is how a dead cron shows
   const beat = process.env.BETTERSTACK_HEARTBEAT_URL;
   if (beat) await fetch(digests && !("error" in jobs) ? beat : `${beat}/fail`, { method: "POST" }).catch(() => {});
-  return Response.json({ pruned, limits, digests: digests && { teams: digests.teams, sent: digests.sent, paused: digests.paused, skipped: digests.skipped, spaced: digests.spaced }, jobs });
+  return Response.json({ pruned, limits, tombstones, digests: digests && { teams: digests.teams, sent: digests.sent, paused: digests.paused, skipped: digests.skipped, spaced: digests.spaced }, jobs });
 }

@@ -470,6 +470,20 @@ export const inspoComment = pgTable("inspo_comment", {
   index("inspo_comment_parent_id_idx").on(t.parentId),
 ]);
 
+/** A row the open board mirrors went away: written by AFTER DELETE triggers on inspo_item and inspo_comment
+ *  (migration 0036), so every path that deletes (the app, the extension, the MCP, a cascade) leaves one. The pulse
+ *  (lib/pulse.ts) sends them to the boards that still show the row; the morning cron prunes them after a week.
+ *  No foreign key to the workspace: deleting one cascades its items, and their triggers must still write */
+export const libraryTombstone = pgTable("library_tombstone", {
+  organizationId: text("organization_id").notNull(),
+  kind: text("kind").notNull(),
+  id: text("id").notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  index("library_tombstone_org_deleted_idx").on(t.organizationId, t.deletedAt),
+  oneOf("library_tombstone_kind_check", t.kind, ["item", "comment"]),
+]);
+
 // ─── AI usage ────────────────────────────────────────────────────────────────
 // One row per model call (Claude or Jev), with its estimated cost in USD
 // at the rate current when written (lib/usage.ts). The basis for SaaS pricing.

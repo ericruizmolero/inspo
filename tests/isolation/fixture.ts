@@ -149,6 +149,8 @@ export async function cleanup(tag: string) {
     await db.delete(schema.user).where(inArray(schema.user.id, ids));
   }
   await db.delete(schema.organization).where(like(schema.organization.id, `${tag}%`));
+  // What the deletes above left behind (migration 0036's triggers)
+  await db.delete(schema.libraryTombstone).where(like(schema.libraryTombstone.organizationId, `${tag}%`));
   await db.delete(schema.mcpClient).where(like(schema.mcpClient.id, `${tag}%`));
   // Shared across workspaces, so no cascade reaches it
   await db.delete(schema.designDoc).where(like(schema.designDoc.url, `https://${tag}%`));
