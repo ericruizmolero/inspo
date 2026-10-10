@@ -2,7 +2,8 @@
 // The project's brief, every field in one place. Order and questions are the table of
 // docs/design-system/decisiones/2026-10-10-el-brief-pide-una-frase-y-el-resto-se-rellena-solo.md.
 // A long form, so the flat modal with the packed form, like Improve with AI. Each field is saved alone, so only the
-// field someone touched leaves `drafted`.
+// field someone touched leaves `drafted`. What the AI drafted (lib/brief-draft.ts) goes first, under "This is what
+// we understood", each field editable and confirmed on its own or all at once.
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { A11Y_LEVELS, BRIEF_LIMITS, BRIEF_TEXT_MAX, KEEP_PARTS, PLATFORMS, PRICE_RANGES, isMarketTag, readBrief, type Brief, type DraftField } from "@/types/brief";
 import { normalizeWebUrl } from "@/lib/url";
@@ -62,16 +63,43 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
   const [status, setStatus] = useState<"saving" | "saved" | null>(null);
   // One save at a time: saveBrief reads the stored brief and writes it back whole, so two in flight could lose one
   const queue = useRef<Promise<unknown>>(Promise.resolve());
+  // What the AI drafted stays together under "This is what we understood" while the panel is open: confirming or
+  // editing a field takes its mark away but does not move it from under the cursor
+  const [understood, setUnderstood] = useState<ReadonlySet<DraftField>>(() => new Set(brief.drafted));
+  // A field someone touched here is theirs: a draft that lands later never writes over it
+  const touched = useRef(new Set<Editable>());
+  // Bumped for a field a landing draft rewrote, so its boxes start again from the new value
+  const [rev, setRev] = useState<Partial<Record<DraftField, number>>>({});
+  const understoodId = useId();
+  const now = useRef(brief);
+  useEffect(() => { now.current = brief; });
+
+  // The draft runs after the site or the document is saved and reaches the board with its next look (the pulse)
+  useEffect(() => {
+    const landed = readBrief(stored);
+    if (!landed) return;
+    const take = landed.drafted.filter((k) => !touched.current.has(k));
+    const changed = take.filter((k) => JSON.stringify(landed[k]) !== JSON.stringify(now.current[k]));
+    if (!changed.length && take.every((k) => now.current.drafted.includes(k))) return;
+    setBrief((b) => ({ ...b, ...Object.fromEntries(changed.map((k) => [k, landed[k]])), drafted: [...new Set([...b.drafted, ...take])] }));
+    setUnderstood((u) => new Set([...u, ...take]));
+    setRev((r) => ({ ...r, ...Object.fromEntries(changed.map((k) => [k, (r[k] ?? 0) + 1])) }));
+  }, [stored]);
 
   // The panel's value stays the truth: every control already hands over what readBrief keeps, and a reply taken back
-  // would undo a newer save of the same field still in the queue
-  const save = <K extends Editable>(key: K, value: Brief[K]) => {
-    setBrief((b) => ({ ...b, [key]: value, drafted: b.drafted.filter((d) => d !== key) }));
+  // would undo a newer save of the same field still in the queue. A field sent is the team's, so it leaves `drafted`
+  const send = (patch: Partial<Brief>) => {
+    const keys = Object.keys(patch) as Editable[];
+    for (const k of keys) touched.current.add(k);
+    setBrief((b) => ({ ...b, ...patch, drafted: b.drafted.filter((d) => !keys.includes(d)) }));
     setStatus("saving");
     queue.current = queue.current
-      .then(() => onSave({ [key]: value } as Partial<Brief>))
+      .then(() => onSave(patch))
       .then((saved) => setStatus(saved ? "saved" : null), () => setStatus(null));
   };
+  const save = <K extends Editable>(key: K, value: Brief[K]) => send({ [key]: value });
+  /** Confirming is saving the value as it is */
+  const confirm = (keys: DraftField[]) => send(Object.fromEntries(keys.map((k) => [k, brief[k]])));
 
   const field = (f: Field) => {
     switch (f.kind) {
@@ -135,6 +163,18 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
     }
   };
 
+  const isUnderstood = (f: Field) => understood.has(f.key as DraftField);
+  const ours = FIELDS.filter(isUnderstood);
+  const row = (f: Field) => {
+    const draft = brief.drafted.includes(f.key as DraftField);
+    return (
+      <Row key={`${f.key}:${rev[f.key as DraftField] ?? 0}`} label={s.questions[f.key]} single={SINGLE.has(f.kind)} draft={draft ? s.draft : null}
+        confirm={draft ? { label: s.confirm(s.questions[f.key]), onClick: () => confirm([f.key as DraftField]) } : undefined}>
+        {field(f)}
+      </Row>
+    );
+  };
+
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent className="brf">
@@ -145,25 +185,34 @@ export default function BriefPanel({ brief: stored, client, onSave, onClose }: {
         </div>
         <div className="modal__body brf__body">
           <DialogDescription className="brf__lead">{s.lead}</DialogDescription>
-          {brief.drafted.length > 0 && <p className="brf__hint">{s.draftHint}</p>}
-          {FIELDS.map((f) => (
-            <Row key={f.key} label={s.questions[f.key]} single={SINGLE.has(f.kind)} draft={brief.drafted.includes(f.key as DraftField) ? s.draft : null}>
-              {field(f)}
-            </Row>
-          ))}
+          {ours.length > 0 && (
+            <section className="brf__understood" aria-labelledby={understoodId}>
+              <div className="brf__understood-head">
+                <h3 id={understoodId} className="t-label brf__understood-title">{s.understood}</h3>
+                {brief.drafted.length > 0 && <Button variant="quiet" size="s" icon="check" onClick={() => confirm(brief.drafted)}>{s.confirmAll}</Button>}
+              </div>
+              {brief.drafted.length > 0 && <p className="brf__hint">{s.draftHint}</p>}
+              {ours.map(row)}
+            </section>
+          )}
+          {FIELDS.filter((f) => !isUnderstood(f)).map(row)}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-/** A question and its control. One box is a label; chips are a group, where a label would press the first chip */
-function Row({ label, single, draft, children }: { label: string; single: boolean; draft: string | null; children: React.ReactNode }) {
+/** A question and its control. One box is a label; chips are a group, where a label would press the first chip. A
+ *  drafted one carries its confirm beside the question, outside the label: a button inside it would be a second control */
+function Row({ label, single, draft, confirm, children }: { label: string; single: boolean; draft: string | null; confirm?: { label: string; onClick: () => void }; children: React.ReactNode }) {
   const id = useId();
   const head = <span id={id} className="t-label brf__label">{label}{draft && <small className="brf__draft">{draft}</small>}</span>;
-  return single
+  const body = single
     ? <label className="brf__row">{head}{children}</label>
     : <div className="brf__row" role="group" aria-labelledby={id}>{head}{children}</div>;
+  return confirm
+    ? <div className="brf__drafted">{body}<IconButton className="brf__confirm" icon="check" variant="quiet" size="s" label={confirm.label} onClick={confirm.onClick} /></div>
+    : body;
 }
 
 /** Saved after a pause in typing, on leaving the box or with ⌘Enter, like the blocks of criterio.md. A required box

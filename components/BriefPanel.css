@@ -21,3 +21,12 @@
 .brf__sample { display: flex; align-items: flex-start; gap: 6px; }
 .brf__sample > .cr-textarea { flex: 1; min-width: 0; }
 .brf__add { align-self: flex-start; }
+/* What the AI drafted, together at the top under "This is what we understood": a flat group closed by one line,
+ * with "Confirm all" as the quiet action of its head. Each drafted field carries its own round check at the end of
+ * its question, so the label keeps room for it */
+.brf__understood { display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.brf__understood-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; margin-bottom: -12px; }
+.brf__understood-title { margin: 0; color: var(--text); font-weight: var(--fw-medium); }
+.brf__drafted { position: relative; }
+.brf__drafted .brf__label { padding-right: 36px; }
+.brf__confirm { position: absolute; top: -6px; right: 0; }

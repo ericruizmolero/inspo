@@ -617,13 +617,24 @@ export const ui: typeof EnUi = {
       hint: "La web actual del cliente manda: su copy, sus fuentes, su logo y sus cifras se toman tal cual. El resto del tabl\u00f3n inspira lo dem\u00e1s.",
       clear: "Ya no es un redise\u00f1o",
     },
+    briefAsk: {
+      a11y: {
+        say: "Antes de elegir colores, el contraste que tienen que pasar.",
+        question: "\u00bfQu\u00e9 nivel de accesibilidad?",
+        why: { AA: "El nivel habitual: legible para casi todos, y el que vale si nadie elige.", AAA: "M\u00e1s contraste y letra m\u00e1s grande, para servicios p\u00fablicos o un p\u00fablico mayor." },
+      },
+      neverSay: { say: "Antes de la voz, lo que la marca nunca dir\u00eda.", question: "\u00bfAlgo que la marca nunca dir\u00eda?" },
+    },
     briefPanel: {
       open: "Brief",
       openHint: "Todo lo que el proyecto dice de s\u00ed mismo, campo a campo",
       title: "Brief",
       lead: "Solo hace falta la primera pregunta. El resto ayuda a cada pasada de la IA y entra en criterio.md seg\u00fan lo escribes.",
       draft: "borrador",
-      draftHint: "Donde pone borrador, lo escribi\u00f3 la IA a partir de la web del cliente. Ed\u00edtalo y pasa a ser vuestro.",
+      understood: "Esto es lo que hemos entendido",
+      draftHint: "Lo ley\u00f3 la IA en la web del cliente o en el documento importado. Edita un campo o conf\u00edrmalo y pasa a ser vuestro.",
+      confirm: (question: string): string => `Confirmar: ${question}`,
+      confirmAll: "Confirmar todo",
       questions: {
         about: "\u00bfQu\u00e9 es el proyecto y para qui\u00e9n?",
         clientItemId: "\u00bfYa tiene web?",

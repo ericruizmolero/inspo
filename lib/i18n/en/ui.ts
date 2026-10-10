@@ -621,13 +621,24 @@ export const ui = {
       hint: "The client's current site rules: its copy, typefaces, logo and figures are taken as they are. The rest of the board inspires everything else.",
       clear: "Not a redesign any more",
     },
+    briefAsk: {
+      a11y: {
+        say: "Before choosing colours, the contrast they have to pass.",
+        question: "Which accessibility level?",
+        why: { AA: "The usual level: readable for most people, and the one that applies if nobody chooses.", AAA: "More contrast and larger type, for public services or an older audience." },
+      },
+      neverSay: { say: "Before the voice, what the brand would never say.", question: "Something the brand would never say?" },
+    },
     briefPanel: {
       open: "Brief",
       openHint: "Everything the project says about itself, field by field",
       title: "Brief",
       lead: "Only the first question is needed. The rest helps every pass of the AI and goes into criterio.md as you write it.",
       draft: "draft",
-      draftHint: "Where it says draft, the AI wrote it from the client's site. Edit it and it is yours.",
+      understood: "This is what we understood",
+      draftHint: "The AI read it on the client's site or in the imported document. Edit a field or confirm it and it is yours.",
+      confirm: (question: string): string => `Confirm: ${question}`,
+      confirmAll: "Confirm all",
       questions: {
         about: "What is the project and who is it for?",
         clientItemId: "Does it have a site already?",
