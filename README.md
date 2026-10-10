@@ -113,6 +113,7 @@ Nothing is required. Each key switches one thing on:
 | `OPENROUTER_API_KEY` | DESIGN.md, explain, revisions, tags and search translation (every model call) |
 | `TAG_MODEL` | Optional. Tagging model, default `google/gemini-2.5-flash-lite` (`npm run tags:bakeoff` compares others) |
 | `TAG_FALLBACK_MODEL` | Optional. Model for a job's last try, default `mistralai/mistral-small-3.2-24b-instruct` |
+| `LLM_FALLBACK_MODEL` | Optional. Model that answers when a call fails, default `anthropic/claude-haiku-5.5` |
 | `QUERY_MODEL` | Optional. Model that turns a search into English, default `TAG_MODEL` |
 | `CRON_SECRET` | Vercel Cron: the tagging worker (`/api/cron/tag-pending`, once a day on Hobby) and the usage check |
 | `TYPESAFE_API_KEY` | Jev: AI search and polish |
@@ -230,6 +231,8 @@ npm run check:invites    # the invitation flow, against the running app (npm run
 npm run check:locale     # which language each page and email uses
 npm run check:design     # the DESIGN.md data before and after the model
 npm run check:usage      # the cost reconciliation with OpenRouter
+npm run check:llm        # retry and fallback of every model call, OpenRouter stubbed
+npm run eval:system      # scores the system and brand prompts on the golden set (a few cents a pass)
 ```
 
 ## For maintainers

@@ -11,7 +11,7 @@ import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
-import { llm, LlmError } from "./llm";
+import { llm, LlmError, type LlmInput } from "./llm";
 import { summarize } from "./jev";
 import { embedEnabled, nearest, queryVector } from "./embed";
 import { viewOf } from "./taxonomy";
@@ -20,7 +20,7 @@ import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
 import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
-import { AUTO_REF, autoSystemPass, recordUsage, type UsageCtx } from "./usage";
+import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { autoSystemToday } from "./quota";
 import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
@@ -382,7 +382,7 @@ ${STYLE}`;
 /** What the team reads on screen, in the workspace's language */
 const languageOf = (lang: OutputLanguage | undefined) => languageRule(lang ?? DEFAULT_OUTPUT_LANGUAGE, "every decision, why, take, reason, question, option and summary");
 
-const OutSchema = z.object({
+export const SystemOutSchema = z.object({
   summary: z.string(),
   areas: z.array(z.object({
     area: z.enum(SYSTEM_AREAS),
@@ -416,6 +416,63 @@ function focusForModel(focus: SystemFocus | undefined, teamAreas: SystemArea[] =
   return lines.length ? `THIS PASS was asked for by the team, who said what they want from it:\n${lines.map((l) => `- ${l}`).join("\n")}` : null;
 }
 
+/** Everything the system pass reads: built from the database by runSystem, frozen as a fixture by the eval (scripts/eval-system.ts) */
+export interface SystemSnapshot {
+  name: string;
+  brief: Brief | null;
+  /** The system as it stands, its references named by their code on the board */
+  standing: { area: SystemArea; status: string; decision?: string; confidence?: number; evidence?: { ref: string; take?: string; filed_by_team?: boolean }[]; never?: string[] }[];
+  /** The board as the model reads it, the client's site marked */
+  refs: Record<string, unknown>[];
+  guides: string[];
+}
+
+/** The system pass's input as the database has it now */
+export async function loadSnapshot(organizationId: string, projectId: string): Promise<{ snapshot: SystemSnapshot; refs: BoardRef[]; stamp: string; current: ProjectSystem }> {
+  const project = await projectRow(organizationId, projectId);
+  const [{ refs, stamp }, current, guides] = await Promise.all([loadBoard(organizationId, projectId), getSystem(organizationId, projectId), projectGuides(organizationId, projectId)]);
+  const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
+  const snapshot: SystemSnapshot = {
+    name: project.name,
+    brief: project.brief,
+    standing: current.areas.map((a) => ({
+      area: a.area,
+      status: a.source ?? "empty",
+      decision: a.decision || undefined,
+      confidence: a.decision ? a.confidence : undefined,
+      evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take || undefined, filed_by_team: e.pinned || undefined })) : undefined,
+      never: a.never ? a.never.split("\n") : undefined,
+    })),
+    refs: markClient(refs, project.brief),
+    guides,
+  };
+  return { snapshot, refs, stamp, current };
+}
+
+/** Names the prompt an eval scored: the version and a fingerprint, so an edit nobody numbered still reads as another prompt */
+export const SYSTEM_PROMPT_ID = `v${PROMPT_VERSION}-${createHash("sha1").update(SYSTEM).digest("hex").slice(0, 7)}`;
+
+/** The system pass as one model call */
+export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage; focus?: SystemFocus } = {}): LlmInput & { schema: typeof SystemOutSchema } {
+  const text = [
+    `Project: ${s.name}`,
+    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(s.brief))}`,
+    `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
+    `References on the board (JSON): ${JSON.stringify(s.refs)}`,
+    s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
+    focusForModel(o.focus, s.standing.filter((a) => a.status === "team").map((a) => a.area)),
+  ].filter(Boolean).join("\n\n");
+  return {
+    model: SYSTEM_MODEL,
+    system: `${SYSTEM}\n\n${languageOf(o.language)}`,
+    text,
+    schema: SystemOutSchema,
+    // Reasoning counts against the budget: room for it, the answer itself is short
+    maxTokens: 16000,
+    effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
+  };
+}
+
 // One run per project at a time: two tabs must not pay twice for the same board
 const inflight = new Map<string, Promise<ProjectSystem>>();
 
@@ -428,50 +485,24 @@ export function runSystem(input: { organizationId: string; projectId: string; us
   const running = inflight.get(key);
   if (running) return running;
   const job = (async () => {
-    const project = await projectRow(input.organizationId, input.projectId);
-    const [{ refs, stamp }, current, guides] = await Promise.all([loadBoard(input.organizationId, input.projectId), getSystem(input.organizationId, input.projectId), projectGuides(input.organizationId, input.projectId)]);
-    if (!refs.length && !guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
+    const { snapshot, refs, stamp, current } = await loadSnapshot(input.organizationId, input.projectId);
+    if (!refs.length && !snapshot.guides.length) throw new HttpError(400, (await getErrors()).systemEmptyBoard);
     const asked = !!input.auto && !input.focus;
     const auto = autoSystemPass(asked, { lastStamp: current.run?.stamp ?? null, stamp, autoToday: asked ? await autoSystemToday(input.organizationId, input.projectId) : 0 });
 
     const codes = new Map(refs.map((r) => [r.code, r.itemId]));
     const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
     const textIds = new Set(refs.filter((r) => r.ref.kind === "text").map((r) => r.itemId));
-const standing = current.areas.map((a) => ({
-      area: a.area,
-      status: a.source ?? "empty",
-      decision: a.decision || undefined,
-      confidence: a.decision ? a.confidence : undefined,
-      evidence: a.evidence.length ? a.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take || undefined, filed_by_team: e.pinned || undefined })) : undefined,
-      never: a.never ? a.never.split("\n") : undefined,
-    }));
-    const text = [
-      `Project: ${project.name}`,
-      `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
-      `System as it stands (JSON): ${JSON.stringify(standing)}`,
-      `References on the board (JSON): ${JSON.stringify(markClient(refs, project.brief))}`,
-      guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
-      focusForModel(input.focus, current.areas.filter((a) => a.source === "team").map((a) => a.area)),
-    ].filter(Boolean).join("\n\n");
-
     let res: Awaited<ReturnType<typeof llm>>;
     try {
-      res = await llm({
-        model: SYSTEM_MODEL,
-        system: `${SYSTEM}\n\n${languageOf(input.language)}`,
-        text,
-        schema: OutSchema,
-        // Reasoning counts against the budget: room for it, the answer itself is short
-        maxTokens: 16000,
-        effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
-      });
+      res = await llm(systemRequest(snapshot, input));
     } catch (err) {
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
     // Awaited: a brand pass asked for right after this one looks for this row (autoBrandPass)
-    await recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${auto ? AUTO_REF : ""}project:${input.projectId}` });
-    const out = OutSchema.parse(JSON.parse(res.text));
+    await recordUsage(input.usage, { action: "system", ...billOf(res), ref: `${auto ? AUTO_REF : ""}project:${input.projectId}` });
+    const out = SystemOutSchema.parse(JSON.parse(res.text));
     log.info("system.built", { ref: input.projectId, refs: refs.length, areasFilled: out.areas.filter((a) => a.decision.trim()).length, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
 
     const now = new Date();
@@ -579,7 +610,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
-  void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId} ${area} options` });
+  void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `project:${input.projectId} ${area} options` });
   const out = OptionsSchema.parse(JSON.parse(res.text));
   return out.options.slice(0, 3).map((o) => {
     const seen = new Set<string>();
@@ -640,7 +671,7 @@ async function startCall<S extends z.ZodTypeAny>(input: StartInput, part: string
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
-  void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId}:start-${part}:${input.area}` });
+  void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `project:${input.projectId}:start-${part}:${input.area}` });
   log.info("system.started", { ref: input.projectId, part, area: input.area, tokensIn: res.usage.input, tokensOut: res.usage.output, costUsd: res.costUsd });
   return schema.parse(JSON.parse(res.text));
 }
@@ -940,7 +971,7 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
     const refs = batch.map(({ row }, i) => ({ id: `r${i + 1}`, kind: mediaKindOf(row.web), ...summarize(rowToItem(row), row.tagsJson ?? undefined) }));
     const text = `Projects (JSON): ${JSON.stringify(projectsText)}\n\nUnfiled references (JSON): ${JSON.stringify(refs)}`;
     const res = await llm({ model: SYSTEM_MODEL, system: `${TRIAGE_SYSTEM}\n\n${languageOf(input.language)}`, text, schema: TriageSchema, maxTokens: 16000, effort: "low" });
-    void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `inbox triage ${batch.length}` });
+    void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `inbox triage ${batch.length}` });
     const parsed = TriageSchema.parse(JSON.parse(res.text));
     const out: TriageProposal[] = [];
     for (const it of parsed.items) {
@@ -1031,7 +1062,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
     if (!(err instanceof LlmError) || !err.finishReason) throw err;
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
-  void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId} ${area} curate` });
+  void recordUsage(input.usage, { action: "system", ...billOf(res), ref: `project:${input.projectId} ${area} curate` });
   const out = CurateSchema.parse(JSON.parse(res.text));
   const ids = new Set(candidates.map((c) => c.id));
   const verdicts: CandidateVerdict[] = candidates.map((c) => {

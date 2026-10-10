@@ -79,3 +79,4 @@ jobs:
       - run: npm run check:url-keys
       - run: npm run check:notifications
       - run: npm run check:postgres
+      - run: npm run check:llm

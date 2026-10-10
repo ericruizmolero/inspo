@@ -5,13 +5,14 @@
 // any guide the team pasted in. A section the team set by hand is left alone; every other one is rewritten, so the
 // values keep up with the decisions.
 import "server-only";
+import { createHash } from "crypto";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
-import { llm, LlmError } from "./llm";
-import { AUTO_REF, autoBrandPass, recordUsage, type UsageCtx } from "./usage";
+import { llm, LlmError, type LlmInput } from "./llm";
+import { AUTO_REF, autoBrandPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { brandChain } from "./quota";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
 import { SYSTEM_MODEL, getSystem } from "./system";
@@ -58,7 +59,7 @@ async function boardOf(organizationId: string, projectId: string) {
 
 // ─── What the model writes ───────────────────────────────────────────────────
 
-const OutSchema = z.object({
+export const BrandOutSchema = z.object({
   intro: z.object({ headline: z.string(), paragraphs: z.array(z.string()) }),
   color: z.object({
     lede: z.string(),
@@ -88,7 +89,7 @@ const OutSchema = z.object({
   imagery: z.object({ lede: z.string(), traits: z.array(z.object({ label: z.string(), value: z.string() })), avoid: z.array(z.string()), refs: z.array(z.string()) }),
   applications: z.object({ lede: z.string(), handle: z.string(), tagline: z.string(), bio: z.string(), postLine: z.string() }),
 });
-type Out = z.infer<typeof OutSchema>;
+type Out = z.infer<typeof BrandOutSchema>;
 
 const PROMPT = `You turn a project's design SYSTEM into the values of its BRAND GUIDELINES: the page a designer, a developer or an AI agent opens to build anything for this brand. The system's decisions are already made, in words, area by area. You give them values.
 
@@ -118,6 +119,59 @@ STYLE
 
 // ─── The pass ────────────────────────────────────────────────────────────────
 
+/** Everything the brand pass reads: built from the database by runBrand, from a fixture and the system it just wrote by the eval */
+export interface BrandSnapshot {
+  name: string;
+  brief: { about: string | null; tone: string[] | null; avoid: string | null };
+  system: { summary: string; areas: { area: SystemArea; decision?: string; why?: string; never?: string[] }[] };
+  measured: Record<string, unknown[]>;
+  clientSite: Record<string, unknown> | null;
+  guides: string[];
+  keep: Record<string, unknown>;
+  current: Record<string, unknown>;
+  pictures: { id?: string; name: string; kind: string }[];
+}
+
+/** Per area, the references behind its decision (by code) with what their sites measured */
+export function measuredOf(areas: { area: SystemArea; evidence: { ref: string; take?: string }[] }[], sites: Map<string, { name: string; spec: DesignSpec | null }>): Record<string, unknown[]> {
+  const measured: Record<string, unknown[]> = {};
+  for (const a of areas) {
+    const rows = a.evidence.filter((e) => sites.has(e.ref)).slice(0, PER_AREA).flatMap((e) => {
+      const { name, spec } = sites.get(e.ref)!;
+      return spec ? [{ id: e.ref, name, take: e.take, measured: sliceFor(a.area, spec) }] : [];
+    });
+    if (rows.length) measured[a.area] = rows;
+  }
+  return measured;
+}
+
+/** A redesign's current site, as the brand pass reads it */
+export const clientSiteOf = (web: string, spec: DesignSpec) => ({ web, theme: spec.theme, colors: spec.colors, fonts: spec.fonts.map((f) => ({ family: f.family, role: f.role, weights: f.weights })), scale: spec.typeScale, motion: spec.motion, glance: spec.brief });
+
+/** Names the prompt an eval scored (see SYSTEM_PROMPT_ID) */
+export const BRAND_PROMPT_ID = `v1-${createHash("sha1").update(PROMPT).digest("hex").slice(0, 7)}`;
+
+/** The brand pass as one model call */
+export function brandRequest(s: BrandSnapshot, language?: OutputLanguage): LlmInput & { schema: typeof BrandOutSchema } {
+  const text = [
+    `Brand: ${s.name}`,
+    `Brief: ${JSON.stringify(s.brief)}`,
+    `system (JSON): ${JSON.stringify(s.system)}`,
+    `measured (JSON): ${JSON.stringify(s.measured)}`,
+    s.clientSite ? `client_site (JSON): ${JSON.stringify(s.clientSite)}` : null,
+    s.guides.length ? `guide (the team's own guidelines, verbatim):\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
+    Object.keys(s.keep).length ? `keep (JSON): ${JSON.stringify(s.keep)}` : null,
+    `current (JSON): ${JSON.stringify(s.current)}`,
+    `pictures on the board (JSON): ${JSON.stringify(s.pictures)}`,
+  ].filter(Boolean).join("\n\n");
+  return {
+    model: SYSTEM_MODEL,
+    system: `${PROMPT}\n\n${languageRule(language ?? DEFAULT_OUTPUT_LANGUAGE, "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line")}`,
+    text, schema: BrandOutSchema, maxTokens: 12000,
+    effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
+  };
+}
+
 const inflight = new Map<string, Promise<ProjectSystem>>();
 
 export function runBrand(input: { organizationId: string; projectId: string; usage: UsageCtx; language?: OutputLanguage; force?: BrandSection[]; /** The client calls this pass chained to a system pass; autoBrandPass decides whether it counts */ auto?: boolean }): Promise<ProjectSystem> {
@@ -137,46 +191,35 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     // Codes for the board, as the system run names them
     const code = new Map(board.map((r, i) => [r.id, `r${i + 1}`]));
     const byCode = new Map(board.map((r, i) => [`r${i + 1}`, r.id]));
+    const rowOf = new Map(board.map((r, i) => [`r${i + 1}`, r]));
     const specs = new Map<string, DesignSpec | null>();
     const specOf = async (web: string) => { if (!specs.has(web)) specs.set(web, mediaKindOf(web) === "web" ? (await getDesignMd(web).catch(() => null))?.spec ?? null : null); return specs.get(web) ?? null; };
-    const measured: Record<string, unknown[]> = {};
-    for (const a of system.areas) {
-      const refs = a.evidence.map((e) => board.find((r) => r.id === e.itemId)).filter((r): r is NonNullable<typeof r> => !!r).slice(0, PER_AREA);
-      const rows = await Promise.all(refs.map(async (r) => { const s = await specOf(r.web); return s ? { id: code.get(r.id), name: r.name, take: a.evidence.find((e) => e.itemId === r.id)?.take, measured: sliceFor(a.area, s) } : null; }));
-      const got = rows.filter(Boolean);
-      if (got.length) measured[a.area] = got;
-    }
+    const areas = system.areas.map((a) => ({ area: a.area, evidence: a.evidence.flatMap((e) => code.has(e.itemId) ? [{ ref: code.get(e.itemId)!, take: e.take }] : []) }));
+    const wanted = [...new Set(areas.flatMap((a) => a.evidence.slice(0, PER_AREA).map((e) => e.ref)))];
+    const sites = new Map(await Promise.all(wanted.map(async (c) => [c, { name: rowOf.get(c)!.name, spec: await specOf(rowOf.get(c)!.web) }] as const)));
     const clientSpec = client ? await specOf(client.web) : null;
-    const pictures = board.filter((r) => mediaKindOf(r.web) !== "text").map((r) => ({ id: code.get(r.id), name: r.name, kind: mediaKindOf(r.web) }));
 
-    const keep = Object.fromEntries((Object.keys(brand.meta) as BrandSection[]).filter((k) => !runMayWrite(brand, k) && !input.force?.includes(k)).map((k) => [k, brand[k]]));
-    const current = { intro: brand.intro, color: brand.color.items.map((c) => ({ name: c.name, hex: c.hex, role: c.role, group: c.group })), faces: brand.typography.faces.map((f) => ({ family: f.family, role: f.role })), voice: brand.voice };
-    const text = [
-      `Brand: ${project.name}`,
-      `Brief: ${JSON.stringify({ about: project.brief?.about || null, tone: project.brief?.tone ?? null, avoid: project.brief?.avoid || null })}`,
-      `system (JSON): ${JSON.stringify({ summary: system.summary, areas: system.areas.filter((a) => a.decision || a.never).map((a) => ({ area: a.area, decision: a.decision || undefined, why: a.why || undefined, never: a.never ? a.never.split("\n") : undefined })) })}`,
-      `measured (JSON): ${JSON.stringify(measured)}`,
-      clientSpec ? `client_site (JSON): ${JSON.stringify({ web: client!.web, theme: clientSpec.theme, colors: clientSpec.colors, fonts: clientSpec.fonts.map((f) => ({ family: f.family, role: f.role, weights: f.weights })), scale: clientSpec.typeScale, motion: clientSpec.motion, glance: clientSpec.brief })}` : null,
-      guides.length ? `guide (the team's own guidelines, verbatim):\n${guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
-      Object.keys(keep).length ? `keep (JSON): ${JSON.stringify(keep)}` : null,
-      `current (JSON): ${JSON.stringify(current)}`,
-      `pictures on the board (JSON): ${JSON.stringify(pictures.slice(0, 80))}`,
-    ].filter(Boolean).join("\n\n");
+    const snapshot: BrandSnapshot = {
+      name: project.name,
+      brief: { about: project.brief?.about || null, tone: project.brief?.tone ?? null, avoid: project.brief?.avoid || null },
+      system: { summary: system.summary, areas: system.areas.filter((a) => a.decision || a.never).map((a) => ({ area: a.area, decision: a.decision || undefined, why: a.why || undefined, never: a.never ? a.never.split("\n") : undefined })) },
+      measured: measuredOf(areas, sites),
+      clientSite: client && clientSpec ? clientSiteOf(client.web, clientSpec) : null,
+      guides,
+      keep: Object.fromEntries((Object.keys(brand.meta) as BrandSection[]).filter((k) => !runMayWrite(brand, k) && !input.force?.includes(k)).map((k) => [k, brand[k]])),
+      current: { intro: brand.intro, color: brand.color.items.map((c) => ({ name: c.name, hex: c.hex, role: c.role, group: c.group })), faces: brand.typography.faces.map((f) => ({ family: f.family, role: f.role })), voice: brand.voice },
+      pictures: board.filter((r) => mediaKindOf(r.web) !== "text").map((r) => ({ id: code.get(r.id), name: r.name, kind: mediaKindOf(r.web) })).slice(0, 80),
+    };
 
     let res: Awaited<ReturnType<typeof llm>>;
     try {
-      res = await llm({
-        model: SYSTEM_MODEL,
-        system: `${PROMPT}\n\n${languageRule(input.language ?? DEFAULT_OUTPUT_LANGUAGE, "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line")}`,
-        text, schema: OutSchema, maxTokens: 12000,
-        effort: (process.env.SYSTEM_EFFORT as "low" | "medium" | "high") || "medium",
-      });
+      res = await llm(brandRequest(snapshot, input.language));
     } catch (err) {
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
-    void recordUsage(input.usage, { action: "brand", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${auto ? AUTO_REF : ""}project:${projectId}` });
-    const out = OutSchema.parse(JSON.parse(res.text));
+    void recordUsage(input.usage, { action: "brand", ...billOf(res), ref: `${auto ? AUTO_REF : ""}project:${projectId}` });
+    const out = BrandOutSchema.parse(JSON.parse(res.text));
     const sections = await toSections(out, brand, client?.web ?? null, byCode);
     const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model } });
     log.info("brand.built", { ref: projectId, sections: written, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });

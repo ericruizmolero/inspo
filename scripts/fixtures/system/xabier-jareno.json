@@ -1,0 +1,795 @@
+{
+ "slug": "xabier-jareno",
+ "language": "es",
+ "frozenAt": "2026-10-10",
+ "system": {
+  "name": "Landing de despacho · Xabier Jareño Abogados",
+  "brief": null,
+  "standing": [
+   {
+    "area": "typography",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r5",
+      "take": "Mantener el par serif en titulares y sans en el cuerpo.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r8",
+      "take": "Usar serif en titulares y nombres del equipo sobre fondo neutro.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Adoptar la serif ligera a gran tamaño como registro único de titular.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r12",
+      "take": "Copiar la serif finísima a gran tamaño sobre crema.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r13",
+      "take": "Tomar su serif editorial como referencia legal-tech para titulares.",
+      "filed_by_team": true
+     }
+    ]
+   },
+   {
+    "area": "color",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r5",
+      "take": "Mantener la base clara con un solo acento oscuro.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Adoptar tinta sobre pergamino casi monocromo, con el botón negro como único acento.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r12",
+      "take": "Tomar la base crema con tinta oscura y filetes finos.",
+      "filed_by_team": true
+     }
+    ]
+   },
+   {
+    "area": "layout",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r4",
+      "take": "Componer el espacio a pantalla partida con retrato, nombre, cargo y firma.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r5",
+      "take": "Tomar la estructura del footer como cierre de la landing.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r6",
+      "take": "Colocar el navbar con logo centrado y el hero con subtítulo y CTA.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r7",
+      "take": "Presentar los servicios en una zona de tabs con imágenes del despacho detrás.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r8",
+      "take": "Mostrar el equipo en fichas sencillas con retrato y datos breves.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Poner una sola foto cinematográfica por bloque y filetes finos en vez de sombras.",
+      "filed_by_team": true
+     }
+    ]
+   },
+   {
+    "area": "motion",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r5",
+      "take": "Revelar el logo del footer en sticky con GSAP.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r6",
+      "take": "Pasar las fotos de la sesión como slider de fondo en el hero.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r7",
+      "take": "Animar los tabs de servicios al cambiar de pestaña.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r9",
+      "take": "Aplicar scroll blur y opacidad suave a los elementos que aparecen.",
+      "filed_by_team": true
+     }
+    ]
+   },
+   {
+    "area": "iconography",
+    "status": "empty"
+   },
+   {
+    "area": "logo",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r10",
+      "take": "Componer el logo solo con tipografía, sin símbolo, al estilo de Legora.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Mantener el registro serif limpio y sobrio para la marca.",
+      "filed_by_team": true
+     }
+    ]
+   },
+   {
+    "area": "imagery",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r4",
+      "take": "Llevar el retrato de Xabier con nombre, cargo y firma junto al espacio.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r6",
+      "take": "Usar las fotos del despacho como slider de fondo en el hero.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r8",
+      "take": "Usar fichas sencillas con retrato para presentar al equipo.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Poner una sola foto cinematográfica por bloque.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r14",
+      "take": "Tirar solo de las fotos del reportaje y los retratos del equipo ya hechos.",
+      "filed_by_team": true
+     }
+    ]
+   },
+   {
+    "area": "voice",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r14",
+      "take": "Tomar literalmente el posicionamiento «Cercanía, seguridad, certeza» y «Desde 2011».",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r15",
+      "take": "Seguir el tono y el vocabulario del listado real de servicios.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r16",
+      "take": "Seguir el tono pausado del copy de El espacio.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r1",
+      "take": "Recoger el tú a tú y el rigor de los valores del despacho.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r2",
+      "take": "Mantener el registro del equipo: nombres, cargos y trayectoria.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r3",
+      "take": "Cerrar con la llamada del footer: «Cuéntanos qué te ha pasado».",
+      "filed_by_team": true
+     }
+    ]
+   }
+  ],
+  "refs": [
+   {
+    "id": "r1",
+    "kind": "text",
+    "name": "Valores",
+    "curator_notes": "Recoger el tú a tú y el rigor de los valores del despacho.",
+    "excerpt": "Cercanía y rigor, Hablas con tu abogado. Tu caso tiene nombre y apellidos, también por nuestra parte. Cada asunto, estudiado a fondo. Si no merece la pena pelearlo, te lo decimos. Seguimiento continuo. Sabes en qué punto está tu procedimiento sin tener que llamar."
+   },
+   {
+    "id": "r2",
+    "kind": "text",
+    "name": "El equipo",
+    "curator_notes": "Mantener el registro del equipo: nombres, cargos y trayectoria.",
+    "excerpt": "Xabier Jareño Abogados, Un despacho de abogados en Pamplona, en ejercicio desde 2011 y formado en la Universidad Pública de Navarra. Xabier Jareño Lacalle, socio director de Jareño Abogados, Xabier Jareño Lacalle, Socio director, Licenciado en Derecho, Colegiado nº 2439 del M.I.C.A.P. En ejercicio desde 2011, Tamara Riesgo González, abogada de Jareño Abogados, Tamara Riesgo González, Abogada, Grado en Derecho, Máster de Acceso a la Abogacía y la Procura, Curso de la Ley…"
+   },
+   {
+    "id": "r3",
+    "kind": "text",
+    "name": "Footer",
+    "curator_notes": "Cerrar con la llamada del footer: «Cuéntanos qué te ha pasado».",
+    "excerpt": "Cuéntanos qué te ha pasado. La primera conversación es para escucharte. Llama al 848 46 34 66, Móvil: 636 54 89 94, Escríbenos por WhatsApp, Av. Carlos III, 13-15, Piso 4B · 31002 Pamplona, Navarra, Navegación, El despacho, Áreas, Xabier, Contacto, Contacto, Av. Carlos III, 13-15, Piso 4B, 31002 Pamplona, Navarra, 848 46 34 66, 636 54 89 94, WhatsApp, Xabier Jareño Abogados, Desde 2011, © 2026"
+   },
+   {
+    "id": "r4",
+    "kind": "image",
+    "name": "Sección a pantalla partida con retrato y firma",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-xabier-jareno-seccion-retrato-firma.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Componer el espacio a pantalla partida con retrato, nombre, cargo y firma.",
+    "page": null,
+    "look": "A clean, minimalist design with a soft beige background. The layout is split, featuring a portrait of a man on the left and a large, bright photograph of a modern office interior on the right. Subtle typography and a digital signature add a polished touch.",
+    "sector": "Studio / agency",
+    "style": "Minimal",
+    "traits": [
+     "Photography"
+    ],
+    "colours": [
+     "white",
+     "orange",
+     "brown",
+     "beige",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "team",
+     "cta"
+    ],
+    "elements": [
+     "photography",
+     "mockups",
+     "form"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "split",
+     "airy"
+    ],
+    "keywords": [
+     "legal tech",
+     "startup",
+     "modern office",
+     "founder portrait",
+     "signature",
+     "professional services"
+    ]
+   },
+   {
+    "id": "r5",
+    "kind": "image",
+    "name": "Footer con el logo a lo grande",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-xabier-jareno-footer-logo.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Me gusta este footer, además si podemos hacer con GSAP que se anime de tal forma que se devele el logo en sticky sería ideal.",
+    "page": null,
+    "look": "A clean, minimal design with a large, prominent logo centered on a white background. Text is arranged in organized columns at the top and bottom, listing product features, solutions, certifications, and company information. The overall impression is professional and straightforward.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Typography"
+    ],
+    "colours": [
+     "white"
+    ],
+    "sections": [
+     "footer"
+    ],
+    "elements": [
+     "icons",
+     "badges",
+     "form",
+     "cards"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "legal tech",
+     "software",
+     "product list",
+     "corporate compliance",
+     "certificates",
+     "legal research",
+     "document management"
+    ]
+   },
+   {
+    "id": "r6",
+    "kind": "image",
+    "name": "Hero con navbar y logo centrado",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-xabier-jareno-hero-logo-centrado.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Me gusta que la disposición del hero sea esta: navbar con logo centrado y contenido abajo en la pared de abajo con CTA y subtitle tal y como está",
+    "page": null,
+    "look": "A dark, minimal UI with a blurred abstract background and subtle glowing shapes. The hero section features a large, centered heading and a data table listing events with dates and parties. The overall aesthetic is clean, futuristic, and professional, with a small CTA button in the top right corner.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Motion",
+     "Dark",
+     "Grid / bento",
+     "Colourful",
+     "Monochrome"
+    ],
+    "colours": [
+     "grey",
+     "white"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "cta"
+    ],
+    "elements": [
+     "shapes",
+     "cards",
+     "mockups",
+     "illustration",
+     "icons",
+     "form"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "full-bleed"
+    ],
+    "keywords": [
+     "legal tech",
+     "ai assistant",
+     "chronology",
+     "case management",
+     "data visualization",
+     "search filters",
+     "collaborative",
+     "abstract shapes"
+    ]
+   },
+   {
+    "id": "r7",
+    "kind": "image",
+    "name": "Servicios en tabs",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-xabier-jareno-servicios-tabs.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Me gusta mucho la manera de presentar los servicios con este tipo de tabs bien animados.",
+    "page": null,
+    "look": "A clean, minimal interface with a split layout. On the left, a dark sidebar lists features with subtle rounded badges. On the right, two frosted glass panels display titles 'Data & Integrations' and 'Agentic Harness', creating a sense of depth and clarity against a white background.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark",
+     "Monochrome"
+    ],
+    "colours": [
+     "white",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features"
+    ],
+    "elements": [
+     "mockups",
+     "badges",
+     "glass"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "split",
+     "airy"
+    ],
+    "keywords": [
+     "large language models",
+     "llm",
+     "agentic harness",
+     "legal tech",
+     "orchestration engine",
+     "data integrations",
+     "content",
+     "security",
+     "governance"
+    ]
+   },
+   {
+    "id": "r8",
+    "kind": "image",
+    "name": "Fichas del equipo",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-xabier-jareno-equipo-fichas.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Para representar al equipo podemos hacer algo así bien sencillo.",
+    "page": null,
+    "look": "A clean and minimal design showcasing the team of a law firm. Three professional portraits are displayed in a horizontal row, each with a name, title, and educational background below. The overall aesthetic is airy, with generous white space and a restrained color palette.",
+    "sector": "Studio / agency",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Photography"
+    ],
+    "colours": [
+     "white",
+     "black",
+     "brown",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "team"
+    ],
+    "elements": [
+     "photography",
+     "cards"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "law firm",
+     "team introduction",
+     "professional portraits",
+     "lawyers",
+     "business cards",
+     "minimalist"
+    ]
+   },
+   {
+    "id": "r9",
+    "kind": "video",
+    "name": "Aparición con blur y opacidad al hacer scroll",
+    "url": "https://screen.studio/share/pzm9qyYv",
+    "collection": "videos",
+    "curator_notes": "Se puede crear este scroll blur + opacity effect para que salgan los elementos.",
+    "page": null,
+    "look": "The page appears to be a minimal studio website showcasing work with a focus on subtle motion design. It likely features clean layouts, prominent typography, and possibly device mockups. The defining characteristic is the use of blur and opacity effects that trigger as the user scrolls, creating an engaging visual experience.",
+    "sector": "Studio / agency",
+    "style": "Minimal",
+    "traits": [
+     "Motion"
+    ],
+    "colours": [],
+    "sections": [
+     "hero",
+     "nav",
+     "work",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "cards",
+     "glass",
+     "gradient"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "screen studio",
+     "animated ui",
+     "blur effect",
+     "opacity effect",
+     "scroll animation",
+     "design showcase",
+     "macbook mockup",
+     "product feature"
+    ]
+   },
+   {
+    "id": "r10",
+    "kind": "image",
+    "name": "Logo tipográfico",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-xabier-jareno-logo-tipografico.jpg",
+    "collection": "inspiration",
+    "curator_notes": "El diseño del logo quiero que sea tipográfico como el de Legora.",
+    "page": null,
+    "look": "A simple, minimalist design featuring the word LEGORA in a dark green serif typeface centered against a plain white background. The typography is the sole focus, emphasizing elegance and brand identity.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Typography"
+    ],
+    "colours": [
+     "white",
+     "green"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [],
+    "type": [
+     "serif"
+    ],
+    "layout": [
+     "centered"
+    ],
+    "keywords": [
+     "serif",
+     "logotype",
+     "typographic",
+     "minimalist",
+     "elegant",
+     "brand",
+     "identity"
+    ]
+   },
+   {
+    "id": "r11",
+    "kind": "web",
+    "name": "Legora AI law",
+    "url": "https://legora.com",
+    "collection": "inspiration",
+    "curator_notes": "Esta web me ha gustado porque es de un despacho de abogados que han escogido vídeo y fotos de manera muy muy acertada. Simplemente la dejo aquí para que sirva por si tenemos que hacer webs más corporate.",
+    "page": "Legora · Legora is the collaborative AI powering lawyers to review and research faster, draft smarter, and advise with precision. Legora adapts to your ways of working, unlocking team and machine collaboration at scale.",
+    "look": "A stark, minimal interface with a dominant dark theme and subtle gradients. The typography is bold and oversized, emphasizing headlines. A clean layout features key features presented with icons and concise descriptions, grounded by a row of trusted client logos and a clear call to action.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark",
+     "Monochrome"
+    ],
+    "colours": [
+     "white",
+     "grey"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "logos",
+     "features",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "icons",
+     "badges",
+     "form",
+     "gradient",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "oversized",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "legal ai",
+     "collaborative ai",
+     "legal technology",
+     "law firm software",
+     "document review",
+     "legal research",
+     "ai assistant"
+    ],
+    "made_by": [],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null
+   },
+   {
+    "id": "r12",
+    "kind": "web",
+    "name": "Stripe Press",
+    "url": "https://press.stripe.com",
+    "collection": "inspiration",
+    "curator_notes": "Pariente del estilo de Legora: serif finísima a gran tamaño sobre crema.",
+    "page": "Stripe Press — Ideas for progress · Stripe Press produces works about technological, economic, and scientific advancement.",
+    "look": "A clean, airy editorial layout with a focus on typography. Features a prominent hero section with a bold headline. Content is organized into cards and grids, showcasing book covers and author information. A colorful, modern palette is used, with a clear hierarchy and legible sans-serif and display typefaces.",
+    "sector": "Editorial / media",
+    "style": "Editorial",
+    "traits": [
+     "Typography",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [],
+    "sections": [
+     "hero",
+     "work",
+     "blog",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "cards",
+     "icons",
+     "badges",
+     "form",
+     "shapes"
+    ],
+    "type": [
+     "serif",
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "columns",
+     "centered"
+    ],
+    "keywords": [
+     "publishing",
+     "books",
+     "essays",
+     "technology",
+     "progress",
+     "culture",
+     "economics",
+     "science",
+     "authors"
+    ],
+    "made_by": [
+     "@stripe"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null
+   },
+   {
+    "id": "r13",
+    "kind": "web",
+    "name": "Harvey",
+    "url": "https://www.harvey.ai",
+    "collection": "inspiration",
+    "curator_notes": "Pariente del estilo de Legora: legal-tech con serif editorial.",
+    "page": "Harvey | AI software for legal and professional services · Legal AI tailored for leading law firms and corporate legal teams worldwide. Harvey streamlines contract analysis, due diligence, compliance, and litigation.",
+    "look": "The page presents a clean, professional aesthetic with a focus on AI solutions for legal services. It utilizes a neutral color palette with subtle accents and employs clear typography. The layout is organized, featuring sections for product solutions, customer testimonials, and security measures, aiming for a trustworthy and established feel.",
+    "sector": "Product / SaaS",
+    "style": "Corporate",
+    "traits": [],
+    "colours": [],
+    "sections": [
+     "nav",
+     "hero",
+     "features",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "icons",
+     "cards",
+     "form"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "legal tech",
+     "ai",
+     "law firm",
+     "contract analysis",
+     "due diligence",
+     "litigation",
+     "corporate legal",
+     "compliance"
+    ],
+    "made_by": [
+     "Harvey",
+     "@harvey.ai"
+    ],
+    "declared_type": "Corporation",
+    "own_keywords": [],
+    "place": "San Francisco, US"
+   },
+   {
+    "id": "r14",
+    "kind": "web",
+    "name": "Sesión de fotos del despacho",
+    "url": "https://xn--xabierjareoabogados-43b.com/fotos",
+    "collection": "inspiration",
+    "curator_notes": "La sesión fotográfica del despacho: las 65 fotos del reportaje y los retratos de Xabier, Tamara y Andrea, con las que están ahora en la web (hero, slider, banda panorámica). Página interna, sin enlaces desde la web y con no-index.",
+    "page": "Selección de fotos · Xabier Jareño Abogados, despacho en Pamplona. Derecho penal, civil, bancario, laboral y administrativo. Cercanía, seguridad, certeza. Desde 2011.",
+    "look": "This is a page for selecting photos, likely for a law firm. It lists various photo categories such as 'Hero', 'Slider', and 'Portraits'. It mentions specific photo numbers and descriptions, suggesting an internal selection process rather than a public-facing gallery. The tone is functional and business-oriented.",
+    "sector": "Other",
+    "style": "Corporate",
+    "traits": [
+     "Photography"
+    ],
+    "colours": [],
+    "sections": [
+     "hero",
+     "gallery",
+     "work"
+    ],
+    "elements": [
+     "photography",
+     "carousel"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered"
+    ],
+    "keywords": [
+     "law firm",
+     "office photography",
+     "professional portraits",
+     "selection tool",
+     "legal services",
+     "team photos",
+     "photo gallery"
+    ]
+   },
+   {
+    "id": "r15",
+    "kind": "text",
+    "name": "Servicios",
+    "curator_notes": "El listado de servicios tal cual está publicado: las cinco áreas con todas sus materias.",
+    "excerpt": "En Xabier Jareño Abogados prestamos asesoramiento y defensa jurídica en distintas áreas del Derecho, tanto en la vía judicial como extrajudicial. Derecho Penal, Delitos contra las personas, Lesiones, Delitos contra la libertad, Violencia doméstica y de género, Delitos contra el patrimonio, Estafas y apropiaciones indebidas, Delitos societarios y económicos, Delitos contra la seguridad vial, Alcoholemias y conducción temeraria, Delitos contra la Administración Pública,…"
+   },
+   {
+    "id": "r16",
+    "kind": "text",
+    "name": "El espacio",
+    "curator_notes": "Seguir el tono pausado del copy de El espacio.",
+    "excerpt": "Un lugar pensado para hablar con calma, Estamos en: Av. Carlos III, 13-15, Piso 4B, 31002 Pamplona, Navarra, Detalle de la mesa de mármol y silla verde de la sala de reuniones, Primera visita con cita previa: llámanos o escríbenos por WhatsApp y buscamos hueco. La sala de reuniones con el cuadro abstracto de 150cmLa recepción con la lámpara de arcos y el cuadro de líneaPuerta de arco con cristal texturizado y estantería del despachoLa mesa de trabajo del despacho con la…"
+   }
+  ],
+  "guides": []
+ },
+ "sites": {},
+ "clientSite": null,
+ "expect": {
+  "typography": "Titulares en serif ligera a gran tamaño, con mucho aire y peso ligero; cuerpo, nombres del equipo y botones en sans neutra. La jerarquía se construye por tamaño y por filetes finos, no por color ni sombras.",
+  "color": "Base de pergamino o crema con tinta oscura, casi monocromo. El botón negro es el único acento; los grises quedan solo para texto secundario y no hay degradados ni colores secundarios.",
+  "layout": "Landing de una sola página: navbar con logo centrado, hero con subtítulo y CTA de WhatsApp, servicios, el espacio, los valores, el equipo, reseñas de Google (4,9 de 146 reseñas) y footer. Una sola foto cinematográfica por bloque, filetes finos en vez de sombras y botón flotante de WhatsApp siempre visible.",
+  "motion": "Las fotos de la sesión pasan solas en el hero como slider cada pocos segundos; los servicios se presentan en tabs animados con imágenes del despacho detrás; el logo del footer se revela en sticky con GSAP y los elementos aparecen al hacer scroll con desenfoque y opacidad.",
+  "logo": "Logo solo tipográfico, sin símbolo ni imagotipo, compuesto en serif con el nombre exacto «Xabier Jareño abogados», respetando mayúsculas y minúsculas.",
+  "imagery": "Usar solo la sesión fotográfica ya hecha del despacho, el espacio y el equipo, sin banco de imágenes. Una sola foto cinematográfica por bloque: slider en el hero, el espacio a pantalla partida con retrato de Xabier, nombre, cargo y firma, y las fichas de equipo con retrato.",
+  "voice": "Copy cercano en primera persona, sin jerga jurídica, con las líneas de posicionamiento del despacho literalmente: «Cercanía, seguridad, certeza» y «Desde 2011». Frases cortas, de tú a tú, nombrando las áreas del Derecho y con la primera conversación como puerta de entrada."
+ }
+}

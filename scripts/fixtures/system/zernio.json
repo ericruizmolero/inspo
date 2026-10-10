@@ -1,0 +1,592 @@
+{
+ "slug": "zernio",
+ "language": "es",
+ "frozenAt": "2026-10-10",
+ "system": {
+  "name": "Rediseño de home · Zernio",
+  "brief": null,
+  "standing": [
+   {
+    "area": "typography",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r5",
+      "take": "La sans de todo el texto, de 400 a 700.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r6",
+      "take": "La mono, en 400, 500 y 700, para eyebrows, etiquetas, código y datos.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r8",
+      "take": "Link en naranja y descripción en gris; kicker de la promo en mono.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r9",
+      "take": "H1 de 68px en Instrument Sans con nota en mono debajo de los CTA.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r10",
+      "take": "Pills y chips en mono y mayúsculas.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r17",
+      "take": "Chips en mono y mayúsculas.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Fuentes que no vengan de Google Fonts",
+     "Un H2 sin su segunda frase atenuada",
+     "Las etiquetas en caja naranja de la web original (PLATFORMS, HOW IT WORKS, PRICING): pasan a eyebrow mono en --faint"
+    ]
+   },
+   {
+    "area": "color",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r2",
+      "take": "Comprobar los dos temas en la versión publicada.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r9",
+      "take": "El degradado #EB3514 a #F2833E solo en \"One API\".",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r12",
+      "take": "Fondo #14110F y cards con borde discontinuo naranja al 30%.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r18",
+      "take": "Fondo cálido #FAEAE1.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Inventar colores fuera de la paleta",
+     "Un segundo acento: el naranja #EB3514 es el único",
+     "El bloque de código oscuro del hero de la web original: pasa a ventana clara"
+    ]
+   },
+   {
+    "area": "layout",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r1",
+      "take": "Conservar el contenido de cada sección y rediseñar la forma.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r2",
+      "take": "Seguir el orden de secciones de la home v2.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r8",
+      "take": "El contenedor del header crece en altura al hover y muestra columnas más un rail con promo.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Panel de 360px más pila 3D sobre rejilla de puntos.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r12",
+      "take": "La sección se despega como tarjeta al hacer scroll.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r14",
+      "take": "Card de caso con métrica grande, cita y foto, imagen a la derecha.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r16",
+      "take": "Self-serve destacada con borde naranja y fondo tinte.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r19",
+      "take": "Footer plano en #FDF7F3 con cinco columnas de links naranjas.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Librerías de UI: un único documento con CSS mínimo",
+     "Los canales en una rueda circular: se cambió a tabs con pila 3D",
+     "El listado plano de plataformas por categoría de la web original: cada canal tiene su tab y su panel"
+    ]
+   },
+   {
+    "area": "motion",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r2",
+      "take": "Medir cada animación contra la versión publicada.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r9",
+      "take": "Escribir el código a 190ms por línea con caret naranja y hacer loop.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r10",
+      "take": "Tokens que viajan por las curvas con offset-path.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r11",
+      "take": "Autoplay de tabs mientras está en pantalla; se para al hacer click.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r13",
+      "take": "Los tiles derivan y encajan en el slot de uno en uno.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r14",
+      "take": "Rotar cada 7s y cursor custom que sigue al ratón.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r15",
+      "take": "Autoplay de 4,2s por paso con PAUSE/PLAY y contador 01/03.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r18",
+      "take": "Dibujar las líneas con scaleX y scaleY y luego el contenido escalonado.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Animar algo que no sea transform u opacity cuando se puede evitar",
+     "Ignorar prefers-reduced-motion: desactiva autoplay, typing y reveals"
+    ]
+   },
+   {
+    "area": "iconography",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r11",
+      "take": "Icono oficial de cada canal como máscara en tab y tarjeta.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Iconos de canal que no sean los SVG oficiales",
+     "Iconos como imagen con su color fijo"
+    ]
+   },
+   {
+    "area": "logo",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r1",
+      "take": "Usar el wordmark y el mark Z de la marca.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r13",
+      "take": "El mark ocupa el slot naranja del dock.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r19",
+      "take": "Mark en 16 capas apiladas con contorno naranja, girando en 22s.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Marca de agua gigante del wordmark en el footer, ni en bandas ni con degradado",
+     "Emboss, deboss o contorno del wordmark"
+    ]
+   },
+   {
+    "area": "imagery",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r4",
+      "take": "Dibujar el chip mcp.zernio.com con los clientes orbitando.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r10",
+      "take": "Diagrama de 6 entradas a 6 salidas con el mark como nodo central.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r12",
+      "take": "Vídeo en loop de fondo con degradado oscuro y tinte naranja al 14%.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r14",
+      "take": "Solo fotos y logos de clientes reales.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r17",
+      "take": "Sellos dibujados en SVG, no imágenes de badge.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Fotografía o ilustración de stock"
+    ]
+   },
+   {
+    "area": "voice",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r1",
+      "take": "Tomar el copy literal en inglés.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r3",
+      "take": "Contar el cambio de nombre con esa frase y ninguna otra.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r4",
+      "take": "Citar mcp.zernio.com y las 300+ tools.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r7",
+      "take": "El copy literal del hero y de cada H2, con la segunda frase que va atenuada.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r16",
+      "take": "Tramos exactos: 1–2 free, 3–10 $5.00, 11–100 $2.50, 101–1,000 $2.00, 1,001+ $1.50.",
+      "filed_by_team": true
+     }
+    ],
+    "never": [
+     "Emojis",
+     "Reescribir el copy: va literal"
+    ]
+   }
+  ],
+  "refs": [
+   {
+    "id": "r1",
+    "kind": "web",
+    "name": "Zernio · web original",
+    "url": "https://zernio.com",
+    "collection": "inspiration",
+    "curator_notes": "El punto de partida: estética mono, etiquetas en caja naranja, listado plano de plataformas, bloque de código oscuro zernio.ts, logos de partners, cards de precio y calculadora. Se usó como fuente de copy y contenido.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r2",
+    "kind": "web",
+    "name": "Zernio · home v2",
+    "url": "https://zernio.treseiscero.app",
+    "collection": "inspiration",
+    "curator_notes": "Donde acabó el trabajo: todo lo anterior consolidado más hero con conmutador Código / Esquema, calculadora de precios, casos con cursor custom, FAQ animada y seguridad.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r3",
+    "kind": "web",
+    "name": "Late",
+    "url": "https://getlate.dev",
+    "collection": "inspiration",
+    "curator_notes": "El nombre anterior. La home lo cuenta con una sola frase: \"Late is now Zernio. Zero breaking changes.\"",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r4",
+    "kind": "web",
+    "name": "Zernio MCP",
+    "url": "https://mcp.zernio.com",
+    "collection": "inspiration",
+    "curator_notes": "El servidor MCP con 300+ tools que cuenta la sección Agents; su dirección aparece en un chip con iconos orbitando.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r5",
+    "kind": "web",
+    "name": "Instrument Sans",
+    "url": "https://fonts.google.com/specimen/Instrument+Sans",
+    "collection": "inspiration",
+    "curator_notes": "La sans de todo el texto, de 400 a 700.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r6",
+    "kind": "web",
+    "name": "JetBrains Mono",
+    "url": "https://www.jetbrains.com/lp/mono",
+    "collection": "inspiration",
+    "curator_notes": "La mono de la web del propio cliente: para cifras, kickers, etiquetas y specs, con tabular-nums.",
+    "page": "JetBrains Mono: A free and open source typeface for developers | JetBrains: Developer Tools for Professionals and Teams · Try JetBrains Mono in your IDE. Its simple forms and attention to every detail make coding a nice experience for developers’ eyes, no matter which IDE you choose.",
+    "look": "A clean, minimal design focused on typography. Features a dark background with light text and prominent sans-serif and monospaced fonts. Demonstrates code snippets and UI mockups showcasing the typeface's use in IDEs. Sections highlight key features and benefits with icons and card-based layouts.",
+    "sector": "Tool",
+    "style": "Minimal",
+    "traits": [
+     "Typography"
+    ],
+    "colours": [],
+    "sections": [
+     "hero",
+     "features",
+     "comparison",
+     "cta"
+    ],
+    "elements": [
+     "code",
+     "mockups",
+     "icons",
+     "cards",
+     "badges"
+    ],
+    "type": [
+     "sans",
+     "mono",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "developer font",
+     "coding typeface",
+     "monospaced",
+     "programming",
+     "readability",
+     "open source",
+     "free font",
+     "jetbrains",
+     "ligatures"
+    ],
+    "made_by": [
+     "JetBrains: Developer Tools for Professionals and Teams",
+     "@jetbrains"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null
+   },
+   {
+    "id": "r7",
+    "kind": "text",
+    "name": "Titulares de la home",
+    "curator_notes": "El copy literal del hero y de cada H2, con la segunda frase que va atenuada.",
+    "excerpt": "Late is now Zernio. Zero breaking changes. Hero, One API for every social, messaging and ad channel. Publish, reply, measure and promote across 23 channels with a single REST call. We hold the platform apps, the OAuth flows, the rate limits and the retries. Start for free · Read the quickstart, Free up to 2 accounts · no credit card · no platform dev apps, Titulares de sección, Every channel, already shipped. One endpoint. We hold the dev apps, the OAuth flows and the…"
+   },
+   {
+    "id": "r8",
+    "kind": "image",
+    "name": "Mega-menú",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-mega-menu.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de una referencia de header con desplegable a columnas (encabezado, link de color y descripción gris) y una columna lateral \"Más\" con tarjeta promo. Aquí Platform, Use cases y Developers, con rail \"More\" y la promo de Open Analytics.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r9",
+    "kind": "image",
+    "name": "Hero A · Código",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-hero-codigo.jpg",
+    "collection": "inspiration",
+    "curator_notes": "El bloque de código de la web original (oscuro, \"15 channels\") convertido en una ventana clara que se escribe sola, con 3 pasos y el resultado \"200 OK\". Se comparó en paralelo con el hero Esquema (Zernio Hero Options) y en la v2 conviven con un conmutador A/B.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r10",
+    "kind": "image",
+    "name": "Hero B · Esquema",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-hero-esquema.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de una referencia de diagrama de pipeline: pills mono a la izquierda, nodo central con etapas INGEST, REDUCE, NORMALIZE y ROUTE, destinos a la derecha y glow detrás. Aquí, \"Twenty-three APIs in. One API out.\": 6 entradas, el mark como nodo central y 6 salidas, con tokens que viajan por las curvas y chips AUTH · NORMALIZE · FAN-OUT · RETRY.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r11",
+    "kind": "image",
+    "name": "Channels: tabs y pila 3D",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-channels-pila-3d.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Del listado plano de plataformas de la web original a tabs por categoría (Social 12, Messaging 4, Ad networks 7) con grid de tiles; luego tabs por canal con panel de detalle, por una referencia de \"tabs más panel con gráfico a la derecha\"; después una rueda de tarjetas, que acabó en la pila 3D vertical.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r12",
+    "kind": "image",
+    "name": "The Shift",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-the-shift.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de una referencia \"Meet a new approach\": foto o vídeo a sangre que funde a oscuro y grid 3×2 de cards con borde discontinuo e ilustraciones mínimas. Aquí, vídeo de fondo con tinte naranja y 6 cards (Channels, Inbox, Ads, Webhooks, Analytics, API); al hacer scroll gana inset de 56px y radio de 40px y se despega como una tarjeta.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r13",
+    "kind": "image",
+    "name": "Agents: dock",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-agents-dock.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de una referencia de dock: cápsula vertical con slot \"YOUR AGENT HERE\" y logo de marca, logos que entran en el slot y 3 cards debajo (orquestación, chat de agente, órbita de iconos). Aquí los tiles de canales encajan de uno en uno en el slot naranja del mark, con las cards \"Real tool calls\", \"Read and reply to the inbox\" y \"Claude, Cursor or your CLI\".",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r14",
+    "kind": "image",
+    "name": "Customers: caso destacado",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-customers-caso.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de una referencia \"Take their word for it\": card oscura grande con logo, cita, autor y foto a la derecha, y 2 testimonios debajo. Aquí rota cada 7s entre Plinng, HeyMark y Vibiz, con cursor custom \"Read case study\" al hover y \"Show more\" para el resto de testimonios.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r15",
+    "kind": "image",
+    "name": "How it works",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-how-it-works.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Los 3 pasos y su copy son los de la web original, rediseñados con el sistema nuevo: pasos clicables y un escenario con autoplay de 4,2s por paso (la clave escribiéndose, las cuentas conectándose, las llamadas en cascada).",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r16",
+    "kind": "image",
+    "name": "Pricing y calculadora",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-pricing-calculadora.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Copy de la web original (Self-serve $0, Enterprise Custom, slider logarítmico 1 a 10k) rediseñado con el sistema nuevo: calculadora con desglose por tramos.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r17",
+    "kind": "image",
+    "name": "Security",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-security.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de una referencia de sellos GDPR (círculo de estrellas) y AICPA SOC con titular centrado y una línea vertical que baja. Aquí, sellos dibujados en SVG naranja, chips de compliance en mono y la línea que baja hacia el CTA final.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r18",
+    "kind": "image",
+    "name": "Final CTA",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-final-cta.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de varias capturas de una referencia con grid de líneas punteadas a toda anchura, caja central, 3 logos que rotan con transición vertical y dos botones. Aquí las líneas se dibujan al entrar y los slots de logos de clientes cambian cada 4,2s.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   },
+   {
+    "id": "r19",
+    "kind": "image",
+    "name": "Footer con la marca 3D",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-footer-marca-3d.jpg",
+    "collection": "inspiration",
+    "curator_notes": "Sale de referencias de footer con logo, 5 columnas de links de color y el símbolo de la marca en contorno o 3D en la esquina. Se probaron el wordmark en contorno, en emboss y deboss, como marca de agua con degradado y en bandas (de una referencia de logotipo gigante a líneas horizontales); quedó footer plano y el mark de Zernio apilado en 3D girando.",
+    "page": null,
+    "look": null,
+    "sector": null,
+    "style": null,
+    "traits": []
+   }
+  ],
+  "guides": []
+ },
+ "sites": {},
+ "clientSite": null,
+ "expect": {
+  "typography": "Instrument Sans 400 a 700 para todo el texto; JetBrains Mono 400, 500 y 700 para eyebrows, etiquetas, código y datos. H1 68px, interlineado .98, tracking -0.04em, peso 600. H2 44px, 1.08, -0.032em, 600. H3 de 19 a 27px en 600. Cuerpo de 15 a 19,5px con interlineado 1.55 a 1.65. Eyebrow mono de 11px, tracking .2em, en mayúsculas y color --faint. Cada H2 lleva una segunda frase en la misma línea a opacidad .4. text-wrap balance en titulares, pretty en párrafos, tabular-nums en cifras.",
+  "color": "Claro: fondo #F7F4F0, superficies #FFF y #FBF8F5, líneas #E4DCD3, #C6BAAE y #EFE8E0, tinta #17130F, #4C453F, #57504A y #8A8177, tinte #FDEEEA con línea #F3D3C9, acento en texto #B0350F. Acento #EB3514 (hover #D42D0F) y degradado de texto #EB3514 a #F2833E. Cálidos #FAEAE1 y #FDF7F3 para el CTA final y el footer; secciones oscuras en #14110F. Oscuro en [data-theme=\"dark\"]: fondo #100E0C, superficies #17130F y #1B1714, tinta #F2ECE5, acento en texto #FF8A63. Tema persistente en localStorage.",
+  "layout": "Contenedor de 1240px con 32px de padding lateral; secciones de 92 a 100px de padding vertical. Radios: botones 10px, chips 6 a 8px, cards 12 a 18px, pills 999px. Bordes de 1px --line en todo y sombras muy suaves y largas (0 18px 40px -34px). Fondos técnicos con rejilla de puntos de 16px, sacada de una referencia de ventana de app. Header flotante de 56px a 8px del borde, con mega-menú que crece en altura. Canales en tabs más una pila 3D vertical; The Shift en tarjeta oscura que gana inset de 56px y radio de 40px al hacer scroll. Por debajo de 900px todo a una columna, H1 40px y H2 30px; por debajo de 560px, H1 32px y footer a una columna. Dos heros que se compararon lado a lado y conviven en la v2 con un conmutador A/B: Código (por defecto) y Esquema.",
+  "motion": "Curva principal cubic-bezier(.32,.72,0,1) y reveals en cubic-bezier(.22,1,.36,1); de .2 a .5s en UI y de .7 a 1s en reveals. Los hijos de cada sección entran de opacity 0 y 22px abajo, con stagger de 90ms y techo de 360ms. Preloader de 5 paneles con un cuadro cuyo borde se dibuja y el mark rellenándose de 0 a 100% en 1,9s. Preloader, reveals y ritmo general salen de los vídeos de referencia Plain y Sona, descompuestos en frames. Hero fijado al scroll: el editor escribe el código línea a línea (190ms por línea, caret naranja) y sube a ocupar el sitio de los CTA. Eyebrows que aparecen letra a letra (34ms) y se scramblean a 0/1 en naranja al hover. CTA primario con el mark entrando desde la izquierda y un brillo diagonal. Sonido de UI con Web Audio, sin archivos, silenciable.",
+  "iconography": "Los iconos de canal son los SVG oficiales de cada plataforma, pintados siempre como máscara CSS (mask: url(icon.svg) con background: currentColor). Partners con sus logos oficiales de programa (Meta, TikTok, LinkedIn, Pinterest, X).",
+  "logo": "Wordmark en assets/logo.svg y símbolo Z en assets/mark.svg. El mark vive en el producto: se rellena en el preloader, entra deslizando en el hover del CTA primario, es el nodo central del diagrama del hero y el slot naranja del dock de Agents. El footer es plano y termina en el mark en 3D: 16 capas apiladas en translateZ con contorno naranja, girando lento (rotateX 34°, 22s).",
+  "imagery": "Sin fotos de stock: las ilustraciones son producto dibujado en HTML y SVG (editor de código, diagrama de 6 entradas a 6 salidas, tarjetas de spec por canal, mini ilustraciones de capacidades, burbujas de DM). Un vídeo en loop de fondo en The Shift, con degradado oscuro y tinte naranja al 14%. Fotos y logos solo de clientes reales: fotos de equipo (HeyMark, Vibiz) y retratos (Pedro, Lautaro, Chris) en la card de caso, con crossfade y zoom, y en los testimonios.",
+  "voice": "Copy en inglés, literal del documento. Tono técnico, frases cortas. Cada titular es una afirmación y su matiz atenuado (\"Pay for what you use. No plans, no seats, every feature included.\"). El cambio de nombre se cuenta siempre igual: \"Late is now Zernio. Zero breaking changes.\" Cifras concretas: 23 canales, 300+ tools en el MCP, tramos de precio por cuenta."
+ }
+}

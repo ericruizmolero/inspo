@@ -30,6 +30,7 @@
     "check:boards": "tsx --conditions=react-server scripts/check-boards.ts",
     "check:postgres": "tsx --conditions=react-server scripts/check-postgres.ts",
     "check:system": "tsx --conditions=react-server scripts/check-system.ts",
+    "check:llm": "tsx --conditions=react-server scripts/check-llm.ts",
     "check:brand": "tsx --conditions=react-server scripts/check-brand.ts",
     "check:mcp": "tsx --conditions=react-server scripts/check-mcp.ts",
     "check:notifications": "tsx --conditions=react-server scripts/check-notifications.ts",
@@ -42,7 +43,9 @@
     "files:pull": "tsx scripts/pull-files.ts",
     "shots:pages": "tsx --conditions=react-server scripts/capture-pages.ts",
     "tags:bakeoff": "tsx --conditions=react-server scripts/tag-bakeoff.ts",
-    "embed:bakeoff": "tsx --conditions=react-server scripts/embed-bakeoff.ts"
+    "embed:bakeoff": "tsx --conditions=react-server scripts/embed-bakeoff.ts",
+    "eval:freeze": "tsx --conditions=react-server scripts/eval-freeze.ts",
+    "eval:system": "tsx --conditions=react-server scripts/eval-system.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",
