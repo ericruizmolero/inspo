@@ -3,7 +3,8 @@
 //   hard checks: evidence ids that exist, hex and families found in what was measured, areas written in the fixture's language;
 //   a judge model: specificity, the team's words, coherence, how close each area is to what the team decided,
 //   and the "never" lines broken (a line names what it protects, "the orange #EB3514 is the only accent", so
-//   finding its words in a decision proves nothing: reading it does);
+//   finding its words in a decision proves nothing: reading it does), proposals the team rejected that came back,
+//   and whether a decision cites what the team said in an area's conversation;
 //   the cost and time of the pass.
 // Each pass appends one row to scripts/evals/system.jsonl, keyed by prompt version and model, and the command
 // ends with the table of every row so far. What the models wrote goes to .data/evals/ to read.
@@ -43,7 +44,9 @@ interface Row {
   judge: string | null;
   error?: string;
   checks?: { evidence: [number, number]; hex: [number, number]; families: [number, number]; language?: [number, number] };
-  scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number; /** "expected" by area, so a change aimed at one area is read there */ byArea?: Partial<Record<SystemArea, number>> };
+  scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number; /** "expected" by area, so a change aimed at one area is read there */ byArea?: Partial<Record<SystemArea, number>>;
+    /** Decisions that bring back a proposal the team rejected; missing on rows before system v6 */ rejectedBack?: number;
+    /** The share of areas whose "said" holds something to follow that a decision cites; null: no such area */ saidCited?: number | null };
   /** The two passes; the judge is billed apart, so a model's cost reads clean */
   costUsd?: number;
   /** [in, out] of each pass: what a cost moved by */
@@ -72,6 +75,8 @@ const JudgeSchema = z.object({
   coherence: z.number().int().min(1).max(5),
   expected: z.array(z.object({ area: z.string(), score: z.number().int().min(1).max(5) })),
   never_broken: z.array(z.object({ line: z.string(), by: z.string() })),
+  rejected_back: z.array(z.object({ proposal: z.string(), by: z.string() })),
+  said_cited: z.array(z.object({ area: z.string(), cited: z.boolean() })),
   note: z.string(),
 });
 
@@ -83,6 +88,8 @@ Each score is 1 to 5:
 - coherence: the areas agree with each other, with the summary and with the brand values.
 - expected: for every area under EXPECTED, how close the tool's decision is in substance to what the team decided. 5: the same decision and values. 3: the same direction, values missing or different. 1: another decision, or empty.
 never_broken: every NEVER line that a decision or a brand value goes against, quoted, with what breaks it in "by". A line that names what it protects ("the orange is the only accent") is kept, not broken, when that thing is used.
+rejected_back: every REJECTED proposal that a decision brings back, as it was or as an equivalent in other words or values, quoted, with what brings it back in "by". Empty when none came back.
+said_cited: for every area under SAID whose lines hold something a decision should follow, whether that area's decision or why follows it and the why says so (naming the line or who said it). Skip areas whose lines hold nothing to follow.
 note: the worst problem, at most 40 words.`;
 
 async function fixtures(): Promise<EvalFixture[]> {
@@ -154,6 +161,8 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
           `WHAT THE TOOL READ\n${sysReq.text}`,
           `EXPECTED (the team's own decisions, JSON): ${JSON.stringify(fx.expect)}`,
           `NEVER (the team's lines, by area, JSON): ${JSON.stringify(Object.fromEntries([...nevers].filter(([, v]) => v.length)))}`,
+          `REJECTED (proposals the team said no to, by area, JSON): ${JSON.stringify(Object.fromEntries(fx.system.standing.filter((a) => a.rejected?.length).map((a) => [a.area, a.rejected])))}`,
+          `SAID (the team's lines in each area's conversation, JSON): ${JSON.stringify(Object.fromEntries(fx.system.standing.filter((a) => a.said?.length).map((a) => [a.area, a.said])))}`,
           `SYSTEM WRITTEN (JSON): ${JSON.stringify(sys)}`,
           `BRAND WRITTEN (JSON): ${JSON.stringify(brand)}`,
         ].join("\n\n"),
@@ -161,7 +170,9 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
       verdict = JudgeSchema.parse(JSON.parse(res.text));
       row.judgeUsd = res.costUsd ?? 0;
       const expected = verdict.expected.filter((e) => e.area in fx.expect);
-      row.scores = { specificity: verdict.specificity, teamWords: verdict.team_words, coherence: verdict.coherence, expected: expected.length ? expected.reduce((n, e) => n + e.score, 0) / expected.length : null, neverBroken: verdict.never_broken.length, byArea: Object.fromEntries(expected.map((e) => [e.area, e.score])) };
+      const said = verdict.said_cited.filter((c) => fx.system.standing.some((a) => a.area === c.area && a.said?.length));
+      row.scores = { specificity: verdict.specificity, teamWords: verdict.team_words, coherence: verdict.coherence, expected: expected.length ? expected.reduce((n, e) => n + e.score, 0) / expected.length : null, neverBroken: verdict.never_broken.length, byArea: Object.fromEntries(expected.map((e) => [e.area, e.score])),
+        rejectedBack: verdict.rejected_back.length, saidCited: said.length ? said.filter((c) => c.cited).length / said.length : null };
     }
 
     const out = path.join(OUTPUTS, SYSTEM_PROMPT_ID, row.model.replace(/[^a-z0-9.-]+/gi, "_"), `${fx.slug}-${row.at.replace(/[:.]/g, "-")}.json`);
@@ -183,7 +194,7 @@ function table(rows: Row[], current: string) {
     const k = `${r.systemPrompt}|${r.brandPrompt}|${r.model}`;
     groups.set(k, [...(groups.get(k) ?? []), r]);
   }
-  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "color", "type", "never broken", "$ / pass", "judge $", "s / pass"];
+  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "color", "type", "never broken", "rejected back", "said cited", "$ / pass", "judge $", "s / pass"];
   const body = [...groups.values()].sort((a, b) => a.at(-1)!.at.localeCompare(b.at(-1)!.at)).map((g) => {
     const ok = g.filter((r) => r.checks);
     const scored = ok.filter((r) => r.scores);
@@ -191,14 +202,14 @@ function table(rows: Row[], current: string) {
     return [
       `${g[0].systemPrompt === current ? "* " : ""}${g[0].systemPrompt} · ${g[0].brandPrompt}`, g[0].model, String(g.length), String(g.length - ok.length),
       okRate(ok.map((r) => r.checks!.evidence)), okRate(ok.map((r) => r.checks!.hex)), okRate(ok.map((r) => r.checks!.families)), okRate(ok.flatMap((r) => r.checks!.language ? [r.checks!.language] : [])),
-      s((x) => x.specificity), s((x) => x.teamWords), s((x) => x.coherence), s((x) => x.expected), s((x) => x.byArea?.color ?? null), s((x) => x.byArea?.typography ?? null), s((x) => x.neverBroken),
+      s((x) => x.specificity), s((x) => x.teamWords), s((x) => x.coherence), s((x) => x.expected), s((x) => x.byArea?.color ?? null), s((x) => x.byArea?.typography ?? null), s((x) => x.neverBroken), s((x) => x.rejectedBack ?? null), s((x) => x.saidCited ?? null),
       fixed(mean(ok.map((r) => r.costUsd ?? 0)), 4), fixed(mean(scored.flatMap((r) => r.judgeUsd ?? [])), 4), fixed(mean(ok.map((r) => (r.ms ?? 0) / 1000))),
     ];
   });
   const widths = head.map((h, i) => Math.max(h.length, ...body.map((r) => r[i].length)));
   const line = (cells: string[]) => cells.map((c, i) => (i < 2 ? c.padEnd(widths[i]) : c.padStart(widths[i]))).join("  ");
   console.log(`\n${line(head)}\n${widths.map((w) => "─".repeat(w)).join("  ")}\n${body.map(line).join("\n")}`);
-  console.log("\nChecks: the share that passed. Judge: 1 to 5 (color and type: expected, in those areas only), and never lines broken per pass. $ / pass: the two passes; judge $: the judge on top. * the prompt in the code now.");
+  console.log("\nChecks: the share that passed. Judge: 1 to 5 (color and type: expected, in those areas only), never lines broken and rejected proposals back per pass, and the share of areas whose conversation a decision cites. $ / pass: the two passes; judge $: the judge on top. * the prompt in the code now.");
 }
 
 async function readRows(): Promise<Row[]> {
