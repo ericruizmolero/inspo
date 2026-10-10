@@ -16,7 +16,7 @@ export const maxDuration = 120; // posts are copied in after(), once the respons
 // reference on its own day on the board instead of piling them all on today.
 // `projectId` is the project picked on the import page (addMany says where things are filed).
 export async function POST(req: NextRequest) {
-  const ctx = await requireExtCtx(req);
+  const ctx = await requireExtCtx(req, "batch");
   if (ctx instanceof Response) return ctx;
   const body = (await req.json().catch(() => ({}))) as { items?: { url?: unknown; title?: unknown; date?: unknown; image?: unknown; text?: unknown }[]; source?: string; projectId?: string };
   if (!Array.isArray(body.items) || body.items.length > MAX_PER_BATCH) {

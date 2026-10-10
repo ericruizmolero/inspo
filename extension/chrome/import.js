@@ -40,7 +40,8 @@ function scopeOf(sel) {
 let state = { key: null, base: DEFAULT_BASE, workspace: null, workspaces: [], user: null };
 let ready = false; // the destination is known: the workspace's projects are loaded
 
-const api = async (path, init = {}) => {
+// A 429 is the server's import limit: wait as long as it says and send the same thing again
+const api = async (path, init = {}, tries = 5) => {
   const res = await fetch(state.base + API + path, {
     ...init,
     headers: {
@@ -49,6 +50,10 @@ const api = async (path, init = {}) => {
       ...(init.headers || {}),
     },
   });
+  if (res.status === 429 && tries > 1) {
+    await new Promise((r) => setTimeout(r, (Number(res.headers.get("Retry-After")) || 60) * 1000));
+    return api(path, init, tries - 1);
+  }
   const data = await res.json().catch(() => ({}));
   if (res.status === 401) { await chrome.storage.local.remove(["key"]); setView("connect"); throw new Error(data.error || t("keyInvalid")); }
   if (!res.ok) throw new Error(data.error || t("errorStatus", [String(res.status)]));

@@ -4,10 +4,13 @@
 // what starts the client's OAuth flow (lib/mcp/oauth.ts).
 import { authMcp, originOf, CORS } from "@/lib/mcp/auth";
 import { handleRpc } from "@/lib/mcp/server";
+import { allow } from "@/lib/rate-limit";
 
 export const maxDuration = 300; // saving a reference names it from its site, and tags it once answered
 
 const MAX_BODY = 512 * 1024;
+/** A person's requests per minute, across instances and whichever token they come with */
+const PER_MINUTE = 120;
 const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...CORS, ...headers } });
 const rpcError = (code: number, message: string) => ({ jsonrpc: "2.0", id: null, error: { code, message } });
@@ -23,6 +26,7 @@ function unauthorized(req: Request): Response {
 export async function POST(req: Request) {
   const ctx = await authMcp(req);
   if (!ctx) return unauthorized(req);
+  if (!(await allow(`mcp:${ctx.user.id}`, PER_MINUTE, 60_000))) return json(rpcError(-32000, "Too many requests in a minute. Wait a moment and go on."), 429, { "Retry-After": "60" });
   const raw = await req.text();
   if (raw.length > MAX_BODY) return json(rpcError(-32600, "Request too large"), 413);
   let body: unknown;

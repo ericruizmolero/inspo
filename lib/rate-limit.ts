@@ -28,3 +28,6 @@ export async function pruneRateLimits(): Promise<number> {
   const { rowCount } = await db.execute(sql`DELETE FROM rate_limit WHERE last_request < ${Date.now() - 24 * 60 * 60 * 1000}`);
   return rowCount ?? 0;
 }
+
+/** The caller's address as Vercel's edge hands it on, first in x-forwarded-for, for limits on routes with nobody signed in */
+export const ipOf = (headers: Headers) => headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";

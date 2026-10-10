@@ -11,6 +11,7 @@ import { isMember, listWorkspaces, newId, type SessionUser, type Workspace } fro
 import { toLocale } from "./i18n/locale";
 import { getErrors } from "./i18n";
 import { log, logAs } from "./log";
+import { allow } from "./rate-limit";
 import { HttpError } from "./workspace-core";
 
 const T = schema.extKey;
@@ -92,11 +93,22 @@ export async function authByExtKey(authorization: string | null, wanted?: string
   return { user: { ...u, language: toLocale(u.language) }, workspace, workspaces, keyId: row.id };
 }
 
-/** For /api/ext route handlers: context, or a 401 (bad key) / 403 (workspace not theirs) Response. */
-export async function requireExtCtx(req: Request): Promise<ExtCtx | Response> {
+/** Requests per minute, counted across instances: per key (one browser), per workspace (every member's browser),
+ *  and imports per workspace, since each batch saves up to 25 references and names, captures and tags each one.
+ *  The import page waits out a 429 and sends the same batch again. */
+const PER_MINUTE = { key: 120, workspace: 300, batch: 30 };
+
+/** For /api/ext route handlers: context, or a 401 (bad key) / 403 (workspace not theirs) / 429 (too many) Response. */
+export async function requireExtCtx(req: Request, kind: "call" | "batch" = "call"): Promise<ExtCtx | Response> {
   const ctx = await authByExtKey(req.headers.get("authorization"), req.headers.get("x-workspace"));
   if (!ctx) return Response.json({ error: (await getErrors()).badKey }, { status: 401 });
   if (ctx === "forbidden") return Response.json({ error: (await getErrors()).workspaceNotYours }, { status: 403 });
   await logAs({ userId: ctx.user.id, organizationId: ctx.workspace.id });
+  const within = await Promise.all([
+    allow(`ext:key:${ctx.keyId}`, PER_MINUTE.key, 60_000),
+    allow(`ext:ws:${ctx.workspace.id}`, PER_MINUTE.workspace, 60_000),
+    kind === "batch" ? allow(`ext:batch:${ctx.workspace.id}`, PER_MINUTE.batch, 60_000) : true,
+  ]);
+  if (within.includes(false)) return Response.json({ error: (await getErrors()).tooMany }, { status: 429, headers: { "Retry-After": "60" } });
   return ctx;
 }

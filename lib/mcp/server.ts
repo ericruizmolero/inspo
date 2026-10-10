@@ -6,6 +6,7 @@ import "server-only";
 import { z } from "zod";
 import { HttpError } from "../workspace-core";
 import { logAs, recordFailure } from "../log";
+import { allow } from "../rate-limit";
 import type { McpCtx } from "./auth";
 import { INSTRUCTIONS, TOOLS, toolList } from "./tools";
 import { promptGet, promptList } from "./prompts";
@@ -32,19 +33,9 @@ const ok = (id: Id, result: unknown): RpcResponse => ({ jsonrpc: "2.0", id, resu
 const fail = (id: Id, code: number, message: string): RpcResponse => ({ jsonrpc: "2.0", id, error: { code, message } });
 const text = (s: string, isError = false) => ({ content: [{ type: "text", text: s }], ...(isError ? { isError: true } : {}) });
 
-// A person's calls per minute, per server instance: enough for an agent at work, not for a loop gone wrong.
-// ponytail: in memory, so each serverless instance counts on its own. Move it to the database if abuse shows up.
-const LIMIT = { calls: 120, writes: 40, windowMs: 60_000 };
-const g = globalThis as { __criterioMcpCalls?: Map<string, { at: number; calls: number; writes: number }> };
-const seen = (g.__criterioMcpCalls ??= new Map());
-function allow(userId: string, write: boolean): boolean {
-  const now = Date.now();
-  let w = seen.get(userId);
-  if (!w || now - w.at > LIMIT.windowMs) { w = { at: now, calls: 0, writes: 0 }; seen.set(userId, w); }
-  if (seen.size > 5000) for (const [k, v] of seen) if (now - v.at > LIMIT.windowMs) seen.delete(k);
-  w.calls++; if (write) w.writes++;
-  return w.calls <= LIMIT.calls && w.writes <= LIMIT.writes;
-}
+/** Writes a person may make in a minute, across instances: enough for an agent at work, not for a loop gone wrong.
+ *  Said back as a tool error, so the model waits; every request is also counted at the door (app/mcp/route.ts). */
+const WRITES_PER_MINUTE = 40;
 
 const RESOURCE = /^criterio:\/\/projects\/([\w-]{1,60})\/criterio\.md$/;
 
@@ -52,7 +43,7 @@ async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx
   const tool = TOOLS.find((t) => t.name === params?.name);
   if (!tool) return null;
   await logAs({ userId: ctx.user.id });
-  if (!allow(ctx.user.id, !tool.annotations.readOnlyHint)) return text("Too many calls in a minute. Wait a moment and go on.", true);
+  if (!tool.annotations.readOnlyHint && !(await allow(`mcp:writes:${ctx.user.id}`, WRITES_PER_MINUTE, 60_000))) return text("Too many changes in a minute. Wait a moment and go on.", true);
   const input = tool.input.safeParse(params?.arguments ?? {});
   if (!input.success) return text(`The arguments are not right:\n${z.prettifyError(input.error)}`, true);
   try {
