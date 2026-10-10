@@ -53,6 +53,13 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 - Cambiar un prompt = subir su `PROMPT_VERSION`.
 - Visión con Haiku; razonamiento largo con cuidado: el razonamiento consume `max_tokens`.
 
+## Logs y fallos
+
+- En el servidor no se usa `console`: se usa `log.info|warn|error("area.que", { err, ref })` de `lib/log.ts`. Sale una línea JSON con el identificador de la petición (`x-request-id`, que pone `proxy.ts`; en Vercel es su `x-vercel-id`), la ruta y `userId` y `organizationId`, nunca un correo. Los correos y las firmas de URL de R2 salen tapados (`redact`, `lib/error-reports.ts`).
+- Lo que falla y alguien notaría (una llamada al modelo, una captura, un correo, un trabajo, una acción, una herramienta del MCP, un borrado en R2) va con `recordFailure(kind, what, err)`. Guarda una fila en `failure`, visible 30 días en `/admin/failures`. Ya lo hacen `llm()`, `captureHero`, `sendMail`, los trabajos de etiquetas, `withCtx` y el MCP.
+- Un `catch` que se traga el error lleva un comentario con el porqué. Si no hay porqué, se registra.
+- Para seguir un "no me ha funcionado": el correo da la persona, `/admin/failures` da la hora y el identificador, y el identificador lleva a los logs.
+
 ## Flujo de trabajo
 
 - Se revisa en **localhost** (la preview de Ship Studio). No subir tras cada cambio; a producción solo cuando se pide, directo.

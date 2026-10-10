@@ -6,6 +6,7 @@ import { activeProjectFor, fileItems } from "./projects";
 import { assignEvidence } from "./system";
 import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import type { ExtCtx } from "./ext-keys";
+import { recordFailure } from "./log";
 
 export const cleanAreas = (v: unknown): SystemArea[] =>
   Array.isArray(v) ? [...new Set(v.filter((a): a is SystemArea => SYSTEM_AREAS.includes(a)))] : [];
@@ -18,5 +19,5 @@ export async function fileFromExt(ctx: ExtCtx, itemId: string | undefined, picke
     if (!projectId) return;
     await fileItems(ctx.workspace.id, projectId, [itemId], ctx.user.id);
     for (const area of areas) await assignEvidence(ctx.workspace.id, projectId, area, itemId, true, { id: ctx.user.id, name: ctx.user.name });
-  } catch (e) { console.error("ext: not filed", e instanceof Error ? e.message : e); }
+  } catch (e) { void recordFailure("action", "file in project", e, { ref: itemId }); }
 }

@@ -8,6 +8,7 @@ import { putFile, deleteFiles, getFile, keyOf, fileUrl } from "./storage";
 import { webKeyOf } from "./url";
 import { TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoTags } from "@/types/inspo";
+import { log } from "./log";
 
 /** What a text can hold: a long page of copy, not a book */
 export const TEXT_MAX = 40_000;
@@ -51,7 +52,8 @@ export async function readText(url: string): Promise<string | null> {
   try {
     const f = await getFile(key);
     return f ? f.body.toString("utf-8") : null;
-  } catch {
+  } catch (err) {
+    log.warn("storage.read_failed", { ref: key, err });
     return null;
   }
 }

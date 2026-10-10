@@ -8,6 +8,7 @@ import { type ActivityOverview, type ActivityDay, type AdminEntry } from "@/lib/
 import { type UsageOverview } from "@/lib/usage-core";
 import { batchMarkdown, type FeedbackBatch, type FeedbackOverview } from "@/lib/feedback-core";
 import { useT } from "@/components/I18nProvider";
+import type { FailureRow } from "@/lib/log";
 import { fmtDate, fmtDateTime as fmtDT, fmtUsd as usd } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
@@ -338,6 +339,49 @@ function FeedbackPanel({ feedback, now }: { feedback: FeedbackOverview; now: num
   );
 }
 
+// One row per failure, newest first: when, what kind, which one, the error (its stack on hover), who, and the
+// request id to search in the logs
+function FailuresPanel({ failures, days, now }: { failures: FailureRow[]; days: number; now: number }) {
+  const { locale, t } = useT();
+  return (
+    <SettingsWindow title={t.admin.failuresTitle} figure={failures.length} note={failures.length ? t.admin.failuresHint : undefined}>
+      {failures.length === 0 ? (
+        <EmptyState title={t.admin.nothingYet}>{t.admin.noFailures(days)}</EmptyState>
+      ) : (
+        <div className="ad-table-wrap">
+          <table className="ad-table t-small">
+            <thead>
+              <tr>
+                <th>{t.admin.thWhen}</th>
+                <th>{t.admin.thKind}</th>
+                <th>{t.admin.thWhat}</th>
+                <th>{t.admin.thError}</th>
+                <th>{t.admin.thPerson}</th>
+                <th>{t.admin.thRequest}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {failures.map((f) => {
+                const at = new Date(f.createdAt).toISOString();
+                return (
+                <tr key={f.id}>
+                  <td data-tip={fmtDT(at, locale)}>{ago(at, now, locale, t)}</td>
+                  <td><Chip className="t-label" tone="ember">{t.admin.failureKinds[f.kind] ?? f.kind}</Chip></td>
+                  <td className="ad-cell-trunc" title={f.ref ?? undefined}>{f.what}</td>
+                  <td className="ad-cell-trunc ad-failure" title={f.stack ?? undefined}>{f.message}</td>
+                  <td className="ad-cell-trunc" title={f.userEmail ?? undefined}>{[f.userName, f.workspaceName].filter(Boolean).join(" · ")}</td>
+                  <td className="ad-cell-trunc ad-mono">{f.requestId ?? ""}</td>
+                </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </SettingsWindow>
+  );
+}
+
 // ─── KPI strip and share bar ────────────────────────────────────────────────
 
 type Kpi = { label: React.ReactNode; value: React.ReactNode; note?: React.ReactNode };
@@ -370,11 +414,11 @@ function Bar({ share }: { share: number }) {
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
-export type AdminSection = "overview" | "usage" | "people" | "feedback" | "access";
+export type AdminSection = "overview" | "usage" | "people" | "feedback" | "failures" | "access";
 
 // One section of the Activity area. Each page loads only the data its section shows.
-export default function AdminPanel({ section, data, usage, feedback, admins, me }: {
-  section: AdminSection; data: ActivityOverview; usage?: UsageOverview; feedback?: FeedbackOverview; admins?: AdminEntry[]; me: string;
+export default function AdminPanel({ section, data, usage, feedback, failures, admins, me }: {
+  section: AdminSection; data: ActivityOverview; usage?: UsageOverview; feedback?: FeedbackOverview; failures?: FailureRow[]; admins?: AdminEntry[]; me: string;
 }) {
   const { locale, t } = useT();
   const fmtUsd = (n: number) => usd(n, locale);
@@ -616,6 +660,7 @@ export default function AdminPanel({ section, data, usage, feedback, admins, me 
 
       {section === "feedback" && feedback && <FeedbackPanel feedback={feedback} now={now} />}
 
+      {section === "failures" && failures && <FailuresPanel failures={failures} days={data.days} now={now} />}
       {section === "access" && admins && <AccessPanel initial={admins} me={me} />}
     </div>
   );

@@ -3,6 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { uploadCommentFile, deleteCommentFiles, ownsCommentFile, ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES } from "@/lib/comment-files";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { recordFailure } from "@/lib/log";
 
 
 // POST multipart { file } → { url }. One screenshot per request: the browser has already shrunk it
@@ -19,8 +20,7 @@ export async function POST(req: NextRequest) {
     const url = await uploadCommentFile(ctx.workspace.id, file);
     return Response.json({ url }, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("Error uploading comment attachment:", msg);
+    if (!(e instanceof HttpError)) void recordFailure("storage", "comment attachment upload", e);
     return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

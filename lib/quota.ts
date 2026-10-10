@@ -8,6 +8,7 @@ import { HttpError, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
 import { overCapacityMail, sendMail, localeForEmail } from "./mail";
+import { log } from "./log";
 
 export interface QuotaLine { used: number; limit: number | null }
 export interface QuotaStatus {
@@ -202,7 +203,7 @@ export async function notifyOverCapacity(organizationId: string, planKey: string
   }
   for (const [locale, emails] of byLocale) {
     const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/settings/members`, teamName, over.planName, over.members, over.limit, locale);
-    try { await sendMail(emails, m.subject, m.html, m.text); } catch (e) { console.error("[plan] could not notify the owner:", e); }
+    try { await sendMail(emails, m.subject, m.html, m.text); } catch (err) { log.warn("plan.owner_not_notified", { err }); }
   }
   return true;
 }

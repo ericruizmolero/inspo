@@ -2,6 +2,7 @@
 // Call sites keep their prompt and format; the connection, the token count
 // and the real cost come from here (#5, #28).
 import { z } from "zod";
+import { log, recordFailure } from "./log";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -37,7 +38,17 @@ export class LlmError extends Error {
   constructor(message: string, readonly finishReason: string | null = null, readonly raw = "", readonly status: number | null = null) { super(message); }
 }
 
+/** One call. A failure is stored (lib/log.ts) and thrown; a call the caller aborted is neither a failure nor stored */
 export async function llm(i: LlmInput): Promise<LlmResult> {
+  try {
+    return await call(i);
+  } catch (e) {
+    if (!i.signal?.aborted) void recordFailure("ai", i.model, e);
+    throw e;
+  }
+}
+
+async function call(i: LlmInput): Promise<LlmResult> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPENROUTER_API_KEY is not set");
 
@@ -81,13 +92,14 @@ export async function llm(i: LlmInput): Promise<LlmResult> {
   // Trap 2 (#5): long answers can run out of budget and come back cut in half
   if (finish !== "stop") {
     const u = json.usage;
-    console.error(`llm: ${i.model} via ${json.provider} finish_reason=${finish}, ${text.length} chars, out ${u?.completion_tokens} (reasoning ${u?.completion_tokens_details?.reasoning_tokens}). Tail: …${text.slice(-120)}`);
+    // Never the text itself: a model answer can quote what a person wrote
+    log.error("llm.unfinished", { model: i.model, provider: json.provider, finish, chars: text.length, output: u?.completion_tokens, reasoning: u?.completion_tokens_details?.reasoning_tokens });
     throw new LlmError(`${i.model} did not finish (finish_reason=${finish ?? "unknown"})`, finish, text);
   }
 
   const u = json.usage ?? {};
   const costUsd = typeof u.cost === "number" ? u.cost : null;
-  if (costUsd === null) console.warn(`llm: no cost returned for ${json.id} (${json.model})`);
+  if (costUsd === null) log.warn("llm.no_cost", { id: json.id, model: json.model });
 
   return {
     text,

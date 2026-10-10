@@ -81,7 +81,7 @@ export async function savePageShot(url: string, key: string, full: Buffer): Prom
         .map((u) => (u ? keyOf(u) : null)).filter((k): k is string => !!k && k.startsWith(PAGES_PREFIX)));
     }
   });
-  writing = job.catch(() => {});
+  writing = job.catch(() => {}); // only the order: the caller awaits the job and gets its error
   await job;
   return shot;
 }

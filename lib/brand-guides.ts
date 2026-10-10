@@ -6,6 +6,7 @@ import { db, schema } from "./db";
 import { getFile, putFile } from "./storage";
 import { projectBrandPrefix } from "./brand-files";
 import { readBrand, type BrandSpec } from "@/types/brand";
+import { log } from "./log";
 
 export const GUIDE_MAX = 60_000;
 /** What the models read of them, all together */
@@ -14,7 +15,7 @@ const READ_MAX = 40_000;
 /** The texts of the latest guides, newest first, cut to what the models read */
 export async function guideTexts(brand: BrandSpec): Promise<string[]> {
   const keys = brand.sources.filter((s) => s.kind === "text" && s.key).map((s) => s.key!).slice(-3).reverse();
-  const texts = await Promise.all(keys.map(async (k) => (await getFile(k).catch(() => null))?.body.toString("utf8") ?? ""));
+  const texts = await Promise.all(keys.map(async (k) => (await getFile(k).catch((err) => { log.warn("storage.read_failed", { ref: k, err }); return null; }))?.body.toString("utf8") ?? ""));
   let room = READ_MAX;
   return texts.filter(Boolean).map((t) => { const cut = t.slice(0, Math.max(0, room)); room -= cut.length; return cut; }).filter(Boolean);
 }

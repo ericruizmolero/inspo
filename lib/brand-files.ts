@@ -6,6 +6,7 @@ import "server-only";
 import sharp from "sharp";
 import { getFile, deleteFiles, listFiles, isSafeKey } from "./storage";
 import type { BrandFile } from "@/types/brand";
+import { recordFailure } from "./log";
 
 export const brandPrefix = (organizationId: string) => `inspo/${organizationId}/brand/`;
 export const projectBrandPrefix = (organizationId: string, projectId: string) => `${brandPrefix(organizationId)}${projectId}/`;
@@ -109,6 +110,8 @@ export async function inspectBrandFile(key: string, type: string, name?: string)
 
 /** Every file of a project's brand, when the project goes */
 export async function deleteProjectBrandFiles(organizationId: string, projectId: string): Promise<void> {
-  const files = await listFiles(projectBrandPrefix(organizationId, projectId)).catch(() => []);
-  if (files.length) await deleteFiles(files.map((f) => f.key)).catch(() => {});
+  const prefix = projectBrandPrefix(organizationId, projectId);
+  const files = await listFiles(prefix).catch((err) => { void recordFailure("storage", "brand files list", err, { ref: prefix, organizationId }); return []; });
+  // deleteFiles stores its own failure
+  if (files.length) await deleteFiles(files.map((f) => f.key));
 }

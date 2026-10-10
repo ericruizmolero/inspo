@@ -3,6 +3,7 @@
 import { CORS, originOf } from "@/lib/mcp/auth";
 import { OAuthError, exchangeCode, refreshTokens } from "@/lib/mcp/oauth";
 import { readForm } from "@/lib/mcp/form";
+import { recordFailure } from "@/lib/log";
 
 const headers = { ...CORS, "Cache-Control": "no-store", Pragma: "no-cache" };
 
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
     throw new OAuthError("unsupported_grant_type", "authorization_code or refresh_token");
   } catch (e) {
     if (e instanceof OAuthError) return Response.json({ error: e.code, error_description: e.message }, { status: e.status, headers });
-    console.error("mcp token", e);
+    void recordFailure("mcp", `token ${f.grant_type}`, e);
     return Response.json({ error: "server_error" }, { status: 500, headers });
   }
 }

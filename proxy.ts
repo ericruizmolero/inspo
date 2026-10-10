@@ -50,14 +50,21 @@ export function proxy(request: NextRequest) {
   const page = !pathname.startsWith("/api/") && pathname !== "/mcp" && !pathname.startsWith("/.well-known/");
   const nonce = page ? btoa(crypto.randomUUID()) : null;
   const policy = nonce ? csp(nonce, pathname) : null;
+  // Every log line and stored failure of this request carries its id (lib/log.ts). On Vercel it is Vercel's own,
+  // so our lines and its request log match; the response sends it back for a report to quote
+  const requestId = request.headers.get("x-vercel-id") ?? crypto.randomUUID();
   // Next reads the nonce from the request's CSP while rendering; the browser enforces the response's
   const next = () => {
-    if (!policy) return NextResponse.next();
     const headers = new Headers(request.headers);
-    headers.set("x-nonce", nonce!);
-    headers.set("Content-Security-Policy", policy);
+    headers.set("x-request-id", requestId);
+    headers.set("x-request-path", pathname);
+    if (policy) {
+      headers.set("x-nonce", nonce!);
+      headers.set("Content-Security-Policy", policy);
+    }
     const res = NextResponse.next({ request: { headers } });
-    res.headers.set("Content-Security-Policy", policy);
+    if (policy) res.headers.set("Content-Security-Policy", policy);
+    res.headers.set("x-request-id", requestId);
     return res;
   };
   // /api calls don't pick a locale: they inherit it from the cookie the browser already sends.

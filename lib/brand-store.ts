@@ -11,6 +11,7 @@ import { BRAND_SECTIONS, SECTION_SCHEMAS, readBrand, type BrandSection, type Bra
 import type { ProjectSystem } from "@/types/system";
 import { getSystem } from "./system";
 import { brandKeyAllowed, keysIn } from "./brand-files";
+import { log } from "./log";
 
 const S = schema.projectSystem;
 const P = schema.project;
@@ -79,8 +80,8 @@ export async function writeBrandSections(organizationId: string, projectId: stri
       if (v === undefined) continue;
       if (brand.meta[k]?.src === "team" && !opts.force?.includes(k)) continue;
       const parsed = SECTION_SCHEMAS[k].safeParse(v);
-      if (!parsed.success) { console.warn("brand: section refused", k, parsed.error.issues.slice(0, 3)); continue; }
-      if (keysIn(parsed.data).some((key) => !brandKeyAllowed(organizationId, key))) { console.warn("brand: section refused, a file outside the workspace", k); continue; }
+      if (!parsed.success) { log.warn("brand.section_refused", { section: k, issues: parsed.error.issues.slice(0, 3) }); continue; }
+      if (keysIn(parsed.data).some((key) => !brandKeyAllowed(organizationId, key))) { log.warn("brand.section_refused", { section: k, reason: "a file outside the workspace" }); continue; }
       (next as unknown as Record<string, unknown>)[k] = parsed.data;
       next.meta[k] = { src, by: null, at };
       written.push(k);

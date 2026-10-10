@@ -5,6 +5,7 @@ import { startAreaAsk, startAreaRefs } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
 import { assertQuota, assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
+import { log } from "@/lib/log";
 
 export const maxDuration = 60;
 
@@ -33,8 +34,7 @@ export async function POST(req: NextRequest) {
     return Response.json(await startAreaAsk(input));
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("system start error:", projectId, area, msg);
+    log.error("system.start_failed", { ref: projectId, area, err: e });
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

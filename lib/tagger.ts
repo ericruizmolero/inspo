@@ -22,6 +22,7 @@ import { mediaKindOf, normalizeWebUrl, postOf, webKeyOf } from "./url";
 import { recordUsage, type UsageCtx } from "./usage";
 import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoItem, InspoTags } from "@/types/inspo";
+import { log } from "./log";
 
 /** Picked with `npm run tags:bakeoff` (October 2026): ~$0.0004 an item, the fewest invented tags of four
  *  cheap models. Any OpenRouter model that takes images and strict JSON will do. */
@@ -105,7 +106,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
 
 const readUrl = async (u: string | undefined) => {
   const k = u ? keyOf(u) : null;
-  return k ? (await getFile(k).catch(() => null))?.body ?? null : null;
+  return k ? (await getFile(k).catch((err) => { log.warn("storage.read_failed", { ref: k, err }); return null; }))?.body ?? null : null;
 };
 
 /** The whole page of a site: a stored capture first (DESIGN.md, then the canvas's), else one new capture. */
@@ -116,7 +117,7 @@ async function pageImage(web: string, capture: boolean): Promise<Buffer | null> 
   try {
     return await withTimeout(captureNewPage(web), CAPTURE_TIMEOUT_MS, "capture");
   } catch (e) {
-    console.warn("tagger: no capture", web, e instanceof Error ? e.message : e);
+    log.warn("tagger.no_capture", { ref: web, err: e });
     return getStoredShot(web); // the card's first screen, if /api/shot made one
   }
 }
@@ -202,7 +203,7 @@ async function tagsElsewhere(organizationId: string, web: string): Promise<Inspo
 async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   try { return await fn(); }
   catch (e) {
-    console.warn("tagger: retrying", e instanceof Error ? e.message : e);
+    log.warn("tagger.retrying", { err: e });
     await new Promise((r) => setTimeout(r, 1500));
     return fn();
   }
@@ -213,7 +214,7 @@ export interface TagInputs { image: Buffer | null; site: SiteText | null }
 /** What the model gets for an item: its picture (already sized for the model) and its words.
  *  `capture: false` only reads what is stored: no browser, nothing written. */
 export async function inputsOf(web: string, { capture = true } = {}): Promise<TagInputs> {
-  const [image, site] = await Promise.all([imageOf(web, capture).catch(() => null), textOf(web)]);
+  const [image, site] = await Promise.all([imageOf(web, capture).catch((err) => { log.warn("tagger.no_image", { ref: web, err }); return null; }), textOf(web)]);
   // An uploaded image speaks through its EXIF/XMP/IPTC, read from the original before it is resized
   const fromFile = mediaKindOf(web) === "image" && image ? await imageMeta(image) : undefined;
   const words: SiteText | null = fromFile

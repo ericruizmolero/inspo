@@ -5,6 +5,7 @@ import { embedPending } from "@/lib/embed";
 import { assertSeatsOk } from "@/lib/quota";
 import type { PlanKey } from "@/lib/plans";
 import { cronAuthorized } from "@/lib/cron-auth";
+import { log } from "@/lib/log";
 
 export const maxDuration = 300;
 
@@ -49,6 +50,6 @@ export async function GET(req: NextRequest) {
     }
   }));
   // Vectors left to make (new tags whose embed failed, edits, the first fill): one batched call each 64
-  const embedded = Date.now() < deadline ? await embedPending(200).catch((e) => { console.warn("embed:", e instanceof Error ? e.message : e); return 0; }) : 0;
+  const embedded = Date.now() < deadline ? await embedPending(200).catch((err) => { log.warn("embed.pending_failed", { err }); return 0; }) : 0;
   return Response.json({ workspaces: open.length, done, failed, throttled, embedded, ms: RUN_BUDGET_MS - (deadline - Date.now()) });
 }

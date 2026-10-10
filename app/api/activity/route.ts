@@ -3,6 +3,7 @@ import { getSession } from "@/lib/workspace";
 import { touchSegment, type Heartbeat } from "@/lib/activity";
 import { getErrors } from "@/lib/i18n";
 import { isMember } from "@/lib/workspace-core";
+import { log } from "@/lib/log";
 
 
 // POST { segmentId, visitId, area, path, organizationId? } → { ok: true }
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: true });
   } catch (e) {
     // Losing a heartbeat must not make noise on the client
-    console.warn("activity: could not record", e instanceof Error ? e.message : e);
+    log.warn("activity.not_recorded", { err: e });
     return Response.json({ ok: false }, { status: 500 });
   }
 }

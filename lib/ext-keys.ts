@@ -9,6 +9,7 @@ import { db, schema } from "./db";
 import { isMember, listWorkspaces, newId, type SessionUser, type Workspace } from "./workspace-core";
 import { toLocale } from "./i18n/locale";
 import { getErrors } from "./i18n";
+import { log, logAs } from "./log";
 import { HttpError } from "./workspace-core";
 
 const T = schema.extKey;
@@ -87,7 +88,7 @@ export async function authByExtKey(authorization: string | null, wanted?: string
   }
 
   if (!row.lastUsedAt || Date.now() - +row.lastUsedAt > TOUCH_EVERY_MS) {
-    void db.update(T).set({ lastUsedAt: new Date() }).where(eq(T.id, row.id)).catch(() => {});
+    void db.update(T).set({ lastUsedAt: new Date() }).where(eq(T.id, row.id)).catch((err) => log.warn("ext.key_not_touched", { ref: row.id, err }));
   }
   return { user: { ...u, language: toLocale(u.language) }, workspace, workspaces, keyId: row.id };
 }
@@ -97,5 +98,6 @@ export async function requireExtCtx(req: Request): Promise<ExtCtx | Response> {
   const ctx = await authByExtKey(req.headers.get("authorization"), req.headers.get("x-workspace"));
   if (!ctx) return Response.json({ error: (await getErrors()).badKey }, { status: 401 });
   if (ctx === "forbidden") return Response.json({ error: (await getErrors()).workspaceNotYours }, { status: 403 });
+  await logAs({ userId: ctx.user.id, organizationId: ctx.workspace.id });
   return ctx;
 }

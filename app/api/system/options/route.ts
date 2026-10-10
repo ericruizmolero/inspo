@@ -5,6 +5,7 @@ import { proposeOptions } from "@/lib/system";
 import { llmEnabled } from "@/lib/llm";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
+import { log } from "@/lib/log";
 
 export const maxDuration = 60;
 
@@ -28,8 +29,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ options });
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("system options error:", projectId, area, msg);
+    log.error("system.options_failed", { ref: projectId, area, err: e });
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

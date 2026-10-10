@@ -3,6 +3,7 @@ import { getSession } from "@/lib/workspace";
 import { handleFeedbackEvent, type FeedbackEvent } from "@/lib/feedback";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { log } from "@/lib/log";
 
 
 const EVENTS = new Set(["annotation.add", "annotation.update", "annotation.delete", "submit"]);
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
     const r = await handleFeedbackEvent({ id: s.user.id, name: s.user.name, email: s.user.email }, organizationId, body as FeedbackEvent);
     return Response.json({ ok: true, ...r });
   } catch (e) {
-    console.warn("feedback: could not record", e instanceof Error ? e.message : e);
+    log.warn("feedback.not_recorded", { err: e });
     return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

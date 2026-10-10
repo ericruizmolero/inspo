@@ -24,6 +24,7 @@ import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 import type { ExtCtx } from "@/lib/ext-keys";
 import type { InspoItem } from "@/types/inspo";
+import { log, recordFailure } from "@/lib/log";
 
 export const maxDuration = 300; // copying a video of up to 100 MB
 
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
         try {
           const thumb = await uploadThumbnail(ctx.workspace.id, "extension.jpg", new File([new Uint8Array(frame.body)], "extension.jpg", { type: frame.type }));
           await setThumbnail(ctx.workspace.id, web, thumb);
-        } catch (e) { console.error("ext media: frame not saved", e instanceof Error ? e.message : e); }
+        } catch (err) { log.warn("ext.frame_not_saved", { ref: web, err }); }
       };
 
       // 1. Its file, copied
@@ -118,7 +119,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     // Our own messages go back as they are; anything else (a driver, the database) stays in the log
     if (err instanceof HttpError) return Response.json({ error: err.message }, { status: err.status });
-    console.error("ext media error:", err instanceof Error ? err.message : err);
+    void recordFailure("action", "media from the extension", err);
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

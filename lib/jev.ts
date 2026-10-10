@@ -5,6 +5,7 @@ import { InspoItem, InspoTags } from "@/types/inspo";
 import { TAGS, TAG_THRESHOLD, viewOf } from "./taxonomy";
 import en from "./i18n/en";
 import { recordUsage, type UsageCtx } from "./usage";
+import { recordFailure } from "./log";
 
 let _client: TypeSafeClient | null = null;
 function client() {
@@ -108,7 +109,8 @@ export async function matchQuery(
       const a = res.answers as Record<string, { noul?: number }>;
       return { ...billingOf(res), scores: batch.map((it, i) => [it.web, Number(a[`item_${i}`]?.noul ?? 0)] as const) };
     } catch (e) {
-      console.error("matchQuery batch error:", e);
+      // The search goes on with this batch scored 0; the failure is kept
+      void recordFailure("ai", "jev", e, { ref: query });
       return { costUsd: 0, provider: null, requestId: null, scores: batch.map((it) => [it.web, 0] as const) };
     }
   });

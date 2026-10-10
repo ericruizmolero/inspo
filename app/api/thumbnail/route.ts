@@ -5,6 +5,7 @@ import { setThumbnail, hasItem } from "@/lib/items";
 import { ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES } from "@/lib/comment-files";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { recordFailure } from "@/lib/log";
 
 
 // POST (multipart file + webUrl) → uploads an image and assigns it to the item
@@ -26,8 +27,7 @@ export async function POST(req: NextRequest) {
     await setThumbnail(ctx.workspace.id, webUrl, url);
     return Response.json({ url });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("Error uploading thumbnail:", msg);
+    if (!(err instanceof HttpError)) void recordFailure("storage", "thumbnail upload", err);
     return Response.json({ error: err instanceof HttpError ? err.message : (await getErrors()).unexpected }, { status: err instanceof HttpError ? err.status : 500 });
   }
 }

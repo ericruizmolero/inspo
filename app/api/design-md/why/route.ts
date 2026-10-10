@@ -13,6 +13,7 @@ import { getErrors } from "@/lib/i18n";
 import type { DesignWhy } from "@/types/design";
 import { HttpError } from "@/lib/workspace-core";
 import { assertQuota, quotaBlock } from "@/lib/quota";
+import { log } from "@/lib/log";
 
 export const maxDuration = 120;
 
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
     if (!result) return blocked!;
     const { why, built, stale } = result;
     if (built) {
-      console.log(`design-why ${url}: ${voices.length} voices → ${why.highlights.length} highlights${why.probe ? `, probe ${why.probe.ms}ms` : ""}, ${built.model} ${Date.now() - t0}ms`);
+      log.info("design_why.built", { ref: url, voices: voices.length, highlights: why.highlights.length, probeMs: why.probe?.ms, model: built.model, ms: Date.now() - t0 });
       void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, {
         action: "design_why", model: built.model, inputTokens: built.usage.input, outputTokens: built.usage.output,
         cacheReadTokens: built.usage.cacheRead, costUsd: built.costUsd, provider: built.provider, requestId: built.requestId, ref: url,
@@ -83,8 +84,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ why, cached: !built, stale });
   } catch (err) {
     if (req.signal.aborted) return new Response(null, { status: 499 });
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("design-why error:", url, msg);
+    log.error("design_why.failed", { ref: url, err });
     return Response.json({ error: err instanceof HttpError ? err.message : (await getErrors()).unexpected }, { status: err instanceof HttpError ? err.status : 500 });
   }
 }

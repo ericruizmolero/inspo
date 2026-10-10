@@ -23,6 +23,7 @@ const DICTS: Record<Locale, Dict> = { en, es };
 
 /** The language of this request. */
 export const getLocale = cache(async (): Promise<Locale> => {
+  // A session that cannot be read speaks the cookie's language; the page that needs the session reports it
   const session = await getSession().catch(() => null);
   if (session) {
     // Read the language from the row, not the session object: Better Auth caches the session

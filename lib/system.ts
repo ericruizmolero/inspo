@@ -27,6 +27,7 @@ import { areaCandidates } from "./candidates";
 import type { PolishBrief } from "@/types/polish";
 import { readBrand } from "@/types/brand";
 import { projectGuides } from "./brand-guides";
+import { log } from "./log";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -467,7 +468,7 @@ const standing = current.areas.map((a) => ({
     }
     void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `${input.auto ? AUTO_REF : ""}project:${input.projectId}` });
     const out = OutSchema.parse(JSON.parse(res.text));
-    console.log(`system ${input.projectId}: ${refs.length} refs → ${out.areas.filter((a) => a.decision.trim()).length} areas filled, ${res.usage.input}+${res.usage.output} tokens, ${res.ms} ms, ${res.costUsd ?? "?"} USD`);
+    log.info("system.built", { ref: input.projectId, refs: refs.length, areasFilled: out.areas.filter((a) => a.decision.trim()).length, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
 
     const now = new Date();
     await ensureHead(input.organizationId, input.projectId, now);
@@ -512,7 +513,7 @@ const standing = current.areas.map((a) => ({
     return getSystem(input.organizationId, input.projectId);
   })();
   inflight.set(key, job);
-  job.finally(() => inflight.delete(key)).catch(() => {});
+  job.finally(() => inflight.delete(key)).catch(() => {}); // the caller gets the job's error
   return job;
 }
 
@@ -636,7 +637,7 @@ async function startCall<S extends z.ZodTypeAny>(input: StartInput, part: string
     throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
   }
   void recordUsage(input.usage, { action: "system", model: res.model, inputTokens: res.usage.input, outputTokens: res.usage.output, cacheReadTokens: res.usage.cacheRead, costUsd: res.costUsd, provider: res.provider, requestId: res.id, ref: `project:${input.projectId}:start-${part}:${input.area}` });
-  console.log(`[system] start ${part} ${input.area} for ${input.projectId}: ${res.usage.input} in, ${res.usage.output} out, ${(res.costUsd ?? 0).toFixed(4)} $`);
+  log.info("system.started", { ref: input.projectId, part, area: input.area, tokensIn: res.usage.input, tokensOut: res.usage.output, costUsd: res.costUsd });
   return schema.parse(JSON.parse(res.text));
 }
 
@@ -680,14 +681,14 @@ export async function startAreaRefs(input: Omit<StartInput, "usage" | "language"
   const [boardRows, rows, visuals] = await Promise.all([
     db.select({ itemId: PI.itemId }).from(PI).where(and(eq(PI.organizationId, input.organizationId), eq(PI.projectId, input.projectId))),
     db.select().from(T).where(eq(T.organizationId, input.organizationId)).orderBy(desc(T.createdAt)),
-    boardVisuals(input.organizationId, input.projectId).catch(() => [] as RefVisual[]),
+    boardVisuals(input.organizationId, input.projectId).catch((err) => { log.warn("system.visuals_unread", { ref: input.projectId, err }); return [] as RefVisual[]; }),
   ]);
   const ids = rows.map((r) => r.id);
   const threads = ids.length ? await db.select({ itemId: C.itemId, body: C.body }).from(C).where(and(eq(C.organizationId, input.organizationId), inArray(C.itemId, ids))) : [];
   const said = new Map<string, string>();
   for (const c of threads) said.set(c.itemId, `${said.get(c.itemId) ?? ""} ${c.body}`);
   // Closeness in meaning, when the library has its vectors (it costs one cached embedding of the query); without them the words decide alone
-  const near = embedEnabled() ? await queryVector(search.q, input.organizationId).then((vec) => nearest(input.organizationId, vec, 60)).catch(() => ({} as Record<string, number>)) : {};
+  const near = embedEnabled() ? await queryVector(search.q, input.organizationId).then((vec) => nearest(input.organizationId, vec, 60)).catch((err) => { log.warn("embed.query_failed", { err }); return {} as Record<string, number>; }) : {};
   const onBoard = new Set(boardRows.map((r) => r.itemId));
   const material = new Map(visuals.map((v) => [v.itemId, area === "logo" ? !!v.logo : area === "iconography" ? v.icons.length > 0 : false]));
   const count = (text: string) => { search.words.lastIndex = 0; return new Set((text.match(search.words) ?? []).map((w) => w.toLowerCase())).size; };
@@ -943,7 +944,7 @@ export async function triageInbox(input: { organizationId: string; itemIds?: str
       if (!itemId) continue;
       out.push({ itemId, projectId: it.project ? pcodes.get(it.project) ?? null : null, areas: [...new Set(it.areas)], reason: it.reason.trim().slice(0, 160) });
     }
-    console.log(`triage ${org}: ${batch.length} refs → ${parsed.items.filter((i) => i.project).length} filed, ${res.usage.input}+${res.usage.output} tokens, ${res.costUsd ?? "?"} USD, ${res.ms} ms`);
+    log.info("system.triaged", { organizationId: org, refs: batch.length, filed: parsed.items.filter((i) => i.project).length, tokensIn: res.usage.input, tokensOut: res.usage.output, costUsd: res.costUsd, ms: res.ms });
     return out;
   }));
   return results.flat();
@@ -1050,7 +1051,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
       ? { area, decision, confidence: Math.max(1, out.confidence), evidence, source: "model", decidedBy: null, why: out.why, curation }
       : { area, decision: "", confidence: 0, evidence: pinned, source: null, decidedBy: null, why: "", curation }, { id: null, name: res.model }, now);
   }
-  console.log(`curate ${input.projectId} ${area}: ${candidates.length} candidates, ${verdicts.filter((v) => v.keep).length} kept, ${res.costUsd ?? "?"} USD`);
+  log.info("system.curated", { ref: input.projectId, area, candidates: candidates.length, kept: verdicts.filter((v) => v.keep).length, costUsd: res.costUsd });
   return getSystem(input.organizationId, input.projectId);
 }
 

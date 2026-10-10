@@ -9,6 +9,7 @@ import { auth } from "./auth";
 import { toLocale } from "./i18n/locale";
 import { ensurePersonalWorkspace, listWorkspaces, canManage, HttpError, type Ctx, type Role, type SessionUser } from "./workspace-core";
 import { getErrors } from "./i18n";
+import { log, logAs, recordFailure } from "./log";
 
 export * from "./workspace-core";
 
@@ -47,6 +48,7 @@ const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
   const active = workspaces.find((w) => w.id === activeId);
   // No active workspace: if they're in a team, better to start there than in the empty personal one
   const workspace = active ?? workspaces.find((w) => w.kind === "team") ?? workspaces[0];
+  await logAs({ userId: user.id, organizationId: workspace.id });
   return { ctx: { user, workspace, workspaces }, fallback: !active };
 });
 
@@ -57,7 +59,9 @@ export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Res
   try {
     const { ctx, fallback } = await resolveCtx();
     if (fallback) {
-      await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: ctx.workspace.id } }).catch(() => {});
+      // The request goes on with the workspace it resolved; the next one tries to save it again
+      await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: ctx.workspace.id } })
+        .catch((err) => log.warn("workspace.active_not_saved", { err }));
     }
     if (opts?.manage && !canManage(ctx.workspace.role)) {
       return Response.json({ error: (await getErrors()).workspaceAdminsCan }, { status: 403 });
@@ -84,7 +88,8 @@ export async function withCtx<T>(fn: (ctx: Ctx) => Promise<T>, opts?: { manage?:
   try {
     return { ok: true, data: await fn(ctx) };
   } catch (e) {
-    if (!(e instanceof HttpError)) console.error(e);
+    // The person reads a generic message; the real error is kept, with this request's id
+    if (!(e instanceof HttpError)) void recordFailure("action", fn.name || "server action", e);
     return { ok: false, error: e instanceof HttpError ? e.message : (await getErrors()).unexpected };
   }
 }

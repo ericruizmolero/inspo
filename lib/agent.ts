@@ -25,6 +25,7 @@ import { taggerEnabled } from "./tagger";
 import { SYSTEM_MODEL, loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
+import { log } from "./log";
 
 const P = schema.project;
 const T = schema.inspoItem;
@@ -391,7 +392,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
           const item = await addItem(org, { name: await nameFor(web), web, type: typeFromUrl(web), author: author.name, createdBy: author.id });
           if (a.project && item.id) { await fileItems(org, a.project, [item.id], author.id); line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
-          if (item.id && taggerEnabled()) { const id = item.id; after(() => startTagJob(org, id, author.id).catch(() => null)); }
+          if (item.id && taggerEnabled()) { const id = item.id; after(() => startTagJob(org, id, author.id).catch((err) => log.warn("job.tag.not_started", { ref: id, err }))); }
           (patch.added ??= []).push(item); line.name = item.name; if (item.id) line.items = [item.id]; break;
         }
         case "note": {
@@ -415,7 +416,7 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
       line.ok = false;
       // Our own messages are written for the person; anything else (the database, a driver) stays in the log
       line.error = e instanceof HttpError ? e.message : (await getErrors()).unexpected;
-      console.warn("agent action failed:", a.kind, e instanceof Error ? e.message : e);
+      log.warn("agent.action_failed", { kind: a.kind, err: e });
     }
     done.push(line);
   }
@@ -452,7 +453,7 @@ export async function ask(ctx: Ctx, input: { text: string; scope: AgentScope; us
   const now = resolved.filter((a) => !DANGEROUS.has(a.kind));
   const pending = resolved.filter((a) => DANGEROUS.has(a.kind));
   const { done, patch } = await runActions(ctx, now, input.usage, language);
-  console.log(`agent ${ctx.workspace.id}: "${text.slice(0, 60)}" → ${resolved.map((a) => a.kind).join(",") || "nothing"}, ${res.usage.input}+${res.usage.output} tokens, ${res.costUsd ?? "?"} USD`);
+  log.info("agent.answered", { actions: resolved.map((a) => a.kind), tokensIn: res.usage.input, tokensOut: res.usage.output, costUsd: res.costUsd });
   return { say: plan.say.trim(), done, pending, patch, costUsd: res.costUsd };
 }
 

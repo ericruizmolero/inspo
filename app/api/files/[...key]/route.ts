@@ -11,6 +11,7 @@ import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
 import { openFile, fileUrl, signedFileUrl, isSafeKey } from "@/lib/storage";
 import { brandPrefix } from "@/lib/brand-files";
+import { log } from "@/lib/log";
 
 // Every stored file goes through here (lib/storage.ts): the bucket is private.
 // A workspace's thumbnails, uploaded images, copied videos, comment screenshots and "why" captures are read by
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
     if (file.contentType === "image/svg+xml") headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
     return new Response(file.stream, { status: file.range ? 206 : 200, headers });
   } catch (e) {
-    console.error("files route:", e);
+    log.error("files.not_served", { err: e });
     return new Response("error", { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { embedEnabled, nearest, queryVector } from "@/lib/embed";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { log } from "@/lib/log";
 
 export const maxDuration = 15;
 
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ scores: await nearest(ctx.workspace.id, vec) });
   } catch (e) {
     if (req.signal.aborted) return new Response(null, { status: 499 });
-    console.error("semantic search:", e);
+    log.error("search.semantic_failed", { err: e });
     return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

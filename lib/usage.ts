@@ -7,6 +7,7 @@ import { db, schema } from "./db";
 import { newId } from "./items";
 import { dayOf, daySlots, tzOffsetSeconds } from "./days";
 import { type UsageAction, type UsageOverview } from "./usage-core";
+import { log } from "./log";
 
 export * from "./usage-core";
 
@@ -46,7 +47,7 @@ async function writeUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Prom
   const input = u.inputTokens ?? 0, output = u.outputTokens ?? 0, cacheRead = u.cacheReadTokens ?? 0, units = u.units ?? 0;
   const real = typeof u.costUsd === "number";
   const cost = real ? u.costUsd! : u.model === "jev" ? units * JEV_PER_ITEM_USD : 0;
-  if (!real) console.warn("usage: no real cost", u.action, u.model);
+  if (!real) log.warn("usage.no_real_cost", { action: u.action, model: u.model });
   try {
     await db.insert(schema.aiUsage).values({
       id: newId(), organizationId: ctx.organizationId, userId: ctx.userId ?? null,
@@ -56,7 +57,7 @@ async function writeUsage(ctx: UsageCtx | null | undefined, u: UsageInput): Prom
       ref: u.ref?.slice(0, 300) ?? null, createdAt: new Date(),
     });
   } catch (e) {
-    console.warn("usage: could not record", u.action, e instanceof Error ? e.message : e);
+    log.error("usage.not_recorded", { action: u.action, err: e });
   }
 }
 

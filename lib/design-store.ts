@@ -7,6 +7,7 @@ import { makeCanvasCopies, colorOfStored } from "./page-shots";
 
 import type { DesignSpec } from "@/types/design";
 import { svgIsSafe } from "./brand-files";
+import { log } from "./log";
 
 export interface DesignMdEntry {
   url: string;
@@ -64,7 +65,7 @@ async function saveImage(key: string, suffix: string, data: Buffer, ext: "jpg" |
 
 export async function getDesignMd(url: string): Promise<DesignMdEntry | null> {
   try { return await getJson<DesignMdEntry>(entryKey(keyFor(url))); }
-  catch (e) { console.error("design-store get:", e); return null; }
+  catch (err) { log.error("design_store.read_failed", { ref: url, err }); return null; }
 }
 
 /** Prefix of a workspace's "why it's here" captures (the file route allows it for that workspace) */
@@ -80,7 +81,7 @@ export async function getDesignScreenshot(url: string): Promise<Buffer | null> {
   const entry = await getDesignMd(url);
   const key = entry?.screenshotUrl ? keyOf(entry.screenshotUrl) : null;
   if (!key) return null;
-  try { return (await getFile(key))?.body ?? null; } catch { return null; }
+  try { return (await getFile(key))?.body ?? null; } catch (err) { log.warn("storage.read_failed", { ref: key, err }); return null; }
 }
 
 // Read on every library load: kept in memory for a short while, and replaced by what this process writes.
@@ -89,7 +90,7 @@ const INDEX_FRESH_MS = 20_000;
 let indexCache: { at: number; index: Promise<DesignMdIndex> } | null = null;
 export function getDesignMdIndex(): Promise<DesignMdIndex> {
   if (indexCache && Date.now() - indexCache.at < INDEX_FRESH_MS) return indexCache.index;
-  const index = getJson<DesignMdIndex>(INDEX_KEY).then((v) => v ?? {}, (e) => { console.error("design-store index:", e); return {}; });
+  const index = getJson<DesignMdIndex>(INDEX_KEY).then((v) => v ?? {}, (err) => { log.error("design_store.index_failed", { err }); return {}; });
   indexCache = { at: Date.now(), index };
   return index;
 }
@@ -108,7 +109,7 @@ export async function designMdIndexFor(organizationId: string, webs?: Set<string
 /** The canvas copies of the page (lib/page-shots.ts). Never throws: a page without them still shows. */
 async function canvasShots(key: string, fullShot: Buffer): Promise<Pick<DesignMdEntry, "shotH" | "topUrl" | "tileUrl" | "thumbUrl" | "color">> {
   try { return await makeCanvasCopies(`${DESIGN_MD_PREFIX}${key}`, fullShot); }
-  catch (e) { console.warn("design-store canvas shots:", e); return {}; }
+  catch (err) { log.warn("design_store.canvas_copies_failed", { ref: key, err }); return {}; }
 }
 
 const imagesOf = (e: DesignMdEntry | null) => e ? [e.screenshotUrl, e.coverUrl, e.scrollUrl, e.logoUrl, e.logoSvgUrl, e.topUrl, e.tileUrl, e.thumbUrl] : [];

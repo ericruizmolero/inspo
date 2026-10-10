@@ -6,6 +6,7 @@ import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { deleteThumbnailFiles } from "./thumbnails";
 import { deleteCommentFiles } from "./comment-files";
+import { log } from "./log";
 
 export interface ItemFiles { thumbnails: string[]; attachments: string[] }
 
@@ -53,6 +54,6 @@ export async function dropUnusedFiles(organizationId: string, files: ItemFiles):
       deleteCommentFiles(organizationId, atts.filter((u) => !keepAtts.has(u))),
     ]);
   } catch (e) {
-    console.warn("Could not clean up files:", e);
+    log.warn("storage.cleanup_failed", { err: e });
   }
 }

@@ -7,6 +7,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
+import { log } from "./log";
 
 const Sh = schema.systemShare;
 const P = schema.project;
@@ -49,5 +50,5 @@ export async function resolveShare(token: string): Promise<{ id: string; organiz
 }
 
 export async function markViewed(id: string): Promise<void> {
-  await db.update(Sh).set({ lastViewedAt: new Date() }).where(eq(Sh.id, id)).catch(() => {});
+  await db.update(Sh).set({ lastViewedAt: new Date() }).where(eq(Sh.id, id)).catch((err) => log.warn("share.view_not_marked", { ref: id, err }));
 }

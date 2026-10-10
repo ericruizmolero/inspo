@@ -12,6 +12,7 @@ import { DesignWhySchema, type DesignSpec, type DesignWhy } from "@/types/design
 import type { ProbeReport } from "./design-probe";
 import { voiceText } from "./comment-context";
 import { DEFAULT_OUTPUT_LANGUAGE, languageRule, type OutputLanguage } from "./output-language";
+import { log } from "./log";
 
 // Vision + judgment over a finished spec. Haiku padded every answer with prose; Sonnet keeps to values (a few cents).
 export const DESIGN_WHY_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -134,7 +135,7 @@ export function getOrBuildWhy(input: {
     // A probe that broke (browser down, model hiccup) must not freeze a capture-less answer:
     // the row is saved under a stamp that never matches, so the next open tries again
     let probeFailed = false;
-    const probe = input.probe ? input.probe().catch((e) => { probeFailed = true; console.error("design-why probe failed:", input.url, e instanceof Error ? e.message : e); return null; }) : Promise.resolve(null);
+    const probe = input.probe ? input.probe().catch((e) => { probeFailed = true; log.warn("design_why.probe_failed", { ref: input.url, err: e }); return null; }) : Promise.resolve(null);
     const [screenshot, probed] = await Promise.all([input.screenshot(), probe]);
     const built = await buildWhy({ spec: input.spec, url: input.url, voices: input.voices, screenshot, probe: probed?.report ?? null, shotUrls: probed?.shotUrls, language: input.language });
     await saveWhy(input.organizationId, input.url, probeFailed ? `${stamp}~retry` : stamp, built.why);
@@ -145,7 +146,7 @@ export function getOrBuildWhy(input: {
   // An older answer is better than a spinner: hand it over and let the job finish behind the response
   return getWhy(input.organizationId, input.url).then((cached): WhyResult | Promise<WhyResult> => {
     if (!cached || cached.stamp === stamp) return job;
-    input.background!(job.catch((e) => console.error("design-why background rebuild failed:", input.url, e instanceof Error ? e.message : e)));
+    input.background!(job.catch((err) => log.error("design_why.rebuild_failed", { ref: input.url, err })));
     return { why: cached.why, built: null, stale: true };
   });
 }

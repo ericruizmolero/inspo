@@ -2090,6 +2090,9 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .ad-table .cr-chip { white-space: nowrap; }
 .ad-person { display: flex; align-items: center; gap: 12px; min-width: 0; max-width: 240px; }
 .ad-cell-trunc { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+/* /admin/failures: the error gets the room, the request id is literal data */
+.ad-failure { max-width: 360px; }
+.ad-mono { font-family: var(--font-mono); }
 @media (max-width: 900px) {
   .ad-charts, .ad-cols { grid-template-columns: 1fr; }
 }

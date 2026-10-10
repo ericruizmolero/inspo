@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
 import { templatePage } from "@/lib/templates";
+import { log } from "@/lib/log";
 
 export const maxDuration = 90; // the first time: Chromium cold start, the page loaded and scrolled, the copies cut
 
@@ -15,7 +16,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ id: string
     return Response.json(await templatePage(session.workspace.id, id), { headers: { "Cache-Control": "private, max-age=300" } });
   } catch (e) {
     if (e instanceof HttpError) return new Response(e.message, { status: e.status });
-    console.error("template page:", id, e instanceof Error ? e.message : e);
+    log.error("template.page_failed", { ref: id, err: e });
     return Response.json(null, { status: 502 });
   }
 }

@@ -10,6 +10,7 @@ import { llm } from "./llm";
 import type { Voice } from "./design-why";
 import { voiceText } from "./comment-context";
 import { guardPage } from "./safe-fetch";
+import { log } from "./log";
 
 // Locating a section from a description needs eyes and judgment: the same model as the "why"
 export const PLAN_MODEL = process.env.DESIGN_WHY_MODEL || "anthropic/claude-sonnet-5";
@@ -297,6 +298,7 @@ async function recordSweep(page: Page, elements: Candidate[]): Promise<{ frames:
   const t0 = Date.now();
   client.on("Page.screencastFrame", (ev: { data: string; sessionId: number }) => {
     frames.push({ data: ev.data, t: Date.now() - t0 });
+    // A frame acked after the page closed: nothing to do
     client.send("Page.screencastFrameAck", { sessionId: ev.sessionId }).catch(() => {});
   });
   await client.send("Page.startScreencast", { format: "jpeg", quality: 72, maxWidth: 1440, maxHeight: 900, everyNthFrame: 1 });
@@ -311,8 +313,9 @@ async function recordSweep(page: Page, elements: Candidate[]): Promise<{ frames:
     await page.mouse.move(5, 5);
     await settle(page, 600);
   } finally {
+    // Cleanup: the page may already be gone
     await client.send("Page.stopScreencast").catch(() => {});
-    await client.detach().catch(() => {});
+    await client.detach().catch(() => {}); // cleanup too
   }
   if (frames.length < 3) return null;
 
@@ -377,9 +380,9 @@ async function encodeWebm(browser: Browser, frames: Frame[], region: Region, aud
     if (!res || !res.b64) return null;
     return { data: Buffer.from(res.b64, "base64"), ms: res.ms };
   } catch (e) {
-    console.error("probe: video encode failed", e instanceof Error ? e.message : e);
+    log.warn("probe.video_failed", { err: e });
     return null;
-  } finally { await page.close().catch(() => {}); }
+  } finally { await page.close().catch(() => {}); } // cleanup: the browser may already be gone
 }
 
 /** For tuning the matcher: the candidates the browser sees on a page. */
@@ -392,14 +395,14 @@ export async function listCandidates(url: string): Promise<Candidate[]> {
     await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 }).catch(async () => { await page.waitForSelector("body", { timeout: 5000 }); });
     await settle(page, 1200);
     return (await page.evaluate(CANDIDATES)) as Candidate[];
-  } finally { await browser.close().catch(() => {}); }
+  } finally { await browser.close().catch(() => {}); } // cleanup: a crashed browser has nothing to close
 }
 
 /** Null when the notes point at nothing the browser could show or check. */
 export async function probeSite(url: string, voices: Voice[], signal?: AbortSignal): Promise<ProbeReport | null> {
   const t0 = Date.now();
   const browser = await launch();
-  const onAbort = () => { void browser.close().catch(() => {}); };
+  const onAbort = () => { void browser.close().catch(() => {}); }; // the run's own error reports the abort
   signal?.addEventListener("abort", onAbort, { once: true });
   try {
     const page = await browser.newPage();
@@ -512,7 +515,7 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
             if (vid) captures.push({ id: `v${vi}`, hint: target.hint, kind: "video", sectionId: -1, text: `${elements.length} elements hovered in turn${rec.audio ? ", with the sound the page played" : ""}`, box: { y: rec.region.y, h: rec.region.h }, data: vid.data, mime: "video/webm", ext: "webm", ms: vid.ms });
             if (rec.audio) captures.push({ id: `a${vi}`, hint: target.hint, kind: "audio", sectionId: -1, text: "sound the page played while hovering", box: { y: rec.region.y, h: 0 }, data: rec.audio.data, mime: rec.audio.mime, ext: rec.audio.ext });
           }
-        } catch (e) { console.error("probe: sweep failed", e instanceof Error ? e.message : e); }
+        } catch (err) { log.warn("probe.sweep_failed", { ref: url, err }); }
       }
     }
     await page.mouse.move(5, 5);
@@ -542,6 +545,6 @@ export async function probeSite(url: string, voices: Voice[], signal?: AbortSign
     return { plan, captures, audio, cursor: { css: [...cursors], customElement: customCursor }, scroll, targets, summary, ms: Date.now() - t0 };
   } finally {
     signal?.removeEventListener("abort", onAbort);
-    await browser.close().catch(() => {});
+    await browser.close().catch(() => {}); // cleanup: a crashed browser has nothing to close
   }
 }

@@ -401,6 +401,36 @@ export const aiUsage = pgTable("ai_usage", {
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);
 
+// ─── Failures ────────────────────────────────────────────────────────────────
+// One row per thing that went wrong out of sight: a model call, a capture, an email, a tagging job, a Server
+// Action or an MCP tool (lib/log.ts recordFailure). With a person's id and the time, support finds what failed
+// and why without reproducing it. Shown in /admin/failures; the morning cron drops rows older than 30 days.
+
+export const FAILURE_KINDS = ["ai", "shot", "mail", "job", "action", "mcp", "storage"] as const;
+
+export const failure = pgTable("failure", {
+  id: text("id").primaryKey(),
+  /** What failed: FAILURE_KINDS */
+  kind: text("kind").notNull(),
+  /** Which one: the model, the tool, the job, the host of a capture */
+  what: text("what").notNull(),
+  /** The error, with addresses and R2 signatures blanked */
+  message: text("message").notNull(),
+  /** Where it was thrown: the top of the stack */
+  stack: text("stack"),
+  /** The request it happened in (x-request-id, proxy.ts): the same id the logs carry */
+  requestId: text("request_id"),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+  /** The item, URL or route it was about */
+  ref: text("ref"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+}, (t) => [
+  index("failure_created_idx").on(t.createdAt),
+  index("failure_user_created_idx").on(t.userId, t.createdAt),
+  oneOf("failure_kind_check", t.kind, FAILURE_KINDS),
+]);
+
 // ─── Activity (presence) ─────────────────────────────────────────────────────
 // A segment = one person in one area of the app (library, DESIGN.md, team…)
 // within one visit (tab). The client sends a heartbeat every 20 s while the

@@ -6,6 +6,7 @@ import { llmEnabled } from "@/lib/llm";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { BRAND_SECTIONS, type BrandSection } from "@/types/brand";
+import { log } from "@/lib/log";
 
 export const maxDuration = 90;
 
@@ -28,8 +29,7 @@ export async function POST(req: NextRequest) {
     return Response.json(system);
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("brand error:", projectId, msg);
+    log.error("brand.failed", { ref: projectId, err: e });
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

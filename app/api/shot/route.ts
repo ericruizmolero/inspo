@@ -3,6 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { findByWeb } from "@/lib/items";
 import { getOrCaptureShot } from "@/lib/screenshot";
 import { allow } from "@/lib/rate-limit";
+import { log } from "@/lib/log";
 
 export const maxDuration = 90; // Chromium cold start + 20 s load + capture
 
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (err) {
-    console.error("shot error:", url, err instanceof Error ? err.message : err);
+    log.warn("shot.not_served", { ref: url, err });
     // A failure is remembered for a while so Chromium is not relaunched on every load, but not so
     // long that a server fix takes an hour to show. Respond 204 and
     // not 502 so the browser does not print it as a console error: the card already

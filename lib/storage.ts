@@ -12,6 +12,7 @@ import {
   S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { log, recordFailure } from "./log";
 
 export const FILES_BASE = "/api/files/";
 
@@ -252,13 +253,13 @@ export const listFiles = (prefix: string) => d().list(prefix);
 /** Deletes files by key. Never throws: an orphan file blocks nothing. */
 export async function deleteFiles(keys: string[]): Promise<void> {
   if (!keys.length) return;
-  try { await d().del(keys); } catch (e) { console.warn("Could not delete files:", e); }
+  try { await d().del(keys); } catch (err) { void recordFailure("storage", "delete files", err, { ref: keys[0] }); }
 }
 
 export async function getJson<T>(key: string): Promise<T | null> {
   const f = await getFile(key);
   if (!f) return null;
-  try { return JSON.parse(f.body.toString("utf8")) as T; } catch { return null; }
+  try { return JSON.parse(f.body.toString("utf8")) as T; } catch (err) { log.warn("storage.bad_json", { ref: key, err }); return null; }
 }
 export async function putJson(key: string, data: unknown): Promise<void> {
   await d().put(key, Buffer.from(JSON.stringify(data)), "application/json");

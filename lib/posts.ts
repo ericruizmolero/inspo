@@ -9,6 +9,7 @@
 import "server-only";
 import { postOf } from "./url";
 import { putFile, getJson, putJson, keyOf } from "./storage";
+import { log, recordFailure } from "./log";
 
 export const POSTS_PREFIX = "inspo/posts/";
 const FETCH_TIMEOUT_MS = 8000;
@@ -156,13 +157,13 @@ async function copy(remote: string, key: string, maxBytes: number): Promise<stri
     if (body.length > maxBytes) return null;
     return await putFile(`${POSTS_PREFIX}${key}`, body, type);
   } catch (e) {
-    console.warn("posts: not copied", remote, e instanceof Error ? e.message : e);
+    log.warn("posts.media_not_copied", { ref: remote, err: e });
     return null;
   }
 }
 
 export async function getStoredPost(id: string): Promise<Post | null> {
-  try { return await getJson<Post>(`${POSTS_PREFIX}${id}/post.json`); } catch { return null; }
+  try { return await getJson<Post>(`${POSTS_PREFIX}${id}/post.json`); } catch (err) { log.warn("storage.read_failed", { ref: id, err }); return null; }
 }
 
 const inflight = new Map<string, Promise<Post | null>>();
@@ -197,7 +198,7 @@ export function ensurePost(web: string): Promise<Post | null> {
     const post: Post = { ...raw, media, savedAt: new Date().toISOString() };
     await putJson(`${POSTS_PREFIX}${raw.id}/post.json`, post);
     return post;
-  })().catch((e) => { console.error("posts: import failed", web, e); return null; })
+  })().catch((e) => { void recordFailure("job", "post import", e, { ref: web }); return null; })
     .finally(() => inflight.delete(ref.id));
   inflight.set(ref.id, job);
   return job;

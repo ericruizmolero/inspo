@@ -8,6 +8,7 @@ import { deleteFeedbackNotes, resolveFeedbackNotes } from "@/lib/feedback";
 import { sendMail, adminAccessMail, localeForEmail } from "@/lib/mail";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { log } from "@/lib/log";
 
 type Admin = NonNullable<Awaited<ReturnType<typeof getSession>>>;
 
@@ -18,7 +19,7 @@ async function asAdmin<T>(fn: (s: Admin) => Promise<T>): Promise<ActionResult<T>
   try {
     return { ok: true, data: await fn(s) };
   } catch (e) {
-    if (!(e instanceof HttpError)) console.error(e);
+    if (!(e instanceof HttpError)) log.error("admin.action_failed", { err: e });
     return { ok: false, error: e instanceof HttpError ? e.message : (await getErrors()).unexpected };
   }
 }
@@ -35,7 +36,7 @@ export async function grantAccess(email: string) {
       const base = APP_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
       const m = adminAccessMail(`${base}/admin`, by, await localeForEmail(r.email));
       try { await sendMail(r.email, m.subject, m.html, m.text); mailed = true; }
-      catch (e) { console.warn("access: could not send the email", e instanceof Error ? e.message : e); }
+      catch (err) { log.warn("admin.access_mail_not_sent", { err }); }
     }
     return { ...r, mailed };
   });

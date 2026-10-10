@@ -11,6 +11,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { and, desc, eq, gt, isNotNull, isNull, or } from "drizzle-orm";
 import { db, schema } from "../db";
 import { newId } from "../workspace-core";
+import { log } from "../log";
 
 const C = schema.mcpClient;
 const G = schema.mcpGrant;
@@ -218,7 +219,7 @@ export async function grantByAccessToken(token: string): Promise<{ id: string; u
     .where(and(eq(G.accessHash, sha256(token)), isNull(G.revokedAt), gt(G.accessExpiresAt, new Date()))).limit(1);
   if (!row) return null;
   if (!row.lastUsedAt || Date.now() - +row.lastUsedAt > TOUCH_EVERY_MS) {
-    void db.update(G).set({ lastUsedAt: new Date() }).where(eq(G.id, row.id)).catch(() => {});
+    void db.update(G).set({ lastUsedAt: new Date() }).where(eq(G.id, row.id)).catch((err) => log.warn("mcp.grant_not_touched", { ref: row.id, err }));
   }
   return { id: row.id, userId: row.userId, clientName: row.clientName };
 }

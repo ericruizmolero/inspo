@@ -5,6 +5,7 @@ import { ask, confirm, type AgentScope } from "@/lib/agent";
 import { llmEnabled } from "@/lib/llm";
 import { assertQuota, assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
+import { log } from "@/lib/log";
 
 export const maxDuration = 300;
 
@@ -29,8 +30,7 @@ export async function POST(req: NextRequest) {
     return Response.json(await ask(ctx, { text, scope, usage, language }));
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("agent error:", msg);
+    log.error("agent.failed", { err: e });
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

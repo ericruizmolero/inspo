@@ -7,6 +7,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { putFile, deleteFiles, getFile, keyOf, fileUrl } from "./storage";
 import { webKeyOf } from "./url";
+import { log } from "./log";
 
 export const MEDIA_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif"]);
 /** Kept whole, not downscaled: a GIF would lose its animation */
@@ -58,7 +59,8 @@ export async function readMediaFile(url: string): Promise<{ data: Buffer; type: 
   try {
     const f = await getFile(key);
     return f ? { data: f.body, type: f.contentType } : null;
-  } catch {
+  } catch (err) {
+    log.warn("storage.read_failed", { ref: key, err });
     return null;
   }
 }

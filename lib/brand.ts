@@ -24,6 +24,7 @@ import { getBrand, projectClient, writeBrandSections } from "./brand-store";
 import { brandId, runMayWrite, type BrandFace, type BrandSection, type BrandSections, type BrandSpec } from "@/types/brand";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { DesignSpec } from "@/types/design";
+import { log } from "./log";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -177,11 +178,11 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
     const out = OutSchema.parse(JSON.parse(res.text));
     const sections = await toSections(out, brand, client?.web ?? null, byCode);
     const written = await writeBrandSections(organizationId, projectId, sections, "model", { force: input.force, run: { at: new Date().toISOString(), model: res.model } });
-    console.log(`brand ${projectId}: ${written.join(", ")} · ${res.usage.input}+${res.usage.output} tokens, ${res.ms} ms, ${res.costUsd ?? "?"} USD`);
+    log.info("brand.built", { ref: projectId, sections: written, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
     return getSystem(organizationId, projectId);
   })();
   inflight.set(key, job);
-  job.finally(() => inflight.delete(key)).catch(() => {});
+  job.finally(() => inflight.delete(key)).catch(() => {}); // the caller gets the job's error
   return job;
 }
 

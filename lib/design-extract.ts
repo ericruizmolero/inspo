@@ -226,10 +226,10 @@ const COLLECT = `(() => {
         }
       }
     }
-  } catch {}
+  } catch { /* a page whose sheets cannot be walked: no variables */ }
 
   const loaded = new Set();
-  try { document.fonts.forEach(f => { if (f.status === "loaded") loaded.add(f.family.replace(/["']/g, "") + " " + f.weight); }); } catch {}
+  try { document.fonts.forEach(f => { if (f.status === "loaded") loaded.add(f.family.replace(/["']/g, "") + " " + f.weight); }); } catch { /* no font loading API */ }
   const fontLinks = [...document.querySelectorAll('link[rel="stylesheet"][href*="font"], link[href*="fonts.googleapis"], link[href*="typekit"], link[href*="fonts.bunny"]')].map(l => l.href).slice(0, 6);
 
   const meta = (n) => document.querySelector('meta[name="' + n + '"], meta[property="' + n + '"]')?.getAttribute("content") || "";
@@ -474,7 +474,7 @@ async function fontFaceRules(page: Page): Promise<string[]> {
   } catch {
     return [];
   } finally {
-    await cdp.detach().catch(() => {});
+    await cdp.detach().catch(() => {}); // cleanup: the page may already be gone
   }
 }
 
@@ -505,7 +505,7 @@ function fontFormats(blocks: string[]): FontFile[] {
 export async function extractDesign(url: string, signal?: AbortSignal): Promise<ExtractResult> {
   signal?.throwIfAborted();
   const browser = await launch();
-  const onAbort = () => { void browser.close().catch(() => {}); };
+  const onAbort = () => { void browser.close().catch(() => {}); }; // the run's own error reports the abort
   signal?.addEventListener("abort", onAbort, { once: true });
   try {
     const page = await browser.newPage();
@@ -576,7 +576,7 @@ export async function extractDesign(url: string, signal?: AbortSignal): Promise<
     return { tokens, screenshot, fullShot, cover, scroll, logo, icons: oklchToHex(iconSvgs), logoSvg: logoSvg ? oklchToHex(logoSvg) : null, fontFiles };
   } finally {
     signal?.removeEventListener("abort", onAbort);
-    await browser.close().catch(() => {});
+    await browser.close().catch(() => {}); // cleanup: a crashed browser has nothing to close
   }
 }
 

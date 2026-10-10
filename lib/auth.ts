@@ -15,6 +15,7 @@ import { toOutputLanguage, DEFAULT_OUTPUT_LANGUAGE } from "./output-language";
 import { collectItemFiles, dropUnusedFiles, type ItemFiles } from "./item-files";
 import { eq } from "drizzle-orm";
 import { allow } from "./rate-limit";
+import { log } from "./log";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -132,7 +133,7 @@ export const auth = betterAuth({
       const reason = location && /[?&]error=/.test(location) ? new URL(location, "http://x").searchParams.get("error")
         : err && err.statusCode >= 400 ? err.body?.code ?? String(err.status) : null;
       if (!reason) return;
-      console.warn(JSON.stringify({ event: "login_failed", path: ctx.path, reason, ip: ctx.request ? getIP(ctx.request, ctx.context.options) : null }));
+      log.warn("auth.login_failed", { path: ctx.path, reason, ip: ctx.request ? getIP(ctx.request, ctx.context.options) : null });
     }),
   },
   session: {
@@ -204,7 +205,7 @@ export const auth = betterAuth({
         try {
           await sendMail(data.email, m.subject, m.html, m.text);
         } catch (e) {
-          console.error(`[invite] could not send the email to ${data.email}:`, e);
+          log.warn("invite.mail_not_sent", { organizationId: data.organization.id, err: e });
         }
       },
       organizationHooks: {

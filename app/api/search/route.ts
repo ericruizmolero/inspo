@@ -5,6 +5,7 @@ import { matchQuery, jevEnabled, getCachedSearch, setCachedSearch } from "@/lib/
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { log } from "@/lib/log";
 
 export const maxDuration = 30;
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     setCachedSearch(key, scores);
     return Response.json({ scores });
   } catch (e) {
-    console.error("search error:", e);
+    log.error("search.failed", { err: e });
     return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

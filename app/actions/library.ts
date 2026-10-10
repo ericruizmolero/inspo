@@ -28,13 +28,14 @@ import { allow } from "@/lib/rate-limit";
 import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
+import { log, recordFailure } from "@/lib/log";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment, CommentAnchor, InspoItem, PolishChoice } from "@/types/inspo";
 
 /** Its meaning vector, made again after answering. Its row's vector is already null (the edit cleared it),
  *  so a failure leaves it for the worker instead of keeping the old vector. */
 function embedAfter(itemId: string) {
-  after(() => embedItems([itemId]).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+  after(() => embedItems([itemId]).catch((err) => log.warn("embed.deferred", { ref: itemId, err })));
 }
 
 /** Its thread changed, which lives in another table: the vector is cleared first, then made again */
@@ -63,7 +64,7 @@ export async function addInspo(input: { web: string; name?: string; type?: strin
       author: ctx.user.name || ctx.user.email,
       createdBy: ctx.user.id,
     });
-    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
     startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
   });
@@ -84,7 +85,7 @@ export async function readBoardAction(input: string): Promise<ActionResult<Board
       return { ok: true, name: b.name, platform: b.platform, entries: b.entries, skipped: b.skipped, capped: b.capped };
     } catch (e) {
       if (!(e instanceof BoardError)) throw e;
-      console.warn("board not read", e.message);
+      log.warn("board.not_read", { reason: e.reason, err: e });
       return { ok: false, reason: e.reason };
     }
   });
@@ -180,7 +181,7 @@ export async function addImage(input: { url: string; fileName?: string; type?: s
       author: ctx.user.name || ctx.user.email,
       createdBy: ctx.user.id,
     });
-    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
     startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
   });

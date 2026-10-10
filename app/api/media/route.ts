@@ -4,6 +4,7 @@ import { uploadMediaFile, newMediaKey, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/li
 import { uploadUrl, fileUrl } from "@/lib/storage";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { recordFailure } from "@/lib/log";
 
 // Uploads an image that will be an inspo of its own. Two ways in (lib/media-client.ts):
 // - JSON { type, size } → { url, put }: the browser PUTs the file to `put`, straight to R2.
@@ -32,8 +33,7 @@ export async function POST(req: NextRequest) {
     if (file.size > MAX_MEDIA_BYTES) return Response.json({ error: errors.mediaTooHeavy }, { status: 413 });
     return Response.json({ url: await uploadMediaFile(ctx.workspace.id, file) }, { status: 201 });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("Error uploading an image inspo:", msg);
+    if (!(e instanceof HttpError)) void recordFailure("storage", "image upload", e);
     return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

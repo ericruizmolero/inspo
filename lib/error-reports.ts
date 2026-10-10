@@ -10,6 +10,9 @@ export const REPORT_DSN = process.env.NEXT_PUBLIC_BETTERSTACK_DSN;
 const EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]+/g;
 const SIGNED = /([?&])X-Amz-[^&\s"'\\]*/g;
 
+/** Blanks addresses and R2 signatures in a text. The logs (lib/log.ts) use it too */
+export const redact = (text: string) => text.replace(EMAIL, "[email]").replace(SIGNED, "$1[signed]");
+
 function scrub(event: ErrorEvent): ErrorEvent {
   if (event.request) {
     delete event.request.data;
@@ -20,7 +23,7 @@ function scrub(event: ErrorEvent): ErrorEvent {
   delete event.user;
   // The console says what the code printed, and that can be a note
   event.breadcrumbs = event.breadcrumbs?.filter((b) => b.category !== "console");
-  return JSON.parse(JSON.stringify(event).replace(EMAIL, "[email]").replace(SIGNED, "$1[signed]"));
+  return JSON.parse(redact(JSON.stringify(event)));
 }
 
 export const reportOptions = {

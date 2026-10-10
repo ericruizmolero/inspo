@@ -46,7 +46,7 @@ export function applyThemePref(pref: ThemePref) {
   try {
     if (pref === "system") localStorage.removeItem(THEME_KEY);
     else localStorage.setItem(THEME_KEY, pref);
-  } catch {}
+  } catch { /* storage blocked: the theme holds for this visit */ }
   setTheme(resolveTheme(pref));
 }
 

@@ -14,6 +14,7 @@ import { ITEM_COLUMNS, rowToItem, type ItemRow } from "./items";
 import { tagItem, TAG_FALLBACK_MODEL, TAG_MODEL } from "./tagger";
 import { LlmError } from "./llm";
 import { embedItems } from "./embed";
+import { log, recordFailure } from "./log";
 import { TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoTags, TagStatus } from "@/types/inspo";
 
@@ -77,17 +78,21 @@ async function run(row: Row, userId: string | null): Promise<InspoTags | null | 
     const tags = await tagItem(rowToItem(row), { organizationId: row.organizationId, userId: userId ?? row.createdBy }, model);
     // New tags, new meaning: the vector is made now, or by the worker if this fails
     await db.update(T).set({ tagsJson: tags, tagStatus: "done", tagError: null, embedding: null, updatedAt: new Date() }).where(eq(T.id, row.id));
-    await embedItems([row.id]).catch((e) => console.warn("embed: left for the worker", row.web, e instanceof Error ? e.message : e));
+    await embedItems([row.id]).catch((err) => log.warn("embed.deferred", { ref: row.id, err }));
     (await import("./jev")).clearSearchCache();
     return tags;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const throttled = e instanceof LlmError && e.status === 429;
-    console.error(`tag job: ${throttled ? "rate limited" : "failed"}`, row.web, msg);
+    // A model failure is already stored by llm(); anything else (the capture, the write) is stored here
+    if (!(e instanceof LlmError)) void recordFailure("job", "tag", e, { ref: row.id, organizationId: row.organizationId, userId: userId ?? row.createdBy });
+    else log.warn(throttled ? "job.tag.throttled" : "job.tag.failed", { ref: row.id, organizationId: row.organizationId });
     await db.update(T).set({
       tagStatus: "failed", tagError: msg.slice(0, 500),
       ...(throttled ? { tagAttempts: sql`greatest(${T.tagAttempts} - 1, 0)` } : {}),
-    }).where(eq(T.id, row.id)).catch(() => {});
+    }).where(eq(T.id, row.id))
+      // The row stays "running" until the worker takes it as lost (STALE_MS)
+      .catch((err) => log.error("job.tag.not_marked", { ref: row.id, err }));
     return throttled ? "throttled" : null;
   }
 }

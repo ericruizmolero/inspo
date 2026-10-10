@@ -9,6 +9,7 @@ import { overlayRevision, addRevision, listRevisions } from "@/lib/design-revise
 import { recordUsage } from "@/lib/usage";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
+import { log } from "@/lib/log";
 
 export const maxDuration = 300;
 
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
         { fullShot, cover, scroll, logo, logoSvg }
       );
 
-      console.log(`design-md ${url}: extract ${t1 - t0}ms, ${model} ${t2 - t1}ms, tokens in/out ${usage.input}/${usage.output}`);
+      log.info("design_md.built", { ref: url, extractMs: t1 - t0, model, modelMs: t2 - t1, tokensIn: usage.input, tokensOut: usage.output });
       void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, provider, requestId, ref: url });
 
       // If the workspace had revisions, the regeneration becomes the current version and stays in the history
@@ -104,11 +105,10 @@ export async function GET(req: NextRequest) {
       return Response.json({ ...entry, revisions, cached: false });
     } catch (err) {
       if (ctrl.signal.aborted) {
-        console.log(`design-md ${url}: stopped by the user`);
+        log.info("design_md.cancelled", { ref: url });
         return CANCELLED();
       }
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error("design-md error:", url, msg);
+      log.error("design_md.failed", { ref: url, err });
       return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
     } finally {
       inflight.delete(key);

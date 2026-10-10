@@ -9,6 +9,7 @@ import { SECTIONS, addRevision, getRevisionSpec, latestRevision, listRevisions, 
 import { getErrors, getT, fmtDate } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 import { assertQuota, quotaBlock } from "@/lib/quota";
+import { log } from "@/lib/log";
 
 export const maxDuration = 120;
 
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     const t0 = Date.now();
     const out = await reviseDesignSpec({ spec: current, url, section, comment, language: ctx.workspace.outputLanguage });
-    console.log(`design-md revise ${url} [${section}] by ${author.authorName}: ${Date.now() - t0}ms, ${out.model}, changed=${out.changed}`);
+    log.info("design_md.revised", { ref: url, section, ms: Date.now() - t0, model: out.model, changed: out.changed });
     void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "revise", model: out.model, inputTokens: out.usage.input, outputTokens: out.usage.output, cacheReadTokens: out.usage.cacheRead, costUsd: out.costUsd, provider: out.provider, requestId: out.requestId, ref: url });
 
     if (!out.changed) {
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
     });
     return Response.json(await respond(ctx.workspace.id, url, out.spec, meta.id));
   } catch (e) {
-    console.error("design-md revise error:", e);
+    log.error("design_md.revise_failed", { err: e });
     return Response.json({ error: e instanceof HttpError ? e.message : (await getErrors()).unexpected }, { status: e instanceof HttpError ? e.status : 500 });
   }
 }

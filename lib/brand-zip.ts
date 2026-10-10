@@ -8,6 +8,7 @@ import { brandKeyAllowed } from "./brand-files";
 import { zip, type ZipEntry } from "./zip";
 import { fileStem, fontLinks, tailwindTheme, tokensCss, tokensJson } from "./brand-export";
 import type { BrandFile, BrandSpec } from "@/types/brand";
+import { log } from "./log";
 
 const ext = (f: BrandFile) => (f.type === "image/svg+xml" ? "svg" : f.type === "image/jpeg" ? "jpg" : f.type.split("/")[1] ?? "bin");
 
@@ -28,7 +29,7 @@ export async function brandZip(organizationId: string, brand: BrandSpec, name: s
   const stem = fileStem(name);
   const entries: ZipEntry[] = [];
   // Only the workspace's own files go in, whatever the stored brand says
-  const fetchKey = async (key: string) => (brandKeyAllowed(organizationId, key) ? (await getFile(key).catch(() => null))?.body ?? null : null);
+  const fetchKey = async (key: string) => (brandKeyAllowed(organizationId, key) ? (await getFile(key).catch((err) => { log.warn("storage.read_failed", { ref: key, err }); return null; }))?.body ?? null : null);
   const read = async (f: BrandFile | null) => (f ? fetchKey(f.key) : null);
   const logos: [string, BrandFile | null][] = [["logo-light", brand.logo.primary.light], ["logo-dark", brand.logo.primary.dark], ["mark-light", brand.logo.mark.light], ["mark-dark", brand.logo.mark.dark]];
   let iconSource: Buffer | null = null;

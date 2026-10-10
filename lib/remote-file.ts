@@ -2,6 +2,7 @@
 // extension (app/api/ext/v1/media) or by an AI client over MCP (lib/mcp/pieces.ts).
 import "server-only";
 import { safeFetch } from "./safe-fetch";
+import { log } from "./log";
 
 /** The file at `src`, asked for as the page that shows it would (some sites refuse a bare request).
  *  null unless it is one of `types` and weighs at most `maxBytes`. */
@@ -26,7 +27,7 @@ export async function fetchFile(src: string, page: string | undefined, types: (t
     const body = Buffer.from(await res.arrayBuffer());
     return body.byteLength > 0 && body.byteLength <= maxBytes ? { body, type } : null;
   } catch (e) {
-    console.warn("remote file: not fetched", src, e instanceof Error ? e.message : e);
+    log.warn("remote_file.not_fetched", { ref: src, err: e });
     return null;
   }
 }

@@ -9,6 +9,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { eq } from "drizzle-orm";
 import { db, schema } from "./db";
+import { recordFailure } from "./log";
 import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import en from "./i18n/en";
 import es from "./i18n/es";
@@ -45,12 +46,18 @@ export async function sendMail(to: string | string[], subject: string, html: str
     } catch { /* just a development aid */ }
     return;
   }
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to: recipients, reply_to: opts.replyTo || REPLY_TO, subject, html, text, ...(opts.headers ? { headers: opts.headers } : {}) }),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM, to: recipients, reply_to: opts.replyTo || REPLY_TO, subject, html, text, ...(opts.headers ? { headers: opts.headers } : {}) }),
+    });
+    if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  } catch (e) {
+    // Never the subject or the address: both can name a person
+    void recordFailure("mail", "resend", e);
+    throw e;
+  }
 }
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]!));

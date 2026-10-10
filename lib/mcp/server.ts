@@ -5,6 +5,7 @@
 import "server-only";
 import { z } from "zod";
 import { HttpError } from "../workspace-core";
+import { logAs, recordFailure } from "../log";
 import type { McpCtx } from "./auth";
 import { INSTRUCTIONS, TOOLS, toolList } from "./tools";
 import { promptGet, promptList } from "./prompts";
@@ -50,6 +51,7 @@ const RESOURCE = /^criterio:\/\/projects\/([\w-]{1,60})\/criterio\.md$/;
 async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx, origin: string) {
   const tool = TOOLS.find((t) => t.name === params?.name);
   if (!tool) return null;
+  await logAs({ userId: ctx.user.id });
   if (!allow(ctx.user.id, !tool.annotations.readOnlyHint)) return text("Too many calls in a minute. Wait a moment and go on.", true);
   const input = tool.input.safeParse(params?.arguments ?? {});
   if (!input.success) return text(`The arguments are not right:\n${z.prettifyError(input.error)}`, true);
@@ -60,7 +62,7 @@ async function callTool(params: Record<string, unknown> | undefined, ctx: McpCtx
     // What the libraries refuse on purpose (not found, already there, not allowed) is for the model to read and
     // act on; anything else is ours, and says nothing of how the app is built
     if (e instanceof HttpError) return text(e.message, true);
-    console.error(`mcp: ${tool.name} failed`, e);
+    void recordFailure("mcp", tool.name, e);
     return text("Something failed in criterio. Try again in a moment.", true);
   }
 }

@@ -58,6 +58,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 - Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista; `--prod --apply` toca producción) y borra la referencia y sus copias en todos los espacios.
 - Las claves de la BD de producción, la de escritura de R2 y la de Resend nunca van en un `.env.local`: la app local escribiría en producción. Las credenciales entre socios van por canal privado. `.env*` y `prod.env` están en `.gitignore`.
 - Un informe de error (Better Stack, `lib/error-reports.ts`) no lleva quién es la persona ni lo que escribió: se quitan el cuerpo de la petición (feedback, notas, comentarios), cookies, cabeceras, la query y los mensajes de consola, y cualquier correo o firma de URL de R2 que quede se tapa. Un dato nuevo que pueda acabar en un error pasa por ahí.
+- Los logs y la tabla `failure` (`lib/log.ts`) siguen la misma regla: `userId` y `organizationId`, nunca un correo, ni el texto de una nota, un comentario, un feedback o un prompt. `failure` guarda 30 días (el cron `morning` borra lo anterior) y solo la ven los socios en `/admin/failures`.
 - Lo que se manda a un modelo: la captura y el texto de una web para etiquetarla, las notas y el hilo de un proyecto para su sistema. Ningún proveedor entrena con ello (es lo que promete la política de privacidad, y la lista de proveedores de `lib/i18n/<locale>/legal.ts` tiene que coincidir con el [stack](stack.md)).
 
 ## La extensión

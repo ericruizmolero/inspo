@@ -2,6 +2,7 @@
 // Open to anyone, as the MCP spec has it; a registered app opens nothing until a person approves it.
 import { CORS } from "@/lib/mcp/auth";
 import { OAuthError, registerClient } from "@/lib/mcp/oauth";
+import { recordFailure } from "@/lib/log";
 
 const headers = { ...CORS, "Cache-Control": "no-store" };
 
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
     return Response.json(await registerClient(body), { status: 201, headers });
   } catch (e) {
     if (e instanceof OAuthError) return Response.json({ error: e.code, error_description: e.message }, { status: e.status, headers });
-    console.error("mcp register", e);
+    void recordFailure("mcp", "register client", e);
     return Response.json({ error: "server_error" }, { status: 500, headers });
   }
 }

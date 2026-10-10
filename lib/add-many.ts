@@ -21,6 +21,7 @@ import { taggerEnabled } from "@/lib/tagger";
 import { startTagJob } from "@/lib/tag-jobs";
 import { HttpError } from "@/lib/workspace-core";
 import type { InspoItem } from "@/types/inspo";
+import { log, recordFailure } from "./log";
 
 export { MAX_PER_BATCH };
 /** Sites read at once while naming (each read has its own time limit) */
@@ -99,6 +100,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
           added.push(item);
           return { url: raw, status: "added", id: item.id };
         } catch (e) {
+          // deleteFiles stores its own failure; the add's error is the one to throw
           if (!(e instanceof HttpError && e.status === 409)) await deleteTextFile(workspaceId, stored).catch(() => {});
           throw e;
         }
@@ -128,7 +130,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
     } catch (err) {
       // 409: saved by someone else between the lookup and the insert
       if (err instanceof HttpError && err.status === 409) return { url: raw, status: "existed" };
-      console.error(`add many (${source}): not saved`, web, err instanceof Error ? err.message : err);
+      void recordFailure("action", `add many (${source})`, err, { ref: web });
       return { url: raw, status: "error" };
     }
   });
@@ -141,17 +143,17 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
   let filed = false;
   if (picked && (ids.length || here.length)) {
     filed = await fileItems(workspaceId, picked, [...ids, ...here], user.id).then(() => true)
-      .catch((e) => { console.error(`add many (${source}): not filed in the picked project`, e instanceof Error ? e.message : e); return false; });
+      .catch((err) => { log.warn("add_many.picked_project_failed", { ref: picked, err }); return false; });
   }
   if (!filed && ids.length) {
-    const projectId = await activeProjectFor(workspaceId, user.id).catch(() => null);
-    if (projectId) await fileItems(workspaceId, projectId, ids, user.id).catch((e) => console.error(`add many (${source}): not filed`, e));
+    const projectId = await activeProjectFor(workspaceId, user.id).catch((err) => { log.warn("add_many.active_project_unknown", { err }); return null; });
+    if (projectId) await fileItems(workspaceId, projectId, ids, user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: projectId }));
   }
 
   // Posts on X get their copies and picture; then the AI tags, as when a URL is pasted in the app.
   // A text is not tagged (its first lines are its tags, set above): it only gets its meaning vector.
   const texts = added.filter((i) => mediaKindOf(i.web) === "text").map((i) => i.id).filter((x): x is string => !!x);
-  if (texts.length) after(() => embedItems(texts).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+  if (texts.length) after(() => embedItems(texts).catch((err) => log.warn("embed.deferred", { ref: texts[0], count: texts.length, err })));
   const others = added.filter((i) => mediaKindOf(i.web) !== "text");
   if (others.length && (taggerEnabled() || others.some((i) => mediaKindOf(i.web) === "post"))) {
     after(() => eachLimit(others, FINISH_AT_ONCE, async (item) => {
@@ -166,7 +168,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
         }
         // Tagged as a pasted URL is: its job, which keeps the workspace to a few at once (lib/tag-jobs.ts)
         if (taggerEnabled() && item.id) await startTagJob(workspaceId, item.id, user.id);
-      } catch (e) { console.error(`add many (${source}): finishing failed`, item.web, e instanceof Error ? e.message : e); }
+      } catch (err) { log.warn("add_many.finish_failed", { source, ref: item.web, err }); }
     }));
   }
 

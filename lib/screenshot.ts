@@ -7,6 +7,7 @@ import { gatedLaunch, QueueFull } from "./browser-gate";
 import type { PageShot } from "@/types/inspo";
 import { guardPage } from "./safe-fetch";
 import { egressArgs } from "./egress-proxy";
+import { log, recordFailure } from "./log";
 
 const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
@@ -27,12 +28,12 @@ export function shotKey(url: string): string {
 const shotFile = (url: string) => `inspo/shots/${shotKey(url)}.jpg`;
 
 export async function getStoredShot(url: string): Promise<Buffer | null> {
-  try { return (await getFile(shotFile(url)))?.body ?? null; } catch { return null; }
+  try { return (await getFile(shotFile(url)))?.body ?? null; } catch (err) { log.warn("shot.stored_unreadable", { ref: url, err }); return null; }
 }
 
 /** Is there a stored screenshot? Metadata only: doesn't download the image. */
 export async function hasStoredShot(url: string): Promise<boolean> {
-  try { return await fileExists(shotFile(url)); } catch { return false; }
+  try { return await fileExists(shotFile(url)); } catch (err) { log.warn("shot.stored_unreadable", { ref: url, err }); return false; }
 }
 
 async function storeShot(url: string, jpeg: Buffer): Promise<void> {
@@ -119,6 +120,7 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
       // Sites with long-polling never go idle; capture whatever is there.
     }
 
+    // The tweaks below are best effort: a page that refuses one is still captured
     await page.addStyleTag({ content: HIDE_CSS }).catch(() => {});
 
     // Click a consent button if one is still visible.
@@ -129,9 +131,9 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
         return t.length < 24 && texts.some((x) => t === x || t.startsWith(x + " "));
       });
       hit?.click();
-    }, ACCEPT_TEXTS).catch(() => {});
+    }, ACCEPT_TEXTS).catch(() => {}); // best effort
 
-    await page.evaluate(() => (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready).catch(() => {});
+    await page.evaluate(() => (document as unknown as { fonts?: { ready: Promise<unknown> } }).fonts?.ready).catch(() => {}); // best effort
     await new Promise((r) => setTimeout(r, SETTLE_MS));
 
     if (full) {
@@ -139,7 +141,7 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
         const h = document.documentElement.scrollHeight;
         for (let y = 0; y < Math.min(h, ${MAX_PAGE_H}); y += 700) { window.scrollTo(0, y); await new Promise(r => setTimeout(r, 120)); }
         window.scrollTo(0, 0);
-      })()`).catch(() => {});
+      })()`).catch(() => {}); // best effort: the lazy images that loaded are enough
       await new Promise((r) => setTimeout(r, 600));
       const h = (await page.evaluate("document.documentElement.scrollHeight").catch(() => VIEWPORT.height)) as number;
       const height = Math.max(VIEWPORT.height, Math.min(Number(h) || VIEWPORT.height, MAX_PAGE_H));
@@ -148,8 +150,12 @@ export async function captureHero(url: string, full = false): Promise<Buffer> {
     }
     const jpeg = await page.screenshot({ type: "jpeg", quality: JPEG_QUALITY, fullPage: false });
     return Buffer.from(jpeg);
+  } catch (e) {
+    // A full queue is not the site's fault: it is tried again later
+    if (!(e instanceof QueueFull)) void recordFailure("shot", new URL(url).hostname, e, { ref: url });
+    throw e;
   } finally {
-    await browser?.close().catch(() => {});
+    await browser?.close().catch(() => {}); // cleanup: a crashed browser has nothing to close
   }
 }
 

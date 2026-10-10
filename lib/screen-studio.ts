@@ -4,6 +4,7 @@
 // from X (it is public). Files: lib/storage.ts, under inspo/screen-studio/<id>/.
 import "server-only";
 import { putFile, fileExists } from "./storage";
+import { recordFailure } from "./log";
 
 export const SCREEN_STUDIO_PREFIX = "inspo/screen-studio/";
 const MAX_VIDEO_BYTES = 80 * 1024 * 1024;
@@ -38,9 +39,9 @@ export function ensureScreenStudio(id: string): Promise<boolean> {
     const html = await page.text();
     const video = meta(html, "og:video:secure_url") ?? meta(html, "og:video");
     const image = meta(html, "og:image:secure_url") ?? meta(html, "og:image");
-    if (image) await copy(image, screenStudioKey(id, "poster.jpg"), "image/jpeg", 10 * 1024 * 1024).catch(() => false);
+    if (image) await copy(image, screenStudioKey(id, "poster.jpg"), "image/jpeg", 10 * 1024 * 1024).catch(() => false); // the video plays without its poster
     return video ? await copy(video, screenStudioKey(id, "video.mp4"), "video/mp4", MAX_VIDEO_BYTES) : false;
-  })().catch((e) => { console.error("screen-studio: not copied", id, e instanceof Error ? e.message : e); return false; })
+  })().catch((e) => { void recordFailure("job", "screen studio copy", e, { ref: id }); return false; })
     .finally(() => inflight.delete(id));
   inflight.set(id, job);
   return job;

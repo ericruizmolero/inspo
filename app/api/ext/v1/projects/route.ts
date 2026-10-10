@@ -4,6 +4,7 @@ import { requireExtCtx } from "@/lib/ext-keys";
 import { loadProjects, activeProjectFor, projectForBoard } from "@/lib/projects";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { log, recordFailure } from "@/lib/log";
 
 // GET → { projects: [{ id, name }], active }
 export async function GET(req: Request) {
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
   const [{ projects }, active] = await Promise.all([
     loadProjects(ctx.workspace.id),
-    activeProjectFor(ctx.workspace.id, ctx.user.id).catch(() => null),
+    activeProjectFor(ctx.workspace.id, ctx.user.id).catch((err) => { log.warn("ext.active_project_unknown", { err }); return null; }),
   ]);
   return Response.json({ projects: projects.map((p) => ({ id: p.id, name: p.name })), active });
 }
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     return Response.json({ project: { id: project.id, name: project.name } });
   } catch (err) {
     if (err instanceof HttpError) return Response.json({ error: err.message }, { status: err.status });
-    console.error("ext: board project not made", err instanceof Error ? err.message : err);
+    void recordFailure("action", "board project from the extension", err);
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

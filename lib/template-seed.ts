@@ -21,6 +21,7 @@ import { mediaPrefix } from "./media";
 import { typeFromUrl } from "./url";
 import { textPrefix, textTags } from "./text-refs";
 import type { ProjectTemplate } from "@/types/system";
+import { log } from "./log";
 
 const P = schema.project, S = schema.projectSystem, A = schema.systemArea, PI = schema.projectItem;
 /** Who "saved" a template's references: nobody of the workspace. They are the template's until a project is cloned from it */
@@ -136,9 +137,9 @@ export function ensureBuiltinTemplates(organizationId: string): Promise<void> {
       if (have.has(readTemplateSpec(dir).name)) continue;
       // A millisecond apart, so they list in the folders' order
       const made = await loadTemplateFolder(dir, organizationId, { id: builtinId(organizationId, folder), at: new Date(t0 + i) });
-      if (made) console.log(`templates: built-in "${folder}" loaded into ${organizationId} (${made.references} references)`);
+      if (made) log.info("templates.builtin_loaded", { folder, organizationId, references: made.references });
     }
-  })().catch((e) => { ensured.delete(organizationId); console.error("templates: built-ins not loaded", organizationId, e instanceof Error ? e.message : e); });
+  })().catch((e) => { ensured.delete(organizationId); log.error("templates.builtins_not_loaded", { organizationId, err: e }); });
   ensured.set(organizationId, job);
   return job;
 }

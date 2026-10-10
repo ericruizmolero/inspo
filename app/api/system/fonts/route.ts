@@ -5,6 +5,7 @@ import { boardVisuals } from "@/lib/system";
 import { refFaces, type RefFace } from "@/lib/ref-fonts";
 import { mediaKindOf } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";
+import { log } from "@/lib/log";
 
 export const maxDuration = 30;
 
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     return Response.json({ faces }, { headers: { "Cache-Control": "private, max-age=600" } });
   } catch (e) {
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
-    console.error("fonts error:", projectId, e instanceof Error ? e.message : e);
+    log.error("brand.fonts_failed", { ref: projectId, err: e });
     return Response.json({ error: (await getErrors()).unexpected }, { status: 500 });
   }
 }

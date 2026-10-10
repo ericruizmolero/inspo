@@ -14,6 +14,7 @@ import { recordUsage } from "./usage";
 import en from "./i18n/en";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import { threadLines, type CommentRowLike } from "./comment-context";
+import { log } from "./log";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/embeddings";
 /** Picked with scripts/embed-bakeoff.ts (October 2026): the closest English/Spanish match of the cheap ones */
@@ -163,7 +164,7 @@ export async function nearest(organizationId: string, vec: number[], limit = 60)
     });
   } catch (e) {
     // A Postgres with an older pgvector: the plain query
-    console.warn("nearest: no iterative scan", e instanceof Error ? e.message : e);
+    log.warn("embed.no_iterative_scan", { err: e });
     rows = await query(db);
   }
   return Object.fromEntries(rows.map((r) => [r.web, Number(r.sim)]));

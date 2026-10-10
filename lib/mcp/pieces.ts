@@ -30,6 +30,7 @@ import { addAreaComment, systemActivity } from "../area-comments";
 import { saveBrief } from "../brief";
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, type SystemArea } from "@/types/system";
 import type { McpCtx } from "./auth";
+import { log } from "../log";
 
 const P = schema.project;
 const PI = schema.projectItem;
@@ -212,11 +213,12 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
       await setTags(org, item.web, await textTags(item.web));
       itemId = item.id!; name = item.name;
     } catch (e) {
+      // deleteFiles stores its own failure; the add's error is the one to throw
       await deleteTextFile(org, url).catch(() => {});
       throw e;
     }
     const id = itemId;
-    after(() => embedItems([id]).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+    after(() => embedItems([id]).catch((err) => log.warn("embed.deferred", { ref: id, err })));
   } else {
     const web = normalizeWebUrl(input.url!);
     if (!web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);

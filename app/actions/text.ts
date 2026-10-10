@@ -9,6 +9,7 @@ import { embedItems } from "@/lib/embed";
 import { cleanText, putText, readText, rewriteText, textTags, deleteTextFile, ownsTextFile, TEXT_TITLE_MAX } from "@/lib/text-refs";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
+import { log, recordFailure } from "@/lib/log";
 
 /** A pasted text becomes a card: its words go to a file, whose path is the item's address.
  *  Added from inside a project, it is filed there too. Its "tags" are its first lines: no model reads it here. */
@@ -24,11 +25,12 @@ export async function addText(input: { title: string; text: string; note?: strin
         author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
       });
       await setTags(ctx.workspace.id, item.web, await textTags(item.web));
-      if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch(() => {});
+      if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
       const id = item.id;
-      if (id) after(() => embedItems([id]).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+      if (id) after(() => embedItems([id]).catch((err) => log.warn("embed.deferred", { ref: id, err })));
       return item;
     } catch (e) {
+      // deleteFiles stores its own failure; the add's error is the one to throw
       await deleteTextFile(ctx.workspace.id, url).catch(() => {});
       throw e;
     }
@@ -46,7 +48,7 @@ export async function saveText(itemId: string, text: string) {
     await rewriteText(row.web, next);
     const tags = await textTags(row.web);
     await setTags(ctx.workspace.id, row.web, tags);
-    after(() => embedItems([row.id]).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+    after(() => embedItems([row.id]).catch((err) => log.warn("embed.deferred", { ref: row.id, err })));
     return { text: next, tags };
   });
 }
@@ -59,7 +61,7 @@ export async function renameText(itemId: string, title: string) {
     const [row] = await db.select({ id: T.id, web: T.web }).from(T).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, String(itemId)))).limit(1);
     if (!name || !row || !ownsTextFile(ctx.workspace.id, row.web)) throw new HttpError(400, (await getErrors()).badBody);
     await db.update(T).set({ name, updatedAt: new Date() }).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, row.id)));
-    after(() => embedItems([row.id]).catch((e) => console.warn("embed: left for the worker", e instanceof Error ? e.message : e)));
+    after(() => embedItems([row.id]).catch((err) => log.warn("embed.deferred", { ref: row.id, err })));
     return { name };
   });
 }

@@ -13,6 +13,7 @@ import { taggerEnabled } from "@/lib/tagger";
 import { startTagJob } from "@/lib/tag-jobs";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
+import { log, recordFailure } from "@/lib/log";
 
 export const maxDuration = 300; // tagging (with a whole-page capture) and importing a post (copying its video) run in after(), once the response is sent
 
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest) {
       try {
         const url = await uploadThumbnail(ctx.workspace.id, shot.name, shot);
         await setThumbnail(ctx.workspace.id, web, url);
-      } catch (e) { console.error("ext: thumbnail not saved", e instanceof Error ? e.message : e); }
+      } catch (err) { log.warn("ext.thumbnail_not_saved", { ref: web, err }); }
     }
 
     // A post on X is imported after responding (its photos, frame and video are copied);
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: true, existed: false, item });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    if (!(err instanceof HttpError)) void recordFailure("action", "save from the extension", err);
     // The status comes from the error, not from the message: the text is translated
     return Response.json({ error: err instanceof HttpError ? msg : (await getErrors()).unexpected }, { status: err instanceof HttpError ? err.status : 500 });
   }

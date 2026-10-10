@@ -22,6 +22,7 @@ import { toLocale, type Locale } from "./i18n/locale";
 import en from "./i18n/en";
 import es from "./i18n/es";
 import { SYSTEM_AREAS } from "@/types/system";
+import { log } from "./log";
 
 const U = schema.user;
 const M = schema.member;
@@ -99,7 +100,7 @@ const clip = (s: string, n = QUOTE_MAX) => { const one = s.replace(/\s+/g, " ").
 
 /** Runs something once the response has gone out (Next's after); outside a request, right away */
 export function inBackground(job: () => Promise<void>): void {
-  const run = () => job().catch((e) => console.warn("notify:", e instanceof Error ? e.message : e));
+  const run = () => job().catch((err) => log.error("notify.failed", { err }));
   import("next/server").then(({ after }) => { try { after(run); } catch { void run(); } }, () => { void run(); });
 }
 

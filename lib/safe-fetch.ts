@@ -108,6 +108,7 @@ export async function guardPage(page: Page): Promise<void> {
     if (req.isInterceptResolutionHandled()) return;
     const url = req.url();
     if (/^(data|blob|about):/.test(url)) { void req.continue(); return; }
+    // isPublicUrl never throws; this is a request whose page already closed
     void isPublicUrl(url).then((ok) => (ok ? req.continue() : req.abort("blockedbyclient"))).catch(() => {});
   });
 }

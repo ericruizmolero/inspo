@@ -1,7 +1,7 @@
 // The sections of Settings, Admin and the design library, one Phosphor glyph each
 import {
   AppWindow, ArrowsHorizontal, Asterisk, CaretLeft, ChartBar, Chat, CheckCircle, CircleHalf, Clock, Code, CornersOut, CursorClick,
-  File, Fingerprint, Globe, Keyboard, Layout, Lock, Notepad, Path, Pulse, PuzzlePiece, Shapes, SpeakerHigh, SquaresFour, Stack, TextT, ToggleRight, User, Users } from "@phosphor-icons/react/ssr";
+  File, Fingerprint, Globe, Keyboard, Layout, Lock, Notepad, Path, Pulse, PuzzlePiece, Shapes, SpeakerHigh, SquaresFour, Stack, TextT, ToggleRight, User, Users, Warning } from "@phosphor-icons/react/ssr";
 import type { Icon } from "@phosphor-icons/react";
 
 const GLYPHS: Record<string, Icon> = {
@@ -15,6 +15,7 @@ const GLYPHS: Record<string, Icon> = {
   usage: Clock,
   people: Users,
   feedback: Chat,
+  failures: Warning,
   access: Lock,
   principles: Asterisk,
   foundations: SquaresFour,
