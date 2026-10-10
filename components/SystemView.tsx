@@ -7,9 +7,10 @@ import Clouds from "@/components/Clouds";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
 import { blocksToMd, criterioBlocks, type RefInfo } from "@/lib/criterio-md";
-import { saveProjectBrief } from "@/app/actions/brief";
 import SkillsMenu from "./SkillsMenu";
 import ImproveModal from "./ImproveModal";
+import BriefPanel from "./BriefPanel";
+import type { Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
@@ -77,6 +78,8 @@ interface Props {
   onTextTitle?: (itemId: string, title: string) => Promise<void>;
   /** Saves a site in the project (or files it, when the library has it) and returns it */
   onAddSite?: (web: string) => Promise<InspoItem | null>;
+  /** Saves fields of the brief; the brief as saved, or null when it failed (the caller says why) */
+  onBrief: (patch: Partial<Brief>) => Promise<Brief | null>;
 }
 
 /** A redesign: the reference that is the client's current site, named under the project. Its copy, typefaces, logo and figures rule the system */
@@ -95,7 +98,7 @@ function ClientChip({ client, imageOf, onPick }: { client: InspoItem; imageOf: (
   );
 }
 
-export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite }: Props) {
+export default function SystemView({ project, system, onSystem, board, library, imageOf, onOpenBoard, focusArea, focusRef, onOpenChange, onClient, onOpenItem, refInfo, onText, onTextTitle, onAddSite, onBrief }: Props) {
   const { t, locale } = useT();
   const setSystem = onSystem;
   const [running, setRunning] = useState(false);
@@ -180,8 +183,6 @@ export default function SystemView({ project, system, onSystem, board, library, 
 
   // Each area's conversation (the file carries it): read again whenever an area moves
   const [talkN, setTalkN] = useState(0);
-  // What the project is, as it was last written in the file (the brief), until the page loads it again
-  const [aboutNow, setAboutNow] = useState<string | null>(null);
   const activity = useSystemActivity(project.id, `${sys.areas.map((a) => a.updatedAt ?? "").join("|")}|${talkN}`);
   // Oldest first: a reference keeps its code (R1, R2…) when more arrive
   const boardIds = useMemo(() => board.map((i) => i.id!).filter(Boolean).reverse(), [board]);
@@ -199,15 +200,16 @@ export default function SystemView({ project, system, onSystem, board, library, 
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
-    about: aboutNow ?? project.intent, brief: project.brief, board: boardIds, talk: activity?.notes,
+    about: project.intent, brief: project.brief, board: boardIds, talk: activity?.notes,
     origin: typeof window === "undefined" ? "" : window.location.origin,
     skills: skillsOn, locale, brand: sys.brand,
-  }), [sys, project.name, project.intent, project.brief, aboutNow, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale]);
+  }), [sys, project.name, project.intent, project.brief, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);
   const [sharing, setSharing] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const b = p.get("bring");
@@ -245,6 +247,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const actions = (
     <div className="spage-head__actions">
       {!filled && !running && <p className="spage-muted">{board.length ? t.system.runHint(board.length) : t.system.noBoard}</p>}
+      <Button size="s" icon="file" onClick={() => setBriefOpen(true)} data-tip={t.system.briefPanel.openHint}>{t.system.briefPanel.open}</Button>
       {board.length > 0 ? (
         <Button variant="primary" size="s" onClick={() => setImproving(true)} disabled={running} data-tip={t.system.improveHint}>
           {running ? <><Busy label={phase === "brand" ? t.brand.drawing : t.system.running} /> {phase === "brand" ? t.brand.drawing : t.system.running}</> : <><Icon name="sparkle" size={16} /> {t.system.improve}</>}
@@ -277,6 +280,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
         {error && <p className="sysv-error" role="alert">{error}</p>}
         {notice && <p className="spage-notice" role="status">{notice}</p>}
         {improving && <ImproveModal system={sys} onRun={(focus) => void run(focus)} onClose={() => setImproving(false)} />}
+        {briefOpen && <BriefPanel brief={project.brief} client={clientItem?.name ?? null} onSave={onBrief} onClose={() => setBriefOpen(false)} />}
         {sharing && <ShareDialog projectId={project.id} onClose={() => setSharing(false)} />}
         {bringing && <BrandImport projectId={project.id} brand={editor.brand} initial={bringing} onClose={() => setBringing(null)} onAddSite={onAddSite} onClient={onClient}
           onSystem={setSystem} onRun={() => runAll()} save={editor.save} />}
@@ -290,7 +294,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
         ) : (
           <SystemDoc look={view === "doc" ? "doc" : "md"} blocks={blocks} system={sys} labels={labels} boardIds={boardIds} itemOf={itemOf} imageOf={imageOf} refInfo={refInfo} activity={activity}
             onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
-            onAbout={async (text) => { const r = await saveProjectBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
+            onAbout={async (text) => { await onBrief({ about: text }); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
             busy={busy} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
             onSave={async (area, next) => {
