@@ -44,6 +44,7 @@ async function tables() {
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
     schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
     schema.systemShare, schema.rateLimit, schema.mcpClient, schema.mcpGrant,
+    schema.polishVote, schema.failure,
   ];
   // A table added to the schema but not to this list would vanish from every dump without a word
   const all = (Object.values(schema) as unknown[]).filter((v): v is PgTable => v instanceof PgTable);
