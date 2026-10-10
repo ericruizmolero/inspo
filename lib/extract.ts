@@ -132,7 +132,9 @@ async function fetchHtml(url: string, headers?: Record<string, string>): Promise
   try {
     const res = await safeFetch(url, { signal: ctrl.signal, cache: "no-store", headers });
     if (!res.ok) return null;
-    const html = await res.text();
+    // The abort does not end a body already stalled (the proxy can send a gzip header over a body that never
+    // finishes): without the race, text() never settles and the tag job waits on it forever
+    const html = await Promise.race([res.text(), new Promise<never>((_, reject) => ctrl.signal.addEventListener("abort", () => reject(new Error("body timeout")), { once: true }))]);
     return html && html.length >= 200 ? html : null;
   } catch {
     return null;
