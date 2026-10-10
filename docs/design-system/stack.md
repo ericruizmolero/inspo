@@ -35,11 +35,11 @@ Todos por OpenRouter. Cada tarea tiene una fila en `lib/prompts.ts` (modelo, res
 | --- | --- | --- | --- |
 | Etiquetar una referencia (visión) | `TAG_MODEL` | `google/gemini-2.5-flash-lite` | `lib/tagger.ts` |
 | Reserva de las etiquetas: cada llamada que falla y el último intento de un trabajo | `TAG_FALLBACK_MODEL` | `mistralai/mistral-small-3.2-24b-instruct` | `lib/tagger.ts` |
-| Leer el tablero en el sistema | `SYSTEM_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
-| Otras opciones para un área | `OPTIONS_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
-| Curar la evidencia de un área | `CURATE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
-| Repartir la bandeja en proyectos | `TRIAGE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system.ts` |
-| Arranque de un área vacía | `START_MODEL` | `anthropic/claude-haiku-4.5` | `lib/system.ts` |
+| Leer el tablero en el sistema | `SYSTEM_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system/run.ts` |
+| Otras opciones para un área | `OPTIONS_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system/options.ts` |
+| Curar la evidencia de un área | `CURATE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system/curate.ts` |
+| Repartir la bandeja en proyectos | `TRIAGE_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/system/triage.ts` |
+| Arranque de un área vacía | `START_MODEL` | `anthropic/claude-haiku-4.5` | `lib/system/options.ts` |
 | Valores de la marca | `BRAND_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/brand.ts` |
 | Plan del agente | `AGENT_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/agent.ts` |
 | DESIGN.md de una web (lo pide la importación de marca) | `DESIGN_MD_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/design-md.ts` |
@@ -60,7 +60,7 @@ Lo que cuesta cada acción y cómo cuenta en la cuota está en [Desarrollo](desa
 | shadcn (`base-nova`) sobre Base UI, Phosphor | Piezas base (`components/ui/`) y todos los iconos (`@phosphor-icons/react/ssr`) | `components.json` |
 | cmdk | La paleta de comandos | `components/ui/command.tsx` |
 | class-variance-authority, clsx, tailwind-merge | Variantes y unión de clases | `components/ui/` |
-| zod 4 | El contrato de salida de cada modelo y de las herramientas MCP | `lib/llm.ts`, `lib/tagger.ts`, `lib/system.ts`, `lib/mcp/tools.ts` |
+| zod 4 | El contrato de salida de cada modelo y de las herramientas MCP | `lib/llm.ts`, `lib/tagger.ts`, `lib/system/`, `lib/mcp/tools.ts` |
 | drizzle-orm 0.45 y `pg` | Consultas y migraciones | `lib/db/` |
 | @aws-sdk/client-s3 y s3-request-presigner | R2 | `lib/storage.ts` |
 | undici | `safeFetch`: salir a la red sin tocar la red propia | `lib/safe-fetch.ts` |
