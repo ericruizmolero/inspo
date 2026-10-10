@@ -239,6 +239,13 @@
       "when": 1791642692049,
       "tag": "0034_area_support",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791654109690,
+      "tag": "0035_item_indexes",
+      "breakpoints": true
     }
   ]
 }

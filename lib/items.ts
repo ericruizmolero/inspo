@@ -59,7 +59,7 @@ export function rowToItem(r: Row): InspoItem {
 /** The workspace's rows, newest first. With `webs`, only those addresses. */
 export async function listRows(organizationId: string, webs?: string[]): Promise<Row[]> {
   const where = webs ? and(eq(T.organizationId, organizationId), inArray(T.web, webs)) : eq(T.organizationId, organizationId);
-  return db.select(ROW).from(T).where(where).orderBy(desc(T.date), desc(T.createdAt));
+  return db.select(ROW).from(T).where(where).orderBy(desc(sql`${T.date} collate "C"`), desc(T.createdAt));
 }
 
 export async function listItems(organizationId: string): Promise<InspoItem[]> {

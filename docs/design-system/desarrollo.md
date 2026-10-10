@@ -94,6 +94,15 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 - Un tipo de trabajo nuevo es una entrada en `Job` (`lib/jobs.ts`) y otra en `HANDLERS` (`lib/job-run.ts`). Para que vuelva a intentarse más tarde, el manejador lanza `RetryLater(segundos)`; cualquier otro error se reintenta a 1, 2, 4, 8 y 15 minutos y a la sexta entrega se guarda en `failure` y se suelta.
 - La entrega es al menos una vez: un trabajo tiene que poder correr dos veces sin daño. Los de etiquetas lo consiguen con su fila y el candado por espacio (`lib/tag-jobs.ts`).
 
+## Base de datos
+
+- Producción entra por el pooler de Neon (el host `-pooler` de `DATABASE_URL`, que pone la integración). `lib/db/url.ts` se niega a arrancar en producción con el host directo: con él, cada instancia de función guarda sus conexiones y unas cuantas a la vez llegan al límite del compute. Las migraciones van por el directo (`DATABASE_URL_UNPOOLED`), porque su candado es de sesión.
+- La pool (`lib/db/index.ts`): 10 conexiones por instancia, una ociosa se cierra a los 5 s y `attachDatabasePool` (`@vercel/functions`) mantiene viva la instancia de Fluid hasta que se cierran. Con 3, las consultas de `loadLibrary` hacían cola.
+- Las migraciones corren en el build, antes de `next build`: si el build falla después, el esquema nuevo queda en producción con el código viejo. Por eso una migración solo añade (tablas, columnas que admiten vacío o tienen valor por defecto, índices) y el código viejo tiene que seguir funcionando sobre ella. Renombrar o borrar una columna o una tabla va en dos despliegues: primero el código deja de usarla, después la migración la quita. Borrar o cambiar un índice sí puede ir en el mismo. → [decisión](decisiones/2026-10-10-las-migraciones-solo-anaden.md)
+- `inspo_item.date` es texto ISO: el orden de la biblioteca es `date collate "C"`, con su índice `(organization_id, date collate "C", created_at)`. Con la colación de la base, ordenar 2.000 filas tardaba el doble.
+- `rate_limit` (la nuestra y la de Better Auth) se vacía cada mañana: el cron `morning` borra los contadores de hace más de un día (`pruneRateLimits` en `lib/rate-limit.ts`).
+- Medir: `npm run bench:library` siembra en local un espacio de 2.000 referencias entre otros 20 iguales, mide la parte de base de datos de `loadLibrary`, el sello del tablero y la cuota, imprime el plan de cada consulta y lo borra todo al acabar. El 10/10, la parte de base de datos de `loadLibrary` bajó de 14,6 ms de mediana (p90 37,9) a 8,6 ms (p90 11,1). El sello (0,4 ms) y la cuota de búsquedas (unos 5 ms con 3.000 búsquedas al mes) no compensaban una tabla mantenida al escribir; volver a medir si crecen.
+
 ## Flujo de trabajo
 
 - Se revisa en **localhost** (la preview de Ship Studio). No subir tras cada cambio; a producción solo cuando se pide, directo.

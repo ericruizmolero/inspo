@@ -21,3 +21,10 @@ export async function allow(key: string, max: number, windowMs: number): Promise
     RETURNING count`);
   return Number(rows[0]?.count ?? 1) <= max;
 }
+
+/** Deletes the counters whose window ended over a day ago, ours and Better Auth's: the longest window is an hour,
+ *  so none of them still counts. The morning cron runs it; without it the table keeps one row per key ever seen. */
+export async function pruneRateLimits(): Promise<number> {
+  const { rowCount } = await db.execute(sql`DELETE FROM rate_limit WHERE last_request < ${Date.now() - 24 * 60 * 60 * 1000}`);
+  return rowCount ?? 0;
+}

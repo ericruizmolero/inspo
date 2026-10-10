@@ -96,7 +96,7 @@ export async function embedItems(ids: string[]): Promise<number> {
   for (let i = 0; i < rows.length; i += BATCH) {
     const batch = rows.slice(i, i + BATCH);
     const res = await embedTexts(batch.map((r) => itemText(r, said.get(r.id) ?? [])));
-    // One UPDATE for the batch: the pool has 3 connections on Vercel, and 64 single-row updates queue on them
+    // One UPDATE for the batch: 64 single-row updates would queue on the pool's connections
     const values = batch.map((r, k) => sql`(${r.id}, ${`[${res.vectors[k].join(",")}]`}::vector)`);
     await db.execute(sql`
       update ${T} set embedding = v.embedding, embedding_at = now()

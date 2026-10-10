@@ -252,7 +252,9 @@ export const inspoItem = pgTable("inspo_item", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
-  index("inspo_item_org_idx").on(t.organizationId),
+  // The library's order (lib/items.ts listRows). `date` is ISO text, so byte order ("C") is date order, and it
+  // sorts several times faster than the database's locale
+  index("inspo_item_org_date_idx").on(t.organizationId, sql`${t.date} collate "C"`, t.createdAt),
   uniqueIndex("inspo_item_org_web_uq").on(t.organizationId, t.webKey),
   index("inspo_item_created_by_idx").on(t.createdBy),
   // The cron's sweep: only the few rows not done
@@ -264,6 +266,8 @@ export const inspoItem = pgTable("inspo_item", {
   index("inspo_item_embed_pending_idx").on(t.createdAt).where(sql`${t.embedding} is null and ${t.tagStatus} = 'done'`),
   // The same address in other workspaces, whose tags a new save can copy (lib/tagger.ts)
   index("inspo_item_web_key_idx").on(t.webKey),
+  // The file proxy's ownership check for a thumbnail outside the workspace's own folder (lib/items.ts ownsAnyThumbnail)
+  index("inspo_item_thumbnail_idx").on(t.thumbnailUrl).where(sql`${t.thumbnailUrl} is not null`),
   oneOf("inspo_item_type_check", t.type, ["inspiration", "videos", "ideas", "documentaries"]),
   oneOf("inspo_item_tag_status_check", t.tagStatus, ["pending", "running", "done", "failed"]),
 ]);
