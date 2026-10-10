@@ -84,3 +84,4 @@ jobs:
       - run: npm run check:jobs
       - run: npm run check:postgres
       - run: npm run check:llm
+      - run: npm run check:workspace-delete

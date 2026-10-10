@@ -531,7 +531,7 @@ Un `h1` (sin clase: el elemento ya da el tamaño), entradilla en `.t-body` y un 
 
 ### Paneles de ajustes
 `AccountPanel` · `WorkspacePanel` · `MembersPanel` · `ExtensionPanel` · `UsageCard` · `app/settings/_components/`
-Cuenta (nombre, foto, tema, idioma), espacio, miembros e invitaciones, claves de la extensión y gasto de IA. Filas `.setting-row` sobre `Card`. Espacio acaba en "Tus espacios": todos los de la persona en filas `.list__row`, con Salir o Eliminar en cada una. → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md) En Miembros, el rol de cada persona es un selector (`.list__pick`) para quien gestiona el equipo. → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
+Cuenta (nombre, foto, tema, idioma), espacio, miembros e invitaciones, claves de la extensión y gasto de IA. Filas `.setting-row` sobre `Card`. Espacio acaba en "Exportar" (un enlace con clases `cr-btn cr-btn-secondary cr-btn-s` y `download`, solo para el propietario; los demás ven el botón desactivado y la razón en el pie) y "Tus espacios": todos los de la persona en filas `.list__row`, con Salir o Eliminar en cada una. → [decisión](decisiones/2026-10-06-los-espacios-se-eligen-en-una-lista-para-salir-o-eliminar.md), [exportar y borrar](decisiones/2026-10-10-borrar-un-espacio-no-deja-nada-y-exportarlo-es-un-json.md) En Miembros, el rol de cada persona es un selector (`.list__pick`) para quien gestiona el equipo. → [decisión](decisiones/2026-10-06-un-miembro-borra-lo-suyo-y-los-admins-el-resto.md)
 
 ### Panel de actividad
 `AdminPanel` · `AreaThumb` · `app/admin/AdminPanel.tsx` · `.ad-kpi`

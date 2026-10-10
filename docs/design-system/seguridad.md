@@ -58,6 +58,8 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 - Todo pertenece a un espacio (`workspace`), y las consultas filtran por él. La propiedad de una tarjeta es `createdBy`, nunca el nombre de quien la guardó.
 - Borrar en cascada: al borrar una referencia se van sus ficheros, su hilo y sus votos (`npm run check:postgres` lo comprueba).
+- Borrar un equipo (solo su propietario, escribiendo el nombre) se lleva todas sus filas, sus lápidas, sus avisos y contadores con el id en la clave, y sus ficheros bajo `inspo/<ws>/` e `inspo/design-why/<ws>/` (`deleteWorkspace`, `lib/workspace-delete.ts`). El espacio personal no se borra. El gasto de IA se queda para la contabilidad, sin espacio y con su nombre. El endpoint de borrar de Better Auth está apagado. `npm run check:workspace-delete` comprueba que no queda nada. → [decisión](decisiones/2026-10-10-borrar-un-espacio-no-deja-nada-y-exportarlo-es-un-json.md)
+- Exportar un espacio: su propietario baja un JSON con fichas, proyectos, sistema, comentarios, revisiones, miembros (con su correo) y gasto de IA (`GET /api/workspace/export`, `lib/workspace-export.ts`). Sin tokens de enlaces compartidos ni hashes de llaves.
 - Lo que viene de X, Pinterest, Are.na o Cosmos (`staysInside`, `lib/url.ts`: un post, o una imagen, vídeo o texto cuya página está en una de esas plataformas) no se enseña sin sesión; cada copia guarda su página en `inspo_item.source` y todo lo que la cita enlaza al original. → [decisión](decisiones/2026-10-06-lo-importado-de-x-y-pinterest-no-sale-del-espacio.md)
 - Una petición de retirada se ejecuta con `npm run takedown <url>` (sin `--apply` solo lista; `--prod --apply` toca producción) y borra la referencia y sus copias en todos los espacios.
 - Las claves de la BD de producción, la de escritura de R2 y la de Resend nunca van en un `.env.local`: la app local escribiría en producción. Las credenciales entre socios van por canal privado. `.env*` y `prod.env` están en `.gitignore`.
@@ -91,3 +93,4 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 - Better Stack: la página de estado pública, y apuntar quién tiene la cuenta. Los errores de Better Stack están en la región de EE. UU. (`us-west-2a`); el resto de los datos, en Fráncfort.
 - `ANTHROPIC_API_KEY` en Vercel sin uso: borrarla o usarla.
 - Vercel en Hobby y Neon en Free: cambiar antes del primer cobro.
+- La política de privacidad no dice todavía que el gasto de IA de un equipo borrado se guarda, con su nombre, para la contabilidad, ni cómo se exporta un espacio.
