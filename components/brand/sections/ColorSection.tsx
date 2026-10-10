@@ -31,17 +31,17 @@ function ColorForm({ color, isAccent, onChange, onRemove, onAccent, onMove, firs
   const commitHex = (v: string) => { const h = v.startsWith("#") ? v : `#${v}`; if (HEX_RE.test(h)) onChange({ ...color, hex: h.toUpperCase() }); else setHex(color.hex); };
   return (
     <div className="bc-form">
-      <label><span>{s.name}</span><input className="input" defaultValue={color.name} maxLength={40} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v && v !== color.name) onChange({ ...color, name: v }); }} /></label>
+      <label><span>{s.name}</span><input className="cr-input" defaultValue={color.name} maxLength={40} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v && v !== color.name) onChange({ ...color, name: v }); }} /></label>
       <label><span>{s.hex}</span>
         <span className="bc-form__hex">
           <input type="color" value={hex.toLowerCase()} onChange={(e) => setHex(e.currentTarget.value.toUpperCase())} onBlur={(e) => commitHex(e.currentTarget.value)} aria-label={s.hex} />
-          <input className="input" value={hex} maxLength={7} spellCheck={false} onChange={(e) => setHex(e.currentTarget.value.toUpperCase())} onBlur={(e) => commitHex(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === "Enter") commitHex(e.currentTarget.value); }} />
+          <input className="cr-input" value={hex} maxLength={7} spellCheck={false} onChange={(e) => setHex(e.currentTarget.value.toUpperCase())} onBlur={(e) => commitHex(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === "Enter") commitHex(e.currentTarget.value); }} />
         </span>
       </label>
-      <label><span>{s.role}</span><textarea className="input" rows={2} defaultValue={color.role} maxLength={200} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v !== color.role) onChange({ ...color, role: v }); }} /></label>
+      <label><span>{s.role}</span><textarea className="cr-input cr-textarea" rows={2} defaultValue={color.role} maxLength={200} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (v !== color.role) onChange({ ...color, role: v }); }} /></label>
       <div className="bc-form__row">
         <label><span>{s.group}</span>
-          <select className="input" value={color.group} onChange={(e) => onChange({ ...color, group: e.currentTarget.value as BrandColor["group"] })}>
+          <select className="cr-input" value={color.group} onChange={(e) => onChange({ ...color, group: e.currentTarget.value as BrandColor["group"] })}>
             {COLOR_GROUPS.map((g) => <option key={g} value={g}>{s.groups[g]}</option>)}
           </select>
         </label>

@@ -4,13 +4,12 @@ import { cn } from "@/lib/utils"
 
 function Input({
   className,
-  size,
   ...props
-}: Omit<React.ComponentProps<"input">, "size"> & { size?: "default" | "lg" }) {
+}: React.ComponentProps<"input">) {
   return (
     <InputPrimitive
       data-slot="input"
-      className={cn("input", size === "lg" && "input--lg", className)}
+      className={cn("cr-input", className)}
       {...props}
     />
   )

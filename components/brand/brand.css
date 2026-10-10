@@ -113,8 +113,8 @@
 .bt-specimen { font-size: clamp(56px, 8vw, 112px); line-height: 0.98; letter-spacing: -0.035em; overflow-wrap: anywhere; color: var(--text); }
 .bt-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; font-size: var(--fs-small); color: var(--text-2); }
 .bt-meta > span:first-child, .bt-meta__role { color: var(--text); font-weight: 500; }
-/* The app's selects in the presentation (edit mode): the system's select.input, set compact for a row of meta */
-.bt-meta select.input, .bt-step__more select.input { width: auto; height: 32px; padding: 0 30px 0 10px; font-size: var(--fs-small); background-position: right 10px center; }
+/* The app's selects in the presentation (edit mode): the system's field (select.cr-input), set compact for a row of meta */
+.bt-meta select.cr-input, .bt-step__more select.cr-input { width: auto; height: 32px; padding: 0 30px 0 10px; font-size: var(--fs-small); background-position: right 10px center; }
 .bt-meta__tools { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; }
 .bt-note { max-width: 40em; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 .bt-weights { display: grid; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
@@ -384,6 +384,7 @@
 .bc-form label { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-label); color: var(--muted); }
 .bc-form textarea { resize: vertical; min-height: 54px; padding: 8px 10px; }
 .bc-form__hex { display: flex; gap: 8px; }
+.bc-form__hex .cr-input { width: 100%; }
 .bc-form__hex input[type="color"] { width: 40px; height: 36px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
 .bc-form__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 /* How much it covers: the system's SegmentedControl (paper, a choice), each segment a square of its size */

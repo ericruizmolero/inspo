@@ -434,12 +434,12 @@
 :root:not([data-theme="light"]) :is(.modal--window .cr-window-heading,.modal--window .cr-window-text,.cr-window .cr-window-heading,.cr-window .cr-window-text){color:var(--paper)}
 :root:not([data-theme="light"]) :is(.cr-menu,.modal--window,.cr-window) .cr-sep{border-top-color:rgba(0,0,0,0.5);border-bottom-color:rgba(255,255,255,0.08)}
 :root:not([data-theme="light"]) .cr-menu .cr-menu-heading{color:var(--text-2)}
-:root:not([data-theme="light"]) :is(.modal--window,.cr-window,.cr-menu) select.input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256' fill='%23EDE6D6'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E")}
+:root:not([data-theme="light"]) :is(.modal--window,.cr-window,.cr-menu) select.cr-input{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256' fill='%23EDE6D6'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E")}
 
 /* ---- One control height (2026-10-07): fields, selects and choices are 44, the height of Button m ---- */
 /* Read-only and disabled fields stop looking editable: flat, the disabled fill, muted text */
-:is(.cr-input,.input,.cr-textarea)[readonly]{background:var(--surface-2);color:var(--text-2);box-shadow:none;border-color:var(--border-strong)}
-:is(.cr-input,.input,.cr-textarea):disabled{background:var(--disabled);color:var(--disabled-text);border-color:var(--disabled-border);box-shadow:none;cursor:not-allowed}
+:is(.cr-input,.cr-textarea)[readonly]{background:var(--surface-2);color:var(--text-2);box-shadow:none;border-color:var(--border-strong)}
+:is(.cr-input,.cr-textarea):disabled{background:var(--disabled);color:var(--disabled-text);border-color:var(--disabled-border);box-shadow:none;cursor:not-allowed}
 /* The paper SegmentedControl is a field too: a sunken well, 44 high, the picked option a raised beveled key */
 .cr-seg-paper{box-sizing:border-box;min-height:44px;padding:3px;gap:3px;background:var(--field);border:1px solid var(--border);border-radius:var(--radius-md,10px);box-shadow:var(--sunken)}
 .cr-seg-paper.cr-seg-s{min-height:34px;padding:2px;gap:2px}
@@ -489,8 +489,8 @@
   .cr-fieldrow-label{padding-top:0}
 }
 /* Board: a disabled field stays dark (a dimmer well), not the paper disabled fill */
-:root:not([data-theme="light"]) :is(.cr-input,.input,.cr-textarea,.select select):disabled{background:#141413;color:#6E695F;border-color:#34342F}
-:root:not([data-theme="light"]) :is(.modal--window,.cr-window,.cr-menu) :is(.cr-input,.input,.cr-textarea,.select select):disabled{background:#141413}
+:root:not([data-theme="light"]) :is(.cr-input,.cr-textarea,.select select):disabled{background:#141413;color:#6E695F;border-color:#34342F}
+:root:not([data-theme="light"]) :is(.modal--window,.cr-window,.cr-menu) :is(.cr-input,.cr-textarea,.select select):disabled{background:#141413}
 
 /* SegmentedControl through Liquid: the chosen option and the one under the pointer are its two pills, in each
    tone's colours. Until the pill is measured the option carries its own fill (no blink before the script runs) */

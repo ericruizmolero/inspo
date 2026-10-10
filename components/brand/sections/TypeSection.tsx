@@ -30,7 +30,7 @@ function FindFace({ initial, onFound, label }: { initial: string; onFound: (f: P
   };
   return (
     <form className="bt-find" onSubmit={(e) => { e.preventDefault(); void go(); }}>
-      <label><span>{t.brand.type.family}</span><input className="input" value={family} onChange={(e) => setFamily(e.currentTarget.value)} maxLength={80} autoFocus /></label>
+      <label><span>{t.brand.type.family}</span><input className="cr-input" value={family} onChange={(e) => setFamily(e.currentTarget.value)} maxLength={80} autoFocus /></label>
       <button type="submit" className="cr-btn cr-btn-secondary cr-btn-s" disabled={busy || !family.trim()}>{busy ? <><Busy label={t.brand.type.finding} /> {t.brand.type.finding}</> : label}</button>
     </form>
   );
@@ -51,7 +51,7 @@ function Face({ face, i }: { face: BrandFace; i: number }) {
         <p className="bt-specimen" style={{ fontFamily: stack(face.id), fontWeight: heavy }}>{face.family}</p>
         <div className="bt-meta">
           {mode === "edit" ? (
-            <select className="input bt-meta__role" value={face.role} onChange={(e) => put({ role: e.currentTarget.value as BrandFace["role"] })} aria-label={s.face}>
+            <select className="cr-input bt-meta__role" value={face.role} onChange={(e) => put({ role: e.currentTarget.value as BrandFace["role"] })} aria-label={s.face}>
               {FACE_ROLES.map((r) => <option key={r} value={r}>{s.roles[r]}</option>)}
             </select>
           ) : <span>{s.roles[face.role]}</span>}
@@ -111,8 +111,8 @@ function Step({ step, i, sample }: { step: ScaleStep; i: number; sample: string 
         <EditableNumber value={step.px} min={6} max={400} label={s.size} suffix="px" onCommit={(px) => put({ px })} />
         {mode === "edit" && (
           <span className="bt-step__more">
-            <select className="input" value={step.faceId} onChange={(e) => put({ faceId: e.currentTarget.value })} aria-label={s.face}>{type.faces.map((f) => <option key={f.id} value={f.id}>{f.family}</option>)}</select>
-            <select className="input" value={step.weight} onChange={(e) => put({ weight: Number(e.currentTarget.value) })} aria-label={s.weight}>{WEIGHTS.map((w) => <option key={w} value={w}>{w}</option>)}</select>
+            <select className="cr-input" value={step.faceId} onChange={(e) => put({ faceId: e.currentTarget.value })} aria-label={s.face}>{type.faces.map((f) => <option key={f.id} value={f.id}>{f.family}</option>)}</select>
+            <select className="cr-input" value={step.weight} onChange={(e) => put({ weight: Number(e.currentTarget.value) })} aria-label={s.weight}>{WEIGHTS.map((w) => <option key={w} value={w}>{w}</option>)}</select>
             <EditableNumber value={step.lineHeight} min={0.6} max={3} step={0.05} label={s.lineHeight} onCommit={(lineHeight) => put({ lineHeight })} />
             <EditableNumber value={step.tracking} min={-0.2} max={0.5} step={0.005} label={s.tracking} suffix="em" onCommit={(tracking) => put({ tracking })} />
             <ItemTools list={type.scale} index={i} onChange={(scale) => set({ scale })} />

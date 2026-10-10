@@ -4,7 +4,7 @@ Cada pieza de la app con su nombre en castellano (el que usamos al hablar), su n
 
 ## Sistema Criterio
 
-Los componentes del sistema de diseño Criterio (`components/criterio/index.tsx`, `components/criterio/criterio.css`, clases `cr-*`), portados de su bundle y ampliados aquí: una ficha por export. Antes de dibujar algo, búscalo en esta pestaña; lo que la app tenía antes con la misma función (`.btn`, `.input`, `.pill`, `components/ui/button.tsx`) es la misma pieza con el nombre viejo y está en la ficha de la nueva. La criatura solo es el logotipo: `Creature`, `Profile` y `Sprite` siguen fuera. → [decisión](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
+Los componentes del sistema de diseño Criterio (`components/criterio/index.tsx`, `components/criterio/criterio.css`, clases `cr-*`), portados de su bundle y ampliados aquí: una ficha por export. Antes de dibujar algo, búscalo en esta pestaña; las clases viejas con la misma función (`.btn`, `.input`, `.pill`) ya no existen. La criatura solo es el logotipo: `Creature`, `Profile` y `Sprite` siguen fuera. → [decisión](decisiones/2026-10-07-sistema-de-diseno-criterio.md)
 
 ### Botón
 `Button` · `components/criterio/index.tsx` · `.cr-btn` · muestra: botones
@@ -30,9 +30,9 @@ Vistas excluyentes, una activa. Cada opción es un `SegmentItem` (`label`, `icon
 La única pregunta de la casa: un campo grande y redondeado con el botón redondo de enviar, que se enciende cuando hay texto. `leading` pone algo delante (adjuntar), `below` una segunda línea dentro de la misma forma, `busy` cambia la flecha por la espera. `inputRef`, `onKeyDown`, `onPaste` e `inputProps` para lo que el campo necesite (pegar una URL, una imagen). También es la caja de Inbox vacío y de proyecto vacío.
 
 ### Campo de texto
-`TextField` · `.cr-field` · `.cr-input` · `components/ui/input.tsx` · `.input` · muestra: campo
+`TextField` · `.cr-field` · `.cr-input` · `components/ui/input.tsx` · muestra: campo
 El pozo hundido (`--field`, `--sunken`, 44 de alto, radio `--radius-md`; talla s de 34 con letra pequeña, `.cr-input-s`, junto a un `Button` s): casi negro con texto papel en Board, blanco con tinta y línea suave en Paper. `label` arriba en pequeño y apagado; `hint` debajo, y con `.cr-field-hint.is-error` el error va bajo el campo. Un campo de solo lectura o desactivado se ve plano y apagado. → [campos en Board](decisiones/2026-10-07-los-campos-tienen-version-oscura.md)
-- `Input` de `components/ui/input.tsx` (`.input`, `.input--lg`) es el mismo pozo con el nombre viejo; quedan dos usos.
+- `Input` de `components/ui/input.tsx` (Base UI) es el mismo pozo, `.cr-input`, sin etiqueta encima: para los campos que solo llevan placeholder (añadir una referencia, importar un tablero, confirmar escribiendo el nombre). Un `<select>` o un `<textarea>` sueltos llevan `.cr-input` (y `.cr-textarea`) igual; `select.cr-input` pinta su flecha.
 
 ### Área de texto y compositor
 `TextArea` · `.cr-textarea` · `.cr-textbox` · muestra: compositor
@@ -47,7 +47,7 @@ La casilla hundida con el tic de tinta y su etiqueta al lado. Controlada (`check
 Encendido y apagado: pista hundida (copia el pozo de la casilla), perilla de papel con bisel (copia el botón) y ember encendido. Siempre con `label`; `role=switch`. → [las piezas pequeñas](decisiones/2026-10-07-las-piezas-pequenas-copian-a-las-grandes.md) Dentro de un `FieldRow` guarda su tamaño (34 por 20), no se estira como un campo.
 
 ### Chip
-`Chip` · `.cr-chip` · `.pill` · muestra: pastillas
+`Chip` · `.cr-chip` · muestra: pastillas
 Etiquetas con borde de tinta: paper (por defecto), butter (sugerencias), ember (una regla activa), moss (bibliotecas), chrome (sobre el cromo y en las sugerencias de los vacíos). Con `onClick` es un botón; `pressed` lo invierte a tinta con texto papel (con borde papel en Board); `onRemove` añade una x (un filtro). Elegido no es ember. `.pill` es el nombre viejo; quedan dos usos.
 - Dentro de un formulario en el modal plano (Añadir, Mejorar con IA) las Chips van en `.pills--line` (`app/globals.css`): pastillas de 28, transparentes, línea suave `--border` y texto `--muted`; la elegida va en el cristal de la Isla (`--glass-on`), sin borde, no invertida a blanco. → [decisión](decisiones/2026-10-07-anadir-es-el-modal-plano-con-el-formulario-empaquetado.md), [Mejorar con IA en el modal plano](decisiones/2026-10-08-mejorar-con-ia-es-el-modal-plano-sin-barra-ni-tarjeta.md)
 - Las áreas del popup de la extensión (`.pill` en `extension/chrome/popup.css`) van igual: oscuras y calladas, solo la elegida se invierte a papel. → [decisión](decisiones/2026-10-08-las-areas-del-popup-son-pastillas-oscuras.md)

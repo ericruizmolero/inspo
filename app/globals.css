@@ -427,29 +427,12 @@ p { text-wrap: pretty; }
 .modal { --ib-hover: var(--surface-2); }
 
 /* ─── Inputs ──────────────────────────────────────────────────────────────── */
-/* TextField (design system): sunken, ink border on white */
-.input {
-  width: 100%; height: 44px; padding: 0 12px;
-  background: var(--field);
-  border: var(--field-stroke, 1.5px) solid var(--field-border);
-  border-radius: var(--radius-md);
-  color: var(--field-ink); font-size: var(--fs-ui);
-  box-shadow: var(--sunken);
-  /* The focus ring is always there, transparent, so taking focus fades it in over 350ms (Eric, 07-10) */
-  outline: 2px solid transparent; outline-offset: 2px;
-  transition: outline-color 350ms var(--ease-out), border-color 350ms var(--ease-out), background-color 350ms var(--ease-out), box-shadow 350ms var(--ease-out);
-}
-.input::placeholder { color: var(--field-placeholder); opacity: 1; }
-.input:focus-visible { outline-color: var(--focus); }
-textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height: var(--lh-body); }
-.input--lg { height: 48px; font-size: var(--fs-body); padding: 0 14px; }
-
-/* Chip (design system): pill tags with an ink border. Paper by default, ember only when active */
+/* A row of Chips */
 .pills { display: flex; flex-wrap: wrap; gap: 8px; }
-select.input { appearance: none; padding-right: 32px; cursor: pointer;
+select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256' fill='%23EDE6D6'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 12px center; }
-:root[data-theme="light"] select.input, .modal--window select.input {
+:root[data-theme="light"] select.cr-input, .modal--window select.cr-input {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256' fill='%231B1B18'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'/%3E%3C/svg%3E"); }
 
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -1337,7 +1320,7 @@ video.vp__media { object-fit: contain; }
 /* In Board the field is a step lighter than the panel, not the near-black well; in Paper it keeps the system's white */
 :root:not([data-theme="light"]) .add { --field: var(--surface-2); }
 /* Focus like the dashboard's: the border rises to the text colour, no ember ring when the dialog opens on the field (Eric, 07-10) */
-.add .input:focus-visible, .add .cr-textarea:focus-visible { outline: none; border-color: var(--text); }
+.add .cr-input:focus-visible { outline: none; border-color: var(--text); }
 .add .modal__hint { font-size: var(--fs-label); color: var(--add-quiet); }
 .add .modal__footer { padding-top: var(--space-2); }
 /* The other ways in (an image, a text): a dashed box, transparent, so they read as options and not as more fields */
@@ -2499,7 +2482,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
 /* The search dock's field reads white text too */
-.sb--dock .sb__field input, .sb--dock .sb__field .input { color: var(--dock-ink); }
+.sb--dock .sb__field input { color: var(--dock-ink); }
 .sb--dock .sb__field input::placeholder { color: var(--dock-muted); }
 .sb--dock .sb__field svg { color: var(--dock-muted); }
 /* The dock's field: the placeholder trims instead of running under the status and the shortcut */
