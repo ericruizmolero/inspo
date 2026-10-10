@@ -83,6 +83,6 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 - Rellenar `LEGAL` y que lo revise un abogado.
 - Apuntar bajo qué cuenta están Cloudflare, Neon, OpenRouter y Typesafe; mover `web-proxy` al equipo de Vercel.
-- Better Stack: crear la cuenta, poner `NEXT_PUBLIC_SENTRY_DSN` y `BETTERSTACK_HEARTBEAT_URL` en Vercel, los monitores y la página de estado.
+- Better Stack: crear la cuenta, poner `NEXT_PUBLIC_BETTERSTACK_DSN` y `BETTERSTACK_HEARTBEAT_URL` en Vercel, los monitores y la página de estado.
 - `ANTHROPIC_API_KEY` en Vercel sin uso: borrarla o usarla.
 - Vercel en Hobby y Neon en Free: cambiar antes del primer cobro.

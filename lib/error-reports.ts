@@ -1,9 +1,9 @@
 // Error reports: the Sentry SDK, sending to BetterStack (one account for errors, uptime and the status page).
 // The same options in the browser (instrumentation-client.ts) and on the server (instrumentation.ts).
-// Without NEXT_PUBLIC_SENTRY_DSN the SDK is never started, so local runs and previews send nothing.
+// Without NEXT_PUBLIC_BETTERSTACK_DSN the SDK is never started, so local runs and previews send nothing.
 import type { ErrorEvent } from "@sentry/nextjs";
 
-export const REPORT_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+export const REPORT_DSN = process.env.NEXT_PUBLIC_BETTERSTACK_DSN;
 
 // A report never carries what a person wrote or who they are: request bodies (feedback, notes, comments),
 // cookies and headers go; addresses and the signature of an R2 URL are blanked wherever they turn up.
