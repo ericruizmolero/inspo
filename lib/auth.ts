@@ -12,7 +12,6 @@ import { isLocale, DEFAULT_LOCALE, localeFromCookieHeader, localeForNewUser, typ
 import { getErrors } from "./i18n";
 import { planOf, DEFAULT_PLAN } from "./plans";
 import { toOutputLanguage, DEFAULT_OUTPUT_LANGUAGE } from "./output-language";
-import { collectItemFiles, dropUnusedFiles, type ItemFiles } from "./item-files";
 import { eq } from "drizzle-orm";
 import { allow } from "./rate-limit";
 import { log } from "./log";
@@ -198,6 +197,8 @@ export const auth = betterAuth({
       },
       invitationExpiresIn: 60 * 60 * 24 * 7,
       cancelPendingInvitationsOnReInvite: true,
+      // A workspace is deleted by lib/workspace-delete.ts, which also clears its files and the rows with no foreign key
+      disableOrganizationDeletion: true,
       // The email doesn't decide whether the invitation is valid: the row already exists and the link works.
       // If Resend fails, log it and move on; the members settings can copy the link or resend.
       async sendInvitationEmail(data, request) {
@@ -220,18 +221,6 @@ export const auth = betterAuth({
         // A new team writes in its creator's language until someone changes it
         async beforeCreateOrganization({ organization: org, user }) {
           return { data: { ...org, outputLanguage: toOutputLanguage((user as { language?: unknown }).language) } };
-        },
-        // The database cascade removes every row of the workspace, but not its files in storage:
-        // their URLs are read before the delete and the files dropped after it
-        async beforeDeleteOrganization({ organization: org }) {
-          // The personal space is where a person lands with no team: only teams are deleted
-          if ((org as { kind?: string }).kind === "personal") throw new APIError("FORBIDDEN", { message: (await getErrors()).personalSpaceStays });
-          filesOfDeleted.set(org.id, await collectItemFiles(org.id));
-        },
-        async afterDeleteOrganization({ organization: org }) {
-          const files = filesOfDeleted.get(org.id);
-          filesOfDeleted.delete(org.id);
-          if (files) await dropUnusedFiles(org.id, files);
         },
         // Plan seat quota: checked on invite and on accept.
         // On invite, unaccepted invitations count too, except the one for this
@@ -304,9 +293,6 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
-
-/** Between beforeDeleteOrganization and afterDeleteOrganization of the same request */
-const filesOfDeleted = new Map<string, ItemFiles>();
 
 function planFromOrg(org: Record<string, unknown>): string | null {
   return typeof org.plan === "string" ? org.plan : null;

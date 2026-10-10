@@ -431,6 +431,17 @@ export const routes: Record<string, Surface> = {
   "route:app/api/og/route.ts#GET": { exempt: "fetches a public page's og:image for any signed-in person; reads no workspace row" },
   "route:app/api/screen-studio/[id]/[file]/route.ts#GET": { exempt: "a global cache of public Screen Studio shares keyed by their public id; no workspace data" },
 
+  "route:app/api/workspace/export/route.ts#GET": {
+    probe: async (fx) => {
+      const { GET } = await import("@/app/api/workspace/export/route");
+      asB(fx);
+      await expectDenied(fx, await GET(request(`/api/workspace/export?id=${fx.a.team}`)), "A's export");
+      const own = await GET(request(`/api/workspace/export?id=${fx.b.team}`));
+      expect(own.status, "B's own export").toBe(200);
+      expectNoSecret(fx, await own.text(), "B's export carries nothing of A's");
+    },
+  },
+
   // ─── Outside any workspace ──────────────────────────────────────────────────
   "route:app/api/auth/[...all]/route.ts#GET": { exempt: "Better Auth's own endpoints: its organization plugin checks membership itself" },
   "route:app/api/auth/[...all]/route.ts#POST": { exempt: "Better Auth's own endpoints: its organization plugin checks membership itself" },

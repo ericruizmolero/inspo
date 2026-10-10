@@ -398,4 +398,13 @@ export const actions: Record<string, Surface> = {
       expect(await team(), "A's team unchanged").toEqual(before);
     },
   },
+  "action:app/actions/workspace.ts#deleteTeam": {
+    probe: async (fx) => {
+      const { deleteTeam } = await import("@/app/actions/workspace");
+      asB(fx);
+      expectRefused(fx, await deleteTeam(fx.a.team), "B cannot delete A's team");
+      expect((await db.select().from(schema.organization).where(eq(schema.organization.id, fx.a.team))).length, "A's team still there").toBe(1);
+      expect(await itemRow(fx.a.item), "A's reference still there").toBeTruthy();
+    },
+  },
 };
