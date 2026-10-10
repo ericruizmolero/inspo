@@ -24,6 +24,10 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 
 - Better Auth limita a 100 peticiones por minuto, contadas en Postgres (`rate_limit`) para que todas las instancias sumen. Solo en producción.
 - Los nuestros usan la misma tabla con claves `app:` (`allow()` en `lib/rate-limit.ts`): 5 enlaces mágicos por hora y dirección, 10 comentarios por hora y persona, 60 capturas cada 10 minutos por espacio.
+- La extensión (`requireExtCtx` en `lib/ext-keys.ts`, todas las rutas de `/api/ext/v1`): 120 peticiones por minuto por llave, 300 por espacio sumando las llaves de todos sus miembros, y 30 lotes de importación por minuto por espacio. Pasado el límite responde 429 con `Retry-After: 60`, y la página de importar espera y manda el mismo lote otra vez.
+- El MCP: 120 peticiones por minuto por persona en `/mcp`, con cualquier token (429), y 40 escrituras por minuto, que se le dicen al modelo como error de la herramienta para que espere. Antes era un contador en memoria que cada instancia llevaba por su cuenta.
+- El OAuth del MCP, por IP (`ipOf()`, la primera de `x-forwarded-for`): 60 registros de cliente por hora en `/api/mcp/register` y 120 peticiones por minuto en `/api/mcp/token`. Claude.ai registra desde sus servidores, así que una IP puede ser mucha gente: subirlo antes de que les cierre la puerta.
+- `tests/rate-limits.test.ts` golpea cada una de estas rutas desde dos instancias a la vez y comprueba el 429 justo después del límite. → [límites por minuto](decisiones/2026-10-10-la-extension-el-mcp-y-su-oauth-tienen-limite-por-minuto-en-postgres.md)
 - Cada intento de entrada fallido queda en el log como `login_failed` con ruta, motivo e IP.
 - La cuota del plan cuenta acciones de IA por mes (`assertQuota` antes de cada llamada a un modelo, `recordUsage` después). → [el plan cuenta acciones de IA](decisiones/2026-10-06-el-plan-cuenta-acciones-de-ia.md)
 
