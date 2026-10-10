@@ -14,20 +14,32 @@ import { promises as fs } from "fs";
 import path from "path";
 import { Client, Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { getTableColumns, sql } from "drizzle-orm";
+import { eq, getTableColumns, sql } from "drizzle-orm";
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import { databaseUrl } from "../lib/db/url";
+import { sha256 } from "../lib/hash";
 
 const FILE = path.join(process.cwd(), ".data", "seed.json");
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 
-type Dump = { at: string; tables: Record<string, Record<string, unknown>[]> };
+type Row = Record<string, unknown>;
+type Dump = { at: string; tables: Record<string, Row[]> };
+
+// The waitlist is people without an account: their addresses never leave production. The mask is
+// stable, so an entry and the invite for the same person still match, and unique, so the load holds.
+const MASK_DOMAIN = "@example.invalid";
+const maskEmail = (email: unknown) =>
+  typeof email !== "string" || email.endsWith(MASK_DOMAIN) ? email : `waitlist+${sha256(email).slice(0, 12)}${MASK_DOMAIN}`;
+const MASKS: Record<string, (r: Row) => Row> = {
+  waitlist_entry: (r) => ({ ...r, email: maskEmail(r.email), name: null, website: null }),
+  access_invite: (r) => ({ ...r, email: maskEmail(r.email) }),
+};
 
 async function tables() {
   const { schema } = await import("../lib/db");
   // Parents before children, so foreign keys hold while loading
   const list: PgTable[] = [
-    schema.user, schema.organization, schema.session, schema.account, schema.verification,
+    schema.user, schema.accessInvite, schema.waitlistEntry, schema.organization, schema.session, schema.account, schema.verification,
     schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designRevision, schema.designWhy,
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
     schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
@@ -55,7 +67,8 @@ async function dump(from?: string) {
     if (!have.size) { console.log(`${name}: not in the source yet, skipped`); out.tables[name] = []; continue; }
     const skipped = Object.values(cols).filter((c) => !have.has(c.name)).map((c) => c.name);
     if (skipped.length) console.log(`${name}: not in the source yet, left to defaults: ${skipped.join(", ")}`);
-    out.tables[name] = await db.select(shared).from(table);
+    const rows: Row[] = await db.select(shared).from(table);
+    out.tables[name] = MASKS[name] ? rows.map(MASKS[name]) : rows;
     console.log(`${name.padEnd(18)} ${String(out.tables[name].length).padStart(6)}`);
   }
   await fs.mkdir(path.dirname(FILE), { recursive: true });
@@ -75,7 +88,7 @@ async function load(replace: boolean) {
   let data: Dump;
   try { data = JSON.parse(await fs.readFile(FILE, "utf8")); }
   catch { throw new Error(`No ${path.relative(process.cwd(), FILE)}. Copy it from a machine that has the data (npm run seed:dump there).`); }
-  const { db, pool } = await import("../lib/db");
+  const { db, pool, schema } = await import("../lib/db");
   const list = await tables();
   const [{ n }] = (await pool.query(`select ${list.map((t) => `(select count(*) from "${t.name}")`).join(" + ")} as n`)).rows;
   if (Number(n) > 0 && !replace) {
@@ -85,17 +98,25 @@ async function load(replace: boolean) {
   }
   await db.transaction(async (tx) => {
     if (replace) await tx.execute(sql.raw(`truncate ${list.map((t) => `"${t.name}"`).join(", ")} cascade`));
+    // user.access_invite_id and access_invite.created_by point at each other: users go in without
+    // their invite, and get it back once the invites are in
+    const userInvites: { id: string; accessInviteId: string }[] = [];
     for (const { table, name, cols } of list) {
       // JSON turned dates into strings: back to Date for the timestamp columns
       const dates = Object.entries(cols).filter(([, c]) => c.columnType === "PgTimestamp").map(([k]) => k);
       const rows = (data.tables[name] ?? []).map((r) => {
         const row = { ...r };
         for (const k of dates) if (row[k] != null) row[k] = new Date(row[k] as string);
+        if (table === schema.user && row.accessInviteId) {
+          userInvites.push({ id: row.id as string, accessInviteId: row.accessInviteId as string });
+          row.accessInviteId = null;
+        }
         return row;
       });
       for (let i = 0; i < rows.length; i += 200) await tx.insert(table).values(rows.slice(i, i + 200) as never);
       console.log(`${name.padEnd(18)} ${String(rows.length).padStart(6)}`);
     }
+    for (const u of userInvites) await tx.update(schema.user).set({ accessInviteId: u.accessInviteId }).where(eq(schema.user.id, u.id));
   });
   await pool.end();
   console.log(`Loaded the dump from ${data.at}`);
