@@ -1345,7 +1345,8 @@ video.vp__media { object-fit: contain; }
   transition: color 120ms ease, border-color 120ms ease, background-color 120ms ease;
 }
 .modal .pills--line .cr-chip:hover { color: var(--text); border-color: var(--border-strong); }
-.modal .pills--line .cr-chip.is-pressed { background: var(--glass-on); border-color: transparent; color: var(--text); }
+/* :root outranks the paper border criterio.css gives a pressed chip in Board */
+:root .modal .pills--line .cr-chip.is-pressed { background: var(--glass-on); border-color: transparent; color: var(--text); }
 .modal .pills--line .cr-chip-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 /* Importing a board (components/BoardImport.tsx): the Progress blocks and the line that says what is happening,
  * under the paste field of the first run and of Add */
