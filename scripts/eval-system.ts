@@ -1,6 +1,6 @@
 // Scores the system and brand prompts on the golden set (scripts/fixtures/system, frozen with npm run eval:freeze).
-// Each pass runs the real prompts of lib/system.ts and lib/brand.ts on a fixture, with no fallback model. With the
-// sheet (the default), the look pass first reads the fixture's frozen pictures side by side (read only, from storage)
+// Each pass runs the real prompts of lib/system.ts and lib/brand.ts on a fixture, with no fallback model. With
+// --sheet (off by default, as in runSystem), the look pass first reads the fixture's frozen pictures side by side (read only, from storage)
 // and the system pass gets what it saw, as runSystem does; its cost is kept apart. Then:
 //   hard checks: evidence ids that exist, hex and families found in what was measured, areas written in the fixture's language;
 //   a judge model: specificity, the team's words, coherence, how close each area is to what the team decided,
@@ -13,7 +13,7 @@
 //   npm run eval:system                                → every fixture, each pass on its own model (lib/prompts.ts), once
 //   npm run eval:system -- --models a/b,c/d --runs 2   → other models for both passes, each fixture twice
 //   npm run eval:system -- --only zernio --no-judge    → one fixture, hard checks only
-//   npm run eval:system -- --no-sheet                  → without the look pass
+//   npm run eval:system -- --sheet                     → with the look pass (SYSTEM_SHEET=1 in the app)
 //   npm run eval:system -- --table                     → the table, no calls
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -241,7 +241,7 @@ async function main() {
     await Promise.all(Array.from({ length: Math.min(3, jobs.length) }, async () => {
       while (next < jobs.length) {
         const [fx, model] = jobs[next++];
-        const row = await pass(fx, model, !flag("no-judge"), !flag("no-sheet"));
+        const row = await pass(fx, model, !flag("no-judge"), flag("sheet"));
         await fs.appendFile(RESULTS, JSON.stringify(row) + "\n");
         console.log(row.error ? `  ✗ ${fx.slug} · ${row.model}: ${row.error}` : `  ✓ ${fx.slug} · ${row.model}${row.sheet ? ` · look $${(row.lookUsd ?? 0).toFixed(4)}` : ""} · $${row.costUsd!.toFixed(4)}${row.judgeUsd !== undefined ? ` + judge $${row.judgeUsd.toFixed(4)}` : ""} · ${(row.ms! / 1000).toFixed(0)}s`);
       }

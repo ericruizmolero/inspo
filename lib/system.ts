@@ -526,6 +526,9 @@ const SHEET_MAX = 20;
 /** Under this many pictures there is nothing to compare */
 const SHEET_MIN = 3;
 const SHEET_AREAS = new Set<SystemArea>(["color", "imagery", "logo"]);
+// Off unless SYSTEM_SHEET=1: on the golden set (10 passes each way, October 2026) the sheet moved no judge score and
+// cost 0.003 $ and 10 s a run. `npm run eval:system -- --sheet` measures it again on a board that is mostly pictures
+const SHEET_ON = process.env.SYSTEM_SHEET === "1";
 
 const LOOK_SYSTEM = `You are a designer laying a project's references side by side. The image is a contact sheet: each tile is one reference (a website's first screen, an image, a post), with its code (r1, r2…) on a black tag in its top left corner.
 
@@ -603,7 +606,7 @@ export function runSystem(input: { organizationId: string; projectId: string; us
     const codes = new Map(refs.map((r) => [r.code, r.itemId]));
     const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
     const textIds = new Set(refs.filter((r) => r.ref.kind === "text").map((r) => r.itemId));
-    const seen = await lookAtBoard(input, refs, current, snapshot.brief?.clientItemId);
+    const seen = SHEET_ON ? await lookAtBoard(input, refs, current, snapshot.brief?.clientItemId) : undefined;
     let res: Awaited<ReturnType<typeof llm>>;
     try {
       res = await llm(systemRequest(seen ? { ...snapshot, seen } : snapshot, input));
