@@ -291,7 +291,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
             onSystem={setSystem} onTalk={() => setTalkN((n) => n + 1)}
             onAbout={async (text) => { const r = await saveProjectBrief(project.id, { about: text }); if (r.ok) setAboutNow(r.data.brief?.about ?? text); else setError(r.error); }} onOpenItem={onOpenItem} onText={onText} onTextTitle={onTextTitle}
             fileTools={<SkillsMenu on={skillsOn} onToggle={(id) => void toggleSkill(id)} />}
-            busy={busy} onOpen={setOpen} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
+            busy={busy} onCopy={() => void copy()} onDownload={download} copied={copied} markdown={markdown} projectId={project.id} projectName={project.name} hasRecipe={!!project.hasRecipe}
             onSave={async (area, next) => {
               const cur = sys.areas.find((x) => x.area === area)!;
               if (next.decision !== cur.decision.trim() || next.why !== cur.why.trim()) await withBusy(area, () => decideSystemArea(project.id, area, { decision: next.decision, why: next.why }));

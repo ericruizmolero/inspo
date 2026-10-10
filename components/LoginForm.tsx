@@ -38,8 +38,7 @@ const SOCIAL: Record<SocialProvider, { label: string; icon: React.ReactNode }> =
 const devLoginHref = (next: string) => `/api/dev-login?next=${encodeURIComponent(next.startsWith("/login") ? "/" : next)}`;
 
 /**
- * Magic link sign-in form. Used by the /login page and by the dialog
- * that pops up on a guest's first action (LoginGate).
+ * Magic link sign-in form, on the /login page.
  * - `next`: route to return to after sign-in (the current one by default).
  * - `lead`/`hint`: headline and help; if not given, the generic ones are used.
  * - `providers`: Google / Apple / X buttons to render (those with keys on the server).

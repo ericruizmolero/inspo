@@ -39,7 +39,6 @@ interface Props {
   onSystem: (system: ProjectSystem) => void;
   /** The conversation moved (a proposal made or answered): read it again */
   onTalk: () => void;
-  onOpen: (area: SystemArea) => void;
   /** Writes what the project is (the brief), typed in the file */
   onAbout?: (text: string) => Promise<void>;
   /** Writes the words of a text reference, typed in the file's Content */
@@ -57,7 +56,7 @@ interface Props {
   look: "md" | "doc";
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onOpen, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look }: Props) {
+export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;
