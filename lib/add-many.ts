@@ -20,6 +20,7 @@ import { taggerEnabled } from "@/lib/tagger";
 import { enqueue, enqueueEmbed } from "@/lib/jobs";
 import { PER_WORKSPACE } from "@/lib/tag-jobs";
 import { HttpError } from "@/lib/workspace-core";
+import { eachLimit } from "@/lib/each-limit";
 import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "./log";
 
@@ -40,15 +41,6 @@ export interface AddResult { url: string; status: AddStatus; id?: string }
 export interface NewRef { url: string; title?: string; date?: unknown; image?: unknown; text?: unknown }
 
 interface Who { workspaceId: string; user: { id: string; name?: string | null; email: string } }
-
-/** Runs `fn` over `list`, at most `n` at a time, keeping the order of the results */
-async function eachLimit<T, R>(list: T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(list.length);
-  let next = 0;
-  const worker = async () => { while (next < list.length) { const i = next++; out[i] = await fn(list[i]); } };
-  await Promise.all(Array.from({ length: Math.min(n, list.length) }, worker));
-  return out;
-}
 
 /** The item's date as the caller knows it (a bookmark's day, a post's day), never ahead of today */
 function dateOf(date: unknown): string | undefined {
