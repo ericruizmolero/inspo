@@ -297,11 +297,102 @@
     "url": "https://zernio.com",
     "collection": "inspiration",
     "curator_notes": "El punto de partida: estética mono, etiquetas en caja naranja, listado plano de plataformas, bloque de código oscuro zernio.ts, logos de partners, cards de precio y calculadora. Se usó como fuente de copy y contenido.",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Zernio - Marketing Infrastructure for Agents · Marketing infrastructure for agents: social, ads, inbox, WhatsApp, SMS and calls behind one API key. MCP server included, free up to 2 accounts.",
+    "look": "A clean, airy design with a soft off-white background and vibrant orange accents. Bold, oversized sans-serif typography dominates the hero section. The layout features split sections with code snippets and UI mockups of apps and interfaces, creating a modern, tech-focused aesthetic.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Motion",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "beige",
+     "orange"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "logos",
+     "features",
+     "testimonials",
+     "process",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "icons",
+     "cards",
+     "code",
+     "form",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "oversized",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "marketing api",
+     "ai agent infrastructure",
+     "social media integration",
+     "messaging api",
+     "voice api",
+     "ad campaign management",
+     "unified inbox",
+     "developer tool"
+    ],
+    "made_by": [
+     "Zernio",
+     "@paletmiki"
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [
+     "marketing infrastructure",
+     "marketing api for ai agents",
+     "ai agent marketing api",
+     "social media api",
+     "social media posting api",
+     "social media scheduling api",
+     "messaging api",
+     "whatsapp api",
+     "whatsapp business api",
+     "unified messaging api",
+     "instagram dm api",
+     "multi-platform social api",
+     "twitter api",
+     "instagram api",
+     "tiktok api",
+     "linkedin api",
+     "facebook api",
+     "youtube api",
+     "threads api",
+     "pinterest api"
+    ],
+    "place": "Palamós, ES",
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f3eeeb",
+       "share": 0.81
+      },
+      {
+       "hex": "#e1d8d2",
+       "share": 0.1
+      },
+      {
+       "hex": "#e7b19f",
+       "share": 0.09
+      }
+     ]
+    }
    },
    {
     "id": "r2",
@@ -310,11 +401,88 @@
     "url": "https://zernio.treseiscero.app",
     "collection": "inspiration",
     "curator_notes": "Donde acabó el trabajo: todo lo anterior consolidado más hero con conmutador Código / Esquema, calculadora de precios, casos con cursor custom, FAQ animada y seguridad.",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Zernio - Social Media & Messaging API for Developers & AI Agents · Unified social media & messaging API: post, schedule, message and engage across 16 platforms with one REST call. Free up to 2 accounts, then usage-based per account. MCP server for AI agents.",
+    "look": "A clean and airy website with a light color palette, focusing on typography and code snippets. The hero section features a large, bold headline and a subtle animation. Subsequent sections use cards and minimal graphics to explain features, with a prominent dark section detailing the integration capabilities.",
+    "look_by_area": {
+     "logo": "A red stylized 'z' with a line through it, next to the word 'zernio' in black sans-serif.",
+     "color": "Dominant white and light grey background with red and dark grey accents.",
+     "imagery": "Screen capture of a website with code snippets and interface elements.",
+     "typography": "Sans-serif fonts in varying weights and sizes, with code blocks using monospace."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Motion",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "black",
+     "orange"
+    ],
+    "sections": [
+     "hero",
+     "stats",
+     "features",
+     "work",
+     "process",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "code",
+     "mockups",
+     "icons",
+     "badges",
+     "cards",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "centered",
+     "long-scroll"
+    ],
+    "keywords": [
+     "social media api",
+     "messaging api",
+     "developer tool",
+     "ai agents",
+     "platform integration",
+     "cross-platform posting",
+     "unified inbox",
+     "ad networks",
+     "webhook"
+    ],
+    "made_by": [
+     "Zernio",
+     "@paletmiki"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f3ef",
+       "share": 0.63
+      },
+      {
+       "hex": "#312421",
+       "share": 0.25
+      },
+      {
+       "hex": "#f4e5e0",
+       "share": 0.09
+      }
+     ]
+    }
    },
    {
     "id": "r3",
@@ -323,11 +491,100 @@
     "url": "https://getlate.dev",
     "collection": "inspiration",
     "curator_notes": "El nombre anterior. La home lo cuenta con una sola frase: \"Late is now Zernio. Zero breaking changes.\"",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Zernio - Marketing Infrastructure for Agents · Marketing infrastructure for agents: social, ads, inbox, WhatsApp, SMS and calls behind one API key. MCP server included, free up to 2 accounts.",
+    "look": "A clean, airy interface with a light, off-white background. Bold, dark typography dominates the hero section, contrasted by vibrant orange accent shapes and gradient elements. Content blocks feature mockups of code and app interfaces, presented in a card-like layout with subtle gradients and icon sets.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Motion",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "logos",
+     "features",
+     "testimonials",
+     "blog",
+     "contact",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "icons",
+     "badges",
+     "form",
+     "code",
+     "cards",
+     "gradient",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "marketing api",
+     "ai agent",
+     "social media automation",
+     "messaging api",
+     "whatsapp integration",
+     "sms api",
+     "voice calls api",
+     "developer platform",
+     "saas infrastructure"
+    ],
+    "made_by": [
+     "Zernio",
+     "@paletmiki"
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [
+     "marketing infrastructure",
+     "marketing api for ai agents",
+     "ai agent marketing api",
+     "social media api",
+     "social media posting api",
+     "social media scheduling api",
+     "messaging api",
+     "whatsapp api",
+     "whatsapp business api",
+     "unified messaging api",
+     "instagram dm api",
+     "multi-platform social api",
+     "twitter api",
+     "instagram api",
+     "tiktok api",
+     "linkedin api",
+     "facebook api",
+     "youtube api",
+     "threads api",
+     "pinterest api"
+    ],
+    "place": "Palamós, ES",
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f3eeeb",
+       "share": 0.91
+      },
+      {
+       "hex": "#eaae9b",
+       "share": 0.09
+      }
+     ]
+    }
    },
    {
     "id": "r4",
@@ -349,11 +606,82 @@
     "url": "https://fonts.google.com/specimen/Instrument+Sans",
     "collection": "inspiration",
     "curator_notes": "La sans de todo el texto, de 400 a 700.",
-    "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "page": "Instrument Sans - Google Fonts · Instrument Sans is a font designed for the Instrument brand. It's a variable sans-serif which balances an abundance of precision with subtle notes of playfulnes",
+    "look": "A dark theme website showcasing the 'Instrument Sans' font. The design is minimal and airy, with large, clear typography highlighting different weights and styles. Interactive elements allow users to preview text and adjust font parameters. The page includes articles on typography choices and links to design resources.",
+    "look_by_area": {
+     "logo": "The Google Fonts logo is a stylized G in blue.",
+     "color": "The dominant colors are white and blue, with black text and subtle grey accents.",
+     "imagery": "A web page screen capture showing a font specimen and related information.",
+     "typography": "The page displays sans-serif typography in various weights, sizes, and italic styles."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark"
+    ],
+    "colours": [
+     "black",
+     "grey",
+     "blue"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features",
+     "blog",
+     "footer"
+    ],
+    "elements": [
+     "form",
+     "mockups",
+     "badges",
+     "icons",
+     "shapes",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "oversized"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "variable font",
+     "font specimen",
+     "typographic hierarchy",
+     "font pairing",
+     "type exploration",
+     "open source",
+     "design system"
+    ],
+    "made_by": [
+     "Google Fonts",
+     "@googlefonts"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#26292b",
+       "share": 0.71
+      },
+      {
+       "hex": "#3b3b3c",
+       "share": 0.18
+      },
+      {
+       "hex": "#0c4c75",
+       "share": 0.11
+      }
+     ]
+    }
    },
    {
     "id": "r6",
@@ -422,159 +750,891 @@
     "id": "r8",
     "kind": "image",
     "name": "Mega-menú",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-mega-menu.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-mega-menu.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de una referencia de header con desplegable a columnas (encabezado, link de color y descripción gris) y una columna lateral \"Más\" con tarjeta promo. Aquí Platform, Use cases y Developers, con rail \"More\" y la promo de Open Analytics.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A clean, minimal interface with a light, airy design. The navigation bar is at the top, followed by a large dropdown menu showcasing various features categorized into Publish, Engage, Measure, Promote, and More. Below this is a prominent call-to-action section with two buttons. The bottom features a small blog-like section with cards.",
+    "look_by_area": {
+     "logo": "A stylized red 'z' with the word 'zernio' in black sans-serif.",
+     "color": "White and light grey dominate, with red used for calls to action and accents.",
+     "imagery": "A clean website screenshot with muted lighting and a soft background.",
+     "typography": "Sans-serif fonts in varying weights and sizes, with capitalized section headers."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Grid / bento"
+    ],
+    "colours": [
+     "white",
+     "orange"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "features",
+     "cta",
+     "blog"
+    ],
+    "elements": [
+     "cards",
+     "badges",
+     "icons"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "columns"
+    ],
+    "keywords": [
+     "api",
+     "platform",
+     "social media",
+     "analytics",
+     "automation",
+     "messaging",
+     "publishing"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f5f0ed",
+       "share": 0.91
+      },
+      {
+       "hex": "#e3d8d4",
+       "share": 0.08
+      }
+     ]
+    }
    },
    {
     "id": "r9",
     "kind": "image",
     "name": "Hero A · Código",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-hero-codigo.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-hero-codigo.jpg",
     "collection": "inspiration",
     "curator_notes": "El bloque de código de la web original (oscuro, \"15 channels\") convertido en una ventana clara que se escribe sola, con 3 pasos y el resultado \"200 OK\". Se comparó en paralelo con el hero Esquema (Zernio Hero Options) y en la v2 conviven con un conmutador A/B.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A clean, minimalist landing page with ample white space. The hero section features a bold, large-headline emphasizing \"One API for every social, messaging and ad channel.\" The color palette is primarily white and grey, with pops of orange and red for calls to action and accents. A visual representation of code or an interface is shown at the bottom.",
+    "look_by_area": {
+     "logo": "A red wordmark logo that says 'zernio' in a simple, modern font.",
+     "color": "A light cream background with orange and black text for emphasis and a red button.",
+     "imagery": "A screenshot of a website with a clean, minimal design.",
+     "typography": "Large, bold sans-serif text for headlines and smaller, lighter sans-serif for body copy."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "beige",
+     "orange",
+     "red"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features",
+     "cta"
+    ],
+    "elements": [
+     "icons",
+     "badges",
+     "cards",
+     "mockups",
+     "code"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "api",
+     "social media",
+     "messaging",
+     "advertising",
+     "developer tool",
+     "platform integration",
+     "rest api",
+     "code example"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f2ef",
+       "share": 0.83
+      },
+      {
+       "hex": "#ede6e2",
+       "share": 0.09
+      },
+      {
+       "hex": "#d0c0b9",
+       "share": 0.05
+      },
+      {
+       "hex": "#a07368",
+       "share": 0.04
+      }
+     ]
+    }
    },
    {
     "id": "r10",
     "kind": "image",
     "name": "Hero B · Esquema",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-hero-esquema.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-hero-esquema.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de una referencia de diagrama de pipeline: pills mono a la izquierda, nodo central con etapas INGEST, REDUCE, NORMALIZE y ROUTE, destinos a la derecha y glow detrás. Aquí, \"Twenty-three APIs in. One API out.\": 6 entradas, el mark como nodo central y 6 salidas, con tokens que viajan por las curvas y chips AUTH · NORMALIZE · FAN-OUT · RETRY.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A clean, minimal landing page with a light background and a soft pink gradient blur effect in the center. The layout features a prominent navigation bar and a central hero section that uses a mind-map-like structure. Oval-shaped badges with icons and text connect to a central logo, illustrating connections and processes.",
+    "look_by_area": {
+     "logo": "A stylized, abstract black mark on a rounded white square is present.",
+     "color": "A light, peachy-pink background with white and red UI elements and grey text.",
+     "imagery": "A clean, minimal screen capture of a website with a mind-map visualization in the center.",
+     "typography": "Sans-serif fonts are used throughout with varying weights and case."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Illustration",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "cta"
+    ],
+    "elements": [
+     "illustration",
+     "icons",
+     "badges",
+     "shapes",
+     "cards",
+     "gradient"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "mind map",
+     "workflow",
+     "automation",
+     "social media",
+     "api",
+     "content creation",
+     "marketing tools",
+     "collaboration"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f8f3f0",
+       "share": 0.88
+      },
+      {
+       "hex": "#f1d5cd",
+       "share": 0.08
+      }
+     ]
+    }
    },
    {
     "id": "r11",
     "kind": "image",
     "name": "Channels: tabs y pila 3D",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-channels-pila-3d.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-channels-pila-3d.jpg",
     "collection": "inspiration",
     "curator_notes": "Del listado plano de plataformas de la web original a tabs por categoría (Social 12, Messaging 4, Ad networks 7) con grid de tiles; luego tabs por canal con panel de detalle, por una referencia de \"tabs más panel con gráfico a la derecha\"; después una rueda de tarjetas, que acabó en la pila 3D vertical.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "The page features a clean, minimalist design with a light color palette. Large, bold sans-serif typography dominates the hero section. A card-based layout showcases features and integrations, using simple icons and badges. The overall impression is modern and professional, focusing on clarity and information.",
+    "look_by_area": {
+     "logo": "A red, stylized 'z' followed by the word 'zernio' in black sans-serif text.",
+     "color": "The background is a pale beige, with white for content cards and black text.",
+     "imagery": "A screen capture of a website with a soft beige background and a central white card.",
+     "typography": "Bold, sans-serif headings and body text contrast with smaller, lighter text."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "white"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features",
+     "cta"
+    ],
+    "elements": [
+     "tabs",
+     "badges",
+     "icons",
+     "cards",
+     "mockups",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "social media api",
+     "content posting",
+     "marketing tool",
+     "platform integration",
+     "developer tools",
+     "api features",
+     "social media management",
+     "api documentation"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f2ef",
+       "share": 0.98
+      }
+     ]
+    }
    },
    {
     "id": "r12",
     "kind": "image",
     "name": "The Shift",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-the-shift.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-the-shift.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de una referencia \"Meet a new approach\": foto o vídeo a sangre que funde a oscuro y grid 3×2 de cards con borde discontinuo e ilustraciones mínimas. Aquí, vídeo de fondo con tinte naranja y 6 cards (Channels, Inbox, Ads, Webhooks, Analytics, API); al hacer scroll gana inset de 56px y radio de 40px y se despega como una tarjeta.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A dark, minimal hero section with a large, prominent headline. A screen mockup displaying a UI is centrally placed, with abstract glowing shapes and icons in the foreground and background. The color palette is predominantly dark with bright orange accents for calls to action and interactive elements.",
+    "look_by_area": {
+     "logo": "A stylized red mark resembling a lower-case 'z' with an arrow on the left of 'zernio'.",
+     "color": "Dark browns and grays dominate the background, with white text and red accents.",
+     "imagery": "A screen capture of a website's UI, with a dark, subtly textured background.",
+     "typography": "Bold, sans-serif sans-serif, black ink on a light background, sentence case."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark"
+    ],
+    "colours": [
+     "brown",
+     "black",
+     "white",
+     "orange"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "cards",
+     "icons",
+     "badges",
+     "video",
+     "gradient",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "oversized",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "full-bleed"
+    ],
+    "keywords": [
+     "social infrastructure",
+     "integration platform",
+     "communication api",
+     "developer tools",
+     "cross-channel",
+     "backend integration",
+     "product infrastructure"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#513934",
+       "share": 0.47
+      },
+      {
+       "hex": "#1b1311",
+       "share": 0.35
+      },
+      {
+       "hex": "#f2edea",
+       "share": 0.12
+      },
+      {
+       "hex": "#a48d87",
+       "share": 0.06
+      }
+     ]
+    }
    },
    {
     "id": "r13",
     "kind": "image",
     "name": "Agents: dock",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-agents-dock.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-agents-dock.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de una referencia de dock: cápsula vertical con slot \"YOUR AGENT HERE\" y logo de marca, logos que entran en el slot y 3 cards debajo (orquestación, chat de agente, órbita de iconos). Aquí los tiles de canales encajan de uno en uno en el slot naranja del mark, con las cards \"Real tool calls\", \"Read and reply to the inbox\" y \"Claude, Cursor or your CLI\".",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A clean and minimal product landing page with a light background. The hero section features a prominent headline about API integration, accompanied by colorful app icons. Below, a card-based layout showcases features and interactive examples of automated workflows, with a clear call to action for pricing.",
+    "look_by_area": {
+     "logo": "The Zernio logo is a red wordmark with a small red symbol to its left. The symbol is a downward-pointing chevron inside a rounded square.",
+     "color": "A light gray background grounds the white UI elements. Red is used for action buttons and prominent icons, while black is used for icons and text.",
+     "imagery": "Three white squares with rounded corners contain red and black icons. Two red squares are stacked vertically, one with a white Pinterest logo. Above and below are white squares with black icons. A black square with a white character icon is to the left.",
+     "typography": "A sans-serif font family is used with varied weights and title case for headings. Body text is in regular weight."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "beige",
+     "red",
+     "orange"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "features",
+     "pricing",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "icons",
+     "badges",
+     "cards",
+     "mockups"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "centered"
+    ],
+    "keywords": [
+     "api integration",
+     "developer tools",
+     "workflow automation",
+     "saas dashboard",
+     "cross-platform",
+     "tech product",
+     "ui examples"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f2ef",
+       "share": 0.64
+      },
+      {
+       "hex": "#fdf9f6",
+       "share": 0.28
+      },
+      {
+       "hex": "#b4412c",
+       "share": 0.05
+      },
+      {
+       "hex": "#c7b0aa",
+       "share": 0.04
+      }
+     ]
+    }
    },
    {
     "id": "r14",
     "kind": "image",
     "name": "Customers: caso destacado",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-customers-caso.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-customers-caso.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de una referencia \"Take their word for it\": card oscura grande con logo, cita, autor y foto a la derecha, y 2 testimonios debajo. Aquí rota cada 7s entre Plinng, HeyMark y Vibiz, con cursor custom \"Read case study\" al hover y \"Show more\" para el resto de testimonios.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "The page features a clean, minimal design with a light background. The hero section has a large headline and a contrasting dark section showcasing customer testimonials and a video mockup. Typography is prominent with sans-serif fonts. The overall mood is professional and trustworthy.",
+    "look_by_area": {
+     "logo": "The Zernio logo is a red stylized wordmark. A symbol for Plinng is also visible.",
+     "color": "A light background contrasts with a dark card. Red is used for the logo and accents.",
+     "imagery": "Screenshot of a website with a dark card featuring text and a video thumbnail.",
+     "typography": "Bold sans-serif fonts are used for titles and quotes. A lighter weight sans-serif is used for body text."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark",
+     "Photography"
+    ],
+    "colours": [
+     "white",
+     "orange",
+     "black",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "testimonials",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "photography",
+     "cards",
+     "video",
+     "icons",
+     "badges",
+     "form"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "api",
+     "integrations",
+     "saas",
+     "developer tool",
+     "customer testimonials",
+     "tech",
+     "automation"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f3f0",
+       "share": 0.42
+      },
+      {
+       "hex": "#fdfaf7",
+       "share": 0.3
+      },
+      {
+       "hex": "#1e1916",
+       "share": 0.23
+      },
+      {
+       "hex": "#938079",
+       "share": 0.06
+      }
+     ]
+    }
    },
    {
     "id": "r15",
     "kind": "image",
     "name": "How it works",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-how-it-works.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-how-it-works.jpg",
     "collection": "inspiration",
     "curator_notes": "Los 3 pasos y su copy son los de la web original, rediseñados con el sistema nuevo: pasos clicables y un escenario con autoplay de 4,2s por paso (la clave escribiéndose, las cuentas conectándose, las llamadas en cascada).",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "The page features a clean, minimal design with ample whitespace and a soft, peachy background. Large, bold sans-serif typography grabs attention in the hero section. A prominent navigation bar and a clear call-to-action button are visible. The content is organized into cards, showcasing features with icons and concise text, accompanied by a code snippet display.",
+    "look_by_area": {
+     "logo": "A red wordmark logo 'zernio' is present in the top left corner.",
+     "color": "The page uses a predominantly neutral palette with a bright red call to action button.",
+     "imagery": "A website screen capture of a landing page with a light, neutral background.",
+     "typography": "Large, bold, sans-serif headline text in dark grey and smaller grey body text."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "white"
+    ],
+    "sections": [
+     "nav",
+     "features",
+     "process",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "cards",
+     "badges",
+     "icons",
+     "code",
+     "mockups"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "centered",
+     "split"
+    ],
+    "keywords": [
+     "api integration",
+     "saas landing page",
+     "product onboarding",
+     "developer tools",
+     "cta button",
+     "service signup",
+     "marketing automation"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f8f3f0",
+       "share": 0.99
+      }
+     ]
+    }
    },
    {
     "id": "r16",
     "kind": "image",
     "name": "Pricing y calculadora",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-pricing-calculadora.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-pricing-calculadora.jpg",
     "collection": "inspiration",
     "curator_notes": "Copy de la web original (Self-serve $0, Enterprise Custom, slider logarítmico 1 a 10k) rediseñado con el sistema nuevo: calculadora con desglose por tramos.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A clean, minimal interface with a light, almost white background and subtle pink and orange accents. The primary focus is on the pricing section, which features two distinct plans: 'Self-serve' and 'Enterprise Custom'. Typography is bold and uses sans-serif fonts. A prominent statistic shows '275 connected accounts'.",
+    "look_by_area": {
+     "logo": "A red wordmark with the text 'zernio'.",
+     "color": "The dominant colors are white and a pale red, with dark grey for text.",
+     "imagery": "A screen capture of a website, with clean lines and soft shadows.",
+     "typography": "Sans-serif fonts are used in various weights and sizes for headings and body text."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange",
+     "beige"
+    ],
+    "sections": [
+     "nav",
+     "pricing",
+     "stats",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "badges",
+     "icons",
+     "form",
+     "charts",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "centered"
+    ],
+    "keywords": [
+     "saas pricing",
+     "usage based pricing",
+     "enterprise plan",
+     "self-serve",
+     "account management",
+     "platform",
+     "social media management",
+     "ads management"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f9f2ef",
+       "share": 0.63
+      },
+      {
+       "hex": "#efe6e1",
+       "share": 0.2
+      },
+      {
+       "hex": "#fcf8f5",
+       "share": 0.15
+      }
+     ]
+    }
    },
    {
     "id": "r17",
     "kind": "image",
     "name": "Security",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-security.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-security.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de una referencia de sellos GDPR (círculo de estrellas) y AICPA SOC con titular centrado y una línea vertical que baja. Aquí, sellos dibujados en SVG naranja, chips de compliance en mono y la línea que baja hacia el CTA final.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A minimal landing page with a soft peach background. The hero section features large, bold sans-serif typography with the headline \"Engineered with enterprise-level security. Built for everyone.\" Two circular badges and a row of rectangular badges highlight security features. A prominent orange \"Start for free\" button is in the navigation bar.",
+    "look_by_area": {
+     "logo": "A red wordmark 'zernio' is on the top left of the header.",
+     "color": "A pale peach background is accented by black and grey text, and a red 'Start for free' button.",
+     "imagery": "A screen capture of a website with a faint gradient background and blurred content below.",
+     "typography": "Bold, black sans-serif headlines contrast with lighter grey body text. Grey buttons have white sans-serif text."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange",
+     "beige"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "features",
+     "cta"
+    ],
+    "elements": [
+     "badges",
+     "shapes",
+     "icons"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "security",
+     "enterprise",
+     "compliance",
+     "encryption",
+     "audit log",
+     "api",
+     "trust portal"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f8f3ef",
+       "share": 0.68
+      },
+      {
+       "hex": "#efe2dc",
+       "share": 0.15
+      },
+      {
+       "hex": "#fcf7f4",
+       "share": 0.12
+      }
+     ]
+    }
    },
    {
     "id": "r18",
     "kind": "image",
     "name": "Final CTA",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-final-cta.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-final-cta.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de varias capturas de una referencia con grid de líneas punteadas a toda anchura, caja central, 3 logos que rotan con transición vertical y dos botones. Aquí las líneas se dibujan al entrar y los slots de logos de clientes cambian cada 4,2s.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "A clean, minimal website with a light, peachy color scheme. The hero section features large, bold sans-serif typography with a prominent red 'Start for free' button. The footer contains organized links in columns. The overall aesthetic is airy and modern.",
+    "look_by_area": {
+     "logo": "A wordmark logo with a red stylized 'z' and the text 'zernio' in red next to it.",
+     "color": "A pale pink background with white text and a bright red button for emphasis.",
+     "imagery": "A screen capture of a website's hero section with a large headline and two call-to-action buttons.",
+     "typography": "A bold, sans-serif font is used for the headline and a lighter weight for the sub-headline."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "footer"
+    ],
+    "elements": [
+     "badges",
+     "icons",
+     "cards",
+     "form"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "api",
+     "saas",
+     "developer tools",
+     "communication api",
+     "social api",
+     "messaging api",
+     "ads api",
+     "platform",
+     "web app"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#fcf7f4",
+       "share": 0.68
+      },
+      {
+       "hex": "#f9eae3",
+       "share": 0.27
+      }
+     ]
+    }
    },
    {
     "id": "r19",
     "kind": "image",
     "name": "Footer con la marca 3D",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-zernio-footer-marca-3d.jpg",
+    "url": "/api/files/inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-footer-marca-3d.jpg",
     "collection": "inspiration",
     "curator_notes": "Sale de referencias de footer con logo, 5 columnas de links de color y el símbolo de la marca en contorno o 3D en la esquina. Se probaron el wordmark en contorno, en emboss y deboss, como marca de agua con degradado y en bandas (de una referencia de logotipo gigante a líneas horizontales); quedó footer plano y el mark de Zernio apilado en 3D girando.",
     "page": null,
-    "look": null,
-    "sector": null,
-    "style": null,
-    "traits": []
+    "look": "The page uses a clean, minimal aesthetic with a light color palette dominated by white and soft peach. Bold sans-serif typography is used for headlines. A subtle 3D abstract shape in the footer adds a touch of visual interest. Navigation and a clear call-to-action are present.",
+    "look_by_area": {
+     "logo": "The 'Zernio' logo is a red wordmark with a small red rectangle above the 'i'.",
+     "color": "The palette is light with accents of orange and coral for buttons and links, on a white background.",
+     "imagery": "The top part is a website screenshot with a hero section, the bottom is a footer with text and a subtle 3D graphic.",
+     "typography": "Headings use a bold sans-serif font. Body text is also sans-serif, with varying weights and cases."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "3D / WebGL",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange",
+     "beige"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "footer"
+    ],
+    "elements": [
+     "shapes",
+     "3d-object",
+     "badges",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "api",
+     "social messaging",
+     "advertising",
+     "developer tools",
+     "saas",
+     "minimalist",
+     "light",
+     "tech",
+     "modern"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#fcf7f4",
+       "share": 0.62
+      },
+      {
+       "hex": "#f9ece6",
+       "share": 0.3
+      },
+      {
+       "hex": "#fdf9f6",
+       "share": 0.04
+      }
+     ]
+    }
    }
   ],
+  "omitted": 0,
   "guides": []
  },
  "sites": {},
@@ -588,5 +1648,67 @@
   "logo": "Wordmark en assets/logo.svg y símbolo Z en assets/mark.svg. El mark vive en el producto: se rellena en el preloader, entra deslizando en el hover del CTA primario, es el nodo central del diagrama del hero y el slot naranja del dock de Agents. El footer es plano y termina en el mark en 3D: 16 capas apiladas en translateZ con contorno naranja, girando lento (rotateX 34°, 22s).",
   "imagery": "Sin fotos de stock: las ilustraciones son producto dibujado en HTML y SVG (editor de código, diagrama de 6 entradas a 6 salidas, tarjetas de spec por canal, mini ilustraciones de capacidades, burbujas de DM). Un vídeo en loop de fondo en The Shift, con degradado oscuro y tinte naranja al 14%. Fotos y logos solo de clientes reales: fotos de equipo (HeyMark, Vibiz) y retratos (Pedro, Lautaro, Chris) en la card de caso, con crossfade y zoom, y en los testimonios.",
   "voice": "Copy en inglés, literal del documento. Tono técnico, frases cortas. Cada titular es una afirmación y su matiz atenuado (\"Pay for what you use. No plans, no seats, every feature included.\"). El cambio de nombre se cuenta siempre igual: \"Late is now Zernio. Zero breaking changes.\" Cifras concretas: 23 canales, 300+ tools en el MCP, tramos de precio por cuenta."
- }
+ },
+ "pictures": [
+  {
+   "code": "r19",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-footer-marca-3d.jpg"
+  },
+  {
+   "code": "r18",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-final-cta.jpg"
+  },
+  {
+   "code": "r17",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-security.jpg"
+  },
+  {
+   "code": "r14",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-customers-caso.jpg"
+  },
+  {
+   "code": "r13",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-agents-dock.jpg"
+  },
+  {
+   "code": "r12",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-the-shift.jpg"
+  },
+  {
+   "code": "r10",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-hero-esquema.jpg"
+  },
+  {
+   "code": "r9",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-hero-codigo.jpg"
+  },
+  {
+   "code": "r4",
+   "key": "inspo/pages/8179b66139bc8fdaa0b3fa117f3491edcee8715a-1791262700242.jpg"
+  },
+  {
+   "code": "r2",
+   "key": "inspo/pages/f64f5723eca753adf66a4954edc26d14c81193b8-1791216138495.jpg"
+  },
+  {
+   "code": "r16",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-pricing-calculadora.jpg"
+  },
+  {
+   "code": "r15",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-how-it-works.jpg"
+  },
+  {
+   "code": "r11",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-channels-pila-3d.jpg"
+  },
+  {
+   "code": "r8",
+   "key": "inspo/XtBiLaIFO7UNKtKjKQB8XUCa1u1ZRIHP/media/template-zernio-mega-menu.jpg"
+  },
+  {
+   "code": "r5",
+   "key": "inspo/pages/5b8a7ef8fd4c3d2c3d93f0863f1914183724d11f-1791262692301.jpg"
+  }
+ ]
 }

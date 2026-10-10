@@ -11,22 +11,22 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r1",
+      "ref": "r13",
       "take": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
       "filed_by_team": true
      },
      {
-      "ref": "r3",
+      "ref": "r1",
       "take": "El hero terminado: titular en Schibsted, cifras en JetBrains Mono y el rojo solo en lo que actúa.",
       "filed_by_team": true
      },
      {
-      "ref": "r8",
+      "ref": "r6",
       "take": "La fuente de todo el texto, en 400, 500 y 600 con itálica 400. Titulares en caja baja.",
       "filed_by_team": true
      },
      {
-      "ref": "r9",
+      "ref": "r7",
       "take": "La mono de la web del propio cliente: para cifras, kickers, etiquetas y specs, con tabular-nums.",
       "filed_by_team": true
      }
@@ -41,17 +41,17 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r2",
+      "ref": "r14",
       "take": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
       "filed_by_team": true
      },
      {
-      "ref": "r3",
+      "ref": "r1",
       "take": "El hero terminado: titular en Schibsted, cifras en JetBrains Mono y el rojo solo en lo que actúa.",
       "filed_by_team": true
      },
      {
-      "ref": "r10",
+      "ref": "r8",
       "take": "Un solo tema oscuro hecho de grises fríos escalonados y hairlines: el mismo ritmo de fondos alternos.",
       "filed_by_team": true
      }
@@ -68,22 +68,22 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r2",
+      "ref": "r14",
       "take": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
       "filed_by_team": true
      },
      {
-      "ref": "r7",
+      "ref": "r5",
       "take": "Andoni pasó tres capturas de su sección de bloques: rejilla de celdas unidas y cantos rectos, como una hoja.",
       "filed_by_team": true
      },
      {
-      "ref": "r10",
+      "ref": "r8",
       "take": "Un solo tema oscuro hecho de grises fríos escalonados y hairlines: el mismo ritmo de fondos alternos.",
       "filed_by_team": true
      },
      {
-      "ref": "r11",
+      "ref": "r9",
       "take": "Deep tech de IA y cuántica contada con cifras y sin épica, el registro que pide el copy.",
       "filed_by_team": true
      }
@@ -100,12 +100,12 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r2",
+      "ref": "r14",
       "take": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
       "filed_by_team": true
      },
      {
-      "ref": "r13",
+      "ref": "r11",
       "take": "El visor de curvas: power2.in para lo que cae con gravedad, y lo de debajo que cede 3,2px y vuelve.",
       "filed_by_team": true
      }
@@ -124,7 +124,7 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r14",
+      "ref": "r12",
       "take": "Iconos con reglas propias de trazo y retícula. Aquí ni eso: cada producto lleva su símbolo real recortado de su logotipo.",
       "filed_by_team": true
      }
@@ -140,12 +140,12 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r1",
+      "ref": "r13",
       "take": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
       "filed_by_team": true
      },
      {
-      "ref": "r4",
+      "ref": "r2",
       "take": "Pieza del propio cliente con el isotipo de bandas: de aquí sale la variante de 9 bandas que va impresa en cada ilustración.",
       "filed_by_team": true
      }
@@ -160,17 +160,17 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r5",
+      "ref": "r3",
       "take": "Retrato pintado en los rojos de la marca, sin contorno y con el borde deshecho. Salió de la referencia del retrato de Adriano Olivetti.",
       "filed_by_team": true
      },
      {
-      "ref": "r6",
+      "ref": "r4",
       "take": "Lo que el cliente tenía: portátil sobre fondo verde, fuera de paleta. Es lo que no se repite; las imágenes pasan a ilustración propia.",
       "filed_by_team": true
      },
      {
-      "ref": "r7",
+      "ref": "r5",
       "take": "Andoni pasó tres capturas de su sección de bloques: rejilla de celdas unidas y cantos rectos, como una hoja.",
       "filed_by_team": true
      }
@@ -187,17 +187,17 @@
     "status": "empty",
     "evidence": [
      {
-      "ref": "r1",
+      "ref": "r13",
       "take": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
       "filed_by_team": true
      },
      {
-      "ref": "r11",
+      "ref": "r9",
       "take": "Deep tech de IA y cuántica contada con cifras y sin épica, el registro que pide el copy.",
       "filed_by_team": true
      },
      {
-      "ref": "r12",
+      "ref": "r10",
       "take": "Copy técnico de cuántica que se lee: frases de posicionamiento cortas, una idea por bloque.",
       "filed_by_team": true
      }
@@ -211,149 +211,22 @@
   "refs": [
    {
     "id": "r1",
-    "kind": "web",
-    "name": "Multiverse Computing",
-    "url": "https://multiversecomputing.com",
-    "collection": "inspiration",
-    "curator_notes": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
-    "page": "Multiverse Computing - Pioneering the Era of Efficient and Sovereign AI · We empower organizations to run secure, production-ready AI with tailored solutions — reducing compute costs and retaining full control across cloud, data centers and edge environments",
-    "look": "A dark, minimal website with a prominent headline about AI. It features bold, sans-serif typography and a subtle geometric background shape. The color palette is dark with accents of red and white, and a row of client logos appears at the bottom.",
-    "sector": "Product / SaaS",
-    "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Dark",
-     "Colourful"
-    ],
-    "colours": [
-     "black",
-     "grey",
-     "pink",
-     "green"
-    ],
-    "sections": [
-     "nav",
-     "hero",
-     "logos",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "shapes",
-     "mockups",
-     "badges",
-     "cards",
-     "icons",
-     "form"
-    ],
-    "type": [
-     "sans",
-     "display",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy"
-    ],
-    "keywords": [
-     "ai",
-     "machine learning",
-     "deep learning",
-     "quantum computing",
-     "tech",
-     "software",
-     "startup",
-     "big tech",
-     "cryptography"
-    ],
-    "made_by": [
-     "Multiverse Computing"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
-   },
-   {
-    "id": "r2",
-    "kind": "web",
-    "name": "Multiverse · rediseño",
-    "url": "https://multiversecomputing.treseiscero.app",
-    "collection": "inspiration",
-    "curator_notes": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
-    "page": "Multiverse Computing — Pioneering the era of efficient & secure AI · We empower organizations to run secure, production-ready AI with tailored solutions, reducing compute costs and retaining full control across cloud, data centers and edge environments. Quasar 438B, CompactifAI, Foundry and Sentinel",
-    "look": "A dark-themed, minimal website focused on AI. Features a large, central typography headline, a 3D sphere graphic in the hero section, and isometric illustrations for features. Uses stark white and red for accents against a dark background, with clear sans-serif typography and some subtle 3D elements.",
-    "sector": "Product / SaaS",
-    "style": "Minimal",
-    "traits": [
-     "Typography",
-     "Dark",
-     "3D / WebGL",
-     "Colourful"
-    ],
-    "colours": [
-     "black",
-     "grey"
-    ],
-    "sections": [
-     "hero",
-     "features",
-     "stats",
-     "work",
-     "blog",
-     "cta",
-     "footer"
-    ],
-    "elements": [
-     "3d-object",
-     "mockups",
-     "icons",
-     "badges",
-     "code",
-     "charts",
-     "shapes",
-     "cards"
-    ],
-    "type": [
-     "sans",
-     "display",
-     "oversized",
-     "caps"
-    ],
-    "layout": [
-     "centered",
-     "airy",
-     "long-scroll"
-    ],
-    "keywords": [
-     "ai",
-     "artificial intelligence",
-     "machine learning",
-     "cloud computing",
-     "data center",
-     "edge computing",
-     "optimization",
-     "quantum computing"
-    ],
-    "made_by": [
-     "Multiverse Computing"
-    ],
-    "declared_type": null,
-    "own_keywords": [],
-    "place": null
-   },
-   {
-    "id": "r3",
     "kind": "image",
     "name": "Hero del rediseño",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-hero-resultado.png",
+    "url": "/api/files/inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-hero-resultado.png",
     "collection": "inspiration",
     "curator_notes": "El hero terminado: titular en Schibsted, cifras en JetBrains Mono y el rojo solo en lo que actúa.",
     "page": null,
-    "look": "A dark, minimal product landing page featuring oversized, bold white sans-serif typography. Red abstract shapes and accents add a pop of color. The layout is clean and airy, with key statistics and call-to-action buttons presented clearly.",
+    "look": "A dark, minimalist landing page with bold, oversized white sans-serif typography. A vibrant red abstract graphic complements the text. Key stats like model size and accuracy are presented in clean cards. The overall mood is sophisticated and technological.",
+    "look_by_area": {
+     "logo": "A red and black abstract symbol is to the left of the word 'MULTIVERSE'.",
+     "color": "Black is the background, white text, and red for accents and graphics.",
+     "imagery": "A dark screen capture shows a website's hero section with bold white text and a red abstract graphic.",
+     "typography": "Bold, white, sans-serif sans-serif sans-serif text with high contrast against the dark background."
+    },
     "sector": "Product / SaaS",
     "style": "Minimal",
     "traits": [
-     "Typography",
      "Dark",
      "Colourful"
     ],
@@ -369,9 +242,10 @@
     ],
     "elements": [
      "shapes",
+     "icons",
      "badges",
      "form",
-     "mockups"
+     "cards"
     ],
     "type": [
      "sans",
@@ -386,26 +260,50 @@
     "keywords": [
      "ai",
      "large language model",
+     "ml",
      "compact model",
      "tensor networks",
-     "machine learning",
-     "tech demo",
-     "ai deployment"
-    ]
+     "precision loss",
+     "frontier ai",
+     "data center"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#15181c",
+       "share": 0.75
+      },
+      {
+       "hex": "#463a40",
+       "share": 0.18
+      },
+      {
+       "hex": "#b71934",
+       "share": 0.07
+      }
+     ]
+    }
    },
    {
-    "id": "r4",
+    "id": "r2",
     "kind": "image",
     "name": "Quasar 438B, nota de prensa",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-cliente-prensa-quasar.jpg",
+    "url": "/api/files/inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-cliente-prensa-quasar.jpg",
     "collection": "inspiration",
     "curator_notes": "Pieza del propio cliente con el isotipo de bandas: de aquí sale la variante de 9 bandas que va impresa en cada ilustración.",
     "page": null,
-    "look": "A clean, light UI featuring concentric pink and white rings radiating from the center. Large, dark sans-serif typography announces 'Quasar 438B' above a minimalist circular icon with layered pink ellipses. A subtitle describes the product's purpose for enterprise agents and coding.",
+    "look": "A clean, minimalist hero section with a pale pink and white gradient background featuring concentric circles. The central focus is on the product name 'Quasar 438B' in large, dark sans-serif typography, highlighted by a small red 'New Model' badge. A circular icon with layered, striped red circles sits below the title, and descriptive text anchors the bottom.",
+    "look_by_area": {
+     "logo": "A circular logo with three overlapping, stylized circles, rendered with horizontal lines in bright pink.",
+     "color": "A soft palette dominated by white and pale pink, with accents of bright pink in the logo.",
+     "imagery": "An abstract, soft-focus background with concentric circles in shades of pink and white.",
+     "typography": "Bold, sans-serif typeface for the main title. Smaller, understated sans-serif for secondary text."
+    },
     "sector": "Product / SaaS",
     "style": "Minimal",
     "traits": [
-     "Typography"
+     "Typography",
+     "Colourful"
     ],
     "colours": [
      "pink",
@@ -417,11 +315,14 @@
     "elements": [
      "shapes",
      "gradient",
-     "icons"
+     "icons",
+     "badges"
     ],
     "type": [
      "sans",
-     "oversized"
+     "display",
+     "oversized",
+     "caps"
     ],
     "layout": [
      "centered",
@@ -429,28 +330,46 @@
     ],
     "keywords": [
      "ai model",
-     "new product",
-     "flagship",
-     "enterprise",
-     "coding",
-     "reasoning",
-     "tech announcement"
-    ]
+     "reasoning engine",
+     "enterprise software",
+     "coding assistant",
+     "tech product",
+     "generative ai",
+     "product launch"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#fef5f6",
+       "share": 0.94
+      },
+      {
+       "hex": "#fefdfd",
+       "share": 0.06
+      }
+     ]
+    }
    },
    {
-    "id": "r5",
+    "id": "r3",
     "kind": "image",
     "name": "Retrato pintado del equipo",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-retrato-pintado.jpg",
+    "url": "/api/files/inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-retrato-pintado.jpg",
     "collection": "inspiration",
     "curator_notes": "Retrato pintado en los rojos de la marca, sin contorno y con el borde deshecho. Salió de la referencia del retrato de Adriano Olivetti.",
     "page": null,
-    "look": "A striking, watercolor-style illustration of a man with a beard, wearing a suit jacket over a collared shirt. The artwork uses a limited palette of deep reds and pinks, with a textured, painterly effect and a rough, feathered bottom edge. It is set against a plain white background, emphasizing the portrait itself.",
+    "look": "A digital watercolor illustration of a man with a beard, wearing a suit jacket and collared shirt. The style is predominantly red and pink tones, with a rough, painted texture. The portrait is cropped at the shoulders and set against a stark white background, giving it a minimalist and modern feel.",
+    "look_by_area": {
+     "logo": "No logo is visible in the image.",
+     "color": "The illustration uses shades of red and pink, with a darker red for the suit.",
+     "imagery": "A watercolor-style illustration of a man's head and shoulders against a white background.",
+     "typography": "No text is visible in the image."
+    },
     "sector": "Other",
     "style": "Minimal",
     "traits": [
+     "Dark",
      "Illustration",
-     "Colourful",
      "Monochrome"
     ],
     "colours": [
@@ -464,39 +383,65 @@
      "team"
     ],
     "elements": [
-     "illustration",
-     "grain"
+     "illustration"
     ],
     "type": [
      "sans"
     ],
     "layout": [
-     "centered"
+     "centered",
+     "airy"
     ],
     "keywords": [
      "watercolor portrait",
      "business headshot",
      "red tones",
-     "textured",
-     "hand-painted",
-     "beard",
-     "studio portrait"
-    ]
+     "bearded man",
+     "digital painting",
+     "corporate illustration",
+     "minimalist portrait"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.45
+      },
+      {
+       "hex": "#7a2420",
+       "share": 0.38
+      },
+      {
+       "hex": "#f4bfba",
+       "share": 0.1
+      },
+      {
+       "hex": "#fefdfd",
+       "share": 0.05
+      }
+     ]
+    }
    },
    {
-    "id": "r6",
+    "id": "r4",
     "kind": "image",
     "name": "Mockup de Foundry del cliente",
-    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/template-multiverse-cliente-mockup-foundry.jpg",
+    "url": "/api/files/inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-cliente-mockup-foundry.jpg",
     "collection": "inspiration",
     "curator_notes": "Lo que el cliente tenía: portátil sobre fondo verde, fuera de paleta. Es lo que no se repite; las imágenes pasan a ilustración propia.",
     "page": null,
-    "look": "A clean, modern product dashboard displayed on a laptop screen. The interface features a prominent red header with white text, a left-hand sidebar navigation, and a main content area divided into cards. It utilizes a predominantly white and light grey color scheme with red accents, incorporating icons and charts.",
+    "look": "A clean, modern dashboard interface is displayed on a laptop screen. The design features a predominantly white and grey color scheme with a bright red accent for key calls to action and headings. A prominent sidebar on the left contains navigation links with icons. The main content area uses a card-based layout to present data and features. The overall mood is professional and efficient.",
+    "look_by_area": {
+     "logo": "A red circular symbol with abstract shapes inside is visible next to the word 'Foundry'.",
+     "color": "The interface primarily uses white and light gray backgrounds with a prominent red accent in a header section.",
+     "imagery": "A screen capture of a laptop displaying a web application interface.",
+     "typography": "The text uses a clean sans-serif font with varying weights and sizes for hierarchy."
+    },
     "sector": "Product / SaaS",
     "style": "Minimal",
     "traits": [
-     "Grid / bento",
-     "Colourful"
+     "Dark",
+     "Grid / bento"
     ],
     "colours": [
      "black",
@@ -509,38 +454,59 @@
      "nav",
      "hero",
      "features",
-     "work",
      "cta",
      "footer"
     ],
     "elements": [
      "mockups",
-     "cards",
      "icons",
-     "badges",
+     "cards",
      "form",
-     "charts"
+     "badges"
     ],
     "type": [
-     "sans",
-     "caps"
+     "sans"
     ],
     "layout": [
-     "airy",
-     "sidebar"
+     "split",
+     "airy"
     ],
     "keywords": [
-     "cloud platform",
-     "ai infrastructure",
-     "gpu clusters",
-     "serverless",
+     "cloud",
+     "ai",
+     "infrastructure",
      "dashboard",
      "ui",
-     "data analytics"
-    ]
+     "ux",
+     "saas"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#13272f",
+       "share": 0.37
+      },
+      {
+       "hex": "#1a3d45",
+       "share": 0.28
+      },
+      {
+       "hex": "#f9f8f8",
+       "share": 0.23
+      },
+      {
+       "hex": "#8b878a",
+       "share": 0.06
+      },
+      {
+       "hex": "#d5282e",
+       "share": 0.06
+      }
+     ]
+    }
    },
    {
-    "id": "r7",
+    "id": "r5",
     "kind": "web",
     "name": "Mistral AI",
     "url": "https://mistral.ai",
@@ -548,6 +514,12 @@
     "curator_notes": "Andoni pasó tres capturas de su sección de bloques: rejilla de celdas unidas y cantos rectos, como una hoja.",
     "page": "Frontier AI LLMs, assistants, agents, services | Mistral · The most powerful AI platform for enterprises. Customize, fine-tune, and deploy AI assistants, autonomous agents, and multimodal AI with open models.",
     "look": "A minimal, airy layout with a split screen. The left side features bold, oversized sans-serif typography and abstract, colorful geometric shapes in a grid. The right side has clean, concise text and a featured news section. A prominent cookie consent banner overlays the content.",
+    "look_by_area": {
+     "logo": "No logo is clearly visible, but the text 'axeptio' appears within the cookie banner.",
+     "color": "A stark white background is accented by bright orange and red in a mosaic pattern and interactive elements.",
+     "imagery": "A screen capture of a website with a cookie banner overlay. A mosaic of red and orange squares is visible.",
+     "typography": "Bold, dark sans-serif text for headlines and smaller, lighter sans-serif for body copy and navigation."
+    },
     "sector": "Product / SaaS",
     "style": "Minimal",
     "traits": [
@@ -602,10 +574,30 @@
     ],
     "declared_type": "Organization",
     "own_keywords": [],
-    "place": "Paris, FR"
+    "place": "Paris, FR",
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#fbfbf7",
+       "share": 0.72
+      },
+      {
+       "hex": "#de3210",
+       "share": 0.17
+      },
+      {
+       "hex": "#c1b6b1",
+       "share": 0.05
+      },
+      {
+       "hex": "#f5952b",
+       "share": 0.05
+      }
+     ]
+    }
    },
    {
-    "id": "r8",
+    "id": "r6",
     "kind": "web",
     "name": "Schibsted Grotesk",
     "url": "https://fonts.google.com/specimen/Schibsted+Grotesk",
@@ -613,6 +605,12 @@
     "curator_notes": "La fuente de todo el texto, en 400, 500 y 600 con itálica 400. Titulares en caja baja.",
     "page": "Schibsted Grotesk - Google Fonts · Schibsted Grotesk is a digital-first font family crafted for user interfaces. Taking visual cues from Schibsted's proud history of printed media as well as our",
     "look": "A clean, minimal interface showcasing the Schibsted Grotesk typeface. Features include sans-serif, condensed, and all-caps styles, presented through mockups and typography examples. The layout is airy and centered, emphasizing the font's digital-first design and legibility for UI applications. Subtle badges and icons are used.",
+    "look_by_area": {
+     "logo": "The Google Fonts logo is a stylized 'G' with a serif at the top, in white.",
+     "color": "The background is dark grey. Text is primarily white, with blue accents for links and buttons.",
+     "imagery": "A screen capture of the Google Fonts website showing the Schibsted Grotesk font specimen page.",
+     "typography": "Large, bold, white sans-serif text with wide tracking. Smaller, regular weight sans-serif text with tighter tracking."
+    },
     "sector": "Tool",
     "style": "Minimal",
     "traits": [
@@ -662,7 +660,7 @@
     "place": null
    },
    {
-    "id": "r9",
+    "id": "r7",
     "kind": "web",
     "name": "JetBrains Mono",
     "url": "https://www.jetbrains.com/lp/mono",
@@ -718,7 +716,7 @@
     "place": null
    },
    {
-    "id": "r10",
+    "id": "r8",
     "kind": "web",
     "name": "Linear",
     "url": "https://linear.app",
@@ -777,7 +775,7 @@
     "place": null
    },
    {
-    "id": "r11",
+    "id": "r9",
     "kind": "web",
     "name": "SandboxAQ",
     "url": "https://www.sandboxaq.com",
@@ -825,7 +823,7 @@
     "place": null
    },
    {
-    "id": "r12",
+    "id": "r10",
     "kind": "web",
     "name": "Quantinuum",
     "url": "https://www.quantinuum.com",
@@ -874,7 +872,7 @@
     ]
    },
    {
-    "id": "r13",
+    "id": "r11",
     "kind": "web",
     "name": "GSAP Eases",
     "url": "https://gsap.com/docs/v3/Eases",
@@ -882,6 +880,12 @@
     "curator_notes": "El visor de curvas: power2.in para lo que cae con gravedad, y lo de debajo que cede 3,2px y vuelve.",
     "page": "Easing | GSAP | Docs & Learning · Easing is the primary way to change the timing of your tweens. Simply changing the ease can adjust the entire feel and personality of your animation. There are infinite eases that you can use in GSAP so we created the visualizer below to help you choose exactly the ",
     "look": "Clean documentation site with a strong focus on typography and code examples. Features a prominent navigation and an interactive ease visualizer, suggesting a focus on detailed technical explanations and utility for developers. The palette is likely subdued with clear emphasis on readability and functional design elements.",
+    "look_by_area": {
+     "logo": "The GSAP wordmark in white, a sans-serif typeface, located in the top-left corner.",
+     "color": "Dark background with vibrant green and purple accents for headings and interactive elements.",
+     "imagery": "A screenshot of a documentation website with a dark theme, showing a line graph of easing functions.",
+     "typography": "Sans-serif text with high contrast and varying weights, organized in lists and headings."
+    },
     "sector": "Tool",
     "style": "Minimal",
     "traits": [
@@ -930,7 +934,7 @@
     "place": null
    },
    {
-    "id": "r14",
+    "id": "r12",
     "kind": "web",
     "name": "IBM Design Language · iconos",
     "url": "https://www.ibm.com/design/language/iconography/ui-icons",
@@ -938,6 +942,12 @@
     "curator_notes": "Iconos con reglas propias de trazo y retícula. Aquí ni eso: cada producto lleva su símbolo real recortado de su logotipo.",
     "page": null,
     "look": "A minimalist 404 error page with generous white space. It features IBM's branding in the header and footer, a prominent '404' graphic with a stylized circle, a search bar, and a list of helpful links. The color palette is restricted to blue and white.",
+    "look_by_area": {
+     "logo": "The IBM logo is a simple wordmark in grey at the top left.",
+     "color": "The page uses a white background with blue and grey text and graphics.",
+     "imagery": "A screen capture of a 404 error page with a large blue graphic of '404'.",
+     "typography": "Headings use a clean, large sans-serif font in black. Body text is smaller and grey."
+    },
     "sector": "Other",
     "style": "Minimal",
     "traits": [
@@ -972,9 +982,202 @@
      "white space",
      "minimalist error page",
      "ibm branding"
-    ]
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.48
+      },
+      {
+       "hex": "#f0f1f2",
+       "share": 0.44
+      },
+      {
+       "hex": "#c2ccdb",
+       "share": 0.08
+      }
+     ]
+    }
+   },
+   {
+    "id": "r13",
+    "kind": "web",
+    "name": "Multiverse Computing",
+    "url": "https://multiversecomputing.com",
+    "collection": "inspiration",
+    "curator_notes": "La web del cliente. Manda en copy, logo, fuentes y cifras: el titular y el cierre se toman literales.",
+    "page": "Multiverse Computing - Pioneering the Era of Efficient and Sovereign AI · We empower organizations to run secure, production-ready AI with tailored solutions — reducing compute costs and retaining full control across cloud, data centers and edge environments",
+    "look": "A dark, minimal website with a prominent headline about AI. It features bold, sans-serif typography and a subtle geometric background shape. The color palette is dark with accents of red and white, and a row of client logos appears at the bottom.",
+    "look_by_area": {
+     "logo": "A red, abstract, circular symbol with a gradient effect next to the wordmark 'MULTIVERSE'.",
+     "color": "The main color is dark grey, with white text and a bright red accent for buttons and the logo.",
+     "imagery": "A dark background with a blurred circular graphic of red and blue tones behind the headline.",
+     "typography": "Large, white, sans-serif headlines with high contrast and variable weights. Smaller body text is also sans-serif."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark",
+     "Colourful"
+    ],
+    "colours": [
+     "black",
+     "grey",
+     "pink",
+     "green"
+    ],
+    "sections": [
+     "nav",
+     "hero",
+     "logos",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "shapes",
+     "mockups",
+     "badges",
+     "cards",
+     "icons",
+     "form"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "ai",
+     "machine learning",
+     "deep learning",
+     "quantum computing",
+     "tech",
+     "software",
+     "startup",
+     "big tech",
+     "cryptography"
+    ],
+    "made_by": [
+     "Multiverse Computing"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#12151a",
+       "share": 0.82
+      },
+      {
+       "hex": "#453a43",
+       "share": 0.08
+      },
+      {
+       "hex": "#8d6b76",
+       "share": 0.05
+      },
+      {
+       "hex": "#07ae59",
+       "share": 0.05
+      }
+     ]
+    }
+   },
+   {
+    "id": "r14",
+    "kind": "web",
+    "name": "Multiverse · rediseño",
+    "url": "https://multiversecomputing.treseiscero.app",
+    "collection": "inspiration",
+    "curator_notes": "Donde acabó el trabajo tras 31 entregas: un tema oscuro, dos radios, una firma de movimiento por sección.",
+    "page": "Multiverse Computing — Pioneering the era of efficient & secure AI · We empower organizations to run secure, production-ready AI with tailored solutions, reducing compute costs and retaining full control across cloud, data centers and edge environments. Quasar 438B, CompactifAI, Foundry and Sentinel",
+    "look": "A dark-themed, minimal website focused on AI. Features a large, central typography headline, a 3D sphere graphic in the hero section, and isometric illustrations for features. Uses stark white and red for accents against a dark background, with clear sans-serif typography and some subtle 3D elements.",
+    "look_by_area": {
+     "logo": "A red and white horizontal wordmark with the text 'MULTIVERSE COMPUTING'.",
+     "color": "The dominant color is dark gray, with bright red accents for calls to action and graphic elements.",
+     "imagery": "A digital illustration of a red sphere made of interconnected dots with a subtle glow, set against a dark background.",
+     "typography": "Bold, sans-serif headlines with high contrast. Body text is smaller, with moderate contrast and spacing."
+    },
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Dark",
+     "3D / WebGL",
+     "Colourful"
+    ],
+    "colours": [
+     "black",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "features",
+     "stats",
+     "work",
+     "blog",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "3d-object",
+     "mockups",
+     "icons",
+     "badges",
+     "code",
+     "charts",
+     "shapes",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "oversized",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "ai",
+     "artificial intelligence",
+     "machine learning",
+     "cloud computing",
+     "data center",
+     "edge computing",
+     "optimization",
+     "quantum computing"
+    ],
+    "made_by": [
+     "Multiverse Computing"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#171a1f",
+       "share": 0.96
+      },
+      {
+       "hex": "#525358",
+       "share": 0.04
+      }
+     ]
+    }
    }
   ],
+  "omitted": 0,
   "guides": []
  },
  "sites": {},
@@ -988,5 +1191,47 @@
   "logo": "El isotipo real, en su variante de 9 bandas, impreso en la tapa del modelo en cada ilustración. El footer termina en el logo real, no en piezas que se le parecen. Logo del nav a 52px sin mover la altura del header. Logos de clientes igualados por tinta medida, no por caja.",
   "imagery": "Quince ilustraciones isométricas dibujadas por código, en unidades de mundo, cada una con una línea de lo que afirma y ningún sujeto repetido. Material: una sola luz arriba a la izquierda, degradado por cara, cantos en sombra de su propia cara, sombra de contacto, reflejo del rojo sobre la placa y barrido especular. Retratos del equipo en rampa gris a 180px y opacidad plena.",
   "voice": "El copy es del cliente: titular principal, cierre y frases de posicionamiento, literales de su web actual. Titulares nuevos solo en las secciones que no tenían. Cifras de sus notas de prensa. Un estado se cuenta de una sola manera."
- }
+ },
+ "pictures": [
+  {
+   "code": "r14",
+   "key": "inspo/pages/db7649525343f9ffd8a5626423044c474bc0ddc2-1791117663524.jpg"
+  },
+  {
+   "code": "r13",
+   "key": "inspo/shots/a20ec31c83af791da1b133667a1d9873f46c8cb9.jpg"
+  },
+  {
+   "code": "r5",
+   "key": "inspo/shots/d8d7cda564947b17d8b9447a03f5e8323994539c.jpg"
+  },
+  {
+   "code": "r4",
+   "key": "inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-cliente-mockup-foundry.jpg"
+  },
+  {
+   "code": "r3",
+   "key": "inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-retrato-pintado.jpg"
+  },
+  {
+   "code": "r2",
+   "key": "inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-cliente-prensa-quasar.jpg"
+  },
+  {
+   "code": "r1",
+   "key": "inspo/a9595d5eb40c47dab0a17e89/media/template-multiverse-hero-resultado.png"
+  },
+  {
+   "code": "r12",
+   "key": "inspo/shots/d6ab2ac1078ce2d163fca6a6213d2b1e319dc784.jpg"
+  },
+  {
+   "code": "r11",
+   "key": "inspo/shots/bd6d8ad93d59eda9fb5f6c8edd87be2fe51a4bb3.jpg"
+  },
+  {
+   "code": "r6",
+   "key": "inspo/shots/5d29e47ecdd55a52bd1dd9fd9a24157746b4f2f1.jpg"
+  }
+ ]
 }
