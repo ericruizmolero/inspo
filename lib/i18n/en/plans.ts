@@ -4,7 +4,7 @@ export const plans = {
   solo: {
     tagline: "For your own library.",
     features: [
-      "Unlimited inspos",
+      "Up to 200 references and 1 GB",
       "Automatic tags",
       "30 AI actions a month",
       "30 different AI searches a month",

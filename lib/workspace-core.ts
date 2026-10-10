@@ -38,6 +38,10 @@ export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
+/** The response a route sends for an HttpError. A plan's limit (402) carries `quota: true`, which the upgrade notice reads */
+export const httpErrorResponse = (e: HttpError): Response =>
+  Response.json({ error: e.message, ...(e.status === 402 ? { quota: true } : {}) }, { status: e.status });
+
 const planKey = (p: string): PlanKey => (isPlanKey(p) ? p : DEFAULT_PLAN);
 
 /**

@@ -240,6 +240,7 @@ export const ui = {
     plan: (name: string): string => `${name} plan`,
     ai: "AI",
     quotaSpent: "Monthly quota spent, upgrade",
+    libraryFull: "Library full, upgrade",
     noLimit: "No limit this month",
     thisMonth: "this month",
     gathering: (n: number): string => (n === 1 ? "Tagging 1 reference" : `Tagging ${n} references`),
@@ -313,6 +314,9 @@ export const ui = {
     skipped: (n: number, why: string): string => `${n} skipped (${why}).`,
     failed: (n: number): string => (n === 1 ? "1 could not be saved." : `${n} could not be saved.`),
     capped: "Only the first 500 came in.",
+    full: (n: number): string => (n === 1
+      ? "1 left out: your plan has no more room. Move up a plan in /planes to bring it in."
+      : `${n} left out: your plan has no more room. Move up a plan in /planes to bring them in.`),
     none: "That board has nothing Criterio can save.",
     private: "That board is private. Make it public and try again.",
     notFound: "We could not find that board. Check the link.",
@@ -1233,6 +1237,10 @@ export const ui = {
     designMdThisMonth: "DESIGN.md this month",
     searchesThisMonth: "AI searches this month",
     people: "People",
+    references: "References",
+    storage: "Storage",
+    storageOf: (used: string, limit: string): string => `${used} of ${limit} GB`,
+    storageNoLimit: (used: string): string => `${used} GB, no limit`,
     overSeatsBefore: (used: number, plan: string, limit: number): string => `There are ${used} of you and the ${plan} plan allows ${limit}. We have not removed anyone, but invitations and the AI are on hold until you remove someone in `,
     overSeatsLink: "the team",
     overSeatsAfter: " or move up a plan.",
@@ -1619,6 +1627,11 @@ export const ui = {
     withPending: (allows: string, members: string, pending: string): string =>
       `${allows} Right now there are ${members} on the team and ${pending}. Cancel an invitation in /equipo, or move up a plan in /planes.`,
     movePlan: (allows: string): string => `${allows} Move up a plan in /planes to invite more.`,
+    itemsFull: (limit: number, plan: string): string =>
+      `The library is full: the ${plan} plan keeps ${limit} references. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
+    storageFull: (limit: string, plan: string): string =>
+      `Storage is full: the ${plan} plan keeps ${limit} GB of files. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
+    secondTeam: "Your personal space is your free workspace, and a new team would start free too. To create one, move a workspace you own up to a paid plan in /planes.",
   },
   areaThread: {
     title: "Conversation",

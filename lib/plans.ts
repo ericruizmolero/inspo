@@ -15,20 +15,24 @@ export interface Plan {
   /** What a person asks of the model in a month (see AI_ACTIONS in lib/quota.ts) */
   aiActionsPerMonth: number | null;
   searchesPerMonth: number | null;
+  /** References the library holds, the sample project's left out (lib/sample-items.ts) */
+  itemsMax: number | null;
+  /** Bytes of the workspace's own files (stored_file) */
+  storageMaxBytes: number | null;
 }
 
 export const PLANS: Plan[] = [
   {
     key: "solo", name: "Solo", priceEur: 0,
-    members: 1, aiActionsPerMonth: 30, searchesPerMonth: 30,
+    members: 1, aiActionsPerMonth: 30, searchesPerMonth: 30, itemsMax: 200, storageMaxBytes: 1024 ** 3,
   },
   {
     key: "studio", name: "Studio", priceEur: 29,
-    members: 5, aiActionsPerMonth: 500, searchesPerMonth: null,
+    members: 5, aiActionsPerMonth: 500, searchesPerMonth: null, itemsMax: null, storageMaxBytes: null,
   },
   {
     key: "agency", name: "Agency", priceEur: 79,
-    members: 15, aiActionsPerMonth: 2000, searchesPerMonth: null,
+    members: 15, aiActionsPerMonth: 2000, searchesPerMonth: null, itemsMax: null, storageMaxBytes: null,
   },
 ];
 
@@ -37,6 +41,9 @@ export const DEFAULT_PLAN: PlanKey = "solo";
 export function planOf(key: string | null | undefined): Plan {
   return PLANS.find((p) => p.key === key) ?? PLANS[0];
 }
+
+/** A plan someone pays for. Free is a price, not a key: the keys get renamed (#89) */
+export const isPaid = (p: Pick<Plan, "priceEur">) => p.priceEur > 0;
 
 export const isPlanKey = (k: string): k is PlanKey => PLANS.some((p) => p.key === k);
 

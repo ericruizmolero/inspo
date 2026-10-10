@@ -238,6 +238,7 @@ export const ui: typeof EnUi = {
     plan: (name: string) => `Plan ${name}`,
     ai: "IA",
     quotaSpent: "Cuota del mes agotada, ampliar plan",
+    libraryFull: "Biblioteca llena, ampliar plan",
     noLimit: "Sin límite este mes",
     thisMonth: "este mes",
     gathering: (n: number) => (n === 1 ? "Etiquetando 1 referencia" : `Etiquetando ${n} referencias`),
@@ -309,6 +310,9 @@ export const ui: typeof EnUi = {
     skipped: (n: number, why: string) => (n === 1 ? `1 se queda fuera (${why}).` : `${n} se quedan fuera (${why}).`),
     failed: (n: number) => (n === 1 ? "1 no se pudo guardar." : `${n} no se pudieron guardar.`),
     capped: "Solo entran las 500 primeras.",
+    full: (n: number) => (n === 1
+      ? "1 se queda fuera: tu plan no tiene más sitio. Amplía el plan en /planes para traerla."
+      : `${n} se quedan fuera: tu plan no tiene más sitio. Amplía el plan en /planes para traerlas.`),
     none: "Ese tablero no tiene nada que Criterio sepa guardar.",
     private: "Ese tablero es privado. Hazlo público y vuelve a probar.",
     notFound: "No encontramos ese tablero. Revisa el enlace.",
@@ -1229,6 +1233,10 @@ export const ui: typeof EnUi = {
     designMdThisMonth: "DESIGN.md este mes",
     searchesThisMonth: "Búsquedas IA este mes",
     people: "Personas",
+    references: "Referencias",
+    storage: "Almacenamiento",
+    storageOf: (used: string, limit: string): string => `${used} de ${limit} GB`,
+    storageNoLimit: (used: string): string => `${used} GB, sin límite`,
     overSeatsBefore: (used: number, plan: string, limit: number): string => `Sois ${used} y el plan ${plan} admite ${limit}. No hemos quitado a nadie, pero las invitaciones y la IA están paradas hasta que quites a alguien en `,
     overSeatsLink: "el equipo",
     overSeatsAfter: " o amplíes el plan.",
@@ -1615,6 +1623,11 @@ export const ui: typeof EnUi = {
     withPending: (allows: string, members: string, pending: string): string =>
       `${allows} Ahora hay ${members} en el equipo y ${pending}. Cancela una invitación en /equipo o amplía el plan en /planes.`,
     movePlan: (allows: string): string => `${allows} Amplía el plan en /planes para invitar a más.`,
+    itemsFull: (limit: number, plan: string): string =>
+      `La biblioteca está llena: el plan ${plan} guarda ${limit} referencias. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
+    storageFull: (limit: string, plan: string): string =>
+      `El almacenamiento está lleno: el plan ${plan} guarda ${limit} GB de archivos. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
+    secondTeam: "Tu espacio personal es tu workspace gratis, y un equipo nuevo también empezaría gratis. Para crearlo, pasa a un plan de pago un workspace que sea tuyo en /planes.",
   },
   areaThread: {
     title: "Conversación",

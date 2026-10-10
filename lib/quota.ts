@@ -1,14 +1,16 @@
 // Monthly quotas per plan, counted on ai_usage. Server only.
 import "server-only";
-import { and, eq, gt, gte, inArray, isNull, lt, max, notLike, or, sql } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNull, lt, max, ne, not, notLike, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
 import { AUTO_REF, type UsageAction } from "./usage-core";
-import { HttpError, listMembers, type Workspace } from "./workspace-core";
+import { HttpError, httpErrorResponse, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
 import { overCapacityMail, sendMail, localeForEmail } from "./mail";
 import { log } from "./log";
+import { isSampleItem } from "./sample-items";
+import { fmtGb, mayCreateTeam, roomLeft, whatIsFull, type Full, type Room, type Usage } from "./room";
 
 export interface QuotaLine { used: number; limit: number | null }
 export interface QuotaStatus {
@@ -21,6 +23,10 @@ export interface QuotaStatus {
   ai: QuotaLine;
   searches: QuotaLine;
   members: QuotaLine;
+  /** References in the library, the sample project's left out */
+  items: QuotaLine;
+  /** Bytes of the workspace's own files */
+  storage: QuotaLine;
   /** Sent, unaccepted invitations: they take a seat too */
   pendingInvites: number;
 }
@@ -108,16 +114,85 @@ export async function countPendingInvitations(organizationId: string, exceptEmai
 
 export async function quotaStatus(ws: Pick<Workspace, "id" | "plan">): Promise<QuotaStatus> {
   const plan: Plan = planOf(ws.plan);
-  const [ai, searches, members, pendingInvites] = await Promise.all([
+  const [ai, searches, members, pendingInvites, items, bytes] = await Promise.all([
     countAction(ws.id, "ai"), countAction(ws.id, "jev_search"), countMembers(ws.id), countPendingInvitations(ws.id),
+    countItems(ws.id), storageUsed(ws.id),
   ]);
   return {
     plan: plan.key, planName: plan.name, priceEur: plan.priceEur, resetsAt: nextMonth().toISOString(),
     ai: { used: ai, limit: plan.aiActionsPerMonth },
     searches: { used: searches, limit: plan.searchesPerMonth },
     members: { used: members, limit: plan.members },
+    items: { used: items, limit: plan.itemsMax },
+    storage: { used: bytes, limit: plan.storageMaxBytes },
     pendingInvites,
   };
+}
+
+/** References the plan counts: all of the workspace's but the ones a template brought */
+export async function countItems(organizationId: string): Promise<number> {
+  const T = schema.inspoItem;
+  const [r] = await db.select({ n: sql<number>`count(*)` }).from(T).where(and(eq(T.organizationId, organizationId), not(isSampleItem())));
+  return Number(r?.n ?? 0);
+}
+
+/** Bytes the workspace's files take. `except` leaves one key out: the file about to be written over */
+export async function storageUsed(organizationId: string, except?: string): Promise<number> {
+  const F = schema.storedFile;
+  const [r] = await db.select({ n: sql<string>`coalesce(sum(${F.bytes}), 0)` }).from(F)
+    .where(and(eq(F.organizationId, organizationId), except ? ne(F.key, except) : undefined));
+  return Number(r?.n ?? 0);
+}
+
+/** What the workspace can still add: references and bytes, null where the plan has no cap */
+export async function roomOf(ws: Pick<Workspace, "id" | "plan">, replacing?: string): Promise<Room> {
+  const plan = planOf(ws.plan);
+  const used: Usage = {
+    items: plan.itemsMax === null ? 0 : await countItems(ws.id),
+    bytes: plan.storageMaxBytes === null ? 0 : await storageUsed(ws.id, replacing),
+  };
+  return roomLeft(plan, used);
+}
+
+/**
+ * Throws HttpError(402) when `need` does not fit in the plan: references or bytes. Viewing, searching and exporting
+ * never come here, so a full workspace keeps them. `replacing` is the key of a file being written over: its old
+ * bytes don't count twice.
+ */
+export async function assertRoom(ws: Pick<Workspace, "id" | "plan">, need: { items?: number; bytes?: number }, replacing?: string): Promise<void> {
+  const plan = planOf(ws.plan);
+  const counts = (need.items && plan.itemsMax !== null) || (need.bytes && plan.storageMaxBytes !== null);
+  if (!counts) return;
+  const full = whatIsFull(await roomOf(ws, replacing), need);
+  if (full) throw new HttpError(402, await fullMessage(plan, full));
+}
+
+/** What a person reads when the plan has no room left, in their language */
+export async function fullMessage(plan: Plan, full: Full): Promise<string> {
+  const { t, locale } = await getT();
+  return full === "items" ? t.quota.itemsFull(plan.itemsMax ?? 0, plan.name) : t.quota.storageFull(fmtGb(plan.storageMaxBytes ?? 0, locale), plan.name);
+}
+
+/** The plan of a workspace known only by its id */
+export async function planIn(organizationId: string): Promise<PlanKey> {
+  const [org] = await db.select({ plan: schema.organization.plan }).from(schema.organization).where(eq(schema.organization.id, organizationId)).limit(1);
+  return planOf(org?.plan).key;
+}
+
+/** assertRoom for code that holds only the workspace's id */
+export async function assertRoomIn(organizationId: string, need: { items?: number; bytes?: number }, replacing?: string): Promise<void> {
+  await assertRoom({ id: organizationId, plan: await planIn(organizationId) }, need, replacing);
+}
+
+/**
+ * Why this person may not make another team, or null if they may. A team starts on the free plan, and the free
+ * workspace each person gets is their personal space: another one takes a workspace they own on a paid plan.
+ */
+export async function newTeamRefusal(userId: string): Promise<string | null> {
+  const M = schema.member, O = schema.organization;
+  const owned = await db.select({ plan: O.plan, role: M.role }).from(M).innerJoin(O, eq(O.id, M.organizationId)).where(eq(M.userId, userId));
+  if (mayCreateTeam(owned.filter((r) => r.role.split(",").includes("owner")).map((r) => planOf(r.plan)))) return null;
+  return (await getT()).t.quota.secondTeam;
 }
 
 export interface OverCapacity { members: number; limit: number; planName: string }
@@ -134,18 +209,18 @@ export async function overCapacity(organizationId: string, planKey: string | nul
   return members > plan.members ? { members, limit: plan.members, planName: plan.name } : null;
 }
 
-/** Throws HttpError(402) if the team exceeds its plan's seat count. */
 /** For route handlers: null to continue, or the error response with `quota: true`. */
 export async function quotaBlock(check: Promise<void>): Promise<Response | null> {
   try {
     await check;
     return null;
   } catch (e) {
-    if (e instanceof HttpError) return Response.json({ error: e.message, quota: true }, { status: e.status });
+    if (e instanceof HttpError) return httpErrorResponse(e);
     throw e;
   }
 }
 
+/** Throws HttpError(402) if the team exceeds its plan's seat count. */
 export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise<void> {
   const over = await overCapacity(ws.id, ws.plan);
   if (!over) return;
