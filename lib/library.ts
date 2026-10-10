@@ -8,7 +8,7 @@ import { ITEM_COLUMNS, shapeRows, type ItemRow } from "./items";
 import { loadProjects } from "./projects";
 import { TEMPLATE_AUTHOR } from "./template-seed";
 import type { ItemsBundle, ItemsPage, ProjectLinks } from "@/types/inspo";
-import { loadSystemSummaries } from "./system";
+import { loadSystemSummaries } from "./system/areas";
 import { isAdmin } from "./activity";
 import { quotaStatus } from "./quota";
 import { listCommentsOf } from "./comments";

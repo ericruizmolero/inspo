@@ -19,7 +19,7 @@ import { createShare, resolveShare, revokeShare } from "../lib/share";
 import { loadShareView } from "../lib/share-view";
 import { brandZip } from "../lib/brand-zip";
 import { tokensCss, tokensJson } from "../lib/brand-export";
-import { runSystem } from "../lib/system";
+import { runSystem } from "../lib/system/run";
 import { runBrand } from "../lib/brand";
 
 async function main() {

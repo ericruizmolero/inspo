@@ -16,7 +16,8 @@ import { AUTO_REF, autoBrandPass, billOf, recordUsage, type UsageCtx } from "./u
 import { brandChain } from "./quota";
 import type { OutputLanguage } from "./output-language";
 import { prompt, PROMPTS } from "./prompts";
-import { getSystem, PASS_CLAIM, passBusy } from "./system";
+import { getSystem } from "./system/areas";
+import { PASS_CLAIM, passBusy } from "./system/run";
 import { once } from "./capture-claim";
 import { getDesignMd } from "./design-store";
 import { guideCutLine, guideTexts, type GuideCut } from "./brand-guides";

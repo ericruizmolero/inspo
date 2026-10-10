@@ -7,7 +7,7 @@ import { getErrors } from "@/lib/i18n";
 import { saveBrandSection, releaseBrandSection, writeBrandSections, projectClient } from "@/lib/brand-store";
 import { seedFromDesignMd } from "@/lib/brand-seed";
 import { getDesignMd } from "@/lib/design-store";
-import { getSystem } from "@/lib/system";
+import { getSystem } from "@/lib/system/areas";
 import { resolveFace } from "@/lib/brand-fonts";
 import { inspectBrandFile, projectBrandPrefix } from "@/lib/brand-files";
 

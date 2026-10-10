@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
-import { proposeOptions } from "@/lib/system";
+import { proposeOptions } from "@/lib/system/options";
 import { llmEnabled } from "@/lib/llm";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";

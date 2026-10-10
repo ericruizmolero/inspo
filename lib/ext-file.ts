@@ -3,7 +3,7 @@
 // dialog does. Shared by POST /api/ext/v1/items and /media.
 import "server-only";
 import { activeProjectFor, fileItems } from "./projects";
-import { assignEvidence } from "./system";
+import { assignEvidence } from "./system/areas";
 import { SYSTEM_AREAS, type SystemArea } from "@/types/system";
 import type { ExtCtx } from "./ext-keys";
 import { recordFailure } from "./log";

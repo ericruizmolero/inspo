@@ -2,7 +2,9 @@
 // The project's system: read it, confirm or write an area, hand an area back to the board.
 // The model run (reading the whole board) takes longer and goes through app/api/system.
 import { withCtx } from "@/lib/workspace";
-import { getSystem, boardStamp, decideArea, releaseArea, boardVisuals, areaHistory, revertArea, assignEvidence, setAreaEvidence, setVerdict, setAreaNever, setDocPart, setSummary } from "@/lib/system";
+import { getSystem, decideArea, releaseArea, areaHistory, revertArea, assignEvidence, setAreaEvidence, setAreaNever, setDocPart, setSummary } from "@/lib/system/areas";
+import { boardStamp, boardVisuals } from "@/lib/system/board";
+import { setVerdict } from "@/lib/system/curate";
 import { brandStale } from "@/lib/brand";
 import type { SystemArea } from "@/types/system";
 import type { SystemEvidence } from "@/types/system";

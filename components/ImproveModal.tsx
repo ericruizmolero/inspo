@@ -1,7 +1,7 @@
 "use client";
 // "Improve with AI": before the model works, the team says what it wants from the pass (put order, sharpen the
 // writing, read the references again), in which areas (any of the eight), and anything else in its own words. Under
-// that, what to expect from it. The choice travels with the run (SystemFocus, lib/system.ts): what is left out stays as it was.
+// that, what to expect from it. The choice travels with the run (SystemFocus, lib/system/run.ts): what is left out stays as it was.
 // A long form, so the flat modal with the packed form inside, like Add (decision of 2026-10-07): no moss bar, one title,
 // line pills, no paper card.
 import { useState } from "react";

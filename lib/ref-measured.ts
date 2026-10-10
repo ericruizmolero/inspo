@@ -1,5 +1,5 @@
 // What a reference measured, in values: its DESIGN.md's colours, typefaces, radii, density and theme, and the share
-// of each colour in its saved palette. The system pass reads it (lib/system.ts measuredSummary) and criterio.md writes it
+// of each colour in its saved palette. The system pass reads it (lib/system/board.ts measuredSummary) and criterio.md writes it
 // under the reference. Pure, so the app and the server build the same lines.
 import type { DesignSpec } from "@/types/design";
 import type { InspoColor } from "@/types/inspo";

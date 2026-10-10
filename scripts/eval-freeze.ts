@@ -12,7 +12,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import { promises as fs } from "fs";
 import { eq, inArray } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { loadSnapshot } from "../lib/system";
+import { loadSnapshot } from "../lib/system/board";
 import { clientSiteOf } from "../lib/brand";
 import { projectClient } from "../lib/brand-store";
 import { getDesignMd } from "../lib/design-store";

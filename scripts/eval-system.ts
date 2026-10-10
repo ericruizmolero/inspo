@@ -1,5 +1,5 @@
 // Scores the system and brand prompts on the golden set (scripts/fixtures/system, frozen with npm run eval:freeze).
-// Each pass runs the real prompts of lib/system.ts and lib/brand.ts on a fixture, with no fallback model, then:
+// Each pass runs the real prompts of lib/system/prompts.ts and lib/brand.ts on a fixture, with no fallback model, then:
 //   hard checks: evidence ids that exist, hex and families found in what was measured, areas written in the fixture's language;
 //   a judge model: specificity, the team's words, coherence, how close each area is to what the team decided,
 //   and the "never" lines broken (a line names what it protects, "the orange #EB3514 is the only accent", so
@@ -18,7 +18,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import { promises as fs } from "fs";
 import path from "path";
 import { z } from "zod";
-import type { SystemSnapshot } from "../lib/system";
+import type { SystemSnapshot } from "../lib/system/board";
 import type { DesignSpec } from "../types/design";
 import type { SystemArea } from "../types/system";
 
@@ -102,7 +102,9 @@ async function fixtures(): Promise<EvalFixture[]> {
 /** `model` "": each pass on its own task's model */
 async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row> {
   const { llm } = await import("../lib/llm");
-  const { systemRequest, measuredSummary, SystemOutSchema, SYSTEM_PROMPT_ID } = await import("../lib/system");
+  const { systemRequest, SystemOutSchema } = await import("../lib/system/run");
+  const { measuredSummary } = await import("../lib/system/board");
+  const { SYSTEM_PROMPT_ID } = await import("../lib/system/prompts");
   const { brandRequest, measuredOf, BrandOutSchema, BRAND_PROMPT_ID } = await import("../lib/brand");
   const { emptyBrand } = await import("../types/brand");
   const { toOutputLanguage, writtenIn } = await import("../lib/output-language");
@@ -218,7 +220,7 @@ async function readRows(): Promise<Row[]> {
 }
 
 async function main() {
-  const { SYSTEM_PROMPT_ID } = await import("../lib/system");
+  const { SYSTEM_PROMPT_ID } = await import("../lib/system/prompts");
   if (!flag("table")) {
     const { llmEnabled } = await import("../lib/llm");
     if (!llmEnabled()) throw new Error("OPENROUTER_API_KEY is not set");

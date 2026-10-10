@@ -9,7 +9,7 @@ import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "../db";
 import { HttpError, type Workspace } from "../workspace-core";
 import { loadProjects, createProject, fileItems } from "../projects";
-import { loadSystems, getSystem, assignEvidence } from "../system";
+import { loadSystems, getSystem, assignEvidence } from "../system/areas";
 import { loadShareView } from "../share-view";
 import { blocksToMd } from "../criterio-md";
 import { addItem, findByWeb, rowToItem, setTags, setThumbnail, tagsOfRow, ITEM_COLUMNS } from "../items";
