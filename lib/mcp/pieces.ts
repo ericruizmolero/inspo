@@ -4,27 +4,23 @@
 // (a site, a picture, a text), or a change to an area's
 // decision, which is never written straight in: it waits under its area as a proposal for the team's yes or no.
 import "server-only";
-import { after } from "next/server";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import { db, schema } from "../db";
 import { HttpError, type Workspace } from "../workspace-core";
-import { loadProjects, createProject, fileItems } from "../projects";
-import { loadSystems, getSystem, assignEvidence } from "../system/areas";
+import { loadProjects, createProject } from "../projects";
+import { loadSystems, getSystem } from "../system/areas";
 import { loadShareView } from "../share-view";
 import { blocksToMd } from "../criterio-md";
-import { addItem, findByWeb, rowToItem, setTags, setThumbnail, tagsOfRow, ITEM_COLUMNS } from "../items";
+import { rowToItem, tagsOfRow, ITEM_COLUMNS } from "../items";
+import { addReference, cleanAreas, titleOf, type Piece } from "../add";
 import { addComment, listItemComments } from "../comments";
 import { refInfoOf } from "../ref-info";
 import { dictOf } from "../i18n";
-import { nameFor } from "../item-name";
-import { normalizeWebUrl, typeFromUrl, mediaKindOf, nameFromFile } from "../url";
-import { ensurePost, postThumb } from "../posts";
-import { taggerEnabled } from "../tagger";
-import { enqueue, enqueueEmbed } from "../jobs";
+import { normalizeWebUrl, mediaKindOf, nameFromFile } from "../url";
 import { fetchFile } from "../remote-file";
 import { MEDIA_TYPES, MAX_MEDIA_BYTES, newMediaKey } from "../media";
 import { putFile } from "../storage";
-import { cleanText, putText, readText, textTags, deleteTextFile, TEXT_TITLE_MAX } from "../text-refs";
+import { cleanText, readText, TEXT_TITLE_MAX } from "../text-refs";
 import { addAreaComment, systemActivity } from "../area-comments";
 import { saveBrief } from "../brief";
 import { SYSTEM_AREAS, cleanDecision, NEVER_MAX, type SystemArea } from "@/types/system";
@@ -171,7 +167,6 @@ export async function readReference(ctx: McpCtx, id: string) {
 // ─── Writing ─────────────────────────────────────────────────────────────────
 
 const IMAGE_FILE = /\.(png|jpe?g|webp|gif|avif)$/i;
-const cleanAreas = (v: readonly string[] | undefined): SystemArea[] => [...new Set((v ?? []).filter((a): a is SystemArea => (SYSTEM_AREAS as readonly string[]).includes(a)))];
 const oneLine = (s: string | undefined, max: number) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 
 export interface NewPiece {
@@ -198,63 +193,32 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
   const hasUrl = !!input.url?.trim(), hasText = !!input.text?.trim();
   if (hasUrl === hasText) throw new HttpError(400, "Pass exactly one of url or text.");
   const note = oneLine(input.note, 500);
-  const base = { author: author.name, createdBy: author.id, note, via: ctx.via };
-  let itemId: string, name: string, existed = false;
+  const areas = cleanAreas(input.areas);
+  let piece: Piece;
 
   if (hasText) {
     const text = cleanText(input.text);
-    // No title given: its first line, without Markdown's marks
-    const title = oneLine(input.title, TEXT_TITLE_MAX) || oneLine(text.split("\n").find((l) => l.trim())?.replace(/^[#>\-*\s]+/, "").replace(/[*_`]/g, ""), TEXT_TITLE_MAX);
+    const title = oneLine(input.title, TEXT_TITLE_MAX) || titleOf(text);
     if (!text || !title) throw new HttpError(400, "The text is empty.");
-    const url = await putText(org, text);
-    try {
-      const item = await addItem(org, { ...base, name: title, web: url, type: "inspiration" });
-      await setTags(org, item.web, await textTags(item.web));
-      itemId = item.id!; name = item.name;
-    } catch (e) {
-      // deleteFiles stores its own failure; the add's error is the one to throw
-      await deleteTextFile(org, url).catch(() => {});
-      throw e;
-    }
-    const id = itemId;
-    void enqueueEmbed(org, [id]);
+    piece = { kind: "text", text, title };
   } else {
     const web = normalizeWebUrl(input.url!);
     if (!web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);
     // A picture's own address: the picture is copied, so the board shows it whatever its site does later
     const image = IMAGE_FILE.test(new URL(web).pathname) ? await fetchFile(web, undefined, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES) : null;
-    if (image) {
-      const url = await putFile(newMediaKey(org, image.type), image.body, image.type);
-      const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", web: url, thumbnailUrl: url, source: web, type: "inspiration" });
-      itemId = item.id!; name = item.name;
-      if (taggerEnabled()) void enqueue({ kind: "tag", organizationId: org, itemId, userId: author.id });
-    } else {
-      const existing = await findByWeb(org, web);
-      if (existing) {
-        itemId = existing.id; name = existing.name; existed = true;
-        // Already in the library, with someone's note on it: why it is here now goes in its thread
-        if (note) await addComment(org, { itemId, authorId: author.id, authorName: author.name, body: note });
-      }
-      else {
-        const item = await addItem(org, { ...base, name: oneLine(input.title, 80) || await nameFor(web), web, type: typeFromUrl(web) });
-        itemId = item.id!; name = item.name;
-        // As when a URL is pasted in the app: a post on X is imported, and the AI tags what was saved
-        const isPost = mediaKindOf(web) === "post";
-        if (isPost || taggerEnabled()) {
-          after(async () => {
-            if (isPost) { const post = await ensurePost(web); const thumb = post && postThumb(post); if (thumb) await setThumbnail(org, web, thumb); }
-            if (taggerEnabled()) await enqueue({ kind: "tag", organizationId: org, itemId, userId: author.id });
-          });
-        }
-      }
-    }
+    piece = image
+      ? { kind: "image", url: await putFile(newMediaKey(org, image.type), image.body, image.type), name: oneLine(input.title, 80) || nameFromFile(new URL(web).pathname.split("/").pop() ?? "") || "Image", source: web }
+      : { kind: "url", web, name: oneLine(input.title, 80) };
   }
-
-  await fileItems(org, project.id, [itemId], author.id);
-  const areas = cleanAreas(input.areas);
-  for (const area of areas) await assignEvidence(org, project.id, area, itemId, true, author);
+  // As when a URL is pasted in the app: a post on X is imported, and the AI tags what was saved, once answered
+  const { item, existed } = await addReference(org, piece, ctx.user, {
+    note, via: ctx.via, file: { projectId: project.id, areas, onError: "throw", existing: true }, finish: { post: true, tag: "after" },
+  });
+  const itemId = item.id!;
+  // Already in the library, with someone's note on it: why it is here now goes in its thread
+  if (existed && note) await addComment(org, { itemId, authorId: author.id, authorName: author.name, body: note });
   return {
-    id: itemId, name, project: project.name,
+    id: itemId, name: item.name, project: project.name,
     ...(existed ? { already_in_library: true } : {}),
     ...(areas.length ? { areas } : {}),
     url: projectUrl(origin, project.id),

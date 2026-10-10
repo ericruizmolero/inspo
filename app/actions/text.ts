@@ -2,13 +2,12 @@
 // Text as a reference of its own (lib/text-refs.ts): the project's content, pasted and kept whole.
 import { and, eq, inArray } from "drizzle-orm";
 import { withCtx, HttpError } from "@/lib/workspace";
-import { addItem, setTags } from "@/lib/items";
-import { fileItems } from "@/lib/projects";
+import { addReference } from "@/lib/add";
+import { setTags } from "@/lib/items";
 import { enqueueEmbed } from "@/lib/jobs";
-import { cleanText, putText, readText, rewriteText, textTags, deleteTextFile, ownsTextFile, TEXT_TITLE_MAX } from "@/lib/text-refs";
+import { cleanText, readText, rewriteText, textTags, ownsTextFile, TEXT_TITLE_MAX } from "@/lib/text-refs";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
-import { recordFailure } from "@/lib/log";
 
 /** A pasted text becomes a card: its words go to a file, whose path is the item's address.
  *  Added from inside a project, it is filed there too. Its "tags" are its first lines: no model reads it here. */
@@ -17,22 +16,8 @@ export async function addText(input: { title: string; text: string; note?: strin
     const text = cleanText(input.text);
     const title = String(input.title ?? "").replace(/\s+/g, " ").trim().slice(0, TEXT_TITLE_MAX);
     if (!text || !title) throw new HttpError(400, (await getErrors()).badBody);
-    const url = await putText(ctx.workspace.id, text);
-    try {
-      const item = await addItem(ctx.workspace.id, {
-        name: title, web: url, type: "inspiration", note: input.note,
-        author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
-      });
-      await setTags(ctx.workspace.id, item.web, await textTags(item.web));
-      if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
-      const id = item.id;
-      if (id) void enqueueEmbed(ctx.workspace.id, [id]);
-      return item;
-    } catch (e) {
-      // deleteFiles stores its own failure; the add's error is the one to throw
-      await deleteTextFile(ctx.workspace.id, url).catch(() => {});
-      throw e;
-    }
+    const { item } = await addReference(ctx.workspace.id, { kind: "text", text, title }, ctx.user, { note: input.note, file: { projectId: input.projectId, onError: "log" } });
+    return item;
   });
 }
 

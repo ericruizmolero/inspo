@@ -7,6 +7,7 @@ import { TAGS, TAG_THRESHOLD, viewOf } from "./taxonomy";
 import en from "./i18n/en";
 import { recordUsage, type UsageCtx } from "./usage";
 import { recordFailure } from "./log";
+import { eachLimit } from "./each-limit";
 
 let _client: TypeSafeClient | null = null;
 function client() {
@@ -74,17 +75,6 @@ export function summarize(item: InspoItem, t: InspoTags | undefined) {
   };
 }
 
-async function pool<T, R>(items: T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(items.length);
-  let i = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(n, items.length) }, async () => {
-      while (i < items.length) { const idx = i++; out[idx] = await fn(items[idx]); }
-    })
-  );
-  return out;
-}
-
 /** Returns, per URL, the probability (0–1) that the item fits the query. */
 export async function matchQuery(
   query: string,
@@ -95,7 +85,7 @@ export async function matchQuery(
   const batches: InspoItem[][] = [];
   for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
 
-  const results = await pool(batches, CONCURRENCY, async (batch) => {
+  const results = await eachLimit(batches, CONCURRENCY, async (batch) => {
     const state = {
       search_query: query,
       note: "The query is written by a designer looking through their inspiration library. It may be in Spanish or English.",

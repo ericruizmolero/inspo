@@ -6,20 +6,21 @@
 // Callers pace themselves: one batch per request, the next when this one answers.
 import "server-only";
 import { after } from "next/server";
-import { addItem, findByWeb, findByWebs, setTags, setThumbnail, setItemDate } from "@/lib/items";
+import { findByWebs, setThumbnail, setItemDate } from "@/lib/items";
+import { saveReference, titleOf } from "@/lib/add";
 import { activeProjectFor, fileItems } from "@/lib/projects";
-import { nameFor } from "@/lib/item-name";
 import { importedMediaKey, importedMediaUrls, MEDIA_TYPES, MAX_MEDIA_BYTES } from "@/lib/media";
 import { putFile } from "@/lib/storage";
 import { fetchFile } from "@/lib/remote-file";
 import { ensurePost, postThumb, postDay } from "@/lib/posts";
-import { cleanText, deleteTextFile, importedTextUrl, putText, textTags, TEXT_TITLE_MAX } from "@/lib/text-refs";
-import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
+import { cleanText, TEXT_TITLE_MAX } from "@/lib/text-refs";
+import { normalizeWebUrl, mediaKindOf } from "@/lib/url";
 import { MAX_PER_BATCH } from "@/lib/batch-limits";
 import { taggerEnabled } from "@/lib/tagger";
 import { enqueue, enqueueEmbed } from "@/lib/jobs";
 import { PER_WORKSPACE } from "@/lib/tag-jobs";
 import { HttpError } from "@/lib/workspace-core";
+import { eachLimit } from "@/lib/each-limit";
 import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "./log";
 
@@ -41,15 +42,6 @@ export interface NewRef { url: string; title?: string; date?: unknown; image?: u
 
 interface Who { workspaceId: string; user: { id: string; name?: string | null; email: string } }
 
-/** Runs `fn` over `list`, at most `n` at a time, keeping the order of the results */
-async function eachLimit<T, R>(list: T[], n: number, fn: (x: T) => Promise<R>): Promise<R[]> {
-  const out: R[] = new Array(list.length);
-  let next = 0;
-  const worker = async () => { while (next < list.length) { const i = next++; out[i] = await fn(list[i]); } };
-  await Promise.all(Array.from({ length: Math.min(n, list.length) }, worker));
-  return out;
-}
-
 /** The item's date as the caller knows it (a bookmark's day, a post's day), never ahead of today */
 function dateOf(date: unknown): string | undefined {
   if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return undefined;
@@ -70,7 +62,6 @@ const imagesOf = (image: unknown): string[] =>
  */
 export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[] }> {
   const { source } = opts;
-  const author = user.name || user.email;
 
   // The same address twice in one batch is saved once
   const seen = new Set<string>();
@@ -86,24 +77,11 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
       const dateIso = dateOf(it.date);
       const words = it.text === undefined ? "" : cleanText(it.text);
       if (words) {
-        const at = importedTextUrl(workspaceId, web);
-        const had = await findByWeb(workspaceId, at);
-        if (had) return { url: raw, status: "existed", id: had.id };
-        const stored = await putText(workspaceId, words, web);
-        const firstLine = words.split("\n").find((l) => l.trim())?.replace(/^[#>\-*\s]+/, "").replace(/[*_`]/g, "");
-        try {
-          const item = await addItem(workspaceId, {
-            name: clip(it.title, TEXT_TITLE_MAX) || clip(firstLine, TEXT_TITLE_MAX) || new URL(web).hostname.replace(/^www\./, ""),
-            web: stored, source: web, type: "inspiration", author, createdBy: user.id, dateIso,
-          });
-          await setTags(workspaceId, item.web, await textTags(item.web));
-          added.push(item);
-          return { url: raw, status: "added", id: item.id };
-        } catch (e) {
-          // deleteFiles stores its own failure; the add's error is the one to throw
-          if (!(e instanceof HttpError && e.status === 409)) await deleteTextFile(workspaceId, stored).catch(() => {});
-          throw e;
-        }
+        const title = clip(it.title, TEXT_TITLE_MAX) || titleOf(words) || new URL(web).hostname.replace(/^www\./, "");
+        const { item, existed } = await saveReference(workspaceId, { kind: "text", text: words, title, at: web }, user, { dateIso });
+        if (existed) return { url: raw, status: "existed", id: item.id };
+        added.push(item);
+        return { url: raw, status: "added", id: item.id };
       }
       const images = imagesOf(it.image);
       if (images.length) {
@@ -113,17 +91,12 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
         for (const src of images) { file = await fetchFile(src, web, (t) => MEDIA_TYPES.has(t), MAX_MEDIA_BYTES); if (file) break; }
         if (!file) return { url: raw, status: "error" };
         const stored = await putFile(importedMediaKey(workspaceId, web, file.type), file.body, file.type);
-        const item = await addItem(workspaceId, {
-          name: clip(it.title, 48) || new URL(web).hostname.replace(/^www\./, ""),
-          web: stored, thumbnailUrl: stored, source: web, type: "inspiration", author, createdBy: user.id, dateIso,
-        });
+        const { item } = await saveReference(workspaceId, { kind: "image", url: stored, name: clip(it.title, 48) || new URL(web).hostname.replace(/^www\./, ""), source: web }, user, { dateIso });
         added.push(item);
         return { url: raw, status: "added", id: item.id };
       }
-      const existing = await findByWeb(workspaceId, web);
-      if (existing) return { url: raw, status: "existed", id: existing.id };
-      const name = await nameFor(web, it.title);
-      const item = await addItem(workspaceId, { name, web, type: typeFromUrl(web), author, createdBy: user.id, dateIso });
+      const { item, existed } = await saveReference(workspaceId, { kind: "url", web, title: it.title }, user, { dateIso });
+      if (existed) return { url: raw, status: "existed", id: item.id };
       added.push(item);
       if (dateIso) dated.add(web);
       return { url: raw, status: "added", id: item.id };

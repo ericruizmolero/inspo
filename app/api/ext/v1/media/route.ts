@@ -7,23 +7,17 @@
 // saved by the post or the video page it belongs to, which the app knows how to play (a post from X
 // has its video copied on import); only when there is none does it keep the page and the frame.
 // Either way it lands on the board picked in the popup, under the areas ticked there.
-import { NextRequest, after } from "next/server";
+import { NextRequest } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
-import { addItem, findByWeb, rowToItem, setThumbnail } from "@/lib/items";
-import { fileFromExt, cleanAreas } from "@/lib/ext-file";
+import { setThumbnail } from "@/lib/items";
+import { addReference, cleanAreas, type Filing } from "@/lib/add";
 import { uploadThumbnail } from "@/lib/thumbnails";
 import { newMediaKey, MEDIA_TYPES, MAX_MEDIA_BYTES, newVideoKey, VIDEO_TYPES, MAX_VIDEO_BYTES } from "@/lib/media";
 import { putFile } from "@/lib/storage";
 import { fetchFile } from "@/lib/remote-file";
-import { nameFor } from "@/lib/item-name";
-import { ensurePost, postThumb } from "@/lib/posts";
-import { normalizeWebUrl, mediaKindOf, typeFromUrl } from "@/lib/url";
-import { taggerEnabled } from "@/lib/tagger";
-import { enqueue } from "@/lib/jobs";
+import { normalizeWebUrl, mediaKindOf } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
-import type { ExtCtx } from "@/lib/ext-keys";
-import type { InspoItem } from "@/types/inspo";
 import { log, recordFailure } from "@/lib/log";
 
 export const maxDuration = 300; // copying a video of up to 100 MB
@@ -36,12 +30,6 @@ function fromDataUrl(dataUrl: string | undefined, maxBytes: number): { body: Buf
   if (!m || !MEDIA_TYPES.has(m[1])) return null;
   const body = Buffer.from(m[2], "base64");
   return body.byteLength > 0 && body.byteLength <= maxBytes ? { body, type: m[1] } : null;
-}
-
-/** Files the new item on the board picked in the popup (with its areas), and tags it once answered */
-async function settle(ctx: ExtCtx, item: InspoItem, projectId: unknown, areas: unknown) {
-  await fileFromExt(ctx, item.id, projectId, cleanAreas(areas));
-  if (taggerEnabled() && item.id) void enqueue({ kind: "tag", organizationId: ctx.workspace.id, itemId: item.id, userId: ctx.user.id });
 }
 
 const clip = (s: unknown, n: number) => (typeof s === "string" ? s.replace(/\s+/g, " ").trim().slice(0, n).trim() : "");
@@ -58,8 +46,9 @@ export async function POST(req: NextRequest) {
   };
   const page = normalizeWebUrl(body.page ?? "") ?? undefined;
   const note = clip(body.note, 500);
-  const author = ctx.user.name || ctx.user.email;
   const frame = fromDataUrl(body.frame, MAX_FRAME_BYTES);
+  // Filed on the board picked in the popup, under the areas ticked there, or where this person was working
+  const filing: Filing = { projectId: typeof body.projectId === "string" ? body.projectId : null, fallback: "active", areas: cleanAreas(body.areas), onError: "log" };
 
   try {
     if (body.kind === "image") {
@@ -69,11 +58,7 @@ export async function POST(req: NextRequest) {
       if (!file) return Response.json({ error: errors.imageFailed }, { status: 422 });
       const url = await putFile(newMediaKey(ctx.workspace.id, file.type), file.body, file.type);
       const host = page ? new URL(page).hostname.replace(/^www\./, "") : "";
-      const item = await addItem(ctx.workspace.id, {
-        name: clip(body.alt, 48) || clip(body.title, 48) || host || "Image",
-        web: url, thumbnailUrl: url, source: page, type: "inspiration", note, author, createdBy: ctx.user.id,
-      });
-      await settle(ctx, item, body.projectId, body.areas);
+      const { item } = await addReference(ctx.workspace.id, { kind: "image", url, name: clip(body.alt, 48) || clip(body.title, 48) || host || "Image", source: page }, ctx.user, { note, file: filing });
       return Response.json({ ok: true, existed: false, item, saved: "copy" });
     }
 
@@ -91,9 +76,8 @@ export async function POST(req: NextRequest) {
       const file = await fetchFile(body.src ?? "", page, (t) => t in VIDEO_TYPES, MAX_VIDEO_BYTES);
       if (file) {
         const url = await putFile(newVideoKey(ctx.workspace.id, file.type), file.body, file.type);
-        const item = await addItem(ctx.workspace.id, { name: name || "Video", web: url, source: page, type: "videos", note, author, createdBy: ctx.user.id });
+        const { item } = await addReference(ctx.workspace.id, { kind: "video", url, name: name || "Video", source: page }, ctx.user, { note, file: filing });
         await saveFrame(url);
-        await settle(ctx, item, body.projectId, body.areas);
         return Response.json({ ok: true, existed: false, item, saved: "copy" });
       }
 
@@ -101,17 +85,10 @@ export async function POST(req: NextRequest) {
       const link = [normalizeWebUrl(body.link ?? ""), page].find((w) => w && ["post", "video"].includes(mediaKindOf(w)));
       const web = link ?? page;
       if (!web) return Response.json({ error: errors.badUrl }, { status: 400 });
-      const existing = await findByWeb(ctx.workspace.id, web);
-      if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing), saved: link ? "link" : "page" });
-      const item = await addItem(ctx.workspace.id, {
-        name: await nameFor(web, link ? undefined : body.title), web, type: typeFromUrl(web), note, author, createdBy: ctx.user.id,
-      });
-      if (mediaKindOf(web) === "post") {
-        // Its video is copied on import, and its picture is the card's
-        await saveFrame(web);
-        after(async () => { const post = await ensurePost(web); const thumb = post && postThumb(post); if (thumb) await setThumbnail(ctx.workspace.id, web, thumb); });
-      } else if (!link) await saveFrame(web);
-      await settle(ctx, item, body.projectId, body.areas);
+      // A post's video is copied on import, and its picture becomes the card's; the frame stands in until then
+      const { item, existed } = await addReference(ctx.workspace.id, { kind: "url", web, title: link ? undefined : body.title }, ctx.user, { note, file: filing, finish: { post: true } });
+      if (existed) return Response.json({ ok: true, existed: true, item, saved: link ? "link" : "page" });
+      if (mediaKindOf(web) === "post" || !link) await saveFrame(web);
       return Response.json({ ok: true, existed: false, item, saved: link ? "link" : "page" });
     }
 

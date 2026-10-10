@@ -6,17 +6,16 @@
 import { cookies } from "next/headers";
 import { and, eq, inArray } from "drizzle-orm";
 import { withCtx, getSession, canManage, HttpError, type ActionResult } from "@/lib/workspace";
-import { addItem, deleteItem, deleteItems, deletableIds, setItemNote, editUserTags } from "@/lib/items";
-import { enqueue, enqueueEmbed } from "@/lib/jobs";
+import { deleteItem, deleteItems, deletableIds, setItemNote, editUserTags } from "@/lib/items";
+import { addReference } from "@/lib/add";
+import { enqueueEmbed } from "@/lib/jobs";
 import { staleEmbedding } from "@/lib/embed";
-import { taggerEnabled } from "@/lib/tagger";
 import { createProject, projectForBoard, renameProject, deleteProject, startedProject, fileItems, unfileItems, startProject } from "@/lib/projects";
 import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
 import { addComment, deleteComment } from "@/lib/comments";
-import { nameFor } from "@/lib/item-name";
 import { z } from "zod";
 import { addMany, type AddResult, type NewRef } from "@/lib/add-many";
 import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "@/lib/batch-limits";
@@ -24,10 +23,10 @@ import { boardOf, type Platform } from "@/lib/boards/match";
 import { MAX_TEXT, type Entry, type Skipped } from "@/lib/boards/entries";
 import { readBoard, BoardError, type BoardFailure } from "@/lib/boards/read";
 import { allow } from "@/lib/rate-limit";
-import { normalizeWebUrl, typeFromUrl, nameFromFile } from "@/lib/url";
+import { normalizeWebUrl, nameFromFile } from "@/lib/url";
 import { db, schema } from "@/lib/db";
 import { getErrors } from "@/lib/i18n";
-import { log, recordFailure } from "@/lib/log";
+import { log } from "@/lib/log";
 import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment, InspoItem, PolishChoice } from "@/types/inspo";
 
@@ -37,27 +36,16 @@ async function reembed(organizationId: string, itemId: string) {
   void enqueueEmbed(organizationId, [itemId]);
 }
 
-/** Gathers the new item's tags in its own job (lib/tag-jobs.ts) */
-function startTagging(organizationId: string, itemId: string | undefined, userId: string) {
-  if (itemId && taggerEnabled()) void enqueue({ kind: "tag", organizationId, itemId, userId });
-}
-
 /** Only the URL is required: name and collection are inferred if missing.
  *  Added from inside a project, it is filed there too (otherwise it lands in the Inbox). */
 export async function addInspo(input: { web: string; name?: string; type?: string; note?: string; subNote?: string; projectId?: string }) {
   return withCtx(async (ctx) => {
     const web = normalizeWebUrl(input.web ?? "");
     if (!web) throw new HttpError(400, (await getErrors()).badUrl);
-    const item = await addItem(ctx.workspace.id, {
-      name: input.name?.trim() || await nameFor(web),
-      web,
-      type: input.type?.trim() || typeFromUrl(web),
-      note: input.note, subNote: input.subNote,
-      author: ctx.user.name || ctx.user.email,
-      createdBy: ctx.user.id,
+    const { item, existed } = await addReference(ctx.workspace.id, { kind: "url", web, name: input.name?.trim(), type: input.type?.trim() }, ctx.user, {
+      note: input.note, subNote: input.subNote, file: { projectId: input.projectId, onError: "log" },
     });
-    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
-    startTagging(ctx.workspace.id, item.id, ctx.user.id);
+    if (existed) throw new HttpError(409, (await getErrors()).urlAlreadyHere);
     return item;
   });
 }
@@ -164,17 +152,9 @@ export async function addImage(input: { url: string; fileName?: string; type?: s
   return withCtx(async (ctx) => {
     const url = String(input.url ?? "");
     if (!ownsMediaFile(ctx.workspace.id, url) || !(await fileExists(keyOf(url)!))) throw new HttpError(400, (await getErrors()).imageNotHere);
-    const item = await addItem(ctx.workspace.id, {
-      name: nameFromFile(String(input.fileName ?? "")) || "Image",
-      web: url,
-      thumbnailUrl: url,
-      type: input.type?.trim() || "inspiration",
-      note: input.note,
-      author: ctx.user.name || ctx.user.email,
-      createdBy: ctx.user.id,
+    const { item } = await addReference(ctx.workspace.id, { kind: "image", url, name: nameFromFile(String(input.fileName ?? "")) || "Image", type: input.type?.trim() }, ctx.user, {
+      note: input.note, file: { projectId: input.projectId, onError: "log" },
     });
-    if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
-    startTagging(ctx.workspace.id, item.id, ctx.user.id);
     return item;
   });
 }
