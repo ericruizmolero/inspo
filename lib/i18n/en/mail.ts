@@ -3,6 +3,7 @@
 // The rule: an email goes out in the language of WHO RECEIVES IT, not who triggers it.
 // Who decides in each case is in localeForEmail (lib/mail.ts).
 export const mail = {
+  signature: "Eric, Andoni and Alberto",
 
   magicLink: {
     subject: "Your link to sign in to criterio.design",

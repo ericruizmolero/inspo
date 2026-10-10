@@ -59,15 +59,18 @@ export async function sendMail(to: string | string[], { subject, text }: Mail, o
   }
 }
 
+/** Signed by the three partners: a person, not a product, sends it */
+const signed = (locale: Locale, text: string) => `${text}\n\n${mailDict(locale).signature}`;
+
 export function magicLinkMail(url: string, locale: Locale): Mail {
   const t = mailDict(locale);
-  return { subject: t.magicLink.subject, text: t.magicLink.text(url) };
+  return { subject: t.magicLink.subject, text: signed(locale, t.magicLink.text(url)) };
 }
 
 export function invitationMail(url: string, teamName: string, inviterName: string, inviterEmail: string, inviteeEmail: string, locale: Locale): Mail {
   const t = mailDict(locale);
   const who = inviterName === inviterEmail ? inviterName : `${inviterName} (${inviterEmail})`;
-  return { subject: t.invitation.subject(inviterName, teamName), text: t.invitation.text(who, teamName, inviteeEmail, url) };
+  return { subject: t.invitation.subject(inviterName, teamName), text: signed(locale, t.invitation.text(who, teamName, inviteeEmail, url)) };
 }
 
 /**
@@ -79,13 +82,13 @@ export function overCapacityMail(url: string, teamName: string, planName: string
   const nMembers = t.overCapacity.people(members);
   return {
     subject: t.overCapacity.subject(teamName, nMembers, planName, limit),
-    text: t.overCapacity.text(teamName, planName, t.overCapacity.people(limit), nMembers, url),
+    text: signed(locale, t.overCapacity.text(teamName, planName, t.overCapacity.people(limit), nMembers, url)),
   };
 }
 
 export function adminAccessMail(url: string, granterName: string, locale: Locale): Mail {
   const t = mailDict(locale);
-  return { subject: t.adminAccess.subject(granterName), text: t.adminAccess.text(granterName, url) };
+  return { subject: t.adminAccess.subject(granterName), text: signed(locale, t.adminAccess.text(granterName, url)) };
 }
 
 /** Feedback time is always in the Madrid zone: it's a studio fact, not a language one. */
@@ -125,14 +128,14 @@ export function digestMail(d: { summary: string; url: string; groups: DigestGrou
   const groups = d.groups.map((g) => `${g.title}\n${g.lines.map((l) => `  ${l.text}${l.quote ? ` \u00ab${l.quote}\u00bb` : ""}\n  ${l.url}`).join("\n")}${g.more > 0 ? `\n  ${t.digest.more(g.more)}` : ""}`).join("\n\n");
   return {
     subject: t.digest.subject(foot.team, d.summary),
-    text: `${t.digest.title(foot.team)}\n${d.url}\n\n${groups}\n\n${footerText(locale, foot)}`,
+    text: signed(locale, `${t.digest.title(foot.team)}\n${d.url}\n\n${groups}\n\n${footerText(locale, foot)}`),
   };
 }
 
 /** Someone answered one of your comments: their words under yours, and the email replies to them */
 export function replyMail(r: { who: string; mine: string; theirs: string; url: string }, foot: TeamMailFoot, locale: Locale): Mail {
   const t = mailDict(locale);
-  return { subject: t.reply.subject(r.who), text: `${t.reply.text(r.who, r.mine, r.theirs, r.url)}\n\n${footerText(locale, foot)}` };
+  return { subject: t.reply.subject(r.who), text: signed(locale, `${t.reply.text(r.who, r.mine, r.theirs, r.url)}\n\n${footerText(locale, foot)}`) };
 }
 
 /** Someone accepted or turned down a change you proposed to an area */
@@ -140,12 +143,12 @@ export function proposalMail(p: { who: string; accepted: boolean; area: string; 
   const t = mailDict(locale);
   return {
     subject: t.proposal.subject(p.who, p.accepted, p.area),
-    text: `${t.proposal.text(p.who, p.accepted, p.area, p.project, p.decision, p.url)}\n\n${footerText(locale, foot)}`,
+    text: signed(locale, `${t.proposal.text(p.who, p.accepted, p.area, p.project, p.decision, p.url)}\n\n${footerText(locale, foot)}`),
   };
 }
 
 /** A month without opening the app: the digest stops on its own, and this says so once */
 export function pausedMail(url: string, locale: Locale): Mail {
   const t = mailDict(locale);
-  return { subject: t.paused.subject, text: t.paused.text(url) };
+  return { subject: t.paused.subject, text: signed(locale, t.paused.text(url)) };
 }

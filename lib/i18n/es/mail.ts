@@ -1,6 +1,7 @@
 import type { mail as EnMail } from "../en/mail";
 
 export const mail: typeof EnMail = {
+  signature: "Eric, Andoni y Alberto",
 
   magicLink: {
     subject: "Tu enlace para entrar en criterio.design",
