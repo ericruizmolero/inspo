@@ -6,8 +6,7 @@
 // reloading the page; what the server sends on a later navigation takes over again.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { WorkspaceSwitchContext } from "./workspace-switch";
-import { authClient } from "@/lib/auth-client";
+import { ActiveWorkspace, WorkspaceSwitchContext, setActiveWorkspace } from "./workspace-switch";
 import type { LibraryData } from "@/lib/library";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
 import InspoClient from "./InspoClient";
@@ -60,7 +59,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
   const switchTo = useCallback(async (id: string) => {
     if (id === shownId.current) return;
     // The server learns first in the background; anything saved from now on goes to the new workspace
-    const active = authClient.organization.setActive({ organizationId: id }).catch(() => null);
+    const active = setActiveWorkspace(id);
     // A project or an open reference belong to the workspace being left: back to its library
     if (window.location.pathname !== "/" || window.location.search) window.history.replaceState(null, "", "/");
     const hit = cache.get(id);
@@ -83,6 +82,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
 
   return (
     <WorkspaceSwitchContext.Provider value={switcher}>
+      <ActiveWorkspace id={shown.workspace.id} />
       <InspoClient
         key={`${shown.workspace.id}:${round}`}
         items={shown.items}

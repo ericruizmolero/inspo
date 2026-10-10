@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { setActiveWorkspace } from "@/components/workspace-switch";
 import { useT } from "@/components/I18nProvider";
 import { Avatar, Button, toneFor } from "@/components/criterio";
 import AuthWindow from "@/components/AuthWindow";
@@ -21,7 +22,7 @@ export default function AcceptInvitation({ id, teamName, inviterName, inviterEma
     const { data, error: err } = await authClient.organization.acceptInvitation({ invitationId: id });
     if (err) { setBusy(false); setError(err.message ?? t.invite.acceptFailed); return; }
     const orgId = data?.invitation?.organizationId;
-    if (orgId) await authClient.organization.setActive({ organizationId: orgId });
+    if (orgId) await setActiveWorkspace(orgId);
     // Confirmation before dropping the person into the library: without it, it looks like they did not get in
     setDone(true);
     router.refresh();

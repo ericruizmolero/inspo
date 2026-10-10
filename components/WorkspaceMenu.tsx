@@ -6,7 +6,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "./CreateTeamDialog";
-import { useWorkspaceSwitch } from "./workspace-switch";
+import { setActiveWorkspace, useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, Icon, MenuItem, MenuLabel, Separator, toneFor } from "@/components/criterio";
@@ -69,7 +69,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
     if (id === workspace.id) { setOpen(false); return; }
     if (instant) { setOpen(false); await instant.switchTo(id); return; }
     setBusy(true);
-    await authClient.organization.setActive({ organizationId: id });
+    await setActiveWorkspace(id);
     setOpen(false); setBusy(false);
     router.refresh();
   };

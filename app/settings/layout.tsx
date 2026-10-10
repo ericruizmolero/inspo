@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import SectionShell from "@/components/SectionShell";
+import { ActiveWorkspace } from "@/components/workspace-switch";
 import { getCtxOrLogin } from "@/lib/workspace";
 import { getT } from "@/lib/i18n";
 
@@ -30,6 +31,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
         },
       ]}
     >
+      <ActiveWorkspace id={ctx.workspace.id} />
       {children}
     </SectionShell>
   );
