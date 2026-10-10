@@ -6,7 +6,7 @@ import { batchesOf } from "@/lib/boards/entries";
 import { noneImported, type BoardStep, type ImportBoard } from "./BoardImport";
 import { importSummary } from "@/lib/boards/summary";
 import { votesByItem, finishedOf, forgottenBy, openVotes } from "@/lib/polish-tally";
-import { authClient } from "@/lib/auth-client";
+import { setActiveWorkspace } from "./workspace-switch";
 import { setProjectClient, saveProjectBrief } from "@/app/actions/brief";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -1036,7 +1036,7 @@ export default function InspoClient({
     // Not in this workspace: if it is in another one of mine, switch to it; the library remounts and opens it
     workspaceOfItem(id).then(async (r) => {
       if (!r.ok || !r.data || r.data === workspace.id) return;
-      await authClient.organization.setActive({ organizationId: r.data });
+      await setActiveWorkspace(r.data);
       router.refresh();
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs on path changes only
