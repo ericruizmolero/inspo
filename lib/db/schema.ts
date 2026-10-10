@@ -32,7 +32,6 @@ export const user = pgTable("user", {
   replyEmails: boolean("reply_emails").notNull().default(true),
   /** The invite the account was created with (lib/access.ts). Null for accounts from before the waitlist */
   accessInviteId: text("access_invite_id").references((): AnyPgColumn => accessInvite.id, { onDelete: "set null" }),
-  /** Invites this person can still hand out */
   invitesLeft: integer("invites_left").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
@@ -143,11 +142,11 @@ export const invitation = pgTable("invitation", {
 ]);
 
 // ─── Access ──────────────────────────────────────────────────────────────────
-// Who waits for an account and the codes that let one be created (lib/access.ts). Not Better Auth's
-// `invitation`, which brings someone into a team.
+// Not Better Auth's `invitation`, which brings someone into a team.
 
 export const WAITLIST_STATUSES = ["pending", "invited", "joined", "removed"] as const;
 export type WaitlistStatus = (typeof WAITLIST_STATUSES)[number];
+export type WaitlistSource = "landing" | "login" | `referral:${string}` | `utm_${string}`;
 
 export const waitlistEntry = pgTable("waitlist_entry", {
   id: text("id").primaryKey(),
@@ -160,8 +159,7 @@ export const waitlistEntry = pgTable("waitlist_entry", {
   website: text("website"),
   note: text("note"),
   locale: text("locale").$type<Locale>().notNull().default("en"),
-  /** landing | login | referral:<code> | utm_* */
-  source: text("source").notNull(),
+  source: text("source").$type<WaitlistSource>().notNull(),
   status: text("status").$type<WaitlistStatus>().notNull().default("pending"),
   /** Higher goes first when a wave is picked by hand */
   priority: integer("priority").notNull().default(0),

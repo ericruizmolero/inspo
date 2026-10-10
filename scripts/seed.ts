@@ -25,8 +25,6 @@ const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 type Row = Record<string, unknown>;
 type Dump = { at: string; tables: Record<string, Row[]> };
 
-// The waitlist is people without an account: their addresses never leave production. The mask is
-// stable, so an entry and the invite for the same person still match, and unique, so the load holds.
 const MASK_DOMAIN = "@example.invalid";
 const maskEmail = (email: unknown) =>
   typeof email !== "string" || email.endsWith(MASK_DOMAIN) ? email : `waitlist+${sha256(email).slice(0, 12)}${MASK_DOMAIN}`;
@@ -99,9 +97,7 @@ async function load(replace: boolean) {
   }
   await db.transaction(async (tx) => {
     if (replace) await tx.execute(sql.raw(`truncate ${list.map((t) => `"${t.name}"`).join(", ")} cascade`));
-    // user.access_invite_id and access_invite.created_by point at each other: users go in without
-    // their invite, and get it back once the invites are in
-    const userInvites: { id: string; accessInviteId: string }[] = [];
+    const userInvitesAfterLoad: { id: string; accessInviteId: string }[] = [];
     for (const { table, name, cols } of list) {
       // JSON turned dates into strings: back to Date for the timestamp columns
       const dates = Object.entries(cols).filter(([, c]) => c.columnType === "PgTimestamp").map(([k]) => k);
@@ -109,7 +105,7 @@ async function load(replace: boolean) {
         const row = { ...r };
         for (const k of dates) if (row[k] != null) row[k] = new Date(row[k] as string);
         if (table === schema.user && row.accessInviteId) {
-          userInvites.push({ id: row.id as string, accessInviteId: row.accessInviteId as string });
+          userInvitesAfterLoad.push({ id: row.id as string, accessInviteId: row.accessInviteId as string });
           row.accessInviteId = null;
         }
         return row;
@@ -117,7 +113,7 @@ async function load(replace: boolean) {
       for (let i = 0; i < rows.length; i += 200) await tx.insert(table).values(rows.slice(i, i + 200) as never);
       console.log(`${name.padEnd(18)} ${String(rows.length).padStart(6)}`);
     }
-    for (const u of userInvites) await tx.update(schema.user).set({ accessInviteId: u.accessInviteId }).where(eq(schema.user.id, u.id));
+    for (const u of userInvitesAfterLoad) await tx.update(schema.user).set({ accessInviteId: u.accessInviteId }).where(eq(schema.user.id, u.id));
   });
   await pool.end();
   console.log(`Loaded the dump from ${data.at}`);

@@ -1,6 +1,4 @@
 // Who may create an account: the waitlist and the invite codes (waitlist_entry, access_invite).
-// Access is derived, not stored: an email with an account has access, so the accounts from before the
-// waitlist need nothing copied. An invite code is shown once, when it is made; the database keeps its SHA-256.
 import "server-only";
 import { randomBytes } from "crypto";
 import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
@@ -9,6 +7,7 @@ import { sha256 } from "./hash";
 import { newId } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import type { PlanKey } from "./plans";
+import type { WaitlistSource } from "./db/schema";
 
 const W = schema.waitlistEntry;
 const I = schema.accessInvite;
@@ -18,7 +17,7 @@ export const normalEmail = (email: string) => email.trim().toLowerCase();
 export interface WaitlistAnswers {
   email: string;
   locale: Locale;
-  source: string;
+  source: WaitlistSource;
   name?: string | null;
   role?: string | null;
   teamSize?: string | null;
@@ -76,10 +75,7 @@ export type RedeemResult =
   | { ok: true; inviteId: string; grantsPlan: PlanKey | null; grantsUntil: Date | null }
   | { ok: false; reason: RedeemFailure };
 
-/**
- * Spends one use of the code for this email. The check and the spend are one UPDATE, so two requests
- * racing for the last use cannot both get in.
- */
+/** Spends one use of the code for this email. */
 export async function redeemInvite(code: string, email: string): Promise<RedeemResult> {
   const hash = sha256(code.trim());
   const mail = normalEmail(email);
@@ -93,17 +89,18 @@ export async function redeemInvite(code: string, email: string): Promise<RedeemR
     ))
     .returning({ inviteId: I.id, grantsPlan: I.grantsPlan, grantsUntil: I.grantsUntil });
   if (spent) return { ok: true, ...spent };
-
-  // Only to say why: the decision was the UPDATE above
-  const [row] = await db.select().from(I).where(eq(I.codeHash, hash));
-  if (!row) return { ok: false, reason: "not_found" };
-  if (row.revokedAt) return { ok: false, reason: "revoked" };
-  if (row.expiresAt && row.expiresAt <= new Date()) return { ok: false, reason: "expired" };
-  if (row.email && row.email !== mail) return { ok: false, reason: "wrong_email" };
-  return { ok: false, reason: "used_up" };
+  return { ok: false, reason: await whyNotRedeemed(hash, mail) };
 }
 
-/** An email with an account has access. */
+async function whyNotRedeemed(hash: string, mail: string): Promise<RedeemFailure> {
+  const [row] = await db.select().from(I).where(eq(I.codeHash, hash));
+  if (!row) return "not_found";
+  if (row.revokedAt) return "revoked";
+  if (row.expiresAt && row.expiresAt <= new Date()) return "expired";
+  if (row.email && row.email !== mail) return "wrong_email";
+  return "used_up";
+}
+
 export async function hasAccess(email: string): Promise<boolean> {
   const [row] = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, normalEmail(email))).limit(1);
   return !!row;
