@@ -6,6 +6,8 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, integer, bigint, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { Brief } from "@/types/brief";
+import type { DesignSpec } from "@/types/design";
+import type { SiteCopy } from "../ref-measured";
 import { OUTPUT_LANGUAGES } from "../output-language";
 import { LOCALES, type Locale } from "../i18n/locale";
 import { PLANS, type PlanKey } from "../plans";
@@ -333,15 +335,71 @@ export const polishVote = pgTable("polish_vote", {
   oneOf("polish_vote_vote_check", t.vote, ["keep", "forget"]),
 ]);
 
+// ─── DESIGN.md and page captures ─────────────────────────────────────────────
+// One row per site, shared across workspaces: what lib/design-store.ts measured and wrote about it, and where
+// its images are (files in storage, /api/files/… paths). Written with an upsert: two instances saving two sites
+// at once both land (#25). A workspace's own changes are revisions on top (design_revision).
+
+export const designDoc = pgTable("design_doc", {
+  /** webKeyOf(url): one site, whatever case or trailing slash it was typed with */
+  webKey: text("web_key").primaryKey(),
+  /** Normalized URL, the one the revisions name */
+  url: text("url").notNull().unique(),
+  markdown: text("markdown").notNull(),
+  model: text("model").notNull(),
+  generatedAt: timestamp("generated_at", { withTimezone: true, mode: "date" }).notNull(),
+  spec: jsonb("spec").$type<DesignSpec>(),
+  /** The whole page at 1440px, the 720x450 cover, the 720px strip, the logo as png and as svg */
+  screenshotUrl: text("screenshot_url"),
+  coverUrl: text("cover_url"),
+  scrollUrl: text("scroll_url"),
+  logoUrl: text("logo_url"),
+  logoSvgUrl: text("logo_svg_url"),
+  /** The board copies (lib/page-shots.ts): the page's height at 1440, its top at 1440, 720 and 288px, its colour */
+  shotH: integer("shot_h"),
+  topUrl: text("top_url"),
+  tileUrl: text("tile_url"),
+  thumbUrl: text("thumb_url"),
+  color: text("color"),
+  /** Up to 8 of the site's icons as standalone svg markup */
+  icons: jsonb("icons").$type<string[]>(),
+  /** The file format each @font-face family is served in */
+  fontFiles: jsonb("font_files").$type<{ family: string; formats: string[] }[]>(),
+  /** The headline, headings and buttons, for criterio.md's voice samples */
+  copy: jsonb("copy").$type<SiteCopy>(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
+/** The full-page capture of a site with no DESIGN.md (lib/page-shots.ts), shared across workspaces like the docs */
+export const pageShot = pgTable("page_shot", {
+  webKey: text("web_key").primaryKey(),
+  url: text("url").notNull(),
+  shotUrl: text("shot_url").notNull(),
+  topUrl: text("top_url").notNull(),
+  tileUrl: text("tile_url").notNull(),
+  thumbUrl: text("thumb_url").notNull(),
+  shotH: integer("shot_h").notNull(),
+  color: text("color"),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
+/** Who is generating or capturing a site right now, across instances (lib/capture-claim.ts): one row per
+ *  "design:<web_key>" or "page:<web_key>" while it runs. A row older than the work's limit was lost and can be taken */
+export const captureClaim = pgTable("capture_claim", {
+  key: text("key").primaryKey(),
+  claimedAt: timestamp("claimed_at", { withTimezone: true, mode: "date" }).notNull(),
+});
+
 // ─── DESIGN.md revisions ─────────────────────────────────────────────────────
-// The automatic generation is the global base per URL (lib/design-store.ts).
-// Each workspace stores its revisions on top: one row per change, with the full
-// resulting spec. The workspace's current spec is the one in the latest row.
+// The automatic generation is the global base per URL (design_doc). Each workspace stores its
+// revisions on top: one row per change, with the full resulting spec. The workspace's current
+// spec is the one in the latest row.
 
 export const designRevision = pgTable("design_revision", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-  /** Normalized URL (same as the global cache key) */
+  /** The doc's url (design_doc.url). Its foreign key comes in the deploy after `npm run migrate:r2-indexes` filled
+   *  design_doc: added with the table, it would refuse the old code's revisions on docs still only in R2 */
   url: text("url").notNull(),
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
   authorName: text("author_name").notNull(),

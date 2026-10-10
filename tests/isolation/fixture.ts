@@ -96,6 +96,7 @@ async function seedA(p: string) {
   ]);
 
   const designUrl = webKeyOf(web);
+  await db.insert(schema.designDoc).values({ webKey: designUrl, url: designUrl, markdown: `# ${secret}`, model: "m", generatedAt: now, updatedAt: now });
   await db.insert(schema.designRevision).values({ id: `${p}-revision`, organizationId: ws, url: designUrl, authorId: owner.id, authorName: owner.name, kind: "revision", section: "color", comment: secret, summary: secret, specJson: { name: secret }, createdAt: now });
   await db.insert(schema.designWhy).values({ id: `${p}-why`, organizationId: ws, url: designUrl, stamp: "s", model: "m", whyJson: { why: secret }, createdAt: now });
 
@@ -149,4 +150,6 @@ export async function cleanup(tag: string) {
   }
   await db.delete(schema.organization).where(like(schema.organization.id, `${tag}%`));
   await db.delete(schema.mcpClient).where(like(schema.mcpClient.id, `${tag}%`));
+  // Shared across workspaces, so no cascade reaches it
+  await db.delete(schema.designDoc).where(like(schema.designDoc.url, `https://${tag}%`));
 }
