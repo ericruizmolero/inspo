@@ -16,6 +16,9 @@ import { collectItemFiles, dropUnusedFiles, type ItemFiles } from "./item-files"
 import { eq } from "drizzle-orm";
 import { allow } from "./rate-limit";
 import { log } from "./log";
+import { admit, markJoined, maySignIn } from "./access";
+import { inviteFromCookieHeader } from "./invite-cookie";
+import { ensurePersonalWorkspace } from "./workspace-core";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -155,6 +158,8 @@ export const auth = betterAuth({
       // Set on creation from the request (databaseHooks below) and afterwards
       // by setLanguage (app/actions/library.ts), never by the client directly.
       language: { type: "string", required: false, defaultValue: "en", input: false },
+      // The invite the account was created with, set by the gate (databaseHooks below)
+      accessInviteId: { type: "string", required: false, input: false },
     },
   },
   plugins: [
@@ -165,6 +170,9 @@ export const auth = betterAuth({
         if (DEV_LOGIN_EMAIL && email.toLowerCase() === DEV_LOGIN_EMAIL) { g.__inspoDevLink = url; return; }
         // The plugin limits each IP; this limits each address, so nobody fills someone's inbox from many IPs
         if (!(await allow(`magic:${email.toLowerCase()}`, 5, 60 * 60 * 1000))) throw new APIError("TOO_MANY_REQUESTS", { message: (await getErrors()).tooMany });
+        // No link for someone the gate would turn away. The answer is the same either way, so nobody learns who has an account
+        const headers = ctx?.headers ?? ctx?.request?.headers;
+        if (!(await maySignIn(email, inviteFromCookieHeader(headers?.get("cookie"))))) return;
         const callbackURL = (ctx?.body as { callbackURL?: string } | undefined)?.callbackURL;
         // If the address already has an account, its language; otherwise that of the requesting tab
         const locale = await localeForEmail(email, localeFromCookie(ctx?.headers ?? ctx?.request?.headers));
@@ -271,11 +279,24 @@ export const auth = betterAuth({
     user: {
       create: {
         async before(u, ctx) {
+          const headers = ctx?.headers ?? ctx?.request?.headers;
           const name = (u.name && u.name.trim()) || u.email.split("@")[0];
           // The language they were using on /login, so the account does not
           // start in English for someone who signed up in Spanish
-          const language = localeForNewUser(ctx?.headers ?? ctx?.request?.headers);
-          return { data: { ...u, name, language } };
+          const language = localeForNewUser(headers);
+          // The signup gate (lib/access.ts). It acts only here, on creation: existing accounts never meet it
+          const isDev = !!DEV_LOGIN_EMAIL && u.email.toLowerCase() === DEV_LOGIN_EMAIL;
+          const entry = isDev ? null : await admit(u.email, inviteFromCookieHeader(headers?.get("cookie")));
+          if (entry && !entry.ok) throw new APIError("FORBIDDEN", { code: "invite_only", message: (await getErrors()).inviteOnly });
+          return { data: { ...u, name, language, accessInviteId: entry?.inviteId ?? null } };
+        },
+        async after(u) {
+          await markJoined(u.email);
+          const inviteId = (u as { accessInviteId?: string | null }).accessInviteId;
+          if (!inviteId) return;
+          const [invite] = await db.select({ plan: schema.accessInvite.grantsPlan }).from(schema.accessInvite).where(eq(schema.accessInvite.id, inviteId));
+          // The personal space is made now, on the invite's plan, instead of on the first page load
+          if (invite?.plan) await ensurePersonalWorkspace(u.id, u.name, u.email, (u as { language?: string }).language, invite.plan);
         },
       },
     },

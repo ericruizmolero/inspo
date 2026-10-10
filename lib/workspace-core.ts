@@ -58,7 +58,7 @@ export function slugify(s: string): string {
 }
 
 /** Creates the user's personal workspace if they don't have one yet. Returns its id. */
-export async function ensurePersonalWorkspace(userId: string, name: string, email: string, language?: string): Promise<string> {
+export async function ensurePersonalWorkspace(userId: string, name: string, email: string, language?: string, plan?: PlanKey): Promise<string> {
   const rows = await db
     .select({ id: schema.organization.id })
     .from(schema.member)
@@ -76,6 +76,7 @@ export async function ensurePersonalWorkspace(userId: string, name: string, emai
     createdAt: now,
     kind: "personal",
     outputLanguage: toOutputLanguage(language),
+    ...(plan ? { plan } : {}),
   });
   await db.insert(schema.member).values({ id: newId(), organizationId: id, userId, role: "owner", createdAt: now });
   return id;
