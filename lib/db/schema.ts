@@ -487,10 +487,15 @@ export const libraryTombstone = pgTable("library_tombstone", {
 // ─── AI usage ────────────────────────────────────────────────────────────────
 // One row per model call (Claude or Jev), with its estimated cost in USD
 // at the rate current when written (lib/usage.ts). The basis for SaaS pricing.
+// Deleting a workspace keeps its rows for the accounts: organization_id goes null and organization_name
+// keeps the name, written by a BEFORE DELETE trigger on organization (migration 0038), whatever path deletes it.
 
 export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
-  organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  /** Null once the workspace is deleted */
+  organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
+  /** The workspace's name when it was deleted; null while it exists (its name is in organization) */
+  organizationName: text("organization_name"),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
   /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish | auto_tag | query_en | embed | system */
   action: text("action").notNull(),

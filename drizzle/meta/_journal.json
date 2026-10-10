@@ -260,6 +260,13 @@
       "when": 1791656341043,
       "tag": "0037_library_tombstone",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791658438480,
+      "tag": "0038_ai_usage_outlives_workspace",
+      "breakpoints": true
     }
   ]
 }

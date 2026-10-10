@@ -574,10 +574,10 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
                   <h3 className="t-title-s">{t.admin.byTeam}</h3>
                   <ul className="list">
                     {usage.byWorkspace.map((w) => (
-                      <li key={w.id} className="list__row">
+                      <li key={w.id ?? `deleted:${w.name}`} className="list__row">
                         <span className="list__main">
                           <span className="list__name t-ui"><span className="list__text">{w.name ?? t.admin.deletedWorkspace}</span></span>
-                          <span className="list__sub t-small">{w.kind === "personal" && <span>{t.admin.personalSpace}</span>}<span>{t.admin.calls(w.calls)}</span></span>
+                          <span className="list__sub t-small">{w.kind === "personal" && <span>{t.admin.personalSpace}</span>}{!w.id && w.name && <span>{t.admin.deletedWorkspace}</span>}<span>{t.admin.calls(w.calls)}</span></span>
                         </span>
                         <span className="list__figure t-small">{fmtUsd(w.usd)}</span>
                       </li>

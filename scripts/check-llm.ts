@@ -90,6 +90,8 @@ async function main() {
   assert.equal(row?.promptVersion, promptId("brand"), "ai_usage says which prompt version made the call");
 
   await db.delete(schema.organization).where(eq(schema.organization.id, TAG));
+  // Spend outlives its workspace (migration 0038): the row stays, detached, until dropped here
+  await db.delete(schema.aiUsage).where(eq(schema.aiUsage.ref, TAG));
   // Give the failure rows recordFailure writes without waiting a moment to land, then drop them
   await new Promise((res) => setTimeout(res, 500));
   await db.delete(schema.failure).where(and(gte(schema.failure.createdAt, start), or(like(schema.failure.what, `${TAG}%`), eq(schema.failure.what, FALLBACK_MODEL))));

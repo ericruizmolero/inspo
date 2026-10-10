@@ -42,7 +42,7 @@ export interface UsageOverview {
   byAction: { action: string; calls: number; usd: number; units: number }[];
   /** `name` null = system call, no person behind it */
   byUser: { userId: string | null; name: string | null; email: string | null; image: string | null; usd: number; calls: number }[];
-  /** `name` null = the workspace no longer exists */
-  byWorkspace: { id: string; name: string | null; kind: "personal" | "team"; usd: number; calls: number }[];
+  /** `id` null = the workspace was deleted, and `name` is the one it had then (ai_usage.organization_name) */
+  byWorkspace: { id: string | null; name: string | null; kind: "personal" | "team"; usd: number; calls: number }[];
   daily: UsageDay[];
 }
