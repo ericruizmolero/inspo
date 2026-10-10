@@ -44,7 +44,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 - **`safeFetch`** (`lib/safe-fetch.ts`, sobre undici) resuelve el nombre, comprueba cada dirección, sigue las redirecciones a mano y abre el socket a la dirección recién comprobada: un nombre que responde público a la comprobación y privado a la conexión (DNS rebinding) no llega a nada. `isPublicHttpUrl` (`lib/extract.ts`) es el "no" barato de antes.
 - **Chromium solo sale por `lib/egress-proxy.ts`**, un proxy HTTP dentro del proceso que resuelve y comprueba cada host; Chromium nunca resuelve nombres por su cuenta.
-- **Un Chromium a la vez** (`lib/browser-gate.ts`): cada uno pesa de 300 a 500 MB; la cola rechaza en vez de esperar minutos.
+- **Un Chromium a la vez** (`lib/browser.ts`): cada uno pesa de 300 a 500 MB; la cola rechaza en vez de esperar minutos.
 - **Tamaños con tope**: imagen de `/api/og` 8 MB, fuente 4 MB, imagen subida 20 MB, vídeo 60 MB (80 MB para Screen Studio). Las subidas grandes van del navegador a R2 por URL firmada, sin pasar por una función.
 - El proxy externo `web-proxy` lee webs que bloquean IPs de centros de datos; `WEB_PROXY_URL=""` lo apaga.
 

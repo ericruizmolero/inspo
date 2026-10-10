@@ -26,7 +26,7 @@ export async function addText(input: { title: string; text: string; note?: strin
       await setTags(ctx.workspace.id, item.web, await textTags(item.web));
       if (input.projectId && item.id) await fileItems(ctx.workspace.id, input.projectId, [item.id], ctx.user.id).catch((e) => void recordFailure("action", "file in project", e, { ref: input.projectId }));
       const id = item.id;
-      if (id) void enqueueEmbed([id]);
+      if (id) void enqueueEmbed(ctx.workspace.id, [id]);
       return item;
     } catch (e) {
       // deleteFiles stores its own failure; the add's error is the one to throw
@@ -47,7 +47,7 @@ export async function saveText(itemId: string, text: string) {
     await rewriteText(row.web, next);
     const tags = await textTags(row.web);
     await setTags(ctx.workspace.id, row.web, tags);
-    void enqueueEmbed([row.id]);
+    void enqueueEmbed(ctx.workspace.id, [row.id]);
     return { text: next, tags };
   });
 }
@@ -60,7 +60,7 @@ export async function renameText(itemId: string, title: string) {
     const [row] = await db.select({ id: T.id, web: T.web }).from(T).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, String(itemId)))).limit(1);
     if (!name || !row || !ownsTextFile(ctx.workspace.id, row.web)) throw new HttpError(400, (await getErrors()).badBody);
     await db.update(T).set({ name, updatedAt: new Date() }).where(and(eq(T.organizationId, ctx.workspace.id), eq(T.id, row.id)));
-    void enqueueEmbed([row.id]);
+    void enqueueEmbed(ctx.workspace.id, [row.id]);
     return { name };
   });
 }

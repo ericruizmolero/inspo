@@ -217,7 +217,7 @@ export async function addPiece(ctx: McpCtx, origin: string, input: NewPiece) {
       throw e;
     }
     const id = itemId;
-    void enqueueEmbed([id]);
+    void enqueueEmbed(org, [id]);
   } else {
     const web = normalizeWebUrl(input.url!);
     if (!web) throw new HttpError(400, `"${input.url}" is not an address that can be saved.`);

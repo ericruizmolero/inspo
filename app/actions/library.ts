@@ -32,9 +32,9 @@ import { LANG_COOKIE, LANG_COOKIE_MAX_AGE, isLocale } from "@/lib/i18n/locale";
 import type { CommentAttachment, InspoItem, PolishChoice } from "@/types/inspo";
 
 /** Its thread changed, which lives in another table: the vector is cleared first, then made again */
-async function reembed(itemId: string) {
-  await staleEmbedding(itemId);
-  void enqueueEmbed([itemId]);
+async function reembed(organizationId: string, itemId: string) {
+  await staleEmbedding(organizationId, itemId);
+  void enqueueEmbed(organizationId, [itemId]);
 }
 
 /** Gathers the new item's tags in its own job (lib/tag-jobs.ts) */
@@ -218,7 +218,7 @@ export async function postComment(itemId: string, body: string, attachments: Com
   return withCtx(async (ctx) => {
     const comment = await addComment(ctx.workspace.id, { itemId, authorId: ctx.user.id, authorName: ctx.user.name || ctx.user.email.split("@")[0], body: String(body ?? ""), attachments, parentId });
     // The thread is searchable
-    if (comment.body.trim()) await reembed(String(itemId));
+    if (comment.body.trim()) await reembed(ctx.workspace.id, String(itemId));
     return comment;
   });
 }
@@ -229,7 +229,7 @@ export async function removeComment(id: string) {
   return withCtx(async (ctx) => {
     const itemId = await deleteComment(ctx.workspace.id, id, ctx.user.id, canManage(ctx.workspace.role));
     if (!itemId) throw new HttpError(403, (await getErrors()).cannotDeleteComment);
-    await reembed(itemId);
+    await reembed(ctx.workspace.id, itemId);
   });
 }
 
@@ -241,7 +241,7 @@ export async function editNote(itemId: string, field: "note" | "subNote", text: 
     const item = await setItemNote(ctx.workspace.id, String(itemId), field, String(text ?? ""), ctx.user, canManage(ctx.workspace.role));
     if (item === null) throw new HttpError(404, errors.cardGone);
     if (item === false) throw new HttpError(403, errors.cannotEditNote);
-    void enqueueEmbed([String(itemId)]);
+    void enqueueEmbed(ctx.workspace.id, [String(itemId)]);
     return item;
   });
 }
@@ -277,7 +277,7 @@ export async function editTags(itemId: string, change: { add?: string; remove?: 
       remove: typeof change.remove === "string" ? change.remove : undefined,
     });
     if (!user) throw new HttpError(404, (await getErrors()).urlNotInWorkspace);
-    void enqueueEmbed([String(itemId)]);
+    void enqueueEmbed(ctx.workspace.id, [String(itemId)]);
     return user;
   });
 }

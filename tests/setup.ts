@@ -108,21 +108,21 @@ vi.mock("@/lib/jobs", async (importOriginal) => {
   return {
     ...(await importOriginal<object>()),
     enqueue: async (jobs: unknown) => { reached.push(["queue", jobs]); },
-    enqueueEmbed: async (ids: unknown) => { reached.push(["queue", ids]); },
+    enqueueEmbed: async (_org: string, ids: unknown) => { reached.push(["queue", ids]); },
     scheduleSweep: async () => {},
   };
 });
 
-// embedItems and staleEmbedding read and write by id with no workspace filter (#115): record which ids reach them.
-// Every query is the vector the fixture gives A's item, so a search that is not filtered by workspace finds it.
+// embedItems and staleEmbedding skip other workspaces' ids (tests/isolation/embed.test.ts runs the real ones); here
+// they record which ids reach them. Every query is the vector the fixture gives A's item, so a search that is not filtered by workspace finds it.
 vi.mock("@/lib/embed", async (importOriginal) => {
   const { blocked, reached, UNIT_VECTOR } = await import("./harness");
   return {
     ...(await importOriginal<object>()),
     embedTexts: (input: unknown) => blocked("embed", input),
     queryVector: async () => UNIT_VECTOR,
-    embedItems: async (ids: string[]) => { reached.push(["embedItems", ids]); return 0; },
-    staleEmbedding: async (id: string) => { reached.push(["staleEmbedding", id]); },
+    embedItems: async (_org: string, ids: string[]) => { reached.push(["embedItems", ids]); return 0; },
+    staleEmbedding: async (_org: string, id: string) => { reached.push(["staleEmbedding", id]); },
   };
 });
 

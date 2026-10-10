@@ -157,7 +157,7 @@ export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts:
   const texts = added.filter((i) => mediaKindOf(i.web) === "text");
   const posts = added.filter((i) => mediaKindOf(i.web) === "post");
   const others = added.filter((i) => !texts.includes(i) && !posts.includes(i));
-  void enqueueEmbed(idsOf(texts));
+  void enqueueEmbed(workspaceId, idsOf(texts));
   const tag = (ids: string[]) => taggerEnabled() ? enqueue(ids.map((itemId) => ({ kind: "tag" as const, organizationId: workspaceId, itemId, userId: user.id }))) : Promise.resolve();
   // A few start the workspace's line; each one that ends sends the next, so the rest wait in their rows
   void tag(idsOf(others).slice(0, PER_WORKSPACE));

@@ -16,8 +16,8 @@ export const TOPIC = "jobs";
 export type Job =
   /** This item's tagging, or the workspace's next one waiting (no itemId) */
   | { kind: "tag"; organizationId: string; itemId?: string; userId?: string | null }
-  /** These items' meaning vectors, in one call (at most EMBED_BATCH) */
-  | { kind: "embed"; itemIds: string[] }
+  /** These items' meaning vectors, all of one workspace, in one call (at most EMBED_BATCH) */
+  | { kind: "embed"; organizationId: string; itemIds: string[] }
   /** A site's first screen, for its card */
   | { kind: "shot"; url: string }
   /** Every job left behind, sent again; then the next sweep */
@@ -54,8 +54,8 @@ async function sendAll(list: Job[], opts: SendOpts) {
 /** Texts per embedding call (lib/embed.ts batches the same) */
 export const EMBED_BATCH = 64;
 
-/** Their meaning vectors, made again now that their words changed */
-export const enqueueEmbed = (itemIds: string[]) => enqueue(chunk(itemIds, EMBED_BATCH).map((ids) => ({ kind: "embed" as const, itemIds: ids })));
+/** The meaning vectors of these items of the workspace, made again now that their words changed */
+export const enqueueEmbed = (organizationId: string, itemIds: string[]) => enqueue(chunk(itemIds, EMBED_BATCH).map((ids) => ({ kind: "embed" as const, organizationId, itemIds: ids })));
 
 /** The next sweep, at the next boundary of SWEEP_EVERY_S. Whoever asks within one period asks for the same
  *  message (one key per boundary), so the sweep that schedules the next one and a cron that starts the chain

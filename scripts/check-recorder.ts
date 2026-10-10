@@ -1,10 +1,8 @@
 // Can the headless Chrome we already use encode a video by itself? (MediaRecorder on a canvas stream)
 //   npx tsx --conditions=react-server scripts/check-recorder.ts
-import { launch } from "../lib/design-extract";
+import { withPage } from "../lib/browser";
 async function main() {
-  const browser = await launch();
-  try {
-    const page = await browser.newPage();
+  await withPage("extract", async (page) => {
     await page.goto("about:blank");
     const r = await page.evaluate(`(async () => {
       const ok = { rec: typeof MediaRecorder, vp9: MediaRecorder.isTypeSupported("video/webm;codecs=vp9"), vp8: MediaRecorder.isTypeSupported("video/webm;codecs=vp8"), av1: MediaRecorder.isTypeSupported("video/webm;codecs=av1"), h264: MediaRecorder.isTypeSupported("video/mp4;codecs=avc1"), opus: MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus") };
@@ -21,6 +19,6 @@ async function main() {
       return { ...ok, bytes: blob.size };
     })()`);
     console.log(JSON.stringify(r));
-  } finally { await browser.close(); }
+  });
 }
 main().catch((e) => { console.error(e); process.exit(1); });
