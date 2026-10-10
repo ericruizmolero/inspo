@@ -491,10 +491,9 @@ Póster que solo carga el iframe del proveedor al pulsarlo.
 
 ### Conversación
 `CommentsPanel` · `components/CommentsPanel.tsx` · `.cm`
-La nota original y los hilos, con respuestas a un nivel. Capturas pegadas con ⌘V, arrastradas o con el clip; lightbox con ← → y Esc. Enter envía, Shift+Enter salta línea.
+La columna de la conversación, a la derecha de la ficha de la referencia: la nota original y los hilos, con respuestas a un nivel. Capturas pegadas con ⌘V, arrastradas o con el clip; lightbox con ← → y Esc. Enter envía, Shift+Enter salta línea.
 - El texto de todos los comentarios va en `--text`, sea de quien sea (`.cm-msg__body`); el papel apagado es solo del avance de dos líneas bajo la tarjeta (`Comment`). → [decisión](decisiones/2026-10-08-todos-los-comentarios-del-hilo-llevan-el-mismo-color-de-texto.md)
 - Vacía, enseña quién la va a leer: bajo la frase y antes de las sugerencias, hasta tres filas fantasma (`.cm-empty__ghosts`) con el `Avatar` real de cada persona a 20 (quien mira primero) y una barra apagada, la segunda fila entrada 24 px, cada una con `pop-in` 90 ms tras la anterior; la frase es una sola y no repite los nombres. → [decisión](decisiones/2026-10-09-el-vacio-de-comentarios-lleva-las-caras-del-equipo.md)
-- La variante `drawer` no se usa.
 
 ### Criterio de la referencia
 `RefCriterio` · `components/RefCriterio.tsx` · `.rfc`

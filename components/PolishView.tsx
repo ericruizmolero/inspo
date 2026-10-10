@@ -32,7 +32,7 @@ import { PostBox } from "./PostView";
 import LoopVideo from "./LoopVideo";
 import { usePost } from "./post-cache";
 import type { Post } from "@/lib/posts";
-import { Avatar } from "./CommentsPanel";
+import PersonAvatar from "./PersonAvatar";
 import { useT } from "./I18nProvider";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
@@ -887,8 +887,8 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
             {note && (
               <p className="polish__say polish__say--note">
                 {note.people.length > 1
-                  ? <span className="polish__faces" aria-hidden>{note.people.map((p) => <Avatar key={p.name} name={p.name} image={p.image} size={18} />)}</span>
-                  : <Avatar name={note.name} image={note.image} size={18} />}
+                  ? <span className="polish__faces" aria-hidden>{note.people.map((p) => <PersonAvatar key={p.name} name={p.name} image={p.image} size={18} />)}</span>
+                  : <PersonAvatar name={note.name} image={note.image} size={18} />}
                 <span><b>{note.name}</b> {note.body.length > NOTE_MAX ? `${note.body.slice(0, NOTE_MAX).trimEnd()}…` : note.body}</span>
               </p>
             )}
@@ -898,7 +898,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
                   const who = voters(choice);
                   return who.length > 0 && (
                     <span key={choice} className="polish__voted" data-tip={names.format(who.map((m) => m.name))}>
-                      <span className="polish__faces" aria-hidden>{who.map((m) => <Avatar key={m.id} name={m.name} image={m.image} size={18} />)}</span>
+                      <span className="polish__faces" aria-hidden>{who.map((m) => <PersonAvatar key={m.id} name={m.name} image={m.image} size={18} />)}</span>
                       {choice === "keep" ? s.votedKeep(who.length) : s.votedForget(who.length)}
                     </span>
                   );

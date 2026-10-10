@@ -8,10 +8,11 @@ import { fmtDate, fmtDateTime } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
 import { useT, messageOf } from "./I18nProvider";
-import { mediaKindOf, readableDomain } from "@/lib/url";
+import { mediaKindOf } from "@/lib/url";
 import VideoPlayer from "./VideoPlayer";
 import PostView from "./PostView";
-import { Avatar as SysAvatar, Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea, toneFor } from "@/components/criterio";
+import { Busy, Button, Chip, EmptyState, Icon, IconButton, TextArea } from "@/components/criterio";
+import PersonAvatar from "@/components/PersonAvatar";
 
 // Side panel for an inspo's comments. The original note from whoever saved it opens the list; then each
 // comment as a thread, oldest first: pinned ones (post-its on the page) carry their number and a way to the
@@ -42,16 +43,8 @@ interface CommentsPanelProps {
   onClose?: () => void;
   /** The reference's picture, video or post above the comments; off where the page has its own card */
   showMedia?: boolean;
-  /**
-   * `drawer` (default): fixed side panel with a dark backdrop, closes with Escape.
-   * `column`: column embedded in the DESIGN.md sheet; no backdrop, no Escape
-   * (the sheet handles it) and a short header, since the brand is already in the bar.
-   */
-  variant?: "drawer" | "column";
   /** A post from X reports the picture it got once imported (it becomes the card's thumbnail) */
   onPostThumb?: (thumb: string) => void;
-  /** This site's DESIGN.md status, for the "generate the MD to get the full sheet" notice */
-  designMd?: { status: "none" | "loading" | "ready"; onGenerate: () => void; onOpen: () => void };
   /** Answers a comment. Without it, threads are read-only */
   onReply?: (parentId: string, body: string) => Promise<void>;
 }
@@ -60,21 +53,6 @@ const IcTrash = <Icon name="trash" size={14} />;
 const IcEdit = <Icon name="edit" size={14} />;
 const IcImage = <Icon name="image" size={14} />;
 const IcArrow = <Icon name="arrow-up-right" size={11} />;
-const IcDoc = <Icon name="file" size={14} />;
-
-// Stable color per name to tell people apart at a glance
-const HUES = [212, 28, 152, 268, 88, 340, 190, 48];
-export function hueFor(name: string): number {
-  let h = 0;
-  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return HUES[h % HUES.length];
-}
-
-/** A person by name: the system's Avatar in that person's tone (the same one everywhere), their picture when
- * there is one. Kept as a name-based shortcut for InspoCard, SystemDoc and SystemMarkdown. */
-export function Avatar({ name, image, size = 26 }: { name: string; image?: string | null; size?: number }) {
-  return <SysAvatar className="cm-avatar" initials={name.slice(0, 1).toUpperCase()} name={name} tone={toneFor(name)} size={size} src={image} />;
-}
 
 function relTime(iso: string, now: number, locale: Locale, t: Dict): string {
   const at = Date.parse(iso);
@@ -178,9 +156,8 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, variant = "drawer", designMd, onPostThumb, onReply }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply }: CommentsPanelProps) {
   const { locale, t } = useT();
-  const column = variant === "column";
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -198,30 +175,22 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   const [editing, setEditing] = useState<{ id: string; text: string } | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
-  const editingRef = useRef(editing);
-  editingRef.current = editing;
   // The reply being written, under which comment
   const [replying, setReplying] = useState<{ id: string; text: string; sending: boolean; error?: string } | null>(null);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const lb = lightboxRef.current;
-      if (lb) {
-        if (e.key === "Escape") setLightbox(null);
-        if (e.key === "ArrowRight") setLightbox({ list: lb.list, idx: (lb.idx + 1) % lb.list.length });
-        if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
-        return;
-      }
-      // Escape inside the note editor cancels the edit, it doesn't close the panel
-      if (e.key === "Escape" && !column && !editingRef.current) onClose?.();
+      if (!lb) return;
+      if (e.key === "Escape") setLightbox(null);
+      if (e.key === "ArrowRight") setLightbox({ list: lb.list, idx: (lb.idx + 1) % lb.list.length });
+      if (e.key === "ArrowLeft") setLightbox({ list: lb.list, idx: (lb.idx - 1 + lb.list.length) % lb.list.length });
     };
     document.addEventListener("keydown", onKey);
     const t = setInterval(() => setNow(Date.now()), 30000);
     return () => { document.removeEventListener("keydown", onKey); clearInterval(t); };
-  }, [onClose, column]);
+  }, []);
 
-  // In column mode focus isn't stolen: the sheet beside it is what's being read
-  useEffect(() => { if (!column) textareaRef.current?.focus(); }, [item.id, column]);
   useEffect(() => { setEditing(null); setEditError(null); setReplying(null); }, [item.id]);
 
   // On inspo change or close, release the local previews
@@ -375,14 +344,13 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
   // An uploaded image is not a site: its link opens the file itself, which is also the picture on top
   const kind = mediaKindOf(item.web);
   const href = kind === "image" && image ? image : item.web;
-  const domain = kind === "image" ? t.card.openImage : (() => { try { return readableDomain(new URL(item.web).hostname.replace(/^www\./, "")); } catch { return ""; } })();
   const count = comments.length;
 
   const renderMsg = (m: Msg, grouped: boolean) => (
     <div key={m.id} className={`cm-msg${m.mine ? " is-mine" : ""}${m.original ? " is-original" : ""}${grouped ? " is-grouped" : ""}`}>
       {!grouped && (
         <div className="cm-msg__head">
-          <Avatar name={m.name} image={m.image} />
+          <PersonAvatar name={m.name} image={m.image} size={26} />
           <span className="cm-msg__name">{m.name}{m.mine && <Chip className="cm-msg__you">{t.comments.you}</Chip>}</span>
           <span className="cm-msg__time" data-tip={fmtDateTime(m.at, locale)}>{relTime(m.at, now, locale, t)}</span>
         </div>
@@ -443,9 +411,8 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
 
   return (
     <>
-      {!column && <div className="cm-backdrop" onClick={() => onClose?.()} />}
       <aside
-        className={`cm-panel${column ? " cm-panel--column" : ""}${dragging ? " is-dragging" : ""}`}
+        className={`cm-panel${dragging ? " is-dragging" : ""}`}
         role="dialog"
         aria-label={t.comments.ofLabel(item.name)}
         onPaste={onPaste}
@@ -463,27 +430,11 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         )}
         <header className="cm-panel__head cr-viewer-aside-head">
           <div className="cm-panel__title">
-            <span className="cr-viewer-aside-title">{column ? t.comments.title : item.name}</span>
-            {!column && <a className="cm-panel__link" href={href} target="_blank" rel="noopener noreferrer">{domain}{IcArrow}</a>}
+            <span className="cr-viewer-aside-title">{t.comments.title}</span>
           </div>
           <span className="cm-panel__count cr-viewer-aside-meta">{total === 0 ? t.comments.noComments : t.comments.count(total)}</span>
-          {onClose && <IconButton icon="close" variant="quiet" size="s" onClick={onClose} label={column ? t.comments.hide : t.common.close} />}
+          {onClose && <IconButton icon="close" variant="quiet" size="s" onClick={onClose} label={t.comments.hide} />}
         </header>
-
-        {designMd && !column && (
-          <div className={`cm-md-cta is-${designMd.status}`}>
-            <span className="cm-md-cta__icon">{designMd.status === "loading" ? <Busy label={t.comments.mdLoading} /> : IcDoc}</span>
-            <span className="cm-md-cta__text">
-              {designMd.status === "ready"
-                ? t.comments.mdReady
-                : designMd.status === "loading"
-                  ? t.comments.mdLoading
-                  : t.comments.mdNone}
-            </span>
-            {designMd.status === "ready" && <Button size="s" onClick={designMd.onOpen}>{t.comments.seeSpec}</Button>}
-            {designMd.status === "none" && <Button variant="primary" size="s" onClick={designMd.onGenerate}>{t.comments.generateMd}</Button>}
-          </div>
-        )}
 
         <div ref={listRef} className="cm-list">
           {notice}
@@ -510,7 +461,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 <div className="cm-empty__ghosts" aria-hidden>
                   {ghosts.map((g, i) => (
                     <div key={g.name} className="cm-empty__ghost" style={{ animationDelay: `${i * 90}ms` }}>
-                      <Avatar name={g.name} image={g.image} size={20} />
+                      <PersonAvatar name={g.name} image={g.image} size={20} />
                       <span className="cm-empty__bars"><span style={{ width: g.w1 }} /></span>
                     </div>
                   ))}

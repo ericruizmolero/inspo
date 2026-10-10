@@ -56,7 +56,7 @@ import { useActivity } from "./useActivity";
 import { useT, messageOf } from "./I18nProvider";
 import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "./CommentsPanel";
+import PersonAvatar from "./PersonAvatar";
 import { afterPaint } from "@/components/ui/liquid";
 import { useConfirm } from "./useConfirm";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -1645,7 +1645,6 @@ export default function InspoClient({
           ) : undefined}
           thread={panelItem.id ? (
             <CommentsPanel
-              variant="column"
               item={panelItem}
               comments={panelComments}
               user={user}
@@ -1754,7 +1753,7 @@ export default function InspoClient({
                               {members.slice(0, 5).map((m) => (
                                 <span key={m.id} className={`topbar__face${polishTab.done.has(m.id) ? " is-done" : ""}`}
                                   data-tip={polishTab.done.has(m.id) ? t.polish.memberDone(m.name) : t.polish.memberVoting(m.name)}>
-                                  <Avatar name={m.name} image={m.image} size={14} />
+                                  <PersonAvatar name={m.name} image={m.image} size={14} />
                                 </span>
                               ))}
                             </span>

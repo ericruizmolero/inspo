@@ -79,7 +79,6 @@
   --shadow-card: none;
   --shadow-pop: 0 16px 40px rgba(0,0,0,0.5);
   --shadow-modal: 0 20px 50px rgba(0,0,0,0.5);
-  --shadow-drawer: -24px 0 60px -30px rgba(0,0,0,0.8);
   --focus-ring: var(--focus);
 
   /* The 2000 nod: chunky controls with an ink border, light top-left and shade bottom-right */
@@ -278,7 +277,6 @@
   --text-strong: #000;
   --shadow-pop: 0 16px 40px rgba(27,27,24,0.16);
   --shadow-modal: 0 20px 50px rgba(27,27,24,0.2);
-  --shadow-drawer: -24px 0 60px -30px rgba(27,27,24,0.3);
 }
 
 /* shadcn parts draw borders without naming a colour; give them the token (layered, so any explicit border wins) */
@@ -1111,22 +1109,12 @@ select.input { appearance: none; padding-right: 32px; cursor: pointer;
    The bar's radius is the button's plus the 3px inset, so the two stay concentric */
 .tile__action--confirm:focus-visible { outline-color: var(--ember-glow); }
 /* ─── Comments (Figma-style thread side panel) ────────────────────────────── */
-.cm-backdrop { position: fixed; inset: 0; z-index: 60; background: var(--scrim); animation: fade-in 0.2s; }
-.cm-panel {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 61;
-  width: min(420px, 100vw);
-  display: flex; flex-direction: column;
-  background: var(--surface-page); border-left: 1px solid var(--chrome-raised);
-  box-shadow: var(--shadow-drawer);
-  animation: cm-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-@keyframes cm-in { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* The thread column, embedded to the right of the reference sheet */
+.cm-panel { position: relative; width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; background: var(--surface-page); }
 /* The Viewer's aside head: "Comments" in display 700 and the count */
 .cm-panel__head.cr-viewer-aside-head { flex-shrink: 0; align-items: center; gap: 10px; padding: 16px 16px 16px 20px; }
 .cm-panel__title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .cm-panel__title .cr-viewer-aside-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cm-panel__link { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--chrome-muted); text-decoration: none; }
-.cm-panel__link:hover { color: var(--chrome-ink); }
 .cm-panel__count { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cm-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
 /* Above the thread: what happened to the reference somewhere else (a closed polish forgot it), and the way back */
@@ -1178,7 +1166,7 @@ video.vp__media { object-fit: contain; }
 .cm-empty__ghosts { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 200px; margin: 10px 0 2px; }
 .cm-empty__ghost { display: flex; align-items: center; gap: 8px; opacity: 0; animation: pop-in 0.4s var(--ease-out) forwards; }
 .cm-empty__ghost:nth-child(2) { padding-left: 24px; }
-.cm-empty__ghost .cm-avatar { opacity: 0.8; }
+.cm-empty__ghost .cr-avatar { opacity: 0.8; }
 .cm-empty__bars { flex: 1; display: flex; }
 .cm-empty__bars span { display: block; height: 6px; border-radius: var(--radius-pill); background: var(--chrome-raised); }
 @media (prefers-reduced-motion: reduce) { .cm-empty__ghost { animation: none; opacity: 1; } }
@@ -1255,16 +1243,6 @@ video.vp__media { object-fit: contain; }
 .cm-drop__icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 999px; background: var(--surface-2); color: var(--text); margin-bottom: 8px; }
 .cm-drop__icon svg { width: 18px; height: 18px; }
 
-/* Column mode: the same panel, embedded to the right of the DESIGN.md sheet */
-.cm-panel--column { position: relative; inset: auto; z-index: auto; width: 100%; height: 100%; min-height: 0; border-left: none; box-shadow: none; animation: none; }
-.cm-panel--column { background: var(--surface-page); }
-
-/* Notice in the drawer: without a DESIGN.md there is only the thread; the full sheet is generated from here */
-.cm-md-cta { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 20px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-2); }
-.cm-md-cta__icon { flex-shrink: 0; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 999px; background: var(--surface-2); color: var(--text); }
-.cm-md-cta__text { flex: 1; min-width: 0; }
-.cm-md-cta .cr-btn { flex-shrink: 0; white-space: nowrap; }
-.cm-md-cta.is-ready { color: var(--muted); }
 .cm-drop__text { font-size: var(--fs-label); color: var(--muted); }
 
 .cm-files { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -2212,9 +2190,6 @@ body:has([data-feedback-entry]) .fb-dock:not(.has-notes) { display: none; }
 .fb-btn--send[data-state="sent"] { background: var(--moss); color: var(--on-moss); }
 .fb-btn--send[data-state="error"] { background: var(--danger-deep); color: var(--paper); }
 .fb-btn--send[data-state="sending"] { opacity: 0.7; }
-/* The thread panel is fixed on the right: whatever docks bottom-right (feedback, toasts) moves left of it,
-   so the button never sits on the composer. On phones the panel is the whole width and they leave the screen. */
-body:has(.cm-panel:not(.cm-panel--column)) :is(.fb-dock, .fb-panel, .toasts) { right: calc(min(420px, 100vw) + 1.25rem); }
 /* The side panel takes the right edge: the same move, by its width. A dragged dock (inline position) wins. */
 body:has(.ip) :is(.fb-dock, .fb-panel, .toasts) { right: calc(clamp(440px, 46vw, 820px) + 1.25rem); }
 @media (max-width: 800px) { body:has(.ip) :is(.fb-dock, .fb-panel) { display: none; } }
