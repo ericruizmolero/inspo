@@ -168,8 +168,8 @@ export const auth = betterAuth({
         const callbackURL = (ctx?.body as { callbackURL?: string } | undefined)?.callbackURL;
         // If the address already has an account, its language; otherwise that of the requesting tab
         const locale = await localeForEmail(email, localeFromCookie(ctx?.headers ?? ctx?.request?.headers));
-        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request), email, locale);
-        await sendMail(email, m.subject, m.html, m.text);
+        const m = magicLinkMail(publicLink(url, callbackURL, ctx?.headers, ctx?.request), locale);
+        await sendMail(email, m);
       },
     }),
     organization({
@@ -203,7 +203,7 @@ export const auth = betterAuth({
         const url = `${base}/invite/${data.id}?lang=${locale}`;
         const m = invitationMail(url, data.organization.name, inviter.name || inviter.email, inviter.email, data.email, locale);
         try {
-          await sendMail(data.email, m.subject, m.html, m.text);
+          await sendMail(data.email, m);
         } catch (e) {
           log.warn("invite.mail_not_sent", { organizationId: data.organization.id, err: e });
         }

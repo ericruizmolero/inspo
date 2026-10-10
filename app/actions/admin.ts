@@ -35,7 +35,7 @@ export async function grantAccess(email: string) {
       const h = await headers();
       const base = APP_URL || `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
       const m = adminAccessMail(`${base}/admin`, by, await localeForEmail(r.email));
-      try { await sendMail(r.email, m.subject, m.html, m.text); mailed = true; }
+      try { await sendMail(r.email, m); mailed = true; }
       catch (err) { log.warn("admin.access_mail_not_sent", { err }); }
     }
     return { ...r, mailed };

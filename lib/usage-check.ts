@@ -33,7 +33,7 @@ export async function checkUsage(): Promise<{ ours: number; billed: number; drif
     const line = `Today (UTC) we logged $${ours.toFixed(4)} and OpenRouter billed $${billed.toFixed(4)}: a ${(d * 100).toFixed(1)}% difference.`;
     log.error("usage.drift", { ours, billed, drift: d });
     const why = "It's usually a call that skips recordUsage, a row without a real cost (cost_source = estimated) or someone using the same key outside production.";
-    await sendMail(fixedAdmins(), "AI spend doesn't match OpenRouter", `<p>${line}</p><p>${why}</p>`, `${line}\n\n${why}`);
+    await sendMail(fixedAdmins(), { subject: "AI spend doesn't match OpenRouter", text: `${line}\n\n${why}` });
   }
   return { ours, billed, drift: d };
 }

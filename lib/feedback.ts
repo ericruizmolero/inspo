@@ -86,7 +86,7 @@ export async function handleFeedbackEvent(author: FeedbackAuthor, organizationId
       if (!to.length) throw new HttpError(400, (await getErrors()).nobodyToNotify);
       // Goes to the partners; the language is that of the first on the list, who reads it
       const m = feedbackMail({ author, path, url, count: annotations.length, markdown, at: new Date() }, await localeForEmail(to[0]));
-      await sendMail(to, m.subject, m.html, m.text, { replyTo: author.email });
+      await sendMail(to, m, { replyTo: author.email });
       await db.update(F).set({ sentAt: new Date() }).where(inArray(F.id, annotations.map((a) => noteId(a.id, author.id))));
       return { sent: 1 };
     }
