@@ -9,6 +9,7 @@
     "prebuild": "node scripts/fetch-fonts.mjs",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "db:migrate": "tsx scripts/migrate.ts",
@@ -93,6 +94,7 @@
     "papaparse": "^5.7.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }
