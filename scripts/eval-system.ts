@@ -43,7 +43,7 @@ interface Row {
   judge: string | null;
   error?: string;
   checks?: { evidence: [number, number]; hex: [number, number]; families: [number, number]; language?: [number, number] };
-  scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number };
+  scores?: { specificity: number; teamWords: number; coherence: number; expected: number | null; neverBroken: number; /** "expected" by area, so a change aimed at one area is read there */ byArea?: Partial<Record<SystemArea, number>> };
   /** The two passes; the judge is billed apart, so a model's cost reads clean */
   costUsd?: number;
   judgeUsd?: number;
@@ -158,7 +158,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
       verdict = JudgeSchema.parse(JSON.parse(res.text));
       row.judgeUsd = res.costUsd ?? 0;
       const expected = verdict.expected.filter((e) => e.area in fx.expect);
-      row.scores = { specificity: verdict.specificity, teamWords: verdict.team_words, coherence: verdict.coherence, expected: expected.length ? expected.reduce((n, e) => n + e.score, 0) / expected.length : null, neverBroken: verdict.never_broken.length };
+      row.scores = { specificity: verdict.specificity, teamWords: verdict.team_words, coherence: verdict.coherence, expected: expected.length ? expected.reduce((n, e) => n + e.score, 0) / expected.length : null, neverBroken: verdict.never_broken.length, byArea: Object.fromEntries(expected.map((e) => [e.area, e.score])) };
     }
 
     const out = path.join(OUTPUTS, SYSTEM_PROMPT_ID, row.model.replace(/[^a-z0-9.-]+/gi, "_"), `${fx.slug}-${row.at.replace(/[:.]/g, "-")}.json`);
@@ -180,7 +180,7 @@ function table(rows: Row[], current: string) {
     const k = `${r.systemPrompt}|${r.brandPrompt}|${r.model}`;
     groups.set(k, [...(groups.get(k) ?? []), r]);
   }
-  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "never broken", "$ / pass", "judge $", "s / pass"];
+  const head = ["prompt (system · brand)", "model", "passes", "failed", "evidence ok", "hex ok", "families ok", "language ok", "specific", "team words", "coherent", "expected", "color", "type", "never broken", "$ / pass", "judge $", "s / pass"];
   const body = [...groups.values()].sort((a, b) => a.at(-1)!.at.localeCompare(b.at(-1)!.at)).map((g) => {
     const ok = g.filter((r) => r.checks);
     const scored = ok.filter((r) => r.scores);
@@ -188,14 +188,14 @@ function table(rows: Row[], current: string) {
     return [
       `${g[0].systemPrompt === current ? "* " : ""}${g[0].systemPrompt} · ${g[0].brandPrompt}`, g[0].model, String(g.length), String(g.length - ok.length),
       okRate(ok.map((r) => r.checks!.evidence)), okRate(ok.map((r) => r.checks!.hex)), okRate(ok.map((r) => r.checks!.families)), okRate(ok.flatMap((r) => r.checks!.language ? [r.checks!.language] : [])),
-      s((x) => x.specificity), s((x) => x.teamWords), s((x) => x.coherence), s((x) => x.expected), s((x) => x.neverBroken),
+      s((x) => x.specificity), s((x) => x.teamWords), s((x) => x.coherence), s((x) => x.expected), s((x) => x.byArea?.color ?? null), s((x) => x.byArea?.typography ?? null), s((x) => x.neverBroken),
       fixed(mean(ok.map((r) => r.costUsd ?? 0)), 4), fixed(mean(scored.flatMap((r) => r.judgeUsd ?? [])), 4), fixed(mean(ok.map((r) => (r.ms ?? 0) / 1000))),
     ];
   });
   const widths = head.map((h, i) => Math.max(h.length, ...body.map((r) => r[i].length)));
   const line = (cells: string[]) => cells.map((c, i) => (i < 2 ? c.padEnd(widths[i]) : c.padStart(widths[i]))).join("  ");
   console.log(`\n${line(head)}\n${widths.map((w) => "─".repeat(w)).join("  ")}\n${body.map(line).join("\n")}`);
-  console.log("\nChecks: the share that passed. Judge: 1 to 5, and never lines broken per pass. $ / pass: the two passes; judge $: the judge on top. * the prompt in the code now.");
+  console.log("\nChecks: the share that passed. Judge: 1 to 5 (color and type: expected, in those areas only), and never lines broken per pass. $ / pass: the two passes; judge $: the judge on top. * the prompt in the code now.");
 }
 
 async function readRows(): Promise<Row[]> {
