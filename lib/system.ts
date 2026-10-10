@@ -16,14 +16,14 @@ import { prompt, PROMPTS } from "./prompts";
 import { summarize } from "./jev";
 import { embedEnabled, nearest, queryVector } from "./embed";
 import { viewOf } from "./taxonomy";
-import type { InspoTags } from "@/types/inspo";
+import type { InspoColor, InspoTags } from "@/types/inspo";
 import { rowToItem } from "./items";
 import { mediaKindOf, webKeyOf } from "./url";
 import { getDesignMd, getDesignMdIndex } from "./design-store";
 import { getWhy } from "./design-why";
 import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "./usage";
 import { autoSystemToday } from "./quota";
-import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
+import { BRIEF_KEYS, type DesignBrief, type DesignSpec, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { Brief } from "@/types/brief";
@@ -245,6 +245,27 @@ export async function releaseArea(organizationId: string, projectId: string, are
 
 // ─── The board, as the model reads it ────────────────────────────────────────
 
+const GROUP_ORDER = ["brand", "accent", "neutral", "semantic"];
+
+/** What a reference measured, as the system pass reads it: the DESIGN.md's glance and real values, and the share of each
+ *  colour in its saved palette (which images and posts have too). Undefined when nothing was measured */
+export function measuredSummary(spec: DesignSpec | null, pixels: InspoColor[] | undefined): Record<string, unknown> | undefined {
+  const b = spec?.brief;
+  const glance = b ? Object.fromEntries(BRIEF_KEYS.filter((k) => k !== "framework" && b[k]).map((k) => [k, b[k]])) as Partial<DesignBrief> : {};
+  const out: Record<string, unknown> = {
+    glance: Object.keys(glance).length ? glance : undefined,
+    layout: spec?.layout || undefined,
+    colors: spec?.colors.length ? [...spec.colors].sort((x, y) => GROUP_ORDER.indexOf(x.group) - GROUP_ORDER.indexOf(y.group)).slice(0, 5).map(({ name, hex, group }) => ({ name, hex, group })) : undefined,
+    pixels: pixels?.length ? [...pixels].sort((x, y) => y.share - x.share).slice(0, 5).map(({ hex, share }) => ({ hex, share: Math.round(share * 100) / 100 })) : undefined,
+    families: spec?.fonts.length ? spec.fonts.map(({ family, role, weights }) => ({ family, role, weights })) : undefined,
+    radius: spec?.radii.length ? spec.radii.slice(0, 3) : undefined,
+    density: spec?.spacing?.density,
+    theme: spec?.theme,
+  };
+  const kept = Object.fromEntries(Object.entries(out).filter(([, v]) => v !== undefined));
+  return Object.keys(kept).length ? kept : undefined;
+}
+
 interface BoardRef {
   code: string;
   itemId: string;
@@ -273,17 +294,15 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
   // DESIGN.md sheets and "why it's here", only the ones that exist; never generated here
   const index = await getDesignMdIndex();
   const sheets = await Promise.all(board.map(async ({ row }) => {
-    if (mediaKindOf(row.web) !== "web" || !(row.web in index || webKeyOf(row.web) in index)) return { brief: null, layout: null, why: null };
+    if (mediaKindOf(row.web) !== "web" || !(row.web in index || webKeyOf(row.web) in index)) return { spec: null, why: null };
     const [entry, why] = await Promise.all([getDesignMd(row.web), getWhy(organizationId, row.web)]);
-    const b = entry?.spec?.brief;
-    const brief = b ? Object.fromEntries(BRIEF_KEYS.filter((k) => k !== "framework" && b[k]).map((k) => [k, b[k]])) as Partial<DesignBrief> : null;
-    return { brief, layout: entry?.spec?.layout ?? null, why: (why?.why as DesignWhy | undefined) ?? null };
+    return { spec: entry?.spec ?? null, why: (why?.why as DesignWhy | undefined) ?? null };
   }));
 
   const refs: BoardRef[] = board.map(({ row }, i) => {
     const item = rowToItem(row);
     const comments = (byItem.get(row.id) ?? []).slice(-COMMENTS_PER_REF);
-    const { brief, layout, why } = sheets[i];
+    const { spec, why } = sheets[i];
     const pointed = why?.highlights?.map((h) => ({ quote: h.quote, by: h.author, values: h.values?.length ? h.values : undefined, take: h.note || undefined })) ?? [];
     const base = summarize(item, row.tagsJson ?? undefined);
     return {
@@ -298,7 +317,7 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
         id: `r${i + 1}`, kind: mediaKindOf(row.web), ...base,
         team_comments: comments.length ? comments : undefined,
         team_pointed_at: pointed.length ? pointed : undefined,
-        measured: brief || layout ? { ...brief, layout: layout ?? undefined } : undefined,
+        measured: measuredSummary(spec, row.tagsJson?.colors),
       },
     };
   });
@@ -334,8 +353,10 @@ const AREAS = `THE EIGHT AREAS
 - voice: how the copy sounds.`;
 
 const BOARD = `THE BOARD
-References the team saved for this project: websites, images, posts. Each comes with a short id (r1, r2…), the note of whoever saved it, the team's comments, what the team pointed at on it, and, for websites, values measured from the live page.
+References the team saved for this project: websites, images, posts. Each comes with a short id (r1, r2…), the note of whoever saved it, the team's comments, what the team pointed at on it, and what was measured from it.
+- "measured": glance (one line per aspect) and layout, read from a website's live page; colors (name, hex, group: its palette, brand and accent first), families (family, role, weights), radius, density and theme, from the same page; pixels, the colours of the saved picture or page with their share of it (0 to 1), which images and posts have too.
 - The team's words say WHY a reference is here: that is where a decision starts. The measured values say WHAT it does: use them to make a decision concrete (families, weights, palette logic, easing, grid), never to invent a direction nobody asked for.
+- hex and families in "measured" are real values: a decision that uses one cites it literally, as given. Never round a hex or rename a family.
 - Ids: use them exactly as given, never invent one.`;
 
 const CLIENT_SITE = `- A reference marked "client_site" is the client's own current website: this project is a REDESIGN of it. Its copy (headline, closing, positioning lines), its typefaces (as its stylesheets name them), its logo and its figures are the source of truth. Carry them literally into typography, logo and voice, never propose others for those, and never invent figures or dates. The rest of the board is inspiration for everything else.`;

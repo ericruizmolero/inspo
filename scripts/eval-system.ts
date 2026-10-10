@@ -93,7 +93,7 @@ async function fixtures(): Promise<EvalFixture[]> {
 /** `model` "": each pass on its own task's model */
 async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row> {
   const { llm } = await import("../lib/llm");
-  const { systemRequest, SystemOutSchema, SYSTEM_PROMPT_ID } = await import("../lib/system");
+  const { systemRequest, measuredSummary, SystemOutSchema, SYSTEM_PROMPT_ID } = await import("../lib/system");
   const { brandRequest, measuredOf, BrandOutSchema, BRAND_PROMPT_ID } = await import("../lib/brand");
   const { emptyBrand } = await import("../types/brand");
   const { toOutputLanguage, writtenIn } = await import("../lib/output-language");
@@ -102,9 +102,11 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
   const pick = model ? { model } : {};
   const row: Row = { at: new Date().toISOString(), fixture: fx.slug, model: model || own, systemPrompt: SYSTEM_PROMPT_ID, brandPrompt: BRAND_PROMPT_ID, judge: judge ? JUDGE_MODEL : null };
   const language = toOutputLanguage(fx.language);
+  // The fixtures froze an older "measured": built again from the frozen sites, as the code builds it now (pixels were not frozen)
+  const system: SystemSnapshot = { ...fx.system, refs: fx.system.refs.map((r) => r.kind === "text" ? r : { ...r, measured: measuredSummary(fx.sites[String(r.id)]?.spec ?? null, undefined) }) };
 
   try {
-    const sysReq = systemRequest(fx.system, { language });
+    const sysReq = systemRequest(system, { language });
     const sysRes = await llm({ ...sysReq, ...pick, fallback: null });
     const sys = SystemOutSchema.parse(JSON.parse(sysRes.text));
 
