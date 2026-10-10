@@ -44,7 +44,7 @@ Todos por OpenRouter. Cada tarea tiene una fila en `lib/prompts.ts` (modelo, res
 | Plan del agente | `AGENT_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/agent.ts` |
 | DESIGN.md de una web (lo pide la importación de marca) | `DESIGN_MD_MODEL` | `deepseek/deepseek-v4.1-flash` | `lib/design-md.ts` |
 | Reserva de cualquier llamada que falla (la de etiquetas tiene la suya) | `LLM_FALLBACK_MODEL` | `anthropic/claude-haiku-5.5` | `lib/llm.ts` |
-| Juez de las evals (script) | `EVAL_JUDGE_MODEL` | `anthropic/claude-sonnet-5.5` | `scripts/eval-system.ts` |
+| Juez de las evals (script) | `EVAL_JUDGE_MODEL` | `anthropic/claude-sonnet-5.5` | `scripts/eval-system.ts`, `scripts/eval-criterio.ts` |
 | Vectores de búsqueda | `EMBED_MODEL` | `baai/bge-m3` | `lib/embed.ts` |
 | Prototipo del loop (scripts, fuera de la app) | `LOOP_CHEAP_MODEL`, `LOOP_SMART_MODEL` | DeepSeek, Sonnet | `scripts/loop/` |
 
