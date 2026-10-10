@@ -21,7 +21,7 @@ export const LEGAL: LegalFacts = {
 };
 
 /** The day the texts last changed (YYYY-MM-DD): change it with them */
-export const LEGAL_UPDATED = "2026-10-06";
+export const LEGAL_UPDATED = "2026-10-10";
 
 /** Every detail the texts name is in */
 export const legalReady = () => !!(LEGAL.entity && LEGAL.taxId && LEGAL.address);

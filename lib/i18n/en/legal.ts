@@ -29,6 +29,7 @@ export const legal = {
         "How you use the app: when you were last in and how much time you spent in each part of it.",
         "AI use: which AI actions ran in your workspace and what they cost, to apply your plan's limits.",
         "Feedback: what you send with the feedback tool, with the page it was about.",
+        "The waitlist: your email, what you answer when you join (name, role, team size, tools, website, what you would use criterio for), your language, where you came from and when you agreed to hear from us.",
         "The browser extension has its own page: criterio.design/extension/privacy.",
       ]] },
       { heading: "What your references contain", body: [
@@ -38,6 +39,7 @@ export const legal = {
       { heading: "Why we use it", body: [[
         "To give you the service you signed up for: your account, your library, your team. The basis is our contract with you.",
         "To write to you about your account: sign-in links, invitations and notices about the service. Also the contract.",
+        "To write to you from the waitlist: when there is room for you, and to send you your invite. Nothing else. The basis is your consent, and you can take it back whenever you like.",
         "To keep the service secure and see how it is used, so we can improve it. The basis is our legitimate interest.",
         "To comply with the law when it obliges us.",
       ], "We do not sell your data, show ads or build advertising profiles."] },
@@ -64,6 +66,7 @@ export const legal = {
       ] },
       { heading: "How long we keep it", body: [
         "For as long as your account is open. When a reference is deleted, the files that were only its own go with it. When you ask us to close your account we delete it, and what only you owned, within 30 days; what belongs to a team's workspace stays with the team. Copies in backups expire on their own some days later.",
+        "A waitlist entry with no account behind it is deleted 12 months after you joined, or as soon as you ask us. If you create your account, the entry stays with it and goes when the account closes.",
       ] },
       { heading: "Your rights", body: [
         `You can ask to see your data, correct it, delete it, take it with you, or limit or object to how we use it. Write to ${c.contact} from your account's address and we answer within a month.`,

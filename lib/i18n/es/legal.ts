@@ -23,6 +23,7 @@ export const legal = {
         "Cómo usas la app: cuándo entraste por última vez y cuánto tiempo pasas en cada parte.",
         "Uso de la IA: qué acciones de IA se han ejecutado en tu espacio y cuánto han costado, para aplicar los límites de tu plan.",
         "Comentarios: lo que envías con la herramienta de comentarios, con la página a la que se refieren.",
+        "La lista de espera: tu correo, lo que respondes al apuntarte (nombre, rol, tamaño del equipo, herramientas, web, para qué usarías criterio), tu idioma, de dónde llegaste y cuándo aceptaste que te escribamos.",
         "La extensión del navegador tiene su propia página: criterio.design/extension/privacy.",
       ]] },
       { heading: "Qué contienen tus referencias", body: [
@@ -32,6 +33,7 @@ export const legal = {
       { heading: "Para qué lo usamos", body: [[
         "Para darte el servicio en el que te has registrado: tu cuenta, tu librería, tu equipo. La base es nuestro contrato contigo.",
         "Para escribirte sobre tu cuenta: enlaces de acceso, invitaciones y avisos del servicio. También el contrato.",
+        "Para escribirte desde la lista de espera: cuando haya sitio para ti, y para enviarte tu invitación. Nada más. La base es tu consentimiento, y puedes retirarlo cuando quieras.",
         "Para mantener el servicio seguro y ver cómo se usa, y así mejorarlo. La base es nuestro interés legítimo.",
         "Para cumplir la ley cuando nos obliga.",
       ], "No vendemos tus datos, no mostramos anuncios ni hacemos perfiles publicitarios."] },
@@ -58,6 +60,7 @@ export const legal = {
       ] },
       { heading: "Cuánto tiempo lo guardamos", body: [
         "Mientras tu cuenta esté abierta. Al borrar una referencia se borran los ficheros que eran solo suyos. Cuando nos pides cerrar tu cuenta la eliminamos, junto con lo que era solo tuyo, en un plazo de 30 días; lo que pertenece al espacio de un equipo se queda con el equipo. Las copias de seguridad caducan solas unos días después.",
+        "Una entrada de la lista de espera sin cuenta detrás se borra 12 meses después de apuntarte, o en cuanto nos lo pidas. Si creas tu cuenta, la entrada se queda con ella y se va cuando la cuenta se cierra.",
       ] },
       { heading: "Tus derechos", body: [
         `Puedes pedir ver tus datos, corregirlos, borrarlos, llevártelos, o limitar u oponerte a cómo los usamos. Escribe a ${c.contact} desde el correo de tu cuenta y respondemos en un mes como máximo.`,
