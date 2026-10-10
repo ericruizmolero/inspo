@@ -37,6 +37,9 @@ export const PROMPTS = {
   brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 4, language: "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line" },
   /** The agent's plan for a request (lib/agent.ts) */
   agent: { model: env("AGENT_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"say", every decision, why, "never" rule, brief, question, label and guide text' },
+  /** The board's contact sheet read side by side before the system pass (lib/system.ts seeBoard): a model that sees, a short answer.
+   *  Little room to reason: the threads are a few lines */
+  look: { model: env("LOOK_MODEL", "google/gemini-2.5-flash"), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 3000, version: 1, language: null },
   /** A reference's tags: words the search matches, so always English. Picked with `npm run tags:bakeoff` (October 2026):
    *  ~$0.0004 an item, the fewest invented tags of four cheap models; any model that takes images and strict JSON will do.
    *  The fallback, second in the bake-off at ~$0.0002 an item, also takes a job's last try (lib/tag-jobs.ts): Gemini

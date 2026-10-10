@@ -11,7 +11,9 @@ import { db, schema } from "./db";
 import { HttpError, newId } from "./workspace-core";
 import { getErrors } from "./i18n";
 import type { OutputLanguage } from "./output-language";
-import { llm, LlmError, type LlmInput } from "./llm";
+import { llm, LlmError, type LlmInput, type LlmResult } from "./llm";
+import { contactSheet } from "./contact-sheet";
+import { pictureAt, pictureKey } from "./tagger";
 import { prompt, PROMPTS } from "./prompts";
 import { summarize } from "./jev";
 import { embedEnabled, nearest, queryVector } from "./embed";
@@ -269,6 +271,7 @@ export function measuredSummary(spec: DesignSpec | null, pixels: InspoColor[] | 
 interface BoardRef {
   code: string;
   itemId: string;
+  web: string;
   words: string[];
   ref: Record<string, unknown>;
 }
@@ -329,6 +332,7 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
     return {
       code,
       itemId: row.id,
+      web: row.web,
       words: [base.curator_notes ?? "", ...comments, ...pointed.map((p) => p.quote)],
       // A pasted text is the project's content: the model gets its title and first lines, nothing to read a look from
       ref: mediaKindOf(row.web) === "text" ? {
@@ -465,6 +469,8 @@ export interface SystemSnapshot {
   guides: string[];
   /** What the guides lost to READ_MAX; absent when nothing */
   guidesCut?: GuideCut;
+  /** What the look pass saw on the board's pictures (seeBoard); absent when it did not run. Never frozen: the eval computes it */
+  seen?: SeenThread[];
 }
 
 /** The system pass's input as the database has it now */
@@ -501,12 +507,80 @@ export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage;
     briefPrompt(s.brief),
     `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
     `References on the board (JSON): ${JSON.stringify(s.refs)}`,
+    s.seen?.length ? `SEEN ON THE BOARD (a model looked at the pictures side by side; what the team said still decides):\n${s.seen.map((t) => `- ${t.area} (${t.refs.join(", ")}): ${t.says}`).join("\n")}` : null,
     s.omitted ? `${s.omitted} references on the board were left out of this reading; what you see is not everything the team saved.` : null,
     s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
     s.guides.length ? guideCutLine(s.guidesCut) : null,
     focusForModel(o.focus, s.standing.filter((a) => a.status === "team").map((a) => a.area)),
   ].filter(Boolean).join("\n\n");
   return { ...prompt("system", { system: SYSTEM, text, language: o.language }), schema: SystemOutSchema };
+}
+
+// ─── The board seen: its pictures side by side ───────────────────────────────────────────────────
+// The System model reads no pictures. Before it runs, a model that sees reads a contact sheet of the board and says
+// what several references share, or where one breaks away, in the areas a picture decides. Its threads reach the
+// System as a block of the prompt, weaker than the team's words.
+
+/** Tiles on the sheet (lib/contact-sheet.ts) */
+const SHEET_MAX = 20;
+/** Under this many pictures there is nothing to compare */
+const SHEET_MIN = 3;
+const SHEET_AREAS = new Set<SystemArea>(["color", "imagery", "logo"]);
+
+const LOOK_SYSTEM = `You are a designer laying a project's references side by side. The image is a contact sheet: each tile is one reference (a website's first screen, an image, a post), with its code (r1, r2…) on a black tag in its top left corner.
+
+Name 2 to 6 THREADS: a pattern that several references share, or one reference that clearly breaks from the rest, in color, imagery, logo or typography.
+- area: the one area the thread is about.
+- refs: the codes of the references in it, exactly as written on their tags. Only codes on the sheet.
+- says: one concrete sentence of at most 30 words on what is visible: the ground and the accent, the kind of picture and its light, the letterforms, the mark. A value (a hex, a size, a family) only when you can read it on the sheet; never guess one.
+- Literal: no praise, no advice, nothing about what the project should do.`;
+
+const LookOutSchema = z.object({ threads: z.array(z.object({ area: z.enum(["color", "imagery", "logo", "typography"]), refs: z.array(z.string()), says: z.string() })) });
+export type SeenThread = z.infer<typeof LookOutSchema>["threads"][number];
+
+/** The references the sheet shows, in its order, with where each picture is stored: filed under color, imagery or logo,
+ *  the client's site, then what the team wrote about, then the newest. Only stored pictures, never a capture */
+export async function sheetRefs(refs: BoardRef[], areas: SystemAreaState[], clientItemId: string | null | undefined): Promise<{ code: string; key: string }[]> {
+  const filed = new Set(areas.filter((a) => SHEET_AREAS.has(a.area)).flatMap((a) => a.evidence.filter((e) => e.pinned).map((e) => e.itemId)));
+  const rank = (r: BoardRef) => filed.has(r.itemId) ? 0 : r.itemId === clientItemId ? 1 : r.words.some((w) => w.trim()) ? 2 : 3;
+  const order = refs.map((r, i) => ({ r, i })).sort((a, b) => rank(a.r) - rank(b.r) || b.i - a.i).map(({ r }) => r);
+  const out: { code: string; key: string }[] = [];
+  for (let i = 0; i < order.length && out.length < SHEET_MAX; i += SHEET_MAX) {
+    const keys = await Promise.all(order.slice(i, i + SHEET_MAX).map(async (r) => ({ code: r.code, key: await pictureKey(r.web).catch(() => null) })));
+    out.push(...keys.filter((k): k is { code: string; key: string } => !!k.key));
+  }
+  return out.slice(0, SHEET_MAX);
+}
+
+/** The look pass over pictures already read: the sheet and what a model saw on it, its codes checked against the
+ *  sheet. null under SHEET_MIN pictures */
+export async function seeBoard(pictures: { code: string; image: Buffer }[], over: Partial<Pick<LlmInput, "model" | "fallback">> = {}): Promise<{ seen: SeenThread[]; sheet: Buffer; res: LlmResult } | null> {
+  const shown = pictures.slice(0, SHEET_MAX);
+  if (shown.length < SHEET_MIN) return null;
+  const sheet = await contactSheet(shown);
+  const res = await llm({ ...prompt("look", { system: LOOK_SYSTEM, text: `The sheet shows ${shown.length} references: ${shown.map((p) => p.code).join(", ")}.`, image: sheet, schema: LookOutSchema }), ...over });
+  const codes = new Set(shown.map((p) => p.code));
+  const seen = LookOutSchema.parse(JSON.parse(res.text)).threads
+    .map((t) => ({ area: t.area, refs: [...new Set(t.refs.map((r) => r.trim().toLowerCase()))].filter((r) => codes.has(r)), says: t.says.trim() }))
+    .filter((t) => t.refs.length && t.says);
+  return { seen, sheet, res };
+}
+
+/** The look pass of a run, from the board's stored pictures. A failure never stops the run: it goes on without */
+async function lookAtBoard(input: { projectId: string; usage: UsageCtx }, refs: BoardRef[], current: ProjectSystem, clientItemId: string | null | undefined): Promise<SeenThread[] | undefined> {
+  try {
+    const keys = await sheetRefs(refs, current.areas, clientItemId);
+    const read = await Promise.all(keys.map(async ({ code, key }) => ({ code, image: await pictureAt(key) })));
+    const r = await seeBoard(read.filter((p): p is { code: string; image: Buffer } => !!p.image));
+    if (!r) return undefined;
+    // Not a pass of its own: logged as automatic, so it never counts as a second AI action of the click
+    await recordUsage(input.usage, { action: "system", ...billOf(r.res), ref: `${AUTO_REF}project:${input.projectId} look` });
+    log.info("system.seen", { ref: input.projectId, pictures: Math.min(read.length, SHEET_MAX), threads: r.seen.length, tokensIn: r.res.usage.input, tokensOut: r.res.usage.output, ms: r.res.ms, costUsd: r.res.costUsd });
+    return r.seen.length ? r.seen : undefined;
+  } catch (err) {
+    log.warn("system.look_failed", { ref: input.projectId, err });
+    return undefined;
+  }
 }
 
 // One run per project at a time: two tabs must not pay twice for the same board
@@ -529,9 +603,10 @@ export function runSystem(input: { organizationId: string; projectId: string; us
     const codes = new Map(refs.map((r) => [r.code, r.itemId]));
     const codeOf = new Map(refs.map((r) => [r.itemId, r.code]));
     const textIds = new Set(refs.filter((r) => r.ref.kind === "text").map((r) => r.itemId));
+    const seen = await lookAtBoard(input, refs, current, snapshot.brief?.clientItemId);
     let res: Awaited<ReturnType<typeof llm>>;
     try {
-      res = await llm(systemRequest(snapshot, input));
+      res = await llm(systemRequest(seen ? { ...snapshot, seen } : snapshot, input));
     } catch (err) {
       if (!(err instanceof LlmError) || !err.finishReason) throw err;
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
