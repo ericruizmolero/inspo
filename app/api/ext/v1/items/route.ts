@@ -1,16 +1,12 @@
 // Save a site from the extension. The extension sends only the address, the tab title
 // and a screenshot of what is visible; the rest (name, collection, tags) is decided by the
 // server, same as when a URL is pasted in the app.
-import { NextRequest, after } from "next/server";
+import { NextRequest } from "next/server";
 import { requireExtCtx } from "@/lib/ext-keys";
-import { addItem, findByWeb, rowToItem, setThumbnail } from "@/lib/items";
-import { fileFromExt, cleanAreas } from "@/lib/ext-file";
+import { setThumbnail } from "@/lib/items";
+import { addReference, cleanAreas } from "@/lib/add";
 import { uploadThumbnail } from "@/lib/thumbnails";
-import { nameFor } from "@/lib/item-name";
-import { ensurePost, postThumb } from "@/lib/posts";
-import { normalizeWebUrl, typeFromUrl, mediaKindOf } from "@/lib/url";
-import { taggerEnabled } from "@/lib/tagger";
-import { enqueue } from "@/lib/jobs";
+import { normalizeWebUrl } from "@/lib/url";
 import { getErrors } from "@/lib/i18n";
 import { HttpError } from "@/lib/workspace-core";
 import { log, recordFailure } from "@/lib/log";
@@ -37,19 +33,15 @@ export async function POST(req: NextRequest) {
   const web = normalizeWebUrl(body.url ?? "");
   if (!web) return Response.json({ error: (await getErrors()).badUrl }, { status: 400 });
 
-  const existing = await findByWeb(ctx.workspace.id, web);
-  if (existing) return Response.json({ ok: true, existed: true, item: rowToItem(existing) });
-
-  // Name: a post's author and words, a video's title, the site's og:site_name or <title> with a time limit; if missing, the tab title
-  const name = await nameFor(web, body.title);
-
   try {
-    const item = await addItem(ctx.workspace.id, {
-      name, web, type: typeFromUrl(web), note: typeof body.note === "string" ? body.note.slice(0, 500) : "",
-      author: ctx.user.name || ctx.user.email, createdBy: ctx.user.id,
+    // Named by its page (nameFor), the tab title standing in. Filed on the board picked in the popup, under the
+    // areas ticked there, or where this person was working; a post on X is imported and the AI tags once answered
+    const { item, existed } = await addReference(ctx.workspace.id, { kind: "url", web, title: body.title }, ctx.user, {
+      note: typeof body.note === "string" ? body.note.slice(0, 500) : "",
+      file: { projectId: typeof body.projectId === "string" ? body.projectId : null, fallback: "active", areas: cleanAreas(body.areas), onError: "log" },
+      finish: { post: true, tag: "after" },
     });
-    // Nothing lives outside a project: the one picked in the popup, or the one this person was working in
-    await fileFromExt(ctx, item.id, body.projectId, cleanAreas(body.areas));
+    if (existed) return Response.json({ ok: true, existed: true, item });
 
     // The tab screenshot serves as the thumbnail from the first second
     const shot = fileFromDataUrl(body.screenshot);
@@ -58,20 +50,6 @@ export async function POST(req: NextRequest) {
         const url = await uploadThumbnail(ctx.workspace.id, shot.name, shot);
         await setThumbnail(ctx.workspace.id, web, url);
       } catch (err) { log.warn("ext.thumbnail_not_saved", { ref: web, err }); }
-    }
-
-    // A post on X is imported after responding (its photos, frame and video are copied);
-    // its picture replaces the tab screenshot. Then the AI tags, as the app does when a URL is pasted.
-    const isPost = mediaKindOf(web) === "post";
-    if (isPost || taggerEnabled()) {
-      after(async () => {
-        if (isPost) {
-          const post = await ensurePost(web);
-          const thumb = post && postThumb(post);
-          if (thumb) await setThumbnail(ctx.workspace.id, web, thumb);
-        }
-        if (taggerEnabled() && item.id) await enqueue({ kind: "tag", organizationId: ctx.workspace.id, itemId: item.id, userId: ctx.user.id });
-      });
     }
 
     return Response.json({ ok: true, existed: false, item });

@@ -14,14 +14,12 @@ import { DEFAULT_OUTPUT_LANGUAGE, type OutputLanguage } from "./output-language"
 import { llm, LlmError } from "./llm";
 import { prompt } from "./prompts";
 import { billOf, recordUsage, type UsageCtx } from "./usage";
-import { addItem, deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
-import { nameFor } from "./item-name";
-import { hostOf, mediaKindOf, normalizeWebUrl, typeFromUrl } from "./url";
+import { deleteItems, deletableIds, rowToItem, setItemNote, editUserTags } from "./items";
+import { addReference } from "./add";
+import { hostOf, mediaKindOf, normalizeWebUrl } from "./url";
 import { loadProjects, createProject, renameProject, deleteProject, startedProject, fileItems, unfileItems } from "./projects";
 import { saveBrief, setClientBrand } from "./brief";
 import { addComment } from "./comments";
-import { enqueue } from "./jobs";
-import { taggerEnabled } from "./tagger";
 import { loadSystems, decideArea, releaseArea, revertArea, assignEvidence, dropEvidence, runSystem, curateArea, triageInbox, applyTriage, setAreaNever, getSystem } from "./system";
 import { SYSTEM_AREAS, type ProjectSystem, type SystemArea } from "@/types/system";
 import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
@@ -390,9 +388,9 @@ export async function runActions(ctx: Ctx, actions: AgentAction[], usage: UsageC
         case "add_url": {
           const web = normalizeWebUrl(a.url);
           if (!web) throw new HttpError(400, (await getErrors()).badUrl);
-          const item = await addItem(org, { name: await nameFor(web), web, type: typeFromUrl(web), author: author.name, createdBy: author.id });
-          if (a.project && item.id) { await fileItems(org, a.project, [item.id], author.id); line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
-          if (item.id && taggerEnabled()) void enqueue({ kind: "tag", organizationId: org, itemId: item.id, userId: author.id });
+          const { item, existed } = await addReference(org, { kind: "url", web }, ctx.user, { file: a.project ? { projectId: a.project, onError: "throw" } : undefined });
+          if (existed) throw new HttpError(409, (await getErrors()).urlAlreadyHere);
+          if (a.project) { line.project = names.get(a.project); projectsTouched = true; systemsTouched = true; }
           (patch.added ??= []).push(item); line.name = item.name; if (item.id) line.items = [item.id]; break;
         }
         case "note": {
