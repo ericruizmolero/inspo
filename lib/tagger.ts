@@ -14,12 +14,12 @@ import { getStoredPost, ensurePost, postThumb } from "./posts";
 import { readMediaFile } from "./media";
 import { textTags } from "./text-refs";
 import { getDesignScreenshot } from "./design-store";
-import { getPageIndex } from "./page-shots";
+import { getPageShot } from "./page-shots";
 import { captureNewPage, getStoredShot } from "./screenshot";
 import { getFile, keyOf } from "./storage";
 import { paletteOf } from "./palette";
 import { imageMeta, metaLines, postMeta } from "./meta";
-import { mediaKindOf, normalizeWebUrl, postOf, webKeyOf } from "./url";
+import { mediaKindOf, postOf, webKeyOf } from "./url";
 import { billOf, recordUsage, type UsageCtx } from "./usage";
 import { SECTORS, STYLES, TAGS, SECTIONS, ELEMENTS, TYPE, LAYOUT, SIGNALS, SIGNAL_AREA, TAXONOMY_VERSION } from "./taxonomy";
 import { typeFamilies } from "./font-names";
@@ -118,7 +118,7 @@ const readUrl = async (u: string | undefined) => {
 
 /** The whole page of a site: a stored capture first (DESIGN.md, then the canvas's), else one new capture. */
 async function pageImage(web: string, capture: boolean): Promise<Buffer | null> {
-  const stored = (await getDesignScreenshot(web)) ?? (await readUrl((await getPageIndex())[normalizeWebUrl(web) ?? web]?.shotUrl));
+  const stored = (await getDesignScreenshot(web)) ?? (await readUrl((await getPageShot(web))?.shotUrl));
   if (stored) return stored;
   if (!capture) return getStoredShot(web);
   try {

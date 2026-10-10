@@ -121,9 +121,8 @@ export async function templatePage(organizationId: string, templateId: string): 
   if (!row) throw new HttpError(404, (await getErrors()).badBody);
   const url = cleanTemplate((row.template ?? {}) as Partial<ProjectTemplate>).to;
   if (!url) return null;
-  const { getPageIndex } = await import("./page-shots");
+  const { getPageShot } = await import("./page-shots");
   const { capturePage } = await import("./screenshot");
-  const { normalizeWebUrl } = await import("./url");
-  const shot = (await getPageIndex())[normalizeWebUrl(url) ?? url] ?? await capturePage(url);
+  const shot = (await getPageShot(url)) ?? await capturePage(url);
   return { topUrl: shot.topUrl, shotUrl: shot.shotUrl, shotH: shot.shotH, color: shot.color };
 }

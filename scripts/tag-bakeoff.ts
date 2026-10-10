@@ -20,17 +20,19 @@ const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&l
 async function main() {
   const { db, schema } = await import("../lib/db");
   const { inputsOf, tagWith } = await import("../lib/tagger");
-  const { getDesignMdIndex } = await import("../lib/design-store");
-  const { getPageIndex } = await import("../lib/page-shots");
-  const { mediaKindOf, normalizeWebUrl } = await import("../lib/url");
+  const { designDocsFor } = await import("../lib/design-store");
+  const { pageShotsFor } = await import("../lib/page-shots");
+  const { mediaKindOf } = await import("../lib/url");
   const { rowToItem } = await import("../lib/items");
   const { FACETS } = await import("../lib/taxonomy");
 
   // Sites with a stored full page first (no capture to wait for), then a few uploads and posts for range
-  const [rows, design, pages] = await Promise.all([db.select().from(schema.inspoItem), getDesignMdIndex(), getPageIndex()]);
+  const rows = await db.select().from(schema.inspoItem);
   const seen = new Set<string>();
   const unique = rows.filter((r) => !seen.has(r.webKey) && seen.add(r.webKey));
-  const stored = unique.filter((r) => { const n = normalizeWebUrl(r.web) ?? r.web; return mediaKindOf(r.web) === "web" && (design[n]?.shotUrl || pages[n]?.shotUrl); });
+  const webs = unique.map((r) => r.web);
+  const [design, pages] = await Promise.all([designDocsFor(webs), pageShotsFor(webs)]);
+  const stored = unique.filter((r) => mediaKindOf(r.web) === "web" && (design[r.web]?.shotUrl || pages[r.web]));
   const other = unique.filter((r) => mediaKindOf(r.web) !== "web");
   // Read only: stored pages, or the card's first screen. Nothing is captured or written.
   const firstScreen = unique.filter((r) => mediaKindOf(r.web) === "web" && !stored.includes(r));

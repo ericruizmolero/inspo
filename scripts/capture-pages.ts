@@ -14,26 +14,21 @@ const limit = limitAt >= 0 ? Number(args[limitAt + 1]) || Infinity : Infinity;
 
 async function main() {
   const { db, schema } = await import("../lib/db");
-  const { backfillCanvasShots, getDesignMdIndex } = await import("../lib/design-store");
-  const { getPageIndex, savePageShot, addMissingColors } = await import("../lib/page-shots");
+  const { backfillCanvasShots } = await import("../lib/design-store");
+  const { pageShotsFor, savePageShot, addMissingColors } = await import("../lib/page-shots");
   const { capturePage, shotKey } = await import("../lib/screenshot");
   const { getFile } = await import("../lib/storage");
-  const { hasOwnPage, normalizeWebUrl } = await import("../lib/url");
+  const { hasOwnPage } = await import("../lib/url");
 
   const recut = await backfillCanvasShots((m) => console.log(`DESIGN.md ${m}`));
   console.log(`${recut} DESIGN.md entr${recut === 1 ? "y" : "ies"} cut for the canvas`);
   const colored = await addMissingColors((m) => console.log(`colour ${m}`));
   console.log(`${colored} captures got their colour`);
 
-  const [rows, designIndex, pages] = await Promise.all([
-    db.selectDistinct({ web: schema.inspoItem.web }).from(schema.inspoItem),
-    getDesignMdIndex(),
-    getPageIndex(),
-  ]);
-  const todo = [...new Set(rows.map((r) => r.web))]
-    .filter(hasOwnPage)
-    .filter((web) => { const n = normalizeWebUrl(web) ?? web; return !designIndex[n]?.topUrl && !pages[n]; })
-    .slice(0, limit);
+  const rows = await db.selectDistinct({ web: schema.inspoItem.web }).from(schema.inspoItem);
+  const sites = [...new Set(rows.map((r) => r.web))].filter(hasOwnPage);
+  const shown = await pageShotsFor(sites);
+  const todo = sites.filter((web) => !shown[web]).slice(0, limit);
   console.log(`${todo.length} sites to capture`);
 
   let done = 0, failed = 0;

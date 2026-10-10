@@ -143,7 +143,7 @@ export interface InspoComment {
 
 export type CommentMap = Record<string, InspoComment[]>;
 
-/** What the library knows of each site's DESIGN.md without loading it (lib/design-store.ts DesignMdIndexEntry) */
+/** What the library knows of each site's DESIGN.md without loading it (lib/design-store.ts designDocsFor) */
 export interface DesignIndexEntry extends Partial<PageShot> { coverUrl?: string; scrollUrl?: string }
 
 /** A site's full-page screenshot, stored once (lib/page-shots.ts): the whole page for the panel, and its

@@ -18,8 +18,8 @@ import { embedEnabled, nearest, queryVector } from "./embed";
 import { SIGNAL_AREA, TAXONOMY_VERSION, viewOf } from "./taxonomy";
 import type { InspoColor, InspoTags } from "@/types/inspo";
 import { rowToItem } from "./items";
-import { mediaKindOf, webKeyOf } from "./url";
-import { getDesignMd, getDesignMdIndex } from "./design-store";
+import { mediaKindOf } from "./url";
+import { getDesignMd, designDocsFor } from "./design-store";
 import { refMeasuredOf } from "./ref-measured";
 import { getWhy } from "./design-why";
 import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "./usage";
@@ -342,9 +342,9 @@ async function loadBoard(organizationId: string, projectId: string): Promise<{ r
   const ids = board.map(({ row }) => row.id);
 
   // DESIGN.md sheets and "why it's here", only the ones that exist; never generated here
-  const index = await getDesignMdIndex();
+  const docs = await designDocsFor(board.map(({ row }) => row.web));
   const sheets = await Promise.all(board.map(async ({ row }) => {
-    if (mediaKindOf(row.web) !== "web" || !(row.web in index || webKeyOf(row.web) in index)) return { spec: null, why: null };
+    if (mediaKindOf(row.web) !== "web" || !(row.web in docs)) return { spec: null, why: null };
     const [entry, why] = await Promise.all([getDesignMd(row.web), getWhy(organizationId, row.web)]);
     return { spec: entry?.spec ?? null, why: (why?.why as DesignWhy | undefined) ?? null };
   }));
@@ -917,10 +917,10 @@ const DURATION_RE = /(\d+(?:[.,]\d+)?)\s*(ms|s)\b/;
 export async function boardVisuals(organizationId: string, projectId: string): Promise<RefVisual[]> {
   const rows = await db.select({ row: T }).from(PI).innerJoin(T, eq(T.id, PI.itemId))
     .where(and(eq(PI.organizationId, organizationId), eq(PI.projectId, projectId))).orderBy(asc(PI.createdAt));
-  const index = await getDesignMdIndex();
+  const docs = await designDocsFor(rows.map(({ row }) => row.web));
   return Promise.all(rows.slice(0, MAX_BOARD).map(async ({ row }) => {
     const base: RefVisual = { itemId: row.id, name: row.name, web: row.web, cover: null, scroll: null, colors: [], fonts: [], radii: [], easing: null, durationMs: null, logo: null, icons: [], voice: null, tagline: null };
-    if (mediaKindOf(row.web) !== "web" || !(row.web in index || webKeyOf(row.web) in index)) return base;
+    if (mediaKindOf(row.web) !== "web" || !(row.web in docs)) return base;
     const e = await getDesignMd(row.web);
     if (!e) return base;
     const s = e.spec;

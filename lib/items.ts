@@ -208,11 +208,6 @@ export async function ownsAnyThumbnail(organizationIds: string[], thumbnailUrl: 
   return !!r;
 }
 
-export async function webSet(organizationId: string): Promise<Set<string>> {
-  const rows = await db.select({ web: T.web }).from(T).where(eq(T.organizationId, organizationId));
-  return new Set(rows.map((r) => r.web));
-}
-
 /**
  * Deletes items. Their comment threads go with them (ON DELETE CASCADE), and their files
  * (thumbnail, comment screenshots) are deleted from storage afterwards. Returns how many went.

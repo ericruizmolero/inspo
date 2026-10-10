@@ -3,7 +3,7 @@
 // the two copies share nothing in memory, only storage and the database, as two instances do.
 import { randomBytes } from "node:crypto";
 import { NextRequest } from "next/server";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { db, schema } from "@/lib/db";
 import { webKeyOf } from "@/lib/url";
@@ -71,16 +71,21 @@ afterAll(async () => {
   actAs(null);
   await db.delete(schema.organization).where(inArray(schema.organization.id, [`${tag}-team`, `${tag}-personal`]));
   await db.delete(schema.user).where(eq(schema.user.id, owner.id));
+  // Shared across workspaces, so no cascade reaches them
+  await db.delete(schema.designDoc).where(like(schema.designDoc.url, `https://${tag}%`));
+  await db.delete(schema.pageShot).where(like(schema.pageShot.url, `https://${tag}%`));
 });
 
 test("two instances save the DESIGN.md of two sites at once and the library lists both", async () => {
   const [s1, s2] = await twice(() => import("@/lib/design-store"));
   const [a, b] = [site("a"), site("b")];
   const entry = (url: string) => ({ url, markdown: `# ${url}`, generatedAt: new Date().toISOString(), model: "test/model" });
-  await Promise.all([s1.saveDesignMd(entry(a)), s2.saveDesignMd(entry(b))]);
+  const img = await jpeg();
+  const images = { fullShot: img, cover: img, scroll: img };
+  await Promise.all([s1.saveDesignMd(entry(a), images), s2.saveDesignMd(entry(b), images)]);
 
   const [s3] = await twice(() => import("@/lib/design-store"));
-  const index = await s3.designMdIndexFor(owner.workspaceId, new Set([a, b]));
+  const index = await s3.designDocsFor([a, b]);
   expect(Object.keys(index).sort(), "a library with both sites lists both DESIGN.md").toEqual([a, b].sort());
 });
 
@@ -92,7 +97,7 @@ test("two instances capture two sites at once and the board shows both", async (
   await Promise.all([p1.savePageShot(a, shotKey(a), img), p2.savePageShot(b, shotKey(b), img)]);
 
   const [p3] = await twice(() => import("@/lib/page-shots"));
-  const shots = await p3.pageShotsFor(owner.workspaceId, {}, undefined, new Set([a, b]));
+  const shots = await p3.pageShotsFor([a, b]);
   expect(Object.keys(shots).sort(), "a board with both sites shows both captures").toEqual([a, b].sort());
 });
 

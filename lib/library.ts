@@ -13,16 +13,13 @@ import { isAdmin } from "./activity";
 import { quotaStatus } from "./quota";
 import { listComments } from "./comments";
 import { listVotes } from "./polish-votes";
-import { designMdIndexFor, getDesignMdIndex } from "./design-store";
-import { getPageIndex, pageShotsFor, signCanvasCopies } from "./page-shots";
+import { designDocsFor } from "./design-store";
+import { pageShotsFor, signCanvasCopies } from "./page-shots";
 import type { SessionUser, Workspace } from "./workspace-core";
 
 export async function loadLibrary(user: SessionUser, ws: Workspace) {
   // Taken before reading: whatever changes while this loads makes the next look differ, and loads again
   const stamp = await libraryStamp(ws.id);
-  // Both shared indexes (R2) are read while the database answers; they are cached, so the calls below reuse them
-  const pages = getPageIndex();
-  void getDesignMdIndex();
   const [all, filed, systems, members, admin, quota, comments, votes] = await Promise.all([
     loadWorkspaceData(ws.id),
     loadProjects(ws.id),
@@ -43,11 +40,8 @@ export async function loadLibrary(user: SessionUser, ws: Workspace) {
   const shown = new Set(items.map((i) => i.web));
   const only = <T,>(m: Record<string, T>): Record<string, T> => Object.fromEntries(Object.entries(m).filter(([web]) => shown.has(web)));
   const thumbnailMap = only(all.thumbnailMap), tagMap = only(all.tagMap), tagJobs = only(all.tagJobs);
-  // The workspace's addresses are already here: neither index needs to ask the database for them again
-  const webs = new Set(items.map((i) => i.web));
-  const designMdIndex = await designMdIndexFor(ws.id, webs);
-  // A site's DESIGN.md capture comes before a capture of its own
-  const pageShots = await signCanvasCopies(await pageShotsFor(ws.id, designMdIndex, await pages, webs));
+  const webs = items.map((i) => i.web);
+  const [designMdIndex, pageShots] = await Promise.all([designDocsFor(webs), pageShotsFor(webs).then(signCanvasCopies)]);
   return {
     workspace: ws,
     stamp,
