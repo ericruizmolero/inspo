@@ -188,6 +188,33 @@ new file.
 | `RESEND_API_KEY`, `MAIL_FROM`, `MAIL_REPLY_TO` | By hand. `MAIL_FROM` needs a domain verified in Resend |
 | `OPENROUTER_API_KEY`, `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` | By hand |
 | `CRON_SECRET` | By hand. Vercel sends it to the cron route; without it the route refuses everything |
+| `SIGNUP_MODE` | Optional. `invite` or `open`, only until someone flips the switch in `/admin`. Unset means `open` |
+
+## Sign-up: open or invite-only
+
+Sign-up is open today: anyone with an email or a Google account can create one.
+One flag, `signup_mode`, closes it so that only people with an invitation get in.
+
+To turn invite-only on:
+
+1. Sign in with an admin account and open `/admin/access`.
+2. Under **Sign-up**, switch on **Invite only** and confirm.
+
+That's it. No deploy. Every server picks it up within a minute. Turning it off is the same switch.
+The panel shows who changed it last and when.
+
+With invite-only on:
+
+- Existing accounts sign in as always. The gate only acts when an account is created.
+- A new account needs one of these: an invitation link (`/login?invite=<code>`, codes come from
+  `createInvite` in `lib/access.ts`), an invite made out to that email, a pending team invitation,
+  or a seat on `/admin`.
+- Anyone else gets no magic link and can't sign up with Google. `/login` offers them the waitlist.
+- The landing page and the extension ask `GET /api/access/mode` and change their text on their own.
+
+The value lives in the database (`app_setting`), so each environment keeps its own and
+`npm run db:pull` never copies it. `SIGNUP_MODE` in Vercel only sets the starting value for an
+environment where nobody has used the switch yet. Details in `docs/design-system/desarrollo.md`.
 
 ## Checks
 
@@ -198,6 +225,7 @@ local database.
 npm run check:postgres   # cascades, file cleanup, projects, bulk tags, heartbeat, day grouping
 npm run tags:bakeoff     # tagging models side by side on real items (read only), HTML in .data/
 npm run check:seats      # plan seat limits
+npm run check:access     # the waitlist, invite codes and the sign-up gate in both modes
 npm run check:invites    # the invitation flow, against the running app (npm run dev first)
 npm run check:locale     # which language each page and email uses
 npm run check:design     # the DESIGN.md data before and after the model

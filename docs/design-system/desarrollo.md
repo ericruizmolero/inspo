@@ -36,7 +36,17 @@ Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack te
 - `redeemInvite` comprueba y gasta un uso en un único `UPDATE … WHERE uses < max_uses …`: dos peticiones a la vez sobre un código de un uso dejan entrar solo a una. La CHECK `uses <= max_uses` lo sostiene también en la base de datos.
 - El acceso se deduce, no se copia: un correo con cuenta tiene acceso. Las cuentas que ya existían no necesitaron migración de datos.
 - `user` y `access_invite` se apuntan entre sí (las dos claves con `on delete set null`): `scripts/seed.ts` carga los usuarios sin su invitación y se la devuelve al final. Al volcar, los correos de la lista de espera y de las invitaciones salen enmascarados (`waitlist+<hash>@example.invalid`, el mismo para la misma persona) y sin nombre ni web.
-- `npm run check:access` prueba la carrera, los códigos caducados, revocados y de otra persona, la lista sin duplicados y que todas las cuentas tienen acceso.
+- `npm run check:access` prueba la carrera, los códigos caducados, revocados y de otra persona, la lista sin duplicados, que todas las cuentas tienen acceso, y la puerta en sus dos modos con sus cuatro caminos de entrada y el corte.
+
+### La puerta del registro (`signup_mode`)
+
+- Un solo flag, `signup_mode`: `invite` (solo con invitación) u `open` (cualquiera). Vive en la tabla `app_setting` (clave, valor, quién y cuándo; migración `0031`) y se cambia en `/admin/access` → Registro, con confirmación. `SIGNUP_MODE` solo da el valor si no hay fila; sin ella, `open`. Producción salió en `open` (decisión del 10/10): la puerta se enciende desde `/admin` el día que empiece la lista.
+- `getSignupMode()` lo guarda 30 s en cada instancia y el cambio actualiza la de quien lo hace: el resto lo ve en menos de un minuto, sin desplegar. `seed.ts` no copia `app_setting`: cada entorno guarda el suyo.
+- Todo lo que depende de la puerta lee ese flag y nada más: el hook `databaseHooks.user.create.before` (`lib/auth.ts`, cubre magic link y Google), `sendMagicLink`, los textos de `/login` y de `GuestStart`, y `GET /api/access/mode` (público, para la landing y el popup de la extensión).
+- Con `invite`, `admit()` deja crear la cuenta si hay un código válido (la cookie `criterio_invite`, httpOnly, 30 min, que `proxy.ts` pone al abrir `/login?invite=<código>`), una `access_invite` a nombre de ese correo, una invitación de equipo pendiente (salta la lista, #116) o un sitio en `/admin`. Si no, corta con `invite_only`, que `/login` traduce. `DEV_LOGIN_EMAIL` no pasa por la puerta.
+- Antes de mandar el magic link, `maySignIn()`: a quien no podría entrar no se le manda nada, y la respuesta es la misma, para no decir quién tiene cuenta. La pantalla de "revisa tu correo" ofrece a todos la lista de espera (`joinWaitlistFromLogin`; el formulario completo es #119).
+- La invitación se gasta en los dos modos, para que cuenten los referidos. Al crear la cuenta: `user.access_invite_id`, la entrada de la lista pasa a `joined` y, si la invitación trae plan, el espacio personal nace con él. `grants_until` aún no hace nada (#126).
+- La puerta solo actúa al crear: las cuentas que ya existen entran siempre.
 - Plazo, en la política de privacidad: una entrada sin cuenta se borra a los 12 meses o cuando la persona lo pide. Todavía no hay nada que la borre sola ni borrado de cuenta (#35).
 
 ## Importar un tablero
