@@ -271,10 +271,11 @@ La única pieza que flota abajo a la izquierda, a 16 px de cada pared (como el b
 `InspoClient` · `components/InspoClient.tsx` · `.shell` · `.topbar` · `.dock`
 La app: barra superior (Isla, logo, acciones), selector Tablón / Pulido / Sistema, el "+" y, abajo, el dock con la barra de reunir, la respuesta del agente y el buscador. Según el espacio activo enruta a Descubrir, Inicio, Inbox, tablero, Pulido o Sistema.
 - Atajos: ⌘K paleta, N añadir, "/" buscador (o sobre una tarjeta, entregarla al agente).
+- El estado vive en hooks de `hooks/`, uno por tema (cómo se reparte, en [Desarrollo](desarrollo.md#biblioteca-y-pulso)); en el componente quedan el espacio y la vista, el árbol y lo que lo une. Las piezas de su árbol son `BoardCard`, `ProjectModes` (el selector Tablón / Pulido / Sistema), `RefPage` (la página de la ficha) y `Toast`.
 - En teléfono el selector de vista conserva los nombres a 12 px y solo la vista activa su cifra; el logo se va cuando hay selector. Entre 801 y 1200 px el selector va solo con iconos para que las pestañas de la Isla conserven sus nombres (hasta el 09-10 era 1100: con cinco pestañas abiertas y equipo, entre 1100 y 1200 el + y la campanita caían bajo el selector).
 
 ### Respuesta del agente
-`AgentCard` · `components/InspoClient.tsx` · `.dock__agent`
+`AgentCard` · `components/AgentCard.tsx` · `.dock__agent`
 Lo que el agente hizo, con deshacer; sus preguntas con opciones; y lo destructivo pendiente con Hazlo / Déjalo.
 
 ### Tablero
@@ -338,7 +339,7 @@ Caja fija abajo, con chips de filtro (persona, fecha, color, sección…) y suge
 Pegada al dock: recuento, tres miniaturas apiladas, "Añadir" y "Ya tengo mis referencias", que marca el proyecto como empezado y lleva siempre al Sistema (no pasa por Pulido, que es una pestaña aparte). El dock no se ensancha por ella (sigue en 640 px): al texto le quedan unos 160 px junto a las miniaturas y los dos botones, así que los textos son cortos ("El tablón", "7 referencias" y "Sube lo que te inspira." de entradilla) los dos botones siguen en m, a la misma altura (Eric: "cuidado con eso"); "Añadir" lleva menos relleno lateral (10 px) y los huecos de la fila son de 10 px. Si aun así falta sitio, el nombre y la entradilla acaban en puntos suspensivos; el número nunca se recorta. → [decisión](decisiones/2026-10-07-el-dock-no-se-ensancha-por-la-barra-de-reunir.md) En teléfono (≤640 px) es una fila: el título y el botón; miniaturas, recuento, entradilla y "Añadir" fuera (añade el "+" de la barra).
 
 ### Pulido
-`PolishView` · `components/PolishView.tsx` · `components/PolishView.css` · `.polish`
+`PolishView` · `components/PolishView.tsx` (`polish-tornado.ts`, `PolishFace.tsx`, `PolishFlyer.tsx`) · `components/PolishView.css` · `.polish`
 La fase entre el Tablón y el Sistema (`?view=polish`): lo que queda por decidir del tablón, en un slider con forma de tornado 3D; la tarjeta de delante ocupa más sitio y es la que se decide. → [la fase](decisiones/2026-10-06-vuelve-pulido-como-fase-entre-tablon-y-sistema.md), [cómo se decide](decisiones/2026-10-06-en-pulido-la-tarjeta-decidida-vuela-a-su-pestana.md)
 - Niebla arriba y abajo: `Clouds` con `always` (64 y 112 px), las dos siempre encendidas porque las tarjetas giran bajo la Isla y la barra sin scroll; `z-index: 4` en `PolishView.css`, sobre el cielo y bajo la barra.
 - La matemática es la del "3D cards tornado" de Osmo Supply, en `requestAnimationFrame` y sin GSAP; sus parámetros son las constantes del principio del fichero. Ventaneado: solo se montan las tarjetas cercanas a la pantalla (unas 33 en un tablero de 134).
