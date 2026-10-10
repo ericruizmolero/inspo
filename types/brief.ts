@@ -61,6 +61,8 @@ const texts = (v: unknown, n: number, max?: number) => [...new Set((Array.isArra
 const oneOf = <T extends string>(keys: readonly T[], v: unknown): v is T => keys.includes(v as T);
 const keysOf = <T extends string>(keys: readonly T[], v: unknown) => [...new Set(Array.isArray(v) ? v.filter((x): x is T => oneOf(keys, x)) : [])];
 const BCP47 = /^[a-z]{2,3}(-[a-z0-9]{2,8})*$/i;
+/** A market as readBrief keeps it: a BCP 47 tag */
+export const isMarketTag = (m: string) => BCP47.test(m);
 const httpUrl = (u: string) => { try { return /^https?:$/.test(new URL(u).protocol); } catch { return false; } };
 
 /** A brief as stored, read into the current shape: a brief saved before a field existed reads it empty, and the
@@ -73,7 +75,7 @@ export function readBrief(v: unknown): Brief | null {
     about: text(b.about),
     sector: text(b.sector, 40) || null,
     product: { what: text(product.what), price: oneOf(PRICE_RANGES, product.price) ? product.price : null },
-    markets: texts(b.markets, BRIEF_LIMITS.markets, 35).filter((m) => BCP47.test(m)),
+    markets: texts(b.markets, BRIEF_LIMITS.markets, 35).filter(isMarketTag),
     competitors: texts(b.competitors, BRIEF_LIMITS.competitors, BRIEF_LIMITS.url).filter(httpUrl),
     competitorsNote: text(b.competitorsNote),
     traits: texts(b.traits, BRIEF_LIMITS.traits, BRIEF_LIMITS.word),
