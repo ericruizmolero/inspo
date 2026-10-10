@@ -72,6 +72,7 @@ Lo que cuesta cada acción y cómo cuenta en la cuota está en [Desarrollo](desa
 | better-auth | Identidad y espacios | `lib/auth.ts` |
 | WAAPI y CSS | Todo el movimiento. GSAP se retiró el 2026-10-05 y no vuelve sin decisión | [Movimiento](fundamentos/movimiento.md) |
 | tsx, dotenv | Los scripts de `scripts/` | `package.json` |
+| vitest | Los tests (`npm test`): la suite de aislamiento entre equipos | `vitest.config.mts`, `tests/` |
 | papaparse, @vercel/blob, @libsql/client | Solo en scripts de migración de la etapa anterior (Google Sheet, Vercel Blob, Turso). No usar en la app | `lib/sheets.ts`, `scripts/move-blob-to-r2.ts`, `scripts/copy-turso.ts` |
 | exifr, tw-animate-css | Están en `package.json` y nadie los importa: candidatos a salir | |
 

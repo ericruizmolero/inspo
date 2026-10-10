@@ -216,10 +216,19 @@ The value lives in the database (`app_setting`), so each environment keeps its o
 `npm run db:pull` never copies it. `SIGNUP_MODE` in Vercel only sets the starting value for an
 environment where nobody has used the switch yet. Details in `docs/design-system/desarrollo.md`.
 
+## Tests
+
+```bash
+npm test                 # vitest: team B gets nothing of team A on every route, action, MCP tool and page
+```
+
+It runs the real handlers against your local Postgres; storage and outside calls are mocked, so it
+never writes to R2. A new route, action, MCP tool or dynamic page fails the guard test until it has a
+probe or an exemption in `tests/isolation/surfaces.ts`. Details in `docs/design-system/desarrollo.md`.
+
 ## Checks
 
-Not a test framework: scripts that assert and clean up after themselves. They run against your
-local database.
+Scripts that assert and clean up after themselves. They run against your local database.
 
 ```bash
 npm run check:postgres   # cascades, file cleanup, projects, bulk tags, heartbeat, day grouping
