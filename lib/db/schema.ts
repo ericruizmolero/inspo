@@ -279,7 +279,7 @@ export const project = pgTable("project", {
   name: text("name").notNull(),
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   /** The team's words about the project, and the client's site for a redesign (types/brief.ts, lib/brief.ts) */
-  brief: jsonb("brief").$type<Brief>(),
+  brief: jsonb("brief").$type<Partial<Brief>>(),
   /** Set when this is a template, not a project: where the work started and where it ended (types/system.ts ProjectTemplate) */
   template: jsonb("template").$type<unknown>(),
   /** The recipe: how the work was done, as a Markdown document an agent can follow (the process of a template) */

@@ -6,7 +6,9 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import { eq, ilike, or } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
 import { runMigrations } from "../lib/db/migrate";
-import { runSystem } from "../lib/system";
+import { loadSnapshot, runSystem, systemRequest } from "../lib/system";
+import { brandRequest } from "../lib/brand";
+import { emptyBrand } from "../types/brand";
 import { toOutputLanguage } from "../lib/output-language";
 import { renderCriterioMd } from "../lib/criterio-md";
 import { ui as en } from "../lib/i18n/en/ui";
@@ -19,12 +21,18 @@ async function main() {
   await runMigrations();
   const [p] = await db.select().from(schema.project).where(or(eq(schema.project.id, what), ilike(schema.project.name, what))).limit(1);
   if (!p) throw new Error(`No project "${what}"`);
+  // The brief as the system and the brand passes read it: every filled field must be in both
+  const briefOf = (text: string) => text.split("\n\n").find((b) => b.startsWith("PROJECT BRIEF")) ?? "(no brief)";
+  const { snapshot } = await loadSnapshot(p.organizationId, p.id);
+  const empty = emptyBrand();
+  const brand = brandRequest({ name: p.name, brief: p.brief, system: { summary: "", areas: [] }, measured: {}, clientSite: null, guides: [], keep: {}, current: { intro: empty.intro, color: [], faces: [], voice: empty.voice }, pictures: [] });
+  console.log(`\nSystem input, brief:\n${briefOf(systemRequest(snapshot).text)}\n\nBrand input, brief:\n${briefOf(brand.text)}`);
   const t0 = Date.now();
   const system = await runSystem({ organizationId: p.organizationId, projectId: p.id, usage: { organizationId: p.organizationId }, language: toOutputLanguage(locale) });
   console.log(`\n${p.name}: ${Date.now() - t0} ms\n`);
   const items = await db.select({ id: schema.inspoItem.id, name: schema.inspoItem.name, web: schema.inspoItem.web }).from(schema.inspoItem).where(eq(schema.inspoItem.organizationId, p.organizationId));
   const dict = locale === "es" ? es : en;
-  console.log(renderCriterioMd({ project: p.name, system, items: Object.fromEntries(items.map((i) => [i.id, i])), labels: dict.system.areas, strings: dict.system.md }));
+  console.log(renderCriterioMd({ project: p.name, system, items: Object.fromEntries(items.map((i) => [i.id, i])), labels: dict.system.areas, strings: dict.system.md, about: p.brief?.about, brief: p.brief }));
   await pool.end();
 }
 

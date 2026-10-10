@@ -11,9 +11,10 @@
 // it as it is and let a block be edited: the system stays the one source, the file is its other face.
 import { SYSTEM_AREAS, confidenceOf, type ProjectSystem, type SystemArea } from "@/types/system";
 import { skillSections } from "@/lib/md-skills";
-import { readableDomain } from "@/lib/url";
+import { hostOf, readableDomain } from "@/lib/url";
 import { brandTokenLines, brandIntroLines, brandCssLines, type BrandMdStrings } from "@/lib/brand-md";
 import type { BrandSpec } from "@/types/brand";
+import { readBrief, type KeepPart, type Platform, type PriceRange } from "@/types/brief";
 
 /** A reference as the file tells it: what it is, who brought it and what the team said about it */
 export interface RefInfo {
@@ -46,6 +47,8 @@ export interface CriterioMdInput {
   client?: { name: string; web: string } | null;
   /** What the project is, in the team's words (the brief) */
   about?: string | null;
+  /** The project's brief as stored: every field filled gets a line under Brief */
+  brief?: unknown;
   /** The project's references in the order they were saved: each gets a code (R1, R2…) and its own entry at the end of the file */
   board?: string[];
   /** The team's conversation about each area, oldest first */
@@ -69,7 +72,41 @@ export interface CriterioMdInput {
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
     proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
     brand: BrandMdStrings;
+    brief: BriefMdStrings;
   };
+}
+
+export interface BriefMdStrings {
+  heading: string; draft: string;
+  sector: string; product: string; price: string; markets: string; competitors: string; competitorsNote: string; traits: string;
+  neverSay: string; firstSeconds: string; platforms: string; stack: string; a11y: string; keep: string; voiceSamples: string;
+  sectors: Record<string, string>; prices: Record<PriceRange, string>; platformNames: Record<Platform, string>; keepNames: Record<KeepPart, string>;
+}
+
+/** The brief's filled fields as lines of the file, in the order of the decision's table. `about` is not here: it is
+ *  The project, above. A field a model drafted and nobody touched says so */
+export function briefLines(stored: unknown, s: BriefMdStrings): string[] {
+  const b = readBrief(stored);
+  if (!b) return [];
+  const draft = new Set<string>(b.drafted);
+  const lines: string[] = [];
+  const head = (field: string, label: string) => `- **${label}:**${draft.has(field) ? ` _(${s.draft})_` : ""}`;
+  const row = (field: string, label: string, value: string) => { if (value) lines.push(`${head(field, label)} ${value}`); };
+  row("sector", s.sector, b.sector ? s.sectors[b.sector] ?? b.sector : "");
+  row("product", s.product, b.product.what);
+  row("product", s.price, b.product.price ? s.prices[b.product.price] : "");
+  row("markets", s.markets, b.markets.join(", "));
+  row("competitors", s.competitors, b.competitors.map((u) => `[${hostOf(u)}](${u})`).join(", "));
+  row("competitorsNote", s.competitorsNote, one(b.competitorsNote));
+  row("traits", s.traits, b.traits.join(", "));
+  row("neverSay", s.neverSay, one(b.neverSay));
+  row("firstSeconds", s.firstSeconds, one(b.firstSeconds));
+  row("platforms", s.platforms, b.platforms.map((p) => s.platformNames[p]).join(", "));
+  row("stack", s.stack, b.stack.join(", "));
+  row("a11y", s.a11y, b.a11y ? `WCAG ${b.a11y}` : "");
+  row("keep", s.keep, b.keep.map((k) => s.keepNames[k]).join(", "));
+  if (b.voiceSamples.length) lines.push(head("voiceSamples", s.voiceSamples), "", ...b.voiceSamples.flatMap((t, i) => [...(i ? [""] : []), ...t.split("\n").map((l) => `  > ${l}`)]));
+  return lines;
 }
 
 export type CriterioBlock =
@@ -105,7 +142,7 @@ const lowerHeadings = (text: string) => text.split("\n").map((l) => l.replace(/^
 // The other way, for a text typed over in the file: lib/text-headings.ts (the board needs it without this whole module)
 const quote = (s: string, max = 280) => { const t = one(s); return `\u00ab${t.length > max ? `${t.slice(0, max - 1).replace(/\s+\S*$/, "")}\u2026` : t}\u00bb`; };
 
-export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref }: CriterioMdInput): CriterioBlock[] {
+export function criterioBlocks({ project, system, items: allItems, labels, strings, client, about, brief, board = [], talk: allTalk = {}, origin = "", skills = [], locale, brand, mode = "full", fileHref }: CriterioMdInput): CriterioBlock[] {
   const date = (system.updatedAt ?? new Date().toISOString()).slice(0, 10);
   // Clean: what each reference is stays; who saved it and what the team said of it do not
   const clean = mode === "clean";
@@ -137,6 +174,8 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
+  const briefed = briefLines(brief, strings.brief);
+  if (briefed.length) blocks.push({ kind: "section", id: "brief", heading: title("brief", strings.brief.heading), lines: briefed });
   // The project's content: each text the team pasted, whole and as given, under its title. It is material to
   // place, not a reference to read a look from, so it sits with what the project is and not in the appendix
   type Part = { itemId: string; head: string[]; body: string[] };

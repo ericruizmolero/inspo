@@ -3,6 +3,7 @@
 // object, so a missing key does not compile.
 //
 // Anything with variables inside is a function, not a template with placeholders.
+import { taxonomy } from "./taxonomy";
 export const ui = {
   settings: {
     language: "Language",
@@ -712,6 +713,16 @@ export const ui = {
       never: "Never",
       client: "Redesign of the client's site, which rules copy, typefaces, logo and figures",
       project: "The project",
+      brief: {
+        heading: "Brief", draft: "draft, not confirmed",
+        sector: "Sector", product: "What it sells", price: "Price range", markets: "Languages and markets", competitors: "Competitors",
+        competitorsNote: "Unlike them in", traits: "Three words", neverSay: "Would never say", firstSeconds: "In the first five seconds",
+        platforms: "Where it lives", stack: "Built with", a11y: "Accessibility", keep: "Stays from the current brand", voiceSamples: "Real copy",
+        sectors: taxonomy.sector as Record<string, string>,
+        prices: { affordable: "Affordable", mid: "Mid-range", premium: "Premium" },
+        platformNames: { web: "Web", ios: "iOS", android: "Android", print: "Print" },
+        keepNames: { logo: "Logo", colors: "Colors", type: "Typefaces" },
+      },
       refs: "References",
       refsIntro: "Everything the team gathered, each thing once: what it is, who brought it, what was said and what it brings to each area. The areas cite it by its code.",
       kinds: { web: "Site", image: "Image", video: "Video", post: "Post", text: "Text" },

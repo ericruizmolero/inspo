@@ -112,7 +112,7 @@ async function pass(fx: EvalFixture, model: string, judge: boolean): Promise<Row
     const empty = emptyBrand();
     const brandReq = brandRequest({
       name: fx.system.name,
-      brief: { about: fx.system.brief?.about || null, tone: fx.system.brief?.tone ?? null, avoid: fx.system.brief?.avoid || null },
+      brief: fx.system.brief,
       system: { summary: sys.summary, areas: sys.areas.filter((a) => a.decision || nevers.get(a.area)?.length).map((a) => ({ area: a.area, decision: a.decision || undefined, why: a.why || undefined, never: nevers.get(a.area)?.length ? nevers.get(a.area) : undefined })) },
       measured: measuredOf(sys.areas, new Map(Object.entries(fx.sites))),
       clientSite: fx.clientSite,

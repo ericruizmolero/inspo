@@ -27,6 +27,7 @@ import { BRIEF_KEYS, type DesignBrief, type DesignWhy } from "@/types/design";
 import { DECISION_MAX, DOC_PART_MAX, isDocPart, IMPROVE_NOTE_MAX, NEVER_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemAreaState, type SystemEvidence, type SystemRun, type AreaCandidate, type AreaCuration, type CandidateVerdict } from "@/types/system";
 import { areaCandidates } from "./candidates";
 import type { Brief } from "@/types/brief";
+import { briefForModel, briefPrompt } from "./brief";
 import { readBrand } from "@/types/brand";
 import { projectGuides } from "./brand-guides";
 import { log } from "./log";
@@ -312,14 +313,9 @@ export async function boardStamp(organizationId: string, projectId: string): Pro
 }
 
 /** The board as the model reads it, with the client's current site marked when the project is a redesign */
-function markClient(refs: BoardRef[], brief: Brief | null | undefined) {
+function markClient(refs: BoardRef[], brief: Partial<Brief> | null | undefined) {
   const id = brief?.clientItemId;
   return refs.map((r) => (id && r.itemId === id ? { ...r.ref, client_site: true } : r.ref));
-}
-
-function briefForModel(b: Brief | null | undefined) {
-  if (!b) return null;
-  return { about: b.about || null, audience_note: b.audienceNote || null, tone: b.tone.length ? b.tone : null, avoid: b.avoid || null, first_five_seconds: b.firstSeconds || null };
 }
 
 // ─── The run ─────────────────────────────────────────────────────────────────
@@ -415,7 +411,7 @@ function focusForModel(focus: SystemFocus | undefined, teamAreas: SystemArea[] =
 /** Everything the system pass reads: built from the database by runSystem, frozen as a fixture by the eval (scripts/eval-system.ts) */
 export interface SystemSnapshot {
   name: string;
-  brief: Brief | null;
+  brief: Partial<Brief> | null;
   /** The system as it stands, its references named by their code on the board */
   standing: { area: SystemArea; status: string; decision?: string; confidence?: number; evidence?: { ref: string; take?: string; filed_by_team?: boolean }[]; never?: string[] }[];
   /** The board as the model reads it, the client's site marked */
@@ -452,7 +448,7 @@ export const SYSTEM_PROMPT_ID = `v${PROMPTS.system.version}-${createHash("sha1")
 export function systemRequest(s: SystemSnapshot, o: { language?: OutputLanguage; focus?: SystemFocus } = {}): LlmInput & { schema: typeof SystemOutSchema } {
   const text = [
     `Project: ${s.name}`,
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(s.brief))}`,
+    briefPrompt(s.brief),
     `System as it stands (JSON): ${JSON.stringify(s.standing)}`,
     `References on the board (JSON): ${JSON.stringify(s.refs)}`,
     s.guides.length ? `GUIDE: brand guidelines the team brought in, verbatim. They are the brand's own word, as strong as the client's site: decisions follow their explicit rules and values unless the team's own words on the board say otherwise. Cite no reference for what only the guide says.\n${s.guides.map((g) => `<<<\n${g}\n>>>`).join("\n")}` : null,
@@ -585,7 +581,7 @@ export async function proposeOptions(input: { organizationId: string; projectId:
     `Project: ${project.name}`,
     `Area to settle: ${area}`,
     standing.never ? `The team ruled these out for this area, never propose them (one per line):\n${standing.never}` : "",
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
+    briefPrompt(project.brief),
     `This area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, confidence: standing.confidence, evidence: standing.evidence.map((e) => ({ ref: codeOf.get(e.itemId) ?? "gone", take: e.take })) } : null)}`,
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
     only ? `The team picked these references for this area, on purpose: build the directions from them alone.` : "",
@@ -742,7 +738,7 @@ export async function startAreaAsk(input: StartInput): Promise<AreaStartAsk> {
     `Project: ${project.name}`,
     `The empty area: ${area}`,
     current.areas.find((x) => x.area === area)?.never ? `Ruled out by the team for this area, never offer them:\n${current.areas.find((x) => x.area === area)!.never}` : "",
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
+    briefPrompt(project.brief),
     `In a paragraph: ${current.summary || "(not written yet)"}`,
     project.brief?.clientItemId ? `This project is a REDESIGN of the client's current site (${String(refs.find((r) => r.itemId === project.brief!.clientItemId)?.ref.url ?? "on the board")}): for typography, logo and voice the answers take what that site already uses, never something new.` : "",
     `The other areas, decided or proposed (JSON): ${JSON.stringify(others)}`,
@@ -1035,7 +1031,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
   const text = [
     `Project: ${project.name}`,
     `Area: ${area}`,
-    `Project brief (the team's words, JSON): ${JSON.stringify(briefForModel(project.brief))}`,
+    briefPrompt(project.brief),
     `The area as it stands (JSON): ${JSON.stringify(standing.decision ? { decision: standing.decision, why: standing.why, source: standing.source } : null)}`,
     input.keep && Object.keys(input.keep).length ? `The team already settled some candidates, keep these verdicts exactly (JSON): ${JSON.stringify(input.keep)}` : "",
     `Candidates (JSON): ${JSON.stringify(candidates.map((c) => ({ id: c.id, label: c.label, detail: c.detail, refs: c.refs.map((id) => codeOf.get(id) ?? id), ...c.visual })))}`,

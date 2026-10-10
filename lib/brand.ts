@@ -24,6 +24,7 @@ import { familyKey } from "./font-names";
 import { resolveFace } from "./brand-fonts";
 import { clampBezier, HEX_RE_LOOSE } from "./brand-values";
 import { getBrand, projectClient, writeBrandSections } from "./brand-store";
+import { briefPrompt } from "./brief";
 import { brandId, runMayWrite, type BrandFace, type BrandSection, type BrandSections, type BrandSpec } from "@/types/brand";
 import type { ProjectSystem, SystemArea } from "@/types/system";
 import type { DesignSpec } from "@/types/design";
@@ -123,7 +124,8 @@ STYLE
 /** Everything the brand pass reads: built from the database by runBrand, from a fixture and the system it just wrote by the eval */
 export interface BrandSnapshot {
   name: string;
-  brief: { about: string | null; tone: string[] | null; avoid: string | null };
+  /** The stored brief: briefPrompt reads it */
+  brief: unknown;
   system: { summary: string; areas: { area: SystemArea; decision?: string; why?: string; never?: string[] }[] };
   measured: Record<string, unknown[]>;
   clientSite: Record<string, unknown> | null;
@@ -156,7 +158,7 @@ export const BRAND_PROMPT_ID = `v${PROMPTS.brand.version}-${createHash("sha1").u
 export function brandRequest(s: BrandSnapshot, language?: OutputLanguage): LlmInput & { schema: typeof BrandOutSchema } {
   const text = [
     `Brand: ${s.name}`,
-    `Brief: ${JSON.stringify(s.brief)}`,
+    briefPrompt(s.brief),
     `system (JSON): ${JSON.stringify(s.system)}`,
     `measured (JSON): ${JSON.stringify(s.measured)}`,
     s.clientSite ? `client_site (JSON): ${JSON.stringify(s.clientSite)}` : null,
@@ -201,7 +203,7 @@ export function runBrand(input: { organizationId: string; projectId: string; usa
 
     const snapshot: BrandSnapshot = {
       name: project.name,
-      brief: { about: project.brief?.about || null, tone: project.brief?.tone ?? null, avoid: project.brief?.avoid || null },
+      brief: project.brief,
       system: { summary: system.summary, areas: system.areas.filter((a) => a.decision || a.never).map((a) => ({ area: a.area, decision: a.decision || undefined, why: a.why || undefined, never: a.never ? a.never.split("\n") : undefined })) },
       measured: measuredOf(areas, sites),
       clientSite: client && clientSpec ? clientSiteOf(client.web, clientSpec) : null,

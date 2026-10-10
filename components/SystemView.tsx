@@ -199,10 +199,10 @@ export default function SystemView({ project, system, onSystem, board, library, 
     items: Object.fromEntries(library.filter((i) => i.id).map((i) => [i.id!, refInfo ? refInfo(i) : { name: i.name, web: i.web }])),
     labels, strings: t.system.md,
     client: clientItem ? { name: clientItem.name, web: clientItem.web } : null,
-    about: aboutNow ?? project.intent, board: boardIds, talk: activity?.notes,
+    about: aboutNow ?? project.intent, brief: project.brief, board: boardIds, talk: activity?.notes,
     origin: typeof window === "undefined" ? "" : window.location.origin,
     skills: skillsOn, locale, brand: sys.brand,
-  }), [sys, project.name, project.intent, aboutNow, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale]);
+  }), [sys, project.name, project.intent, project.brief, aboutNow, library, boardIds, labels, t, clientItem, refInfo, activity, skillsOn, locale]);
   const markdown = useMemo(() => blocksToMd(blocks), [blocks]);
   // Bringing in a brand that exists: asked for here, or from the empty project's start (?bring=site)
   const [bringing, setBringing] = useState<"site" | "files" | "text" | null>(null);

@@ -1,4 +1,5 @@
 // Spanish. Typed against lib/i18n/en/ui.ts: a missing key does not compile.
+import { taxonomy } from "./taxonomy";
 import type { ui as EnUi } from "../en/ui";
 
 export const ui: typeof EnUi = {
@@ -708,6 +709,16 @@ export const ui: typeof EnUi = {
       never: "Nunca",
       client: "Redise\u00f1o de la web del cliente, que manda en copy, fuentes, logo y cifras",
       project: "El proyecto",
+      brief: {
+        heading: "Brief", draft: "borrador, sin confirmar",
+        sector: "Sector", product: "Qué vende", price: "Gama de precio", markets: "Idiomas y mercados", competitors: "Competidores",
+        competitorsNote: "En qué no se parece a ellos", traits: "Tres palabras", neverSay: "Nunca diría", firstSeconds: "En los primeros cinco segundos",
+        platforms: "Dónde vive", stack: "Con qué se construye", a11y: "Accesibilidad", keep: "Lo que no se toca de la marca actual", voiceSamples: "Textos reales",
+        sectors: taxonomy.sector as Record<string, string>,
+        prices: { affordable: "Asequible", mid: "Media", premium: "Premium" },
+        platformNames: { web: "Web", ios: "iOS", android: "Android", print: "Impreso" },
+        keepNames: { logo: "Logo", colors: "Colores", type: "Tipografías" },
+      },
       refs: "Referencias",
       refsIntro: "Todo lo que el equipo ha reunido, una vez cada cosa: qu\u00e9 es, qui\u00e9n lo trajo, qu\u00e9 se dijo y qu\u00e9 aporta a cada \u00e1rea. Las \u00e1reas lo citan por su c\u00f3digo.",
       kinds: { web: "Web", image: "Imagen", video: "V\u00eddeo", post: "Post", text: "Texto" },

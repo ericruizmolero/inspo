@@ -24,17 +24,17 @@ const SYSTEM_FIELDS = "every decision, why, take, reason, question, option and s
 
 export const PROMPTS = {
   /** Reads the board into the eight areas (lib/system.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
-  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 2, language: SYSTEM_FIELDS },
+  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 3, language: SYSTEM_FIELDS },
   /** Other directions for one area */
-  options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 1, language: SYSTEM_FIELDS },
+  options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 2, language: SYSTEM_FIELDS },
   /** The question that starts an empty area: a person is waiting, so a quick model that does not stop to reason */
-  start: { model: env("START_MODEL", "anthropic/claude-haiku-4.5"), fallback: FALLBACK_MODEL, maxTokens: 3000, version: 1, language: SYSTEM_FIELDS },
+  start: { model: env("START_MODEL", "anthropic/claude-haiku-4.5"), fallback: FALLBACK_MODEL, maxTokens: 3000, version: 2, language: SYSTEM_FIELDS },
   /** One area's evidence picked again */
-  curate: { model: env("CURATE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 1, language: SYSTEM_FIELDS },
+  curate: { model: env("CURATE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 2, language: SYSTEM_FIELDS },
   /** The inbox's references filed into projects */
-  triage: { model: env("TRIAGE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 16000, version: 1, language: SYSTEM_FIELDS },
+  triage: { model: env("TRIAGE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 16000, version: 2, language: SYSTEM_FIELDS },
   /** The brand's values from the areas (lib/brand.ts) */
-  brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 1, language: "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line" },
+  brand: { model: env("BRAND_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 2, language: "every lede, paragraph, headline, role, note, rule, principle, sample, pair, tagline, bio and line" },
   /** The agent's plan for a request (lib/agent.ts) */
   agent: { model: env("AGENT_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 6000, version: 1, language: '"say", every decision, why, "never" rule, brief, question, label and guide text' },
   /** A reference's tags: words the search matches, so always English. Picked with `npm run tags:bakeoff` (October 2026):

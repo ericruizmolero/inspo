@@ -98,7 +98,7 @@ export async function loadShareView(organizationId: string, projectId: string, m
   const client = project.brief?.clientItemId ? items.find((i) => i.id === project.brief!.clientItemId) : null;
   const blocks = criterioBlocks({
     project: project.name, system, items: infos, labels: t.system.areas as Record<SystemArea, string>, strings: t.system.md,
-    client: client ? { name: client.name, web: client.web } : null, about: project.brief?.about || null,
+    client: client ? { name: client.name, web: client.web } : null, about: project.brief?.about || null, brief: project.brief,
     board: boardIds, talk: activity?.notes ?? {}, origin, skills: (system.doc?.skills ?? "").split(",").filter(Boolean), locale,
     brand, mode, fileHref: (key) => { keys.add(key); return `${origin}${at(key)}`; },
   });
