@@ -1689,6 +1689,7 @@ export default function InspoClient({
         workspaces={workspaces}
         isAdmin={isAdmin}
         onOpenItem={(item) => openItem(item)}
+        onBrief={currentProject ? () => setParams({ view: "system", brief: "1" }) : undefined}
         onAddUrl={(web) => {
           // Already saved: show it instead of saving it twice (found on the board; opened where there is no search)
           if (isDuplicate(web)) {
@@ -1828,6 +1829,15 @@ export default function InspoClient({
               const r = await setProjectClient(id, itemId).catch((e) => ({ ok: false as const, error: String(e) }));
               if (!r.ok) { projectFailed(new Error(r.error)); return; }
               setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, clientItemId: itemId } : p)));
+            }}
+            // criterio.md is built from project.brief and project.intent: both follow the save, no reload
+            onBrief={async (patch) => {
+              const id = currentProject.id;
+              const r = await saveProjectBrief(id, patch).catch((e) => ({ ok: false as const, error: String(e) }));
+              if (!r.ok) { projectFailed(new Error(r.error)); return null; }
+              const { brief } = r.data;
+              setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, brief, intent: brief.about || null } : p)));
+              return brief;
             }}
             onAddSite={async (web) => {
               // Already in the library: filed here instead of saved twice

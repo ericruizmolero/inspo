@@ -7,6 +7,7 @@ Todos los que maneja la app. Al añadir uno: que no choque con estos, que no sal
 | Tecla | Qué hace |
 | --- | --- |
 | ⌘K / Ctrl+K | Abre o cierra la paleta de comandos |
+| ⌘K → "Abrir el brief" | Con un proyecto abierto, lleva a su Sistema y abre el panel Brief (desde el tablero también) |
 | N | Añadir referencia (fuera de campos y sin diálogos abiertos) |
 | / | Lleva al buscador |
 | / con el ratón sobre una tarjeta | Se la entrega al agente como "esto" |

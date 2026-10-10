@@ -11,6 +11,7 @@ import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
 import { sectionIcon } from "./section-icons";
 import { enterFeedbackMode } from "./feedback-mode";
+import { Icon } from "@/components/criterio";
 import {
   CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
 } from "@/components/ui/command";
@@ -19,11 +20,13 @@ import "./CommandPalette.css";
 const SETTINGS = ["account", "feedback", "workspace", "members", "plan", "extension"] as const;
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
 
-export default function CommandPalette({ open, onOpenChange, items, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onDirectory }: {
+export default function CommandPalette({ open, onOpenChange, items, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onDirectory, onBrief }: {
   open: boolean; onOpenChange: (open: boolean) => void;
   items: InspoItem[];
   workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   onOpenItem: (item: InspoItem) => void; onAddUrl: (web: string) => void; onAdd: () => void; onDirectory: () => void;
+  /** Only with a project open: opens that project's Brief panel */
+  onBrief?: () => void;
 }) {
   const { t } = useT();
   const router = useRouter();
@@ -52,6 +55,11 @@ export default function CommandPalette({ open, onOpenChange, items, workspace, w
           {url && (
             <CommandItem className="cr-listbox-item" value={`save ${url}`} forceMount onSelect={run(() => onAddUrl(url))}>
               <span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addUrl(host(url))}
+            </CommandItem>
+          )}
+          {onBrief && (
+            <CommandItem className="cr-listbox-item" value={`brief ${t.palette.openBrief}`} onSelect={run(onBrief)}>
+              <span className="cmdk-item__icon"><Icon name="file" size={16} /></span>{t.palette.openBrief}
             </CommandItem>
           )}
           <CommandItem className="cr-listbox-item" onSelect={run(onAdd)}><span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addInspo}</CommandItem>
