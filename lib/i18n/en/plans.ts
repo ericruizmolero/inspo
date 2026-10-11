@@ -37,8 +37,8 @@ export const plans = {
     name: "Agency",
     tagline: "For an agency, one criterio per client.",
     features: [
-      "Up to 15 people",
-      "Several workspaces, one per client",
+      "Up to 15 people in each workspace",
+      "10 workspaces on one plan",
       "2,000 AI actions a month",
       "AI searches, fair use",
     ],

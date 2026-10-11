@@ -37,8 +37,8 @@ export const plans: typeof EnPlans = {
     name: "Agency",
     tagline: "Para una agencia, con un criterio por cliente.",
     features: [
-      "Hasta 15 personas",
-      "Varios workspaces, uno por cliente",
+      "Hasta 15 personas en cada espacio",
+      "10 espacios con un solo plan",
       "2.000 acciones de IA al mes",
       "Búsquedas IA con uso justo",
     ],

@@ -85,17 +85,13 @@ export default async function PlanPage() {
                 note={current ? t.plans.current : undefined}
                 actions={current ? undefined : (
                   <Button variant={isPaid(p) ? "primary" : "secondary"} size="s" href={mailto(name)}>
-                    {isPaid(p) ? t.plans.moveUp(name) : t.plans.moveDown(name)}
+                    {isPaid(p) ? t.plans.moveUp : t.plans.moveDown}
                   </Button>
                 )}>
                 <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
                 <div className="pl-plan__price">
-                  {!isPaid(p)
-                    ? <span className="t-title-l">{t.plans.free}</span>
-                    : <>
-                      <span className="t-title-l">{fmtPrice(p.price.month, locale)}</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span>
-                      <span className="pl-plan__year t-small">{t.plans.orYearly(fmtPrice(p.price.year, locale))}</span>
-                    </>}
+                  <span className="t-title-l">{fmtPrice(p.price.month, locale)}</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span>
+                  <span className="pl-plan__year t-small">{isPaid(p) ? t.plans.orYearly(fmtPrice(p.price.year, locale)) : t.plans.forGood}</span>
                 </div>
                 <ul className="pl-plan__features">
                   {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} weight="bold" /></span><span>{f}</span></li>)}
