@@ -4,7 +4,7 @@ import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback, setSignupMo
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AreaThumb from "./AreaThumb";
-import { type ActivityOverview, type ActivityDay, type AdminEntry } from "@/lib/activity-core";
+import { type ActivityOverview, type AdminEntry } from "@/lib/activity-core";
 import { type UsageOverview } from "@/lib/usage-core";
 import { batchMarkdown, type FeedbackBatch, type FeedbackOverview } from "@/lib/feedback-core";
 import { useT } from "@/components/I18nProvider";

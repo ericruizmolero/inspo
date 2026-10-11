@@ -66,7 +66,6 @@ const imagesOf = (image: unknown): string[] =>
  */
 export async function addMany({ workspaceId, user }: Who, items: NewRef[], opts: { source: string; projectId?: string | null }): Promise<{ results: AddResult[]; added: InspoItem[]; full: string | null }> {
   const { source } = opts;
-  const author = user.name || user.email;
   const plan = planOf(await planIn(workspaceId));
   // References left before the cap, taken before the work that makes one: five run at once, and a count
   // per add would let all five through the last free place. The bytes are checked by putFile, file by file

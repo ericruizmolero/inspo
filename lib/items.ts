@@ -14,7 +14,6 @@ import { cleanTag, MAX_ADDED } from "./taxonomy";
 
 const T = schema.inspoItem;
 // Every column but the embedding: 1024 floats per row that only search by meaning reads (lib/embed.ts)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { embedding: _e, embeddingAt: _ea, ...ROW } = getTableColumns(T);
 export const ITEM_COLUMNS = ROW;
 export type ItemRow = Omit<typeof T.$inferSelect, "embedding" | "embeddingAt">;

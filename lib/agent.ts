@@ -84,8 +84,6 @@ const PlanSchema = z.object({
 
 /** Actions that destroy something: planned, shown, run only when the person says so */
 const DANGEROUS = new Set<AgentAction["kind"]>(["delete_items", "delete_project", "clear"]);
-/** Actions the interface runs itself (nothing changes on the server) */
-const CLIENT_SIDE = new Set<AgentAction["kind"]>(["search", "go", "guide", "ask"]);
 // What a confirmation may run: the deletions the person said yes to, and the undo of a filing (line.undo).
 // Anything else would run outside the AI quota, which a confirmation does not count
 const CONFIRMABLE = new Set<AgentAction["kind"]>([...DANGEROUS, "file", "assign"]);

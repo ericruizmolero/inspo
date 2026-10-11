@@ -3,7 +3,7 @@
 // are the ones Better Auth 1.7 expects (organization plugin included).
 // inspo_item is ours: each row belongs to a workspace (organization).
 import { sql } from "drizzle-orm";
-import { pgTable, text, integer, bigint, real, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, bigint, boolean, timestamp, jsonb, index, uniqueIndex, check, primaryKey, vector, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import type { Brief } from "@/types/brief";
 import type { DesignSpec } from "@/types/design";

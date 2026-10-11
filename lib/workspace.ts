@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "./session";
 import { auth } from "./auth";
 import { toLocale } from "./i18n/locale";
-import { ensurePersonalWorkspace, listWorkspaces, canManage, HttpError, type Ctx, type Role, type SessionUser } from "./workspace-core";
+import { ensurePersonalWorkspace, listWorkspaces, canManage, HttpError, type Ctx, type SessionUser } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { log, logAs, recordFailure } from "./log";
 

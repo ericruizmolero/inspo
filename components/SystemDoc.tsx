@@ -14,7 +14,6 @@ import { readAreaMeta } from "@/lib/criterio-md";
 import { timeAgo } from "@/lib/i18n/format";
 import SystemMarkdown from "./SystemMarkdown";
 import { useT } from "./I18nProvider";
-import { areaIcon } from "./area-icons";
 import { Avatar, Chip, Icon, toneFor } from "@/components/criterio";
 import "./SystemDoc.css";
 
@@ -55,7 +54,7 @@ interface Props {
   look: "md" | "doc";
 }
 
-export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onOpenItem, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look }: Props) {
+export default function SystemDoc({ blocks, system, boardIds, itemOf, imageOf, refInfo, activity, busy, onSave, onSystem, onTalk, onAbout, onText, onTextTitle, onCopy, onDownload, copied, markdown, projectId, projectName, hasRecipe, fileTools, look }: Props) {
   const { t, locale } = useT();
   const s = t.doc;
   const md = t.system.md;

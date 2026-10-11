@@ -9,7 +9,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import { createHash, randomBytes } from "crypto";
 import { eq } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { approve, registerClient } from "../lib/mcp/oauth";
+import { approve } from "../lib/mcp/oauth";
 import { listWorkspaces } from "../lib/workspace-core";
 
 const args = process.argv.slice(2);

@@ -7,7 +7,6 @@
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { db, schema } from "../lib/db";
 import { webKeyOf } from "../lib/url";
 

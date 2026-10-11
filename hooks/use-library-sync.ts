@@ -27,7 +27,7 @@ export function useLibraryMirror(first: ItemsPage) {
     });
     return { items: part("items"), thumbMap: part("thumbnailMap"), tagMap: part("tagMap"), tagJobs: part("tagJobs"), pageShots: part("pageShots"), commentMap: part("comments") };
   }, []);
-  const { items: setItems, thumbMap: setThumbMap, tagMap: setTagMap, tagJobs: setTagJobs, pageShots: setPageShots, commentMap: setCommentMap } = setters;
+  const { items: setItems, thumbMap: setThumbMap, tagMap: setTagMap, tagJobs: setTagJobs, commentMap: setCommentMap } = setters;
   return { setMirror, items, thumbMap, tagMap, tagJobs, pageShots, designMdIndex, signed, commentMap, setItems, setThumbMap, setTagMap, setTagJobs, setCommentMap };
 }
 

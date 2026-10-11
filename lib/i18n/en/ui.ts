@@ -591,7 +591,7 @@ export const ui = {
     tray: {
       label: "Tray",
       hint: "Drag a reference onto an area, or click it to see its card",
-      carrying: (name: string): string => `Drop it on an area`,
+      carrying: (_name: string): string => `Drop it on an area`,
       empty: "Nothing here.",
       landed: (area: string): string => `Added to ${area}`,
       emptyArea: "Drag references here from the tray",

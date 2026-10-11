@@ -6,7 +6,6 @@ import { getSystem, decideArea, releaseArea, areaHistory, revertArea, assignEvid
 import { boardStamp, boardVisuals } from "@/lib/system/board";
 import { setVerdict } from "@/lib/system/curate";
 import { brandStale } from "@/lib/brand";
-import type { SystemArea } from "@/types/system";
 import type { SystemEvidence } from "@/types/system";
 
 export async function loadSystem(projectId: string) {

@@ -233,7 +233,6 @@ export default function InspoClient({
   // What no project has taken (nor archived): the library's second view
   // What no project holds: the system's inbox, kept as one array so the system view's memos hold across renders
   const unfiled = useMemo(() => items.filter((i) => !(i.id && links[i.id]?.length)), [items, links]);
-  const unfiledCount = unfiled.length;
   // The items in the current space (inbox, a project or everything), before any other filter
   const spaceItems = useMemo(() => space === "all" || space === "home" ? items
     : space === "inbox" ? items.filter((i) => !(i.id && links[i.id]?.length))

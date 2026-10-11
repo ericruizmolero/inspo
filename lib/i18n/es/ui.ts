@@ -587,7 +587,7 @@ export const ui: typeof EnUi = {
     tray: {
       label: "Bandeja",
       hint: "Arrastra una referencia a un \u00e1rea, o p\u00falsala para ver su ficha",
-      carrying: (name: string): string => `Su\u00e9ltala en un \u00e1rea`,
+      carrying: (_name: string): string => `Su\u00e9ltala en un \u00e1rea`,
       empty: "Nada por aqu\u00ed.",
       landed: (area: string): string => `A\u00f1adida a ${area}`,
       emptyArea: "Arrastra aqu\u00ed referencias de la bandeja",

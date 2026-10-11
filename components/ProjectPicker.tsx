@@ -5,7 +5,6 @@
 import { useRef, useState, type ReactNode } from "react";
 import type { Project } from "@/types/inspo";
 import type { SystemArea } from "@/types/system";
-import { areaIcon } from "./area-icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
 import { Busy, Icon } from "@/components/criterio";
