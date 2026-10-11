@@ -27,6 +27,7 @@ import { useBrandEditor } from "./brand/useBrandEditor";
 import { useBrandFonts } from "./brand/useBrandFonts";
 import type { BrandRef, FoundFace } from "./brand/context";
 import { findBrandFace } from "@/app/actions/brand";
+import { criterioExported } from "@/app/actions/first-steps";
 import { uploadBrandFile } from "./brand/upload";
 import BrandImport from "./brand/BrandImport";
 import ShareDialog from "./brand/ShareDialog";
@@ -254,8 +255,9 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const refs = useMemo(() => Object.fromEntries(board.filter((i) => i.id).map((i): [string, BrandRef] => [i.id!, { id: i.id!, name: i.name, web: i.web, image: imageOf(i), kind: mediaKindOf(i.web) }])), [board, imageOf]);
   const findFace = useCallback(async (family: string): Promise<FoundFace | null> => { const r = await findBrandFace(project.id, family); return r.ok ? r.data : null; }, [project.id]);
 
-  const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* the download still works */ } };
+  const copy = async () => { try { await navigator.clipboard.writeText(markdown); setCopied(true); setTimeout(() => setCopied(false), 1500); void criterioExported(project.id); } catch { /* the download still works */ } };
   const download = () => {
+    void criterioExported(project.id);
     const blob = new Blob([markdown], { type: "text/markdown" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = `${project.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-criterio.md`; a.click(); URL.revokeObjectURL(a.href);

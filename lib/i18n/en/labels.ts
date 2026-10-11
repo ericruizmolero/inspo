@@ -21,6 +21,7 @@ export const labels = {
     search: "Search",
     directory: "Resources",
     examples: "Examples",
+    example: "An example, open",
     skills: "Skills",
     add: "Add",
     comments: "Comments",

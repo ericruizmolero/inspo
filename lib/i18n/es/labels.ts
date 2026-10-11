@@ -17,6 +17,7 @@ export const labels: typeof EnLabels = {
     search: "Búsqueda",
     directory: "Recursos",
     examples: "Ejemplos",
+    example: "Un ejemplo abierto",
     skills: "Skills",
     add: "Añadir",
     comments: "Comentarios",

@@ -78,6 +78,28 @@ export const actions: Record<string, Surface> = {
     },
   },
 
+  "action:app/actions/first-steps.ts#loadFirstSteps": {
+    probe: async (fx) => {
+      const { loadFirstSteps } = await import("@/app/actions/first-steps");
+      asB(fx);
+      const r = await loadFirstSteps();
+      expectNoSecret(fx, r, "B's first steps carry none of A's");
+      expect(JSON.stringify(r), "B's first steps never point at A's project").not.toContain(fx.a.project);
+    },
+  },
+  "action:app/actions/first-steps.ts#hideFirstStepsList": { exempt: "the signed-in user's own row, no workspace id" },
+  "action:app/actions/first-steps.ts#criterioExported": {
+    probe: async (fx) => {
+      const { criterioExported } = await import("@/app/actions/first-steps");
+      const S = schema.projectSystem;
+      const exported = async () => (await db.select({ at: S.exportedAt }).from(S).where(eq(S.projectId, fx.a.project)))[0]?.at ?? null;
+      const before = await exported();
+      asB(fx);
+      expectNoSecret(fx, await criterioExported(fx.a.project), "mark A's criterio.md as exported");
+      expect(await exported(), "A's project keeps its own export mark").toEqual(before);
+    },
+  },
+
   "action:app/actions/ext-keys.ts#createKey": {
     probe: async (fx) => {
       const { createKey } = await import("@/app/actions/ext-keys");

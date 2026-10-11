@@ -195,11 +195,13 @@ function Template({ tpl, onUse, onDelete }: { tpl: TemplateCard; onUse: (tpl: Te
   );
 }
 
-export default function TemplatesView({ workspaceId, head, onStarted }: {
+export default function TemplatesView({ workspaceId, head, onStarted, onOpenChange }: {
   workspaceId: string;
   /** The head of the page over the cards (Discover's, with its sections); an open template has its own way back */
   head: React.ReactNode;
   onStarted: (project: Project & { boardIds?: string[] }) => void;
+  /** Whether a template is open: the presence beat names it, and the first steps read that beat */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { t } = useT();
   const s = t.templates;
@@ -210,6 +212,8 @@ export default function TemplatesView({ workspaceId, head, onStarted }: {
   const open = list?.find((x) => x.id === openId) ?? null;
   const scroller = useRef<HTMLDivElement>(null);
   const go = (id: string | null) => { setOpenId(id); scroller.current?.scrollTo({ top: 0 }); };
+  const isOpen = !!open;
+  useEffect(() => { onOpenChange?.(isOpen); return () => onOpenChange?.(false); }, [isOpen, onOpenChange]);
   useEffect(() => {
     if (!open) return;
     const key = (e: KeyboardEvent) => { if (e.key === "Escape" && !(e.target as HTMLElement).closest("input, textarea")) go(null); };
