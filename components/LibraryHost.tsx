@@ -58,8 +58,8 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
 
   const switchTo = useCallback(async (id: string) => {
     if (id === shownId.current) return;
-    // The server learns first in the background; anything saved from now on goes to the new workspace
-    const active = setActiveWorkspace(id);
+    // The server learns in the background; the tab saves into the new workspace once it is the one shown (TabWorkspace)
+    const active = setActiveWorkspace(id, false);
     // A project or an open reference belong to the workspace being left: back to its library
     if (window.location.pathname !== "/" || window.location.search) window.history.replaceState(null, "", "/");
     const hit = cache.get(id);
@@ -76,6 +76,8 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
     const data = await fetchLibrary(id);
     await active;
     if (data) setShown(data);
+    // Still showing the one it left: the session goes back to it
+    else void setActiveWorkspace(shownId.current, false);
   }, []);
 
   const switcher = useMemo(() => ({ switchTo, prefetch }), [switchTo, prefetch]);

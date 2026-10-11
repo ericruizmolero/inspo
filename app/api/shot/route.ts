@@ -25,14 +25,17 @@ export async function GET(req: NextRequest) {
 
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  if (!(await findByWeb(ctx.workspace.id, url))) return new Response("url not in workspace", { status: 403 });
+  // An <img> carries no X-Workspace, so the tab's workspace may not be ctx.workspace: any of the person's will do
+  let owner = null;
+  for (const w of [ctx.workspace, ...ctx.workspaces.filter((w) => w.id !== ctx.workspace.id)]) if (!owner && (await findByWeb(w.id, url))) owner = w;
+  if (!owner) return new Response("url not in workspace", { status: 403 });
 
   try {
     // On Vercel the capture runs in its own job (lib/jobs.ts), never in this function: this one only waits for the file
     let jpeg = await getStoredShot(url);
     if (!jpeg) {
       // Captures per workspace: each one is a browser
-      if (!(await allow(`shot:${ctx.workspace.id}`, 60, 10 * 60 * 1000))) throw new Error("capture limit");
+      if (!(await allow(`shot:${owner.id}`, 60, 10 * 60 * 1000))) throw new Error("capture limit");
       // Off Vercel there is no queue: a job would only start once this answers, so the capture runs here
       if (!onVercel()) jpeg = await getOrCaptureShot(url);
       else {

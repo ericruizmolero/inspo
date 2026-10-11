@@ -34,18 +34,21 @@ let tail: Promise<boolean> = Promise.resolve(true);
 let tailId: string | null = null;
 
 /**
- * The only way the client changes workspace. The tab saves into the new one at once; the session learns it in the
- * background, for the next page load. Requests run one after another, so the last one asked for is the one the
- * session keeps; asking again for the workspace already waiting in line sends nothing more. Resolves false when the
- * server refused.
+ * The only way the client changes workspace. Once the server accepts, the tab saves into the new one, and the session
+ * keeps it for the next page load. `claim` false leaves the tab alone for a page that claims the workspace with
+ * TabWorkspace once it shows it (the library's instant switch). Requests run one after another, so the last one asked for is the one that stays; asking again for the
+ * workspace already waiting in line sends nothing more. Resolves false when the server refused.
  */
-export function setActiveWorkspace(id: string): Promise<boolean> {
-  tab = id;
+export function setActiveWorkspace(id: string, claim = true): Promise<boolean> {
   if (tailId === id) return tail;
   tailId = id;
   const run = tail.then(() => authClient.organization.setActive({ organizationId: id })).then(({ error }) => !error, () => false);
   tail = run;
-  void run.then(() => { if (tail === run) tailId = null; });
+  void run.then((ok) => {
+    if (tail !== run) return;
+    tailId = null;
+    if (ok && claim) tab = id;
+  });
   return run;
 }
 

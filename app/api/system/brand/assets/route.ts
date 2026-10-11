@@ -1,4 +1,6 @@
 import { NextRequest } from "next/server";
+import { and, eq, inArray } from "drizzle-orm";
+import { db, schema } from "@/lib/db";
 import { requireCtx, isResponse } from "@/lib/workspace";
 import { getBrand } from "@/lib/brand-store";
 import { brandZip } from "@/lib/brand-zip";
@@ -13,8 +15,11 @@ export async function GET(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
   const projectId = (req.nextUrl.searchParams.get("projectId") ?? "").trim();
-  const view = projectId ? await loadShareView(ctx.workspace.id, projectId, "full", await getLocale(), null, await requestOrigin()) : null;
-  if (!view) return Response.json({ error: "not found" }, { status: 404 });
-  const { file, fileName } = await brandZip(ctx.workspace.id, await getBrand(ctx.workspace.id, projectId), view.name, view.markdown);
+  // A download link carries no X-Workspace: the project's workspace, if it is one of the person's
+  const [p] = projectId ? await db.select({ ws: schema.project.organizationId }).from(schema.project)
+    .where(and(eq(schema.project.id, projectId), inArray(schema.project.organizationId, ctx.workspaces.map((w) => w.id)))).limit(1) : [];
+  const view = p ? await loadShareView(p.ws, projectId, "full", await getLocale(), null, await requestOrigin()) : null;
+  if (!p || !view) return Response.json({ error: "not found" }, { status: 404 });
+  const { file, fileName } = await brandZip(p.ws, await getBrand(p.ws, projectId), view.name, view.markdown);
   return new Response(new Uint8Array(file), { headers: { "Content-Type": "application/zip", "Content-Disposition": `attachment; filename="${fileName}"`, "Cache-Control": "private, no-store" } });
 }
