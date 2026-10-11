@@ -1,7 +1,7 @@
 ---
 title: Skills es una pestaña de Descubrir, con tarjetas y no con filas
 date: 2026-10-05
-status: vigente
+status: sustituida
 kind: diseño
 supersedes: 2026-10-05-skills-en-descubrir
 ---

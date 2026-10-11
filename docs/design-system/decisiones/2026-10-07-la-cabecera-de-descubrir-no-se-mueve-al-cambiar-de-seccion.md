@@ -1,7 +1,7 @@
 ---
 title: La cabecera de Descubrir no se mueve ni un píxel al cambiar de sección
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Las tres secciones de Descubrir comparten la misma cabecera (título, entradilla y fila de pestañas), pero cada una la monta en su propia columna. En Ejemplos la columna de las tarjetas (`.tpls-inner`) separa sus piezas con un hueco de 18 px y anulaba los márgenes de la fila; en Recursos y Skills la fila lleva 24 px por arriba y 32 por abajo. Al pasar de Ejemplos a Recursos la barra entera bajaba 6 px.

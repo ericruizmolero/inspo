@@ -1,7 +1,7 @@
 ---
 title: Las skills de Descubrir van por temas
 date: 2026-10-06
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Descubrir › Skills era una sola lista de 26 tarjetas: primero las trece de criterio.design y después las de otros autores. En la reunión del 6 de octubre quedó dicho que había que categorizarlas.

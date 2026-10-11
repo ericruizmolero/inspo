@@ -1,7 +1,7 @@
 ---
 title: El comando de instalar una skill va en un pozo hundido, sin papel ni en Copiar
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Al entrar el sistema, la línea `npx skills add …` de cada tarjeta de Skills en Descubrir pasó a ser un `Button` secundario de papel entero (`.btn .btn--sm`). En Board, nueve bloques de papel por pantalla pesaban más que los propios nombres de las skills. Antes del sistema era una tira plana del color del fondo con el comando apagado y un "Copiar" pequeño sobre `--surface-2`.

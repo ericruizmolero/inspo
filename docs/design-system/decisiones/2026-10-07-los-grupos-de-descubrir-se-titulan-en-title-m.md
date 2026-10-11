@@ -1,7 +1,7 @@
 ---
 title: Los grupos de Descubrir se titulan en title-m, no en title-l
 date: 2026-10-07
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** En Recursos y Skills cada grupo (por ejemplo "DESIGN.md para agentes" o "Tipografía, color y layout") lleva un `h2`, que por nivel se pinta en title-l (28 px, Bricolage 700). Sobre filas y tarjetas de 13 a 15 px, y bajo el `h1` de la página, el título del grupo pesaba más que lo que agrupa.

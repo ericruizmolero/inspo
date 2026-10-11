@@ -8,7 +8,7 @@ La interfaz es bilingüe: inglés por defecto, castellano segundo. El código es
 | --- | --- |
 | Textos de la interfaz | `lib/i18n/en/ui.ts` y `lib/i18n/es/ui.ts` |
 | Planes, taxonomía, correos, errores, etiquetas de códigos | `lib/i18n/{en,es}/plans.ts`, `taxonomy.ts`, `mail.ts`, `errors.ts`, `labels.ts` |
-| Web de marketing: portada, recursos, páginas legales | `marketing-site/src/i18n.ts`, `marketing-site/src/resources.ts`, `marketing-site/src/legal.ts` (los dos idiomas en el mismo fichero) |
+| Web de marketing: portada, recursos, skills, precios, extensión, páginas legales | `marketing-site/src/i18n.ts`, `marketing-site/src/resources.ts`, `marketing-site/src/skills.ts`, `marketing-site/src/plans.ts`, `marketing-site/src/legal.ts` (los dos idiomas en el mismo fichero). Los planes y las skills de criterio.md son copia de la app: se cambian en los dos sitios (`tests/marketing-site-copy.test.ts` lo vigila) |
 | Extensión de Chrome | `extension/chrome/_locales/{en,es}/messages.json` |
 | Este sistema de diseño | `docs/design-system/` (solo castellano) |
 

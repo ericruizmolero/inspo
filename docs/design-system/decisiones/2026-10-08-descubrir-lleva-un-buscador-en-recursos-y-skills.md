@@ -1,7 +1,7 @@
 ---
 title: Descubrir lleva un buscador en Recursos y en Skills, en la fila de controles
 date: 2026-10-08
-status: vigente
+status: sustituida
 kind: diseño
 ---
 **Contexto.** Recursos pasaba de cien webs en una decena de grupos y Skills de treinta tarjetas; solo se podían acotar por estantería (Todo, Recién llegados, Destacados) y por tipo o tema desde el menú. Encontrar una web concreta era hacer scroll.
