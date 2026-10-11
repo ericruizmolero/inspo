@@ -162,6 +162,20 @@ export function proposalMail(p: { who: string; accepted: boolean; area: string; 
   };
 }
 
+// ─── First use (lib/first-use-mail.ts) ───────────────────────────────────────
+
+/** Once, when the account is made: the five steps to a first criterio.md, in order */
+export function welcomeMail(url: string, locale: Locale): Mail {
+  const t = mailDict(locale).welcome;
+  return { subject: t.subject, text: signed(locale, t.text(url)) };
+}
+
+/** Once, three days in, if no project has a reference yet. It stops with the digest's switch */
+export function nudgeMail(url: string, stopUrl: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.nudge.subject, text: signed(locale, `${t.nudge.text(url)}\n\n${t.nudge.why}\n${t.team.stopText(stopUrl)}`) };
+}
+
 /** A month without opening the app: the digest stops on its own, and this says so once */
 export function pausedMail(url: string, locale: Locale): Mail {
   const t = mailDict(locale);

@@ -75,6 +75,28 @@ export const mail: typeof EnMail = {
       `${who} ha ${accepted ? "aceptado" : "descartado"} lo que propusiste para ${area} en ${project}: ${decision}\n\nÁbrelo aquí:\n${url}`,
   },
 
+  welcome: {
+    subject: "Por dónde empezar en Criterio",
+    text: (url: string): string =>
+      `Ya tienes tu espacio:\n${url}\n\n` +
+      `Este es el orden que seguiríamos nosotros el primer día.\n\n` +
+      `1. Abre un proyecto.\n` +
+      `2. Escribe una línea de qué es. Con «La web de un estudio de cerámica en Lisboa» basta.\n` +
+      `3. Guarda 10 referencias. Con la extensión del navegador, pegando un enlace o importando un tablero que ya tengas en Are.na, Pinterest o Cosmos.\n` +
+      `4. Pide a Criterio el Sistema. Lee tus referencias y propone la tipografía, el color, el layout y la voz hacia los que apuntan, una decisión por área. La primera pasada no cuenta para las 30 acciones de IA del plan gratis.\n` +
+      `5. Exporta el criterio.md o conecta el MCP, y tu agente lo leerá mientras programa.\n\n` +
+      `Si algo se atasca, responde a este correo.`,
+  },
+
+  nudge: {
+    subject: "Tu proyecto sigue vacío",
+    text: (url: string): string =>
+      `Han pasado tres días y tu proyecto en Criterio sigue sin referencias. Lo tienes aquí:\n${url}\n\n` +
+      `Lo más rápido es traer un tablero que ya tengas. Abre Importar, pega el enlace de un tablero de Are.na, Pinterest o Cosmos y entra como proyecto con todo lo que guardaste. Son dos minutos.\n\n` +
+      `Si te has atascado en algún punto, responde y cuéntanos dónde. Te echamos una mano hasta tu primer Sistema.`,
+    why: "Te llega porque abriste una cuenta en criterio.design.",
+  },
+
   paused: {
     subject: "Hemos parado los resúmenes de tus equipos",
     text: (url: string): string => `Llevas un mes sin abrir criterio.design, así que hemos dejado de mandarte el resumen diario de tus equipos. Vuelve a activarlo aquí:\n${url}`,

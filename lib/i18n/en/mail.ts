@@ -78,6 +78,29 @@ export const mail = {
       `${who} ${accepted ? "accepted" : "turned down"} what you proposed for ${area} in ${project}: ${decision}\n\nOpen it here:\n${url}`,
   },
 
+  // ─── First use (lib/first-use-mail.ts) ─────────────────────────────────────
+  welcome: {
+    subject: "Where to start on Criterio",
+    text: (url: string): string =>
+      `Your workspace is ready:\n${url}\n\n` +
+      `This is the order we would follow on the first day.\n\n` +
+      `1. Open a project.\n` +
+      `2. Write one line about what it is. "A site for a ceramics studio in Lisbon" is enough.\n` +
+      `3. Save 10 references to it. Use the browser extension, paste a link, or import a board you already keep on Are.na, Pinterest or Cosmos.\n` +
+      `4. Ask Criterio for the System. It reads your references and proposes the typography, color, layout and voice they point to, one decision per area. The first pass does not count toward the 30 AI actions of the free plan.\n` +
+      `5. Export criterio.md, or connect the MCP so your coding agent reads it while it builds.\n\n` +
+      `If something gets in the way, reply to this email.`,
+  },
+
+  nudge: {
+    subject: "Your project is still empty",
+    text: (url: string): string =>
+      `Three days in, your project on Criterio still has no references. Here it is:\n${url}\n\n` +
+      `The quickest way to fill it is a board you already have. Open Import, paste the link of a board you keep on Are.na, Pinterest or Cosmos, and it comes in as a project with everything on it. It takes two minutes.\n\n` +
+      `If you got stuck somewhere, reply and tell us where. We'll help you get to your first System.`,
+    why: "You get this because you opened an account on criterio.design.",
+  },
+
   paused: {
     subject: "We have paused your team summaries",
     text: (url: string): string => `You have not opened criterio.design in a month, so we have stopped sending the daily summary of your teams. Turn it back on here:\n${url}`,
