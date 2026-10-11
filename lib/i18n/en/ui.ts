@@ -278,6 +278,11 @@ export const ui = {
       out: { label: "Take criterio.md to your tools", hint: "Copy or download the file, or connect Claude, ChatGPT, Cursor or Claude Code to read it." },
     },
   },
+  guest: {
+    what: "Save the references for a project. Criterio reads them and writes down the design decisions in criterio.md, a file your agent or your team reads before building.",
+    example: "Here is one, from a real project.",
+    cost: (free: string, actions: string, refs: string, from: string): string => `${free}: ${actions} AI actions a month and up to ${refs} references. Paid plans start at ${from} a month.`,
+  },
   imports: {
     open: "Import",
     title: "Bring what you already saved",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type ReactNode } from "react";
 import Clouds from "@/components/Clouds";
 import { normalizeWebUrl } from "@/lib/url";
 import { DIRECTORY, DIRECTORY_TOTAL, siteShot } from "@/lib/directory";
@@ -61,13 +61,17 @@ interface EmptyStartProps {
   onImportBoard: ImportBoard;
   /** A board imported on its own (pasted before signing in): its progress shows here */
   arriving?: BoardStep | null;
+  /** In place of the lead: the signed-out home says what the product is instead */
+  lead?: ReactNode;
+  /** Between the paste field and the directory: the signed-out home's price and example file */
+  children?: ReactNode;
 }
 
 /**
  * Workspace with no inspos yet (Refero model): one prompt box to paste a URL, and under it the
  * directory in tabs, where any site goes into the library with one click.
  */
-export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImportBoard, arriving }: EmptyStartProps) {
+export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImportBoard, arriving, lead, children }: EmptyStartProps) {
   const { t } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
@@ -110,7 +114,7 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
     <section className={s.wrap}>
       <div className={s.head} data-flip>
         <h1 className={s.title}>{t.start.title}</h1>
-        <p className={s.lead}>{t.start.lead}</p>
+        <p className={s.lead}>{lead ?? t.start.lead}</p>
         <PromptInput className={s.prompt} id="start-url" inputRef={inputRef} value={raw} placeholder={t.start.pasteUrl}
           label={t.start.firstUrlLabel} sendLabel={board ? (busy ? t.board.importing : t.board.import) : busy ? t.start.saving : t.start.save} disabled={busy || !!arriving} busy={busy || !!arriving}
           onChange={(v) => { setRaw(v); setError(""); }} onSubmit={submit}
@@ -119,6 +123,8 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
         {step ? <BoardProgress step={step} className={`board-progress ${s.board}`} />
           : board && !error && <p className={s.boardHint}>{t.board.hint(PLATFORM_NAME[board.platform])}</p>}
       </div>
+
+      {children}
 
       <div className={s.section} data-flip>
         <div className={s.tabs}>

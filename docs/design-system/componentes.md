@@ -548,6 +548,9 @@ Cifras, gráficos de columnas en SVG, personas, feedback y accesos. La lista de 
 ### Portada de invitado
 `GuestStart` · `components/GuestStart.tsx` · `.guest__bar`
 Barra con logo y Entrar, y el primer arranque debajo. Pegar una URL lleva a login con la URL como destino. La barra lleva solo el logo, sin nombre.
+- La entradilla de `EmptyStart` (`lead`) dice qué hace el producto y en qué acaba: un criterio.md que lee tu agente o tu equipo.
+- Bajo la caja, una línea pequeña con lo que cuesta (`.guest__cost`): el plan Gratis con sus acciones de IA y su tope de referencias, y el plan de pago más barato. Las cifras salen de `lib/plans.ts` y el nombre del plan de `lib/i18n/<idioma>/plans.ts`; la frase no repite ningún número.
+- Debajo, un criterio.md de verdad (`.guest__example`): el de la plantilla `docs/templates/multiverse`, escrito en el servidor por el mismo generador que el export (`lib/example-md.ts`, modo `clean`, solo sus referencias con enlace), en una `TipWindow` sin cerrar con "criterio.md" en la barra, a 600 px como la caja. El fichero va en mono (es el dato literal) y hace scroll por dentro a 360 px.
 
 ### Acceso
 `LoginForm` · `components/LoginForm.tsx` · `.auth`

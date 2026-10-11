@@ -276,6 +276,11 @@ export const ui: typeof EnUi = {
       out: { label: "Lleva criterio.md a tus herramientas", hint: "Copia o descarga el fichero, o conecta Claude, ChatGPT, Cursor o Claude Code para que lo lean." },
     },
   },
+  guest: {
+    what: "Guarda las referencias de un proyecto. Criterio las lee y escribe las decisiones de diseño en criterio.md, un fichero que tu agente o tu equipo lee antes de construir.",
+    example: "Aquí tienes uno, de un proyecto real.",
+    cost: (free: string, actions: string, refs: string, from: string) => `${free}: ${actions} acciones de IA al mes y hasta ${refs} referencias. Los planes de pago empiezan en ${from} al mes.`,
+  },
   imports: {
     open: "Importar",
     title: "Trae lo que ya tenías guardado",

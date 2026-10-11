@@ -5,9 +5,15 @@ import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
 import dynamic from "next/dynamic";
 import { useT } from "./I18nProvider";
-import { Button } from "@/components/criterio";
+import { Button, TipWindow } from "@/components/criterio";
 import Logo from "@/components/Logo";
 import ThemeToggle from "./ThemeToggle";
+import { PLANS, isPaid, planOf } from "@/lib/plans";
+import { fmtCount, fmtPrice } from "@/lib/i18n/format";
+import type { ExampleMd } from "@/lib/example-md";
+
+const FREE = planOf("free");
+const FROM = Math.min(...PLANS.filter(isPaid).map((p) => p.price.month));
 
 // Only once someone opens it
 const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
@@ -16,9 +22,9 @@ const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false })
  * Signed-out home page: the same start canvas a new user sees, without the sidebar.
  * Pasting a URL goes to /login carrying the URL; back from the link, the site saves itself (?add=).
  */
-export default function GuestStart({ inviteOnly }: { inviteOnly: boolean }) {
+export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolean; example: ExampleMd }) {
   const router = useRouter();
-  const { t } = useT();
+  const { t, locale } = useT();
   const [showDirectory, setShowDirectory] = useState(false);
   // A board goes the same way: back from login, ?add= sees it is a board and imports it
   const signIn = (web: string) => router.push(`/login?next=${encodeURIComponent(`/?add=${encodeURIComponent(web)}`)}`);
@@ -35,7 +41,18 @@ export default function GuestStart({ inviteOnly }: { inviteOnly: boolean }) {
         onAddUrl={async (web) => { signIn(web); }}
         onImportBoard={async (input) => { signIn(input.trim()); return null; }}
         onDirectory={() => setShowDirectory(true)}
-      />
+        lead={t.guest.what}
+      >
+        <p className="guest__cost t-small">
+          {t.guest.cost(t.plans.items.free.name, fmtCount(FREE.aiActionsPerMonth ?? 0, locale), fmtCount(FREE.itemsMax ?? 0, locale), fmtPrice(FROM, locale))}
+        </p>
+        <figure className="guest__example">
+          <figcaption className="t-small">{t.guest.example}</figcaption>
+          <TipWindow title="criterio.md" onClose={false} className="guest__window">
+            <pre className="guest__md" tabIndex={0} aria-label={example.name}>{example.md}</pre>
+          </TipWindow>
+        </figure>
+      </EmptyStart>
 
       {showDirectory && <DirectoryModal guest onClose={() => setShowDirectory(false)} />}
       {/* The theme is a preference, so it is here before signing in too (Eric, 07-10) */}
