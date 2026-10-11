@@ -419,9 +419,8 @@ export const captureClaim = pgTable("capture_claim", {
 export const designRevision = pgTable("design_revision", {
   id: text("id").primaryKey(),
   organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
-  /** The doc's url (design_doc.url). Its foreign key comes in the deploy after `npm run migrate:r2-indexes` filled
-   *  design_doc: added with the table, it would refuse the old code's revisions on docs still only in R2 */
-  url: text("url").notNull(),
+  /** The doc's url: a revision goes with its doc, and follows it if the url is rewritten */
+  url: text("url").notNull().references(() => designDoc.url, { onDelete: "cascade", onUpdate: "cascade" }),
   authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
   authorName: text("author_name").notNull(),
   /** "regeneration" | "revision" | "reversion" */

@@ -12,6 +12,7 @@ import { eq, inArray, sql } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
 import { newId, HttpError, createBillingAccount, dropEmptyAccount } from "../lib/workspace-core";
 import { addItem, deleteItem } from "../lib/items";
+import { webKeyOf } from "../lib/url";
 import { createProject } from "../lib/projects";
 import { putFile, listFiles, usingR2 } from "../lib/storage";
 import { buildWorkspaceExport, WORKSPACE_EXPORT_VERSION, type WorkspaceExport } from "../lib/workspace-export";
@@ -23,6 +24,7 @@ async function main() {
   const orgId = newId(), personalId = newId(), userId = newId();
   const name = `Delete check ${orgId.slice(0, 6)}`;
   const usageIds = [newId(), newId()];
+  const docUrl = `https://${orgId.toLowerCase()}.delete-check.example`;
 
   await db.insert(schema.user).values({ id: userId, name: "check", email: `check-${userId}@example.invalid`, createdAt: now, updatedAt: now });
   const teamAccount = await createBillingAccount({ name, ownerUserId: userId });
@@ -56,7 +58,8 @@ async function main() {
     await db.insert(schema.systemArea).values({ projectId: project.id, organizationId: orgId, area: "color", decision: "Warm paper", confidence: 60, source: "team", updatedAt: now });
     await db.insert(schema.systemAreaComment).values({ id: newId(), projectId: project.id, organizationId: orgId, area: "color", authorId: userId, authorName: "check", body: "an area comment", createdAt: now });
     await db.insert(schema.systemAreaRevision).values({ id: newId(), projectId: project.id, organizationId: orgId, area: "color", decision: "Warm paper", confidence: 60, source: "team", authorId: userId, authorName: "check", createdAt: now });
-    await db.insert(schema.designRevision).values({ id: newId(), organizationId: orgId, url: "https://kept.delete-check.example", authorId: userId, authorName: "check", comment: "a revision", specJson: {}, createdAt: now });
+    await db.insert(schema.designDoc).values({ webKey: webKeyOf(docUrl), url: docUrl, markdown: "# kept", model: "check", generatedAt: now, updatedAt: now });
+    await db.insert(schema.designRevision).values({ id: newId(), organizationId: orgId, url: docUrl, authorId: userId, authorName: "check", comment: "a revision", specJson: {}, createdAt: now });
     await db.insert(schema.aiUsage).values(usageIds.map((id) => ({ id, organizationId: orgId, userId, action: "system", model: "check", costMicros: 1200, createdAt: now })));
     await db.insert(schema.captureClaim).values([
       { key: `system:${orgId}|${project.id}`, claimedAt: now },
@@ -106,6 +109,7 @@ async function main() {
     assert.equal(await left(sql`select count(*)::int as n from capture_claim where position(${orgId} in key) > 0`), 0, "no claim names it");
     assert.equal(await left(sql`select count(*)::int as n from rate_limit where position(${orgId} in key) > 0`), 0, "no rate counter names it");
     assert.equal(await left(sql`select count(*)::int as n from session where active_organization_id = ${orgId}`), 0, "no session has it open");
+    assert.equal(await left(sql`select count(*)::int as n from design_doc where url = ${docUrl}`), 1, "the shared DESIGN.md survives the delete");
 
     const usage = await db.select().from(schema.aiUsage).where(inArray(schema.aiUsage.id, usageIds));
     assert.equal(usage.length, 2, "AI spend survives the delete");
@@ -121,6 +125,7 @@ async function main() {
     await db.delete(schema.aiUsage).where(inArray(schema.aiUsage.id, usageIds));
     await db.delete(schema.organization).where(inArray(schema.organization.id, [orgId, personalId]));
     for (const id of [teamAccount, personalAccount]) await dropEmptyAccount(id);
+    await db.delete(schema.designDoc).where(eq(schema.designDoc.url, docUrl));
     await db.delete(schema.libraryTombstone).where(eq(schema.libraryTombstone.organizationId, orgId));
     await db.delete(schema.user).where(eq(schema.user.id, userId));
   }

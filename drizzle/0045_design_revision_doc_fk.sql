@@ -1,0 +1,1 @@
+ALTER TABLE "design_revision" ADD CONSTRAINT "design_revision_url_design_doc_url_fk" FOREIGN KEY ("url") REFERENCES "public"."design_doc"("url") ON DELETE cascade ON UPDATE cascade;

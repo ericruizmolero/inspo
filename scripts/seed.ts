@@ -39,8 +39,9 @@ async function tables() {
   const { schema } = await import("../lib/db");
   // Parents before children, so foreign keys hold while loading
   const list: PgTable[] = [
-    schema.user, schema.accessInvite, schema.waitlistEntry, schema.organization, schema.session, schema.account, schema.verification,
-    schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designRevision, schema.designWhy,
+    schema.user, schema.accessInvite, schema.waitlistEntry, schema.billingAccount, schema.organization, schema.session, schema.account, schema.verification,
+    schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem, schema.designDoc, schema.designRevision, schema.designWhy,
+    schema.pageShot, schema.captureClaim, schema.libraryTombstone, schema.storedFile,
     schema.inspoComment, schema.aiUsage, schema.activitySegment, schema.appAdmin, schema.feedbackNote, schema.extKey,
     schema.projectSystem, schema.systemArea, schema.systemAreaRevision, schema.systemAreaComment,
     schema.systemShare, schema.rateLimit, schema.mcpClient, schema.mcpGrant,

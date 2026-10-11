@@ -2,8 +2,7 @@
 // inspo/design-md/ becomes a row of design_doc, every entry of inspo/page-shots-index.json a row of page_shot.
 // The entry files are the truth for the docs: the old index lost entries when two were written at once, which
 // is what the tables fix. R2 is only read: nothing there is written or deleted, so the run can be repeated (the
-// rows are upserts) and the files stay until someone removes them by hand. At the end it lists the revisions with no
-// doc: the foreign key from design_revision to design_doc, the next deploy's migration, needs that list empty.
+// rows are upserts) and the files stay until someone removes them by hand.
 //   npm run migrate:r2-indexes
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
@@ -11,8 +10,7 @@ import type { PageShot } from "../types/inspo";
 import type { DesignMdEntry } from "../lib/design-store";
 
 async function main() {
-  const { sql } = await import("drizzle-orm");
-  const { db, pool } = await import("../lib/db");
+  const { pool } = await import("../lib/db");
   const { getJson, listFiles, usingR2 } = await import("../lib/storage");
   const { normalizeWebUrl, webKeyOf } = await import("../lib/url");
   const { DESIGN_MD_PREFIX, upsertDesignDoc } = await import("../lib/design-store");
@@ -46,11 +44,6 @@ async function main() {
   }
   console.log(`${shots} page captures from ${Object.keys(pages).length} index entries`);
 
-  const { rows } = await db.execute<{ url: string; n: string }>(sql`
-    select r.url, count(*) as n from design_revision r
-    where not exists (select 1 from design_doc d where d.url = r.url) group by r.url order by r.url`);
-  console.log(rows.length ? `${rows.length} addresses have revisions and no doc:` : "every revision has its doc");
-  for (const r of rows) console.log(`  ${r.url}: ${r.n} revision${r.n === "1" ? "" : "s"}`);
   await pool.end();
 }
 
