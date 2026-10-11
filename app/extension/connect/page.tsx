@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import BackLink from "@/components/BackLink";
 import ActivityPing from "@/components/ActivityPing";
+import { TabWorkspace } from "@/components/workspace-switch";
 import { getCtxOrLogin } from "@/lib/workspace";
 import ConnectPanel from "./ConnectPanel";
 import { getT } from "@/lib/i18n";
@@ -19,6 +20,7 @@ export default async function ConnectPage() {
   return (
     <div className="auth auth--solo">
       <ActivityPing area="extension" organizationId={ctx.workspace.id} />
+      <TabWorkspace id={ctx.workspace.id} />
       <div className="auth__card">
         <BackLink href="/settings/extension" />
         <ConnectPanel currentId={ctx.workspace.id} youAre={ctx.user.email} />

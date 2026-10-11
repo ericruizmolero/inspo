@@ -30,9 +30,12 @@ export async function getCtxOrLogin(next?: string): Promise<Ctx> {
   }
 }
 
+// The session holds one active workspace for every tab, so a tab names its own in the X-Workspace header
+// (components/workspace-switch.ts) and that one wins. `refused`: the header named a workspace the person is not in;
+// a page shows the session's instead, a save gets a 403 (requireCtx).
 // `fallback`: the session had no active workspace (or is no longer a member) and one was picked here.
 // Saving it writes a cookie, which a Server Component can't do: requireCtx does that.
-const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
+const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean; refused: boolean }> => {
   const s = await getSession();
   if (!s) throw new HttpError(401, (await getErrors()).notSignedIn);
   const user: SessionUser = { id: s.user.id, name: s.user.name, email: s.user.email, image: s.user.image, language: toLocale((s.user as { language?: unknown }).language) };
@@ -44,12 +47,14 @@ const resolveCtx = cache(async (): Promise<{ ctx: Ctx; fallback: boolean }> => {
     workspaces = await listWorkspaces(user.id);
   }
 
+  const wanted = (await headers()).get("x-workspace");
+  const tab = wanted ? workspaces.find((w) => w.id === wanted) : undefined;
   const activeId = (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
   const active = workspaces.find((w) => w.id === activeId);
   // No active workspace: if they're in a team, better to start there than in the empty personal one
-  const workspace = active ?? workspaces.find((w) => w.kind === "team") ?? workspaces[0];
+  const workspace = tab ?? active ?? workspaces.find((w) => w.kind === "team") ?? workspaces[0];
   await logAs({ userId: user.id, organizationId: workspace.id });
-  return { ctx: { user, workspace, workspaces }, fallback: !active };
+  return { ctx: { user, workspace, workspaces }, fallback: !active, refused: !!wanted && !tab };
 });
 
 export { canManage };
@@ -57,7 +62,8 @@ export { canManage };
 /** For route handlers: returns the context or an error Response. */
 export async function requireCtx(opts?: { manage?: boolean }): Promise<Ctx | Response> {
   try {
-    const { ctx, fallback } = await resolveCtx();
+    const { ctx, fallback, refused } = await resolveCtx();
+    if (refused) return Response.json({ error: (await getErrors()).workspaceNotYours }, { status: 403 });
     if (fallback) {
       // The request goes on with the workspace it resolved; the next one tries to save it again
       await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: ctx.workspace.id } })
