@@ -32,6 +32,11 @@ export const mail: typeof EnMail = {
     text: (granter: string, url: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design:\n${url}\n\nEntra con este mismo correo.`,
   },
 
+  accessInvite: {
+    subject: "Ya puedes entrar",
+    text: (url: string, email: string): string => `Ya puedes entrar en criterio.design:\n${url}\n\nEntra con este mismo correo (${email}).`,
+  },
+
   feedback: {
     notes: (n: number): string => (n === 1 ? "1 nota" : `${n} notas`),
     subject: (who: string, notes: string, path: string): string => `Feedback de ${who}: ${notes} en ${path}`,

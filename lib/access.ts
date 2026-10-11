@@ -3,7 +3,7 @@
 import "server-only";
 import { randomBytes } from "crypto";
 import { and, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { db, schema } from "./db";
+import { db, schema, type Exec } from "./db";
 import { sha256 } from "./hash";
 import { newId } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
@@ -52,13 +52,16 @@ export interface InviteOptions {
   grantsUntil?: Date | null;
 }
 
-/** Makes an invite and returns its code: the only time it exists. A waitlist entry for its email moves to invited. */
-export async function createInvite(o: InviteOptions = {}): Promise<{ id: string; code: string }> {
-  const code = randomBytes(15).toString("base64url");
+export const newInviteCode = () => randomBytes(15).toString("base64url");
+
+/** Makes an invite and returns its code: the only time it exists. A waitlist entry for its email moves to invited.
+ *  Pass `exec` to run inside a transaction the caller already holds. */
+export async function createInvite(o: InviteOptions = {}, exec?: Exec): Promise<{ id: string; code: string }> {
+  const code = newInviteCode();
   const id = newId();
   const email = o.email ? normalEmail(o.email) : null;
   const now = new Date();
-  await db.transaction(async (tx) => {
+  const write = async (tx: Exec) => {
     await tx.insert(I).values({
       id, codeHash: sha256(code), email, createdBy: o.createdBy ?? null, wave: o.wave ?? null,
       maxUses: o.maxUses ?? 1, expiresAt: o.expiresAt ?? null,
@@ -68,7 +71,8 @@ export async function createInvite(o: InviteOptions = {}): Promise<{ id: string;
       await tx.update(W).set({ status: "invited", inviteId: id, invitedAt: now })
         .where(and(eq(W.email, email), eq(W.status, "pending")));
     }
-  });
+  };
+  await (exec ? write(exec) : db.transaction(write));
   return { id, code };
 }
 

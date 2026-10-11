@@ -34,6 +34,11 @@ export const mail = {
     text: (granter: string, url: string): string => `${granter} gave you access to the criterio.design activity panel:\n${url}\n\nSign in with this same address.`,
   },
 
+  accessInvite: {
+    subject: "You can come in now",
+    text: (url: string, email: string): string => `You can come in to criterio.design now:\n${url}\n\nSign in with this same address (${email}).`,
+  },
+
   feedback: {
     notes: (n: number): string => (n === 1 ? "1 note" : `${n} notes`),
     subject: (who: string, notes: string, path: string): string => `Feedback from ${who}: ${notes} on ${path}`,

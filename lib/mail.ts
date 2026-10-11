@@ -100,6 +100,12 @@ export function adminAccessMail(url: string, granterName: string, locale: Locale
   return { subject: t.adminAccess.subject(granterName), text: signed(locale, t.adminAccess.text(granterName, url)) };
 }
 
+/** A place opened from the waitlist, or a loose invite made out to someone: the link carries the code. */
+export function accessInviteMail(url: string, email: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  return { subject: t.accessInvite.subject, text: signed(locale, t.accessInvite.text(url, email)) };
+}
+
 /** Feedback time is always in the Madrid zone: it's a studio fact, not a language one. */
 const fmtWhen = (locale: Locale) =>
   new Intl.DateTimeFormat(INTL_LOCALE[locale], { timeZone: "Europe/Madrid", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });

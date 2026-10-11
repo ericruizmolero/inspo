@@ -1,14 +1,17 @@
 // Check of the waitlist, the invite codes and the signup gate (lib/access.ts, the user.create hook in lib/auth.ts)
 // against the database. Not a test framework: it writes its own rows, checks with assert and deletes them when done.
-// It flips signup_mode and puts the old value back at the end.
+// It flips signup_mode and puts the old value back at the end. Mail is never sent: the waves only log it.
 //   npm run check:access
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
+process.env.RESEND_API_KEY = "";
 import assert from "node:assert/strict";
 import { and, eq, inArray, like } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { admit, createInvite, getSignupMode, hasAccess, joinWaitlist, maySignIn, redeemInvite, setSignupMode } from "../lib/access";
+import { admit, codeIsUsable, createInvite, getSignupMode, hasAccess, joinWaitlist, maySignIn, redeemInvite, setSignupMode } from "../lib/access";
+import { nextByPriority, openWave, revokeInvite, rotateInvite, waveMetrics } from "../lib/waves";
 import { auth } from "../lib/auth";
+import { ensurePersonalWorkspace } from "../lib/workspace-core";
 
 const TAG = `accesscheck-${crypto.randomUUID().slice(0, 8)}`;
 const inviteIds: string[] = [];
@@ -61,6 +64,7 @@ async function main() {
   console.log(`hasAccess: ${users.length} of ${users.length} existing accounts`);
 
   await gate();
+  await waves();
 }
 
 /** Creates the account the way a magic link or Google does, through Better Auth and its user.create hooks */
@@ -128,6 +132,53 @@ async function gate() {
   assert.deepEqual(counted, { ok: true, inviteId: open.id, grantsPlan: null }, "open: a code is still spent, so referrals count");
   assert.deepEqual(await redeemInvite(open.code, mail("x")), { ok: false, reason: "used_up" }, "two uses, two spent");
 }
+
+async function waves() {
+  const mail = (s: string) => `${TAG}-wave-${s}@example.test`;
+  const wave = `${TAG}-wave`;
+  const join = (s: string, priority: number) => joinWaitlist({ email: mail(s), locale: s === "b" ? "es" : "en", source: "landing" })
+    .then(async (e) => { await db.update(schema.waitlistEntry).set({ priority }).where(eq(schema.waitlistEntry.id, e.id)); return e.id; });
+  const a = await join("a", 5), b = await join("b", 9), c = await join("c", 1);
+  assert.deepEqual((await nextByPriority(2, [a, b, c])).map((r) => r.id), [b, a], "next by priority: the highest first, and only n");
+
+  const sent = await openWave([a, b, a], { wave }, "http://test");
+  for (const r of sent) if (r.status !== "skipped") inviteIds.push(r.inviteId);
+  assert.deepEqual(sent.map((r) => r.status), ["sent", "sent"], "a wave mails each person once, even when picked twice");
+  const entries = await db.select().from(schema.waitlistEntry).where(inArray(schema.waitlistEntry.id, [a, b]));
+  assert.ok(entries.every((e) => e.status === "invited" && e.inviteId), "and moves them to invited, with their invite");
+  const made = await db.select().from(schema.accessInvite).where(inArray(schema.accessInvite.id, inviteIds.slice(-2)));
+  assert.ok(made.every((i) => i.wave === wave && i.maxUses === 1 && i.email?.startsWith(`${TAG}-wave-`)), "one single-use invite per person, in their name, with the wave");
+  assert.deepEqual((await openWave([a, b], { wave }, "http://test")).map((r) => r.status), ["skipped", "skipped"], "opening the same wave again invites no one twice");
+
+  const [ofA, ofB] = [a, b].map((id) => sent.find((r) => r.entryId === id)!).map((r) => (r.status === "skipped" ? null : r));
+  const rotated = await rotateInvite(ofA!.inviteId);
+  assert.ok(rotated, "an unused invite gets a new code");
+  assert.equal(await codeIsUsable(ofA!.code), false, "the old link stops working");
+  assert.equal(await codeIsUsable(rotated.code), true, "the new one works");
+
+  assert.equal(await revokeInvite(ofB!.inviteId), true, "an unused invite can be revoked");
+  const [back] = await db.select().from(schema.waitlistEntry).where(eq(schema.waitlistEntry.id, b));
+  assert.deepEqual([back.status, back.inviteId, back.invitedAt], ["pending", null, null], "its waitlist entry goes back to waiting");
+  assert.equal(await revokeInvite(ofB!.inviteId), false, "revoking twice does nothing");
+  assert.equal(await rotateInvite(ofB!.inviteId), null, "a revoked invite gets no new code");
+
+  const joined = await signUp(mail("a"));
+  assert.ok(joined.ok, "the invited person creates the account");
+  assert.equal(await rotateInvite(ofA!.inviteId), null, "a used invite gets no new code");
+  const metric = async () => (await waveMetrics()).find((r) => r.wave === wave)!;
+  assert.deepEqual(pick(await metric()), { invited: 1, entered: 1, activated: 0, paying: 0 }, "metrics: the revoked invite does not count, the one who entered does");
+
+  const org = await ensurePersonalWorkspace(joined.user.id, "", mail("a"));
+  const [space] = await db.select({ org: schema.organization.id, account: schema.organization.billingAccountId }).from(schema.organization).where(eq(schema.organization.id, org));
+  const now = new Date();
+  await db.insert(schema.project).values({ id: `${TAG}-tpl`, organizationId: space.org, name: "Template", createdBy: joined.user.id, template: {}, createdAt: now, updatedAt: now });
+  assert.equal((await metric()).activated, 0, "a template is not a first project");
+  await db.insert(schema.project).values({ id: `${TAG}-prj`, organizationId: space.org, name: "First", createdBy: joined.user.id, createdAt: now, updatedAt: now });
+  await db.update(schema.billingAccount).set({ plan: "studio" }).where(eq(schema.billingAccount.id, space.account));
+  assert.deepEqual(pick(await metric()), { invited: 1, entered: 1, activated: 1, paying: 1 }, "metrics: a project of their own activates, a paid plan pays");
+}
+
+const pick = ({ invited, entered, activated, paying }: { invited: number; entered: number; activated: number; paying: number }) => ({ invited, entered, activated, paying });
 
 main()
   .then(() => console.log("access: ok"))
