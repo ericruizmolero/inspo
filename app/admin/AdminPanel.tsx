@@ -444,7 +444,7 @@ function Bar({ share }: { share: number }) {
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
-export type AdminSection = "overview" | "usage" | "people" | "feedback" | "failures" | "access";
+export type AdminSection = "overview" | "usage" | "people" | "feedback" | "failures" | "access" | "waitlist";
 
 // One section of the Activity area. Each page loads only the data its section shows.
 export default function AdminPanel({ section, data, usage, feedback, failures, admins, signup, me }: {

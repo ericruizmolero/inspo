@@ -34,7 +34,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             { slug: "failures", label: a.failures, icon: "failures" },
           ],
         },
-        { items: [{ slug: "access", label: a.access, icon: "access" }] },
+        { items: [{ slug: "access", label: a.access, icon: "access" }, { slug: "waitlist", label: a.waitlist, icon: "waitlist" }] },
       ]}
     >
       {children}

@@ -1960,11 +1960,18 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .ad-table th { text-align: left; font-weight: inherit; color: var(--text-muted); padding: 0 12px 8px 0; white-space: nowrap; }
 .ad-table td { height: 52px; padding: 6px 12px 6px 0; border-top: 1px solid var(--border); color: var(--text); vertical-align: middle; white-space: nowrap; }
 .ad-table th:last-child, .ad-table td:last-child { padding-right: 0; }
-.ad-num { text-align: right; font-variant-numeric: tabular-nums; }
+.ad-num, .ad-table th.ad-num { text-align: right; font-variant-numeric: tabular-nums; }
 .ad-muted { color: var(--text-muted); }
 .ad-table .cr-chip { white-space: nowrap; }
 .ad-person { display: flex; align-items: center; gap: 12px; min-width: 0; max-width: 240px; }
 .ad-cell-trunc { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+/* /admin/waitlist: the status filter and the search over the table; the priority field and the pick box fit
+   their cells; a row's actions sit side by side */
+.ad-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 12px; }
+.ad-tools__search { flex: 1; min-width: 200px; }
+.ad-priority { width: 80px; }
+.ad-pick { width: 28px; }
+.ad-actions { display: inline-flex; gap: 4px; }
 /* /admin/failures: the error gets the room, the request id is literal data */
 .ad-failure { max-width: 360px; }
 .ad-mono { font-family: var(--font-mono); }
@@ -1975,6 +1982,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
   /* On mobile the people table keeps the essentials: person, state, last seen and time */
   .ad-table { min-width: 0; }
   .ad-table th:nth-child(n + 5), .ad-table td:nth-child(n + 5) { display: none; }
+  .ad-table th.ad-keep, .ad-table td.ad-keep { display: table-cell; }
   .ad-table td { white-space: normal; }
   .ad-person { max-width: none; }
 }

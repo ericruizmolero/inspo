@@ -9,12 +9,17 @@ import { feedbackOverview } from "@/lib/feedback";
 import { listFailures } from "@/lib/log";
 import { getT } from "@/lib/i18n";
 import { signupModeState } from "@/lib/access";
+import { listTeamInvites, listWaitlist, waveMetrics } from "@/lib/waves";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
+import WaitlistPanel from "../WaitlistPanel";
 import UpdatedAt from "../UpdatedAt";
 import PeriodSwitch from "../PeriodSwitch";
 
-const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access"];
+const SECTIONS: AdminSection[] = ["overview", "usage", "people", "feedback", "failures", "access", "waitlist"];
 const DAYS = [7, 30, 90];
+
+// Opening a wave mails up to 50 people 600 ms apart, inside a server action that runs under this route
+export const maxDuration = 120;
 
 type Props = { params: Promise<{ section: string }>; searchParams: Promise<{ dias?: string }> };
 
@@ -32,6 +37,17 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
   // Checked here too, not only in the layout: a client navigation can render this page without the layout
   if (!s || !(await isAdmin(s.user.email))) notFound();
 
+  if (section === "waitlist") {
+    const [waitlist, invites, waves] = await Promise.all([listWaitlist(), listTeamInvites(), waveMetrics()]);
+    return (
+      <>
+        <ActivityPing area="admin" />
+        <SettingsHeading title={t.admin.sections.waitlist} lead={t.admin.leads.waitlist} />
+        <WaitlistPanel waitlist={waitlist} invites={invites} waves={waves} />
+      </>
+    );
+  }
+
   // Each section loads only what it shows; the overview data also drives "updated at" and the minute refresh
   const [data, usage, feedback, failures, admins, signup] = await Promise.all([
     activityOverview(days),
@@ -42,7 +58,7 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
     section === "access" ? signupModeState() : undefined,
   ]);
 
-  const lead = section === "overview" ? t.admin.headSub(days) : section === "access" ? t.admin.leads.access : t.admin.leads[section](days);
+  const lead = section === "overview" ? t.admin.headSub(days) : section === "access" ? t.admin.leads.access : t.admin.leads[section as Exclude<AdminSection, "overview" | "access" | "waitlist">](days);
   const period = section !== "access" && (
     <>
       <PeriodSwitch section={section} days={days} options={DAYS} labels={DAYS.map((d) => t.admin.days(d))} label={t.admin.period} />
