@@ -1,5 +1,5 @@
 {
-  "id": "4c73a278-c328-4d9c-afe7-6ab700b39afd",
+  "id": "4a3946cf-d5e5-4a6d-9989-9ca810e9fecf",
   "prevId": "51e03a06-88cb-451e-b1ff-779ed8062fe0",
   "version": "7",
   "dialect": "postgresql",
@@ -434,6 +434,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "billing_account_id": {
+          "name": "billing_account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "user_id": {
           "name": "user_id",
           "type": "text",
@@ -580,6 +586,33 @@
           "method": "btree",
           "with": {}
         },
+        "ai_usage_account_action_created_idx": {
+          "name": "ai_usage_account_action_created_idx",
+          "columns": [
+            {
+              "expression": "billing_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "action",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "ai_usage_user_id_idx": {
           "name": "ai_usage_user_id_idx",
           "columns": [
@@ -603,6 +636,19 @@
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "ai_usage_billing_account_id_billing_account_id_fk": {
+          "name": "ai_usage_billing_account_id_billing_account_id_fk",
+          "tableFrom": "ai_usage",
+          "tableTo": "billing_account",
+          "columnsFrom": [
+            "billing_account_id"
           ],
           "columnsTo": [
             "id"

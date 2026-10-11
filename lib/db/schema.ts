@@ -507,6 +507,8 @@ export const libraryTombstone = pgTable("library_tombstone", {
 // at the rate current when written (lib/usage.ts). The basis for SaaS pricing.
 // Deleting a workspace keeps its rows for the accounts: organization_id goes null and organization_name
 // keeps the name, written by a BEFORE DELETE trigger on organization (migration 0038), whatever path deletes it.
+// billing_account_id is the account that paid for the call, written by a BEFORE INSERT trigger from the workspace's
+// account (migration 0040): the quota counts it, so a deleted workspace's spend stays in its account's pool.
 
 export const aiUsage = pgTable("ai_usage", {
   id: text("id").primaryKey(),
@@ -514,6 +516,8 @@ export const aiUsage = pgTable("ai_usage", {
   organizationId: text("organization_id").references(() => organization.id, { onDelete: "set null" }),
   /** The workspace's name when it was deleted; null while it exists (its name is in organization) */
   organizationName: text("organization_name"),
+  /** The account that paid for the call when it was made; null once that account is deleted */
+  billingAccountId: text("billing_account_id").references(() => billingAccount.id, { onDelete: "set null" }),
   userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
   /** design_md | vision | jev_tag | jev_search | jev_directory | explain | revise | design_why | polish | auto_tag | query_en | embed | system */
   action: text("action").notNull(),
@@ -540,8 +544,9 @@ export const aiUsage = pgTable("ai_usage", {
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [
   index("ai_usage_org_created_idx").on(t.organizationId, t.createdAt),
-  // Monthly quota count (lib/quota.ts): one workspace, one action, since the 1st
   index("ai_usage_org_action_created_idx").on(t.organizationId, t.action, t.createdAt),
+  // Monthly quota count (lib/quota.ts): one account, one action, since the 1st
+  index("ai_usage_account_action_created_idx").on(t.billingAccountId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
   oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system", "brand"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),

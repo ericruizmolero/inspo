@@ -66,9 +66,8 @@ async function countAction(accountId: string, action: "ai" | "jev_search"): Prom
  */
 export const AI_ACTIONS: UsageAction[] = ["system", "brand", "polish", "design_md", "design_why", "revise", "explain"];
 
-/** ai_usage rows of any workspace the account pays for */
-const inAccount = (accountId: string) => inArray(schema.aiUsage.organizationId,
-  db.select({ id: schema.organization.id }).from(schema.organization).where(eq(schema.organization.billingAccountId, accountId)));
+/** ai_usage rows the account paid for: of any of its workspaces, deleted ones included, while they were in it */
+const inAccount = (accountId: string) => eq(schema.aiUsage.billingAccountId, accountId);
 
 async function countAi(accountId: string): Promise<number> {
   const U = schema.aiUsage;
