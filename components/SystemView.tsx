@@ -3,7 +3,7 @@
 // area (components/SystemDoc.tsx). The model reads the board into it ("Improve with AI"); the team writes over it.
 // Beside it, the brand as a presentation (components/brand/BrandPresentation.tsx): the same values drawn.
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Clouds from "@/components/Clouds";
 import type { InspoItem, Project } from "@/types/inspo";
 import { emptySystem, type ProjectSystem, type SystemArea, type SystemFocus } from "@/types/system";
@@ -33,7 +33,6 @@ import BrandImport from "./brand/BrandImport";
 import ShareDialog from "./brand/ShareDialog";
 import { fileUrl } from "@/lib/files-path";
 import { mediaKindOf } from "@/lib/url";
-import { replaceUrl } from "@/lib/url-history";
 import "./SystemView.css";
 
 // Three ways to see the project, in one row of tabs: criterio.md as the Markdown it is, the same file set as a
@@ -229,21 +228,23 @@ export default function SystemView({ project, system, onSystem, board, library, 
   const [briefOpen, setBriefOpen] = useState(false);
   // ⌘K → Brief asks with ?brief=1, also while this view is already open, so it is read on every change
   const briefParam = useSearchParams().get("brief");
+  // Through the router, not history: on first load Next has not patched history yet and would write the param back
+  const router = useRouter();
   useEffect(() => {
     if (briefParam !== "1") return;
     setBriefOpen(true);
     const p = new URLSearchParams(window.location.search);
     p.delete("brief");
-    replaceUrl(window.location.pathname + (p.size ? `?${p}` : ""));
-  }, [briefParam]);
+    router.replace(window.location.pathname + (p.size ? `?${p}` : ""), { scroll: false });
+  }, [briefParam, router]);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const b = p.get("bring");
     if (b !== "site" && b !== "files" && b !== "text") return;
     setBringing(b);
     p.delete("bring");
-    replaceUrl(window.location.pathname + (p.size ? `?${p}` : ""));
-  }, []);
+    router.replace(window.location.pathname + (p.size ? `?${p}` : ""), { scroll: false });
+  }, [router]);
   const [view, setView] = useView();
   const [notice, setNotice] = useState("");
   useEffect(() => { if (!notice) return; const tm = setTimeout(() => setNotice(""), 6000); return () => clearTimeout(tm); }, [notice]);
