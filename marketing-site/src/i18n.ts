@@ -10,9 +10,11 @@ export const PAGES = {
   resources: { path: { en: "/resources/", es: "/es/resources/" }, nav: { en: "Resources", es: "Recursos" } },
   skills: { path: { en: "/skills/", es: "/es/skills/" }, nav: { en: "Skills", es: "Skills" } },
   pricing: { path: { en: "/pricing/", es: "/es/pricing/" }, nav: { en: "Pricing", es: "Precios" } },
+  extension: { path: { en: "/extension/", es: "/es/extension/" }, nav: { en: "Extension", es: "Extensión" } },
   privacy: { path: { en: "/privacy/", es: "/es/privacy/" }, nav: { en: "Privacy", es: "Privacidad" } },
   terms: { path: { en: "/terms/", es: "/es/terms/" }, nav: { en: "Terms", es: "Términos" } },
-  extensionPrivacy: { path: { en: "/extension/privacy/", es: "/es/extension/privacy/" }, nav: { en: "Extension privacy", es: "Privacidad de la extensión" } },
+  // Linked from /extension/ and from the Chrome Web Store listing, not from the footer
+  extensionPrivacy: { path: { en: "/extension/privacy/", es: "/es/extension/privacy/" } },
 } as const satisfies Record<string, { path: Record<Locale, string>; nav?: Record<Locale, string> }>;
 
 export type PageKey = keyof typeof PAGES;
@@ -65,6 +67,36 @@ export const copy = {
       fairUse: "Fair use",
       gb: (n: number) => `${n} GB`,
     },
+    extension: {
+      title: "Browser extension",
+      headline: "Save the tab you're on",
+      lead: "The criterio.design extension for Chrome, Arc, Edge and Brave. One click saves the site you're looking at to your library, with a screenshot, its title and its address. It also brings in your bookmarks, your bookmarks on X and your boards on Pinterest, Are.na or Cosmos.",
+      steps: "Install it",
+      download: {
+        title: "Download it",
+        body: "It comes as a zip. It is not in the Chrome Web Store yet, so for now it is installed by hand.",
+        action: "Download the extension",
+      },
+      load: {
+        title: "Load it in Chrome",
+        unzip: "Unzip the file and leave the folder somewhere it can stay, such as Documents. Chrome runs the extension from that folder, and it stops working if the folder goes.",
+        open: "Open this address in a new tab:",
+        copy: "Copy",
+        copied: "Copied",
+        copyAddress: "Copy the address",
+        devMode: "Turn on Developer mode, at the top right.",
+        unpacked: "Press Load unpacked and pick the folder you unzipped.",
+      },
+      connect: {
+        title: "Connect it to your account",
+        body: "Once it is loaded, the extension opens its install page in criterio.design. Sign in and press Connect this browser. That makes a key for this browser. The key opens every workspace you belong to, and you can revoke it in Settings.",
+      },
+      save: {
+        title: "Save your first site",
+        body: "Open a site you like, click the criterio.design icon in the toolbar and press Save. If the icon is not there, it is behind the puzzle piece: pin it from there.",
+      },
+      privacy: "What the extension does with your data",
+    },
   },
   es: {
     lang: "es",
@@ -112,6 +144,36 @@ export const copy = {
       noLimit: "Sin límite",
       fairUse: "Uso justo",
       gb: (n: number) => `${n} GB`,
+    },
+    extension: {
+      title: "Extensión del navegador",
+      headline: "Guarda la pestaña en la que estás",
+      lead: "La extensión de criterio.design para Chrome, Arc, Edge y Brave. Un clic guarda en tu librería la web que estás viendo, con una captura, su título y su dirección. También trae tus marcadores, tus guardados de X y tus tableros de Pinterest, Are.na o Cosmos.",
+      steps: "Instálala",
+      download: {
+        title: "Descárgala",
+        body: "Viene en un zip. Todavía no está en la Chrome Web Store, así que por ahora se instala a mano.",
+        action: "Descargar la extensión",
+      },
+      load: {
+        title: "Cárgala en Chrome",
+        unzip: "Descomprime el fichero y deja la carpeta en un sitio donde pueda quedarse, como Documentos. Chrome ejecuta la extensión desde esa carpeta, y deja de funcionar si la carpeta desaparece.",
+        open: "Abre esta dirección en una pestaña nueva:",
+        copy: "Copiar",
+        copied: "Copiado",
+        copyAddress: "Copiar la dirección",
+        devMode: "Activa el Modo de desarrollador, arriba a la derecha.",
+        unpacked: "Pulsa Cargar descomprimida y elige la carpeta que has descomprimido.",
+      },
+      connect: {
+        title: "Conéctala a tu cuenta",
+        body: "En cuanto esté cargada, la extensión abre su página de instalación en criterio.design. Entra y pulsa Conectar este navegador. Así se crea una llave para este navegador. La llave abre todos los espacios en los que estás, y se puede revocar en Ajustes.",
+      },
+      save: {
+        title: "Guarda tu primera web",
+        body: "Abre una web que te guste, pulsa el icono de criterio.design en la barra y dale a Guardar. Si no ves el icono, está detrás de la pieza de puzle: fíjalo desde ahí.",
+      },
+      privacy: "Qué hace la extensión con tus datos",
     },
   },
 } as const satisfies Record<Locale, unknown>;

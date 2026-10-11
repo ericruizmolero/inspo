@@ -79,6 +79,7 @@ const canonical = page ? at(PAGES[page].path[lang]) : undefined;
   body > * { width: 100%; }
   body > main { flex: 1 0 auto; }
   h1, h2, p { margin: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
   /* The search and the menu over a list (resources, skills), stuck to the top while the list scrolls. Shown by
      the page's script: without it the whole list is there to read */
