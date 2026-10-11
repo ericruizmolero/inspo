@@ -80,7 +80,7 @@ export const mail: typeof EnMail = {
     text: (url: string): string =>
       `Ya tienes tu espacio:\n${url}\n\n` +
       `Este es el orden que seguiríamos nosotros el primer día.\n\n` +
-      `1. Abre un proyecto.\n` +
+      `1. Crea un proyecto.\n` +
       `2. Escribe una línea de qué es. Con «La web de un estudio de cerámica en Lisboa» basta.\n` +
       `3. Guarda 10 referencias. Con la extensión del navegador, pegando un enlace o importando un tablero que ya tengas en Are.na, Pinterest o Cosmos.\n` +
       `4. Pide a Criterio el Sistema. Lee tus referencias y propone la tipografía, el color, el layout y la voz hacia los que apuntan, una decisión por área. La primera pasada no cuenta para las 30 acciones de IA del plan gratis.\n` +
@@ -92,7 +92,7 @@ export const mail: typeof EnMail = {
     subject: "Tu proyecto sigue vacío",
     text: (url: string): string =>
       `Han pasado tres días y tu proyecto en Criterio sigue sin referencias. Lo tienes aquí:\n${url}\n\n` +
-      `Lo más rápido es traer un tablero que ya tengas. Abre Importar, pega el enlace de un tablero de Are.na, Pinterest o Cosmos y entra como proyecto con todo lo que guardaste. Son dos minutos.\n\n` +
+      `Lo más rápido es traer un tablero que ya tengas. Pega el enlace de un tablero de Are.na, Pinterest o Cosmos donde Criterio te pide un enlace, y el tablero entra como proyecto con todo lo que guardaste. Son dos minutos.\n\n` +
       `Si te has atascado en algún punto, responde y cuéntanos dónde. Te echamos una mano hasta tu primer Sistema.`,
     why: "Te llega porque abriste una cuenta en criterio.design.",
   },

@@ -84,7 +84,7 @@ export const mail = {
     text: (url: string): string =>
       `Your workspace is ready:\n${url}\n\n` +
       `This is the order we would follow on the first day.\n\n` +
-      `1. Open a project.\n` +
+      `1. Create a project.\n` +
       `2. Write one line about what it is. "A site for a ceramics studio in Lisbon" is enough.\n` +
       `3. Save 10 references to it. Use the browser extension, paste a link, or import a board you already keep on Are.na, Pinterest or Cosmos.\n` +
       `4. Ask Criterio for the System. It reads your references and proposes the typography, color, layout and voice they point to, one decision per area. The first pass does not count toward the 30 AI actions of the free plan.\n` +
@@ -96,7 +96,7 @@ export const mail = {
     subject: "Your project is still empty",
     text: (url: string): string =>
       `Three days in, your project on Criterio still has no references. Here it is:\n${url}\n\n` +
-      `The quickest way to fill it is a board you already have. Open Import, paste the link of a board you keep on Are.na, Pinterest or Cosmos, and it comes in as a project with everything on it. It takes two minutes.\n\n` +
+      `The quickest way to fill it is a board you already have. Paste the link of a board you keep on Are.na, Pinterest or Cosmos where Criterio asks for a link, and the board comes in as a project with everything on it. It takes two minutes.\n\n` +
       `If you got stuck somewhere, reply and tell us where. We'll help you get to your first System.`,
     why: "You get this because you opened an account on criterio.design.",
   },
