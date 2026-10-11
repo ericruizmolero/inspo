@@ -72,6 +72,7 @@ export default defineConfig([
     ".claude/**",
     ".vercel/**",
     "extension/dist/**",
+    "marketing-site/**",
     "public/**",
     "refs/**",
     "scratchpad/**",

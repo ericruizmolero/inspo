@@ -2,6 +2,10 @@
   "name": "criterio-design",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "extension",
+    "marketing-site"
+  ],
   "scripts": {
     "fonts": "node scripts/fetch-fonts.mjs",
     "predev": "node scripts/fetch-fonts.mjs",
@@ -58,7 +62,10 @@
     "embed:bakeoff": "tsx --conditions=react-server scripts/embed-bakeoff.ts",
     "eval:freeze": "tsx --conditions=react-server scripts/eval-freeze.ts",
     "eval:system": "tsx --conditions=react-server scripts/eval-system.ts",
-    "eval:criterio": "tsx --conditions=react-server scripts/eval-criterio.ts"
+    "eval:criterio": "tsx --conditions=react-server scripts/eval-criterio.ts",
+    "dev:marketing": "npm run dev -w @criterio/marketing-site",
+    "build:marketing": "npm run build -w @criterio/marketing-site",
+    "build:extension": "npm run build -w @criterio/extension"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1142.0",

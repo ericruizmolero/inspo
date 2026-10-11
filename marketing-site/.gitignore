@@ -1,0 +1,5 @@
+dist/
+.astro/
+.wrangler/
+# Satoshi (ITF Free Font License): downloaded by scripts/fetch-fonts.mjs, never committed (the repo is public)
+public/fonts/Satoshi-*.woff2

@@ -10,6 +10,7 @@ No server to look after. Each part is a managed service:
 | Part | Where | Notes |
 |---|---|---|
 | App, API, Chromium | **Vercel**, functions in Frankfurt (`fra1`) | `vercel.json`. Chromium runs inside the functions (`@sparticuz/chromium`) |
+| Marketing site | **Cloudflare**, static Astro in `marketing-site/` | Root directory `marketing-site`, build `npm run build`, deploy `npx wrangler deploy` |
 | Database | **Neon** Postgres, AWS Frankfurt | Connected through the Vercel integration. Point-in-time restore |
 | Files | **Cloudflare R2**, private bucket `criterio-files` | Served and uploaded through signed URLs (see [Files](#files)) |
 | Email | **Resend** | Magic links and invitations |
@@ -18,6 +19,16 @@ No server to look after. Each part is a managed service:
 - A push to `main` deploys production.
 - Every pull request gets a preview URL with its own copy of the database (a Neon branch).
 - The daily cron (`/api/cron/usage-check`) is in `vercel.json`.
+
+## Repo layout
+
+One repo, npm workspaces, one `package-lock.json`.
+
+| Folder | What | Where it ships |
+|---|---|---|
+| `/` (root) | The app: Next.js | Vercel |
+| `extension/` | Chrome extension (`npm run build:extension` makes the zip in `extension/dist/`) | Chrome Web Store, later |
+| `marketing-site/` | `criterio.design`: Astro, static, with the Log in button (`npm run dev:marketing`, `npm run build:marketing`) | Cloudflare |
 
 ## Run it locally
 

@@ -1,0 +1,70 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  lang?: "en" | "es";
+}
+const { title, description, lang = "en" } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/icon-512.png" />
+    <link rel="alternate" hreflang="en" href={new URL("/", Astro.site)} />
+    <link rel="alternate" hreflang="es" href={new URL("/es/", Astro.site)} />
+    <meta property="og:locale" content={lang === "es" ? "es_ES" : "en_US"} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <link rel="preload" href="/fonts/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  /* Same tokens as the app (docs/design-system/fundamentos/color.md), Paper theme only */
+  @font-face {
+    font-family: "Satoshi";
+    src: url("/fonts/Satoshi-Variable.woff2") format("woff2");
+    font-weight: 300 900;
+    font-display: swap;
+  }
+  :root {
+    --paper: #ede6d6;
+    --paper-white: #fcfaf6;
+    --paper-light: #f6f1e6;
+    --paper-pressed: #d9cfba;
+    --ink: #1b1b18;
+    --ember: #e8892b;
+    --ember-glow: #f6a848;
+    --text-2: #5a5850;
+    --border: #d9d1bf;
+    --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+    --bevel: inset 2px 2px 0 rgba(255, 255, 255, 0.65), inset -2px -3px 0 rgba(27, 27, 24, 0.22);
+    --bevel-pressed: inset 2px 3px 0 rgba(27, 27, 24, 0.22);
+    color-scheme: light;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper-white);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, p { margin: 0; }
+</style>
