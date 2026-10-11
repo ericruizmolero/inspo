@@ -8,7 +8,7 @@ Cada servicio y librería, con su cuenta y cómo se mantiene, está en [Stack te
 
 ## Monorepo
 
-Tres piezas en un repo, con workspaces de npm y un solo `package-lock.json`: la app (raíz, Vercel), `extension/` (Chrome) y `marketing-site/` (Astro estático en Cloudflare, con su `astro check` y sin pasar por el ESLint ni el `tsc` de la raíz). Comandos: `npm run dev:marketing`, `build:marketing`, `build:extension`. La web de marketing repite los tokens de `app/globals.css` en `marketing-site/src/layouts/Base.astro`, solo en Paper, en inglés (`/`) y castellano (`/es/`), y su botón de entrada va a `app.criterio.design/login`. → [decisión](decisiones/2026-10-11-monorepo-app-extension-y-web-de-marketing.md)
+Tres piezas en un repo, con workspaces de npm y un solo `package-lock.json`: la app (raíz, Vercel), `extension/` (Chrome) y `marketing-site/` (Astro estático en Cloudflare, con su `astro check` y sin pasar por el ESLint ni el `tsc` de la raíz). Comandos: `npm run dev:marketing`, `build:marketing`, `build:extension`. La web de marketing repite los tokens de `app/globals.css` en `marketing-site/src/layouts/Base.astro`, solo en Paper, en inglés (`/`) y castellano (`/es/`), y su botón de entrada va a `app.criterio.design/login`. → [decisión](decisiones/2026-10-11-monorepo-app-extension-y-web-de-marketing.md) Las páginas legales y los recursos viven allí; la app los enlaza con `MARKETING_URL` y `marketingHref` (`lib/site.ts`) y redirige sus direcciones antiguas en `next.config.ts`. → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md)
 
 ## Conector MCP
 

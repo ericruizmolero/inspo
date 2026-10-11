@@ -7,7 +7,8 @@ La interfaz es bilingüe: inglés por defecto, castellano segundo. El código es
 | Qué | Dónde |
 | --- | --- |
 | Textos de la interfaz | `lib/i18n/en/ui.ts` y `lib/i18n/es/ui.ts` |
-| Planes, directorio, taxonomía, correos, errores, etiquetas de códigos | `lib/i18n/{en,es}/plans.ts`, `directory.ts`, `taxonomy.ts`, `mail.ts`, `errors.ts`, `labels.ts` |
+| Planes, taxonomía, correos, errores, etiquetas de códigos | `lib/i18n/{en,es}/plans.ts`, `taxonomy.ts`, `mail.ts`, `errors.ts`, `labels.ts` |
+| Web de marketing: portada, recursos, páginas legales | `marketing-site/src/i18n.ts`, `marketing-site/src/resources.ts`, `marketing-site/src/legal.ts` (los dos idiomas en el mismo fichero) |
 | Extensión de Chrome | `extension/chrome/_locales/{en,es}/messages.json` |
 | Este sistema de diseño | `docs/design-system/` (solo castellano) |
 

@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | **App** | Isla arriba a la izquierda, dock sobre el cromo, tablero o documento a pantalla completa | `/`, `/i/[id]`, proyecto |
 | **Sección** | `SectionShell`: sidebar shadcn con secciones, migas, contenido a 800 px (1040 con `wide`) | `/settings`, `/admin`, `/library` |
-| **Pública** | Sin sesión, carga instantánea, sin trabajo pesado | `/login`, `/invite/[id]`, `/extension/privacy` |
+| **Pública** | Sin sesión, carga instantánea, sin trabajo pesado | `/login`, `/invite/[id]`, `/unsubscribe`. Una página que no necesita la app (legal, recursos, contenido) va a la web de marketing (`marketing-site/`), no aquí. → [decisión](../decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md) |
 
 ## Lista de lo que hace falta
 

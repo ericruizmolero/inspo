@@ -4,7 +4,7 @@ Todo lo que protege la app y lo que prometemos en público, en un sitio. Cada re
 
 ## Quién entra y a qué
 
-- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/privacy`, `/terms`, `/unsubscribe`, `/api/unsubscribe`, `/extension/privacy`, `/s/`, `/api/ext/`, `/api/cron/`, `/api/queue/` (las entregas de Vercel Queues; esas rutas no tienen URL pública), `/api/health` (las comprobaciones de Better Stack: dicen ok, tiempos y cuántos trabajos esperan), `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
+- **Sin cookie de sesión no se entra.** `proxy.ts` corre antes de cada petición y solo deja pasar sin sesión lo que está en su lista `PUBLIC`: `/`, `/login`, `/api/auth`, `/invite/`, `/unsubscribe`, `/api/unsubscribe`, `/s/`, `/api/ext/`, `/api/cron/`, `/api/queue/` (las entregas de Vercel Queues; esas rutas no tienen URL pública), `/api/health` (las comprobaciones de Better Stack: dicen ok, tiempos y cuántos trabajos esperan), `/mcp`, `/api/mcp/` y `/.well-known/`. Todo lo demás va a `/login`.
 - **El permiso real lo comprueba cada página y cada ruta**: espacio, rol (`owner` y `admin` gestionan; `member` añade) y socio. `requireCtx` en `lib/workspace.ts`. El proxy solo es el "no" rápido.
 - **Sin contraseñas.** Se entra con enlace mágico (caduca a los 10 minutos) o con Google. La sesión dura 30 días y se renueva cada día; la cookie se cachea 5 minutos (`lib/auth.ts`).
 - **Las páginas internas** (`/admin`, `/library`) responden 404 a quien no es socio. Socio = correo en `ADMIN_EMAILS` o fila en `app_admin` (`npm run admin -- <correo>`).
@@ -66,24 +66,25 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 - Las claves de la BD de producción, la de escritura de R2 y la de Resend nunca van en un `.env.local`: la app local escribiría en producción. Las credenciales entre socios van por canal privado. `.env*` y `prod.env` están en `.gitignore`.
 - Un informe de error (Better Stack, `lib/error-reports.ts`) no lleva quién es la persona ni lo que escribió: se quitan el cuerpo de la petición (feedback, notas, comentarios), cookies, cabeceras, la query y los mensajes de consola, y cualquier correo o firma de URL de R2 que quede se tapa. Un dato nuevo que pueda acabar en un error pasa por ahí.
 - Los logs y la tabla `failure` (`lib/log.ts`) siguen la misma regla: `userId` y `organizationId`, nunca un correo, ni el texto de una nota, un comentario, un feedback o un prompt. `failure` guarda 30 días (el cron `morning` borra lo anterior) y solo la ven los socios en `/admin/failures`.
-- Lo que se manda a un modelo: la captura y el texto de una web para etiquetarla, las notas y el hilo de un proyecto para su sistema. Ningún proveedor entrena con ello (es lo que promete la política de privacidad, y la lista de proveedores de `lib/i18n/<locale>/legal.ts` tiene que coincidir con el [stack](stack.md)).
+- Lo que se manda a un modelo: la captura y el texto de una web para etiquetarla, las notas y el hilo de un proyecto para su sistema. Ningún proveedor entrena con ello (es lo que promete la política de privacidad, y la lista de proveedores de `marketing-site/src/legal.ts` tiene que coincidir con el [stack](stack.md)).
 
 ## La extensión
 
 - Permisos del manifiesto: `storage`, `activeTab`, `bookmarks`, `contextMenus`, `scripting`; hosts fijos `app.criterio.design` y `localhost`; `x.com` y `pinterest.com` solo como opcionales, que la persona concede al importar.
 - No usa la cookie de la web: su llave `crit_…` vive en `chrome.storage.local`.
-- Su política está en `/extension/privacy`, enlazada desde la ficha de la tienda.
+- Su política está en `criterio.design/extension/privacy/` (la web de marketing), enlazada desde la ficha de la tienda; la dirección antigua de la app redirige allí.
 
 ## Políticas públicas
 
 | Página | Qué cubre | Dónde |
 | --- | --- | --- |
-| `/privacy` | Quién responde, qué recogemos (cuenta, sesiones con IP, lo guardado, uso, IA, comentarios), para qué y con qué base, IA sin entrenamiento, proveedores (Vercel, Neon, Cloudflare, Resend, OpenRouter, Typesafe, Google, Apple y X), transferencias fuera del EEE, cookies solo funcionales, conservación, derechos y AEPD, mayores de 16, cambios | `components/LegalDoc.tsx`, textos en `lib/i18n/{en,es}/legal.ts` |
-| `/terms` | Quiénes somos, el servicio, cuenta y equipo, lo tuyo y lo de otros, importar de otros servicios (sin afiliación con X ni Pinterest), lo prohibido (ilegal, recogida masiva, saltarse planes, forzar la entrada), cómo pedir una retirada, planes (los de pago aún no se cobran), disponibilidad, cerrar la cuenta, responsabilidad, ley española, cambios | Igual |
-| `/extension/privacy` | Lo que la extensión manda (dirección, título, captura de lo visible) y lo que no hace | `app/extension/privacy` |
+| `/privacy/` | Quién responde, qué recogemos (cuenta, sesiones con IP, lo guardado, uso, IA, comentarios), para qué y con qué base, IA sin entrenamiento, proveedores (Vercel, Neon, Cloudflare, Resend, OpenRouter, Typesafe, Google, Apple y X), transferencias fuera del EEE, cookies solo funcionales, conservación, derechos y AEPD, mayores de 16, cambios | `marketing-site/src/components/LegalPage.astro`, textos y datos de la sociedad en `marketing-site/src/legal.ts` |
+| `/terms/` | Quiénes somos, el servicio, cuenta y equipo, lo tuyo y lo de otros, importar de otros servicios (sin afiliación con X ni Pinterest), lo prohibido (ilegal, recogida masiva, saltarse planes, forzar la entrada), cómo pedir una retirada, planes (los de pago aún no se cobran), disponibilidad, cerrar la cuenta, responsabilidad, ley española, cambios | Igual |
+| `/extension/privacy/` | Lo que la extensión manda (dirección, título, captura de lo visible) y lo que no hace | Igual |
 
 - Están en producción desde el 2026-10-07 y el login las enlaza siempre. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
-- Son **borrador** hasta que `lib/legal.ts` tenga razón social, NIF y domicilio (`LEGAL`); mientras tanto los huecos se nombran como pendientes y hay aviso de borrador. Contacto: `hola@criterio.design`. Al cambiar un texto, cambiar `LEGAL_UPDATED`.
+- Viven en la web de marketing (`criterio.design`, en inglés y bajo `/es/` en castellano); la app redirige sus direcciones antiguas y el login enlaza allí en el idioma de quien lee. → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md)
+- Son **borrador** hasta que `LEGAL` en `marketing-site/src/legal.ts` tenga razón social, NIF y domicilio; mientras tanto los huecos se nombran como pendientes (sin aviso de borrador: la web es estática). Contacto: `hola@criterio.design`. Al cambiar un texto, cambiar `LEGAL_UPDATED`.
 - Sin analítica de terceros ni anuncios: las únicas cookies son la sesión, el idioma (`lang`) y el estado del menú. El tema va en `localStorage`.
 - Un proveedor nuevo en el stack es también una línea nueva en "Con quién lo compartimos" de la política de privacidad, en los dos idiomas, en el mismo trabajo.
 

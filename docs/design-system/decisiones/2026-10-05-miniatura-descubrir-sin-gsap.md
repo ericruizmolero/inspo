@@ -1,7 +1,7 @@
 ---
 title: La miniatura de Descubrir sigue al ratón sin GSAP
 date: 2026-10-05
-status: vigente
+status: retirada
 kind: desarrollo
 ---
 **Contexto.** Eric pidió que, al pasar el ratón por la lista de Recursos de Descubrir, saliera una miniatura pequeña del hero de cada web, con una animación suave, y la pidió con GSAP. Ese mismo día se quitó GSAP de main y se dejó escrito que no se vuelve a añadir sin una decisión. La primera versión de la miniatura y el placeholder rotativo del selector de proyectos usaban GSAP.

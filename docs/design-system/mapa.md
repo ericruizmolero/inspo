@@ -12,7 +12,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=library` | Toda la biblioteca |
-| `/?in=discover`, `/?in=templates` | Descubrir: recursos y ejemplos |
+| `/?in=templates`, `/?in=skills` | Descubrir: ejemplos y skills. Un `?in=discover` antiguo abre Ejemplos |
 | `/?in=<proyecto>` | Un proyecto: tablero hasta "Ya tengo mis referencias", luego Sistema |
 | `&view=board` / `&view=system` | Fuerza tablero o Sistema dentro del proyecto |
 | `&view=system&brief=1` | Sistema con el panel Brief abierto; el panel se abre y la URL suelta `brief` (lo usa ⌘K → "Abrir el brief") |
@@ -47,12 +47,11 @@ Se da acceso con `npm run admin -- <correo>`. Las invitaciones también salen de
 | `/login` | Acceso con collage fijo; con sesión, salta a `next` |
 | `/invite/[id]` | Aceptar una invitación (pasa el proxy, pero la página pide sesión) |
 | `/s/[token]` | La marca de un proyecto compartida por enlace, de solo lectura, con criterio.md para copiar o descargar. El token es la prueba; no se indexa: la página lo dice en sus metadatos y todo `/s/*` (también `md`, `download`, `f`, `font`, `fonts`) lleva `X-Robots-Tag: noindex, nofollow` desde `next.config.ts` |
-| `/extension/privacy` | Privacidad de la extensión, enlazada desde la Chrome Web Store |
-| `/privacy`, `/terms` | Política de privacidad y términos de uso. Borrador: 404 en producción hasta que `lib/legal.ts` tenga los datos de la sociedad |
+| `/privacy`, `/terms`, `/extension/privacy` | Redirección permanente (308, `next.config.ts`) a la misma página de la web de marketing (`MARKETING_URL` en `lib/site.ts`). → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md) |
 | `/unsubscribe?u=&k=&s=` | El enlace de un clic al pie de cada correo del equipo: apaga ese tipo de correo al abrirse, sin sesión (la firma `s` es la prueba, `lib/notify.ts`), y ofrece volver a activarlo. `/api/unsubscribe` recibe el POST del botón "Cancelar suscripción" del cliente de correo (`List-Unsubscribe`) |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
-| `/robots.txt` | `app/robots.ts`: abre las públicas y cierra `/api/`, `/i/`, `/settings`, `/admin`, `/library`, `/invite/`, `/extension/` (menos `/extension/privacy`), `/mcp`, `/unsubscribe` y `/.well-known/`. `/s/` queda abierta a propósito: una página cerrada nunca le enseña su `noindex` al rastreador. Una ruta nueva con sesión entra aquí |
-| `/sitemap.xml` | `app/sitemap.ts`: `/`, `/login`, `/privacy`, `/terms` y `/extension/privacy`, con la URL de `lib/site.ts`. Una página pública nueva entra aquí |
+| `/robots.txt` | `app/robots.ts`: abre las públicas y cierra `/api/`, `/i/`, `/settings`, `/admin`, `/library`, `/invite/`, `/extension/`, `/mcp`, `/unsubscribe` y `/.well-known/`. `/s/` queda abierta a propósito: una página cerrada nunca le enseña su `noindex` al rastreador. Una ruta nueva con sesión entra aquí |
+| `/sitemap.xml` | `app/sitemap.ts`: `/` y `/login`, con la URL de `lib/site.ts`. Las páginas legales y los recursos están en el sitemap de la web de marketing (`marketing-site/src/pages/sitemap.xml.ts`, sale de `PAGES` en `marketing-site/src/i18n.ts`) |
 | `/manifest.webmanifest` | `app/manifest.ts`: nombre, iconos (`/icon.png`, `/apple-icon.png`, `/icon-512.png`) y el color de Board |
 
 Las tres últimas no pasan por `proxy.ts` (salen del `matcher`): las piden buscadores y navegadores sin sesión.
@@ -70,3 +69,16 @@ Importar no es una ruta: es un diálogo (`ImportDialog`) que se abre desde el me
 ## Redirecciones antiguas
 
 `/equipo` → `/settings/members`, `/planes` → `/settings/plan`, `/invitacion/:id` → `/invite/:id` (`next.config.ts`). No borrarlas: hay correos enviados con esos enlaces.
+
+## Web de marketing
+
+`criterio.design`, en `marketing-site/` (Astro estático). Cada página está en inglés en la raíz y en castellano bajo `/es/`, con `hreflang` y su entrada en el sitemap; la lista es `PAGES` en `marketing-site/src/i18n.ts`.
+
+| Ruta | Qué es |
+| --- | --- |
+| `/`, `/es/` | Portada con el botón de entrada a la app |
+| `/resources/`, `/es/resources/` | Las webs donde buscamos referencias, por grupos, con buscador y tipo (`?q=`, `?kind=`) y "Guardar en Criterio" (`app.criterio.design/?add=<url>`) |
+| `/privacy/`, `/terms/`, `/extension/privacy/` (y `/es/…`) | Política de privacidad, términos de uso y privacidad de la extensión (esta última enlazada desde la Chrome Web Store) |
+| `/sitemap.xml`, `/robots.txt` | El sitemap sale de `PAGES`; `robots.txt` lo nombra |
+
+→ [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md)
