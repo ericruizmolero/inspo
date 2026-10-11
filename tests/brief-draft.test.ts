@@ -1,6 +1,7 @@
 // The brief drafts itself (#128): a draft never writes over what the team wrote, a drafted field is replaced by the
 // next draft, and the area questions leave the brief to the brand guide. The model and the client's site are the edge: the
-// model answers a fixed draft, and any other call to it fails the test.
+// model answers a fixed draft, and any other call to it fails the test. The client's tags and DESIGN.md can arrive
+// after the draft (#142): the tagger answers fixed tags, and the queue and the vectors are left out.
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import type { LlmInput } from "@/lib/llm";
@@ -20,8 +21,17 @@ vi.mock("@/lib/extract", async (importOriginal) => ({
   fetchSiteText: async () => ({ title: "Casa Barro", description: "Cerámica hecha a mano", siteName: "Casa Barro", lang: "es", headings: ["Barro y fuego"], textSample: "Cerámica para restaurantes.", hreflang: ["es-ES", "en-GB"], currencies: ["EUR"], signals: { themeColor: null, fonts: [], colors: [], hasCanvas: false, hasVideo: false, imageCount: 0, platform: null } }),
 }));
 
+const tagged = vi.hoisted(() => ({ sector: "culture" }));
+vi.mock("@/lib/tagger", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  tagItem: async () => ({ sector: tagged.sector, sectorP: 0.9, style: "minimal", styleP: 0.9, tags: {}, summary: "" }),
+}));
+vi.mock("@/lib/jobs", () => ({ enqueue: async () => {}, enqueueEmbed: async () => {} }));
+vi.mock("@/lib/embed", () => ({ embedItems: async () => {} }));
+
 const { db, pool, schema } = await import("@/lib/db");
-const { draftBrief, mergeDraft } = await import("@/lib/brief-draft");
+const { draftBrief, mergeDraft, redraftClientBriefs } = await import("@/lib/brief-draft");
+const { runTagJob } = await import("@/lib/tag-jobs");
 const { saveBrief } = await import("@/lib/brief");
 const { startAreaAsk } = await import("@/lib/system/options");
 const { readBrief } = await import("@/types/brief");
@@ -30,9 +40,11 @@ const { addItems, cleanupTeam, seedTeam } = await import("./library/seed");
 type Team = Awaited<ReturnType<typeof seedTeam>>;
 let team: Team;
 let project: string;
+let clientItem: string;
 beforeAll(async () => {
   team = await seedTeam();
   const [client] = await addItems(team, 1);
+  clientItem = client;
   project = `${team.tag}-p`;
   const now = new Date();
   await db.insert(schema.project).values({ id: project, organizationId: team.ws.id, name: "p", createdBy: team.user.id, createdAt: now, updatedAt: now, brief: { about: "Cerámica para restaurantes", clientItemId: client } });
@@ -86,4 +98,30 @@ test("a draft fills the empty fields, a re-draft keeps what the team wrote and r
 test("Color and Voice ask the model like every area while their brief fields are empty: the brand guide asks for those fields", async () => {
   await expect(startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "color", usage: { organizationId: team.ws.id } })).rejects.toThrow("model called for start@");
   await expect(startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "voice", usage: { organizationId: team.ws.id } })).rejects.toThrow("model called for start@");
+});
+
+test("the client's tags, once tagged, give their sector to a brief whose sector is still a draft, and never to one the team wrote", async () => {
+  const again = () => db.update(schema.inspoItem).set({ tagStatus: "pending" }).where(eq(schema.inspoItem.id, clientItem));
+  expect(await stored()).toMatchObject({ sector: "ecommerce", drafted: expect.arrayContaining(["sector", "keep"]) });
+  await again();
+  await runTagJob({ organizationId: team.ws.id, itemId: clientItem });
+  expect(await stored()).toMatchObject({ sector: "culture", drafted: expect.arrayContaining(["sector"]) });
+
+  await saveBrief(team.ws.id, project, { sector: "studio" }, team.user.id);
+  tagged.sector = "tool";
+  await again();
+  await runTagJob({ organizationId: team.ws.id, itemId: clientItem });
+  const written = await stored();
+  expect(written.sector).toBe("studio");
+  expect(written.drafted).not.toContain("sector");
+});
+
+test("the client's DESIGN.md, once made, drafts again what is still a draft and leaves what the team wrote", async () => {
+  const before = await stored();
+  answer.draft = draft({ keep: ["colors", "type"], traits: ["nada", "de", "esto"] });
+  await redraftClientBriefs(ctx(), `https://${team.tag}-0.example.com`);
+  const after = await stored();
+  expect(after.keep).toEqual(["colors", "type"]);
+  expect(after.traits).toEqual(before.traits);
+  expect(after.sector).toBe("studio");
 });
