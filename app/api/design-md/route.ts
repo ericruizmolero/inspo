@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { normalizeWebUrl, mediaKindOf, webKeyOf } from "@/lib/url";
 import { extractDesign } from "@/lib/design-extract";
 import { generateDesignMd } from "@/lib/design-md";
@@ -12,6 +12,7 @@ import { recordUsage } from "@/lib/usage";
 import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { log } from "@/lib/log";
+import { redraftClientBriefs } from "@/lib/brief-draft";
 
 export const maxDuration = 300;
 
@@ -100,6 +101,7 @@ export async function GET(req: NextRequest) {
         { fullShot, cover, scroll, logo, logoSvg }
       );
 
+      after(() => redraftClientBriefs(ctx, url).catch((err) => log.warn("brief.draft_failed", { ref: url, err })));
       log.info("design_md.built", { ref: url, extractMs: t1 - t0, model, modelMs: t2 - t1, tokensIn: usage.input, tokensOut: usage.output });
       void recordUsage({ organizationId: ctx.workspace.id, userId: ctx.user.id }, { action: "design_md", model, inputTokens: usage.input, outputTokens: usage.output, cacheReadTokens: usage.cacheRead, costUsd, provider, requestId, fallbackFrom, promptVersion: prompt, ref: url });
 

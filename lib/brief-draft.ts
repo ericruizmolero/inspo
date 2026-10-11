@@ -4,13 +4,14 @@
 // docs/design-system/decisiones/2026-10-10-el-brief-pide-una-frase-y-el-resto-se-rellena-solo.md.
 import "server-only";
 import { after } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db, schema } from "./db";
 import { fetchSiteText, type SiteText } from "./extract";
 import { getDesignMd } from "./design-store";
 import { projectGuides } from "./brand-guides";
 import { saveBrief } from "./brief";
+import { findByWeb } from "./items";
 import { llm, llmEnabled, type LlmInput } from "./llm";
 import { prompt, PROMPTS } from "./prompts";
 import { AUTO_REF, billOf, recordUsage } from "./usage";
@@ -152,4 +153,36 @@ export async function draftBrief(ctx: DraftCtx, projectId: string): Promise<{ br
 export function draftBriefAfter(ctx: DraftCtx, projectId: string): void {
   const run = () => draftBrief(ctx, projectId).catch((err) => log.warn("brief.draft_failed", { ref: projectId, err })).then(() => {});
   try { after(run); } catch { void run(); }
+}
+
+/** The projects of a workspace whose client is that item */
+async function clientProjects(organizationId: string, itemId: string) {
+  const P = schema.project;
+  return db.select({ id: P.id, brief: P.brief }).from(P).where(and(eq(P.organizationId, organizationId), sql`${P.brief}->>'clientItemId' = ${itemId}`));
+}
+
+/** The client's DESIGN.md came after the draft (#142): the briefs whose client is the item at that address draft again.
+ *  mergeDraft keeps what the team wrote */
+export async function redraftClientBriefs(ctx: DraftCtx, web: string): Promise<void> {
+  const item = await findByWeb(ctx.workspace.id, web);
+  if (!item) return;
+  for (const p of await clientProjects(ctx.workspace.id, item.id)) {
+    await draftBrief(ctx, p.id).catch((err) => log.warn("brief.draft_failed", { ref: p.id, err }));
+  }
+}
+
+/** The client's tags came after the draft (#142). Their sector is all a draft takes from them, so it goes in with no
+ *  model call, to the briefs whose sector is empty or still a draft. Never throws */
+export async function sectorFromTags(organizationId: string, itemId: string, sector: string, userId: string | null): Promise<void> {
+  if (!SECTOR_KEYS.includes(sector)) return;
+  try {
+    for (const p of await clientProjects(organizationId, itemId)) {
+      const b = readBrief(p.brief);
+      if (!b || b.sector === sector || (b.sector && !b.drafted.includes("sector"))) continue;
+      const by = userId ?? b.updatedBy;
+      if (by) await saveBrief(organizationId, p.id, { sector, drafted: [...new Set([...b.drafted, "sector" as const])] }, by);
+    }
+  } catch (err) {
+    log.warn("brief.sector_failed", { ref: itemId, err });
+  }
 }

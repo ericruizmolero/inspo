@@ -15,6 +15,7 @@ import { tagItem } from "./tagger";
 import { PROMPTS } from "./prompts";
 import { LlmError } from "./llm";
 import { embedItems } from "./embed";
+import { sectorFromTags } from "./brief-draft";
 import { enqueue, enqueueEmbed } from "./jobs";
 import { log, recordFailure } from "./log";
 import { TAXONOMY_VERSION } from "./taxonomy";
@@ -80,6 +81,7 @@ async function run(row: Row, userId: string | null): Promise<InspoTags | null | 
     const tags = await tagItem(rowToItem(row), { organizationId: row.organizationId, userId: userId ?? row.createdBy }, model);
     // New tags, new meaning: the vector is made now, or by its own job if this fails
     await db.update(T).set({ tagsJson: tags, tagStatus: "done", tagError: null, embedding: null, updatedAt: new Date() }).where(eq(T.id, row.id));
+    await sectorFromTags(row.organizationId, row.id, tags.sector, userId ?? row.createdBy);
     await embedItems(row.organizationId, [row.id]).catch(async (err) => { log.warn("embed.deferred", { ref: row.id, err }); await enqueueEmbed(row.organizationId, [row.id]); });
     return tags;
   } catch (e) {
