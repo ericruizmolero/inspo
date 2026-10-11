@@ -142,7 +142,7 @@ stores each one as a path, `/api/files/<key>`, and never as an R2 address.
   `/api/media` for a signed URL and PUTs the file straight to R2 (`lib/media-client.ts`). R2
   refuses a body of another size or type. Locally the file is posted to the app as before.
 - **R2 CORS** (Cloudflare, R2, `criterio-files`, Settings) must allow `PUT` from
-  `https://criterio.design` and `https://inspo-fawn-two.vercel.app`, or uploads fail.
+  `https://app.criterio.design` and `https://inspo-fawn-two.vercel.app`, or uploads fail.
   Add an origin there if the app gets a new domain.
 - Preview deployments use the same bucket as production. Deleting an item in a preview deletes
   its real image.
@@ -183,7 +183,7 @@ new file.
 | `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `PG*`, `POSTGRES_*` (Production) | The Neon integration. Don't edit them by hand |
 | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (Preview) | By hand: the connection strings of the Neon branch `preview` |
 | `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | By hand. A key with Object Read & Write on `criterio-files` |
-| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | By hand. The URL is the public one, `https://criterio.design` |
+| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | By hand. The URL is the public one, `https://app.criterio.design` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | By hand |
 | `RESEND_API_KEY`, `MAIL_FROM`, `MAIL_REPLY_TO` | By hand. `MAIL_FROM` needs a domain verified in Resend |
 | `OPENROUTER_API_KEY`, `TYPESAFE_API_KEY`, `TYPESAFE_BASE_URL` | By hand |

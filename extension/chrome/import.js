@@ -9,7 +9,7 @@
 // a chore to undo. Nothing imports until that destination is known. A board is the exception to the
 // project: it lands in the project named after it, in the picked workspace.
 
-const DEFAULT_BASE = "https://criterio.design";
+const DEFAULT_BASE = "https://app.criterio.design";
 const API = "/api/ext/v1";
 const BATCH = 25; // what the server accepts per request
 const BATCH_IMAGES = 10; // a batch with images: the server copies each one before it answers

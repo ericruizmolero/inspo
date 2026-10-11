@@ -24,11 +24,11 @@ export const legal = {
         "Uso de la IA: qué acciones de IA se han ejecutado en tu espacio y cuánto han costado, para aplicar los límites de tu plan.",
         "Comentarios: lo que envías con la herramienta de comentarios, con la página a la que se refieren.",
         "La lista de espera: tu correo, lo que respondes al apuntarte (nombre, rol, tamaño del equipo, herramientas, web, para qué usarías criterio), tu idioma, de dónde llegaste y cuándo aceptaste que te escribamos.",
-        "La extensión del navegador tiene su propia página: criterio.design/extension/privacy.",
+        "La extensión del navegador tiene su propia página: app.criterio.design/extension/privacy.",
       ]] },
       { heading: "Qué contienen tus referencias", body: [
         "Una referencia suele ser el trabajo de otra persona: una web, un post, una imagen. Un post guardado de X lleva el nombre, el usuario, la foto y las palabras de su autor, tal como X los muestra en público. Lo conservamos solo para que los espacios que guardaron el post puedan verlo.",
-        "Si eres el autor de algo guardado aquí y quieres que se retire, los Términos explican cómo pedirlo (criterio.design/terms).",
+        "Si eres el autor de algo guardado aquí y quieres que se retire, los Términos explican cómo pedirlo (app.criterio.design/terms).",
       ] },
       { heading: "Para qué lo usamos", body: [[
         "Para darte el servicio en el que te has registrado: tu cuenta, tu librería, tu equipo. La base es nuestro contrato contigo.",

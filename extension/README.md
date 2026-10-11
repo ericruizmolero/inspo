@@ -10,7 +10,7 @@ with `chrome.i18n.getMessage`). To add a language, copy `_locales/en` and transl
 
 ## How people get it
 
-`criterio.design/extension/install` is the guide: download, load it in Chrome, connect, save the first
+`app.criterio.design/extension/install` is the guide: download, load it in Chrome, connect, save the first
 site. While the extension is not in the Chrome Web Store it is installed by hand, from the zip the
 guide links to (`/extension/download`, built from `extension/chrome` at build time, without the
 localhost entries). Right after it is installed the extension opens the guide (or reloads it if it is
@@ -26,7 +26,7 @@ every change that should reach people, and they download it again.
 
 It doesn't use the site's session cookie (Safari doesn't allow that reliably). The last step of the
 guide, or pressing "Connect to criterio.design" in the popup (which opens
-`criterio.design/extension/connect`), creates a long key (`crit_…`), which the extension stores in `chrome.storage.local`. Every
+`app.criterio.design/extension/connect`), creates a long key (`crit_…`), which the extension stores in `chrome.storage.local`. Every
 call goes with `Authorization: Bearer crit_…` to the versioned routes under `/api/ext/v1/`:
 
 | Route | What it does |

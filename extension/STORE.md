@@ -40,8 +40,8 @@ para el alta ni para la ficha.
   `3-connect-en.png`; para la ficha en castellano, `1-save-es.png`. Se regeneran con Chrome
   headless a partir del popup (ver el handoff de la extensión).
 - **Icono de la tienda:** `extension/chrome/icons/icon128.png` (mismo que el del manifest).
-- **Web:** https://criterio.design
-- **Política de privacidad:** https://criterio.design/extension/privacy (obligatoria porque
+- **Web:** https://app.criterio.design
+- **Política de privacidad:** https://app.criterio.design/extension/privacy (obligatoria porque
   la extensión envía datos a nuestro servidor).
 
 ## Pestaña "Privacy practices"
@@ -52,8 +52,8 @@ para el alta ni para la ficha.
   - `activeTab`: read the current tab's URL and title and capture its visible area when the
     user clicks the extension.
   - `storage`: keep the access key and workspace name the user chose.
-  - `host_permissions` (criterio.design): call the criterio.design API to check and save
-    sites; the content script runs only on criterio.design, to tell the app the extension is
+  - `host_permissions` (app.criterio.design): call the criterio.design API to check and save
+    sites; the content script runs only on app.criterio.design, to tell the app the extension is
     installed and to receive the key.
   - `bookmarks`: list the user's bookmark folders on the import page so they can choose
     which folders to import; read only, nothing is changed.
@@ -78,7 +78,7 @@ para el alta ni para la ficha.
 ## Después de enviar
 
 - La revisión suele tardar de 1 a 3 días laborables. Llega un correo a tech@.
-- Mientras tanto, se instala a mano con la guía de https://criterio.design/extension/install
+- Mientras tanto, se instala a mano con la guía de https://app.criterio.design/extension/install
   (zip + modo desarrollador).
 - Cuando esté aprobada, apuntar el enlace público en la issue #1 y en Ajustes → Extensión
   del navegador, y cambiar los dos primeros pasos de la guía (`app/extension/install`) por el

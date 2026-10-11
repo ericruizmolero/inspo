@@ -39,7 +39,7 @@ export function takeDevLink(): string | undefined {
 // from Vercel would otherwise send every sign-in back to production.
 // Better Auth reads BETTER_AUTH_URL on its own when no baseURL is given, so in development it goes too.
 // A Vercel preview has no URL of its own in the env (BETTER_AUTH_URL is production's or empty, and
-// VERCEL_PROJECT_PRODUCTION_URL is criterio.design): it infers the URL from each request too, or every
+// VERCEL_PROJECT_PRODUCTION_URL is app.criterio.design): it infers the URL from each request too, or every
 // magic link sent from a preview would open production.
 const IS_PREVIEW = process.env.VERCEL_ENV === "preview";
 if (process.env.NODE_ENV === "development" || IS_PREVIEW) delete process.env.BETTER_AUTH_URL;

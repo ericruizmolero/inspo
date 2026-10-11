@@ -244,7 +244,7 @@ async function freeze(projectId: string, slug: string, which: string, locale: st
   const { loadShareView } = await import("../lib/share-view");
   const [p] = await db.select({ organizationId: schema.project.organizationId }).from(schema.project).where(eq(schema.project.id, projectId));
   if (!p) throw new Error(`No project ${projectId}`);
-  const view = await loadShareView(p.organizationId, projectId, "full", locale as "es" | "en", null, "https://criterio.design");
+  const view = await loadShareView(p.organizationId, projectId, "full", locale as "es" | "en", null, "https://app.criterio.design");
   if (!view) throw new Error("No view");
   const out = path.join(FIXTURES, slug, `${which}.md`);
   await fs.mkdir(path.dirname(out), { recursive: true });

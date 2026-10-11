@@ -1,4 +1,4 @@
-// Runs only on criterio.design. It tells the page the extension is here (its version, and whether
+// Runs only on app.criterio.design. It tells the page the extension is here (its version, and whether
 // it already holds a key): the library offers the install guide to a browser without it, and the
 // guide (/extension/install) follows the steps as they happen. On the guide and on
 // /extension/connect it also picks up the key the page posts with window.postMessage and hands it

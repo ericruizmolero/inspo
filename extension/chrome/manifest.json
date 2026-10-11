@@ -29,7 +29,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://criterio.design/*",
+    "https://app.criterio.design/*",
     "http://localhost/*"
   ],
   "optional_host_permissions": [
@@ -45,7 +45,7 @@
   "content_scripts": [
     {
       "matches": [
-        "https://criterio.design/*",
+        "https://app.criterio.design/*",
         "http://localhost/*"
       ],
       "js": [

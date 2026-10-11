@@ -1,5 +1,5 @@
 // The extension's service worker. It acts as a mailbox: it gets the key from content.js
-// (which picks it up at criterio.design/extension/install or /connect) and stores it in
+// (which picks it up at app.criterio.design/extension/install or /connect) and stores it in
 // chrome.storage.local. Everything else (API calls) the popup does directly.
 
 importScripts("boards.js");
@@ -30,7 +30,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 // Just installed: on to the guide, where the next step is connecting. The guide is usually
 // already open (the zip was downloaded from it) and that tab cannot see the extension until it
 // loads again, so it is reloaded and brought to the front instead of opening a second one.
-const GUIDE = "https://criterio.design/extension/install";
+const GUIDE = "https://app.criterio.design/extension/install";
 const GUIDE_TABS = [`${GUIDE}*`, "http://localhost/extension/install*"];
 
 chrome.runtime.onInstalled.addListener(async ({ reason }) => {

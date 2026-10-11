@@ -45,7 +45,7 @@ async function ask(url: string, init: RequestInit & { as: "json" | "text" }): Pr
 // No token: public and closed channels read alike; a private one answers 401. 30 calls a minute.
 
 const ARENA = "https://api.are.na/v3/channels";
-const ARENA_HEADERS = { "User-Agent": "criterio.design (+https://criterio.design)", Accept: "application/json" };
+const ARENA_HEADERS = { "User-Agent": "criterio.design (+https://app.criterio.design)", Accept: "application/json" };
 
 const arena: Reader<RefOf<"arena">> = {
   async read(ref) {

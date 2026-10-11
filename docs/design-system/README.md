@@ -2,7 +2,7 @@
 
 Aquí se recoge **cada decisión de diseño y desarrollo** que tomamos sobre la plataforma, con su porqué, para que cualquiera del equipo (persona o agente) construya igual que lo haríamos nosotros. No es documentación del producto para clientes: es nuestro criterio sobre nuestra propia app.
 
-Se ve en **criterio.design/library** (solo para quien tiene acceso a `/admin`), que pinta estos mismos ficheros: cada página de tokens con su muestra viva encima de las reglas (la paleta, la escala tipográfica, los radios, las curvas…), los componentes con el CSS real de la app, y las decisiones como registro filtrable. Los agentes leen los `.md`; las personas, la página. Es la misma fuente.
+Se ve en **app.criterio.design/library** (solo para quien tiene acceso a `/admin`), que pinta estos mismos ficheros: cada página de tokens con su muestra viva encima de las reglas (la paleta, la escala tipográfica, los radios, las curvas…), los componentes con el CSS real de la app, y las decisiones como registro filtrable. Los agentes leen los `.md`; las personas, la página. Es la misma fuente.
 
 El nombre está en revisión: "sistema de diseño" se queda corto para lo que recoge (también el stack, la seguridad y cómo trabajamos); Eric propuso el 2026-10-07 algo como "sistema agéntico". Hasta que se decida, se queda así.
 

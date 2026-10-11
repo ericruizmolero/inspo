@@ -5,7 +5,7 @@
 // this only sends the address, the title, a screenshot and that form
 // (see app/api/ext/v1/items/route.ts and media/route.ts).
 
-const DEFAULT_BASE = "https://criterio.design";
+const DEFAULT_BASE = "https://app.criterio.design";
 const API = "/api/ext/v1";
 
 // Texts come from _locales/<lang>/messages.json (browser language; English if there is no translation)

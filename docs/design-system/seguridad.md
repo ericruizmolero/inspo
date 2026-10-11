@@ -70,7 +70,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 ## La extensión
 
-- Permisos del manifiesto: `storage`, `activeTab`, `bookmarks`, `contextMenus`, `scripting`; hosts fijos `criterio.design` y `localhost`; `x.com` y `pinterest.com` solo como opcionales, que la persona concede al importar.
+- Permisos del manifiesto: `storage`, `activeTab`, `bookmarks`, `contextMenus`, `scripting`; hosts fijos `app.criterio.design` y `localhost`; `x.com` y `pinterest.com` solo como opcionales, que la persona concede al importar.
 - No usa la cookie de la web: su llave `crit_…` vive en `chrome.storage.local`.
 - Su política está en `/extension/privacy`, enlazada desde la ficha de la tienda.
 

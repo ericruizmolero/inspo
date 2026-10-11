@@ -30,11 +30,11 @@ export const legal = {
         "AI use: which AI actions ran in your workspace and what they cost, to apply your plan's limits.",
         "Feedback: what you send with the feedback tool, with the page it was about.",
         "The waitlist: your email, what you answer when you join (name, role, team size, tools, website, what you would use criterio for), your language, where you came from and when you agreed to hear from us.",
-        "The browser extension has its own page: criterio.design/extension/privacy.",
+        "The browser extension has its own page: app.criterio.design/extension/privacy.",
       ]] },
       { heading: "What your references contain", body: [
         "A reference is often someone else's work: a site, a post, an image. A post saved from X carries its author's name, handle, picture and words, as X shows them in public. We keep that only so the workspaces that saved the post can see it.",
-        "If you are the author of something saved here and want it removed, the Terms say how to ask (criterio.design/terms).",
+        "If you are the author of something saved here and want it removed, the Terms say how to ask (app.criterio.design/terms).",
       ] },
       { heading: "Why we use it", body: [[
         "To give you the service you signed up for: your account, your library, your team. The basis is our contract with you.",
