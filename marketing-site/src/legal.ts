@@ -1,9 +1,9 @@
 // The legal pages: /privacy, /terms and /extension/privacy, in English and Spanish (components/LegalPage.astro).
 // A section is a heading and its blocks: a string is a paragraph, a list of strings is a list.
-// A draft until a lawyer has read it and LEGAL has the company's details: change LEGAL_UPDATED with every change here.
+// No lawyer has read them yet. Change LEGAL_UPDATED with every change here.
 
 export interface LegalFacts {
-  /** Registered name of the company that runs criterio.design */
+  /** Name of the entity that runs criterio.design */
   entity: string;
   /** Its tax number (NIF) */
   taxId: string;
@@ -14,14 +14,14 @@ export interface LegalFacts {
 }
 
 export const LEGAL: LegalFacts = {
-  entity: "",
-  taxId: "",
-  address: "",
+  entity: "treseiscero",
+  taxId: "E75239277",
+  address: "Jaitzubia 197 Parcela 310, 20280 Hondarribia (Gipuzkoa), España",
   contact: "hola@criterio.design",
 };
 
 /** The day the texts last changed (YYYY-MM-DD) */
-export const LEGAL_UPDATED = "2026-10-10";
+export const LEGAL_UPDATED = "2026-10-11";
 
 export type LegalBlock = string | string[];
 export interface LegalSection { heading: string; body: LegalBlock[] }
@@ -30,13 +30,11 @@ export type LegalDocKey = "privacy" | "terms" | "extensionPrivacy";
 
 interface LegalCopy {
   updated: (date: string) => string;
-  pending: Pick<LegalFacts, "entity" | "taxId" | "address">;
   docs: Record<LegalDocKey, LegalDoc>;
 }
 
 const en: LegalCopy = {
   updated: (date) => `Last updated ${date}`,
-  pending: { entity: "[company name pending]", taxId: "[tax number pending]", address: "[registered address pending]" },
   docs: {
     privacy: {
       title: "Privacy policy",
@@ -191,7 +189,6 @@ const en: LegalCopy = {
 
 const es: LegalCopy = {
   updated: (date) => `Última actualización: ${date}`,
-  pending: { entity: "[razón social pendiente]", taxId: "[NIF pendiente]", address: "[domicilio social pendiente]" },
   docs: {
     privacy: {
       title: "Política de privacidad",

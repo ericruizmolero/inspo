@@ -9,8 +9,6 @@ interface Props { locale: Locale; doc: LegalDocKey }
 const { locale, doc } = Astro.props;
 const t = legal[locale];
 const page = t.docs[doc];
-// Until LEGAL has the company's details, the gaps are named as pending in the text
-const facts = { ...LEGAL, entity: LEGAL.entity || t.pending.entity, taxId: LEGAL.taxId || t.pending.taxId, address: LEGAL.address || t.pending.address };
 const updated = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(LEGAL_UPDATED));
 ---
 <Base lang={locale} page={doc} title={`${page.title} · criterio.design`} description={page.lead}>
@@ -22,7 +20,7 @@ const updated = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long",
       <p class="doc__lead">{page.lead}</p>
       <p class="doc__date">{t.updated(updated)}</p>
     </header>
-    {page.sections(facts).map((s) => (
+    {page.sections(LEGAL).map((s) => (
       <section>
         <h2>{s.heading}</h2>
         {s.body.map((block) => typeof block === "string"

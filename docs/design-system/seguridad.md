@@ -84,13 +84,13 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 
 - Están en producción desde el 2026-10-07 y el login las enlaza siempre. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
 - Viven en la web de marketing (`criterio.design`, en inglés y bajo `/es/` en castellano); la app redirige sus direcciones antiguas y el login enlaza allí en el idioma de quien lee. → [decisión](decisiones/2026-10-11-las-paginas-legales-y-los-recursos-viven-en-la-web-de-marketing.md)
-- Son **borrador** hasta que `LEGAL` en `marketing-site/src/legal.ts` tenga razón social, NIF y domicilio; mientras tanto los huecos se nombran como pendientes (sin aviso de borrador: la web es estática). Contacto: `hola@criterio.design`. Al cambiar un texto, cambiar `LEGAL_UPDATED`.
+- Las firma treseiscero, NIF E75239277, con domicilio en Hondarribia (Gipuzkoa): `LEGAL` en `marketing-site/src/legal.ts`, que no lleva DNI ni teléfono de nadie. Contacto: `hola@criterio.design`. Al cambiar un texto, cambiar `LEGAL_UPDATED`.
 - Sin analítica de terceros ni anuncios: las únicas cookies son la sesión, el idioma (`lang`) y el estado del menú. El tema va en `localStorage`.
 - Un proveedor nuevo en el stack es también una línea nueva en "Con quién lo compartimos" de la política de privacidad, en los dos idiomas, en el mismo trabajo.
 
 ## Pendiente
 
-- Rellenar `LEGAL` y que lo revise un abogado.
+- Que un abogado revise los textos.
 - Apuntar bajo qué cuenta están Cloudflare, Neon, OpenRouter y Typesafe; mover `web-proxy` al equipo de Vercel.
 - Better Stack: la página de estado pública, y apuntar quién tiene la cuenta. Los errores de Better Stack están en la región de EE. UU. (`us-west-2a`); el resto de los datos, en Fráncfort.
 - `ANTHROPIC_API_KEY` en Vercel sin uso: borrarla o usarla.
