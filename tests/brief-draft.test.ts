@@ -1,5 +1,5 @@
 // The brief drafts itself (#128): a draft never writes over what the team wrote, a drafted field is replaced by the
-// next draft, and Color and Voice ask for their brief field once. The model and the client's site are the edge: the
+// next draft, and the area questions leave the brief to the brand guide. The model and the client's site are the edge: the
 // model answers a fixed draft, and any other call to it fails the test.
 import { afterAll, beforeAll, expect, test, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
@@ -83,14 +83,7 @@ test("a draft fills the empty fields, a re-draft keeps what the team wrote and r
   expect(await stored()).toEqual(second);
 });
 
-test("Color asks for the accessibility level and Voice for what the brand never says while each is empty, and never once set", async () => {
-  const color = await startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "color", usage: { organizationId: team.ws.id } });
-  expect(color.brief).toBe("a11y");
-  expect(color.options.map((o) => o.decision)).toEqual(["AA", "AAA"]);
-  const voice = await startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "voice", usage: { organizationId: team.ws.id } });
-  expect(voice).toMatchObject({ brief: "neverSay", options: [] });
-
-  await saveBrief(team.ws.id, project, { a11y: "AAA", neverSay: "Barato" }, team.user.id);
+test("Color and Voice ask the model like every area while their brief fields are empty: the brand guide asks for those fields", async () => {
   await expect(startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "color", usage: { organizationId: team.ws.id } })).rejects.toThrow("model called for start@");
   await expect(startAreaAsk({ organizationId: team.ws.id, projectId: project, area: "voice", usage: { organizationId: team.ws.id } })).rejects.toThrow("model called for start@");
 });

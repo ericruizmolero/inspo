@@ -6,6 +6,7 @@ import { useT } from "../../I18nProvider";
 import { useBrand } from "../context";
 import { AddButton, ItemTools, useSection } from "../BrandPresentation";
 import { Editable } from "../edit/Editable";
+import { BriefAsk } from "../edit/BriefAsk";
 import { brandId } from "@/types/brand";
 
 export default function VoiceSection() {
@@ -15,6 +16,7 @@ export default function VoiceSection() {
   const s = t.brand.voice;
   return (
     <div className="bv">
+      <BriefAsk area="voice" />
       {(voice.principles.length > 0 || mode === "edit") && (
         <div className="bv-principles">
           {voice.principles.map((p, i) => (

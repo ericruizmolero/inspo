@@ -4,6 +4,7 @@
 import { createContext, useContext } from "react";
 import type { BrandFile, BrandSection, BrandSections, BrandSpec } from "@/types/brand";
 import type { SystemAreaState } from "@/types/system";
+import type { Brief } from "@/types/brief";
 
 /** A reference of the project, as the presentation shows it */
 export interface BrandRef { id: string; name: string; web: string; image: string | null; /** web, image, video, post, text (lib/url.ts mediaKindOf) */ kind?: string }
@@ -37,6 +38,9 @@ export interface BrandCtxValue {
   upload?: (file: File, purpose: UploadPurpose) => Promise<BrandFile>;
   findFace?: (family: string) => Promise<FoundFace | null>;
   saving: ReadonlySet<BrandSection>;
+  /** The project's brief, and how a field of it is saved (null when it failed): a section asks for the field it needs */
+  brief?: Brief | null;
+  onBrief?: (patch: Partial<Brief>) => Promise<Brief | null>;
 }
 
 export const BrandCtx = createContext<BrandCtxValue | null>(null);

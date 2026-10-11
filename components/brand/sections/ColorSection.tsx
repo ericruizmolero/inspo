@@ -9,6 +9,7 @@ import { colorCodes, inkOn } from "@/lib/brand-values";
 import { COLOR_GROUPS, HEX_RE, brandId, type BrandColor } from "@/types/brand";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { IconButton, SegmentedControl } from "@/components/criterio";
+import { BriefAsk } from "../edit/BriefAsk";
 
 function Codes({ hex }: { hex: string }) {
   const c = colorCodes(hex);
@@ -112,6 +113,7 @@ export default function ColorSection() {
   const items = color.items;
   return (
     <div className="bc">
+      <BriefAsk area="color" />
       <div className="bc-mosaic">
         {items.map((c, i) => <Tile key={c.id} c={c} i={i} list={items} />)}
         {mode === "edit" && (

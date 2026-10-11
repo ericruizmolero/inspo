@@ -377,6 +377,14 @@
 .be-slot.is-busy { opacity: 0.6; }
 .be-slot__bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; padding: 12px 14px; opacity: 0; transition: opacity 0.15s; }
 .be-slot:hover .be-slot__bar, .be-slot:not(.has-file) .be-slot__bar, .be-slot__bar:focus-within { opacity: 1; }
+/* The brief field a section asks for while it is empty (BriefAsk): flat, in the app's face, above the section's content */
+.be-ask { display: flex; flex-direction: column; gap: var(--space-2); max-width: 40em; margin-bottom: var(--space-6); font-family: var(--font-sans); }
+.be-ask__say { color: var(--text-2); }
+.be-ask__choices { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.be-ask__choices li { display: flex; align-items: baseline; gap: var(--space-3); font-size: var(--fs-small); line-height: var(--lh-small); color: var(--muted); }
+.be-ask__choices .cr-chip { flex: 0 0 auto; }
+.be-ask__write { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+.be-ask__write .cr-input { flex: 1; min-width: 0; }
 /* Over the user's own panels (light or dark): secondary Buttons, size s, which read on either */
 .be-slot__error { position: absolute; left: 14px; right: 14px; bottom: 52px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--surface-raised); border: 1px solid var(--border); font-family: var(--font-sans); font-size: var(--fs-small); color: var(--danger); }
 

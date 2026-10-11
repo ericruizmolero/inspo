@@ -403,6 +403,7 @@ La página del proyecto. Cabecera en dos líneas: el nombre arriba y, debajo, un
 **Fuera de la vista Sistema desde el 05-10** (sigue en el enlace compartido). La marca como manual: índice a la izquierda y una sección por pantalla, cada una con su número, título grande en la tipografía display de la propia marca y una entradilla. Secciones: introducción, logo, color, tipografía, imagen, movimiento, voz, aplicaciones y recursos (`components/brand/sections/`).
 - En la app cada valor se edita donde está; en un enlace compartido es de solo lectura y las secciones vacías no salen.
 - Lo que el equipo edita a mano se queda fijo en las pasadas siguientes del modelo hasta que se devuelve.
+- Mientras el brief no lo tenga, Color pregunta arriba el nivel de accesibilidad (dos `Chip`, WCAG AA y WCAG AAA, cada una con su porqué al lado) y Voz algo que la marca nunca diría (un `.cr-input` s y un `Button` s, o Enter). Es `BriefAsk` (`components/brand/edit/BriefAsk.tsx`), plano y en la letra de la app. Al guardar desaparece; si falla, se queda. Solo en la app.
 - Un color que el modelo escribió lejos de todo lo medido (delta E de más de 10 frente a los hex de las referencias, la web del cliente, las guías y las decisiones del equipo) lleva junto al nombre el mismo punto del acento, pero hueco (`.bc-dot--ring`, en la tinta de la baldosa), con el aviso "No sale de lo medido". Solo en la app: el enlace compartido no lo enseña. Editar el color a mano lo quita.
 
 ### Texto editable de marca

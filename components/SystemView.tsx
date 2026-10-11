@@ -12,7 +12,7 @@ import type { ProjectMeasures } from "@/lib/ref-measured";
 import SkillsMenu from "./SkillsMenu";
 import ImproveModal from "./ImproveModal";
 import BriefPanel from "./BriefPanel";
-import type { Brief } from "@/types/brief";
+import { readBrief, type Brief } from "@/types/brief";
 import { loadSystem, decideSystemArea, setSystemNever, saveDocPart } from "@/app/actions/system";
 import { useT } from "./I18nProvider";
 import { Icons } from "./Sidebar";
@@ -314,7 +314,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
           <div className="spage-sheet">
             <BrandPresentation spec={editor.brand} name={project.name} summary={sys.summary} areas={sys.areas} mode="edit" fileSrc={fileUrl} refs={refs}
               stack={fonts.stack} display={fonts.display} text={fonts.text} markdown={markdown}
-              save={editor.save} release={editor.release} saving={editor.saving} findFace={findFace}
+              save={editor.save} release={editor.release} saving={editor.saving} findFace={findFace} brief={readBrief(project.brief)} onBrief={onBrief}
               upload={(file, purpose) => uploadBrandFile(project.id, file, purpose)} zipHref={`/api/system/brand/assets?projectId=${encodeURIComponent(project.id)}`} />
           </div>
         ) : (

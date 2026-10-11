@@ -661,7 +661,7 @@ export const ui = {
         question: "Which accessibility level?",
         why: { AA: "The usual level: readable for most people, and the one that applies if nobody chooses.", AAA: "More contrast and larger type, for public services or an older audience." },
       },
-      neverSay: { say: "Before the voice, what the brand would never say.", question: "Something the brand would never say?" },
+      neverSay: { say: "Before the voice, what the brand would never say.", question: "Something the brand would never say?", placeholder: "A word or a whole line" },
     },
     briefPanel: {
       open: "Brief",

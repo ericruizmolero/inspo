@@ -657,7 +657,7 @@ export const ui: typeof EnUi = {
         question: "\u00bfQu\u00e9 nivel de accesibilidad?",
         why: { AA: "El nivel habitual: legible para casi todos, y el que vale si nadie elige.", AAA: "M\u00e1s contraste y letra m\u00e1s grande, para servicios p\u00fablicos o un p\u00fablico mayor." },
       },
-      neverSay: { say: "Antes de la voz, lo que la marca nunca dir\u00eda.", question: "\u00bfAlgo que la marca nunca dir\u00eda?" },
+      neverSay: { say: "Antes de la voz, lo que la marca nunca dir\u00eda.", question: "\u00bfAlgo que la marca nunca dir\u00eda?", placeholder: "Una palabra o una frase entera" },
     },
     briefPanel: {
       open: "Brief",
