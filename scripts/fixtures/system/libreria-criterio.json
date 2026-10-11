@@ -1,0 +1,3898 @@
+{
+ "slug": "libreria-criterio",
+ "language": "en",
+ "frozenAt": "2026-10-11",
+ "system": {
+  "name": "Librería Criterio",
+  "brief": null,
+  "standing": [
+   {
+    "area": "typography",
+    "status": "empty",
+    "evidence": [
+     {
+      "ref": "r10",
+      "take": "Collage calm: mix the three families at 400 and 500, hierarchy from size and grey, never weight.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r1",
+      "take": "Serif display at 400 for every headline, never bold; keep the look and feel it was saved for."
+     },
+     {
+      "ref": "r2",
+      "take": "High-contrast display serif against Inter for the functional text."
+     },
+     {
+      "ref": "r4",
+      "take": "The serif carries the headlines; Geist and Geist Mono handle the rest, nothing bold."
+     },
+     {
+      "ref": "r5",
+      "take": "Geist Mono at 500 for metadata; hierarchy carried by grey, never weight."
+     }
+    ]
+   },
+   {
+    "area": "color",
+    "status": "model",
+    "decision": "A base of warm cream paper and charcoal neutrals, with charcoal allowed to carry full-bleed blocks, and one signal accent held in reserve for calls to action and states. No pastel gradients and no second palette.",
+    "confidence": 72,
+    "evidence": [
+     {
+      "ref": "r13",
+      "take": "Team-filed for its background and colours; take the palette intent, no values given.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r1",
+      "take": "Warm paper and oat neutrals cut by one signal accent."
+     },
+     {
+      "ref": "r2",
+      "take": "Warm paper white with one spark; drop the pastel spread."
+     },
+     {
+      "ref": "r4",
+      "take": "Matte greys with a single signal."
+     },
+     {
+      "ref": "r5",
+      "take": "Near-white and graphite with one accent held in reserve."
+     }
+    ],
+    "rejected": [
+     {
+      "decision": "Warm cream paper #F4EFE6 for the page, and full-bleed charcoal #232323 blocks to open each section, with cream text on them.",
+      "why": "Several references open sections on full-bleed dark blocks.",
+      "by": "Alberto Gallego",
+      "reason": "No full-bleed charcoal blocks: charcoal stays for text and rules, never a surface."
+     },
+     {
+      "decision": "Cream paper and charcoal, with one bright orange #FF5A1F accent for calls to action and active states.",
+      "why": "An orange accent reads as warm and urgent next to cream.",
+      "by": "Eric",
+      "reason": "No orange, and no bright accent at all: the accent stays a muted ink tone until the team picks it."
+     }
+    ]
+   },
+   {
+    "area": "layout",
+    "status": "model",
+    "decision": "One centred column, 1280 to 1440px, roughly 40px gutters and an 860px prose measure, with a narrow left rail for the index or filters. The index packs dense, edge to edge, while galleries bleed off the right edge and blocks keep generous air.",
+    "confidence": 78,
+    "evidence": [
+     {
+      "ref": "r9",
+      "take": "Dense, canvas-like packing for the board view; density itself is the point.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r6",
+      "take": "Bright, airy, centred composition where whitespace itself carries the calm."
+     },
+     {
+      "ref": "r3",
+      "take": "Narrow column on a 37px baseline grid, gallery bleeding right, room to capture emails."
+     },
+     {
+      "ref": "r5",
+      "take": "Narrow left rail for the index; the directory below carries all the density."
+     },
+     {
+      "ref": "r1",
+      "take": "Centred 1280px container, asymmetric, media bleeding past the right edge."
+     },
+     {
+      "ref": "r4",
+      "take": "Centred 1440px container, 40px gutters, 860px prose measure."
+     },
+     {
+      "ref": "r2",
+      "take": "One centred column at 1440px max with a long vertical rhythm of blocks."
+     }
+    ]
+   },
+   {
+    "area": "motion",
+    "status": "model",
+    "decision": "Two speeds: 0.15s cubic-bezier(0.4, 0, 0.2, 1) for colour and hover backgrounds at a 4px radius, and 0.5 to 0.7s cubic-bezier(0.22, 1, 0.36, 1) for the fan of captures and scroll reveals. Nothing bounces or overshoots.",
+    "confidence": 85,
+    "evidence": [
+     {
+      "ref": "r17",
+      "take": "Tilted prints that settle slowly, with no bounce.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r19",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r5",
+      "take": "Transform 0.5s cubic-bezier(0.22, 1, 0.36, 1) on the fan; hover background 4px radius at 0.15s."
+     },
+     {
+      "ref": "r12",
+      "take": "Saved for its movement; keep it smooth and never overshooting."
+     },
+     {
+      "ref": "r18",
+      "take": "Smooth, organic, contemplative movement across the forms."
+     },
+     {
+      "ref": "r1",
+      "take": "Quick 0.15s cubic-bezier(0.4, 0, 0.2, 1) changes plus slow scroll reveals."
+     },
+     {
+      "ref": "r4",
+      "take": "Settling at 0.6s cubic-bezier(0.22, 1, 0.36, 1), taps at 0.1s."
+     }
+    ]
+   },
+   {
+    "area": "iconography",
+    "status": "empty"
+   },
+   {
+    "area": "logo",
+    "status": "model",
+    "decision": "The client's current logo is kept as it is: reproduce it faithfully as clean SVG and use it unchanged across web and print. No new wordmark or symbol is drawn.",
+    "confidence": 55,
+    "evidence": [
+     {
+      "ref": "r12",
+      "take": "Team-filed here; no visual values given, so take only the intent that the mark can move.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r13",
+      "take": "A compact mark with size variations, reused as a quiet stamp."
+     },
+     {
+      "ref": "r16",
+      "take": "A small drawn mark reproduced tiny on printed stationery."
+     }
+    ]
+   },
+   {
+    "area": "imagery",
+    "status": "model",
+    "decision": "Flat, ungraded captures of the real artefacts and books, unframed, laid out as an asymmetric collage with generous air: prints fanned and slightly tilted with soft shadows, and the product shown as a usable miniature. The archive is the subject, never stock photography of coffee and books.",
+    "confidence": 75,
+    "evidence": [
+     {
+      "ref": "r10",
+      "take": "Asymmetric collage of photographs, illustrations and type, muted palette, generous white space.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r13",
+      "take": "Team-filed for its background; no image values given, take the surface treatment only.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r17",
+      "take": "A semi-circle of tilted prints above a short text and a single action.",
+      "filed_by_team": true
+     },
+     {
+      "ref": "r3",
+      "take": "Product shown as a usable miniature, with shelf or desk photography below."
+     },
+     {
+      "ref": "r4",
+      "take": "Flat captures of saved artefacts, neutral light, no grading; the archive is the subject."
+     },
+     {
+      "ref": "r5",
+      "take": "Fanned deck of tilted captures, flat light, no frames, soft shadows."
+     },
+     {
+      "ref": "r8",
+      "take": "Layered card carousel with a quiet date and place line beneath."
+     }
+    ]
+   },
+   {
+    "area": "voice",
+    "status": "model",
+    "decision": "Second person, quiet and warm, in short declarative sentences that put what the reader gets before the feature, with a learned aside now and then. Never urgency: no exclamation marks, no \"Don't miss out! Limited offer\".",
+    "confidence": 65,
+    "evidence": [
+     {
+      "ref": "r1",
+      "take": "Plain second person, benefit first: \"Without a meeting bot.\""
+     },
+     {
+      "ref": "r2",
+      "take": "Warm second person, gently anti-productivity: \"Organize nothing.\""
+     },
+     {
+      "ref": "r4",
+      "take": "Second person, plain and declarative."
+     },
+     {
+      "ref": "r5",
+      "take": "Casual lowercase plainspokenness; keep the plainness, not the first person."
+     }
+    ]
+   }
+  ],
+  "refs": [
+   {
+    "id": "r1",
+    "kind": "web",
+    "name": "Granola",
+    "url": "https://www.granola.ai",
+    "collection": "inspiration",
+    "curator_notes": "La serifa y look and feel de Granola.",
+    "page": "Granola — The AI Notepad for back-to-back meetings · The AI notepad for back-to-back meetings. Notes, actions and memory. Without a meeting bot.",
+    "look": "A clean, minimalist design with ample whitespace. Features large, impactful typography and subtle use of color gradients. Showcases product mockups and interface elements with accompanying photography, creating an airy and modern feel.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Motion",
+     "Photography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "yellow",
+     "black",
+     "green"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "logos",
+     "features",
+     "cta"
+    ],
+    "elements": [
+     "mockups",
+     "photography",
+     "icons",
+     "badges",
+     "cards",
+     "gradient",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "oversized",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "centered",
+     "split"
+    ],
+    "keywords": [
+     "meeting notes",
+     "ai assistant",
+     "productivity app",
+     "note taking",
+     "collaboration tool",
+     "saas",
+     "meeting summary"
+    ],
+    "made_by": [
+     "Granola"
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "glance": {
+      "typography": "Quadrant, a weight-400 serif, carries every headline while melange handles all interface text.",
+      "imagery": "Softly graded documentary shots of people on calls, framed inside rounded windows.",
+      "logo": "A lowercase wordmark with a round stamped glyph, drawn in near-black and set slightly heavy, warm and informal.",
+      "motion": "Quick and switch-like: cubic-bezier(0.4, 0, 0.2, 1) at 0.15s.",
+      "color": "Warm paper whites and oat neutrals with one olive signal.",
+      "iconography": "Outline Lucide icons at roughly 1.875px stroke, rounded joins, geometric and unfussy.",
+      "voice": "Plain, first-person second-address product talk: \"Notes, actions and memory. Without a meeting bot.\""
+     },
+     "layout": "Centred content column capped at 1280px, generous vertical rhythm, asymmetric two-column hero with oversized serif on the left and a stacked product mock on the right. Colour fields are large and quiet; the olive accent appears once per screen.",
+     "colors": [
+      {
+       "name": "Olive Signal",
+       "hex": "#B2C248",
+       "group": "accent"
+      },
+      {
+       "name": "Deep Olive",
+       "hex": "#5B6F00",
+       "group": "accent"
+      },
+      {
+       "name": "Paper White",
+       "hex": "#FFFFFF",
+       "group": "neutral"
+      },
+      {
+       "name": "Oat",
+       "hex": "#F7F7F2",
+       "group": "neutral"
+      },
+      {
+       "name": "Graphite",
+       "hex": "#292929",
+       "group": "neutral"
+      }
+     ],
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.76
+      },
+      {
+       "hex": "#a2a958",
+       "share": 0.09
+      },
+      {
+       "hex": "#363535",
+       "share": 0.09
+      },
+      {
+       "hex": "#c2c7b6",
+       "share": 0.06
+      }
+     ],
+     "families": [
+      {
+       "family": "quadrant",
+       "role": "display",
+       "weights": [
+        400
+       ]
+      },
+      {
+       "family": "melange",
+       "role": "body",
+       "weights": [
+        400,
+        430,
+        500,
+        600
+       ]
+      }
+     ],
+     "radius": [
+      {
+       "value": "4px",
+       "element": "Small chips and list rows"
+      },
+      {
+       "value": "8px",
+       "element": "Inline cards and buttons in mock UI"
+      },
+      {
+       "value": "12px",
+       "element": "App panels"
+      }
+     ],
+     "density": "airy",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "r2",
+    "kind": "web",
+    "name": "mymind",
+    "url": "https://mymind.com",
+    "collection": "inspiration",
+    "curator_notes": "Otro ejemplo buenisimo de landing estilo nuestro producto que transmite elegancia, diversión y calma.",
+    "page": "mymind is the extension for your mind. · A private place to save your most precious notes, images, quotes and highlights. Enhanced with AI to help you remember without wasting time on categorizing & organizing.",
+    "look": "A clean and airy design with a dominant pastel gradient in the hero section. Large, expressive serif typography contrasts with fine sans-serif text. The page showcases a grid of images and a UI mockup, featuring soft gradients and photography with a refined, calm mood.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Photography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "orange",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features",
+     "gallery",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "photography",
+     "icons",
+     "badges",
+     "shapes",
+     "gradient",
+     "cards",
+     "video"
+    ],
+    "type": [
+     "serif",
+     "display",
+     "oversized",
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "personal knowledge management",
+     "note-taking app",
+     "digital garden",
+     "bookmarking",
+     "ai organization",
+     "private notes",
+     "search tool",
+     "visual dashboard"
+    ],
+    "made_by": [
+     "mymind"
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "glance": {
+      "typography": "Louize, a high contrast serif with tight negative tracking for every headline, Inter and Nunito at 400 for quiet supporting text.",
+      "imagery": "Warm peach graded product screenshots inside rounded panels, plus sunlit photos of paper and plants, soft focus and gentle bloom.",
+      "logo": "A lowercase 'mymind' wordmark in a soft rounded sans with a small circular eye mark, calm, friendly and almost a signature.",
+      "motion": "Slow and exhaling, sections fade upward: GSAP with ScrollTrigger, cubic-bezier(0.19, 1, 0.22, 1) at 0.7s.",
+      "color": "Paper white and coral blush base, pastel card fields, ink serif text, Signal Orange for the one action.",
+      "iconography": "Sparse, mostly filled platform marks in pill buttons, small round dots as nav markers, no icon system otherwise.",
+      "voice": "Second person, warm and reassuring, short declaratives: \"Remember everything. Organize nothing.\""
+     },
+     "layout": "A single centred column capped at 1440px with an inner content width near 1100px. The hero is a giant white circle sitting inside a full bleed peach gradient, with the 96px serif headline stacked in two lines and the supporting sentence plus pill buttons underneath. Below, features alternate between full width pastel cards and large app screenshots, separated by generous 128px section gaps and 50px card padding.",
+     "colors": [
+      {
+       "name": "Signal Orange",
+       "hex": "#ff5924",
+       "group": "brand"
+      },
+      {
+       "name": "Ink",
+       "hex": "#000000",
+       "group": "neutral"
+      },
+      {
+       "name": "Paper White",
+       "hex": "#ffffff",
+       "group": "neutral"
+      },
+      {
+       "name": "Blush Mist",
+       "hex": "#fff1f1",
+       "group": "neutral"
+      },
+      {
+       "name": "Periwinkle Fog",
+       "hex": "#e5eaf2",
+       "group": "neutral"
+      }
+     ],
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.81
+      },
+      {
+       "hex": "#eabda8",
+       "share": 0.14
+      },
+      {
+       "hex": "#887a79",
+       "share": 0.05
+      }
+     ],
+     "families": [
+      {
+       "family": "Louize-Regular-205TF",
+       "role": "display",
+       "weights": [
+        400,
+        500,
+        700
+       ]
+      },
+      {
+       "family": "Inter-Regular",
+       "role": "body",
+       "weights": [
+        400,
+        500
+       ]
+      },
+      {
+       "family": "Nunito-Regular",
+       "role": "ui",
+       "weights": [
+        400,
+        600
+       ]
+      }
+     ],
+     "radius": [
+      {
+       "value": "100px",
+       "element": "Pills and nav chips"
+      },
+      {
+       "value": "16px",
+       "element": "Feature cards"
+      },
+      {
+       "value": "36px",
+       "element": "App screenshots and large panels"
+      }
+     ],
+     "density": "airy",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "r3",
+    "kind": "web",
+    "name": "Tiny Computer Co.",
+    "url": "https://tinycomputer.co",
+    "collection": "inspiration",
+    "curator_notes": "Para una primera versión de la landing donde captemos atención podriamos hacer algo esitlo esto donde tenemos un producto en miniatura que se puede utilizar y debajo una declaración de intenciones. En algun sitio poner para capturar correos.",
+    "page": "Tiny Computer Co. — A small, independent software studio · Tiny Computer Co. is an independent software studio building Boardwalk, a visual library for collecting and organising ideas on Mac, iPad and iPhone.",
+    "look": "A clean and minimalist design with a neutral, light beige background. Large, expressive serif typography dominates the hero section. Below the headline, a subtle carousel displays UI mockups and photography of desk setups, hinting at the studio's software product. The overall mood is calm, professional, and sophisticated.",
+    "sector": "Studio / agency",
+    "style": "Minimal",
+    "traits": [
+     "Typography"
+    ],
+    "colours": [
+     "orange"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "work"
+    ],
+    "elements": [
+     "mockups",
+     "photography",
+     "form",
+     "cards"
+    ],
+    "type": [
+     "serif",
+     "display",
+     "oversized"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "software studio",
+     "independent",
+     "mac app",
+     "idea organization",
+     "minimalist ui",
+     "clean typography",
+     "product showcase",
+     "ui mockups"
+    ],
+    "made_by": [
+     "Tiny Computer Co."
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#fffcf9",
+       "share": 0.92
+      }
+     ]
+    }
+   },
+   {
+    "id": "r4",
+    "kind": "web",
+    "name": "Trove",
+    "url": "https://trove.quest",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": "Trove · A personal archive you can trust like your own memory.",
+    "look": "A minimalist interface with ample whitespace and a neutral color palette. Large, evocative serif typography dominates the headlines. A grid of diverse imagery, including abstract gradients, objects, and UI mockups, showcases saved references. The overall mood is clean, sophisticated, and contemplative.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Photography",
+     "Monochrome"
+    ],
+    "colours": [
+     "white",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features",
+     "bento",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "photography",
+     "mockups",
+     "icons",
+     "form",
+     "shapes",
+     "cards"
+    ],
+    "type": [
+     "serif",
+     "sans",
+     "display",
+     "oversized"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "personal archive",
+     "digital scrapbooking",
+     "reference manager",
+     "taste profiling",
+     "curation",
+     "inspiration library",
+     "design research",
+     "mood board",
+     "ai assistant"
+    ],
+    "made_by": [
+     "Trove"
+    ],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null,
+    "team_comments": [
+     "Eric: Trove, una librería curada por https://rafaelcespedes.com/ (design de Robinhood). Su librería tiene un agente llamado Mentor que te indica el camino para inspirarte sobre su librería. (said with a screenshot attached, pointing at that part of the reference)"
+    ],
+    "team_pointed_at": [
+     {
+      "quote": "Su librería tiene un agente llamado Mentor que te indica el camino para inspirarte sobre su librería.",
+      "by": "Eric",
+      "take": "Verificar en directo qué responde Mentor a una consulta real, no solo el hover de los botones de la lista de quests."
+     }
+    ],
+    "measured": {
+     "glance": {
+      "typography": "A high-contrast serif at 400 only, clamped huge, Geist body, Geist Mono caps labels.",
+      "imagery": "Almost none in the hero, type carries the page. Lower down, flatly cropped reference thumbnails sit on Paper White cards.",
+      "logo": "A letterspaced uppercase wordmark preceded by a small eight-point star glyph, drawn in Obsidian ink.",
+      "motion": "Reveals drift in slowly, hover snaps. Scroll animation with cubic-bezier(0.22, 1, 0.36, 1) at 0.4s.",
+      "color": "Warm grey paper from Vellum to Paper White, Obsidian ink, one Signal Orange for the agent.",
+      "iconography": "Small filled geometric glyphs in Obsidian ink, one hairline outline at 1.25px, no library detected.",
+      "voice": "Second person, short plain declaratives, quiet confidence, ending on \"The things you kept, back when you need them.\""
+     },
+     "layout": "One 1440px frame with 40px side gutters. The hero breaks into two columns: the headline occupies the left two thirds at clamp(52px, 9.2vw, 148px), while the description and its button sit in a right column starting past the midpoint. Sections open with 112px of top padding and 48px below, blocks are separated by 20px and 24px vertical rhythm, and everything is left aligned. The result is an asymmetric editorial spread rather than a centred landing page.",
+     "colors": [
+      {
+       "name": "Signal Orange",
+       "hex": "#ff5f00",
+       "group": "accent"
+      },
+      {
+       "name": "Pitch Black",
+       "hex": "#0b0b0c",
+       "group": "neutral"
+      },
+      {
+       "name": "Obsidian",
+       "hex": "#1a1a1a",
+       "group": "neutral"
+      },
+      {
+       "name": "Graphite",
+       "hex": "#666666",
+       "group": "neutral"
+      },
+      {
+       "name": "Hairline",
+       "hex": "#e3e3e3",
+       "group": "neutral"
+      }
+     ],
+     "pixels": [
+      {
+       "hex": "#efefef",
+       "share": 0.96
+      },
+      {
+       "hex": "#97958c",
+       "share": 0.03
+      }
+     ],
+     "families": [
+      {
+       "family": "Display",
+       "role": "display",
+       "weights": [
+        400
+       ]
+      },
+      {
+       "family": "Geist",
+       "role": "body",
+       "weights": [
+        400,
+        500
+       ]
+      },
+      {
+       "family": "Geist Mono",
+       "role": "mono",
+       "weights": [
+        400
+       ]
+      }
+     ],
+     "radius": [
+      {
+       "value": "0px",
+       "element": "Marketing buttons, cards and header"
+      },
+      {
+       "value": "3px",
+       "element": "Small inline marks such as chips"
+      },
+      {
+       "value": "6px",
+       "element": "App chrome (--radius)"
+      }
+     ],
+     "density": "airy",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "r5",
+    "kind": "web",
+    "name": "perfolios",
+    "url": "https://perfolios.shwn.design",
+    "collection": "inspiration",
+    "curator_notes": "Directorio de webs de porftolio minamalista. Me gusta su efecto ruleta a la izquierda. Me gusta el hovering en cada descricpción de proyecto.",
+    "page": "perfolios. — portfolio inspiration & directory · A hand-picked directory of the best personal websites and portfolios for inspiration: designers, developers, design engineers and studios, browsable by style.",
+    "look": "A minimal, airy layout with a focus on typography. The page features a clean white background and a vast list of names, each serving as a link to a portfolio. A simple navigation and filter options are present at the top.",
+    "sector": "Portfolio",
+    "style": "Minimal",
+    "traits": [
+     "Typography"
+    ],
+    "colours": [
+     "white"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "work",
+     "cta"
+    ],
+    "elements": [
+     "cards",
+     "form",
+     "badges"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "long-scroll"
+    ],
+    "keywords": [
+     "designer",
+     "developer",
+     "portfolio",
+     "inspiration",
+     "directory",
+     "web design",
+     "creative",
+     "showcase"
+    ],
+    "made_by": [
+     "shawn",
+     "perfolios"
+    ],
+    "declared_type": "CollectionPage",
+    "own_keywords": [
+     "portfolio inspiration",
+     "portfolio inspo",
+     "portfolio directory",
+     "portfolio gallery",
+     "best portfolio websites",
+     "personal website inspiration",
+     "personal websites",
+     "design portfolios",
+     "designer portfolio examples",
+     "developer portfolios",
+     "developer portfolio examples",
+     "design engineer portfolios",
+     "web design inspiration",
+     "curated websites"
+    ],
+    "place": null,
+    "team_pointed_at": [
+     {
+      "quote": "Me gusta su efecto ruleta a la izquierda",
+      "by": "Eric",
+      "values": [
+       "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
+       "fan de tarjetas rotadas"
+      ],
+      "take": "Reproduce el stack de capturas de portfolio ligeramente rotadas en abanico, con esa única transición transform de 0.5s en la parte superior izquierda."
+     },
+     {
+      "quote": "Me gusta el hovering en cada descricpción de proyecto",
+      "by": "Eric",
+      "values": [
+       "radius 4px hover background",
+       "color 0.15s cubic-bezier(0.4,0,0.2,1)"
+      ],
+      "take": "Al pasar el cursor sobre el nombre o descripción del diseñador en el listado, aplica un fondo con 4px de radio y transición de color de 0.15s, sin subrayado."
+     }
+    ],
+    "measured": {
+     "glance": {
+      "typography": "Public Sans at weight 500 for every size, Geist Mono only to count things.",
+      "imagery": "Portfolio screenshots fanned like a hand of cards, each thumb a real site. Mixed palettes, from white pages to deep blue, near-black and warm brown, lit softly and dropped on long shadows.",
+      "logo": "No symbol: the name is inlined into the sentence in body type, lowercase with a trailing period and a blinking typing caret.",
+      "motion": "Quick and switch-like: cubic-bezier(0.4, 0, 0.2, 1) at 0.15s.",
+      "color": "Near-white greys with one graphite voice and a hidden electric blue.",
+      "iconography": "Small outline glyphs at 16px, roughly 1.75-2px strokes, geometric with rounded terminals.",
+      "voice": "Quiet first person, plain and a little wry. \"This is perfolios, a hand-picked directory of the most beautiful personal sites on the internet.\""
+     },
+     "layout": "A single narrow column on Paper, roughly 720px of content, with a fixed left rail of filters. Vertical rhythm is generous: 80px above the fold content, 48px between the intro and the counter, 40px before the search block. Almost nothing is boxed; separation comes from 0.5px hairlines and 8-12px of breathing room rather than containers.",
+     "colors": [
+      {
+       "name": "Signal Blue",
+       "hex": "#3232ff",
+       "group": "brand"
+      },
+      {
+       "name": "Paper",
+       "hex": "#fbfbfb",
+       "group": "neutral"
+      },
+      {
+       "name": "Raised White",
+       "hex": "#ffffff",
+       "group": "neutral"
+      },
+      {
+       "name": "Fog",
+       "hex": "#f2f2f2",
+       "group": "neutral"
+      },
+      {
+       "name": "Cloud",
+       "hex": "#eeeeee",
+       "group": "neutral"
+      }
+     ],
+     "pixels": [
+      {
+       "hex": "#fcfcfc",
+       "share": 1
+      }
+     ],
+     "families": [
+      {
+       "family": "Public Sans",
+       "role": "body",
+       "weights": [
+        500
+       ]
+      },
+      {
+       "family": "Geist Mono",
+       "role": "body",
+       "weights": [
+        500
+       ]
+      }
+     ],
+     "radius": [
+      {
+       "value": "12px",
+       "element": "inputs, thumbnails, search"
+      },
+      {
+       "value": "10px",
+       "element": "filter pills, segmented tabs"
+      },
+      {
+       "value": "9px",
+       "element": "square icon toggles"
+      }
+     ],
+     "density": "compact",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "r6",
+    "kind": "web",
+    "name": "Email marketing that’s different by design",
+    "url": "https://flodesk.com",
+    "collection": "inspiration",
+    "curator_notes": "Limpieza y aire de Flodesk transmite mucha paz.",
+    "page": "Email marketing that’s different by design · With uncompromising design and robust deliverability, Flodesk emails get seen 17% more than industry average.",
+    "look": "A clean and airy interface with a bright, pastel-leaning color palette. Features large, bold typography for headlines, paired with a mix of product mockups, charming illustrations, and photography. The layout is largely centered, with cards and a prominent pricing table.",
+    "sector": "Product / SaaS",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Photography",
+     "Illustration",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "grey",
+     "green",
+     "yellow"
+    ],
+    "sections": [
+     "hero",
+     "nav",
+     "features",
+     "pricing",
+     "process",
+     "cta",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "illustration",
+     "photography",
+     "icons",
+     "badges",
+     "form",
+     "shapes",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "columns"
+    ],
+    "keywords": [
+     "email marketing",
+     "automation",
+     "workflows",
+     "templates",
+     "landing pages",
+     "forms",
+     "brand consistency",
+     "customizable",
+     "design editor"
+    ],
+    "made_by": [
+     "Flodesk"
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [
+     "flodesk"
+    ],
+    "place": null,
+    "measured": {
+     "glance": {
+      "typography": "One self-hosted family, Flodesk Sans, in weights 400 and 500 only.",
+      "imagery": "Product shots are framed email templates in retro display type on flat pastel fields. Light is even and studio-flat, colour graded saturated, crops tight and square.",
+      "logo": "Lowercase flodesk wordmark, softly rounded geometric letters, wide counters, flat black, no symbol.",
+      "motion": "Barely there, quick fades: ease at 0.2s, with Swiper driving the carousels.",
+      "color": "Warm off-white canvas, one ink black, a rotation of muted pastels and deep jewel fields.",
+      "iconography": "Mostly filled solid glyphs at 20px, a smaller outline set at 2px stroke, softly rounded and geometric.",
+      "voice": "Confident, plain-spoken second person, design-literate without jargon: \"Email marketing that's different by design\"."
+     },
+     "layout": "Max content width 1440px, centred text measure 672px. Card padding 64px 60px, section spacing on a 4 / 8 / 12 / 24 / 48 / 64px scale, generous vertical air (160px before the first hero block).",
+     "colors": [
+      {
+       "name": "Dusty Blue",
+       "hex": "#8AA4D8",
+       "group": "accent"
+      },
+      {
+       "name": "Olive Sand",
+       "hex": "#AEA579",
+       "group": "accent"
+      },
+      {
+       "name": "Maize",
+       "hex": "#FDEDA9",
+       "group": "accent"
+      },
+      {
+       "name": "Lavender",
+       "hex": "#A39EC6",
+       "group": "accent"
+      },
+      {
+       "name": "Oxblood",
+       "hex": "#410D26",
+       "group": "accent"
+      }
+     ],
+     "pixels": [
+      {
+       "hex": "#f8f9f4",
+       "share": 0.57
+      },
+      {
+       "hex": "#9c988c",
+       "share": 0.2
+      },
+      {
+       "hex": "#d0d3bf",
+       "share": 0.14
+      },
+      {
+       "hex": "#fefefc",
+       "share": 0.08
+      }
+     ],
+     "families": [
+      {
+       "family": "Flodesk Sans",
+       "role": "display",
+       "weights": [
+        400,
+        500
+       ]
+      }
+     ],
+     "radius": [
+      {
+       "value": "24px",
+       "element": "cards"
+      },
+      {
+       "value": "16px",
+       "element": "inner media and grids"
+      },
+      {
+       "value": "100px",
+       "element": "pills, all actions"
+      }
+     ],
+     "density": "airy",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "r7",
+    "kind": "image",
+    "name": "7FC9C8E5-076D 4B44-951D A59035A9FFA9",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791133237697-smwow5.jpg",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A very dark, minimalist design featuring three blurred, glowing orange shapes arranged horizontally in the center of the frame. The overall mood is abstract and ethereal, with a strong emphasis on negative space and subtle illumination.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Dark"
+    ],
+    "colours": [
+     "black"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [
+     "shapes",
+     "gradient"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "abstract",
+     "blur",
+     "glow",
+     "light",
+     "minimal",
+     "orange",
+     "dark",
+     "shape",
+     "bokeh"
+    ],
+    "made_by": [],
+    "declared_type": null,
+    "own_keywords": [],
+    "place": null,
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#0a0909",
+       "share": 0.98
+      }
+     ]
+    }
+   },
+   {
+    "id": "r8",
+    "kind": "image",
+    "name": "Image",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791133370000-f5ehcd.png",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A minimalist interface showcasing a carousel of photographs presented as layered cards. The central image features a vintage phone booth in a city street, bathed in warm sunlight. Soft gradients and a muted color palette create a nostalgic and airy feel, with a subtle timeline element at the bottom indicating locations and dates.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Photography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "brown",
+     "beige",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "work",
+     "footer"
+    ],
+    "elements": [
+     "photography",
+     "mockups",
+     "carousel",
+     "cards",
+     "gradient"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy",
+     "full-bleed"
+    ],
+    "keywords": [
+     "photo carousel",
+     "travelogue",
+     "cityscape",
+     "phone booth",
+     "calendar",
+     "light leaks",
+     "scenic"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f4f6f3",
+       "share": 0.71
+      },
+      {
+       "hex": "#2b201b",
+       "share": 0.14
+      },
+      {
+       "hex": "#e1d5c2",
+       "share": 0.07
+      },
+      {
+       "hex": "#9faba7",
+       "share": 0.06
+      }
+     ]
+    }
+   },
+   {
+    "id": "r9",
+    "kind": "image",
+    "name": "Image",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791133478080-unbcfn.png",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A dark, minimal UI for a node-based workflow tool. It features a dark theme with neon-like accents and glowing nodes. The layout is dense, showcasing a visual programming interface with input and output connections, reminiscent of AI model configuration. The overall mood is technological and abstract.",
+    "sector": "Tool",
+    "style": "Minimal",
+    "traits": [
+     "Dark",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "grey",
+     "black"
+    ],
+    "sections": [
+     "nav",
+     "work",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "icons",
+     "badges",
+     "form",
+     "cards",
+     "gradient",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "dense"
+    ],
+    "keywords": [
+     "workflow",
+     "node editor",
+     "ai generation",
+     "image generation",
+     "prompt engineering",
+     "neural network",
+     "visual programming",
+     "deep learning"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#6f6e6f",
+       "share": 0.5
+      },
+      {
+       "hex": "#121313",
+       "share": 0.48
+      }
+     ]
+    }
+   },
+   {
+    "id": "r10",
+    "kind": "image",
+    "name": "Image",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791133612931-sx6056.png",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A minimalist collage-style mood board with a muted, neutral color palette and subtle pops of color. It features a mix of photography, abstract illustrations, typography, and a single tomato. The layout is asymmetric and airy, with generous white space. The overall mood is calm and curated.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Photography",
+     "Illustration",
+     "Colourful",
+     "Monochrome"
+    ],
+    "colours": [
+     "white",
+     "beige",
+     "orange",
+     "brown"
+    ],
+    "sections": [
+     "gallery",
+     "contact"
+    ],
+    "elements": [
+     "photography",
+     "illustration",
+     "mockups",
+     "shapes",
+     "collage",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "asymmetric",
+     "airy"
+    ],
+    "keywords": [
+     "mood board",
+     "collage",
+     "inspiration",
+     "visual research",
+     "abstract",
+     "typography",
+     "photography",
+     "illustration"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f2f1ed",
+       "share": 0.7
+      },
+      {
+       "hex": "#d8d1c3",
+       "share": 0.11
+      },
+      {
+       "hex": "#aa9777",
+       "share": 0.1
+      },
+      {
+       "hex": "#655b45",
+       "share": 0.06
+      }
+     ]
+    }
+   },
+   {
+    "id": "r11",
+    "kind": "image",
+    "name": "Image",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791133656141-i47ukr.png",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A dark background showcases a grid of diverse visual references. The layout is airy with generous whitespace. Various images, including product shots, close-ups, and graphic designs, are presented in a clean, modular arrangement.",
+    "sector": "Portfolio",
+    "style": "Minimal",
+    "traits": [
+     "Photography",
+     "Grid / bento",
+     "Colourful"
+    ],
+    "colours": [
+     "black",
+     "grey",
+     "orange",
+     "white"
+    ],
+    "sections": [
+     "hero",
+     "work",
+     "gallery"
+    ],
+    "elements": [
+     "photography",
+     "mockups",
+     "cards",
+     "badges"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "airy",
+     "centered"
+    ],
+    "keywords": [
+     "moodboard",
+     "inspiration",
+     "design thinking",
+     "creative direction",
+     "references",
+     "mood board",
+     "creative process",
+     "inspiration board"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#141413",
+       "share": 0.45
+      },
+      {
+       "hex": "#474240",
+       "share": 0.3
+      },
+      {
+       "hex": "#8d7d6e",
+       "share": 0.16
+      },
+      {
+       "hex": "#efeeea",
+       "share": 0.09
+      }
+     ]
+    }
+   },
+   {
+    "id": "r12",
+    "kind": "image",
+    "name": "Image",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791133712536-5o6xtw.png",
+    "collection": "inspiration",
+    "curator_notes": "Algo que está en movimiento (motion)",
+    "page": null,
+    "look": "A deep orange background with a subtle grain texture. In the center, a stark black abstract shape with soft, blurred edges appears to be casting a shadow. The composition is simple and centered, creating a minimalist and graphic aesthetic with a touch of retro appeal.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Colourful",
+     "Monochrome"
+    ],
+    "colours": [
+     "orange",
+     "black"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [
+     "shapes",
+     "grain",
+     "illustration"
+    ],
+    "type": [
+     "display"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "orange",
+     "black",
+     "abstract",
+     "grainy",
+     "shape",
+     "minimalist",
+     "graphic",
+     "branding"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#d85b2b",
+       "share": 0.96
+      },
+      {
+       "hex": "#190c09",
+       "share": 0.03
+      }
+     ]
+    }
+   },
+   {
+    "id": "r13",
+    "kind": "image",
+    "name": "Image",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791134346116-xj7x04.png",
+    "collection": "inspiration",
+    "curator_notes": "Me gustan el fondo y los colores",
+    "page": null,
+    "look": "A brand identity presentation featuring a dark background with a stylized 'w' logo and abstract star shapes. It showcases a core color palette with swatches for 'Blue Regatta', 'Charcoal', and 'Cream', accompanied by wavy abstract patterns and a repeating logo motif.",
+    "sector": "Other",
+    "style": "Playful",
+    "traits": [
+     "Illustration",
+     "Colourful"
+    ],
+    "colours": [
+     "blue",
+     "black",
+     "white"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [
+     "shapes",
+     "icons"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "full-bleed"
+    ],
+    "keywords": [
+     "brand guidelines",
+     "color palette",
+     "logo variations",
+     "abstract shapes",
+     "wavy patterns",
+     "blue and cream",
+     "dark background",
+     "graphic elements"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#8ba1ee",
+       "share": 0.52
+      },
+      {
+       "hex": "#2c2823",
+       "share": 0.29
+      },
+      {
+       "hex": "#eceae5",
+       "share": 0.2
+      }
+     ]
+    }
+   },
+   {
+    "id": "r14",
+    "kind": "web",
+    "name": "Open",
+    "url": "https://www.cosmos.so/e/1001465979",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": "Open · The &#x27;Eyes&#x27; graphic system from the RTS rebrand by Hymn Design. Typography developed with Newglyph. An Instagram carousel post added by thekuvvat on Feb 21, 2026. The author is Logos Design & Brandi...",
+    "look": "The page presents a graphic system named 'Eyes' as part of a rebrand. It features a prominent use of typography and graphic illustrations. The layout appears clean and organized, with elements like a navigation bar, a carousel showcasing work, and badges indicating categories. The overall aesthetic leans towards editorial design.",
+    "sector": "Studio / agency",
+    "style": "Editorial",
+    "traits": [
+     "Typography",
+     "Illustration"
+    ],
+    "colours": [],
+    "sections": [
+     "nav",
+     "work",
+     "footer"
+    ],
+    "elements": [
+     "illustration",
+     "carousel",
+     "badges"
+    ],
+    "type": [
+     "display",
+     "caps"
+    ],
+    "layout": [
+     "columns",
+     "airy"
+    ],
+    "keywords": [
+     "graphic system",
+     "rebrand",
+     "typography",
+     "illustration",
+     "instagram carousel",
+     "editorial design"
+    ],
+    "made_by": [
+     "Cosmos"
+    ],
+    "declared_type": "Organization",
+    "own_keywords": [],
+    "place": "New York, US",
+    "measured": {
+     "glance": {
+      "typography": "One family, cosmosOracle, at 400 and 500; hierarchy comes from size and grey, never weight.",
+      "imagery": "Dense grid of small square artwork stills and looping video, flat saturated colour on plain grounds, tightly cropped, no grading or grain.",
+      "logo": "A compact black cluster-of-dots symbol in the header, geometric and rounded, set alone with no wordmark beside it.",
+      "motion": "Instant and switch-like: state colours flip with cubic-bezier(0.4, 0, 0.2, 1) at 0.1s, only the endless grid scrolls in.",
+      "color": "Paper white field, obsidian ink, one electric periwinkle flash carried entirely by the artwork.",
+      "iconography": "Mostly filled glyphs with a few 1.75px outlines, geometric, rounded corners, no library detected.",
+      "voice": "Dry, utilitarian, second person, short labels and CTAs; \"Sign up to keep exploring similar elements and save the ones you love.\""
+     },
+     "layout": "A three-column archive view on a white field: a narrow left rail of stacked 3px thumbnail tiles, a large centred artwork block, and a right metadata column separated by vertical hairlines. A 56px header holds a dotted mark, three nav links at the left, a centred pill search, and log in plus Sign up at the right. Gutters are 32px everywhere, the grid below runs full-bleed with no max-width, and rhythm comes from 4px micro gaps between chips rather than from whitespace blocks.",
+     "colors": [
+      {
+       "name": "Cobalt Flash",
+       "hex": "#6364f9",
+       "group": "accent"
+      },
+      {
+       "name": "Blush Pop",
+       "hex": "#f88dc1",
+       "group": "accent"
+      },
+      {
+       "name": "Obsidian",
+       "hex": "#0d0d0d",
+       "group": "neutral"
+      },
+      {
+       "name": "Graphite",
+       "hex": "#5a5a5a",
+       "group": "neutral"
+      },
+      {
+       "name": "Ash",
+       "hex": "#919191",
+       "group": "neutral"
+      }
+     ],
+     "families": [
+      {
+       "family": "cosmosOracle",
+       "role": "body",
+       "weights": [
+        400,
+        500
+       ]
+      }
+     ],
+     "radius": [
+      {
+       "value": "999px",
+       "element": "Buttons, search field, avatars"
+      },
+      {
+       "value": "3px",
+       "element": "Image and video tiles in the rail"
+      },
+      {
+       "value": "8px",
+       "element": "Inline chips and link tags"
+      }
+     ],
+     "density": "comfortable",
+     "theme": "light"
+    }
+   },
+   {
+    "id": "r15",
+    "kind": "image",
+    "name": "An image uploaded by KLab on Apr 08, 2025.",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791134742470-b2ipej.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A highly minimalist design with a stark black and white color scheme. Bold, oversized sans-serif typography dominates the layout, creating a strong typographic focus. Simple folder icons and a list of names are presented in a clean, airy composition, evoking a sense of order and digital archival.",
+    "sector": "Culture / event",
+    "style": "Minimal",
+    "traits": [
+     "Typography",
+     "Monochrome"
+    ],
+    "colours": [
+     "white",
+     "grey"
+    ],
+    "sections": [
+     "hero",
+     "work",
+     "team"
+    ],
+    "elements": [
+     "icons",
+     "cards",
+     "badges"
+    ],
+    "type": [
+     "display",
+     "oversized",
+     "caps"
+    ],
+    "layout": [
+     "airy",
+     "centered"
+    ],
+    "keywords": [
+     "archive",
+     "folder",
+     "visual bleed",
+     "exhibition",
+     "performance",
+     "dj set",
+     "experimental",
+     "minimalist typography"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.71
+      },
+      {
+       "hex": "#4e4e4f",
+       "share": 0.29
+      }
+     ]
+    }
+   },
+   {
+    "id": "r16",
+    "kind": "image",
+    "name": "An image uploaded by Atelier Franck Durand on Ja",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791135587213-rop8w9.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A crisp, off-white notepad features a simple design with a monochromatic illustration of a building on the top left. Centered text above horizontal lines includes the hotel name, address, and website. The typography is a mix of sans-serif, script, and all caps. The layout is clean and centered.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Typography"
+    ],
+    "colours": [
+     "white",
+     "grey"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [
+     "illustration",
+     "mockups"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "handwritten",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "hotel stationery",
+     "letterhead",
+     "minimalist",
+     "classic typography",
+     "paris",
+     "branding"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#d7dad9",
+       "share": 0.81
+      },
+      {
+       "hex": "#c8c8c4",
+       "share": 0.17
+      }
+     ]
+    }
+   },
+   {
+    "id": "r17",
+    "kind": "image",
+    "name": "An image uploaded by Tiago da Silva on Jan 31, 2",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791136805590-fp9ogo.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A minimal layout with a white background. A semi-circle of tilted photographic prints is arranged above a short text description and a call-to-action button. The overall aesthetic is airy, clean, and focuses on the visual content of the photographs.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Motion",
+     "Photography"
+    ],
+    "colours": [
+     "white",
+     "brown",
+     "yellow"
+    ],
+    "sections": [
+     "hero",
+     "cta"
+    ],
+    "elements": [
+     "photography",
+     "shapes"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "photography",
+     "art prints",
+     "curated images",
+     "aesthetic",
+     "minimal layout",
+     "poetry",
+     "motion graphics"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.84
+      },
+      {
+       "hex": "#64573e",
+       "share": 0.08
+      },
+      {
+       "hex": "#aca688",
+       "share": 0.05
+      }
+     ]
+    }
+   },
+   {
+    "id": "r18",
+    "kind": "video",
+    "name": "Element #1675649035 / Cosmos",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/video/1791136823981-drihdl.mp4",
+    "collection": "videos",
+    "curator_notes": null,
+    "page": null,
+    "look": "A video showcases abstract, flowing forms and particles. The animation is smooth and organic, with a sense of depth and movement. The color palette is subtle, possibly monochrome or limited, and the overall mood is contemplative and artistic. It appears to be a generative art piece.",
+    "sector": "Video / talk",
+    "style": "Minimal",
+    "traits": [
+     "Motion"
+    ],
+    "colours": [],
+    "sections": [],
+    "elements": [
+     "video"
+    ],
+    "type": [],
+    "layout": [],
+    "keywords": [
+     "abstract",
+     "animation",
+     "generative art",
+     "visualisation",
+     "motion graphics",
+     "particles",
+     "flow",
+     "data art"
+    ]
+   },
+   {
+    "id": "r19",
+    "kind": "post",
+    "name": "Vighnesh Bangar · We're cooking",
+    "url": "https://x.com/eagledev_/status/2106620003835605477",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "An isometric illustration depicts a central white machine with a logo, receiving and dispensing items on conveyor belts. The style is clean and minimal with a limited color palette of white, grey, and a touch of orange for emphasis. Dotted lines suggest a blueprint or technical drawing. Small icons represent documents and a car.",
+    "sector": "Other",
+    "style": "Minimal",
+    "traits": [
+     "Illustration",
+     "Colourful",
+     "Monochrome"
+    ],
+    "colours": [
+     "teal",
+     "white"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [
+     "illustration",
+     "icons",
+     "shapes",
+     "badges"
+    ],
+    "type": [
+     "sans"
+    ],
+    "layout": [
+     "centered",
+     "airy"
+    ],
+    "keywords": [
+     "isometric",
+     "workflow",
+     "process",
+     "automation",
+     "input",
+     "output",
+     "system",
+     "machine"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#ffffff",
+       "share": 0.58
+      },
+      {
+       "hex": "#eeeff0",
+       "share": 0.4
+      }
+     ]
+    }
+   },
+   {
+    "id": "r20",
+    "kind": "image",
+    "name": "An image uploaded by rivalditrianggara on May 05",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791141545253-jo4p01.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A retro digital collage featuring classic Windows XP desktop elements like MS Paint and Minesweeper against a vibrant blue sky with clouds and green grass. Includes pixelated icons such as Clippy and a recycle bin, evoking a strong sense of digital nostalgia.",
+    "sector": "Other",
+    "style": "Retro",
+    "traits": [
+     "Illustration",
+     "Humour"
+    ],
+    "colours": [
+     "grey",
+     "green",
+     "white",
+     "blue"
+    ],
+    "sections": [
+     "hero"
+    ],
+    "elements": [
+     "mockups",
+     "icons",
+     "illustration",
+     "emoji",
+     "cards"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered"
+    ],
+    "keywords": [
+     "windows xp",
+     "ms paint",
+     "minesweeper",
+     "clippy",
+     "nostalgia",
+     "pixel art",
+     "90s",
+     "y2k",
+     "desktop",
+     "gui"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#b0b4b7",
+       "share": 0.37
+      },
+      {
+       "hex": "#2e471e",
+       "share": 0.24
+      },
+      {
+       "hex": "#fbfbfb",
+       "share": 0.21
+      },
+      {
+       "hex": "#4c80ef",
+       "share": 0.18
+      }
+     ]
+    }
+   },
+   {
+    "id": "r21",
+    "kind": "image",
+    "name": "An image uploaded by Jonston 9 on Oct 07, 2025.",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791141578781-3uwwur.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A collage of retro Windows 98 and Millennium Edition interfaces, featuring pastel pinks and blues, glitch effects, and a digital rendering of a classical bust. The design mimics old computer software with its stacked windows, toolbars, and pixelated icons, creating a dreamy, nostalgic, and slightly surreal digital landscape.",
+    "sector": "Other",
+    "style": "Retro",
+    "traits": [
+     "Illustration",
+     "Colourful"
+    ],
+    "colours": [
+     "blue",
+     "pink",
+     "purple",
+     "black"
+    ],
+    "sections": [
+     "nav",
+     "work",
+     "products"
+    ],
+    "elements": [
+     "mockups",
+     "icons",
+     "shapes",
+     "gradient",
+     "grain",
+     "illustration"
+    ],
+    "type": [
+     "sans",
+     "caps",
+     "display"
+    ],
+    "layout": [
+     "split",
+     "columns",
+     "dense"
+    ],
+    "keywords": [
+     "windows 98",
+     "vaporwave aesthetic",
+     "nostalgia",
+     "glitch art",
+     "retro ui",
+     "y2k",
+     "pastel",
+     "greek bust"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#aeb4eb",
+       "share": 0.49
+      },
+      {
+       "hex": "#e6a4df",
+       "share": 0.22
+      },
+      {
+       "hex": "#b295bb",
+       "share": 0.17
+      },
+      {
+       "hex": "#1b0f21",
+       "share": 0.13
+      }
+     ]
+    }
+   },
+   {
+    "id": "r22",
+    "kind": "image",
+    "name": "A website screenshot added by Sci-Fi Archives on",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791141601806-7su5n0.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A retro-inspired digital advertisement featuring a Seiko chronograph watch, presented as a product mockup. The design uses a limited color palette of cream, black, and orange, with prominent pixel art elements, bold typography, and a prominent photograph of the watch. The layout is centered with a full-bleed image.",
+    "sector": "Other",
+    "style": "Retro",
+    "traits": [
+     "Typography",
+     "Photography",
+     "Colourful"
+    ],
+    "colours": [
+     "white",
+     "grey",
+     "beige",
+     "black",
+     "orange"
+    ],
+    "sections": [
+     "hero",
+     "footer"
+    ],
+    "elements": [
+     "photography",
+     "mockups",
+     "icons",
+     "badges",
+     "shapes"
+    ],
+    "type": [
+     "sans",
+     "display",
+     "caps",
+     "mono"
+    ],
+    "layout": [
+     "centered",
+     "full-bleed"
+    ],
+    "keywords": [
+     "seiko",
+     "watch",
+     "digital",
+     "retro",
+     "futuristic",
+     "pixel",
+     "advertisement",
+     "poster",
+     "graphic design"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#f7f4e8",
+       "share": 0.47
+      },
+      {
+       "hex": "#bbb8b0",
+       "share": 0.19
+      },
+      {
+       "hex": "#dddacf",
+       "share": 0.16
+      },
+      {
+       "hex": "#1a1a1c",
+       "share": 0.09
+      },
+      {
+       "hex": "#97846d",
+       "share": 0.09
+      }
+     ]
+    }
+   },
+   {
+    "id": "r23",
+    "kind": "image",
+    "name": "An image uploaded by Philipp Ruíz Lozano on Jun",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791141620823-gkclrs.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "This is a screenshot of the classic MSN Messenger application from the Windows XP era. It features a blue and silver interface with a prominent menu bar, an input field, and contact/avatar sections. The overall aesthetic is dated, with pixelated icons and a distinctly early 2000s digital feel, evoking strong nostalgia.",
+    "sector": "Other",
+    "style": "Retro",
+    "traits": [
+     "Illustration",
+     "Colourful"
+    ],
+    "colours": [
+     "blue",
+     "white"
+    ],
+    "sections": [
+     "nav"
+    ],
+    "elements": [
+     "icons",
+     "mockups",
+     "form",
+     "emoji"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "centered",
+     "dense"
+    ],
+    "keywords": [
+     "windows xp",
+     "msn messenger",
+     "instant messaging",
+     "retro ui",
+     "nostalgia",
+     "emoticon",
+     "messenger app",
+     "blue mountain"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#dde2eb",
+       "share": 0.56
+      },
+      {
+       "hex": "#f9fafd",
+       "share": 0.39
+      }
+     ]
+    }
+   },
+   {
+    "id": "r24",
+    "kind": "image",
+    "name": "An image uploaded on Aug 07, 2026.",
+    "url": "/api/files/inspo/UFVszZN8P8KTllh2jiZbVlyvGcjIElP0/media/1791141707886-c7bsld.webp",
+    "collection": "inspiration",
+    "curator_notes": null,
+    "page": null,
+    "look": "A desktop view simulating an old operating system (OS/2 or Windows 95). Multiple windows are open, displaying a media player, file explorer, control panel, and a comic strip. The interface uses a teal background, grey window frames, and pixelated icons, creating a strong retro aesthetic.",
+    "sector": "Other",
+    "style": "Retro",
+    "traits": [
+     "Illustration",
+     "Humour"
+    ],
+    "colours": [
+     "teal",
+     "white",
+     "grey",
+     "black"
+    ],
+    "sections": [
+     "nav",
+     "features",
+     "gallery",
+     "footer"
+    ],
+    "elements": [
+     "mockups",
+     "illustration",
+     "icons",
+     "cards",
+     "form",
+     "video"
+    ],
+    "type": [
+     "sans",
+     "caps"
+    ],
+    "layout": [
+     "airy"
+    ],
+    "keywords": [
+     "os/2",
+     "windows 95",
+     "retro ui",
+     "vintage computer",
+     "old operating system",
+     "midi player",
+     "file explorer",
+     "comic strip"
+    ],
+    "measured": {
+     "pixels": [
+      {
+       "hex": "#028180",
+       "share": 0.41
+      },
+      {
+       "hex": "#e3e4db",
+       "share": 0.3
+      },
+      {
+       "hex": "#a5b2ae",
+       "share": 0.18
+      },
+      {
+       "hex": "#15100f",
+       "share": 0.09
+      }
+     ]
+    }
+   }
+  ],
+  "omitted": 0,
+  "guides": [],
+  "signals": {
+   "of": 24,
+   "areas": {}
+  }
+ },
+ "sites": {
+  "r1": {
+   "name": "Granola",
+   "spec": {
+    "es": {
+     "brief": {
+      "logo": "Un logotipo en minúsculas con un glifo circular, casi negro y algo grueso, cálido e informal.",
+      "color": "Blancos de papel cálido y neutros de avena con una sola señal oliva.",
+      "voice": "Lenguaje de producto directo y en segunda persona: \"Notes, actions and memory. Without a meeting bot.\"",
+      "motion": "Rápido y de interruptor: cubic-bezier(0.4, 0, 0.2, 1) a 0.15s.",
+      "imagery": "Fotos documentales de gente en llamada, graduadas en cálido y encuadradas en ventanas redondeadas.",
+      "framework": "Next.js, Tailwind CSS",
+      "typography": "Quadrant, un serif a peso 400, lleva todos los titulares; melange se ocupa de la interfaz.",
+      "iconography": "Iconos Lucide de contorno, trazo de unos 1.875px, uniones redondeadas, geométricos y sobrios."
+     },
+     "tagline": "cuaderno de papel cálido con serif editorial"
+    },
+    "dos": [
+     "Set every heading in quadrant at weight 400 and let size, not weight, build hierarchy.",
+     "Track large serif type negative: about -0.02em, growing with the size.",
+     "Keep the palette to warm neutrals plus one olive accent used exactly once per view.",
+     "Use full pill radii for actions and 12px to 24px radii for content surfaces, never the reverse.",
+     "Default inline gaps to 8px and let grouped blocks breathe at 24px or more."
+    ],
+    "brand": "Granola",
+    "brief": {
+     "logo": "A lowercase wordmark with a round stamped glyph, drawn in near-black and set slightly heavy, warm and informal.",
+     "color": "Warm paper whites and oat neutrals with one olive signal.",
+     "voice": "Plain, first-person second-address product talk: \"Notes, actions and memory. Without a meeting bot.\"",
+     "motion": "Quick and switch-like: cubic-bezier(0.4, 0, 0.2, 1) at 0.15s.",
+     "imagery": "Softly graded documentary shots of people on calls, framed inside rounded windows.",
+     "framework": "Next.js, Tailwind CSS",
+     "typography": "Quadrant, a weight-400 serif, carries every headline while melange handles all interface text.",
+     "iconography": "Outline Lucide icons at roughly 1.875px stroke, rounded joins, geometric and unfussy."
+    },
+    "donts": [
+     "Never bold a heading or use a sans for display copy.",
+     "Do not introduce a second saturated hue; olive is the only accent.",
+     "Avoid hard grey dividers and dark borders; edges come from Oat surfaces and the Hairline tint.",
+     "Do not add glossy gradients, strong shadows or glowing buttons.",
+     "Do not mix radii within one component family or use a squared-off primary button."
+    ],
+    "fonts": [
+     {
+      "role": "display",
+      "sizes": "24px to 160px",
+      "usage": "Every heading, subheading and statement. Always weight 400: the serif is never bolded, scale alone carries the hierarchy.",
+      "family": "quadrant",
+      "weights": [
+       400
+      ],
+      "fallback": "",
+      "lineHeight": "0.93 to 1.05, tightening as size grows",
+      "letterSpacing": "-0.24px at 24px, -2.4px at 160px"
+     },
+     {
+      "role": "body",
+      "sizes": "10px to 22px",
+      "usage": "Navigation, labels, buttons, captions and all interface copy. Weight 430 does the work on buttons; 400 everywhere else.",
+      "family": "melange",
+      "weights": [
+       400,
+       430,
+       500,
+       600
+      ],
+      "fallback": "",
+      "lineHeight": "1.5 body, 1.05 to 1.3 in mock UI labels",
+      "letterSpacing": "normal, up to 0.28px on small caps-like labels"
+     }
+    ],
+    "radii": [
+     {
+      "value": "4px",
+      "element": "Small chips and list rows"
+     },
+     {
+      "value": "8px",
+      "element": "Inline cards and buttons in mock UI"
+     },
+     {
+      "value": "12px",
+      "element": "App panels"
+     },
+     {
+      "value": "16px",
+      "element": "Feature cards"
+     },
+     {
+      "value": "24px",
+      "element": "Large demo windows"
+     },
+     {
+      "value": "9999px",
+      "element": "Pills and all actions"
+     }
+    ],
+    "theme": "light",
+    "colors": [
+     {
+      "hex": "#FFFFFF",
+      "name": "Paper White",
+      "role": "Page and elevated surfaces. The default ground everything else is printed on.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#F7F7F2",
+      "name": "Oat",
+      "role": "Sunken app surface. Note cards, mock UI panels and alternating sections that should read as paper, not screen.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#292929",
+      "name": "Graphite",
+      "role": "Primary ink and the darkest fill: body copy, headline colour, and the pill button variant used on light sections.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#0E0F0C",
+      "name": "Ink Black",
+      "role": "Deepest text tone, used inside compact UI mockups where Graphite would feel washed out.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#72726E",
+      "name": "Stone",
+      "role": "Secondary ink. Nav labels at rest, supporting captions, de-emphasised copy.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ACADA8",
+      "name": "Ash",
+      "role": "Tertiary and disabled ink: inactive tabs, muted metadata, disabled button labels.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#B2C248",
+      "name": "Olive Signal",
+      "role": "The one bright accent. Card faces and highlight panels that need to feel alive without breaking the calm.",
+      "group": "accent"
+     },
+     {
+      "hex": "#5B6F00",
+      "name": "Deep Olive",
+      "role": "Primary action fill. The download pill and accent text, the only saturated colour allowed to sit on a button.",
+      "group": "accent"
+     },
+     {
+      "hex": "#FCFCF8",
+      "name": "Bone",
+      "role": "Inverse ink for text sitting on Graphite or Deep Olive fills.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#47432A33",
+      "name": "Hairline",
+      "role": "Card and panel borders. A tinted, barely-there line that keeps edges soft rather than structural.",
+      "group": "neutral"
+     }
+    ],
+    "layout": "Centred content column capped at 1280px, generous vertical rhythm, asymmetric two-column hero with oversized serif on the left and a stacked product mock on the right. Colour fields are large and quiet; the olive accent appears once per screen.",
+    "motion": "Quick and switch-like: transitions run on cubic-bezier(0.4, 0, 0.2, 1) at 0.15s for layout and hover, 0.3s when only colour changes. Scroll-triggered reveals are present but short. Backgrounds fade, nothing slides far.",
+    "imagery": "Muted documentary frames of real people mid-call, cropped tight inside rounded device windows, graded warm with a single red backdrop. Alongside them, generative dot-mesh textures that behave like risograph grain rather than photography.",
+    "similar": [],
+    "spacing": {
+     "density": "airy",
+     "baseUnit": "،4px",
+     "maxWidth": "1280px",
+     "elementGap": "8px is the default inline gap; 4px inside dense mock UI, 24px to 32px between content groups",
+     "sectionGap": "52px between column tracks, 32px between stacked blocks",
+     "cardPadding": "12px on small list cards, 36px 56px on framed panels"
+    },
+    "tagline": "editorial serif on warm memo paper",
+    "elevation": "Almost flat. Cards carry one diffuse shadow, rgba(0,0,0,0.1) 0px 20px 25px -5px with rgba(0,0,0,0.1) 0px 8px 10px -6px, plus an inset Graphite hairline on pressed surfaces. Never stacked, never darker.",
+    "typeScale": [
+     {
+      "role": "caption",
+      "size": 10,
+      "family": "melange",
+      "weight": 400,
+      "lineHeight": 1.625,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body-sm",
+      "size": 14,
+      "family": "melange",
+      "weight": 400,
+      "lineHeight": 1.29,
+      "letterSpacing": "0.28px"
+     },
+     {
+      "role": "body",
+      "size": 16,
+      "family": "melange",
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "subtitle",
+      "size": 20,
+      "family": "melange",
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "title-sm",
+      "size": 24,
+      "family": "quadrant",
+      "weight": 400,
+      "lineHeight": 1.05,
+      "letterSpacing": "-0.24px"
+     },
+     {
+      "role": "title",
+      "size": 36,
+      "family": "quadrant",
+      "weight": 400,
+      "lineHeight": 1.1,
+      "letterSpacing": "-0.36px"
+     },
+     {
+      "role": "title-lg",
+      "size": 48,
+      "family": "quadrant",
+      "weight": 400,
+      "lineHeight": 1,
+      "letterSpacing": "-0.72px"
+     },
+     {
+      "role": "display",
+      "size": 108,
+      "family": "quadrant",
+      "weight": 400,
+      "lineHeight": 0.97,
+      "letterSpacing": "-2.16px"
+     }
+    ],
+    "components": [
+     {
+      "name": "Primary Button",
+      "role": "The single call to action, in pill form.",
+      "spec": "Deep Olive background, Bone text, full pill radius, melange 16px weight 430, 18px line height, padding 9px 24px. Hover shifts the fill to #4C5616. A Graphite variant with Bone text is used on light accent sections."
+     },
+     {
+      "name": "Secondary Button",
+      "role": "Quiet action that sits beside a primary one.",
+      "spec": "Transparent background, 1px Graphite border, Graphite text, full pill radius, same melange 16px weight 430 and 9px 24px padding. Hover fills with the soft wash #625A220F and keeps the border."
+     },
+     {
+      "name": "Nav Link",
+      "role": "Top-of-page navigation and footer links.",
+      "spec": "melange 14px weight 400, 13.3px line height, 0.28px tracking, Graphite ink, padding 2px 0. At rest it is flat and underline-free; the only signal is the colour drop to Stone."
+     },
+     {
+      "name": "Note Card",
+      "role": "The product's own interface, shown as a floating artefact.",
+      "spec": "Oat background, 12px to 24px radius, 1px Hairline border, diffuse shadow, melange 16px at 1.5 for titles and 10px captions at 1.625 for the dense note body. Olive Signal fills the square variant; content is always Ink Black."
+     },
+     {
+      "name": "Hairline Input",
+      "role": "Single-line fields inside the demo surfaces.",
+      "spec": "Paper White fill on Oat panels, 8px radius, no visible border until focus, then the focus ring #B2C24899 with a rgba(71,67,42,0.05) 0px 0px 0px 6px soft halo. melange 14px placeholder in Ash."
+     }
+    ],
+    "agentPrompt": "",
+    "description": "Granola reads like a well-kept paper notebook that happens to be software. The page is warm white and oat, with almost no chrome: no gradients, no gloss, no glow. Everything structural is a serif. Quadrant sets headlines at weight 400, from 24px section titles up to a 108px statement, with tight negative tracking that makes the large sizes feel engraved rather than shouted. Melange, a quiet text sans, carries navigation, labels, buttons and the dense notepad mock from 10px to 20px, mostly at 400 with a single 430 reserved for button copy. Colour arrives in one olive gesture: a lime card face and a deep olive pill button, drawn from the same leaf. Radii split between soft cards at 12 to 24px and full pills for actions. Shadows stay minimal and diffuse. The effect is calm, literate and unhurried: a productivity tool that looks like stationery."
+   }
+  },
+  "r2": {
+   "name": "mymind",
+   "spec": {
+    "es": {
+     "brief": {
+      "logo": "Wordmark 'mymind' en sans redondeada con una pequeña marca circular, calmada, cercana, casi una firma.",
+      "color": "Base blanco papel y rubor coral, campos pastel, texto serif tinta y Signal Orange para la única acción.",
+      "voice": "Segunda persona, cálida y tranquilizadora, frases cortas: \"Remember everything. Organize nothing.\"",
+      "motion": "Lento y exhalado, las secciones suben al aparecer: GSAP con ScrollTrigger, cubic-bezier(0.19, 1, 0.22, 1) a 0.7s.",
+      "imagery": "Capturas del producto con grado melocotón dentro de paneles redondeados, y fotos de papel y plantas con luz suave.",
+      "framework": "GSAP, ScrollTrigger",
+      "typography": "Louize, serif de alto contraste con tracking negativo para titulares, Inter y Nunito a 400 para el texto de apoyo.",
+      "iconography": "Escasa, iconos de plataforma rellenos en botones píldora, puntos redondos como marcas de navegación."
+     },
+     "tagline": "serif cálida dentro de un halo naranja"
+    },
+    "dos": [
+     "Set every headline in Louize with negative tracking, larger sizes get tighter spacing.",
+     "Use Signal Orange only for the primary action and the logo mark, once per view.",
+     "Place pastel surfaces (Blush Mist, Periwinkle Fog, Warm Cream, Sage Smoke) as full bleed fields behind content, never as small chips.",
+     "Keep pills at 100px radius and cards at 16px; never mix a mid radius like 24px into the same row.",
+     "Let the hero breathe inside a circular white stage over a coral gradient halo.",
+     "Keep body copy in Slate or Haze, reserve pure Ink for serif headlines."
+    ],
+    "brand": "mymind",
+    "brief": {
+     "logo": "A lowercase 'mymind' wordmark in a soft rounded sans with a small circular eye mark, calm, friendly and almost a signature.",
+     "color": "Paper white and coral blush base, pastel card fields, ink serif text, Signal Orange for the one action.",
+     "voice": "Second person, warm and reassuring, short declaratives: \"Remember everything. Organize nothing.\"",
+     "motion": "Slow and exhaling, sections fade upward: GSAP with ScrollTrigger, cubic-bezier(0.19, 1, 0.22, 1) at 0.7s.",
+     "imagery": "Warm peach graded product screenshots inside rounded panels, plus sunlit photos of paper and plants, soft focus and gentle bloom.",
+     "framework": "GSAP, ScrollTrigger",
+     "typography": "Louize, a high contrast serif with tight negative tracking for every headline, Inter and Nunito at 400 for quiet supporting text.",
+     "iconography": "Sparse, mostly filled platform marks in pill buttons, small round dots as nav markers, no icon system otherwise."
+    },
+    "donts": [
+     "Do not introduce a second saturated accent, the palette resolves around one orange.",
+     "Do not use sans serif for headlines or serif for buttons.",
+     "Do not add hard black borders or high contrast outlines to cards.",
+     "Do not use sharp corners on buttons or nav items, pills are non negotiable.",
+     "Do not stack more than two pastel surfaces adjacent without a white gap.",
+     "Do not animate with bounce, spring or overshoot easings."
+    ],
+    "fonts": [
+     {
+      "role": "display",
+      "sizes": "40-96px, 4 values",
+      "usage": "The signature: a high contrast transitional serif used for every headline, most memorably the 96px two line hero. Negative tracking tightens the big sizes so the strokes almost touch, and the italic variant adds a literary whisper to pull quotes.",
+      "family": "Louize-Regular-205TF",
+      "weights": [
+       400,
+       500,
+       700
+      ],
+      "fallback": "Georgia, 'Times New Roman', serif",
+      "lineHeight": "1.05-1.2",
+      "letterSpacing": "-4.194px at display, -1.404px at title"
+     },
+     {
+      "role": "body",
+      "sizes": "16-20px, 3 values",
+      "usage": "Neutral grotesque for hero subheadlines and standard paragraph copy. Medium 500 appears for the smallest emphasis; almost everything stays at 400 to keep the page quiet.",
+      "family": "Inter-Regular",
+      "weights": [
+       400,
+       500
+      ],
+      "fallback": "system-ui, -apple-system, sans-serif",
+      "lineHeight": "1.4-2.2",
+      "letterSpacing": "-0.4px"
+     },
+     {
+      "role": "ui",
+      "sizes": "16-20px, 3 values",
+      "usage": "Softly rounded UI face for navigation links, footer text and inline utility labels. Its round terminals match the pill radii and keep small text friendly rather than technical.",
+      "family": "Nunito-Regular",
+      "weights": [
+       400,
+       600
+      ],
+      "fallback": "system-ui, sans-serif",
+      "lineHeight": "1.5-1.65",
+      "letterSpacing": "-0.396px"
+     }
+    ],
+    "radii": [
+     {
+      "value": "100px",
+      "element": "Pills and nav chips"
+     },
+     {
+      "value": "16px",
+      "element": "Feature cards"
+     },
+     {
+      "value": "36px",
+      "element": "App screenshots and large panels"
+     },
+     {
+      "value": "50%",
+      "element": "Hero stage circle"
+     },
+     {
+      "value": "12px",
+      "element": "Inputs and small controls"
+     }
+    ],
+    "theme": "light",
+    "colors": [
+     {
+      "hex": "#000000",
+      "name": "Ink",
+      "role": "Display headlines and primary text, set on Paper White for maximum serif contrast.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ffffff",
+      "name": "Paper White",
+      "role": "The dominant canvas and the giant circular stage behind the hero.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#fff1f1",
+      "name": "Blush Mist",
+      "role": "Warm pale pink surface for the atmospheric gradient around the hero and soft section fields.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#e5eaf2",
+      "name": "Periwinkle Fog",
+      "role": "Cool pale blue surface used for secondary feature cards and quiet section backgrounds.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#f3f0e7",
+      "name": "Warm Cream",
+      "role": "Sand coloured card surface that keeps long feature copy soft rather than clinical.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ccd8d0",
+      "name": "Sage Smoke",
+      "role": "Muted green card surface, the cool counterweight to the warm pastels.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#4a5465",
+      "name": "Slate",
+      "role": "Body paragraph copy, comfortably readable without matching the harsh black of the headline.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#717286",
+      "name": "Haze",
+      "role": "Muted UI text for navigation, links and small labels.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ff5924",
+      "name": "Signal Orange",
+      "role": "The single accent: primary Sign up button, logo mark and the highest emphasis CTA.",
+      "group": "brand"
+     }
+    ],
+    "layout": "A single centred column capped at 1440px with an inner content width near 1100px. The hero is a giant white circle sitting inside a full bleed peach gradient, with the 96px serif headline stacked in two lines and the supporting sentence plus pill buttons underneath. Below, features alternate between full width pastel cards and large app screenshots, separated by generous 128px section gaps and 50px card padding.",
+    "motion": "Calm and slow. Sections and cards fade and rise with GSAP and ScrollTrigger, the dominant easing is cubic-bezier(0.19, 1, 0.22, 1) (ease-out-expo) over 0.7s, which makes entrances feel like a slow exhale. Small hover changes use 0.2s linear, and the nav underline sweeps with 0.25s ease-in-out. Nothing bounces or overshoots.",
+    "imagery": "Warm, softly lit product screenshots of the app UI placed inside rounded 36px panels, plus occasional photography of paper, plants and quiet desk scenes with a peach colour grade and gentle highlight bloom. Crops are generous and centred; nothing is sharp edged or high contrast, the mood is a sunlit afternoon.",
+    "similar": [
+     {
+      "why": "Same private workspace promise with warm neutral surfaces and a single accent, though mymind leans far more editorial.",
+      "brand": "Notion"
+     },
+     {
+      "why": "Both build an atmosphere with restrained palettes and low key motion, but Linear is dark and technical where mymind is warm and literary.",
+      "brand": "Linear"
+     },
+     {
+      "why": "Pastel card fields, rounded panels and aspirational copy for a creative tool.",
+      "brand": "Air"
+     },
+     {
+      "why": "Quiet serif system for a personal archive, softer and more emotional in mymind's case.",
+      "brand": "Are.na"
+     },
+     {
+      "why": "Peach and periwinkle gradients over white with one hot accent, similar friendly software mood.",
+      "brand": "Arc browser"
+     }
+    ],
+    "spacing": {
+     "density": "airy",
+     "baseUnit": "8px",
+     "maxWidth": "1440px, content column 1100px",
+     "elementGap": "26-42px",
+     "sectionGap": "128px",
+     "cardPadding": "50px"
+    },
+    "tagline": "warm serif calm inside an orange bloom",
+    "elevation": "Depth is mostly flat: pastel card surfaces sit directly on the paper without borders. Where shadows exist they are coral tinted and diffuse, like rgba(255, 167, 129, 0.44) 0 57px 60px -54px plus rgba(255, 128, 36, 0.27) 0 -27px 50px -40px, giving panels a warm glow rather than a drop shadow. The hero stage uses rgba(0, 0, 0, 0.15) 0 0 120px for a soft atmospheric halo.",
+    "typeScale": [
+     {
+      "role": "caption",
+      "size": 12,
+      "family": "Nunito-Regular",
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body-sm",
+      "size": 16,
+      "family": "Nunito-Regular",
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "-0.396px"
+     },
+     {
+      "role": "body",
+      "size": 20,
+      "family": "Inter-Regular",
+      "weight": 400,
+      "lineHeight": 2.2,
+      "letterSpacing": "-0.4px"
+     },
+     {
+      "role": "subtitle",
+      "size": 24,
+      "family": "Nunito-Regular",
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "-0.594px"
+     },
+     {
+      "role": "title-sm",
+      "size": 32,
+      "family": "Louize-Regular-205TF",
+      "weight": 400,
+      "lineHeight": 1.2,
+      "letterSpacing": "-0.792px"
+     },
+     {
+      "role": "title",
+      "size": 40,
+      "family": "Louize-Regular-205TF",
+      "weight": 400,
+      "lineHeight": 1.2,
+      "letterSpacing": "-1.404px"
+     },
+     {
+      "role": "title-lg",
+      "size": 52,
+      "family": "Louize-Regular-205TF",
+      "weight": 400,
+      "lineHeight": 1.15,
+      "letterSpacing": "-1.404px"
+     },
+     {
+      "role": "display",
+      "size": 96,
+      "family": "Louize-Regular-205TF",
+      "weight": 400,
+      "lineHeight": 1.05,
+      "letterSpacing": "-4.194px"
+     }
+    ],
+    "components": [
+     {
+      "name": "Primary button",
+      "role": "The single loud action, Sign up in the header and Get the app in the hero.",
+      "spec": "Signal Orange background, Paper White text, 100px pill radius, roughly 10px 24px padding, body-sm in Nunito-SemiBold. Hover deepens the orange slightly; no border, no shadow."
+     },
+     {
+      "name": "Secondary button",
+      "role": "Store and platform actions such as iPhone app, Browser Extension, Android app.",
+      "spec": "Blush Mist or Periwinkle Fog background, Ink text, 100px pill radius, 10px 24px padding, body-sm in Nunito. Contains a small filled platform icon at the left. Hover lifts with the coral tinted shadow."
+     },
+     {
+      "name": "Nav link",
+      "role": "Top bar items What, Why, How and the Log in action.",
+      "spec": "Haze text, body-sm in Nunito-Regular, no underline. Each link is preceded by a tiny coloured dot marker on hover and during scroll, height about 40px in the header."
+     },
+     {
+      "name": "Feature card",
+      "role": "Coloured panel holding a feature title in Louize and a paragraph in Slate.",
+      "spec": "Pastel surface from the neutral group (Warm Cream, Periwinkle Fog, Sage Smoke), 16px radius, 50px padding, no border. Title at title-sm in Louize, body at 18px in Inter, the panel bleeds edge to edge in the grid."
+     },
+     {
+      "name": "Header",
+      "role": "Sticky top bar with the logo, three nav links and two actions.",
+      "spec": "Transparent over the hero gradient, Paper White when scrolled. Logo left, nav centred, Log in and Primary button right, vertical padding around 32px, max width 1440px."
+     }
+    ],
+    "agentPrompt": "Build a warm, literary interface for a personal memory tool. Set the page on Paper White #ffffff with a full bleed coral to peach gradient halo and a large circular white stage behind the hero. Headlines use a high contrast serif at 40-96px with negative tracking (up to -4.2px), body uses Inter at 20px and Nunito at 16px, all near 400 weight. The only accent is Signal Orange #ff5924 on the primary pill button and logo mark. Cards are 16px rounded pastel panels in Blush Mist #fff1f1, Periwinkle Fog #e5eaf2, Warm Cream #f3f0e7 and Sage Smoke #ccd8d0 with 50px padding. Buttons are 100px pills. Motion is GSAP ScrollTrigger fades with cubic-bezier(0.19, 1, 0.22, 1) at 0.7s.",
+    "description": "mymind wraps a generous white stage in a soft peach and coral halo, so the page feels like a lit room rather than a website. The hero headline is set in Louize, a high contrast serif at roughly 96px with tight -4.2px tracking, ink black on white, and it does all the emotional work. Around it, Inter at 20px and Nunito at 16-20px carry supporting copy in Slate #4a5465 and Haze #717286. Colour is used as atmosphere, not as chrome: Blush Mist #fff1f1, Periwinkle Fog #e5eaf2, Warm Cream #f3f0e7 and Sage Smoke #ccd8d0 appear as full bleed pastel fields behind rounded 16px cards. One hot accent, Signal Orange #ff5924, marks the primary action and the small circular logo mark, never competing with the type. Corners swing between fully round 100px pills and soft 16px panels; shadows are coral tinted and barely there."
+   }
+  },
+  "r4": {
+   "name": "Trove",
+   "spec": {
+    "es": {
+     "brief": {
+      "logo": "Palabra en mayúsculas espaciadas con una estrella pequeña delante, dibujada en tinta Obsidian.",
+      "color": "Pila de grises cálidos, tinta Obsidian y un Signal Orange solo para el agente.",
+      "voice": "Segunda persona, frases cortas y llanas, confianza tranquila, cierra con \"The things you kept, back when you need them.\"",
+      "motion": "Las apariciones entran despacio, el hover es seco. Con cubic-bezier(0.22, 1, 0.36, 1) a 0.4s.",
+      "imagery": "Casi ninguna en la portada, el tipo lleva la página. Más abajo, miniaturas recortadas sobre tarjetas Paper White.",
+      "framework": "Next.js, Three.js",
+      "typography": "Serif de alto contraste solo a 400, enorme; Geist en el cuerpo, Geist Mono en etiquetas mayúsculas.",
+      "iconography": "Glifos geométricos rellenos en tinta Obsidian, un contorno de 1.25px, sin librería detectada."
+     },
+     "tagline": "archivo gris diurno del gusto propio"
+    },
+    "dos": [
+     "Set every headline in Display at weight 400 with -0.03em tracking and a line height under 1.",
+     "Stack the three greys: Ash for the shell, Vellum for the body, Paper White for anything that floats.",
+     "Label actions and sections in Geist Mono at 11px uppercase with 0.08em tracking.",
+     "Keep marketing corners at 0px and separate surfaces with 1px Hairline borders instead of shadow.",
+     "Leave a step of tone between a card and the page, never a glow or a coloured shadow.",
+     "Reach for Signal Orange once per view, as the agent's mark.",
+     "Open sections with 112px of top padding and keep body copy in the right column of a 1440px frame."
+    ],
+    "brand": "Trove",
+    "brief": {
+     "logo": "A letterspaced uppercase wordmark preceded by a small eight-point star glyph, drawn in Obsidian ink.",
+     "color": "Warm grey paper from Vellum to Paper White, Obsidian ink, one Signal Orange for the agent.",
+     "voice": "Second person, short plain declaratives, quiet confidence, ending on \"The things you kept, back when you need them.\"",
+     "motion": "Reveals drift in slowly, hover snaps. Scroll animation with cubic-bezier(0.22, 1, 0.36, 1) at 0.4s.",
+     "imagery": "Almost none in the hero, type carries the page. Lower down, flatly cropped reference thumbnails sit on Paper White cards.",
+     "framework": "Next.js, Three.js",
+     "typography": "A high-contrast serif at 400 only, clamped huge, Geist body, Geist Mono caps labels.",
+     "iconography": "Small filled geometric glyphs in Obsidian ink, one hairline outline at 1.25px, no library detected."
+    },
+    "donts": [
+     "Do not bold a headline or load a second serif weight; Display only ever appears at 400.",
+     "Do not add gradients, glows, glass or coloured shadows; the palette is flat paper and ink.",
+     "Do not round cards, buttons or inputs on the marketing page.",
+     "Do not set body copy in Obsidian or add tracking to the serif; Headline stays the darkest thing.",
+     "Do not use Signal Orange for a button fill, a link or a heading; it belongs to the agent mark.",
+     "Do not mix Geist Mono into paragraphs; it is for labels, nav and section numbers only.",
+     "Do not move elements on hover: colour changes at 0.1s, entrances fade and drift at 0.4s."
+    ],
+    "fonts": [
+     {
+      "role": "display",
+      "sizes": "49-132px, 3 values",
+      "usage": "A single high-contrast serif, loaded as display and used for every heading on the page. Weight 400 is the only weight, so the hierarchy comes from size and tracking rather than boldness. The optical size is large: 132px at a 0.88 line height, with -0.03em tracking pulling the words into a solid engraved block.",
+      "family": "Display",
+      "weights": [
+       400
+      ],
+      "fallback": "Georgia, 'Times New Roman', serif",
+      "lineHeight": "0.88-1",
+      "letterSpacing": "-0.03em"
+     },
+     {
+      "role": "body",
+      "sizes": "10-22px, 6 values",
+      "usage": "The working text face: lead paragraphs, card contents, list metadata, chips. Nearly all of it is weight 400 in Graphite; weight 500 appears once, on the outlined in-app button. Body copy sits at 17px / 1.55 with -0.01em tracking, small enough to stay subordinate to the serif.",
+      "family": "Geist",
+      "weights": [
+       400,
+       500
+      ],
+      "fallback": "'Helvetica Neue', Arial, sans-serif",
+      "lineHeight": "1.35-1.6",
+      "letterSpacing": "-0.01em"
+     },
+     {
+      "role": "mono",
+      "sizes": "10-12px, 3 values",
+      "usage": "The interface voice: navigation, buttons, section numbers and step labels, always uppercase at 11px with 0.08em tracking. It never appears in running prose. Its even rhythm is what makes even a plain invite button read as a piece of machinery.",
+      "family": "Geist Mono",
+      "weights": [
+       400
+      ],
+      "fallback": "'Geist Mono Fallback', 'SFMono-Regular', Menlo, monospace",
+      "lineHeight": "1.5",
+      "letterSpacing": "0.08em"
+     }
+    ],
+    "radii": [
+     {
+      "value": "0px",
+      "element": "Marketing buttons, cards and header"
+     },
+     {
+      "value": "3px",
+      "element": "Small inline marks such as chips"
+     },
+     {
+      "value": "6px",
+      "element": "App chrome (--radius)"
+     }
+    ],
+    "theme": "light",
+    "colors": [
+     {
+      "hex": "#0b0b0c",
+      "name": "Pitch Black",
+      "role": "The deepest surface, used only for the few full-bleed dark bands and the blackest app chrome.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#1a1a1a",
+      "name": "Obsidian",
+      "role": "The ink of every headline and of the primary button fill; light mode black is never pure.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#666666",
+      "name": "Graphite",
+      "role": "Secondary text: lead paragraphs, descriptions, nav links and their 60-70% muted variants.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#e3e3e3",
+      "name": "Hairline",
+      "role": "Every 1px border and divider: card outlines, header rule, secondary button edge.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#e9e9e9",
+      "name": "Ash",
+      "role": "The largest surface: full-bleed section and shell backgrounds, plus chip fills.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#efefef",
+      "name": "Vellum",
+      "role": "The body background, half a step lighter than Ash, sitting behind all content.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#fafafa",
+      "name": "Paper White",
+      "role": "Cards, popovers and panels, and the label colour on Obsidian buttons.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ff5f00",
+      "name": "Signal Orange",
+      "role": "The single chromatic accent: the star glyph beside the agent's name, plus a 15% wash behind agent blocks.",
+      "group": "accent"
+     },
+     {
+      "hex": "#edf6da",
+      "name": "Quest Green",
+      "role": "Pale olive surface marking quest cards and agent answers, paired with a dark olive text.",
+      "group": "semantic"
+     }
+    ],
+    "layout": "One 1440px frame with 40px side gutters. The hero breaks into two columns: the headline occupies the left two thirds at clamp(52px, 9.2vw, 148px), while the description and its button sit in a right column starting past the midpoint. Sections open with 112px of top padding and 48px below, blocks are separated by 20px and 24px vertical rhythm, and everything is left aligned. The result is an asymmetric editorial spread rather than a centred landing page.",
+    "motion": "Deliberately split between snap and drift. Interactive colour and transform resolve in 0.1s to 0.15s with cubic-bezier(0.4, 0, 0.2, 1); entrances and reveals take 0.4s to 0.6s with cubic-bezier(0.22, 1, 0.36, 1) and are scroll triggered. A Three.js canvas carries the heaviest movement, while text blocks only fade and travel a short distance. Tokens: tap 0.1s, quick 0.15s, settle 0.25s, travel 0.4s, drift 0.6s.",
+    "imagery": "Mostly empty and type-led, with 34 images loaded and 4 of them large: flatly cropped reference thumbnails on Paper White cards, plus one canvas. No video, no full-bleed photography and no colour grading, so the page's warmth comes entirely from the grey paper.",
+    "similar": [
+     {
+      "why": "A private archive of saved references, grey paper surfaces, mono labels and an unglamorous tone.",
+      "brand": "Are.na"
+     },
+     {
+      "why": "Image saving presented with oversized restrained type and a near monochrome palette.",
+      "brand": "Cosmos"
+     },
+     {
+      "why": "Editorial headlines over a near-white shell with small uppercase mono caps for navigation.",
+      "brand": "Read.cv"
+     },
+     {
+      "why": "A confident custom serif at large sizes with a lot of quiet space around it.",
+      "brand": "Instrument"
+     }
+    ],
+    "spacing": {
+     "density": "airy",
+     "baseUnit": "4px",
+     "maxWidth": "1440px",
+     "elementGap": "8px",
+     "sectionGap": "112px",
+     "cardPadding": "12px"
+    },
+    "tagline": "daylit grey archive of personal taste",
+    "elevation": "Depth is drawn, not cast: three greys stack (Ash, Vellum, Paper White) and 1px Hairline borders do the separation. Shadows exist only on floating cards, from a five-step scale. elev-1: 0 1px 1px -0.5px #23201a0a, 0 2px 3px -1.5px #23201a0a. elev-2: 0 1px 1px -0.5px #23201a0d, 0 3px 5px -2px #23201a0d, 0 7px 12px -4px #23201a0d. elev-4 adds an inset 0 1px 0 0 #fff9 edge. On dark surfaces the whole system collapses to one deep shadow, rgba(0, 0, 0, 0.7) 0 24px 60px -20px, behind white at 10% borders.",
+    "typeScale": [
+     {
+      "role": "caption",
+      "size": 11,
+      "family": "Geist Mono",
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "0.08em"
+     },
+     {
+      "role": "body-sm",
+      "size": 15,
+      "family": "Geist",
+      "weight": 400,
+      "lineHeight": 1.6,
+      "letterSpacing": "-0.01em"
+     },
+     {
+      "role": "body",
+      "size": 17,
+      "family": "Geist",
+      "weight": 400,
+      "lineHeight": 1.55,
+      "letterSpacing": "-0.01em"
+     },
+     {
+      "role": "subtitle",
+      "size": 20,
+      "family": "Geist",
+      "weight": 400,
+      "lineHeight": 1.35,
+      "letterSpacing": "-0.01em"
+     },
+     {
+      "role": "title-sm",
+      "size": 22,
+      "family": "Geist",
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "-0.01em"
+     },
+     {
+      "role": "title",
+      "size": 49,
+      "family": "Display",
+      "weight": 400,
+      "lineHeight": 1,
+      "letterSpacing": "-0.03em"
+     },
+     {
+      "role": "title-lg",
+      "size": 81,
+      "family": "Display",
+      "weight": 400,
+      "lineHeight": 0.95,
+      "letterSpacing": "-0.03em"
+     },
+     {
+      "role": "display",
+      "size": 132,
+      "family": "Display",
+      "weight": 400,
+      "lineHeight": 0.88,
+      "letterSpacing": "-0.03em"
+     }
+    ],
+    "components": [
+     {
+      "name": "Primary button",
+      "role": "The one commit action, an invite request, repeated in the header and the body.",
+      "spec": "Obsidian fill, Paper White Geist Mono caption in uppercase with 0.08em tracking, 0px radius, no border, no shadow, 6px 12px padding. Hover and focus change colour only, at 0.1s; it never lifts or moves."
+     },
+     {
+      "name": "Secondary button",
+      "role": "Quiet in-app actions such as Discard, drawn as an outlined counterpart to the primary.",
+      "spec": "Paper White fill, 1px Hairline border, Obsidian label in Geist at 14px weight 500, 8px 12px padding, square corners, elev-1 shadow. Hover is a colour transition at 0.1s, no transform."
+     },
+     {
+      "name": "Link",
+      "role": "Two registers: uppercase mono navigation, and underlined body links inside running copy.",
+      "spec": "Nav links are Geist Mono caption in Graphite, uppercase, 0.08em tracking, 4px 0 padding, no underline until hover. Inline links stay in Geist body-sm, Obsidian, with a persistent underline. Both transition colour only, 0.1s."
+     },
+     {
+      "name": "Card",
+      "role": "A floated surface that holds a saved reference or a short agent answer.",
+      "spec": "Paper White background, 1px Hairline border, square corners, 12px padding, elev-2 shadow. Inside dark bands the border becomes white at 10% and the shadow collapses to rgba(0, 0, 0, 0.7) 0 24px 60px -20px. Content is Obsidian Geist with Graphite metadata."
+     },
+     {
+      "name": "Header",
+      "role": "A single thin row holding the wordmark left and mono navigation right.",
+      "spec": "Full-bleed Vellum, content capped at 1440px with 40px side gutters, Obsidian logo and Signal Orange star left, Geist Mono caption links right. A 1px Hairline rule separates it from the page; no shadow, no blur, no sticky fill."
+     }
+    ],
+    "agentPrompt": "Build on a warm grey paper stack: #efefef page over a #e9e9e9 shell, #fafafa for anything that floats, #1a1a1a as ink, #666666 for body copy, #e3e3e3 for every 1px border. Headlines: one high-contrast serif at weight 400 only, clamp(52px, 9.2vw, 148px), line height 0.88, tracking -0.03em. Body: Geist 17px / 1.55 in #666666. Labels: Geist Mono 11px uppercase, 0.08em tracking. Buttons are square: #1a1a1a fill, #fafafa mono caps, no radius, no shadow. One accent, #ff5f00, for the agent mark. Colour transitions 0.1s, reveals 0.4s cubic-bezier(0.22, 1, 0.36, 1).",
+    "description": "Trove reads like a printed archive that happens to be a web app. The page sits on a stack of warm greys, #efefef body over a #e9e9e9 shell, with Paper White #fafafa reserved for anything that floats, so depth comes from tone and 1px #e3e3e3 hairlines rather than shadow. Almost everything is set in a custom high-contrast serif at a single weight: 400. It runs at 132px with -0.03em tracking and a 0.88 line height, so the headline feels engraved rather than shouted, and its ink is #1a1a1a, never pure black. Geist carries body copy at 17px in #666666, keeping the headline the darkest object on screen. Geist Mono, 11px uppercase with 0.08em tracking, holds nav, buttons and section numbers, the only place interface language appears. One chromatic accent, #ff5f00, marks the agent. Corners are square, motion is short, and empty grey does as much work as the type."
+   }
+  },
+  "r5": {
+   "name": "perfolios",
+   "spec": {
+    "es": {
+     "brief": {
+      "logo": "Sin símbolo: el nombre va dentro de la frase, en tipografía de texto, minúsculas, con punto final y un cursor que escribe.",
+      "color": "Grises casi blancos, una sola voz grafito y un azul eléctrico escondido.",
+      "voice": "Primera persona discreta, llana y algo irónica. \"This is perfolios, a hand-picked directory of the most beautiful personal sites on the internet.\"",
+      "motion": "Rápido y de interruptor: cubic-bezier(0.4, 0, 0.2, 1) a 0.15s.",
+      "imagery": "Capturas de portfolios en abanico, como una mano de cartas, cada una un sitio real. Paletas mezcladas, del blanco al azul profundo, al casi negro y al marrón cálido, con luz suave y sombras largas.",
+      "framework": "Next.js",
+      "typography": "Public Sans en peso 500 para todos los tamaños, Geist Mono solo para contar cosas.",
+      "iconography": "Iconos de contorno a 16px, trazo de 1,75-2px, geométricos y de esquinas redondeadas."
+     },
+     "tagline": "índice casi blanco de sitios escogidos"
+    },
+    "dos": [
+     "Set every text run, headings included, in Public Sans weight 500 at 15px/1.5; hierarchy is colour, not size.",
+     "Use Geist Mono 12px only for quantities, counters and keyboard hints.",
+     "Reserve Obsidian for the current or actionable item, keep copy in Graphite and dormant labels in Ash.",
+     "Build surfaces from shadow rings (0 0 0 .5px Hairline, 0 .5px 0 Raised White inset) instead of borders.",
+     "Keep controls between 28px and 36px tall with 10-12px radii, and full pills for anything floating.",
+     "Transition colour in 0.15s cubic-bezier(0.4, 0, 0.2, 1); anything slower reads as decoration.",
+     "Pop one Raised White surface above the Paper ground whenever something needs to detach, as the card fan does."
+    ],
+    "brand": "perfolios.",
+    "brief": {
+     "logo": "No symbol: the name is inlined into the sentence in body type, lowercase with a trailing period and a blinking typing caret.",
+     "color": "Near-white greys with one graphite voice and a hidden electric blue.",
+     "voice": "Quiet first person, plain and a little wry. \"This is perfolios, a hand-picked directory of the most beautiful personal sites on the internet.\"",
+     "motion": "Quick and switch-like: cubic-bezier(0.4, 0, 0.2, 1) at 0.15s.",
+     "imagery": "Portfolio screenshots fanned like a hand of cards, each thumb a real site. Mixed palettes, from white pages to deep blue, near-black and warm brown, lit softly and dropped on long shadows.",
+     "framework": "Next.js",
+     "typography": "Public Sans at weight 500 for every size, Geist Mono only to count things.",
+     "iconography": "Small outline glyphs at 16px, roughly 1.75-2px strokes, geometric with rounded terminals."
+    },
+    "donts": [
+     "Never introduce a display size, a bold weight or a second text colour for emphasis.",
+     "Do not paint surfaces with Signal Blue; it exists for selection and focus only.",
+     "Avoid hard 1px borders and flat grey cards, edges come from 0.5px rings and inset highlights.",
+     "Do not mix radii inside one family: pills for floating actions, 8-12px for inline controls.",
+     "No filled or saturated icons beyond the two solid toggles; glyphs stay 16px outline.",
+     "Do not add a display face for headings or numbers, the system has exactly two families."
+    ],
+    "fonts": [
+     {
+      "role": "body",
+      "sizes": "13, 14, 15",
+      "usage": "Everything: body copy, headings, controls, chips. Weight 500 does all the work, there is one 400 sample in the whole page, so nothing is ever bold and nothing is ever regular.",
+      "family": "Public Sans",
+      "weights": [
+       500
+      ],
+      "fallback": "sans-serif",
+      "lineHeight": "1.5",
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body",
+      "sizes": "12",
+      "usage": "Only counters and metadata: the portfolio count, the live badge, the keyboard slash hint in the search field. It gives numbers a machine-read honesty without turning the page technical.",
+      "family": "Geist Mono",
+      "weights": [
+       500
+      ],
+      "fallback": "monospace",
+      "lineHeight": "1.5",
+      "letterSpacing": "normal"
+     }
+    ],
+    "radii": [
+     {
+      "value": "12px",
+      "element": "inputs, thumbnails, search"
+     },
+     {
+      "value": "10px",
+      "element": "filter pills, segmented tabs"
+     },
+     {
+      "value": "9px",
+      "element": "square icon toggles"
+     },
+     {
+      "value": "8px",
+      "element": "inline chips"
+     },
+     {
+      "value": "4-6px",
+      "element": "tags, small links"
+     },
+     {
+      "value": "full",
+      "element": "floating pills, theme toggle"
+     }
+    ],
+    "theme": "light",
+    "colors": [
+     {
+      "hex": "#fbfbfb",
+      "name": "Paper",
+      "role": "Page ground for the whole directory. Slightly warm, never pure white, so raised surfaces can float above it.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ffffff",
+      "name": "Raised White",
+      "role": "Only for lifted things: floating toolbars, pill buttons, and the portfolio thumbnails in the fan. Always paired with a ring shadow rather than a border.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#f2f2f2",
+      "name": "Fog",
+      "role": "Recessed control surface: search field, inactive segmented tabs, the visual cue that something is meant to be typed into or stepped on.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#eeeeee",
+      "name": "Cloud",
+      "role": "Weightless fill for inline chips and tags, the lightest surface that still separates a word from the page.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#e0e0e0",
+      "name": "Hairline",
+      "role": "Not a border but a 0.5px ring and inset highlight, the entire edge language of the interface.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#000000",
+      "name": "Obsidian",
+      "role": "Reserved for what is current or actionable: the active filter, the theme icon in use, links. Never used for long copy.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#707070",
+      "name": "Graphite",
+      "role": "The reading voice. Body copy, headings, chips and icon glyphs all default here; it is the page's normal temperature.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#a3a3a3",
+      "name": "Ash",
+      "role": "Dormant text: unselected filters, sponsor label, placeholders and metadata. The tone that says not yet, not now.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#3232ff",
+      "name": "Signal Blue",
+      "role": "The only chroma in the system, defined for selection and focus. It renders almost nowhere; treat it as an accent on demand, not a surface.",
+      "group": "brand"
+     }
+    ],
+    "layout": "A single narrow column on Paper, roughly 720px of content, with a fixed left rail of filters. Vertical rhythm is generous: 80px above the fold content, 48px between the intro and the counter, 40px before the search block. Almost nothing is boxed; separation comes from 0.5px hairlines and 8-12px of breathing room rather than containers.",
+    "motion": "One dominant easing carries state: colour 0.15s cubic-bezier(0.4, 0, 0.2, 1), with opacity 0.2s on the same curve for appearing elements. The card fan and a handful of transforms use a slower 0.5s cubic-bezier(0.22, 1, 0.36, 1), and the tokens define a deliberate in-out cubic-bezier(.645.045.355, 1) for anything that moves both ways. Scroll animations are on, but they stay at the fade level.",
+    "imagery": "Eight photographs, all screenshots of real portfolio sites rather than stock: white editorial pages, a saturated blue project sheet, near-black photo work, warm brown. They are cropped to page proportions and fanned at slight rotations like prints in a hand, each with a long soft shadow so the group reads as a physical object.",
+    "similar": [],
+    "spacing": {
+     "density": "compact",
+     "baseUnit": "4px",
+     "maxWidth": "720px",
+     "elementGap": "12px",
+     "sectionGap": "40-48px",
+     "cardPadding": "8px"
+    },
+    "tagline": "quiet near-white index of hand-picked sites",
+    "elevation": "Two shadows do all the work. Raised: 0 .5px 0 #fff inset, 0 0 0 .5px #e0e0e0, 0 -.5px 0 #d0d0d0 inset, 0 2px 5px #00000010. Lifted: 0 0 0 .5px #00000014, 0 1px 0 #fff inset, 0 12px 32px -8px #00000030. There is no other depth cue.",
+    "typeScale": [
+     {
+      "role": "caption",
+      "size": 12,
+      "family": "Geist Mono",
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body-sm",
+      "size": 13,
+      "family": "Public Sans",
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "subtitle",
+      "size": 14,
+      "family": "Public Sans",
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body",
+      "size": 15,
+      "family": "Public Sans",
+      "weight": 500,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     }
+    ],
+    "components": [
+     {
+      "name": "Inline chip button",
+      "role": "The lightest call to action, sitting inside a sentence: Cloud fill, 8px radius, Graphite text in body type, 2px 8px 3px padding. Hover moves the text to Obsidian over 0.15s colour.",
+      "spec": "background: Cloud; color: Graphite; font: body; radius: 8px; padding: 2px 8px 3px"
+     },
+     {
+      "name": "Filter pill",
+      "role": "Sidebar facet. 28px tall, 10px radius, 0 12px padding, Public Sans 14px weight 500. Inactive sits in Ash, active in Obsidian and carries a small 4px dot after the label.",
+      "spec": "height: 28px; radius: 10px; padding: 0 12px; font: 14px"
+     },
+     {
+      "name": "Inline tag",
+      "role": "Smallest label in the system, used once for the sponsor line. 6px radius with hair-thin 1px 6px padding, Public Sans 12px, Graphite on Cloud.",
+      "spec": "background: Cloud; radius: 6px; padding: 1px 6px; font: caption"
+     },
+     {
+      "name": "Search field",
+      "role": "Full-width recessed input on Fog, 12px radius, 36px of left padding for the magnifier and right padding for the keyboard hint. Placeholder in Ash, typed text in Obsidian.",
+      "spec": "background: Fog; radius: 12px; padding: 0 36px; font: 14px; placeholder: Ash"
+     },
+     {
+      "name": "Floating pill",
+      "role": "Detached controls that hover above the page: the theme toggle, the Surprise me action. Raised White, fully round or 9-10px radius, defined only by an inset-lit ring shadow and a soft 2px drop.",
+      "spec": "background: Raised White; shadow: raised-shadow; radius: 9px or full; icon: 16px"
+     }
+    ],
+    "agentPrompt": "You are extracting the design system of directoryyy.com (perfolios). Follow the measured JSON for values and the screenshot for judgement. Write in English except the Spanish sheet.",
+    "description": "A directory that behaves like a well-kept notebook. Everything sits on Paper with hairline rings instead of borders, so surfaces read as pressed sheets rather than panels. The page never raises its voice: paragraphs, headings and labels all run at 15px Public Sans weight 500, and hierarchy comes only from tone, Obsidian for what is live, Graphite for what is read, Ash for what is dormant. Geist Mono appears solely to count things. Colour is largely withheld, a grey ramp from Paper to Obsidian plus one electric blue defined for selection that the calm rarely shows. Controls are small, pill-like and float on soft inset-lit shadows rather than outlines. The single flourish is photographic: portfolio screenshots fanned like a hand of cards, each thumb carrying the weight of a printed sheet. Motion stays minimal, a 0.15s colour fade for state and one slow eased transform for the fan."
+   }
+  },
+  "r6": {
+   "name": "Email marketing that’s different by design",
+   "spec": {
+    "es": {
+     "brief": {
+      "logo": "Marca flodesk en minúsculas, letras geométricas de curvas suaves, tinta negra plana, sin símbolo.",
+      "color": "Lienzo blanco cálido, una tinta negra y una rotación de pasteles apagados y joya profunda.",
+      "voice": "Segunda persona segura y directa, culta en diseño sin jerga: «Email marketing that's different by design».",
+      "motion": "Casi imperceptible, fundidos rápidos: ease a 0.2s, con Swiper en los carruseles.",
+      "imagery": "Capturas de plantillas de email con tipografía retro sobre campos planos y pastel. Luz plana de estudio, color saturado, encuadre cerrado y cuadrado.",
+      "framework": "Next.js, Emotion, Swiper",
+      "typography": "Una única familia propia, Flodesk Sans, solo en pesos 400 y 500.",
+      "iconography": "Glifos sobre todo rellenos a 20px, un set menor de contorno a 2px, geométricos y redondeados."
+     },
+     "tagline": "papel cálido, una sola tinta negra"
+    },
+    "dos": [
+     "Set every headline and button label in Flodesk Sans 500; never introduce a bold weight.",
+     "Collapse line height to 1.0 for anything 24px and above, and apply -0.02em tracking.",
+     "Use 100px radius on every action, 24px on editorial cards, 8px only on small square controls.",
+     "Carry a card with a saturated accent fill and let the Paper canvas around it do the framing.",
+     "Keep one ink black for type and button fill, and switch to Bone for anything sitting on it.",
+     "Animate opacity in about 0.2s ease; avoid moving, scaling or bouncing elements."
+    ],
+    "brand": "Flodesk",
+    "brief": {
+     "logo": "Lowercase flodesk wordmark, softly rounded geometric letters, wide counters, flat black, no symbol.",
+     "color": "Warm off-white canvas, one ink black, a rotation of muted pastels and deep jewel fields.",
+     "voice": "Confident, plain-spoken second person, design-literate without jargon: \"Email marketing that's different by design\".",
+     "motion": "Barely there, quick fades: ease at 0.2s, with Swiper driving the carousels.",
+     "imagery": "Product shots are framed email templates in retro display type on flat pastel fields. Light is even and studio-flat, colour graded saturated, crops tight and square.",
+     "framework": "Next.js, Emotion, Swiper",
+     "typography": "One self-hosted family, Flodesk Sans, in weights 400 and 500 only.",
+     "iconography": "Mostly filled solid glyphs at 20px, a smaller outline set at 2px stroke, softly rounded and geometric."
+    },
+    "donts": [
+     "Don't add shadows, glows or visible card borders; the fill alone divides surfaces.",
+     "Don't use the pastel accent fields for text, buttons or icons, they are surfaces only.",
+     "Don't set paragraphs at 500; 400 carries all running copy.",
+     "Don't invent radii between the scale steps (16px, 24px, 100px, 50%, small 8px).",
+     "Don't push letter spacing positive, or let a headline run tighter than -0.04em.",
+     "Don't introduce a second typeface for captions, the promo bar or the logo."
+    ],
+    "fonts": [
+     {
+      "role": "display",
+      "sizes": "64px",
+      "usage": "Weights 400 and 500 only, self-hosted. The 500 does all the work, headlines and button labels alike; nothing is bold.",
+      "family": "Flodesk Sans",
+      "weights": [
+       400,
+       500
+      ],
+      "fallback": "system sans-serif",
+      "lineHeight": "1.0 at 24px and above, 1.4-1.5 in running text",
+      "letterSpacing": "-0.02em on all display and title sizes"
+     }
+    ],
+    "radii": [
+     {
+      "value": "24px",
+      "element": "cards"
+     },
+     {
+      "value": "16px",
+      "element": "inner media and grids"
+     },
+     {
+      "value": "100px",
+      "element": "pills, all actions"
+     },
+     {
+      "value": "8px",
+      "element": "small controls"
+     },
+     {
+      "value": "50%",
+      "element": "icon buttons"
+     }
+    ],
+    "theme": "light",
+    "colors": [
+     {
+      "hex": "#111110",
+      "name": "Flodesk Black",
+      "role": "All primary type, the dark button fill, footer and dark editorial sections.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#F8F8F5",
+      "name": "Paper",
+      "role": "Page canvas under everything, also the fill of circular icon buttons on dark media.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#F0F0EB",
+      "name": "Bone",
+      "role": "Inverse text and icon colour on black surfaces, and the site's brand white.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#111110A6",
+      "name": "Muted Ink",
+      "role": "Secondary and lead paragraphs, all supporting copy under headlines.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#1111101F",
+      "name": "Hairline",
+      "role": "Faint rules and separators; the system prefers absence of borders, so this is used sparingly.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#8AA4D8",
+      "name": "Dusty Blue",
+      "role": "Editorial card surface, pale and matte, holds a screenshot and a short feature line.",
+      "group": "accent"
+     },
+     {
+      "hex": "#AEA579",
+      "name": "Olive Sand",
+      "role": "Editorial card surface, warm and desaturated, the quietest of the accent fields.",
+      "group": "accent"
+     },
+     {
+      "hex": "#FDEDA9",
+      "name": "Maize",
+      "role": "Editorial card surface, the brightest accent in the set, used sparingly for contrast against the neutrals.",
+      "group": "accent"
+     },
+     {
+      "hex": "#A39EC6",
+      "name": "Lavender",
+      "role": "Editorial card surface, cool and muted, balances the warmer accent fields.",
+      "group": "accent"
+     },
+     {
+      "hex": "#410D26",
+      "name": "Oxblood",
+      "role": "Deep card surface and the dark half of the palette family. Siblings in the same role: forest #1B2818, near-black red #290002, walnut #504434, midnight #242230.",
+      "group": "accent"
+     }
+    ],
+    "layout": "Max content width 1440px, centred text measure 672px. Card padding 64px 60px, section spacing on a 4 / 8 / 12 / 24 / 48 / 64px scale, generous vertical air (160px before the first hero block).",
+    "motion": "Quiet and functional. Dominant transition is opacity 0.2s ease (33 uses), then all 0.2s ease-in-out / ease for hover states on buttons and links. Scroll-triggered reveals are present but subtle. Swiper handles the card carousels.",
+    "imagery": "Flat, saturated, poster-like email templates shown inside the accent cards: chunky retro display type, close square crops, no depth of field. Photography and illustration are treated the same way, even studio light, strong single-colour fields, message-first composition.",
+    "similar": [],
+    "spacing": {
+     "density": "airy",
+     "baseUnit": "4px",
+     "maxWidth": "1440px",
+     "elementGap": "12px",
+     "sectionGap": "48-64px",
+     "cardPadding": "64px 60px"
+    },
+    "tagline": "warm paper canvas, one black pen",
+    "elevation": "None. No shadows are used anywhere; depth comes from filled colour blocks and from Bone glyphs sitting on dark media.",
+    "typeScale": [
+     {
+      "role": "caption",
+      "size": 12,
+      "family": "Flodesk Sans",
+      "weight": 500,
+      "lineHeight": 1.4,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body-sm",
+      "size": 14,
+      "family": "Flodesk Sans",
+      "weight": 500,
+      "lineHeight": 1.43,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "body",
+      "size": 16,
+      "family": "Flodesk Sans",
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "subtitle",
+      "size": 16,
+      "family": "Flodesk Sans",
+      "weight": 400,
+      "lineHeight": 1.25,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "title-sm",
+      "size": 24,
+      "family": "Flodesk Sans",
+      "weight": 500,
+      "lineHeight": 1,
+      "letterSpacing": "-0.02em"
+     },
+     {
+      "role": "title-lg",
+      "size": 48,
+      "family": "Flodesk Sans",
+      "weight": 500,
+      "lineHeight": 1,
+      "letterSpacing": "-0.02em"
+     },
+     {
+      "role": "display",
+      "size": 64,
+      "family": "Flodesk Sans",
+      "weight": 500,
+      "lineHeight": 1,
+      "letterSpacing": "-0.02em"
+     },
+     {
+      "role": "display-xl",
+      "size": 160,
+      "family": "Flodesk Sans",
+      "weight": 500,
+      "lineHeight": 1,
+      "letterSpacing": "-0.04em"
+     }
+    ],
+    "components": [
+     {
+      "name": "Primary pill button",
+      "role": "The single call to action, Try it free, in the header and the hero.",
+      "spec": "Flodesk Black background, Bone text, Flodesk Sans 500 at 14px, 100px radius, padding 0 24px (about 40px tall). No border, no shadow. On hover the fill stays and opacity drops."
+     },
+     {
+      "name": "Ghost pill button",
+      "role": "Log in and secondary navigation actions.",
+      "spec": "Transparent fill, 1px transparent border so it matches the primary pill's box, Flodesk Black text, Flodesk Sans 500 at 14px, 100px radius, padding 0 12px. Reads as plain text until hovered."
+     },
+     {
+      "name": "Editorial card",
+      "role": "The repeating colour block that carries product screenshots and feature copy.",
+      "spec": "One accent field fill, 24px radius, 64px 60px inner padding, no border and no shadow. Heading in title-sm (24px, 500, -0.02em), body in body at 400. Colour alone separates it from Paper."
+     },
+     {
+      "name": "Icon button",
+      "role": "Carousel arrows and small controls over media.",
+      "spec": "Two forms: a 50% circle filled Paper with Flodesk Black glyph, and an 8px square filled #111110A6 with Bone glyph over imagery. Icon at 16-20px, 2px stroke or solid."
+     },
+     {
+      "name": "Promo banner",
+      "role": "Full-width announcement strip at the very top of the page.",
+      "spec": "Pale blue band with Flodesk Black text at caption size (12px, 500), a monospace-feeling offer code link with 0.24px tracking, a dismiss icon button, and a hairline divider under it."
+     }
+    ],
+    "agentPrompt": "Flodesk design system spec",
+    "description": "Flodesk is a warm paper world with a single black pen. The page sits on #F8F8F5, a barely-warm off-white, and almost all type is #111110 set in one self-hosted family, Flodesk Sans, whose 500 weight does every headline and every button label while 400 handles paragraphs. Nothing is bold; hierarchy comes from size and tracking, from a 64px display down to a 12px caption, all with a consistent -0.02em optical tightening and line heights that collapse to 1.0 at headline sizes. Radii are generous and rounded: 24px editorial cards, 100px pills for every action, circles for icon buttons. Colour arrives only in surfaces, a rotating set of muted pastels and deep jewel fields (dusty blue, olive sand, maize, lavender, oxblood) that hold product screenshots and short feature copy. There are no shadows and no visible borders; separation is made by the card fill alone. Motion is minimal and quick, mostly opacity fades around 0.2s, with Swiper driving the carousels."
+   }
+  },
+  "r14": {
+   "name": "Open",
+   "spec": {
+    "es": {
+     "brief": {
+      "logo": "Un símbolo negro y compacto de puntos en la cabecera, geométrico y redondeado, solo, sin logotipo de texto al lado.",
+      "color": "Campo blanco, tinta obsidiana, un destello azul eléctrico que aporta por completo la obra.",
+      "voice": "Seca, utilitaria, en segunda persona, etiquetas y CTAs breves; «Sign up to keep exploring similar elements and save the ones you love.»",
+      "motion": "Instantáneo y de interruptor: los colores cambian con cubic-bezier(0.4, 0, 0.2, 1) a 0.1s, solo la rejilla infinita se desplaza.",
+      "imagery": "Rejilla densa de viñetas cuadradas y vídeo en bucle, color plano saturado sobre fondos lisos, encuadre ceñido, sin etalonaje ni grano.",
+      "framework": "Next.js",
+      "typography": "Una sola familia, cosmosOracle, en 400 y 500; la jerarquía la dan el tamaño y el gris, nunca el peso.",
+      "iconography": "Casi todo relleno con algunos trazos de 1.75px, geométrico, esquinas redondeadas, sin librería detectada."
+     },
+     "tagline": "muro de archivo blanco, un bloque eléctrico"
+    },
+    "dos": [
+     "Keep every weight at 400 or 500 and express emphasis through size and grey instead.",
+     "Draw the interface with a 1px #0000001f hairline before adding any shadow.",
+     "Reserve full pills for anything interactive, 3px for image tiles, 24px for floating panels.",
+     "Let saturated colour enter only through artwork laid on the white field.",
+     "Hold page gutters at 32px, card padding at 16px and chip gaps at 4px.",
+     "Tighten letter spacing as type grows (about -2%) and leave 16px body at normal."
+    ],
+    "brand": "Cosmos",
+    "brief": {
+     "logo": "A compact black cluster-of-dots symbol in the header, geometric and rounded, set alone with no wordmark beside it.",
+     "color": "Paper white field, obsidian ink, one electric periwinkle flash carried entirely by the artwork.",
+     "voice": "Dry, utilitarian, second person, short labels and CTAs; \"Sign up to keep exploring similar elements and save the ones you love.\"",
+     "motion": "Instant and switch-like: state colours flip with cubic-bezier(0.4, 0, 0.2, 1) at 0.1s, only the endless grid scrolls in.",
+     "imagery": "Dense grid of small square artwork stills and looping video, flat saturated colour on plain grounds, tightly cropped, no grading or grain.",
+     "framework": "Next.js",
+     "typography": "One family, cosmosOracle, at 400 and 500; hierarchy comes from size and grey, never weight.",
+     "iconography": "Mostly filled glyphs with a few 1.75px outlines, geometric, rounded corners, no library detected."
+    },
+    "donts": [
+     "Do not introduce a second typeface, a bold weight or an italic.",
+     "Do not fill sections with coloured backgrounds to create separation.",
+     "Do not square a button, pill a thumbnail, or round an image into a circle.",
+     "Do not put drop shadows on inline chips, links or buttons.",
+     "Do not wrap the archive grid in a max-width container.",
+     "Do not use long, elastic or springy easing on any state change."
+    ],
+    "fonts": [
+     {
+      "role": "body",
+      "sizes": "12-26px, 5 values",
+      "usage": "One proprietary grotesque for everything: nav, metadata, links, buttons and the 26px section heading. Weight stops at 500, so emphasis is expressed by shrinking the size and lightening the grey instead of thickening the stroke. Every size above 12px is tightened with negative tracking.",
+      "family": "cosmosOracle",
+      "weights": [
+       400,
+       500
+      ],
+      "fallback": "system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif",
+      "lineHeight": "1.15-1.5",
+      "letterSpacing": "-2% (about -0.24px to -0.52px)"
+     }
+    ],
+    "radii": [
+     {
+      "value": "999px",
+      "element": "Buttons, search field, avatars"
+     },
+     {
+      "value": "3px",
+      "element": "Image and video tiles in the rail"
+     },
+     {
+      "value": "8px",
+      "element": "Inline chips and link tags"
+     },
+     {
+      "value": "16px",
+      "element": "Elevated popovers and menus"
+     },
+     {
+      "value": "24px",
+      "element": "Floating panels and modal sheets"
+     }
+    ],
+    "theme": "light",
+    "colors": [
+     {
+      "hex": "#0d0d0d",
+      "name": "Obsidian",
+      "role": "Primary text, active labels, and the fill of the primary button; the darkest ink in the system.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#5a5a5a",
+      "name": "Graphite",
+      "role": "Secondary prose, the descriptive sentence under a heading, and link text at rest.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#919191",
+      "name": "Ash",
+      "role": "Tertiary metadata: counts, timestamps, author handles, placeholder text in the search field.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#0000001f",
+      "name": "Hairline",
+      "role": "The 1px border that draws every chip, pill, input and panel; the site's only structural line.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#f2f1f0",
+      "name": "Chalk",
+      "role": "Secondary surface for hover fills and low-elevation blocks that must not read as pure white.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#ffffff",
+      "name": "Paper White",
+      "role": "The page canvas and the fill of floating cards and secondary buttons; the site's default state.",
+      "group": "neutral"
+     },
+     {
+      "hex": "#6364f9",
+      "name": "Cobalt Flash",
+      "role": "Electric periwinkle introduced only by artwork tiles; it carries the page's entire charge against the white.",
+      "group": "accent"
+     },
+     {
+      "hex": "#f88dc1",
+      "name": "Blush Pop",
+      "role": "Rare hot pink that appears inside preview thumbnails as a counter-accent to the cobalt.",
+      "group": "accent"
+     }
+    ],
+    "layout": "A three-column archive view on a white field: a narrow left rail of stacked 3px thumbnail tiles, a large centred artwork block, and a right metadata column separated by vertical hairlines. A 56px header holds a dotted mark, three nav links at the left, a centred pill search, and log in plus Sign up at the right. Gutters are 32px everywhere, the grid below runs full-bleed with no max-width, and rhythm comes from 4px micro gaps between chips rather than from whitespace blocks.",
+    "motion": "Deliberately switch-like: interface transitions complete in under a tenth of a second, so colour and outline changes read as state flips rather than animation. The dominant curve is cubic-bezier(0.4, 0, 0.2, 1) at about 0.1s, applied to color, outline-width and transform. Scroll-triggered loading exists for the endless grid, but nothing eases, bounces or lingers.",
+    "imagery": "Dense mosaic of small square artwork stills and looping video, all flat saturated colour on plain grounds and cropped tight to the graphic. There is no photography, no grading and no grain: the content is the graphic itself, so the white page acts as a light gallery wall.",
+    "similar": [
+     {
+      "why": "Same white archive grid, monochrome chrome and metadata that sits beside the work rather than over it.",
+      "brand": "Are.na"
+     },
+     {
+      "why": "Dense visual bookmark rail with pill controls floating on a pure white canvas.",
+      "brand": "Savee"
+     },
+     {
+      "why": "Image-first board with a centred pill search and near-identical card rhythm.",
+      "brand": "Pinterest"
+     },
+     {
+      "why": "Asset detail page with a large centred shot and a narrow metadata column to its right.",
+      "brand": "Dribbble"
+     }
+    ],
+    "spacing": {
+     "density": "comfortable",
+     "baseUnit": "4px",
+     "maxWidth": "None, full-bleed with 32px side gutters",
+     "elementGap": "4px",
+     "sectionGap": "72px",
+     "cardPadding": "16px"
+    },
+    "tagline": "white archive wall, one electric block",
+    "elevation": "Flat by default: structure is a single 1px Hairline #0000001f, plus an inset white highlight on glassy controls. Only floating layers get real depth, rgba(0, 0, 0, 0.15) 0 6px 44px with rgba(0, 0, 0, 0.03) 0 4px 8px and a 0.5px hairline ring. Buttons and chips never cast a shadow.",
+    "typeScale": [
+     {
+      "role": "caption",
+      "size": 12,
+      "family": "cosmosOracle",
+      "weight": 400,
+      "lineHeight": 1.17,
+      "letterSpacing": "-0.24px"
+     },
+     {
+      "role": "body-sm",
+      "size": 14,
+      "family": "cosmosOracle",
+      "weight": 400,
+      "lineHeight": 1.4,
+      "letterSpacing": "-0.28px"
+     },
+     {
+      "role": "title-sm",
+      "size": 14,
+      "family": "cosmosOracle",
+      "weight": 500,
+      "lineHeight": 1.4,
+      "letterSpacing": "-0.28px"
+     },
+     {
+      "role": "body",
+      "size": 15,
+      "family": "cosmosOracle",
+      "weight": 500,
+      "lineHeight": 1.47,
+      "letterSpacing": "-0.28px"
+     },
+     {
+      "role": "subtitle",
+      "size": 16,
+      "family": "cosmosOracle",
+      "weight": 400,
+      "lineHeight": 1.5,
+      "letterSpacing": "normal"
+     },
+     {
+      "role": "title",
+      "size": 26,
+      "family": "cosmosOracle",
+      "weight": 400,
+      "lineHeight": 1.15,
+      "letterSpacing": "-0.52px"
+     }
+    ],
+    "components": [
+     {
+      "name": "Primary button",
+      "role": "The single filled action, used for Sign up in the header and for the save prompt.",
+      "spec": "Obsidian background, fully rounded pill, 16px 24px padding, body weight 500, Paper White label, no border. Hover darkens the fill toward #232323 with the system cubic-bezier at 0.1s."
+     },
+     {
+      "name": "Secondary button",
+      "role": "The quiet action beside artwork, such as Save, that must not compete with the image.",
+      "spec": "Paper White background with a 1px Hairline border, pill radius, 16px padding, caption-to-body-sm text in Obsidian. Hover swaps the fill to Chalk and keeps the border."
+     },
+     {
+      "name": "Search input",
+      "role": "The centred pill field in the header, suggesting a query before the visitor types.",
+      "spec": "Transparent background, 1px Hairline border, pill radius, body-sm text with Ash placeholder and a leading outline magnifier. Focus darkens the border, never adds a ring or shadow."
+     },
+     {
+      "name": "Link chip",
+      "role": "Inline entity tags inside the metadata paragraph, marking brands, studios and type foundries.",
+      "spec": "Paper White background, 1px Hairline border, 8px radius, 2px 6px 1px padding, body-sm Obsidian text, with the faintest 0 1px 8px card shadow. Hover raises the border opacity."
+     },
+     {
+      "name": "Floating card",
+      "role": "The overlay that appears over the artwork to convert a visitor into a signed-up user.",
+      "spec": "Paper White background, 24px radius, 1px Hairline border, 72px 0 56px padding, title heading at 400 and one body-sm Graphite sentence, plus a shadowed 0 6px 44px lift that no other surface uses."
+     }
+    ],
+    "agentPrompt": "Build a white archive interface: full-bleed #ffffff, 32px gutters, no max-width. Use one grotesque family at weights 400 and 500 only, sizes from 12px meta to a 26px heading, letter spacing about -2% from 12px up. Ink is #0d0d0d, secondary #5a5a5a, muted #919191. Draw all structure with a 1px #0000001f border, never a shadow, except floating overlays which get 0 6px 44px rgba(0,0,0,0.15). Pill every interactive element, round image tiles to 3px and floating cards to 24px. Keep transitions near-instant with cubic-bezier(0.4, 0, 0.2, 1). Let colour come only from the artwork.",
+    "description": "Cosmos is a white-walled archive: a full-bleed #ffffff canvas, a 56px header, and a single restrained typeface, cosmosOracle, set at 400 and 500 only. Nothing is bold. Hierarchy is built from size (12px meta up to 26px display) and from grey (Obsidian #0d0d0d, Graphite #5a5a5a, Ash #919191) rather than from weight. Space stays generous and even: 32px page gutters, 16px card padding, 4px micro gaps. Depth is not shadow but a 12% black hairline, #0000001f, drawn at 1px around every pill, chip and panel; only floating overlays lift, with a soft 44px blur. Radii split cleanly into three jobs: full pills for anything interactive, 3px for the dense thumbnail rail, 24px for the floating panel. The only saturated colour arrives through the artwork itself, a flat electric periwinkle #6364f9 against the white, so the chrome stays quiet and the pictures do the shouting."
+   }
+  }
+ },
+ "clientSite": null,
+ "expect": {
+  "typography": "Headlines in Louize at 400, never bold, and never Quadrant. Everything else in Inter at 400; dates and card metadata in Geist Mono at 500, 12px. Hierarchy from size and grey value only."
+ }
+}

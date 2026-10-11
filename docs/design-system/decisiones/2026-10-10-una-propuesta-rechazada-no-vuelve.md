@@ -10,4 +10,4 @@ kind: producto
 
 **Por qué.** Que el equipo diga no una vez y no tenga que repetirlo. Un rechazo que caduca con la evidencia obliga a vigilar cada pasada; uno que solo el equipo levanta deja la decisión donde está.
 
-**Cómo aplicarlo.** Toda pasada nueva que decida un área carga `areaMemory()` y lleva `MEMORY` en su prompt. El caso de las evals vive en el área de color de `scripts/fixtures/system/zernio.json`; `npm run eval:system` cuenta `rejected back` (tiene que ser 0) y `said cited`.
+**Cómo aplicarlo.** Toda pasada nueva que decida un área carga `areaMemory()` y lleva `MEMORY` en su prompt. Los casos de las evals viven en el área de color de `scripts/fixtures/system/zernio.json`, escrito a mano, y de `libreria-criterio.json`, congelado de datos reales (un rechazo desde la app, otro por MCP y una reescritura en tipografía, issue #134); `npm run eval:system` cuenta `rejected back` (tiene que ser 0) y `said cited`.

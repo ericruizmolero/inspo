@@ -67,7 +67,10 @@ async function main() {
   const standing = snapshot.standing.map((a) => {
     if (a.status !== "team" || !a.decision) return a;
     expect[a.area] = a.decision;
-    return { area: a.area, status: "empty", evidence: a.evidence, never: a.never };
+    // What the team said and rejected there stays for the model to read; a rewrite whose team text is the decision
+    // expected would hand it the answer
+    const rewritten = a.rewritten?.filter((r) => r.team !== a.decision);
+    return { area: a.area, status: "empty", evidence: a.evidence, never: a.never, said: a.said, saidOmitted: a.saidOmitted, rejected: a.rejected, ...(rewritten?.length ? { rewritten } : {}) };
   });
 
   const fixture: EvalFixture = {
