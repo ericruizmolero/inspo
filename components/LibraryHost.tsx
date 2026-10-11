@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TabWorkspace, WorkspaceSwitchContext, setActiveWorkspace } from "./workspace-switch";
 import type { LibraryData } from "@/lib/library";
 import type { SessionUser, Workspace } from "@/lib/workspace-core";
+import { replaceUrl } from "@/lib/url-history";
 import InspoClient from "./InspoClient";
 
 type Cached = { data: LibraryData; at: number };
@@ -61,7 +62,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
     // The server learns in the background; the tab saves into the new workspace once it is the one shown (TabWorkspace)
     const active = setActiveWorkspace(id, false);
     // A project or an open reference belong to the workspace being left: back to its library
-    if (window.location.pathname !== "/" || window.location.search) window.history.replaceState(null, "", "/");
+    if (window.location.pathname !== "/" || window.location.search) replaceUrl("/");
     const hit = cache.get(id);
     if (hit) {
       setShown(hit.data);

@@ -33,6 +33,7 @@ import BrandImport from "./brand/BrandImport";
 import ShareDialog from "./brand/ShareDialog";
 import { fileUrl } from "@/lib/files-path";
 import { mediaKindOf } from "@/lib/url";
+import { replaceUrl } from "@/lib/url-history";
 import "./SystemView.css";
 
 // Three ways to see the project, in one row of tabs: criterio.md as the Markdown it is, the same file set as a
@@ -233,7 +234,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
     setBriefOpen(true);
     const p = new URLSearchParams(window.location.search);
     p.delete("brief");
-    window.history.replaceState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+    replaceUrl(window.location.pathname + (p.size ? `?${p}` : ""));
   }, [briefParam]);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
@@ -241,7 +242,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
     if (b !== "site" && b !== "files" && b !== "text") return;
     setBringing(b);
     p.delete("bring");
-    window.history.replaceState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+    replaceUrl(window.location.pathname + (p.size ? `?${p}` : ""));
   }, []);
   const [view, setView] = useView();
   const [notice, setNotice] = useState("");

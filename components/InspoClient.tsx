@@ -72,6 +72,7 @@ import FirstSteps from "./FirstSteps";
 import ConnectDialog from "./ConnectDialog";
 import { hideFirstStepsList, loadFirstSteps } from "@/app/actions/first-steps";
 import type { FirstSteps as FirstStepsValue } from "@/lib/first-steps-core";
+import { replaceUrl } from "@/lib/url-history";
 
 // Opened by a click or a shortcut, never on the first paint: each loads on its own, and the panel (the
 // most used) is fetched once the page is idle, so the first click doesn't wait for it
@@ -231,9 +232,14 @@ export default function InspoClient({
   const saveTargetRef = useRef(saveTarget);
   saveTargetRef.current = saveTarget;
   // There is no library to land on: the bare address (or an old ?in=library) opens the last project worked in.
-  // With no project yet, the first screen stays (the chooser, or the empty start)
+  // With no project yet, the first screen stays (the chooser, or the empty start). With the router, not history: on
+  // the first load this runs before Next listens to history, and the URL would change while the chooser stayed
   useEffect(() => {
-    if (inParam !== "home" && (space === "home" || space === "all") && projects.length) setParams({ in: saveTarget() ?? "" }, true);
+    const to = saveTarget();
+    if (inParam === "home" || (space !== "home" && space !== "all") || !to) return;
+    const p = new URLSearchParams(window.location.search);
+    p.set("in", to);
+    router.replace(`${window.location.pathname}?${p}`, { scroll: false });
   }, [space, inParam, projects.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const [confirm, confirmDialog] = useConfirm();
 
@@ -462,7 +468,7 @@ export default function InspoClient({
   const goToSystem = (projectId: string, spot: SystemSpot) => {
     const p = new URLSearchParams(window.location.search);
     p.set("in", projectId); p.set("view", "system");
-    window.history.replaceState(null, "", `/?${p}`);
+    replaceUrl(`/?${p}`);
     pushedRef.current = false;
     setPanelItem(null);
     if ("area" in spot) setFocusArea((f) => ({ area: spot.area, n: (f?.n ?? 0) + 1 }));

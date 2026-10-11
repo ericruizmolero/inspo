@@ -5,6 +5,7 @@ import { usePathname, type useRouter } from "next/navigation";
 import { workspaceOfItem } from "@/app/actions/library";
 import { setActiveWorkspace } from "@/components/workspace-switch";
 import type { Workspace } from "@/lib/workspace-core";
+import { pushUrl, replaceUrl } from "@/lib/url-history";
 import type { InspoItem } from "@/types/inspo";
 
 // ─── The panel ──────────────────────────────────────────────────────────────
@@ -25,15 +26,15 @@ export function usePanelRoute({ items, filling, panelItem, setPanelItem, workspa
     setPanelItem(item);
     if (item.id && window.location.pathname !== `/i/${item.id}`) {
       // From one open reference to another: replace, so Back goes to the library and not through each one
-      if (window.location.pathname.startsWith("/i/")) window.history.replaceState(null, "", `/i/${item.id}${window.location.search}`);
-      else { window.history.pushState(null, "", `/i/${item.id}${window.location.search}`); pushedRef.current = true; }
+      if (window.location.pathname.startsWith("/i/")) replaceUrl(`/i/${item.id}${window.location.search}`);
+      else { pushUrl(`/i/${item.id}${window.location.search}`); pushedRef.current = true; }
     }
   };
   const closePanel = () => {
     if (!window.location.pathname.startsWith("/i/")) { setPanelItem(null); return; }
     // Opened here: step back, so Back and close do the same. Opened from a shared link: go to the library.
     if (pushedRef.current) { window.history.back(); return; }
-    window.history.replaceState(null, "", `/${window.location.search}`);
+    replaceUrl(`/${window.location.search}`);
     setPanelItem(null);
   };
   const panelItemRef = useRef<InspoItem | null>(null);

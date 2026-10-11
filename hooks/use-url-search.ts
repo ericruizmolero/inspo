@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReadonlyURLSearchParams } from "next/navigation";
 import { filtersFromParams, filterKey, LEGACY_PARAMS, type Filter } from "@/lib/search-query";
+import { pushUrl, replaceUrl } from "@/lib/url-history";
 
 // The search lives in the URL (?f=person:Eric&f=tag:c:blue&q=serif): a search can be shared and Back
 // undoes a chip. Older links (?type= ?author= ?tags=…) are read as chips. history.pushState/replaceState
@@ -18,7 +19,7 @@ export function useUrlSearch(sp: ReadonlyURLSearchParams) {
     const p = new URLSearchParams(window.location.search);
     for (const [k, v] of Object.entries(patch)) { if (v && v !== "all") p.set(k, v); else p.delete(k); }
     const url = window.location.pathname + (p.size ? `?${p}` : "");
-    if (replace) window.history.replaceState(null, "", url); else window.history.pushState(null, "", url);
+    if (replace) replaceUrl(url); else pushUrl(url);
   }, []);
   // ?q= is written once typing pauses: each write is a second render through useSearchParams, and Safari
   // refuses more than 100 history calls in 10 s. Anything else that writes the URL takes the pending words first.
@@ -43,7 +44,7 @@ export function useUrlSearch(sp: ReadonlyURLSearchParams) {
     p.delete("f");
     for (const k of LEGACY_PARAMS) p.delete(k);
     for (const f of next) p.append("f", filterKey(f));
-    window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+    pushUrl(window.location.pathname + (p.size ? `?${p}` : ""));
   }, [flushQuery]);
   const filtersRef = useRef(filters);
   filtersRef.current = filters;
@@ -58,7 +59,7 @@ export function useUrlSearch(sp: ReadonlyURLSearchParams) {
     if (qPending.current) { clearTimeout(qPending.current.timer); qPending.current = null; }
     const p = new URLSearchParams(window.location.search);
     for (const k of ["f", "q", "in", ...LEGACY_PARAMS]) p.delete(k);
-    window.history.pushState(null, "", window.location.pathname + (p.size ? `?${p}` : ""));
+    pushUrl(window.location.pathname + (p.size ? `?${p}` : ""));
   }, []);
   return { filters, query, setQuery, setParams, setFilters, toggleFilter, resetFilters };
 }
