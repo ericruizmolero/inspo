@@ -71,6 +71,6 @@ export function useAddDialog({ t, setToast }: { t: Dict; setToast: Dispatch<SetS
       document.removeEventListener("dragleave", onDragLeave);
       document.removeEventListener("drop", onDrop);
     };
-  }, [t]);
+  }, [t, setToast]);
   return { showAdd, setShowAdd, addInitial, setAddInitial, boardDrag };
 }

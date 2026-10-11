@@ -23,10 +23,10 @@ function Examples({ list }: { list: readonly string[] }) {
   const ref = useRef<HTMLSpanElement>(null);
   // Always in a random order: the next one is any but the one showing. The server draws the list's first; the
   // browser picks another before the first paint, so no two visits start the same
-  const next = (n: number) => (n + 1 + Math.floor(Math.random() * (list.length - 1))) % list.length;
   useLayoutEffect(() => { if (list.length > 1) setI(Math.floor(Math.random() * list.length)); }, [list]);
   const shown = useRef(false);
   useLayoutEffect(() => {
+    const next = (n: number) => (n + 1 + Math.floor(Math.random() * (list.length - 1))) % list.length;
     const box = ref.current;
     if (!box || list.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const chars = Array.from(box.querySelectorAll<HTMLElement>(".chooser__char"));

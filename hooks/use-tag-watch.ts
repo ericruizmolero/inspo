@@ -21,7 +21,7 @@ export function useTagWatch({ items, tagJobs, setTagJobs, setTagMap }: {
   const watch = useCallback((web: string) => {
     setTagJobs((prev) => ({ ...prev, [web]: "pending" }));
     setWatching((prev) => ({ ...prev, [web]: Date.now() }));
-  }, []);
+  }, [setTagJobs]);
   useEffect(() => {
     const webs = Object.keys(watching);
     if (!webs.length) return;
@@ -44,7 +44,7 @@ export function useTagWatch({ items, tagJobs, setTagJobs, setTagMap }: {
       } catch { setWatching((prev) => ({ ...prev })); } // asks again next round
     }, TAG_POLL_MS);
     return () => clearTimeout(id);
-  }, [watching]);
+  }, [watching, setTagJobs, setTagMap]);
   const gathering = useMemo(() => items.filter((i) => tagJobs[i.web] === "pending" || tagJobs[i.web] === "running").length, [items, tagJobs]);
   return { watch, gathering };
 }

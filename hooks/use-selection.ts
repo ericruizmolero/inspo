@@ -84,6 +84,7 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
     if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); return false; }
     refreshSystem(projectId);
     return true;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [selected, links, refreshSystem]);
   // Moving: into the other project and out of this one, on screen at once; the board here lets go of them
   const moveSelection = useCallback(async (projectId: string) => {
@@ -106,6 +107,7 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
     else if (!out.ok) setLinks((prev) => { const next = { ...prev }; for (const id of ids) next[id] = [...(next[id] ?? []).filter((x) => x !== from), from]; return next; });
     if (!out.ok) projectFailed(new Error(out.error));
     refreshSystem(projectId); refreshSystem(from);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [currentProject, selected, links, fileSelection, clearSelection, refreshSystem]);
   const removeSelection = useCallback(async () => {
     if (!currentProject) return;
@@ -129,7 +131,7 @@ export function useSelection({ t, items, setItems, setThumbMap, boardItems, spac
     const webs = new Set(gone.map((i) => i.web));
     setThumbMap((prev) => Object.fromEntries(Object.entries(prev).filter(([web]) => !webs.has(web))));
     for (const p of touched) refreshSystem(p);
-  }, [selected, items, links, confirm, clearSelection, refreshSystem, t]);
+  }, [selected, items, links, confirm, clearSelection, refreshSystem, t, setItems, setThumbMap, setToast]);
   const createForSelection = useCallback(async (name: string) => {
     const p = await createProject(name);
     if (!p) return;

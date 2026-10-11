@@ -96,7 +96,7 @@ export function useLibrarySync({ first, stamp, since, bell, workspace, items, se
       clearInterval(id);
       document.removeEventListener("visibilitychange", look);
     };
-  }, [workspace.id, watch]);
+  }, [workspace.id, watch, setMirror, setProjects, setLinks, setVotes, withVoteWrites]);
 
   // The rest of the library, a page after another as soon as the board is up. Search, chips, the Inbox and the
   // boards filter what is here in memory, so they need every reference: the pages are not waiting for a scroll
@@ -122,6 +122,6 @@ export function useLibrarySync({ first, stamp, since, bell, workspace, items, se
       if (alive) setFilling(false);
     })();
     return () => { alive = false; };
-  }, [first.cursor, workspace.id]);
+  }, [first.cursor, workspace.id, setMirror]);
   return { bellNews, beatRef, filling };
 }

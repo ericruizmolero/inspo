@@ -59,6 +59,7 @@ export function usePolishVotes({ initialPolishVotes, user, members, setLinks, re
     const now = Date.now();
     for (const itemId of ids) { const w = voteWrites.current.get(`${projectId}:${itemId}`); if (w && w.vote === vote) w.saved = now; }
     if (leaves) refreshSystem(projectId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [solo, user.id, refreshSystem]);
   /** Whoever manages the workspace settles what was voted. Returns how many references left the board, or null if it failed */
   const closePolishOf = useCallback(async (projectId: string, resolve: Record<string, PolishChoice>): Promise<number | null> => {
@@ -72,6 +73,7 @@ export function usePolishVotes({ initialPolishVotes, user, members, setLinks, re
       refreshSystem(projectId);
     }
     return removed.length;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [user.id, refreshSystem]);
   /** A reference the polish forgot, back on its board, to be voted again */
   const restoreToProject = useCallback(async (item: InspoItem, projectId: string) => {
@@ -87,6 +89,7 @@ export function usePolishVotes({ initialPolishVotes, user, members, setLinks, re
     const r = await restoreToBoard(projectId, id).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { flip(false); projectFailed(new Error(r.error)); return; }
     refreshSystem(projectId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [refreshSystem]);
   return { votes, setVotes, voteWrites, withVoteWrites, solo, castVote, closePolishOf, restoreToProject };
 }

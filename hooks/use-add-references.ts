@@ -51,7 +51,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       const data = res.ok ? await res.json() : null;
       if (data?.thumb) setThumbMap((prev) => (prev[web] ? prev : { ...prev, [web]: data.thumb }));
     } catch { /* stays a typographic card */ }
-  }, []);
+  }, [setThumbMap]);
   // Saved from the dialog under some areas of the project's system: each one counts it at once
   const fileUnderAreas = async (projectId: string, item: InspoItem, areas: SystemArea[] | undefined) => {
     if (!item.id || !areas?.length) return;
@@ -90,6 +90,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       setToast({ title: t.app.saveFailed, detail: e instanceof Error ? e.message : String(e) });
       return null;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- fileUnderAreas is a new function on every render, so listing it would rebuild this callback on every render; the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes; the setters, refreshSystem and saveTargetRef never change identity
   }, [user, watch, importPost]);
 
   // ─── Add an image ────────────────────────────────────────────────────────────
@@ -127,6 +128,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       // The card already swapped to the uploaded file; give it a moment before dropping the local copy
       setTimeout(() => URL.revokeObjectURL(local), 30_000);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cardCopy and fileUnderAreas are new functions on every render, so listing them would rebuild this callback on every render; the setters, refreshSystem and saveTargetRef never change identity
   }, [user, watch, workspace.id, t]);
 
   // ─── Add a text ──────────────────────────────────────────────────────────────
@@ -156,7 +158,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       setToast({ title: t.app.saveFailed, detail: messageOf(e, t, String(e)) });
       return null;
     }
-  }, [user, watch, refreshSystem, t]);
+  }, [user, watch, refreshSystem, t, saveTargetRef, setItems, setLinks, setToast]);
 
   // A guest who pasted a URL on the start canvas comes back from login with ?add=<url>:
   // it saves itself and its DESIGN.md opens, as if pasted from inside.

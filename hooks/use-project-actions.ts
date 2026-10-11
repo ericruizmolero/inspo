@@ -38,6 +38,7 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     if (!r.ok) { projectFailed(new Error(r.error)); return null; }
     setProjects((prev) => [...prev, r.data]);
     return r.data;
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, []);
 
   // ─── Import a board ──────────────────────────────────────────────────────────
@@ -92,12 +93,13 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     setSpace(project.id);
     setToast({ ok: true, ...importSummary(t, { imported, existed, skipped: { ...board.skipped, invalid }, failed, capped: board.capped, full }) });
     return null;
-  }, [t, watch, setSpace]);
+  }, [t, watch, setSpace, setItems, setLinks, setProjects, setToast]);
   const renameProject = useCallback(async (id: string, name: string) => {
     const before = projects.find((p) => p.id === id);
     setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, name } : p)));
     const r = await editProject(id, name).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { if (before) setProjects((prev) => prev.map((p) => (p.id === id ? before : p))); projectFailed(new Error(r.error)); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [projects]);
   const deleteProject = useCallback(async (project: Project) => {
     if (!(await confirm({ title: t.projects.confirmRemove(project.name), description: t.projects.confirmRemoveHint, action: t.common.delete, danger: true }))) return;
@@ -107,6 +109,7 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     setLinks((prev) => Object.fromEntries(Object.entries(prev).map(([k, v]) => [k, v.filter((x) => x !== project.id)])));
     const r = await removeProject(project.id).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { setProjects(prevProjects); setLinks(prevLinks); projectFailed(new Error(r.error)); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render; the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes
   }, [projects, links, space, confirm, setParams]);
   const toggleFiled = useCallback(async (item: InspoItem, projectId: string, on: boolean) => {
     const id = item.id;
@@ -121,6 +124,7 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     // Taken off the board by hand: what was voted about it there goes too, as on the server
     if (!on) { voteWrites.current.delete(`${projectId}:${id}`); setVotes((prev) => prev.filter((v) => !(v.projectId === projectId && v.itemId === id))); }
     refreshSystem(projectId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [refreshSystem]);
   // The step into the system, from the board's bar or at the end of polishing: the first time it also marks the project as started
   const startSystem = useCallback(async () => {
@@ -132,6 +136,7 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
       setProjects((prev) => prev.map((p) => (p.id === id ? { ...p, started: true } : p)));
     }
     setParams({ view: "system" });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [currentProject, setParams]);
   /** Several references into one project at once (the empty project's picker) */
   const fileMany = useCallback(async (picked: InspoItem[], projectId: string) => {
@@ -146,6 +151,7 @@ export function useProjectActions({ t, projects, setProjects, links, setLinks, s
     const r = await setFiled(projectId, ids, true).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { setLinks(prevLinks); projectFailed(new Error(r.error)); return; }
     refreshSystem(projectId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [links, refreshSystem]);
   const createAndFile = useCallback(async (item: InspoItem, name: string) => {
     const p = await createProject(name);

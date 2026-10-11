@@ -256,7 +256,7 @@ export default function PolishView({ project, items, imageOf, largeImageOf, rati
     else if (!e.done) e.target = front;
     if (e.still && e.target !== null) e.p = e.target;
     if (front !== e.base) { e.base = front; setBase(front); }
-  });
+  }, [list]);
 
   // After every render: which cards are mounted, each gliding from where it was last drawn
   useLayoutEffect(() => {

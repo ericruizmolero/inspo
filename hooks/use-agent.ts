@@ -86,7 +86,7 @@ export function useAgent({ t, items, projects, links, currentProject, space, pro
     for (const [id, sys] of Object.entries(patch.systems ?? {})) setSystem(id, sys);
     if (patch.added?.length) setItems((prev) => [...patch.added!.filter((a) => !prev.some((i) => i.id === a.id)), ...prev]);
     if (patch.removed?.length) { const gone = new Set(patch.removed); setItems((prev) => prev.filter((i) => !i.id || !gone.has(i.id))); }
-  }, []);
+  }, [setItems, setLinks, setProjects, setSystem]);
   const followAgent = useCallback((done: AgentDone[]) => {
     for (const d of done) {
       if (!d.ok) continue;
@@ -97,6 +97,7 @@ export function useAgent({ t, items, projects, links, currentProject, space, pro
         if (d.go.area) { setProjectView("system"); setFocusArea((f) => ({ area: d.go!.area!, n: (f?.n ?? 0) + 1 })); }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- saveTarget is a new function on every render, so listing it would rebuild this callback on every render
   }, [setQuery, setSpace, setProjectView]);
   const askAgent = useCallback(async (text: string) => {
     setAgent({ text, busy: true, done: [], pending: [] });

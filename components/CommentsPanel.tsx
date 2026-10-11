@@ -214,6 +214,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         .catch((e) => setPending((prev) => prev.map((x) => x.key === p.key ? { ...x, status: "error", error: messageOf(e, t, t.comments.uploadFailed) } : x)));
     });
     if (files.length > room) setError(t.comments.filesLeftOut(MAX_FILES, files.length - room));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes
   }, []);
 
   const removePending = (key: string) => {
@@ -267,6 +268,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     }
     for (const c of comments) if (c.parentId && ids.has(c.parentId)) byId.get(c.parentId)?.replies.push(toMsg(c));
     return { originals, threads };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes
   }, [item, comments, user, canManage, memberImages, onEditNote]);
   const total = originals.length + threads.reduce((n, th) => n + 1 + th.replies.length, 0);
 

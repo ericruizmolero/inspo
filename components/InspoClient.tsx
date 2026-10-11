@@ -270,6 +270,7 @@ export default function InspoClient({
       setItems((prev) => (prev.some((i) => i.id === item.id) ? prev : [item, ...prev]));
       setToast({ title: t.app.removeFailed, detail: e instanceof Error ? e.message : String(e) });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes; the setters never change identity
   }, []);
 
   // ─── Plan and quotas ───────────────────────────────────────────────────────
@@ -351,14 +352,14 @@ export default function InspoClient({
     if (!r.ok) throw new Error(r.error);
     setTextBody(item.id, r.data.text);
     setTagMap((prev) => ({ ...prev, [item.web]: r.data.tags }));
-  }, [setTextBody]);
+  }, [setTextBody, setTagMap]);
   const renameTextItem = useCallback(async (item: InspoItem, title: string) => {
     if (!item.id) return;
     const r = await renameText(item.id, title);
     if (!r.ok) throw new Error(r.error);
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, name: r.data.name } : i)));
     setPanelItem((cur) => (cur && cur.id === item.id ? { ...cur, name: r.data.name } : cur));
-  }, []);
+  }, [setItems]);
   const refInfo = useCallback((i: InspoItem) => {
     const text = i.id ? textBodies[i.id] : undefined;
     return { ...refInfoOf(i, tagMap[i.web], i.id ? commentMap[i.id] : undefined, t), ...(text ? { text } : {}) };
@@ -405,6 +406,7 @@ export default function InspoClient({
     const r = await assignSystemArea(projectId, area, item.id, on).catch((e) => ({ ok: false as const, error: String(e) }));
     if (!r.ok) { projectFailed(new Error(r.error)); return; }
     setSystem(projectId, r.data);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- projectFailed is a new function on every render, so listing it would rebuild this callback on every render
   }, [setSystem]);
   const { selected, bar, setBar, selectItem, clearSelection, selectAll, selectionIn, fileSelection, moveSelection, removeSelection, deleteSelection, createForSelection } = useSelection({ t, items, setItems, setThumbMap, boardItems, space, projectView, links, setLinks, currentProject, confirm, refreshSystem, projectFailed, setToast, createProject });
 
