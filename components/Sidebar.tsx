@@ -220,7 +220,7 @@ function SidebarNav({ quota, steps, items, onPick,
   // Projects: which one is being named in place ("new" = the row at the bottom), and each one's count
   const [naming, setNaming] = useState<string | null>(null);
   const counts = useSpaceCounts(items, links);
-  const inDiscover = space === "discover" || space === "templates" || space === "skills";
+  const inDiscover = space === "templates";
   return (
     <>
       {/* SidebarContent stays still; FadeScroll owns the scroll so the edge fades can follow it */}

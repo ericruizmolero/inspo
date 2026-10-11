@@ -10,7 +10,6 @@ import { localeFromHeader, localeFromCookieHeader, localeForNewUser, toLocale, D
 import { localeForEmail } from "../lib/mail";
 import en from "../lib/i18n/en";
 import es from "../lib/i18n/es";
-import { SKILLS } from "../lib/agent-skills";
 
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 const TAG = `localecheck-${id().slice(0, 8)}`;
@@ -79,9 +78,6 @@ async function main() {
   const esKeys = keys(es).sort();
   assert.deepEqual(esKeys, enKeys, "es is missing keys or has extra ones");
   assert.ok(enKeys.length > 300, `too few keys: ${enKeys.length}`);
-
-  // Every skill for agents says what it does in both languages
-  for (const s of SKILLS) assert.ok(en.discover.skills.items[s.url] && es.discover.skills.items[s.url], `no text for the skill ${s.url}`);
 
   console.log(`✓ locale: ${enKeys.length} keys in both dictionaries, order and emails correct`);
 }

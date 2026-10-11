@@ -246,8 +246,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: openTabs.filter((p) => keep.has(p.id)), hidden: openTabs.filter((p) => !keep.has(p.id)) };
   }, [openTabs, fitOrder, fit]);
 
-  // No library tab: Discover holds the templates and the skills, and the Inbox what is in no project yet
-  const inDiscover = space === "discover" || space === "templates" || space === "skills";
+  // No library tab: Discover holds the examples, and the Inbox what is in no project yet
+  const inDiscover = space === "templates";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
     if (!p) return;
@@ -317,8 +317,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
           </div>
           <Separator />
-          {/* The places to look live on the marketing site: a new tab, the library stays where it was */}
+          {/* The places to look and the skills for agents live on the marketing site: a new tab, the library stays where it was */}
           <MenuItem icon="compass" onClick={() => window.open(marketingHref("/resources/", locale), "_blank", "noopener")}>{t.ws.resources}</MenuItem>
+          <MenuItem icon="file" onClick={() => window.open(marketingHref("/skills/", locale), "_blank", "noopener")}>{t.ws.skills}</MenuItem>
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>
@@ -334,7 +335,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             chosen state (is-on), like any other tab, so the home never hovers differently from the rest */}
         <a href={hrefOf("home")} className={`cr-iconbtn cr-iconbtn-quiet cr-iconbtn-m island__home${space === "home" ? " is-on is-active" : ""}`} aria-current={space === "home" ? "page" : undefined}
           aria-label={t.projects.home} data-tip={t.projects.home} data-fixed onClick={go("home")}><Icon name="home" size={18} /></a>
-        {/* Discover opens on its templates; the places to look are one tab away */}
+        {/* Discover is its examples */}
         <a href={hrefOf("templates")} className={`island__tab${inDiscover ? " is-on" : ""}`} aria-current={inDiscover ? "page" : undefined} data-fixed onClick={go("templates")}>
           <span className="island__label">{t.sidebar.discover}</span>
         </a>

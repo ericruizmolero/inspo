@@ -153,6 +153,8 @@ export const ui = {
   ws: {
     /** The places we look for references, on the marketing site */
     resources: "Resources",
+    /** The skills for agents, on the marketing site */
+    skills: "Skills",
     manageTeam: "Manage team",
     manage: "Manage",
     savedBy: (name: string): string => `What ${name} saved`,
@@ -211,35 +213,6 @@ export const ui = {
     ready: "Ready. Tap to see it.",
     failed: "It failed",
     dismiss: "Dismiss",
-  },
-  discover: {
-    sections: { label: "What to discover", templates: "Examples", skills: "Skills" },
-    skills: {
-      copy: "Copy", copied: "Copied", topicsLabel: "Topics", none: "No skills here", search: "Search skills",
-      lead: "To install in Claude, Cursor or Codex.",
-      /** What each skill for agents does (SKILLS in lib/agent-skills.ts), by its URL */
-      items: {
-        "https://ui-skills.com/skills/anthropics/frontend-design": "Anthropic's own: distinctive, production-grade interfaces that steer clear of the generic AI look.",
-        "https://ui-skills.com/skills/emilkowalski/emil-design-eng": "Emil Kowalski's design engineering: polish, components, animation and frontend craft ready for production.",
-        "https://ui-skills.com/skills/emilkowalski/apple-design": "Apple's way with interfaces and fluid, physical motion, brought to the web: gestures, springs, transitions.",
-        "https://ui-skills.com/skills/wshobson/interaction-design": "Micro-interactions, transitions and feedback patterns, designed and built.",
-        "https://ui-skills.com/skills/mengto/beautiful-shadows": "Depth, elevation and shadows that never turn muddy.",
-        "https://ui-skills.com/skills/pbakaus/adapt": "Adapts a design across breakpoints, devices and platforms without losing the interaction.",
-        "https://ui-skills.com/skills/shadcn-ui/shadcn": "The official shadcn/ui workflow: find, add, compose and fix components the right way.",
-        "https://ui-skills.com/skills/addyosmani/accessibility": "Addy Osmani's accessibility audit and fixes against WCAG 2.2.",
-        "https://ui-skills.com/skills/superfuture/design-review": "A sharp, prioritised design critique of a URL, a screenshot or a component: hierarchy, type, spacing, colour.",
-        "https://ui-skills.com/skills/jakubkrehel/better-interface": "A whole interface review: accessibility, layout, writing, type, colour and finish.",
-        "https://github.com/MrBongoC/ai-iso-skill": "Draws an object as an interactive isometric line figure in one HTML file, with parts that work when pressed.",
-        "https://github.com/greensock/gsap-skills": "GreenSock's own: GSAP done right, from timelines and ScrollTrigger to SplitText and Flip, with cleanup in React.",
-        "https://github.com/petergyang/no-ai-slop": "Peter Yang's: writes, edits and audits text so it doesn't read as generated.",
-      } as Record<string, string>,
-      topics: { foundations: "Typography, color and layout", motion: "Motion", assets: "Icons, logo and imagery", voice: "Voice", interface: "Interface and components", review: "Review and accessibility" },
-    },
-    inCriterio: "In criterio.md",
-    inCriterioHint: "Also a skill of criterio.md: switch it on from Skills in your project",
-    shelves: "What to see",
-    shelf: { all: "Everything", new: "Just in", featured: "Featured" },
-    all: "All",
   },
   sidebar: {
     library: "Library",

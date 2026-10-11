@@ -84,9 +84,8 @@ const SystemView = dynamic(() => import("./SystemView"), { ssr: false });
 const PolishView = dynamic(() => import("./PolishView"), { ssr: false });
 const RefCriterio = dynamic(() => import("./RefCriterio"), { ssr: false });
 const CommandPalette = dynamic(() => import("./CommandPalette"), { ssr: false });
-// Discover and its templates only show in their own space (still server-rendered when a link lands there),
+// Discover (its examples) only shows in its own space (still server-rendered when a link lands there),
 // the add dialog only once opened
-const Discover = dynamic(() => import("./Discover"));
 const TemplatesView = dynamic(() => import("./TemplatesView"));
 const AddInspoModal = dynamic(() => import("./AddInspoModal"), { ssr: false });
 
@@ -156,11 +155,12 @@ export default function InspoClient({
   const projectFailed = (e: unknown) => setToast({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) });
   const { systems, fullSystems, setSystem, refreshSystem } = useSystems(initialSummaries);
   const { votes, setVotes, voteWrites, withVoteWrites, solo, castVote, closePolishOf, restoreToProject } = usePolishVotes({ initialPolishVotes, user, members, setLinks, refreshSystem, projectFailed });
-  // ?in=discover was Discover's resources, now on the marketing site: an old link opens Discover on its examples
-  const inParam = sp.get("in") === "discover" ? "templates" : sp.get("in");
+  // ?in=discover (the resources) and ?in=skills were Discover's other sections, now on the marketing site: an old
+  // link opens Discover, which is its examples
+  const inParam = sp.get("in") === "discover" || sp.get("in") === "skills" ? "templates" : sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
   // ?in=home is the chooser asked for (the island's house); the bare address lands on the last project (below)
-  const space = inParam === "inbox" || inParam === "templates" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "templates" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
   // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes
@@ -414,7 +414,7 @@ export default function InspoClient({
   const area = currentProject && projectView === "polish" ? "polish"
     : panelItem ? "sheet"
     : showAdd ? "add"
-    : space === "templates" ? (exampleOpen ? "example" : "examples") : space === "skills" ? "skills"
+    : space === "templates" ? (exampleOpen ? "example" : "examples")
     : filtering ? "search"
     : currentProject ? projectView
     : space === "inbox" ? "inbox"
@@ -621,14 +621,13 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "templates" || space === "skills" ? (
-          // Discover: the templates (whole systems to start a project from) and the skills for agents
-          <Discover section={space} onSection={setSpace}
-            templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onOpenChange={setExampleOpen} onStarted={(p) => {
-              // The template's references are not in this page's library until a project holds them, so the page is
-              // read again on the new project: its board comes with them, their pictures and their tags
-              // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full load the comment above asks for
-              window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />} />
+        {space === "templates" ? (
+          // Discover: the examples, whole systems to start a project from
+          <TemplatesView key={workspace.id} workspaceId={workspace.id} onOpenChange={setExampleOpen} onStarted={(p) => {
+            // The template's references are not in this page's library until a project holds them, so the page is
+            // read again on the new project: its board comes with them, their pictures and their tags
+            // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full load the comment above asks for
+            window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />
         ) : space === "home" ? (
           <ProjectChooser
             projects={projects}
@@ -765,7 +764,7 @@ export default function InspoClient({
         )}
         {/* The music is in the corner of every view. The boards and Polish have it in their zoom's pill; the others
             have nothing to zoom, and the pill is the music alone */}
-        {!(space !== "templates" && space !== "skills" && space !== "home" && items.length > 0
+        {!(space !== "templates" && space !== "home" && items.length > 0
           && !(currentProject && projectView === "system")
           && ((currentProject && projectView === "polish") || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
           && <ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill>}
