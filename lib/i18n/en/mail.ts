@@ -20,7 +20,7 @@ export const mail = {
     people: (n: number): string => `${n} ${n === 1 ? "person" : "people"}`,
     subject: (team: string, members: string, plan: string, limit: number): string => `${team} has ${members} and the ${plan} plan allows ${limit}`,
     text: (team: string, plan: string, limit: string, members: string, url: string): string =>
-      `${team} has moved to the ${plan} plan, which allows ${limit}, and now there are ${members}.\n\nWe have not removed anyone. While there are more people than the plan allows, the team cannot send new invitations or use the AI. Remove someone, or go back to a bigger plan:\n${url}`,
+      `${team} has moved to the ${plan} plan, which allows ${limit}, and now there are ${members}.\n\nWe have not removed anyone, and the AI keeps working. While there are more people than the plan allows, the team cannot send new invitations. Remove someone, or go back to a bigger plan:\n${url}`,
   },
 
   adminAccess: {

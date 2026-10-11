@@ -1238,7 +1238,7 @@ export const ui: typeof EnUi = {
     storage: "Almacenamiento",
     storageOf: (used: string, limit: string): string => `${used} de ${limit} GB`,
     storageNoLimit: (used: string): string => `${used} GB, sin límite`,
-    overSeatsBefore: (used: number, plan: string, limit: number): string => `Sois ${used} y el plan ${plan} admite ${limit}. No hemos quitado a nadie, pero las invitaciones y la IA están paradas hasta que quites a alguien en `,
+    overSeatsBefore: (used: number, plan: string, limit: number): string => `Sois ${used} y el plan ${plan} admite ${limit}. No hemos quitado a nadie y la IA sigue funcionando, pero las invitaciones esperan hasta que quites a alguien en `,
     overSeatsLink: "el equipo",
     overSeatsAfter: " o amplíes el plan.",
     pendingInvites: (n: number): string => (n === 1 ? "1 invitación sin aceptar, que también ocupa plaza." : `${n} invitaciones sin aceptar, que también ocupan plaza.`),
@@ -1300,7 +1300,7 @@ export const ui: typeof EnUi = {
     members: "Miembros",
     membersOf: (n: number, limit: number): string => `${n} de ${limit}`,
     pendingCount: (n: number): string => `, ${n} sin aceptar`,
-    overSeatsBefore: (used: number, plan: string, limit: number): string => `Sois ${used} y el plan ${plan} admite ${limit}. No hemos quitado a nadie, pero las invitaciones y la IA están paradas hasta que quites a alguien de la lista o `,
+    overSeatsBefore: (used: number, plan: string, limit: number): string => `Sois ${used} y el plan ${plan} admite ${limit}. No hemos quitado a nadie y la IA sigue funcionando, pero las invitaciones esperan hasta que quites a alguien de la lista o `,
     overSeatsLink: "amplíes el plan",
     you: "tú",
     remove: "Quitar",
@@ -1632,8 +1632,6 @@ export const ui: typeof EnUi = {
   quota: {
     people: (n: number): string => `${n} ${n === 1 ? "persona" : "personas"}`,
     actions: { ai: "acciones de IA", jev_search: "búsquedas IA" },
-    overSeats: (members: string, plan: string, limit: number): string =>
-      `El equipo tiene ${members} y el plan ${plan} admite ${limit}. Quita a alguien en /equipo o amplía el plan en /planes para volver a usar la IA.`,
     spent: (used: number, limit: number, what: string, plan: string): string =>
       `Has usado ${used} de ${limit} ${what} este mes en el plan ${plan}. Amplía el plan en /planes.`,
     planAllows: (plan: string, people: string): string => `El plan ${plan} admite ${people}.`,

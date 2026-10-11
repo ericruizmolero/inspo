@@ -17,8 +17,6 @@ import { LlmError } from "./llm";
 import { embedItems } from "./embed";
 import { enqueue, enqueueEmbed } from "./jobs";
 import { log, recordFailure } from "./log";
-import { assertSeatsOk } from "./quota";
-import type { PlanKey } from "./plans";
 import { TAXONOMY_VERSION } from "./taxonomy";
 import type { InspoTags, TagStatus } from "@/types/inspo";
 
@@ -127,16 +125,10 @@ export async function resetTagJob(organizationId: string, web: string): Promise<
   return row?.id ?? null;
 }
 
-/** Workspaces with jobs to take that may take them: one over its seats gets no AI until it fixes it, as in the app */
+/** Workspaces with jobs to take */
 export async function openWorkspacesWithJobs(limit: number): Promise<string[]> {
-  const found = await db.selectDistinct({ organizationId: T.organizationId, plan: schema.billingAccount.plan }).from(T)
-    .innerJoin(schema.organization, eq(schema.organization.id, T.organizationId))
-    .innerJoin(schema.billingAccount, eq(schema.billingAccount.id, schema.organization.billingAccountId))
-    .where(claimable())
-    .limit(limit);
-  const open = await Promise.all(found.map((w) =>
-    assertSeatsOk({ id: w.organizationId, plan: w.plan as PlanKey }).then(() => w.organizationId, () => null)));
-  return open.filter((id): id is string => !!id);
+  const found = await db.selectDistinct({ organizationId: T.organizationId }).from(T).where(claimable()).limit(limit);
+  return found.map((w) => w.organizationId);
 }
 
 /** How the jobs are going, for /api/health/deep. `stalled`: workspaces that may run jobs, with one waiting

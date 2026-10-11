@@ -3,7 +3,7 @@ import { requireCtx, isResponse } from "@/lib/workspace";
 import { HttpError } from "@/lib/workspace-core";
 import { startAreaAsk, startAreaRefs } from "@/lib/system/options";
 import { llmEnabled } from "@/lib/llm";
-import { assertQuota, assertSeatsOk, quotaBlock } from "@/lib/quota";
+import { assertQuota, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import { log } from "@/lib/log";
 
@@ -16,8 +16,6 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
-  if (blocked) return blocked;
 
   const body = (await req.json().catch(() => ({}))) as { projectId?: string; area?: string; part?: string };
   const projectId = String(body.projectId ?? "").trim();

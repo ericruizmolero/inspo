@@ -7,8 +7,7 @@ import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { setAccountPlan } from "../lib/workspace-core";
-import { memberLimitMessage, overCapacity, memberRank, assertSeatsOk, countPendingInvitations } from "../lib/quota";
-import { HttpError } from "../lib/workspace-core";
+import { memberLimitMessage, overCapacity, memberRank, assertQuota, countPendingInvitations } from "../lib/quota";
 
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 const TAG = `seatcheck-${id().slice(0, 8)}`;
@@ -72,11 +71,8 @@ async function main() {
   await setAccountPlan(orgId, "solo");
   const over = await overCapacity(orgId, "solo");
   assert.deepEqual(over, { members: 5, limit: 1, planName: "Solo" }, "5 people don't fit in Solo");
-  await assert.rejects(
-    () => assertSeatsOk({ id: orgId, plan: "solo" }),
-    (e: unknown) => e instanceof HttpError && e.status === 402,
-    "AI stops while the team is over the limit",
-  );
+  await assertQuota({ id: orgId, plan: "solo", billingAccountId: orgId }, "ai");
+  assert.match((await memberLimitMessage(orgId, "solo", { includePending: true }))!, /allows 1 person/, "a new invitation is refused");
 
   // 5. When two accept the last seat at once, the one left over is always the later one, never both
   const ordered = await db.select({ id: schema.member.id, createdAt: schema.member.createdAt })

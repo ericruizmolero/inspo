@@ -18,7 +18,7 @@ export const mail: typeof EnMail = {
     people: (n: number): string => `${n} ${n === 1 ? "persona" : "personas"}`,
     subject: (team: string, members: string, plan: string, limit: number): string => `${team} tiene ${members} y el plan ${plan} admite ${limit}`,
     text: (team: string, plan: string, limit: string, members: string, url: string): string =>
-      `${team} ha pasado al plan ${plan}, que admite ${limit}, y ahora sois ${members}.\n\nNo hemos quitado a nadie. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas ni usar la IA. Quita a alguien o vuelve a un plan más grande:\n${url}`,
+      `${team} ha pasado al plan ${plan}, que admite ${limit}, y ahora sois ${members}.\n\nNo hemos quitado a nadie y la IA sigue funcionando. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas. Quita a alguien o vuelve a un plan más grande:\n${url}`,
   },
 
   adminAccess: {

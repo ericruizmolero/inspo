@@ -214,8 +214,8 @@ export interface OverCapacity { members: number; limit: number; planName: string
 
 /**
  * A team can end up with more people than its plan allows after a downgrade.
- * We don't kick anyone out: destroying data over a charge isn't an option. Invitations
- * and AI actions are blocked, and the owner decides.
+ * Nobody is removed and the AI keeps working: only new invitations wait (memberLimitMessage)
+ * until someone leaves or the plan goes up.
  */
 export async function overCapacity(organizationId: string, planKey: string | null | undefined): Promise<OverCapacity | null> {
   const plan = planOf(planKey);
@@ -235,17 +235,8 @@ export async function quotaBlock(check: Promise<void>): Promise<Response | null>
   }
 }
 
-/** Throws HttpError(402) if the team exceeds its plan's seat count. */
-export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise<void> {
-  const over = await overCapacity(ws.id, ws.plan);
-  if (!over) return;
-  const { t } = await getT();
-  throw new HttpError(402, t.quota.overSeats(t.quota.people(over.members), over.planName, over.limit));
-}
-
 /** Throws HttpError(402) if the workspace has used up that action's monthly quota. */
 export async function assertQuota(ws: QuotaWorkspace, action: "ai" | "jev_search"): Promise<void> {
-  await assertSeatsOk(ws);
   const plan = planOf(ws.plan);
   const limit = action === "ai" ? plan.aiActionsPerMonth : plan.searchesPerMonth;
   if (limit === null) return;

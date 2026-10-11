@@ -6,7 +6,6 @@ import { findByWeb, tagsOfRow } from "@/lib/items";
 import { taggerEnabled } from "@/lib/tagger";
 import { resetTagJob, statusOf } from "@/lib/tag-jobs";
 import { enqueue } from "@/lib/jobs";
-import { assertSeatsOk, quotaBlock } from "@/lib/quota";
 import { getErrors } from "@/lib/i18n";
 import type { InspoTags, TagStatus } from "@/types/inspo";
 
@@ -38,9 +37,6 @@ export async function POST(req: NextRequest) {
   if (!taggerEnabled()) return Response.json({ error: "OPENROUTER_API_KEY not configured" }, { status: 503 });
   const ctx = await requireCtx();
   if (isResponse(ctx)) return ctx;
-  // Downgrading can leave the team with more people than the plan allows: AI stops until they fix it
-  const blocked = await quotaBlock(assertSeatsOk(ctx.workspace));
-  if (blocked) return blocked;
   const { web } = (await req.json().catch(() => ({}))) as { web?: string };
   if (!web) return Response.json({ error: (await getErrors()).missingWebOrAll }, { status: 400 });
   const id = await resetTagJob(ctx.workspace.id, web);

@@ -23,13 +23,13 @@ async function main() {
   const workspaces = await accountWorkspaces(account.id);
   console.log(`✓ ${org.name} (${org.slug}) → plan ${plan}${workspaces.length > 1 ? `, with the ${workspaces.length} workspaces of ${account.name}` : ""}`);
 
-  // A downgrade can leave a team with more people than it allows. Nobody is
-  // removed: owners and admins get notified, and the app blocks invitations and AI until they decide.
-  // An account left with more workspaces than the plan allows keeps them all; it only cannot add another.
+  // A downgrade can leave a team with more people than it allows. Nobody is removed: owners and admins get
+  // notified, and only new invitations wait until they decide. An account left with more workspaces than the plan
+  // allows keeps them all; it only cannot add another.
   const appUrl = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   for (const w of workspaces) {
     if (await notifyOverCapacity(w.id, plan, w.name, appUrl)) {
-      console.log(`  ⚠ ${w.name} is over the plan limit: owners notified, invitations and AI blocked`);
+      console.log(`  ⚠ ${w.name} is over the plan limit: owners notified, new invitations on hold`);
     }
   }
 }

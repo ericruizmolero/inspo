@@ -1242,7 +1242,7 @@ export const ui = {
     storage: "Storage",
     storageOf: (used: string, limit: string): string => `${used} of ${limit} GB`,
     storageNoLimit: (used: string): string => `${used} GB, no limit`,
-    overSeatsBefore: (used: number, plan: string, limit: number): string => `There are ${used} of you and the ${plan} plan allows ${limit}. We have not removed anyone, but invitations and the AI are on hold until you remove someone in `,
+    overSeatsBefore: (used: number, plan: string, limit: number): string => `There are ${used} of you and the ${plan} plan allows ${limit}. Nobody has been removed and the AI keeps working, but invitations are on hold until you remove someone in `,
     overSeatsLink: "the team",
     overSeatsAfter: " or move up a plan.",
     pendingInvites: (n: number): string => (n === 1 ? "1 invitation not yet accepted, which also takes a seat." : `${n} invitations not yet accepted, which also take a seat.`),
@@ -1304,7 +1304,7 @@ export const ui = {
     members: "Members",
     membersOf: (n: number, limit: number): string => `${n} of ${limit}`,
     pendingCount: (n: number): string => `, ${n} not accepted`,
-    overSeatsBefore: (used: number, plan: string, limit: number): string => `There are ${used} of you and the ${plan} plan allows ${limit}. We have not removed anyone, but invitations and the AI are on hold until you remove someone from the list or `,
+    overSeatsBefore: (used: number, plan: string, limit: number): string => `There are ${used} of you and the ${plan} plan allows ${limit}. Nobody has been removed and the AI keeps working, but invitations are on hold until you remove someone from the list or `,
     overSeatsLink: "move up a plan",
     you: "you",
     remove: "Remove",
@@ -1636,8 +1636,6 @@ export const ui = {
   quota: {
     people: (n: number): string => `${n} ${n === 1 ? "person" : "people"}`,
     actions: { ai: "AI actions", jev_search: "AI searches" },
-    overSeats: (members: string, plan: string, limit: number): string =>
-      `The team has ${members} and the ${plan} plan allows ${limit}. Remove someone in /equipo, or move up a plan in /planes, to use the AI again.`,
     spent: (used: number, limit: number, what: string, plan: string): string =>
       `You have used ${used} of ${limit} ${what} this month on the ${plan} plan. Move up a plan in /planes.`,
     planAllows: (plan: string, people: string): string => `The ${plan} plan allows ${people}.`,
