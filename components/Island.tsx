@@ -2,7 +2,7 @@
 
 // The island (desktop): the design system's TabBar. The projects as tabs on dark chrome (in both themes), so moving
 // between them is one click and nothing opens. Projects change every day and workspaces almost never, so the
-// workspace is only the logo tile at the start of the bar: it opens the workspace menu (switch, directory,
+// workspace is only the logo tile at the start of the bar: it opens the workspace menu (switch, resources,
 // feedback, the plan, settings). Each project tab carries a StatusRing for its system. The selected project carries a ⌄ to rename or delete it. Tabs work as in Figma:
 // a project gets one when it is opened and keeps it until its × closes it (kept per browser and workspace); the
 // house at the start goes to every project. Open tabs that do not fit beside the right-hand pill wait in "N more".
@@ -20,6 +20,7 @@ import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
 import TeamBell from "./TeamBell";
 import { useT } from "./I18nProvider";
+import { marketingHref } from "@/lib/site";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Liquid, afterPaint } from "@/components/ui/liquid";
 
@@ -96,7 +97,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota, onMenuOpen, steps }: {
+  onCreateProject, onRenameProject, onDeleteProject, onPerson, quota, onMenuOpen, steps }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -114,7 +115,6 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   onCreateProject: (name: string) => Promise<Project | null>;
   onRenameProject: (id: string, name: string) => void;
   onDeleteProject: (project: Project) => void;
-  onDirectory: () => void;
   quota: QuotaView | null;
   /** The first steps (components/FirstSteps.tsx), over the plan meter while there are steps to show */
   steps?: React.ReactNode;
@@ -246,7 +246,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: openTabs.filter((p) => keep.has(p.id)), hidden: openTabs.filter((p) => !keep.has(p.id)) };
   }, [openTabs, fitOrder, fit]);
 
-  // No library tab: Discover holds the directory and the templates, and the Inbox what is in no project yet
+  // No library tab: Discover holds the templates and the skills, and the Inbox what is in no project yet
   const inDiscover = space === "discover" || space === "templates" || space === "skills";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
@@ -317,7 +317,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
           </div>
           <Separator />
-          <MenuItem icon="compass" onClick={onDirectory}>{t.palette.openDirectory}</MenuItem>
+          {/* The places to look live on the marketing site: a new tab, the library stays where it was */}
+          <MenuItem icon="compass" onClick={() => window.open(marketingHref("/resources/", locale), "_blank", "noopener")}>{t.ws.resources}</MenuItem>
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>

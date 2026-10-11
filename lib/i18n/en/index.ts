@@ -3,13 +3,12 @@
 // so a missing key does not compile.
 //
 // ui.ts is the interface text. The others hold the text of things that have
-// their own key: the plans, the directory, the taxonomy, the emails, the
-// labels for the codes the database stores.
+// their own key: the plans, the taxonomy, the emails and the labels for the
+// codes the database stores.
 import { ui } from "./ui";
 import { labels } from "./labels";
 import { taxonomy } from "./taxonomy";
 import { plans } from "./plans";
-import { directory } from "./directory";
 import { mail } from "./mail";
 import { errors } from "./errors";
 
@@ -20,7 +19,6 @@ const en = {
   mail,
   errors,
   plans: { ...ui.plans, items: plans },
-  directory: { ...ui.directory, ...directory },
 };
 
 export type Dict = typeof en;

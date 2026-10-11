@@ -1,5 +1,5 @@
 /* Initial state of a workspace with no inspos: a starting point with
-   the resource directory at hand, instead of "Nothing here". */
+   the places we look at hand, instead of "Nothing here". */
 /* The content area is one fixed screen: each view scrolls inside itself */
 .scroll { position: absolute; inset: 0; overflow-y: auto; }
 .wrap {
@@ -24,40 +24,9 @@
 .board { max-width: 600px; margin-top: 4px; text-align: left; }
 
 .section { width: 100%; margin-top: 56px; display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
-/* Directory groups: the system's SegmentedControl on paper, one row that scrolls sideways */
-.tabs { max-width: 100%; overflow-x: auto; scrollbar-width: none; padding: 2px; }
-.tabs::-webkit-scrollbar { display: none; }
-.tabs :global(.cr-seg-item) { flex-shrink: 0; white-space: nowrap; }
-/* Inside the scrolling row an outside ring would be clipped */
-.tabs :global(.cr-seg-item:focus-visible) { outline-offset: -2px; }
-/* A secondary Button */
-.more { margin-top: var(--space-2); }
-
-.grid { width: 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
-/* The system's Card (raised): flat, a hairline, radius-lg; the link and the add button fill it edge to edge */
-.tile:global(.cr-card) { padding: 0; gap: 0; transition: border-color 0.12s; }
-.tileLink { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 10px; color: var(--text); text-decoration: none; border-radius: inherit; }
-.tileLink:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.foot { display: flex; justify-content: flex-end; padding: 0 14px 14px; }
-.tile:hover { border-color: var(--text-2); }
-.thumb {
-  width: 100%; aspect-ratio: 16 / 10; border-radius: 6px; overflow: hidden;
-  background: var(--surface-2);
-  display: grid; place-items: center; color: var(--text-2); font-family: var(--font-title); font-size: var(--fs-title-m); font-weight: var(--fw-title-m);
-}
-.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; transition: transform 0.3s ease; }
-.tile:hover .thumb img { transform: scale(1.04); }
-.text { display: flex; flex-direction: column; gap: 3px; padding: 0 4px 4px; min-width: 0; }
-.group { font-size: var(--fs-small); color: var(--text-2); }
-.name { font-size: var(--fs-ui); font-weight: var(--fw-medium); line-height: var(--lh-ui); display: flex; align-items: center; gap: 6px; }
-.name svg { opacity: 0; transform: translate(-2px, 2px); transition: opacity 0.15s, transform 0.15s; color: var(--text-2); }
-.tile:hover .name svg { opacity: 1; transform: none; }
-.desc { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 
 
-@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
-  .grid { grid-template-columns: 1fr; }
   .wrap { padding-left: 16px; padding-right: 16px; }
   .prompt.prompt { padding-left: 18px; }
 }

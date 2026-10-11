@@ -49,7 +49,6 @@ const I = {
   chevron: <Icon name="chevron-down" size={14} />,
   compass: <Icon name="compass" size={16} />,
   external: <Icon name="arrow-up-right" size={12} />,
-  shuffle: <Icon name="shuffle" size={14} />,
 };
 
 function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }: {
@@ -90,7 +89,6 @@ export interface SidebarProps {
   isAll: boolean;
   onReset: () => void;
   onAdd: () => void;
-  onDirectory: () => void;
   /** Where the library is looking: "all", "inbox" or a project id */
   space: string;
   onSpace: (space: string) => void;
@@ -210,7 +208,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar 
   );
 }
 
-/** Everything under the workspace: add, the whole library, the projects, the directory and the plan.
+/** Everything under the workspace: add, the whole library, the projects and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
 function SidebarNav({ quota, steps, items, onPick,
   space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject, onImportBoard }: Omit<SidebarProps, "brand"> & {

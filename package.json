@@ -20,7 +20,6 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "seed": "tsx --conditions=react-server scripts/seed.ts",
     "migrate:sheet": "tsx --conditions=react-server scripts/migrate-sheet.ts",
-    "shots:directory": "tsx --conditions=react-server scripts/directory-shots.ts",
     "skills:build": "tsx scripts/build-skills.ts",
     "plan": "tsx --conditions=react-server scripts/set-plan.ts",
     "apple:secret": "tsx --conditions=react-server scripts/apple-secret.ts",

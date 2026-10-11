@@ -19,11 +19,11 @@ import "./CommandPalette.css";
 const SETTINGS = ["account", "feedback", "workspace", "members", "plan", "extension"] as const;
 const host = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
 
-export default function CommandPalette({ open, onOpenChange, items, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onDirectory, onBrief }: {
+export default function CommandPalette({ open, onOpenChange, items, workspace, workspaces, isAdmin, onOpenItem, onAddUrl, onAdd, onBrief }: {
   open: boolean; onOpenChange: (open: boolean) => void;
   items: InspoItem[];
   workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
-  onOpenItem: (item: InspoItem) => void; onAddUrl: (web: string) => void; onAdd: () => void; onDirectory: () => void;
+  onOpenItem: (item: InspoItem) => void; onAddUrl: (web: string) => void; onAdd: () => void;
   /** Only with a project open: opens that project's Brief panel */
   onBrief?: () => void;
 }) {
@@ -62,7 +62,6 @@ export default function CommandPalette({ open, onOpenChange, items, workspace, w
             </CommandItem>
           )}
           <CommandItem className="cr-listbox-item" onSelect={run(onAdd)}><span className="cmdk-item__icon">{Icons.plus}</span>{t.palette.addInspo}</CommandItem>
-          <CommandItem className="cr-listbox-item" onSelect={run(onDirectory)}><span className="cmdk-item__icon">{Icons.compass}</span>{t.palette.openDirectory}</CommandItem>
           <CommandItem className="cr-listbox-item" value={`feedback ${t.feedback.open}`} onSelect={run(enterFeedbackMode)}><span className="cmdk-item__icon">{sectionIcon("feedback")}</span>{t.feedback.open}</CommandItem>
         </CommandGroup>
 

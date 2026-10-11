@@ -102,7 +102,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // directory/: static directory thumbnails, also shown signed out from the home page
   // opengraph-image and twitter-image: WhatsApp and friends request the share card without a session
   // showcase/: the fixed images beside /login, shown signed out
   // logo.png: the header logo, on the signed-out home and /login too
@@ -110,5 +109,5 @@ export const config = {
   // icon.png: the page's <link rel="icon"> points at it; favicon services (Google's, which Claude uses for the
   // connector's logo) fetch it with no session
   // robots.txt, sitemap.xml and manifest.webmanifest: crawlers and browsers ask for them with no session
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|robots.txt|sitemap.xml|manifest.webmanifest|directory/|showcase/|polish/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.png|apple-icon.png|icon-512.png|logo.png|opengraph-image|twitter-image|robots.txt|sitemap.xml|manifest.webmanifest|showcase/|polish/).*)"],
 };

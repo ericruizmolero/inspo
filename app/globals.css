@@ -890,14 +890,14 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 
 /* Touch: 44px targets without changing the look. The pills wrap instead of scrolling, so nothing clips the larger target */
 @media (pointer: coarse) {
-  .dir-add, .sb__chip .cr-chip-x { position: relative; }
-  .dir-add::after, .sb__chip .cr-chip-x::after { content: ""; position: absolute; inset: -8px -2px; }
+  .sb__chip .cr-chip-x { position: relative; }
+  .sb__chip .cr-chip-x::after { content: ""; position: absolute; inset: -8px -2px; }
   .sb__option.cr-listbox-item { min-height: 44px; }
 }
 /* Reduced motion: state changes stay, the movement goes */
 @media (prefers-reduced-motion: reduce) {
-  .dir-row__add, .dir-add, .chip, .sb__field { transition: none; }
-  .chip:active, .dir-add:active, .board-zoom .cr-zoom-value:active, .zoom-pill button:active { transform: none; }
+  .chip, .sb__field { transition: none; }
+  .chip:active, .board-zoom .cr-zoom-value:active, .zoom-pill button:active { transform: none; }
 }
 
 @media (max-width: 800px) {
@@ -1487,96 +1487,6 @@ video.vp__media { object-fit: contain; }
 .tile__score:hover .tile__score-why, .tile__score.is-open .tile__score-why { opacity: 1; transform: none; }
 @media (hover: none) {
   .tile__caption .tile__tags { margin-top: 6px; }
-}
-
-/* ─── Resource directory ("Looking for inspiration?") ─────────────────────── */
-/* A DialogWindow (moss bar, heading at title-m like every dialog): the lead, then search and the kinds, which stay
-   at the top of the scrolling body, then the groups */
-.modal.dir-modal { max-width: 1080px; }
-.dir-modal .modal-window__body { gap: 0; padding: 20px 28px 32px; }
-.dir-modal__lead { font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); margin: 6px 0 0; max-width: 560px; }
-.dir-modal__tools {
-  position: sticky; top: -20px; z-index: 2; display: flex; flex-direction: column; gap: 12px;
-  margin: 0 -28px; padding: 18px 28px 16px; background: var(--paper); border-bottom: 1px solid var(--border);
-}
-.dir-search { position: relative; display: flex; align-items: center; }
-.dir-search > .cr-icon { position: absolute; left: 12px; color: var(--field-placeholder); pointer-events: none; }
-.dir-search .cr-input { width: 100%; padding-left: 36px; outline: none; }
-.dir-search .cr-input::-webkit-search-cancel-button { display: none; }
-.dir-modal__tabs { overflow-x: auto; scrollbar-width: none; margin: 0 -28px; padding: 2px 28px; }
-.dir-modal__tabs::-webkit-scrollbar { display: none; }
-.dir-modal__tabs .cr-seg-item { flex-shrink: 0; white-space: nowrap; }
-.dir-modal__body { display: flex; flex-direction: column; gap: 36px; padding-top: 24px; }
-.dir-showing { margin: 0; font-size: var(--fs-small); color: var(--text-2); }
-
-.dir-group__head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-.dir-group__title { color: var(--text); }
-.dir-group__count { font-size: var(--fs-small); color: var(--text-2); font-variant-numeric: tabular-nums; }
-.dir-group__hint { font-size: var(--fs-small); color: var(--text-2); margin-left: auto; }
-
-.dir-list { list-style: none; margin: 0; padding: 10px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.dir-item { position: relative; min-width: 0; }
-/* Save a directory site into the library: the system's secondary Button, size s; once added it is
-   disabled, the system's disabled look */
-.dir-row.dir-row--add { padding-right: 12px; align-items: center; }
-.dir-row__link { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; color: inherit; text-decoration: none; border-radius: var(--radius-sm); }
-/* In a row the button is icon only (it carries an aria-label), so the text keeps its width */
-.dir-row__add { flex-shrink: 0; width: 34px; padding: 0; justify-content: center; opacity: 0; transition: opacity 0.15s, background 0.15s, box-shadow 0.1s, transform 0.1s; }
-.dir-row__add span { display: none; }
-.dir-row:hover .dir-row__add, .dir-row:focus-within .dir-row__add, .dir-row__add.is-added { opacity: 1; }
-@media (hover: none) { .dir-row__add { opacity: 1; } }
-.dir-row {
-  position: relative; display: flex; align-items: flex-start; gap: 12px; height: 100%;
-  padding: 12px 36px 12px 12px; border-radius: var(--radius-lg);
-  background: var(--surface-raised); border: 1px solid var(--border);
-  color: var(--text); text-decoration: none;
-  transition: background 0.12s, border-color 0.12s;
-}
-.dir-row__thumb {
-  flex-shrink: 0; width: 80px; aspect-ratio: 16 / 10; border-radius: var(--radius-sm); overflow: hidden;
-  background: var(--surface-2); border: 1px solid var(--border);
-  display: grid; place-items: center; color: var(--text-2); font-family: var(--font-title); font-size: var(--fs-title-s); font-weight: var(--fw-title-s);
-}
-.dir-row__thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; transition: transform 0.25s ease; }
-.dir-row:hover .dir-row__thumb img { transform: scale(1.05); }
-.dir-row__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.dir-row:hover { border-color: var(--border-strong); }
-a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.dir-row__name { font-size: var(--fs-ui); font-weight: var(--fw-semibold); color: var(--text); line-height: var(--lh-ui); }
-.dir-row__desc { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); transition: color 0.12s; }
-.dir-row:hover .dir-row__desc { color: var(--text-2); }
-.dir-row__arrow { position: absolute; top: 14px; right: 14px; color: var(--text-2); opacity: 0; transform: translate(-2px, 2px); transition: opacity 0.15s, transform 0.15s; }
-.dir-row:hover .dir-row__arrow { opacity: 1; transform: none; color: var(--text); }
-.dir-empty.cr-empty { padding: 20px 0; }
-.dir-empty .cr-empty-title { color: var(--text); }
-
-/* Directory for guests: a short sample and, behind it, blurred rows past the sign-in button */
-.dir-modal__body--guest { gap: 28px; }
-.dir-gate { position: relative; overflow: hidden; padding: 36px 20px 20px; }
-.dir-gate__rows {
-  position: absolute; inset: 0; padding: 0 0 0; filter: blur(5px); opacity: 0.5; pointer-events: none; user-select: none;
-  mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 85%);
-}
-.dir-gate__cta {
-  position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
-}
-.dir-gate__title { margin: 0; color: var(--text); }
-.dir-gate__groups { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; max-width: 640px; }
-.dir-gate__chip.cr-chip { gap: 6px; }
-.dir-count { color: var(--text-2); font-variant-numeric: tabular-nums; }
-.dir-gate__note { font-size: var(--fs-small); color: var(--text-2); margin: 0; }
-@media (max-width: 640px) { .dir-gate__groups { display: none; } }
-@media (max-width: 900px) { .dir-list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) {
-  .dir-list { grid-template-columns: minmax(0, 1fr); }
-  .dir-row { padding: 10px 12px; }
-  .dir-row__thumb { width: 64px; }
-  .dir-row__arrow { display: none; }
-  .dir-group__hint { margin-left: 0; width: 100%; }
-  .dir-modal .modal-window__body { padding-left: 18px; padding-right: 18px; }
-  .dir-modal__tools { margin: 0 -18px; padding-left: 18px; padding-right: 18px; }
-  .dir-modal__tabs { margin: 0 -18px; padding: 2px 18px; }
 }
 
 /* ─── Auth / standalone pages ─────────────────────────────────────────────── */

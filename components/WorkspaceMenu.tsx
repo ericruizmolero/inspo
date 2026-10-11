@@ -70,7 +70,7 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
   trigger?: ReactNode;
   triggerClassName?: string;
   triggerLabel?: string;
-  /** Rows above Settings (the island puts the directory, feedback and the plan here); any click in them closes the menu */
+  /** Rows above Settings (the island puts the resources, feedback and the plan here); any click in them closes the menu */
   extras?: ReactNode;
   /** Called each time the menu opens (the island re-reads the plan's usage, so the meter is never stale) */
   onOpen?: () => void;

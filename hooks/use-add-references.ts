@@ -166,7 +166,6 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
   // keeps its own URL and, on a workspace switch (router.refresh + remount), it
   // restored it with ?add= and the site got added to the second workspace too.
   // Just in case, the handled URL is noted in sessionStorage and not repeated in the tab.
-  // And if it comes back with ?directory=1 (pressed "sign in" from the guest directory), Discover opens on its resources.
   const autoAdded = useRef(false);
   // A board that came back from login: the first-run canvas shows its progress
   const [arrivingBoard, setArrivingBoard] = useState<BoardStep | null>(null);
@@ -174,14 +173,10 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
     if (autoAdded.current) return;
     const params = new URLSearchParams(window.location.search);
     const web = params.get("add");
-    const wantsDirectory = params.has("directory");
-    if (!web && !wantsDirectory) return;
+    if (!web) return;
     autoAdded.current = true;
     params.delete("add");
-    params.delete("directory");
-    if (wantsDirectory) params.set("in", "discover");
     router.replace(window.location.pathname + (params.size ? `?${params}` : ""), { scroll: false });
-    if (!web) return;
     const DONE_KEY = "inspo:auto-added";
     let done = "";
     try { done = sessionStorage.getItem(DONE_KEY) ?? ""; } catch { /* no storage */ }

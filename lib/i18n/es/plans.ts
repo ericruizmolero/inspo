@@ -10,7 +10,6 @@ export const plans: typeof EnPlans = {
       "30 acciones de IA al mes",
       "Tu primer criterio.md no gasta acciones de IA",
       "30 búsquedas IA distintas al mes",
-      "Directorio de 130+ webs",
     ],
   },
   personal: {
@@ -21,7 +20,6 @@ export const plans: typeof EnPlans = {
       "Referencias sin límite",
       "300 acciones de IA al mes",
       "Búsquedas IA con uso justo",
-      "Directorio de 130+ webs",
     ],
   },
   studio: {

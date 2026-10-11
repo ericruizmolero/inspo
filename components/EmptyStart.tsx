@@ -3,80 +3,35 @@
 import { useState, useRef, useEffect, type ReactNode } from "react";
 import Clouds from "@/components/Clouds";
 import { normalizeWebUrl } from "@/lib/url";
-import { DIRECTORY, DIRECTORY_TOTAL, siteShot } from "@/lib/directory";
-import { Icons } from "./Sidebar";
+import { marketingHref } from "@/lib/site";
 import { useT } from "./I18nProvider";
-import { Button, Card, PromptInput, SegmentedControl } from "@/components/criterio";
+import { Button, PromptInput } from "@/components/criterio";
 import s from "./EmptyStart.module.css";
-import AddToLibrary from "./AddToLibrary";
 import { boardOf, PLATFORM_NAME } from "@/lib/boards/match";
 import { BoardProgress, useBoardImport, type BoardStep, type ImportBoard } from "./BoardImport";
-
-// Always 9 sites (3×3 grid): the most used and the most popular right now, picked by hand
-// with a screenshot that looks perfect. If one leaves the directory, the first site of each
-// group not yet shown fills the gap, so the grid never has a hole.
-const FEATURED = [
-  "https://styles.refero.design",
-  "https://recent.design",
-  "https://curated.design",
-  "https://mobbin.com",
-  "https://saasframe.io",
-  "https://supahero.io",
-  "https://motionin.design",
-  "https://the-brandidentity.com",
-  "https://www.cosmos.so",
-];
-const ALL = DIRECTORY.flatMap((g) => g.items.map((r) => ({ group: g, ...r })));
-const PICKS = (() => {
-  const picks = FEATURED.map((u) => ALL.find((r) => r.url === u)).filter((r): r is (typeof ALL)[number] => !!r);
-  for (const g of DIRECTORY) {
-    if (picks.length >= 9) break;
-    // Tools and Mac apps are not where a project starts looking
-    if (g.key === "resources" || g.key === "mac" || picks.some((r) => r.group.key === g.key)) continue;
-    picks.push({ group: g, ...g.items[0] });
-  }
-  return picks.slice(0, 9);
-})();
-
-function Thumb({ name, url }: { name: string; url: string }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <span className={s.thumb} aria-hidden>
-      {failed ? name.slice(0, 1).toUpperCase() : (
-        <img src={siteShot(url)} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />
-      )}
-    </span>
-  );
-}
-
-
-const PER_TAB = 9;
 
 interface EmptyStartProps {
   /** Saves the first inspo from the (already normalized) URL. Resolves when the save finishes. */
   onAddUrl: (web: string) => Promise<void>;
   isDuplicate?: (web: string) => boolean;
-  onDirectory: () => void;
   /** A board pasted (Are.na, Pinterest, Cosmos): what Criterio can save of it comes in, in a project of its own */
   onImportBoard: ImportBoard;
   /** A board imported on its own (pasted before signing in): its progress shows here */
   arriving?: BoardStep | null;
   /** In place of the lead: the signed-out home says what the product is instead */
   lead?: ReactNode;
-  /** Between the paste field and the directory: the signed-out home's price and example file */
+  /** Under the paste field: the signed-out home's price and example file */
   children?: ReactNode;
 }
 
 /**
- * Workspace with no inspos yet (Refero model): one prompt box to paste a URL, and under it the
- * directory in tabs, where any site goes into the library with one click.
+ * Workspace with no inspos yet: one prompt box to paste a URL, and under it the way to the places we look.
  */
-export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImportBoard, arriving, lead, children }: EmptyStartProps) {
-  const { t } = useT();
+export default function EmptyStart({ onAddUrl, isDuplicate, onImportBoard, arriving, lead, children }: EmptyStartProps) {
+  const { t, locale } = useT();
   const [raw, setRaw] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState("picks");
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -102,12 +57,6 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
     void add(web);
   };
 
-  const group = DIRECTORY.find((g) => g.key === tab);
-  const shown = group ? group.items.slice(0, PER_TAB).map((r) => ({ group, ...r })) : PICKS;
-  const groupTitle = (key: string) => t.directory.groups[key as keyof typeof t.directory.groups].title;
-  const tabs = [{ key: "picks", title: t.directory.featured, n: PICKS.length },
-    ...DIRECTORY.map((g) => ({ key: g.key, title: groupTitle(g.key), n: g.items.length }))];
-
   return (
     <>
     <div className={s.scroll}>
@@ -126,32 +75,9 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
 
       {children}
 
+      {/* Nothing to paste yet: the places we look, on the marketing site. Each one there saves back here (?add=) */}
       <div className={s.section} data-flip>
-        <div className={s.tabs}>
-          <SegmentedControl tone="paper" label={t.start.trendingNow} active={tabs.findIndex((x) => x.key === tab)} onChange={(i) => setTab(tabs[i].key)}
-            items={tabs.map((x) => ({ label: x.title, count: x.n }))} />
-        </div>
-
-        <div className={s.grid}>
-          {shown.map((r) => (
-            <Card key={r.url} className={s.tile}>
-              <a className={s.tileLink} href={r.url} target="_blank" rel="noopener noreferrer">
-                <Thumb name={r.name} url={r.url} />
-                <span className={s.text}>
-                  <span className={s.group}>{groupTitle(r.group.key)}</span>
-                  <span className={s.name}>{r.name}{Icons.arrow}</span>
-                  <span className={s.desc}>{t.directory.items[r.url]}</span>
-                </span>
-              </a>
-              {/* Outside the link, so the two targets never overlap */}
-              <div className={s.foot}>
-                <AddToLibrary url={r.url} name={r.name} added={!!isDuplicate?.(r.url)} onAdd={add} />
-              </div>
-            </Card>
-          ))}
-        </div>
-
-        <Button className={s.more} icon="compass" iconEnd="arrow-right" onClick={onDirectory}>{t.start.seeAll(DIRECTORY_TOTAL)}</Button>
+        <Button icon="compass" iconEnd="arrow-up-right" href={marketingHref("/resources/", locale)}>{t.start.resources}</Button>
       </div>
     </section>
     </div>

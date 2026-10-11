@@ -10,7 +10,6 @@ export const plans = {
       "30 AI actions a month",
       "Your first criterio.md spends no AI actions",
       "30 different AI searches a month",
-      "A directory of 130+ sites",
     ],
   },
   personal: {
@@ -21,7 +20,6 @@ export const plans = {
       "Unlimited references",
       "300 AI actions a month",
       "AI searches, fair use",
-      "A directory of 130+ sites",
     ],
   },
   studio: {

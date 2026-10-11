@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import EmptyStart from "./EmptyStart";
-import dynamic from "next/dynamic";
 import { useT } from "./I18nProvider";
 import { Button, TipWindow } from "@/components/criterio";
 import Logo from "@/components/Logo";
@@ -15,9 +13,6 @@ import type { ExampleMd } from "@/lib/example-md";
 const FREE = planOf("free");
 const FROM = Math.min(...PLANS.filter(isPaid).map((p) => p.price.month));
 
-// Only once someone opens it
-const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false });
-
 /**
  * Signed-out home page: the same start canvas a new user sees, without the sidebar.
  * Pasting a URL goes to /login carrying the URL; back from the link, the site saves itself (?add=).
@@ -25,7 +20,6 @@ const DirectoryModal = dynamic(() => import("./DirectoryModal"), { ssr: false })
 export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolean; example: ExampleMd }) {
   const router = useRouter();
   const { t, locale } = useT();
-  const [showDirectory, setShowDirectory] = useState(false);
   // A board goes the same way: back from login, ?add= sees it is a board and imports it
   const signIn = (web: string) => router.push(`/login?next=${encodeURIComponent(`/?add=${encodeURIComponent(web)}`)}`);
 
@@ -40,7 +34,6 @@ export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolea
       <EmptyStart
         onAddUrl={async (web) => { signIn(web); }}
         onImportBoard={async (input) => { signIn(input.trim()); return null; }}
-        onDirectory={() => setShowDirectory(true)}
         lead={t.guest.what}
       >
         <p className="guest__cost t-small">
@@ -54,7 +47,6 @@ export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolea
         </figure>
       </EmptyStart>
 
-      {showDirectory && <DirectoryModal guest onClose={() => setShowDirectory(false)} />}
       {/* The theme is a preference, so it is here before signing in too (Eric, 07-10) */}
       <ThemeToggle />
     </div>

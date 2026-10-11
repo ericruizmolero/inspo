@@ -156,10 +156,11 @@ export default function InspoClient({
   const projectFailed = (e: unknown) => setToast({ title: t.projects.saveFailed, detail: e instanceof Error ? e.message : String(e) });
   const { systems, fullSystems, setSystem, refreshSystem } = useSystems(initialSummaries);
   const { votes, setVotes, voteWrites, withVoteWrites, solo, castVote, closePolishOf, restoreToProject } = usePolishVotes({ initialPolishVotes, user, members, setLinks, refreshSystem, projectFailed });
-  const inParam = sp.get("in");
+  // ?in=discover was Discover's resources, now on the marketing site: an old link opens Discover on its examples
+  const inParam = sp.get("in") === "discover" ? "templates" : sp.get("in");
   // Bare "/" asks what you are making (the chooser); ?in=library is the whole board; ?in=inbox; ?in=<project>
   // ?in=home is the chooser asked for (the island's house); the bare address lands on the last project (below)
-  const space = inParam === "inbox" || inParam === "templates" || inParam === "discover" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
+  const space = inParam === "inbox" || inParam === "templates" || inParam === "skills" || (inParam && projects.some((p) => p.id === inParam)) ? inParam : inParam === "library" || items.length === 0 ? "all" : "home";
   const currentProject = projects.find((p) => p.id === space) ?? null;
   const currentSystem = currentProject ? systems[currentProject.id] ?? null : null;
   // Inside a project the board comes first; polishing it (?view=polish) and the system (?view=system) are modes
@@ -257,8 +258,6 @@ export default function InspoClient({
 
   const { showAdd, setShowAdd, addInitial, setAddInitial, boardDrag } = useAddDialog({ t, setToast });
   const gridRef = useRef<GridHandle | null>(null);
-  // The directory is Discover's resources: every "open the directory" lands there
-  const openDirectory = useCallback(() => setSpace("discover"), [setSpace]);
   useEffect(() => {
     if (!toast) return;
     cue(toast.ok ? "success" : "error");
@@ -337,7 +336,7 @@ export default function InspoClient({
   const navProps = {
     quota, items,
     isAll: space === "all" && !filtering,
-    onReset: resetFilters, onAdd: () => setShowAdd(true), onDirectory: openDirectory,
+    onReset: resetFilters, onAdd: () => setShowAdd(true),
     space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
     onImportBoard: importBoard,
@@ -415,7 +414,7 @@ export default function InspoClient({
   const area = currentProject && projectView === "polish" ? "polish"
     : panelItem ? "sheet"
     : showAdd ? "add"
-    : space === "discover" ? "directory" : space === "templates" ? (exampleOpen ? "example" : "examples") : space === "skills" ? "skills"
+    : space === "templates" ? (exampleOpen ? "example" : "examples") : space === "skills" ? "skills"
     : filtering ? "search"
     : currentProject ? projectView
     : space === "inbox" ? "inbox"
@@ -569,7 +568,6 @@ export default function InspoClient({
           void addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
         onAdd={() => setShowAdd(true)}
-        onDirectory={openDirectory}
       />}
       {boardDrag && <div className="board-drop" aria-hidden><span className="t-title-l">{t.add.dropHere}</span></div>}
       <ThemeToggle />
@@ -600,7 +598,7 @@ export default function InspoClient({
               else if (projectView !== "board") setProjectView("board");
               toggleFilter({ kind: "person", value: name });
             }}
-            onDirectory={openDirectory} quota={quota} onMenuOpen={loadQuota} steps={stepsList} />
+            quota={quota} onMenuOpen={loadQuota} steps={stepsList} />
           <Logo size={28} className="topbar__logo" />
           {/* The system's ViewSwitcher, the island's twin on the right: Board and System, then the ways in and add.
               On a phone the labels go and the icons stay */}
@@ -623,9 +621,9 @@ export default function InspoClient({
           </div>
         </header>
 
-        {space === "discover" || space === "templates" || space === "skills" ? (
-          // Discover: the templates (whole systems to start a project from), the directory of places to look, and the skills for agents
-          <Discover section={space === "templates" ? "templates" : space === "skills" ? "skills" : "sites"} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
+        {space === "templates" || space === "skills" ? (
+          // Discover: the templates (whole systems to start a project from) and the skills for agents
+          <Discover section={space} onSection={setSpace}
             templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onOpenChange={setExampleOpen} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
@@ -647,7 +645,6 @@ export default function InspoClient({
           <EmptyStart
             onAddUrl={async (web) => { await addByUrl({ web, type: typeFromUrl(web), note: "" }); }}
             isDuplicate={isDuplicate}
-            onDirectory={openDirectory}
             onImportBoard={importBoard}
             arriving={arrivingBoard}
           />
@@ -768,7 +765,7 @@ export default function InspoClient({
         )}
         {/* The music is in the corner of every view. The boards and Polish have it in their zoom's pill; the others
             have nothing to zoom, and the pill is the music alone */}
-        {!(space !== "discover" && space !== "templates" && space !== "skills" && space !== "home" && items.length > 0
+        {!(space !== "templates" && space !== "skills" && space !== "home" && items.length > 0
           && !(currentProject && projectView === "system")
           && ((currentProject && projectView === "polish") || !(spaceItems.length === 0 && (currentProject || space === "inbox"))))
           && <ZoomPill className="board-zoom" zoom={null}><SoundControl /></ZoomPill>}
