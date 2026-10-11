@@ -79,7 +79,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 | Página | Qué cubre | Dónde |
 | --- | --- | --- |
 | `/privacy/` | Quién responde, qué recogemos (cuenta, sesiones con IP, lo guardado, uso, IA, comentarios), para qué y con qué base, IA sin entrenamiento, proveedores (Vercel, Neon, Cloudflare, Resend, OpenRouter, Typesafe, Google, Apple y X), transferencias fuera del EEE, cookies solo funcionales, conservación, derechos y AEPD, mayores de 16, cambios | `marketing-site/src/components/LegalPage.astro`, textos y datos de la sociedad en `marketing-site/src/legal.ts` |
-| `/terms/` | Quiénes somos, el servicio, cuenta y equipo, lo tuyo y lo de otros, importar de otros servicios (sin afiliación con X ni Pinterest), lo prohibido (ilegal, recogida masiva, saltarse planes, forzar la entrada), cómo pedir una retirada, planes (los de pago aún no se cobran), disponibilidad, cerrar la cuenta, responsabilidad, ley española, cambios | Igual |
+| `/terms/` | Quiénes somos, el servicio, cuenta y equipo, lo tuyo y lo de otros, importar de otros servicios (sin afiliación con X ni Pinterest), lo prohibido (ilegal, recogida masiva, saltarse planes, forzar la entrada), cómo pedir una retirada, planes y pago (los de pago aún no se cobran; cuando se cobren: EUR o USD más IVA, con IVA español, inversión del sujeto pasivo, OSS o sin IVA según quién paga; mensual o anual, renovación, cancelación al final del periodo pagado sin reembolso del anual, desistimiento de 14 días; precio de fundador; uso justo de las búsquedas sin cifra; topes del gratis, que salen de `PLANS`, y qué pasa con lo guardado al bajar o cancelar), disponibilidad, cerrar la cuenta, responsabilidad, ley española, cambios | Igual |
 | `/extension/privacy/` | Lo que la extensión manda (dirección, título, captura de lo visible) y lo que no hace | Igual |
 
 - Están en producción desde el 2026-10-07 y el login las enlaza siempre. → [decisión](decisiones/2026-10-07-el-login-es-plano-y-enlaza-siempre-a-terminos-y-privacidad.md)
@@ -91,6 +91,7 @@ Lo más delicado: la app descarga lo que una persona le pide (una web, una image
 ## Pendiente
 
 - Que un abogado revise los textos.
+- Confirmar tres reglas de "Planes y pago" que se escribieron por defecto, sin decidir (#97): el anual cancelado sigue hasta el final del año pagado sin reembolso de lo que queda; el mensual acaba al final del mes; el desistimiento de 14 días termina cuando el servicio empieza con el consentimiento expreso de quien compra.
 - Apuntar bajo qué cuenta están Cloudflare, Neon, OpenRouter y Typesafe; mover `web-proxy` al equipo de Vercel.
 - Better Stack: la página de estado pública, y apuntar quién tiene la cuenta. Los errores de Better Stack están en la región de EE. UU. (`us-west-2a`); el resto de los datos, en Fráncfort.
 - `ANTHROPIC_API_KEY` en Vercel sin uso: borrarla o usarla.

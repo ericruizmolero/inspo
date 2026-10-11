@@ -1,6 +1,7 @@
 // The legal pages: /privacy, /terms and /extension/privacy, in English and Spanish (components/LegalPage.astro).
 // A section is a heading and its blocks: a string is a paragraph, a list of strings is a list.
 // No lawyer has read them yet. Change LEGAL_UPDATED with every change here.
+import { PLANS } from "./plans";
 
 export interface LegalFacts {
   /** Name of the entity that runs criterio.design */
@@ -22,6 +23,11 @@ export const LEGAL: LegalFacts = {
 
 /** The day the texts last changed (YYYY-MM-DD) */
 export const LEGAL_UPDATED = "2026-10-11";
+
+/** The free plan's caps, read from the plans so the Terms cannot drift from them */
+const free = PLANS.find((p) => p.key === "free")!;
+const FREE_ITEMS = free.itemsMax;
+const FREE_GB = (free.storageMaxBytes ?? 0) / 1024 ** 3;
 
 export type LegalBlock = string | string[];
 export interface LegalSection { heading: string; body: LegalBlock[] }
@@ -152,7 +158,26 @@ const en: LegalCopy = {
           "We look at every notice promptly, remove or block what should not be here, and tell you what we did and why. We also tell the workspace that saved it, which can answer if it believes the notice is wrong. Accounts that infringe again and again are closed.",
         ] },
         { heading: "Plans and payment", body: [
-          "Each plan has limits, shown in Settings. Paid plans are not being charged yet. When they are, you will see the price and the conditions before you pay anything.",
+          "Each plan has limits, shown in Settings and at criterio.design/pricing. Paid plans are not charged yet. Once they are, what follows applies, and you see the price and the conditions before you pay anything.",
+          "Prices are in euros or US dollars, depending on your country, with the same figures in both. They do not include VAT:",
+          [
+            "In Spain, we add Spanish VAT (21%).",
+            "A business in another EU country with a VAT number that checks out in VIES pays no VAT to us. It accounts for the VAT itself (reverse charge).",
+            "A consumer in another EU country pays Spanish VAT until our sales to consumers in other EU countries pass €10,000 in a year. After that, they pay the VAT of their own country, which we declare through the EU's One Stop Shop (OSS).",
+            "Outside the EU, we charge no VAT.",
+          ],
+          "You pay each month or each year:",
+          [
+            "A year costs the same as 10 months.",
+            "A plan renews at the end of each period until you cancel it.",
+            "If you cancel a monthly plan, it ends at the end of the month you paid for.",
+            "If you cancel an annual plan, you keep it until the end of the year you paid for. We do not refund the months left.",
+            "If you are a consumer, you have 14 days from the purchase to withdraw. That right ends once the service has started with your express consent.",
+          ],
+          "Some early teams get a founder price, through a link we send them. It applies to annual plans and to the first year only. From the second year, the plan renews at its normal price.",
+          "On paid plans, AI searches are under fair use. There is no fixed number: you get what the normal work of the people in the plan needs. Searches are never cut off. If a workspace searches far beyond that, Settings shows a notice and we write to the account owner.",
+          `The free plan keeps up to ${FREE_ITEMS} references and ${FREE_GB} GB of files. If you cancel a paid plan, the workspace goes back to the free plan.`,
+          "Moving to a cheaper plan or cancelling never deletes what you saved. Past the new plan's limits, you can still see, search and export everything, but you cannot add more until you are back under them or move up a plan. The workspace owner can export the whole workspace as one file from Settings. If the workspace has more people than the new plan allows, nobody is removed: only new invitations stop.",
         ] },
         { heading: "Availability", body: [
           "We work to keep the service up and your data safe, but we offer it as it is, without promising it will never fail or lose anything. Keep your own copy of what matters: criterio.md can be copied or downloaded at any time.",
@@ -306,7 +331,26 @@ const es: LegalCopy = {
           "Miramos cada aviso con rapidez, retiramos o bloqueamos lo que no debe estar aquí, y te contamos qué hemos hecho y por qué. También avisamos al espacio que lo guardó, que puede responder si cree que el aviso es un error. Las cuentas que infringen una y otra vez se cierran.",
         ] },
         { heading: "Planes y pago", body: [
-          "Cada plan tiene límites, que se ven en Ajustes. Los planes de pago todavía no se cobran. Cuando se cobren, verás el precio y las condiciones antes de pagar nada.",
+          "Cada plan tiene límites, que se ven en Ajustes y en criterio.design/es/pricing. Los planes de pago todavía no se cobran. Cuando se cobren, se aplica lo que sigue, y verás el precio y las condiciones antes de pagar nada.",
+          "Los precios están en euros o en dólares, según tu país, con las mismas cifras en los dos. No incluyen el IVA:",
+          [
+            "En España sumamos el IVA español (21 %).",
+            "Una empresa de otro país de la UE con un NIF-IVA válido en VIES no nos paga IVA. Lo declara ella (inversión del sujeto pasivo).",
+            "Un particular de otro país de la UE paga IVA español mientras nuestras ventas a particulares de otros países de la UE no pasen de 10.000 € en un año. A partir de ahí paga el IVA de su país, que declaramos por la ventanilla única de la UE (OSS).",
+            "Fuera de la UE no cobramos IVA.",
+          ],
+          "Pagas cada mes o cada año:",
+          [
+            "Un año cuesta lo mismo que 10 meses.",
+            "Un plan se renueva al final de cada periodo hasta que lo cancelas.",
+            "Si cancelas un plan mensual, termina al final del mes que has pagado.",
+            "Si cancelas un plan anual, lo mantienes hasta el final del año que has pagado. No devolvemos los meses que quedan.",
+            "Si eres consumidor, tienes 14 días desde la compra para desistir. Ese derecho termina cuando el servicio ha empezado con tu consentimiento expreso.",
+          ],
+          "Algunos de los primeros equipos tienen un precio de fundador, con un enlace que les enviamos. Vale para planes anuales y solo el primer año. Desde el segundo año, el plan se renueva a su precio normal.",
+          "En los planes de pago, las búsquedas IA tienen uso justo. No hay una cifra fija: tienes lo que necesita el trabajo normal de las personas del plan. Las búsquedas nunca se cortan. Si un espacio busca mucho más que eso, Ajustes lo avisa y escribimos al propietario de la cuenta.",
+          `El plan gratis guarda hasta ${FREE_ITEMS} referencias y ${FREE_GB} GB de ficheros. Si cancelas un plan de pago, el espacio vuelve al plan gratis.`,
+          "Bajar de plan o cancelar nunca borra lo que has guardado. Por encima de los límites del nuevo plan puedes seguir viendo, buscando y exportando todo, pero no añadir más hasta volver a estar por debajo o subir de plan. El propietario del espacio puede exportarlo entero en un fichero desde Ajustes. Si el espacio tiene más personas de las que admite el nuevo plan, nadie sale: solo se paran las invitaciones nuevas.",
         ] },
         { heading: "Disponibilidad", body: [
           "Trabajamos para que el servicio funcione y tus datos estén a salvo, pero lo ofrecemos tal como es, sin prometer que nunca fallará ni perderá nada. Guarda tu propia copia de lo importante: criterio.md se puede copiar o descargar en cualquier momento.",
