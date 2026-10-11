@@ -2,7 +2,7 @@
 // signup_mode flag that turns the gate on and off.
 import "server-only";
 import { randomBytes } from "crypto";
-import { and, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import { db, schema, type Exec } from "./db";
 import { sha256 } from "./hash";
 import { newId } from "./workspace-core";
@@ -74,6 +74,83 @@ export async function createInvite(o: InviteOptions = {}, exec?: Exec): Promise<
   };
   await (exec ? write(exec) : db.transaction(write));
   return { id, code };
+}
+
+// ─── Personal invites ───────────────────────────────────────────────────────
+// What a person hands out from Settings → Invite: one single-use access_invite row each, created_by them.
+// It lets the other person create an account with their own space; it never adds them to a workspace.
+
+/** What every account starts with (user.create.before in lib/auth.ts). /admin can give more */
+export const INVITES_PER_PERSON = 3;
+
+export type PersonalInviteResult =
+  | { ok: true; id: string; code: string; left: number }
+  | { ok: false; reason: "none_left" | "has_account" };
+
+/** Spends one of the person's invites and makes it in one transaction: two at once with one left make exactly one. */
+export async function createPersonalInvite(userId: string, email: string | null): Promise<PersonalInviteResult> {
+  const mail = email ? normalEmail(email) : null;
+  if (mail && (await hasAccess(mail))) return { ok: false, reason: "has_account" };
+  const U = schema.user;
+  return db.transaction(async (tx) => {
+    const [spent] = await tx.update(U).set({ invitesLeft: sql`${U.invitesLeft} - 1` })
+      .where(and(eq(U.id, userId), gt(U.invitesLeft, 0)))
+      .returning({ left: U.invitesLeft });
+    if (!spent) return { ok: false as const, reason: "none_left" as const };
+    const made = await createInvite({ email: mail, createdBy: userId, maxUses: 1 }, tx);
+    return { ok: true as const, ...made, left: spent.left };
+  });
+}
+
+/** An unused invite of this person's stops working and comes back to them, so a lost link costs nothing. */
+export async function revokePersonalInvite(userId: string, inviteId: string): Promise<boolean> {
+  const U = schema.user;
+  return db.transaction(async (tx) => {
+    const [revoked] = await tx.update(I).set({ revokedAt: new Date() })
+      .where(and(eq(I.id, inviteId), eq(I.createdBy, userId), eq(I.uses, 0), isNull(I.revokedAt)))
+      .returning({ id: I.id });
+    if (!revoked) return false;
+    await tx.update(U).set({ invitesLeft: sql`${U.invitesLeft} + 1` }).where(eq(U.id, userId));
+    return true;
+  });
+}
+
+export interface PersonalInvite {
+  id: string;
+  /** Null: a link anyone can use */
+  email: string | null;
+  state: "pending" | "used" | "revoked";
+  createdAt: Date;
+  /** Who created their account with it. Null when unused, or when that account is gone */
+  joined: { name: string; email: string; image: string | null } | null;
+}
+
+/** For Settings → Invite: how many the person has left, and every invite they made, newest first, with who came in on it. */
+export async function personalInvites(userId: string): Promise<{ left: number; invites: PersonalInvite[] }> {
+  const U = schema.user;
+  const [[me], rows] = await Promise.all([
+    db.select({ left: U.invitesLeft }).from(U).where(eq(U.id, userId)),
+    db.select({ id: I.id, email: I.email, uses: I.uses, revokedAt: I.revokedAt, createdAt: I.createdAt, name: U.name, userEmail: U.email, image: U.image })
+      .from(I).leftJoin(U, eq(U.accessInviteId, I.id))
+      .where(eq(I.createdBy, userId)).orderBy(desc(I.createdAt)),
+  ]);
+  return {
+    left: me?.left ?? 0,
+    invites: rows.map((r): PersonalInvite => ({
+      id: r.id, email: r.email, createdAt: r.createdAt,
+      state: r.revokedAt ? "revoked" : r.uses > 0 ? "used" : "pending",
+      joined: r.userEmail ? { name: r.name || r.userEmail, email: r.userEmail, image: r.image } : null,
+    })),
+  };
+}
+
+/** From /admin: more invites for one account. Null: no account with that email */
+export async function giveInvites(email: string, n: number): Promise<number | null> {
+  const U = schema.user;
+  const [row] = await db.update(U).set({ invitesLeft: sql`${U.invitesLeft} + ${n}` })
+    .where(eq(U.email, normalEmail(email)))
+    .returning({ left: U.invitesLeft });
+  return row?.left ?? null;
 }
 
 export type { SignupMode };

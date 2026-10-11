@@ -15,7 +15,7 @@ import { toOutputLanguage, DEFAULT_OUTPUT_LANGUAGE } from "./output-language";
 import { eq } from "drizzle-orm";
 import { allow } from "./rate-limit";
 import { log } from "./log";
-import { admit, markJoined, maySignIn } from "./access";
+import { admit, INVITES_PER_PERSON, markJoined, maySignIn } from "./access";
 import { inviteFromCookieHeader } from "./invite-cookie";
 import { accountOf, createBillingAccount, ensurePersonalWorkspace } from "./workspace-core";
 
@@ -159,6 +159,8 @@ export const auth = betterAuth({
       language: { type: "string", required: false, defaultValue: "en", input: false },
       // The invite the account was created with, set by the gate (databaseHooks below)
       accessInviteId: { type: "string", required: false, input: false },
+      // The personal invites the account can still hand out (Settings → Invite, lib/access.ts)
+      invitesLeft: { type: "number", required: false, input: false },
     },
   },
   plugins: [
@@ -283,7 +285,7 @@ export const auth = betterAuth({
           const isDev = !!DEV_LOGIN_EMAIL && u.email.toLowerCase() === DEV_LOGIN_EMAIL;
           const entry = isDev ? null : await admit(u.email, inviteFromCookieHeader(headers?.get("cookie")));
           if (entry && !entry.ok) throw new APIError("FORBIDDEN", { code: "invite_only", message: (await getErrors()).inviteOnly });
-          return { data: { ...u, name, language, accessInviteId: entry?.inviteId ?? null } };
+          return { data: { ...u, name, language, accessInviteId: entry?.inviteId ?? null, invitesLeft: INVITES_PER_PERSON } };
         },
         async after(u) {
           await markJoined(u.email);

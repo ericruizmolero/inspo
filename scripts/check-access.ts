@@ -6,9 +6,12 @@ import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 process.env.RESEND_API_KEY = "";
 import assert from "node:assert/strict";
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, like, sql } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { admit, codeIsUsable, createInvite, getSignupMode, hasAccess, joinWaitlist, maySignIn, redeemInvite, setSignupMode } from "../lib/access";
+import {
+  admit, codeIsUsable, createInvite, createPersonalInvite, getSignupMode, giveInvites, hasAccess, INVITES_PER_PERSON, joinWaitlist, maySignIn,
+  personalInvites, redeemInvite, revokePersonalInvite, setSignupMode,
+} from "../lib/access";
 import { nextByPriority, openWave, revokeInvite, rotateInvite, waveMetrics } from "../lib/waves";
 import { auth } from "../lib/auth";
 import { ensurePersonalWorkspace } from "../lib/workspace-core";
@@ -65,6 +68,7 @@ async function main() {
 
   await gate();
   await waves();
+  await ownInvites();
 }
 
 /** Creates the account the way a magic link or Google does, through Better Auth and its user.create hooks */
@@ -180,6 +184,65 @@ async function waves() {
 
 const pick = ({ invited, entered, activated, paying }: { invited: number; entered: number; activated: number; paying: number }) => ({ invited, entered, activated, paying });
 
+async function ownInvites() {
+  const mail = (s: string) => `${TAG}-own-${s}@example.test`;
+  const left = async (id: string) => (await db.select({ n: schema.user.invitesLeft }).from(schema.user).where(eq(schema.user.id, id)))[0].n;
+
+  await setSignupMode("open", null);
+  const inviter = await signUp(mail("inviter"));
+  assert.ok(inviter.ok, "the inviter's account is made");
+  const me = inviter.user.id;
+  assert.equal(await left(me), INVITES_PER_PERSON, `a new account starts with ${INVITES_PER_PERSON} invites`);
+
+  const link = await createPersonalInvite(me, null);
+  assert.ok(link.ok, "an invite without an email is a link");
+  assert.equal(link.left, INVITES_PER_PERSON - 1, "spending says what is left");
+  assert.equal(await left(me), INVITES_PER_PERSON - 1, "spending takes one off the balance");
+
+  assert.deepEqual(await createPersonalInvite(me, ` ${mail("Inviter").toUpperCase()} `), { ok: false, reason: "has_account" }, "an email that already has an account is refused, whatever its case");
+  assert.equal(await left(me), INVITES_PER_PERSON - 1, "and costs nothing");
+
+  await db.update(schema.user).set({ invitesLeft: 1 }).where(eq(schema.user.id, me));
+  const raced = await Promise.all([createPersonalInvite(me, null), createPersonalInvite(me, null)]);
+  assert.equal(raced.filter((r) => r.ok).length, 1, "two at once with one left: exactly one invite");
+  assert.deepEqual(raced.find((r) => !r.ok), { ok: false, reason: "none_left" }, "the other is told none are left");
+  assert.equal(await left(me), 0, "the balance ends at 0, never below");
+  const [{ n: made }] = await db.select({ n: sql<number>`count(*)::int` }).from(schema.accessInvite).where(eq(schema.accessInvite.createdBy, me));
+  assert.equal(made, 2, "one row for the link and one for the race winner");
+  assert.deepEqual(await createPersonalInvite(me, null), { ok: false, reason: "none_left" }, "a zero balance refuses");
+
+  assert.equal(await revokePersonalInvite(`${TAG}-someone`, link.id), false, "only its creator can revoke an invite");
+  assert.equal(await left(me), 0, "and nobody gets it back");
+  assert.equal(await revokePersonalInvite(me, link.id), true, "an unused invite can be revoked");
+  assert.equal(await left(me), 1, "and comes back");
+  assert.equal(await revokePersonalInvite(me, link.id), false, "revoking twice gives back nothing more");
+  assert.equal(await left(me), 1, "the balance stays");
+  assert.deepEqual(await redeemInvite(link.code, mail("late")), { ok: false, reason: "revoked" }, "a revoked link no longer lets anyone in");
+
+  await setSignupMode("invite", null);
+  await db.update(schema.user).set({ invitesLeft: 2 }).where(eq(schema.user.id, me));
+  const named = await createPersonalInvite(me, mail("Friend"));
+  assert.ok(named.ok, "an invite to an email without an account is made");
+  const friend = await signUp(mail("friend"));
+  assert.ok(friend.ok, "invite: the friend gets in through the hook on the invite in their name");
+  assert.equal(friend.user.accessInviteId, named.id, "and the account records the invite, so it counts as the inviter's");
+  assert.equal(await revokePersonalInvite(me, named.id), false, "a used invite cannot be revoked");
+
+  const second = await createPersonalInvite(me, null);
+  assert.ok(second.ok, "another link");
+  assert.deepEqual(await admit(mail("linked"), second.code), { ok: true, inviteId: second.id, grantsPlan: null }, "invite: the link's code lets in through admit()");
+
+  const mine = await personalInvites(me);
+  assert.equal(mine.left, 0, "the list says what is left");
+  const row = mine.invites.find((i) => i.id === named.id);
+  assert.equal(row?.state, "used", "the friend's invite reads as used");
+  assert.equal(row?.joined?.email, mail("friend"), "with who came in on it");
+  assert.equal(mine.invites.find((i) => i.id === link.id)?.state, "revoked", "the revoked link reads as revoked");
+
+  assert.equal(await giveInvites(mail("INVITER"), 5), 5, "/admin gives more, by email in any case");
+  assert.equal(await giveInvites(mail("nobody"), 5), null, "and says when there is no such account");
+}
+
 main()
   .then(() => console.log("access: ok"))
   .catch((e) => { console.error(e); process.exitCode = 1; })
@@ -189,6 +252,7 @@ main()
     const made = await db.select({ id: schema.user.id }).from(schema.user).where(like(schema.user.email, `${TAG}%`));
     if (made.length) {
       const ids = made.map((u) => u.id);
+      await db.delete(schema.accessInvite).where(inArray(schema.accessInvite.createdBy, ids));
       const spaces = await db.select({ id: schema.member.organizationId }).from(schema.member).where(inArray(schema.member.userId, ids));
       if (spaces.length) await db.delete(schema.organization).where(inArray(schema.organization.id, spaces.map((x) => x.id)));
       await db.delete(schema.billingAccount).where(inArray(schema.billingAccount.ownerUserId, ids));

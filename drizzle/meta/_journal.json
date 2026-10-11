@@ -302,6 +302,13 @@
       "when": 1791703519699,
       "tag": "0043_first_steps",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791703520699,
+      "tag": "0044_invites_left",
+      "breakpoints": true
     }
   ]
 }
