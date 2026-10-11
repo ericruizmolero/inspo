@@ -24,6 +24,13 @@ export function fmtUsd(n: number, locale: Locale): string {
   return new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: "USD", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n);
 }
 
+/** The same price figure in euros for Spanish and in dollars for English, without VAT: "1.490 €", "$1,490" */
+export function fmtPrice(n: number, locale: Locale): string {
+  return new Intl.NumberFormat(INTL_LOCALE[locale], {
+    style: "currency", currency: locale === "es" ? "EUR" : "USD", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0, useGrouping: "always",
+  } as Intl.NumberFormatOptions).format(n);
+}
+
 /** A count with the language's thousands separator, from four digits on: "2.000" in Spanish, "2,000" in English. */
 export function fmtCount(n: number, locale: Locale): string {
   return new Intl.NumberFormat(INTL_LOCALE[locale], { useGrouping: "always" } as Intl.NumberFormatOptions).format(n);

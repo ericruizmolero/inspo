@@ -9,7 +9,7 @@ import PlanWorkspaces from "../_components/PlanWorkspaces";
 import { countMembers, quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT, isPaid, planOf } from "@/lib/plans";
 import { fmtGb } from "@/lib/room";
-import { getT, fmtDate, type Dict } from "@/lib/i18n";
+import { getT, fmtDate, fmtPrice, type Dict } from "@/lib/i18n";
 import { Button, Icon, Progress, SettingsWindow } from "@/components/criterio";
 
 
@@ -18,7 +18,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.settings.sections.plan };
 }
 
-function Line({ label, used, limit, t, seats, nums }: { label: string; used: number; limit: number | null; t: Dict; seats?: boolean; /** The figures, when they are not a count */ nums?: string }) {
+function Line({ label, used, limit, t, seats, fairUse, nums }: {
+  label: string; used: number; limit: number | null; t: Dict; seats?: boolean;
+  /** `limit` is the internal ceiling: no bar, and past it a warning instead of a refusal */
+  fairUse?: boolean;
+  /** The figures, when they are not a count */ nums?: string;
+}) {
   const pct = limit === null ? 0 : Math.min(100, Math.round((used / limit) * 100));
   // A monthly quota warns once it runs out; seats are fine at the limit and only warn when over it
   const full = limit !== null && (seats ? used > limit : used >= limit);
@@ -26,9 +31,10 @@ function Line({ label, used, limit, t, seats, nums }: { label: string; used: num
     <div className={`pl-quota${full ? " is-full" : ""}`}>
       <div className="pl-quota__head">
         <span className="t-ui">{label}</span>
-        <span className="pl-quota__nums t-small">{nums ?? (limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit))}</span>
+        <span className="pl-quota__nums t-small">{nums ?? (fairUse ? t.plans.fairUse(used) : limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit))}</span>
       </div>
-      {limit !== null && <Progress value={pct} segments={16} label={label} className="pl-quota__progress" />}
+      {limit !== null && !fairUse && <Progress value={pct} segments={16} label={label} className="pl-quota__progress" />}
+      {fairUse && full && <p className="pl-quota__note t-small">{t.plans.fairUsePassed}</p>}
     </div>
   );
 }
@@ -86,7 +92,10 @@ export default async function PlanPage() {
                 <div className="pl-plan__price">
                   {!isPaid(p)
                     ? <span className="t-title-l">{t.plans.free}</span>
-                    : <><span className="t-title-l">{p.price.month} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
+                    : <>
+                      <span className="t-title-l">{fmtPrice(p.price.month, locale)}</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span>
+                      <span className="pl-plan__year t-small">{t.plans.orYearly(fmtPrice(p.price.year, locale))}</span>
+                    </>}
                 </div>
                 <ul className="pl-plan__features">
                   {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} weight="bold" /></span><span>{f}</span></li>)}
@@ -113,7 +122,7 @@ export default async function PlanPage() {
           ) : undefined}>
           <div className="pl-usage__grid">
             <Line label={t.plans.aiThisMonth} used={q.ai.used} limit={q.ai.limit} t={t} />
-            <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} />
+            <Line label={t.plans.searchesThisMonth} used={q.searches.used} limit={q.searches.limit} t={t} fairUse={q.searches.fairUse} />
             <Line label={t.plans.people} used={q.members.used} limit={q.members.limit} t={t} seats />
             <Line label={t.plans.references} used={q.items.used} limit={q.items.limit} t={t} />
             <Line label={t.plans.storage} used={q.storage.used} limit={q.storage.limit} t={t}

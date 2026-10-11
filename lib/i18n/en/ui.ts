@@ -1232,6 +1232,8 @@ export const ui = {
   },
   plans: {
     noLimit: (used: number): string => `${used}, no limit`,
+    fairUse: (used: number): string => `${used}, fair use`,
+    fairUsePassed: "Searches keep working. We will write to you before anything changes.",
     usedOf: (used: number, limit: number): string => `${used} of ${limit}`,
     resets: (plan: string, date: string): string => `${plan} plan, the counter goes back to zero on ${date}`,
     aiThisMonth: "AI actions this month",
@@ -1249,6 +1251,7 @@ export const ui = {
     yourPlan: "Your plan",
     free: "Free",
     perMonth: "a month",
+    orYearly: (price: string): string => `or ${price} a year, 2 months free`,
     current: "This is your current plan",
     moveUp: (name: string): string => `Move up to ${name}`,
     moveDown: (name: string): string => `Move down to ${name}`,

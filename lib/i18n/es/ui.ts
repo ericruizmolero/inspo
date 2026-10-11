@@ -1228,6 +1228,8 @@ export const ui: typeof EnUi = {
   },
   plans: {
     noLimit: (used: number): string => `${used}, sin límite`,
+    fairUse: (used: number): string => `${used}, uso justo`,
+    fairUsePassed: "Las búsquedas siguen funcionando. Te escribiremos antes de cambiar nada.",
     usedOf: (used: number, limit: number): string => `${used} de ${limit}`,
     resets: (plan: string, date: string): string => `Plan ${plan}, el contador vuelve a cero el ${date}`,
     aiThisMonth: "Acciones de IA este mes",
@@ -1245,6 +1247,7 @@ export const ui: typeof EnUi = {
     yourPlan: "Tu plan",
     free: "Gratis",
     perMonth: "al mes",
+    orYearly: (price: string): string => `o ${price} al año, 2 meses gratis`,
     current: "Es tu plan actual",
     moveUp: (name: string): string => `Pasar a ${name}`,
     moveDown: (name: string): string => `Bajar a ${name}`,
