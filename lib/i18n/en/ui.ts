@@ -809,12 +809,12 @@ export const ui = {
       guidance: "guidance",
       use: {
         heading: "How to use this file",
-        lines: ({ never, evidence, tokens, refs, required, guidance, client }: UseMdKeys): string[] => [
+        lines: ({ never, evidence, tokens, refs, required, guidance, measured, client }: UseMdKeys): string[] => [
           "> For the agent that reads this file: what binds, what guides, and what to do when they clash.",
           "",
-          `1. **Required.** The brand's values, where the file has them (the palette and its hex codes, the typefaces, the type scale, the ${tokens} section), and every ${never} line. They are marked \`(${required})\`, as in \`**${never}** (${required}):\`. Use the values exactly as written. Never break a ${never} line.`,
+          `1. **Required.** The brand's values, where the file has them (the palette and its hex codes, the typefaces, the type scale, the ${tokens} section), and every ${never} line. They are marked \`(${required})\`, as in \`**${never}** (${required}):\`. Use the values exactly as written: the brand's are the only hex codes and families allowed. Never invent a shade between two of the palette's; for a tint, use one of its hex codes with opacity. In \`font-family\`, the brand's family is followed only by a generic one (\`sans-serif\`, \`monospace\`), never another named family. Never break a ${never} line.`,
           "2. **Direction.** Each area's decision. Follow it and adapt it to the task; never contradict it. A value a decision names (a hex, a family, a size) is used as written. A decision the team made outranks one proposed from the board.",
-          `3. **Guidance.** The references under each area, marked \`**${evidence} (n)** (${guidance}):\`, and the ${refs} at the end are inspiration to read the intent from, never something to copy: not their layout, copy, images or logos. ${client ? `Only the client's site, ${client}, is the brand: its copy, typefaces and logo rule.` : "No reference is the brand."}`,
+          `3. **Guidance.** The references under each area, marked \`**${evidence} (n)** (${guidance}):\`, and the ${refs} at the end are inspiration to read the intent from, never something to copy: not their layout, copy, images or logos. What a reference lists as ${measured} describes that reference: it is not the palette or the typefaces. ${client ? `Only the client's site, ${client}, is the brand: its copy, typefaces and logo rule.` : "No reference is the brand."}`,
           "4. **Open or not covered.** Where an area is open, or the file says nothing about what you need, ask the person. Never fill the gap with a default.",
           `5. **Conflicts.** ${never} lines, then the brand's values, then a decision the team made, then a proposed one, then the references. Tell the person about the clash.`,
         ],
