@@ -1,64 +1,24 @@
 ---
 import Base from "../layouts/Base.astro";
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
 import { copy, type Locale } from "../i18n";
 
 const { locale } = Astro.props as { locale: Locale };
 const t = copy[locale];
 ---
-<Base lang={t.lang} title={t.title} description={t.body}>
-  <header class="bar">
-    <a class="bar__logo" href={t.home} aria-label="criterio.design">
-      <img src="/logo.png" alt="criterio.design" width="36" height="36" draggable="false" />
-    </a>
-    <div class="bar__end">
-      <a class="lang" href={t.other.href} hreflang={t.other.href === "/" ? "en" : "es"}>{t.other.label}</a>
-      <a class="btn" href={t.login.href}>{t.login.label}</a>
-    </div>
-  </header>
+<Base lang={t.lang} page="home" title={t.title} description={t.body}>
+  <Header locale={locale} page="home" />
 
   <main class="hero">
     <h1>{t.headline}</h1>
     <p>{t.body}</p>
   </main>
+
+  <Footer locale={locale} page="home" />
 </Base>
 
 <style>
-  .bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 1080px;
-    margin: 0 auto;
-    padding: 20px 24px;
-  }
-  .bar__logo { display: inline-flex; }
-  .bar__logo img { display: block; }
-  .bar__end { display: flex; align-items: center; gap: 20px; }
-  .lang { color: var(--text-2); text-decoration: none; }
-  .lang:hover { color: var(--ink); }
-  .lang:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
-
-  /* Button primary, size m (docs/design-system/botones.md): ember, ink border, bevel; it sinks when pressed */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0 18px;
-    border: 1.5px solid var(--ink);
-    border-radius: 10px;
-    background: var(--ember);
-    color: var(--ink);
-    font-weight: 600;
-    text-decoration: none;
-    white-space: nowrap;
-    box-shadow: var(--bevel);
-    transition: background-color 150ms ease, box-shadow 100ms ease, transform 100ms ease;
-  }
-  .btn:hover { background: var(--ember-glow); }
-  .btn:active { box-shadow: var(--bevel-pressed); transform: translateY(1px); }
-  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-
   .hero { max-width: 1080px; margin: 0 auto; padding: 96px 24px 120px; }
   .hero h1 {
     max-width: 14em;

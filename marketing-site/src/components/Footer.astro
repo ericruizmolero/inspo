@@ -1,0 +1,28 @@
+---
+import { copy, PAGES, type Locale, type PageKey } from "../i18n";
+
+interface Props { locale: Locale; page: PageKey }
+const { locale, page } = Astro.props;
+const links = Object.entries(copy[locale].footer) as [keyof typeof copy.en.footer, string][];
+---
+<footer class="foot">
+  <nav>
+    {links.map(([key, label]) => (
+      <a href={PAGES[key][locale]} aria-current={key === page ? "page" : undefined}>{label}</a>
+    ))}
+  </nav>
+</footer>
+
+<style>
+  .foot { max-width: 1080px; margin: 0 auto; padding: 0 24px 40px; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px 20px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; }
+  a {
+    color: var(--text-2);
+    text-decoration: underline;
+    text-decoration-color: var(--border);
+    text-underline-offset: 3px;
+    transition: color 150ms ease;
+  }
+  a:hover, a[aria-current="page"] { color: var(--ink); text-decoration-color: currentColor; }
+  a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+</style>

@@ -1,11 +1,16 @@
 ---
+import { PAGES, type Locale, type PageKey } from "../i18n";
+
 interface Props {
   title: string;
   description: string;
-  lang?: "en" | "es";
+  lang?: Locale;
+  /** Leave out on pages with no address of their own (404): no canonical, no alternates */
+  page?: PageKey;
 }
-const { title, description, lang = "en" } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
+const { title, description, lang = "en", page } = Astro.props;
+const at = (path: string) => new URL(path, Astro.site).href;
+const canonical = page ? at(PAGES[page][lang]) : undefined;
 ---
 <!doctype html>
 <html lang={lang}>
@@ -14,15 +19,16 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {page && <link rel="canonical" href={canonical} />}
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/icon-512.png" />
-    <link rel="alternate" hreflang="en" href={new URL("/", Astro.site)} />
-    <link rel="alternate" hreflang="es" href={new URL("/es/", Astro.site)} />
+    {page && <link rel="alternate" hreflang="en" href={at(PAGES[page].en)} />}
+    {page && <link rel="alternate" hreflang="es" href={at(PAGES[page].es)} />}
+    {page && <link rel="alternate" hreflang="x-default" href={at(PAGES[page].en)} />}
     <meta property="og:locale" content={lang === "es" ? "es_ES" : "en_US"} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
+    {page && <meta property="og:url" content={canonical} />}
     <meta property="og:type" content="website" />
     <link rel="preload" href="/fonts/Satoshi-Variable.woff2" as="font" type="font/woff2" crossorigin />
   </head>
@@ -65,6 +71,12 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     font-weight: 500;
     line-height: 1.4;
     -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
   }
-  h1, p { margin: 0; }
+  /* The footer sits at the bottom of a short page */
+  body > * { width: 100%; }
+  body > main { flex: 1 0 auto; }
+  h1, h2, p { margin: 0; }
 </style>
