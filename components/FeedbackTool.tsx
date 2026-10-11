@@ -230,6 +230,7 @@ export default function FeedbackTool({ canSend = true }: { canSend?: boolean }) 
     if (!canSend) {
       // The notes stay in localStorage: back on this route with a session, they can be sent
       const here = window.location.pathname + window.location.search;
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full load to sign in; the notes wait in localStorage
       window.location.assign(`/login?next=${encodeURIComponent(here)}`);
       return;
     }

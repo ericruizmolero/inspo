@@ -12,6 +12,7 @@ export default function SwitchAccount({ next }: { next: string }) {
   const go = async () => {
     setBusy(true);
     await authClient.signOut();
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- a full load after signing out, so nothing of the old session stays in memory
     window.location.assign(`/login?next=${encodeURIComponent(next)}`);
   };
   return (

@@ -55,7 +55,7 @@ export default async function Image() {
 
         {/* Text */}
         <div style={{ position: "absolute", left: 72, top: 72, bottom: 72, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <img src={logo} width={160} height={160} />
+          <img src={logo} width={160} height={160} alt="" />
           <div style={{ display: "flex", flexDirection: "column", fontWeight: 700, fontSize: 64, lineHeight: 1.05, letterSpacing: "-1.6px", color: PAPER }}>
             <span>What inspires your team,</span>
             <span>all in one place.</span>

@@ -20,6 +20,8 @@ export default defineConfig([
       // 37 reports: 16 are the latest-value ref (ref.current = value during render, read later by a callback), the house
       // pattern; the other 21 read a ref during render (InspoCard's decoded images, PolishView's arrival, BriefPanel, Editable)
       "react-hooks/refs": "off",
+      // The pictures are the team's references and remote captures: <img> is deliberate, not next/image
+      "@next/next/no-img-element": "off",
     },
   },
   {

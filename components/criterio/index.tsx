@@ -450,7 +450,6 @@ export function Avatar({ initials, name, tone = "moss", size = 28, square, src, 
   return (
     <span className={cx("cr-avatar", `cr-avatar-${tone}`, square && "is-square", className)}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.42), overflow: "hidden" }} role="img" aria-label={name || initials}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       {pic ? <img src={pic} alt="" width={size} height={size} loading="lazy" onError={() => setFailed(pic)} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : initials}
     </span>
   );

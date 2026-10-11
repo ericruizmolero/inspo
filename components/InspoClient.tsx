@@ -602,6 +602,7 @@ export default function InspoClient({
             templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
+              // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full load the comment above asks for
               window.location.assign(`/?in=${encodeURIComponent(p.id)}`); }} />} />
         ) : space === "home" ? (
           <ProjectChooser
