@@ -287,6 +287,8 @@ export const auth = betterAuth({
         },
         async after(u) {
           await markJoined(u.email);
+          // Imported here: lib/first-use-mail.ts reaches lib/notify.ts, which imports this file
+          try { (await import("./first-use-mail")).welcomeLater(u); } catch (err) { log.warn("welcome.not_queued", { err }); }
           const inviteId = (u as { accessInviteId?: string | null }).accessInviteId;
           if (!inviteId) return;
           const [invite] = await db.select({ plan: schema.accessInvite.grantsPlan }).from(schema.accessInvite).where(eq(schema.accessInvite.id, inviteId));

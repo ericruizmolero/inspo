@@ -223,7 +223,7 @@ export const SIGNUP_MODES = ["invite", "open"] as const;
 export type SignupMode = (typeof SIGNUP_MODES)[number];
 
 /** Settings changed from /admin without a deploy (`signup_mode`, lib/access.ts), and the emails already sent once
- *  (`spend_alert:<day>`, `fair_use:<account>:<month>`, lib/spend.ts) */
+ *  (`spend_alert:<day>`, `fair_use:<account>:<month>`, `welcome:<user>`, `nudge3:<user>`, lib/mail-once.ts) */
 export const appSetting = pgTable("app_setting", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
