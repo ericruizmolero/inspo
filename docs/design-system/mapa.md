@@ -50,7 +50,7 @@ Se da acceso con `npm run admin -- <correo>`. Las invitaciones también salen de
 | `/privacy`, `/terms` | Política de privacidad y términos de uso. Borrador: 404 en producción hasta que `lib/legal.ts` tenga los datos de la sociedad |
 | `/unsubscribe?u=&k=&s=` | El enlace de un clic al pie de cada correo del equipo: apaga ese tipo de correo al abrirse, sin sesión (la firma `s` es la prueba, `lib/notify.ts`), y ofrece volver a activarlo. `/api/unsubscribe` recibe el POST del botón "Cancelar suscripción" del cliente de correo (`List-Unsubscribe`) |
 | `/opengraph-image`, `/twitter-image` | Tarjeta para compartir |
-| `/robots.txt` | `app/robots.ts`: abre las públicas y cierra `/api/`, `/s/`, `/i/`, `/settings`, `/admin`, `/library`, `/invite/`, `/extension/` (menos `/extension/privacy`), `/mcp`, `/unsubscribe` y `/.well-known/`. Una ruta nueva con sesión entra aquí |
+| `/robots.txt` | `app/robots.ts`: abre las públicas y cierra `/api/`, `/i/`, `/settings`, `/admin`, `/library`, `/invite/`, `/extension/` (menos `/extension/privacy`), `/mcp`, `/unsubscribe` y `/.well-known/`. `/s/` queda abierta a propósito: una página cerrada nunca le enseña su `noindex` al rastreador. Una ruta nueva con sesión entra aquí |
 | `/sitemap.xml` | `app/sitemap.ts`: `/`, `/login`, `/privacy`, `/terms` y `/extension/privacy`, con la URL de `lib/site.ts`. Una página pública nueva entra aquí |
 | `/manifest.webmanifest` | `app/manifest.ts`: nombre, iconos (`/icon.png`, `/apple-icon.png`, `/icon-512.png`) y el color de Board |
 
