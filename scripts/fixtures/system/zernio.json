@@ -85,7 +85,8 @@
      {
       "decision": "Fondo blanco puro #FFFFFF en toda la página y tinta #312421, los valores que mide la web original.",
       "why": "Son los colores medidos de la web de partida.",
-      "by": "Eric"
+      "by": "Eric",
+      "reason": "La v2 va en cálido: ni blanco puro ni la tinta de la web vieja, en ningún tono."
      }
     ]
    },

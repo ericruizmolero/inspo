@@ -111,12 +111,15 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
     onTalk();
     return true;
   };
-  const answer = async (note: Note, accept: boolean) => {
+  // Saying no opens a line under the proposal for why: optional, and it tells the next pass how far the no reaches
+  const [refusing, setRefusing] = useState<{ id: string; reason: string } | null>(null);
+  const answer = async (note: Note, accept: boolean, reason?: string) => {
     if (working) return;
     setWorking(true); setError("");
-    const r = await answerAreaProposal(note.id, accept);
+    const r = await answerAreaProposal(note.id, accept, reason);
     setWorking(false);
     if (!r.ok) { setError(r.error); return; }
+    setRefusing(null);
     onSystem(r.data); onTalk();
   };
   // Each reference's picture, by its code: the document shows it where the reference is named. A site with no
@@ -198,7 +201,7 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
         <time dateTime={n.at}>{timeAgo(n.at, locale, t)}</time>
         <span className="sdoc-proposal__tools">
           <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} onClick={() => void answer(n, true)}><Icon name="check" size={16} /> {s.accept}</button>
-          <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} onClick={() => void answer(n, false)}>{n.mine ? s.withdraw : s.reject}</button>
+          <button type="button" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working} aria-expanded={refusing?.id === n.id} onClick={() => setRefusing(refusing?.id === n.id ? null : { id: n.id, reason: "" })}>{n.mine ? s.withdraw : s.reject}</button>
         </span>
       </header>
       <p className="sdoc-decision">{n.proposal!.decision}</p>
@@ -207,6 +210,14 @@ export default function SystemDoc({ blocks, system, labels, boardIds, itemOf, im
         <div className="sdoc-never"><b>{b.neverLabel}</b><ul>{n.proposal!.never.split("\n").filter(Boolean).map((x) => <li key={x}>{x}</li>)}</ul></div>
       )}
       {n.text && n.text !== n.proposal!.decision && <p className="sdoc-proposal__reason">{n.text}</p>}
+      {refusing?.id === n.id && (
+        <form className="sdoc-proposal__refuse" onSubmit={(e) => { e.preventDefault(); void answer(n, false, refusing.reason); }}>
+          <input className="cr-input cr-input-s" autoFocus maxLength={200} value={refusing.reason} placeholder={s.whyNot} aria-label={s.whyNot} disabled={working}
+            onChange={(e) => setRefusing({ id: n.id, reason: e.target.value })} onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); setRefusing(null); } }} />
+          <button type="submit" className="cr-btn cr-btn-secondary cr-btn-s" disabled={working}>{n.mine ? s.withdraw : s.reject}</button>
+          <button type="button" className="cr-btn cr-btn-quiet cr-btn-s" disabled={working} onClick={() => setRefusing(null)}>{t.common.cancel}</button>
+        </form>
+      )}
     </div>
   ));
   // An area's status and references typed over in the file go back to the board: the references it cites (by code)

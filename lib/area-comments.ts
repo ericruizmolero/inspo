@@ -15,7 +15,8 @@ const P = schema.project;
 const U = schema.user;
 
 /** A change someone proposes to an area instead of making it: the text it would have, waiting for the team's yes or no */
-export interface AreaProposal { decision: string; why: string; never: string; state: "open" | "accepted" | "rejected"; resolvedBy?: string; /** The AI client it was proposed from over MCP ("Claude"), when it was not written in the app */ via?: string }
+export interface AreaProposal { decision: string; why: string; never: string; state: "open" | "accepted" | "rejected"; resolvedBy?: string; /** The AI client it was proposed from over MCP ("Claude"), when it was not written in the app */ via?: string;
+  /** Why the team said no, in one line, when whoever rejected it said: it marks how far the no reaches */ reason?: string }
 /** What a line points at: an option tried on the sample (the choice to put back, and how it reads), a reference,
  *  or the change it proposes */
 export type AreaAbout = { choice: Record<string, string | number | boolean>; label: string } | { itemId: string } | { proposal: AreaProposal }
@@ -38,6 +39,8 @@ export interface AreaNote {
 }
 
 const BODY_MAX = 2000;
+const REASON_MAX = 200;
+const oneLine = (v: unknown, max: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 /** Comments on the references that come into the thread: the latest ones */
 const REF_NOTES = 12;
 
@@ -51,7 +54,7 @@ function cleanAbout(v: unknown): AreaAbout | null {
     const decision = cleanDecision(p.decision);
     if (!decision) return null;
     const state = p.state === "accepted" || p.state === "rejected" ? p.state : "open";
-    return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}), ...(typeof p.via === "string" && p.via.trim() ? { via: p.via.trim().slice(0, 40) } : {}) } };
+    return { proposal: { decision, why: String(p.why ?? "").trim().slice(0, 400), never: String(p.never ?? "").split("\n").map((l) => l.trim().replace(/^[-*·]\s*/, "")).filter(Boolean).join("\n").slice(0, NEVER_MAX), state, ...(typeof p.resolvedBy === "string" ? { resolvedBy: p.resolvedBy.slice(0, 80) } : {}), ...(typeof p.via === "string" && p.via.trim() ? { via: p.via.trim().slice(0, 40) } : {}), ...(state === "rejected" && oneLine(p.reason, REASON_MAX) ? { reason: oneLine(p.reason, REASON_MAX) } : {}) } };
   }
   if (o.pin && typeof o.pin === "object") {
     const quote = String((o.pin as Record<string, unknown>).quote ?? "").replace(/\s+/g, " ").trim().slice(0, 160);
@@ -108,8 +111,8 @@ export async function areaThread(organizationId: string, projectId: string, area
 export async function addAreaComment(organizationId: string, projectId: string, area: string, body: string, author: { id: string; name: string; image?: string | null }, aboutIn?: unknown): Promise<AreaNote> {
   await assertProject(organizationId, projectId);
   const parsed = cleanAbout(aboutIn);
-  // A new proposal is always open: only resolving it (below) may mark it accepted or rejected, and by whom
-  const about = parsed && "proposal" in parsed ? { proposal: { ...parsed.proposal, state: "open" as const, resolvedBy: undefined } } : parsed;
+  // A new proposal is always open: only resolving it (below) may mark it accepted or rejected, by whom and why
+  const about = parsed && "proposal" in parsed ? { proposal: { ...parsed.proposal, state: "open" as const, resolvedBy: undefined, reason: undefined } } : parsed;
   // A pin can sit on any part of the file; the rest of the conversation is an area's
   const key = about && "pin" in about ? await assertPart(area) : await assertArea(area);
   const text = String(body ?? "").trim().slice(0, BODY_MAX);
@@ -211,8 +214,8 @@ export interface AreaMemory {
   said?: string[];
   /** Older lines left out of `said` */
   saidOmitted?: number;
-  /** Proposals the team said no to, latest 5: the text it would have had, why it was proposed, who said no */
-  rejected?: { decision: string; why?: string; by?: string }[];
+  /** Proposals the team said no to, latest 5: the text it would have had, why it was proposed, who said no and why */
+  rejected?: { decision: string; why?: string; by?: string; reason?: string }[];
   /** Model decisions a person rewrote, latest 2: what the model wrote and what the team made of it */
   rewritten?: { model: string; team: string }[];
 }
@@ -240,7 +243,7 @@ export async function areaMemory(organizationId: string, projectId: string): Pro
     // An open or accepted proposal is already on the board or waiting there; only a no is news to the model
     if (about && "proposal" in about) {
       const p = about.proposal;
-      if (p.state === "rejected") (rejected[n.area] ??= []).push({ decision: p.decision, ...(p.why ? { why: p.why } : {}), ...(p.resolvedBy ? { by: p.resolvedBy } : {}) });
+      if (p.state === "rejected") (rejected[n.area] ??= []).push({ decision: p.decision, ...(p.why ? { why: p.why } : {}), ...(p.resolvedBy ? { by: p.resolvedBy } : {}), ...(p.reason ? { reason: p.reason } : {}) });
       continue;
     }
     (said[n.area] ??= []).push(`${n.authorName}: ${cut(n.body, SAID_MAX)}`);
@@ -269,10 +272,10 @@ export async function areaMemory(organizationId: string, projectId: string): Pro
 
 // ─── Proposals ───────────────────────────────────────────────────────────────────────────────────
 // A proposal is a line of an area's conversation that carries the text the area would have. Anyone in the
-// workspace says yes (the area takes it, as a decision of the team) or no; either way the line stays, with
-// who answered.
+// workspace says yes (the area takes it, as a decision of the team) or no, with why if they want; either way the
+// line stays, with who answered.
 
-export async function resolveProposal(organizationId: string, id: string, accept: boolean, user: { id: string; name: string }): Promise<ProjectSystem> {
+export async function resolveProposal(organizationId: string, id: string, accept: boolean, user: { id: string; name: string }, reason?: string): Promise<ProjectSystem> {
   const [row] = await db.select().from(A).where(and(eq(A.organizationId, organizationId), eq(A.id, String(id)))).limit(1);
   const about = cleanAbout(row?.about);
   if (!row || !about || !("proposal" in about) || about.proposal.state !== "open") throw new HttpError(400, (await getErrors()).badBody);
@@ -282,7 +285,8 @@ export async function resolveProposal(organizationId: string, id: string, accept
     const current = (await getSystem(organizationId, row.projectId)).areas.find((a) => a.area === row.area);
     if (about.proposal.never !== (current?.never ?? "")) await setAreaNever(organizationId, row.projectId, row.area, about.proposal.never);
   }
-  await db.update(A).set({ about: { proposal: { ...about.proposal, state: accept ? "accepted" : "rejected", resolvedBy: user.name } } }).where(eq(A.id, row.id));
+  const why = accept ? "" : oneLine(reason, REASON_MAX);
+  await db.update(A).set({ about: { proposal: { ...about.proposal, state: accept ? "accepted" : "rejected", resolvedBy: user.name, ...(why ? { reason: why } : {}) } } }).where(eq(A.id, row.id));
   // Whoever proposed it hears the answer by email, once this has answered (lib/notify.ts)
   const [p] = await db.select({ name: P.name }).from(P).where(eq(P.id, row.projectId)).limit(1);
   inBackground(async () => { await notifyProposalResolved(organizationId, { toUserId: row.authorId, fromUserId: user.id, fromName: user.name, accepted: accept, area: row.area, projectId: row.projectId, projectName: p?.name ?? "", decision: about.proposal.decision }); });

@@ -23,14 +23,19 @@ const DEEPSEEK = "deepseek/deepseek-v4.1-flash";
 const SYSTEM_FIELDS = "every decision, why, take, reason, question, option and summary";
 
 export const PROMPTS = {
+<<<<<<< Updated upstream
   /** Reads the board into the eight areas (lib/system/run.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
   system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 6, language: SYSTEM_FIELDS },
+=======
+  /** Reads the board into the eight areas (lib/system.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
+  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 7, language: SYSTEM_FIELDS },
+>>>>>>> Stashed changes
   /** Other directions for one area */
-  options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 5, language: SYSTEM_FIELDS },
+  options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 6, language: SYSTEM_FIELDS },
   /** The question that starts an empty area: a person is waiting, so a quick model that does not stop to reason */
   start: { model: env("START_MODEL", "anthropic/claude-haiku-4.5"), fallback: FALLBACK_MODEL, maxTokens: 3000, version: 2, language: SYSTEM_FIELDS },
   /** One area's evidence picked again */
-  curate: { model: env("CURATE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 3, language: SYSTEM_FIELDS },
+  curate: { model: env("CURATE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 4, language: SYSTEM_FIELDS },
   /** The inbox's references filed into projects */
   triage: { model: env("TRIAGE_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "low", maxTokens: 16000, version: 2, language: SYSTEM_FIELDS },
   /** The brief's draft from the client's site or an imported document (lib/brief-draft.ts): it runs by itself on

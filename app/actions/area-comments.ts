@@ -20,7 +20,7 @@ export async function loadSystemActivity(projectId: string) {
   return withCtx(async (ctx) => systemActivity(ctx.workspace.id, String(projectId), ctx.user.id));
 }
 
-/** Yes or no to a change someone proposed: yes writes it as the area's decision, the team's. Returns the system. */
-export async function answerAreaProposal(id: string, accept: boolean) {
-  return withCtx(async (ctx) => resolveProposal(ctx.workspace.id, String(id), !!accept, { id: ctx.user.id, name: ctx.user.name }));
+/** Yes or no to a change someone proposed: yes writes it as the area's decision, the team's; a no may say why. Returns the system. */
+export async function answerAreaProposal(id: string, accept: boolean, reason?: string) {
+  return withCtx(async (ctx) => resolveProposal(ctx.workspace.id, String(id), !!accept, { id: ctx.user.id, name: ctx.user.name }, reason == null ? undefined : String(reason)));
 }

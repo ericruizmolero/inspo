@@ -37,6 +37,9 @@
 .sdoc-proposal time { font-size: var(--fs-label); color: var(--text-2); }
 .sdoc-proposal__tools { margin-left: auto; display: inline-flex; gap: 4px; }
 .sdoc-proposal p.sdoc-proposal__reason { font-size: var(--fs-small); color: var(--text-2); }
+/* Saying no: one line for why, then the no itself */
+.sdoc-proposal__refuse { display: flex; gap: 4px; align-items: center; }
+.sdoc-proposal__refuse .cr-input { flex: 1; min-width: 0; }
 
 @media (max-width: 900px) { .sdoc { flex-direction: column; gap: 16px; } .sdoc-toc { position: static; flex: none; flex-direction: row; flex-wrap: wrap; } .sdoc-toc__gap { display: none; } }
 /* A narrow page: the file's bar goes onto two rows (its tools under its tabs) instead of pushing the panel wider than the page */

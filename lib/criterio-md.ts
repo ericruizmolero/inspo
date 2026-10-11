@@ -38,7 +38,7 @@ export interface RefInfo {
   measured?: RefMeasured;
 }
 /** A line of an area's conversation; `label` is the option it points at, `itemId` the reference */
-export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected"; /** The AI client it came from over MCP, when it was not written in the app */ via?: string } }
+export interface TalkLine { who: string; text: string; label?: string; itemId?: string; /** The change it proposes, and whether the team took it */ proposal?: { decision: string; state: "open" | "accepted" | "rejected"; /** The AI client it came from over MCP, when it was not written in the app */ via?: string; /** Why the team said no, when it did */ reason?: string } }
 
 export interface CriterioMdInput {
   project: string;
@@ -75,7 +75,7 @@ export interface CriterioMdInput {
     intro: string; summary: string; decided: string; proposed: string; open: string; confidence: string; evidence: string; take: string; why: string; never: string; client: string;
     project: string; refs: string; refsIntro: string; kinds: Record<"web" | "image" | "video" | "post" | "text", string>; content: string; contentIntro: string; what: string; savedBy: string; said: string; attached: string;
     brings: string; noArea: string; tags: string; talk: string; on: (what: string) => string;
-    proposes: string; states: Record<"open" | "accepted" | "rejected", string>;
+    proposes: string; states: Record<"open" | "accepted" | "rejected", string>; whyNot: string;
     /** The signals behind a decision (lib/taxonomy.ts SIGNALS), by key, in the reader's language */
     support: string; supportOf: (signal: string, n: number, of: number) => string; signals: Record<string, string>;
     brand: BrandMdStrings;
@@ -272,6 +272,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
         if (l.proposal) {
           meta.push(`  - ${l.who}${l.proposal.via ? ` (${l.proposal.via})` : ""} ${strings.proposes} (${strings.states[l.proposal.state]}): ${quote(l.proposal.decision, 600)}`);
           if (l.text && l.text !== l.proposal.decision) meta.push(`    - ${quote(l.text)}`);
+          if (l.proposal.state === "rejected" && l.proposal.reason) meta.push(`    - ${strings.whyNot}: ${quote(l.proposal.reason)}`);
         } else meta.push(`  - ${l.who}${on ? `, ${strings.on(on)}` : ""}: ${quote(l.text)}`);
       }
     }
