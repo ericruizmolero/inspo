@@ -8,6 +8,7 @@ import Logo from "@/components/Logo";
 import ThemeToggle from "./ThemeToggle";
 import { PLANS, isPaid, planOf } from "@/lib/plans";
 import { fmtCount, fmtPrice } from "@/lib/i18n/format";
+import { marketingHref } from "@/lib/site";
 import type { ExampleMd } from "@/lib/example-md";
 
 const FREE = planOf("free");
@@ -37,7 +38,9 @@ export default function GuestStart({ inviteOnly, example }: { inviteOnly: boolea
         lead={t.guest.what}
       >
         <p className="guest__cost t-small">
-          {t.guest.cost(t.plans.items.free.name, fmtCount(FREE.aiActionsPerMonth ?? 0, locale), fmtCount(FREE.itemsMax ?? 0, locale), fmtPrice(FROM, locale))}
+          {t.guest.cost(t.plans.items.free.name, fmtCount(FREE.aiActionsPerMonth ?? 0, locale), fmtCount(FREE.itemsMax ?? 0, locale), fmtPrice(FROM, locale))}{" "}
+          {/* Every plan, side by side, is on the marketing site */}
+          <a href={marketingHref("/pricing/", locale)}>{t.sidebar.seePlans}</a>
         </p>
         <figure className="guest__example">
           <figcaption className="t-small">{t.guest.example}</figcaption>
