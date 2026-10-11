@@ -23,13 +23,8 @@ const DEEPSEEK = "deepseek/deepseek-v4.1-flash";
 const SYSTEM_FIELDS = "every decision, why, take, reason, question, option and summary";
 
 export const PROMPTS = {
-<<<<<<< Updated upstream
   /** Reads the board into the eight areas (lib/system/run.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
-  system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 6, language: SYSTEM_FIELDS },
-=======
-  /** Reads the board into the eight areas (lib/system.ts runSystem). Reasoning counts against the budget: room for it, the answer itself is short */
   system: { model: env("SYSTEM_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 16000, version: 7, language: SYSTEM_FIELDS },
->>>>>>> Stashed changes
   /** Other directions for one area */
   options: { model: env("OPTIONS_MODEL", DEEPSEEK), fallback: FALLBACK_MODEL, effort: "medium", maxTokens: 12000, version: 6, language: SYSTEM_FIELDS },
   /** The question that starts an empty area: a person is waiting, so a quick model that does not stop to reason */
