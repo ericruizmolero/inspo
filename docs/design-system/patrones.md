@@ -61,7 +61,7 @@ Cada acción de la app existe como botón **y** como acción del agente (`lib/ag
 
 ## Al tope del plan
 
-Un límite del plan responde 402 con `{ error, quota: true }` (`httpErrorResponse` en `lib/workspace-core.ts`, `quotaBlock` en `lib/quota.ts`). Hasta que llegue el aviso con botón de #90, la app lo enseña en el aviso de error que ya tiene (`toast--error`, "No se pudo guardar" con el mensaje), la extensión en su popup y el MCP como error de la herramienta: no hay un segundo aviso. El mensaje dice qué está lleno, que ver, buscar y exportar siguen, y dónde se amplía. Importar no falla entero: entra hasta el tope, la línea final dice "N se quedan fuera" y los lotes que quedan no se envían. → [decisión](decisiones/2026-10-10-el-plan-gratis-guarda-200-referencias-1-gb-y-un-workspace.md)
+Un límite del plan responde 402 con `{ error, quota: true }` (`httpErrorResponse` en `lib/workspace-core.ts`, `quotaBlock` en `lib/quota.ts`). Hasta que llegue el aviso con botón de #90, la app lo enseña en el aviso de error que ya tiene (`toast--error`, "No se pudo guardar" con el mensaje), la extensión en su popup y el MCP como error de la herramienta: no hay un segundo aviso. El mensaje dice qué está lleno, que ver, buscar y exportar siguen, y dónde se amplía. Importar no falla entero: entra hasta el tope, la línea final dice "N se quedan fuera" y los lotes que quedan no se envían. Dos límites no responden 402: las búsquedas de un plan de pago (uso justo; pasado el techo, la página del plan avisa en `--danger` de que siguen funcionando y de que escribiremos antes de cambiar nada) y pasarse de personas, que solo bloquea invitar. → [decisión](decisiones/2026-10-10-el-plan-gratis-guarda-200-referencias-1-gb-y-un-workspace.md)
 
 ## Texto generado por IA
 

@@ -215,7 +215,7 @@ Menú flotante de Base UI (posicionador en z 55). Las filas usan `.ws__item`. Es
 `AppSidebar` · `components/Sidebar.tsx` · `.app-sidebar` · `.nav-item`
 Navegación sobre el sidebar de shadcn con los destinos de la Isla y en su orden: Inicio, Descubrir, Inbox, proyectos (anillo, contador y "…") y Nuevo proyecto; al pie Conectores, feedback, cambiar tema y medidor del plan. **Solo se monta en móvil**; en escritorio navega la Isla. ⌘B / Ctrl+B la pliega. → [repite la Isla](decisiones/2026-10-06-el-menu-de-movil-repite-la-isla.md)
 - En táctil el "…" de cada proyecto es siempre visible y el contador va a su izquierda; el nombre largo acaba en elipsis antes de los dos.
-- Exporta piezas que se usan fuera: `Icons` (iconos de 16 px) y `PlanMeter`. Sin `compact`, el medidor añade la nota de abajo: "Biblioteca llena, ampliar plan" en `--danger` cuando no caben más referencias o bytes, que gana a la de la cuota de IA.
+- Exporta piezas que se usan fuera: `Icons` (iconos de 16 px) y `PlanMeter`. El medidor recibe la clave del plan (`QuotaView.plan`) y pinta su nombre del diccionario. Sin `compact`, el medidor añade la nota de abajo: "Biblioteca llena, ampliar plan" en `--danger` cuando no caben más referencias o bytes, que gana a la de la cuota de IA.
 
 ### Anillo de progreso
 `FillRing` · `components/Sidebar.tsx`

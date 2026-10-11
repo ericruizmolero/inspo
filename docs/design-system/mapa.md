@@ -26,7 +26,7 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/settings/account` | Sesión | Nombre, foto, tema, idioma, sonidos y los correos del equipo (resumen diario, respuestas) |
 | `/settings/workspace` | Sesión (editar: quien gestiona) | Nombre y logo del espacio, idioma del modelo, Exportar (el propietario baja el JSON de `/api/workspace/export`) y Tus espacios (salir o eliminar) |
 | `/settings/members` | Sesión | Miembros e invitaciones; `?create=1` abre "Crear equipo" |
-| `/settings/plan` | Sesión (espacios del plan: quien paga o gestiona; crear y traer: quien paga) | Planes primero, luego cuotas (la IA, compartida entre los espacios del plan), asientos, referencias y almacenamiento ("143 de 200", "0,4 de 1 GB", por espacio), los espacios que paga el plan con "Espacio nuevo" y "Traer un espacio aquí", y gasto de IA |
+| `/settings/plan` | Sesión (espacios del plan: quien paga o gestiona; crear y traer: quien paga) | Los cuatro planes primero (precio al mes en EUR o en USD según el idioma, el anual debajo; cuatro columnas desde 1088 px, dos hasta 860, una por debajo), luego cuotas (la IA, compartida entre los espacios del plan), asientos, referencias y almacenamiento ("143 de 200", "0,4 de 1 GB", por espacio), las búsquedas de un plan de pago como "N, uso justo" sin barra, los espacios que paga el plan con "Espacio nuevo" y "Traer un espacio aquí", y gasto de IA |
 | `/settings/extension` | Sesión | Claves de la extensión |
 | `/settings/feedback` | Sesión | El feedback que ha mandado la persona |
 
