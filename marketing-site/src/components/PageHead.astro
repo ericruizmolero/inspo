@@ -1,0 +1,16 @@
+---
+// The top of a page under the header: its h1 and what the page holds
+interface Props { headline: string; lead: string }
+const { headline, lead } = Astro.props;
+---
+<header class="head">
+  <h1>{headline}</h1>
+  <p>{lead}</p>
+</header>
+
+<style>
+  .head { display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 40px; font-weight: 700; line-height: 1.05; letter-spacing: -0.025em; text-wrap: balance; }
+  p { max-width: 34em; color: var(--text-2); font-size: 17px; font-weight: 400; line-height: 1.55; text-wrap: pretty; }
+  @media (max-width: 640px) { h1 { font-size: 32px; } }
+</style>

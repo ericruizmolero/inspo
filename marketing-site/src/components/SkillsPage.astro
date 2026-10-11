@@ -1,0 +1,120 @@
+---
+import Base from "../layouts/Base.astro";
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
+import PageHead from "./PageHead.astro";
+import { copy, type Locale } from "../i18n";
+import { SKILLS, SKILL_TOPICS, isNew } from "../skills";
+import { plain } from "../plain";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = copy[locale].skills;
+// "New" is decided when the site is built, as on /resources/
+const now = Date.now();
+const groups = SKILL_TOPICS.map((topic) => ({ ...topic, skills: SKILLS.filter((s) => s.topic === topic.key) })).filter((g) => g.skills.length);
+---
+<Base lang={locale} page="skills" title={`${t.title} · criterio.design`} description={t.lead(SKILLS.length)}>
+  <Header locale={locale} page="skills" />
+
+  <main class="skills">
+    <PageHead headline={t.headline} lead={t.lead(SKILLS.length)} />
+
+    <div class="tools" data-tools hidden>
+      <input class="field" type="search" name="q" placeholder={t.search} aria-label={t.search} autocomplete="off" data-search />
+      <select class="field" name="topic" aria-label={t.topic} data-menu>
+        <option value="">{t.all}</option>
+        {groups.map((g) => <option value={g.key}>{g.title[locale]}</option>)}
+      </select>
+    </div>
+
+    {groups.map((g) => (
+      <section class="group" data-group={g.key}>
+        <h2>{g.title[locale]}</h2>
+        <ul>
+          {g.skills.map((s) => (
+            <li class="row" data-text={plain([s.name[locale], s.author, s.text[locale], s.install, g.title[locale]].join(" "))}>
+              <div class="row__text">
+                <span class="row__name">
+                  <a href={s.url} target="_blank" rel="noopener">{s.name[locale]}</a>
+                  {isNew(s, now) && <span class="badge">{t.new}</span>}
+                  {s.inCriterio && <span class="badge badge--quiet" title={t.inCriterioHint}>{t.inCriterio}</span>}
+                </span>
+                <span class="row__by">{t.by(s.author)}</span>
+                <p class="row__desc">{s.text[locale]}</p>
+              </div>
+              <div class="cmd">
+                <code>{s.install}</code>
+                {/* Shown once the script runs; without it the command is there to select */}
+                <button type="button" class="cmd__copy" data-copy={s.install} aria-label={t.copyLabel(s.install)} hidden>{t.copy}</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+    <p class="none" data-none hidden>{t.none}</p>
+  </main>
+
+  <Footer locale={locale} page="skills" />
+</Base>
+
+<script is:inline define:vars={{ copied: t.copied }}>
+  // Each command copies with its button; the button says so for a moment
+  for (const button of document.querySelectorAll("[data-copy]")) {
+    const label = button.textContent;
+    let timer;
+    button.hidden = false;
+    button.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(button.dataset.copy); } catch { return; }
+      button.textContent = copied;
+      button.classList.add("is-copied");
+      clearTimeout(timer);
+      timer = setTimeout(() => { button.textContent = label; button.classList.remove("is-copied"); }, 1600);
+    });
+  }
+</script>
+
+<script>
+  // Search and topic narrow the list in place, and live in the address (?q=, ?topic=)
+  import "../scripts/list-filter";
+</script>
+
+<style>
+  .skills { display: flex; flex-direction: column; gap: 40px; max-width: 880px; margin: 0 auto; padding: 56px 24px 80px; }
+  .group { display: flex; flex-direction: column; gap: 8px; }
+  .group[hidden] { display: none; }
+  h2 { padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  ul { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+
+  /* The command goes under the text, whole: what tells one skill from another is its end (--skill …) */
+  .row { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 8px; border-radius: 12px; transition: background-color 150ms ease; }
+  .row[hidden] { display: none; }
+  .row:hover { background: var(--paper-light); }
+  .row__text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .row__name { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-weight: 600; }
+  .row__name a { color: inherit; text-decoration: none; }
+  .row__name a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .row__name a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 2px; }
+  .row__by { color: var(--text-2); font-size: 13px; }
+  .row__desc { color: var(--text-2); font-size: 14px; font-weight: 400; line-height: 1.45; text-wrap: pretty; }
+  .badge--quiet { border-color: var(--border); color: var(--text-2); }
+
+  /* The command: a sunken well with the line in mono and a small grey key to copy it, as in the app's cards */
+  .cmd { display: flex; align-items: center; gap: 8px; max-width: 100%; min-width: 0; height: 36px; padding: 0 4px 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--paper-light); }
+  .cmd code { flex: 1; min-width: 0; overflow-x: auto; color: var(--text-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: nowrap; scrollbar-width: none; }
+  .cmd code::-webkit-scrollbar { display: none; }
+  .cmd__copy { flex-shrink: 0; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: var(--paper); color: var(--ink); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color 150ms ease; }
+  .cmd__copy[hidden] { display: none; }
+  .cmd__copy:hover { background: var(--paper-pressed); }
+  .cmd__copy:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .cmd__copy.is-copied { background: var(--ink); color: var(--paper-white); }
+
+  .none { color: var(--text-2); }
+  .none[hidden] { display: none; }
+
+  @media (max-width: 640px) {
+    .skills { padding-top: 32px; }
+    .cmd { width: 100%; }
+  }
+</style>

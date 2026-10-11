@@ -2,8 +2,10 @@
 import Base from "../layouts/Base.astro";
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
+import PageHead from "./PageHead.astro";
 import { APP_URL, copy, type Locale } from "../i18n";
 import { RESOURCES, isNew, resourceHost, resourceSlug } from "../resources";
+import { plain } from "../plain";
 
 interface Props { locale: Locale }
 const { locale } = Astro.props;
@@ -11,8 +13,6 @@ const t = copy[locale].resources;
 const total = RESOURCES.reduce((n, g) => n + g.items.length, 0);
 // "New" is decided when the site is built: a site stops being new on the first build after NEW_DAYS
 const now = Date.now();
-/** Lowercase, without accents: "diseño" finds "diseno" and the other way round (the script below does the same to what is typed) */
-const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 // The app opens Add with the address already in it (signed out, it asks to sign in first)
 const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
 ---
@@ -20,15 +20,12 @@ const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
   <Header locale={locale} page="resources" />
 
   <main class="res">
-    <header class="res__head">
-      <h1>{t.headline}</h1>
-      <p class="res__lead">{t.lead(total)}</p>
-    </header>
+    <PageHead headline={t.headline} lead={t.lead(total)} />
 
     {/* Shown once the script runs: without it the whole list is there to read */}
-    <div class="res__tools" data-tools hidden>
+    <div class="tools" data-tools hidden>
       <input class="field" type="search" name="q" placeholder={t.search} aria-label={t.search} autocomplete="off" data-search />
-      <select class="field" name="kind" aria-label={t.kind} data-kind>
+      <select class="field" name="kind" aria-label={t.kind} data-menu>
         <option value="">{t.all}</option>
         {RESOURCES.map((g) => <option value={g.key}>{g.title[locale]}</option>)}
       </select>
@@ -64,68 +61,12 @@ const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
 </Base>
 
 <script>
-  // Search and kind narrow the list in place. Both live in the address (?q=, ?kind=), so a filtered list can be shared
-  const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const tools = document.querySelector<HTMLElement>("[data-tools]")!;
-  const search = document.querySelector<HTMLInputElement>("[data-search]")!;
-  const kind = document.querySelector<HTMLSelectElement>("[data-kind]")!;
-  const none = document.querySelector<HTMLElement>("[data-none]")!;
-  const groups = [...document.querySelectorAll<HTMLElement>("[data-group]")];
-
-  const params = new URLSearchParams(location.search);
-  search.value = params.get("q") ?? "";
-  if (groups.some((g) => g.dataset.group === params.get("kind"))) kind.value = params.get("kind")!;
-  tools.hidden = false;
-
-  function apply() {
-    const words = plain(search.value).split(/\s+/).filter(Boolean);
-    let shown = 0;
-    for (const group of groups) {
-      const inKind = !kind.value || group.dataset.group === kind.value;
-      let inGroup = 0;
-      for (const row of group.querySelectorAll<HTMLElement>("[data-text]")) {
-        const hit = inKind && words.every((w) => row.dataset.text!.includes(w));
-        row.hidden = !hit;
-        if (hit) inGroup++;
-      }
-      group.hidden = inGroup === 0;
-      shown += inGroup;
-    }
-    none.hidden = shown > 0;
-    const next = new URLSearchParams();
-    if (search.value.trim()) next.set("q", search.value.trim());
-    if (kind.value) next.set("kind", kind.value);
-    history.replaceState(null, "", next.size ? `?${next}` : location.pathname);
-  }
-
-  search.addEventListener("input", apply);
-  search.addEventListener("keydown", (e) => { if (e.key === "Escape" && search.value) { search.value = ""; apply(); } });
-  kind.addEventListener("change", apply);
-  apply();
+  // Search and kind narrow the list in place, and live in the address (?q=, ?kind=)
+  import "../scripts/list-filter";
 </script>
 
 <style>
   .res { display: flex; flex-direction: column; gap: 40px; max-width: 880px; margin: 0 auto; padding: 56px 24px 80px; }
-  .res__head { display: flex; flex-direction: column; gap: 16px; }
-  h1 { font-size: 40px; font-weight: 700; line-height: 1.05; letter-spacing: -0.025em; text-wrap: balance; }
-  .res__lead { max-width: 34em; color: var(--text-2); font-size: 17px; font-weight: 400; line-height: 1.55; }
-
-  .res__tools { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin: -16px -8px -8px; padding: 12px 8px; background: var(--paper-white); }
-  .res__tools[hidden] { display: none; }
-  .field {
-    min-height: 40px;
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--paper-light);
-    color: var(--ink);
-    font: inherit;
-  }
-  .field::placeholder { color: var(--text-2); }
-  .field:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
-  [data-search] { flex: 1 1 240px; min-width: 0; }
-  [data-kind] { flex: 0 1 auto; max-width: 100%; cursor: pointer; }
-
   .group { display: flex; flex-direction: column; gap: 8px; }
   .group[hidden] { display: none; }
   .group__head { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
@@ -144,7 +85,6 @@ const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
   .row__desc { color: var(--text-2); font-size: 14px; font-weight: 400; line-height: 1.45; text-wrap: pretty; }
   .row__host { color: var(--text-2); font-size: 13px; }
   .row:hover .row__desc { color: var(--ink); }
-  .badge { padding: 1px 8px; border: 1px solid var(--ink); border-radius: 999px; background: var(--paper-white); font-size: 12px; font-weight: 600; }
   .row__save {
     flex-shrink: 0;
     margin-right: 8px;
@@ -168,7 +108,6 @@ const saveHref = (url: string) => `${APP_URL}/?add=${encodeURIComponent(url)}`;
 
   @media (max-width: 640px) {
     .res { padding-top: 32px; }
-    h1 { font-size: 32px; }
     .row { flex-wrap: wrap; gap: 0; padding-bottom: 12px; }
     .row__open { flex-basis: 100%; align-items: flex-start; gap: 12px; padding-bottom: 8px; }
     .row__thumb { width: 96px; height: 60px; }

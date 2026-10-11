@@ -1,14 +1,18 @@
 ---
-import { copy, PAGES, type Locale, type PageKey } from "../i18n";
+import { PAGES, type Locale, type PageKey } from "../i18n";
 
 interface Props { locale: Locale; page: PageKey }
 const { locale, page } = Astro.props;
-const links = Object.entries(copy[locale].footer) as [keyof typeof copy.en.footer, string][];
+// The pages with a name for the footer, in the table's order
+const links = (Object.keys(PAGES) as PageKey[]).flatMap((key) => {
+  const p: { path: Record<Locale, string>; nav?: Record<Locale, string> } = PAGES[key];
+  return p.nav ? [{ key, href: p.path[locale], label: p.nav[locale] }] : [];
+});
 ---
 <footer class="foot">
   <nav>
-    {links.map(([key, label]) => (
-      <a href={PAGES[key][locale]} aria-current={key === page ? "page" : undefined}>{label}</a>
+    {links.map(({ key, href, label }) => (
+      <a href={href} aria-current={key === page ? "page" : undefined}>{label}</a>
     ))}
   </nav>
 </footer>

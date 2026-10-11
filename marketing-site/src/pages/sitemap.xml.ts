@@ -4,7 +4,7 @@ import { PAGES } from "../i18n";
 // Every page in both languages, each with its alternates (PAGES in src/i18n.ts)
 export const GET: APIRoute = ({ site }) => {
   const at = (path: string) => new URL(path, site).href;
-  const urls = Object.values(PAGES).flatMap((paths) =>
+  const urls = Object.values(PAGES).flatMap(({ path: paths }) =>
     Object.values(paths).map((path) => `  <url>
     <loc>${at(path)}</loc>
     <xhtml:link rel="alternate" hreflang="en" href="${at(paths.en)}"/>

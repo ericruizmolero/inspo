@@ -26,7 +26,7 @@ export const LEGAL_UPDATED = "2026-10-10";
 export type LegalBlock = string | string[];
 export interface LegalSection { heading: string; body: LegalBlock[] }
 export interface LegalDoc { title: string; lead: string; sections: (c: LegalFacts) => LegalSection[] }
-export type LegalDocKey = "privacy" | "terms" | "extension";
+export type LegalDocKey = "privacy" | "terms" | "extensionPrivacy";
 
 interface LegalCopy {
   updated: (date: string) => string;
@@ -174,7 +174,7 @@ const en: LegalCopy = {
       ],
     },
 
-    extension: {
+    extensionPrivacy: {
       title: "Extension privacy",
       lead: "What the criterio.design browser extension does with your data. Short, because it does very little.",
       sections: () => [
@@ -329,7 +329,7 @@ const es: LegalCopy = {
       ],
     },
 
-    extension: {
+    extensionPrivacy: {
       title: "Privacidad de la extensión",
       lead: "Qué hace la extensión de criterio.design con tus datos. Corto, porque hace muy poco.",
       sections: () => [

@@ -6,11 +6,11 @@ const { locale, page } = Astro.props;
 const t = copy[locale];
 ---
 <header class="bar">
-  <a class="bar__logo" href={PAGES.home[locale]} aria-label="criterio.design">
+  <a class="bar__logo" href={PAGES.home.path[locale]} aria-label="criterio.design">
     <img src="/logo.png" alt="criterio.design" width="36" height="36" draggable="false" />
   </a>
   <div class="bar__end">
-    <a class="lang" href={PAGES[page][t.other.lang]} hreflang={t.other.lang}>{t.other.label}</a>
+    <a class="lang" href={PAGES[page].path[t.other.lang]} hreflang={t.other.lang}>{t.other.label}</a>
     <a class="btn" href={t.login.href}>{t.login.label}</a>
   </div>
 </header>

@@ -10,7 +10,7 @@ interface Props {
 }
 const { title, description, lang = "en", page } = Astro.props;
 const at = (path: string) => new URL(path, Astro.site).href;
-const canonical = page ? at(PAGES[page][lang]) : undefined;
+const canonical = page ? at(PAGES[page].path[lang]) : undefined;
 ---
 <!doctype html>
 <html lang={lang}>
@@ -22,9 +22,9 @@ const canonical = page ? at(PAGES[page][lang]) : undefined;
     {page && <link rel="canonical" href={canonical} />}
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/icon-512.png" />
-    {page && <link rel="alternate" hreflang="en" href={at(PAGES[page].en)} />}
-    {page && <link rel="alternate" hreflang="es" href={at(PAGES[page].es)} />}
-    {page && <link rel="alternate" hreflang="x-default" href={at(PAGES[page].en)} />}
+    {page && <link rel="alternate" hreflang="en" href={at(PAGES[page].path.en)} />}
+    {page && <link rel="alternate" hreflang="es" href={at(PAGES[page].path.es)} />}
+    {page && <link rel="alternate" hreflang="x-default" href={at(PAGES[page].path.en)} />}
     <meta property="og:locale" content={lang === "es" ? "es_ES" : "en_US"} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -79,4 +79,23 @@ const canonical = page ? at(PAGES[page][lang]) : undefined;
   body > * { width: 100%; }
   body > main { flex: 1 0 auto; }
   h1, h2, p { margin: 0; }
+
+  /* The search and the menu over a list (resources, skills), stuck to the top while the list scrolls. Shown by
+     the page's script: without it the whole list is there to read */
+  .tools { position: sticky; top: 0; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; margin: -16px -8px -8px; padding: 12px 8px; background: var(--paper-white); }
+  .tools[hidden] { display: none; }
+  .tools > input { flex: 1 1 240px; min-width: 0; }
+  .tools > select { flex: 0 1 auto; max-width: 100%; cursor: pointer; }
+  .field {
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--paper-light);
+    color: var(--ink);
+    font: inherit;
+  }
+  .field::placeholder { color: var(--text-2); }
+  .field:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+  .badge { padding: 1px 8px; border: 1px solid var(--ink); border-radius: 999px; background: var(--paper-white); font-size: 12px; font-weight: 600; white-space: nowrap; }
 </style>
