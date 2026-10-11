@@ -40,7 +40,8 @@ para el alta ni para la ficha.
   `3-connect-en.png`; para la ficha en castellano, `1-save-es.png`. Se regeneran con Chrome
   headless a partir del popup (ver el handoff de la extensión).
 - **Icono de la tienda:** `extension/chrome/icons/icon128.png` (mismo que el del manifest).
-- **Web:** https://app.criterio.design
+- **Web:** https://criterio.design/extension/ (la página pública de la extensión, en la web de
+  marketing: qué hace, cómo instalarla y su privacidad).
 - **Política de privacidad:** https://criterio.design/extension/privacy/ (obligatoria porque
   la extensión envía datos a nuestro servidor). Vive en la web de marketing (`marketing-site/`);
   la app redirige su dirección antigua allí.
