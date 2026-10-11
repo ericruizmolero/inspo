@@ -36,6 +36,7 @@ export default async function InvitePage({ params }: { params: Promise<{ id: str
   const mismatch = !!inv && inv.email.toLowerCase() !== session.user.email.toLowerCase();
   const problem = !inv ? t.invite.notFound
     : inv.status !== "pending" ? t.invite.used
+    // eslint-disable-next-line react-hooks/purity -- a server component renders once per request, so the clock is read once
     : +inv.expiresAt < Date.now() ? t.invite.expired
     : mismatch
       ? t.invite.mismatch(inv.email, session.user.email)

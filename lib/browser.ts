@@ -122,11 +122,11 @@ const LAUNCH = { shot: launchForShots, extract: launchForExtraction };
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 /**
- * Runs `use` on a fresh page of its own Chromium, behind the gate (it throws QueueFull when the line is full),
+ * Runs `run` on a fresh page of its own Chromium, behind the gate (it throws QueueFull when the line is full),
  * then closes the browser whatever happened. The page only reaches public addresses (lib/safe-fetch.ts).
  * `signal`: aborting closes Chromium at once, so whatever step is pending fails and the caller's error reports it.
  */
-export async function withPage<T>(launch: keyof typeof LAUNCH, use: (page: Page) => Promise<T>, signal?: AbortSignal): Promise<T> {
+export async function withPage<T>(launch: keyof typeof LAUNCH, run: (page: Page) => Promise<T>, signal?: AbortSignal): Promise<T> {
   signal?.throwIfAborted();
   const browser = await gatedLaunch(LAUNCH[launch]);
   const onAbort = () => { void browser.close().catch(() => {}); };
@@ -137,7 +137,7 @@ export async function withPage<T>(launch: keyof typeof LAUNCH, use: (page: Page)
     // Reduced motion: sites that hold the page behind an intro or reveal it on scroll show everything at once.
     // Light: the same capture on any machine, not the dark mode of the Mac that runs it.
     await page.emulateMediaFeatures([{ name: "prefers-reduced-motion", value: "reduce" }, { name: "prefers-color-scheme", value: "light" }]);
-    return await use(page);
+    return await run(page);
   } finally {
     signal?.removeEventListener("abort", onAbort);
     await browser.close().catch(() => {}); // cleanup: a crashed browser has nothing to close

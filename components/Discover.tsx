@@ -213,6 +213,7 @@ function usePeek() {
 function DiscoverList({ group, shelf, query, head }: { group: string | null; shelf: Shelf; query: string; head: React.ReactNode }) {
   const { t } = useT();
   const peek = usePeek();
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- the compiler skips DiscoverList over this memo today; making it compile is a behavior change to test as such
   const groups = useMemo(() => {
     const keep = new Set(matching(group, shelf).map((s) => s.url));
     // Every word typed has to be somewhere in the row: its name, its domain, what it is for, or its group's name
