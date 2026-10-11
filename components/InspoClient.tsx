@@ -68,6 +68,10 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { useIsMobile } from "@/hooks/use-mobile";
 import Logo from "@/components/Logo";
 import dynamic from "next/dynamic";
+import FirstSteps from "./FirstSteps";
+import ConnectDialog from "./ConnectDialog";
+import { hideFirstStepsList, loadFirstSteps } from "@/app/actions/first-steps";
+import type { FirstSteps as FirstStepsValue } from "@/lib/first-steps-core";
 
 // Opened by a click or a shortcut, never on the first paint: each loads on its own, and the panel (the
 // most used) is fetched once the page is idle, so the first click doesn't wait for it
@@ -109,6 +113,7 @@ export default function InspoClient({
   members = [],
   isAdmin = false,
   initialQuota = null,
+  initialFirstSteps = null,
   initialPolishVotes = [],
 }: {
   /** The library's newest page; the rest is asked for as soon as the board is up (lib/library.ts loadPage) */
@@ -119,6 +124,8 @@ export default function InspoClient({
   /** The bell's newest news when the library was read (lib/notify.ts latestTeamEvent) */
   bell: string;
   initialQuota?: QuotaView | null;
+  /** Where this person is on the way to the first criterio.md (lib/first-steps.ts); null once hidden or walked */
+  initialFirstSteps?: FirstStepsValue | null;
   /** Every polish vote of the workspace's projects (lib/polish-votes.ts) */
   initialPolishVotes?: PolishVote[];
   initialProjects?: Project[];
@@ -276,9 +283,21 @@ export default function InspoClient({
   // ─── Plan and quotas ───────────────────────────────────────────────────────
   // Arrives from the server with the page; re-read after a search that spent quota and whenever the island's menu opens
   const [quota, setQuota] = useState<QuotaView | null>(initialQuota);
+  // The first steps sit beside the plan meter and are read again with it, and on every move between views
+  const [firstSteps, setFirstSteps] = useState<FirstStepsValue | null>(initialFirstSteps);
+  const stepsOn = firstSteps !== null;
+  const loadSteps = useCallback(() => { void loadFirstSteps().then((r) => { if (r.ok) setFirstSteps(r.data); }); }, []);
   const loadQuota = useCallback(() => {
     fetch("/api/plan").then((r) => (r.ok ? r.json() : null)).then((q) => { if (q) setQuota(q); }).catch(() => {});
-  }, []);
+    if (stepsOn) loadSteps();
+  }, [stepsOn, loadSteps]);
+  useEffect(() => { if (stepsOn) loadSteps(); }, [space, projectView, stepsOn, loadSteps]);
+  const [connecting, setConnecting] = useState(false);
+  const [exampleOpen, setExampleOpen] = useState(false);
+  const stepsList = firstSteps && (
+    <FirstSteps steps={firstSteps} onConnect={() => setConnecting(true)}
+      onHide={() => { setFirstSteps(null); void hideFirstStepsList(); }} />
+  );
 
   // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
@@ -316,6 +335,7 @@ export default function InspoClient({
     space, onSpace: setSpace, projects, links, systems,
     onCreateProject: createProject, onRenameProject: renameProject, onDeleteProject: deleteProject,
     onImportBoard: importBoard,
+    steps: stepsList,
   };
 
   // ─── Board ──────────────────────────────────────────────────────────────────
@@ -389,7 +409,7 @@ export default function InspoClient({
   const area = currentProject && projectView === "polish" ? "polish"
     : panelItem ? "sheet"
     : showAdd ? "add"
-    : space === "discover" ? "directory" : space === "templates" ? "examples" : space === "skills" ? "skills"
+    : space === "discover" ? "directory" : space === "templates" ? (exampleOpen ? "example" : "examples") : space === "skills" ? "skills"
     : filtering ? "search"
     : currentProject ? projectView
     : space === "inbox" ? "inbox"
@@ -484,6 +504,7 @@ export default function InspoClient({
   return (
     <SidebarProvider defaultOpen={false} className="shell">
       {confirmDialog}
+      {connecting && <ConnectDialog onClose={() => { setConnecting(false); loadSteps(); }} />}
       {panelItem && (
         <ItemPanel
           item={panelItem}
@@ -573,7 +594,7 @@ export default function InspoClient({
               else if (projectView !== "board") setProjectView("board");
               toggleFilter({ kind: "person", value: name });
             }}
-            onDirectory={openDirectory} quota={quota} onMenuOpen={loadQuota} />
+            onDirectory={openDirectory} quota={quota} onMenuOpen={loadQuota} steps={stepsList} />
           <Logo size={28} className="topbar__logo" />
           {/* The system's ViewSwitcher, the island's twin on the right: Board and System, then the ways in and add.
               On a phone the labels go and the icons stay */}
@@ -599,7 +620,7 @@ export default function InspoClient({
         {space === "discover" || space === "templates" || space === "skills" ? (
           // Discover: the templates (whole systems to start a project from), the directory of places to look, and the skills for agents
           <Discover section={space === "templates" ? "templates" : space === "skills" ? "skills" : "sites"} onSection={(s) => setSpace(s === "sites" ? "discover" : s)}
-            templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onStarted={(p) => {
+            templates={(head) => <TemplatesView key={workspace.id} workspaceId={workspace.id} head={head} onOpenChange={setExampleOpen} onStarted={(p) => {
               // The template's references are not in this page's library until a project holds them, so the page is
               // read again on the new project: its board comes with them, their pictures and their tags
               // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full load the comment above asks for

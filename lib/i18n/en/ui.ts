@@ -260,6 +260,24 @@ export const ui = {
     trendingNow: "Somewhere to start, what everyone is looking at",
     seeAll: (n: number): string => `See all ${n}`,
   },
+  firstSteps: {
+    title: "First steps",
+    count: (n: number, of: number): string => `${n} of ${of}`,
+    hide: "Hide",
+    done: "done",
+    connect: "Connect an AI client",
+    steps: {
+      example: { label: "Open an example", hint: "A finished system and its criterio.md. Looking spends no AI actions." },
+      project: { label: "Create a project", hint: "One project for each brand or product you work on." },
+      brief: { label: "Say what the project is", hint: "One sentence on what it is and who it is for. Every pass reads it." },
+      refs: {
+        label: (n: number, of: number): string => `Save ${of} references (${n} of ${of})`,
+        hint: "From the browser extension, by pasting a link, or by importing an Are.na, Pinterest or Cosmos board.",
+      },
+      system: { label: "Run the first System pass", hint: "Improve with AI reads the board and writes your criterio.md. The first pass spends no AI actions." },
+      out: { label: "Take criterio.md to your tools", hint: "Copy or download the file, or connect Claude, ChatGPT, Cursor or Claude Code to read it." },
+    },
+  },
   imports: {
     open: "Import",
     title: "Bring what you already saved",

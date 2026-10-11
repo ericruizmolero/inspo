@@ -1,0 +1,22 @@
+/* The first steps (components/FirstSteps.tsx), beside the plan meter: in the island's workspace menu and at the foot
+   of the phone sidebar. The menu's own tokens (--text, --text-2, --surface-2), so it reads in both themes */
+.first-steps { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) 2px var(--space-1); }
+.first-steps__head { display: flex; align-items: baseline; gap: var(--space-2); padding: 0 8px; font-size: var(--fs-label); color: var(--text-2); }
+.first-steps__title { flex: 1; font-weight: var(--fw-medium); color: var(--text); }
+.first-steps__hide, .first-steps__more {
+  border: 0; padding: 0; background: none; font: inherit; font-size: var(--fs-label); color: var(--text-2);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.first-steps__hide:hover, .first-steps__more:hover { color: var(--text); }
+.first-steps__list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.first-steps__row {
+  display: flex; align-items: center; gap: var(--space-2); min-height: 28px; padding: 4px 8px; border-radius: var(--radius-sm);
+  font-size: var(--fs-small); color: var(--text-2); text-decoration: none;
+}
+.first-steps__row:hover, .first-steps__row:focus-visible { background: var(--surface-2); color: var(--text); outline: none; }
+.first-steps__row:focus-visible { box-shadow: inset 0 0 0 2px var(--focus); }
+.first-steps__mark { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 14px; }
+.first-steps__step.is-done .first-steps__label { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-2) 50%, transparent); }
+.first-steps__step.is-now .first-steps__row { color: var(--text); font-weight: var(--fw-medium); }
+.first-steps__hint { margin: 0; padding: 0 8px 0 30px; font-size: var(--fs-label); line-height: var(--lh-small); color: var(--text-2); }
+.first-steps__more { display: block; margin: var(--space-1) 0 0 30px; }

@@ -258,6 +258,24 @@ export const ui: typeof EnUi = {
     trendingNow: "Para empezar a mirar, las más de moda",
     seeAll: (n: number) => `Ver las ${n}`,
   },
+  firstSteps: {
+    title: "Primeros pasos",
+    count: (n: number, of: number) => `${n} de ${of}`,
+    hide: "Ocultar",
+    done: "hecho",
+    connect: "Conectar un cliente de IA",
+    steps: {
+      example: { label: "Abre un ejemplo", hint: "Un sistema acabado y su criterio.md. Mirarlo no gasta acciones de IA." },
+      project: { label: "Crea un proyecto", hint: "Un proyecto por cada marca o producto en el que trabajas." },
+      brief: { label: "Di qué es el proyecto", hint: "Una frase sobre qué es y para quién. Cada pasada la lee." },
+      refs: {
+        label: (n: number, of: number) => `Guarda ${of} referencias (${n} de ${of})`,
+        hint: "Con la extensión del navegador, pegando un enlace o importando un tablero de Are.na, Pinterest o Cosmos.",
+      },
+      system: { label: "Haz la primera pasada del Sistema", hint: "Mejorar con IA lee el tablón y escribe tu criterio.md. La primera pasada no gasta acciones de IA." },
+      out: { label: "Lleva criterio.md a tus herramientas", hint: "Copia o descarga el fichero, o conecta Claude, ChatGPT, Cursor o Claude Code para que lo lean." },
+    },
+  },
   imports: {
     open: "Importar",
     title: "Trae lo que ya tenías guardado",

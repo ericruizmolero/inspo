@@ -81,6 +81,8 @@ export interface QuotaView {
 export interface SidebarProps {
   /** Plan and this month's usage (null until loaded) */
   quota?: QuotaView | null;
+  /** The first steps (components/FirstSteps.tsx), over the plan meter while there are steps to show */
+  steps?: ReactNode;
   /** Header: workspace switcher */
   brand: React.ReactNode;
   items: InspoItem[];
@@ -210,7 +212,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar 
 
 /** Everything under the workspace: add, the whole library, the projects, the directory and the plan.
  *  Shared by the docked column and the phone sheet. The team lives in Settings › Members. */
-function SidebarNav({ quota, items, onPick,
+function SidebarNav({ quota, steps, items, onPick,
   space, onSpace, projects, links, systems = {}, onCreateProject, onRenameProject, onDeleteProject, onImportBoard }: Omit<SidebarProps, "brand"> & {
   /** Called after any choice (the phone sheet closes) */
   onPick?: () => void;
@@ -270,6 +272,8 @@ function SidebarNav({ quota, items, onPick,
         <SidebarMenu><Connectors row onImportBoard={onImportBoard} /></SidebarMenu>
         <FeedbackEntry onPick={onPick} />
         <ThemeToggle row />
+        {/* A step taken from here closes the sheet, like any other choice in it */}
+        {steps && <div onClick={onPick}>{steps}</div>}
         {quota && <PlanMeter quota={quota} />}
       </SidebarFooter>
     </>

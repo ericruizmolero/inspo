@@ -96,7 +96,7 @@ function NewProject({ onCreate, onDone }: { onCreate: (name: string, about: stri
 }
 
 export default function Island({ user, workspace, workspaces, isAdmin, items, links, projects, systems = {}, members = [], space, onSpace, bellNews = "",
-  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota, onMenuOpen }: {
+  onCreateProject, onRenameProject, onDeleteProject, onDirectory, onPerson, quota, onMenuOpen, steps }: {
   user: SessionUser; workspace: Workspace; workspaces: Workspace[]; isAdmin: boolean;
   items: InspoItem[]; links: ProjectLinks; projects: Project[];
   /** Each project's system: a ring on its tab says how much of it is decided */
@@ -116,6 +116,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
   onDeleteProject: (project: Project) => void;
   onDirectory: () => void;
   quota: QuotaView | null;
+  /** The first steps (components/FirstSteps.tsx), over the plan meter while there are steps to show */
+  steps?: React.ReactNode;
 }) {
   const { t, locale } = useT();
   const counts = useSpaceCounts(items, links);
@@ -317,6 +319,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>
+          {steps}
           {quota && <div className="island__plan"><PlanMeter quota={quota} compact /></div>}
           <Separator />
         </>}

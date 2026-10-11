@@ -99,6 +99,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
         members={shown.members}
         isAdmin={shown.isAdmin}
         initialQuota={shown.initialQuota}
+        initialFirstSteps={shown.initialFirstSteps}
         initialPolishVotes={shown.initialPolishVotes}
       />
     </WorkspaceSwitchContext.Provider>
