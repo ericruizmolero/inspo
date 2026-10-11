@@ -73,7 +73,7 @@ export async function curateArea(input: { organizationId: string; projectId: str
   await ensureHead(input.organizationId, input.projectId, now);
   if (standing.source === "team") {
     // A decided area keeps its decision: only the table is written, for the team to look at
-    await db.update(A).set({ curationJson: curation, updatedAt: now }).where(and(eq(A.projectId, input.projectId), eq(A.area, area)));
+    await db.update(A).set({ curationJson: curation, updatedAt: now }).where(and(eq(A.organizationId, input.organizationId), eq(A.projectId, input.projectId), eq(A.area, area)));
   } else {
     const decision = out.decision.trim().replace(/\s+/g, " ").slice(0, DECISION_MAX);
     await writeArea(input.organizationId, input.projectId, decision
@@ -92,6 +92,6 @@ export async function setVerdict(organizationId: string, projectId: string, area
   if (!current.curation) return getSystem(organizationId, projectId);
   const verdicts = current.curation.verdicts.map((v) => (v.id === verdict.id ? { ...v, keep: !!verdict.keep, reason: typeof verdict.reason === "string" ? verdict.reason.trim().slice(0, 160) : v.reason, byTeam: true } : v));
   const curation: AreaCuration = { ...current.curation, verdicts };
-  await db.update(A).set({ curationJson: curation, updatedAt: new Date() }).where(and(eq(A.projectId, projectId), eq(A.area, area)));
+  await db.update(A).set({ curationJson: curation, updatedAt: new Date() }).where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId), eq(A.area, area)));
   return getSystem(organizationId, projectId);
 }

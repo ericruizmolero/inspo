@@ -237,7 +237,7 @@ export async function releaseArea(organizationId: string, projectId: string, are
   if (current.source !== "team") return getSystem(organizationId, projectId);
   const now = new Date();
   await db.update(A).set({ source: current.decision ? "model" : null, decidedBy: null, updatedAt: now })
-    .where(and(eq(A.projectId, projectId), eq(A.area, area)));
+    .where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId), eq(A.area, area)));
   void author;
   return getSystem(organizationId, projectId);
 }
@@ -334,6 +334,6 @@ export async function dropEvidence(organizationId: string, projectId: string, it
   for (const r of rows) {
     const evidence = Array.isArray(r.evidence) ? (r.evidence as SystemEvidence[]) : [];
     const kept = evidence.filter((e) => !gone.has(e.itemId));
-    if (kept.length !== evidence.length) await db.update(A).set({ evidence: kept, updatedAt: now }).where(and(eq(A.projectId, projectId), eq(A.area, r.area)));
+    if (kept.length !== evidence.length) await db.update(A).set({ evidence: kept, updatedAt: now }).where(and(eq(A.organizationId, organizationId), eq(A.projectId, projectId), eq(A.area, r.area)));
   }
 }

@@ -286,7 +286,7 @@ export async function resolveProposal(organizationId: string, id: string, accept
     if (about.proposal.never !== (current?.never ?? "")) await setAreaNever(organizationId, row.projectId, row.area, about.proposal.never);
   }
   const why = accept ? "" : oneLine(reason, REASON_MAX);
-  await db.update(A).set({ about: { proposal: { ...about.proposal, state: accept ? "accepted" : "rejected", resolvedBy: user.name, ...(why ? { reason: why } : {}) } } }).where(eq(A.id, row.id));
+  await db.update(A).set({ about: { proposal: { ...about.proposal, state: accept ? "accepted" : "rejected", resolvedBy: user.name, ...(why ? { reason: why } : {}) } } }).where(and(eq(A.organizationId, organizationId), eq(A.id, row.id)));
   // Whoever proposed it hears the answer by email, once this has answered (lib/notify.ts)
   const [p] = await db.select({ name: P.name }).from(P).where(eq(P.id, row.projectId)).limit(1);
   inBackground(async () => { await notifyProposalResolved(organizationId, { toUserId: row.authorId, fromUserId: user.id, fromName: user.name, accepted: accept, area: row.area, projectId: row.projectId, projectName: p?.name ?? "", decision: about.proposal.decision }); });
