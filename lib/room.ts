@@ -32,4 +32,4 @@ export function fmtGb(bytes: number, locale: Locale): string {
 }
 
 /** Another team needs a workspace someone pays for among the ones the person owns: their personal space is the free one */
-export const mayCreateTeam = (owned: Pick<Plan, "priceEur">[]): boolean => owned.some(isPaid);
+export const mayCreateTeam = (owned: Pick<Plan, "price">[]): boolean => owned.some(isPaid);

@@ -95,7 +95,7 @@ locally: it prints in the terminal and lands in `.data/last-mail.txt`.
 | `npm run seed:dump` | Writes your local database to `.data/seed.json` |
 | `npm run db:generate` | Writes a migration after a change to `lib/db/schema.ts` |
 | `npm run db:studio` | Drizzle Studio, a browser view of the local database |
-| `npm run plan -- <workspace> <solo\|studio\|agency>` | Changes a workspace's plan (there's no payment gateway yet) |
+| `npm run plan -- <workspace> <free\|personal\|studio\|agency>` | Changes a workspace's plan (there's no payment gateway yet) |
 | `npm run admin -- <email>` | Gives access to `/admin`. `--remove` takes it away, `--list` shows who has it |
 | `npm run shots:directory` | Captures missing Directory thumbnails into `public/directory/` (`--force` redoes all) |
 

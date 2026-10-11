@@ -77,7 +77,7 @@ test("a plan of one workspace refuses a second, and nothing is created", async (
   actAs(solo);
   const r = await createWorkspaceInAccount("Second");
   expect(r.ok).toBe(false);
-  if (!r.ok) expect(r.error).toMatch(/Solo plan holds one workspace/);
+  if (!r.ok) expect(r.error).toMatch(/Free plan holds one workspace/);
   expect(await countWorkspaces((await accountOf(solo.workspaceId))!.id)).toBe(1);
 });
 
@@ -119,7 +119,7 @@ test("a client workspace deleted keeps what it spent in the account's pool, and 
   expect(after.workspaces.used, "one workspace fewer").toBe(before.workspaces.used - 1);
 
   const lone = `${tag}-lone`, loneTeam = `${tag}-loneteam`;
-  await db.insert(schema.billingAccount).values({ id: lone, name: "Alone", plan: "solo", ownerUserId: agency.id });
+  await db.insert(schema.billingAccount).values({ id: lone, name: "Alone", plan: "free", ownerUserId: agency.id });
   await db.insert(schema.organization).values({ id: loneTeam, name: "Alone", slug: loneTeam, kind: "team", billingAccountId: lone, createdAt: new Date() });
   await db.insert(schema.member).values({ id: `${tag}-lone-owner`, organizationId: loneTeam, userId: agency.id, role: "owner", createdAt: new Date() });
   await usage(loneTeam, 1);

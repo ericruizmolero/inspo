@@ -17,6 +17,7 @@ import { getTableColumns, sql } from "drizzle-orm";
 import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
 import { db, pool, schema } from "../lib/db";
 import { databaseUrl } from "../lib/db/url";
+import { DEFAULT_PLAN, isPlanKey } from "../lib/plans";
 
 // Parents before children
 const TABLES: PgTable[] = [
@@ -88,7 +89,7 @@ async function main() {
           let meta: { kind?: string; plan?: string } = {};
           try { meta = JSON.parse(String(raw.metadata ?? "{}")) ?? {}; } catch { /* broken metadata */ }
           row.kind = meta.kind === "personal" ? "personal" : "team";
-          const plan = ["solo", "studio", "agency"].includes(meta.plan ?? "") ? meta.plan : "solo";
+          const plan = isPlanKey(meta.plan ?? "") ? meta.plan : DEFAULT_PLAN;
           accounts.push({ id: String(row.id), name: String(row.name), plan: plan as string });
           ids.set("billing_account", (ids.get("billing_account") ?? new Set()).add(String(row.id)));
           row.billingAccountId = row.id;

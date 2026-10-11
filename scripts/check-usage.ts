@@ -48,6 +48,15 @@ assert.equal(whatIsFull(roomLeft(free, { items: 10, bytes: GB - 100 }), { bytes:
 assert.equal(whatIsFull(roomLeft(free, { items: 200, bytes: GB }), {}), null, "asking for nothing never fails: viewing, searching, exporting");
 assert.equal(whatIsFull(roomLeft(free, { items: 200, bytes: 0 }), { items: 1, bytes: 1 }), "items", "references are named before storage");
 const paid = PLANS.find(isPaid)!;
+
+// The paid plans (#89): a year is 10 months, searches are fair use up to 10 times the AI actions, Personal can't invite
+assert.deepEqual(PLANS.map((p) => p.key), ["free", "personal", "studio", "agency"]);
+assert.deepEqual(free.searches, { kind: "capped", perMonth: 30 });
+for (const p of PLANS.filter(isPaid)) {
+  assert.equal(p.price.year, p.price.month * 10, `${p.key}: 2 months free`);
+  assert.deepEqual(p.searches, { kind: "fairUse", ceiling: 10 * p.aiActionsPerMonth! }, `${p.key}: fair use`);
+}
+assert.equal(PLANS.find((p) => p.key === "personal")!.members, 1, "Personal is one person: no invitations");
 assert.equal(whatIsFull(roomLeft(paid, { items: 1e6, bytes: 1e13 }), { items: 1, bytes: GB }), null, "a paid plan never fills");
 
 // The room an import shares out among its references (addMany; check:limits runs one against the database)

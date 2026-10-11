@@ -10,7 +10,7 @@ import type { DesignSpec } from "@/types/design";
 import type { SiteCopy } from "../ref-measured";
 import { OUTPUT_LANGUAGES } from "../output-language";
 import { LOCALES, type Locale } from "../i18n/locale";
-import { PLANS, type PlanKey } from "../plans";
+import { DEFAULT_PLAN, PLANS, type PlanKey } from "../plans";
 
 /** CHECK that a text column holds one of these values */
 const oneOf = (name: string, col: Parameters<typeof sql>[1], values: readonly string[]) =>
@@ -94,14 +94,14 @@ export const billingAccount = pgTable("billing_account", {
   /** The name of the workspace it was created for: the switcher names the group with it */
   name: text("name").notNull(),
   /** SaaS plan (lib/plans.ts), changed by hand with scripts/set-plan.ts */
-  plan: text("plan").notNull().default("solo"),
+  plan: text("plan").notNull().default(DEFAULT_PLAN),
   /** Set null, not cascade: its workspaces outlive the person, and the account with them */
   ownerUserId: text("owner_user_id").references(() => user.id, { onDelete: "set null" }),
   /** Stripe's customer (#90), unused until then */
   stripeCustomerId: text("stripe_customer_id"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (t) => [
-  oneOf("billing_account_plan_check", t.plan, ["solo", "studio", "agency"]),
+  oneOf("billing_account_plan_check", t.plan, PLANS.map((p) => p.key)),
   index("billing_account_owner_idx").on(t.ownerUserId),
 ]);
 

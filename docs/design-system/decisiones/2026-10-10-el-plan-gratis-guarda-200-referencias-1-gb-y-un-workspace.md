@@ -7,7 +7,7 @@ kind: producto
 **Contexto.** El plan gratis de #89 promete un tope de 200 elementos o 1 GB, pero nada se contaba: ningún archivo guardaba su tamaño y guardar era ilimitado. Y cualquiera podía crear todos los equipos que quisiera, cada uno con su plan gratis: diez equipos eran 300 acciones de IA al mes sin pagar (#124).
 
 **Decisión.**
-- `lib/plans.ts` lleva `itemsMax` y `storageMaxBytes` (null = sin tope). El plan gratis es el de `priceEur` 0, sea cual sea su clave: 200 referencias y 1 GB (1024³ bytes). Los de pago, sin tope.
+- `lib/plans.ts` lleva `itemsMax` y `storageMaxBytes` (null = sin tope). El plan gratis es el de `price.month` 0 (`isPaid`), sea cual sea su clave: 200 referencias y 1 GB (1024³ bytes). Los de pago, sin tope.
 - Cuentan las referencias del workspace salvo las que trae una plantilla (`isSampleItem()`, `lib/sample-items.ts`): firmadas por Criterio y aún en el tablero de una plantilla.
 - El almacenamiento es la suma de `stored_file.bytes` del workspace: una fila por archivo propio. Las cachés compartidas por dirección (capturas, páginas, posts de X, DESIGN.md) no son de nadie y no cuentan.
 - Al tope, guardar responde 402 con `quota: true` por cualquier camino (la app, la extensión, el MCP, el agente, importar, las subidas). Ver, buscar y exportar siguen. El mensaje dice qué está lleno, que lo demás sigue y que se amplía en /planes.

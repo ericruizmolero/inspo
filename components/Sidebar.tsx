@@ -18,6 +18,7 @@ import {
   SidebarHeader, SidebarMenu, SidebarMenuAction, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { PlanKey } from "@/lib/plans";
 
 
 // ─── Icons: the system's Icon where it has the glyph; the rest drawn in the same hand (16px, 1.5 stroke) ─
@@ -68,7 +69,7 @@ function NavItem({ icon, label, count, active, onClick, title, onPointerEnter }:
 
 
 export interface QuotaView {
-  planName: string;
+  plan: PlanKey;
   /** AI actions this month: what people asked of the model */
   ai: { used: number; limit: number | null };
   searches: { used: number; limit: number | null };
@@ -198,7 +199,7 @@ export function PlanMeter({ quota, compact }: { quota: QuotaView; /** Head, bar 
   const gb = storage.limit === null ? `${fmtGb(storage.used, locale)} GB` : `${fmtGb(storage.used, locale)}/${fmtGb(storage.limit, locale)} GB`;
   return (
     <Link href="/settings/plan" className={`sidebar__plan${aiFull || libraryFull ? " is-full" : ""}`} title={t.sidebar.seePlans}>
-      <span className="sidebar__plan-head"><strong>{t.sidebar.plan(quota.planName)}</strong><span>{limit === null ? `${fmtCount(used, locale)} ${t.sidebar.ai}` : `${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`}</span></span>
+      <span className="sidebar__plan-head"><strong>{t.sidebar.plan(t.plans.items[quota.plan].name)}</strong><span>{limit === null ? `${fmtCount(used, locale)} ${t.sidebar.ai}` : `${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`}</span></span>
       {/* The system's Progress: segmented ember blocks in a sunken field */}
       {limit !== null && <Progress value={used} max={limit} segments={20} label={`${fmtCount(used, locale)}/${fmtCount(limit, locale)} ${t.sidebar.ai}`} className="sidebar__plan-progress" />}
       <span className="sidebar__plan-head"><span>{t.sidebar.library}</span><span>{refs} · {gb}</span></span>

@@ -1,5 +1,6 @@
 // Check of the free plan's room against the local database (#124): 200 references with the sample project's left
-// out, 1 GB of files, an import that stops at the cap, and one free workspace each, counted by the billing accounts a person pays for. Creates a test workspace and two
+// out, 1 GB of files, an import that stops at the cap, one free workspace each, counted by the billing accounts a
+// person pays for, and searches: capped on the free plan, fair use on a paid one (#89). Creates a test workspace and two
 // people, checks with assert and deletes them when done. Files go to the local .data/files: with R2_* set it stops.
 //   npm run check:limits
 import { config as loadEnv } from "dotenv";
@@ -18,7 +19,7 @@ async function main() {
   const { PLANS, isPaid } = await import("../lib/plans");
   const { addItem } = await import("../lib/items");
   const { addMany } = await import("../lib/add-many");
-  const { countItems, storageUsed, newTeamRefusal, assertRoom } = await import("../lib/quota");
+  const { countItems, storageUsed, newTeamRefusal, assertRoom, assertQuota } = await import("../lib/quota");
   const { TEMPLATE_AUTHOR } = await import("../lib/sample-items");
   const { auth } = await import("../lib/auth");
   const { HttpError, createBillingAccount, accountOf, dropEmptyAccount } = await import("../lib/workspace-core");
@@ -109,7 +110,7 @@ async function main() {
 
     // 5. A paid plan has no cap
     await assertRoom({ id: ws, plan: paid.key }, { items: 1000, bytes: 50 * 1024 ** 3 });
-    console.log(`✓ on ${paid.name} the same workspace has room`);
+    console.log(`✓ on ${paid.key} the same workspace has room`);
 
     // 6. One free workspace each, through Better Auth's own hook
     const create = (userId: string) => auth.api.createOrganization({ body: { name: `${TAG} team`, slug: `${TAG}-${id()}`, userId } })
@@ -135,9 +136,30 @@ async function main() {
     await newOrg(client, "team", paid.key, (await accountOf(agency))!.id);
     assert.ok(await newTeamRefusal(client), "owner of a workspace on another person's paid account: refused");
     console.log("✓ owner of a workspace the agency pays for: refused");
+
+    // 8. Searches: the free plan refuses the 31st distinct one; a paid plan past its fair-use ceiling keeps searching
+    const searches = (org: string, n: number) => Array.from({ length: n }, (_, i) => ({
+      id: id(), organizationId: org, action: "jev_search", model: "check", ref: `${TAG} query ${i}`, createdAt: new Date(),
+    }));
+    const capped = free.searches.kind === "capped" ? free.searches.perMonth : NaN;
+    await db.insert(schema.aiUsage).values(searches(ws, capped));
+    const spent = await as402(assertQuota({ id: ws, plan: free.key, billingAccountId: (await accountOf(ws))!.id }, "jev_search"));
+    assert.ok(spent && new RegExp(`${capped} of ${capped} AI searches`).test(spent), `the free plan stops at ${capped}`);
+    const ceiling = paid.searches.kind === "fairUse" ? paid.searches.ceiling : NaN;
+    await db.insert(schema.aiUsage).values(searches(agency, ceiling));
+    const warned: string[] = [];
+    const warn = console.warn;
+    console.warn = (line: unknown) => { warned.push(String(line)); };
+    try {
+      await assertQuota({ id: agency, plan: paid.key, billingAccountId: (await accountOf(agency))!.id }, "jev_search");
+      await new Promise((r) => setTimeout(r, 100)); // log.warn writes after it reads the request's headers
+    } finally { console.warn = warn; }
+    assert.ok(warned.some((l) => l.includes("quota.fair_use_passed")), "past the ceiling it is logged");
+    console.log(`✓ searches: free refuses at ${capped} ("${spent}"), ${paid.key} keeps searching at ${ceiling} and logs it`);
     console.log("check:limits ok");
   } finally {
     if (orgs.length) {
+      await db.delete(schema.aiUsage).where(inArray(schema.aiUsage.organizationId, orgs));
       const made = await db.select({ a: schema.organization.billingAccountId }).from(schema.organization).where(inArray(schema.organization.id, orgs));
       await db.delete(schema.organization).where(inArray(schema.organization.id, orgs));
       for (const a of new Set([...accounts, ...made.map((m) => m.a)])) await dropEmptyAccount(a);

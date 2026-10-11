@@ -17,13 +17,12 @@ import { fmtGb, mayCreateTeam, roomLeft, whatIsFull, type Full, type Room, type 
 export interface QuotaLine { used: number; limit: number | null }
 export interface QuotaStatus {
   plan: PlanKey;
-  planName: string;
-  priceEur: number;
   /** First day of next month, ISO */
   resetsAt: string;
   /** AI actions: what people asked of the model this month */
   ai: QuotaLine;
-  searches: QuotaLine;
+  /** On a fair-use plan the limit is the internal ceiling: nobody is cut off at it */
+  searches: QuotaLine & { fairUse: boolean };
   members: QuotaLine;
   /** References in the library, the sample project's left out */
   items: QuotaLine;
@@ -133,9 +132,11 @@ export async function quotaStatus(ws: QuotaWorkspace): Promise<QuotaStatus> {
     countWorkspaces(ws.billingAccountId), countPendingInvitations(ws.id), countItems(ws.id), storageUsed(ws.id),
   ]);
   return {
-    plan: plan.key, planName: plan.name, priceEur: plan.priceEur, resetsAt: nextMonth().toISOString(),
+    plan: plan.key, resetsAt: nextMonth().toISOString(),
     ai: { used: ai, limit: plan.aiActionsPerMonth },
-    searches: { used: searches, limit: plan.searchesPerMonth },
+    searches: plan.searches.kind === "capped"
+      ? { used: searches, limit: plan.searches.perMonth, fairUse: false }
+      : { used: searches, limit: plan.searches.ceiling, fairUse: true },
     members: { used: members, limit: plan.members },
     items: { used: items, limit: plan.itemsMax },
     storage: { used: bytes, limit: plan.storageMaxBytes },
@@ -185,7 +186,8 @@ export async function assertRoom(ws: Pick<Workspace, "id" | "plan">, need: { ite
 /** What a person reads when the plan has no room left, in their language */
 export async function fullMessage(plan: Plan, full: Full): Promise<string> {
   const { t, locale } = await getT();
-  return full === "items" ? t.quota.itemsFull(plan.itemsMax ?? 0, plan.name) : t.quota.storageFull(fmtGb(plan.storageMaxBytes ?? 0, locale), plan.name);
+  const name = t.plans.items[plan.key].name;
+  return full === "items" ? t.quota.itemsFull(plan.itemsMax ?? 0, name) : t.quota.storageFull(fmtGb(plan.storageMaxBytes ?? 0, locale), name);
 }
 
 /** The plan of a workspace known only by its id: its billing account's */
@@ -210,7 +212,7 @@ export async function newTeamRefusal(userId: string): Promise<string | null> {
   return (await getT()).t.quota.secondTeam;
 }
 
-export interface OverCapacity { members: number; limit: number; planName: string }
+export interface OverCapacity { members: number; limit: number; plan: PlanKey }
 
 /**
  * A team can end up with more people than its plan allows after a downgrade.
@@ -221,7 +223,7 @@ export async function overCapacity(organizationId: string, planKey: string | nul
   const plan = planOf(planKey);
   if (plan.members === null) return null;
   const members = await countMembers(organizationId);
-  return members > plan.members ? { members, limit: plan.members, planName: plan.name } : null;
+  return members > plan.members ? { members, limit: plan.members, plan: plan.key } : null;
 }
 
 /** For route handlers: null to continue, or the error response with `quota: true`. */
@@ -235,15 +237,24 @@ export async function quotaBlock(check: Promise<void>): Promise<Response | null>
   }
 }
 
-/** Throws HttpError(402) if the workspace has used up that action's monthly quota. */
+/**
+ * Throws HttpError(402) if the workspace has used up that action's monthly quota. Searches on a fair-use plan
+ * never throw: past the ceiling they are logged so someone writes to the team before anything changes.
+ */
 export async function assertQuota(ws: QuotaWorkspace, action: "ai" | "jev_search"): Promise<void> {
   const plan = planOf(ws.plan);
-  const limit = action === "ai" ? plan.aiActionsPerMonth : plan.searchesPerMonth;
+  const searches = plan.searches;
+  if (action === "jev_search" && searches.kind === "fairUse") {
+    const used = await countAction(ws.billingAccountId, action);
+    if (used >= searches.ceiling) log.warn("quota.fair_use_passed", { billingAccountId: ws.billingAccountId, plan: plan.key, used, ceiling: searches.ceiling });
+    return;
+  }
+  const limit = action === "ai" ? plan.aiActionsPerMonth : searches.kind === "capped" ? searches.perMonth : null;
   if (limit === null) return;
   const used = await countAction(ws.billingAccountId, action);
   if (used >= limit) {
     const { t } = await getT();
-    throw new HttpError(402, t.quota.spent(used, limit, t.quota.actions[action], plan.name));
+    throw new HttpError(402, t.quota.spent(used, limit, t.quota.actions[action], t.plans.items[plan.key].name));
   }
 }
 
@@ -258,7 +269,7 @@ export async function assertWorkspaceRoom(accountId: string, exec: Exec = db): P
   const plan = planOf(a?.plan);
   if (plan.workspaces === null || (await countWorkspaces(accountId, exec)) < plan.workspaces) return;
   const { t } = await getT();
-  throw new HttpError(402, t.quota.noWorkspaceRoom(plan.name, plan.workspaces));
+  throw new HttpError(402, t.quota.noWorkspaceRoom(t.plans.items[plan.key].name, plan.workspaces));
 }
 
 export interface SeatOpts {
@@ -278,7 +289,7 @@ export async function memberLimitMessage(organizationId: string, planKey: string
   ]);
   if (members + pending < plan.members) return null;
   const { t } = await getT();
-  const allows = t.quota.planAllows(plan.name, t.quota.people(plan.members));
+  const allows = t.quota.planAllows(t.plans.items[plan.key].name, t.quota.people(plan.members));
   if (pending > 0) {
     return t.quota.withPending(allows, t.quota.people(members), t.quota.pendingInvites(pending));
   }
@@ -319,7 +330,7 @@ export async function notifyOverCapacity(organizationId: string, planKey: string
     byLocale.set(locale, [...(byLocale.get(locale) ?? []), email]);
   }
   for (const [locale, emails] of byLocale) {
-    const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/settings/members`, teamName, over.planName, over.members, over.limit, locale);
+    const m = overCapacityMail(`${appUrl.replace(/\/$/, "")}/settings/members`, teamName, over.plan, over.members, over.limit, locale);
     try { await sendMail(emails, m); } catch (err) { log.warn("plan.owner_not_notified", { err }); }
   }
   return true;

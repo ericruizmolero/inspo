@@ -11,12 +11,13 @@ import { fmtDate } from "@/lib/i18n/format";
 import { Button, Chip, FieldRow, SegmentedControl, SettingsWindow } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 import PersonAvatar from "@/components/PersonAvatar";
+import type { PlanKey } from "@/lib/plans";
 
 const ROLES = ["member", "admin"] as const;
 
 interface Member { id: string; userId: string; name: string; email: string; image?: string | null; role: string; createdAt: string }
 interface Invitation { id: string; email: string; role: string | null; expiresAt: string }
-interface OverCapacity { members: number; limit: number; planName: string }
+interface OverCapacity { members: number; limit: number; plan: PlanKey }
 
 export default function MembersPanel({ workspace, me, canManage, members, invitations, seatLimit, overCapacity, startCreating }: {
   workspace: Workspace; me: SessionUser; canManage: boolean; members: Member[]; invitations: Invitation[];
@@ -110,7 +111,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
         <SettingsWindow title={t.team.members} figure={seatLimit == null ? members.length : t.team.membersOf(members.length, seatLimit)} note={note}>
           {overCapacity && (
             <p className="cr-field-hint is-error setting-alert">
-              {t.team.overSeatsBefore(overCapacity.members, overCapacity.planName, overCapacity.limit)}
+              {t.team.overSeatsBefore(overCapacity.members, t.plans.items[overCapacity.plan].name, overCapacity.limit)}
               <Link href="/settings/plan">{t.team.overSeatsLink}</Link>.
             </p>
           )}

@@ -13,6 +13,7 @@ import { recordFailure } from "./log";
 import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import en from "./i18n/en";
 import es from "./i18n/es";
+import type { PlanKey } from "./plans";
 
 const DICTS = { en, es } as const;
 export const mailDict = (locale: Locale) => DICTS[locale].mail;
@@ -77,8 +78,9 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
  * On a downgrade a team can end up with more people than the new plan allows.
  * Nobody is removed: the owner is told so they can decide.
  */
-export function overCapacityMail(url: string, teamName: string, planName: string, members: number, limit: number, locale: Locale): Mail {
+export function overCapacityMail(url: string, teamName: string, plan: PlanKey, members: number, limit: number, locale: Locale): Mail {
   const t = mailDict(locale);
+  const planName = DICTS[locale].plans.items[plan].name;
   const nMembers = t.overCapacity.people(members);
   return {
     subject: t.overCapacity.subject(teamName, nMembers, planName, limit),

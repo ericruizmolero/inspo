@@ -68,11 +68,11 @@ async function main() {
   // 4. Downgrading leaves the team over the limit
   for (let i = 1; i <= 4; i++) await addMember(await addUser(i), new Date(+now + i));
   assert.equal(await overCapacity(orgId, "studio"), null, "5 people fit in Studio");
-  await setAccountPlan(orgId, "solo");
-  const over = await overCapacity(orgId, "solo");
-  assert.deepEqual(over, { members: 5, limit: 1, planName: "Solo" }, "5 people don't fit in Solo");
-  await assertQuota({ id: orgId, plan: "solo", billingAccountId: orgId }, "ai");
-  assert.match((await memberLimitMessage(orgId, "solo", { includePending: true }))!, /allows 1 person/, "a new invitation is refused");
+  await setAccountPlan(orgId, "free");
+  const over = await overCapacity(orgId, "free");
+  assert.deepEqual(over, { members: 5, limit: 1, plan: "free" }, "5 people don't fit in Free");
+  await assertQuota({ id: orgId, plan: "free", billingAccountId: orgId }, "ai");
+  assert.match((await memberLimitMessage(orgId, "free", { includePending: true }))!, /allows 1 person/, "a new invitation is refused");
 
   // 5. When two accept the last seat at once, the one left over is always the later one, never both
   const ordered = await db.select({ id: schema.member.id, createdAt: schema.member.createdAt })

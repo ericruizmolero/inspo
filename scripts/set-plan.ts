@@ -1,6 +1,6 @@
 // Changes the plan of a workspace's billing account while there is no payment gateway. Every workspace
 // the account pays for moves with it.
-//   npx tsx scripts/set-plan.ts <slug-or-name> <solo|studio|agency>
+//   npx tsx scripts/set-plan.ts <slug-or-name> <free|personal|studio|agency>
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import { eq, or } from "drizzle-orm";

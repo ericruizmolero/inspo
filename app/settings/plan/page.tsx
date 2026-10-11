@@ -7,7 +7,7 @@ import { usageSummary } from "@/lib/usage";
 import UsageCard from "../_components/UsageCard";
 import PlanWorkspaces from "../_components/PlanWorkspaces";
 import { countMembers, quotaStatus } from "@/lib/quota";
-import { PLANS, PLANS_CONTACT, planOf } from "@/lib/plans";
+import { PLANS, PLANS_CONTACT, isPaid, planOf } from "@/lib/plans";
 import { fmtGb } from "@/lib/room";
 import { getT, fmtDate, type Dict } from "@/lib/i18n";
 import { Button, Icon, Progress, SettingsWindow } from "@/components/criterio";
@@ -59,6 +59,7 @@ export default async function PlanPage() {
   const [q, usage, members, account] = await Promise.all([quotaStatus(ws), usageSummary(ws.id, 30), listMembers(ws.id), planWorkspaces(ctx)]);
   const agency = planOf("agency");
   const resets = fmtDate(q.resetsAt, locale, { day: "numeric", month: "long" });
+  const planName = t.plans.items[q.plan].name;
   const overSeats = q.members.limit !== null && q.members.used > q.members.limit;
   const mailto = (plan: string) => `mailto:${PLANS_CONTACT}?subject=${encodeURIComponent(t.plans.mailSubject(plan, ws.name))}`;
 
@@ -71,20 +72,21 @@ export default async function PlanPage() {
         <div className="pl-plans">
           {PLANS.map((p) => {
             const current = p.key === q.plan;
+            const name = t.plans.items[p.key].name;
             return (
               // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
-              <SettingsWindow key={p.key} title={p.name} className={`pl-plan${current ? " is-current" : ""}`}
+              <SettingsWindow key={p.key} title={name} className={`pl-plan${current ? " is-current" : ""}`}
                 note={current ? t.plans.current : undefined}
                 actions={current ? undefined : (
-                  <Button variant={p.priceEur > 0 ? "primary" : "secondary"} size="s" href={mailto(p.name)}>
-                    {p.priceEur > 0 ? t.plans.moveUp(p.name) : t.plans.moveDown(p.name)}
+                  <Button variant={isPaid(p) ? "primary" : "secondary"} size="s" href={mailto(name)}>
+                    {isPaid(p) ? t.plans.moveUp(name) : t.plans.moveDown(name)}
                   </Button>
                 )}>
                 <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
                 <div className="pl-plan__price">
-                  {p.priceEur === 0
+                  {!isPaid(p)
                     ? <span className="t-title-l">{t.plans.free}</span>
-                    : <><span className="t-title-l">{p.priceEur} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
+                    : <><span className="t-title-l">{p.price.month} €</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span></>}
                 </div>
                 <ul className="pl-plan__features">
                   {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} weight="bold" /></span><span>{f}</span></li>)}
@@ -96,12 +98,12 @@ export default async function PlanPage() {
         <p className="pl-foot t-small">{t.plans.foot}</p>
 
         <SettingsWindow title={ws.name}
-          description={q.workspaces.used > 1 ? <>{t.plans.resets(q.planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(q.planName, resets)}
+          description={q.workspaces.used > 1 ? <>{t.plans.resets(planName, resets)}. {t.plans.aiShared(q.workspaces.used)}</> : t.plans.resets(planName, resets)}
           note={(overSeats || q.pendingInvites > 0) ? (
             <>
               {overSeats && (
                 <span className="pl-over">
-                  {t.plans.overSeatsBefore(q.members.used, q.planName, q.members.limit!)}
+                  {t.plans.overSeatsBefore(q.members.used, planName, q.members.limit!)}
                   <Link href="/settings/members">{t.plans.overSeatsLink}</Link>{t.plans.overSeatsAfter}
                 </span>
               )}
@@ -120,8 +122,8 @@ export default async function PlanPage() {
         </SettingsWindow>
 
         {account && (
-          <PlanWorkspaces currentId={ws.id} accountName={account.accountName} planName={q.planName} limit={q.workspaces.limit} used={q.workspaces.used}
-            agency={{ name: agency.name, workspaces: agency.workspaces }} rows={account.rows} movable={account.movable} owner={account.owner} />
+          <PlanWorkspaces currentId={ws.id} accountName={account.accountName} planName={planName} limit={q.workspaces.limit} used={q.workspaces.used}
+            agency={{ name: t.plans.items[agency.key].name, workspaces: agency.workspaces }} rows={account.rows} movable={account.movable} owner={account.owner} />
         )}
 
         <UsageCard usage={usage} images={Object.fromEntries(members.map((m) => [m.userId, m.image ?? null]))} />
