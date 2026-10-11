@@ -75,6 +75,11 @@ export const errors = {
   brandFileTooBig: "That file is too big (the limit is 20 MB)",
   brandSvgUnsafe: "That SVG carries scripts or links to other files, so it cannot be used. Export it again as a plain SVG",
   brandTextEmpty: "Paste the guide's text first",
+  waveName: "Give the wave a name",
+  waveSize: "A wave is 1 to 50 people",
+  badUses: "Uses is a whole number, 1 or more",
+  badPriority: "Priority is a whole number",
+  inviteSpent: "This invite was already used or revoked",
   inviteOnly: "criterio.design is invite-only for now. Join the waitlist and we will write when your turn comes",
   tooMany: "That is a lot in a short time. Wait a few minutes and try again",
 };

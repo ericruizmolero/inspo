@@ -75,6 +75,11 @@ export const errors: typeof EnErrors = {
   brandFileTooBig: "Ese archivo pesa demasiado (el límite son 20 MB)",
   brandSvgUnsafe: "Ese SVG lleva scripts o enlaces a otros archivos, así que no se puede usar. Expórtalo otra vez como SVG simple",
   brandTextEmpty: "Pega primero el texto de la guía",
+  waveName: "Ponle nombre a la oleada",
+  waveSize: "Una oleada es de 1 a 50 personas",
+  badUses: "Los usos son un número entero, 1 o más",
+  badPriority: "La prioridad es un número entero",
+  inviteSpent: "Esta invitación ya se usó o se revocó",
   inviteOnly: "criterio.design es solo con invitación por ahora. Apúntate a la lista y te escribimos cuando te toque",
   tooMany: "Demasiadas veces en poco tiempo. Espera unos minutos y vuelve a probar",
 };

@@ -32,6 +32,12 @@ const notAdmin = (call: (m: typeof import("@/app/actions/admin")) => Promise<unk
     expectRefused(fx, await call(await import("@/app/actions/admin")), "B is not an app admin");
   },
 });
+const notWaitlistAdmin = (call: (m: typeof import("@/app/actions/waitlist-admin")) => Promise<unknown>): Surface => ({
+  probe: async (fx) => {
+    asB(fx);
+    expectRefused(fx, await call(await import("@/app/actions/waitlist-admin")), "B is not an app admin");
+  },
+});
 
 export const actions: Record<string, Surface> = {
   "action:app/actions/access.ts#joinWaitlistFromLogin": { exempt: "public waitlist sign-up: takes an email, no session and no workspace id" },
@@ -41,6 +47,12 @@ export const actions: Record<string, Surface> = {
   "action:app/actions/admin.ts#setSignupMode": notAdmin((m) => m.setSignupMode("open")),
   "action:app/actions/admin.ts#deleteFeedback": notAdmin((m) => m.deleteFeedback(["x"])),
   "action:app/actions/admin.ts#resolveFeedback": notAdmin((m) => m.resolveFeedback(["x"], true)),
+  "action:app/actions/waitlist-admin.ts#setWaitlistPriority": notWaitlistAdmin((m) => m.setWaitlistPriority("x", 1)),
+  "action:app/actions/waitlist-admin.ts#previewWave": notWaitlistAdmin((m) => m.previewWave({ next: 1 })),
+  "action:app/actions/waitlist-admin.ts#sendWave": notWaitlistAdmin((m) => m.sendWave(["x"], { wave: "probe", grantsPlan: null, grantsUntil: null })),
+  "action:app/actions/waitlist-admin.ts#makeLooseInvite": notWaitlistAdmin((m) => m.makeLooseInvite({ email: null, uses: 1, mail: false })),
+  "action:app/actions/waitlist-admin.ts#revokeTeamInvite": notWaitlistAdmin((m) => m.revokeTeamInvite("x")),
+  "action:app/actions/waitlist-admin.ts#resendInvite": notWaitlistAdmin((m) => m.resendInvite("x")),
 
   "action:app/actions/brief.ts#saveProjectBrief": {
     probe: async (fx) => {
