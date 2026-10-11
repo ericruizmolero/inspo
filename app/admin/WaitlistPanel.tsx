@@ -323,7 +323,7 @@ function InvitesWindow({ invites }: { invites: TeamInvite[] }) {
     } else {
       const r = await resendInvite(i.id).catch(() => null);
       if (!r?.ok) setMsg({ text: r?.error ?? w.actionFailed, error: true });
-      else setMsg(r.data.mailed ? { text: w.resent(who) } : { text: w.resendNotMailed, error: true });
+      else setMsg(r.data.mailed ? { text: w.resent(who) } : { text: w.resendNotMailed(r.data.link), error: true });
     }
     setBusy(null);
     router.refresh();

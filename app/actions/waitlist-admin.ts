@@ -85,7 +85,8 @@ export async function resendInvite(inviteId: string) {
   return asAdmin(async () => {
     const rotated = isId(inviteId) ? await rotateInvite(inviteId) : null;
     if (!rotated) throw new HttpError(409, (await getErrors()).inviteSpent);
-    try { await mailInvite(rotated.email, rotated.code, await appBase()); return { mailed: true }; }
-    catch (err) { log.warn("admin.invite_mail_not_sent", { err }); return { mailed: false }; }
+    const base = await appBase();
+    try { await mailInvite(rotated.email, rotated.code, base); return { mailed: true as const }; }
+    catch (err) { log.warn("admin.invite_mail_not_sent", { err }); return { mailed: false as const, link: inviteLink(base, rotated.code) }; }
   });
 }

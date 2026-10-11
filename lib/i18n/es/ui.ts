@@ -1711,7 +1711,7 @@ export const ui: typeof EnUi = {
       resend: "Reenviar",
       resendConfirm: (email: string): string => `¿Mandar a ${email} un enlace nuevo? El que tiene deja de funcionar.`,
       resent: (email: string): string => `Enlace nuevo enviado a ${email}.`,
-      resendNotMailed: "El correo no salió y el enlace anterior ya no funciona. Vuelve a reenviar.",
+      resendNotMailed: (link: string): string => `El correo no salió y el enlace anterior ya no funciona. Manda este a mano: ${link}`,
       actionFailed: "No se pudo hacer",
     },
   },

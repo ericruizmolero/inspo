@@ -1715,7 +1715,7 @@ export const ui = {
       resend: "Resend",
       resendConfirm: (email: string): string => `Send ${email} a new link? The one they have stops working.`,
       resent: (email: string): string => `New link sent to ${email}.`,
-      resendNotMailed: "The mail did not go out, and the old link no longer works. Resend again.",
+      resendNotMailed: (link: string): string => `The mail did not go out, and the old link no longer works. Send this one by hand: ${link}`,
       actionFailed: "Could not do it",
     },
   },
