@@ -549,13 +549,14 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 @media (max-width: 800px) { .island { display: none; } }
 /* The workspace tile (its logo, or your photo in the personal one) and its menu chevron (the system's .cr-tabbar-brand) */
 .island__ws {
-  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; height: 34px; padding: 0 6px 0 4px;
+  position: relative; display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; height: 34px; padding: 0 6px 0 4px;
   border: 0; border-radius: var(--radius-md); background: none; color: var(--chrome-muted); cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease;
 }
 .island__logo { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--chrome-raised); overflow: hidden; }
 .island__logo .cr-avatar.is-square { border-radius: 8px; }
 .island__chev { display: grid; place-items: center; }
+.island__steps { position: absolute; top: 2px; left: 24px; }
 .island__tabs { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .island__tab {
   display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; height: 34px; padding: 0 12px;

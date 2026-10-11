@@ -297,6 +297,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
         trigger={<>
           {/* The workspace you are in (its logo, or your photo in the personal one), never the product mark: the bar says where you are */}
           <span className="island__logo"><WorkspaceFace workspace={workspace} user={user} size={26} /></span>
+          {/* The first steps live in this closed menu: the dot is how a new account finds them */}
+          {steps && <StatusRing className="island__steps" tone="new" label={t.firstSteps.title} />}
           <span className="island__chev" aria-hidden><Icon name="chevron-down" size={14} /></span>
         </>}
         extras={<>
