@@ -805,12 +805,12 @@ export const ui: typeof EnUi = {
       guidance: "orientativo",
       use: {
         heading: "Cómo usar este archivo",
-        lines: ({ never, evidence, tokens, refs, required, guidance, client }: UseMdKeys): string[] => [
+        lines: ({ never, evidence, tokens, refs, required, guidance, measured, client }: UseMdKeys): string[] => [
           "> Para el agente que lee este archivo: qué obliga, qué orienta y qué hacer cuando chocan.",
           "",
-          `1. **Obligatorio.** Los valores de la marca, donde el archivo los tenga (la paleta y sus hex, las fuentes, la escala tipográfica, la sección ${tokens}), y cada línea de ${never}. Van marcados \`(${required})\`, como en \`**${never}** (${required}):\`. Usa los valores tal cual están escritos. No rompas nunca una línea de ${never}.`,
+          `1. **Obligatorio.** Los valores de la marca, donde el archivo los tenga (la paleta y sus hex, las fuentes, la escala tipográfica, la sección ${tokens}), y cada línea de ${never}. Van marcados \`(${required})\`, como en \`**${never}** (${required}):\`. Usa los valores tal cual están escritos: los únicos hex y familias que valen son los de la marca. No inventes un tono entre dos de la paleta; si necesitas un matiz, pon uno de sus hex con opacidad. En \`font-family\`, detrás de la familia de la marca va solo una genérica (\`sans-serif\`, \`monospace\`), nunca otra familia con nombre. No rompas nunca una línea de ${never}.`,
           "2. **Dirección.** La decisión de cada área. Síguela y adáptala a la tarea; no la contradigas. Un valor que nombre una decisión (un hex, una familia, un tamaño) se usa tal cual. Una decisión del equipo pesa más que una propuesta desde el tablero.",
-          `3. **Orientación.** Las referencias de cada área, marcadas \`**${evidence} (n)** (${guidance}):\`, y las ${refs} del final son inspiración para leer la intención, nunca algo que copiar: ni su maquetación, ni su texto, ni sus imágenes, ni sus logos. ${client ? `Solo la web del cliente, ${client}, es la marca: su copy, sus fuentes y su logo mandan.` : "Ninguna referencia es la marca."}`,
+          `3. **Orientación.** Las referencias de cada área, marcadas \`**${evidence} (n)** (${guidance}):\`, y las ${refs} del final son inspiración para leer la intención, nunca algo que copiar: ni su maquetación, ni su texto, ni sus imágenes, ni sus logos. Lo ${measured} de una referencia describe esa referencia: no es paleta ni fuentes. ${client ? `Solo la web del cliente, ${client}, es la marca: su copy, sus fuentes y su logo mandan.` : "Ninguna referencia es la marca."}`,
           "4. **Abierto o sin cubrir.** Donde un área esté abierta, o el archivo no diga nada de lo que necesitas, pregunta a la persona. No rellenes el hueco con un valor por defecto.",
           `5. **Conflictos.** Primero las líneas de ${never}, luego los valores de la marca, luego una decisión del equipo, luego una propuesta, luego las referencias. Avisa a la persona del choque.`,
         ],

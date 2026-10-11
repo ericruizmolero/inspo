@@ -89,7 +89,7 @@ export interface CriterioMdInput {
 }
 
 /** The file's own labels, for the "use" section to name the marks as the file writes them */
-export interface UseMdKeys { never: string; evidence: string; tokens: string; refs: string; required: string; guidance: string; client: string | null }
+export interface UseMdKeys { never: string; evidence: string; tokens: string; refs: string; required: string; guidance: string; measured: string; client: string | null }
 
 export interface BriefMdStrings {
   heading: string; draft: string;
@@ -208,7 +208,7 @@ export function criterioBlocks({ project, system, items: allItems, labels, strin
   const version = system.run?.version ? ` · ${strings.version(system.run.version)}` : "";
   const headLines = [`# ${project}: criterio.md`, "", `> ${strings.intro}`, "", `**criterio.design** · ${date}${version}`, ...(client ? ["", `**${strings.client}:** [${client.name}](${abs(client.web)})`] : [])];
   const blocks: CriterioBlock[] = [{ kind: "head", lines: doc.head ? doc.head.split("\n") : headLines, edited: !!doc.head }];
-  const useLines = strings.use.lines({ never: strings.never, evidence: strings.evidence, tokens: strings.brand.tokens, refs: strings.refs, required: strings.required, guidance: strings.guidance, client: client?.name ?? null });
+  const useLines = strings.use.lines({ never: strings.never, evidence: strings.evidence, tokens: strings.brand.tokens, refs: strings.refs, required: strings.required, guidance: strings.guidance, measured: strings.measured.label, client: client?.name ?? null });
   blocks.push({ kind: "section", id: "use", heading: title("use", strings.use.heading), ...byHandOr("use", useLines) });
   if (about?.trim()) blocks.push({ kind: "section", id: "project", heading: title("project", strings.project), lines: [about.trim()] });
   // A brief with no copy pasted in borrows the client's own words, as its site says them

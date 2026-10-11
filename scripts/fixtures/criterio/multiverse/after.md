@@ -8,9 +8,9 @@
 
 > Para el agente que lee este archivo: qué obliga, qué orienta y qué hacer cuando chocan.
 
-1. **Obligatorio.** Los valores de la marca, donde el archivo los tenga (la paleta y sus hex, las fuentes, la escala tipográfica, la sección Tokens), y cada línea de Nunca. Van marcados `(obligatorio)`, como en `**Nunca** (obligatorio):`. Usa los valores tal cual están escritos. No rompas nunca una línea de Nunca.
+1. **Obligatorio.** Los valores de la marca, donde el archivo los tenga (la paleta y sus hex, las fuentes, la escala tipográfica, la sección Tokens), y cada línea de Nunca. Van marcados `(obligatorio)`, como en `**Nunca** (obligatorio):`. Usa los valores tal cual están escritos: los únicos hex y familias que valen son los de la marca. No inventes un tono entre dos de la paleta; si necesitas un matiz, pon uno de sus hex con opacidad. En `font-family`, detrás de la familia de la marca va solo una genérica (`sans-serif`, `monospace`), nunca otra familia con nombre. No rompas nunca una línea de Nunca.
 2. **Dirección.** La decisión de cada área. Síguela y adáptala a la tarea; no la contradigas. Un valor que nombre una decisión (un hex, una familia, un tamaño) se usa tal cual. Una decisión del equipo pesa más que una propuesta desde el tablero.
-3. **Orientación.** Las referencias de cada área, marcadas `**Referencias (n)** (orientativo):`, y las Referencias del final son inspiración para leer la intención, nunca algo que copiar: ni su maquetación, ni su texto, ni sus imágenes, ni sus logos. Ninguna referencia es la marca.
+3. **Orientación.** Las referencias de cada área, marcadas `**Referencias (n)** (orientativo):`, y las Referencias del final son inspiración para leer la intención, nunca algo que copiar: ni su maquetación, ni su texto, ni sus imágenes, ni sus logos. Lo Medido de una referencia describe esa referencia: no es paleta ni fuentes. Ninguna referencia es la marca.
 4. **Abierto o sin cubrir.** Donde un área esté abierta, o el archivo no diga nada de lo que necesitas, pregunta a la persona. No rellenes el hueco con un valor por defecto.
 5. **Conflictos.** Primero las líneas de Nunca, luego los valores de la marca, luego una decisión del equipo, luego una propuesta, luego las referencias. Avisa a la persona del choque.
 
