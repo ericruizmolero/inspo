@@ -24,7 +24,7 @@ vi.mock("@/lib/egress-proxy", () => ({ egressArgs: async () => [] }));
 
 const { withPage, QueueFull } = await import("@/lib/browser");
 
-process.env.CHROME_PATH = "/chrome";
+process.env.CHROME_EXECUTABLE_PATH = "/chrome";
 beforeEach(() => { launched.length = 0; });
 
 function held() {

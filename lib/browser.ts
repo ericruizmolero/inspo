@@ -44,11 +44,10 @@ async function gatedLaunch(launch: () => Promise<Browser>): Promise<Browser> {
 }
 
 // ─── Launch ──────────────────────────────────────────────────────────────────
-// Screenshots and extraction grew their own launches, and their captures depend on them (flags, WebGL,
-// which Chrome is found). They stay two until someone compares what each one captures.
+// Screenshots and extraction start the same Chromium the same way: one binary, the same flags, WebGL on.
+// Extraction adds one flag so the recorder can play media.
 
 const VIEWPORT = { width: 1440, height: 900 };
-const MAC_CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 // On Vercel, executablePath() unpacks Chromium into /tmp the first time. If two
 // requests ask at once, one runs the binary while the other is still writing it
@@ -64,60 +63,36 @@ async function serverlessExecutablePath(): Promise<string> {
 }
 
 const LOCAL_CHROME_CANDIDATES = [
-  process.env.CHROME_EXECUTABLE_PATH,
-  MAC_CHROME,
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
   "/usr/bin/google-chrome",
   "/usr/bin/chromium",
-].filter(Boolean) as string[];
+];
 
-async function launchForShots(): Promise<Browser> {
+async function chrome(): Promise<{ executablePath: string; args: string[] }> {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     const chromium = (await import("@sparticuz/chromium")).default;
-    return puppeteer.launch({
-      args: [...chromium.args, ...(await egressArgs())],
-      defaultViewport: VIEWPORT,
-      executablePath: await serverlessExecutablePath(),
-      headless: true,
-    });
+    return { executablePath: await serverlessExecutablePath(), args: chromium.args };
   }
-
-  for (const candidate of LOCAL_CHROME_CANDIDATES) {
-    try {
-      await fs.promises.access(candidate);
-      return puppeteer.launch({
-        executablePath: candidate,
-        defaultViewport: VIEWPORT,
-        headless: true,
-        args: ["--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars", ...(await egressArgs())],
-      });
-    } catch { /* try next */ }
-  }
-  throw new Error("No local Chrome found. Set CHROME_EXECUTABLE_PATH.");
+  const executablePath = process.env.CHROME_EXECUTABLE_PATH || LOCAL_CHROME_CANDIDATES.find((c) => fs.existsSync(c));
+  if (!executablePath) throw new Error("No local Chrome found. Set CHROME_EXECUTABLE_PATH.");
+  return { executablePath, args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"] };
 }
 
-async function launchForExtraction(): Promise<Browser> {
-  const local = process.env.CHROME_PATH || (process.platform === "darwin" && fs.existsSync(MAC_CHROME) ? MAC_CHROME : null);
+const EXTRA_ARGS = {
+  shot: [],
+  extract: ["--autoplay-policy=no-user-gesture-required"],
+};
 
-  if (local && !process.env.VERCEL) {
-    return puppeteer.launch({
-      executablePath: local,
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage", "--autoplay-policy=no-user-gesture-required", ...(await egressArgs())],
-    });
-  }
-
-  const chromium = (await import("@sparticuz/chromium")).default;
-  chromium.setGraphicsMode = false;
+async function launch(kind: keyof typeof EXTRA_ARGS): Promise<Browser> {
+  const { executablePath, args } = await chrome();
   return puppeteer.launch({
-    executablePath: await chromium.executablePath(),
-    args: [...chromium.args, "--hide-scrollbars", "--autoplay-policy=no-user-gesture-required", ...(await egressArgs())],
-    headless: true,
+    executablePath,
+    args: [...args, ...EXTRA_ARGS[kind], ...(await egressArgs())],
     defaultViewport: VIEWPORT,
+    headless: true,
   });
 }
-
-const LAUNCH = { shot: launchForShots, extract: launchForExtraction };
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -126,9 +101,9 @@ const LAUNCH = { shot: launchForShots, extract: launchForExtraction };
  * then closes the browser whatever happened. The page only reaches public addresses (lib/safe-fetch.ts).
  * `signal`: aborting closes Chromium at once, so whatever step is pending fails and the caller's error reports it.
  */
-export async function withPage<T>(launch: keyof typeof LAUNCH, run: (page: Page) => Promise<T>, signal?: AbortSignal): Promise<T> {
+export async function withPage<T>(kind: keyof typeof EXTRA_ARGS, run: (page: Page) => Promise<T>, signal?: AbortSignal): Promise<T> {
   signal?.throwIfAborted();
-  const browser = await gatedLaunch(LAUNCH[launch]);
+  const browser = await gatedLaunch(() => launch(kind));
   const onAbort = () => { void browser.close().catch(() => {}); };
   signal?.addEventListener("abort", onAbort, { once: true });
   try {
