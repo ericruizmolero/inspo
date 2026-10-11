@@ -5,6 +5,25 @@ import { MD_SKILLS, SKILLS_REPO } from "@/lib/md-skill-ids";
 import { ui as enUi } from "@/lib/i18n/en/ui";
 import { ui as esUi } from "@/lib/i18n/es/ui";
 import { OWN_SKILLS, SKILLS, SKILLS_REPO as SITE_SKILLS_REPO } from "@/marketing-site/src/skills";
+import { PLANS } from "@/lib/plans";
+import { plans as enPlans } from "@/lib/i18n/en/plans";
+import { plans as esPlans } from "@/lib/i18n/es/plans";
+import { fmtPrice } from "@/lib/i18n/format";
+import * as site from "@/marketing-site/src/plans";
+
+test("the site's plans have the app's figures: prices, people, workspaces, AI actions, searches, references, storage", () => {
+  expect(site.PLANS).toEqual(PLANS);
+});
+
+test("the site says what the app says about each plan and about payment, in both languages", () => {
+  expect(site.PLAN_TEXT).toEqual({ en: enPlans, es: esPlans });
+  for (const [locale, ui] of [["en", enUi], ["es", esUi]] as const) {
+    const lines = site.PLAN_LINES[locale];
+    expect({ forGood: lines.forGood, perMonth: lines.perMonth, foot: lines.foot }).toEqual({ forGood: ui.plans.forGood, perMonth: ui.plans.perMonth, foot: ui.plans.foot });
+    expect(lines.orYearly("X")).toBe(ui.plans.orYearly("X"));
+    for (const p of PLANS) for (const n of [p.price.month, p.price.year]) expect(site.fmtPrice(n, locale)).toBe(fmtPrice(n, locale));
+  }
+});
 
 test("the site lists criterio.design's own skills as the app has them: same ids, order, names and text", () => {
   expect(OWN_SKILLS.map((s) => s.id)).toEqual([...MD_SKILLS]);

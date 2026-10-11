@@ -1,0 +1,124 @@
+---
+import Base from "../layouts/Base.astro";
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
+import PageHead from "./PageHead.astro";
+import { copy, type Locale } from "../i18n";
+import { PLANS, PLAN_LINES, PLAN_TEXT, fmtCount, fmtPrice, isPaid, type Plan } from "../plans";
+
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+const t = copy[locale].pricing;
+const lines = PLAN_LINES[locale];
+const text = PLAN_TEXT[locale];
+const free = PLANS.find((p) => !isPaid(p))!;
+const lead = t.lead(fmtCount(free.aiActionsPerMonth ?? 0, locale));
+
+const count = (n: number | null) => (n === null ? t.noLimit : fmtCount(n, locale));
+// Each row of the table, read from the plan's numbers, never from its text
+const rows: { label: string; value: (p: Plan) => string }[] = [
+  { label: t.rows.ai, value: (p) => count(p.aiActionsPerMonth) },
+  { label: t.rows.searches, value: (p) => (p.searches.kind === "capped" ? fmtCount(p.searches.perMonth, locale) : t.fairUse) },
+  { label: t.rows.references, value: (p) => count(p.itemsMax) },
+  { label: t.rows.storage, value: (p) => (p.storageMaxBytes === null ? t.noLimit : t.gb(p.storageMaxBytes / 1024 ** 3)) },
+  { label: t.rows.people, value: (p) => count(p.members) },
+  { label: t.rows.workspaces, value: (p) => count(p.workspaces) },
+];
+---
+<Base lang={locale} page="pricing" title={`${t.title} · criterio.design`} description={lead}>
+  <Header locale={locale} page="pricing" />
+
+  <main class="pricing">
+    <PageHead headline={t.headline} lead={lead} />
+
+    <ul class="plans">
+      {PLANS.map((p) => (
+        <li class="plan">
+          <h2>{text[p.key].name}</h2>
+          <p class="plan__tagline">{text[p.key].tagline}</p>
+          <p class="plan__price">
+            <span class="plan__amount">{fmtPrice(p.price.month, locale)}</span>
+            <span class="plan__per">{lines.perMonth}</span>
+          </p>
+          <p class="plan__year">{isPaid(p) ? lines.orYearly(fmtPrice(p.price.year, locale)) : lines.forGood}</p>
+          <ul class="plan__features">
+            {text[p.key].features.map((f) => <li>{f}</li>)}
+          </ul>
+        </li>
+      ))}
+    </ul>
+
+    <div class="start">
+      <a class="btn" href={copy[locale].login.href}>{t.start}</a>
+      <p>{lines.foot}</p>
+    </div>
+
+    <section class="compare">
+      <h2>{t.compare}</h2>
+      <div class="compare__scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr-only">{t.plan}</span></th>
+              {PLANS.map((p) => <th scope="col">{text[p.key].name}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr>
+                <th scope="row">{r.label}</th>
+                {PLANS.map((p) => <td>{r.value(p)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <Footer locale={locale} page="pricing" />
+</Base>
+
+<style>
+  .pricing { display: flex; flex-direction: column; gap: 40px; max-width: 1080px; margin: 0 auto; padding: 56px 24px 80px; }
+
+  .plans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+  .plan { display: flex; flex-direction: column; gap: 4px; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--paper-light); }
+  h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+  .plan__tagline { min-height: 2.8em; color: var(--text-2); font-size: 14px; font-weight: 400; line-height: 1.4; text-wrap: pretty; }
+  .plan__price { display: flex; align-items: baseline; gap: 6px; margin-top: 12px; }
+  .plan__amount { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .plan__per { color: var(--text-2); font-size: 14px; }
+  .plan__year { color: var(--text-2); font-size: 13px; }
+  .plan__features { display: flex; flex-direction: column; gap: 8px; margin: 16px 0 0; padding: 16px 0 0; border-top: 1px solid var(--border); list-style: none; font-size: 14px; line-height: 1.4; }
+  .plan__features li { position: relative; padding-left: 20px; text-wrap: pretty; }
+  .plan__features li::before { content: ""; position: absolute; left: 2px; top: 0.3em; width: 9px; height: 5px; border-left: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: rotate(-45deg); }
+
+  .start { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+  .start p { flex: 1 1 280px; max-width: 34em; color: var(--text-2); font-size: 14px; font-weight: 400; line-height: 1.5; }
+  /* Button primary, size m (docs/design-system/botones.md), the same as the header's */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px;
+    border: 1.5px solid var(--ink); border-radius: 10px; background: var(--ember); color: var(--ink);
+    font-weight: 600; text-decoration: none; white-space: nowrap; box-shadow: var(--bevel);
+    transition: background-color 150ms ease, box-shadow 100ms ease, transform 100ms ease;
+  }
+  .btn:hover { background: var(--ember-glow); }
+  .btn:active { box-shadow: var(--bevel-pressed); transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  .compare { display: flex; flex-direction: column; gap: 12px; }
+  .compare__scroll { overflow-x: auto; }
+  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
+  thead th { font-weight: 700; }
+  tbody th { color: var(--text-2); font-weight: 500; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  @media (max-width: 960px) { .plans { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) {
+    .pricing { padding-top: 32px; }
+    .plans { grid-template-columns: minmax(0, 1fr); }
+    .plan__tagline { min-height: 0; }
+  }
+</style>

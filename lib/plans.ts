@@ -1,6 +1,8 @@
 // SaaS plans. No payment gateway yet: the plan lives in billing_account.plan, one account for one or
 // more workspaces, and is changed by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
 // Quotas are monthly (calendar month), counted on the ai_usage table across the account's workspaces.
+// The marketing site's /pricing/ shows a copy (marketing-site/src/plans.ts): change both, or
+// tests/marketing-site-copy.test.ts fails. The same goes for the plans' text in lib/i18n/<locale>/plans.ts.
 
 export type PlanKey = "free" | "personal" | "studio" | "agency";
 
