@@ -1869,7 +1869,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .pl-plan__tagline { margin: 0; min-height: 2lh; color: var(--text-muted); }
 .pl-plan__price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; color: var(--text); }
 .pl-plan__per { color: var(--text-muted); }
-.pl-plan__year { flex-basis: 100%; color: var(--text-muted); }
+.pl-plan__year { flex-basis: 100%; min-height: 2lh; color: var(--text-muted); }
 .pl-plan__features { list-style: none; margin: 0; padding: 16px 0 0; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
 .pl-plan__features li { display: flex; align-items: flex-start; gap: 10px; color: var(--text); }
 /* The tick in the Checkbox look: a small sunken white square with an ink tick */
@@ -1886,7 +1886,7 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 @media (max-width: 860px) {
   .pl-usage__grid { grid-template-columns: 1fr; gap: 16px; }
   .pl-plans { grid-template-columns: 1fr; }
-  .pl-plan__tagline { min-height: 0; }
+  .pl-plan__tagline, .pl-plan__year { min-height: 0; }
 }
 
 /* ─── Back (secondary pages) ──────────────────────────────────────────────── */

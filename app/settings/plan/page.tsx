@@ -78,14 +78,15 @@ export default async function PlanPage() {
         <div className="pl-plans">
           {PLANS.map((p) => {
             const current = p.key === q.plan;
+            const up = p.price.month > planOf(q.plan).price.month;
             const name = t.plans.items[p.key].name;
             return (
               // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
               <SettingsWindow key={p.key} title={name} className={`pl-plan${current ? " is-current" : ""}`}
                 note={current ? t.plans.current : undefined}
                 actions={current ? undefined : (
-                  <Button variant={isPaid(p) ? "primary" : "secondary"} size="s" href={mailto(name)}>
-                    {isPaid(p) ? t.plans.moveUp : t.plans.moveDown}
+                  <Button variant={up ? "primary" : "secondary"} size="s" href={mailto(name)}>
+                    {up ? t.plans.moveUp : t.plans.moveDown}
                   </Button>
                 )}>
                 <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
