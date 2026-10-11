@@ -65,7 +65,7 @@ page in a small window). The popup reads it once and shows the image or video in
 
 A site and a right-clicked image or video get the same form as the board's add dialog: what caught the
 eye, the project (`GET /projects` lists them and says which one this person last added to, picked
-first) and the areas of its system. `lib/ext-file.ts` files the item there and hangs it under each area
+first) and the areas of its system. `lib/add.ts` files the item there and hangs it under each area
 ticked. After saving, the button turns into "Saved" with a check, and the form folds away.
 
 ## Importing bookmarks and boards
