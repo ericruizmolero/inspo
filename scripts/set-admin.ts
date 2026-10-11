@@ -28,4 +28,4 @@ async function main() {
   const res = await db.insert(schema.appAdmin).values({ email, addedBy: "script", createdAt: new Date() }).onConflictDoNothing().returning({ email: schema.appAdmin.email });
   console.log(res.length ? `✓ ${email} can now see the panel` : `${email} already had access`);
 }
-main();
+void main();

@@ -52,7 +52,7 @@ export default function LibraryHost({ library, user, workspaces, aiEnabled }: {
   const prefetch = useCallback(() => {
     for (const w of others()) {
       const c = cache.get(w.id);
-      if (!c || Date.now() - c.at > FRESH_MS) fetchLibrary(w.id);
+      if (!c || Date.now() - c.at > FRESH_MS) void fetchLibrary(w.id);
     }
   }, [others]);
 

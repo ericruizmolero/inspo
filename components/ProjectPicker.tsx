@@ -50,7 +50,7 @@ export default function ProjectPicker({ projects, filed, partly = [], onToggle, 
   // Enter on a name that exists files it there; on a new one, makes it
   const submit = () => {
     if (exact) pick(exact.id, !filed.includes(exact.id));
-    else if (q) create();
+    else if (q) void create();
   };
 
   return (

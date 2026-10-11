@@ -92,10 +92,10 @@ export default function EmptyStart({ onAddUrl, isDuplicate, onDirectory, onImpor
     } finally { setBusy(false); }
   };
   const submit = () => {
-    if (board) { importBoard(); return; }
+    if (board) { void importBoard(); return; }
     const web = normalizeWebUrl(raw);
     if (!web) { setError(t.start.notUrl); return; }
-    add(web);
+    void add(web);
   };
 
   const group = DIRECTORY.find((g) => g.key === tab);

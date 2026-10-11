@@ -22,4 +22,4 @@ async function main() {
     .sign(key);
   console.log(jwt);
 }
-main();
+void main();

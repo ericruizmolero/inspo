@@ -123,7 +123,7 @@ export default function AddInspoModal({ onClose, onSubmit, isDuplicate, project,
       close();
       return;
     }
-    if (board) { if (!step) importBoard(); return; }
+    if (board) { if (!step) void importBoard(); return; }
     if (!web) { setError(t.add.notUrl); return; }
     if (isDuplicate?.(web)) { setError(t.add.alreadyInLibrary); return; }
     onSubmit({ web, type: finalType, note: note.trim(), areas });

@@ -70,4 +70,4 @@ async function main() {
     while (queue.length) { const r = queue.shift()!; await one(r.name, r.url); }
   }));
 }
-main();
+void main();

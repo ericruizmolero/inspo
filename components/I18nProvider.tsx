@@ -26,7 +26,7 @@ const loading = new Map<Locale, Promise<Dict>>();
 function dictFor(locale: Locale): Promise<Dict> {
   let p = loading.get(locale);
   if (!p) {
-    const job: Promise<Dict> = LOADERS[locale]().then((m) => { Object.assign(job, { status: "fulfilled", value: m.default }); return m.default; });
+    const job: Promise<Dict> = LOADERS[locale]().then((m) => { void Object.assign(job, { status: "fulfilled", value: m.default }); return m.default; });
     loading.set(locale, (p = job));
   }
   return p;
@@ -45,7 +45,7 @@ export function I18nProvider({ locale, children }: { locale: Locale; children: R
   useEffect(() => {
     if (locale === shown) return;
     let live = true;
-    dictFor(locale).then(() => { if (live) startTransition(() => setShown(locale)); });
+    void dictFor(locale).then(() => { if (live) startTransition(() => setShown(locale)); });
     return () => { live = false; };
   }, [locale, shown]);
   const value = useMemo(() => ({ locale: shown, t }), [shown, t]);

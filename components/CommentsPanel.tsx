@@ -367,7 +367,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 onFocus={(e) => { const l = e.currentTarget.value.length; e.currentTarget.setSelectionRange(l, l); }}
                 onChange={(e) => setEditing({ id: m.id, text: e.target.value })}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); saveEdit(); }
+                  if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void saveEdit(); }
                   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
                 }}
               />
@@ -482,7 +482,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
               {renderMsg(head, false)}
               {replies.length > 0 && <div className="cm-replies">{replies.map((r, i) => renderMsg(r, !!replies[i - 1] && replies[i - 1].name === r.name && Math.abs(Date.parse(replies[i - 1].at) - Date.parse(r.at)) < 5 * 60000))}</div>}
               {onReply && (replying?.id === head.id ? (
-                <form className="cm-reply" onSubmit={(e) => { e.preventDefault(); sendReply(); }}>
+                <form className="cm-reply" onSubmit={(e) => { e.preventDefault(); void sendReply(); }}>
                   <TextArea
                     className="cm-reply__box"
                     autoFocus
@@ -493,7 +493,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                     aria-label={t.comments.reply}
                     onChange={(e) => setReplying({ ...replying, text: e.target.value })}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendReply(); }
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendReply(); }
                       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeReply(head.id); }
                     }}
                     onBlur={() => { if (!replying.text.trim()) setReplying(null); }}
@@ -520,7 +520,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
         {/* One field: the text, the screenshots waiting to go, and a toolbar inside the same box (attach on
             the left, Send on the right), and the keys and how to attach as a line under the field. No avatar (it is
             always you). The little help is on screen again (Eric, 07-10: "antes teníamos una mini ayuda... eso podemos rescatar?") */}
-        <form className="cm-composer" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        <form className="cm-composer" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden
             onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} />
           <TextArea
@@ -531,7 +531,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             aria-describedby="cm-composer-keys"
             placeholder={count === 0 && !item.note ? t.comments.firstComment : t.comments.addComment}
             onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); } }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); } }}
             toolbar={<>
               <IconButton icon="image" variant="quiet" size="s" label={t.comments.attach} onClick={() => fileRef.current?.click()} />
               {uploading && <span className="cr-textbox-status" role="status">{t.comments.uploading}</span>}

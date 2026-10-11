@@ -41,4 +41,4 @@ async function main() {
     console.log(`· workspace ${orgId}: ${items.length} sites → ${[...tally].map(([n, c]) => `${n} ${c}`).join(", ")}`);
   }
 }
-main();
+void main();

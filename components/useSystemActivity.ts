@@ -8,7 +8,7 @@ export function useSystemActivity(projectId: string, stamp: string): SystemActiv
   const [activity, setActivity] = useState<SystemActivity | null>(null);
   useEffect(() => {
     let alive = true;
-    loadSystemActivity(projectId).then((r) => { if (alive && r.ok) setActivity(r.data); });
+    void loadSystemActivity(projectId).then((r) => { if (alive && r.ok) setActivity(r.data); });
     return () => { alive = false; };
   }, [projectId, stamp]);
   return activity;

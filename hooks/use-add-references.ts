@@ -81,7 +81,7 @@ export function useAddReferences({ user, workspace, t, items, setItems, setLinks
       // Full experience from the start: tags and DESIGN.md without asking.
       // A post on X is imported first (its picture is what the tags look at).
       // Its tags are already being gathered on the server: the card shows it until they arrive
-      if (mediaKindOf(item.web) === "post") importPost(item.web);
+      if (mediaKindOf(item.web) === "post") void importPost(item.web);
       watch(item.web);
       cue("success", { emphasis: "subtle" });
       return item;

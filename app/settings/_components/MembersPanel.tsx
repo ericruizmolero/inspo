@@ -126,7 +126,7 @@ export default function MembersPanel({ workspace, me, canManage, members, invita
                 {canManage && m.userId !== me.id && !m.role.split(",").includes("owner") ? (
                   <SegmentedControl tone="paper" size="s" choice className="list__pick" label={t.team.roleOf(m.name)}
                     active={m.role.split(",").includes("admin") ? 1 : 0}
-                    onChange={(i) => { if (!busy && ROLES[i] !== (m.role.split(",").includes("admin") ? "admin" : "member")) setMemberRole(m, ROLES[i]); }}
+                    onChange={(i) => { if (!busy && ROLES[i] !== (m.role.split(",").includes("admin") ? "admin" : "member")) void setMemberRole(m, ROLES[i]); }}
                     items={ROLES.map((r) => ({ label: t.team.roles[r] }))} />
                 ) : (
                   <span className="list__meta t-small">{roleOf(m.role)}</span>

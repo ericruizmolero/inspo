@@ -221,7 +221,7 @@ export default function TemplatesView({ workspaceId, head, onStarted }: {
     // What this browser kept shows at once (after hydration: the server never has it), then the fresh list
     const kept = remembered(workspaceId);
     if (kept) setList(kept);
-    preloadTemplates(workspaceId).then((r) => { if (!alive) return; if (r.ok) setList(r.data); else if (!seen.has(workspaceId)) setError(r.error); });
+    void preloadTemplates(workspaceId).then((r) => { if (!alive) return; if (r.ok) setList(r.data); else if (!seen.has(workspaceId)) setError(r.error); });
     return () => { alive = false; };
   }, [workspaceId]);
   const use = async (tpl: TemplateCard, name: string) => {

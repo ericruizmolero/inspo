@@ -156,7 +156,7 @@ export default function SystemView({ project, system, onSystem, board, library, 
   // Fresh on open. A project with references and no reading reads itself; a brand an older prompt drew is drawn again, free
   useEffect(() => {
     let alive = true;
-    loadSystem(project.id).then((r) => {
+    void loadSystem(project.id).then((r) => {
       if (!alive) return;
       if (!r.ok) { setError(r.error); if (!system) setSystem(emptySystem(project.id)); return; }
       setSystem(r.data.system);

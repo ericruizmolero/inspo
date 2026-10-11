@@ -537,7 +537,7 @@ export default function InspoClient({
             if (searchHere || !saved) setQuery(nameFromHost(web)); else openItem(saved);
             return;
           }
-          addByUrl({ web, type: typeFromUrl(web), note: "" });
+          void addByUrl({ web, type: typeFromUrl(web), note: "" });
         }}
         onAdd={() => setShowAdd(true)}
         onDirectory={openDirectory}
@@ -548,7 +548,7 @@ export default function InspoClient({
         <AddInspoModal
           onClose={() => { setShowAdd(false); setAddInitial(undefined); }}
           initial={addInitial}
-          onSubmit={(input) => { if (input.file) addByUpload({ ...input, file: input.file }); else if (input.text) addByText({ ...input, text: input.text }); else addByUrl(input); }}
+          onSubmit={(input) => { if (input.file) void addByUpload({ ...input, file: input.file }); else if (input.text) void addByText({ ...input, text: input.text }); else void addByUrl(input); }}
           isDuplicate={isDuplicate}
           project={currentProject?.name}
           onImportBoard={importBoard}
