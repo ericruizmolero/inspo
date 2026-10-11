@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
     return [
       { source: "/((?!mcp/authorize).*)", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'self'" }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
       { source: "/mcp/authorize", headers: [...base, { key: "Content-Security-Policy", value: "frame-ancestors 'none'" }, { key: "X-Frame-Options", value: "DENY" }] },
+      // A shared link is for whoever was sent it: its page says noindex in its metadata, and its files (md,
+      // download, fonts) are route handlers with no metadata, so the header covers all of /s/ at once
+      { source: "/s/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
     ];
   },
   serverExternalPackages: ["puppeteer-core", "@sparticuz/chromium"],

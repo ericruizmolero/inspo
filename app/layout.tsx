@@ -8,9 +8,8 @@ import { getLocale, type Locale } from "@/lib/i18n";
 import { I18nProvider } from "@/components/I18nProvider";
 import FeedbackTool from "@/components/FeedbackTool";
 import { TipLayer } from "@/components/criterio";
+import { SITE } from "@/lib/site";
 
-// Canonical public URL: the same as BETTER_AUTH_URL on Vercel (criterio.design since 22/09/2026).
-const SITE = process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://criterio.design";
 // Title and description in the viewer's language. A search engine or bot sends no
 // cookie, so it gets the default language: English.
 const META: Record<Locale, { title: string; description: string; ogLocale: string }> = {
