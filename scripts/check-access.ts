@@ -102,8 +102,9 @@ async function gate() {
   assert.equal(created.user.accessInviteId, named.id, "the account keeps the invite it came with");
   const [entry] = await db.select({ status: schema.waitlistEntry.status }).from(schema.waitlistEntry).where(eq(schema.waitlistEntry.email, mail("named")));
   assert.equal(entry.status, "joined", "the waitlist entry is marked joined");
-  const [space] = await db.select({ plan: schema.organization.plan }).from(schema.member)
+  const [space] = await db.select({ plan: schema.billingAccount.plan }).from(schema.member)
     .innerJoin(schema.organization, eq(schema.organization.id, schema.member.organizationId))
+    .innerJoin(schema.billingAccount, eq(schema.billingAccount.id, schema.organization.billingAccountId))
     .where(and(eq(schema.member.userId, created.user.id), eq(schema.organization.kind, "personal")));
   assert.equal(space?.plan, "studio", "the personal space starts on the invite's plan");
   assert.deepEqual(await admit(mail("named"), null), { ok: false }, "the named invite is spent once");
@@ -139,6 +140,7 @@ main()
       const ids = made.map((u) => u.id);
       const spaces = await db.select({ id: schema.member.organizationId }).from(schema.member).where(inArray(schema.member.userId, ids));
       if (spaces.length) await db.delete(schema.organization).where(inArray(schema.organization.id, spaces.map((x) => x.id)));
+      await db.delete(schema.billingAccount).where(inArray(schema.billingAccount.ownerUserId, ids));
       await db.delete(schema.user).where(inArray(schema.user.id, ids));
     }
     await db.delete(schema.waitlistEntry).where(like(schema.waitlistEntry.email, `${TAG}%`));

@@ -25,12 +25,13 @@ async function main() {
   if (databaseUrl() !== LOCAL_DATABASE_URL) throw new Error("bench:library runs on the local database only");
   const tag = `bench${Date.now().toString(36)}`;
   const orgs = Array.from({ length: NOISE + 1 }, (_, i) => `${tag}-${i}`);
-  const ws = { id: orgs[0], name: orgs[0], slug: orgs[0], kind: "team", role: "owner", logo: null, plan: "studio" } as unknown as Workspace;
+  const ws = { id: orgs[0], name: orgs[0], slug: orgs[0], kind: "team", role: "owner", logo: null, plan: "studio", billingAccountId: orgs[0] } as unknown as Workspace;
   const user: SessionUser = { id: `${tag}-user`, name: "bench", email: "bench@example.invalid", language: "en" };
   try {
     await db.execute(sql`insert into "user" (id, name, email, email_verified, created_at, updated_at) values (${user.id}, 'bench', ${`${tag}@example.invalid`}, true, now(), now())`);
-    await db.execute(sql`insert into organization (id, name, slug, created_at, plan, kind)
-      select o, o, o, now(), 'studio', 'team' from (select ${tag} || '-' || i as o from generate_series(0, ${NOISE}) i) w`);
+    await db.execute(sql`insert into billing_account (id, name, plan) select o, o, 'studio' from (select ${tag} || '-' || i as o from generate_series(0, ${NOISE}) i) w`);
+    await db.execute(sql`insert into organization (id, name, slug, created_at, billing_account_id, kind)
+      select o, o, o, now(), o, 'team' from (select ${tag} || '-' || i as o from generate_series(0, ${NOISE}) i) w`);
     await db.execute(sql`insert into member (id, organization_id, user_id, role, created_at) values (${`${tag}-m`}, ${ws.id}, ${user.id}, 'owner', now())`);
     const { rows: [real] } = await db.execute<{ tags: unknown }>(sql`select tags_json as tags from inspo_item where tags_json is not null and organization_id not like 'bench%' order by updated_at desc limit 1`);
     console.log(real ? "tags: a real reference's, copied onto every row" : "tags: none (no tagged reference in the local database)");
@@ -97,6 +98,7 @@ async function main() {
     // Spend outlives its workspace (migration 0038): dropped first, while it still names the bench's
     await db.execute(sql`delete from ai_usage where organization_id like ${`${tag}-%`}`);
     await db.execute(sql`delete from organization where id like ${`${tag}-%`}`);
+    await db.execute(sql`delete from billing_account where id like ${`${tag}-%`}`);
     await db.execute(sql`delete from "user" where id = ${user.id}`);
     await db.execute(sql`delete from library_tombstone where organization_id like ${`${tag}-%`}`);
     await pool.end();

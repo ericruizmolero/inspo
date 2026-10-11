@@ -12,7 +12,7 @@ import assert from "node:assert/strict";
 import { promises as fs } from "fs";
 import { eq, inArray } from "drizzle-orm";
 import { db, schema } from "../lib/db";
-import { setWorkspacePlan } from "../lib/workspace-core";
+import { accountOf, createBillingAccount, dropEmptyAccount, setAccountPlan } from "../lib/workspace-core";
 
 const BASE = process.env.BASE || "http://localhost:3000";
 const TAG = `flowcheck-${crypto.randomUUID().slice(0, 8)}`;
@@ -48,6 +48,7 @@ const accept = (cookie: string, invitationId: string) =>
   post("/api/auth/organization/accept-invitation", cookie, { invitationId });
 
 let orgId = "", paidId = "";
+const accounts: string[] = [];
 
 async function main() {
   const owner = await login(mail("owner"));
@@ -56,12 +57,16 @@ async function main() {
   assert.equal(refused.status, 403, `a second free workspace was created: ${JSON.stringify(refused.body)}`);
   const [me] = await db.select({ id: schema.user.id }).from(schema.user).where(eq(schema.user.email, mail("owner")));
   paidId = newId();
-  await db.insert(schema.organization).values({ id: paidId, name: `${TAG}-paid`, slug: `${TAG}-paid`, createdAt: new Date(), kind: "team", plan: "studio" });
+  const paidAccount = await createBillingAccount({ name: `${TAG}-paid`, ownerUserId: me.id, plan: "studio" });
+  accounts.push(paidAccount);
+  await db.insert(schema.organization).values({ id: paidId, name: `${TAG}-paid`, slug: `${TAG}-paid`, createdAt: new Date(), kind: "team", billingAccountId: paidAccount });
   await db.insert(schema.member).values({ id: newId(), organizationId: paidId, userId: me.id, role: "owner", createdAt: new Date() });
   const created = await post("/api/auth/organization/create", owner, { name: TAG, slug: TAG });
   orgId = created.body.id as string;
   assert.ok(orgId, `team was not created: ${JSON.stringify(created.body)}`);
-  await setWorkspacePlan(orgId, "studio");
+  const accountId = (await accountOf(orgId))!.id;
+  accounts.push(accountId);
+  await setAccountPlan(accountId, "studio");
 
   // 1. Three people join: the team is at 4 of 5
   for (const who of ["one", "two", "three"]) {
@@ -114,5 +119,6 @@ main()
   .catch((e) => { console.error("✗", e instanceof Error ? e.message : e); process.exitCode = 1; })
   .finally(async () => {
     for (const id of [orgId, paidId]) if (id) await db.delete(schema.organization).where(eq(schema.organization.id, id));
+    for (const id of accounts) await dropEmptyAccount(id);
     await db.delete(schema.user).where(inArray(schema.user.email, PEOPLE.map(mail)));
   });

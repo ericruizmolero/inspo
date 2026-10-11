@@ -1,11 +1,12 @@
 // Check of the free plan's room against the local database (#124): 200 references with the sample project's left
-// out, 1 GB of files, an import that stops at the cap, and one free workspace each. Creates a test workspace and two
+// out, 1 GB of files, an import that stops at the cap, and one free workspace each, counted by the billing accounts a person pays for. Creates a test workspace and two
 // people, checks with assert and deletes them when done. Files go to the local .data/files: with R2_* set it stops.
 //   npm run check:limits
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
 import { eq, inArray } from "drizzle-orm";
+import type { PlanKey } from "../lib/plans";
 
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 const TAG = `limitcheck-${id().slice(0, 8)}`;
@@ -20,7 +21,7 @@ async function main() {
   const { countItems, storageUsed, newTeamRefusal, assertRoom } = await import("../lib/quota");
   const { TEMPLATE_AUTHOR } = await import("../lib/sample-items");
   const { auth } = await import("../lib/auth");
-  const { HttpError } = await import("../lib/workspace-core");
+  const { HttpError, createBillingAccount, accountOf, dropEmptyAccount } = await import("../lib/workspace-core");
   const free = PLANS.find((p) => !isPaid(p))!, paid = PLANS.find(isPaid)!;
 
   const orgs: string[] = [], users: string[] = [];
@@ -31,9 +32,13 @@ async function main() {
     users.push(uid);
     return uid;
   };
-  const newOrg = async (owner: string, kind: "personal" | "team", plan: string) => {
+  const accounts: string[] = [];
+  /** A workspace on an account of its own that `owner` pays for, or on `account` when given */
+  const newOrg = async (owner: string, kind: "personal" | "team", plan: PlanKey, account?: string) => {
     const oid = id();
-    await db.insert(schema.organization).values({ id: oid, name: `${TAG}-${kind}`, slug: `${TAG}-${oid}`, createdAt: now, kind, plan });
+    const billingAccountId = account ?? await createBillingAccount({ name: `${TAG}-${kind}`, ownerUserId: owner, plan });
+    accounts.push(billingAccountId);
+    await db.insert(schema.organization).values({ id: oid, name: `${TAG}-${kind}`, slug: `${TAG}-${oid}`, createdAt: now, kind, billingAccountId });
     await db.insert(schema.member).values({ id: id(), organizationId: oid, userId: owner, role: "owner", createdAt: now });
     orgs.push(oid);
     return oid;
@@ -117,14 +122,26 @@ async function main() {
     console.log(`✓ only free workspaces: refused, "${second.ok ? "" : second.message}"`);
     const payer = await newUser("payer");
     await newOrg(payer, "personal", free.key);
-    await newOrg(payer, "team", paid.key);
+    const agency = await newOrg(payer, "team", paid.key);
     assert.equal(await newTeamRefusal(payer), null);
     const third = await create(payer);
     assert.equal(third.ok, true, `with a paid workspace a team is created: ${JSON.stringify(third)}`);
-    console.log("✓ owner of a paid workspace: the team is created");
+    assert.equal((await accountOf(third.id!))?.plan, free.key, "the new team pays on its own, on the free plan");
+    console.log("✓ owner of a paid workspace: the team is created, on a free account of its own");
+
+    // 7. Owning a workspace someone else pays for (an agency's client) is not paying: no free team for them
+    const client = await newUser("client");
+    await newOrg(client, "personal", free.key);
+    await newOrg(client, "team", paid.key, (await accountOf(agency))!.id);
+    assert.ok(await newTeamRefusal(client), "owner of a workspace on another person's paid account: refused");
+    console.log("✓ owner of a workspace the agency pays for: refused");
     console.log("check:limits ok");
   } finally {
-    if (orgs.length) await db.delete(schema.organization).where(inArray(schema.organization.id, orgs));
+    if (orgs.length) {
+      const made = await db.select({ a: schema.organization.billingAccountId }).from(schema.organization).where(inArray(schema.organization.id, orgs));
+      await db.delete(schema.organization).where(inArray(schema.organization.id, orgs));
+      for (const a of new Set([...accounts, ...made.map((m) => m.a)])) await dropEmptyAccount(a);
+    }
     if (users.length) await db.delete(schema.user).where(inArray(schema.user.id, users));
     await db.delete(schema.storedFile).where(eq(schema.storedFile.key, `inspo/pages/${TAG}.jpg`));
     await pool.end();

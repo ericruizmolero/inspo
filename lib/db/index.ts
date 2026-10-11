@@ -20,3 +20,5 @@ if (process.env.VERCEL) attachDatabasePool(pool);
 export const db = drizzle(pool, { schema });
 export { schema, pool };
 export type Db = typeof db;
+/** What a write can run on: the pool, or a transaction it is part of */
+export type Exec = Pick<Parameters<Parameters<Db["transaction"]>[0]>[0], "select" | "insert" | "update" | "delete">;

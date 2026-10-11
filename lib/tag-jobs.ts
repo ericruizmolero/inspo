@@ -129,8 +129,9 @@ export async function resetTagJob(organizationId: string, web: string): Promise<
 
 /** Workspaces with jobs to take that may take them: one over its seats gets no AI until it fixes it, as in the app */
 export async function openWorkspacesWithJobs(limit: number): Promise<string[]> {
-  const found = await db.selectDistinct({ organizationId: T.organizationId, plan: schema.organization.plan }).from(T)
+  const found = await db.selectDistinct({ organizationId: T.organizationId, plan: schema.billingAccount.plan }).from(T)
     .innerJoin(schema.organization, eq(schema.organization.id, T.organizationId))
+    .innerJoin(schema.billingAccount, eq(schema.billingAccount.id, schema.organization.billingAccountId))
     .where(claimable())
     .limit(limit);
   const open = await Promise.all(found.map((w) =>

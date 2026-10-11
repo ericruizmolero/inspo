@@ -10,7 +10,7 @@ import path from "path";
 import { db, schema } from "../lib/db";
 import { fetchInspoItems } from "../lib/sheets";
 import { addItem, findByWeb, setThumbnail, setTags, newId } from "../lib/items";
-import { ensurePersonalWorkspace } from "../lib/workspace-core";
+import { createBillingAccount, ensurePersonalWorkspace } from "../lib/workspace-core";
 import type { TagMap } from "../types/inspo";
 
 const TEAM_NAME = process.env.TEAM_NAME || "treseiscero";
@@ -32,7 +32,8 @@ async function ensureUser(name: string, email: string) {
 async function ensureTeam() {
   const [o] = await db.select().from(schema.organization).where(eq(schema.organization.slug, TEAM_SLUG)).limit(1);
   if (o) return o;
-  const row = { id: newId(), name: TEAM_NAME, slug: TEAM_SLUG, logo: null, createdAt: new Date(), kind: "team" };
+  const billingAccountId = await createBillingAccount({ name: TEAM_NAME, ownerUserId: null });
+  const row = { id: newId(), name: TEAM_NAME, slug: TEAM_SLUG, logo: null, createdAt: new Date(), kind: "team", billingAccountId };
   await db.insert(schema.organization).values(row);
   console.log(`+ team ${TEAM_NAME}`);
   return row;

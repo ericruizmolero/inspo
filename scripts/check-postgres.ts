@@ -23,7 +23,8 @@ async function main() {
   const now = new Date();
   const orgId = newId(), userId = newId();
   await db.insert(schema.user).values({ id: userId, name: "check", email: `check-${userId}@example.invalid`, createdAt: now, updatedAt: now });
-  await db.insert(schema.organization).values({ id: orgId, name: "check", slug: `check-${orgId}`, createdAt: now, kind: "team" });
+  await db.insert(schema.billingAccount).values({ id: orgId, name: "check", ownerUserId: userId });
+  await db.insert(schema.organization).values({ id: orgId, name: "check", slug: `check-${orgId}`, createdAt: now, kind: "team", billingAccountId: orgId });
   try {
     // 1. setThumbnail reports success from rowCount
     const item = await addItem(orgId, { name: "Check", web: "https://check.example", author: "check", createdBy: userId });
@@ -112,6 +113,7 @@ async function main() {
   } finally {
     await db.delete(schema.aiUsage).where(eq(schema.aiUsage.organizationId, orgId));
     await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
+    await db.delete(schema.billingAccount).where(eq(schema.billingAccount.id, orgId));
     await db.delete(schema.user).where(eq(schema.user.id, userId));
   }
   console.log("check:postgres ok");

@@ -26,9 +26,10 @@ async function person(p: string) {
   const now = new Date();
   const owner: Actor = { id: `${p}-user`, name: `${p} owner`, email: `${p}@example.test`, workspaceId: `${p}-team` };
   await db.insert(schema.user).values({ id: owner.id, name: owner.name, email: owner.email, emailVerified: true, createdAt: now, updatedAt: now });
+  await db.insert(schema.billingAccount).values([`${p}-team`, `${p}-personal`].map((id) => ({ id, name: id, plan: "agency", ownerUserId: owner.id })));
   await db.insert(schema.organization).values([
-    { id: `${p}-team`, name: `${p} team`, slug: `${p}-team`, kind: "team", plan: "agency", createdAt: now },
-    { id: `${p}-personal`, name: `${p} personal`, slug: `${p}-personal`, kind: "personal", plan: "agency", createdAt: now },
+    { id: `${p}-team`, name: `${p} team`, slug: `${p}-team`, kind: "team", billingAccountId: `${p}-team`, createdAt: now },
+    { id: `${p}-personal`, name: `${p} personal`, slug: `${p}-personal`, kind: "personal", billingAccountId: `${p}-personal`, createdAt: now },
   ]);
   await db.insert(schema.member).values([
     { id: `${p}-m1`, organizationId: `${p}-team`, userId: owner.id, role: "owner", createdAt: now },
@@ -152,6 +153,7 @@ export async function cleanup(tag: string) {
   }
   await db.delete(schema.aiUsage).where(like(schema.aiUsage.organizationId, `${tag}%`));
   await db.delete(schema.organization).where(like(schema.organization.id, `${tag}%`));
+  await db.delete(schema.billingAccount).where(like(schema.billingAccount.id, `${tag}%`));
   // What the deletes above left behind (migration 0036's triggers)
   await db.delete(schema.libraryTombstone).where(like(schema.libraryTombstone.organizationId, `${tag}%`));
   await db.delete(schema.mcpClient).where(like(schema.mcpClient.id, `${tag}%`));

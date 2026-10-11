@@ -39,9 +39,9 @@ export interface WorkspaceExport {
 
 /** The workspace's export, or null when it does not exist */
 export async function buildWorkspaceExport(organizationId: string): Promise<WorkspaceExport | null> {
-  const O = schema.organization, M = schema.member, U = schema.user;
-  const [ws] = await db.select({ id: O.id, name: O.name, kind: O.kind, plan: O.plan, outputLanguage: O.outputLanguage, createdAt: O.createdAt })
-    .from(O).where(eq(O.id, organizationId));
+  const O = schema.organization, B = schema.billingAccount, M = schema.member, U = schema.user;
+  const [ws] = await db.select({ id: O.id, name: O.name, kind: O.kind, plan: B.plan, outputLanguage: O.outputLanguage, createdAt: O.createdAt })
+    .from(O).innerJoin(B, eq(B.id, O.billingAccountId)).where(eq(O.id, organizationId));
   if (!ws) return null;
   const I = schema.inspoItem, P = schema.project, PI = schema.projectItem, PS = schema.projectSystem, SA = schema.systemArea;
   const C = schema.inspoComment, AC = schema.systemAreaComment, DR = schema.designRevision, AR = schema.systemAreaRevision, AI = schema.aiUsage;

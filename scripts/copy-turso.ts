@@ -4,7 +4,8 @@
 // The target needs its tables first: start the app once (or npm run db:init on a local database).
 // Ids are copied as they are: they live in file paths and cookies.
 // Column names: Turso kept Better Auth's camelCase ("emailVerified"), Postgres uses snake_case;
-// each column is looked up by both. Workspace kind and plan come out of the old metadata JSON.
+// each column is looked up by both. Workspace kind and plan come out of the old metadata JSON; the plan goes
+// on a billing account made for each workspace.
 // Turso never enforced foreign keys, so there are orphans: a row whose parent is gone is skipped
 // (cascade) or keeps the row with the reference cleared (set null), and the count is printed.
 // Remove this script and @libsql/client once production runs on Postgres.
@@ -19,7 +20,8 @@ import { databaseUrl } from "../lib/db/url";
 
 // Parents before children
 const TABLES: PgTable[] = [
-  schema.user, schema.organization, schema.session, schema.account, schema.verification,
+  // billing_account is not in Turso: each organization gets one of its own as it is copied
+  schema.user, schema.billingAccount, schema.organization, schema.session, schema.account, schema.verification,
   schema.member, schema.invitation, schema.inspoItem, schema.project, schema.projectItem,
   schema.designRevision, schema.designWhy, schema.inspoComment, schema.aiUsage, schema.activitySegment,
   schema.appAdmin, schema.feedbackNote, schema.extKey,
@@ -69,13 +71,14 @@ async function main() {
 
       const res = await turso.execute(`select * from "${cfg.name}"`);
       const rows: Record<string, unknown>[] = [];
+      const accounts: { id: string; name: string; plan: string }[] = [];
       let skipped = 0, cleared = 0, broken = 0;
       for (const s of res.rows as LibsqlRow[]) {
         const raw = s as unknown as Record<string, unknown>;
         let keep = true;
         const row: Record<string, unknown> = {};
         for (const [key, col] of cols) {
-          if (cfg.name === "organization" && (key === "kind" || key === "plan")) continue;
+          if (cfg.name === "organization" && (key === "kind" || key === "billingAccountId")) continue;
           const c = convert(col.columnType, raw[col.name] ?? raw[key], col.notNull);
           if (!c.ok) { keep = false; broken++; break; }
           row[key] = c.value;
@@ -85,7 +88,10 @@ async function main() {
           let meta: { kind?: string; plan?: string } = {};
           try { meta = JSON.parse(String(raw.metadata ?? "{}")) ?? {}; } catch { /* broken metadata */ }
           row.kind = meta.kind === "personal" ? "personal" : "team";
-          row.plan = ["solo", "studio", "agency"].includes(meta.plan ?? "") ? meta.plan : "solo";
+          const plan = ["solo", "studio", "agency"].includes(meta.plan ?? "") ? meta.plan : "solo";
+          accounts.push({ id: String(row.id), name: String(row.name), plan: plan as string });
+          ids.set("billing_account", (ids.get("billing_account") ?? new Set()).add(String(row.id)));
+          row.billingAccountId = row.id;
           row.metadata = null;
         }
         for (const fk of fks) {
@@ -98,6 +104,7 @@ async function main() {
         if (keep) rows.push(row);
       }
 
+      for (let i = 0; i < accounts.length; i += 200) await tx.insert(schema.billingAccount).values(accounts.slice(i, i + 200));
       for (let i = 0; i < rows.length; i += 200) await tx.insert(table).values(rows.slice(i, i + 200) as never);
       const keyOfRow = (r: Record<string, unknown>) => pkCols.map((c) => r[cols.find(([, col]) => col.name === c)![0]]).join("|");
       ids.set(cfg.name, new Set(rows.map(keyOfRow)));

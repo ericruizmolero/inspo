@@ -61,9 +61,10 @@ const owner: Actor = { id: `${tag}-user`, name: `${tag} owner`, email: `${tag}@e
 beforeAll(async () => {
   const now = new Date();
   await db.insert(schema.user).values({ id: owner.id, name: owner.name, email: owner.email, emailVerified: true, createdAt: now, updatedAt: now });
+  await db.insert(schema.billingAccount).values([`${tag}-team`, `${tag}-personal`].map((id) => ({ id, name: id, plan: "agency", ownerUserId: owner.id })));
   await db.insert(schema.organization).values([
-    { id: `${tag}-team`, name: `${tag} team`, slug: `${tag}-team`, kind: "team", plan: "agency", createdAt: now },
-    { id: `${tag}-personal`, name: `${tag} personal`, slug: `${tag}-personal`, kind: "personal", plan: "agency", createdAt: now },
+    { id: `${tag}-team`, name: `${tag} team`, slug: `${tag}-team`, kind: "team", billingAccountId: `${tag}-team`, createdAt: now },
+    { id: `${tag}-personal`, name: `${tag} personal`, slug: `${tag}-personal`, kind: "personal", billingAccountId: `${tag}-personal`, createdAt: now },
   ]);
   await db.insert(schema.member).values([
     { id: `${tag}-m1`, organizationId: `${tag}-team`, userId: owner.id, role: "owner", createdAt: now },
@@ -84,6 +85,7 @@ afterAll(async () => {
   delete process.env.OPENROUTER_API_KEY;
   actAs(null);
   await db.delete(schema.organization).where(inArray(schema.organization.id, [`${tag}-team`, `${tag}-personal`]));
+  await db.delete(schema.billingAccount).where(inArray(schema.billingAccount.id, [`${tag}-team`, `${tag}-personal`]));
   await db.delete(schema.user).where(eq(schema.user.id, owner.id));
   // Shared across workspaces, so no cascade reaches them
   await db.delete(schema.designDoc).where(like(schema.designDoc.url, `https://${tag}%`));

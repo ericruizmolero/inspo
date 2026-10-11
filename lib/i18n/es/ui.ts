@@ -1628,6 +1628,11 @@ export const ui: typeof EnUi = {
     storageFull: (limit: string, plan: string): string =>
       `El almacenamiento está lleno: el plan ${plan} guarda ${limit} GB de archivos. Puedes seguir viendo, buscando y exportando. Amplía el plan en /planes para guardar más.`,
     secondTeam: "Tu espacio personal es tu workspace gratis, y un equipo nuevo también empezaría gratis. Para crearlo, pasa a un plan de pago un workspace que sea tuyo en /planes.",
+    noWorkspaceRoom: (plan: string, limit: number): string => limit === 1
+      ? `El plan ${plan} tiene un espacio. Pasa a Agency en /planes para tener varios.`
+      : `El plan ${plan} admite ${limit} espacios y este ya los tiene.`,
+    notAccountOwner: "Solo quien paga este plan puede añadirle espacios.",
+    cannotMove: "Solo se puede traer un equipo tuyo, y no al plan en el que ya está.",
   },
   areaThread: {
     title: "Conversación",

@@ -1,10 +1,12 @@
 // Monthly quotas per plan, counted on ai_usage. Server only.
+// The plan belongs to the billing account: AI actions, searches and workspaces count across all of its
+// workspaces (an agency has one pool for all its clients). Seats count per workspace.
 import "server-only";
 import { and, eq, gt, gte, inArray, isNull, lt, max, ne, not, notLike, or, sql } from "drizzle-orm";
-import { db, schema } from "./db";
+import { db, schema, type Exec } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
 import { AUTO_REF, type UsageAction } from "./usage-core";
-import { HttpError, httpErrorResponse, listMembers, type Workspace } from "./workspace-core";
+import { accountOf, HttpError, httpErrorResponse, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
 import { overCapacityMail, sendMail, localeForEmail } from "./mail";
@@ -27,6 +29,8 @@ export interface QuotaStatus {
   items: QuotaLine;
   /** Bytes of the workspace's own files */
   storage: QuotaLine;
+  /** Workspaces the billing account pays for */
+  workspaces: QuotaLine;
   /** Sent, unaccepted invitations: they take a seat too */
   pendingInvites: number;
 }
@@ -45,12 +49,12 @@ function nextMonth(): Date {
 // Searches are counted per distinct query (ref = normalized text), not per
 // call: search fires while typing and one intent can produce several
 // partial calls. The real cost stays in ai_usage row by row.
-async function countAction(organizationId: string, action: "ai" | "jev_search"): Promise<number> {
-  if (action === "ai") return countAi(organizationId);
+async function countAction(accountId: string, action: "ai" | "jev_search"): Promise<number> {
+  if (action === "ai") return countAi(accountId);
   const U = schema.aiUsage;
   const n = action === "jev_search" ? sql<number>`count(distinct lower(trim(${U.ref})))` : sql<number>`count(*)`;
   const [r] = await db.select({ n }).from(U)
-    .where(and(eq(U.organizationId, organizationId), eq(U.action, action), gte(U.createdAt, monthStart())));
+    .where(and(inAccount(accountId), eq(U.action, action), gte(U.createdAt, monthStart())));
   return Number(r?.n ?? 0);
 }
 
@@ -62,10 +66,14 @@ async function countAction(organizationId: string, action: "ai" | "jev_search"):
  */
 export const AI_ACTIONS: UsageAction[] = ["system", "brand", "polish", "design_md", "design_why", "revise", "explain"];
 
-async function countAi(organizationId: string): Promise<number> {
+/** ai_usage rows of any workspace the account pays for */
+const inAccount = (accountId: string) => inArray(schema.aiUsage.organizationId,
+  db.select({ id: schema.organization.id }).from(schema.organization).where(eq(schema.organization.billingAccountId, accountId)));
+
+async function countAi(accountId: string): Promise<number> {
   const U = schema.aiUsage;
   const [r] = await db.select({ n: sql<number>`count(*)` }).from(U)
-    .where(and(eq(U.organizationId, organizationId), inArray(U.action, AI_ACTIONS), gte(U.createdAt, monthStart()),
+    .where(and(inAccount(accountId), inArray(U.action, AI_ACTIONS), gte(U.createdAt, monthStart()),
       or(isNull(U.ref), notLike(U.ref, `${AUTO_REF}%`))));
   return Number(r?.n ?? 0);
 }
@@ -112,11 +120,18 @@ export async function countPendingInvitations(organizationId: string, exceptEmai
   return Number(r?.n ?? 0);
 }
 
-export async function quotaStatus(ws: Pick<Workspace, "id" | "plan">): Promise<QuotaStatus> {
+export async function countWorkspaces(accountId: string, exec: Exec = db): Promise<number> {
+  const [r] = await exec.select({ n: sql<number>`count(*)` }).from(schema.organization).where(eq(schema.organization.billingAccountId, accountId));
+  return Number(r?.n ?? 0);
+}
+
+type QuotaWorkspace = Pick<Workspace, "id" | "plan" | "billingAccountId">;
+
+export async function quotaStatus(ws: QuotaWorkspace): Promise<QuotaStatus> {
   const plan: Plan = planOf(ws.plan);
-  const [ai, searches, members, pendingInvites, items, bytes] = await Promise.all([
-    countAction(ws.id, "ai"), countAction(ws.id, "jev_search"), countMembers(ws.id), countPendingInvitations(ws.id),
-    countItems(ws.id), storageUsed(ws.id),
+  const [ai, searches, members, workspaces, pendingInvites, items, bytes] = await Promise.all([
+    countAction(ws.billingAccountId, "ai"), countAction(ws.billingAccountId, "jev_search"), countMembers(ws.id),
+    countWorkspaces(ws.billingAccountId), countPendingInvitations(ws.id), countItems(ws.id), storageUsed(ws.id),
   ]);
   return {
     plan: plan.key, planName: plan.name, priceEur: plan.priceEur, resetsAt: nextMonth().toISOString(),
@@ -125,6 +140,7 @@ export async function quotaStatus(ws: Pick<Workspace, "id" | "plan">): Promise<Q
     members: { used: members, limit: plan.members },
     items: { used: items, limit: plan.itemsMax },
     storage: { used: bytes, limit: plan.storageMaxBytes },
+    workspaces: { used: workspaces, limit: plan.workspaces },
     pendingInvites,
   };
 }
@@ -173,10 +189,9 @@ export async function fullMessage(plan: Plan, full: Full): Promise<string> {
   return full === "items" ? t.quota.itemsFull(plan.itemsMax ?? 0, plan.name) : t.quota.storageFull(fmtGb(plan.storageMaxBytes ?? 0, locale), plan.name);
 }
 
-/** The plan of a workspace known only by its id */
+/** The plan of a workspace known only by its id: its billing account's */
 export async function planIn(organizationId: string): Promise<PlanKey> {
-  const [org] = await db.select({ plan: schema.organization.plan }).from(schema.organization).where(eq(schema.organization.id, organizationId)).limit(1);
-  return planOf(org?.plan).key;
+  return planOf((await accountOf(organizationId))?.plan).key;
 }
 
 /** assertRoom for code that holds only the workspace's id */
@@ -185,13 +200,14 @@ export async function assertRoomIn(organizationId: string, need: { items?: numbe
 }
 
 /**
- * Why this person may not make another team, or null if they may. A team starts on the free plan, and the free
- * workspace each person gets is their personal space: another one takes a workspace they own on a paid plan.
+ * Why this person may not make another team, or null if they may. A team starts on a free account of its own, and
+ * the free workspace each person gets is their personal space: another one takes paying for a plan, that is, owning
+ * a billing account on a paid plan. Being an owner of a workspace someone else pays for (an agency's client) is not.
  */
 export async function newTeamRefusal(userId: string): Promise<string | null> {
-  const M = schema.member, O = schema.organization;
-  const owned = await db.select({ plan: O.plan, role: M.role }).from(M).innerJoin(O, eq(O.id, M.organizationId)).where(eq(M.userId, userId));
-  if (mayCreateTeam(owned.filter((r) => r.role.split(",").includes("owner")).map((r) => planOf(r.plan)))) return null;
+  const B = schema.billingAccount;
+  const paying = await db.select({ plan: B.plan }).from(B).where(eq(B.ownerUserId, userId));
+  if (mayCreateTeam(paying.map((r) => planOf(r.plan)))) return null;
   return (await getT()).t.quota.secondTeam;
 }
 
@@ -229,16 +245,30 @@ export async function assertSeatsOk(ws: Pick<Workspace, "id" | "plan">): Promise
 }
 
 /** Throws HttpError(402) if the workspace has used up that action's monthly quota. */
-export async function assertQuota(ws: Pick<Workspace, "id" | "plan">, action: "ai" | "jev_search"): Promise<void> {
+export async function assertQuota(ws: QuotaWorkspace, action: "ai" | "jev_search"): Promise<void> {
   await assertSeatsOk(ws);
   const plan = planOf(ws.plan);
   const limit = action === "ai" ? plan.aiActionsPerMonth : plan.searchesPerMonth;
   if (limit === null) return;
-  const used = await countAction(ws.id, action);
+  const used = await countAction(ws.billingAccountId, action);
   if (used >= limit) {
     const { t } = await getT();
     throw new HttpError(402, t.quota.spent(used, limit, t.quota.actions[action], plan.name));
   }
+}
+
+/**
+ * Throws HttpError(402) if the account already has as many workspaces as its plan allows. Run it in the
+ * transaction that adds the workspace, after locking the account's row, so two at once cannot both fit.
+ * An account left over the limit by a downgrade keeps every workspace: only adding one is refused.
+ */
+export async function assertWorkspaceRoom(accountId: string, exec: Exec = db): Promise<void> {
+  const [a] = await exec.select({ plan: schema.billingAccount.plan }).from(schema.billingAccount)
+    .where(eq(schema.billingAccount.id, accountId)).limit(1);
+  const plan = planOf(a?.plan);
+  if (plan.workspaces === null || (await countWorkspaces(accountId, exec)) < plan.workspaces) return;
+  const { t } = await getT();
+  throw new HttpError(402, t.quota.noWorkspaceRoom(plan.name, plan.workspaces));
 }
 
 export interface SeatOpts {

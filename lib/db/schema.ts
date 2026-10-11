@@ -87,7 +87,25 @@ export const rateLimit = pgTable("rate_limit", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 });
 
-// A workspace = a Better Auth organization. kind and plan are our columns, declared to
+// Who pays: one plan for one or more workspaces (an agency holds one per client). Every workspace belongs to
+// one, and a workspace on its own has its own. The quotas count across all of its workspaces (lib/quota.ts).
+export const billingAccount = pgTable("billing_account", {
+  id: text("id").primaryKey(),
+  /** The name of the workspace it was created for: the switcher names the group with it */
+  name: text("name").notNull(),
+  /** SaaS plan (lib/plans.ts), changed by hand with scripts/set-plan.ts */
+  plan: text("plan").notNull().default("solo"),
+  /** Set null, not cascade: its workspaces outlive the person, and the account with them */
+  ownerUserId: text("owner_user_id").references(() => user.id, { onDelete: "set null" }),
+  /** Stripe's customer (#90), unused until then */
+  stripeCustomerId: text("stripe_customer_id"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  oneOf("billing_account_plan_check", t.plan, ["solo", "studio", "agency"]),
+  index("billing_account_owner_idx").on(t.ownerUserId),
+]);
+
+// A workspace = a Better Auth organization. kind and billingAccountId are our columns, declared to
 // Better Auth as additionalFields (lib/auth.ts). metadata is Better Auth's and we leave it empty.
 export const organization = pgTable("organization", {
   id: text("id").primaryKey(),
@@ -98,13 +116,13 @@ export const organization = pgTable("organization", {
   metadata: text("metadata"),
   /** "personal" (one per person, created by lib/workspace-core.ts) | "team" */
   kind: text("kind").notNull().default("team"),
-  /** SaaS plan (lib/plans.ts), changed by hand with scripts/set-plan.ts */
-  plan: text("plan").notNull().default("solo"),
+  /** Who pays for it, and so its plan */
+  billingAccountId: text("billing_account_id").notNull().references(() => billingAccount.id),
   /** The language the model writes in for this workspace (lib/output-language.ts). Not the interface language. */
   outputLanguage: text("output_language").notNull().default("en"),
 }, (t) => [
   oneOf("organization_kind_check", t.kind, ["personal", "team"]),
-  oneOf("organization_plan_check", t.plan, ["solo", "studio", "agency"]),
+  index("organization_billing_account_idx").on(t.billingAccountId),
   oneOf("organization_output_language_check", t.outputLanguage, OUTPUT_LANGUAGES),
 ]);
 

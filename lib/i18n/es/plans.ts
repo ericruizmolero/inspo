@@ -24,8 +24,8 @@ export const plans: typeof EnPlans = {
   agency: {
     tagline: "Para equipos con varios proyectos abiertos.",
     features: [
-      "Hasta 15 personas",
-      "Varios workspaces",
+      "Hasta 15 personas en cada espacio",
+      "10 espacios con un solo plan",
       "2.000 acciones de IA al mes",
       "Búsquedas IA ilimitadas",
       "Soporte por correo el mismo día",

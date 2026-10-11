@@ -25,7 +25,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function main() {
   const now = new Date();
   await db.insert(schema.user).values({ id: userId, name: TAG, email: `${TAG}@example.test`, createdAt: now, updatedAt: now });
-  await db.insert(schema.organization).values({ id: orgId, name: TAG, slug: TAG, createdAt: now });
+  await db.insert(schema.billingAccount).values({ id: orgId, name: TAG, ownerUserId: userId });
+  await db.insert(schema.organization).values({ id: orgId, name: TAG, slug: TAG, createdAt: now, billingAccountId: orgId });
   await db.insert(schema.member).values({ id: id(), organizationId: orgId, userId, role: "owner", createdAt: now });
   await db.insert(T).values(Array.from({ length: ITEMS }, (_, i) => {
     const web = `/api/files/inspo/media/${TAG}-${i}.jpg`;
@@ -92,5 +93,6 @@ async function cleanup() {
   await db.delete(schema.failure).where(eq(schema.failure.organizationId, orgId)).catch(() => {});
   await db.delete(schema.aiUsage).where(eq(schema.aiUsage.organizationId, orgId)).catch(() => {});
   await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
+  await db.delete(schema.billingAccount).where(eq(schema.billingAccount.id, orgId));
   await db.delete(schema.user).where(eq(schema.user.id, userId));
 }

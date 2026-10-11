@@ -24,8 +24,8 @@ export const plans = {
   agency: {
     tagline: "For teams with several projects open at once.",
     features: [
-      "Up to 15 people",
-      "Several workspaces",
+      "Up to 15 people in each workspace",
+      "10 workspaces on one plan",
       "2,000 AI actions a month",
       "Unlimited AI searches",
       "Same-day email support",

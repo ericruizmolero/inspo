@@ -10,14 +10,14 @@ import { db, schema } from "./db";
 import { sendMail, magicLinkMail, invitationMail, localeForEmail } from "./mail";
 import { isLocale, DEFAULT_LOCALE, localeFromCookieHeader, localeForNewUser, type Locale } from "./i18n/locale";
 import { getErrors } from "./i18n";
-import { planOf, DEFAULT_PLAN } from "./plans";
+import { planOf } from "./plans";
 import { toOutputLanguage, DEFAULT_OUTPUT_LANGUAGE } from "./output-language";
 import { eq } from "drizzle-orm";
 import { allow } from "./rate-limit";
 import { log } from "./log";
 import { admit, markJoined, maySignIn } from "./access";
 import { inviteFromCookieHeader } from "./invite-cookie";
-import { ensurePersonalWorkspace } from "./workspace-core";
+import { accountOf, createBillingAccount, ensurePersonalWorkspace } from "./workspace-core";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
@@ -183,12 +183,12 @@ export const auth = betterAuth({
       allowUserToCreateOrganization: true,
       creatorRole: "owner",
       // Our columns on the organization table. Set on the server only: kind by lib/workspace-core.ts
-      // (personal) or the column default (team), plan by scripts/set-plan.ts.
+      // (personal) or the column default (team), billingAccountId by beforeCreateOrganization.
       schema: {
         organization: {
           additionalFields: {
             kind: { type: "string", required: false, input: false, defaultValue: "team" },
-            plan: { type: "string", required: false, input: false, defaultValue: DEFAULT_PLAN },
+            billingAccountId: { type: "string", required: false, input: false },
             // The language the model writes in: the creator's on creation (beforeCreateOrganization),
             // then setOutputLanguage (app/actions/workspace.ts)
             outputLanguage: { type: "string", required: false, input: false, defaultValue: DEFAULT_OUTPUT_LANGUAGE },
@@ -218,31 +218,34 @@ export const auth = betterAuth({
         }
       },
       organizationHooks: {
-        // A new team writes in its creator's language until someone changes it. The personal space never comes
-        // through here (ensurePersonalWorkspace writes it), so this is always a team, and one free workspace each
+        // A new team writes in its creator's language until someone changes it, and pays on its own: an account of its
+        // own on the free plan, so one free workspace each. The personal space never comes through here
+        // (ensurePersonalWorkspace writes it), nor does a workspace inside an agency's account (createWorkspaceInAccount,
+        // app/actions/billing.ts).
         async beforeCreateOrganization({ organization: org, user }) {
           const refused = await newTeamRefusal(user.id);
           if (refused) throw new APIError("FORBIDDEN", { message: refused });
-          return { data: { ...org, outputLanguage: toOutputLanguage((user as { language?: unknown }).language) } };
+          const billingAccountId = await createBillingAccount({ name: org.name ?? "", ownerUserId: user.id ?? null });
+          return { data: { ...org, billingAccountId, outputLanguage: toOutputLanguage((user as { language?: unknown }).language) } };
         },
         // Plan seat quota: checked on invite and on accept.
         // On invite, unaccepted invitations count too, except the one for this
         // same address: re-inviting replaces the pending one instead of adding to it.
         async beforeCreateInvitation({ invitation, organization: org }) {
-          const msg = await memberLimitMessage(invitation.organizationId, planFromOrg(org), { includePending: true, exceptEmail: invitation.email });
+          const msg = await memberLimitMessage(invitation.organizationId, await planFromOrg(org), { includePending: true, exceptEmail: invitation.email });
           if (msg) throw new APIError("FORBIDDEN", { message: msg });
         },
         // Direct member add (not by invitation): counts members only
         async beforeAddMember({ member, organization: org }) {
           if (member.role === "owner") return; // workspace creator
-          const msg = await memberLimitMessage(member.organizationId, planFromOrg(org));
+          const msg = await memberLimitMessage(member.organizationId, await planFromOrg(org));
           if (msg) throw new APIError("FORBIDDEN", { message: msg });
         },
         // Accepting an invitation does NOT go through beforeAddMember: Better Auth uses these two
         // hooks for that path. Only members count here, because the pending invitation
         // becomes the member who joins.
         async beforeAcceptInvitation({ invitation, organization: org }) {
-          const msg = await memberLimitMessage(invitation.organizationId, planFromOrg(org));
+          const msg = await memberLimitMessage(invitation.organizationId, await planFromOrg(org));
           if (msg) throw new APIError("FORBIDDEN", { message: msg });
         },
         // Two people can accept the last seat at once: both pass the check above
@@ -252,7 +255,7 @@ export const auth = betterAuth({
         // ponytail: compensating check, not a transaction. If the insert ever moves
         // to our own code, replace this with a db.transaction() and delete it.
         async afterAcceptInvitation({ invitation, member, organization: org }) {
-          const plan = planOf(planFromOrg(org));
+          const plan = planOf(await planFromOrg(org));
           if (plan.members === null) return;
           const rank = await memberRank(member.organizationId, member.id);
           if (rank < plan.members) return; // the first ones within the plan always stay
@@ -297,6 +300,7 @@ export const auth = betterAuth({
 
 export type Session = typeof auth.$Infer.Session;
 
-function planFromOrg(org: Record<string, unknown>): string | null {
-  return typeof org.plan === "string" ? org.plan : null;
+/** The plan of the account that pays for the workspace; seats still count per workspace */
+async function planFromOrg(org: { id: string }): Promise<string | null> {
+  return (await accountOf(org.id))?.plan ?? null;
 }

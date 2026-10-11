@@ -1632,6 +1632,11 @@ export const ui = {
     storageFull: (limit: string, plan: string): string =>
       `Storage is full: the ${plan} plan keeps ${limit} GB of files. Viewing, searching and exporting still work. Move up a plan in /planes to save more.`,
     secondTeam: "Your personal space is your free workspace, and a new team would start free too. To create one, move a workspace you own up to a paid plan in /planes.",
+    noWorkspaceRoom: (plan: string, limit: number): string => limit === 1
+      ? `The ${plan} plan holds one workspace. Move up to Agency in /planes to hold several.`
+      : `The ${plan} plan holds ${limit} workspaces and this one has them all.`,
+    notAccountOwner: "Only the person who pays for this plan can add workspaces to it.",
+    cannotMove: "Only a team you own can move, and not into the plan it is already on.",
   },
   areaThread: {
     title: "Conversation",

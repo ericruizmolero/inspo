@@ -1,6 +1,6 @@
-// SaaS plans. No payment gateway yet: the plan lives in organization.plan
-// and is changed by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
-// Quotas are monthly (calendar month) and counted on the ai_usage table.
+// SaaS plans. No payment gateway yet: the plan lives in billing_account.plan, one account for one or
+// more workspaces, and is changed by hand with `npx tsx scripts/set-plan.ts <slug> <plan>`.
+// Quotas are monthly (calendar month), counted on the ai_usage table across the account's workspaces.
 
 export type PlanKey = "solo" | "studio" | "agency";
 
@@ -10,8 +10,10 @@ export interface Plan {
   key: PlanKey;
   name: string;
   priceEur: number;
-  /** null = unlimited */
+  /** People in each workspace. null = unlimited */
   members: number | null;
+  /** Workspaces one billing account can hold. null = unlimited */
+  workspaces: number | null;
   /** What a person asks of the model in a month (see AI_ACTIONS in lib/quota.ts) */
   aiActionsPerMonth: number | null;
   searchesPerMonth: number | null;
@@ -24,15 +26,15 @@ export interface Plan {
 export const PLANS: Plan[] = [
   {
     key: "solo", name: "Solo", priceEur: 0,
-    members: 1, aiActionsPerMonth: 30, searchesPerMonth: 30, itemsMax: 200, storageMaxBytes: 1024 ** 3,
+    members: 1, workspaces: 1, aiActionsPerMonth: 30, searchesPerMonth: 30, itemsMax: 200, storageMaxBytes: 1024 ** 3,
   },
   {
     key: "studio", name: "Studio", priceEur: 29,
-    members: 5, aiActionsPerMonth: 500, searchesPerMonth: null, itemsMax: null, storageMaxBytes: null,
+    members: 5, workspaces: 1, aiActionsPerMonth: 500, searchesPerMonth: null, itemsMax: null, storageMaxBytes: null,
   },
   {
     key: "agency", name: "Agency", priceEur: 79,
-    members: 15, aiActionsPerMonth: 2000, searchesPerMonth: null, itemsMax: null, storageMaxBytes: null,
+    members: 15, workspaces: 10, aiActionsPerMonth: 2000, searchesPerMonth: null, itemsMax: null, storageMaxBytes: null,
   },
 ];
 

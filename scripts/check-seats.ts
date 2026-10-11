@@ -6,7 +6,7 @@ loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
 import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
-import { setWorkspacePlan } from "../lib/workspace-core";
+import { setAccountPlan } from "../lib/workspace-core";
 import { memberLimitMessage, overCapacity, memberRank, assertSeatsOk, countPendingInvitations } from "../lib/quota";
 import { HttpError } from "../lib/workspace-core";
 
@@ -41,8 +41,9 @@ async function addInvitation(email: string, expiresAt: Date, inviterId: string) 
 
 async function main() {
   const now = new Date();
+  await db.insert(schema.billingAccount).values({ id: orgId, name: TAG, plan: "studio" });
   await db.insert(schema.organization).values({
-    id: orgId, name: TAG, slug: TAG, createdAt: now, kind: "team", plan: "studio",
+    id: orgId, name: TAG, slug: TAG, createdAt: now, kind: "team", billingAccountId: orgId,
   });
   const owner = await addUser(0);
   await addMember(owner, now, "owner");
@@ -68,7 +69,7 @@ async function main() {
   // 4. Downgrading leaves the team over the limit
   for (let i = 1; i <= 4; i++) await addMember(await addUser(i), new Date(+now + i));
   assert.equal(await overCapacity(orgId, "studio"), null, "5 people fit in Studio");
-  await setWorkspacePlan(orgId, "solo");
+  await setAccountPlan(orgId, "solo");
   const over = await overCapacity(orgId, "solo");
   assert.deepEqual(over, { members: 5, limit: 1, planName: "Solo" }, "5 people don't fit in Solo");
   await assert.rejects(
@@ -93,5 +94,6 @@ main()
   .finally(async () => {
     // The cascade delete takes members and invitations; users go separately
     await db.delete(schema.organization).where(eq(schema.organization.id, orgId));
+    await db.delete(schema.billingAccount).where(eq(schema.billingAccount.id, orgId));
     for (const uid of userIds) await db.delete(schema.user).where(eq(schema.user.id, uid));
   });

@@ -10,7 +10,7 @@ for (const k of Object.keys(process.env)) if (k.startsWith("R2_")) delete proces
 import assert from "node:assert/strict";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db, pool, schema } from "../lib/db";
-import { newId, HttpError } from "../lib/workspace-core";
+import { newId, HttpError, createBillingAccount, dropEmptyAccount } from "../lib/workspace-core";
 import { addItem, deleteItem } from "../lib/items";
 import { createProject } from "../lib/projects";
 import { putFile, listFiles, usingR2 } from "../lib/storage";
@@ -25,9 +25,11 @@ async function main() {
   const usageIds = [newId(), newId()];
 
   await db.insert(schema.user).values({ id: userId, name: "check", email: `check-${userId}@example.invalid`, createdAt: now, updatedAt: now });
+  const teamAccount = await createBillingAccount({ name, ownerUserId: userId });
+  const personalAccount = await createBillingAccount({ name: "check", ownerUserId: userId });
   await db.insert(schema.organization).values([
-    { id: orgId, name, slug: `check-${orgId}`, createdAt: now, kind: "team" },
-    { id: personalId, name: "check", slug: `p-check-${personalId}`, createdAt: now, kind: "personal" },
+    { id: orgId, name, slug: `check-${orgId}`, createdAt: now, kind: "team", billingAccountId: teamAccount },
+    { id: personalId, name: "check", slug: `p-check-${personalId}`, createdAt: now, kind: "personal", billingAccountId: personalAccount },
   ]);
   try {
     await db.insert(schema.member).values([
@@ -86,6 +88,9 @@ async function main() {
 
     const first = await deleteWorkspace(orgId);
     assert.deepEqual(first, { files: 4, storageClean: true }, "four files deleted, storage clean");
+    const accountsLeft = await db.select({ id: schema.billingAccount.id }).from(schema.billingAccount)
+      .where(inArray(schema.billingAccount.id, [teamAccount, personalAccount]));
+    assert.deepEqual(accountsLeft.map((a) => a.id), [personalAccount], "the team's account, left with no workspace, goes with it");
     const again = await deleteWorkspace(orgId);
     assert.deepEqual(again, { files: 0, storageClean: true }, "a second run finds nothing and still converges");
 
@@ -115,6 +120,7 @@ async function main() {
   } finally {
     await db.delete(schema.aiUsage).where(inArray(schema.aiUsage.id, usageIds));
     await db.delete(schema.organization).where(inArray(schema.organization.id, [orgId, personalId]));
+    for (const id of [teamAccount, personalAccount]) await dropEmptyAccount(id);
     await db.delete(schema.libraryTombstone).where(eq(schema.libraryTombstone.organizationId, orgId));
     await db.delete(schema.user).where(eq(schema.user.id, userId));
   }

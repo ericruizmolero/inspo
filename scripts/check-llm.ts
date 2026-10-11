@@ -79,7 +79,8 @@ async function main() {
   }
 
   const org = { id: TAG };
-  await db.insert(schema.organization).values({ id: TAG, name: "check", slug: TAG, createdAt: new Date() });
+  await db.insert(schema.billingAccount).values({ id: TAG, name: "check" });
+  await db.insert(schema.organization).values({ id: TAG, name: "check", slug: TAG, createdAt: new Date(), billingAccountId: TAG });
   stub({ status: 200, finish: "length" }, { status: 200 });
   const r = await llm({ ...prompt("brand", { system: "s", text: "t" }), model: MODEL, fallback: FALLBACK_MODEL });
   globalThis.fetch = realFetch;
@@ -92,6 +93,7 @@ async function main() {
   await db.delete(schema.organization).where(eq(schema.organization.id, TAG));
   // Spend outlives its workspace (migration 0038): the row stays, detached, until dropped here
   await db.delete(schema.aiUsage).where(eq(schema.aiUsage.ref, TAG));
+  await db.delete(schema.billingAccount).where(eq(schema.billingAccount.id, TAG));
   // Give the failure rows recordFailure writes without waiting a moment to land, then drop them
   await new Promise((res) => setTimeout(res, 500));
   await db.delete(schema.failure).where(and(gte(schema.failure.createdAt, start), or(like(schema.failure.what, `${TAG}%`), eq(schema.failure.what, FALLBACK_MODEL))));

@@ -13,9 +13,10 @@ export async function seedTeam() {
   const now = new Date();
   const user: SessionUser = { id: `${tag}-user`, name: `${tag} owner`, email: `${tag}@example.test`, image: null, language: "en" } as SessionUser;
   await db.insert(schema.user).values({ id: user.id, name: user.name, email: user.email, emailVerified: true, createdAt: now, updatedAt: now });
-  await db.insert(schema.organization).values({ id: `${tag}-team`, name: `${tag} team`, slug: `${tag}-team`, kind: "team", plan: "agency", createdAt: now });
+  await db.insert(schema.billingAccount).values({ id: `${tag}-team`, name: `${tag} team`, plan: "agency", ownerUserId: user.id });
+  await db.insert(schema.organization).values({ id: `${tag}-team`, name: `${tag} team`, slug: `${tag}-team`, kind: "team", billingAccountId: `${tag}-team`, createdAt: now });
   await db.insert(schema.member).values({ id: `${tag}-m`, organizationId: `${tag}-team`, userId: user.id, role: "owner", createdAt: now });
-  const ws = { id: `${tag}-team`, name: `${tag} team`, slug: `${tag}-team`, kind: "team", plan: "agency", role: "owner" } as Workspace;
+  const ws = { id: `${tag}-team`, name: `${tag} team`, slug: `${tag}-team`, kind: "team", plan: "agency", billingAccountId: `${tag}-team`, billingAccountName: `${tag} team`, role: "owner" } as Workspace;
   return { tag, user, ws };
 }
 
@@ -43,6 +44,7 @@ export async function cleanupTeam(team: Team) {
   // AI spend outlives its workspace (migration 0038): dropped while it still names the team
   await db.delete(schema.aiUsage).where(like(schema.aiUsage.organizationId, `${team.tag}%`));
   await db.delete(schema.organization).where(like(schema.organization.id, `${team.tag}%`));
+  await db.delete(schema.billingAccount).where(like(schema.billingAccount.id, `${team.tag}%`));
   await db.delete(schema.user).where(like(schema.user.id, `${team.tag}%`));
   await db.delete(schema.libraryTombstone).where(like(schema.libraryTombstone.organizationId, `${team.tag}%`));
 }

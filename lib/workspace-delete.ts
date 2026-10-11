@@ -3,7 +3,7 @@
 //
 // The database goes first, in one transaction: the organization row, whose foreign keys cascade to items,
 // projects, comments, revisions, members, invitations and keys, and set null on failure, activity and
-// feedback rows. AI spend stays for the accounts (migration 0038). Then the rows that name the workspace by
+// feedback rows; and its billing account, if no other workspace is left in it. AI spend stays for the accounts (migration 0038). Then the rows that name the workspace by
 // a key rather than a foreign key. Then storage, by prefix. Each step converges: run again on the same id, it
 // finds nothing in the database and deletes whatever files are left, so a cleanup cut halfway is run again.
 import "server-only";
@@ -11,7 +11,7 @@ import { and, eq, or, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { listFiles, deleteFiles } from "./storage";
 import { whyShotPrefix } from "./design-store";
-import { HttpError } from "./workspace-core";
+import { dropEmptyAccount, HttpError } from "./workspace-core";
 import { getErrors } from "./i18n";
 import { recordFailure } from "./log";
 
@@ -29,10 +29,12 @@ export interface DeleteResult {
 export async function deleteWorkspace(organizationId: string): Promise<DeleteResult> {
   const O = schema.organization;
   await db.transaction(async (tx) => {
-    const [org] = await tx.select({ kind: O.kind }).from(O).where(eq(O.id, organizationId)).for("update");
+    const [org] = await tx.select({ kind: O.kind, billingAccountId: O.billingAccountId }).from(O).where(eq(O.id, organizationId)).for("update");
     // The personal space is where a person lands with no team
     if (org?.kind === "personal") throw new HttpError(403, (await getErrors()).personalSpaceStays);
     await tx.delete(O).where(eq(O.id, organizationId));
+    // Its billing account goes with it when this was its last workspace
+    if (org) await dropEmptyAccount(org.billingAccountId, tx);
     // After the delete: the cascade's own triggers write a tombstone per item and comment
     await tx.delete(schema.libraryTombstone).where(eq(schema.libraryTombstone.organizationId, organizationId));
     const claim = schema.captureClaim.key, limit = schema.rateLimit.key;
