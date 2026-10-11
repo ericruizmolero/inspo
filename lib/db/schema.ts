@@ -35,6 +35,8 @@ export const user = pgTable("user", {
   /** The invite the account was created with (lib/access.ts). Null for accounts from before the waitlist */
   accessInviteId: text("access_invite_id").references((): AnyPgColumn => accessInvite.id, { onDelete: "set null" }),
   invitesLeft: integer("invites_left").notNull().default(0),
+  /** When the first steps (lib/first-steps.ts) stopped showing: the person hid them, or every step was done */
+  firstStepsDoneAt: timestamp("first_steps_done_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 });
@@ -699,6 +701,8 @@ export const projectSystem = pgTable("project_system", {
   /** The brand as values (types/brand.ts BrandSpec): colours, faces and scale, curves, logo files, the voice's pairs.
    *  The presentation draws it and criterio.md writes it as tables */
   brand: jsonb("brand").$type<unknown>(),
+  /** The first time someone copied or downloaded the project's criterio.md: the file left the app */
+  exportedAt: timestamp("exported_at", { withTimezone: true, mode: "date" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull(),
 }, (t) => [index("project_system_org_idx").on(t.organizationId)]);
