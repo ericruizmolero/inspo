@@ -12,7 +12,7 @@ kind: producto
 - El almacenamiento es la suma de `stored_file.bytes` del workspace: una fila por archivo propio. Las cachés compartidas por dirección (capturas, páginas, posts de X, DESIGN.md) no son de nadie y no cuentan.
 - Al tope, guardar responde 402 con `quota: true` por cualquier camino (la app, la extensión, el MCP, el agente, importar, las subidas). Ver, buscar y exportar siguen. El mensaje dice qué está lleno, que lo demás sigue y que se amplía en /planes.
 - Importar un tablero entra hasta el tope y dice cuántas se quedaron fuera.
-- Crear un equipo pide ser dueño de un workspace de pago. El espacio personal es el gratis y nunca se bloquea.
+- Crear un equipo pide ser dueño de un workspace de pago. El espacio personal es el gratis y nunca se bloquea. Desde que el plan vive en la cuenta de facturación, "dueño" es quien paga la cuenta (`owner_user_id`), y los topes leen el plan de la cuenta y cuentan por espacio ([un plan paga varios espacios](2026-10-10-un-plan-paga-varios-espacios.md)).
 
 **Por qué.** Es lo que pide #124 para que el precio no se escape por workspaces. Se cuentan "referencias" y no "elementos" porque así las llama la app en los dos idiomas.
 
