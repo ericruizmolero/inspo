@@ -11,7 +11,7 @@ import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
 import { fairUseMail, overCapacityMail, sendMail, localeForEmail } from "./mail";
 import { fixedAdmins } from "./activity";
-import { mailOnce } from "./spend";
+import { mailOnce } from "./mail-once";
 import { log } from "./log";
 import { isSampleItem } from "./sample-items";
 import { fmtGb, mayCreateTeam, roomLeft, whatIsFull, type Full, type Room, type Usage } from "./room";

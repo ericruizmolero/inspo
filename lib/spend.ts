@@ -3,10 +3,10 @@
 // app, so it holds whatever plan a quota bug or an abuse comes through. A call that skips ai_usage is caught each
 // night instead, against OpenRouter's own bill (lib/usage-check.ts).
 import "server-only";
-import { eq, gte, sql } from "drizzle-orm";
+import { gte, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { fixedAdmins } from "./activity";
-import { sendMail, type Mail } from "./mail";
+import { mailOnce } from "./mail-once";
 import { log } from "./log";
 
 /** The costliest day so far was $1.44 (2026-09-21): the alert sits far above any real day, the cap stops a runaway one */
@@ -15,24 +15,6 @@ export function spendLimits(): { alertUsd: number; capUsd: number } {
 }
 
 export class SpendCapError extends Error {}
-
-/** True for whoever claims `key` first: of two instances crossing a line at once, only one sends the email */
-export async function firstTime(key: string): Promise<boolean> {
-  const rows = await db.insert(schema.appSetting).values({ key, value: "sent", updatedAt: new Date() })
-    .onConflictDoNothing().returning({ key: schema.appSetting.key });
-  return rows.length > 0;
-}
-
-/** Sends `mail` once per `key`. A failed send gives the key back, so the next call tries again */
-export async function mailOnce(key: string, to: string[], mail: Mail): Promise<void> {
-  if (!(await firstTime(key))) return;
-  try {
-    await sendMail(to, mail);
-  } catch (err) {
-    log.warn("spend.not_mailed", { key, err });
-    await db.delete(schema.appSetting).where(eq(schema.appSetting.key, key));
-  }
-}
 
 /** What the app has spent on models since `since`, in USD. Not lib/usage.ts: it reaches lib/llm.ts, which calls this */
 async function spentSince(since: Date): Promise<number> {
