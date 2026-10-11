@@ -8,6 +8,7 @@ export const plans = {
       "Up to 200 references and 1 GB",
       "Automatic tags",
       "30 AI actions a month",
+      "Your first criterio.md spends no AI actions",
       "30 different AI searches a month",
       "A directory of 130+ sites",
     ],

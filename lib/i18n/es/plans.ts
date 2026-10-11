@@ -8,6 +8,7 @@ export const plans: typeof EnPlans = {
       "Hasta 200 referencias y 1 GB",
       "Etiquetas automáticas",
       "30 acciones de IA al mes",
+      "Tu primer criterio.md no gasta acciones de IA",
       "30 búsquedas IA distintas al mes",
       "Directorio de 130+ webs",
     ],

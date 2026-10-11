@@ -1,9 +1,9 @@
-// Check of the reconciliation with OpenRouter (#28), of who decides an automatic pass (#91) and of the free plan's
-// room (#124): references, storage and one free workspace each. Not a test framework: assert.
+// Check of the reconciliation with OpenRouter (#28), of who decides an automatic pass (#91), of the free first pass
+// (#103) and of the free plan's room (#124): references, storage and one free workspace each. Not a test framework: assert.
 //   npm run check:usage
 import assert from "node:assert/strict";
 import { drift } from "../lib/usage-check";
-import { AUTO_SYSTEM_PER_DAY, BRAND_CHAIN_MS, autoBrandPass, autoSystemPass } from "../lib/usage-core";
+import { AUTO_REF, AUTO_SYSTEM_PER_DAY, BRAND_CHAIN_MS, FIRST_REF, autoBrandPass, autoSystemPass, systemPassRef } from "../lib/usage-core";
 import { GB, fmtGb, mayCreateTeam, roomLeft, whatIsFull } from "../lib/room";
 import { PLANS, isPaid } from "../lib/plans";
 
@@ -29,6 +29,12 @@ assert.equal(autoBrandPass(true, { systemAt: null, brandAt: null, now }), false,
 assert.equal(autoBrandPass(true, { systemAt: ago(10_000), brandAt: ago(5_000), now }), false, "a second brand pass on one system pass counts");
 assert.equal(autoBrandPass(true, { systemAt: ago(BRAND_CHAIN_MS + 1), brandAt: null, now }), false, "too long after counts");
 assert.equal(autoBrandPass(false, { systemAt: ago(5_000), brandAt: null, now }), false, "not asked: counts");
+
+// The account's first system pass asked for by hand is free (#103); an automatic one stays automatic
+assert.equal(systemPassRef("p1", { auto: false, countedBefore: false }), `${FIRST_REF}project:p1`);
+assert.equal(systemPassRef("p1", { auto: false, countedBefore: true }), "project:p1", "the second pass counts");
+assert.equal(systemPassRef("p1", { auto: true, countedBefore: false }), `${AUTO_REF}project:p1`, "a re-read is automatic, not the first");
+assert.ok(!FIRST_REF.startsWith(AUTO_REF) && !AUTO_REF.startsWith(FIRST_REF), "the two markers never read as each other");
 // The free plan is the one nobody pays for, whatever its key: 200 references and 1 GB. The paid ones have no cap
 const free = PLANS.find((p) => !isPaid(p))!;
 assert.equal(free.itemsMax, 200);

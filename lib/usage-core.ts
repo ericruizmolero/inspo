@@ -11,6 +11,15 @@ export type UsageAction = "design_md" | "vision" | "jev_tag" | "jev_search" | "j
  *  the brand pass chained to a system pass): logged with its cost, but not one of the plan's AI actions */
 export const AUTO_REF = "auto:";
 
+/** Prefix of `ref` on the billing account's first system pass asked for by hand: it shows what the product does
+ *  before it spends an AI action, so it is logged with its cost but not counted (#103) */
+export const FIRST_REF = "first:";
+
+/** The ref a system pass is logged with: automatic, the account's first one asked for by hand, or counted */
+export function systemPassRef(projectId: string, f: { auto: boolean; countedBefore: boolean }): string {
+  return `${f.auto ? AUTO_REF : f.countedBefore ? "" : FIRST_REF}project:${projectId}`;
+}
+
 /** Free re-reads of one project's board a day: each filed reference changes the board, so moving one in and out
  *  must not buy passes without end */
 export const AUTO_SYSTEM_PER_DAY = 20;

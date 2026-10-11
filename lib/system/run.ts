@@ -9,8 +9,8 @@ import type { OutputLanguage } from "../output-language";
 import { llm, LlmError, type LlmInput } from "../llm";
 import { prompt, PROMPTS } from "../prompts";
 import { SIGNAL_AREA } from "../taxonomy";
-import { AUTO_REF, autoSystemPass, billOf, recordUsage, type UsageCtx } from "../usage";
-import { autoSystemToday } from "../quota";
+import { autoSystemPass, billOf, recordUsage, systemPassRef, type UsageCtx } from "../usage";
+import { autoSystemToday, hadSystemPass } from "../quota";
 import { DECISION_MAX, IMPROVE_NOTE_MAX, SYSTEM_AREAS, cleanDecision, emptySystem, type ImproveAim, type SystemFocus, type ProjectSystem, type SystemArea, type SystemEvidence, type SystemRun } from "@/types/system";
 import { briefPrompt } from "../brief";
 import { guideCutLine } from "../brand-guides";
@@ -114,7 +114,9 @@ export async function runSystem(input: { organizationId: string; projectId: stri
       throw new HttpError(502, `${(await getErrors()).incompleteAnswer} (finish_reason=${err.finishReason})`);
     }
     // Awaited: a brand pass asked for right after this one looks for this row (autoBrandPass)
-    await recordUsage(input.usage, { action: "system", ...billOf(res), ref: `${auto ? AUTO_REF : ""}project:${input.projectId}` });
+    // Two first passes of one account at once, on two projects, may both go free: accepted, it is one pass
+    const countedBefore = auto || await hadSystemPass(input.organizationId);
+    await recordUsage(input.usage, { action: "system", ...billOf(res), ref: systemPassRef(input.projectId, { auto, countedBefore }) });
     const out = SystemOutSchema.parse(JSON.parse(res.text));
     log.info("system.built", { ref: input.projectId, refs: refs.length, omitted: snapshot.omitted, areasFilled: out.areas.filter((a) => a.decision.trim()).length, tokensIn: res.usage.input, tokensOut: res.usage.output, ms: res.ms, costUsd: res.costUsd });
 

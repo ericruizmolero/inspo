@@ -5,7 +5,7 @@ import "server-only";
 import { and, eq, gt, gte, inArray, isNull, lt, max, ne, not, notLike, or, sql } from "drizzle-orm";
 import { db, schema, type Exec } from "./db";
 import { planOf, type Plan, type PlanKey } from "./plans";
-import { AUTO_REF, type UsageAction } from "./usage-core";
+import { AUTO_REF, FIRST_REF, type UsageAction } from "./usage-core";
 import { accountOf, HttpError, httpErrorResponse, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
@@ -62,8 +62,9 @@ async function countAction(accountId: string, action: "ai" | "jev_search"): Prom
 /**
  * The model calls that count as an AI action: the ones a person asks for (improve with AI, the agent,
  * bringing a brand in). What runs by itself on saving (tags, embeddings, captions) is not here, and neither
- * are the passes logged with an AUTO_REF ref: the board's own re-read after filing a reference and the brand
- * pass chained to a system pass. One click on "Improve with AI" is one action.
+ * are the passes logged with an AUTO_REF ref (the board's own re-read after filing a reference and the brand
+ * pass chained to a system pass) or a FIRST_REF one (the account's first system pass). One click on "Improve with AI"
+ * is one action.
  */
 export const AI_ACTIONS: UsageAction[] = ["system", "brand", "polish", "design_md", "design_why", "revise", "explain"];
 
@@ -74,8 +75,18 @@ async function countAi(accountId: string): Promise<number> {
   const U = schema.aiUsage;
   const [r] = await db.select({ n: sql<number>`count(*)` }).from(U)
     .where(and(inAccount(accountId), inArray(U.action, AI_ACTIONS), gte(U.createdAt, monthStart()),
-      or(isNull(U.ref), notLike(U.ref, `${AUTO_REF}%`))));
+      or(isNull(U.ref), and(notLike(U.ref, `${AUTO_REF}%`), notLike(U.ref, `${FIRST_REF}%`)))));
   return Number(r?.n ?? 0);
+}
+
+/** Whether the account behind this workspace ever had a system pass asked for by hand, its free first one included.
+ *  Ever, not this month: the first pass is the first of the account's life */
+export async function hadSystemPass(organizationId: string): Promise<boolean> {
+  const U = schema.aiUsage, O = schema.organization;
+  const [r] = await db.select({ one: sql<number>`1` }).from(U)
+    .where(and(sql`${U.billingAccountId} = (select ${O.billingAccountId} from ${O} where ${O.id} = ${organizationId})`, eq(U.action, "system"), or(isNull(U.ref), notLike(U.ref, `${AUTO_REF}%`))))
+    .limit(1);
+  return !!r;
 }
 
 /** Automatic re-reads of this project's board since 00:00 UTC */
@@ -87,7 +98,8 @@ export async function autoSystemToday(organizationId: string, projectId: string)
   return Number(r?.n ?? 0);
 }
 
-/** The project's last counted system pass and its last brand pass, to tell a chained brand pass */
+/** The project's last system pass asked for by hand (the account's free first one too) and its last brand pass, to
+ *  tell a chained brand pass */
 export async function brandChain(organizationId: string, projectId: string): Promise<{ systemAt: Date | null; brandAt: Date | null }> {
   const U = schema.aiUsage;
   const last = async (action: UsageAction, refs: string[]) => {
@@ -96,7 +108,7 @@ export async function brandChain(organizationId: string, projectId: string): Pro
     return r?.at ?? null;
   };
   const ref = `project:${projectId}`;
-  const [systemAt, brandAt] = await Promise.all([last("system", [ref]), last("brand", [ref, `${AUTO_REF}${ref}`])]);
+  const [systemAt, brandAt] = await Promise.all([last("system", [ref, `${FIRST_REF}${ref}`]), last("brand", [ref, `${AUTO_REF}${ref}`])]);
   return { systemAt, brandAt };
 }
 
