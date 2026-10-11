@@ -1,9 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "criterio-marketing",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
+  "routes": [
+    { "pattern": "criterio.design", "custom_domain": true },
+    { "pattern": "www.criterio.design", "custom_domain": true }
+  ],
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "404-page"
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // The Worker sees every request first, so it can redirect www before an asset answers
+    "run_worker_first": true
   }
 }
