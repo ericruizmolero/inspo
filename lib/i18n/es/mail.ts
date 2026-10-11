@@ -21,6 +21,12 @@ export const mail: typeof EnMail = {
       `${team} ha pasado al plan ${plan}, que admite ${limit}, y ahora sois ${members}.\n\nNo hemos quitado a nadie y la IA sigue funcionando. Mientras haya más gente de la que admite el plan, el equipo no puede enviar invitaciones nuevas. Quita a alguien o vuelve a un plan más grande:\n${url}`,
   },
 
+  fairUse: {
+    subject: (account: string, ceiling: string): string => `${account} ha pasado las ${ceiling} búsquedas este mes`,
+    text: (account: string, plan: string, used: string, ceiling: string): string =>
+      `Este mes ${account} lleva ${used} búsquedas. En el plan ${plan} las búsquedas son de uso justo, y ${ceiling} al mes es mucho más de lo que hace un equipo normal.\n\nNo hemos cortado nada y puedes seguir buscando. Si no sabes de dónde salen tantas, contesta a este correo y lo miramos juntos.`,
+  },
+
   adminAccess: {
     subject: (granter: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design`,
     text: (granter: string, url: string): string => `${granter} te ha dado acceso al panel de actividad de criterio.design:\n${url}\n\nEntra con este mismo correo.`,

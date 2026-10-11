@@ -6,7 +6,7 @@
 import { config as loadEnv } from "dotenv";
 loadEnv({ path: ".env.local" }); loadEnv();
 import assert from "node:assert/strict";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import type { PlanKey } from "../lib/plans";
 
 const id = () => crypto.randomUUID().replace(/-/g, "").slice(0, 24);
@@ -162,7 +162,10 @@ async function main() {
       await db.delete(schema.aiUsage).where(inArray(schema.aiUsage.organizationId, orgs));
       const made = await db.select({ a: schema.organization.billingAccountId }).from(schema.organization).where(inArray(schema.organization.id, orgs));
       await db.delete(schema.organization).where(inArray(schema.organization.id, orgs));
-      for (const a of new Set([...accounts, ...made.map((m) => m.a)])) await dropEmptyAccount(a);
+      for (const a of new Set([...accounts, ...made.map((m) => m.a)])) {
+        await dropEmptyAccount(a);
+        await db.delete(schema.appSetting).where(like(schema.appSetting.key, `fair_use:${a}:%`));
+      }
     }
     if (users.length) await db.delete(schema.user).where(inArray(schema.user.id, users));
     await db.delete(schema.storedFile).where(eq(schema.storedFile.key, `inspo/pages/${TAG}.jpg`));

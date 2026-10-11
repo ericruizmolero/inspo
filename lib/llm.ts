@@ -3,6 +3,7 @@
 // and the real cost come from here (#5, #28).
 import { z } from "zod";
 import { log, recordFailure } from "./log";
+import { assertSpendRoom } from "./spend";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -60,6 +61,7 @@ const recoverable = (e: unknown) => !(e instanceof LlmError) || (e.status !== 40
  * answer is billed, so its cost is added to the one that answers.
  */
 export async function llm(i: LlmInput): Promise<LlmResult> {
+  await assertSpendRoom();
   const fallback = i.fallback === undefined ? FALLBACK_MODEL : i.fallback;
   let wasted = 0;
   let last: unknown;

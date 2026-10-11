@@ -288,6 +288,13 @@
       "when": 1791700358851,
       "tag": "0041_plan_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791701141611,
+      "tag": "0042_ai_usage_created_idx",
+      "breakpoints": true
     }
   ]
 }

@@ -23,6 +23,12 @@ export const mail = {
       `${team} has moved to the ${plan} plan, which allows ${limit}, and now there are ${members}.\n\nWe have not removed anyone, and the AI keeps working. While there are more people than the plan allows, the team cannot send new invitations. Remove someone, or go back to a bigger plan:\n${url}`,
   },
 
+  fairUse: {
+    subject: (account: string, ceiling: string): string => `${account} has passed ${ceiling} searches this month`,
+    text: (account: string, plan: string, used: string, ceiling: string): string =>
+      `${account} has made ${used} searches this month. On the ${plan} plan searches are fair use, and ${ceiling} a month is far more than a team usually makes.\n\nWe haven't cut anything off, and you can keep searching. If you don't know where so many come from, reply to this email and we'll look at it together.`,
+  },
+
   adminAccess: {
     subject: (granter: string): string => `${granter} has given you access to the criterio.design activity panel`,
     text: (granter: string, url: string): string => `${granter} gave you access to the criterio.design activity panel:\n${url}\n\nSign in with this same address.`,

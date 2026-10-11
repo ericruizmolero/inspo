@@ -15,6 +15,7 @@ import en from "./i18n/en";
 import type { InspoTags, UserTags } from "@/types/inspo";
 import { threadLines, type CommentRowLike } from "./comment-context";
 import { log } from "./log";
+import { assertSpendRoom } from "./spend";
 
 const ENDPOINT = "https://openrouter.ai/api/v1/embeddings";
 /** Picked with scripts/embed-bakeoff.ts (October 2026): the closest English/Spanish match of the cheap ones */
@@ -31,6 +32,7 @@ export const embedEnabled = () => !!process.env.OPENROUTER_API_KEY;
 interface Embedded { vectors: number[][]; costUsd: number | null; tokens: number; model: string; provider: string | null; id: string | null }
 
 export async function embedTexts(input: string[], model = EMBED_MODEL, signal?: AbortSignal): Promise<Embedded> {
+  await assertSpendRoom();
   const res = await fetch(ENDPOINT, {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`, "Content-Type": "application/json", "X-Title": "criterio.design" },

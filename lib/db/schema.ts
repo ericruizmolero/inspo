@@ -220,7 +220,8 @@ export const accessInvite = pgTable("access_invite", {
 export const SIGNUP_MODES = ["invite", "open"] as const;
 export type SignupMode = (typeof SIGNUP_MODES)[number];
 
-/** Settings changed from /admin without a deploy. Today only `signup_mode` (lib/access.ts) */
+/** Settings changed from /admin without a deploy (`signup_mode`, lib/access.ts), and the emails already sent once
+ *  (`spend_alert:<day>`, `fair_use:<account>:<month>`, lib/spend.ts) */
 export const appSetting = pgTable("app_setting", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
@@ -548,6 +549,8 @@ export const aiUsage = pgTable("ai_usage", {
   // Monthly quota count (lib/quota.ts): one account, one action, since the 1st
   index("ai_usage_account_action_created_idx").on(t.billingAccountId, t.action, t.createdAt),
   index("ai_usage_user_id_idx").on(t.userId),
+  // The day's spend across the app, read before every model call (lib/spend.ts)
+  index("ai_usage_created_idx").on(t.createdAt),
   oneOf("ai_usage_action_check", t.action, ["design_md", "vision", "jev_tag", "jev_search", "jev_directory", "explain", "revise", "design_why", "polish", "auto_tag", "query_en", "embed", "system", "brand"]),
   oneOf("ai_usage_cost_source_check", t.costSource, ["real", "estimated"]),
 ]);

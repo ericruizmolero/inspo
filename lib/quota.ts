@@ -9,7 +9,9 @@ import { AUTO_REF, type UsageAction } from "./usage-core";
 import { accountOf, HttpError, httpErrorResponse, listMembers, type Workspace } from "./workspace-core";
 import type { Locale } from "./i18n/locale";
 import { getT } from "./i18n";
-import { overCapacityMail, sendMail, localeForEmail } from "./mail";
+import { fairUseMail, overCapacityMail, sendMail, localeForEmail } from "./mail";
+import { fixedAdmins } from "./activity";
+import { mailOnce } from "./spend";
 import { log } from "./log";
 import { isSampleItem } from "./sample-items";
 import { fmtGb, mayCreateTeam, roomLeft, whatIsFull, type Full, type Room, type Usage } from "./room";
@@ -239,14 +241,29 @@ export async function quotaBlock(check: Promise<void>): Promise<Response | null>
 
 /**
  * Throws HttpError(402) if the workspace has used up that action's monthly quota. Searches on a fair-use plan
- * never throw: past the ceiling they are logged so someone writes to the team before anything changes.
+ * never throw: past the ceiling the team and the account's owner are told, once a month.
  */
+/** The first search past the ceiling each month emails the team and the account's owner. Nobody is cut off */
+async function fairUsePassed(accountId: string, plan: Plan, used: number, ceiling: number): Promise<void> {
+  log.warn("quota.fair_use_passed", { billingAccountId: accountId, plan: plan.key, used, ceiling });
+  const key = `fair_use:${accountId}:${monthStart().toISOString().slice(0, 7)}`;
+  const B = schema.billingAccount;
+  const [a] = await db.select({ name: B.name, owner: schema.user.email }).from(B)
+    .leftJoin(schema.user, eq(schema.user.id, B.ownerUserId)).where(eq(B.id, accountId)).limit(1);
+  const name = a?.name ?? accountId;
+  await mailOnce(key, fixedAdmins(), {
+    subject: `${name} passed the fair-use ceiling: ${used} searches this month on ${plan.key}`,
+    text: `The ${plan.key} plan's searches are fair use, with an internal ceiling of ${ceiling} a month. ${name} (billing account ${accountId}, owner ${a?.owner ?? "none"}) has made ${used}.\n\nNobody is cut off${a?.owner ? ", and the owner gets an email of their own" : ""}. Its usage is in /admin.`,
+  });
+  if (a?.owner) await mailOnce(`${key}:owner`, [a.owner], fairUseMail(name, plan.key, used, ceiling, await localeForEmail(a.owner)));
+}
+
 export async function assertQuota(ws: QuotaWorkspace, action: "ai" | "jev_search"): Promise<void> {
   const plan = planOf(ws.plan);
   const searches = plan.searches;
   if (action === "jev_search" && searches.kind === "fairUse") {
     const used = await countAction(ws.billingAccountId, action);
-    if (used >= searches.ceiling) log.warn("quota.fair_use_passed", { billingAccountId: ws.billingAccountId, plan: plan.key, used, ceiling: searches.ceiling });
+    if (used >= searches.ceiling) await fairUsePassed(ws.billingAccountId, plan, used, searches.ceiling);
     return;
   }
   const limit = action === "ai" ? plan.aiActionsPerMonth : searches.kind === "capped" ? searches.perMonth : null;

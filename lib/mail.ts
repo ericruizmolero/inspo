@@ -88,6 +88,13 @@ export function overCapacityMail(url: string, teamName: string, plan: PlanKey, m
   };
 }
 
+/** A paid account passed its fair-use ceiling of searches (lib/plans.ts). Nothing is cut off: the owner is told */
+export function fairUseMail(account: string, plan: PlanKey, used: number, ceiling: number, locale: Locale): Mail {
+  const t = mailDict(locale).fairUse;
+  const n = (x: number) => x.toLocaleString(INTL_LOCALE[locale]);
+  return { subject: t.subject(account, n(ceiling)), text: signed(locale, t.text(account, DICTS[locale].plans.items[plan].name, n(used), n(ceiling))) };
+}
+
 export function adminAccessMail(url: string, granterName: string, locale: Locale): Mail {
   const t = mailDict(locale);
   return { subject: t.adminAccess.subject(granterName), text: signed(locale, t.adminAccess.text(granterName, url)) };
