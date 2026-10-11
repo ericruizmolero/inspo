@@ -2,7 +2,7 @@
 // wave did. A wave is no table of its own, only the `wave` name on its invites. Shared by app/actions/waitlist-admin.ts
 // and scripts/access.ts.
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 import { sha256 } from "./hash";
 import { createInvite, newInviteCode, normalEmail } from "./access";
@@ -15,7 +15,7 @@ const W = schema.waitlistEntry;
 const I = schema.accessInvite;
 
 /** One wave mails at most this many people: a bigger send hurts the domain's standing with the inboxes. */
-export const WAVE_CAP = 50;
+export const WAVE_CAP = 50; // errors.waveSize says it too
 /** Resend takes about 2 requests a second */
 const SEND_GAP_MS = 600;
 
@@ -106,12 +106,13 @@ export async function revokeInvite(inviteId: string): Promise<boolean> {
   });
 }
 
-/** A new code for an invite no one has used: the old link stops working. Null when it was used or revoked. */
-export async function rotateInvite(inviteId: string): Promise<{ code: string; email: string | null } | null> {
+/** A new code for an unused invite made out to someone, to mail them: the old link stops working. Null when it was
+ *  used, revoked, or has no email to send the new one to. */
+export async function rotateInvite(inviteId: string): Promise<{ code: string; email: string } | null> {
   const code = newInviteCode();
   const [row] = await db.update(I).set({ codeHash: sha256(code) })
-    .where(and(eq(I.id, inviteId), eq(I.uses, 0), isNull(I.revokedAt))).returning({ email: I.email });
-  return row ? { code, email: row.email } : null;
+    .where(and(eq(I.id, inviteId), eq(I.uses, 0), isNull(I.revokedAt), isNotNull(I.email))).returning({ email: I.email });
+  return row?.email ? { code, email: row.email } : null;
 }
 
 export interface TeamInvite {
