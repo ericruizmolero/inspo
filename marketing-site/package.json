@@ -11,13 +11,15 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "shots": "node scripts/resource-shots.ts"
   },
   "dependencies": {
     "astro": "^7.3.8"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "puppeteer-core": "^25.11.0",
     "typescript": "^5",
     "wrangler": "^4.149.0"
   }
