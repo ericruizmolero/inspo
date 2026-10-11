@@ -1,6 +1,6 @@
 "use client";
 
-import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback, setSignupMode } from "@/app/actions/admin";
+import { grantAccess, revokeAccess, deleteFeedback, resolveFeedback, setSignupMode, giveMoreInvites } from "@/app/actions/admin";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AreaThumb from "./AreaThumb";
@@ -13,7 +13,7 @@ import type { SignupModeState } from "@/lib/access";
 import { fmtDate, fmtDateTime as fmtDT, fmtUsd as usd } from "@/lib/i18n/format";
 import type { Locale } from "@/lib/i18n/locale";
 import type { Dict } from "@/lib/i18n/en";
-import { Avatar, AvatarStack, Busy, Button, Chip, EmptyState, FieldRow, IconButton, Progress, SettingsWindow, StatusRing, Switch, toneFor } from "@/components/criterio";
+import { Avatar, AvatarStack, Busy, Button, Chip, EmptyState, FieldRow, IconButton, Progress, SegmentedControl, SettingsWindow, StatusRing, Switch, toneFor } from "@/components/criterio";
 import { useConfirm } from "@/components/useConfirm";
 
 // ─── Formatting ─────────────────────────────────────────────────────────────
@@ -251,6 +251,49 @@ function SignupPanel({ initial }: { initial: SignupModeState }) {
   );
 }
 
+// ─── Personal invites ───────────────────────────────────────────────────────
+
+const GIVE_COUNTS = [1, 3, 5, 10];
+
+function InvitesPanel({ perPerson }: { perPerson: number }) {
+  const { t } = useT();
+  const [email, setEmail] = useState("");
+  const [count, setCount] = useState(3);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [error, setError] = useState("");
+
+  const give = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const value = email.trim().toLowerCase();
+    if (!value) return;
+    setBusy(true); setError(""); setMsg("");
+    const r = await giveMoreInvites(value, count).catch(() => null);
+    setBusy(false);
+    if (!r?.ok) { setError(r?.error ?? t.admin.giveFailed); return; }
+    setEmail("");
+    setMsg(t.admin.given(value, r.data));
+  };
+
+  return (
+    <SettingsWindow title={t.admin.invitesTitle} description={t.admin.invitesHint(perPerson)}
+      note={msg ? <span role="status">{msg}</span> : undefined}>
+      <form onSubmit={give}>
+        <FieldRow label={t.team.emailLabel} htmlFor="give-invites-email" error={error}
+          action={<Button variant="primary" size="s" type="submit" disabled={busy || !email.trim()}>{t.admin.give}</Button>}>
+          <span className="setting-invite">
+            <input id="give-invites-email" type="email" className="cr-input" placeholder={t.team.emailPlaceholder} value={email}
+              onChange={(e) => setEmail(e.target.value)} required aria-invalid={error ? true : undefined} />
+            <SegmentedControl tone="paper" size="s" choice className="theme-seg" label={t.admin.invitesCount}
+              active={GIVE_COUNTS.indexOf(count)} onChange={(i) => setCount(GIVE_COUNTS[i])}
+              items={GIVE_COUNTS.map((n) => ({ label: String(n) }))} />
+          </span>
+        </FieldRow>
+      </form>
+    </SettingsWindow>
+  );
+}
+
 // ─── Toolbar feedback (Agentation) ───────────────────────────────────────────
 
 function CopyMarkdown({ batch }: { batch: FeedbackBatch }) {
@@ -447,8 +490,10 @@ function Bar({ share }: { share: number }) {
 export type AdminSection = "overview" | "usage" | "people" | "feedback" | "failures" | "access" | "waitlist";
 
 // One section of the Activity area. Each page loads only the data its section shows.
-export default function AdminPanel({ section, data, usage, feedback, failures, admins, signup, me }: {
-  section: AdminSection; data: ActivityOverview; usage?: UsageOverview; feedback?: FeedbackOverview; failures?: FailureRow[]; admins?: AdminEntry[]; signup?: SignupModeState; me: string;
+export default function AdminPanel({ section, data, usage, feedback, failures, admins, signup, invitesPerPerson, me }: {
+  section: AdminSection; data: ActivityOverview; usage?: UsageOverview; feedback?: FeedbackOverview; failures?: FailureRow[]; admins?: AdminEntry[]; signup?: SignupModeState;
+  /** INVITES_PER_PERSON, which lives in a server-only module */
+  invitesPerPerson?: number; me: string;
 }) {
   const { locale, t } = useT();
   const fmtUsd = (n: number) => usd(n, locale);
@@ -618,6 +663,7 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
                   <th className="ad-num">{t.admin.thVisits}</th>
                   <th>{t.admin.thWhere}</th>
                   <th>{t.admin.thTeams}</th>
+                  <th>{t.admin.thInvitedBy}</th>
                   <th>{t.admin.thDevice}</th>
                 </tr>
               </thead>
@@ -649,6 +695,7 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
                     <td className="ad-num">{u.visits || ""}</td>
                     <td>{u.topArea ? areaName(u.topArea) : ""}</td>
                     <td className="ad-cell-trunc" title={u.workspaces.join(", ")}>{u.workspaces.length ? u.workspaces.join(", ") : t.admin.personal}</td>
+                    <td className="ad-cell-trunc">{u.invitedBy === "team" ? t.admin.invitedByTeam : u.invitedBy ?? ""}</td>
                     <td className="ad-cell-trunc">{u.device ?? ""}</td>
                   </tr>
                 ))}
@@ -692,6 +739,7 @@ export default function AdminPanel({ section, data, usage, feedback, failures, a
 
       {section === "failures" && failures && <FailuresPanel failures={failures} days={data.days} now={now} />}
       {section === "access" && signup && <SignupPanel initial={signup} />}
+      {section === "access" && invitesPerPerson != null && <InvitesPanel perPerson={invitesPerPerson} />}
       {section === "access" && admins && <AccessPanel initial={admins} me={me} />}
     </div>
   );

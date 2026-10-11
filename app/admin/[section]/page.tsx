@@ -8,7 +8,7 @@ import { usageOverview } from "@/lib/usage";
 import { feedbackOverview } from "@/lib/feedback";
 import { listFailures } from "@/lib/log";
 import { getT } from "@/lib/i18n";
-import { signupModeState } from "@/lib/access";
+import { INVITES_PER_PERSON, signupModeState } from "@/lib/access";
 import { listTeamInvites, listWaitlist, waveMetrics } from "@/lib/waves";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
 import WaitlistPanel from "../WaitlistPanel";
@@ -70,7 +70,8 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
     <>
       <ActivityPing area="admin" />
       <SettingsHeading title={t.admin.sections[section]} lead={lead} aside={period || undefined} />
-      <AdminPanel section={section} data={data} usage={usage} feedback={feedback} failures={failures} admins={admins} signup={signup} me={s!.user.email} />
+      <AdminPanel section={section} data={data} usage={usage} feedback={feedback} failures={failures} admins={admins} signup={signup}
+        invitesPerPerson={section === "access" ? INVITES_PER_PERSON : undefined} me={s!.user.email} />
     </>
   );
 }

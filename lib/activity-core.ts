@@ -12,6 +12,8 @@ export interface ActivityUser {
   email: string;
   image: string | null;
   createdAt: string;
+  /** Whose personal invite they came in with. "team": an invite from /admin; null: no invite */
+  invitedBy: string | "team" | null;
   workspaces: string[];
   /** Last heartbeat (ISO), or null if never seen with the tracked app */
   lastSeenAt: string | null;

@@ -82,4 +82,9 @@ export const errors = {
   inviteSpent: "This invite was already used or revoked",
   inviteOnly: "criterio.design is invite-only for now. Join the waitlist and we will write when your turn comes",
   tooMany: "That is a lot in a short time. Wait a few minutes and try again",
+  noInvitesLeft: "You have no invites left",
+  inviteHasAccount: "That address already has an account. To work together, invite them from Members",
+  inviteNotRevocable: "That invite has been used or revoked already",
+  noAccountForEmail: "No account has that email",
+  badInviteCount: "A whole number from 1 to 100",
 };

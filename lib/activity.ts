@@ -4,6 +4,7 @@
 //  - session (Better Auth): open sessions = "logged in", and their creation = sign-ins
 // Visible to the fixed emails (DEFAULT_ADMINS, ADMIN_EMAILS) and those added from the panel itself (app_admin table).
 import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import "server-only";
 import { userAgent } from "next/server";
 import { db, schema } from "./db";
@@ -143,10 +144,12 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
   const since30 = new Date(now - 30 * 86400000);
   const onlineSince = new Date(now - ONLINE_WINDOW_MS);
   const S = schema.activitySegment, U = schema.user, SE = schema.session, M = schema.member, O = schema.organization;
+  const I = schema.accessInvite, INV = alias(schema.user, "inviter");
   const dayExpr = dayOf(S.startedAt, off);
 
   const [users, perUser, perUserArea, sessions, daily, byArea, memberships, recentLogins, distinctCounts] = await Promise.all([
-    db.select({ id: U.id, name: U.name, email: U.email, image: U.image, createdAt: U.createdAt }).from(U),
+    db.select({ id: U.id, name: U.name, email: U.email, image: U.image, createdAt: U.createdAt, inviteId: I.id, inviter: sql<string | null>`coalesce(nullif(${INV.name}, ''), ${INV.email})` })
+      .from(U).leftJoin(I, eq(I.id, U.accessInviteId)).leftJoin(INV, eq(INV.id, I.createdBy)),
     db.select({ userId: S.userId, seconds: sql<number>`sum(${S.seconds})`, visits: sql<number>`count(distinct ${S.visitId})`, lastSeen: sql<number>`(extract(epoch from max(${S.lastSeenAt})) * 1000)::bigint` })
       .from(S).where(gte(S.lastSeenAt, since)).groupBy(S.userId),
     db.select({ userId: S.userId, area: S.area, seconds: sql<number>`sum(${S.seconds})` })
@@ -196,6 +199,7 @@ export async function activityOverview(days = 30): Promise<ActivityOverview> {
     const lastSeen = a?.lastSeen ? Number(a.lastSeen) : null;
     return {
       id: u.id, name: u.name, email: u.email, image: u.image ?? null, createdAt: u.createdAt.toISOString(),
+      invitedBy: u.inviter ?? (u.inviteId ? "team" : null),
       workspaces: wsOf.get(u.id) ?? [],
       lastSeenAt: lastSeen ? new Date(lastSeen).toISOString() : null,
       lastLoginAt: s?.lastLogin ? new Date(Number(s.lastLogin)).toISOString() : null,

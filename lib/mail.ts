@@ -13,7 +13,7 @@ import { recordFailure } from "./log";
 import { toLocale, INTL_LOCALE, DEFAULT_LOCALE, type Locale } from "./i18n/locale";
 import en from "./i18n/en";
 import es from "./i18n/es";
-import type { PlanKey } from "./plans";
+import { DEFAULT_PLAN, type PlanKey } from "./plans";
 
 const DICTS = { en, es } as const;
 export const mailDict = (locale: Locale) => DICTS[locale].mail;
@@ -72,6 +72,14 @@ export function invitationMail(url: string, teamName: string, inviterName: strin
   const t = mailDict(locale);
   const who = inviterName === inviterEmail ? inviterName : `${inviterName} (${inviterEmail})`;
   return { subject: t.invitation.subject(inviterName, teamName), text: signed(locale, t.invitation.text(who, teamName, inviteeEmail, url)) };
+}
+
+/** A personal invite (lib/access.ts): the person gets their own space on the free plan, not a seat in the inviter's */
+export function personalInviteMail(url: string, inviterName: string, inviterEmail: string, inviteeEmail: string, locale: Locale): Mail {
+  const t = mailDict(locale);
+  const who = inviterName === inviterEmail ? inviterName : `${inviterName} (${inviterEmail})`;
+  const plan = DICTS[locale].plans.items[DEFAULT_PLAN].name;
+  return { subject: t.personalInvite.subject(inviterName), text: signed(locale, t.personalInvite.text(who, plan, inviteeEmail, url)) };
 }
 
 /**

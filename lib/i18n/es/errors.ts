@@ -82,4 +82,9 @@ export const errors: typeof EnErrors = {
   inviteSpent: "Esta invitación ya se usó o se revocó",
   inviteOnly: "criterio.design es solo con invitación por ahora. Apúntate a la lista y te escribimos cuando te toque",
   tooMany: "Demasiadas veces en poco tiempo. Espera unos minutos y vuelve a probar",
+  noInvitesLeft: "No te quedan invitaciones",
+  inviteHasAccount: "Ese correo ya tiene cuenta. Para trabajar juntos, invítalo desde Miembros",
+  inviteNotRevocable: "Esa invitación ya se usó o se revocó",
+  noAccountForEmail: "No hay ninguna cuenta con ese correo",
+  badInviteCount: "Un número entero del 1 al 100",
 };

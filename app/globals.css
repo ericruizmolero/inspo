@@ -1785,6 +1785,8 @@ a.dir-row:focus-visible, .dir-row__link:focus-visible { outline: 2px solid var(-
 .setting-ok { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 .setting-alert { margin: 0; }
 .setting-alert a { color: inherit; text-underline-offset: 3px; }
+/* A link inside a section's description (Invite → Members): underlined like the auth footer, or it reads as plain text */
+.cr-swin-desc a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border-strong); text-underline-offset: 3px; }
 /* A second list in a window: its title-s heading over the rows, after a hairline */
 .setting-sub { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 1px solid var(--border); }
 /* Native select in the TextField look (sunken white field, ink border) */

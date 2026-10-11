@@ -8,6 +8,7 @@ import type { Workspace, SessionUser } from "@/lib/workspace-core";
 import CreateTeamDialog from "./CreateTeamDialog";
 import { setActiveWorkspace, useWorkspaceSwitch } from "./workspace-switch";
 import { useT } from "./I18nProvider";
+import { sectionIcon } from "./section-icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, Icon, MenuItem, MenuLabel, Separator, toneFor } from "@/components/criterio";
 
@@ -146,6 +147,9 @@ export default function WorkspaceMenu({ user, workspace, workspaces, isAdmin = f
           {extras && <div className="ws__extras" onClick={() => setOpen(false)}>{extras}</div>}
           <Link className="cr-menu-item" role="menuitem" href="/settings" onClick={() => setOpen(false)}>
             {I.gear}<span className="cr-menu-label">{t.ws.settings}</span>
+          </Link>
+          <Link className="cr-menu-item" role="menuitem" href="/settings/invite" onClick={() => setOpen(false)}>
+            {sectionIcon("invite")}<span className="cr-menu-label">{t.ws.invite}</span>
           </Link>
           {isAdmin && (
             <Link className="cr-menu-item" role="menuitem" href="/admin" onClick={() => setOpen(false)}>

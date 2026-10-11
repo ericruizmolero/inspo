@@ -53,6 +53,22 @@ export const actions: Record<string, Surface> = {
   "action:app/actions/waitlist-admin.ts#makeLooseInvite": notWaitlistAdmin((m) => m.makeLooseInvite({ email: null, uses: 1, mail: false })),
   "action:app/actions/waitlist-admin.ts#revokeTeamInvite": notWaitlistAdmin((m) => m.revokeTeamInvite("x")),
   "action:app/actions/waitlist-admin.ts#resendInvite": notWaitlistAdmin((m) => m.resendInvite("x")),
+  "action:app/actions/admin.ts#giveMoreInvites": notAdmin((m) => m.giveMoreInvites("someone@example.test", 1)),
+
+  "action:app/actions/invites.ts#createMyInvite": { exempt: "spends the signed-in user's own balance and makes an invite in their name, no workspace id" },
+  "action:app/actions/invites.ts#revokeMyInvite": {
+    probe: async (fx) => {
+      const { createInvite } = await import("@/lib/access");
+      const { revokeMyInvite } = await import("@/app/actions/invites");
+      const { id } = await createInvite({ createdBy: fx.a.owner.id });
+      const row = () => db.select().from(schema.accessInvite).where(eq(schema.accessInvite.id, id));
+      const before = await row();
+      asB(fx);
+      expectRefused(fx, await revokeMyInvite(id), "B cannot revoke A's invite");
+      expect(await row(), "A's invite unchanged").toEqual(before);
+      await db.delete(schema.accessInvite).where(eq(schema.accessInvite.id, id));
+    },
+  },
 
   "action:app/actions/brief.ts#saveProjectBrief": {
     probe: async (fx) => {

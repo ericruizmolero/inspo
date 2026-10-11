@@ -14,6 +14,12 @@ export const mail: typeof EnMail = {
       `${who} te invita a ${team} en criterio.design:\n${url}\n\nEntra con este mismo correo (${invitee}). El enlace caduca en 7 días.`,
   },
 
+  personalInvite: {
+    subject: (inviter: string): string => `${inviter} te invita a criterio.design`,
+    text: (who: string, plan: string, invitee: string, url: string): string =>
+      `${who} tiene una invitación a criterio.design para ti:\n${url}\n\nTendrás tu propio espacio en el plan ${plan}. Entra con este mismo correo (${invitee}).`,
+  },
+
   overCapacity: {
     people: (n: number): string => `${n} ${n === 1 ? "persona" : "personas"}`,
     subject: (team: string, members: string, plan: string, limit: number): string => `${team} tiene ${members} y el plan ${plan} admite ${limit}`,

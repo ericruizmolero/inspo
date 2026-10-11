@@ -16,6 +16,13 @@ export const mail = {
       `${who} invites you to ${team} on criterio.design:\n${url}\n\nSign in with this same address (${invitee}). The link expires in 7 days.`,
   },
 
+  /** A personal invite from Settings → Invite: access to the product, not a seat in a team */
+  personalInvite: {
+    subject: (inviter: string): string => `${inviter} invites you to criterio.design`,
+    text: (who: string, plan: string, invitee: string, url: string): string =>
+      `${who} has an invite to criterio.design for you:\n${url}\n\nYou get your own space on the ${plan} plan. Sign in with this same address (${invitee}).`,
+  },
+
   overCapacity: {
     people: (n: number): string => `${n} ${n === 1 ? "person" : "people"}`,
     subject: (team: string, members: string, plan: string, limit: number): string => `${team} has ${members} and the ${plan} plan allows ${limit}`,
