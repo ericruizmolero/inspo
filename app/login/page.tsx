@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/workspace";
 import { showcaseImages } from "@/lib/showcase";
@@ -10,7 +9,7 @@ import { Fragment } from "react";
 import Logo from "@/components/Logo";
 import { isLocalPath } from "@/lib/url";
 import { Button } from "@/components/criterio";
-import { legalShown } from "@/lib/legal";
+import { MARKETING_URL } from "@/lib/site";
 import ThemeToggle from "@/components/ThemeToggle";
 import { cookies } from "next/headers";
 import { codeIsUsable, getSignupMode } from "@/lib/access";
@@ -41,12 +40,14 @@ function loginError(code: string | undefined, t: Dict): string | undefined {
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; invite?: string }> }) {
   const { next, error, invite } = await searchParams;
-  const { t } = await getT();
+  const { t, locale } = await getT();
   if (await getSession()) redirect(isLocalPath(next) ? next : "/");
   // The signup gate (lib/access.ts). The code comes on the URL the first time and from the cookie after (proxy.ts)
   const inviteOnly = (await getSignupMode()) === "invite";
   const code = invite?.trim() || (await cookies()).get(INVITE_COOKIE)?.value;
   const invited = inviteOnly && !!code && (await codeIsUsable(code));
+  // The terms and the privacy policy live on the marketing site, in the reader's language
+  const legalBase = `${MARKETING_URL}${locale === "es" ? "/es" : ""}`;
   // Someone arriving from an invitation needs to know what they are joining and with which email
   const fromInvitation = (next ?? "").startsWith("/invite/");
   // If they come from the start canvas with a URL (?next=/?add=…), the headline says so
@@ -84,11 +85,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
         <footer className="auth__foot">
           <span>{inviteOnly && !invited ? t.login.firstTimeInviteOnly : t.login.firstTime}</span>
-          {legalShown() && (
-            <span>
-              {t.legal.accept[0]}<Link href="/terms">{t.legal.accept[1]}</Link>{t.legal.accept[2]}<Link href="/privacy">{t.legal.accept[3]}</Link>{t.legal.accept[4]}
-            </span>
-          )}
+          <span>
+            {t.login.accept[0]}<a href={`${legalBase}/terms/`}>{t.login.accept[1]}</a>{t.login.accept[2]}<a href={`${legalBase}/privacy/`}>{t.login.accept[3]}</a>{t.login.accept[4]}
+          </span>
         </footer>
       </section>
 

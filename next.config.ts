@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { MARKETING_URL } from "./lib/site";
 
 // Chromium for screenshots: the binary (.br) isn't found through imports, so it has
 // to be added by hand to the bundle of the routes that launch it. Without this, Vercel fails
@@ -21,6 +22,10 @@ const nextConfig: NextConfig = {
       { source: "/planes", destination: "/settings/plan", permanent: true },
       // Routes in English (23/09/2026). Invitation emails already sent keep working.
       { source: "/invitacion/:id", destination: "/invite/:id", permanent: true },
+      // The legal pages moved to the marketing site (11/10/2026)
+      { source: "/privacy", destination: `${MARKETING_URL}/privacy/`, permanent: true },
+      { source: "/terms", destination: `${MARKETING_URL}/terms/`, permanent: true },
+      { source: "/extension/privacy", destination: `${MARKETING_URL}/extension/privacy/`, permanent: true },
     ];
   },
   // On every response. HSTS keeps browsers on HTTPS after the first visit (Vercel already redirects

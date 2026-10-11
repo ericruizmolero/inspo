@@ -2162,11 +2162,6 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
 .steps__notice.cr-card { align-items: flex-start; font-size: var(--fs-ui); line-height: var(--lh-body); }
 .steps__notice p { margin: 0; }
 
-/* Legal pages (extension privacy): plain sections, read without a session. Body text near 65 characters */
-.legal { display: flex; flex-direction: column; gap: 24px; max-width: 65ch; }
-.legal h2 { margin: 0 0 6px; }
-.legal p { margin: 0; font-size: var(--fs-body); line-height: var(--lh-body); color: var(--text-muted); text-wrap: pretty; }
-
 /* ─── Board ───────────────────────────────────────────────────────────────── */
 /* The library as a masonry that scrolls like a page (components/Grid.tsx): the scroller fills the content
    under the floating bars, and every card is one flat node placed by transform from numbers the layout

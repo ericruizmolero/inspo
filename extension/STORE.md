@@ -41,8 +41,9 @@ para el alta ni para la ficha.
   headless a partir del popup (ver el handoff de la extensión).
 - **Icono de la tienda:** `extension/chrome/icons/icon128.png` (mismo que el del manifest).
 - **Web:** https://app.criterio.design
-- **Política de privacidad:** https://app.criterio.design/extension/privacy (obligatoria porque
-  la extensión envía datos a nuestro servidor).
+- **Política de privacidad:** https://criterio.design/extension/privacy/ (obligatoria porque
+  la extensión envía datos a nuestro servidor). Vive en la web de marketing (`marketing-site/`);
+  la app redirige su dirección antigua allí.
 
 ## Pestaña "Privacy practices"
 

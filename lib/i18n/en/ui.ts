@@ -964,6 +964,8 @@ export const ui = {
   },
   login: {
     pageTitle: "Sign in",
+    /** Under the sign-in form: before, the terms link, between, the privacy link, after */
+    accept: ["By signing in you accept the ", "Terms", " and the ", "Privacy policy", "."] as [string, string, string, string, string],
     checkInbox: "Check your inbox",
     sentToBefore: "We sent a link to ",
     sentToAfter: ". Open it on this device; it expires in 10 minutes.",
@@ -1513,18 +1515,6 @@ export const ui = {
         title: (v: string): string => `Version ${v} is out`,
         body: (have: string): string => `This browser has ${have}. Download the new one, unzip it over the old folder and press the reload arrow on the extension's card in chrome://extensions.`,
       },
-    },
-    privacy: {
-      title: "Extension privacy",
-      lead: "What the criterio.design browser extension does with your data. Short, because it does very little.",
-      sections: [
-        ["What it does", "It saves the site you are looking at into your criterio.design library. Nothing happens until you open the popup and press Save. It can also import your bookmarks, from the browser or from X, and the pins of a board on Pinterest, when you ask it to from its import page."],
-        ["What it sends", "When you press Save it sends three things to criterio.design over HTTPS: the page address, the tab title and a screenshot of the visible part of the page. The screenshot becomes the thumbnail of the saved item. When you import bookmarks it sends their addresses and titles, nothing else; from a board on Pinterest, each pin's address, its title and the address of its image. criterio.design then copies each pin's image and each post's photos and videos into your library, which only your workspace sees. It sends nothing anywhere else."],
-        ["What it keeps in the browser", "An access key, the list of your workspaces and your email, in the extension's own storage. Disconnect removes them and revokes the key on the server."],
-        ["What it does not do", "It does not read your browsing history, does not track the pages you visit, does not run on any site by itself and does not share or sell data to third parties."],
-        ["Permissions", "activeTab: to read the address and title of the current tab and capture it, only when you click the extension. storage: to keep the key. bookmarks: to list your bookmark folders on the import page, so you can choose what to import. scripting and x.com (optional, Chrome asks when you press Import from X): to scroll through your bookmarks page on x.com and read the addresses of the posts while importing; nothing else on x.com is read, and you can remove that permission in Chrome at any time. pinterest.com (optional, Chrome asks when you press Import from Pinterest): to open the board you gave and read its pins while importing; nothing else on Pinterest is read, and that permission can be removed the same way. criterio.design: to talk to your library; it runs on criterio.design only, to tell the app it is installed and to receive its key."],
-        ["Your data", "Revoke a key any time under Settings, Browser extension. Saved items are deleted from the library. Questions: hola@criterio.design."],
-      ] as [string, string][],
     },
   },
   designLibrary: {
