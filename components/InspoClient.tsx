@@ -305,7 +305,7 @@ export default function InspoClient({
 
   // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
-  const { postComment, editNote, deleteComment, reactComment } = useComments({ t, me: { id: user.id, name: user.name || user.email.split("@")[0] }, commentMap, setCommentMap, setItems, setPanelItem, confirm });
+  const { postComment, editNote, deleteComment, reactComment, reactNote } = useComments({ t, me: { id: user.id, name: user.name || user.email.split("@")[0] }, commentMap, setCommentMap, setItems, setPanelItem, confirm });
 
   useEffect(() => {
     // The templates too: Discover opens with its cards already read, not waiting for the server
@@ -443,6 +443,9 @@ export default function InspoClient({
 
   // The open reference: its thread, every comment with its replies (the post-its once pinned on the page among them)
   const panelComments = (panelItem?.id ? commentMap[panelItem.id] : undefined) ?? [];
+  // The note's reactions come from the library, which the pulse keeps current; the sheet's copy of the item does not
+  const panelLive = panelItem?.id ? items.find((i) => i.id === panelItem.id) : undefined;
+  const panelNoteReactions = { note: (panelLive ?? panelItem)?.noteReactions, subNote: (panelLive ?? panelItem)?.subNoteReactions };
   const canManage = workspace.role === "owner" || workspace.role === "admin";
 
   // What the open reference writes in criterio.md: in the project open, or else the first one it is in. A text is
@@ -534,6 +537,8 @@ export default function InspoClient({
               onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
               onReply={(parentId, body) => postComment(panelItem.id!, body, [], parentId)}
               onReact={(id, emoji) => reactComment(panelItem.id!, id, emoji)}
+              noteReactions={panelNoteReactions}
+              onReactNote={(field, emoji) => reactNote(panelItem.id!, field, emoji)}
               notice={panelForgotten.length > 0 && panelForgotten.map(({ project, names }) => (
                 <p key={project.id} className="cm-notice">
                   <span>{t.polish.forgottenIn(project.name, names)}</span>

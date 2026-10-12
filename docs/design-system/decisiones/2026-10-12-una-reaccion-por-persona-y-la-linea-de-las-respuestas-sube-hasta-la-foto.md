@@ -11,4 +11,6 @@ kind: diseño
 
 **Por qué.** Eric, 12-10: "que no puedas poner tantos emojis como quieras por comentario solo 1", "el tag del emoji mejora de diseño", "que la respuesta a un comentario la linea persiga hasta la foto de arriba" y, del botón, "el border de responder ahi se toca con todo lo demás, hazlo más pequeño el butto y cuidado". La forma concreta de la pastilla es interpretación nuestra de "mejora de diseño".
 
+La nota con la que se guardó una referencia también admite reacciones, con la misma regla de una por persona (`toggleNoteReaction`, `inspo_item.note_reactions`): Eric, 12-10, "yo no puedo reaccionar a primeros comentarios de andoni en la ficha desde pulido, eso arreglar".
+
 **Cómo aplicarlo.** Una reacción nueva en otra parte de la app sigue la misma regla de una por persona. Los botones de texto dentro de un hilo no pasan de 26 px y su foco no sale del botón cuando tienen vecinos a menos de 8 px.

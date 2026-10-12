@@ -250,6 +250,8 @@ export const inspoItem = pgTable("inspo_item", {
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   note: text("note").notNull().default(""),
   subNote: text("sub_note"),
+  /** Emoji reactions to the note and sub-note, as on a comment (lib/reactions.ts): one per person and note */
+  noteReactions: jsonb("note_reactions").$type<NoteReactionRow[]>().notNull().default([]),
   /** The app it was saved from when that was not criterio itself: the name of the AI client connected over MCP
    *  (lib/mcp), "Claude". Null for everything saved in the app or by the extension */
   via: text("via"),
@@ -469,6 +471,8 @@ export const designWhy = pgTable("design_why", {
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
 /** One person's reaction to a comment: the emoji, who, and their name at the time (in case they are gone) */
 export interface CommentReactionRow { e: string; u: string; n: string }
+/** A reaction to the note a reference was saved with: which of its two notes (`f`), the rest as on a comment */
+export interface NoteReactionRow extends CommentReactionRow { f: "note" | "subNote" }
 
 export const inspoComment = pgTable("inspo_comment", {
   id: text("id").primaryKey(),

@@ -51,6 +51,10 @@ interface CommentsPanelProps {
   onReply?: (parentId: string, body: string) => Promise<void>;
   /** Gives or takes away the person's emoji on a comment. Without it, reactions are only shown */
   onReact?: (id: string, emoji: string) => Promise<void>;
+  /** The reactions to the note and sub-note the reference was saved with, read live from the library */
+  noteReactions?: { note?: CommentReaction[]; subNote?: CommentReaction[] };
+  /** Gives or takes away the person's emoji on that note. Without it, its reactions are only shown */
+  onReactNote?: (field: "note" | "subNote", emoji: string) => Promise<void>;
 }
 
 const IcTrash = <Icon name="trash" size={14} />;
@@ -96,7 +100,7 @@ interface Msg {
   deletable?: boolean;
   /** Original note or sub-note this person may rewrite */
   editable?: boolean;
-  /** Emoji reactions; only real comments take them (the original note is part of the reference) */
+  /** Emoji reactions: on a comment, or on the note the reference was saved with (stored on the reference) */
   reactions?: CommentReaction[];
   reactable?: boolean;
 }
@@ -181,7 +185,7 @@ function filesFrom(dt: DataTransfer | null): File[] {
   return out;
 }
 
-export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply, onReact }: CommentsPanelProps) {
+export default function CommentsPanel({ item, comments, user, canManage, memberImages, memberNames = [], image, notice, onPost, onDelete, onEditNote, onClose, showMedia = true, onPostThumb, onReply, onReact, noteReactions, onReactNote }: CommentsPanelProps) {
   const { locale, t } = useT();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -273,10 +277,10 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     const mine = author === user.name;
     const editable = !!onEditNote && (mine || canManage);
     if (item.note) {
-      originals.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
+      originals.push({ id: "nota", name: author, image: memberImages[author] ?? null, body: item.note, attachments: [], at: esDateToIso(item.date), mine, original: true, editable, reactions: noteReactions?.note ?? [], reactable: true });
     }
     if (item.subNote) {
-      originals.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true, editable });
+      originals.push({ id: "sub", name: author, image: memberImages[author] ?? null, body: item.subNote, attachments: [], at: esDateToIso(item.date), mine, original: true, editable, reactions: noteReactions?.subNote ?? [], reactable: true });
     }
     const toMsg = (c: InspoComment): Msg => {
       const own = c.authorId === user.id;
@@ -294,7 +298,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     for (const c of comments) if (c.parentId && ids.has(c.parentId)) byId.get(c.parentId)?.replies.push(toMsg(c));
     return { originals, threads };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- the strings are read from the dictionary it was built with, and listing t would rebuild it when the language changes
-  }, [item, comments, user, canManage, memberImages, onEditNote]);
+  }, [item, comments, user, canManage, memberImages, onEditNote, noteReactions?.note, noteReactions?.subNote]);
 
   // Who gave an emoji, you last and as "you": the tooltip and the label of its chip
   const whoReacted = (r: CommentReaction) => {
@@ -302,7 +306,12 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     if (r.people.some((p) => p.id === user.id)) names.push(t.comments.you);
     return listNames(names, t.comments.and);
   };
-  const react = (id: string, emoji: string) => { void onReact?.(id, emoji); };
+  // The note and sub-note that open the list ("nota", "sub") are the reference's own; the rest are comments
+  const react = (id: string, emoji: string) => {
+    if (id === "nota" || id === "sub") void onReactNote?.(id === "nota" ? "note" : "subNote", emoji);
+    else void onReact?.(id, emoji);
+  };
+  const canReact = (m: Msg) => (m.original ? !!onReactNote : !!onReact);
   const myReaction = (m: Msg) => m.reactions?.find((r) => r.people.some((p) => p.id === user.id))?.emoji;
   const total = originals.length + threads.reduce((n, th) => n + 1 + th.replies.length, 0);
 
@@ -442,14 +451,14 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 const mine = r.people.some((p) => p.id === user.id);
                 const who = whoReacted(r);
                 return (
-                  <button key={r.emoji} type="button" className={`cm-react${mine ? " is-mine" : ""}`} aria-pressed={mine} disabled={!onReact}
+                  <button key={r.emoji} type="button" className={`cm-react${mine ? " is-mine" : ""}`} aria-pressed={mine} disabled={!canReact(m)}
                     aria-label={`${r.emoji} ${r.people.length}, ${who}`} data-tip={who} onClick={() => react(m.id, r.emoji)}>
                     <span className="cm-react__emoji" aria-hidden>{r.emoji}</span>
                     <span className="cm-react__count" aria-hidden>{r.people.length}</span>
                   </button>
                 );
               })}
-              {onReact && (
+              {canReact(m) && (
                 <ReactionPicker className="cm-react cm-react--add" label={t.comments.react} title={t.comments.reactions} current={myReaction(m)} onPick={(e) => react(m.id, e)}>
                   <Icon name="smile" size={14} />
                 </ReactionPicker>
@@ -457,7 +466,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
             </div>
           )}
         </div>
-        {m.reactable && onReact && (
+        {m.reactable && canReact(m) && (
           <ReactionPicker className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-xs cm-msg__react" label={t.comments.react} title={t.comments.reactions} current={myReaction(m)} onPick={(e) => react(m.id, e)}>
             <Icon name="smile" size={14} />
           </ReactionPicker>

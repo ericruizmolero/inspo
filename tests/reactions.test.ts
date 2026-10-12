@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { eq } from "drizzle-orm";
 import { db, pool, schema } from "@/lib/db";
-import { toggleReaction } from "@/lib/comments";
+import { toggleNoteReaction, toggleReaction } from "@/lib/comments";
 import { groupReactions, toggleIn } from "@/lib/reactions";
 import { cleanup, seed, type Fixture } from "./isolation/fixture";
 
@@ -44,6 +44,21 @@ describe("reactions", () => {
     await expect(toggleReaction(fx.a.team, fx.a.comment, me, "💩")).rejects.toMatchObject({ status: 400 });
     await expect(toggleReaction(fx.a.team, fx.a.comment, me, "<b>")).rejects.toMatchObject({ status: 400 });
     await expect(toggleReaction(fx.b.team, fx.a.comment, me, "👍")).rejects.toMatchObject({ status: 404 });
+  });
+
+  test("the note a reference was saved with takes reactions too, one each per note, and the pulse sees the reference", async () => {
+    const { owner, team, item } = fx.a;
+    const me = { id: owner.id, name: owner.name };
+    const itemRow = async () => (await db.select().from(schema.inspoItem).where(eq(schema.inspoItem.id, item)))[0];
+    const was = (await itemRow()).updatedAt;
+    expect(await toggleNoteReaction(team, item, "note", me, "👍")).toEqual([{ emoji: "👍", people: [me] }]);
+    expect((await itemRow()).updatedAt.getTime(), "updated_at moves so the pulse carries it").toBeGreaterThan(was.getTime());
+    expect(await toggleNoteReaction(team, item, "subNote", me, "🔥"), "the sub-note is apart").toEqual([{ emoji: "🔥", people: [me] }]);
+    expect(await toggleNoteReaction(team, item, "note", me, "❤️"), "another emoji replaces yours").toEqual([{ emoji: "❤️", people: [me] }]);
+    expect(await toggleNoteReaction(team, item, "note", me, "❤️"), "the same one takes it away").toEqual([]);
+    expect((await itemRow()).noteReactions, "the sub-note's stays").toEqual([{ e: "🔥", u: me.id, n: me.name, f: "subNote" }]);
+    await expect(toggleNoteReaction(team, item, "title", me, "👍")).rejects.toMatchObject({ status: 400 });
+    await expect(toggleNoteReaction(fx.b.team, item, "note", me, "👍")).rejects.toMatchObject({ status: 404 });
   });
 
   test("grouping keeps the order each emoji was first given, and the tab's toggle mirrors the server's", () => {

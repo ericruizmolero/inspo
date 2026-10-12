@@ -90,8 +90,8 @@ async function main() {
   try {
     for (const it of newItems) {
       const [old] = items.filter((x) => itemMap.get(x.id) === it.id);
-      await db.query(`insert into inspo_item (id, organization_id, name, web, web_key, date, type, author, created_by, note, sub_note, thumbnail_url, tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source)
-        select $1, $2, name, replace(web, $4, $5), replace(web_key, lower($4), lower($5)), date, type, author, created_by, note, sub_note, replace(thumbnail_url, $4, $5), tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source
+      await db.query(`insert into inspo_item (id, organization_id, name, web, web_key, date, type, author, created_by, note, sub_note, note_reactions, thumbnail_url, tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source)
+        select $1, $2, name, replace(web, $4, $5), replace(web_key, lower($4), lower($5)), date, type, author, created_by, note, sub_note, note_reactions, replace(thumbnail_url, $4, $5), tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source
         from inspo_item where id=$3`, [it.id, to, old.id, FROM, TO]);
     }
     for (const p of newProjects) {
