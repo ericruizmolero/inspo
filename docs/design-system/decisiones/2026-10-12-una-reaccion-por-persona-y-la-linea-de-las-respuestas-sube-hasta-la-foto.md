@@ -13,4 +13,6 @@ kind: diseño
 
 La nota con la que se guardó una referencia también admite reacciones, con la misma regla de una por persona (`toggleNoteReaction`, `inspo_item.note_reactions`): Eric, 12-10, "yo no puedo reaccionar a primeros comentarios de andoni en la ficha desde pulido, eso arreglar".
 
+Eric, 12-10, preguntó si las reacciones avisan, "al menos a la campanita": avisan en la campanita solo a quien escribió lo reaccionado, como en Slack, y nunca por correo ni en el resumen diario (`reactionsTo` en `lib/notify.ts`). Que no lleguen al resto del equipo es interpretación nuestra, para no llenar la campanita de todos con cada emoji.
+
 **Cómo aplicarlo.** Una reacción nueva en otra parte de la app sigue la misma regla de una por persona. Los botones de texto dentro de un hilo no pasan de 26 px y su foco no sale del botón cuando tienen vecinos a menos de 8 px.

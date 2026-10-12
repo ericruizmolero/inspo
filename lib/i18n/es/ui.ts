@@ -92,6 +92,7 @@ export const ui: typeof EnUi = {
       talked: (who: string, area: string): string => `${who} sobre ${area}`,
       voted: (who: string, n: number): string => `${who} votó ${n === 1 ? "una referencia" : `${n} referencias`} en el Pulido`,
       closedPolish: (who: string): string => `${who} cerró el Pulido`,
+      reacted: (who: string, emoji: string, what: string): string => `${who} reaccionó ${emoji} a lo que dijiste en ${what}`,
     },
   },
   unsubscribe: {

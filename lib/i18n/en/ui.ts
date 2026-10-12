@@ -94,6 +94,7 @@ export const ui = {
       talked: (who: string, area: string): string => `${who} on ${area}`,
       voted: (who: string, n: number): string => `${who} voted on ${n === 1 ? "a reference" : `${n} references`} in Polish`,
       closedPolish: (who: string): string => `${who} closed the Polish`,
+      reacted: (who: string, emoji: string, what: string): string => `${who} reacted ${emoji} to what you said on ${what}`,
     },
   },
   unsubscribe: {

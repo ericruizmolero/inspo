@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, pool, schema } from "@/lib/db";
 import { toggleNoteReaction, toggleReaction } from "@/lib/comments";
 import { groupReactions, toggleIn } from "@/lib/reactions";
+import { latestTeamEvent, teamActivity, teamEvents } from "@/lib/notify";
 import { cleanup, seed, type Fixture } from "./isolation/fixture";
 
 let fx: Fixture;
@@ -56,9 +57,28 @@ describe("reactions", () => {
     expect(await toggleNoteReaction(team, item, "subNote", me, "🔥"), "the sub-note is apart").toEqual([{ emoji: "🔥", people: [me] }]);
     expect(await toggleNoteReaction(team, item, "note", me, "❤️"), "another emoji replaces yours").toEqual([{ emoji: "❤️", people: [me] }]);
     expect(await toggleNoteReaction(team, item, "note", me, "❤️"), "the same one takes it away").toEqual([]);
-    expect((await itemRow()).noteReactions, "the sub-note's stays").toEqual([{ e: "🔥", u: me.id, n: me.name, f: "subNote" }]);
+    expect((await itemRow()).noteReactions, "the sub-note's stays").toMatchObject([{ e: "🔥", u: me.id, n: me.name, f: "subNote" }]);
     await expect(toggleNoteReaction(team, item, "title", me, "👍")).rejects.toMatchObject({ status: 400 });
     await expect(toggleNoteReaction(fx.b.team, item, "note", me, "👍")).rejects.toMatchObject({ status: 404 });
+  });
+
+  test("the bell of whoever wrote it hears of someone else's emoji, and nobody else's does", async () => {
+    const { owner, team, comment, item } = fx.a;
+    const other = { id: fx.b.owner.id, name: "Otra" };
+    const before = await latestTeamEvent(team, owner.id);
+    await toggleReaction(team, comment, other, "🎉");
+    await toggleNoteReaction(team, item, "note", other, "👀");
+    await toggleReaction(team, comment, { id: owner.id, name: owner.name }, "👍");
+    const bell = await teamActivity(team, owner.id, "es");
+    // The account's name now, not the one stored with the reaction
+    const who = fx.b.owner.name;
+    const mine = bell.lines.filter((l) => l.text.startsWith(`${who} reaccionó`) && /👀|🎉/.test(l.text));
+    expect(mine.map((l) => l.text).sort()).toEqual([`${who} reaccionó 👀 a lo que dijiste en ${fx.a.secret} ${item}`, `${who} reaccionó 🎉 a lo que dijiste en ${fx.a.secret} ${item}`].sort());
+    expect(mine.every((l) => l.path === `/i/${item}`), "each line opens the reference").toBe(true);
+    expect(await latestTeamEvent(team, owner.id) > before, "the board's pulse sees news for the bell").toBe(true);
+    expect((await teamEvents(team, new Date(0))).some((e) => e.kind === "reaction"), "never in the shared list, so never in the digest").toBe(false);
+    await toggleReaction(team, comment, other, "🎉");
+    expect((await teamActivity(team, owner.id, "es")).lines.filter((l) => l.text.includes("🎉")), "taken away, gone from the bell").toEqual([]);
   });
 
   test("grouping keeps the order each emoji was first given, and the tab's toggle mirrors the server's", () => {

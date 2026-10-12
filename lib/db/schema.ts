@@ -469,8 +469,9 @@ export const designWhy = pgTable("design_why", {
 // opens the list.
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
-/** One person's reaction to a comment: the emoji, who, and their name at the time (in case they are gone) */
-export interface CommentReactionRow { e: string; u: string; n: string }
+/** One person's reaction to a comment: the emoji, who, their name at the time (in case they are gone) and when
+ *  (ISO), which the bell of whoever wrote the comment reads (lib/notify.ts reactionsTo) */
+export interface CommentReactionRow { e: string; u: string; n: string; t?: string }
 /** A reaction to the note a reference was saved with: which of its two notes (`f`), the rest as on a comment */
 export interface NoteReactionRow extends CommentReactionRow { f: "note" | "subNote" }
 

@@ -140,7 +140,7 @@ function toggled(column: string, emoji: string, user: { id: string; name: string
   const theirs = key({ u: user.id });
   const mine = field ? sql`(r->>'u' = ${user.id}::text and r->>'f' = ${field}::text)` : sql`r->>'u' = ${user.id}::text`;
   const others = sql`coalesce((select jsonb_agg(r order by i) from jsonb_array_elements(${col}) with ordinality as x(r, i) where not ${mine}), '[]'::jsonb)`;
-  const row = sql`${JSON.stringify([{ e: emoji, u: user.id, n: user.name.slice(0, 120), ...(field ? { f: field } : {}) }])}::jsonb`;
+  const row = sql`${JSON.stringify([{ e: emoji, u: user.id, n: user.name.slice(0, 120), t: new Date().toISOString(), ...(field ? { f: field } : {}) }])}::jsonb`;
   return {
     value: sql`case when ${col} @> ${same} then ${others} else ${others} || ${row} end`,
     room: sql`(${col} @> ${theirs} or jsonb_array_length(${col}) < ${MAX_REACTIONS})`,

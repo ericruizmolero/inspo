@@ -155,13 +155,42 @@ export interface TeamEvent {
   byImage: string | null;
   /** Where it files: a project, or the library */
   projectId: string | null;
-  kind: "ref" | "project" | "comment" | "areaTalk" | "proposal" | "decision" | "vote" | "polishClosed";
+  /** "reaction" is only ever someone's emoji on what the person looking wrote (reactionsTo): the bell, never the digest */
+  kind: "ref" | "project" | "comment" | "areaTalk" | "proposal" | "decision" | "vote" | "polishClosed" | "reaction";
   /** Where the line goes, inside the app */
   path: string;
   /** The reference's or project's name, the area's key */
   what: string;
   /** The comment's or decision's words */
   quote?: string;
+  /** A reaction's emoji */
+  emoji?: string;
+}
+
+/** The emoji others gave, after `since`, to what this person wrote in a workspace: their comments and the notes they
+ *  saved references with. Only theirs, as in Slack: the whole team's emoji in everyone's bell would be noise, and an
+ *  emoji is not worth an email. A reaction taken away is gone from the row, so it is gone from here too */
+export async function reactionsTo(organizationId: string, userId: string, since: Date): Promise<TeamEvent[]> {
+  const o = organizationId, u = userId, s = since.toISOString();
+  const [onComments, onNotes] = await Promise.all([
+    db.execute<{ item_id: string; name: string; body: string; r: { e: string; u: string; n: string; t: string } }>(sql`
+      select c.item_id, i.name, c.body, r from inspo_comment c join inspo_item i on i.id = c.item_id, jsonb_array_elements(c.reactions) r
+      where c.organization_id = ${o} and c.author_id = ${u} and r->>'u' <> ${u} and (r->>'t')::timestamptz > ${s}::timestamptz`),
+    db.execute<{ id: string; name: string; note: string; sub_note: string | null; r: { e: string; u: string; n: string; t: string; f: string } }>(sql`
+      select i.id, i.name, i.note, i.sub_note, r from inspo_item i, jsonb_array_elements(i.note_reactions) r
+      where i.organization_id = ${o} and i.created_by = ${u} and r->>'u' <> ${u} and (r->>'t')::timestamptz > ${s}::timestamptz`),
+  ]);
+  const ids = [...new Set([...onComments.rows, ...onNotes.rows].map((x) => x.r.u))];
+  const people = new Map<string, { name: string; image: string | null }>();
+  if (ids.length) for (const p of await db.select({ id: U.id, name: U.name, image: U.image }).from(U).where(inArray(U.id, ids))) people.set(p.id, { name: p.name, image: p.image ?? null });
+  const event = (r: { e: string; u: string; n: string; t: string }, itemId: string, what: string, quote: string): TeamEvent => ({
+    at: new Date(r.t), by: r.u, byName: people.get(r.u)?.name || r.n, byImage: people.get(r.u)?.image ?? null,
+    projectId: null, kind: "reaction", path: itemPath(itemId), what, quote, emoji: r.e,
+  });
+  return [
+    ...onComments.rows.map((x) => event(x.r, x.item_id, x.name, x.body)),
+    ...onNotes.rows.map((x) => event(x.r, x.id, x.name, (x.r.f === "subNote" ? x.sub_note : x.note) ?? "")),
+  ].sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 /** Everything that happened in a workspace after `since`, oldest first. One query per table */
@@ -217,7 +246,11 @@ export async function latestTeamEvent(organizationId: string, userId: string): P
     (select max(created_at) from system_area_comment where organization_id = ${o} and author_id is distinct from ${u}),
     (select max(created_at) from system_area_revision where organization_id = ${o} and source = 'team' and author_id is distinct from ${u}),
     (select max(updated_at) from polish_vote where organization_id = ${o} and user_id is distinct from ${u}),
-    (select max(closed_at) from polish_vote where organization_id = ${o} and closed_by is distinct from ${u})
+    (select max(closed_at) from polish_vote where organization_id = ${o} and closed_by is distinct from ${u}),
+    (select max((r->>'t')::timestamptz) from inspo_comment c, jsonb_array_elements(c.reactions) r
+      where c.organization_id = ${o} and c.author_id = ${u} and r->>'u' <> ${u}),
+    (select max((r->>'t')::timestamptz) from inspo_item i, jsonb_array_elements(i.note_reactions) r
+      where i.organization_id = ${o} and i.created_by = ${u} and r->>'u' <> ${u})
   )::text as at`);
   return rows[0]?.at ?? "";
 }
@@ -259,6 +292,7 @@ export function activityLines(events: TeamEvent[], locale: Locale): ActivityLine
       case "proposal": lines.push({ ...base, text: t.proposed(who, areaName(locale, e.what)), quote: clip(e.quote ?? "") }); break;
       case "decision": lines.push({ ...base, text: t.decided(who, areaName(locale, e.what)), quote: clip(e.quote ?? "") }); break;
       case "polishClosed": lines.push({ ...base, text: t.closedPolish(who) }); break;
+      case "reaction": lines.push({ ...base, text: t.reacted(who, e.emoji ?? "", e.what), quote: clip(e.quote ?? "") }); break;
     }
   }
   return lines;
@@ -282,7 +316,8 @@ export async function teamActivity(organizationId: string, userId: string, local
   if (!m) return { lines: [], unseen: 0 };
   const since = new Date(now.getTime() - WINDOW_DAYS * DAY);
   const seenAt = m.seenAt ?? m.joinedAt;
-  const [events, projectNames] = await Promise.all([teamEvents(organizationId, since), projectNamesOf(organizationId)]);
+  const [team, reactions, projectNames] = await Promise.all([teamEvents(organizationId, since), reactionsTo(organizationId, userId, since), projectNamesOf(organizationId)]);
+  const events = [...team, ...reactions].sort((a, b) => a.at.getTime() - b.at.getTime());
   const lines = activityLines(events.filter((e) => e.by !== userId), locale)
     .map((l) => ({ ...l, project: l.projectId ? projectNames.get(l.projectId) ?? null : null, fresh: new Date(l.at) > seenAt }))
     .reverse().slice(0, BELL_LINES);
