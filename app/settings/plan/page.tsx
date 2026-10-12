@@ -10,7 +10,7 @@ import { countMembers, quotaStatus } from "@/lib/quota";
 import { PLANS, PLANS_CONTACT, isPaid, planOf } from "@/lib/plans";
 import { fmtGb } from "@/lib/room";
 import { getT, fmtDate, fmtPrice, type Dict } from "@/lib/i18n";
-import { Button, Icon, Progress, SettingsWindow } from "@/components/criterio";
+import { Button, Card, Icon, Progress, SettingsWindow } from "@/components/criterio";
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,8 +30,8 @@ function Line({ label, used, limit, t, seats, fairUse, nums }: {
   return (
     <div className={`pl-quota${full ? " is-full" : ""}`}>
       <div className="pl-quota__head">
-        <span className="t-ui">{label}</span>
-        <span className="pl-quota__nums t-small">{nums ?? (fairUse ? t.plans.fairUse(used) : limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit))}</span>
+        <span className="pl-quota__label t-small">{label}</span>
+        <span className="pl-quota__nums t-ui">{nums ?? (fairUse ? t.plans.fairUse(used) : limit === null ? t.plans.noLimit(used) : t.plans.usedOf(used, limit))}</span>
       </div>
       {limit !== null && !fairUse && <Progress value={pct} segments={16} label={label} className="pl-quota__progress" />}
       {fairUse && full && <p className="pl-quota__note t-small">{t.plans.fairUsePassed}</p>}
@@ -82,22 +82,25 @@ export default async function PlanPage() {
             const name = t.plans.items[p.key].name;
             return (
               // Every plan the same height: the tagline holds two lines, the features grow, the footer sits at the bottom
-              <SettingsWindow key={p.key} title={name} className={`pl-plan${current ? " is-current" : ""}`}
-                note={current ? t.plans.current : undefined}
-                actions={current ? undefined : (
-                  <Button variant={up ? "primary" : "secondary"} size="s" href={mailto(name)}>
-                    {up ? t.plans.moveUp : t.plans.moveDown}
-                  </Button>
-                )}>
+              <Card key={p.key} as="article" className={`pl-plan${current ? " is-current" : ""}`}>
+                <header className="pl-plan__head">
+                  <h2 className="t-title-s">{name}</h2>
+                  {current && <span className="pl-plan__mine t-small">{t.plans.yourPlan}</span>}
+                </header>
                 <p className="pl-plan__tagline t-small">{t.plans.items[p.key].tagline}</p>
                 <div className="pl-plan__price">
                   <span className="t-title-l">{fmtPrice(p.price.month, locale)}</span><span className="pl-plan__per t-small">{t.plans.perMonth}</span>
                   <span className="pl-plan__year t-small">{isPaid(p) ? t.plans.orYearly(fmtPrice(p.price.year, locale)) : t.plans.forGood}</span>
                 </div>
-                <ul className="pl-plan__features">
-                  {t.plans.items[p.key].features.map((f) => <li key={f}><span className="pl-plan__tick"><Icon name="check" size={12} weight="bold" /></span><span>{f}</span></li>)}
+                <ul className="pl-plan__features t-small">
+                  {t.plans.items[p.key].features.map((f) => <li key={f}><Icon name="check" size={14} weight="bold" className="pl-plan__tick" /><span>{f}</span></li>)}
                 </ul>
-              </SettingsWindow>
+                <div className="pl-plan__foot">
+                  {current
+                    ? <span className="pl-plan__current t-small">{t.plans.current}</span>
+                    : <Button variant={up ? "primary" : "secondary"} size="s" href={mailto(name)} className="pl-plan__cta">{up ? t.plans.moveUp : t.plans.moveDown}</Button>}
+                </div>
+              </Card>
             );
           })}
         </div>

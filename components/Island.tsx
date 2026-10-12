@@ -274,7 +274,7 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     if (unread > 0) return <StatusRing className="island__ring" tone="new" label={t.system.stale(unread)} />;
     return <StatusRing className="island__ring" tone={filled >= SYSTEM_AREAS.length ? "synced" : "idle"} progress={filled / SYSTEM_AREAS.length} label={t.system.filled(filled, SYSTEM_AREAS.length)} />;
   };
-  const label = (name: string, n: number, id?: string) => <><span className="island__label">{name}</span><span className="island__n">{n}</span>{id && ringOf(id)}</>;
+  const label = (name: string, n: number, id?: string) => <><span className="island__label" data-long={name.length > 7 || undefined}>{name}</span><span className="island__n">{n}</span>{id && ringOf(id)}</>;
   /** The × that closes a project's tab: the project stays, it only leaves the bar */
   const closeX = (p: Project) => (
     <IconButton icon="close" variant="quiet" size="xs" className="island__tab-x" label={t.projects.closeTab(p.name)}

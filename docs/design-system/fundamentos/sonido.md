@@ -19,8 +19,8 @@ Dos cosas distintas que no se encienden la una a la otra: la música es ambiente
 
 | Sonido | Para qué sirve | Dónde suena en la app |
 | --- | --- | --- |
-| `tap` | Pulsar, activar | Cada carta que pasa por delante del tornado de Pulido cuando lo gira la persona (scroll o arrastre): sutil, como la muesca de una rueda, con 70 ms de mínimo entre dos (`TICK_MS`). Nunca cuando se coloca solo ni cuando gira detrás de las palabras → [decisión](../decisiones/2026-10-08-el-tornado-de-pulido-hace-tic-al-girarlo.md) |
-| `type` | Escribir | No suena |
+| `tap` | Pulsar, activar | Cada carta que pasa por delante del tornado de Pulido cuando lo gira la persona (scroll o arrastre): sutil, como la muesca de una rueda, con 70 ms de mínimo entre dos (`TICK_MS`). Nunca cuando se coloca solo ni cuando gira detrás de las palabras → [decisión](../decisiones/2026-10-08-el-tornado-de-pulido-hace-tic-al-girarlo.md). Pasar el ratón por una fila de recursos de Descubrir, sutil y con el mismo mínimo (solo ratón) → [decisión](../decisiones/2026-10-12-pasar-por-los-recursos-hace-tic.md) |
+| `type` | Escribir | No suena (se probó en los recursos de Descubrir y se volvió a `tap`) |
 | `select` | Elegir en una lista, decidir | Pulido: Conservar hacia delante, Olvidar hacia atrás. Sacar una carta de un proyecto al Inbox: hacia atrás, como Olvidar |
 | `toggle` | Cambiar de estado | Encender los sonidos en Ajustes (para oír cómo son) |
 | `open` | Abrir | No suena |

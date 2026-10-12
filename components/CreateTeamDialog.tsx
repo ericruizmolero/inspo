@@ -34,7 +34,7 @@ export default function CreateTeamDialog({ open, onOpenChange }: { open: boolean
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogWindow initialFocus={() => document.getElementById("new-team-name")} bar={t.team.title} heading={t.team.newTeam} closeLabel={t.common.close}
+      <DialogWindow className="modal--confirm" initialFocus={() => document.getElementById("new-team-name")} bar={t.team.title} heading={t.team.newTeam} closeLabel={t.common.close}
         footer={
           <div className="modal__footer">
             <DialogClose render={<Button size="s" />}>{t.common.cancel}</DialogClose>

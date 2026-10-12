@@ -1328,9 +1328,9 @@ export const ui = {
     revoke: "Revoke",
     connectBrowser: "Connect this browser",
     newTeam: "New team",
-    teamNamePlaceholder: "Team name",
+    teamNamePlaceholder: "Studio North",
     create: "Create",
-    newTeamHint: "A team has a library of its own. Invite whoever you like by email; you will be the owner.",
+    newTeamHint: "With a library of its own. You will be the owner.",
   },
   invite: {
     pageTitle: "Invitation",

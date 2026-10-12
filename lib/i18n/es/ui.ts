@@ -1320,9 +1320,9 @@ export const ui: typeof EnUi = {
     revoke: "Revocar",
     connectBrowser: "Conectar este navegador",
     newTeam: "Nuevo equipo",
-    teamNamePlaceholder: "Nombre del equipo",
+    teamNamePlaceholder: "Estudio Norte",
     create: "Crear",
-    newTeamHint: "Un equipo tiene su propia librería. Invita a quien quieras por correo; tú serás el propietario.",
+    newTeamHint: "Con su propia librería. Tú serás el propietario.",
   },
   invite: {
     pageTitle: "Invitación",

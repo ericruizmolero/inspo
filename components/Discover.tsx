@@ -13,6 +13,7 @@ import { SKILLS, SKILL_TOPICS, isNewSkill, type SkillTopic } from "@/lib/agent-s
 import DiscoverSkills from "./DiscoverSkills";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useT } from "./I18nProvider";
+import { cue } from "@/lib/ui-sounds";
 import { Chip, Icon, MenuItem, SegmentedControl } from "@/components/criterio";
 import { afterPaint } from "@/components/ui/liquid";
 import "./Discover.css";
@@ -25,6 +26,15 @@ const ALL = RESOURCES.flatMap((g) => g.items);
 const FRESH = ALL.filter((s) => isNewSite(s)).length;
 /** The skills that came in lately: as with the resources, criterio.design's own carry no date */
 const FRESH_SKILLS = SKILLS.filter((s) => isNewSkill(s)).length;
+// Passing over a resource ticks like the tornado's notch (a subtle `tap`), with the mouse only and never closer than this
+const TICK_MS = 70;
+let ticked = 0;
+function rowTick(e: React.PointerEvent) {
+  const t = performance.now();
+  if (e.pointerType !== "mouse" || t - ticked < TICK_MS) return;
+  ticked = t;
+  cue("tap", { emphasis: "subtle" });
+}
 const inShelf = (s: Resource, shelf: Shelf) => shelf === "all" || (shelf === "new" ? isNewSite(s) : FEATURED_URLS.includes(s.url));
 
 /** Discover: the examples, the places to look and the skills for agents */
@@ -230,7 +240,7 @@ function DiscoverList({ group, shelf, query, head }: { group: string | null; she
             {g.items.map((site) => (
               <li key={site.url}>
                 <a className="disc-row" href={site.url} target="_blank" rel="noopener noreferrer"
-                  onPointerEnter={(e) => peek.show(e, site.url)} onPointerMove={(e) => peek.place(e)}>
+                  onPointerEnter={(e) => { peek.show(e, site.url); rowTick(e); }} onPointerMove={(e) => peek.place(e)}>
                   <b className="disc-row__name">{site.name}</b>
                   {isNewSite(site) && <Chip tone="paper" className="disc-row__new">{t.discover.new}</Chip>}
                   <span className="disc-row__text">{site.text[locale]}</span>
