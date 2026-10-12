@@ -141,8 +141,7 @@
   --radius-l: 14px;
 
   /* One family: Satoshi for titles, text and UI. Titles keep their own token so a second face is one line */
-  /* TRIAL 2026-10-09: Söhne (Klim test files, local only) for text and UI; titles stay in Satoshi */
-  --font-sans: var(--font-soehne), system-ui, -apple-system, sans-serif; /* test files lack accents and most punctuation: system-ui (SF Pro) is closer to Söhne than Satoshi */
+  --font-sans: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
   --font-title: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
   --font: var(--font-sans);
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
@@ -195,8 +194,7 @@
   --color-moss: var(--moss);
   --color-ember: var(--ember);
   --color-butter: var(--butter);
-  /* TRIAL 2026-10-09: Söhne (Klim test files, local only) for text and UI; titles stay in Satoshi */
-  --font-sans: var(--font-soehne), system-ui, -apple-system, sans-serif; /* test files lack accents and most punctuation: system-ui (SF Pro) is closer to Söhne than Satoshi */
+  --font-sans: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
   --font-title: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --color-sidebar: var(--sidebar);

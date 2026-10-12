@@ -51,6 +51,10 @@ HANDOFF-*.md
 .data
 
 /public/posts/
+# What the app stores on disk when R2 is not set (local only): captures, DESIGN.md files and their reasons
+/public/shots/
+/public/design-md/
+/public/design-why/
 prod.env
 
 # Chrome Web Store packages (node extension/build.mjs)

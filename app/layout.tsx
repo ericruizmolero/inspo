@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-import { satoshi, soehne } from "./fonts";
+import { satoshi } from "./fonts";
 import "./globals.css";
 import { getSession } from "@/lib/workspace";
 import { getLocale, type Locale } from "@/lib/i18n";
@@ -69,7 +69,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${satoshi.variable} ${soehne.variable}`}
+      className={satoshi.variable}
       suppressHydrationWarning
     >
       <head>
