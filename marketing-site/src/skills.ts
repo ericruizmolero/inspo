@@ -79,6 +79,8 @@ const OTHERS: (Omit<Skill, "author" | "name"> & { name: string })[] = [
     text: { en: "GreenSock's own: GSAP done right, from timelines and ScrollTrigger to SplitText and Flip, with cleanup in React.", es: "La de GreenSock: GSAP bien hecho, de las timelines y ScrollTrigger a SplitText y Flip, con limpieza en React." } },
   { name: "no-ai-slop", topic: "voice", url: "https://github.com/petergyang/no-ai-slop", added: "2026-10-05", install: "npx skills add https://github.com/petergyang/no-ai-slop --skill no-ai-slop", inCriterio: "no-ai-slop",
     text: { en: "Peter Yang's: writes, edits and audits text so it doesn't read as generated.", es: "La de Peter Yang: escribe, edita y revisa textos para que no suenen a generados." } },
+  { name: "slopmonster", topic: "voice", url: "https://github.com/ItsssssJack/SlopMonster", added: "2026-10-12", install: "npx skills add https://github.com/ItsssssJack/SlopMonster --skill slopmonster",
+    text: { en: "Scores English copy out of 5 for AI tells with a local checker, then rewrites it and asks a rival model for a second pass.", es: "Puntúa el copy en inglés sobre 5 por tics de IA con un comprobador local, lo reescribe y pide una segunda pasada a un modelo rival." } },
 ];
 
 const ownerOf = (install: string) => install.match(/github\.com\/([^/\s]+)/)?.[1] ?? "";
