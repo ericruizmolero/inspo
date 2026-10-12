@@ -2,6 +2,14 @@
    the front and out of focus with depth. The card facing the screen takes more room and is the one being decided. */
 .polish { position: absolute; inset: 0; overflow: clip; background: var(--bg); -webkit-user-select: none; user-select: none; }
 
+/* Arriving from the system (components/view-morph.ts, distillIn): Polish comes in under the copy of the system as
+   it goes, from its first frame, whenever it has loaded: the view fades in and the tornado grows a little from the
+   middle. Opacity and transform only, which the compositor plays while Polish settles; never on its 3D stage */
+html[data-distill="polish"] .polish:not([data-ghost]) { animation: distill-in 620ms var(--ease-out) both; }
+html[data-distill="polish"] .polish:not([data-ghost]) .polish__sky { animation: distill-grow 620ms var(--ease-out) both; }
+@keyframes distill-in { from { opacity: 0; } }
+@keyframes distill-grow { from { transform: scale(0.965); } }
+
 /* ─── The tornado ─── */
 .polish__sky { position: absolute; inset: 0; font-size: clamp(9px, min(1.2vw, 2.1vh), 22px); cursor: grab; touch-action: none; transition: filter 900ms var(--ease-out); }
 .polish__sky.is-grabbing { cursor: grabbing; }

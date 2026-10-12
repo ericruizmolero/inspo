@@ -1,6 +1,6 @@
 "use client";
-// A project with nothing in it yet: a setup wizard in one window (the system's .cr-window, moss bar with the
-// project's name). Step 1, what the project is about: optional, saved on leaving the field or on Next; it is the
+// A project with nothing in it yet: a setup wizard on one flat card (the system's raised Card, no moss bar: the
+// project's name is its heading). Step 1, what the project is about: optional, saved on leaving the field or on Next; it is the
 // brief's intention (what the system reads the board against). Step 2, the references: a pasted link (a site, a
 // video, a post) is saved and filed here at once, an image is chosen, dropped anywhere or pasted with ⌘V, and the
 // references already in the library are picked in a well and brought in from the footer. The Inbox comes first:
@@ -11,7 +11,7 @@ import type { InspoItem, Project, ProjectLinks } from "@/types/inspo";
 import { normalizeWebUrl, readableDomain, mediaKindOf, isGif, type MediaKind } from "@/lib/url";
 import { MEDIA_ACCEPT, isMediaFile, mediaFileFrom } from "@/lib/media-client";
 import { useT } from "./I18nProvider";
-import { Busy, Button, Icon, IconButton, PromptInput, SegmentedControl, Separator, StatusBar, StatusCell, TextArea } from "@/components/criterio";
+import { Busy, Button, Icon, IconButton, PromptInput, SegmentedControl, Separator, TextArea } from "@/components/criterio";
 import { cachedCardImage } from "./InspoCard";
 import p from "./ProjectStart.module.css";
 
@@ -152,12 +152,10 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
     <>
     <div className={p.scroll} onPaste={onPaste} onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}>
     <div className={p.stage}>
-      <section className={`cr-window ${p.window}`} aria-labelledby="project-start-title">
-        <header className="cr-window-bar">
-          <h1 id="project-start-title" className={`cr-window-title t-title-s ${p.barTitle}`}>{project.name}</h1>
-        </header>
+      <section className={`cr-card cr-card-raised ${p.window}`} aria-labelledby="project-start-title">
+        <h1 id="project-start-title" className={`t-title-m ${p.title}`}>{project.name}</h1>
 
-        {/* Where the wizard is: the current step is the raised key, a done one carries the tick */}
+        {/* Where the wizard is: the current step is the glass pill, a done one carries the tick */}
         <ol className={p.steps} aria-label={w.startSteps}>
           {steps.map((label, i) => {
             const n = (i + 1) as 1 | 2;
@@ -172,11 +170,8 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         </ol>
 
         {step === 1 ? (
-          <div className={`cr-window-body ${p.body}`}>
-            <div className={p.intro}>
-              <h2 className="t-title-m">{w.startAboutTitle}</h2>
-              <p className={`t-small ${p.muted}`}>{w.startAboutLead}</p>
-            </div>
+          <div className={p.body}>
+            <p className={`t-small ${p.muted}`}>{w.startAboutLead}</p>
             <TextArea
               ref={aboutRef}
               className={p.about}
@@ -193,8 +188,7 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
             {errorLine}
           </div>
         ) : (
-          <div className={`cr-window-body ${p.body}`}>
-            <h2 className="t-title-m">{w.startRefsTitle}</h2>
+          <div className={p.body}>
             <div className={p.add}>
               <PromptInput className={p.prompt} id="project-url" inputRef={inputRef} value={raw}
                 placeholder={w.startPaste} label={w.startUrlLabel(project.name)} sendLabel={busy ? t.start.saving : t.start.save}
@@ -249,13 +243,11 @@ export default function ProjectStart({ project, items, links, imageOf, onAddUrl,
         )}
 
         <Separator className={p.sep} />
-        <div className={`cr-window-footer ${p.footer}`}>
+        <div className={p.footer}>
           <div className={p.footStart}>
-            <StatusBar>
-              <StatusCell>{step === 1
-                ? (saved ? w.startDescribed : w.startOptional)
-                : (picked.size ? w.startPicked(picked.size) : w.startNothingPicked)}</StatusCell>
-            </StatusBar>
+            <p className={`t-small ${p.muted}`} role="status">{step === 1
+              ? (saved ? w.startDescribed : w.startOptional)
+              : (picked.size ? w.startPicked(picked.size) : w.startNothingPicked)}</p>
             {step === 2 && onBringBrand && (
               <Button variant="quiet" size="s" icon="folder" data-tip={w.startBrand} onClick={onBringBrand}>{w.startBrandShort}</Button>
             )}

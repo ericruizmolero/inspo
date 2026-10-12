@@ -9,7 +9,7 @@ import { areaIcon } from "@/components/area-icons";
 import { sectionIcon, SECTION_ICON_NAMES } from "@/components/section-icons";
 import Logo from "@/components/Logo";
 import { setTheme as applyTheme } from "@/lib/theme";
-import { audition } from "@/lib/ui-sounds";
+import { audition, gust } from "@/lib/ui-sounds";
 import { SYSTEM_AREAS } from "@/types/system";
 import {
   Avatar, AvatarStack, Balloon, BoardCard, Busy, Button, Card, Checkbox, Chip, Comment, EmptyState, FieldRow, Icon, IconButton, Key, MenuItem,
@@ -171,6 +171,9 @@ function SoundSpecimen() {
               {c.label} <span className="ds-val">{c.sound}{c.options?.direction === "back" ? " ↓" : c.options?.direction === "forward" ? " ↑" : ""}{c.options?.emphasis === "subtle" ? " · sutil" : ""}</span>
             </Button>
           ))}
+          <Button size="s" onClick={() => gust(900, { force: true })}>Del Tablón a Pulido <span className="ds-val">viento propio</span></Button>
+          <Button size="s" onClick={() => gust(900, { back: true, force: true })}>De Pulido al Tablón, salir del Sistema <span className="ds-val">viento propio ↓</span></Button>
+          <Button size="s" onClick={() => gust(900, { bright: true, force: true })}>Entrar al Sistema <span className="ds-val">viento propio agudo</span></Button>
         </div>
       </Block>
       <Block title="Sin uso" aside={<span className="ds-val">los otros siete</span>}>

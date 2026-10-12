@@ -90,8 +90,8 @@ async function main() {
   try {
     for (const it of newItems) {
       const [old] = items.filter((x) => itemMap.get(x.id) === it.id);
-      await db.query(`insert into inspo_item (id, organization_id, name, web, web_key, date, type, author, created_by, note, sub_note, thumbnail_url, tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source)
-        select $1, $2, name, replace(web, $4, $5), replace(web_key, lower($4), lower($5)), date, type, author, created_by, note, sub_note, replace(thumbnail_url, $4, $5), tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source
+      await db.query(`insert into inspo_item (id, organization_id, name, web, web_key, date, type, author, created_by, note, sub_note, note_reactions, thumbnail_url, tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source)
+        select $1, $2, name, replace(web, $4, $5), replace(web_key, lower($4), lower($5)), date, type, author, created_by, note, sub_note, note_reactions, replace(thumbnail_url, $4, $5), tags_json, created_at, updated_at, tags_user, tag_status, tag_attempts, tag_started_at, tag_error, embedding, embedding_at, via, source
         from inspo_item where id=$3`, [it.id, to, old.id, FROM, TO]);
     }
     for (const p of newProjects) {
@@ -124,8 +124,8 @@ async function main() {
       const [had] = await q<{ id: string }>(`select n.id from inspo_comment n join inspo_comment o on o.id=$1 where n.organization_id=$2 and n.item_id=$3 and n.body=o.body and n.created_at=o.created_at and n.author_name=o.author_name`, [c.id, to, itemMap.get(c.item_id)]);
       if (had) { commentMap.set(c.id, had.id); continue; }
       const id = newId(); commentMap.set(c.id, id);
-      await db.query(`insert into inspo_comment (id, organization_id, item_id, author_id, author_name, body, attachments, created_at, edited_at, parent_id)
-        select $1, $2, $3, author_id, author_name, body, replace(attachments::text, $5, $6)::jsonb, created_at, edited_at, $7 from inspo_comment where id=$4`,
+      await db.query(`insert into inspo_comment (id, organization_id, item_id, author_id, author_name, body, attachments, reactions, created_at, edited_at, parent_id)
+        select $1, $2, $3, author_id, author_name, body, replace(attachments::text, $5, $6)::jsonb, reactions, created_at, edited_at, $7 from inspo_comment where id=$4`,
         [id, to, itemMap.get(c.item_id), c.id, FROM, TO, c.parent_id ? commentMap.get(c.parent_id) ?? null : null]);
     }
     for (const w of whys) {

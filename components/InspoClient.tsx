@@ -47,10 +47,10 @@ import { useAgent } from "@/hooks/use-agent";
 import { useCommandPalette } from "@/hooks/use-command-palette";
 import { thumbnailActions } from "./thumbnail-actions";
 import Grid, { type GridHandle, type ShotLevel } from "./Grid";
-import { leaveBoard, leavePolish } from "./view-morph";
+import { MORPH_MS, distillIn, distillOut, distills, leaveBoard, leavePolish } from "./view-morph";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
-import { cue } from "@/lib/ui-sounds";
+import { cue, gust } from "@/lib/ui-sounds";
 import { cardCopyOf, keyOf } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
@@ -170,18 +170,24 @@ export default function InspoClient({
   const lastView = useRef(projectView);
   useLayoutEffect(() => {
     if (lastView.current === "polish" && projectView === "board") gridRef.current?.receive();
+    distillIn(projectView);
     lastView.current = projectView;
   }, [projectView]);
   useEffect(() => { if (currentProject) void import("./PolishView"); }, [currentProject]);
   /** Between the board and Polish the cards go from one to the other: the view leaving sets off at the click, before
-   *  anything is rendered, and the view arriving takes them from where they have got to (components/view-morph.ts) */
+   *  anything is rendered, and the view arriving takes them from where they have got to. To and from the system a
+   *  copy of the view leaving fades over the one arriving (components/view-morph.ts). Returns how long to wait
+   *  before rendering the new view (none, today) */
   const leaveView = useCallback((v: "system" | "polish" | "board") => {
     if (projectView === "board" && v === "polish") leaveBoard();
     else if (projectView === "polish" && v === "board") leavePolish();
+    else if (distills(projectView, v) && distillOut(projectView, v)) gust(MORPH_MS, v === "system" ? { bright: true } : { back: true });
+    return 0;
   }, [projectView]);
-  const setProjectView = useCallback((v: "system" | "polish" | "board") => {
-    leaveView(v);
-    setParams({ view: v === defaultView ? "" : v });
+  const setProjectView = useCallback((v: "system" | "polish" | "board", left = false) => {
+    const wait = left ? 0 : leaveView(v);
+    const go = () => setParams({ view: v === defaultView ? "" : v });
+    if (wait) window.setTimeout(go, wait); else go();
   }, [setParams, defaultView, leaveView]);
   // The search lives on a project's board and in the Inbox, nowhere else: off them there is no box, and what was
   // typed or chipped there waits in the URL without narrowing anything
@@ -305,7 +311,7 @@ export default function InspoClient({
 
   // The panel: one reference open on the right, the board still live on the left
   const [panelItem, setPanelItem] = useState<InspoItem | null>(null);
-  const { postComment, editNote, deleteComment } = useComments({ t, commentMap, setCommentMap, setItems, setPanelItem, confirm });
+  const { postComment, editNote, deleteComment, reactComment, reactNote } = useComments({ t, me: { id: user.id, name: user.name || user.email.split("@")[0] }, commentMap, setCommentMap, setItems, setPanelItem, confirm });
 
   useEffect(() => {
     // The templates too: Discover opens with its cards already read, not waiting for the server
@@ -445,6 +451,9 @@ export default function InspoClient({
 
   // The open reference: its thread, every comment with its replies (the post-its once pinned on the page among them)
   const panelComments = (panelItem?.id ? commentMap[panelItem.id] : undefined) ?? [];
+  // The note's reactions come from the library, which the pulse keeps current; the sheet's copy of the item does not
+  const panelLive = panelItem?.id ? items.find((i) => i.id === panelItem.id) : undefined;
+  const panelNoteReactions = { note: (panelLive ?? panelItem)?.noteReactions, subNote: (panelLive ?? panelItem)?.subNoteReactions };
   const canManage = workspace.role === "owner" || workspace.role === "admin";
 
   // What the open reference writes in criterio.md: in the project open, or else the first one it is in. A text is
@@ -508,6 +517,24 @@ export default function InspoClient({
     />
   ), [workspace.name, ratioOf, tagMap, tagJobs, jevScores, reasons, commentMap, authorImages, thumbMap, signed, designMdIndex, pageShots, projects, links, currentProject, backsOf, areasByItem, selected, canManage, user]);
 
+  // The board stays mounted under Polish and under the system, inert and hidden: coming back is instant, and the
+  // cards fly from the tornado onto a board already laid out (components/view-morph.ts). The same element first in
+  // both branches below, so React keeps it from one to the other
+  const grid = (
+    <Grid
+      under={!!currentProject && projectView !== "board"}
+      items={boardItems}
+      ratioOf={ratioOf}
+      hasNote={hasNote}
+      insets={insets}
+      zoom={zoom}
+      onZoom={setZoom}
+      fitKey={fitKey}
+      focusKey={panelItem ? keyOf(panelItem) : null}
+      handleRef={gridRef}
+      renderCard={renderCard}
+    />
+  );
   return (
     <SidebarProvider defaultOpen={false} className="shell">
       {confirmDialog}
@@ -536,6 +563,9 @@ export default function InspoClient({
               onPostThumb={(thumb) => setThumbMap((prev) => (prev[panelItem.web] ? prev : { ...prev, [panelItem.web]: thumb }))}
               onEditNote={(field, text) => editNote(panelItem.id!, field, text)}
               onReply={(parentId, body) => postComment(panelItem.id!, body, [], parentId)}
+              onReact={(id, emoji) => reactComment(panelItem.id!, id, emoji)}
+              noteReactions={panelNoteReactions}
+              onReactNote={(field, emoji) => reactNote(panelItem.id!, field, emoji)}
               notice={panelForgotten.length > 0 && panelForgotten.map(({ project, names }) => (
                 <p key={project.id} className="cm-notice">
                   <span>{t.polish.forgottenIn(project.name, names)}</span>
@@ -611,7 +641,7 @@ export default function InspoClient({
                   {/* Board, Polish, System: the system's SegmentedControl. The view is set a frame after the click
                       (afterPaint): a view of the project is a heavy render, and the tab answers first */}
                   <ProjectModes projectView={projectView} polishTab={polishTab} solo={solo} members={members} systemFilled={systemFilled} systemStale={systemStale}
-                    onChange={(i) => { leaveView(PROJECT_VIEWS[i]); afterPaint(() => setProjectView(PROJECT_VIEWS[i])); }} />
+                    onChange={(i) => { const v = PROJECT_VIEWS[i], wait = leaveView(v); if (wait) window.setTimeout(() => setProjectView(v, true), wait); else afterPaint(() => setProjectView(v, true)); }} />
                   <PillBarSep />
                 </>
               )}
@@ -651,6 +681,8 @@ export default function InspoClient({
             arriving={arrivingBoard}
           />
         ) : currentProject && projectView === "system" ? (
+          <>
+          {grid}
           <SystemView
             key={currentProject.id}
             project={currentProject}
@@ -682,6 +714,7 @@ export default function InspoClient({
               return addByUrl({ web, type: typeFromUrl(web), note: "" });
             }}
           />
+          </>
         ) : spaceItems.length === 0 && currentProject && projectView !== "polish" ? (
           // An empty project is a starting point: paste a site, or bring references from the library
           <ProjectStart
@@ -718,21 +751,7 @@ export default function InspoClient({
           />
         ) : (
           <>
-            {/* The board stays mounted under Polish, inert: coming back is instant, and the cards fly from the
-                tornado onto a board already laid out (components/view-morph.ts) */}
-            <Grid
-              under={!!currentProject && projectView === "polish"}
-              items={boardItems}
-              ratioOf={ratioOf}
-              hasNote={hasNote}
-              insets={insets}
-              zoom={zoom}
-              onZoom={setZoom}
-              fitKey={fitKey}
-              focusKey={panelItem ? keyOf(panelItem) : null}
-              handleRef={gridRef}
-              renderCard={renderCard}
-            />
+            {grid}
             {filtered.length === 0 && projectView !== "polish" && (
               <EmptyState className="empty empty--over" title={t.app.nothingHere}>
                 <span>{searchBusy ? t.app.searchingShort : t.app.tryAnother}</span>

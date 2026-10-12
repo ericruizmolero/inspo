@@ -15,7 +15,7 @@ import { castVotes, closePolish, restoreForgotten } from "@/lib/polish-votes";
 import { ownsMediaFile, deleteMediaFile } from "@/lib/media";
 import { deleteTextFile } from "@/lib/text-refs";
 import { fileExists, keyOf } from "@/lib/storage";
-import { addComment, deleteComment } from "@/lib/comments";
+import { addComment, deleteComment, toggleNoteReaction, toggleReaction } from "@/lib/comments";
 import { z } from "zod";
 import { addMany, type AddResult, type NewRef } from "@/lib/add-many";
 import { MAX_IMAGES_PER_BATCH, MAX_PER_BATCH } from "@/lib/batch-limits";
@@ -203,6 +203,16 @@ export async function postComment(itemId: string, body: string, attachments: Com
   });
 }
 
+
+/** Gives or takes away the person's emoji on a comment (lib/reactions.ts). Returns the comment with its reactions now. */
+export async function reactToComment(id: string, emoji: string) {
+  return withCtx(async (ctx) => toggleReaction(ctx.workspace.id, String(id), { id: ctx.user.id, name: ctx.user.name || ctx.user.email.split("@")[0] }, emoji));
+}
+
+/** The same for the note (or sub-note) a reference was saved with. Returns that note's reactions now. */
+export async function reactToNote(itemId: string, field: "note" | "subNote", emoji: string) {
+  return withCtx(async (ctx) => toggleNoteReaction(ctx.workspace.id, String(itemId), field, { id: ctx.user.id, name: ctx.user.name || ctx.user.email.split("@")[0] }, emoji));
+}
 
 /** Own comments, or any if they manage the workspace. */
 export async function removeComment(id: string) {

@@ -11,6 +11,7 @@ import { collectItemFiles, dropUnusedFiles } from "./item-files";
 import { statusOf } from "./tag-jobs";
 import { assertRoomIn } from "./quota";
 import { cleanTag, MAX_ADDED } from "./taxonomy";
+import { groupReactions } from "./reactions";
 
 const T = schema.inspoItem;
 // Every column but the embedding: 1024 floats per row that only search by meaning reads (lib/embed.ts)
@@ -41,6 +42,14 @@ export function dmyToIso(es: string): string {
   return isNaN(+d) ? new Date().toISOString().slice(0, 10) : d.toISOString().slice(0, 10);
 }
 
+/** The reactions to the note and the sub-note, grouped as on a comment; nothing when there are none */
+function noteReactionsOf(rows: Row["noteReactions"]): Pick<InspoItem, "noteReactions" | "subNoteReactions"> {
+  if (!Array.isArray(rows) || !rows.length) return {};
+  const note = groupReactions(rows.filter((r) => r.f === "note"));
+  const sub = groupReactions(rows.filter((r) => r.f === "subNote"));
+  return { ...(note.length ? { noteReactions: note } : {}), ...(sub.length ? { subNoteReactions: sub } : {}) };
+}
+
 export function rowToItem(r: Row): InspoItem {
   return {
     id: r.id,
@@ -51,6 +60,7 @@ export function rowToItem(r: Row): InspoItem {
     type: normalizeType(r.type),
     note: r.note,
     subNote: r.subNote || undefined,
+    ...noteReactionsOf(r.noteReactions),
     ...(r.via ? { via: r.via } : {}),
     ...(r.source ? { source: r.source } : {}),
   };

@@ -142,7 +142,7 @@
 
   /* One family: Satoshi for titles, text and UI. Titles keep their own token so a second face is one line */
   --font-sans: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
-  --font-title: var(--font-sans);
+  --font-title: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
   --font: var(--font-sans);
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   /* shadcn/ui: its variables point at the tokens above, so both themes follow data-theme */
@@ -195,7 +195,7 @@
   --color-ember: var(--ember);
   --color-butter: var(--butter);
   --font-sans: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
-  --font-title: var(--font-sans);
+  --font-title: var(--font-satoshi), "Satoshi", system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -669,14 +669,18 @@ select.cr-input { appearance: none; padding-right: 32px; cursor: pointer;
 .island__activity-list { display: flex; flex-direction: column; max-height: min(440px, calc(100dvh - 160px)); overflow-y: auto; overscroll-behavior: contain; }
 /* A line is a Comment of the system laid as a menu row: the face, the words with the name in bold, the quote,
    then the project and the hour; an ember dot at the end while it is unseen */
-.island__event { display: flex; align-items: flex-start; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--text); text-decoration: none; transition: background-color 120ms ease; }
+.island__event { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 6px; color: var(--text); text-decoration: none; transition: background-color 120ms ease; }
 .island__event:hover, .island__event:focus-visible { background: var(--surface-2); outline: none; }
 .island__event-face { flex: none; margin-top: 0; }
-.island__event-body { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
-.island__event-text { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); }
+.island__event-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.island__event-text { font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .island__event-text b { font-weight: var(--fw-semibold); color: var(--text); }
-.island__event-quote { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.island__event-meta { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-2); }
+.island__event-quote { font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.island__event-meta { display: flex; gap: 8px; margin-top: 2px; font-size: var(--fs-label); line-height: var(--lh-label); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.island__event-where { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.island__event-meta time { flex: none; display: flex; align-items: center; gap: 8px; }
+/* A short rule between where and when: shorter than a typed "|", drawn so it sits on the middle of the line */
+.island__event-meta time::before { content: ""; width: 1px; height: 8px; background: currentColor; opacity: 0.5; }
 .island__event-new { flex: none; margin-top: 5px; }
 .sidebar__footer-note { font-size: var(--fs-label); color: var(--muted-2); padding: 0 10px; }
 
@@ -1103,13 +1107,56 @@ video.vp__media { object-fit: contain; }
 .cm-msg__del, .cm-msg__edit { opacity: 0; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
 .cm-msg:hover :is(.cm-msg__del, .cm-msg__edit), :is(.cm-msg__del, .cm-msg__edit):focus-visible { opacity: 1; }
 .cm-msg__del:hover { color: var(--danger); }
+/* React: the same quiet xs IconButton, first of the three, shown with them */
+.cm-msg__react { opacity: 0; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
+.cm-msg:hover .cm-msg__react, .cm-msg__react:focus-visible, .cm-msg__react[data-popup-open] { opacity: 1; }
+/* Reactions under a comment (Slack, WhatsApp): one soft pill per emoji, no line, the emoji a size up and the count
+   small and strong beside it. Yours is tinted ember with a thin ember ring; pressing it takes it away. A new pill
+   pops in. The last one, a bare face, opens the picker */
+.cm-reacts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.cm-react {
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px 0 7px; border-radius: var(--radius-pill);
+  border: 0; background: var(--surface-2); color: var(--text-2);
+  font: inherit; font-size: var(--fs-label); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; cursor: pointer;
+  animation: react-in 220ms var(--ease-out) both;
+  transition: background-color 0.15s, box-shadow 0.15s, color 0.15s, transform 0.12s var(--ease-out);
+}
+.cm-react:hover { background: var(--surface-3); color: var(--text); }
+.cm-react:active { transform: scale(0.92); }
+.cm-react:disabled { cursor: default; transform: none; }
+.cm-react.is-mine {
+  background: color-mix(in oklab, var(--ember) 20%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ember) 60%, transparent); color: var(--text);
+}
+.cm-react.is-mine:hover { background: color-mix(in oklab, var(--ember) 28%, var(--surface)); }
+.cm-react__emoji { font-size: 15px; line-height: 1; }
+.cm-react--add { padding: 0 7px; background: transparent; color: var(--muted); animation: none; opacity: 0; transition: opacity 0.15s, background-color 0.15s, color 0.15s; }
+.cm-react--add:hover { background: var(--surface-2); color: var(--text); }
+.cm-msg:hover .cm-react--add, .cm-react--add:focus-visible, .cm-react--add[data-popup-open] { opacity: 1; }
+@keyframes react-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cm-react { animation: none; } }
+/* The picker: the system's menu with a grid of emoji, six a row, the quick ones first */
+.cm-picker.cr-menu { min-width: 0; padding: 6px; }
+.cm-picker__grid { display: grid; grid-template-columns: repeat(6, 32px); gap: 2px; }
+.cm-picker__emoji {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--radius-s);
+  background: transparent; font-size: 18px; line-height: 1; cursor: pointer; transition: background-color 0.12s, transform 0.12s;
+}
+.cm-picker__emoji:hover, .cm-picker__emoji:focus-visible { background: var(--surface-2); transform: scale(1.12); }
+/* The one you gave, marked in the picker: choosing another replaces it, choosing it again takes it away */
+.cm-picker__emoji.is-mine { background: color-mix(in oklab, var(--ember) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ember) 60%, transparent); }
+/* A comment with replies: its rule starts under the author's photo and runs down into the replies' rule (Eric, 12-10) */
+.cm-thread.has-replies > .cm-msg:first-child { position: relative; }
+.cm-thread.has-replies > .cm-msg:first-child::before { content: ""; position: absolute; left: 12px; top: 30px; bottom: -6px; border-left: 1px solid var(--border-strong); pointer-events: none; }
 /* One comment and its replies. Replies hang from the comment on a rule that starts under its avatar (26/2). */
 .cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
 .cm-replies { display: flex; flex-direction: column; gap: 10px; margin-left: 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--border-strong); }
-/* Reply: a quiet Button, size s */
-.cm-reply-btn { align-self: flex-start; margin-left: 26px; }
-.cm-thread__foot { display: flex; align-items: center; gap: 4px; margin-left: 26px; }
-.cm-thread__foot .cm-reply-btn { margin-left: 0; }
+/* Reply: a quiet Button made smaller than s (26 px, label size), its words in line with the comment's (26 + 8 = 34).
+   Its focus ring sits inside the button: outside, at s, it touched the reply above and "1 reply" beside it (Eric, 12-10) */
+.cm-reply-btn.cr-btn { align-self: flex-start; margin-left: 26px; min-height: 26px; padding: 0 8px; font-size: var(--fs-label); border-radius: var(--radius-s); }
+.cm-reply-btn.cr-btn:focus-visible { outline-offset: -2px; }
+.cm-thread__foot { display: flex; align-items: center; gap: 8px; margin: 2px 0 0 26px; }
+.cm-thread__foot .cm-reply-btn.cr-btn { margin-left: 0; }
 .cm-thread__count { font-size: var(--fs-label); color: var(--muted); }
 /* Reply and edit use the system's TextArea (components/criterio): the reply is its composer version with Send
    inside the field; the edit is the plain field */
@@ -1125,7 +1172,7 @@ video.vp__media { object-fit: contain; }
 /* The help (keys, ⌘V pastes screenshots) is a line under the field, whole: in the bar it was cut and in the way (Eric, 07-10) */
 .cm-composer__keys { margin: 6px 2px 0; line-height: var(--lh-label); }
 .cm-composer__error { font-size: var(--fs-label); color: var(--danger); }
-@media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
+@media (hover: none) { .cm-msg__del, .cm-msg__edit, .cm-msg__react, .cm-react--add { opacity: 1; } }
 
 /* Screenshots in comments (paste, drag or attach, as in Figma) */
 .cm-msg__content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -2082,6 +2129,14 @@ body:has(.fb-dock, .fb-panel) .toasts { bottom: 76px; }
   position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
   background-color: var(--bg);
 }
+/* Under Polish and the system the board stays mounted and inert (Grid's `under`), covered by their background.
+   Only while a view crosses to or from the system is it hidden (components/view-morph.ts), so it never shows in
+   the frames before Polish has loaded. Never from the board to Polish: the cards fly into the tornado from the
+   board still standing under it, and hiding it left an empty frame between the two */
+html[data-distill] .board[inert] { visibility: hidden; }
+/* The still copy of a view that fades over the next one (components/view-morph.ts, ghostOf): a clone starts its CSS
+   animations again, so the tornado's cards replayed their entrance and went out and back in. A copy is a still */
+[data-ghost], [data-ghost] * { animation: none !important; transition: none !important; }
 .board__world { position: relative; width: 100%; }
 /* The clouds (components/Clouds.tsx; Eric, 09-10: "nubecita del color de background", "casi que en todas partes"):
    a view fades into its own background where the bars float over it. Each shows where there is more beyond it:
@@ -2372,7 +2427,7 @@ body:has(.fb-dock.has-notes) .theme-float { bottom: calc(72px + env(safe-area-in
 .pn-empty.cr-empty { justify-content: center; min-height: 320px; }
 .ip .pn-empty { flex: 1; }
 /* Touch has no hover: the delete buttons stay in sight */
-@media (hover: none) { .cm-msg__del, .cm-msg__edit { opacity: 1; } }
+@media (hover: none) { .cm-msg__del, .cm-msg__edit, .cm-msg__react, .cm-react--add { opacity: 1; } }
 /* ─── The project's system (components/SystemView.tsx and its own stylesheets) ─── */
 /* System fill: a ring per project in the sidebar (the top bar uses the system's SegmentedControl and StatusRing) */
 /* The team on the Polish tab: everyone's face, and in full only those who have voted the whole board */

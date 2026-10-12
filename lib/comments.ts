@@ -2,12 +2,14 @@
 // replies, one level deep.
 import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, schema } from "./db";
+import type { CommentReactionRow, NoteReactionRow as CommentReactionRowWithField } from "./db/schema";
 import { newId } from "./items";
 import { ownsCommentFile, deleteCommentFiles, MAX_ATTACHMENTS } from "./comment-files";
-import type { InspoComment, CommentMap, CommentAttachment } from "@/types/inspo";
+import type { InspoComment, CommentMap, CommentAttachment, CommentReaction } from "@/types/inspo";
 import { getErrors } from "./i18n";
 import { HttpError } from "./workspace-core";
 import { inBackground, notifyReply } from "./notify";
+import { groupReactions, isReaction, MAX_REACTIONS } from "./reactions";
 
 const C = schema.inspoComment;
 const U = schema.user;
@@ -15,17 +17,18 @@ const U = schema.user;
 const select = {
   id: C.id, itemId: C.itemId, authorId: C.authorId, authorName: C.authorName,
   body: C.body, attachments: C.attachments, createdAt: C.createdAt, authorImage: U.image,
-  parentId: C.parentId,
+  parentId: C.parentId, reactions: C.reactions,
 };
 type Row = {
   id: string; itemId: string; authorId: string | null; authorName: string; body: string; attachments: CommentAttachment[]; createdAt: Date; authorImage: string | null;
-  parentId: string | null;
+  parentId: string | null; reactions: CommentReactionRow[];
 };
 
 const toComment = (r: Row): InspoComment => ({
   id: r.id, itemId: r.itemId, authorId: r.authorId, authorName: r.authorName,
   authorImage: r.authorImage ?? null, body: r.body, attachments: Array.isArray(r.attachments) ? r.attachments : [],
   ...(r.parentId ? { parentId: r.parentId } : {}),
+  ...(Array.isArray(r.reactions) && r.reactions.length ? { reactions: groupReactions(r.reactions) } : {}),
   createdAt: r.createdAt.toISOString(),
 });
 
@@ -97,7 +100,7 @@ export async function addComment(organizationId: string, input: { itemId: string
   }
   const row = {
     id: newId(), organizationId, itemId: input.itemId, authorId: input.authorId, authorName: input.authorName, body: body.slice(0, 4000), attachments,
-    parentId, createdAt: new Date(), editedAt: null,
+    parentId, reactions: [], createdAt: new Date(), editedAt: null,
   };
   await db.insert(C).values(row);
   // Whoever wrote the comment answered hears of it by email, once this has answered (lib/notify.ts)
@@ -125,4 +128,60 @@ export async function deleteComment(organizationId: string, id: string, userId: 
   const urls = [row, ...replies].flatMap((r) => (Array.isArray(r.attachments) ? r.attachments.map((a) => a.url) : []));
   if (urls.length) await deleteCommentFiles(organizationId, urls);
   return row.itemId;
+}
+
+/** The new value of a reactions column after this person's press: one each, so another emoji replaces theirs and the
+ *  same one again takes it away (WhatsApp). With `field`, only the rows of that note count (the item's two notes share
+ *  one column). Also the guard: a row already holding theirs can always change, otherwise it needs room. */
+function toggled(column: string, emoji: string, user: { id: string; name: string }, field?: "note" | "subNote") {
+  const col = sql.raw(column);
+  const key = (extra: object) => sql`${JSON.stringify([{ ...extra, ...(field ? { f: field } : {}) }])}::jsonb`;
+  const same = key({ e: emoji, u: user.id });
+  const theirs = key({ u: user.id });
+  const mine = field ? sql`(r->>'u' = ${user.id}::text and r->>'f' = ${field}::text)` : sql`r->>'u' = ${user.id}::text`;
+  const others = sql`coalesce((select jsonb_agg(r order by i) from jsonb_array_elements(${col}) with ordinality as x(r, i) where not ${mine}), '[]'::jsonb)`;
+  const row = sql`${JSON.stringify([{ e: emoji, u: user.id, n: user.name.slice(0, 120), t: new Date().toISOString(), ...(field ? { f: field } : {}) }])}::jsonb`;
+  return {
+    value: sql`case when ${col} @> ${same} then ${others} else ${others} || ${row} end`,
+    room: sql`(${col} @> ${theirs} or jsonb_array_length(${col}) < ${MAX_REACTIONS})`,
+  };
+}
+
+/** Gives this person's reaction to a comment of the workspace (one each, see toggled). One statement, so two people
+ *  reacting at once both count. It touches edited_at, so the pulse carries the new reactions to the other boards.
+ *  Returns the comment as it is now. */
+export async function toggleReaction(organizationId: string, commentId: string, user: { id: string; name: string }, emoji: unknown): Promise<InspoComment> {
+  const errors = await getErrors();
+  if (!isReaction(emoji)) throw new HttpError(400, errors.badBody);
+  const t = toggled("reactions", emoji, user);
+  const res = await db.execute<{ id: string }>(sql`
+    update inspo_comment set reactions = ${t.value}, edited_at = now()
+    where id = ${commentId} and organization_id = ${organizationId} and ${t.room}
+    returning id`);
+  if (!res.rows.length) {
+    const [there] = await db.select({ id: C.id }).from(C).where(and(eq(C.id, commentId), eq(C.organizationId, organizationId))).limit(1);
+    throw new HttpError(there ? 409 : 404, there ? errors.tooManyReactions : errors.reactionGone);
+  }
+  const [row] = await db.select(select).from(C).leftJoin(U, eq(C.authorId, U.id))
+    .where(and(eq(C.id, commentId), eq(C.organizationId, organizationId))).limit(1);
+  return toComment(row);
+}
+
+/** The same for the note (or sub-note) a reference was saved with, which lives on the reference and not as a comment.
+ *  It touches updated_at, so the pulse carries the reference, reactions and all, to the other boards. Returns that
+ *  note's reactions as they are now. */
+export async function toggleNoteReaction(organizationId: string, itemId: string, field: unknown, user: { id: string; name: string }, emoji: unknown): Promise<CommentReaction[]> {
+  const errors = await getErrors();
+  if (!isReaction(emoji) || (field !== "note" && field !== "subNote")) throw new HttpError(400, errors.badBody);
+  const t = toggled("note_reactions", emoji, user, field);
+  const res = await db.execute<{ note_reactions: CommentReactionRowWithField[] }>(sql`
+    update inspo_item set note_reactions = ${t.value}, updated_at = now()
+    where id = ${itemId} and organization_id = ${organizationId} and ${t.room}
+    returning note_reactions`);
+  if (!res.rows.length) {
+    const [there] = await db.select({ id: schema.inspoItem.id }).from(schema.inspoItem)
+      .where(and(eq(schema.inspoItem.id, itemId), eq(schema.inspoItem.organizationId, organizationId))).limit(1);
+    throw new HttpError(there ? 409 : 404, there ? errors.tooManyReactions : errors.itemNotInWorkspace);
+  }
+  return groupReactions(res.rows[0].note_reactions.filter((r) => r.f === field));
 }

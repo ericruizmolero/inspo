@@ -441,13 +441,16 @@
 }
 
 /* ─── Bringing in an existing brand (components/brand/BrandImport.tsx) ─── */
-.bimp { width: min(560px, 94vw); }
-.bimp__body { display: flex; flex-direction: column; gap: 16px; }
+.bimp.modal { width: min(560px, 94vw); max-width: none; }
+.bimp__body.modal__body { gap: 16px; }
 .bimp__lead { margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--text-2); }
 /* The three ways in: the system's SegmentedControl, paper */
 .bimp__tabs { align-self: flex-start; }
 .bimp__form { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
-.bimp__form > .cr-btn { align-self: flex-start; }
+.bimp__form > .cr-btn { align-self: flex-end; }
+.bimp__row { display: flex; gap: 8px; align-items: center; }
+.bimp__row .cr-input { flex: 1; min-width: 0; }
+.bimp__row .cr-btn { flex-shrink: 0; }
 .bimp__hint { margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); }
 .bimp__text.cr-textarea { min-height: 180px; font-size: var(--fs-small); }
 /* Files land in a sunken well (a copy of the field) */

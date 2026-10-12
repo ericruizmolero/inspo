@@ -6,7 +6,7 @@ Un solo juego: Phosphor, peso `regular`, `currentColor`. → [decisión](../deci
 
 | Puerta | Fichero | Para qué |
 | --- | --- | --- |
-| `Icon`, `IconName` | `components/criterio/index.tsx` | Lo genérico: home, plus, close, search, folder, trash, copy, check, bell, arrow-right… |
+| `Icon`, `IconName` | `components/criterio/index.tsx` | Lo genérico: home, plus, close, search, folder, trash, copy, check, bell, smile (reaccionar a un comentario), arrow-right… |
 | `areaIcon` | `components/area-icons.tsx` | Las 8 áreas del Sistema |
 | `sectionIcon` | `components/section-icons.tsx` | Las secciones de Ajustes, Admin y esta librería |
 

@@ -12,6 +12,9 @@ export interface InspoItem {
   type: "inspiration" | "videos" | "ideas" | "documentaries";
   note: string;
   subNote?: string;
+  /** Emoji reactions to the note and the sub-note it was saved with, as on a comment */
+  noteReactions?: CommentReaction[];
+  subNoteReactions?: CommentReaction[];
   /** The AI client it was saved from over MCP ("Claude"), when it was not saved in criterio itself */
   via?: string;
   /** The page it was found on, when `web` is our copy of an image or a video (a pin, a picture saved from a site) */
@@ -139,7 +142,12 @@ export interface InspoComment {
   parentId?: string;
   /** ISO */
   createdAt: string;
+  /** Emoji reactions, by emoji in the order first given (lib/reactions.ts) */
+  reactions?: CommentReaction[];
 }
+
+/** One emoji on a comment and who gave it */
+export interface CommentReaction { emoji: string; people: { id: string; name: string }[] }
 
 export type CommentMap = Record<string, InspoComment[]>;
 

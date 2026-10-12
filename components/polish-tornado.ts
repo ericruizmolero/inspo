@@ -1,5 +1,6 @@
 // The tornado of PolishView: where each card stands on the orbit, the engine that turns it, and how the board's
 // cards settle into it on arriving (components/view-morph.ts).
+import { gust } from "@/lib/ui-sounds";
 import { EASE_WIND, GHOST_MS, MORPH_MS, MORPH_STEP_MS, coverWhileFlying, type Shot } from "./view-morph";
 
 // The tornado, in Osmo's own terms
@@ -100,7 +101,9 @@ export function paint(e: Engine, dt: number) {
 
 export function settleFromBoard(e: Engine, stage: HTMLElement, shots: Map<string, Shot>) {
   const sr = stage.getBoundingClientRect(), cx = sr.left + sr.width / 2, cy = sr.top + sr.height * 0.46, cardW = FRONT_W * e.em;
-  const reads = e.nodes.map((nd) => ({ nd, w: nd.el.offsetWidth, h: nd.el.offsetHeight }));
+  // Nearest the front first: with few references the orbit shows each card more than once, and the board's card
+  // flies to the copy at the front, not to the first one found (the one furthest back, high up the orbit)
+  const reads = e.nodes.map((nd) => ({ nd, w: nd.el.offsetWidth, h: nd.el.offsetHeight })).sort((a, b) => Math.abs(a.nd.k - e.p) - Math.abs(b.nd.k - e.p));
   /** The pose, flat and facing the screen, that covers a box of the board exactly */
   const flat = (shot: Shot, w: number, h: number) => `translate3d(${(shot.x + shot.w / 2 - cx).toFixed(2)}px,${(shot.y + shot.h / 2 - cy).toFixed(2)}px,0px) rotateY(0deg) translateZ(0px) scale(${(shot.w / w).toFixed(4)}, ${(shot.h / h).toFixed(4)})`;
   const timing = (rel: number): KeyframeAnimationOptions => ({ duration: MORPH_MS, delay: Math.min(Math.abs(rel), 6) * MORPH_STEP_MS, easing: EASE_WIND, fill: "backwards" });
@@ -111,6 +114,8 @@ export function settleFromBoard(e: Engine, stage: HTMLElement, shots: Map<string
   const look: KeyframeAnimationOptions = { duration: MORPH_MS, easing: EASE_WIND, fill: "backwards" };
   const rise: KeyframeAnimationOptions = { duration: MORPH_MS * 0.5, easing: EASE_OUT, fill: "backwards" };
   const used = new Set<string>();
+  // The wind, on the flight's clock: from the front card's start to the last one's landing
+  gust(MORPH_MS + 6 * MORPH_STEP_MS);
   for (const { nd, w, h } of reads) {
     const key = nd.key.slice(0, nd.key.lastIndexOf("#")), rel = nd.k - e.p, end = pose(e, rel);
     const shot = used.has(key) ? undefined : shots.get(key);

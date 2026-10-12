@@ -250,6 +250,8 @@ export const inspoItem = pgTable("inspo_item", {
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
   note: text("note").notNull().default(""),
   subNote: text("sub_note"),
+  /** Emoji reactions to the note and sub-note, as on a comment (lib/reactions.ts): one per person and note */
+  noteReactions: jsonb("note_reactions").$type<NoteReactionRow[]>().notNull().default([]),
   /** The app it was saved from when that was not criterio itself: the name of the AI client connected over MCP
    *  (lib/mcp), "Claude". Null for everything saved in the app or by the extension */
   via: text("via"),
@@ -467,6 +469,11 @@ export const designWhy = pgTable("design_why", {
 // opens the list.
 
 export interface CommentAttachmentRow { url: string; w: number; h: number; name?: string }
+/** One person's reaction to a comment: the emoji, who, their name at the time (in case they are gone) and when
+ *  (ISO), which the bell of whoever wrote the comment reads (lib/notify.ts reactionsTo) */
+export interface CommentReactionRow { e: string; u: string; n: string; t?: string }
+/** A reaction to the note a reference was saved with: which of its two notes (`f`), the rest as on a comment */
+export interface NoteReactionRow extends CommentReactionRow { f: "note" | "subNote" }
 
 export const inspoComment = pgTable("inspo_comment", {
   id: text("id").primaryKey(),
@@ -478,9 +485,12 @@ export const inspoComment = pgTable("inspo_comment", {
   body: text("body").notNull(),
   /** Attached screenshots: JSON `[{ url, w, h, name }]` (private Blob URLs, or /public paths locally) */
   attachments: jsonb("attachments").$type<CommentAttachmentRow[]>().notNull().default([]),
+  /** Emoji reactions, in the order they were given (lib/reactions.ts): one row per person and emoji */
+  reactions: jsonb("reactions").$type<CommentReactionRow[]>().notNull().default([]),
   /** The comment this one answers. Null: a comment of its own, about the whole reference */
   parentId: text("parent_id").references((): AnyPgColumn => inspoComment.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull(),
+  /** Its last change after being written (a reaction too): what the pulse looks at */
   editedAt: timestamp("edited_at", { withTimezone: true, mode: "date" }),
 }, (t) => [
   index("inspo_comment_org_item_idx").on(t.organizationId, t.itemId),

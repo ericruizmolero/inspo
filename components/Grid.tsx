@@ -11,6 +11,7 @@
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Clouds from "@/components/Clouds";
+import { gust } from "@/lib/ui-sounds";
 import { EASE_OUT, EASE_WIND, MORPH_MS, coverWhileFlying, ghostsOut, peekHandoff, takeHandoff } from "./view-morph";
 import type { InspoItem } from "@/types/inspo";
 import { keyOf } from "@/lib/board";
@@ -295,6 +296,8 @@ export default memo(function Grid({ under = false, items, ratioOf, hasNote, inse
       return { inner, key: tile.dataset.key!, r: inner.getBoundingClientRect() };
     });
     const used = new Set<string>();
+    // The wind dropping, on the flight's clock
+    gust(MORPH_MS, { back: true });
     for (const { inner, key, r } of reads) {
       if (r.bottom < 0 || r.top > window.innerHeight || !r.width) continue;
       const shot = shots.get(key);

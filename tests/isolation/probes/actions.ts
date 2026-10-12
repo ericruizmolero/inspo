@@ -278,6 +278,25 @@ export const actions: Record<string, Surface> = {
       expect(files.has(fx.a.keys.comment), "its screenshot stays").toBe(true);
     },
   },
+  "action:app/actions/library.ts#reactToComment": {
+    probe: async (fx) => {
+      const { reactToComment } = await import("@/app/actions/library");
+      const before = await commentRow(fx.a.comment);
+      asB(fx);
+      expectRefused(fx, await reactToComment(fx.a.comment, "👍"), "B cannot react to A's comment");
+      expectRefused(fx, await reactToComment(fx.a.reply, "👍"), "B cannot react to A's reply");
+      expect(await commentRow(fx.a.comment), "A's comment unchanged").toEqual(before);
+    },
+  },
+  "action:app/actions/library.ts#reactToNote": {
+    probe: async (fx) => {
+      const { reactToNote } = await import("@/app/actions/library");
+      const before = await itemRow(fx.a.item);
+      asB(fx);
+      expectRefused(fx, await reactToNote(fx.a.item, "note", "👍"), "B cannot react to the note of A's reference");
+      expect(await itemRow(fx.a.item), "A's reference unchanged").toEqual(before);
+    },
+  },
   "action:app/actions/library.ts#editNote": {
     probe: async (fx) => {
       const { editNote } = await import("@/app/actions/library");
