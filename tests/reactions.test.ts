@@ -1,5 +1,5 @@
-// Emoji reactions on a comment (lib/reactions.ts, toggleReaction in lib/comments.ts): one press gives, the next takes
-// away, people reacting at the same moment all count, and only the listed emoji are taken.
+// Emoji reactions on a comment (lib/reactions.ts, toggleReaction in lib/comments.ts): one each, another emoji replaces
+// yours and the same one takes it away, people reacting at the same moment all count, and only the listed emoji are taken.
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { eq } from "drizzle-orm";
 import { db, pool, schema } from "@/lib/db";
@@ -23,7 +23,9 @@ describe("reactions", () => {
     const given = await toggleReaction(team, comment, me, "👍");
     expect(given.reactions).toEqual([{ emoji: "👍", people: [me] }]);
     expect((await row(comment)).editedAt, "edited_at moves so the pulse carries it").not.toBeNull();
-    const taken = await toggleReaction(team, comment, me, "👍");
+    const swapped = await toggleReaction(team, comment, me, "🔥");
+    expect(swapped.reactions, "one each: another emoji replaces yours").toEqual([{ emoji: "🔥", people: [me] }]);
+    const taken = await toggleReaction(team, comment, me, "🔥");
     expect(taken.reactions ?? []).toEqual([]);
     expect((await row(comment)).reactions).toEqual([]);
   });
@@ -48,7 +50,9 @@ describe("reactions", () => {
     const g = groupReactions([{ e: "🔥", u: "a", n: "A" }, { e: "👍", u: "b", n: "B" }, { e: "🔥", u: "b", n: "B" }]);
     expect(g.map((x) => [x.emoji, x.people.length])).toEqual([["🔥", 2], ["👍", 1]]);
     const off = toggleIn(g, "👍", { id: "b", name: "B" });
-    expect(off.map((x) => x.emoji)).toEqual(["🔥"]);
-    expect(toggleIn(off, "🔥", { id: "c", name: "C" })[0].people).toHaveLength(3);
+    expect(off.map((x) => [x.emoji, x.people.length]), "pressing yours again takes away all of yours").toEqual([["🔥", 1]]);
+    const swap = toggleIn([{ emoji: "👍", people: [{ id: "a", name: "A" }] }], "🔥", { id: "a", name: "A" });
+    expect(swap.map((x) => x.emoji), "another emoji replaces yours").toEqual(["🔥"]);
+    expect(toggleIn(off, "🔥", { id: "c", name: "C" })[0].people).toHaveLength(2);
   });
 });

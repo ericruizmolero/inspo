@@ -130,24 +130,25 @@ export async function deleteComment(organizationId: string, id: string, userId: 
   return row.itemId;
 }
 
-/** Gives this person's reaction to a comment of the workspace, or takes it away if they had given it. One statement,
- *  so two people reacting at once both count. It touches edited_at, so the pulse carries the new reactions to the
- *  other boards. Returns the comment as it is now. */
+/** Gives this person's reaction to a comment of the workspace: one each, so another emoji replaces theirs, and the
+ *  same one again takes it away (WhatsApp). One statement, so two people reacting at once both count. It touches
+ *  edited_at, so the pulse carries the new reactions to the other boards. Returns the comment as it is now. */
 export async function toggleReaction(organizationId: string, commentId: string, user: { id: string; name: string }, emoji: unknown): Promise<InspoComment> {
   const errors = await getErrors();
   if (!isReaction(emoji)) throw new HttpError(400, errors.badBody);
-  const mine = sql`jsonb_build_array(jsonb_build_object('e', ${emoji}::text, 'u', ${user.id}::text))`;
+  const same = sql`jsonb_build_array(jsonb_build_object('e', ${emoji}::text, 'u', ${user.id}::text))`;
+  const theirs = sql`jsonb_build_array(jsonb_build_object('u', ${user.id}::text))`;
+  const others = sql`coalesce((select jsonb_agg(r order by i) from jsonb_array_elements(reactions) with ordinality as x(r, i)
+    where r->>'u' <> ${user.id}::text), '[]'::jsonb)`;
   const res = await db.execute<{ id: string }>(sql`
     update inspo_comment set
       reactions = case
-        when reactions @> ${mine} then coalesce((
-          select jsonb_agg(r order by i) from jsonb_array_elements(reactions) with ordinality as x(r, i)
-          where not (r->>'e' = ${emoji}::text and r->>'u' = ${user.id}::text)), '[]'::jsonb)
-        else reactions || jsonb_build_array(jsonb_build_object('e', ${emoji}::text, 'u', ${user.id}::text, 'n', ${user.name.slice(0, 120)}::text))
+        when reactions @> ${same} then ${others}
+        else ${others} || jsonb_build_array(jsonb_build_object('e', ${emoji}::text, 'u', ${user.id}::text, 'n', ${user.name.slice(0, 120)}::text))
       end,
       edited_at = now()
     where id = ${commentId} and organization_id = ${organizationId}
-      and (reactions @> ${mine} or jsonb_array_length(reactions) < ${MAX_REACTIONS})
+      and (reactions @> ${theirs} or jsonb_array_length(reactions) < ${MAX_REACTIONS})
     returning id`);
   if (!res.rows.length) {
     const [there] = await db.select({ id: C.id }).from(C).where(and(eq(C.id, commentId), eq(C.organizationId, organizationId))).limit(1);

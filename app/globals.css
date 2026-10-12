@@ -1103,28 +1103,34 @@ video.vp__media { object-fit: contain; }
 .cm-msg__del, .cm-msg__edit { opacity: 0; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
 .cm-msg:hover :is(.cm-msg__del, .cm-msg__edit), :is(.cm-msg__del, .cm-msg__edit):focus-visible { opacity: 1; }
 .cm-msg__del:hover { color: var(--danger); }
-/* One comment and its replies. Replies hang from the comment on a rule that starts under its avatar (26/2). */
-.cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
 /* React: the same quiet xs IconButton, first of the three, shown with them */
 .cm-msg__react { opacity: 0; transition: opacity 0.15s, color 0.15s, background-color 0.15s; }
 .cm-msg:hover .cm-msg__react, .cm-msg__react:focus-visible, .cm-msg__react[data-popup-open] { opacity: 1; }
-/* Reactions under a comment (Slack, WhatsApp): one small pill per emoji with how many gave it. Flat, a --border line,
-   no ink border or bevel: they are part of the comment, not a control bar. Yours wears ember's line and a paper fill
-   one step up; pressing it takes yours away. The last pill, a face, opens the picker for one more */
-.cm-reacts { display: flex; flex-wrap: wrap; gap: 4px; }
+/* Reactions under a comment (Slack, WhatsApp): one soft pill per emoji, no line, the emoji a size up and the count
+   small and strong beside it. Yours is tinted ember with a thin ember ring; pressing it takes it away. A new pill
+   pops in. The last one, a bare face, opens the picker */
+.cm-reacts { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 .cm-react {
-  display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: var(--radius-pill);
-  border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
-  font: inherit; font-size: var(--fs-label); font-variant-numeric: tabular-nums; cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 9px 0 7px; border-radius: var(--radius-pill);
+  border: 0; background: var(--surface-2); color: var(--text-2);
+  font: inherit; font-size: var(--fs-label); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums; cursor: pointer;
+  animation: react-in 220ms var(--ease-out) both;
+  transition: background-color 0.15s, box-shadow 0.15s, color 0.15s, transform 0.12s var(--ease-out);
 }
-.cm-react:hover { border-color: var(--border-strong); }
-.cm-react:active { transform: scale(0.94); }
+.cm-react:hover { background: var(--surface-3); color: var(--text); }
+.cm-react:active { transform: scale(0.92); }
 .cm-react:disabled { cursor: default; transform: none; }
-.cm-react.is-mine { border-color: var(--ember); background: var(--surface-2); color: var(--text); font-weight: var(--fw-semibold); }
-.cm-react__emoji { font-size: 14px; line-height: 1; }
-.cm-react--add { padding: 0 6px; color: var(--muted); opacity: 0; transition: opacity 0.15s, border-color 0.15s; }
+.cm-react.is-mine {
+  background: color-mix(in oklab, var(--ember) 20%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ember) 60%, transparent); color: var(--text);
+}
+.cm-react.is-mine:hover { background: color-mix(in oklab, var(--ember) 28%, var(--surface)); }
+.cm-react__emoji { font-size: 15px; line-height: 1; }
+.cm-react--add { padding: 0 7px; background: transparent; color: var(--muted); animation: none; opacity: 0; transition: opacity 0.15s, background-color 0.15s, color 0.15s; }
+.cm-react--add:hover { background: var(--surface-2); color: var(--text); }
 .cm-msg:hover .cm-react--add, .cm-react--add:focus-visible, .cm-react--add[data-popup-open] { opacity: 1; }
+@keyframes react-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cm-react { animation: none; } }
 /* The picker: the system's menu with a grid of emoji, six a row, the quick ones first */
 .cm-picker.cr-menu { min-width: 0; padding: 6px; }
 .cm-picker__grid { display: grid; grid-template-columns: repeat(6, 32px); gap: 2px; }
@@ -1133,11 +1139,20 @@ video.vp__media { object-fit: contain; }
   background: transparent; font-size: 18px; line-height: 1; cursor: pointer; transition: background-color 0.12s, transform 0.12s;
 }
 .cm-picker__emoji:hover, .cm-picker__emoji:focus-visible { background: var(--surface-2); transform: scale(1.12); }
+/* The one you gave, marked in the picker: choosing another replaces it, choosing it again takes it away */
+.cm-picker__emoji.is-mine { background: color-mix(in oklab, var(--ember) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ember) 60%, transparent); }
+/* A comment with replies: its rule starts under the author's photo and runs down into the replies' rule (Eric, 12-10) */
+.cm-thread.has-replies > .cm-msg:first-child { position: relative; }
+.cm-thread.has-replies > .cm-msg:first-child::before { content: ""; position: absolute; left: 12px; top: 30px; bottom: -6px; border-left: 1px solid var(--border-strong); pointer-events: none; }
+/* One comment and its replies. Replies hang from the comment on a rule that starts under its avatar (26/2). */
+.cm-thread { display: flex; flex-direction: column; gap: 6px; margin: -6px -8px; padding: 6px 8px; border-radius: var(--radius-m); transition: background-color 150ms ease; }
 .cm-replies { display: flex; flex-direction: column; gap: 10px; margin-left: 12px; padding: 2px 0 2px 14px; border-left: 1px solid var(--border-strong); }
-/* Reply: a quiet Button, size s */
-.cm-reply-btn { align-self: flex-start; margin-left: 26px; }
-.cm-thread__foot { display: flex; align-items: center; gap: 4px; margin-left: 26px; }
-.cm-thread__foot .cm-reply-btn { margin-left: 0; }
+/* Reply: a quiet Button made smaller than s (26 px, label size), its words in line with the comment's (26 + 8 = 34).
+   Its focus ring sits inside the button: outside, at s, it touched the reply above and "1 reply" beside it (Eric, 12-10) */
+.cm-reply-btn.cr-btn { align-self: flex-start; margin-left: 26px; min-height: 26px; padding: 0 8px; font-size: var(--fs-label); border-radius: var(--radius-s); }
+.cm-reply-btn.cr-btn:focus-visible { outline-offset: -2px; }
+.cm-thread__foot { display: flex; align-items: center; gap: 8px; margin: 2px 0 0 26px; }
+.cm-thread__foot .cm-reply-btn.cr-btn { margin-left: 0; }
 .cm-thread__count { font-size: var(--fs-label); color: var(--muted); }
 /* Reply and edit use the system's TextArea (components/criterio): the reply is its composer version with Send
    inside the field; the edit is the plain field */

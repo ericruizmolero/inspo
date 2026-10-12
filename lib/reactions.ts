@@ -11,7 +11,7 @@ export const REACTIONS = [
 
 export const isReaction = (e: unknown): e is string => typeof e === "string" && (REACTIONS as readonly string[]).includes(e);
 
-/** A comment holds at most this many reactions in all, so a loop of clicks cannot grow a row without end */
+/** A comment holds at most this many reactions (one per person), so a row cannot grow without end */
 export const MAX_REACTIONS = 200;
 
 /** The rows grouped by emoji, in the order each emoji was first given */
@@ -24,11 +24,12 @@ export function groupReactions(rows: readonly { e: string; u: string; n: string 
   return out;
 }
 
-/** Someone's reaction added, or taken away when they had already given it: what the tab shows before the server answers */
+/** Someone's reaction given: one each, so another emoji replaces theirs and the same one again takes it away. What
+ *  the tab shows before the server answers, the same rule as toggleReaction in lib/comments.ts */
 export function toggleIn(list: readonly CommentReaction[], emoji: string, me: { id: string; name: string }): CommentReaction[] {
-  const g = list.find((x) => x.emoji === emoji);
-  if (!g) return [...list, { emoji, people: [me] }];
-  const had = g.people.some((p) => p.id === me.id);
-  const people = had ? g.people.filter((p) => p.id !== me.id) : [...g.people, me];
-  return people.length ? list.map((x) => (x === g ? { emoji, people } : x)) : list.filter((x) => x !== g);
+  const had = list.some((g) => g.emoji === emoji && g.people.some((p) => p.id === me.id));
+  const out = list.map((g) => ({ emoji: g.emoji, people: g.people.filter((p) => p.id !== me.id) })).filter((g) => g.people.length);
+  if (had) return out;
+  const g = out.find((x) => x.emoji === emoji);
+  return g ? out.map((x) => (x === g ? { emoji, people: [...g.people, me] } : x)) : [...out, { emoji, people: [me] }];
 }

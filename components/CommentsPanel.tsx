@@ -101,8 +101,9 @@ interface Msg {
   reactable?: boolean;
 }
 
-/** The emoji to choose from, the quick row first, as a menu over the comment (Slack, WhatsApp) */
-function ReactionPicker({ className, label, title, children, onPick }: { className: string; label: string; title: string; children: React.ReactNode; onPick: (emoji: string) => void }) {
+/** The emoji to choose from, the quick row first, as a menu over the comment (Slack, WhatsApp). One each: yours is
+ *  marked, another replaces it */
+function ReactionPicker({ className, label, title, children, current, onPick }: { className: string; label: string; title: string; children: React.ReactNode; current?: string; onPick: (emoji: string) => void }) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -110,7 +111,7 @@ function ReactionPicker({ className, label, title, children, onPick }: { classNa
       <PopoverContent align="end" side="top" className="cr-menu cm-picker" aria-label={title}>
         <div className="cm-picker__grid">
           {REACTIONS.map((e) => (
-            <button key={e} type="button" className="cm-picker__emoji" aria-label={e} onClick={() => { setOpen(false); onPick(e); }}>{e}</button>
+            <button key={e} type="button" className={`cm-picker__emoji${e === current ? " is-mine" : ""}`} aria-label={e} aria-pressed={e === current} onClick={() => { setOpen(false); onPick(e); }}>{e}</button>
           ))}
         </div>
       </PopoverContent>
@@ -302,6 +303,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
     return listNames(names, t.comments.and);
   };
   const react = (id: string, emoji: string) => { void onReact?.(id, emoji); };
+  const myReaction = (m: Msg) => m.reactions?.find((r) => r.people.some((p) => p.id === user.id))?.emoji;
   const total = originals.length + threads.reduce((n, th) => n + 1 + th.replies.length, 0);
 
   // On open or when a new message arrives, scroll to the end of the list
@@ -448,7 +450,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
                 );
               })}
               {onReact && (
-                <ReactionPicker className="cm-react cm-react--add" label={t.comments.react} title={t.comments.reactions} onPick={(e) => react(m.id, e)}>
+                <ReactionPicker className="cm-react cm-react--add" label={t.comments.react} title={t.comments.reactions} current={myReaction(m)} onPick={(e) => react(m.id, e)}>
                   <Icon name="smile" size={14} />
                 </ReactionPicker>
               )}
@@ -456,7 +458,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           )}
         </div>
         {m.reactable && onReact && (
-          <ReactionPicker className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-xs cm-msg__react" label={t.comments.react} title={t.comments.reactions} onPick={(e) => react(m.id, e)}>
+          <ReactionPicker className="cr-iconbtn cr-iconbtn-quiet cr-iconbtn-xs cm-msg__react" label={t.comments.react} title={t.comments.reactions} current={myReaction(m)} onPick={(e) => react(m.id, e)}>
             <Icon name="smile" size={14} />
           </ReactionPicker>
         )}
@@ -539,7 +541,7 @@ export default function CommentsPanel({ item, comments, user, canManage, memberI
           )}
           {threads.map(({ head, replies }) => (
             // A post-it's thread wears the post-it's colour from its comment down to its last reply
-            <div key={head.id} data-thread={head.id} className="cm-thread">
+            <div key={head.id} data-thread={head.id} className={`cm-thread${replies.length ? " has-replies" : ""}`}>
               {renderMsg(head, false)}
               {replies.length > 0 && <div className="cm-replies">{replies.map((r, i) => renderMsg(r, !!replies[i - 1] && replies[i - 1].name === r.name && Math.abs(Date.parse(replies[i - 1].at) - Date.parse(r.at)) < 5 * 60000))}</div>}
               {onReply && (replying?.id === head.id ? (
