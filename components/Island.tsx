@@ -20,7 +20,6 @@ import { enterFeedbackMode } from "./feedback-mode";
 import { sectionIcon } from "./section-icons";
 import TeamBell from "./TeamBell";
 import { useT } from "./I18nProvider";
-import { marketingHref } from "@/lib/site";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Liquid, afterPaint } from "@/components/ui/liquid";
 
@@ -246,8 +245,8 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
     return { shown: openTabs.filter((p) => keep.has(p.id)), hidden: openTabs.filter((p) => !keep.has(p.id)) };
   }, [openTabs, fitOrder, fit]);
 
-  // No library tab: Discover holds the examples, and the Inbox what is in no project yet
-  const inDiscover = space === "templates";
+  // No library tab: Discover holds the examples, the resources and the skills, and the Inbox what is in no project yet
+  const inDiscover = space === "templates" || space === "discover" || space === "skills";
   const createNew = async (name: string, about: string) => {
     const p = await onCreateProject(name);
     if (!p) return;
@@ -317,9 +316,9 @@ export default function Island({ user, workspace, workspaces, isAdmin, items, li
             <Link className="island__team-manage" href="/settings/members" aria-label={t.ws.manageTeam}>{t.ws.manage}</Link>
           </div>
           <Separator />
-          {/* The places to look and the skills for agents live on the marketing site: a new tab, the library stays where it was */}
-          <MenuItem icon="compass" onClick={() => window.open(marketingHref("/resources/", locale), "_blank", "noopener")}>{t.ws.resources}</MenuItem>
-          <MenuItem icon="file" onClick={() => window.open(marketingHref("/skills/", locale), "_blank", "noopener")}>{t.ws.skills}</MenuItem>
+          {/* The places to look and the skills for agents are Discover's other two sections (the same lists the marketing site shows) */}
+          <MenuItem icon="compass" onClick={() => onSpace("discover")}>{t.ws.resources}</MenuItem>
+          <MenuItem icon="file" onClick={() => onSpace("skills")}>{t.ws.skills}</MenuItem>
           <MenuItem icon={sectionIcon("feedback")} data-feedback-toolbar="true" data-tip={t.feedback.entryHint} onClick={() => enterFeedbackMode()}>
             {t.feedback.open}
           </MenuItem>

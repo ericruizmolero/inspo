@@ -1,0 +1,83 @@
+/* ─── Discover (components/Discover.tsx): the examples and the resources as a list, group by group, with its shelves and kinds on top ─── */
+/* The head of the page, the same in both sections and in their column, as a project's page has it (.spage-head):
+   the name (the page's h1, display) and what the open section holds (.t-body, muted), then one row with the sections
+   on the left (the paper SegmentedControl) and its controls on the right. It all scrolls away with the page: over
+   the content only the top bar floats */
+.disc-head { max-width: 1040px; margin: 0 auto; }
+.disc-title { margin: 0; color: var(--text); }
+.disc-lead { margin: var(--space-2) 0 0; max-width: 62ch; color: var(--text-2); }
+.disc-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); flex-wrap: wrap; min-width: 0; max-width: 1040px; margin: var(--space-5) auto var(--space-6); }
+.disc-bar__side { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; min-width: 0; }
+.disc-bar .cr-seg { flex-shrink: 0; max-width: 100%; }
+.disc-bar .cr-seg-item { white-space: nowrap; }
+/* Over the examples' cards the head and the row are two more pieces of their column, which keeps its own gap: the
+   row's margins give back that gap so it sits at the same height as in the resources (Eric, 07-10: the bar must not
+   move when switching sections) */
+.tpls-inner > :is(.disc-head, .disc-bar) { width: 100%; margin: 0; }
+.tpls-inner > .disc-bar { margin: calc(var(--space-5) - var(--tpls-gap)) 0 calc(var(--space-6) - var(--tpls-gap)); }
+/* A few words over the resources: the field at the toolbar size (.cr-input-s, 34), the search icon inside at the
+   left, no browser clear button */
+.disc-search { position: relative; display: flex; align-items: center; flex-shrink: 0; }
+.disc-search > .cr-icon { position: absolute; left: 10px; color: var(--field-placeholder); pointer-events: none; }
+.disc-search .cr-input { width: 200px; padding-left: 30px; }
+.disc-search .cr-input::-webkit-search-cancel-button { display: none; }
+/* The kinds of resource: a secondary Button opens a Menu (.cr-menu); pressed while one is chosen or the menu is
+   open. A long list scrolls inside */
+.disc__group { flex-shrink: 0; white-space: nowrap; }
+.disc__group[data-popup-open] { background: var(--paper-pressed); box-shadow: var(--bevel-pressed); }
+.disc__menu { max-height: min(70vh, 520px); overflow-y: auto; }
+@media (max-width: 560px) { .disc-bar .cr-seg { overflow-x: auto; scrollbar-width: none; } .disc-bar .cr-seg::-webkit-scrollbar { display: none; } .disc-search { width: 100%; } .disc-search .cr-input { width: 100%; } }
+/* The resources as a list, group by group. The gutter of the scrollbar is kept in every section (as .tpls keeps it),
+   so the column never shifts between a short one and a long one */
+.disc-list { position: absolute; inset: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 132px 28px 72px; background: var(--bg); }
+.disc-list__group { max-width: 1040px; margin: 0 auto 40px; display: flex; flex-direction: column; gap: 10px; }
+/* A group's name is an h2 for the outline but reads at title-m (20): at title-l it outweighed the rows (Eric, 07-10) */
+.disc-list__head h2 { color: var(--text); }
+.disc-list__head p { margin: 4px 0 0; font-size: var(--fs-small); color: var(--text-2); }
+.disc-rows { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--border); }
+.disc-rows li { border-bottom: 1px solid var(--border); }
+.disc-row { display: flex; align-items: baseline; gap: 12px; min-width: 0; padding: 12px 8px; color: var(--text-2); text-decoration: none; font-size: var(--fs-ui); transition: background 0.15s, color 0.15s; }
+.disc-row:hover { background: var(--surface-raised); color: var(--text); }
+.disc-row:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: var(--radius-sm); }
+.disc-row__name { flex: 0 0 180px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: var(--fw-semibold); color: var(--text); }
+/* "New": the system's paper Chip, set small for the row */
+.disc-row__new.cr-chip { flex-shrink: 0; align-self: center; margin-left: -6px; padding: 1px 8px; font-size: var(--fs-label); font-weight: var(--fw-semibold); }
+.disc-row__text { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text-2); }
+.disc-row:hover .disc-row__text { color: var(--text); }
+.disc-row__host { flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; align-self: center; font-size: var(--fs-small); color: var(--text-2); }
+@media (max-width: 700px) { .disc-row { flex-wrap: wrap; gap: 4px 10px; } .disc-row__name { flex-basis: auto; } .disc-row__text { flex-basis: 100%; order: 3; white-space: normal; } }
+/* The hero of the site under the pointer: fixed to the window, placed with `translate` each frame and grown with WAAPI
+   (opacity, transform); never catches the pointer */
+.disc-peek { position: fixed; top: 0; left: 0; z-index: 55; width: 216px; height: 135px; border-radius: var(--radius-md); overflow: hidden; background: var(--surface-raised); border: 1px solid var(--border); box-shadow: var(--shadow-pop); pointer-events: none; opacity: 0; transform: scale(0.85); will-change: translate, transform, opacity; }
+.disc-peek img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.disc-list__none { margin: 0 auto; max-width: 1040px; font-size: var(--fs-ui); color: var(--text-2); }
+
+/* ─── Discover › Skills (components/DiscoverSkills.tsx): cards with the author, what it does and its install command,
+   grouped by topic under the page's head ─── */
+.disc-skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+/* Cards: the system's Card (raised: surface-raised with a hairline); the hairline darkens on hover */
+.disc-skill.cr-card { min-width: 0; transition: border-color 0.15s var(--ease-out); }
+@media (hover: hover) { .disc-skill:hover { border-color: var(--border-strong); } }
+.disc-skill:has(.disc-skill__name:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.disc-skill__by { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--fs-small); color: var(--text-2); }
+.disc-skill__by > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "In criterio.md": the system's Chip, set small for the card */
+.disc-skill__inmd { display: inline-flex; margin-left: auto; }
+.disc-skill__inmd .cr-chip { flex-shrink: 0; align-self: center; padding: 1px 8px; font-size: var(--fs-label); font-weight: var(--fw-semibold); }
+/* The skill's name is title-s (.t-title-s on the link) */
+.disc-skill__name { color: var(--text); text-decoration: none; outline: none; }
+.disc-skill__name::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.disc-skill__what { flex: 1; margin: 0; font-size: var(--fs-small); line-height: var(--lh-small); color: var(--text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+/* The install line: a sunken well in the card (the field's ground and line, no bevel) holds the command in muted
+   mono (it is literal); "Copy" is a small raised key in the card's own grey, no paper at all (Eric, 07-10: "el botón
+   de copiar no tiene que ser blanco tampoco") */
+.disc-skill__install {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; min-width: 0; height: 34px; margin-top: 4px; padding: 0 4px 0 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--field); color: var(--muted);
+  font: inherit; text-align: left; cursor: pointer; transition: border-color 150ms ease, color 150ms ease;
+}
+.disc-skill__install code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-label); }
+.disc-skill__install span { flex-shrink: 0; padding: 0 8px; height: 24px; line-height: 24px; border-radius: var(--radius-sm); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-label); font-weight: var(--fw-medium); transition: background-color 150ms ease, color 150ms ease; }
+@media (hover: hover) { .disc-skill__install:hover { border-color: var(--border-strong); color: var(--text-2); } .disc-skill__install:hover span { background: var(--surface-3); color: var(--text); } }
+.disc-skill__install:active span { background: var(--surface-3); color: var(--text); }
+.disc-skill__install.is-copied span { background: var(--moss); color: var(--on-moss); }

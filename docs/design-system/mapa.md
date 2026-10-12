@@ -12,7 +12,9 @@ La app vive en `/`. Lo que se ve depende de la query, sin cambiar de página, pa
 | `/?in=home` | Inicio: "¿Qué vas a hacer?" y los proyectos |
 | `/?in=inbox` | Inbox: lo que no está en ningún proyecto |
 | `/?in=library` | Toda la biblioteca |
-| `/?in=templates` | Descubrir: los ejemplos. Un `?in=discover` o un `?in=skills` antiguos abren Ejemplos (los recursos y las skills están en la web de marketing) |
+| `/?in=templates` | Descubrir: los ejemplos |
+| `/?in=discover` | Descubrir: los recursos, la lista de la web de marketing con la miniatura que sigue al puntero |
+| `/?in=skills` | Descubrir: las skills para agentes, la lista de la web de marketing como tarjetas |
 | `/?in=<proyecto>` | Un proyecto: tablero hasta "Ya tengo mis referencias", luego Sistema |
 | `&view=board` / `&view=system` | Fuerza tablero o Sistema dentro del proyecto |
 | `&view=system&brief=1` | Sistema con el panel Brief abierto; el panel se abre y la URL suelta `brief` (lo usa ⌘K → "Abrir el brief") |
