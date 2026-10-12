@@ -11,3 +11,16 @@ export const DEFAULT_RATIO = 0.625;
 
 /** The key a card is laid out by: its id once saved, its address while it is still being added */
 export const keyOf = (item: InspoItem) => item.id ?? item.web;
+
+/** The board's copy of a stored picture: the same image CARD_WIDTH wide as WebP, next to it in the bucket. A card is
+ *  at most 380px wide on a 2x screen, and the originals are photos and screenshots of up to 20 MB. GIFs keep their
+ *  animation and stay whole. Made the first time it is asked for (app/api/files) or ahead of time (scripts/card-copies.ts) */
+export const CARD_WIDTH = 720;
+const CARD_SUFFIX = ".card.webp";
+const RESIZABLE = /\.(jpe?g|png|webp|avif)$/i;
+export function cardCopyOf(path: string | null | undefined): string | null {
+  if (!path?.startsWith("/api/files/") || path.includes("?") || path.endsWith(CARD_SUFFIX) || !RESIZABLE.test(path)) return null;
+  return path + CARD_SUFFIX;
+}
+/** The stored key a card copy was made from, or null when `key` is not a card copy */
+export const originalOfCard = (key: string): string | null => (key.endsWith(CARD_SUFFIX) ? key.slice(0, -CARD_SUFFIX.length) : null);

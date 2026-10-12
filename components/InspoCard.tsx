@@ -162,8 +162,10 @@ interface InspoCardProps {
     onMeasure?: (ratio: number) => void;
     /** The page's own colour, painted until its image arrives */
     color?: string;
-    /** The same page at other sizes: one already decoded stands in while the cover loads */
-    alternates?: (string | undefined)[];
+    /** The same page (or picture) at other sizes: one already decoded stands in while the cover loads */
+    alternates?: (string | null | undefined)[];
+    /** The thumbnail's path at the size the board draws it (its card copy), loaded when the signed link fails */
+    thumb?: string;
   };
 }
 
@@ -197,9 +199,12 @@ export default function InspoCard({ item, tags, tagJob, score, reason, manualThu
   // An uploaded image is its own thumbnail; a video shows its frame when the provider gives one away
   const kind = mediaKindOf(item.web);
   const video = kind === "video" ? videoEmbedOf(item.web) : null;
-  const thumbPath = uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
+  const thumbPath = board?.thumb ?? uploadedThumb ?? (kind === "image" ? item.web : video?.poster);
   const [thumbRetry, setThumbRetry] = useState(false);
-  const manualThumbnail = signedThumbnail && !thumbRetry ? signedThumbnail : thumbPath;
+  const wantedThumbnail = signedThumbnail && !thumbRetry ? signedThumbnail : thumbPath;
+  // A zoom swaps the card copy for the original: the one already drawn stays until the other is decoded
+  const decodedThumbnail = useDecodedSrc(wantedThumbnail, board?.alternates);
+  const manualThumbnail = board ? decodedThumbnail : wantedThumbnail;
   const videoFile = video?.provider === "file" && !manualThumbnail;
   // A post from X plays in the thread too: its picture's name says whether it is a video or a gif
   const postKind = kind === "post" ? postThumbKind(uploadedThumb) : null;

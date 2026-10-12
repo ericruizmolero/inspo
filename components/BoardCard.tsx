@@ -3,6 +3,7 @@
 import { memo, useCallback, useMemo, type RefObject } from "react";
 import InspoCard, { captionFor } from "./InspoCard";
 import type { ShotLevel } from "./Grid";
+import { cardCopyOf } from "@/lib/board";
 import type { DesignIndexEntry, InspoComment, InspoItem, InspoTags, PageShot, Project, TagStatus } from "@/types/inspo";
 import type { SystemArea } from "@/types/system";
 
@@ -19,7 +20,7 @@ export interface GridActions {
 }
 
 /** One card with its handlers bound. Memoised on its own data: moving the camera or another card leaves it alone. */
-const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, deletable, spaceName, takeOutOf, actions }: {
+const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, score, reason, comments, authorImage, manualThumbnail, signedThumbnail, signedCard, designMd, signedCover, signedScroll, shot, projects, projectIds, backs, areasIn, selected, selecting, deletable, spaceName, takeOutOf, actions }: {
   item: InspoItem; level: ShotLevel; ratio: number; tags: InspoTags | undefined; tagJob: TagStatus | undefined; score: number | undefined; reason: string | undefined;
   /** Inside a project: the areas of its system this reference backs */
   backs?: SystemArea[];
@@ -29,6 +30,8 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
   manualThumbnail: string | undefined; designMd: DesignIndexEntry | undefined; shot: PageShot | undefined;
   /** The signed bucket links of the thumbnail it shows and of the DESIGN.md pictures, when the library sent them */
   signedThumbnail: string | undefined; signedCover: string | undefined; signedScroll: string | undefined;
+  /** The signed link of the thumbnail's card copy (lib/board.ts cardCopyOf), when the library sent it */
+  signedCard: string | undefined;
   projects: Project[]; projectIds: string[] | undefined;
   selected: boolean; selecting: boolean;
   /** Whether this person may delete the card: theirs, or they manage the workspace */
@@ -48,6 +51,10 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
   const page = showsPage ? shot![key] : signedCover ?? designMd?.coverUrl;
   // The same page at the other sizes: whichever is already decoded stands in while this one loads
   const alternates = useMemo(() => (shot ? [shot.tileUrl, shot.thumbUrl, shot.topUrl] : undefined), [shot]);
+  // A picture is drawn from its card copy until the zoom makes the card wider than the copy; then the original
+  const picture = manualThumbnail ?? item.web;
+  const card = level === "full" ? null : cardCopyOf(picture);
+  const pictureAlternates = useMemo(() => [signedCard, signedThumbnail, cardCopyOf(picture), picture], [signedCard, signedThumbnail, picture]);
   const open = () => act().openItem(item);
   // Always the whole card, at every zoom: its note and its thread are always there. Only the copy of the
   // page changes with the zoom (288, 720 or 1440px), swapped without a blank frame.
@@ -65,7 +72,7 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
       onTakeOut={item.id && takeOutOf ? () => act().toggleFiled(item, takeOutOf, false) : undefined}
       spaceName={spaceName}
       manualThumbnail={manualThumbnail}
-      signedThumbnail={signedThumbnail}
+      signedThumbnail={card ? signedCard : signedThumbnail}
       onUpload={(file) => { act().handleThumbnailUpload(item.web, file); return Promise.resolve(); }}
       onRemoveThumbnail={() => { act().handleThumbnailRemove(item.web); return Promise.resolve(); }}
       onOpen={open}
@@ -83,7 +90,7 @@ const BoardCard = memo(function BoardCard({ item, level, ratio, tags, tagJob, sc
       selected={selected}
       selecting={selecting}
       onSelect={item.id ? (range) => act().select(item, range) : undefined}
-      board={{ ratio, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : undefined, onMeasure: showsPage ? undefined : onMeasure }}
+      board={{ ratio, color: showsPage ? shot!.color : undefined, alternates: showsPage ? alternates : pictureAlternates, thumb: card ?? undefined, onMeasure: showsPage ? undefined : onMeasure }}
     />
   );
 });

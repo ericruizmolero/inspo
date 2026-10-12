@@ -51,7 +51,7 @@ import { leaveBoard, leavePolish } from "./view-morph";
 import SoundControl from "./SoundControl";
 import ZoomPill from "./ZoomPill";
 import { cue } from "@/lib/ui-sounds";
-import { keyOf } from "@/lib/board";
+import { cardCopyOf, keyOf } from "@/lib/board";
 import EmptyStart from "./EmptyStart";
 import ProjectStart from "./ProjectStart";
 import { filledOf, unreadOf, type SystemArea, type SystemSummary } from "@/types/system";
@@ -391,9 +391,11 @@ export default function InspoClient({
   // A small picture of any reference, wherever one is shown outside the board: the thumbnail someone gave it, the
   // DESIGN.md cover, or the stored copy of its page (so a reference without a DESIGN.md is not a blank)
   const signedOf = useCallback((u: string | null) => (u && signed[u]) || u, [signed]);
-  const smallImageOf = useCallback((i: InspoItem) => signedOf(thumbMap[i.web] ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null), [signedOf, thumbMap, designMdIndex, pageShots]);
+  // A thumbnail is drawn small everywhere off the board too: its card copy (lib/board.ts)
+  const thumbOf = useCallback((web: string) => { const t = thumbMap[web]; return t && (cardCopyOf(t) ?? t); }, [thumbMap]);
+  const smallImageOf = useCallback((i: InspoItem) => signedOf(thumbOf(i.web) ?? designMdIndex[i.web]?.coverUrl ?? pageShots[i.web]?.tileUrl ?? null), [signedOf, thumbOf, designMdIndex, pageShots]);
   // The same choice a card makes on the board, at the smallest stored size: a project's cover is its board from afar
-  const miniImageOf = useCallback((i: InspoItem) => signedOf(thumbMap[i.web] ?? pageShots[i.web]?.thumbUrl ?? designMdIndex[i.web]?.coverUrl ?? null), [signedOf, thumbMap, designMdIndex, pageShots]);
+  const miniImageOf = useCallback((i: InspoItem) => signedOf(thumbOf(i.web) ?? pageShots[i.web]?.thumbUrl ?? designMdIndex[i.web]?.coverUrl ?? null), [signedOf, thumbOf, designMdIndex, pageShots]);
   const [zoom, setZoom] = useKeptZoom();
 
   // What floats over the board, so the cards keep clear of it
@@ -486,6 +488,7 @@ export default function InspoClient({
       authorImage={authorImages[item.addedBy]}
       manualThumbnail={thumbMap[item.web]}
       signedThumbnail={signed[thumbMap[item.web] ?? item.web]}
+      signedCard={signed[cardCopyOf(thumbMap[item.web] ?? item.web) ?? ""]}
       designMd={designMdIndex[item.web]}
       signedCover={signed[designMdIndex[item.web]?.coverUrl ?? ""]}
       signedScroll={signed[designMdIndex[item.web]?.scrollUrl ?? ""]}

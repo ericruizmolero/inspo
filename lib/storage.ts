@@ -16,6 +16,7 @@ import { inArray } from "drizzle-orm";
 import { db, schema } from "./db";
 import { assertRoomIn } from "./quota";
 import { log, recordFailure } from "./log";
+import { CARD_WIDTH, cardCopyOf, originalOfCard } from "./board";
 
 export const FILES_BASE = "/api/files/";
 
@@ -265,11 +266,25 @@ export const uploadUrl = (key: string, contentType: string, size: number): Promi
   d().signPut?.(key, contentType, size) ?? Promise.resolve(null);
 export const listFiles = (prefix: string) => d().list(prefix);
 
+/** Makes the board's copy of a stored picture (lib/board.ts) unless it is there. Idempotent: the same key always gives
+ *  the same copy. False when it can't be made (no original, not a picture): the caller serves the original. */
+export async function ensureCardCopy(cardKey: string): Promise<boolean> {
+  const original = originalOfCard(cardKey);
+  if (!original) return false;
+  if (await fileExists(cardKey)) return true;
+  const f = await getFile(original);
+  if (!f) return false;
+  const sharp = (await import("sharp")).default;
+  const body = await sharp(f.body).rotate().resize({ width: CARD_WIDTH, withoutEnlargement: true }).webp({ quality: 74 }).toBuffer();
+  await d().put(cardKey, body, "image/webp");
+  return true;
+}
+
 /** Deletes files by key, and their sizes with them. Never throws: an orphan file blocks nothing. */
 export async function deleteFiles(keys: string[]): Promise<void> {
   if (!keys.length) return;
   try {
-    await d().del(keys);
+    await d().del(keys.flatMap((k) => { const card = keyOf(cardCopyOf(fileUrl(k)) ?? ""); return card ? [k, card] : [k]; }));
     await db.delete(schema.storedFile).where(inArray(schema.storedFile.key, keys));
   } catch (err) { void recordFailure("storage", "delete files", err, { ref: keys[0] }); }
 }

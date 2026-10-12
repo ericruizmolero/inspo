@@ -9,7 +9,8 @@ import { textPrefix } from "@/lib/text-refs";
 import { POSTS_PREFIX } from "@/lib/posts";
 import { PAGES_PREFIX } from "@/lib/page-shots";
 import { SCREEN_STUDIO_PREFIX } from "@/lib/screen-studio";
-import { openFile, fileUrl, signedFileUrl, isSafeKey } from "@/lib/storage";
+import { openFile, fileUrl, signedFileUrl, isSafeKey, ensureCardCopy } from "@/lib/storage";
+import { originalOfCard } from "@/lib/board";
 import { brandPrefix } from "@/lib/brand-files";
 import { log } from "@/lib/log";
 
@@ -25,17 +26,22 @@ export async function GET(req: NextRequest, ctx: RouteContext<"/api/files/[...ke
   if (isResponse(session)) return session;
   const { key: parts } = await ctx.params;
   // Checked after the join: a segment can hold an encoded slash ("..%2F..")
-  const key = parts.join("/");
+  let key = parts.join("/");
   if (!isSafeKey(key)) return new Response("bad path", { status: 400 });
+  // A card copy (lib/board.ts) is seen by whoever may see its original
+  const original = originalOfCard(key);
 
   // The active workspace first: it answers nearly every request without looking further
   const mine = [session.workspace, ...session.workspaces.filter((w) => w.id !== session.workspace.id)].map((w) => w.id);
   const ownPrefixes = (ws: string) => [blobPrefix(ws), mediaPrefix(ws), brandPrefix(ws), videoPrefix(ws), textPrefix(ws), commentPrefix(ws), whyShotPrefix(ws)];
   const allowed = [DESIGN_MD_PREFIX, POSTS_PREFIX, PAGES_PREFIX, SCREEN_STUDIO_PREFIX].some((p) => key.startsWith(p))
-    || mine.some((ws) => ownPrefixes(ws).some((p) => key.startsWith(p)))
+    || mine.some((ws) => ownPrefixes(ws).some((p) => (original ?? key).startsWith(p)))
     // A thumbnail stored under another prefix but set on an item of one of their workspaces
-    || (await ownsAnyThumbnail(mine, fileUrl(key)));
+    || (await ownsAnyThumbnail(mine, fileUrl(original ?? key)));
   if (!allowed) return new Response("forbidden", { status: 403 });
+
+  // Made the first time it is asked for. A picture that can't be resized is served as it is
+  if (original && !(await ensureCardCopy(key).catch((err) => { log.warn("files.card_copy_failed", { ref: key, err }); return false; }))) key = original;
 
   try {
     const signed = await signedFileUrl(key);

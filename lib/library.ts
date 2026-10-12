@@ -19,6 +19,7 @@ import { designDocsFor } from "./design-store";
 import { pageShotsFor, signCanvasCopies } from "./page-shots";
 import { keyOf, signedFileUrl } from "./storage";
 import { mediaKindOf } from "./url";
+import { cardCopyOf } from "./board";
 import { HttpError, listMembers, type SessionUser, type Workspace } from "./workspace-core";
 
 const T = schema.inspoItem, PI = schema.projectItem, P = schema.project;
@@ -108,8 +109,9 @@ async function bundleOf(organizationId: string, rows: ItemRow[]): Promise<ItemsB
   const { items, thumbnailMap, tagMap, tagJobs } = shapeRows(rows);
   const webs = items.map((i) => i.web);
   const [designMdIndex, pageShots] = webs.length ? await Promise.all([designDocsFor(webs), pageShotsFor(webs).then(signCanvasCopies)]) : [{}, {}];
+  const pictures = [...Object.values(thumbnailMap), ...webs.filter((w) => mediaKindOf(w) === "image")];
   const signed = await signedLinks([
-    ...Object.values(thumbnailMap), ...webs.filter((w) => mediaKindOf(w) === "image"),
+    ...pictures, ...pictures.map(cardCopyOf),
     ...Object.values(designMdIndex).flatMap((d) => [d.coverUrl, d.scrollUrl]),
   ]);
   return { items, thumbnailMap, tagMap, tagJobs, pageShots, designMdIndex, signed };
@@ -118,7 +120,7 @@ async function bundleOf(organizationId: string, rows: ItemRow[]): Promise<ItemsB
 /** The board's other images as signed R2 links, keyed by their stored path: the browser loads them straight from the
  *  bucket instead of through /api/files, one function each. Only this bundle's rows get here, so only what the
  *  workspace may see is signed. A path that fails to sign, and every path on disk, is left out: the card loads the path */
-async function signedLinks(paths: (string | undefined)[]): Promise<Record<string, string>> {
+async function signedLinks(paths: (string | null | undefined)[]): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
   await Promise.all([...new Set(paths)].map(async (p) => {
     const k = p ? keyOf(p) : null;

@@ -298,6 +298,7 @@ Masonry con scroll vertical. El layout son números (ratio de cada tarjeta) y so
 - Nubecitas: las de `Clouds`, con las márgenes del tablón (64 arriba, 112 abajo con dock, 24 sin él). No se montan mientras el tablón está debajo de Pulido, que trae las suyas.
 - Las tarjetas se deslizan a su nuevo sitio con una transición CSS de `transform`.
 - Cada tarjeta pide la copia de captura que necesita: 288, 720 o 1440 px.
+- Una imagen (subida, miniatura elegida o foto de un post) se pinta desde su copia de 720 px; con el zoom de cerca, desde el original.
 
 ### Tarjeta de referencia
 `InspoCard` · `components/InspoCard.tsx` · `.tile`

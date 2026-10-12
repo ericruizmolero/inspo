@@ -56,6 +56,7 @@
     "backfill:file-bytes": "tsx --conditions=react-server scripts/backfill-file-bytes.ts",
     "db:copy-turso": "tsx --conditions=react-server scripts/copy-turso.ts",
     "files:pull": "tsx scripts/pull-files.ts",
+    "files:cards": "tsx --conditions=react-server scripts/card-copies.ts",
     "shots:pages": "tsx --conditions=react-server scripts/capture-pages.ts",
     "tags:bakeoff": "tsx --conditions=react-server scripts/tag-bakeoff.ts",
     "embed:bakeoff": "tsx --conditions=react-server scripts/embed-bakeoff.ts",
