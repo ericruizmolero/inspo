@@ -39,6 +39,15 @@ export function usePanelRoute({ items, filling, panelItem, setPanelItem, workspa
   };
   const panelItemRef = useRef<InspoItem | null>(null);
 
+  // The URL changes without a navigation, so Next never sets this title: the tab names the open reference
+  const panelName = panelItem?.name;
+  useEffect(() => {
+    if (!panelName) return;
+    const before = document.title;
+    document.title = `${panelName} · criterio.design`;
+    return () => { document.title = before; };
+  }, [panelName]);
+
   /** Opens a reference in the panel */
   const openItem = (item: InspoItem) => showPanel(item);
   panelItemRef.current = panelItem;

@@ -7,9 +7,12 @@ import ResubscribeButton from "./ResubscribeButton";
 
 // The one-click link at the foot of a team email (lib/notify.ts). Public (proxy.ts): no sign-in, the signature
 // in the link is the proof. Opening it turns that kind of email off at once; the page says so and offers the way back.
-export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await getT();
-  return { title: t.unsubscribe.title.digest };
+// Only checks the link: turning the email off is the page's job
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ u?: string; k?: string; s?: string }> }): Promise<Metadata> {
+  const [{ u, k, s }, { t }] = await Promise.all([searchParams, getT()]);
+  return unsubscribeValid(u, k, s)
+    ? { title: t.unsubscribe.title[k], description: t.unsubscribe.lead[k] }
+    : { title: t.unsubscribe.invalid, description: t.unsubscribe.invalidLead };
 }
 
 export default async function UnsubscribePage({ searchParams }: { searchParams: Promise<{ u?: string; k?: string; s?: string }> }) {

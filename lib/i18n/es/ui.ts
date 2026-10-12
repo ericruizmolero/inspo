@@ -1481,6 +1481,11 @@ export const ui: typeof EnUi = {
       },
     },
   },
+  meta: {
+    library: "Las referencias de tu equipo en un sitio: webs, vídeos e ideas, cada una con sus etiquetas, comentarios y DESIGN.md.",
+    login: "Entra en criterio.design, la biblioteca de inspiración de tu equipo.",
+    designLibrary: "Cómo está diseñado y construido criterio.design: principios, tokens, componentes y cada decisión detrás.",
+  },
   designLibrary: {
     title: "Sistema de diseño",
     all: "Todas",

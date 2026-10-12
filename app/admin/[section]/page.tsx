@@ -7,7 +7,7 @@ import { activityOverview, listAdmins, isAdmin } from "@/lib/activity";
 import { usageOverview } from "@/lib/usage";
 import { feedbackOverview } from "@/lib/feedback";
 import { listFailures } from "@/lib/log";
-import { getT } from "@/lib/i18n";
+import { getT, type Dict } from "@/lib/i18n";
 import { INVITES_PER_PERSON, signupModeState } from "@/lib/access";
 import { listTeamInvites, listWaitlist, waveMetrics } from "@/lib/waves";
 import AdminPanel, { type AdminSection } from "../AdminPanel";
@@ -23,16 +23,25 @@ export const maxDuration = 120;
 
 type Props = { params: Promise<{ section: string }>; searchParams: Promise<{ dias?: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const [{ section }, { t }] = await Promise.all([params, getT()]);
-  return { title: t.admin.sections[section as AdminSection] ?? t.admin.title };
+const daysOf = (dias: string | undefined) => (DAYS.includes(Number(dias)) ? Number(dias) : 30);
+
+function leadOf(t: Dict, section: AdminSection, days: number): string {
+  if (section === "overview") return t.admin.headSub(days);
+  if (section === "access" || section === "waitlist") return t.admin.leads[section];
+  return t.admin.leads[section](days);
+}
+
+export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
+  const [{ section }, { dias }, { t }] = await Promise.all([params, searchParams, getT()]);
+  if (!SECTIONS.includes(section as AdminSection)) return { title: t.admin.title };
+  return { title: t.admin.sections[section as AdminSection], description: leadOf(t, section as AdminSection, daysOf(dias)) };
 }
 
 export default async function AdminSectionPage({ params, searchParams }: Props) {
   const [{ section: raw }, { dias }] = await Promise.all([params, searchParams]);
   const section = raw as AdminSection;
   if (!SECTIONS.includes(section)) notFound();
-  const days = DAYS.includes(Number(dias)) ? Number(dias) : 30;
+  const days = daysOf(dias);
   const [s, { t }] = await Promise.all([getSession(), getT()]);
   // Checked here too, not only in the layout: a client navigation can render this page without the layout
   if (!s || !(await isAdmin(s.user.email))) notFound();
@@ -42,7 +51,7 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
     return (
       <>
         <ActivityPing area="admin" />
-        <SettingsHeading title={t.admin.sections.waitlist} lead={t.admin.leads.waitlist} />
+        <SettingsHeading title={t.admin.sections.waitlist} lead={leadOf(t, section, days)} />
         <WaitlistPanel waitlist={waitlist} invites={invites} waves={waves} />
       </>
     );
@@ -58,7 +67,7 @@ export default async function AdminSectionPage({ params, searchParams }: Props) 
     section === "access" ? signupModeState() : undefined,
   ]);
 
-  const lead = section === "overview" ? t.admin.headSub(days) : section === "access" ? t.admin.leads.access : t.admin.leads[section as Exclude<AdminSection, "overview" | "access" | "waitlist">](days);
+  const lead = leadOf(t, section, days);
   const period = section !== "access" && (
     <>
       <PeriodSwitch section={section} days={days} options={DAYS} labels={DAYS.map((d) => t.admin.days(d))} label={t.admin.period} />

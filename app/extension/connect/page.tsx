@@ -9,7 +9,7 @@ import { getT } from "@/lib/i18n";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.ext.connect };
+  return { title: t.ext.connect, description: t.settings.connectHint };
 }
 
 // The extension opens this tab to connect: the person is already signed in (or signs in),

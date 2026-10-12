@@ -1489,6 +1489,12 @@ export const ui = {
       },
     },
   },
+  // Descriptions for the pages whose heading has no lead line to reuse (the browser's history, a pasted link)
+  meta: {
+    library: "Your team's references in one place: sites, videos and ideas, each with its tags, comments and DESIGN.md.",
+    login: "Sign in to criterio.design, your team's inspiration library.",
+    designLibrary: "How criterio.design is designed and built: principles, tokens, components and every decision behind them.",
+  },
   designLibrary: {
     title: "Design system",
     all: "All",

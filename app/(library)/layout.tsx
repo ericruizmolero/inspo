@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import { getSession, getCtx } from "@/lib/workspace";
+import { getT } from "@/lib/i18n";
 import type { ReactNode } from "react";
 import { loadLibrary } from "@/lib/library";
 import LibraryHost from "@/components/LibraryHost";
+
+// A guest keeps the root's title and description. An open reference puts its name in the tab (hooks/use-panel-route.ts).
+export async function generateMetadata(): Promise<Metadata> {
+  if (!(await getSession())) return {};
+  const { t } = await getT();
+  return { title: t.sidebar.library, description: t.meta.library };
+}
 
 // The library lives in this layout so it stays mounted between / and /i/[id]: opening a DESIGN.md
 // changes the URL (history.pushState) without a remount, and a refresh keeps the running jobs.

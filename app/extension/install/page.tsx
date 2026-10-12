@@ -8,7 +8,7 @@ import InstallGuide from "./InstallGuide";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.ext.install.title };
+  return { title: t.ext.install.title, description: t.ext.install.lead };
 }
 
 // The way in for someone who does not have the extension yet: download, load it in Chrome, connect.

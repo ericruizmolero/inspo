@@ -13,7 +13,7 @@ import { TabWorkspace } from "@/components/workspace-switch";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.mcp.pageTitle, robots: { index: false } };
+  return { title: t.mcp.pageTitle, description: t.mcp.can, robots: { index: false } };
 }
 
 // Where an AI client (Claude, ChatGPT, Cursor) sends the person to let it in: the authorization endpoint of

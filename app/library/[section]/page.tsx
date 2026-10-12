@@ -9,13 +9,13 @@ import Catalog from "@/components/design-library/Catalog";
 import { sectionIcon } from "@/components/section-icons";
 import { getSession } from "@/lib/workspace";
 import { isAdmin } from "@/lib/activity";
-import { DS_GROUPS, DS_PAGES, pageTitles, parseCatalog, parseMd, readDecisions, readPage, type Block } from "@/lib/design-system";
+import { DS_GROUPS, DS_PAGES, pageHead, pageTitles, parseCatalog, parseMd, readDecisions, readPage, type Block } from "@/lib/design-system";
 
 type Props = { params: Promise<{ section: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const [{ section }, titles] = await Promise.all([params, pageTitles()]);
-  return { title: titles[section] ?? "Sistema de diseño" };
+  const head = await pageHead((await params).section);
+  return head ? { title: head.title, description: head.lead } : {};
 }
 
 /** "En esta página": the h2s of a long page, kept in view beside it. */
@@ -53,7 +53,8 @@ export default async function DesignLibrarySection({ params }: Props) {
   const s = await getSession();
   if (!s || !(await isAdmin(s.user.email))) notFound();
   const meta = DS_PAGES.find((p) => p.slug === section);
-  if (!meta) notFound();
+  const head = await pageHead(section);
+  if (!meta || !head) notFound();
   const source = `docs/design-system/${meta.file}`;
   const aside = <span className="settings__meta">{source}</span>;
 
@@ -61,7 +62,7 @@ export default async function DesignLibrarySection({ params }: Props) {
     const items = (await readDecisions()).map(({ body, ...rest }) => ({ ...rest, blocks: parseMd(body) }));
     return (
       <>
-        <SettingsHeading title="Decisiones" lead="Cada sí y cada no del equipo, con su porqué. Lo retirado se queda para que nadie lo vuelva a meter." aside={aside} />
+        <SettingsHeading title={head.title} lead={head.lead} aside={aside} />
         <Decisions items={items} />
       </>
     );
@@ -70,24 +71,21 @@ export default async function DesignLibrarySection({ params }: Props) {
   const page = await readPage(section);
   if (!page) notFound();
   if (section === "componentes") {
-    const { intro, tabs } = parseCatalog(page.body);
-    const lead = intro[0]?.t === "p" ? intro[0].text.map((x) => x.v).join("") : "";
+    const { tabs } = parseCatalog(page.body);
     return (
       <>
-        <SettingsHeading title={page.title} lead={lead} aside={aside} />
+        <SettingsHeading title={head.title} lead={head.lead} aside={aside} />
         <Catalog tabs={tabs} />
       </>
     );
   }
   const blocks = parseMd(page.body);
-  // The first paragraph is the page's lead
-  const first = blocks[0]?.t === "p" ? blocks.shift() as Extract<Block, { t: "p" }> : null;
-  const lead = first ? first.text.map((x) => x.v).join("") : DS_GROUPS.find((g) => g.label === meta.group)!.lead;
-  const title = section === "inicio" ? "Cómo usar esta librería" : page.title;
+  // The first paragraph is the page's lead (pageHead), so it does not repeat below
+  if (blocks[0]?.t === "p") blocks.shift();
 
   return (
     <>
-      <SettingsHeading title={title} lead={lead} aside={aside} />
+      <SettingsHeading title={head.title} lead={head.lead} aside={aside} />
       {section === "inicio" && <Blocks />}
       <PageSpecimen slug={section} />
       <div className="ds-page">

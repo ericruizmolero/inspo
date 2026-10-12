@@ -1,17 +1,19 @@
 import type { Metadata } from "next";
 import ActivityPing from "@/components/ActivityPing";
 import SettingsHeading from "@/components/SettingsHeading";
-import { getCtxOrLogin, listMembers, canManage } from "@/lib/workspace";
+import { getCtxOrLogin, listMembers, canManage, type Ctx } from "@/lib/workspace";
 import { db, schema } from "@/lib/db";
 import { and, eq, gt } from "drizzle-orm";
 import { overCapacity } from "@/lib/quota";
 import { planOf } from "@/lib/plans";
-import { getT } from "@/lib/i18n";
+import { getT, type Dict } from "@/lib/i18n";
 import MembersPanel from "../_components/MembersPanel";
 
+const leadOf = (t: Dict, ws: Ctx["workspace"]) => (ws.kind === "personal" ? t.settings.leads.personal : t.settings.leads.members(ws.name));
+
 export async function generateMetadata(): Promise<Metadata> {
-  const { t } = await getT();
-  return { title: t.settings.sections.members };
+  const [ctx, { t }] = await Promise.all([getCtxOrLogin("/settings/members"), getT()]);
+  return { title: t.settings.sections.members, description: leadOf(t, ctx.workspace) };
 }
 
 // ?create=1 opens the Create team dialog
@@ -31,7 +33,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   return (
     <>
       <ActivityPing area="team" organizationId={ws.id} />
-      <SettingsHeading title={t.settings.sections.members} lead={ws.kind === "personal" ? t.settings.leads.personal : t.settings.leads.members(ws.name)} />
+      <SettingsHeading title={t.settings.sections.members} lead={leadOf(t, ws)} />
       <MembersPanel
         workspace={ws}
         me={ctx.user}

@@ -8,7 +8,7 @@ import ExtensionPanel from "../_components/ExtensionPanel";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.settings.sections.extension };
+  return { title: t.settings.sections.extension, description: t.settings.leads.extension };
 }
 
 export default async function ExtensionPage() {

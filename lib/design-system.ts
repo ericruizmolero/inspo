@@ -83,6 +83,21 @@ export async function readPage(slug: string): Promise<DsPage | null> {
   return { slug, title: h?.[1] ?? slug, body: h ? md.slice(h[0].length) : md };
 }
 
+const plain = (b: Block | undefined): string | null => (b?.t === "p" ? b.text.map((x) => x.v).join("") : null);
+
+/** A page's heading: its title, and as lead its first paragraph (or its block's). Also the page's description. */
+export async function pageHead(slug: string): Promise<{ title: string; lead: string } | null> {
+  if (slug === "decisiones") return { title: "Decisiones", lead: "Cada sí y cada no del equipo, con su porqué. Lo retirado se queda para que nadie lo vuelva a meter." };
+  const page = await readPage(slug);
+  if (!page) return null;
+  const first = slug === "componentes" ? parseCatalog(page.body).intro[0] : parseMd(page.body)[0];
+  const group = DS_PAGES.find((p) => p.slug === slug)!.group;
+  return {
+    title: slug === "inicio" ? "Cómo usar esta librería" : page.title,
+    lead: plain(first) ?? DS_GROUPS.find((g) => g.label === group)!.lead,
+  };
+}
+
 /** Navigation titles come from each file's first heading, so a page is named in one place. */
 export async function pageTitles(): Promise<Record<string, string>> {
   const out: Record<string, string> = { decisiones: "Decisiones" };

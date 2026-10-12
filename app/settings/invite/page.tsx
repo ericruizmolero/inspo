@@ -8,7 +8,7 @@ import InvitePanel from "../_components/InvitePanel";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.settings.sections.invite };
+  return { title: t.settings.sections.invite, description: t.settings.leads.invite };
 }
 
 export default async function InvitePage() {

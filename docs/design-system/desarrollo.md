@@ -96,6 +96,7 @@ Las reglas de acceso, cabeceras, salida a la red, ficheros ajenos, datos y polí
 - Código, comentarios, nombres de campos y rutas en **inglés**.
 - Textos de UI nunca en el componente: van a `lib/i18n/en/*.ts` **y** `lib/i18n/es/*.ts` a la vez. Inglés por defecto, cookie `lang`. La extensión usa `_locales/{en,es}/messages.json`. → [UI bilingüe](decisiones/2026-09-23-ui-bilingue-i18n.md)
 - Lo que lee el equipo directamente (handoffs, issues, este sistema) en castellano.
+- Cada página lleva título y descripción en `generateMetadata`, aunque esté detrás del login y no tenga SEO: los leen la pestaña, el historial y la vista previa de un enlace pegado. La descripción es el `lead` que la página ya pinta bajo su título (ajustes, admin, extensión, invitación, MCP), y en `/library` el primer párrafo del Markdown (`pageHead`, `lib/design-system.ts`); solo las páginas sin lead tienen texto propio en `meta` (`ui.ts`). La biblioteca cambia la URL sin navegar, así que es `use-panel-route.ts` quien pone el nombre de la referencia abierta en la pestaña.
 
 ## IA
 

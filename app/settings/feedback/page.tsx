@@ -9,7 +9,7 @@ import { Chip, EmptyState, SettingsWindow } from "@/components/criterio";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.settings.sections.feedback };
+  return { title: t.settings.sections.feedback, description: t.settings.leads.feedback };
 }
 
 // Everything this person has left with the feedback tool (issue #8): sent, dealt with by a

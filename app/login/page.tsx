@@ -18,7 +18,7 @@ import { INVITE_COOKIE } from "@/lib/invite-cookie";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.login.pageTitle };
+  return { title: t.login.pageTitle, description: t.meta.login };
 }
 
 /** Headlines carry a deliberate line break: in the dictionary it is a \n. */

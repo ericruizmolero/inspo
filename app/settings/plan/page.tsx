@@ -15,7 +15,7 @@ import { Button, Icon, Progress, SettingsWindow } from "@/components/criterio";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.settings.sections.plan };
+  return { title: t.settings.sections.plan, description: t.settings.leads.plan };
 }
 
 function Line({ label, used, limit, t, seats, fairUse, nums }: {

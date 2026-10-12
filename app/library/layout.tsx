@@ -11,7 +11,7 @@ import "@/components/design-library/DesignLibrary.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: { template: `%s · ${t.designLibrary.title} · criterio.design`, default: t.designLibrary.title } };
+  return { title: { template: `%s · ${t.designLibrary.title} · criterio.design`, default: t.designLibrary.title }, description: t.meta.designLibrary };
 }
 
 // The team's own design system (docs/design-system/), shown as pages. Internal: the same people who

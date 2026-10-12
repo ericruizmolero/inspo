@@ -13,7 +13,7 @@ import AuthWindow from "@/components/AuthWindow";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.invite.pageTitle };
+  return { title: t.invite.pageTitle, description: t.invite.sharedLibrary };
 }
 
 export default async function InvitePage({ params }: { params: Promise<{ id: string }> }) {

@@ -8,7 +8,7 @@ import AccountPanel from "../_components/AccountPanel";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();
-  return { title: t.settings.sections.account };
+  return { title: t.settings.sections.account, description: t.settings.leads.account };
 }
 
 export default async function AccountPage() {
