@@ -37,7 +37,7 @@ async function main() {
   ];
   const lines = activityLines(events, "es");
   assert.deepEqual(lines.map((l) => l.text), [
-    "Alberto añadió 3 referencias", "Andoni añadió una referencia", "Alberto en Superr", "Andoni decidió Color", "Alberto votó 2 referencias en el Pulido",
+    "Alberto añadió 3 referencias", "Andoni añadió una referencia", "Alberto comentó", "Andoni decidió Color", "Alberto votó 2 referencias en el Pulido",
   ]);
   assert.equal(lines[0].path, "/?in=p1", "several references open the project");
   assert.equal(lines[1].path, "/i/4", "one reference opens itself");
